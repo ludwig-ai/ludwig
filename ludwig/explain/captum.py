@@ -1,5 +1,8 @@
 import copy
+import gc
+import logging
 from collections import defaultdict
+from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
@@ -14,7 +17,7 @@ from tqdm import tqdm
 
 from ludwig.api import LudwigModel
 from ludwig.api_annotations import PublicAPI
-from ludwig.constants import CATEGORY, DATE, INPUT_FEATURES, NAME, PREPROCESSING, TEXT, UNKNOWN_SYMBOL
+from ludwig.constants import CATEGORY, DATE, IMAGE, INPUT_FEATURES, NAME, PREPROCESSING, TEXT, UNKNOWN_SYMBOL
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.explain.explainer import Explainer
 from ludwig.explain.explanation import Explanation
@@ -22,6 +25,42 @@ from ludwig.explain.util import get_pred_col
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.models.ecd import ECD
 from ludwig.utils.torch_utils import DEVICE
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class ExplanationRunConfig:
+    """Mutable state containing runtime configuration for explanation process.
+
+    This is useful for updating the batch size used during explanation so it can be propagated across calls to
+    `get_total_attribution`.
+    """
+
+    batch_size: int
+
+
+def retry_on_cuda_oom(run_config: ExplanationRunConfig):
+    def retry_on_cuda_oom_fn(fn):
+        def retry_on_cuda_oom_wrapper(*args, **kwargs):
+            while run_config.batch_size >= 2:
+                try:
+                    return fn(*args, **kwargs)
+                except RuntimeError as e:
+                    # PyTorch only generates Runtime errors for CUDA OOM.
+                    gc.collect()
+                    if "CUDA out of memory" in str(e) or isinstance(e, torch.cuda.OutOfMemoryError):
+                        logger.exception(f"OOM at batch_size={run_config.batch_size}, halving and trying again")
+                        run_config.batch_size //= 2
+                    else:
+                        # Not a CUDA error
+                        raise
+
+            raise RuntimeError("CUDA OOM raised during explanation, but batch size cannot be reduced any further")
+
+        return retry_on_cuda_oom_wrapper
+
+    return retry_on_cuda_oom_fn
 
 
 class WrapperModule(torch.nn.Module):
@@ -68,7 +107,89 @@ class WrapperModule(torch.nn.Module):
         return get_pred_col(predictions, self.target)
 
 
-def get_input_tensors(model: LudwigModel, input_set: pd.DataFrame) -> List[torch.Tensor]:
+@PublicAPI(stability="experimental")
+class IntegratedGradientsExplainer(Explainer):
+    def explain(self) -> Tuple[List[Explanation], List[float]]:
+        """Explain the model's predictions using Integrated Gradients.
+
+        # Return
+
+        :return: (Tuple[List[Explanation], List[float]]) `(explanations, expected_values)`
+            `explanations`: (List[Explanation]) A list of explanations, one for each row in the input data. Each
+            explanation contains the integrated gradients for each label in the target feature's vocab with respect to
+            each input feature.
+
+            `expected_values`: (List[float]) of length [output feature cardinality] Average convergence delta for each
+            label in the target feature's vocab.
+        """
+
+        # TODO(travis): add back skip encoders at the end in finally. Shouldn't be an issue in most cases as we
+        # typically perform explanations on a loaded model and don't use it to predict afterwards.
+        self.model.model.unskip()
+        self.model.model.to(DEVICE)
+
+        input_features: LudwigFeatureDict = self.model.model.input_features
+        run_config = ExplanationRunConfig(batch_size=self.model.config_obj.trainer.batch_size)
+
+        get_input_tensors_with_retry = retry_on_cuda_oom(run_config)(get_input_tensors)
+        get_total_attribution_with_retry = retry_on_cuda_oom(run_config)(get_total_attribution)
+
+        # Convert input data into embedding tensors from the output of the model encoders.
+        inputs_encoded = get_input_tensors_with_retry(self.model, self.inputs_df, run_config)
+        sample_encoded = get_input_tensors_with_retry(self.model, self.sample_df, run_config)
+        baseline = get_baseline(self.model, sample_encoded)
+
+        # Compute attribution for each possible output feature label separately.
+        expected_values = []
+        for target_idx in tqdm(range(self.vocab_size), desc="Explain"):
+            total_attribution, feat_to_token_attributions = get_total_attribution_with_retry(
+                self.model,
+                self.target_feature_name,
+                target_idx if self.is_category_target else None,
+                inputs_encoded,
+                baseline,
+                self.use_global,
+                len(self.inputs_df),
+                run_config,
+            )
+
+            for i, (feature_attributions, explanation) in enumerate(zip(total_attribution, self.explanations)):
+                # Add the feature attributions to the explanation object for this row.
+                explanation.add(
+                    input_features.keys(),
+                    feature_attributions,
+                    {k: v[i] for k, v in feat_to_token_attributions.items()},
+                )
+
+            # TODO(travis): for force plots, need something similar to SHAP E[X]
+            expected_values.append(0.0)
+
+            if self.is_binary_target:
+                # For binary targets, we only need to compute attribution for the positive class (see below).
+                break
+
+        # For binary targets, add an extra attribution for the negative class (false).
+        if self.is_binary_target:
+            for explanation in self.explanations:
+                le_true = explanation.label_explanations[0]
+                negated_attributions = le_true.to_array() * -1
+                negated_token_attributions = {
+                    fa.feature_name: [(t, -a) for t, a in fa.token_attributions]
+                    for fa in le_true.feature_attributions
+                    if fa.token_attributions is not None
+                }
+                # Prepend the negative class to the list of label explanations.
+                explanation.add(input_features.keys(), negated_attributions, negated_token_attributions, prepend=True)
+
+            # TODO(travis): for force plots, need something similar to SHAP E[X]
+            expected_values.append(0.0)
+
+        return self.explanations, expected_values
+
+
+def get_input_tensors(
+    model: LudwigModel, input_set: pd.DataFrame, run_config: ExplanationRunConfig
+) -> List[torch.Tensor]:
     """Convert the input data into a list of variables, one for each input feature.
 
     # Inputs
@@ -113,7 +234,7 @@ def get_input_tensors(model: LudwigModel, input_set: pd.DataFrame) -> List[torch
 
     # Convert dataset into a dict of tensors, and split each tensor into batches to control GPU memory usage
     inputs = {
-        name: torch.from_numpy(dataset.dataset[feature.proc_column]).split(model.config_obj.trainer.batch_size)
+        name: torch.from_numpy(dataset.dataset[feature.proc_column]).split(run_config.batch_size)
         for name, feature in model.model.input_features.items()
     }
 
@@ -126,6 +247,8 @@ def get_input_tensors(model: LudwigModel, input_set: pd.DataFrame) -> List[torch
     data_to_predict = [v for _, v in preproc_inputs.items()]
     tensors = []
     for t in data_to_predict:
+        # TODO(travis): Consider changing to `if not torch.is_floating_point(t.dtype)` to simplify, then handle bool
+        # case in this block.
         if t.dtype == torch.int8 or t.dtype == torch.int16 or t.dtype == torch.int32 or t.dtype == torch.int64:
             # Don't wrap input into a variable if it's an integer type, since it will be used as an index into the
             # embedding table. We explain the output of the embedding table, not the input to the embedding table using
@@ -138,81 +261,6 @@ def get_input_tensors(model: LudwigModel, input_set: pd.DataFrame) -> List[torch
             tensors.append(Variable(t, requires_grad=True))
 
     return tensors
-
-
-@PublicAPI(stability="experimental")
-class IntegratedGradientsExplainer(Explainer):
-    def explain(self) -> Tuple[List[Explanation], List[float]]:
-        """Explain the model's predictions using Integrated Gradients.
-
-        # Return
-
-        :return: (Tuple[List[Explanation], List[float]]) `(explanations, expected_values)`
-            `explanations`: (List[Explanation]) A list of explanations, one for each row in the input data. Each
-            explanation contains the integrated gradients for each label in the target feature's vocab with respect to
-            each input feature.
-
-            `expected_values`: (List[float]) of length [output feature cardinality] Average convergence delta for each
-            label in the target feature's vocab.
-        """
-
-        # TODO(travis): add back skip encoders at the end in finally. Shouldn't be an issue in most cases as we
-        # typically perform explanations on a loaded model and don't use it to predict afterwards.
-        self.model.model.unskip()
-        self.model.model.to(DEVICE)
-
-        input_features: LudwigFeatureDict = self.model.model.input_features
-
-        # Convert input data into embedding tensors from the output of the model encoders.
-        inputs_encoded = get_input_tensors(self.model, self.inputs_df)
-        sample_encoded = get_input_tensors(self.model, self.sample_df)
-        baseline = get_baseline(self.model, sample_encoded)
-
-        # Compute attribution for each possible output feature label separately.
-        expected_values = []
-        for target_idx in tqdm(range(self.vocab_size), desc="Explain"):
-            total_attribution, feat_to_token_attributions = get_total_attribution(
-                self.model,
-                self.target_feature_name,
-                target_idx if self.is_category_target else None,
-                inputs_encoded,
-                baseline,
-                self.use_global,
-                len(self.inputs_df),
-            )
-
-            for i, (feature_attributions, explanation) in enumerate(zip(total_attribution, self.explanations)):
-                # Add the feature attributions to the explanation object for this row.
-                explanation.add(
-                    input_features.keys(),
-                    feature_attributions,
-                    {k: v[i] for k, v in feat_to_token_attributions.items()},
-                )
-
-            # TODO(travis): for force plots, need something similar to SHAP E[X]
-            expected_values.append(0.0)
-
-            if self.is_binary_target:
-                # For binary targets, we only need to compute attribution for the positive class (see below).
-                break
-
-        # For binary targets, add an extra attribution for the negative class (false).
-        if self.is_binary_target:
-            for explanation in self.explanations:
-                le_true = explanation.label_explanations[0]
-                negated_attributions = le_true.to_array() * -1
-                negated_token_attributions = {
-                    fa.feature_name: [(t, -a) for t, a in fa.token_attributions]
-                    for fa in le_true.feature_attributions
-                    if fa.token_attributions is not None
-                }
-                # Prepend the negative class to the list of label explanations.
-                explanation.add(input_features.keys(), negated_attributions, negated_token_attributions, prepend=True)
-
-            # TODO(travis): for force plots, need something similar to SHAP E[X]
-            expected_values.append(0.0)
-
-        return self.explanations, expected_values
 
 
 def get_baseline(model: LudwigModel, sample_encoded: List[Variable]) -> List[torch.Tensor]:
@@ -233,9 +281,10 @@ def get_baseline(model: LudwigModel, sample_encoded: List[Variable]) -> List[tor
             # If an unknown is defined, use that as the baseline index, else use the most popular token
             baseline_tok_idx = metadata["str2idx"].get(UNKNOWN_SYMBOL, most_popular_tok_idx)
             baseline = torch.tensor(baseline_tok_idx, device=DEVICE)
+        elif feature.type() == IMAGE:
+            baseline = torch.zeros_like(sample_input[0], device=DEVICE)
         else:
-            # For a robust baseline, we take the mean of all embeddings in the sample from the training data.
-            # TODO(joppe): now that we don't have embeddings, we should re-evaluate this.
+            # For a robust baseline, we take the mean of all samples from the training data.
             baseline = torch.mean(sample_input.float(), dim=0)
         baselines.append(baseline.unsqueeze(0))
 
@@ -250,6 +299,7 @@ def get_total_attribution(
     baseline: List[torch.Tensor],
     use_global: bool,
     nsamples: int,
+    run_config: ExplanationRunConfig,
 ) -> Tuple[npt.NDArray[np.float64], Dict[str, List[List[Tuple[str, float]]]]]:
     """Compute the total attribution for each input feature for each row in the input data.
 
@@ -290,7 +340,7 @@ def get_total_attribution(
 
     explainer = LayerIntegratedGradients(explanation_model, layers)
 
-    feature_inputs_splits = [ipt.split(model.config_obj.trainer.batch_size) for ipt in feature_inputs]
+    feature_inputs_splits = [ipt.split(run_config.batch_size) for ipt in feature_inputs]
     baseline = [t.to(DEVICE) for t in baseline]
 
     total_attribution = None
@@ -302,24 +352,28 @@ def get_total_attribution(
             baselines=tuple(baseline),
             target=target_idx,
             # https://captum.ai/docs/faq#i-am-facing-out-of-memory-oom-errors-when-using-captum-how-do-i-resolve-this
-            internal_batch_size=model.config_obj.trainer.batch_size,
+            internal_batch_size=run_config.batch_size,
         )
 
         attributions_reduced = []
         for a in attribution:
             a_reduced = a.detach().cpu()
-            if a.ndim > 1:
-                # Convert to token-level attributions by summing over the embedding dimension.
-                a_reduced = a.sum(dim=-1)
-            if a_reduced.ndim == 2:
-                # Normalize token-level attributions of shape [batch_size, sequence_length] by dividing by the
-                # norm of the sequence.
-                a_reduced = a_reduced / torch.norm(a_reduced)
+            if a_reduced.ndim == 2 or a_reduced.ndim == 3:
+                # Reduces category-level attributions of shape [batch_size, embedding_dim] by summing over the
+                # embedding dimension to get attributions of shape [batch_size].
+                # Reduces token-level attributions of shape [batch_size, sequence_length, embedding_dim] by summing
+                # over the embedding dimension to get attributions of shape [batch_size, sequence_length]. We keep
+                # the sequence dimension so we can map the attributions to the tokens.
+                a_reduced = a_reduced.sum(dim=-1)
+            elif a_reduced.ndim == 4:
+                # Reduce pixel-level attributions of shape [batch_size, num_channels, height, width] by summing
+                # over the channel and spatial dimensions to get attributions of shape [batch_size].
+                a_reduced = a_reduced.sum(dim=(1, 2, 3))
             attributions_reduced.append(a_reduced)
 
         for inputs, attrs, (name, feat) in zip(input_batch, attributions_reduced, input_features.items()):
             if feat.type() == TEXT:
-                tok_attrs = get_token_attributions(model, name, inputs, attrs)
+                tok_attrs = get_token_attributions(model, name, inputs.detach().cpu(), attrs)
                 feat_to_token_attributions[name].append(tok_attrs)
 
         # Reduce attribution to [num_input_features, batch_size] by summing over the sequence dimension (if present).
@@ -373,6 +427,9 @@ def get_token_attributions(
         or input_ids.dtype == torch.int32
         or input_ids.dtype == torch.int64
     )
+
+    # Normalize token-level attributions to visualize the relative importance of each token.
+    token_attributions = token_attributions / torch.norm(token_attributions)
 
     # map input ids to input tokens via the vocabulary
     feature = model.training_set_metadata[feature_name]

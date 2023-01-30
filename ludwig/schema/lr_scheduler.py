@@ -3,16 +3,16 @@ from dataclasses import field
 from typing import Dict
 
 from marshmallow import fields, ValidationError
-from marshmallow_dataclass import dataclass
 
 import ludwig.schema.utils as schema_utils
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import LOSS, TRAINING
 from ludwig.schema.metadata import TRAINER_METADATA
+from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class LRSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Configuration for learning rate scheduler parameters."""
 
