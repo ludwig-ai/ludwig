@@ -64,8 +64,8 @@ Classifier:
         ui_display_name: Not Displayed
     num_classes:
         other_information: Internal Only
+        internal_only: true
         ui_display_name: Not Displayed
-        expected_impact: 3
     use_bias:
         default_value_reasoning:
             "Bias terms may improve model accuracy, and don't
