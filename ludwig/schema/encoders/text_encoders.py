@@ -475,7 +475,7 @@ class XLMRoBERTaConfig(SequenceEncoderConfig):
         description="The end of sequence token ID.",
         parameter_metadata=ENCODER_METADATA["XLMRoBERTa"]["eos_token_id"],
     )
-    
+
     max_position_embeddings: int = schema_utils.PositiveInteger(
         default=514,
         description="The maximum sequence length that this model might ever be used with. Typically set this to "
@@ -2930,7 +2930,8 @@ class AutoTransformerConfig(SequenceEncoderConfig):
         default=None,
         description=(
             "Vocabulary size of the AutoTransformer model. If None, the vocab size will be inferred "
-            "from the given pretrained model"),
+            "from the given pretrained model"
+        ),
         parameter_metadata=ENCODER_METADATA["AutoTransformer"]["vocab_size"],
     )
 

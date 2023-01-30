@@ -175,8 +175,8 @@ ALBERT:
     max_position_embeddings:
         default_value_reasoning: Taken from huggingface.
         description_implications:
-            The size of the position embeddings table. This typically coincides with the 
-            maximum sequence length this model might ever be used with. Typically set this 
+            The size of the position embeddings table. This typically coincides with the
+            maximum sequence length this model might ever be used with. Typically set this
             to something large just in case (e.g. 512, 1024, 2048).
         expected_impact: 1
         suggested_values: 512
@@ -462,8 +462,8 @@ BERT:
     max_position_embeddings:
         default_value_reasoning: Taken from huggingface.
         description_implications:
-            The size of the position embeddings table. This typically coincides with the 
-            maximum sequence length this model might ever be used with. Typically set this 
+            The size of the position embeddings table. This typically coincides with the
+            maximum sequence length this model might ever be used with. Typically set this
             to something large just in case (e.g. 512, 1024, 2048).
         expected_impact: 2
         suggested_values: 512
@@ -1146,8 +1146,8 @@ CamemBERT:
     max_position_embeddings:
         default_value_reasoning: Taken from huggingface.
         description_implications:
-            The size of the position embeddings table. This typically coincides with the 
-            maximum sequence length this model might ever be used with. Typically set this 
+            The size of the position embeddings table. This typically coincides with the
+            maximum sequence length this model might ever be used with. Typically set this
             to something large just in case (e.g. 512, 1024, 2048).
         expected_impact: 2
         suggested_values: 512
@@ -2335,8 +2335,8 @@ DistilBERT:
     max_position_embeddings:
         default_value_reasoning: Taken from huggingface.
         description_implications:
-            The size of the position embeddings table. This typically coincides with the 
-            maximum sequence length this model might ever be used with. Typically set this 
+            The size of the position embeddings table. This typically coincides with the
+            maximum sequence length this model might ever be used with. Typically set this
             to something large just in case (e.g. 512, 1024, 2048).
         expected_impact: 2
         suggested_values: 512
@@ -2615,8 +2615,8 @@ ELECTRA:
     max_position_embeddings:
         default_value_reasoning: Taken from huggingface.
         description_implications:
-            The size of the position embeddings table. This typically coincides with the 
-            maximum sequence length this model might ever be used with. Typically set this 
+            The size of the position embeddings table. This typically coincides with the
+            maximum sequence length this model might ever be used with. Typically set this
             to something large just in case (e.g. 512, 1024, 2048).
         expected_impact: 2
         suggested_values: 512
@@ -2785,8 +2785,8 @@ FlauBERT:
     max_position_embeddings:
         default_value_reasoning: Taken from huggingface.
         description_implications:
-            The size of the position embeddings table. This typically coincides with the 
-            maximum sequence length this model might ever be used with. Typically set this 
+            The size of the position embeddings table. This typically coincides with the
+            maximum sequence length this model might ever be used with. Typically set this
             to something large just in case (e.g. 512, 1024, 2048).
         expected_impact: 1
         suggested_values: 512
@@ -8933,8 +8933,8 @@ XLM:
     max_position_embeddings:
         default_value_reasoning: Taken from huggingface.
         description_implications:
-            The size of the position embeddings table. This typically coincides with the 
-            maximum sequence length this model might ever be used with. Typically set this 
+            The size of the position embeddings table. This typically coincides with the
+            maximum sequence length this model might ever be used with. Typically set this
             to something large just in case (e.g. 512, 1024, 2048).
         expected_impact: 2
         suggested_values: 512
@@ -9033,8 +9033,8 @@ XLMRoBERTa:
     max_position_embeddings:
         default_value_reasoning: Taken from huggingface.
         description_implications:
-            The size of the position embeddings table. This typically coincides with the 
-            maximum sequence length this model might ever be used with. Typically set this 
+            The size of the position embeddings table. This typically coincides with the
+            maximum sequence length this model might ever be used with. Typically set this
             to something large just in case (e.g. 512, 1024, 2048).
         expected_impact: 1
         suggested_values: 512
