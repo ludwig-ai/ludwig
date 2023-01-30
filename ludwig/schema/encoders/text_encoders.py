@@ -475,6 +475,19 @@ class XLMRoBERTaConfig(SequenceEncoderConfig):
         description="The end of sequence token ID.",
         parameter_metadata=ENCODER_METADATA["XLMRoBERTa"]["eos_token_id"],
     )
+    
+    max_position_embeddings: int = schema_utils.PositiveInteger(
+        default=514,
+        description="The maximum sequence length that this model might ever be used with. Typically set this to "
+        "something large just in case (e.g., 512 or 1024 or 2048).",
+        parameter_metadata=ENCODER_METADATA["XLMRoBERTa"]["max_position_embeddings"],
+    )
+
+    type_vocab_size: int = schema_utils.PositiveInteger(
+        default=1,
+        description="The vocabulary size of the token_type_ids passed in.",
+        parameter_metadata=ENCODER_METADATA["XLMRoBERTa"]["type_vocab_size"],
+    )
 
     add_pooling_layer: bool = schema_utils.Boolean(
         default=True,
@@ -731,14 +744,12 @@ class XLMConfig(SequenceEncoderConfig):
         parameter_metadata=ENCODER_METADATA["XLM"]["emb_dim"],
     )
 
-    # TODO(geoffrey): Ensure that `n_layer``is deprecated in favor of this parameter.
     n_layers: int = schema_utils.PositiveInteger(
         default=12,
         description="Number of hidden layers in the Transformer encoder.",
         parameter_metadata=ENCODER_METADATA["XLM"]["n_layers"],
     )
 
-    # TODO(geoffrey): Ensure that `n_head``is deprecated in favor of this parameter.
     n_heads: int = schema_utils.PositiveInteger(
         default=16,
         description="Number of attention heads for each attention layer in the Transformer encoder.",
@@ -2850,14 +2861,6 @@ class LongformerConfig(SequenceEncoderConfig):
         parameter_metadata=ENCODER_METADATA["Longformer"]["vocab_size"],
     )
 
-    # TODO(geoffrey): Remove this from the schema– it's not used
-    # anywhere nor is it clear what it's supposed to do.
-    num_tokens: int = schema_utils.PositiveInteger(
-        default=None,
-        description="Number of tokens",
-        parameter_metadata=ENCODER_METADATA["Longformer"]["num_tokens"],
-    )
-
     max_position_embeddings: int = schema_utils.PositiveInteger(
         default=4098,
         description="The maximum sequence length that this model might ever be used with. Typically set this to "
@@ -2925,7 +2928,9 @@ class AutoTransformerConfig(SequenceEncoderConfig):
 
     vocab_size: int = schema_utils.PositiveInteger(
         default=None,
-        description="Vocabulary size of the XLMRoBERTa model.",
+        description=(
+            "Vocabulary size of the AutoTransformer model. If None, the vocab size will be inferred "
+            "from the given pretrained model"),
         parameter_metadata=ENCODER_METADATA["AutoTransformer"]["vocab_size"],
     )
 

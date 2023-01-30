@@ -175,15 +175,9 @@ ALBERT:
     max_position_embeddings:
         default_value_reasoning: Taken from huggingface.
         description_implications:
-            "An embedding is a relatively low-dimensional space
-            that is used to translate high-dimensional vectors like words or positions,
-            which can have a large vocbulary size. Ideally, after an embedding is
-            trained, it captures some of the semantics of the input by placing semantically
-            similar inputs close together in the embedding space.
-
-
-            Increasing the embedding size may cause the model to train more slowly,
-            but the higher dimensionality can also improve overall quality."
+            The size of the position embeddings table. This typically coincides with the 
+            maximum sequence length this model might ever be used with. Typically set this 
+            to something large just in case (e.g. 512, 1024, 2048).
         expected_impact: 1
         suggested_values: 512
         suggested_values_reasoning:
@@ -468,15 +462,9 @@ BERT:
     max_position_embeddings:
         default_value_reasoning: Taken from huggingface.
         description_implications:
-            "An embedding is a relatively low-dimensional space
-            that is used to translate high-dimensional vectors like words or positions,
-            which can have a large vocbulary size. Ideally, after an embedding is
-            trained, it captures some of the semantics of the input by placing semantically
-            similar inputs close together in the embedding space.
-
-
-            Increasing the embedding size may cause the model to train more slowly,
-            but the higher dimensionality can also improve overall quality."
+            The size of the position embeddings table. This typically coincides with the 
+            maximum sequence length this model might ever be used with. Typically set this 
+            to something large just in case (e.g. 512, 1024, 2048).
         expected_impact: 2
         suggested_values: 512
         suggested_values_reasoning:
@@ -1158,15 +1146,9 @@ CamemBERT:
     max_position_embeddings:
         default_value_reasoning: Taken from huggingface.
         description_implications:
-            "An embedding is a relatively low-dimensional space
-            that is used to translate high-dimensional vectors like words or positions,
-            which can have a large vocbulary size. Ideally, after an embedding is
-            trained, it captures some of the semantics of the input by placing semantically
-            similar inputs close together in the embedding space.
-
-
-            Increasing the embedding size may cause the model to train more slowly,
-            but the higher dimensionality can also improve overall quality."
+            The size of the position embeddings table. This typically coincides with the 
+            maximum sequence length this model might ever be used with. Typically set this 
+            to something large just in case (e.g. 512, 1024, 2048).
         expected_impact: 2
         suggested_values: 512
         suggested_values_reasoning:
@@ -2353,15 +2335,9 @@ DistilBERT:
     max_position_embeddings:
         default_value_reasoning: Taken from huggingface.
         description_implications:
-            "An embedding is a relatively low-dimensional space
-            that is used to translate high-dimensional vectors like words or positions,
-            which can have a large vocbulary size. Ideally, after an embedding is
-            trained, it captures some of the semantics of the input by placing semantically
-            similar inputs close together in the embedding space.
-
-
-            Increasing the embedding size may cause the model to train more slowly,
-            but the higher dimensionality can also improve overall quality."
+            The size of the position embeddings table. This typically coincides with the 
+            maximum sequence length this model might ever be used with. Typically set this 
+            to something large just in case (e.g. 512, 1024, 2048).
         expected_impact: 2
         suggested_values: 512
         suggested_values_reasoning:
@@ -2639,15 +2615,9 @@ ELECTRA:
     max_position_embeddings:
         default_value_reasoning: Taken from huggingface.
         description_implications:
-            "An embedding is a relatively low-dimensional space
-            that is used to translate high-dimensional vectors like words or positions,
-            which can have a large vocbulary size. Ideally, after an embedding is
-            trained, it captures some of the semantics of the input by placing semantically
-            similar inputs close together in the embedding space.
-
-
-            Increasing the embedding size may cause the model to train more slowly,
-            but the higher dimensionality can also improve overall quality."
+            The size of the position embeddings table. This typically coincides with the 
+            maximum sequence length this model might ever be used with. Typically set this 
+            to something large just in case (e.g. 512, 1024, 2048).
         expected_impact: 2
         suggested_values: 512
         suggested_values_reasoning:
@@ -2815,15 +2785,9 @@ FlauBERT:
     max_position_embeddings:
         default_value_reasoning: Taken from huggingface.
         description_implications:
-            "An embedding is a relatively low-dimensional space
-            that is used to translate high-dimensional vectors like words or positions,
-            which can have a large vocbulary size. Ideally, after an embedding is
-            trained, it captures some of the semantics of the input by placing semantically
-            similar inputs close together in the embedding space.
-
-
-            Increasing the embedding size may cause the model to train more slowly,
-            but the higher dimensionality can also improve overall quality."
+            The size of the position embeddings table. This typically coincides with the 
+            maximum sequence length this model might ever be used with. Typically set this 
+            to something large just in case (e.g. 512, 1024, 2048).
         expected_impact: 1
         suggested_values: 512
         suggested_values_reasoning:
@@ -3991,7 +3955,6 @@ Longformer:
             which can have a large vocbulary size. Ideally, after an embedding is
             trained, it captures some of the semantics of the input by placing semantically
             similar inputs close together in the embedding space.
-
 
             Increasing the embedding size may cause the model to train more slowly,
             but the higher dimensionality can also improve overall quality."
@@ -8970,15 +8933,9 @@ XLM:
     max_position_embeddings:
         default_value_reasoning: Taken from huggingface.
         description_implications:
-            "An embedding is a relatively low-dimensional space
-            that is used to translate high-dimensional vectors like words or positions,
-            which can have a large vocbulary size. Ideally, after an embedding is
-            trained, it captures some of the semantics of the input by placing semantically
-            similar inputs close together in the embedding space.
-
-
-            Increasing the embedding size may cause the model to train more slowly,
-            but the higher dimensionality can also improve overall quality."
+            The size of the position embeddings table. This typically coincides with the 
+            maximum sequence length this model might ever be used with. Typically set this 
+            to something large just in case (e.g. 512, 1024, 2048).
         expected_impact: 2
         suggested_values: 512
         suggested_values_reasoning:
@@ -9073,6 +9030,19 @@ XLMRoBERTa:
     eos_token_id:
         default_value_reasoning: Default value used in pre-trained HF encoder.
         ui_display_name: End-of-Sentence Token Id
+    max_position_embeddings:
+        default_value_reasoning: Taken from huggingface.
+        description_implications:
+            The size of the position embeddings table. This typically coincides with the 
+            maximum sequence length this model might ever be used with. Typically set this 
+            to something large just in case (e.g. 512, 1024, 2048).
+        expected_impact: 1
+        suggested_values: 512
+        suggested_values_reasoning:
+            Out of the box value based on published literature.
+            Try models with smaller or larger embedding sizes to observe relative
+            impact.
+        ui_display_name: Max Position Embeddings
     max_sequence_length:
         default_value_reasoning:
             Sets the maximum sequence length of the expected
@@ -9109,6 +9079,9 @@ XLMRoBERTa:
     trainable:
         expected_impact: 3
         ui_display_name: null
+    type_vocab_size:
+        ui_display_name: null
+        expected_impact: 1
     use_pretrained:
         ui_display_name: null
         expected_impact: 2

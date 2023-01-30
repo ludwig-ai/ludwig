@@ -387,6 +387,8 @@ class XLMRoBERTaEncoder(HFTextEncoder):
         pad_token_id: int = 1,
         bos_token_id: int = 0,
         eos_token_id: int = 2,
+        max_position_embeddings: int = 514,
+        type_vocab_size: int = 1,
         add_pooling_layer: bool = True,
         pretrained_kwargs: Dict = None,
         encoder_config=None,
@@ -400,8 +402,8 @@ class XLMRoBERTaEncoder(HFTextEncoder):
             pad_token_id=pad_token_id,
             bos_token_id=bos_token_id,
             eos_token_id=eos_token_id,
-            max_position_embeddings=514,  # TODO(geoffrey): refactor this to be a part of the schema
-            type_vocab_size=1,
+            max_position_embeddings=max_position_embeddings,
+            type_vocab_size=type_vocab_size,
         )
 
         if use_pretrained and not saved_weights_in_checkpoint:
@@ -924,6 +926,8 @@ class RoBERTaEncoder(HFTextEncoder):
         pad_token_id: int = 1,
         bos_token_id: int = 0,
         eos_token_id: int = 2,
+        max_position_embeddings: int = 514,
+        type_vocab_size: int = 1,
         pretrained_kwargs: Dict = None,
         encoder_config=None,
         **kwargs,
@@ -936,8 +940,8 @@ class RoBERTaEncoder(HFTextEncoder):
             pad_token_id=pad_token_id,
             bos_token_id=bos_token_id,
             eos_token_id=eos_token_id,
-            max_position_embeddings=514,  # TODO(geoffrey): refactor this to be a part of the schema
-            type_vocab_size=1,
+            max_position_embeddings=max_position_embeddings,
+            type_vocab_size=type_vocab_size,
         )
 
         if use_pretrained and not saved_weights_in_checkpoint:
