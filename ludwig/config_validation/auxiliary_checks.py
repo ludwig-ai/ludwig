@@ -1,9 +1,8 @@
 """Checks that are not easily covered by marshmallow JSON schema validation like parameter interdependencies.
 
-Or, checks that we want to have a more specific error message for.
-
-Intended to run run after config upgrades on a comprehensive configs, and before final schema validation.
+Assumes incoming configs are comprehensive (all parameters and defaults filled in), and has been schema-validated.
 """
+
 from ludwig.constants import (
     AUDIO,
     BACKEND,

@@ -266,7 +266,7 @@ class ModelConfig(BaseMarshmallowConfig):
         # Schema validation.
         check_schema(comprehensive_config)
 
-        # Pre-checks.
+        # Additional checks.
         auxiliary_checks.check_feature_names_unique(comprehensive_config)
         auxiliary_checks.check_tied_features_are_valid(comprehensive_config)
         auxiliary_checks.check_training_runway(comprehensive_config)
