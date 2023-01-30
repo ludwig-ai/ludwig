@@ -8,7 +8,7 @@ import yaml
 from marshmallow import ValidationError
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.config_validation import auxiliary_checks
+from ludwig.config_validation.checks import get_config_check_registry
 from ludwig.config_validation.validation import check_schema
 from ludwig.constants import (
     ACTIVE,
@@ -257,29 +257,13 @@ class ModelConfig(BaseMarshmallowConfig):
 
     @staticmethod
     def _validate_config(comprehensive_config: ModelConfigDict) -> None:
-        """Helper function used to validate the config using the Ludwig Schema and additional checks.
+        """Helper function used to validate the config.
 
         Args:
             config_dict: Config Dictionary
         """
-        # Schema validation.
-        check_schema(comprehensive_config)
-
-        # Additional checks.
-        auxiliary_checks.check_feature_names_unique(comprehensive_config)
-        auxiliary_checks.check_tied_features_are_valid(comprehensive_config)
-        auxiliary_checks.check_training_runway(comprehensive_config)
-        auxiliary_checks.check_dependent_features(comprehensive_config)
-        auxiliary_checks.check_gbm_horovod_incompatibility(comprehensive_config)
-        auxiliary_checks.check_gbm_single_output_feature(comprehensive_config)
-        auxiliary_checks.check_gbm_feature_types(comprehensive_config)
-        auxiliary_checks.check_ray_backend_in_memory_preprocessing(comprehensive_config)
-        auxiliary_checks.check_sequence_concat_combiner_requirements(comprehensive_config)
-        auxiliary_checks.check_comparator_combiner_requirements(comprehensive_config)
-        auxiliary_checks.check_class_balance_preprocessing(comprehensive_config)
-        auxiliary_checks.check_sampling_exclusivity(comprehensive_config)
-        auxiliary_checks.check_validation_metric_exists(comprehensive_config)
-        auxiliary_checks.check_splitter(comprehensive_config)
+        for config_check in get_config_check_registry().values():
+            config_check.check(comprehensive_config)
 
     @staticmethod
     def _get_config_nested_cls(section: str, section_type: str, feature_type: str) -> BaseMarshmallowConfig:
