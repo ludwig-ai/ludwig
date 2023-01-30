@@ -78,7 +78,7 @@ def get_mismatched_config_params(ludwig_results_dir, ludwig_model):
         pytest.param(configs.CTRLConfig, marks=pytest.mark.skip("Disabled in the schema")),
         configs.CamemBERTConfig,
         pytest.param(configs.MT5Config, marks=pytest.mark.skip("Disabled in the schema")),
-        configs.XLMRoBERTaConfig,
+        pytest.param(configs.XLMRoBERTaConfig, marks=pytest.mark.skip("Causes exit code 143 in CI")),
         configs.LongformerConfig,
         configs.ELECTRAConfig,
         configs.FlauBERTConfig,
