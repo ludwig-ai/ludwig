@@ -518,21 +518,27 @@ class RayTuneExecutor:
                 checkpoint(progress_tracker, save_path)
 
             def on_train_start(self, model, config: ModelConfigDict, config_fp: Union[str, None]):
+                print("!!! on_train_start - checkpoint_dir: ", checkpoint_dir)
                 if is_using_ray_backend and checkpoint_dir:
                     # When using the Ray backend and resuming from a previous checkpoint, we must sync
                     # the checkpoint files from the trial driver to the trainer worker.
                     resume_ckpt = Checkpoint.from_directory(checkpoint_dir)
-                    self.resume_ckpt_ref = resume_ckpt.to_object_ref()
+                    object_ref = ray.put(resume_ckpt)
+                    self.resume_ckpt_ref = object_ref
 
             def on_trainer_train_setup(self, trainer, save_path, is_coordinator):
                 # Check local rank before manipulating files, as otherwise there will be a race condition
                 # between multiple workers running on the same node.
+                print(f"!!! on_trainer_train_setup - save_path: {save_path}")
                 if self.resume_ckpt_ref is not None and trainer.local_rank == 0:
                     # The resume checkpoint is not None, so we are resuming from a previous state, and the
                     # node of the trainer worker is not the same as the trial driver, otherwise the files would
                     # not need to be synced as they would share the same local filesystem.
-                    trainer_ckpt = Checkpoint(obj_ref=self.resume_ckpt_ref)
+                    trainer_ckpt = ray.get(self.resume_ckpt_ref)
                     with trainer_ckpt.as_directory() as ckpt_path:
+                        save_path = save_path.rstrip(".")
+                        print(f"!!! on_trainer_train_setup save_path after rstrip: {save_path}")
+
                         # Attempt an atomic move from the ckpt_path to the save_path
                         # This may first require removing the existing save_path
                         tmp_path = save_path + ".tmp"
@@ -560,6 +566,9 @@ class RayTuneExecutor:
             def on_eval_end(self, trainer, progress_tracker, save_path):
                 progress_tracker.tune_checkpoint_num += 1
                 self.last_steps = progress_tracker.steps
+                print("!!! on_eval_end - save_path: ", save_path)
+                if save_path:
+                    save_path += "/."
                 self._checkpoint_progress(trainer, progress_tracker, save_path)
                 if not is_using_ray_backend:
                     report(progress_tracker)
@@ -769,6 +778,11 @@ class RayTuneExecutor:
                 search_alg = ConcurrencyLimiter(search_alg, max_concurrent=self.max_concurrent_trials)
 
         def run_experiment_trial(config, local_hyperopt_dict, checkpoint_dir=None):
+            # Checkpoint dir exists when trials are temporarily paused and resumed, for e.g.,
+            # when using the HB_BOHB scheduler. In this case, the checkpoint_dir that's set
+            if checkpoint_dir:
+                checkpoint_dir = checkpoint_dir.rstrip("/.")
+            print("run_experiment_trial - Checkpoint Dir: ", checkpoint_dir)
             return self._run_experiment(
                 config,
                 checkpoint_dir,
@@ -779,6 +793,8 @@ class RayTuneExecutor:
 
         tune_config = {}
         for callback in callbacks or []:
+            # Note: tune_config will contain the MLFlow keys from the last callback
+            # in the list of callbacks that implements prepare_ray_tune.
             run_experiment_trial, tune_config = callback.prepare_ray_tune(
                 run_experiment_trial,
                 tune_config,
