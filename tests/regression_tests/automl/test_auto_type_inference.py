@@ -11,6 +11,7 @@ except ImportError:
 
 
 @pytest.mark.slow
+@pytest.mark.distributed  # ludwig.automl has a dependency on ray
 @pytest.mark.parametrize("dataset_name", TEST_DATASET_REGISTRY)
 def test_auto_type_inference_regression(dataset_name):
     golden_types_path = get_dataset_golden_types_path(dataset_name)
