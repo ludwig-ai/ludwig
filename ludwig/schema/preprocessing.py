@@ -1,4 +1,5 @@
 from functools import lru_cache
+
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import RANDOM
 from ludwig.schema import utils as schema_utils
