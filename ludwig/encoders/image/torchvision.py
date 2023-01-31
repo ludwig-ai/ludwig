@@ -139,10 +139,6 @@ class TVBaseEncoder(ImageEncoder):
         # [num_channels, height, width]
         return torch.Size([self.num_channels, *(2 * self.crop_size)])
 
-    @classmethod
-    def is_pretrained(cls, encoder_params: Dict[str, Any]) -> bool:
-        return encoder_params.get("use_pretrained", True)
-
 
 @DeveloperAPI
 @register_torchvision_model_variants(

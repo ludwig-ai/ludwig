@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import List, Union
+from typing import Any, Dict, List, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BINARY, MODEL_ECD, MODEL_GBM, NUMBER, VECTOR
@@ -21,6 +21,15 @@ class BaseEncoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
         "[internal] Whether to skip encoder and use input as output.",
         parameter_metadata=ENCODER_METADATA["BaseEncoder"]["skip"],
     )
+
+    def get_fixed_preprocessing_params(self) -> Dict[str, Any]:
+        return {}
+
+    def is_pretrained(self) -> bool:
+        return False
+
+    def can_cache_embeddings(self) -> bool:
+        return False
 
 
 @DeveloperAPI

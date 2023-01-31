@@ -11,21 +11,32 @@ from ludwig.schema.utils import ludwig_dataclass
 
 
 class HFEncoderConfig(SequenceEncoderConfig):
+    trainable: bool
     use_pretrained: bool
     pretrained_model_name_or_path: str
+    reduce_output: str
 
     def get_fixed_preprocessing_params(self) -> Dict[str, Any]:
         model_name = self.pretrained_model_name_or_path
         if model_name is None:
             # no default model name, so model name is required by the subclass
             raise ValueError(f"Missing required parameter for `{self.type}` encoder: `pretrained_model_name_or_path`")
-        return {
+        params = {
             "tokenizer": "hf_tokenizer",
             "pretrained_model_name_or_path": model_name,
         }
 
+        if not self.can_cache_embeddings():
+            params["cache_encoder_embeddings"] = False
+
+        return params
+
     def is_pretrained(self) -> bool:
         return self.use_pretrained
+
+    def can_cache_embeddings(self) -> bool:
+        """Returns true if the encoder's output embeddings will not change during training."""
+        return not self.trainable and self.reduce_output != "attention"
 
 
 @DeveloperAPI
