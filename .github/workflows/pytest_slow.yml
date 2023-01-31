@@ -5,15 +5,9 @@ name: pytest (slow)
 
 on:
   push:
-    branches: ["master", "release-*"]
+    branches: ["master", "release-*", "slow-pytest-gha"]
   pull_request:
-    branches: ["master", "release-*"]
-
-# we want an ongoing run of this workflow to be canceled by a later commit
-# so that there is only one concurrent run of this workflow for each branch
-concurrency:
-  group: pytest-slow-${{ github.head_ref || github.sha }}
-  cancel-in-progress: true
+    branches: ["master", "release-*", "slow-pytest-gha"]
 
 jobs:
   start-runner:
@@ -75,6 +69,12 @@ jobs:
     if: needs.start-runner.result != 'skipped'
     needs: start-runner # required to start the main job when the runner is ready
     runs-on: ${{ needs.start-runner.outputs.label }} # run the job on the newly created runners
+
+    # we want an ongoing run of this workflow to be canceled by a later commit
+    # so that there is only one concurrent run of this workflow for each branch
+    concurrency:
+      group: pytest-slow-${{ github.head_ref || github.sha }}
+      cancel-in-progress: true
 
     timeout-minutes: 60
     steps:
