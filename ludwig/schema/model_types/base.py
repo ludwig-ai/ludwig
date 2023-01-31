@@ -7,7 +7,7 @@ from marshmallow import ValidationError
 from marshmallow_dataclass import dataclass
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import ENCODER, INPUT_FEATURES, MODEL_ECD, PREPROCESSING, TYPE
+from ludwig.constants import ENCODER, HYPEROPT, INPUT_FEATURES, MODEL_ECD, PREPROCESSING, TYPE
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.defaults.defaults import DefaultsConfig
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig, FeatureCollection
@@ -47,7 +47,13 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
         config = upgrade_config_dict_to_latest_version(config)
         config = merge_with_defaults(config)
         set_derived_feature_columns_(config)
-        set_hyperopt_defaults_(config)
+
+        hyperopt = config.get(HYPEROPT)
+        if hyperopt:
+            # Convert hyperopt config to hyperopt schema to populate with schema defaults
+            # This fills in missing splits, executor config, search_alg, etc.
+            config[HYPEROPT] = HyperoptConfig.from_dict(hyperopt).to_dict()
+            set_hyperopt_defaults_(config)
 
         model_type = config.get("model_type", MODEL_ECD)
         if model_type not in model_type_schema_registry:

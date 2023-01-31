@@ -41,7 +41,6 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.features.feature_utils import compute_feature_hash
-from ludwig.hyperopt.utils import contains_grid_search_parameters
 from ludwig.modules.loss_modules import get_loss_cls
 from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.combiners.concat import ConcatCombinerConfig
@@ -58,6 +57,7 @@ from ludwig.schema.features.utils import (
 )
 from ludwig.schema.hyperopt import HyperoptConfig
 from ludwig.schema.model_types.base import ModelConfig  # noqa
+from ludwig.schema.model_types.utils import contains_grid_search_parameters
 from ludwig.schema.optimizers import get_optimizer_cls
 from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.schema.split import get_split_cls

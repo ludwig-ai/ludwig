@@ -221,6 +221,7 @@ def hyperopt(
     full_config = config_obj.to_dict()  # TODO (Connor): Refactor to use config object
 
     hyperopt_config = full_config[HYPEROPT]
+    print("!!! HYPEROPT CONFIG", hyperopt_config)
 
     # Explicitly default to a local backend to avoid picking up Ray or Horovod
     # backend from the environment.

@@ -1,4 +1,5 @@
 import copy
+import logging
 import sys
 import warnings
 from typing import Any, Dict, List, Mapping, Set, TYPE_CHECKING
@@ -13,14 +14,18 @@ from ludwig.constants import (
     DEFAULTS,
     ENCODER,
     EXECUTOR,
+    GRID_SEARCH,
     HYPEROPT,
     INPUT_FEATURES,
     LOSS,
     NAME,
+    NUM_SAMPLES,
     OUTPUT_FEATURES,
+    PARAMETERS,
     PREPROCESSING,
     PROC_COLUMN,
     RAY,
+    SPACE,
     TRAINER,
     TYPE,
 )
@@ -28,11 +33,14 @@ from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.schema.encoders.utils import get_encoder_cls
 from ludwig.schema.features.base import BaseOutputFeatureConfig, FeatureCollection
 from ludwig.schema.features.utils import input_config_registry, output_config_registry
-from ludwig.types import ModelConfigDict
+from ludwig.types import HyperoptConfigDict, ModelConfigDict
 from ludwig.utils.misc_utils import merge_dict, set_default_value
 
 if TYPE_CHECKING:
     from ludwig.schema.model_types.base import ModelConfig
+
+
+logger = logging.getLogger(__name__)
 
 
 @DeveloperAPI
@@ -189,6 +197,61 @@ def set_hyperopt_defaults_(config: ModelConfigDict):
     if not hyperopt:
         return
 
+    # Set default num_samples based on search space if not set by user
+    if hyperopt[EXECUTOR].get(NUM_SAMPLES) is None:
+        _contains_grid_search_params = contains_grid_search_parameters(hyperopt)
+        if _contains_grid_search_params:
+            logger.info(
+                "Setting hyperopt num_samples to 1 to prevent duplicate trials from being run. Duplicate trials are"
+                " created when there are hyperopt parameters that use the `grid_search` search space.",
+            )
+            hyperopt[EXECUTOR][NUM_SAMPLES] = 1
+        else:
+            logger.info("Setting hyperopt num_samples to 10.")
+            hyperopt[EXECUTOR][NUM_SAMPLES] = 10
+
+    scheduler = hyperopt.get(EXECUTOR, {}).get("scheduler")
+    if not scheduler:
+        return
+
+    if EXECUTOR in hyperopt:
+        set_default_value(hyperopt[EXECUTOR], TYPE, RAY)
+
+    trainer = config.get(TRAINER, {})
+
+    # Disable early stopping when using a scheduler. We achieve this by setting the parameter
+    # to -1, which ensures the condition to apply early stopping is never met.
+    early_stop = trainer.get("early_stop")
+    if early_stop is not None and early_stop != -1:
+        warnings.warn("Can't utilize `early_stop` while using a hyperopt scheduler. Setting early stop to -1.")
+    trainer["early_stop"] = -1
+
+    max_t = scheduler.get("max_t")
+    time_attr = scheduler.get("time_attr")
+    epochs = trainer.get("epochs")
+    if max_t is not None:
+        if time_attr == "time_total_s":
+            if epochs is None:
+                # Continue training until time limit hit
+                trainer["epochs"] = sys.maxsize
+            # else continue training until either time or trainer epochs limit hit
+        elif epochs is not None and epochs != max_t:
+            raise ValueError(
+                "Cannot set trainer `epochs` when using hyperopt scheduler w/different training_iteration `max_t`. "
+                "Unset one of these parameters in your config or make sure their values match."
+            )
+        else:
+            # Run trainer until scheduler epochs limit hit
+            trainer["epochs"] = max_t
+    elif epochs is not None:
+        scheduler["max_t"] = epochs  # run scheduler until trainer epochs limit hit
+
+    config[TRAINER] = trainer
+
+    hyperopt = config.get(HYPEROPT)
+    if not hyperopt:
+        return
+
     scheduler = hyperopt.get("executor", {}).get("scheduler")
     if not scheduler:
         return
@@ -226,3 +289,12 @@ def set_hyperopt_defaults_(config: ModelConfigDict):
         scheduler["max_t"] = epochs  # run scheduler until trainer epochs limit hit
 
     config[TRAINER] = trainer
+
+
+@DeveloperAPI
+def contains_grid_search_parameters(hyperopt_config: HyperoptConfigDict) -> bool:
+    """Returns True if any hyperopt parameter in the config is using the grid_search space."""
+    for _, param_info in hyperopt_config[PARAMETERS].items():
+        if param_info.get(SPACE, None) == GRID_SEARCH:
+            return True
+    return False
