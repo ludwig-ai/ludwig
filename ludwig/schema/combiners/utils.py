@@ -1,3 +1,4 @@
+from functools import lru_cache
 from typing import Any, Dict, List, Type
 
 from ludwig.api_annotations import DeveloperAPI
@@ -104,5 +105,6 @@ class CombinerSelection(schema_utils.TypeSelection):
         return self.registry[key].get_schema_cls()
 
     @staticmethod
+    @lru_cache(maxsize=1)
     def _jsonschema_type_mapping():
         return get_combiner_jsonschema()

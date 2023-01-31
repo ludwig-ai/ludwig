@@ -1,4 +1,5 @@
 from dataclasses import Field
+from functools import lru_cache
 from typing import Type
 
 from ludwig.api_annotations import DeveloperAPI
@@ -34,6 +35,7 @@ def LossDataclassField(feature_type: str, default: str) -> Field:
             return get_loss_cls(feature_type, key).get_schema_cls()
 
         @staticmethod
+        @lru_cache(maxsize=1)
         def _jsonschema_type_mapping():
             return {
                 "type": "object",

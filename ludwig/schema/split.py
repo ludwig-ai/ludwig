@@ -1,4 +1,5 @@
 from dataclasses import Field
+from functools import lru_cache
 from typing import Type
 
 from ludwig.api_annotations import DeveloperAPI
@@ -173,6 +174,7 @@ def SplitDataclassField(default: str) -> Field:
             return split_config_registry.data[key]
 
         @staticmethod
+        @lru_cache(maxsize=1)
         def _jsonschema_type_mapping():
             return {
                 "type": "object",

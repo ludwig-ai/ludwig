@@ -1,3 +1,4 @@
+from functools import lru_cache
 from marshmallow_dataclass import dataclass
 
 from ludwig.api_annotations import DeveloperAPI
@@ -72,5 +73,6 @@ class DefaultsField(schema_utils.DictMarshmallowField):
         super().__init__(DefaultsConfig)
 
     @staticmethod
+    @lru_cache(maxsize=1)
     def _jsonschema_type_mapping():
         return get_defaults_jsonschema()

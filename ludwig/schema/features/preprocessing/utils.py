@@ -1,4 +1,5 @@
 from dataclasses import field
+from functools import lru_cache
 
 from marshmallow import fields, ValidationError
 
@@ -49,6 +50,7 @@ def PreprocessingDataclassField(feature_type: str):
             raise ValidationError("Field should be None or dict")
 
         @staticmethod
+        @lru_cache(maxsize=1)
         def _jsonschema_type_mapping():
             preprocessor_cls = preprocessing_registry[feature_type]
             props = schema_utils.unload_jsonschema_from_marshmallow_class(preprocessor_cls)["properties"]

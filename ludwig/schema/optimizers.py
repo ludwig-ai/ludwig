@@ -1,5 +1,6 @@
 from abc import ABC
 from dataclasses import field
+from functools import lru_cache
 from typing import ClassVar, Dict, Optional, Tuple
 
 import torch
@@ -455,6 +456,7 @@ def OptimizerDataclassField(default={"type": "adam"}, description="TODO"):
             raise ValidationError(f"Invalud optimizer param {value}, expected `None` or `dict`")
 
         @staticmethod
+        @lru_cache(maxsize=1)
         def _jsonschema_type_mapping():
             # Note that this uses the same conditional pattern as combiners:
             return {
@@ -543,6 +545,7 @@ def GradientClippingDataclassField(description: str, default: Dict = {}):
             raise ValidationError("Field should be None or dict")
 
         @staticmethod
+        @lru_cache(maxsize=1)
         def _jsonschema_type_mapping():
             return {
                 "oneOf": [

@@ -1,3 +1,4 @@
+from functools import lru_cache
 import logging
 from dataclasses import Field, field
 from typing import Any, Dict, Generic, Iterable, List, Optional, Tuple, TypeVar
@@ -243,6 +244,7 @@ class ECDInputFeatureSelection(FeaturesTypeSelection):
         super().__init__(registry=ecd_input_config_registry, description="Type of the input feature")
 
     @staticmethod
+    @lru_cache(maxsize=1)
     def _jsonschema_type_mapping():
         return get_input_feature_jsonschema(MODEL_ECD)
 
@@ -252,6 +254,7 @@ class GBMInputFeatureSelection(FeaturesTypeSelection):
         super().__init__(registry=gbm_input_config_registry, description="Type of the input feature")
 
     @staticmethod
+    @lru_cache(maxsize=1)
     def _jsonschema_type_mapping():
         return get_input_feature_jsonschema(MODEL_GBM)
 
@@ -261,6 +264,7 @@ class ECDOutputFeatureSelection(FeaturesTypeSelection):
         super().__init__(registry=output_config_registry, description="Type of the output feature")
 
     @staticmethod
+    @lru_cache(maxsize=1)
     def _jsonschema_type_mapping():
         return get_output_feature_jsonschema(MODEL_ECD)
 
@@ -270,5 +274,6 @@ class GBMOutputFeatureSelection(FeaturesTypeSelection):
         super().__init__(max_length=1, registry=output_config_registry, description="Type of the output feature")
 
     @staticmethod
+    @lru_cache(maxsize=1)
     def _jsonschema_type_mapping():
         return get_output_feature_jsonschema(MODEL_GBM)

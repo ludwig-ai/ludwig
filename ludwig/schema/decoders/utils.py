@@ -1,4 +1,5 @@
 from dataclasses import Field
+from functools import lru_cache
 from typing import Any, Dict, List, Type, Union
 
 from ludwig.api_annotations import DeveloperAPI
@@ -95,6 +96,7 @@ def DecoderDataclassField(feature_type: str, default: str) -> Field:
             return get_decoder_cls(feature_type, key)
 
         @staticmethod
+        @lru_cache(maxsize=1)
         def _jsonschema_type_mapping():
             return {
                 "type": "object",

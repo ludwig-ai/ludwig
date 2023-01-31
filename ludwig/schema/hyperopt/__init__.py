@@ -1,4 +1,5 @@
 from abc import ABC
+from functools import lru_cache
 from typing import Dict
 
 from marshmallow_dataclass import dataclass
@@ -86,5 +87,6 @@ class HyperoptField(schema_utils.DictMarshmallowField):
         super().__init__(HyperoptConfig, default_missing=True)
 
     @staticmethod
+    @lru_cache(maxsize=1)
     def _jsonschema_type_mapping():
         return get_hyperopt_jsonschema()
