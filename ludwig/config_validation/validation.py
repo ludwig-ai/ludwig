@@ -6,7 +6,7 @@ from jsonschema import Draft7Validator, validate
 from jsonschema.validators import extend
 from marshmallow import ValidationError
 
-from ludwig.api_annotations import Deprecated, DeveloperAPI
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import MODEL_ECD, MODEL_TYPE, PREPROCESSING, SPLIT
 from ludwig.schema import utils as schema_utils
 
@@ -89,7 +89,6 @@ def validate_upgraded_config(updated_config):
         raise ValidationError(f"Failed to validate JSON schema for config. Error: {error.message}")
 
 
-@Deprecated(message="Use 'from ludwig.config_validation.validations import validate_config' instead.")
 def validate_config(config):
     # Update config from previous versions to check that backwards compatibility will enable a valid config
     # NOTE: import here to prevent circular import
