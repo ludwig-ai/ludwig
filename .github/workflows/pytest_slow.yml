@@ -5,9 +5,9 @@ name: pytest (slow)
 
 on:
   push:
-    branches: ["master", "release-*", "slow-pytest-gha"]
+    branches: ["master", "release-*"]
   pull_request:
-    branches: ["master", "release-*", "slow-pytest-gha"]
+    branches: ["master", "release-*"]
 
 jobs:
   start-runner:
