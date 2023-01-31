@@ -33,14 +33,14 @@ from tests.integration_tests.utils import binary_feature, create_data_set_to_use
 try:
     import ray
 
-    _before_ray_220 = version.parse(ray.__version__) < version.parse("2.2.0")
+    _ray_version_before_220 = version.parse(ray.__version__) < version.parse("2.2.0")
     from ray.tune.syncer import get_node_to_storage_syncer, SyncConfig
 
     from ludwig.backend.ray import RayBackend
     from ludwig.hyperopt.execution import _get_relative_checkpoints_dir_parts, RayTuneExecutor
 except ImportError:
     ray = None
-    _before_ray_220 = None
+    _ray_version_before_220 = None
     RayTuneExecutor = object
 
 
@@ -245,7 +245,8 @@ def test_hyperopt_executor_variant_generator(csv_filename, ray_mock_dir, ray_clu
 
 
 @pytest.mark.skipif(
-    _before_ray_220, reason="BOHB resource cleanup bugs in Ray < 2.2.0: https://github.com/ray-project/ray/issues/31738"
+    _ray_version_before_220,
+    reason="BOHB resource cleanup bugs in Ray < 2.2.0: https://github.com/ray-project/ray/issues/31738",
 )
 @pytest.mark.distributed
 def test_hyperopt_executor_bohb(csv_filename, ray_mock_dir, ray_cluster_7cpu):
