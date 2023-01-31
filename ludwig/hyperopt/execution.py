@@ -523,8 +523,7 @@ class RayTuneExecutor:
                     # When using the Ray backend and resuming from a previous checkpoint, we must sync
                     # the checkpoint files from the trial driver to the trainer worker.
                     resume_ckpt = Checkpoint.from_directory(checkpoint_dir)
-                    object_ref = ray.put(resume_ckpt)
-                    self.resume_ckpt_ref = object_ref
+                    self.resume_ckpt_ref = ray.put(resume_ckpt)
 
             def on_trainer_train_setup(self, trainer, save_path, is_coordinator):
                 # Check local rank before manipulating files, as otherwise there will be a race condition
@@ -534,6 +533,8 @@ class RayTuneExecutor:
                     # The resume checkpoint is not None, so we are resuming from a previous state, and the
                     # node of the trainer worker is not the same as the trial driver, otherwise the files would
                     # not need to be synced as they would share the same local filesystem.
+
+                    # Load the checkpoint directly from the reference in the object store.
                     trainer_ckpt = ray.get(self.resume_ckpt_ref)
                     with trainer_ckpt.as_directory() as ckpt_path:
                         save_path = save_path.rstrip(".")
