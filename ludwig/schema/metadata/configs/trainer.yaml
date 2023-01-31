@@ -160,16 +160,16 @@ ecd:
             "Epoch-based evaluation (using the default: 0) is an
             appropriate fit for small datasets that fit in memory and
             train quickly. Commonly available tabular datasets fit in this cateogry.
-    
+
             However, this is a poor fit for unstructured datasets, which tend to be much
             larger, and train more slowly due to larger models.
-    
+
             It's important to setup evaluation such that you do not wait several hours
             before getting a single evaluation result. In general, it is not necessary
             for models to train over the entirety of a dataset, nor evaluate over the
             entirety of a test set, to produce useful monitoring metrics and signals to
             indicate model health.
-    
+
             It is also more engaging and more valuable to ensure a frequent pulse of evaluation
             metrics, even if they are partial."
         expected_impact: 2
@@ -315,13 +315,13 @@ ecd:
         description_implications:
             "When choosing a lambda value, the goal is to strike
             the right balance between simplicity and training-data fit:
-    
-    
+
+
             If your lambda value is too high, your model will be simple, but you run the
             risk of underfitting your data. Your model won't learn enough about the training
             data to make useful predictions.
-    
-    
+
+
             If your lambda value is too low, your model will be more complex, and you
             run the risk of overfitting your data. Your model will learn too much about
             the particularities of the training data, and won't be able to generalize
@@ -347,11 +347,11 @@ ecd:
             "L1 regularization penalizes the sum of absolute values
              of the weights, whereas L2 regularization penalizes the sum of squares of
              the weights.
-    
+
              The L1 regularization solution is sparse, meaning some weights will be zero,
              others will be large.
              The L2 regularization solution is non-sparse, most weights will be small.
-    
+
              L2 regularization does not perform feature
              selection, since weights are only reduced to values near 0 instead of 0.
              L1 regularization implicitly performs feature selection. L1 regularization is more
@@ -391,16 +391,16 @@ ecd:
             "Epoch-based evaluation (using the default: 0) is an
             appropriate fit for tabular datasets, which are small, fit in memory, and
             train quickly.
-    
+
             However, this is a poor fit for unstructured datasets, which tend to be much
             larger, and train more slowly due to larger models.
-    
+
             It's important to setup evaluation such that you do not wait several hours
             before getting a single evaluation result. In general, it is not necessary
             for models to train over the entirety of a dataset, nor evaluate over the
             entirety of a test set, to produce useful monitoring metrics and signals to
             indicate model health.
-    
+
             It is also more engaging and more valuable to ensure a frequent pulse of evaluation
             metrics, even if they are partial."
         expected_impact: 1
@@ -455,7 +455,7 @@ ecd:
                 process getting stuck in a local optimum. Conventional wisdom when training with large batch sizes is
                 to use a larger learning rate (see: `learning_rate_scaling`) but gradually warm up to the larger learning
                 rate over a few epochs of training in the beginning.
-    
+
                 Even when not training with large batch sizes, the randomness of how weights are initialized can result
                 in strange, noisy gradient updates during the beginning of your training run. As such, it's generally
                 recommended to use a small amount of warmup (e.g., 1 epoch / evaluation) even when the batch size is
@@ -475,7 +475,7 @@ ecd:
             suggested_values_reasoning:
                 You don't want to warm up for too long, as after the model is starting to hill climb, you want to use the
                 full weight of the learning rate to descend into good loss minima.
-    
+
                 If you observe your loss curve converging very early into training, within the first few epochs, then
                 increasing learning rate warmup may help to mitigate this effect. Pretrained models can benefit from more
                 warmup to help offset the effects of catastrophic forgetting due to an overly high learning rate.
