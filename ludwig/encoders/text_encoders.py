@@ -206,7 +206,10 @@ class ALBERTEncoder(HFTextEncoder):
             transformer = AlbertModel(config)
             self._maybe_resize_token_embeddings(transformer, vocab_size)
 
-        self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
+        if encoder_config is not None:
+            self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
+        else:
+            self.config = None
 
         self.reduce_output = reduce_output
         if not self.reduce_output == "cls_pooled":
@@ -325,7 +328,10 @@ class MT5Encoder(HFTextEncoder):
             transformer = MT5EncoderModel(config)
             self._maybe_resize_token_embeddings(transformer, vocab_size)
 
-        self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
+        if encoder_config is not None:
+            self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
+        else:
+            self.config = None
 
         self.reduce_output = reduce_output
         if reduce_output == "cls_pooled":
@@ -414,7 +420,10 @@ class XLMRoBERTaEncoder(HFTextEncoder):
             transformer = XLMRobertaModel(config, add_pooling_layer)
             self._maybe_resize_token_embeddings(transformer, vocab_size)
 
-        self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
+        if encoder_config is not None:
+            self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
+        else:
+            self.config = None
 
         self.reduce_output = reduce_output
         if not self.reduce_output == "cls_pooled":
@@ -527,7 +536,10 @@ class BERTEncoder(HFTextEncoder):
             transformer = BertModel(config)
             self._maybe_resize_token_embeddings(transformer, vocab_size)
 
-        self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
+        if encoder_config is not None:
+            self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
+        else:
+            self.config = None
 
         self.reduce_output = reduce_output
         if not self.reduce_output == "cls_pooled":
@@ -770,7 +782,10 @@ class GPTEncoder(HFTextEncoder):
             transformer = OpenAIGPTModel(config)
             self._maybe_resize_token_embeddings(transformer, vocab_size)
 
-        self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
+        if encoder_config is not None:
+            self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
+        else:
+            self.config = None
 
         self.reduce_output = reduce_output
         if self.reduce_output == "cls_pooled":
@@ -869,7 +884,10 @@ class GPT2Encoder(HFTextEncoder):
             transformer = GPT2Model(config)
             self._maybe_resize_token_embeddings(transformer, vocab_size)
 
-        self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
+        if encoder_config is not None:
+            self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
+        else:
+            self.config = None
 
         self.transformer = FreezeModule(transformer, frozen=not trainable)
         self.max_sequence_length = max_sequence_length
@@ -952,7 +970,10 @@ class RoBERTaEncoder(HFTextEncoder):
             transformer = RobertaModel(config)
             self._maybe_resize_token_embeddings(transformer, vocab_size)
 
-        self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
+        if encoder_config is not None:
+            self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
+        else:
+            self.config = None
 
         self.transformer = FreezeModule(transformer, frozen=not trainable)
         self.max_sequence_length = max_sequence_length
@@ -1077,7 +1098,10 @@ class TransformerXLEncoder(HFTextEncoder):
             config = TransfoXLConfig(**hf_config_params)
             transformer = TransfoXLModel(config)
 
-        self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
+        if encoder_config is not None:
+            self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
+        else:
+            self.config = None
 
         self.reduce_output = reduce_output
         if self.reduce_output == "cls_pooled":
@@ -1198,7 +1222,10 @@ class XLNetEncoder(HFTextEncoder):
             transformer = XLNetModel(config)
             self._maybe_resize_token_embeddings(transformer, vocab_size)
 
-        self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
+        if encoder_config is not None:
+            self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
+        else:
+            self.config = None
 
         self.max_sequence_length = max_sequence_length
         self.reduce_output = reduce_output
@@ -1297,7 +1324,10 @@ class DistilBERTEncoder(HFTextEncoder):
             transformer = DistilBertModel(config)
             self._maybe_resize_token_embeddings(transformer, vocab_size)
 
-        self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
+        if encoder_config is not None:
+            self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
+        else:
+            self.config = None
 
         self.transformer = FreezeModule(transformer, frozen=not trainable)
         self.reduce_output = reduce_output
@@ -1400,7 +1430,10 @@ class CTRLEncoder(HFTextEncoder):
             self._maybe_resize_token_embeddings(transformer, vocab_size)
             self.vocab_size = vocab_size
 
-        self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
+        if encoder_config is not None:
+            self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
+        else:
+            self.config = None
 
         self.max_sequence_length = max_sequence_length
         self.transformer = FreezeModule(transformer, frozen=not trainable)
@@ -1504,7 +1537,10 @@ class CamemBERTEncoder(HFTextEncoder):
             transformer = CamembertModel(config)
             self._maybe_resize_token_embeddings(transformer, vocab_size)
 
-        self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
+        if encoder_config is not None:
+            self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
+        else:
+            self.config = None
 
         self.transformer = FreezeModule(transformer, frozen=not trainable)
         self.reduce_output = reduce_output
@@ -1609,7 +1645,10 @@ class T5Encoder(HFTextEncoder):
             transformer = T5Model(config)
             self._maybe_resize_token_embeddings(transformer, vocab_size)
 
-        self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
+        if encoder_config is not None:
+            self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
+        else:
+            self.config = None
 
         self.max_sequence_length = max_sequence_length
         self.reduce_output = reduce_output
@@ -1739,7 +1778,10 @@ class FlauBERTEncoder(HFTextEncoder):
             transformer = FlaubertModel(config)
             self._maybe_resize_token_embeddings(transformer, vocab_size)
 
-        self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
+        if encoder_config is not None:
+            self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
+        else:
+            self.config = None
 
         self.max_sequence_length = max_sequence_length
         self.reduce_output = reduce_output
@@ -1847,7 +1889,10 @@ class ELECTRAEncoder(HFTextEncoder):
             transformer = ElectraModel(config)
             self._maybe_resize_token_embeddings(transformer, vocab_size)
 
-        self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
+        if encoder_config is not None:
+            self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
+        else:
+            self.config = None
 
         self.max_sequence_length = max_sequence_length
         self.reduce_output = reduce_output
@@ -1933,7 +1978,10 @@ class LongformerEncoder(HFTextEncoder):
             transformer = LongformerModel(config)
             self._maybe_resize_token_embeddings(transformer, vocab_size)
 
-        self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
+        if encoder_config is not None:
+            self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
+        else:
+            self.config = None
 
         self.reduce_output = reduce_output
         if not self.reduce_output == "cls_pooled":
