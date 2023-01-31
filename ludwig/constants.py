@@ -274,12 +274,3 @@ JITTER = (0, 1)
 
 # image support constants
 IMAGENET1K = "imagenet1k"
-
-# Schema Parsing Constants
-PROPERTIES = "properties"
-ITEMS = "items"
-IF = "if"
-THEN = "then"
-ALLOF = "allOf"
-ONEOF = "oneOf"
-ENUM = "enum"
