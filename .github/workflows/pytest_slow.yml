@@ -87,7 +87,8 @@ jobs:
       - name: Setup Linux
         if: runner.os == 'linux'
         run: |
-          sudo apt-get install -y cmake libsndfile1
+          sudo apt-get update && sudo apt-get install -y libsndfile1 cmake ccache build-essential g++-8 gcc-8
+          cmake --version
 
       - name: Setup macOS
         if: runner.os == 'macOS'
