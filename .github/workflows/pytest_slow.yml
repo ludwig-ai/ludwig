@@ -53,7 +53,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         python-version: [3.8]
-        test-markers: ["slow"]
+        test-markers: ["not distributed", "distributed"]
         include:
           - python-version: 3.8
             pytorch-version: 1.13.1
@@ -189,7 +189,7 @@ jobs:
 
       - name: Tests
         run: |
-          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=4500 pytest -v --timeout 300 --durations 100 -m "($MARKERS) and (not $EXCLUDED_MARKERS)" --junitxml pytest_slow.xml tests
+          RUN_SLOW=1 RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=4500 pytest -v --timeout 300 --durations 100 -m "($MARKERS) and (not $EXCLUDED_MARKERS)" --junitxml pytest_slow.xml tests
 
       - name: Upload Unit Test Results
         if: ${{ always() && !env.ACT }}
