@@ -1,7 +1,7 @@
 import logging
 import os
 from abc import abstractmethod
-from typing import Any, Dict, Optional, Union
+from typing import Dict, Optional, Union
 
 import torch
 import torchvision.models as tvm
