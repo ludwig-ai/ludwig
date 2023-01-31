@@ -53,7 +53,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         python-version: [3.8]
-        test-markers: ["not distributed"]
+        test-markers: ["not distributed", "distributed"]
         include:
           - python-version: 3.8
             pytorch-version: 1.13.1
@@ -70,7 +70,7 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.LUDWIG_TESTS_AWS_SECRET_ACCESS_KEY }}
       EXCLUDED_MARKERS: "benchmark"
 
-    name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, , ${{ matrix.test-markers }}, ${{ matrix.os }}, ray ${{ matrix.ray-version }}
+    name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, ${{ matrix.test-markers }}, ${{ matrix.os }}, ray ${{ matrix.ray-version }}
     if: needs.start-runner.result != 'skipped'
     needs: start-runner # required to start the main job when the runner is ready
     runs-on: ${{ needs.start-runner.outputs.label }} # run the job on the newly created runners
