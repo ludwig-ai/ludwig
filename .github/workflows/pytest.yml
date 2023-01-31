@@ -41,7 +41,7 @@
 #       PYTORCH: ${{ matrix.pytorch-version }}
 #       MARKERS: ${{ matrix.test-markers }}
 #       NEUROPOD_BASE_DIR: "/usr/local/lib/neuropod"
-#       NEUROPOD_VERISON: "0.3.0-rc6"
+#       NEUROPOD_VERSION: "0.3.0-rc6"
 #       TORCHSCRIPT_VERSION: ${{ matrix.torchscript-version }}
 #       RAY_VERSION: ${{ matrix.ray-version }}
 #       AWS_ACCESS_KEY_ID: ${{ secrets.LUDWIG_TESTS_AWS_ACCESS_KEY_ID }}
@@ -151,7 +151,7 @@
 #       - name: Install Neuropod backend
 #         run: |
 #           sudo mkdir -p "$NEUROPOD_BASE_DIR"
-#           curl -L https://github.com/uber/neuropod/releases/download/v${{ env.NEUROPOD_VERISON }}/libneuropod-cpu-linux-v${{ env.NEUROPOD_VERISON }}-torchscript-${{ env.TORCHSCRIPT_VERSION }}-backend.tar.gz | sudo tar -xz -C "$NEUROPOD_BASE_DIR"
+#           curl -L https://github.com/uber/neuropod/releases/download/v${{ env.NEUROPOD_VERSION }}/libneuropod-cpu-linux-v${{ env.NEUROPOD_VERSION }}-torchscript-${{ env.TORCHSCRIPT_VERSION }}-backend.tar.gz | sudo tar -xz -C "$NEUROPOD_BASE_DIR"
 #         shell: bash
 
 #       - name: Reinstall Horovod if necessary
@@ -235,7 +235,7 @@
 #   #   env:
 #   #     PYTORCH: ${{ matrix.pytorch-version }}
 #   #     NEUROPOD_BASE_DIR: "/usr/local/lib/neuropod"
-#   #     NEUROPOD_VERISON: "0.3.0-rc6"
+#   #     NEUROPOD_VERSION: "0.3.0-rc6"
 #   #     TORCHSCRIPT_VERSION: ${{ matrix.torchscript-version }}
 
 #   #   name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, gpu
@@ -299,7 +299,7 @@
 #   #     - name: Install Neuropod backend
 #   #       run: |
 #   #         sudo mkdir -p "$NEUROPOD_BASE_DIR"
-#   #         curl -L https://github.com/uber/neuropod/releases/download/v${{ env.NEUROPOD_VERISON }}/libneuropod-cpu-linux-v${{ env.NEUROPOD_VERISON }}-torchscript-${{ env.TORCHSCRIPT_VERSION }}-backend.tar.gz | sudo tar -xz -C "$NEUROPOD_BASE_DIR"
+#   #         curl -L https://github.com/uber/neuropod/releases/download/v${{ env.NEUROPOD_VERSION }}/libneuropod-cpu-linux-v${{ env.NEUROPOD_VERSION }}-torchscript-${{ env.TORCHSCRIPT_VERSION }}-backend.tar.gz | sudo tar -xz -C "$NEUROPOD_BASE_DIR"
 #   #       shell: bash
 
 #   #     - name: Reinstall Horovod if necessary

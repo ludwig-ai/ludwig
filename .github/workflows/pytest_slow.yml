@@ -62,8 +62,13 @@ jobs:
     env:
       PYTORCH: ${{ matrix.pytorch-version }}
       MARKERS: ${{ matrix.test-markers }}
+      NEUROPOD_BASE_DIR: "/usr/local/lib/neuropod"
+      NEUROPOD_VERSION: "0.3.0-rc6"
       TORCHSCRIPT_VERSION: ${{ matrix.torchscript-version }}
       RAY_VERSION: ${{ matrix.ray-version }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.LUDWIG_TESTS_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.LUDWIG_TESTS_AWS_SECRET_ACCESS_KEY }}
+      EXCLUDED_MARKERS: "benchmark"
 
     name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, backend-ray-${{ matrix.ray-version }}
     if: needs.start-runner.result != 'skipped'
@@ -163,7 +168,7 @@ jobs:
       - name: Install Neuropod backend
         run: |
           sudo mkdir -p "$NEUROPOD_BASE_DIR"
-          curl -L https://github.com/uber/neuropod/releases/download/v${{ env.NEUROPOD_VERISON }}/libneuropod-cpu-linux-v${{ env.NEUROPOD_VERISON }}-torchscript-${{ env.TORCHSCRIPT_VERSION }}-backend.tar.gz | sudo tar -xz -C "$NEUROPOD_BASE_DIR"
+          curl -L https://github.com/uber/neuropod/releases/download/v${{ env.NEUROPOD_VERSION }}/libneuropod-cpu-linux-v${{ env.NEUROPOD_VERSION }}-torchscript-${{ env.TORCHSCRIPT_VERSION }}-backend.tar.gz | sudo tar -xz -C "$NEUROPOD_BASE_DIR"
         shell: bash
 
       - name: Reinstall Horovod if necessary
@@ -183,18 +188,15 @@ jobs:
         shell: bash
 
       - name: Tests
-        env:
-          KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
-          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
         run: |
           RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=4500 pytest -v --timeout 300 --durations 100 -m "($MARKERS) and (not $EXCLUDED_MARKERS)" --junitxml pytest_slow.xml tests
 
       - name: Upload Unit Test Results
-        if: always()
+        if: ${{ always() && !env.ACT }}
         uses: actions/upload-artifact@v2
         with:
           name: Unit Test Results (Python ${{ matrix.python-version }} ${{ matrix.test-markers }})
-          path: pytest_slow.xml
+          path: pytest.xml
 
   stop-runner:
     name: Stop self-hosted EC2 runner
