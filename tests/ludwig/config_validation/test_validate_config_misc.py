@@ -400,7 +400,7 @@ def test_encoder_descriptions():
     """This test tests that each encoder in the enum for each feature type has a description."""
     schema = get_input_feature_jsonschema(MODEL_ECD)
 
-    for feature_schema in schema["items"]["allOf"]:
+    for feature_schema in schema["allOf"]:
         type_data = feature_schema["then"]["properties"]["encoder"]["properties"]["type"]
         assert len(set(type_data["enumDescriptions"].keys())) > 0
         assert set(type_data["enumDescriptions"].keys()).issubset(set(type_data["enum"]))
@@ -418,7 +418,7 @@ def test_decoder_descriptions():
     """This test tests that each decoder in the enum for each feature type has a description."""
     schema = get_output_feature_jsonschema(MODEL_ECD)
 
-    for feature_schema in schema["items"]["allOf"]:
+    for feature_schema in schema["allOf"]:
         type_data = feature_schema["then"]["properties"]["decoder"]["properties"]["type"]
         assert len(type_data["enumDescriptions"].keys()) > 0
         assert set(type_data["enumDescriptions"].keys()).issubset(set(type_data["enum"]))
