@@ -4,7 +4,6 @@ import ludwig
 from ludwig.constants import DEFAULTS, ENCODER, INPUT_FEATURES, NAME, OUTPUT_FEATURES, PREPROCESSING, TYPE
 from ludwig.data.cache.types import CacheableDataset
 from ludwig.types import ModelConfigDict
-from ludwig.utils.config_utils import merge_fixed_preprocessing_params
 from ludwig.utils.data_utils import hash_dict
 
 
@@ -17,15 +16,7 @@ def calculate_checksum(original_dataset: CacheableDataset, config: ModelConfigDi
         "global_defaults": config.get(DEFAULTS, {}),
         "feature_names": [feature[NAME] for feature in features],
         "feature_types": [feature[TYPE] for feature in features],
-        "feature_preprocessing": [
-            _merge_encoder_cache_params(
-                merge_fixed_preprocessing_params(
-                    feature[TYPE], feature.get(PREPROCESSING, {}), feature.get(ENCODER, {})
-                ),
-                feature.get(ENCODER, {}),
-            )
-            for feature in features
-        ],
+        "feature_preprocessing": [feature.get(PREPROCESSING, {}) for feature in features],
     }
     return hash_dict(info, max_length=None).decode("ascii")
 

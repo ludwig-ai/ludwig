@@ -65,6 +65,9 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
             preprocessing_parameters = merge_fixed_preprocessing_params(
                 model_type, feature_config[TYPE], preprocessing_parameters, feature_config.get(ENCODER, {})
             )
+            preprocessing_parameters = _merge_encoder_cache_params(
+                preprocessing_parameters, feature_config.get(ENCODER, {})
+            )
             feature_config[PREPROCESSING] = preprocessing_parameters
 
         cls = model_type_schema_registry[model_type]
@@ -88,3 +91,9 @@ def register_model_type(name: str):
         return model_type_config
 
     return wrap
+
+
+def _merge_encoder_cache_params(preprocessing_params: Dict[str, Any], encoder_params: Dict[str, Any]) -> Dict[str, Any]:
+    if preprocessing_params.get("cache_encoder_embeddings"):
+        preprocessing_params[ENCODER] = encoder_params
+    return preprocessing_params
