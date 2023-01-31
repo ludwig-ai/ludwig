@@ -33,11 +33,11 @@ from ludwig.schema.split import (
 )
 from ludwig.types import ModelConfigDict, PreprocessingConfigDict
 from ludwig.utils.data_utils import hash_dict, split_dataset_ttv
+from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.registry import Registry
 from ludwig.utils.types import DataFrame
 
 split_registry = Registry()
-default_random_seed = 42
 logger = logging.getLogger(__name__)
 
 TMP_SPLIT_COL = "__SPLIT__"
@@ -47,7 +47,7 @@ DEFAULT_PROBABILITIES = (0.7, 0.1, 0.2)
 class Splitter(ABC):
     @abstractmethod
     def split(
-        self, df: DataFrame, backend: Backend, random_seed: float = default_random_seed
+        self, df: DataFrame, backend: Backend, random_seed: int = default_random_seed
     ) -> Tuple[DataFrame, DataFrame, DataFrame]:
         pass
 
