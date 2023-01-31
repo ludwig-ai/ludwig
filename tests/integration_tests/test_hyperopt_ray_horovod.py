@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import logging
 import os.path
 import shutil
 import uuid
@@ -138,7 +137,6 @@ def _get_config(search_alg, executor):
 def mock_storage_client(path):
     """Mocks storage client that treats a local dir as durable storage."""
     os.makedirs(path, exist_ok=True)
-    logging.info(f"!!! Mocking storage client for {path}")
     sync_client = RemoteSyncer(creds={})
     syncer = ray.tune.SyncConfig(upload_dir=path, syncer=sync_client)
     return syncer
@@ -147,7 +145,6 @@ def mock_storage_client(path):
 class MockRayTuneExecutor(RayTuneExecutor):
     def _get_sync_client_and_remote_checkpoint_dir(self, trial_dir):
         remote_checkpoint_dir = os.path.join(self.mock_path, *_get_relative_checkpoints_dir_parts(trial_dir))
-        logging.info(f"!!! Mocking remote checkpoint dir for {trial_dir} to {remote_checkpoint_dir}")
         return mock_storage_client(remote_checkpoint_dir), remote_checkpoint_dir
 
 
