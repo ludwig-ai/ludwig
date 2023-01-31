@@ -130,14 +130,14 @@ jobs:
           KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
           KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
         run: |
-          pytest -s -v -m "$MARKERS" --junitxml pytest.xml tests/regression_tests/benchmark
+          pytest -s -v -m "$MARKERS" --junitxml pytest_slow.xml tests/regression_tests/benchmark
 
       - name: Upload Unit Test Results
         if: always()
         uses: actions/upload-artifact@v2
         with:
           name: Unit Test Results (Python ${{ matrix.python-version }} ${{ matrix.test-markers }})
-          path: pytest.xml
+          path: pytest_slow.xml
 
   stop-runner:
     name: Stop self-hosted EC2 runner
