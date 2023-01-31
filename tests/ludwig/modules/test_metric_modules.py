@@ -17,7 +17,7 @@ def test_rmse_metric(preds: torch.Tensor, target: torch.Tensor, output: torch.Te
 @pytest.mark.parametrize("target", [torch.tensor([0, 0, 1, 1])])
 @pytest.mark.parametrize("output", [torch.tensor(0.5)])
 def test_roc_auc_metric(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor):
-    metric = metric_modules.AUROCMetric()
+    metric = metric_modules.BinaryAUROCMetric()
     metric.update(preds, target)
     assert output == metric.compute()
 
@@ -112,11 +112,89 @@ def test_token_accuracy_metric(preds: torch.Tensor, target: torch.Tensor, output
     assert torch.allclose(metric.compute(), output)
 
 
+def test_sequence_accuracy_metric():
+    target = torch.tensor(
+        [
+            [1, 6, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 6, 5, 4, 0],
+            [1, 6, 5, 4, 0],
+            [1, 6, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 6, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 6, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+        ]
+    )
+    preds = torch.tensor(
+        [
+            [1, 6, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 6, 5, 4, 0],
+            [1, 6, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 6, 5, 4, 0],
+            [1, 6, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 6, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 6, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+            [1, 4, 5, 4, 0],
+        ]
+    )
+    metric = metric_modules.SequenceAccuracyMetric()
+    metric.update(preds, target)
+    assert torch.isclose(metric.compute(), torch.tensor(0.8438), rtol=0.0001)
+
+
 @pytest.mark.parametrize("preds", [torch.arange(6).reshape(3, 2)])
 @pytest.mark.parametrize("target", [torch.tensor([[0, 1], [2, 1], [4, 5]]).float()])
-@pytest.mark.parametrize("output", [torch.tensor(0.8333).float()])
+@pytest.mark.parametrize("output", [torch.tensor(0.7500).float()])
 def test_category_accuracy(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor):
-    metric = metric_modules.CategoryAccuracy()
+    metric = metric_modules.CategoryAccuracy(num_classes=6)
     metric.update(preds, target)
     assert torch.isclose(output, metric.compute(), rtol=0.0001)
 
@@ -133,7 +211,7 @@ def test_category_accuracy(preds: torch.Tensor, target: torch.Tensor, output: to
     ],
 )
 def test_hits_at_k_metric(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor, k: int):
-    metric = metric_modules.HitsAtKMetric(top_k=k)
+    metric = metric_modules.HitsAtKMetric(num_classes=3, top_k=k)
     metric.update(preds, target)
     assert torch.isclose(output, metric.compute(), rtol=0.0001)
 

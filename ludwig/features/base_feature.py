@@ -344,14 +344,17 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             targets: Tensor with target values for this output feature.
             predictions: Dict of tensors returned by predictions().
         """
-        for _, metric_fn in self._metric_functions.items():
+        for metric_name, metric_fn in self._metric_functions.items():
             metric_class = type(metric_fn)
             prediction_key = metric_class.get_inputs()
             # TODO(shreya): Metrics should ideally just move to the correct device
             #  and not require the user to do this. This is a temporary fix. See
             #  if this can be removed before merging the PR.
             metric_fn = metric_fn.to(predictions[prediction_key].device)
-            metric_fn.update(predictions[prediction_key].detach(), targets)
+            if metric_name == "perplexity":
+                metric_fn.update(predictions[prediction_key].detach(), targets.to(torch.int64))
+            else:
+                metric_fn.update(predictions[prediction_key].detach(), targets)
 
     def get_metrics(self):
         metric_vals = {}

@@ -18,14 +18,15 @@ from contextlib import contextmanager
 from typing import Any, Callable, Generator, Optional, Type
 
 import torch
-import torchmetrics.functional as metrics_F
 from torch import Tensor, tensor
 from torchmetrics import Accuracy as _Accuracy
-from torchmetrics import AUROC, MeanAbsoluteError
+from torchmetrics import CharErrorRate, MeanAbsoluteError
 from torchmetrics import MeanMetric as _MeanMetric
-from torchmetrics import MeanSquaredError, Metric, Precision, Recall, Specificity
+from torchmetrics import MeanSquaredError, Metric, Precision, Recall
+from torchmetrics.classification import BinaryAUROC, BinarySpecificity, MulticlassAccuracy, MulticlassAUROC
 from torchmetrics.functional.regression.r2 import _r2_score_compute, _r2_score_update
 from torchmetrics.metric import jit_distributed_available
+from torchmetrics.text.perplexity import Perplexity
 
 from ludwig.constants import (
     ACCURACY,
@@ -41,6 +42,7 @@ from ludwig.constants import (
     MEAN_SQUARED_ERROR,
     MINIMIZE,
     NUMBER,
+    PERPLEXITY,
     PRECISION,
     PREDICTIONS,
     PROBABILITIES,
@@ -50,6 +52,7 @@ from ludwig.constants import (
     ROOT_MEAN_SQUARED_ERROR,
     ROOT_MEAN_SQUARED_PERCENTAGE_ERROR,
     SEQUENCE,
+    SEQUENCE_ACCURACY,
     SET,
     SPECIFICITY,
     TEXT,
@@ -170,7 +173,7 @@ class RecallMetric(Recall, LudwigMetric):
 # "Argument `num_classes` was set to X in metric `precision_recall_curve` but detected Y number of classes from
 # predictions.", where Y >> X.
 @register_metric(ROC_AUC, [BINARY])
-class AUROCMetric(AUROC, LudwigMetric):
+class BinaryAUROCMetric(BinaryAUROC, LudwigMetric):
     """Area under the receiver operating curve."""
 
     def __init__(self, **kwargs):
@@ -185,8 +188,26 @@ class AUROCMetric(AUROC, LudwigMetric):
         return PROBABILITIES
 
 
+@register_metric(ROC_AUC, [CATEGORY])
+class CategoryAUROCMetric(MulticlassAUROC, LudwigMetric):
+    """Area under the receiver operating curve."""
+
+    def __init__(self, **kwargs):
+        num_classes = kwargs.pop("num_classes", None)
+
+        super().__init__(num_classes=num_classes, dist_sync_fn=_gather_all_tensors_fn())
+
+    @classmethod
+    def get_objective(cls):
+        return MAXIMIZE
+
+    @classmethod
+    def get_inputs(cls):
+        return PROBABILITIES
+
+
 @register_metric(SPECIFICITY, [BINARY])
-class SpecificityMetric(Specificity, LudwigMetric):
+class SpecificityMetric(BinarySpecificity, LudwigMetric):
     """Specificity metric."""
 
     def __init__(self, **kwargs):
@@ -406,6 +427,80 @@ class TokenAccuracyMetric(MeanMetric):
         return PREDICTIONS
 
 
+@register_metric(SEQUENCE_ACCURACY, [SEQUENCE, TEXT])
+class SequenceAccuracyMetric(MeanMetric):
+    def __init__(self, **kwargs):
+        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
+
+    def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
+        return torch.sum(torch.all(preds == target, dim=1)) / target.size()[0]
+
+    @classmethod
+    def get_objective(cls):
+        return MAXIMIZE
+
+    @classmethod
+    def get_inputs(cls):
+        return PREDICTIONS
+
+
+@register_metric(PERPLEXITY, [SEQUENCE, TEXT])
+class PerplexityMetric(Perplexity, LudwigMetric):
+    def __init__(self, **kwargs):
+        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
+
+    @classmethod
+    def get_objective(cls):
+        return MINIMIZE
+
+    @classmethod
+    def get_inputs(cls):
+        return PROBABILITIES
+
+
+# TODO(Justin): Add post-processed metrics.
+# @register_metric("BLEU", [SEQUENCE, TEXT])
+# class BLEUMetric(BLEUScore, LudwigMetric):
+#     def __init__(self, **kwargs):
+#         super().__init__(dist_sync_fn=_gather_all_tensors_fn())
+
+#     @classmethod
+#     def get_objective(cls):
+#         return MAXIMIZE
+
+#     @classmethod
+#     def get_inputs(cls):
+#         return POST_PROCESSED_PREDICTIONS
+
+# Add post-processed metrics.
+# @register_metric("extended_edit_distance", [SEQUENCE, TEXT])
+# class ExtendedEditDistanceMetric(ExtendedEditDistance, LudwigMetric):
+#     def __init__(self, **kwargs):
+#         super().__init__(dist_sync_fn=_gather_all_tensors_fn())
+
+#     @classmethod
+#     def get_objective(cls):
+#         return MINIMIZE
+
+#     @classmethod
+#     def get_inputs(cls):
+#         return POST_PROCESSED_PREDICTIONS
+
+
+@register_metric("char_error_rate", [SEQUENCE, TEXT])
+class CharErrorRateMetric(CharErrorRate, LudwigMetric):
+    def __init__(self, **kwargs):
+        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
+
+    @classmethod
+    def get_objective(cls):
+        return MINIMIZE
+
+    @classmethod
+    def get_inputs(cls):
+        return PREDICTIONS
+
+
 @register_metric(ACCURACY, [BINARY])
 class Accuracy(_Accuracy, LudwigMetric):
     """R-squared metric."""
@@ -423,12 +518,11 @@ class Accuracy(_Accuracy, LudwigMetric):
 
 
 @register_metric(ACCURACY, [CATEGORY])
-class CategoryAccuracy(_Accuracy, LudwigMetric):
-    def __init__(self, **kwargs):
-        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
+class CategoryAccuracy(MulticlassAccuracy, LudwigMetric):
+    def __init__(self, num_classes: int, **kwargs):
+        super().__init__(num_classes=num_classes, dist_sync_fn=_gather_all_tensors_fn())
 
     def update(self, preds: Tensor, target: Tensor) -> None:
-        # make sure y_true is tf.int64
         super().update(preds, target.type(torch.long))
 
     @classmethod
@@ -437,17 +531,13 @@ class CategoryAccuracy(_Accuracy, LudwigMetric):
 
     @classmethod
     def get_inputs(cls):
-        # TODO: double check
         return PREDICTIONS
 
 
 @register_metric(HITS_AT_K, [CATEGORY])
-class HitsAtKMetric(_Accuracy, LudwigMetric):
-    def __init__(self, top_k: int = 3, **kwargs):
-        super().__init__(top_k=top_k, dist_sync_fn=_gather_all_tensors_fn())
-
-    def update(self, preds: Tensor, target: Tensor) -> None:
-        super().update(preds, target)
+class HitsAtKMetric(MulticlassAccuracy, LudwigMetric):
+    def __init__(self, num_classes: int, top_k: int, **kwargs):
+        super().__init__(num_classes=num_classes, top_k=top_k, dist_sync_fn=_gather_all_tensors_fn(), **kwargs)
 
     @classmethod
     def get_objective(cls):
@@ -546,43 +636,3 @@ def get_best_function(metric: str) -> Callable:
         return min
     else:
         return max
-
-
-def accuracy(preds: Tensor, target: Tensor) -> Tensor:
-    """
-    Returns:
-        Accuracy (float tensor of shape (1,)).
-    """
-    return metrics_F.accuracy(preds, target)
-    # correct_predictions = predictions == target
-    # accuracy = torch.mean(correct_predictions.type(torch.float32))
-    # return accuracy, correct_predictions
-
-
-def perplexity(cross_entropy_loss):
-    # This seem weird but is correct:
-    # we are returning the cross entropy loss as it will be later summed,
-    # divided by the size of the dataset and finally exponentiated,
-    # because perplexity has a avg_exp aggregation strategy
-    # in the output config in SequenceOutputFeature.
-    # This implies that in Model update_output_stats_batch()
-    # the values read from the perplexity node will be summed
-    # and in Model update_output_stats() they will be divided
-    # by the set size first and exponentiated.
-    return cross_entropy_loss
-
-
-def error(preds: Tensor, target: Tensor) -> Tensor:
-    return target - preds
-
-
-def absolute_error(preds: Tensor, target: Tensor) -> Tensor:
-    return torch.abs(target - preds)
-
-
-def squared_error(preds: Tensor, target: Tensor) -> Tensor:
-    return (target - preds) ** 2
-
-
-def r2(preds: Tensor, target: Tensor) -> Tensor:
-    return metrics_F.r2_score(preds, target)
