@@ -1,7 +1,5 @@
 from typing import Optional
 
-from marshmallow_dataclass import dataclass
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
@@ -18,11 +16,12 @@ from ludwig.schema.hyperopt import HyperoptConfig, HyperoptField
 from ludwig.schema.model_types.base import ModelConfig, register_model_type
 from ludwig.schema.preprocessing import PreprocessingConfig, PreprocessingField
 from ludwig.schema.trainer import ECDTrainerConfig, ECDTrainerField
+from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
 @register_model_type(name="ecd")
-@dataclass(repr=False)
+@ludwig_dataclass
 class ECDModelConfig(ModelConfig):
     """Parameters for ECD."""
 

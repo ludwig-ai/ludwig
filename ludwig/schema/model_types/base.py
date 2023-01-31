@@ -3,7 +3,6 @@ from abc import ABC
 from typing import Any, Dict, Optional
 
 from marshmallow import ValidationError
-from marshmallow_dataclass import dataclass
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import ENCODER, HYPEROPT, INPUT_FEATURES, MODEL_ECD, PREPROCESSING, TYPE
@@ -20,6 +19,7 @@ from ludwig.schema.model_types.utils import (
 )
 from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.schema.trainer import BaseTrainerConfig
+from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
 from ludwig.utils.data_utils import load_yaml
 from ludwig.utils.registry import Registry
@@ -28,7 +28,7 @@ model_type_schema_registry = Registry()
 
 
 @DeveloperAPI
-@dataclass(repr=False)
+@ludwig_dataclass
 class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
     input_features: FeatureCollection[BaseInputFeatureConfig]
     output_features: FeatureCollection[BaseOutputFeatureConfig]

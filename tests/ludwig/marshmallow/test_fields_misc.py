@@ -6,7 +6,7 @@ from marshmallow_dataclass import dataclass
 
 from ludwig.config_validation.validation import get_validator
 from ludwig.schema import utils as schema_utils
-from ludwig.schema import validate
+from ludwig.config_validation.validation import validate
 
 
 def get_marshmallow_from_dataclass_field(dfield):
