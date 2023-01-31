@@ -78,7 +78,7 @@ HF_ENCODERS = [
     "bert",
     "gpt",
     "gpt2",
-    'transformer_xl',
+    "transformer_xl",
     "xlnet",
     "xlm",
     "roberta",
