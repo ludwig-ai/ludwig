@@ -1,26 +1,31 @@
 from abc import ABC
 from typing import List, Union
 
-from marshmallow_dataclass import dataclass
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BINARY, NUMBER, VECTOR
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.metadata import ENCODER_METADATA
+from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class BaseEncoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Base class for encoders."""
 
     type: str
 
+    skip: bool = schema_utils.Boolean(
+        False,
+        "[internal] Whether to skip encoder and use input as output.",
+        parameter_metadata=ENCODER_METADATA["BaseEncoder"]["skip"],
+    )
+
 
 @DeveloperAPI
 @register_encoder_config("passthrough", [BINARY, NUMBER, VECTOR])
-@dataclass(order=True)
+@ludwig_dataclass
 class PassthroughEncoderConfig(BaseEncoderConfig):
     """PassthroughEncoderConfig is a dataclass that configures the parameters used for a passthrough encoder."""
 
@@ -36,7 +41,7 @@ class PassthroughEncoderConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("dense", [BINARY, NUMBER, VECTOR])
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class DenseEncoderConfig(BaseEncoderConfig):
     """DenseEncoderConfig is a dataclass that configures the parameters used for a dense encoder."""
 

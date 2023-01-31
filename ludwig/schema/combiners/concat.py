@@ -1,15 +1,14 @@
 from typing import Any, Dict, List, Optional, Union
 
-from marshmallow_dataclass import dataclass
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.metadata import COMBINER_METADATA
+from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
-@dataclass(order=True, repr=False)
+@ludwig_dataclass
 class ConcatCombinerConfig(BaseCombinerConfig):
     """Parameters for concat combiner."""
 
@@ -74,7 +73,7 @@ class ConcatCombinerConfig(BaseCombinerConfig):
     )
 
     norm: Optional[str] = schema_utils.StringOptions(
-        ["batch", "layer"],
+        ["batch", "layer", "ghost"],
         description="",
         parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["norm"],
     )
@@ -86,6 +85,7 @@ class ConcatCombinerConfig(BaseCombinerConfig):
 
     num_fc_layers: int = schema_utils.NonNegativeInteger(
         default=0,
+        allow_none=False,
         description="",
         parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["num_fc_layers"],
     )

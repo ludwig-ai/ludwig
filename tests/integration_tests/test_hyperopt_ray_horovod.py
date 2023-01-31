@@ -132,8 +132,8 @@ def _get_config(search_alg, executor):
     input_features = [number_feature()]
     output_features = [binary_feature()]
 
-    # Bohb causes training failures when num epochs is 1
-    num_epochs = 1 if search_alg["type"] == "variant_generator" else 2
+    # When using the hb_bohb scheduler, num_epochs must equal max_t (which is 81 by default)
+    num_epochs = 1 if search_alg["type"] == "variant_generator" else 81
 
     return {
         "input_features": input_features,

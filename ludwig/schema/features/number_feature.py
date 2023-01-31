@@ -1,7 +1,5 @@
 from typing import List, Tuple, Union
 
-from marshmallow_dataclass import dataclass
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import MEAN_SQUARED_ERROR, NUMBER
 from ludwig.schema import utils as schema_utils
@@ -22,12 +20,12 @@ from ludwig.schema.features.utils import (
 )
 from ludwig.schema.metadata import FEATURE_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
-from ludwig.schema.utils import BaseMarshmallowConfig
+from ludwig.schema.utils import BaseMarshmallowConfig, ludwig_dataclass
 
 
 @DeveloperAPI
 @input_mixin_registry.register(NUMBER)
-@dataclass
+@ludwig_dataclass
 class NumberInputFeatureConfigMixin(BaseMarshmallowConfig):
     """NumberInputFeatureConfigMixin is a dataclass that configures the parameters used in both the number input
     feature and the number global defaults section of the Ludwig Config."""
@@ -42,7 +40,7 @@ class NumberInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @input_config_registry.register(NUMBER)
-@dataclass(repr=False)
+@ludwig_dataclass
 class NumberInputFeatureConfig(BaseInputFeatureConfig, NumberInputFeatureConfigMixin):
     """NumberInputFeatureConfig is a dataclass that configures the parameters used for a number input feature."""
 
@@ -51,7 +49,7 @@ class NumberInputFeatureConfig(BaseInputFeatureConfig, NumberInputFeatureConfigM
 
 @DeveloperAPI
 @output_mixin_registry.register(NUMBER)
-@dataclass
+@ludwig_dataclass
 class NumberOutputFeatureConfigMixin(BaseMarshmallowConfig):
     """NumberOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the number output
     feature and the number global defaults section of the Ludwig Config."""
@@ -69,7 +67,7 @@ class NumberOutputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @output_config_registry.register(NUMBER)
-@dataclass(repr=False)
+@ludwig_dataclass
 class NumberOutputFeatureConfig(BaseOutputFeatureConfig, NumberOutputFeatureConfigMixin):
     """NumberOutputFeatureConfig is a dataclass that configures the parameters used for a category output
     feature."""

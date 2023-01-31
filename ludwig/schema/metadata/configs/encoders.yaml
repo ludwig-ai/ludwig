@@ -1,3 +1,8 @@
+BaseEncoder:
+    skip:
+        internal_only: true
+        other_information: Internal Only
+        ui_display_name: Not Displayed
 ALBERT:
     type:
         short_description:
@@ -286,7 +291,6 @@ ALBERT:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -329,7 +333,6 @@ AutoTransformer:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -547,7 +550,6 @@ BERT:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -905,7 +907,6 @@ BagEmbedWeighted:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     weights_initializer:
@@ -1028,7 +1029,6 @@ CTRL:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -1234,7 +1234,6 @@ CamemBERT:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -1464,7 +1463,6 @@ CategoricalSparse:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
 DateEmbed:
@@ -2477,7 +2475,6 @@ DistilBERT:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -2716,7 +2713,6 @@ ELECTRA:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -2911,7 +2907,6 @@ FlauBERT:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -2994,7 +2989,6 @@ GPT2:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -4035,7 +4029,6 @@ Longformer:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -4290,7 +4283,6 @@ MT5:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -4652,7 +4644,6 @@ ParallelCNN:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     weights_initializer:
@@ -5061,7 +5052,6 @@ RoBERTa:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -5175,7 +5165,6 @@ SequenceEmbed:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     weights_initializer:
@@ -5543,7 +5532,6 @@ SetSparseEncoder:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     weights_initializer:
@@ -6333,7 +6321,6 @@ StackedCNN:
             - a
             - b
             - c
-        expected_impact: 1
         internal_only: true
         ui_display_name: Not Displayed
     weights_initializer:
@@ -6924,7 +6911,6 @@ StackedCNNRNN:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     weights_initializer:
@@ -7298,7 +7284,6 @@ StackedParallelCNN:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     weights_initializer:
@@ -7757,7 +7742,6 @@ StackedRNN:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     weights_initializer:
@@ -8196,7 +8180,6 @@ StackedTransformer:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     weights_initializer:
@@ -8347,7 +8330,6 @@ T5:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -8486,7 +8468,6 @@ TransformerXL:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -9054,7 +9035,6 @@ XLM:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -9124,7 +9104,6 @@ XLMRoBERTa:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -9297,7 +9276,6 @@ XLNet:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:

@@ -58,6 +58,7 @@ class TVBaseEncoder(ImageEncoder):
         # remove any Ludwig specific keyword parameters
         kwargs.pop("encoder_config", None)
         kwargs.pop("type", None)
+        kwargs.pop("skip", None)
 
         # cache pre-trained models if requested
         # based on https://github.com/pytorch/vision/issues/616#issuecomment-428637564
