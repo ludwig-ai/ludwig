@@ -70,7 +70,7 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.LUDWIG_TESTS_AWS_SECRET_ACCESS_KEY }}
       EXCLUDED_MARKERS: "benchmark"
 
-    name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, ${{ matrix.test-markers }}, ${{ matrix.os }}, ray ${{ matrix.ray-version }}
+    name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, , ${{ matrix.test-markers }}, ${{ matrix.os }}, ray ${{ matrix.ray-version }}
     if: needs.start-runner.result != 'skipped'
     needs: start-runner # required to start the main job when the runner is ready
     runs-on: ${{ needs.start-runner.outputs.label }} # run the job on the newly created runners
@@ -189,7 +189,7 @@ jobs:
 
       - name: Tests
         run: |
-          RUN_SLOW=1 RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=4500 pytest -v --timeout 300 --durations 100 -m "($MARKERS) and (not $EXCLUDED_MARKERS)" --junitxml pytest_slow.xml tests
+          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=4500 pytest -v --timeout 300 --durations 100 -m "(slow) and ($MARKERS)" --junitxml pytest_slow.xml tests
 
       - name: Upload Unit Test Results
         if: ${{ always() && !env.ACT }}

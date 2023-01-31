@@ -149,18 +149,7 @@ def parse_flag_from_env(key, default=False):
     return _value
 
 
-_run_slow_tests = parse_flag_from_env("RUN_SLOW", default=False)
 _run_private_tests = parse_flag_from_env("RUN_PRIVATE", default=False)
-
-
-def slow(test_case):
-    """Decorator marking a test as slow.
-
-    Slow tests are skipped by default. Set the RUN_SLOW environment variable to a truth value to run them.
-    """
-    if not _run_slow_tests:
-        test_case = unittest.skip("Skipping: this test is too slow")(test_case)
-    return test_case
 
 
 def private_param(param):
