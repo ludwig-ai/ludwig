@@ -20,6 +20,7 @@ from ludwig.constants import (
     TRAINER,
     TYPE,
 )
+from ludwig.error import ConfigValidationError
 from ludwig.features.feature_registries import get_output_type_registry
 from ludwig.schema.combiners.utils import get_combiner_jsonschema
 from ludwig.schema.defaults.defaults import DefaultsConfig
@@ -104,8 +105,7 @@ def test_config_features():
             "output_features": all_output_features + [input_feature],
         }
 
-        dtype = input_feature["type"]
-        with pytest.raises(ValidationError, match=rf"^'{dtype}' is not one of .*"):
+        with pytest.raises(ConfigValidationError):
             ModelConfig(config)
 
 
@@ -128,7 +128,7 @@ def test_config_with_backend():
             category_feature(encoder={"type": "dense", "vocab_size": 2}, reduce_input="sum"),
             number_feature(),
         ],
-        "output_features": [binary_feature(weight_regularization=None)],
+        "output_features": [binary_feature()],
         "combiner": {
             "type": "tabnet",
             "size": 24,
@@ -167,7 +167,7 @@ def test_config_bad_feature_type():
         "combiner": {"type": "concat", "output_size": 14},
     }
 
-    with pytest.raises(ValidationError, match=r"^'fake' is not one of .*"):
+    with pytest.raises(ConfigValidationError):
         ModelConfig(config)
 
 
@@ -178,7 +178,7 @@ def test_config_bad_encoder_name():
         "combiner": {"type": "concat", "output_size": 14},
     }
 
-    with pytest.raises(ValidationError, match=r"^'fake' is not one of .*"):
+    with pytest.raises(ConfigValidationError):
         ModelConfig(config)
 
 

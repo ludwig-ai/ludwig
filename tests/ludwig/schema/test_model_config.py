@@ -588,7 +588,6 @@ def test_initializer_recursion():
             {
                 "name": "binary_52912",
                 "type": "binary",
-                "weight_regularization": None,
                 "column": "binary_52912",
                 "proc_column": "binary_52912_mZFLky",
             }

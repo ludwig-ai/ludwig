@@ -146,7 +146,7 @@ class VersionTransformationRegistry:
 
         def in_range(v, to_version, from_version):
             v = pkg_version.parse(v)
-            return from_version < v <= to_version
+            return from_version <= v <= to_version
 
         versions = [v for v in self._registry.keys() if in_range(v, to_version, from_version)]
 

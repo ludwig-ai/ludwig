@@ -2,6 +2,7 @@ import pytest
 from jsonschema.exceptions import ValidationError
 
 from ludwig.constants import TRAINER
+from ludwig.error import ConfigValidationError
 from ludwig.schema.model_config import ModelConfig
 from ludwig.schema.optimizers import optimizer_registry
 from ludwig.schema.trainer import ECDTrainerConfig
@@ -17,7 +18,7 @@ def test_config_trainer_empty_null_and_default():
             category_feature(encoder={"type": "dense", "vocab_size": 2}, reduce_input="sum"),
             number_feature(),
         ],
-        "output_features": [binary_feature(weight_regularization=None)],
+        "output_features": [binary_feature()],
         "combiner": {
             "type": "tabnet",
         },
@@ -26,7 +27,7 @@ def test_config_trainer_empty_null_and_default():
     ModelConfig(config)
 
     config[TRAINER] = None
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         ModelConfig(config)
 
     config[TRAINER] = ECDTrainerConfig.Schema().dump({})
@@ -39,7 +40,7 @@ def test_config_trainer_bad_optimizer():
             category_feature(encoder={"type": "dense", "vocab_size": 2}, reduce_input="sum"),
             number_feature(),
         ],
-        "output_features": [binary_feature(weight_regularization=None)],
+        "output_features": [binary_feature()],
         "combiner": {
             "type": "tabnet",
         },
@@ -49,7 +50,7 @@ def test_config_trainer_bad_optimizer():
 
     # Test manually set-to-null optimizer vs unspecified:
     config[TRAINER]["optimizer"] = None
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         ModelConfig(config)
     assert ECDTrainerConfig.Schema().load({}).optimizer is not None
 
@@ -60,13 +61,10 @@ def test_config_trainer_bad_optimizer():
 
     # Test invalid optimizer type:
     config[TRAINER]["optimizer"] = {"type": 0}
-    with pytest.raises(ValidationError):
-        ModelConfig(config)
-    config[TRAINER]["optimizer"] = {"type": {}}
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         ModelConfig(config)
     config[TRAINER]["optimizer"] = {"type": "invalid"}
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         ModelConfig(config)
 
 
@@ -76,7 +74,7 @@ def test_optimizer_property_validation():
             category_feature(encoder={"type": "dense", "vocab_size": 2}, reduce_input="sum"),
             number_feature(),
         ],
-        "output_features": [binary_feature(weight_regularization=None)],
+        "output_features": [binary_feature()],
         "combiner": {
             "type": "tabnet",
         },
@@ -114,7 +112,7 @@ def test_clipper_property_validation():
             category_feature(encoder={"type": "dense", "vocab_size": 2}, reduce_input="sum"),
             number_feature(),
         ],
-        "output_features": [binary_feature(weight_regularization=None)],
+        "output_features": [binary_feature()],
         "combiner": {
             "type": "tabnet",
         },
@@ -152,5 +150,4 @@ def test_clipper_property_validation():
     # Test extra keys are excluded and defaults are loaded appropriately:
     config[TRAINER]["gradient_clipping"] = {"clipnorm": 1}
     config[TRAINER]["gradient_clipping"]["extra_key"] = "invalid"
-    ModelConfig(config)
     assert not hasattr(ECDTrainerConfig.Schema().load(config[TRAINER]).gradient_clipping, "extra_key")

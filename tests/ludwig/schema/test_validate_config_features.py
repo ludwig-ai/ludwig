@@ -1,6 +1,7 @@
 import pytest
 from jsonschema.exceptions import ValidationError
 
+from ludwig.error import ConfigValidationError
 from ludwig.schema.model_config import ModelConfig
 from tests.integration_tests.utils import binary_feature, category_feature, number_feature, text_feature
 
@@ -50,7 +51,7 @@ def test_incorrect_input_features_config():
     del config["input_features"][0]["type"]
 
     # No type
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         ModelConfig(config)
 
 
@@ -63,5 +64,5 @@ def test_incorrect_output_features_config():
     }
 
     # Invalid decoder for binary output feature
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         ModelConfig(config)

@@ -3,6 +3,7 @@ from jsonschema.exceptions import ValidationError
 
 from ludwig.config_validation.validation import get_schema
 from ludwig.constants import MODEL_ECD, TRAINER
+from ludwig.error import ConfigValidationError
 from ludwig.schema.model_config import ModelConfig
 from tests.integration_tests.utils import binary_feature, category_feature, number_feature
 
@@ -19,7 +20,7 @@ def test_config_tabnet(eval_batch_size):
             category_feature(encoder={"type": "dense", "vocab_size": 2}, reduce_input="sum"),
             number_feature(),
         ],
-        "output_features": [binary_feature(weight_regularization=None)],
+        "output_features": [binary_feature()],
         "combiner": {
             "type": "tabnet",
             "size": 24,
@@ -57,7 +58,7 @@ def test_config_bad_combiner():
             category_feature(encoder={"type": "dense", "vocab_size": 2}, reduce_input="sum"),
             number_feature(),
         ],
-        "output_features": [binary_feature(decoder={"weight_regularization": None})],
+        "output_features": [binary_feature()],
         "combiner": {
             "type": "tabnet",
         },
@@ -68,17 +69,17 @@ def test_config_bad_combiner():
 
     # combiner without type
     del config["combiner"]["type"]
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         ModelConfig(config)
 
     # bad combiner type
     config["combiner"]["type"] = "fake"
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         ModelConfig(config)
 
     # bad combiner format (list instead of dict)
     config["combiner"] = [{"type": "tabnet"}]
-    with pytest.raises(ValidationError, match=r"^\[\{'type': 'tabnet'\}\] is not of .*"):
+    with pytest.raises(ConfigValidationError):
         ModelConfig(config)
 
     # bad combiner parameter types
@@ -105,7 +106,7 @@ def test_config_bad_combiner_types_enums():
             category_feature(encoder={"type": "dense", "vocab_size": 2}, reduce_input="sum"),
             number_feature(),
         ],
-        "output_features": [binary_feature(weight_regularization=None)],
+        "output_features": [binary_feature()],
         "combiner": {"type": "concat", "weights_initializer": "zeros"},
     }
 

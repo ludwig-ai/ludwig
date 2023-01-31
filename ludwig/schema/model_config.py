@@ -8,8 +8,7 @@ import yaml
 from marshmallow import ValidationError
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.config_validation.checks import get_config_check_registry
-from ludwig.config_validation.validation import check_schema
+from ludwig.config_validation.checks import check_basic_required_parameters, get_config_check_registry
 from ludwig.constants import (
     ACTIVE,
     BINARY,
@@ -140,7 +139,7 @@ class ModelConfig(BaseMarshmallowConfig):
         upgraded_config_dict = self._upgrade_config(config_dict)
 
         # Schema validation.
-        check_schema(upgraded_config_dict)
+        check_basic_required_parameters(upgraded_config_dict)
 
         # ===== Save the original (upgraded) user config =====
         self._user_config_dict = upgraded_config_dict

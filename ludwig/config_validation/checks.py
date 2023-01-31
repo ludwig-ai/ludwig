@@ -13,6 +13,8 @@ from ludwig.constants import (
     BINARY,
     CATEGORY,
     COMBINER,
+    DECODER,
+    ENCODER,
     IMAGE,
     IN_MEMORY,
     INPUT_FEATURES,
@@ -31,7 +33,11 @@ from ludwig.constants import (
     TYPE,
     VECTOR,
 )
+from ludwig.decoders.registry import get_decoder_registry
+from ludwig.encoders.registry import get_encoder_registry
 from ludwig.error import ConfigValidationError
+from ludwig.schema.combiners.utils import get_combiner_registry
+from ludwig.schema.optimizers import optimizer_registry
 from ludwig.types import ModelConfigDict
 from ludwig.utils.metric_utils import get_feature_to_metric_names_map
 from ludwig.utils.registry import Registry
@@ -65,6 +71,69 @@ class ConfigCheck(ABC):
     def check(config: ModelConfigDict) -> None:
         """Checks config for validity."""
         raise NotImplementedError
+
+
+def check_basic_required_parameters(config: ModelConfigDict) -> None:
+    """Checks basic required parameters like that all features have names and types, and all types are valid."""
+    # Check input features.
+    for input_feature in config[INPUT_FEATURES]:
+        if NAME not in input_feature:
+            raise ConfigValidationError("All input features must have a name.")
+        if TYPE not in input_feature:
+            raise ConfigValidationError(f"Input feature {input_feature[NAME]} must have a type.")
+        if ENCODER in input_feature:
+            if (
+                TYPE in input_feature[ENCODER]
+                and input_feature[ENCODER][TYPE] not in get_encoder_registry()[input_feature[TYPE]]
+            ):
+                raise ConfigValidationError(
+                    f"Encoder type '{input_feature[ENCODER][TYPE]}' for input feature {input_feature[NAME]} must be "
+                    f"one of: {list(get_encoder_registry()[input_feature[TYPE]].keys())}."
+                )
+
+    # Check output features.
+    for output_feature in config[OUTPUT_FEATURES]:
+        if NAME not in output_feature:
+            raise ConfigValidationError("All output features must have a name.")
+        if TYPE not in output_feature:
+            raise ConfigValidationError(f"Output feature {output_feature[NAME]} must have a type.")
+        if output_feature[TYPE] not in get_decoder_registry():
+            raise ConfigValidationError(
+                f"Output feature {output_feature[NAME]} uses an invalid/unsupported output type "
+                f"'{output_feature[TYPE]}'. Supported output features: {list(get_decoder_registry().keys())}."
+            )
+        if DECODER in output_feature:
+            if (
+                TYPE in output_feature[DECODER]
+                and output_feature[DECODER][TYPE] not in get_decoder_registry()[output_feature[TYPE]]
+            ):
+                raise ConfigValidationError(
+                    f"Decoder type for output feature {output_feature[NAME]} must be one of: "
+                    f"{list(get_decoder_registry()[output_feature[TYPE]].keys())}."
+                )
+
+    # Check combiners.
+    if config.get(MODEL_TYPE, MODEL_ECD) == MODEL_ECD:
+        if COMBINER not in config:
+            return
+        if TYPE not in config[COMBINER]:
+            raise ConfigValidationError("Combiner must have a type.")
+        if config[COMBINER][TYPE] not in get_combiner_registry():
+            raise ConfigValidationError(f"Combiner type must be one of: {list(get_combiner_registry().keys())}.")
+
+    # Check trainer.
+    if TRAINER in config and config[TRAINER] is None:
+        raise ConfigValidationError("Trainer cannot be None.")
+
+    # Check optimizer.
+    if TRAINER in config and "optimizer" in config[TRAINER]:
+        if config[TRAINER]["optimizer"] is None:
+            raise ConfigValidationError("Trainer.optimizer cannot be None.")
+        if TYPE in config[TRAINER]["optimizer"]:
+            if config[TRAINER]["optimizer"][TYPE] not in optimizer_registry:
+                raise ConfigValidationError(
+                    f"Trainer.optimizer.type must be one of: {list(optimizer_registry.keys())}."
+                )
 
 
 @register_config_check("Checks that all feature names are unique.")
