@@ -1,7 +1,7 @@
-import logging
 from typing import Type
 
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
+from ludwig.utils.logging_utils import log_once
 
 
 def load_ddp():
@@ -34,7 +34,7 @@ def get_current_dist_strategy(allow_local=True) -> Type[DistributedStrategy]:
         try:
             strategy_cls = strategy_loader()
         except ImportError:
-            logging.info(f"Distributed strategy {strategy_name} is not available due to import error")
+            log_once(f"Distributed strategy {strategy_name} is not available due to import error")
             continue
 
         if strategy_cls.is_available():

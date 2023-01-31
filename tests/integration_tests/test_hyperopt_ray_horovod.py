@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import logging
 import os.path
 import shutil
 import uuid
 from unittest.mock import patch
 
 import pytest
-from packaging import version
 
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
@@ -33,14 +33,9 @@ from tests.integration_tests.utils import binary_feature, create_data_set_to_use
 try:
     import ray
 
-    _ray_200 = version.parse(ray.__version__) > version.parse("1.13")
-    if _ray_200:
-        from ray.tune.syncer import get_node_to_storage_syncer, SyncConfig
-    else:
-        from ray.tune.syncer import get_sync_client
-
     from ludwig.backend.ray import RayBackend
     from ludwig.hyperopt.execution import _get_relative_checkpoints_dir_parts, RayTuneExecutor
+    from ludwig.hyperopt.syncer import RemoteSyncer
 except ImportError:
     ray = None
     RayTuneExecutor = object
@@ -48,16 +43,6 @@ except ImportError:
 # Dummy sync templates
 LOCAL_SYNC_TEMPLATE = "echo {source}/ {target}/"
 LOCAL_DELETE_TEMPLATE = "echo {target}"
-
-
-def mock_storage_client(path):
-    """Mocks storage client that treats a local dir as durable storage."""
-    os.makedirs(path, exist_ok=True)
-    if _ray_200:
-        syncer = get_node_to_storage_syncer(SyncConfig(upload_dir=path))
-    else:
-        syncer = get_sync_client(LOCAL_SYNC_TEMPLATE, LOCAL_DELETE_TEMPLATE)
-    return syncer
 
 
 HYPEROPT_CONFIG = {
@@ -77,7 +62,7 @@ SCENARIOS = [
     {
         "executor": {
             "type": "ray",
-            "num_samples": 2,
+            "num_samples": 1,  # Because we're using a grid search, we only need 1 sample
             "trial_driver_resources": {"hyperopt_resources": 1},  # Used to prevent deadlock
             "cpu_resources_per_trial": 1,
         },
@@ -86,11 +71,12 @@ SCENARIOS = [
     {
         "executor": {
             "type": "ray",
-            "num_samples": 2,
+            "num_samples": 3,  # grid search doesn't work with bohb, so we set num_samples to 3
             "scheduler": {
                 "type": "hb_bohb",
                 "time_attr": "training_iteration",
-                "reduction_factor": 4,
+                "reduction_factor": 3,
+                "max_t": 20,
             },
             "trial_driver_resources": {"hyperopt_resources": 1},  # Used to prevent deadlock
             "cpu_resources_per_trial": 1,
@@ -132,8 +118,9 @@ def _get_config(search_alg, executor):
     input_features = [number_feature()]
     output_features = [binary_feature()]
 
-    # When using the hb_bohb scheduler, num_epochs must equal max_t (which is 81 by default)
-    num_epochs = 1 if search_alg["type"] == "variant_generator" else 81
+    # When using the hb_bohb scheduler, num_epochs must equal max_t
+    # Manually override default of 81 so tests run in a reasonable amount of time
+    num_epochs = 1 if search_alg["type"] == "variant_generator" else 20
 
     return {
         "input_features": input_features,
@@ -148,9 +135,19 @@ def _get_config(search_alg, executor):
     }
 
 
+def mock_storage_client(path):
+    """Mocks storage client that treats a local dir as durable storage."""
+    os.makedirs(path, exist_ok=True)
+    logging.info(f"!!! Mocking storage client for {path}")
+    sync_client = RemoteSyncer(creds={})
+    syncer = ray.tune.SyncConfig(upload_dir=path, syncer=sync_client)
+    return syncer
+
+
 class MockRayTuneExecutor(RayTuneExecutor):
     def _get_sync_client_and_remote_checkpoint_dir(self, trial_dir):
         remote_checkpoint_dir = os.path.join(self.mock_path, *_get_relative_checkpoints_dir_parts(trial_dir))
+        logging.info(f"!!! Mocking remote checkpoint dir for {trial_dir} to {remote_checkpoint_dir}")
         return mock_storage_client(remote_checkpoint_dir), remote_checkpoint_dir
 
 

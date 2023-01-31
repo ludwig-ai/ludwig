@@ -1,5 +1,4 @@
 import contextlib
-import logging
 import socket
 from typing import Any, Callable, Optional, Tuple
 
@@ -11,6 +10,7 @@ from torch.optim import Optimizer
 from torchmetrics.utilities.distributed import gather_all_tensors
 
 from ludwig.distributed.base import DistributedStrategy
+from ludwig.utils.logging_utils import log_once
 
 
 class DDPStrategy(DistributedStrategy):
@@ -19,7 +19,7 @@ class DDPStrategy(DistributedStrategy):
         self._log_on_init()
 
     def _log_on_init(self):
-        logging.info("Using DDP strategy")
+        log_once("Using DDP strategy")
 
     def wrap_model(self, model: nn.Module) -> nn.Module:
         return DDP(model)
