@@ -1,70 +1,24 @@
-batch_size:
+learning_rate:
     commonly_used: true
-    default_value_reasoning: Not too big, not too small.
+    default_value_reasoning: Middle of the road learning rate to start with.
     description_implications:
-        There's conflicting evidence about what batch size to
-        use. Using a higher batch size will achieve the highest throughput and training
-        efficiency. However, there's also evidence that depending on other hyperparameters,
-        a smaller batch size may produce a higher quality model.
-        Batch size and learning rate are strongly intertwined,
-        so a commonly adopted strategy to set them is to find a the largest batch size
-        that allows the training process not to run out of memory,
-        and then find the best learning rate that makes the training converge
-        with that batch size.
+        The learning rate is a hyperparameter that controls
+        how much to change the model in response to the estimated error each time
+        the model weights are updated. Increasing the learning rate may decrease learning
+        curve stability but also increase learning speed and efficiency, leading to
+        faster model convergence. Decreasing the learning rate can help stabilize
+        learning curves at the cost of slower time to convergence.
     expected_impact: 3
+    suggested_values: 0.00001 - 0.1 or auto
     related_parameters:
-        - eval_batch_size
-        - learning_rate
-    suggested_values: auto
+        - decay
     suggested_values_reasoning:
-        Auto batch size will determine the largest batch size that allows
-        the training process not to run out of memory.
-        Alternatively, try at least a few different batch sizes to get a
-        sense of whether and how batch size affects model performance.
-    ui_display_name: Batch Size
-bucketing_field:
-    expected_impact: 1
-    other_information:
-        When not null, when creating batches, instead of shuffling
-        randomly, the length along the last dimension of the matrix of the specified
-        input feature (i.e. the length of a sequence or text)
-        is used for bucketing examples and then randomly shuffled examples
-        from the same bin are sampled. Padding is trimmed to the longest example in
-        the batch. The specified feature should be either a sequence or text feature
-        and the encoder encoding it has to be rnn. When used, bucketing improves speed
-        of rnn encoding up to 1.5x, depending on the length distribution of the inputs.
-    ui_display_name: Bucketing Field
-checkpoints_per_epoch:
-    default_value_reasoning:
-        Per-epoch behavior, which scales according to the dataset
-        size.
-    description_implications:
-        "Epoch-based evaluation (using the default: 0) is an
-        appropriate fit for small datasets that fit in memory and
-        train quickly. Commonly available tabular datasets fit in this cateogry.
-
-        However, this is a poor fit for unstructured datasets, which tend to be much
-        larger, and train more slowly due to larger models.
-
-        It's important to setup evaluation such that you do not wait several hours
-        before getting a single evaluation result. In general, it is not necessary
-        for models to train over the entirety of a dataset, nor evaluate over the
-        entirety of a test set, to produce useful monitoring metrics and signals to
-        indicate model health.
-
-        It is also more engaging and more valuable to ensure a frequent pulse of evaluation
-        metrics, even if they are partial."
-    expected_impact: 2
-    related_parameters:
-        - train_steps
-        - steps_per_checkpoint
-    suggested_values: 2 - 10, for larger datasets
-    suggested_values_reasoning:
-        Running evaluation too frequently can be wasteful
-        while running evaluation not frequently enough can be prohibitively uninformative.
-        In many large-scale training runs, evaluation is often configured to run on
-        a sub-epoch time scale, or every few thousand steps.
-    ui_display_name: Checkpoints per epoch
+        Tabular models trained from scratch typically use
+        learning rates around 1e-3 while learning rates for pre-trained models should
+        be much smaller, typically around 1e-5, which is important to mitigate catastrophic
+        forgetting. To make the model more robust to any specific choice of learning
+        rate, consider turning enabling learning rate decay.
+    ui_display_name: Learning Rate
 early_stop:
     default_value_reasoning:
         Deep learning models are prone to overfitting. It's generally
@@ -91,24 +45,6 @@ early_stop:
         train, but so many consecutive rounds of no improvement is usually a good
         indicator that the model converged or overfitted.
     ui_display_name: Early Stop
-epochs:
-    default_value_reasoning:
-        A very high training length ceiling. Models will almost
-        always hit early stopping criteria before hitting a 100-epoch ceiling.
-    description_implications:
-        Decreasing this will shorten the overall runway for
-        training the model.
-    expected_impact: 3
-    related_parameters:
-        - train_steps
-    suggested_values: 100
-    suggested_values_reasoning:
-        Usually it's sensible to leave this very high and
-        rely on a solid early stopping policy to dictate when the model should stop
-        training. Some models and hyperparameter configurations require many epochs
-        through the dataset to converge while others converge before a single epoch
-        through the data.
-    ui_display_name: Epochs
 eval_batch_size:
     default_value_reasoning:
         Use the same batch size used for training.
@@ -156,252 +92,6 @@ evaluate_training_set:
         so it will still be easy to spot signs of overfitting like when the training-validation
         loss curves diverge.
     ui_display_name: Evaluate Training Set
-gradient_clipping:
-    default_value_reasoning:
-        A conservative cap on the maximum gradient size to apply
-        over a single training step.
-    description_implications:
-        Gradient clipping is a technique to prevent exploding
-        gradients in very deep networks. Increasing gradient clipping can help with
-        model training loss curve stability, but it can also make training slower
-        as weights may not be updated as fast.
-    expected_impact: 2
-    suggested_values_reasoning:
-        It's usually sensible to enable gradient clipping to make modeling robust
-        to particularly bad or noisy batches of examples.
-    ui_display_name: Gradient Clipping
-increase_batch_size_eval_metric:
-    expected_impact: 1
-    ui_display_name: "Batch Size Increase: Evaluation Metric"
-increase_batch_size_eval_split:
-    expected_impact: 1
-    ui_display_name: "Batch Size Increase: Evaluation Split"
-increase_batch_size_on_plateau:
-    expected_impact: 1
-    ui_display_name: Batch Size Increase On Plateau
-increase_batch_size_on_plateau_patience:
-    expected_impact: 1
-    ui_display_name: "Batch Size Increase On Plateau: Patience"
-increase_batch_size_on_plateau_rate:
-    expected_impact: 1
-    ui_display_name: "Batch Size Increase On Plateau: Rate"
-learning_rate:
-    commonly_used: true
-    default_value_reasoning: Middle of the road learning rate to start with.
-    description_implications:
-        The learning rate is a hyperparameter that controls
-        how much to change the model in response to the estimated error each time
-        the model weights are updated. Increasing the learning rate may decrease learning
-        curve stability but also increase learning speed and efficiency, leading to
-        faster model convergence. Decreasing the learning rate can help stabilize
-        learning curves at the cost of slower time to convergence.
-    expected_impact: 3
-    suggested_values: 0.00001 - 0.1 or auto
-    related_parameters:
-        - decay
-    suggested_values_reasoning:
-        Tabular models trained from scratch typically use
-        learning rates around 1e-3 while learning rates for pre-trained models should
-        be much smaller, typically around 1e-5, which is important to mitigate catastrophic
-        forgetting. To make the model more robust to any specific choice of learning
-        rate, consider turning enabling learning rate decay.
-    ui_display_name: Learning Rate
-learning_rate_scaling:
-    default_value_reasoning:
-        Traditionally the learning rate is scaled linearly with
-        the number of workers to reflect the proportion by which the effective batch
-        size is increased.
-    description_implications:
-        Traditionally the learning rate is scaled linearly with
-        the number of workers to reflect the proportion by which the effective batch
-        size is increased. For very large batch sizes, a softer square-root scale
-        can sometimes lead to better model performance. If the learning rate is hand-tuned
-        for a given number of workers, setting this value to constant can be used
-        to disable scale-up.
-    expected_impact: 1
-    suggested_values: linear or sqrt
-    suggested_values_reasoning:
-        Traditionally the learning rate is scaled linearly
-        with the number of workers to reflect the proportion by which the effective
-        batch size is increased. For very large batch sizes, a softer square-root
-        scale can sometimes lead to better model performance. If the learning rate
-        is hand-tuned for a given number of workers, setting this value to constant
-        can be used to disable scale-up.
-    ui_display_name: Learning Rate Scaling
-max_batch_size:
-    default_value_reasoning: Not typically required.
-    description_implications:
-        Value used to manually limit the batch sizes explored
-        by auto batch size tuning and batch size increasing on plateau.
-    example_value:
-        - 1024
-    expected_impact: 1
-    related_parameters:
-        - batch_size
-        - increase_batch_size_on_plateau
-    ui_display_name: Max Batch Size
-optimizer:
-    default_value_reasoning:
-        First try Adam because it is shown to return good
-        results without an advanced fine tuning.
-    description_implications:
-        "Choosing a good optimizer for your machine learning
-         project can be overwhelming. Popular deep learning libraries such as PyTorch
-         or TensorFLow offer a broad selection of different optimizers, each
-         with its own strengths and weaknesses. However, picking the wrong optimizer
-         can have a substantial negative impact on the performance of your machine
-         learning model [1][2]. This makes optimizers a critical design choice in
-         the process of building, testing, and deploying your machine learning model."
-    expected_impact: 3
-    literature_references:
-        - https://www.youtube.com/watch?v=mdKjMPmcWjY
-    suggested_values: adam, adamw
-    suggested_values_reasoning:
-        "As a rule of thumb: If you have the resources to
-        find a good learning rate schedule, SGD with momentum is a solid choice. If
-        you are in need of quick results without extensive hyperparameter tuning,
-        adaptive gradient methods like adam or adamw are good choices."
-    ui_display_name: Optimizer
-regularization_lambda:
-    default_value_reasoning:
-        How to tune the overall impact of the regularization
-        term by multiplying its value by a scalar known as lambda (also called the
-        regularization rate).
-    description_implications:
-        "When choosing a lambda value, the goal is to strike
-        the right balance between simplicity and training-data fit:
-
-
-        If your lambda value is too high, your model will be simple, but you run the
-        risk of underfitting your data. Your model won't learn enough about the training
-        data to make useful predictions.
-
-
-        If your lambda value is too low, your model will be more complex, and you
-        run the risk of overfitting your data. Your model will learn too much about
-        the particularities of the training data, and won't be able to generalize
-        to new data. The ideal value of lambda produces a model that generalizes well
-        to new, previously unseen data. Unfortunately, that ideal value of lambda
-        is data-dependent, so you'll need to do some tuning. We recommend trying
-        a handful of values (0.001, 0.02, ... 0.4) gradually increasing the value until
-        training curves get worse"
-    expected_impact: 2
-    literature_references:
-        - "https://developers.google.com/machine-learning/crash-course/regularization-for-simplicity/lambda "
-    related_parameters:
-        - regularization_type
-    suggested_values: 0.1
-    suggested_values_reasoning:
-        "The most common type of regularization is L2, also
-         called weight decay, with values often on a logarithmic
-         scale between 0 and 0.1, such as 0.1, 0.001, 0.0001, etc."
-    ui_display_name: Regularization Lambda
-regularization_type:
-    default_value_reasoning: L2 is a standard regularization to start with.
-    description_implications:
-        "L1 regularization penalizes the sum of absolute values
-         of the weights, whereas L2 regularization penalizes the sum of squares of
-         the weights.
-
-         The L1 regularization solution is sparse, meaning some weights will be zero,
-         others will be large.
-         The L2 regularization solution is non-sparse, most weights will be small.
-
-         L2 regularization does not perform feature
-         selection, since weights are only reduced to values near 0 instead of 0.
-         L1 regularization implicitly performs feature selection. L1 regularization is more
-         robust to outliers."
-    expected_impact: 3
-    literature_references:
-        - "https://neptune.ai/blog/fighting-overfitting-with-l1-or-l2-regularization#:~:text=The%20differences%20between%20L1%20and,regularization%20solution%20is%20non%2Dsparse. "
-    related_parameters:
-        - regularization_lambda
-    suggested_values: L2
-    ui_display_name: Regularization Type
-should_shuffle:
-    default_value_reasoning:
-        In general, it's a good idea to mix up data on each batch
-        so that the neural network gets the broadest exposure to the dataset.
-    description_implications:
-        Turning off mini-batch shuffling can make training faster,
-        but it may lead to worse performance overall as shuffling helps mitigate overfitting.
-    expected_impact: 1
-    literature_references:
-        - "https://stats.stackexchange.com/questions/245502/why-should-we-shuffle-data-while-training-a-neural-network#:~:text=it%20helps%20the%20training%20converge,the%20order%20of%20the%20training "
-    suggested_values: true
-    suggested_values_reasoning:
-        One of the most powerful things about neural networks
-        is that they can be very complex functions, allowing one to learn very complex
-        relationships between your input and output data. These relationships can
-        include things you would never expect, such as the order in which data is
-        fed in per epoch. If the order of data within each epoch is the same, then
-        the model may use this as a way of reducing the training error, which is a
-        sort of overfitting.
-    ui_display_name: Should Shuffle
-steps_per_checkpoint:
-    default_value_reasoning:
-        By default, we evaluate once per epoch, which scales
-        according to the dataset size.
-    description_implications:
-        "Epoch-based evaluation (using the default: 0) is an
-        appropriate fit for tabular datasets, which are small, fit in memory, and
-        train quickly.
-
-        However, this is a poor fit for unstructured datasets, which tend to be much
-        larger, and train more slowly due to larger models.
-
-        It's important to setup evaluation such that you do not wait several hours
-        before getting a single evaluation result. In general, it is not necessary
-        for models to train over the entirety of a dataset, nor evaluate over the
-        entirety of a test set, to produce useful monitoring metrics and signals to
-        indicate model health.
-
-        It is also more engaging and more valuable to ensure a frequent pulse of evaluation
-        metrics, even if they are partial."
-    expected_impact: 1
-    related_parameters:
-        - checkpoints_per_epoch
-    suggested_values: 1000-10000 for larger datasets
-    suggested_values_reasoning:
-        Running evaluation too frequently can be wasteful
-        while running evaluation not frequently enough can be prohibitively uninformative.
-        In many large-scale training runs, evaluation is often configured to run on
-        a sub-epoch time scale, or every few thousand steps.
-    ui_display_name: Steps Per Checkpoint
-train_steps:
-    default_value_reasoning:
-        This defaults to `epochs`, which is a very high training
-        length ceiling. Models will almost always hit early stopping criteria before
-        reaching the absolute end of the training runway.
-    description_implications:
-        Decreasing this parameter will shorten the overall runway for
-        training the model.
-    expected_impact: 1
-    related_parameters:
-        - epochs
-    suggested_values: Leave unset, or 1000000, 1 for debugging
-    suggested_values_reasoning:
-        Usually it's sensible to leave the value of this parameter very high and
-        rely on a solid early stopping policy to dictate when the model should stop
-        training. Some models and hyperparameter configurations require many epochs
-        through the dataset to converge while others converge before a single epoch
-        through the data.
-    ui_display_name: Train Steps
-use_mixed_precision:
-    default_value_reasoning:
-        Speed up training by using float16 parameters where it
-        makes sense.
-    description_implications:
-        Mixed precision training on GPU can dramatically speedup
-        training, with some risks to model convergence.
-    expected_impact: 3
-    literature_references:
-        - https://pytorch.org/blog/what-every-user-should-know-about-mixed-precision-training-in-pytorch/
-    suggested_values: false
-    suggested_values_reasoning:
-        Suggested to enable this if training is taking too
-        long on GPU.
-    ui_display_name: Use Mixed Precision
 validation_field:
     default_value_reasoning:
         Concrete evaluation metrics are usually better than loss,
@@ -425,153 +115,570 @@ validation_metric:
         - validation_field
     suggested_values: default behavior
     ui_display_name: Validation Metric
-learning_rate_scheduler:
-    warmup_evaluations:
-        default_value_reasoning:
-            "Learning rate warmup is most commonly used when training with large batch sizes / distributed
-            training to avoid taking overly large steps at the beginning of training that might result in the
-            process getting stuck in a local optimum. Conventional wisdom when training with large batch sizes is
-            to use a larger learning rate (see: `learning_rate_scaling`) but gradually warm up to the larger learning
-            rate over a few epochs of training in the beginning.
-
-            Even when not training with large batch sizes, the randomness of how weights are initialized can result
-            in strange, noisy gradient updates during the beginning of your training run. As such, it's generally
-            recommended to use a small amount of warmup (e.g., 1 epoch / evaluation) even when the batch size is
-            relatively small."
+ecd:
+    batch_size:
+        commonly_used: true
+        default_value_reasoning: Not too big, not too small.
         description_implications:
-            Learning rate warmup sets a very low learning rate at the beginning of training and gradually
-            (linearly) increases to the base learning rate each step (batch) during training.
-            After your warmup steps you use your "regular" learning rate or learning rate scheduler.
+            There's conflicting evidence about what batch size to
+            use. Using a higher batch size will achieve the highest throughput and training
+            efficiency. However, there's also evidence that depending on other hyperparameters,
+            a smaller batch size may produce a higher quality model.
+            Batch size and learning rate are strongly intertwined,
+            so a commonly adopted strategy to set them is to find a the largest batch size
+            that allows the training process not to run out of memory,
+            and then find the best learning rate that makes the training converge
+            with that batch size.
+        expected_impact: 3
+        related_parameters:
+            - eval_batch_size
+            - learning_rate
+        suggested_values: auto
+        suggested_values_reasoning:
+            Auto batch size will determine the largest batch size that allows
+            the training process not to run out of memory.
+            Alternatively, try at least a few different batch sizes to get a
+            sense of whether and how batch size affects model performance.
+        ui_display_name: Batch Size
+    bucketing_field:
+        expected_impact: 1
+        other_information:
+            When not null, when creating batches, instead of shuffling
+            randomly, the length along the last dimension of the matrix of the specified
+            input feature (i.e. the length of a sequence or text)
+            is used for bucketing examples and then randomly shuffled examples
+            from the same bin are sampled. Padding is trimmed to the longest example in
+            the batch. The specified feature should be either a sequence or text feature
+            and the encoder encoding it has to be rnn. When used, bucketing improves speed
+            of rnn encoding up to 1.5x, depending on the length distribution of the inputs.
+        ui_display_name: Bucketing Field
+    checkpoints_per_epoch:
+        default_value_reasoning:
+            Per-epoch behavior, which scales according to the dataset
+            size.
+        description_implications:
+            "Epoch-based evaluation (using the default: 0) is an
+            appropriate fit for small datasets that fit in memory and
+            train quickly. Commonly available tabular datasets fit in this cateogry.
+    
+            However, this is a poor fit for unstructured datasets, which tend to be much
+            larger, and train more slowly due to larger models.
+    
+            It's important to setup evaluation such that you do not wait several hours
+            before getting a single evaluation result. In general, it is not necessary
+            for models to train over the entirety of a dataset, nor evaluate over the
+            entirety of a test set, to produce useful monitoring metrics and signals to
+            indicate model health.
+    
+            It is also more engaging and more valuable to ensure a frequent pulse of evaluation
+            metrics, even if they are partial."
         expected_impact: 2
         related_parameters:
-            - warmup_fraction
-            - learning_rate_scaling
-        literature_references:
-            - https://arxiv.org/abs/1711.00489
-            - https://datascience.stackexchange.com/questions/55991/in-the-context-of-deep-learning-what-is-training-warmup-steps
-        suggested_values: 0 - 5
+            - train_steps
+            - steps_per_checkpoint
+        suggested_values: 2 - 10, for larger datasets
         suggested_values_reasoning:
-            You don't want to warm up for too long, as after the model is starting to hill climb, you want to use the
-            full weight of the learning rate to descend into good loss minima.
-
-            If you observe your loss curve converging very early into training, within the first few epochs, then
-            increasing learning rate warmup may help to mitigate this effect. Pretrained models can benefit from more
-            warmup to help offset the effects of catastrophic forgetting due to an overly high learning rate.
-        ui_display_name: Warmup Evaluations
-    warmup_fraction:
+            Running evaluation too frequently can be wasteful
+            while running evaluation not frequently enough can be prohibitively uninformative.
+            In many large-scale training runs, evaluation is often configured to run on
+            a sub-epoch time scale, or every few thousand steps.
+        ui_display_name: Checkpoints per epoch
+    epochs:
         default_value_reasoning:
-            Similar to `warmup_evaluations` but expressed as a fraction of the total number of training steps, rather
-            that a certain number of evaluation phases.
-        description_implications: See `warmup_evaluations`.
-        expected_impact: 2
-        related_parameters:
-            - warmup_evaluations
-            - learning_rate_scaling
-        suggested_values: 0.05 - 0.2
-        suggested_values_reasoning:
-            You don't want to warm up for too long, as after the
-            model is starting to hill climb, you want to use the full weight of the learning
-            rate to descend into good loss minima.
-        ui_display_name: Warmup Fraction
-    decay:
+            A very high training length ceiling. Models will almost
+            always hit early stopping criteria before hitting a 100-epoch ceiling.
         description_implications:
-                "It\u2019s almost always a good idea to use a schedule.\
-                \ For most models, try the exponential decay schedule first.\n\nThe exponential\
-                \ schedule divides the learning rate by the same factor (%) every epoch. This\
-                \ means that the learning rate will decrease rapidly in the first few epochs,\
-                \ and spend more epochs with a lower value, but never reach exactly zero.\
-                \ As a rule of thumb, compared to training without a schedule, you can use\
-                \ a slightly higher maximum learning rate. Since the learning rate changes\
-                \ over time, the whole training is not so sensitive to the value picked."
+            Decreasing this will shorten the overall runway for
+            training the model.
+        expected_impact: 3
+        related_parameters:
+            - train_steps
+        suggested_values: 100
+        suggested_values_reasoning:
+            Usually it's sensible to leave this very high and
+            rely on a solid early stopping policy to dictate when the model should stop
+            training. Some models and hyperparameter configurations require many epochs
+            through the dataset to converge while others converge before a single epoch
+            through the data.
+        ui_display_name: Epochs
+    gradient_clipping:
+        default_value_reasoning:
+            A conservative cap on the maximum gradient size to apply
+            over a single training step.
+        description_implications:
+            Gradient clipping is a technique to prevent exploding
+            gradients in very deep networks. Increasing gradient clipping can help with
+            model training loss curve stability, but it can also make training slower
+            as weights may not be updated as fast.
+        expected_impact: 2
+        suggested_values_reasoning:
+            It's usually sensible to enable gradient clipping to make modeling robust
+            to particularly bad or noisy batches of examples.
+        ui_display_name: Gradient Clipping
+    increase_batch_size_eval_metric:
+        expected_impact: 1
+        ui_display_name: "Batch Size Increase: Evaluation Metric"
+    increase_batch_size_eval_split:
+        expected_impact: 1
+        ui_display_name: "Batch Size Increase: Evaluation Split"
+    increase_batch_size_on_plateau:
+        expected_impact: 1
+        ui_display_name: Batch Size Increase On Plateau
+    increase_batch_size_on_plateau_patience:
+        expected_impact: 1
+        ui_display_name: "Batch Size Increase On Plateau: Patience"
+    increase_batch_size_on_plateau_rate:
+        expected_impact: 1
+        ui_display_name: "Batch Size Increase On Plateau: Rate"
+    learning_rate:
+        commonly_used: true
+        default_value_reasoning: Middle of the road learning rate to start with.
+        description_implications:
+            The learning rate is a hyperparameter that controls
+            how much to change the model in response to the estimated error each time
+            the model weights are updated. Increasing the learning rate may decrease learning
+            curve stability but also increase learning speed and efficiency, leading to
+            faster model convergence. Decreasing the learning rate can help stabilize
+            learning curves at the cost of slower time to convergence.
+        expected_impact: 3
+        suggested_values: 0.00001 - 0.1 or auto
+        related_parameters:
+            - decay
+        suggested_values_reasoning:
+            Tabular models trained from scratch typically use
+            learning rates around 1e-3 while learning rates for pre-trained models should
+            be much smaller, typically around 1e-5, which is important to mitigate catastrophic
+            forgetting. To make the model more robust to any specific choice of learning
+            rate, consider turning enabling learning rate decay.
+        ui_display_name: Learning Rate
+    learning_rate_scaling:
+        default_value_reasoning:
+            Traditionally the learning rate is scaled linearly with
+            the number of workers to reflect the proportion by which the effective batch
+            size is increased.
+        description_implications:
+            Traditionally the learning rate is scaled linearly with
+            the number of workers to reflect the proportion by which the effective batch
+            size is increased. For very large batch sizes, a softer square-root scale
+            can sometimes lead to better model performance. If the learning rate is hand-tuned
+            for a given number of workers, setting this value to constant can be used
+            to disable scale-up.
+        expected_impact: 1
+        suggested_values: linear or sqrt
+        suggested_values_reasoning:
+            Traditionally the learning rate is scaled linearly
+            with the number of workers to reflect the proportion by which the effective
+            batch size is increased. For very large batch sizes, a softer square-root
+            scale can sometimes lead to better model performance. If the learning rate
+            is hand-tuned for a given number of workers, setting this value to constant
+            can be used to disable scale-up.
+        ui_display_name: Learning Rate Scaling
+    max_batch_size:
+        default_value_reasoning: Not typically required.
+        description_implications:
+            Value used to manually limit the batch sizes explored
+            by auto batch size tuning and batch size increasing on plateau.
+        example_value:
+            - 1024
+        expected_impact: 1
+        related_parameters:
+            - batch_size
+            - increase_batch_size_on_plateau
+        ui_display_name: Max Batch Size
+    optimizer:
+        default_value_reasoning:
+            First try Adam because it is shown to return good
+            results without an advanced fine tuning.
+        description_implications:
+            "Choosing a good optimizer for your machine learning
+             project can be overwhelming. Popular deep learning libraries such as PyTorch
+             or TensorFLow offer a broad selection of different optimizers, each
+             with its own strengths and weaknesses. However, picking the wrong optimizer
+             can have a substantial negative impact on the performance of your machine
+             learning model [1][2]. This makes optimizers a critical design choice in
+             the process of building, testing, and deploying your machine learning model."
         expected_impact: 3
         literature_references:
-                - "https://peltarion.com/knowledge-center/documentation/modeling-view/run-a-model/optimization-principles-(in-deep-learning)/learning-rate-schedule "
-        related_parameters:
-                - decay_rate
-                - decay_steps
-                - learning_rate
-        suggested_values: exponential
+            - https://www.youtube.com/watch?v=mdKjMPmcWjY
+        suggested_values: adam, adamw
         suggested_values_reasoning:
-                Starting with exponential decay is a safe place to start, as it is a "softer" decrease in the learning
-                rate over time, as compared with linear, which is more steep after the initial drop. Linear decay is
-                most useful when the risk of catastrophic forgetting is very high (e.g, for fine-tuning pretrained models).
-                If you observe your loss curves shooting up (even on the training set) in later epochs, increasing the
-                decay rate may help mitigate this effect.
-        ui_display_name: Decay
-    decay_rate:
+            "As a rule of thumb: If you have the resources to
+            find a good learning rate schedule, SGD with momentum is a solid choice. If
+            you are in need of quick results without extensive hyperparameter tuning,
+            adaptive gradient methods like adam or adamw are good choices."
+        ui_display_name: Optimizer
+    regularization_lambda:
         default_value_reasoning:
-            4-5% decay each step is an empirically useful decay
-            rate to start with.
+            How to tune the overall impact of the regularization
+            term by multiplying its value by a scalar known as lambda (also called the
+            regularization rate).
         description_implications:
-            Increasing the decay rate will lower the learning rate
-            faster. This could make the model more robust to a bad (too high) initial
-            learning rate, but a decay rate that is too high could prohibit the model
-            from learning anything at all.
+            "When choosing a lambda value, the goal is to strike
+            the right balance between simplicity and training-data fit:
+    
+    
+            If your lambda value is too high, your model will be simple, but you run the
+            risk of underfitting your data. Your model won't learn enough about the training
+            data to make useful predictions.
+    
+    
+            If your lambda value is too low, your model will be more complex, and you
+            run the risk of overfitting your data. Your model will learn too much about
+            the particularities of the training data, and won't be able to generalize
+            to new data. The ideal value of lambda produces a model that generalizes well
+            to new, previously unseen data. Unfortunately, that ideal value of lambda
+            is data-dependent, so you'll need to do some tuning. We recommend trying
+            a handful of values (0.001, 0.02, ... 0.4) gradually increasing the value until
+            training curves get worse"
         expected_impact: 2
         literature_references:
-            - "https://peltarion.com/knowledge-center/documentation/modeling-view/run-a-model/optimization-principles-(in-deep-learning)/learning-rate-schedule "
+            - "https://developers.google.com/machine-learning/crash-course/regularization-for-simplicity/lambda "
         related_parameters:
-            - decay_steps
-            - learning_rate
-        suggested_values: 0.9 - 0.96
+            - regularization_type
+        suggested_values: 0.1
         suggested_values_reasoning:
-            Since this controls exponential decay, even a small
-            decay rate will still be strongly impactful.
-        ui_display_name: Decay Rate
-    decay_steps:
-        default_value_reasoning:
-            This default essentially enables the `learning_rate`
-            to decay by a factor of the `decay_rate` at 10000 training steps.
+            "The most common type of regularization is L2, also
+             called weight decay, with values often on a logarithmic
+             scale between 0 and 0.1, such as 0.1, 0.001, 0.0001, etc."
+        ui_display_name: Regularization Lambda
+    regularization_type:
+        default_value_reasoning: L2 is a standard regularization to start with.
         description_implications:
-            By increasing the value of decay steps, you are increasing
-            the number of training steps it takes to decay the learning rate by a factor
-            of `decay_rate`. In other words, the bigger this parameter, the slower the
-            learning rate decays.
-        example_value:
-            - 5000
-        expected_impact: 2
+            "L1 regularization penalizes the sum of absolute values
+             of the weights, whereas L2 regularization penalizes the sum of squares of
+             the weights.
+    
+             The L1 regularization solution is sparse, meaning some weights will be zero,
+             others will be large.
+             The L2 regularization solution is non-sparse, most weights will be small.
+    
+             L2 regularization does not perform feature
+             selection, since weights are only reduced to values near 0 instead of 0.
+             L1 regularization implicitly performs feature selection. L1 regularization is more
+             robust to outliers."
+        expected_impact: 3
+        literature_references:
+            - "https://neptune.ai/blog/fighting-overfitting-with-l1-or-l2-regularization#:~:text=The%20differences%20between%20L1%20and,regularization%20solution%20is%20non%2Dsparse. "
         related_parameters:
-            - decay_rate
-            - learning_rate
-        suggested_values: 10000 +/- 500 at a time
-        suggested_values_reasoning:
-            The decay in the learning rate is calculated as the
-            training step divided by the `decay_steps` plus one. Then the `decay_rate`
-            is raised to the power of this exponent which is then multiplied to the current
-            learning rate. All this to say that the learning rate is only decayed by a
-            factor of the set `decay_rate` when the training step reaches the `decay_steps`
-            and then subsequently when it reaches any multiple of `decay_steps`. You can
-            think of `decay_steps` as a rate of decay for the `decay_rate`.
-        ui_display_name: Decay Steps
-    staircase:
+            - regularization_lambda
+        suggested_values: L2
+        ui_display_name: Regularization Type
+    should_shuffle:
         default_value_reasoning:
-            Performs learning rate decay in stepwise discrete manner.
+            In general, it's a good idea to mix up data on each batch
+            so that the neural network gets the broadest exposure to the dataset.
         description_implications:
-            An excessively aggressive decay results in optimizers
-            never reaching the minima, whereas a slow decay leads to chaotic updates without
-            significant improvement. Discrete learning rate decay is another parameter to help
-            tune a balance.
+            Turning off mini-batch shuffling can make training faster,
+            but it may lead to worse performance overall as shuffling helps mitigate overfitting.
         expected_impact: 1
         literature_references:
-            - https://neptune.ai/blog/how-to-choose-a-learning-rate-scheduler
+            - "https://stats.stackexchange.com/questions/245502/why-should-we-shuffle-data-while-training-a-neural-network#:~:text=it%20helps%20the%20training%20converge,the%20order%20of%20the%20training "
+        suggested_values: true
+        suggested_values_reasoning:
+            One of the most powerful things about neural networks
+            is that they can be very complex functions, allowing one to learn very complex
+            relationships between your input and output data. These relationships can
+            include things you would never expect, such as the order in which data is
+            fed in per epoch. If the order of data within each epoch is the same, then
+            the model may use this as a way of reducing the training error, which is a
+            sort of overfitting.
+        ui_display_name: Should Shuffle
+    steps_per_checkpoint:
+        default_value_reasoning:
+            By default, we evaluate once per epoch, which scales
+            according to the dataset size.
+        description_implications:
+            "Epoch-based evaluation (using the default: 0) is an
+            appropriate fit for tabular datasets, which are small, fit in memory, and
+            train quickly.
+    
+            However, this is a poor fit for unstructured datasets, which tend to be much
+            larger, and train more slowly due to larger models.
+    
+            It's important to setup evaluation such that you do not wait several hours
+            before getting a single evaluation result. In general, it is not necessary
+            for models to train over the entirety of a dataset, nor evaluate over the
+            entirety of a test set, to produce useful monitoring metrics and signals to
+            indicate model health.
+    
+            It is also more engaging and more valuable to ensure a frequent pulse of evaluation
+            metrics, even if they are partial."
+        expected_impact: 1
+        related_parameters:
+            - checkpoints_per_epoch
+        suggested_values: 1000-10000 for larger datasets
+        suggested_values_reasoning:
+            Running evaluation too frequently can be wasteful
+            while running evaluation not frequently enough can be prohibitively uninformative.
+            In many large-scale training runs, evaluation is often configured to run on
+            a sub-epoch time scale, or every few thousand steps.
+        ui_display_name: Steps Per Checkpoint
+    train_steps:
+        default_value_reasoning:
+            This defaults to `epochs`, which is a very high training
+            length ceiling. Models will almost always hit early stopping criteria before
+            reaching the absolute end of the training runway.
+        description_implications:
+            Decreasing this parameter will shorten the overall runway for
+            training the model.
+        expected_impact: 1
+        related_parameters:
+            - epochs
+        suggested_values: Leave unset, or 1000000, 1 for debugging
+        suggested_values_reasoning:
+            Usually it's sensible to leave the value of this parameter very high and
+            rely on a solid early stopping policy to dictate when the model should stop
+            training. Some models and hyperparameter configurations require many epochs
+            through the dataset to converge while others converge before a single epoch
+            through the data.
+        ui_display_name: Train Steps
+    use_mixed_precision:
+        default_value_reasoning:
+            Speed up training by using float16 parameters where it
+            makes sense.
+        description_implications:
+            Mixed precision training on GPU can dramatically speedup
+            training, with some risks to model convergence.
+        expected_impact: 3
+        literature_references:
+            - https://pytorch.org/blog/what-every-user-should-know-about-mixed-precision-training-in-pytorch/
         suggested_values: false
         suggested_values_reasoning:
-            We have not found strong evidence that discretely
-            decaying the learning rate is superior to doing so continuously in general,
-            but in specific tasks it might have a positive impact.
-        ui_display_name: Staircase
-    reduce_on_plateau:
+            Suggested to enable this if training is taking too
+            long on GPU.
+        ui_display_name: Use Mixed Precision
+    learning_rate_scheduler:
+        warmup_evaluations:
+            default_value_reasoning:
+                "Learning rate warmup is most commonly used when training with large batch sizes / distributed
+                training to avoid taking overly large steps at the beginning of training that might result in the
+                process getting stuck in a local optimum. Conventional wisdom when training with large batch sizes is
+                to use a larger learning rate (see: `learning_rate_scaling`) but gradually warm up to the larger learning
+                rate over a few epochs of training in the beginning.
+    
+                Even when not training with large batch sizes, the randomness of how weights are initialized can result
+                in strange, noisy gradient updates during the beginning of your training run. As such, it's generally
+                recommended to use a small amount of warmup (e.g., 1 epoch / evaluation) even when the batch size is
+                relatively small."
+            description_implications:
+                Learning rate warmup sets a very low learning rate at the beginning of training and gradually
+                (linearly) increases to the base learning rate each step (batch) during training.
+                After your warmup steps you use your "regular" learning rate or learning rate scheduler.
+            expected_impact: 2
+            related_parameters:
+                - warmup_fraction
+                - learning_rate_scaling
+            literature_references:
+                - https://arxiv.org/abs/1711.00489
+                - https://datascience.stackexchange.com/questions/55991/in-the-context-of-deep-learning-what-is-training-warmup-steps
+            suggested_values: 0 - 5
+            suggested_values_reasoning:
+                You don't want to warm up for too long, as after the model is starting to hill climb, you want to use the
+                full weight of the learning rate to descend into good loss minima.
+    
+                If you observe your loss curve converging very early into training, within the first few epochs, then
+                increasing learning rate warmup may help to mitigate this effect. Pretrained models can benefit from more
+                warmup to help offset the effects of catastrophic forgetting due to an overly high learning rate.
+            ui_display_name: Warmup Evaluations
+        warmup_fraction:
+            default_value_reasoning:
+                Similar to `warmup_evaluations` but expressed as a fraction of the total number of training steps, rather
+                that a certain number of evaluation phases.
+            description_implications: See `warmup_evaluations`.
+            expected_impact: 2
+            related_parameters:
+                - warmup_evaluations
+                - learning_rate_scaling
+            suggested_values: 0.05 - 0.2
+            suggested_values_reasoning:
+                You don't want to warm up for too long, as after the
+                model is starting to hill climb, you want to use the full weight of the learning
+                rate to descend into good loss minima.
+            ui_display_name: Warmup Fraction
+        decay:
+            description_implications:
+                    "It\u2019s almost always a good idea to use a schedule.\
+                    \ For most models, try the exponential decay schedule first.\n\nThe exponential\
+                    \ schedule divides the learning rate by the same factor (%) every epoch. This\
+                    \ means that the learning rate will decrease rapidly in the first few epochs,\
+                    \ and spend more epochs with a lower value, but never reach exactly zero.\
+                    \ As a rule of thumb, compared to training without a schedule, you can use\
+                    \ a slightly higher maximum learning rate. Since the learning rate changes\
+                    \ over time, the whole training is not so sensitive to the value picked."
+            expected_impact: 3
+            literature_references:
+                    - "https://peltarion.com/knowledge-center/documentation/modeling-view/run-a-model/optimization-principles-(in-deep-learning)/learning-rate-schedule "
+            related_parameters:
+                    - decay_rate
+                    - decay_steps
+                    - learning_rate
+            suggested_values: exponential
+            suggested_values_reasoning:
+                    Starting with exponential decay is a safe place to start, as it is a "softer" decrease in the learning
+                    rate over time, as compared with linear, which is more steep after the initial drop. Linear decay is
+                    most useful when the risk of catastrophic forgetting is very high (e.g, for fine-tuning pretrained models).
+                    If you observe your loss curves shooting up (even on the training set) in later epochs, increasing the
+                    decay rate may help mitigate this effect.
+            ui_display_name: Decay
+        decay_rate:
+            default_value_reasoning:
+                4-5% decay each step is an empirically useful decay
+                rate to start with.
+            description_implications:
+                Increasing the decay rate will lower the learning rate
+                faster. This could make the model more robust to a bad (too high) initial
+                learning rate, but a decay rate that is too high could prohibit the model
+                from learning anything at all.
+            expected_impact: 2
+            literature_references:
+                - "https://peltarion.com/knowledge-center/documentation/modeling-view/run-a-model/optimization-principles-(in-deep-learning)/learning-rate-schedule "
+            related_parameters:
+                - decay_steps
+                - learning_rate
+            suggested_values: 0.9 - 0.96
+            suggested_values_reasoning:
+                Since this controls exponential decay, even a small
+                decay rate will still be strongly impactful.
+            ui_display_name: Decay Rate
+        decay_steps:
+            default_value_reasoning:
+                This default essentially enables the `learning_rate`
+                to decay by a factor of the `decay_rate` at 10000 training steps.
+            description_implications:
+                By increasing the value of decay steps, you are increasing
+                the number of training steps it takes to decay the learning rate by a factor
+                of `decay_rate`. In other words, the bigger this parameter, the slower the
+                learning rate decays.
+            example_value:
+                - 5000
+            expected_impact: 2
+            related_parameters:
+                - decay_rate
+                - learning_rate
+            suggested_values: 10000 +/- 500 at a time
+            suggested_values_reasoning:
+                The decay in the learning rate is calculated as the
+                training step divided by the `decay_steps` plus one. Then the `decay_rate`
+                is raised to the power of this exponent which is then multiplied to the current
+                learning rate. All this to say that the learning rate is only decayed by a
+                factor of the set `decay_rate` when the training step reaches the `decay_steps`
+                and then subsequently when it reaches any multiple of `decay_steps`. You can
+                think of `decay_steps` as a rate of decay for the `decay_rate`.
+            ui_display_name: Decay Steps
+        staircase:
+            default_value_reasoning:
+                Performs learning rate decay in stepwise discrete manner.
+            description_implications:
+                An excessively aggressive decay results in optimizers
+                never reaching the minima, whereas a slow decay leads to chaotic updates without
+                significant improvement. Discrete learning rate decay is another parameter to help
+                tune a balance.
+            expected_impact: 1
+            literature_references:
+                - https://neptune.ai/blog/how-to-choose-a-learning-rate-scheduler
+            suggested_values: false
+            suggested_values_reasoning:
+                We have not found strong evidence that discretely
+                decaying the learning rate is superior to doing so continuously in general,
+                but in specific tasks it might have a positive impact.
+            ui_display_name: Staircase
+        reduce_on_plateau:
+            expected_impact: 3
+            ui_display_name: Reduce On Plateau
+        reduce_on_plateau_patience:
+            expected_impact: 2
+            ui_display_name: Reduce On Plateau Patience
+        reduce_on_plateau_rate:
+            expected_impact: 2
+            ui_display_name: Reduce On Plateau Rate
+        reduce_eval_metric:
+            expected_impact: 1
+            ui_display_name: Reduce Eval Metric
+        reduce_eval_split:
+            expected_impact: 1
+            ui_display_name: Reduce Eval Split
+gbm:
+    max_depth:
         expected_impact: 3
-        ui_display_name: Reduce On Plateau
-    reduce_on_plateau_patience:
+    drop_rate:
         expected_impact: 2
-        ui_display_name: Reduce On Plateau Patience
-    reduce_on_plateau_rate:
+    tree_learner:
         expected_impact: 2
-        ui_display_name: Reduce On Plateau Rate
-    reduce_eval_metric:
+    boosting_type:
+        expected_impact: 3
+    boosting_rounds_per_checkpoint:
+        expected_impact: 2
+    num_boost_round:
+        expected_impact: 2
+    num_leaves:
+        expected_impact: 2
+    min_data_in_leaf:
+        expected_impact: 2
+    min_sum_hessian_in_leaf:
         expected_impact: 1
-        ui_display_name: Reduce Eval Metric
-    reduce_eval_split:
+    bagging_fraction:
+        expected_impact: 3
+    pos_bagging_fraction:
+        expected_impact: 2
+    neg_bagging_fraction:
+        expected_impact: 2
+    bagging_freq:
+        expected_impact: 2
+    bagging_seed:
+        expected_impact: 2
+    feature_fraction:
+        expected_impact: 3
+    feature_fraction_bynode:
+        expected_impact: 2
+    feature_fraction_seed:
+        expected_impact: 2
+    extra_trees:
+        expected_impact: 3
+    extra_seed:
+        expected_impact: 2
+    max_delta_step:
         expected_impact: 1
-        ui_display_name: Reduce Eval Split
+    lambda_l1:
+        expected_impact: 3
+    lambda_l2:
+        expected_impact: 3
+    linear_lambda:
+        expected_impact: 2
+    min_gain_to_split:
+        expected_impact: 1
+    max_drop:
+        expected_impact: 2
+    skip_drop:
+        expected_impact: 2
+    xgboost_dart_mode:
+        expected_impact: 1
+    uniform_drop:
+        expected_impact: 2
+    drop_seed:
+        expected_impact: 2
+    top_rate:
+        expected_impact: 1
+    other_rate:
+        expected_impact: 1
+    min_data_per_group:
+        expected_impact: 1
+    max_cat_threshold:
+        expected_impact: 1
+    cat_l2:
+        expected_impact: 1
+    cat_smooth:
+        expected_impact: 1
+    max_cat_to_onehot:
+        expected_impact: 1
+    cegb_tradeoff:
+        expected_impact: 1
+    cegb_penalty_split:
+        expected_impact: 1
+    path_smooth:
+        expected_impact: 1
+    verbose:
+        expected_impact: 1
+    max_bin:
+        expected_impact: 1
+    feature_pre_filter:
+        expected_impact: 1
