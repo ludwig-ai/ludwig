@@ -56,8 +56,8 @@ from ludwig.schema.features.utils import (
     input_config_registry,
     output_config_registry,
 )
-from ludwig.schema.model_types.base import ModelConfig  # noqa
 from ludwig.schema.hyperopt import HyperoptConfig
+from ludwig.schema.model_types.base import ModelConfig  # noqa
 from ludwig.schema.optimizers import get_optimizer_cls
 from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.schema.split import get_split_cls

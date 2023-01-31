@@ -17,8 +17,8 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import ACTIVE, COLUMN, NAME, PROC_COLUMN, TYPE
 from ludwig.modules.reduction_modules import reduce_mode_registry
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, ParameterMetadata
-from ludwig.utils.registry import Registry
 from ludwig.utils.misc_utils import memoized_method
+from ludwig.utils.registry import Registry
 from ludwig.utils.torch_utils import activations, initializer_registry
 
 RECURSION_STOP_ENUM = {"weights_initializer", "bias_initializer", "norm_params"}
