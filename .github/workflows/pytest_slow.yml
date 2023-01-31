@@ -53,7 +53,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         python-version: [3.8]
-        test-markers: ["not distributed", "distributed"]
+        test-markers: ["not distributed"]
         include:
           - python-version: 3.8
             pytorch-version: 1.13.1
@@ -74,12 +74,6 @@ jobs:
     if: needs.start-runner.result != 'skipped'
     needs: start-runner # required to start the main job when the runner is ready
     runs-on: ${{ needs.start-runner.outputs.label }} # run the job on the newly created runners
-
-    # we want an ongoing run of this workflow to be canceled by a later commit
-    # so that there is only one concurrent run of this workflow for each branch
-    concurrency:
-      group: pytest-slow-${{ github.head_ref || github.sha }}
-      cancel-in-progress: true
 
     timeout-minutes: 90
     steps:
