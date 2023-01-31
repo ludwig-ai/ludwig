@@ -296,7 +296,7 @@ class Stacked2DCNNConfig(ImageEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("resnet_legacy", IMAGE)
+@register_encoder_config("_resnet_legacy", IMAGE)
 @ludwig_dataclass
 class ResNetConfig(ImageEncoderConfig):
     @staticmethod
@@ -550,7 +550,7 @@ class MLPMixerConfig(ImageEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("vit_legacy", IMAGE)
+@register_encoder_config("_vit_legacy", IMAGE)
 @ludwig_dataclass
 class ViTConfig(ImageEncoderConfig):
     @staticmethod

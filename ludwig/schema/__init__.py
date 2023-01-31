@@ -1,8 +1,10 @@
 from functools import lru_cache
 from threading import Lock
 
+import jsonschema.exceptions
 from jsonschema import Draft7Validator, validate
 from jsonschema.validators import extend
+from marshmallow import ValidationError
 
 from ludwig.api_annotations import Deprecated, DeveloperAPI
 from ludwig.constants import MODEL_ECD, MODEL_TYPE, PREPROCESSING, SPLIT
@@ -75,7 +77,15 @@ def validate_upgraded_config(updated_config):
     splitter.validate(updated_config)
 
     with VALIDATION_LOCK:
-        validate(instance=updated_config, schema=get_schema(model_type=model_type), cls=get_validator())
+        try:
+            validate(instance=updated_config, schema=get_schema(model_type=model_type), cls=get_validator())
+        except jsonschema.exceptions.ValidationError as e:
+            # Capture error but don't raise here, otherwise we get the full output from `e`, which contains a dump
+            # of the entire schema
+            error = e
+
+    if error is not None:
+        raise ValidationError(f"Failed to validate JSON schema for config. Error: {error.message}")
 
 
 @Deprecated(message="Use 'from ludwig.config_validation.validations import validate_config' instead.")

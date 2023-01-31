@@ -1,5 +1,5 @@
 import pytest
-from jsonschema.exceptions import ValidationError
+from marshmallow import ValidationError
 
 from ludwig.config_validation.validation import get_schema, validate_config
 from ludwig.constants import MODEL_ECD, TRAINER
@@ -67,17 +67,17 @@ def test_config_bad_combiner():
 
     # combiner without type
     del config["combiner"]["type"]
-    with pytest.raises(ValidationError, match=r"^'type' is a required .*"):
+    with pytest.raises(ValidationError, match=r"'type' is a required .*"):
         validate_config(config)
 
     # bad combiner type
     config["combiner"]["type"] = "fake"
-    with pytest.raises(ValidationError, match=r"^'fake' is not one of .*"):
+    with pytest.raises(ValidationError, match=r"'fake' is not one of .*"):
         validate_config(config)
 
     # bad combiner format (list instead of dict)
     config["combiner"] = [{"type": "tabnet"}]
-    with pytest.raises(ValidationError, match=r"^\[\{'type': 'tabnet'\}\] is not of .*"):
+    with pytest.raises(ValidationError, match=r"\[\{'type': 'tabnet'\}\] is not of .*"):
         validate_config(config)
 
     # bad combiner parameter types
@@ -86,7 +86,7 @@ def test_config_bad_combiner():
         "num_layers": 10,
         "dropout": False,
     }
-    with pytest.raises(ValidationError, match=r"^False is not of type.*"):
+    with pytest.raises(ValidationError, match=r"False is not of type.*"):
         validate_config(config)
 
     # bad combiner parameter range
