@@ -39,6 +39,7 @@ from ludwig.constants import (
     INPUT_FEATURES,
     LOSS,
     MISSING_VALUE_STRATEGY,
+    MODEL_ECD,
     NAME,
     NUM_SAMPLES,
     NUMBER,
@@ -746,10 +747,11 @@ def _upgrade_legacy_image_encoders(feature: FeatureConfigDict) -> FeatureConfigD
     if encoder_type not in encoder_mapping:
         return feature
 
-    new_encoder_cls = get_encoder_cls(feature[TYPE], encoder_type)
+    # For this version of Ludwig, only ECD supported these encoders.
+    new_encoder_cls = get_encoder_cls(MODEL_ECD, feature[TYPE], encoder_type)
     new_encoder_fields = new_encoder_cls.get_valid_field_names()
 
-    legacy_encoder_cls = get_encoder_cls(feature[TYPE], encoder_mapping[encoder_type])
+    legacy_encoder_cls = get_encoder_cls(MODEL_ECD, feature[TYPE], encoder_mapping[encoder_type])
     legacy_encoder_fields = legacy_encoder_cls.get_valid_field_names()
 
     user_fields = set(encoder.keys())

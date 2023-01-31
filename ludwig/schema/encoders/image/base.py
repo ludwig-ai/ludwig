@@ -304,7 +304,7 @@ class ResNetConfig(ImageEncoderConfig):
         return "ResNet"
 
     type: str = schema_utils.ProtectedString(
-        "resnet",
+        "_resnet_legacy",
         description=ENCODER_METADATA["ResNet"]["type"].long_description,
     )
 
@@ -558,7 +558,7 @@ class ViTConfig(ImageEncoderConfig):
         return "ViT"
 
     type: str = schema_utils.ProtectedString(
-        "vit",
+        "_vit_legacy",
         description=ENCODER_METADATA["ViT"]["type"].long_description,
     )
 
