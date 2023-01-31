@@ -1280,8 +1280,8 @@ def get_features_with_cacheable_fixed_embeddings(
     for feature_config in feature_configs:
         # deal with encoders that have fixed preprocessing
         if ENCODER in feature_config:
-            encoder = feature_config[ENCODER]
-            if TYPE in encoder:
+            encoder_params = feature_config[ENCODER]
+            if TYPE in encoder_params:
                 preprocessing = metadata[feature_config[NAME]][PREPROCESSING]
                 if preprocessing.get("cache_encoder_embeddings"):
                     # TODO(travis): passing in MODEL_ECD is a hack here that can be removed once we move to using
@@ -1289,11 +1289,12 @@ def get_features_with_cacheable_fixed_embeddings(
                     # encoder schema at all. This hack works for now because all encoders are supported by ECD, so
                     # there is no chance of a GBM model using an encoder not supported by ECD, but this could change
                     # in the future.
-                    encoder_class = get_encoder_cls(MODEL_ECD, feature_config[TYPE], encoder[TYPE])
-                    if not encoder_class.can_cache_embeddings(encoder):
+                    encoder_class = get_encoder_cls(MODEL_ECD, feature_config[TYPE], encoder_params[TYPE])
+                    encoder = encoder_class.from_dict(encoder_params)
+                    if not encoder.can_cache_embeddings():
                         raise ValueError(
                             f"Set `cache_encoder_embeddings=True` for feature {feature_config[NAME]} with "
-                            f"encoder {encoder[TYPE]}, but encoder embeddings are not static."
+                            f"encoder {encoder_params[TYPE]}, but encoder embeddings are not static."
                         )
 
                     # Convert to Ray Datasets, map batches to encode, then convert back to Dask
