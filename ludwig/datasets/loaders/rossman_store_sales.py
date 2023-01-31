@@ -27,7 +27,6 @@ class RossmanStoreSalesLoader(DatasetLoader):
 
     def load_unprocessed_dataframe(self, file_paths: List[str]) -> pd.DataFrame:
         """Load dataset files into a dataframe."""
-
         stores_df = pd.read_csv(os.path.join(self.raw_dataset_dir, "store.csv"))
 
         train_df = pd.read_csv(os.path.join(self.raw_dataset_dir, "train.csv"), low_memory=False)

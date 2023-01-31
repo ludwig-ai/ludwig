@@ -122,7 +122,6 @@ class IntegratedGradientsExplainer(Explainer):
             `expected_values`: (List[float]) of length [output feature cardinality] Average convergence delta for each
             label in the target feature's vocab.
         """
-
         # TODO(travis): add back skip encoders at the end in finally. Shouldn't be an issue in most cases as we
         # typically perform explanations on a loaded model and don't use it to predict afterwards.
         self.model.model.unskip()

@@ -290,7 +290,6 @@ class R2Score(LudwigMetric):
 
     def compute(self) -> Tensor:
         """Computes r2 score over the metric states."""
-
         # self.total maps to the number of observations in preds/target computed during update()
         if self.total <= 1:
             logger.warning(

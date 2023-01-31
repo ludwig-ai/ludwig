@@ -8,7 +8,8 @@ class LazyLoader(types.ModuleType):
     `contrib`, and `ffmpeg` are examples of modules that are large and not always
     needed, and this allows them to only be loaded when they are used.
 
-    Copied from: https://github.com/tensorflow/tensorflow/blob/master/tensorflow/python/util/lazy_loader.py
+    Copied from:
+    https://github.com/tensorflow/tensorflow/blob/master/tensorflow/python/util/lazy_loader.py
     """
 
     # The lint error here is incorrect.

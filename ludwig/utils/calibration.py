@@ -304,7 +304,8 @@ class MatrixScaling(CalibrationModule):
         """Off-Diagonal and Intercept Regularisation (ODIR).
 
         Described in "Beyond temperature scaling: Obtaining well-calibrated multiclass probabilities with Dirichlet
-        calibration" https://proceedings.neurips.cc/paper/2019/file/8ca01ea920679a0fe3728441494041b9-Paper.pdf
+        calibration"
+        https://proceedings.neurips.cc/paper/2019/file/8ca01ea920679a0fe3728441494041b9-Paper.pdf
         """
         off_diagonal_entries = torch.masked_select(self.w, ~torch.eye(self.num_classes, dtype=bool))
         weight_matrix_loss = self.off_diagonal_l2 * torch.linalg.vector_norm(off_diagonal_entries)

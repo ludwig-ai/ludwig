@@ -768,7 +768,6 @@ class Conv2DStack(LudwigModule):
 
     def _check_in_channels(self, first_in_channels: Optional[int], layers: Optional[List[Dict]]) -> None:
         """Confirms that in_channels for first layer of the stack exists."""
-
         if first_in_channels is not None:
             return first_in_channels
         elif layers is not None and len(layers) > 0 and "in_channels" in layers[0]:

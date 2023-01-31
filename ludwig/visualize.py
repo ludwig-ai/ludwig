@@ -3756,7 +3756,6 @@ def hyperopt_report_cli(hyperopt_stats_path, output_directory=None, file_format=
     :param file_format: format of the output plot, pdf or png
     :return:
     """
-
     hyperopt_report(hyperopt_stats_path, output_directory=output_directory, file_format=file_format)
 
 
@@ -3803,7 +3802,6 @@ def hyperopt_hiplot_cli(hyperopt_stats_path, output_directory=None, **kwargs):
     :param output_directory: path where to save the output plots
     :return:
     """
-
     hyperopt_hiplot(hyperopt_stats_path, output_directory=output_directory)
 
 

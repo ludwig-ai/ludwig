@@ -444,7 +444,6 @@ class H3RNN(Encoder):
                Shape: [batch x H3_INPUT_SIZE], type torch.int8
         :type inputs: Tensor
         """
-
         # ================ Embeddings ================
         embedded_h3 = self.h3_embed(inputs)
 

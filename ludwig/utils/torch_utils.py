@@ -143,7 +143,6 @@ def reg_loss(model: nn.Module, regularizer: str, l1: float = 0.01, l2: float = 0
     Returns:
         Regularization loss for the model (float).
     """
-
     if regularizer == "l1":
         l1_reg = l1 * sum(torch.abs(p).sum() for p in model.parameters())
         return l1_reg
