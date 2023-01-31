@@ -12,6 +12,7 @@ from jsonschema.exceptions import ValidationError
 
 from ludwig.api import LudwigModel
 from ludwig.constants import COLUMN, INPUT_FEATURES, MODEL_TYPE, NAME, OUTPUT_FEATURES, TRAINER
+from ludwig.error import ConfigValidationError
 from tests.integration_tests import synthetic_test_data
 from tests.integration_tests.utils import binary_feature, category_feature, generate_data, number_feature, text_feature
 
@@ -104,7 +105,7 @@ def run_test_gbm_multiple_outputs(tmpdir, backend_config):
         category_feature(decoder={"vocab_size": 3}),
     ]
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         _train_and_predict_gbm(input_features, output_features, tmpdir, backend_config)
 
 

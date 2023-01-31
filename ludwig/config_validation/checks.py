@@ -81,6 +81,11 @@ def check_basic_required_parameters(config: ModelConfigDict) -> None:
             raise ConfigValidationError("All input features must have a name.")
         if TYPE not in input_feature:
             raise ConfigValidationError(f"Input feature {input_feature[NAME]} must have a type.")
+        if input_feature[TYPE] not in get_encoder_registry():
+            raise ConfigValidationError(
+                f"Input feature {input_feature[NAME]} uses an invalid/unsupported type "
+                f"'{input_feature[TYPE]}'. Input feature types: {list(get_encoder_registry().keys())}."
+            )
         if ENCODER in input_feature:
             if (
                 TYPE in input_feature[ENCODER]
