@@ -13,6 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 import json
+import os
 import os.path
 import uuid
 from typing import Dict, Tuple
@@ -58,7 +59,7 @@ from tests.integration_tests.utils import (
 
 ray = pytest.importorskip("ray")
 
-from ludwig.hyperopt.execution import get_build_hyperopt_executor  # noqa
+from ludwig.hyperopt.execution import get_build_hyperopt_executor, RayTuneExecutor  # noqa
 
 pytestmark = pytest.mark.distributed
 
@@ -187,7 +188,7 @@ def test_hyperopt_search_alg(
     assert isinstance(results, HyperoptResults)
 
     with hyperopt_executor._get_best_model_path(
-        results.experiment_analysis.best_trial.logdir, results.experiment_analysis
+        results.experiment_analysis.best_trial, results.experiment_analysis, {}
     ) as path:
         assert path is not None
         assert isinstance(path, str)
@@ -343,6 +344,13 @@ def _run_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, backend, ray_
             assert fs_utils.path_exists(
                 os.path.join(tmpdir, experiment_name, f"trial_{trial.trial_id}"),
             )
+
+    with RayTuneExecutor._get_best_model_path(
+        hyperopt_results.experiment_analysis.best_trial, hyperopt_results.experiment_analysis, minio_test_creds()
+    ) as path:
+        assert path is not None
+        assert isinstance(path, str)
+        assert "model" in os.listdir(path)
 
 
 @pytest.mark.parametrize("search_space", ["random", "grid"])
@@ -557,3 +565,34 @@ def test_hyperopt_nested_parameters(csv_filename, tmpdir, ray_cluster_7cpu):
             assert trial_config[TRAINER]["learning_rate_scaling"] == "linear"
 
         assert trial_config[TRAINER]["learning_rate"] in {0.7, 0.42}
+
+
+def test_hyperopt_without_config_defaults(csv_filename, tmpdir, ray_cluster_7cpu):
+    input_features = [category_feature(encoder={"vocab_size": 3})]
+    output_features = [category_feature(decoder={"vocab_size": 3})]
+
+    rel_path = generate_data(input_features, output_features, csv_filename)
+
+    config = {
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        COMBINER: {TYPE: "concat"},
+        TRAINER: {"train_steps": 5, "learning_rate": 0.001, BATCH_SIZE: 128},
+        # Missing search_alg and executor, but should still work
+        HYPEROPT: {
+            "parameters": {
+                "trainer.learning_rate": {
+                    "lower": 0.0001,
+                    "upper": 0.01,
+                    "space": "loguniform",
+                }
+            },
+            "goal": "minimize",
+            "output_feature": output_features[0]["name"],
+            "metric": "loss",
+        },
+    }
+
+    experiment_name = f"test_hyperopt_{uuid.uuid4().hex}"
+    hyperopt_results = hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name=experiment_name)
+    assert hyperopt_results.experiment_analysis.results_df.shape[0] == 10

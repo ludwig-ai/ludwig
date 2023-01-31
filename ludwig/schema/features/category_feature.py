@@ -1,5 +1,3 @@
-from marshmallow_dataclass import dataclass
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import ACCURACY, CATEGORY, SOFTMAX_CROSS_ENTROPY
 from ludwig.schema import utils as schema_utils
@@ -18,13 +16,14 @@ from ludwig.schema.features.utils import (
     output_config_registry,
     output_mixin_registry,
 )
+from ludwig.schema.metadata import FEATURE_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
-from ludwig.schema.utils import BaseMarshmallowConfig
+from ludwig.schema.utils import BaseMarshmallowConfig, ludwig_dataclass
 
 
 @DeveloperAPI
 @input_mixin_registry.register(CATEGORY)
-@dataclass
+@ludwig_dataclass
 class CategoryInputFeatureConfigMixin(BaseMarshmallowConfig):
     """CategoryInputFeatureConfigMixin is a dataclass that configures the parameters used in both the category
     input feature and the category global defaults section of the Ludwig Config."""
@@ -39,7 +38,7 @@ class CategoryInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @input_config_registry.register(CATEGORY)
-@dataclass(repr=False)
+@ludwig_dataclass
 class CategoryInputFeatureConfig(BaseInputFeatureConfig, CategoryInputFeatureConfigMixin):
     """CategoryInputFeatureConfig is a dataclass that configures the parameters used for a category input
     feature."""
@@ -49,7 +48,7 @@ class CategoryInputFeatureConfig(BaseInputFeatureConfig, CategoryInputFeatureCon
 
 @DeveloperAPI
 @output_mixin_registry.register(CATEGORY)
-@dataclass
+@ludwig_dataclass
 class CategoryOutputFeatureConfigMixin(BaseMarshmallowConfig):
     """CategoryOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the category
     output feature and the category global defaults section of the Ludwig Config."""
@@ -67,7 +66,7 @@ class CategoryOutputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @output_config_registry.register(CATEGORY)
-@dataclass(repr=False)
+@ludwig_dataclass
 class CategoryOutputFeatureConfig(BaseOutputFeatureConfig, CategoryOutputFeatureConfigMixin):
     """CategoryOutputFeatureConfig is a dataclass that configures the parameters used for a category output
     feature."""
@@ -75,6 +74,7 @@ class CategoryOutputFeatureConfig(BaseOutputFeatureConfig, CategoryOutputFeature
     calibration: bool = schema_utils.Boolean(
         default=False,
         description="Calibrate the model's output probabilities using temperature scaling.",
+        parameter_metadata=FEATURE_METADATA[CATEGORY]["calibration"],
     )
 
     default_validation_metric: str = schema_utils.StringOptions(
@@ -87,6 +87,7 @@ class CategoryOutputFeatureConfig(BaseOutputFeatureConfig, CategoryOutputFeature
     dependencies: list = schema_utils.List(
         default=[],
         description="List of input features that this feature depends on.",
+        parameter_metadata=FEATURE_METADATA[CATEGORY]["dependencies"],
     )
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="category_output")
@@ -94,12 +95,14 @@ class CategoryOutputFeatureConfig(BaseOutputFeatureConfig, CategoryOutputFeature
     reduce_dependencies: str = schema_utils.ReductionOptions(
         default="sum",
         description="How to reduce the dependencies of the output feature.",
+        parameter_metadata=FEATURE_METADATA[CATEGORY]["reduce_dependencies"],
     )
 
     reduce_input: str = schema_utils.ReductionOptions(
         default="sum",
         description="How to reduce an input that is not a vector, but a matrix or a higher order tensor, on the first "
         "dimension (second if you count the batch dimension)",
+        parameter_metadata=FEATURE_METADATA[CATEGORY]["reduce_input"],
     )
 
     top_k: int = schema_utils.NonNegativeInteger(
@@ -107,4 +110,5 @@ class CategoryOutputFeatureConfig(BaseOutputFeatureConfig, CategoryOutputFeature
         description="Determines the parameter k, the number of categories to consider when computing the top_k "
         "measure. It computes accuracy but considering as a match if the true category appears in the "
         "first k predicted categories ranked by decoder's confidence.",
+        parameter_metadata=FEATURE_METADATA[CATEGORY]["top_k"],
     )

@@ -16,9 +16,11 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import ACTIVE, COLUMN, NAME, PROC_COLUMN, TYPE
 from ludwig.modules.reduction_modules import reduce_mode_registry
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, ParameterMetadata
+from ludwig.utils.misc_utils import memoized_method
 from ludwig.utils.torch_utils import activations, initializer_registry
 
 RECURSION_STOP_ENUM = {"weights_initializer", "bias_initializer", "norm_params"}
+ludwig_dataclass = m_dataclass(repr=False, order=True)
 
 
 @DeveloperAPI
@@ -149,9 +151,20 @@ class BaseMarshmallowConfig(ABC):
         return convert_submodules(self.__dict__)
 
     @classmethod
+    def from_dict(cls, d: TDict[str, Any]):
+        schema = cls.get_class_schema()()
+        return schema.load(d)
+
+    @classmethod
+    @memoized_method(maxsize=1)
     def get_valid_field_names(cls) -> Set[str]:
-        schema = marshmallow_dataclass.class_schema(cls)()
+        schema = cls.get_class_schema()()
         return set(schema.fields.keys())
+
+    @classmethod
+    @memoized_method(maxsize=1)
+    def get_class_schema(cls):
+        return marshmallow_dataclass.class_schema(cls)
 
     def __repr__(self):
         return yaml.dump(self.to_dict(), sort_keys=False)
@@ -254,9 +267,12 @@ def String(
                 allow_none=allow_none,
                 load_default=default,
                 dump_default=default,
-                metadata={"description": description},
+                metadata={
+                    "description": description,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
+                },
             ),
-            "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
+            # "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
         },
         default=default,
     )
@@ -375,6 +391,8 @@ def Boolean(default: bool, description: str, parameter_metadata: ParameterMetada
             "marshmallow_field": fields.Boolean(
                 truthy={True},
                 falsy={False},
+                # Necessary because marshmallow will otherwise cast any non-boolean value to a boolean:
+                validate=validate.OneOf([True, False]),
                 allow_none=False,
                 load_default=default,
                 dump_default=default,
@@ -798,6 +816,7 @@ def InitializerOrDict(
 
         def _jsonschema_type_mapping(self):
             initializers = list(initializer_registry.keys())
+            param_metadata = convert_metadata_to_json(parameter_metadata) if parameter_metadata else None
             return {
                 "oneOf": [
                     # Note: default not provided in the custom dict option:
@@ -810,6 +829,7 @@ def InitializerOrDict(
                         "title": f"{self.name}_custom_option",
                         "additionalProperties": True,
                         "description": "Customize an existing initializer.",
+                        "parameter_metadata": param_metadata,
                     },
                     {
                         "type": "string",
@@ -817,6 +837,7 @@ def InitializerOrDict(
                         "default": default,
                         "title": f"{self.name}_preconfigured_option",
                         "description": "Pick a preconfigured initializer.",
+                        "parameter_metadata": param_metadata,
                     },
                 ],
                 "title": self.name,
@@ -827,7 +848,13 @@ def InitializerOrDict(
     return field(
         metadata={
             "marshmallow_field": InitializerOptionsOrCustomDictField(
-                allow_none=False, load_default=default, dump_default=default, metadata={"description": description}
+                allow_none=False,
+                load_default=default,
+                dump_default=default,
+                metadata={
+                    "description": description,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
+                },
             )
         },
         default=default,
@@ -960,7 +987,9 @@ def OneOfOptionsField(
                 try:
                     if value is None and mfield_meta.allow_none:
                         return None
-                    mfield_meta.validate(value)
+                    # Not every field (e.g. our custom dataclass fields) has a `validate` method:
+                    if mfield_meta.validate:
+                        mfield_meta.validate(value)
                     return mfield_meta._serialize(value, attr, obj, **kwargs)
                 except Exception:
                     continue
@@ -972,6 +1001,7 @@ def OneOfOptionsField(
             for option in field_options:
                 mfield_meta = option.metadata["marshmallow_field"]
                 try:
+                    # Not every field (e.g. our custom dataclass fields) has a `validate` method:
                     if mfield_meta.validate:
                         mfield_meta.validate(value)
                     return mfield_meta._deserialize(value, attr, obj, **kwargs)

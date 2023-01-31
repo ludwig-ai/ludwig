@@ -1,6 +1,5 @@
 # Register all encoder schemas
 import ludwig.schema.encoders.bag_encoders
-import ludwig.schema.encoders.binary_encoders
 import ludwig.schema.encoders.category_encoders
 import ludwig.schema.encoders.date_encoders
 import ludwig.schema.encoders.h3_encoders

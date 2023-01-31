@@ -1,9 +1,14 @@
 import pytest
 from jsonschema.exceptions import ValidationError
 
-from ludwig.config_validation.validation import validate_config
-from ludwig.constants import TRAINER
+from ludwig.config_validation.validation import get_schema, validate_config
+from ludwig.constants import MODEL_ECD, TRAINER
 from tests.integration_tests.utils import binary_feature, category_feature, number_feature
+
+
+def test_combiner_schema_is_not_empty_for_ECD():
+    # Essentially verifies that the combiner registry is not empty at import time:
+    assert len(get_schema(MODEL_ECD)["properties"]["combiner"]["allOf"]) > 0
 
 
 @pytest.mark.parametrize("eval_batch_size", [500000, None])

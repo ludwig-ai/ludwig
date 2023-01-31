@@ -17,6 +17,7 @@ import logging
 from typing import Any, Callable, Dict, List, Optional, Union
 
 import torch
+from torch import nn
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import TEXT, TYPE
@@ -58,6 +59,9 @@ def _cls_pooled_error_message(encoder: str):
 class HFTextEncoder(Encoder):
     DEFAULT_MODEL_NAME: str
 
+    def get_embedding_layer(self) -> nn.Module:
+        return next(self.transformer.module.children())
+
     @classmethod
     def get_fixed_preprocessing_params(cls, encoder_params: Dict[str, Any]) -> Dict[str, Any]:
         model_name = encoder_params.get("pretrained_model_name_or_path", cls.DEFAULT_MODEL_NAME)
@@ -66,14 +70,25 @@ class HFTextEncoder(Encoder):
             raise ValueError(
                 f"Missing required parameter for `{encoder_params[TYPE]}` encoder: `pretrained_model_name_or_path`"
             )
-        return {
+
+        params = {
             "tokenizer": "hf_tokenizer",
             "pretrained_model_name_or_path": model_name,
         }
 
+        if not cls.can_cache_embeddings(encoder_params):
+            params["cache_encoder_embeddings"] = False
+
+        return params
+
     @classmethod
     def is_pretrained(cls, encoder_params: Dict[str, Any]) -> bool:
         return encoder_params.get("use_pretrained", True)
+
+    @classmethod
+    def can_cache_embeddings(cls, encoder_params: Dict[str, Any]) -> bool:
+        """Returns true if the encoder's output embeddings will not change during training."""
+        return not encoder_params.get("trainable", False) and encoder_params.get("reduce_output") != "attention"
 
 
 @DeveloperAPI
@@ -1338,7 +1353,7 @@ class CTRLEncoder(HFTextEncoder):
 @DeveloperAPI
 @register_encoder("camembert", TEXT)
 class CamemBERTEncoder(HFTextEncoder):
-    DEFAULT_MODEL_NAME = "jplu/camembert-base"
+    DEFAULT_MODEL_NAME = "camembert-base"
 
     def __init__(
         self,
@@ -1877,11 +1892,12 @@ class AutoTransformerEncoder(HFTextEncoder):
 
         pretrained_kwargs = pretrained_kwargs or {}
         transformer = load_pretrained_hf_model(AutoModel, pretrained_model_name_or_path, **pretrained_kwargs)
+        self.transformer = FreezeModule(transformer, frozen=not trainable)
+        transformer.resize_token_embeddings(vocab_size)
+
         self.reduce_output = reduce_output
         if self.reduce_output != "cls_pooled":
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-        self.transformer = FreezeModule(transformer, frozen=not trainable)
-        transformer.resize_token_embeddings(vocab_size)
         self.vocab_size = vocab_size
         self.max_sequence_length = max_sequence_length
 

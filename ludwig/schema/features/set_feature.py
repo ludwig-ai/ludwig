@@ -1,5 +1,3 @@
-from marshmallow_dataclass import dataclass
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import JACCARD, SET, SIGMOID_CROSS_ENTROPY
 from ludwig.schema import utils as schema_utils
@@ -18,13 +16,14 @@ from ludwig.schema.features.utils import (
     output_config_registry,
     output_mixin_registry,
 )
+from ludwig.schema.metadata import FEATURE_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
-from ludwig.schema.utils import BaseMarshmallowConfig
+from ludwig.schema.utils import BaseMarshmallowConfig, ludwig_dataclass
 
 
 @DeveloperAPI
 @input_mixin_registry.register(SET)
-@dataclass
+@ludwig_dataclass
 class SetInputFeatureConfigMixin(BaseMarshmallowConfig):
     """SetInputFeatureConfigMixin is a dataclass that configures the parameters used in both the set input feature
     and the set global defaults section of the Ludwig Config."""
@@ -39,7 +38,7 @@ class SetInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @input_config_registry.register(SET)
-@dataclass(repr=False)
+@ludwig_dataclass
 class SetInputFeatureConfig(BaseInputFeatureConfig, SetInputFeatureConfigMixin):
     """SetInputFeatureConfig is a dataclass that configures the parameters used for a set input feature."""
 
@@ -48,7 +47,7 @@ class SetInputFeatureConfig(BaseInputFeatureConfig, SetInputFeatureConfigMixin):
 
 @DeveloperAPI
 @output_mixin_registry.register(SET)
-@dataclass
+@ludwig_dataclass
 class SetOutputFeatureConfigMixin(BaseMarshmallowConfig):
     """SetOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the set output
     feature and the set global defaults section of the Ludwig Config."""
@@ -66,7 +65,7 @@ class SetOutputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @output_config_registry.register(SET)
-@dataclass(repr=False)
+@ludwig_dataclass
 class SetOutputFeatureConfig(BaseOutputFeatureConfig, SetOutputFeatureConfigMixin):
     """SetOutputFeatureConfig is a dataclass that configures the parameters used for a set output feature."""
 
@@ -80,6 +79,7 @@ class SetOutputFeatureConfig(BaseOutputFeatureConfig, SetOutputFeatureConfigMixi
     dependencies: list = schema_utils.List(
         default=[],
         description="List of input features that this feature depends on.",
+        parameter_metadata=FEATURE_METADATA[SET]["dependencies"],
     )
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="set_output")
@@ -87,12 +87,14 @@ class SetOutputFeatureConfig(BaseOutputFeatureConfig, SetOutputFeatureConfigMixi
     reduce_dependencies: str = schema_utils.ReductionOptions(
         default="sum",
         description="How to reduce the dependencies of the output feature.",
+        parameter_metadata=FEATURE_METADATA[SET]["reduce_dependencies"],
     )
 
     reduce_input: str = schema_utils.ReductionOptions(
         default="sum",
         description="How to reduce an input that is not a vector, but a matrix or a higher order tensor, on the first "
         "dimension (second if you count the batch dimension)",
+        parameter_metadata=FEATURE_METADATA[SET]["reduce_input"],
     )
 
     threshold: float = schema_utils.FloatRange(
@@ -101,4 +103,5 @@ class SetOutputFeatureConfig(BaseOutputFeatureConfig, SetOutputFeatureConfigMixi
         max=1,
         description="The threshold used to convert output probabilities to predictions. Tokens with predicted"
         "probabilities greater than or equal to threshold are predicted to be in the output set (True).",
+        parameter_metadata=FEATURE_METADATA[SET]["threshold"],
     )

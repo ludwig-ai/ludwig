@@ -1,5 +1,3 @@
-from marshmallow_dataclass import dataclass
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import LOSS, SEQUENCE_SOFTMAX_CROSS_ENTROPY, TEXT
 from ludwig.schema import utils as schema_utils
@@ -18,13 +16,14 @@ from ludwig.schema.features.utils import (
     output_config_registry,
     output_mixin_registry,
 )
+from ludwig.schema.metadata import FEATURE_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
-from ludwig.schema.utils import BaseMarshmallowConfig
+from ludwig.schema.utils import BaseMarshmallowConfig, ludwig_dataclass
 
 
 @DeveloperAPI
 @input_mixin_registry.register(TEXT)
-@dataclass
+@ludwig_dataclass
 class TextInputFeatureConfigMixin(BaseMarshmallowConfig):
     """TextInputFeatureConfigMixin is a dataclass that configures the parameters used in both the text input
     feature and the text global defaults section of the Ludwig Config."""
@@ -39,7 +38,7 @@ class TextInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @input_config_registry.register(TEXT)
-@dataclass(repr=False)
+@ludwig_dataclass
 class TextInputFeatureConfig(BaseInputFeatureConfig, TextInputFeatureConfigMixin):
     """TextInputFeatureConfig is a dataclass that configures the parameters used for a text input feature."""
 
@@ -48,7 +47,7 @@ class TextInputFeatureConfig(BaseInputFeatureConfig, TextInputFeatureConfigMixin
 
 @DeveloperAPI
 @output_mixin_registry.register(TEXT)
-@dataclass
+@ludwig_dataclass
 class TextOutputFeatureConfigMixin(BaseMarshmallowConfig):
     """TextOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the text output
     feature and the text global defaults section of the Ludwig Config."""
@@ -66,7 +65,7 @@ class TextOutputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @output_config_registry.register(TEXT)
-@dataclass(repr=False)
+@ludwig_dataclass
 class TextOutputFeatureConfig(BaseOutputFeatureConfig, TextOutputFeatureConfigMixin):
     """TextOutputFeatureConfig is a dataclass that configures the parameters used for a text output feature."""
 
@@ -75,6 +74,7 @@ class TextOutputFeatureConfig(BaseOutputFeatureConfig, TextOutputFeatureConfigMi
         default=None,
         description="If not null this parameter is a c x c matrix in the form of a list of lists that contains the "
         "mutual similarity of classes. It is used if `class_similarities_temperature` is greater than 0. ",
+        parameter_metadata=FEATURE_METADATA[TEXT]["class_similarities"],
     )
 
     default_validation_metric: str = schema_utils.StringOptions(
@@ -87,6 +87,7 @@ class TextOutputFeatureConfig(BaseOutputFeatureConfig, TextOutputFeatureConfigMi
     dependencies: list = schema_utils.List(
         default=[],
         description="List of input features that this feature depends on.",
+        parameter_metadata=FEATURE_METADATA[TEXT]["dependencies"],
     )
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="text_output")
@@ -94,10 +95,12 @@ class TextOutputFeatureConfig(BaseOutputFeatureConfig, TextOutputFeatureConfigMi
     reduce_dependencies: str = schema_utils.ReductionOptions(
         default="sum",
         description="How to reduce the dependencies of the output feature.",
+        parameter_metadata=FEATURE_METADATA[TEXT]["reduce_dependencies"],
     )
 
     reduce_input: str = schema_utils.ReductionOptions(
         default="sum",
         description="How to reduce an input that is not a vector, but a matrix or a higher order tensor, on the first "
         "dimension (second if you count the batch dimension)",
+        parameter_metadata=FEATURE_METADATA[TEXT]["reduce_input"],
     )

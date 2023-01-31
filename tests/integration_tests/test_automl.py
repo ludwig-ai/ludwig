@@ -357,7 +357,14 @@ def _run_train_with_config(time_budget, test_data, tmpdir, **kwargs):
 
         outdir = os.path.join(tmpdir, "output")
         results = train_with_config(dataset_csv, config, output_directory=outdir, **kwargs)
-        best_model = results.best_model
+        try:
+            best_model = results.best_model
+        except ValueError:
+            # ValueError is raised when best_model can't be found. This typically
+            # happens when the time_budget is low and the trial is stopped early,
+            # resulting in no evaluations happening (and no scores being reported back to RayTune).
+            # So RayTune has no way of determining what the best model is.
+            best_model = None
 
         if time_budget > 1:
             assert isinstance(best_model, LudwigModel)
@@ -365,4 +372,4 @@ def _run_train_with_config(time_budget, test_data, tmpdir, **kwargs):
             assert mock_fn.call_count == 0
         else:
             assert best_model is None
-            assert mock_fn.call_count > 0
+            assert mock_fn.call_count == 0

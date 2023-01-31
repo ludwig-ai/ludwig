@@ -56,8 +56,10 @@ from ludwig.data.concatenate_datasets import concatenate_df, concatenate_files, 
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.split import get_splitter, split_dataset
 from ludwig.data.utils import set_fixed_split
+from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_registries import get_base_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
+from ludwig.models.embedder import create_embed_batch_size_evaluator, create_embed_transform_fn
 from ludwig.types import FeatureConfigDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils import data_utils, strings_utils
 from ludwig.utils.backward_compatibility import upgrade_metadata
@@ -1241,7 +1243,60 @@ def build_dataset(
     # Remove partitions that are empty after removing NaNs
     dataset = backend.df_engine.remove_empty_partitions(dataset)
 
+    # Embed features with fixed encoders
+    dataset = embed_fixed_features(dataset, feature_configs, metadata, backend)
+
     return dataset, metadata
+
+
+def embed_fixed_features(
+    dataset: DataFrame, feature_configs: List[FeatureConfigDict], metadata: TrainingSetMetadataDict, backend: Backend
+) -> DataFrame:
+    """Transforms every input feature with cacheable encoder embeddings into its encoded form and updates
+    metadata."""
+    # Encode features in bulk at the end
+    features_to_encode = get_features_with_cacheable_fixed_embeddings(feature_configs, metadata)
+    if not features_to_encode:
+        return dataset
+
+    for feature in features_to_encode:
+        # Temporarily set to False to ensure proper encoding
+        metadata[feature[NAME]][PREPROCESSING]["cache_encoder_embeddings"] = False
+
+    batch_size = backend.tune_batch_size(create_embed_batch_size_evaluator(features_to_encode, metadata), len(dataset))
+    transform_fn = create_embed_transform_fn(features_to_encode, metadata)
+    results = backend.batch_transform(dataset, batch_size, transform_fn)
+
+    for feature in features_to_encode:
+        # Set metadata so we know to skip encoding the feature
+        metadata[feature[NAME]][PREPROCESSING]["cache_encoder_embeddings"] = True
+
+    return results
+
+
+def get_features_with_cacheable_fixed_embeddings(
+    feature_configs: List[FeatureConfigDict], metadata: TrainingSetMetadataDict
+) -> List[FeatureConfigDict]:
+    """Returns list of features with `cache_encoder_embeddings=True` set in the preprocessing config."""
+    features_to_encode = []
+    for feature_config in feature_configs:
+        # deal with encoders that have fixed preprocessing
+        if ENCODER in feature_config:
+            encoder = feature_config[ENCODER]
+            if TYPE in encoder:
+                preprocessing = metadata[feature_config[NAME]][PREPROCESSING]
+                if preprocessing.get("cache_encoder_embeddings"):
+                    encoder_class = get_encoder_cls(feature_config[TYPE], encoder[TYPE])
+                    if not encoder_class.can_cache_embeddings(encoder):
+                        raise ValueError(
+                            f"Set `cache_encoder_embeddings=True` for feature {feature_config[NAME]} with "
+                            f"encoder {encoder[TYPE]}, but encoder embeddings are not static."
+                        )
+
+                    # Convert to Ray Datasets, map batches to encode, then convert back to Dask
+                    features_to_encode.append(feature_config)
+
+    return features_to_encode
 
 
 def cast_columns(dataset_cols, features, backend) -> None:
