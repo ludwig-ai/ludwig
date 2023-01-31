@@ -2,7 +2,6 @@ import copy
 from abc import ABC
 from typing import Any, Dict, Optional
 
-import marshmallow_dataclass
 from marshmallow import ValidationError
 from marshmallow_dataclass import dataclass
 
@@ -77,7 +76,7 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
             feature_config[PREPROCESSING] = preprocessing_parameters
 
         cls = model_type_schema_registry[model_type]
-        schema = marshmallow_dataclass.class_schema(cls)()
+        schema = cls.get_class_schema()()
         config_obj = schema.load(config)
 
         # TODO(travis): do this post-processing stuff at the dict level before we load
