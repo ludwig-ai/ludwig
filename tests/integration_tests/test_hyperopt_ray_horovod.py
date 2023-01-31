@@ -246,7 +246,7 @@ def test_hyperopt_executor_variant_generator(csv_filename, ray_mock_dir, ray_clu
 
 @pytest.mark.skipif(
     _ray_version_before_220,
-    reason="BOHB resource cleanup bugs in Ray < 2.2.0: https://github.com/ray-project/ray/issues/31738",
+    reason="PG/resource cleanup bugs in Ray < 2.2.0: https://github.com/ray-project/ray/issues/31738",
 )
 @pytest.mark.distributed
 def test_hyperopt_executor_bohb(csv_filename, ray_mock_dir, ray_cluster_7cpu):
