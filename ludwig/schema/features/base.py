@@ -1,5 +1,4 @@
 import logging
-from abc import abstractmethod
 from dataclasses import Field, field
 from typing import Any, Dict, Generic, Iterable, List, Optional, Tuple, TypeVar
 
@@ -163,11 +162,6 @@ class BaseOutputFeatureConfig(BaseFeatureConfig):
         description="Size of the input to the decoder.",
         parameter_metadata=ParameterMetadata(internal_only=True),
     )
-
-    @staticmethod
-    @abstractmethod
-    def get_output_metric_functions():
-        pass
 
 
 T = TypeVar("T", bound=BaseFeatureConfig)

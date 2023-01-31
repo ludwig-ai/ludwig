@@ -183,6 +183,30 @@ def safe_move_file(src, dst):
 
 
 @DeveloperAPI
+def safe_move_directory(src, dst):
+    """Recursively moves files from src directory to dst directory and removes src directory.
+
+    If dst directory does not exist, it will be created.
+    """
+    try:
+        os.replace(src, dst)
+    except OSError as err:
+        if err.errno == errno.EXDEV:
+            # Generate a unique ID, and copy `<src>` to the target directory with a temporary name `<dst>.<ID>.tmp`.
+            # Because we're copying across a filesystem boundary, this initial copy may not be atomic.  We insert a
+            # random UUID so if different processes are copying into `<dst>`, they don't overlap in their tmp copies.
+            copy_id = uuid.uuid4()
+            tmp_dst = f"{dst}.{copy_id}.tmp"
+            shutil.copytree(src, tmp_dst)
+
+            # Atomic replace directory name onto the new name, and clean up original source directory.
+            os.replace(tmp_dst, dst)
+            os.unlink(src)
+        else:
+            raise
+
+
+@DeveloperAPI
 def rename(src, tgt):
     protocol, _ = split_protocol(tgt)
     if protocol is not None:

@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import copy
+import logging
 import warnings
 from typing import Any, Callable, Dict, List, Union
 
@@ -33,6 +34,8 @@ from ludwig.constants import (
     EVAL_BATCH_SIZE,
     EXECUTOR,
     FORCE_SPLIT,
+    HEIGHT,
+    IMAGE,
     INPUT_FEATURES,
     LOSS,
     MISSING_VALUE_STRATEGY,
@@ -58,9 +61,11 @@ from ludwig.constants import (
     TRAINING,
     TYPE,
     USE_BIAS,
+    WIDTH,
 )
-from ludwig.features.feature_registries import get_base_type_registry
+from ludwig.features.feature_registries import get_base_type_registry, get_input_type_registry, get_output_type_registry
 from ludwig.globals import LUDWIG_VERSION
+from ludwig.schema.encoders.utils import get_encoder_cls
 from ludwig.types import (
     FeatureConfigDict,
     HyperoptConfigDict,
@@ -70,7 +75,7 @@ from ludwig.types import (
     TrainingSetMetadataDict,
 )
 from ludwig.utils.metric_utils import TrainerMetric
-from ludwig.utils.misc_utils import merge_dict
+from ludwig.utils.misc_utils import get_from_registry, merge_dict
 from ludwig.utils.version_transformation import VersionTransformation, VersionTransformationRegistry
 
 config_transformation_registry = VersionTransformationRegistry()
@@ -358,42 +363,24 @@ def _upgrade_encoder_decoder_params(feature: FeatureConfigDict, input_feature: b
         feature (Dict): Feature to nest encoder/decoder params for.
         input_feature (Bool): Whether this feature is an input feature or not.
     """
-    input_feature_keys = [
-        # Encoder-external parameters.
-        "name",
-        "type",
-        "encoder",
-        "tied",
-        # Internal-only parameters.
-        "column",
-        "proc_column",
-        "preprocessing",
-        "vector_size",
-        "active",
-    ]
+    if TYPE not in feature:
+        return feature
 
-    output_feature_keys = [
-        # Decoder-external parameters.
-        "name",
-        "type",
-        "calibration",
-        "decoder",
-        # Internal-only parameters.
-        "preprocessing",
-        "loss",
-        "column",
-        "proc_column",
-        "num_classes",
-        "reduce_input",
-        "dependencies",
-        "reduce_dependencies",
-        "top_k",
-        "vector_size",
-        "active",
-        "default_validation_metric",
-        "input_size",
-    ]
+    try:
+        if input_feature:
+            module_type = ENCODER
+            feature_cls = get_from_registry(feature[TYPE], get_input_type_registry())
+        else:
+            module_type = DECODER
+            feature_cls = get_from_registry(feature[TYPE], get_output_type_registry())
+    except ValueError:
+        logging.exception("Failed to obtain encoder / decoder from registry")
+        return feature
 
+    feature_schema_cls = feature_cls.get_schema_cls()
+    feature_keys = feature_schema_cls.get_valid_field_names()
+
+    # These keys have been renamed from the form below to `fc_<key>` in the new config
     fc_layer_keys = [
         "fc_layers",
         "output_size",
@@ -406,17 +393,9 @@ def _upgrade_encoder_decoder_params(feature: FeatureConfigDict, input_feature: b
         "dropout",
     ]
 
-    warn = False
-    if input_feature:
-        module_type = ENCODER
-    else:
-        module_type = DECODER
-
     module = feature.get(module_type, {})
 
-    # List of keys to keep in the output feature.
-    feature_keys = input_feature_keys if module_type == ENCODER else output_feature_keys
-
+    warn = False
     if isinstance(module, str):
         module = {TYPE: module}
         feature[module_type] = module
@@ -752,6 +731,57 @@ def learning_rate_scheduler(trainer: TrainerConfigDict) -> TrainerConfigDict:
     return trainer
 
 
+@register_config_transformation("0.7", ["input_features"])
+def _upgrade_legacy_image_encoders(feature: FeatureConfigDict) -> FeatureConfigDict:
+    if feature.get(TYPE) != IMAGE:
+        return feature
+
+    encoder_mapping = {
+        "resnet": "_resnet_legacy",
+        "vit": "_vit_legacy",
+    }
+
+    encoder = feature.get(ENCODER, {})
+    encoder_type = encoder.get(TYPE)
+    if encoder_type not in encoder_mapping:
+        return feature
+
+    new_encoder_cls = get_encoder_cls(feature[TYPE], encoder_type)
+    new_encoder_fields = new_encoder_cls.get_valid_field_names()
+
+    legacy_encoder_cls = get_encoder_cls(feature[TYPE], encoder_mapping[encoder_type])
+    legacy_encoder_fields = legacy_encoder_cls.get_valid_field_names()
+
+    user_fields = set(encoder.keys())
+    user_fields.remove(TYPE)
+
+    removed_fields = legacy_encoder_fields.difference(new_encoder_fields)
+    added_fields = new_encoder_fields.difference(legacy_encoder_fields)
+
+    user_legacy_fields = user_fields.intersection(removed_fields)
+    user_new_fields = user_fields.intersection(added_fields)
+    if len(user_legacy_fields) > 0:
+        if len(user_new_fields) > 0:
+            raise ValueError(
+                f"Intended encoder type is ambiguous. "
+                f"Provided encoder fields matching encoder '{encoder_type}' {user_new_fields} and "
+                f"legacy encoder '{encoder_mapping[encoder_type]}' {user_legacy_fields}. "
+                f"Please remove features unique to one of these encoder types from your configuration."
+            )
+
+        warnings.warn(
+            f"Encoder '{encoder_type}' with params '{user_legacy_fields}' has been renamed to "
+            f"'{encoder_mapping[encoder_type]}'. Please upgrade your config to use the new '{encoder_type}' as "
+            f"support for '{encoder_mapping[encoder_type]}' is not guaranteed past v0.8.",
+            DeprecationWarning,
+        )
+
+        # User provided legacy fields and no new fields, so we assume they intended to use the legacy encoder
+        encoder[TYPE] = encoder_mapping[encoder_type]
+
+    return feature
+
+
 def upgrade_metadata(metadata: TrainingSetMetadataDict) -> TrainingSetMetadataDict:
     # TODO(travis): stopgap solution, we should make it so we don't need to do this
     # by decoupling config and metadata
@@ -764,6 +794,8 @@ def _upgrade_metadata_missing_values(metadata: TrainingSetMetadataDict):
     for k, v in metadata.items():
         if isinstance(v, dict) and _is_old_missing_value_strategy(v):
             _update_old_missing_value_strategy(v)
+        elif isinstance(v, dict) and _is_image_feature(v):
+            _update_old_image_preprocessing(v)
 
 
 def _update_old_missing_value_strategy(feature_config: FeatureConfigDict):
@@ -785,3 +817,15 @@ def _is_old_missing_value_strategy(feature_config: FeatureConfigDict):
     if not missing_value_strategy or missing_value_strategy not in ("backfill", "pad"):
         return False
     return True
+
+
+def _is_image_feature(feature_config: FeatureConfigDict):
+    preproc = feature_config.get(PREPROCESSING, {})
+    return HEIGHT in preproc and WIDTH in preproc
+
+
+def _update_old_image_preprocessing(feature_config: FeatureConfigDict):
+    preprocessing = feature_config.get(PREPROCESSING)
+    if not preprocessing:
+        return
+    preprocessing["standardize_image"] = preprocessing.get("standardize_image")

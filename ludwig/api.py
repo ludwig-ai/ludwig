@@ -608,21 +608,7 @@ class LudwigModel:
                     self.config_obj.trainer.to_dict().get(BATCH_SIZE, None) == AUTO
                     or self.config_obj.trainer.to_dict().get(EVAL_BATCH_SIZE, None) == AUTO
                 ):
-                    # TODO (ASN): add support for substitute_with_max parameter
-                    # TODO(travis): detect train and eval batch sizes separately (enable / disable gradients)
-                    tuned_batch_size = trainer.tune_batch_size(
-                        self.config_obj.to_dict(), training_set, random_seed=random_seed
-                    )
-
-                    # TODO(travis): pass these in as args to trainer when we call train,
-                    #  to avoid setting state on possibly remote trainer
-                    if self.config_obj.trainer.batch_size == AUTO:
-                        self.config_obj.trainer.batch_size = tuned_batch_size
-                        trainer.batch_size = tuned_batch_size
-
-                    if self.config_obj.trainer.eval_batch_size in {AUTO, None}:
-                        self.config_obj.trainer.eval_batch_size = tuned_batch_size
-                        trainer.eval_batch_size = tuned_batch_size
+                    self._tune_batch_size(trainer, training_set, random_seed=random_seed)
 
                 # train model
                 if self.backend.is_coordinator():
@@ -798,7 +784,28 @@ class LudwigModel:
                 config=self.config_obj.trainer, model=self.model, random_seed=random_seed
             )
 
+            if (
+                self.config_obj.trainer.to_dict().get(BATCH_SIZE, None) == AUTO
+                or self.config_obj.trainer.to_dict().get(EVAL_BATCH_SIZE, None) == AUTO
+            ):
+                self._tune_batch_size(self._online_trainer, dataset, random_seed=random_seed)
+
         self.model = self._online_trainer.train_online(training_dataset)
+
+    def _tune_batch_size(self, trainer, dataset, random_seed: int = default_random_seed):
+        # TODO (ASN): add support for substitute_with_max parameter
+        # TODO(travis): detect train and eval batch sizes separately (enable / disable gradients)
+        tuned_batch_size = trainer.tune_batch_size(self.config_obj.to_dict(), dataset, random_seed=random_seed)
+
+        # TODO(travis): pass these in as args to trainer when we call train,
+        #  to avoid setting state on possibly remote trainer
+        if self.config_obj.trainer.batch_size == AUTO:
+            self.config_obj.trainer.batch_size = tuned_batch_size
+            trainer.batch_size = tuned_batch_size
+
+        if self.config_obj.trainer.eval_batch_size in {AUTO, None}:
+            self.config_obj.trainer.eval_batch_size = tuned_batch_size
+            trainer.eval_batch_size = tuned_batch_size
 
     def predict(
         self,

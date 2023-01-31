@@ -1,12 +1,11 @@
 from dataclasses import Field
 from typing import Type
 
-from marshmallow_dataclass import dataclass
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import SPLIT, TYPE
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata import PREPROCESSING_METADATA
+from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils.registry import Registry
 
 split_config_registry = Registry()
@@ -19,7 +18,7 @@ def get_split_cls(name: str):
 
 
 @DeveloperAPI
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class BaseSplitConfig(schema_utils.BaseMarshmallowConfig):
     """This Dataclass is a base schema for the nested split config under preprocessing."""
 
@@ -29,7 +28,7 @@ class BaseSplitConfig(schema_utils.BaseMarshmallowConfig):
 
 @DeveloperAPI
 @split_config_registry.register("random")
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class RandomSplitConfig(BaseSplitConfig):
     """This Dataclass generates a schema for the random splitting config."""
 
@@ -48,7 +47,7 @@ class RandomSplitConfig(BaseSplitConfig):
 
 @DeveloperAPI
 @split_config_registry.register("fixed")
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class FixedSplitConfig(BaseSplitConfig):
     """This Dataclass generates a schema for the fixed splitting config."""
 
@@ -65,7 +64,7 @@ class FixedSplitConfig(BaseSplitConfig):
 
 @DeveloperAPI
 @split_config_registry.register("stratify")
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class StratifySplitConfig(BaseSplitConfig):
     """This Dataclass generates a schema for the fixed splitting config."""
 
@@ -88,7 +87,7 @@ class StratifySplitConfig(BaseSplitConfig):
 
 @DeveloperAPI
 @split_config_registry.register("datetime")
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class DateTimeSplitConfig(BaseSplitConfig):
     """This Dataclass generates a schema for the fixed splitting config."""
 
@@ -111,7 +110,7 @@ class DateTimeSplitConfig(BaseSplitConfig):
 
 @DeveloperAPI
 @split_config_registry.register("hash")
-@dataclass(order=True)
+@ludwig_dataclass
 class HashSplitConfig(BaseSplitConfig):
     """This Dataclass generates a schema for the hash splitting config.
 
@@ -149,7 +148,7 @@ def get_split_conds():
     for splitter in split_config_registry.data:
         splitter_cls = split_config_registry.data[splitter]
         other_props = schema_utils.unload_jsonschema_from_marshmallow_class(splitter_cls)["properties"]
-        schema_utils.remove_duplicate_fields(other_props, TYPE)
+        schema_utils.remove_duplicate_fields(other_props, [TYPE])
         splitter_cond = schema_utils.create_cond(
             {"type": splitter},
             other_props,
@@ -178,7 +177,12 @@ def SplitDataclassField(default: str) -> Field:
             return {
                 "type": "object",
                 "properties": {
-                    "type": {"type": "string", "enum": list(split_config_registry.data.keys()), "default": default},
+                    "type": {
+                        "type": "string",
+                        "description": "Type of splitting to use during preprocessing.",
+                        "enum": list(split_config_registry.data.keys()),
+                        "default": default,
+                    },
                 },
                 "title": "split_options",
                 "allOf": get_split_conds(),

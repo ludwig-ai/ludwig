@@ -8,7 +8,8 @@ import torch
 
 from ludwig.combiners.combiners import Combiner
 from ludwig.constants import COMBINED, LOSS, NAME
-from ludwig.features.base_feature import InputFeature, OutputFeature
+from ludwig.encoders.base import Encoder
+from ludwig.features.base_feature import create_passthrough_input_feature, InputFeature, OutputFeature
 from ludwig.features.feature_registries import get_input_type_registry, get_output_type_registry
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig, FeatureCollection
@@ -71,9 +72,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
             if tied_input_feature_name in other_input_features:
                 encoder_obj = other_input_features[tied_input_feature_name].encoder_obj
 
-        input_feature_class = get_from_registry(feature_config.type, get_input_type_registry())
-        input_feature_obj = input_feature_class(feature_config, encoder_obj=encoder_obj)
-        return input_feature_obj
+        return create_input_feature(feature_config, encoder_obj)
 
     @classmethod
     def build_outputs(
@@ -171,7 +170,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         outputs = self(inputs)
         return self.outputs_to_predictions(outputs)
 
-    def outputs_to_predictions(self, outputs):
+    def outputs_to_predictions(self, outputs: Dict[str, torch.Tensor]) -> Dict[str, Dict[str, torch.Tensor]]:
         """Returns the model's predictions given the raw model outputs."""
         predictions = {}
         for of_name in self.output_features:
@@ -287,6 +286,10 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         tensor_set = set(tensor_names)
         return [named_param for named_param in self.named_parameters() if named_param[0] in tensor_set]
 
+    def unskip(self):
+        """Converts all skipped features into their fully encoded versions."""
+        pass
+
     @abstractmethod
     def save(self, save_path: str):
         """Saves the model to the given path."""
@@ -298,3 +301,11 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
     @abstractmethod
     def get_args(self):
         """Returns init arguments for constructing this model."""
+
+
+def create_input_feature(feature_config: BaseInputFeatureConfig, encoder_obj: Optional[Encoder]) -> InputFeature:
+    input_feature_cls = get_from_registry(feature_config.type, get_input_type_registry())
+    input_feature = input_feature_cls(feature_config, encoder_obj=encoder_obj)
+    if not feature_config.encoder.skip:
+        return input_feature
+    return create_passthrough_input_feature(input_feature, feature_config)

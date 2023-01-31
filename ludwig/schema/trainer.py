@@ -14,6 +14,7 @@ from ludwig.schema.optimizers import (
     GradientClippingDataclassField,
     OptimizerDataclassField,
 )
+from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils.registry import Registry
 
 trainer_schema_registry = Registry()
@@ -29,7 +30,7 @@ def register_trainer_schema(model_type: str):
 
 
 @DeveloperAPI
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Common trainer parameter values."""
 
@@ -55,7 +56,6 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
 
 @DeveloperAPI
-@register_trainer_schema("ecd_ray_legacy")
 @register_trainer_schema(MODEL_ECD)
 @dataclass(order=True)
 class ECDTrainerConfig(BaseTrainerConfig):
@@ -76,9 +76,14 @@ class ECDTrainerConfig(BaseTrainerConfig):
         ],
     )
 
+    learning_rate_scheduler: LRSchedulerConfig = LRSchedulerDataclassField(
+        description="Parameter values for learning rate scheduler.",
+        default=None,
+    )
+
     epochs: int = schema_utils.PositiveInteger(
         default=100,
-        description="Number of epochs the algorithm is intended to be run over.",
+        description="Number of epochs the algorithm is intended to be run over. Overridden if `train_steps` is set",
         parameter_metadata=TRAINER_METADATA["epochs"],
     )
 
@@ -94,8 +99,8 @@ class ECDTrainerConfig(BaseTrainerConfig):
     train_steps: int = schema_utils.PositiveInteger(
         default=None,
         description=(
-            "Maximum number of training steps the algorithm is intended to be run over. "
-            + "If unset, then `epochs` is used to determine training length."
+            "Maximum number of training steps the algorithm is intended to be run over. Unset by default. "
+            "If set, will override `epochs` and if left unset then `epochs` is used to determine training length."
         ),
         parameter_metadata=TRAINER_METADATA["train_steps"],
     )
@@ -109,26 +114,18 @@ class ECDTrainerConfig(BaseTrainerConfig):
         parameter_metadata=TRAINER_METADATA["steps_per_checkpoint"],
     )
 
-    early_stop: int = schema_utils.IntegerRange(
-        default=5,
-        min=-1,
-        description=(
-            "Number of consecutive rounds of evaluation without any improvement on the `validation_metric` that "
-            "triggers training to stop. Can be set to -1, which disables early stopping entirely."
-        ),
-        parameter_metadata=TRAINER_METADATA["early_stop"],
-    )
-
     batch_size: Union[int, str] = schema_utils.OneOfOptionsField(
         default=DEFAULT_BATCH_SIZE,
         allow_none=False,
         description=(
             "The number of training examples utilized in one training step of the model. If ’auto’, the "
-            "biggest batch size (power of 2) that can fit in memory will be used."
+            "batch size that maximized training throughput (samples / sec) will be used. For CPU training, the "
+            "tuned batch size is capped at 128 as throughput benefits of large batch sizes are less noticeable without "
+            "a GPU."
         ),
         parameter_metadata=TRAINER_METADATA["batch_size"],
         field_options=[
-            schema_utils.PositiveInteger(default=DEFAULT_BATCH_SIZE, description="", allow_none=False),
+            schema_utils.PositiveInteger(default=128, description="", allow_none=False),
             schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
         ],
     )
@@ -141,6 +138,16 @@ class ECDTrainerConfig(BaseTrainerConfig):
             "value is 2^40."
         ),
         parameter_metadata=TRAINER_METADATA["max_batch_size"],
+    )
+
+    early_stop: int = schema_utils.IntegerRange(
+        default=5,
+        min=-1,
+        description=(
+            "Number of consecutive rounds of evaluation without any improvement on the `validation_metric` that "
+            "triggers training to stop. Can be set to -1, which disables early stopping entirely."
+        ),
+        parameter_metadata=TRAINER_METADATA["early_stop"],
     )
 
     eval_batch_size: Union[None, int, str] = schema_utils.OneOfOptionsField(
@@ -172,11 +179,6 @@ class ECDTrainerConfig(BaseTrainerConfig):
 
     optimizer: BaseOptimizerConfig = OptimizerDataclassField(
         default={"type": "adam"}, description="Parameter values for selected torch optimizer."
-    )
-
-    learning_rate_scheduler: LRSchedulerConfig = LRSchedulerDataclassField(
-        description="Parameter values for learning rate scheduler.",
-        default=None,
     )
 
     regularization_type: Optional[str] = schema_utils.RegularizerOptions(
@@ -263,7 +265,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
 
 @DeveloperAPI
 @register_trainer_schema(MODEL_GBM)
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class GBMTrainerConfig(BaseTrainerConfig):
     """Dataclass that configures most of the hyperparameters used for GBM model training."""
 
@@ -324,13 +326,16 @@ class GBMTrainerConfig(BaseTrainerConfig):
 
     tree_learner: str = schema_utils.StringOptions(
         ["serial", "feature", "data", "voting"],
+        allow_none=False,
         default="serial",
         description="Type of tree learner to use with GBM trainer.",
     )
 
     # LightGBM core parameters (https://lightgbm.readthedocs.io/en/latest/Parameters.html)
     boosting_type: str = schema_utils.StringOptions(
-        ["gbdt", "rf", "dart", "goss"],
+        # TODO: Re-enable "goss" when supported: https://github.com/ludwig-ai/ludwig/issues/2988
+        ["gbdt", "dart"],
+        allow_none=False,
         default="gbdt",
         description="Type of boosting algorithm to use with GBM trainer.",
     )
@@ -347,8 +352,8 @@ class GBMTrainerConfig(BaseTrainerConfig):
         default=82, description="Number of leaves to use in the tree with GBM trainer."
     )
 
-    min_data_in_leaf: int = schema_utils.PositiveInteger(
-        default=315, description="Minimum number of data points in a leaf with GBM trainer."
+    min_data_in_leaf: int = schema_utils.NonNegativeInteger(
+        default=20, description="Minimum number of data points in a leaf with GBM trainer."
     )
 
     min_sum_hessian_in_leaf: float = schema_utils.NonNegativeFloat(
@@ -509,10 +514,15 @@ class GBMTrainerConfig(BaseTrainerConfig):
         default=255, description="Maximum number of bins to use for discretizing features with GBM trainer."
     )
 
+    feature_pre_filter: bool = schema_utils.Boolean(
+        default=True,
+        description="Whether to ignore features that are unsplittable based on min_data_in_leaf in the GBM trainer.",
+    )
+
 
 @DeveloperAPI
 def get_model_type_jsonschema(model_type: str = MODEL_ECD):
-    enum = [MODEL_ECD, "ecd_ray_legacy"]
+    enum = [MODEL_ECD]
     if model_type == MODEL_GBM:
         enum = [MODEL_GBM]
 

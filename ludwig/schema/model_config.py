@@ -1,19 +1,19 @@
 import copy
+import logging
 import sys
 import warnings
-from dataclasses import dataclass
 from typing import Dict, List
 
 import yaml
 from marshmallow import ValidationError
 
 from ludwig.api_annotations import DeveloperAPI
+from ludwig.config_validation.validation import validate_config
 from ludwig.constants import (
     ACTIVE,
     BINARY,
     CATEGORY,
     COLUMN,
-    COMBINED,
     COMBINER,
     DECODER,
     DEFAULT_VALIDATION_METRIC,
@@ -27,6 +27,7 @@ from ludwig.constants import (
     MODEL_GBM,
     MODEL_TYPE,
     NAME,
+    NUM_SAMPLES,
     NUMBER,
     OPTIMIZER,
     OUTPUT_FEATURES,
@@ -39,17 +40,15 @@ from ludwig.constants import (
     TRAINER,
     TYPE,
 )
-from ludwig.features.feature_registries import get_output_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
+from ludwig.hyperopt.utils import contains_grid_search_parameters
 from ludwig.modules.loss_modules import get_loss_cls
-from ludwig.schema import validate_config
 from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.combiners.concat import ConcatCombinerConfig
 from ludwig.schema.combiners.utils import combiner_registry
 from ludwig.schema.decoders.utils import get_decoder_cls
 from ludwig.schema.defaults.defaults import DefaultsConfig
 from ludwig.schema.encoders.base import PassthroughEncoderConfig
-from ludwig.schema.encoders.binary_encoders import BinaryPassthroughEncoderConfig
 from ludwig.schema.encoders.utils import get_encoder_cls
 from ludwig.schema.features.utils import (
     get_input_feature_cls,
@@ -58,14 +57,19 @@ from ludwig.schema.features.utils import (
     output_config_registry,
 )
 from ludwig.schema.model_types.base import ModelConfig  # noqa
+from ludwig.schema.hyperopt import HyperoptConfig
 from ludwig.schema.optimizers import get_optimizer_cls
 from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.schema.split import get_split_cls
 from ludwig.schema.trainer import BaseTrainerConfig, ECDTrainerConfig, GBMTrainerConfig
-from ludwig.schema.utils import BaseMarshmallowConfig, convert_submodules, RECURSION_STOP_ENUM
+from ludwig.schema.utils import BaseMarshmallowConfig, convert_submodules, ludwig_dataclass, RECURSION_STOP_ENUM
 from ludwig.types import FeatureConfigDict, ModelConfigDict
 from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
+from ludwig.utils.metric_utils import get_feature_to_metric_names_map
 from ludwig.utils.misc_utils import set_default_value
+
+logger = logging.getLogger(__name__)
+
 
 DEFAULTS_MODULES = {NAME, COLUMN, PROC_COLUMN, TYPE, TIED, DEFAULT_VALIDATION_METRIC}
 
@@ -124,7 +128,7 @@ class OutputFeaturesContainer(BaseFeatureContainer):
 
 
 @DeveloperAPI
-@dataclass(repr=False)
+@ludwig_dataclass
 class _ModelConfig(BaseMarshmallowConfig):
     """Configures the end-to-end LudwigModel machine learning pipeline.
 
@@ -175,9 +179,7 @@ class _ModelConfig(BaseMarshmallowConfig):
 
                 for feature in self.input_features.to_dict().keys():
                     feature_cls = getattr(self.input_features, feature)
-                    if feature_cls.type == BINARY:
-                        feature_cls.encoder = BinaryPassthroughEncoderConfig()
-                    elif feature_cls.type in [CATEGORY, NUMBER]:
+                    if feature_cls.type in [BINARY, CATEGORY, NUMBER]:
                         feature_cls.encoder = PassthroughEncoderConfig()
                     else:
                         raise ValidationError(
@@ -205,6 +207,7 @@ class _ModelConfig(BaseMarshmallowConfig):
 
         # ===== Hyperopt =====
         self.hyperopt = upgraded_config_dict.get(HYPEROPT, {})
+
         self._set_hyperopt_defaults()
 
         # Set up default validation metric, which is used for plateau metrics and early stopping.
@@ -456,9 +459,7 @@ class _ModelConfig(BaseMarshmallowConfig):
 
         for feature in self.input_features.to_dict().keys():
             feature_cls = getattr(self.input_features, feature)
-            if feature_cls.type == BINARY:
-                feature_cls.encoder = BinaryPassthroughEncoderConfig()
-            elif feature_cls.type in [CATEGORY, NUMBER]:
+            if feature_cls.type in [BINARY, CATEGORY, NUMBER]:
                 feature_cls.encoder = PassthroughEncoderConfig()
             else:
                 raise ValidationError("GBM Models currently only support Binary, Category, and Number " "features")
@@ -513,7 +514,24 @@ class _ModelConfig(BaseMarshmallowConfig):
         if not self.hyperopt:
             return
 
-        scheduler = self.hyperopt.get("executor", {}).get("scheduler")
+        # Convert hyperopt config to hyperopt schema to populate with schema defaults
+        # This fills in missing splits, executor config, search_alg, etc.
+        self.hyperopt = HyperoptConfig.from_dict(self.hyperopt).to_dict()
+
+        # Set default num_samples based on search space if not set by user
+        if self.hyperopt[EXECUTOR].get(NUM_SAMPLES) is None:
+            _contains_grid_search_params = contains_grid_search_parameters(self.hyperopt)
+            if _contains_grid_search_params:
+                logger.info(
+                    "Setting hyperopt num_samples to 1 to prevent duplicate trials from being run. Duplicate trials are"
+                    " created when there are hyperopt parameters that use the `grid_search` search space.",
+                )
+                self.hyperopt[EXECUTOR][NUM_SAMPLES] = 1
+            else:
+                logger.info("Setting hyperopt num_samples to 10.")
+                self.hyperopt[EXECUTOR][NUM_SAMPLES] = 10
+
+        scheduler = self.hyperopt.get(EXECUTOR, {}).get("scheduler")
         if not scheduler:
             return
 
@@ -523,25 +541,27 @@ class _ModelConfig(BaseMarshmallowConfig):
         # Disable early stopping when using a scheduler. We achieve this by setting the parameter
         # to -1, which ensures the condition to apply early stopping is never met.
         early_stop = self.trainer.early_stop
-        if early_stop is not None and early_stop != -1:
+        if early_stop is not None and early_stop != -1 and scheduler.get("type", {}) != "fifo":
             warnings.warn("Can't utilize `early_stop` while using a hyperopt scheduler. Setting early stop to -1.")
-        self.trainer.early_stop = -1
+            self.trainer.early_stop = -1
 
         max_t = scheduler.get("max_t")
         time_attr = scheduler.get("time_attr")
-        epochs = self.trainer.to_dict().get("epochs", None)
+        epochs_key = "epochs" if self.model_type == MODEL_ECD else "num_boost_round"
+        epochs = self.trainer.to_dict().get(epochs_key, None)
         if max_t is not None:
             if time_attr == "time_total_s":
                 if epochs is None:
-                    setattr(self.trainer, "epochs", sys.maxsize)  # continue training until time limit hit
+                    setattr(self.trainer, epochs_key, sys.maxsize)  # continue training until time limit hit
                 # else continue training until either time or trainer epochs limit hit
             elif epochs is not None and epochs != max_t:
                 raise ValueError(
-                    "Cannot set trainer `epochs` when using hyperopt scheduler w/different training_iteration `max_t`. "
+                    f"Cannot set trainer `{epochs_key}` when using hyperopt scheduler w/ "
+                    "different training_iteration `max_t`. "
                     "Unset one of these parameters in your config or make sure their values match."
                 )
             else:
-                setattr(self.trainer, "epochs", max_t)  # run trainer until scheduler epochs limit hit
+                setattr(self.trainer, epochs_key, max_t)  # run trainer until scheduler epochs limit hit
         elif epochs is not None:
             scheduler["max_t"] = epochs  # run scheduler until trainer epochs limit hit
 
@@ -601,14 +621,3 @@ class _ModelConfig(BaseMarshmallowConfig):
         if self.combiner is not None:
             config_dict["combiner"] = self.combiner.to_dict()
         return convert_submodules(config_dict)
-
-
-def get_feature_to_metric_names_map(output_features: List[FeatureConfigDict]) -> Dict[str, List[str]]:
-    """Returns a dict of output_feature_name -> list of metric names."""
-    metrics_names = {}
-    for output_feature in output_features:
-        output_feature_name = output_feature[NAME]
-        output_feature_type = output_feature[TYPE]
-        metrics_names[output_feature_name] = get_output_type_registry()[output_feature_type].metric_functions
-    metrics_names[COMBINED] = [LOSS]
-    return metrics_names

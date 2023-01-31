@@ -22,7 +22,7 @@ from packaging import version
 
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
-from ludwig.constants import ACCURACY, AUTO, EXECUTOR, MAX_CONCURRENT_TRIALS, TRAINER
+from ludwig.constants import ACCURACY, AUTO, BATCH_SIZE, EXECUTOR, MAX_CONCURRENT_TRIALS, TRAINER
 from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.run import hyperopt
@@ -132,14 +132,14 @@ def _get_config(search_alg, executor):
     input_features = [number_feature()]
     output_features = [binary_feature()]
 
-    # Bohb causes training failures when num epochs is 1
-    num_epochs = 1 if search_alg["type"] == "variant_generator" else 2
+    # When using the hb_bohb scheduler, num_epochs must equal max_t (which is 81 by default)
+    num_epochs = 1 if search_alg["type"] == "variant_generator" else 81
 
     return {
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat"},
-        TRAINER: {"epochs": num_epochs, "learning_rate": 0.001},
+        TRAINER: {"epochs": num_epochs, "learning_rate": 0.001, BATCH_SIZE: 128},
         "hyperopt": {
             **HYPEROPT_CONFIG,
             "executor": executor,
@@ -276,7 +276,7 @@ def test_hyperopt_run_hyperopt(csv_filename, ray_mock_dir, ray_cluster_7cpu):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat"},
-        TRAINER: {"epochs": 1, "learning_rate": 0.001},
+        TRAINER: {"epochs": 1, "learning_rate": 0.001, BATCH_SIZE: 128},
         "backend": {"type": "ray", **RAY_BACKEND_KWARGS},
     }
 

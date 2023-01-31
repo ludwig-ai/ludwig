@@ -15,26 +15,22 @@
 # ==============================================================================
 """This module contains the class and auxiliary methods of a model."""
 import contextlib
-import gc
 import logging
 import math
 import os
 import os.path
 import signal
-import statistics
 import sys
 import threading
 import time
-from collections import OrderedDict
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import psutil
 import torch
-from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
 
-from ludwig.constants import COMBINED, LOSS, MINIMIZE, MODEL_ECD, TEST, TRAINING, VALIDATION
+from ludwig.constants import LOSS, MINIMIZE, MODEL_ECD, TEST, TRAIN, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.globals import (
@@ -47,7 +43,7 @@ from ludwig.models.ecd import ECD
 from ludwig.models.predictor import Predictor
 from ludwig.modules.lr_scheduler import LRScheduler
 from ludwig.modules.metric_modules import get_improved_fn, get_initial_validation_value
-from ludwig.modules.metric_registry import metric_registry
+from ludwig.modules.metric_registry import get_metric_registry
 from ludwig.modules.optimization_modules import create_clipper, create_optimizer
 from ludwig.progress_bar import LudwigProgressBar
 from ludwig.schema.trainer import ECDTrainerConfig
@@ -55,11 +51,13 @@ from ludwig.trainers.base import BaseTrainer
 from ludwig.trainers.registry import register_trainer
 from ludwig.types import ModelConfigDict
 from ludwig.utils import time_utils
+from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
 from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import path_exists
 from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
+from ludwig.utils.metrics_printed_table import MetricsPrintedTable
 from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.torch_utils import get_torch_device
 from ludwig.utils.trainer_utils import (
@@ -70,6 +68,8 @@ from ludwig.utils.trainer_utils import (
     get_total_steps,
     ProgressTracker,
 )
+
+MAX_CPU_BATCH_SIZE = 128
 
 logger = logging.getLogger(__name__)
 
@@ -193,10 +193,13 @@ class Trainer(BaseTrainer):
 
         # Setup for automatic mixed precision (AMP)
         self.use_amp = config.use_mixed_precision
-        self.use_amp = True
-        self.scaler = torch.cuda.amp.GradScaler() if self.use_amp else None
         if self.use_amp:
-            logger.info("Enabling automatic mixed precision (AMP)")
+            if torch.cuda.is_available():
+                logger.info("Enabling automatic mixed precision (AMP)")
+            else:
+                logger.info("`trainer.use_mixed_precision=True`, but no GPU device found. Setting to `False`")
+                self.use_amp = False
+        self.scaler = torch.cuda.amp.GradScaler() if self.use_amp else None
 
         # when training starts the sigint handler will be replaced with
         # set_steps_to_1_or_quit so this is needed to remember
@@ -349,34 +352,6 @@ class Trainer(BaseTrainer):
 
         train_summary_writer.flush()
 
-    def train_for_tuning(
-        self,
-        batch_size: int,
-        total_steps: int = 5,
-    ) -> float:
-        """Function to be used by tune_batch_size.
-
-        Return:
-            Median throughput in samples / sec.
-        """
-        self.dist_model.train()  # Sets model training mode.
-        durations = []
-        for _ in range(total_steps):
-            self.model.reset_metrics()
-            start_ts = time.time()
-            inputs = {
-                input_feature_name: input_feature.create_sample_input(batch_size=batch_size).to(self.device)
-                for input_feature_name, input_feature in self.model.input_features.items()
-            }
-            targets = {
-                output_feature_name: output_feature.create_sample_output(batch_size=batch_size).to(self.device)
-                for output_feature_name, output_feature in self.model.output_features.items()
-            }
-            self.train_step(inputs, targets)
-            durations.append(time.time() - start_ts)
-        med_duration_s = statistics.median(durations)
-        return batch_size / med_duration_s
-
     def is_cpu_training(self):
         return torch.device(self.device) == torch.device("cpu")
 
@@ -390,22 +365,6 @@ class Trainer(BaseTrainer):
     ) -> int:
         logger.info("Tuning batch size...")
 
-        def _is_valid_batch_size(batch_size):
-            # make sure that batch size is valid (e.g. less than size of ds)
-            is_smaller_than_training_set = batch_size < len(training_set)
-            is_under_max_batch_size = batch_size <= self.max_batch_size
-            is_valid = is_smaller_than_training_set and is_under_max_batch_size
-            if not is_valid:
-                logger.info(
-                    f"Batch size {batch_size} is invalid, must be smaller than training set size "
-                    f"{len(training_set)} and less than or equal to max batch size {self.max_batch_size}"
-                )
-            return is_valid
-
-        # TODO (ASN) : Circle back on how we want to set default placeholder value
-        # Currently, since self.batch_size is originally set to auto, we provide a
-        # placeholder starting value
-        batch_size = 2
         skip_save_model = self.skip_save_model
         skip_save_progress = self.skip_save_progress
         skip_save_log = self.skip_save_log
@@ -415,45 +374,43 @@ class Trainer(BaseTrainer):
         self.skip_save_progress = True
         self.skip_save_log = True
 
-        best_samples_per_sec = 0
-        best_batch_size = None
+        # When training on CPU, larger batch sizes offer limited benefits due to lack of effective
+        # parallelization within a batch. As such, to increase chances of stable training, we cap the maximum
+        # batch size at MAX_CPU_BATCH_SIZE
+        max_batch_size = (
+            self.max_batch_size if torch.cuda.is_available() else min(self.max_batch_size, MAX_CPU_BATCH_SIZE)
+        )
+
+        self.dist_model.train()  # Sets model training mode.
+
+        evaluator = self._create_batch_size_evaluator()
         try:
-            count = 0
-            while count < max_trials and _is_valid_batch_size(batch_size):
-                logger.info(f"Exploring batch_size={batch_size}")
-                gc.collect()
-
-                try:
-                    samples_per_sec = self.train_for_tuning(batch_size, total_steps=5)
-                    logger.info(f"Throughput at batch_size={batch_size}: {samples_per_sec:.5f} samples/s")
-                    if samples_per_sec < best_samples_per_sec:
-                        # We assume that once the throughput starts degrading, it won't go up again
-                        logger.info(f"Throughput decrease at batch_size={batch_size}")
-                        break
-
-                    best_samples_per_sec = samples_per_sec
-                    best_batch_size = batch_size
-                    count += 1
-
-                    # double batch size
-                    batch_size *= 2
-                except RuntimeError as e:
-                    # PyTorch only generates Runtime errors for CUDA OOM.
-                    gc.collect()
-                    if "CUDA out of memory" in str(e):
-                        logger.info(f"OOM at batch_size={batch_size}")
-                    else:
-                        # Not a CUDA error
-                        raise
-                    break
+            return evaluator.select_best_batch_size(len(training_set), max_batch_size, max_trials)
         finally:
             # Restore original parameters to defaults
             self.skip_save_model = skip_save_model
             self.skip_save_progress = skip_save_progress
             self.skip_save_log = skip_save_log
 
-        logger.info(f"Selected batch_size={best_batch_size}")
-        return best_batch_size
+    def _create_batch_size_evaluator(self) -> BatchSizeEvaluator:
+        trainer = self
+
+        class _TrainerBatchSizeEvaluator(BatchSizeEvaluator):
+            def reset(self):
+                trainer.model.reset_metrics()
+
+            def step(self, batch_size: int):
+                inputs = {
+                    input_feature_name: input_feature.create_sample_input(batch_size=batch_size).to(trainer.device)
+                    for input_feature_name, input_feature in trainer.model.input_features.items()
+                }
+                targets = {
+                    output_feature_name: output_feature.create_sample_output(batch_size=batch_size).to(trainer.device)
+                    for output_feature_name, output_feature in trainer.model.output_features.items()
+                }
+                trainer.train_step(inputs, targets)
+
+        return _TrainerBatchSizeEvaluator()
 
     def run_evaluation(
         self,
@@ -489,25 +446,25 @@ class Trainer(BaseTrainer):
             logger.info(f"\nRunning evaluation for step: {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
 
         # ================ Eval ================
-        # init tables
-        tables = OrderedDict()
-        for output_feature_name, output_feature in output_features.items():
-            tables[output_feature_name] = [[output_feature_name] + metrics_names[output_feature_name]]
-        tables[COMBINED] = [[COMBINED, LOSS]]
+        printed_table = MetricsPrintedTable(output_features)
 
         # eval metrics on train
         self.eval_batch_size = max(self.eval_batch_size, progress_tracker.batch_size)
 
         if self.evaluate_training_set:
             # Run a separate pass over the training data to compute metrics
-            self.evaluation(
-                training_set, "train", progress_tracker.train_metrics, tables, self.eval_batch_size, progress_tracker
+            train_metrics_log = self.evaluation(
+                training_set, "train", progress_tracker.train_metrics, self.eval_batch_size, progress_tracker
             )
         else:
             # Use metrics accumulated during training
             metrics = self.model.get_metrics()
-            append_metrics(self.model, "train", metrics, progress_tracker.train_metrics, tables, progress_tracker)
+            train_metrics_log = append_metrics(
+                self.model, "train", metrics, progress_tracker.train_metrics, progress_tracker
+            )
             self.model.reset_metrics()
+
+        printed_table.add_metrics_to_printed_table(train_metrics_log, TRAIN)
 
         self.write_eval_summary(
             summary_writer=train_summary_writer,
@@ -519,14 +476,15 @@ class Trainer(BaseTrainer):
             self.callback(lambda c: c.on_validation_start(self, progress_tracker, save_path))
 
             # eval metrics on validation set
-            self.evaluation(
+            validation_metrics_log = self.evaluation(
                 validation_set,
                 VALIDATION,
                 progress_tracker.validation_metrics,
-                tables,
                 self.eval_batch_size,
                 progress_tracker,
             )
+
+            printed_table.add_metrics_to_printed_table(validation_metrics_log, VALIDATION)
 
             self.write_eval_summary(
                 summary_writer=validation_summary_writer,
@@ -540,9 +498,11 @@ class Trainer(BaseTrainer):
             self.callback(lambda c: c.on_test_start(self, progress_tracker, save_path))
 
             # eval metrics on test set
-            self.evaluation(
-                test_set, TEST, progress_tracker.test_metrics, tables, self.eval_batch_size, progress_tracker
+            test_metrics_log = self.evaluation(
+                test_set, TEST, progress_tracker.test_metrics, self.eval_batch_size, progress_tracker
             )
+
+            printed_table.add_metrics_to_printed_table(test_metrics_log, TEST)
 
             self.write_eval_summary(
                 summary_writer=test_summary_writer,
@@ -556,8 +516,7 @@ class Trainer(BaseTrainer):
 
         if self.is_coordinator():
             logger.info(f"Evaluation took {time_utils.strdelta(elapsed_time)}\n")
-            for output_feature, table in tables.items():
-                logger.info(tabulate(table, headers="firstrow", tablefmt="fancy_grid", floatfmt=".4f"))
+            printed_table.log_info()
 
         # ================ Validation Logic ================
         should_break = False
@@ -630,16 +589,6 @@ class Trainer(BaseTrainer):
             raise ValueError(
                 "The specified validation_field {} is not valid."
                 "Available ones are: {}".format(self.validation_field, list(output_features.keys()) + ["combined"])
-            )
-
-        # check if validation_metric is valid
-        valid_validation_metric = self.validation_metric in metrics_names[self.validation_field]
-        if not valid_validation_metric:
-            raise ValueError(
-                "The specified metric {} is not valid. "
-                "Available metrics for {} output feature are: {}".format(
-                    self.validation_metric, self.validation_field, metrics_names[self.validation_field]
-                )
             )
 
         # ====== Setup file names =======
@@ -895,6 +844,10 @@ class Trainer(BaseTrainer):
                     f"{psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
                 )
 
+            # Executing `on_batch_end` calls before `run_evaluation` enables more accurate
+            # batch duration measurements when using timer callbacks.
+            self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path))
+
             if progress_tracker.steps % final_steps_per_checkpoint == 0:
                 # Checkpoint the model.
                 if self.is_coordinator() and not self.skip_save_progress:
@@ -919,8 +872,6 @@ class Trainer(BaseTrainer):
                 )
                 if should_break:
                     return should_break
-
-            self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path))
 
         return False
 
@@ -974,15 +925,13 @@ class Trainer(BaseTrainer):
     def validation_metric(self):
         return self._validation_metric
 
-    def evaluation(self, dataset, dataset_name, metrics_log, tables, batch_size, progress_tracker):
+    def evaluation(self, dataset, dataset_name, metrics_log, batch_size, progress_tracker):
         predictor = Predictor(
             self.model, batch_size=batch_size, distributed=self.distributed, report_tqdm_to_ray=self.report_tqdm_to_ray
         )
         metrics, _ = predictor.batch_evaluation(dataset, collect_predictions=False, dataset_name=dataset_name)
 
-        append_metrics(self.model, dataset_name, metrics, metrics_log, tables, progress_tracker)
-
-        return metrics_log, tables
+        return append_metrics(self.model, dataset_name, metrics, metrics_log, progress_tracker)
 
     def check_progress_on_validation(
         self,
@@ -1046,7 +995,7 @@ class Trainer(BaseTrainer):
                 absolute_eval_metric_value_change = round(
                     abs(previous_best_eval_metric_value - progress_tracker.best_eval_metric_value), 3
                 )
-                if metric_registry[validation_metric].get_objective() == MINIMIZE:
+                if get_metric_registry()[validation_metric].get_objective() == MINIMIZE:
                     logger.info(
                         f"'{validation_output_feature_name}' '{validation_metric}' decreased by "
                         f"{absolute_eval_metric_value_change}."

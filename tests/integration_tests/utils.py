@@ -39,6 +39,7 @@ from ludwig.backend import LocalBackend
 from ludwig.constants import (
     AUDIO,
     BAG,
+    BATCH_SIZE,
     BINARY,
     CATEGORY,
     COLUMN,
@@ -503,7 +504,7 @@ def run_experiment(
             "input_features": input_features,
             "output_features": output_features,
             "combiner": {"type": "concat", "output_size": 14},
-            TRAINER: {"epochs": 2},
+            TRAINER: {"epochs": 2, BATCH_SIZE: 128},
         }
 
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -664,7 +665,7 @@ def run_api_experiment(input_features, output_features, data_csv):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
     }
 
     model = LudwigModel(config)
@@ -875,6 +876,7 @@ def train_with_backend(
 
         if dataset is None:
             dataset = training_set
+
         if predict:
             preds, _ = model.predict(
                 dataset=dataset, skip_save_predictions=skip_save_predictions, output_directory=output_directory

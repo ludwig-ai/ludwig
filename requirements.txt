@@ -6,10 +6,10 @@ scipy>=0.18
 tabulate>=0.7
 scikit-learn<1.2.0
 tqdm
-torch>=1.10.0
+torch>=1.13.0
 torchaudio
 torchtext
-torchvision>=0.10.1
+torchvision
 transformers>=4.10.1,<4.22
 spacy>=2.3
 PyYAML>=3.12
@@ -34,6 +34,10 @@ gpustat
 rich~=12.4.4
 packaging
 retry
+
+# required for TransfoXLTokenizer when using transformer_xl
+sacremoses
+
 # new data format support
 xlwt            # excel
 xlrd            # excel

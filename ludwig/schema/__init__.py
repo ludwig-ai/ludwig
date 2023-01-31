@@ -1,12 +1,10 @@
 from functools import lru_cache
 from threading import Lock
 
-import jsonschema.exceptions
-from jsonschema import _utils, Draft7Validator, validate
+from jsonschema import Draft7Validator, validate
 from jsonschema.validators import extend
-from marshmallow import ValidationError
 
-from ludwig.api_annotations import DeveloperAPI
+from ludwig.api_annotations import Deprecated, DeveloperAPI
 from ludwig.constants import MODEL_ECD, MODEL_TYPE, PREPROCESSING, SPLIT
 from ludwig.schema import utils as schema_utils
 
@@ -29,9 +27,21 @@ def get_ludwig_version_jsonschema():
     }
 
 
+def get_backend_jsonschema():
+    # TODO(travis): implement full backend schema
+    return {
+        "type": "object",
+        "title": "backend",
+        "description": "Backend configuration.",
+        "additionalProperties": True,
+    }
+
+
 @DeveloperAPI
 @lru_cache(maxsize=2)
 def get_schema(model_type: str = MODEL_ECD):
+    # Force populate combiner registry:
+    import ludwig.combiners.combiners  # noqa: F401
     from ludwig.schema.model_types.base import model_type_schema_registry
 
     cls = model_type_schema_registry[model_type]
@@ -44,7 +54,6 @@ def get_schema(model_type: str = MODEL_ECD):
     }
 
 
-@DeveloperAPI
 @lru_cache(maxsize=2)
 def get_validator():
     # Manually add support for tuples (pending upstream changes: https://github.com/Julian/jsonschema/issues/148):
@@ -57,32 +66,24 @@ def get_validator():
     return extend(Draft7Validator, type_checker=type_checker)
 
 
-@DeveloperAPI
-def validate_config(config):
-    # Update config from previous versions to check that backwards compatibility will enable a valid config
-    # NOTE: import here to prevent circular import
+def validate_upgraded_config(updated_config):
     from ludwig.data.split import get_splitter
-    from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
 
-    # Update config from previous versions to check that backwards compatibility will enable a valid config
-    updated_config = upgrade_config_dict_to_latest_version(config)
     model_type = updated_config.get(MODEL_TYPE, MODEL_ECD)
 
     splitter = get_splitter(**updated_config.get(PREPROCESSING, {}).get(SPLIT, {}))
     splitter.validate(updated_config)
 
-    error = None
     with VALIDATION_LOCK:
-        try:
-            validate(instance=updated_config, schema=get_schema(model_type=model_type), cls=get_validator())
-        except jsonschema.exceptions.ValidationError as e:
-            # Capture error but don't raise here, otherwise we get the full output from `e`, which contains a dump
-            # of the entire schema
-            error = e
+        validate(instance=updated_config, schema=get_schema(model_type=model_type), cls=get_validator())
 
-    if error is not None:
-        instance_path = _utils.format_as_index(
-            container=error._word_for_instance_in_error_message,
-            indices=error.relative_path,
-        )
-        raise ValidationError(f"Failed to validate schema for config at {instance_path}. Error: {error.message}")
+
+@Deprecated(message="Use 'from ludwig.config_validation.validations import validate_config' instead.")
+def validate_config(config):
+    # Update config from previous versions to check that backwards compatibility will enable a valid config
+    # NOTE: import here to prevent circular import
+    from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
+
+    # Update config from previous versions to check that backwards compatibility will enable a valid config
+    updated_config = upgrade_config_dict_to_latest_version(config)
+    validate_upgraded_config(updated_config)

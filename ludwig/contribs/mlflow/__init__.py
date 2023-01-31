@@ -40,6 +40,7 @@ class MlflowCallback(Callback):
     def __init__(self, tracking_uri=None, log_artifacts: bool = True):
         if tracking_uri:
             mlflow.set_tracking_uri(tracking_uri)
+        self.tracking_uri = mlflow.get_tracking_uri()
 
         active_run = mlflow.active_run()
         if active_run is not None:
@@ -56,7 +57,6 @@ class MlflowCallback(Callback):
             self.external_run = False
 
         self.run_ended = False
-        self.tracking_uri = tracking_uri
         self.training_set_metadata = None
         self.config = None
         self.save_in_background = True

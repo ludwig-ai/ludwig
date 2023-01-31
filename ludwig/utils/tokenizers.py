@@ -22,6 +22,7 @@ import torch
 
 from ludwig.constants import PADDING_SYMBOL, UNKNOWN_SYMBOL
 from ludwig.utils.data_utils import load_json
+from ludwig.utils.hf_utils import load_pretrained_hf_model
 from ludwig.utils.nlp_utils import load_nlp_pipeline, process_text
 
 logger = logging.getLogger(__name__)
@@ -790,7 +791,8 @@ class HFTokenizer(BaseTokenizer):
         super().__init__()
         from transformers import AutoTokenizer
 
-        self.tokenizer = AutoTokenizer.from_pretrained(
+        self.tokenizer = load_pretrained_hf_model(
+            AutoTokenizer,
             pretrained_model_name_or_path,
         )
 
@@ -1180,7 +1182,7 @@ def get_hf_tokenizer(pretrained_model_name_or_path, **kwargs):
     hf_name = pretrained_model_name_or_path
     # use_fast=False to leverage python class inheritance
     # cannot tokenize HF tokenizers directly because HF lacks strict typing and List[str] cannot be traced
-    hf_tokenizer = AutoTokenizer.from_pretrained(hf_name, use_fast=False)
+    hf_tokenizer = load_pretrained_hf_model(AutoTokenizer, hf_name, use_fast=False)
 
     torchtext_tokenizer = None
     if "bert" in TORCHSCRIPT_COMPATIBLE_TOKENIZERS and isinstance(hf_tokenizer, BertTokenizer):
@@ -1223,10 +1225,23 @@ def get_hf_tokenizer(pretrained_model_name_or_path, **kwargs):
 
 
 def _get_bert_config(hf_name):
-    from transformers.utils.hub import cached_path
+    """Gets configs from BERT tokenizers in HuggingFace.
+
+    `vocab_file` is required for BERT tokenizers. `tokenizer_config.json` are optional keyword arguments used to
+    initialize the tokenizer object. If no `tokenizer_config.json` is found, then we instantiate the tokenizer with
+    default arguments.
+    """
+    from transformers.utils.hub import cached_path, EntryNotFoundError
 
     vocab_file = cached_path(f"https://huggingface.co/{hf_name}/resolve/main/vocab.txt")
-    tokenizer_config = load_json(cached_path(f"https://huggingface.co/{hf_name}/resolve/main/tokenizer_config.json"))
+
+    try:
+        tokenizer_config = load_json(
+            cached_path(f"https://huggingface.co/{hf_name}/resolve/main/tokenizer_config.json")
+        )
+    except EntryNotFoundError:
+        tokenizer_config = {}
+
     return {"vocab_file": vocab_file, **tokenizer_config}
 
 

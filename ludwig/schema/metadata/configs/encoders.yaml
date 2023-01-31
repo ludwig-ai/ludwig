@@ -1,3 +1,8 @@
+BaseEncoder:
+    skip:
+        internal_only: true
+        other_information: Internal Only
+        ui_display_name: Not Displayed
 ALBERT:
     type:
         short_description:
@@ -20,7 +25,7 @@ ALBERT:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -35,6 +40,7 @@ ALBERT:
     bos_token_id:
         default_value_reasoning: Default value used in pre-trained HF encoder.
         ui_display_name: Beginning-of-Sentence Token Id
+        expected_impact: 1
     classifier_dropout_prob:
         default_value_reasoning: Huggingface default.
         description_implications:
@@ -46,7 +52,7 @@ ALBERT:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -78,7 +84,7 @@ ALBERT:
 
             Increasing the embedding size may cause the model to train more slowly,
             but the higher dimensionality can also improve overall quality.'
-        expected_impact: 2
+        expected_impact: 3
         literature_references:
             - https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture
         suggested_values: 1.6 * sqrt(vocab_size)
@@ -90,6 +96,7 @@ ALBERT:
     eos_token_id:
         default_value_reasoning: Default value used in pre-trained HF encoder.
         ui_display_name: End-of-Sentence Token Id
+        expected_impact: 1
     hidden_act:
         default_value_reasoning: Taken from huggingface.
         description_implications:
@@ -97,7 +104,7 @@ ALBERT:
             the feed-forward layers of the transformer.
         example_value:
             - relu
-        expected_impact: 2
+        expected_impact: 1
         literature_references:
             - "[Hugging face docs for ALBERT config](https://huggingface.co/docs/transformers/model_doc/albert#transformers.AlbertConfig.hidden_act)\n\
               \r\n[Relevant StackOverflow discussion](https://ai.stackexchange.com/questions/30341/why-does-a-transformer-not-use-an-activation-function-following-the-multi-head-a)"
@@ -118,7 +125,7 @@ ALBERT:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -138,7 +145,7 @@ ALBERT:
             Increasing the hidden size makes the model larger
             and slower to train, increases the model's capacity to capture more complexity.
             It also increases the chance of overfitting.
-        expected_impact: 2
+        expected_impact: 1
         suggested_values: 10 - 2048
         suggested_values_reasoning:
             Increasing the hidden size makes sense if the
@@ -152,7 +159,7 @@ ALBERT:
             lead to the outputs of these matrices to vanish or explode
         example_value:
             - 0.02
-        expected_impact: 3
+        expected_impact: 1
         other_information: Must be greater than 0
         related_parameters:
             - weights_initializer
@@ -163,10 +170,13 @@ ALBERT:
         ui_display_name: null
     inner_group_num:
         ui_display_name: null
+        expected_impact: 1
     intermediate_size:
         ui_display_name: null
+        expected_impact: 1
     layer_norm_eps:
         ui_display_name: null
+        expected_impact: 1
     max_position_embeddings:
         default_value_reasoning: Taken from huggingface.
         description_implications:
@@ -179,7 +189,7 @@ ALBERT:
 
             Increasing the embedding size may cause the model to train more slowly,
             but the higher dimensionality can also improve overall quality."
-        expected_impact: 2
+        expected_impact: 1
         suggested_values: 512
         suggested_values_reasoning:
             Out of the box value based on published literature.
@@ -190,18 +200,23 @@ ALBERT:
         default_value_reasoning:
             Sets the maximum sequence length of the expected
             inputs, so input/output shapes are computed accurately.
-        expected_impact: 1
+        internal_only: true
         ui_display_name: null
     num_attention_heads:
         ui_display_name: null
+        expected_impact: 1
     num_hidden_groups:
         ui_display_name: null
+        expected_impact: 1
     num_hidden_layers:
         ui_display_name: null
+        expected_impact: 1
     pad_token_id:
         ui_display_name: null
+        expected_impact: 1
     position_embedding_type:
         ui_display_name: null
+        expected_impact: 1
     pretrained_kwargs:
         default_value_reasoning: These arguments typically don't need to be specified.
         expected_impact: 1
@@ -241,6 +256,7 @@ ALBERT:
         ui_display_name: Pretrained model
     reduce_output:
         ui_display_name: null
+        expected_impact: 1
     saved_weights_in_checkpoint:
         default_value_reasoning:
             The weights of the encoder are not necessarily saved
@@ -248,7 +264,7 @@ ALBERT:
         description_implications:
             The memory footprint for some of these encoders
             can be large.
-        expected_impact: 1
+        internal_only: true
         related_parameters:
             - skip_save_model
         suggested_values:
@@ -259,12 +275,14 @@ ALBERT:
             2. the user doesn't have a lot of storage.
         ui_display_name: null
     trainable:
-        expected_impact: 2
+        expected_impact: 3
         ui_display_name: null
     type_vocab_size:
         ui_display_name: null
+        expected_impact: 1
     use_pretrained:
         ui_display_name: null
+        expected_impact: 2
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -273,7 +291,6 @@ ALBERT:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -294,16 +311,19 @@ AutoTransformer:
         default_value_reasoning:
             Sets the maximum sequence length of the expected
             inputs, so input/output shapes are computed accurately.
-        expected_impact: 1
+        internal_only: true
         ui_display_name: null
     pretrained_kwargs:
         ui_display_name: null
+        expected_impact: 1
     pretrained_model_name_or_path:
         ui_display_name: null
+        expected_impact: 3
     reduce_output:
         ui_display_name: null
+        expected_impact: 1
     trainable:
-        expected_impact: 2
+        expected_impact: 3
         ui_display_name: null
     vocab:
         default_value_reasoning:
@@ -313,7 +333,6 @@ AutoTransformer:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -378,6 +397,7 @@ BERT:
         ui_display_name: classifier_dropout
     gradient_checkpointing:
         ui_display_name: null
+        expected_impact: 1
     hidden_act:
         default_value_reasoning: Taken from huggingface.
         description_implications:
@@ -446,8 +466,10 @@ BERT:
         ui_display_name: null
     intermediate_size:
         ui_display_name: null
+        expected_impact: 1
     layer_norm_eps:
         ui_display_name: null
+        expected_impact: 1
     max_position_embeddings:
         default_value_reasoning: Taken from huggingface.
         description_implications:
@@ -471,22 +493,29 @@ BERT:
         default_value_reasoning:
             Sets the maximum sequence length of the expected
             inputs, so input/output shapes are computed accurately.
-        expected_impact: 1
+        internal_only: true
         ui_display_name: null
     num_attention_heads:
         ui_display_name: null
+        expected_impact: 1
     num_hidden_layers:
         ui_display_name: null
+        expected_impact: 1
     pad_token_id:
         ui_display_name: null
+        expected_impact: 1
     position_embedding_type:
         ui_display_name: null
+        expected_impact: 1
     pretrained_kwargs:
         ui_display_name: null
+        expected_impact: 1
     pretrained_model_name_or_path:
         ui_display_name: null
+        expected_impact: 3
     reduce_output:
         ui_display_name: null
+        expected_impact: 1
     saved_weights_in_checkpoint:
         default_value_reasoning:
             The weights of the encoder are not necessarily saved
@@ -494,7 +523,7 @@ BERT:
         description_implications:
             The memory footprint for some of these encoders
             can be large.
-        expected_impact: 1
+        internal_only: true
         related_parameters:
             - skip_save_model
         suggested_values:
@@ -505,12 +534,14 @@ BERT:
             2. the user doesn't have a lot of storage.
         ui_display_name: null
     trainable:
-        expected_impact: 2
+        expected_impact: 3
         ui_display_name: null
     type_vocab_size:
         ui_display_name: null
+        expected_impact: 1
     use_pretrained:
         ui_display_name: null
+        expected_impact: 2
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -519,7 +550,6 @@ BERT:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -544,7 +574,7 @@ BagEmbedWeighted:
             Changing the activation functions has an impact
             on the computational load of the model and might require further hypterparameter
             tuning
-        expected_impact: 1
+        expected_impact: 2
         suggested_values:
             The default value will work well in the majority of the
             cases
@@ -620,7 +650,7 @@ BagEmbedWeighted:
 
             Increasing the embedding size may cause the model to train more slowly,
             but the higher dimensionality can also improve overall quality.'
-        expected_impact: 2
+        expected_impact: 3
         literature_references:
             - https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture
         suggested_values: 1.6 * sqrt(vocab_size)
@@ -724,7 +754,7 @@ BagEmbedWeighted:
             rate.
         example_value:
             - batch
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/
         related_parameters:
@@ -801,7 +831,7 @@ BagEmbedWeighted:
             and there's a higher risk of overfitting. If it seems like the model could
             use even more capacity, consider increasing the number of fully connected
             layers, or explore other architectures.
-        expected_impact: 2
+        expected_impact: 3
         other_information:
             If num_fc_layers=0 and fc_layers=None, and there are no
             fully connected layers defined on the module, then this parameter may
@@ -824,7 +854,7 @@ BagEmbedWeighted:
             model may have a head start in its representation of various input entities.
         example_value:
             - ~/Downloads/glove.6B.100d.txt
-        expected_impact: 2
+        expected_impact: 0
         related_parameters:
             - embedding_size, embeddings_trainable
         ui_display_name: Pretrained embeddings path
@@ -877,7 +907,6 @@ BagEmbedWeighted:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     weights_initializer:
@@ -895,7 +924,7 @@ BagEmbedWeighted:
             provides a few good options. See this nice discussion from [Weights and
             Biases](https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.)
             for more information.
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - "Weights and Biases blog post: https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.
 
@@ -947,7 +976,7 @@ CTRL:
         default_value_reasoning:
             Sets the maximum sequence length of the expected
             inputs, so input/output shapes are computed accurately.
-        expected_impact: 1
+        internal_only: true
         ui_display_name: null
     n_ctx:
         ui_display_name: null
@@ -963,8 +992,10 @@ CTRL:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
+        expected_impact: 3
     reduce_output:
         ui_display_name: null
+        expected_impact: 1
     resid_pdrop:
         ui_display_name: null
     saved_weights_in_checkpoint:
@@ -974,7 +1005,7 @@ CTRL:
         description_implications:
             The memory footprint for some of these encoders
             can be large.
-        expected_impact: 1
+        internal_only: true
         related_parameters:
             - skip_save_model
         suggested_values:
@@ -985,10 +1016,11 @@ CTRL:
             2. the user doesn't have a lot of storage.
         ui_display_name: null
     trainable:
-        expected_impact: 2
+        expected_impact: 3
         ui_display_name: null
     use_pretrained:
         ui_display_name: null
+        expected_impact: 2
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -997,7 +1029,6 @@ CTRL:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -1008,7 +1039,7 @@ CamemBERT:
         short_description:
             Language model trained on large French text corpus.
         long_description:
-            The camembert encoder loads a pretrained CamemBERT (default jplu/tf-camembert-base) model using
+            The camembert encoder loads a pretrained CamemBERT (default camembert-base) model using
             the Hugging Face transformers package. CamemBERT is pre-trained on 138GB of French text.
         literature_references:
             - https://arxiv.org/abs/1911.03894
@@ -1152,7 +1183,7 @@ CamemBERT:
         default_value_reasoning:
             Sets the maximum sequence length of the expected
             inputs, so input/output shapes are computed accurately.
-        expected_impact: 1
+        internal_only: true
         ui_display_name: null
     num_attention_heads:
         ui_display_name: null
@@ -1166,8 +1197,10 @@ CamemBERT:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
+        expected_impact: 3
     reduce_output:
         ui_display_name: null
+        expected_impact: 1
     saved_weights_in_checkpoint:
         default_value_reasoning:
             The weights of the encoder are not necessarily saved
@@ -1175,7 +1208,7 @@ CamemBERT:
         description_implications:
             The memory footprint for some of these encoders
             can be large.
-        expected_impact: 1
+        internal_only: true
         related_parameters:
             - skip_save_model
         suggested_values:
@@ -1186,12 +1219,13 @@ CamemBERT:
             2. the user doesn't have a lot of storage.
         ui_display_name: null
     trainable:
-        expected_impact: 2
+        expected_impact: 3
         ui_display_name: null
     type_vocab_size:
         ui_display_name: null
     use_pretrained:
         ui_display_name: null
+        expected_impact: 2
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -1200,7 +1234,6 @@ CamemBERT:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -1274,7 +1307,7 @@ CategoricalEmbed:
 
             Increasing the embedding size may cause the model to train more slowly,
             but the higher dimensionality can also improve overall quality.'
-        expected_impact: 2
+        expected_impact: 3
         literature_references:
             - https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture
         suggested_values: 1.6 * sqrt(vocab_size)
@@ -1305,8 +1338,10 @@ CategoricalEmbed:
         ui_display_name: Embeddings on CPU
     embeddings_trainable:
         ui_display_name: null
+        expected_impact: 1
     pretrained_embeddings:
         ui_display_name: null
+        expected_impact: 0
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -1315,7 +1350,6 @@ CategoricalEmbed:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
 CategoricalSparse:
@@ -1386,7 +1420,7 @@ CategoricalSparse:
 
             Increasing the embedding size may cause the model to train more slowly,
             but the higher dimensionality can also improve overall quality.'
-        expected_impact: 2
+        expected_impact: 3
         literature_references:
             - https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture
         suggested_values: 1.6 * sqrt(vocab_size)
@@ -1417,8 +1451,10 @@ CategoricalSparse:
         ui_display_name: Embeddings on CPU
     embeddings_trainable:
         ui_display_name: null
+        expected_impact: 1
     pretrained_embeddings:
         ui_display_name: null
+        expected_impact: 0
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -1427,7 +1463,6 @@ CategoricalSparse:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
 DateEmbed:
@@ -1447,7 +1482,7 @@ DateEmbed:
             Changing the activation functions has an impact
             on the computational load of the model and might require further hypterparameter
             tuning
-        expected_impact: 1
+        expected_impact: 2
         suggested_values:
             The default value will work well in the majority of the
             cases
@@ -1523,7 +1558,7 @@ DateEmbed:
 
             Increasing the embedding size may cause the model to train more slowly,
             but the higher dimensionality can also improve overall quality.'
-        expected_impact: 2
+        expected_impact: 3
         literature_references:
             - https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture
         suggested_values: 1.6 * sqrt(vocab_size)
@@ -1598,7 +1633,7 @@ DateEmbed:
             rate.
         example_value:
             - batch
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/
         related_parameters:
@@ -1675,7 +1710,7 @@ DateEmbed:
             and there's a higher risk of overfitting. If it seems like the model could
             use even more capacity, consider increasing the number of fully connected
             layers, or explore other architectures.
-        expected_impact: 2
+        expected_impact: 3
         other_information:
             If num_fc_layers=0 and fc_layers=None, and there are no
             fully connected layers defined on the module, then this parameter may
@@ -1730,7 +1765,7 @@ DateEmbed:
             provides a few good options. See this nice discussion from [Weights and
             Biases](https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.)
             for more information.
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - "Weights and Biases blog post: https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.
 
@@ -1762,7 +1797,7 @@ DateWave:
             Changing the activation functions has an impact
             on the computational load of the model and might require further hypterparameter
             tuning
-        expected_impact: 1
+        expected_impact: 2
         suggested_values:
             The default value will work well in the majority of the
             cases
@@ -1864,7 +1899,7 @@ DateWave:
             rate.
         example_value:
             - batch
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/
         related_parameters:
@@ -1941,7 +1976,7 @@ DateWave:
             and there's a higher risk of overfitting. If it seems like the model could
             use even more capacity, consider increasing the number of fully connected
             layers, or explore other architectures.
-        expected_impact: 2
+        expected_impact: 3
         other_information:
             If num_fc_layers=0 and fc_layers=None, and there are no
             fully connected layers defined on the module, then this parameter may
@@ -1996,7 +2031,7 @@ DateWave:
             provides a few good options. See this nice discussion from [Weights and
             Biases](https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.)
             for more information.
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - "Weights and Biases blog post: https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.
 
@@ -2026,7 +2061,7 @@ DenseEncoder:
             Changing the activation functions has an impact
             on the computational load of the model and might require further hypterparameter
             tuning
-        expected_impact: 1
+        expected_impact: 2
         suggested_values:
             The default value will work well in the majority of the
             cases
@@ -2083,12 +2118,14 @@ DenseEncoder:
             performance.
         ui_display_name: Dropout
     input_size:
+        internal_only: true
         other_information: Internal Only
         related_parameters:
             - "No"
         ui_display_name: Not Displayed
-    layers:
+    fc_layers:
         ui_display_name: null
+        expected_impact: 1
     norm:
         default_value_reasoning:
             While batch normalization and layer normalization
@@ -2101,7 +2138,7 @@ DenseEncoder:
             rate.
         example_value:
             - batch
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/
         related_parameters:
@@ -2159,7 +2196,7 @@ DenseEncoder:
             due to overfitting."
         example_value:
             - 1
-        expected_impact: 1
+        expected_impact: 3
         other_information:
             If you have multiple input features, varying the number
             of layers in the combiner or output feature decoder will have more impact.
@@ -2180,7 +2217,7 @@ DenseEncoder:
             and there's a higher risk of overfitting. If it seems like the model could
             use even more capacity, consider increasing the number of fully connected
             layers, or explore other architectures.
-        expected_impact: 2
+        expected_impact: 3
         other_information:
             If num_fc_layers=0 and fc_layers=None, and there are no
             fully connected layers defined on the module, then this parameter may
@@ -2196,6 +2233,7 @@ DenseEncoder:
         ui_display_name: Output Size
     use_bias:
         ui_display_name: null
+        expected_impact: 1
     weights_initializer:
         default_value_reasoning: Taken from [this paper](http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf).
         description_implications:
@@ -2211,7 +2249,7 @@ DenseEncoder:
             provides a few good options. See this nice discussion from [Weights and
             Biases](https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.)
             for more information.
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - "Weights and Biases blog post: https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.
 
@@ -2243,7 +2281,7 @@ DistilBERT:
             Changing the activation functions has an impact
             on the computational load of the model and might require further hypterparameter
             tuning
-        expected_impact: 1
+        expected_impact: 2
         suggested_values:
             The default value will work well in the majority of the
             cases
@@ -2340,7 +2378,7 @@ DistilBERT:
         default_value_reasoning:
             Sets the maximum sequence length of the expected
             inputs, so input/output shapes are computed accurately.
-        expected_impact: 1
+        internal_only: true
         ui_display_name: null
     n_heads:
         ui_display_name: null
@@ -2350,6 +2388,7 @@ DistilBERT:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
+        expected_impact: 3
     qa_dropout:
         default_value_reasoning: Huggingface default.
         description_implications:
@@ -2375,6 +2414,7 @@ DistilBERT:
         ui_display_name: qa_dropout
     reduce_output:
         ui_display_name: null
+        expected_impact: 1
     saved_weights_in_checkpoint:
         default_value_reasoning:
             The weights of the encoder are not necessarily saved
@@ -2382,7 +2422,7 @@ DistilBERT:
         description_implications:
             The memory footprint for some of these encoders
             can be large.
-        expected_impact: 1
+        internal_only: true
         related_parameters:
             - skip_save_model
         suggested_values:
@@ -2422,10 +2462,11 @@ DistilBERT:
     sinusoidal_pos_embds:
         ui_display_name: null
     trainable:
-        expected_impact: 2
+        expected_impact: 3
         ui_display_name: null
     use_pretrained:
         ui_display_name: null
+        expected_impact: 2
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -2434,7 +2475,6 @@ DistilBERT:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -2518,7 +2558,7 @@ ELECTRA:
 
             Increasing the embedding size may cause the model to train more slowly,
             but the higher dimensionality can also improve overall quality.'
-        expected_impact: 2
+        expected_impact: 3
         literature_references:
             - https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture
         suggested_values: 1.6 * sqrt(vocab_size)
@@ -2624,7 +2664,7 @@ ELECTRA:
         default_value_reasoning:
             Sets the maximum sequence length of the expected
             inputs, so input/output shapes are computed accurately.
-        expected_impact: 1
+        internal_only: true
         ui_display_name: null
     num_attention_heads:
         ui_display_name: null
@@ -2636,8 +2676,10 @@ ELECTRA:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
+        expected_impact: 3
     reduce_output:
         ui_display_name: null
+        expected_impact: 1
     saved_weights_in_checkpoint:
         default_value_reasoning:
             The weights of the encoder are not necessarily saved
@@ -2645,7 +2687,7 @@ ELECTRA:
         description_implications:
             The memory footprint for some of these encoders
             can be large.
-        expected_impact: 1
+        internal_only: true
         related_parameters:
             - skip_save_model
         suggested_values:
@@ -2656,12 +2698,13 @@ ELECTRA:
             2. the user doesn't have a lot of storage.
         ui_display_name: null
     trainable:
-        expected_impact: 2
+        expected_impact: 3
         ui_display_name: null
     type_vocab_size:
         ui_display_name: null
     use_pretrained:
         ui_display_name: null
+        expected_impact: 2
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -2670,7 +2713,6 @@ ELECTRA:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -2688,6 +2730,7 @@ FlauBERT:
             - https://arxiv.org/abs/1912.05372
     asm:
         ui_display_name: null
+        expected_impact: 1
     attention_dropout:
         default_value_reasoning: Huggingface default.
         description_implications:
@@ -2699,7 +2742,7 @@ FlauBERT:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -2713,8 +2756,10 @@ FlauBERT:
         ui_display_name: attention_dropout
     bos_index:
         ui_display_name: null
+        expected_impact: 1
     causal:
         ui_display_name: null
+        expected_impact: 1
     dropout:
         default_value_reasoning: Huggingface default.
         description_implications:
@@ -2740,27 +2785,38 @@ FlauBERT:
         ui_display_name: dropout
     emb_dim:
         ui_display_name: null
+        expected_impact: 1
     embed_init_std:
         ui_display_name: null
+        expected_impact: 1
     eos_index:
         ui_display_name: null
+        expected_impact: 1
     gelu_activation:
         ui_display_name: null
+        expected_impact: 1
     init_std:
         ui_display_name: null
+        expected_impact: 1
     is_encoder:
         ui_display_name: null
+        expected_impact: 1
     lang_id:
         ui_display_name: null
+        expected_impact: 1
     layer_norm_eps:
         ui_display_name: null
+        expected_impact: 1
     layerdrop:
         ui_display_name: null
+        expected_impact: 1
     mask_index:
         ui_display_name: null
+        expected_impact: 1
     mask_token_id:
         default_value_reasoning: Default value used in pre-trained HF encoder.
         ui_display_name: Mask Token ID
+        expected_impact: 1
     max_position_embeddings:
         default_value_reasoning: Taken from huggingface.
         description_implications:
@@ -2773,7 +2829,7 @@ FlauBERT:
 
             Increasing the embedding size may cause the model to train more slowly,
             but the higher dimensionality can also improve overall quality."
-        expected_impact: 2
+        expected_impact: 1
         suggested_values: 512
         suggested_values_reasoning:
             Out of the box value based on published literature.
@@ -2784,26 +2840,33 @@ FlauBERT:
         default_value_reasoning:
             Sets the maximum sequence length of the expected
             inputs, so input/output shapes are computed accurately.
-        expected_impact: 1
+        internal_only: true
         ui_display_name: null
     n_head:
         ui_display_name: null
+        expected_impact: 1
     n_langs:
         default_value_reasoning: Default value used in pre-trained HF encoder.
         expected_impact: 1
         ui_display_name: Number of Languages
     n_layer:
         ui_display_name: null
+        expected_impact: 1
     pad_index:
         ui_display_name: null
+        expected_impact: 1
     pre_norm:
         ui_display_name: null
+        expected_impact: 1
     pretrained_kwargs:
         ui_display_name: null
+        expected_impact: 1
     pretrained_model_name_or_path:
         ui_display_name: null
+        expected_impact: 3
     reduce_output:
         ui_display_name: null
+        expected_impact: 1
     saved_weights_in_checkpoint:
         default_value_reasoning:
             The weights of the encoder are not necessarily saved
@@ -2811,7 +2874,7 @@ FlauBERT:
         description_implications:
             The memory footprint for some of these encoders
             can be large.
-        expected_impact: 1
+        internal_only: true
         related_parameters:
             - skip_save_model
         suggested_values:
@@ -2823,15 +2886,19 @@ FlauBERT:
         ui_display_name: null
     sinusoidal_embeddings:
         ui_display_name: null
+        expected_impact: 1
     trainable:
-        expected_impact: 2
         ui_display_name: null
+        expected_impact: 3
     unk_index:
         ui_display_name: null
+        expected_impact: 1
     use_lang_emb:
         ui_display_name: null
+        expected_impact: 1
     use_pretrained:
         ui_display_name: null
+        expected_impact: 2
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -2840,7 +2907,6 @@ FlauBERT:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -2883,7 +2949,7 @@ GPT2:
         default_value_reasoning:
             Sets the maximum sequence length of the expected
             inputs, so input/output shapes are computed accurately.
-        expected_impact: 1
+        internal_only: true
         ui_display_name: null
     n_ctx:
         ui_display_name: null
@@ -2901,17 +2967,20 @@ GPT2:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
+        expected_impact: 3
     reduce_output:
         ui_display_name: null
+        expected_impact: 1
     resid_pdrop:
         ui_display_name: null
     scale_attn_weights:
         ui_display_name: null
     trainable:
-        expected_impact: 2
+        expected_impact: 3
         ui_display_name: null
     use_pretrained:
         ui_display_name: null
+        expected_impact: 2
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -2920,7 +2989,6 @@ GPT2:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -2963,7 +3031,7 @@ GPT:
         default_value_reasoning:
             Sets the maximum sequence length of the expected
             inputs, so input/output shapes are computed accurately.
-        expected_impact: 1
+        internal_only: true
         ui_display_name: null
     n_ctx:
         ui_display_name: null
@@ -2979,8 +3047,10 @@ GPT:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
+        expected_impact: 3
     reduce_output:
         ui_display_name: null
+        expected_impact: 1
     resid_pdrop:
         ui_display_name: null
     saved_weights_in_checkpoint:
@@ -2990,7 +3060,7 @@ GPT:
         description_implications:
             The memory footprint for some of these encoders
             can be large.
-        expected_impact: 1
+        internal_only: true
         related_parameters:
             - skip_save_model
         suggested_values:
@@ -3001,10 +3071,11 @@ GPT:
             2. the user doesn't have a lot of storage.
         ui_display_name: null
     trainable:
-        expected_impact: 2
+        expected_impact: 3
         ui_display_name: null
     use_pretrained:
         ui_display_name: null
+        expected_impact: 2
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -3013,7 +3084,6 @@ GPT:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -3037,7 +3107,7 @@ H3Embed:
             Changing the activation functions has an impact
             on the computational load of the model and might require further hypterparameter
             tuning
-        expected_impact: 1
+        expected_impact: 2
         suggested_values:
             The default value will work well in the majority of the
             cases
@@ -3113,7 +3183,7 @@ H3Embed:
 
             Increasing the embedding size may cause the model to train more slowly,
             but the higher dimensionality can also improve overall quality.'
-        expected_impact: 2
+        expected_impact: 3
         literature_references:
             - https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture
         suggested_values: 1.6 * sqrt(vocab_size)
@@ -3188,7 +3258,7 @@ H3Embed:
             rate.
         example_value:
             - batch
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/
         related_parameters:
@@ -3265,7 +3335,7 @@ H3Embed:
             and there's a higher risk of overfitting. If it seems like the model could
             use even more capacity, consider increasing the number of fully connected
             layers, or explore other architectures.
-        expected_impact: 2
+        expected_impact: 3
         other_information:
             If num_fc_layers=0 and fc_layers=None, and there are no
             fully connected layers defined on the module, then this parameter may
@@ -3306,6 +3376,7 @@ H3Embed:
         ui_display_name: Sequence Reducer
     use_bias:
         ui_display_name: null
+        expected_impact: 1
     weights_initializer:
         default_value_reasoning: Taken from [this paper](http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf).
         description_implications:
@@ -3321,7 +3392,7 @@ H3Embed:
             provides a few good options. See this nice discussion from [Weights and
             Biases](https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.)
             for more information.
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - "Weights and Biases blog post: https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.
 
@@ -3347,6 +3418,7 @@ H3RNN:
             encoding the path in the tree of all H3 hexes.
     activation:
         ui_display_name: null
+        expected_impact: 1
     bias_initializer:
         default_value_reasoning:
             It is possible and common to initialize the biases
@@ -3358,7 +3430,7 @@ H3RNN:
             constant value such as 0.01 for all biases to ensure that all ReLU units
             are activated in the beginning and have some effect on the gradient. However,
             it's still an open question as to whether this provides consistent improvement.
-        expected_impact: 1
+        expected_impact: 2
         literature_references:
             - https://cs231n.github.io/neural-networks-2/
         related_parameters:
@@ -3382,7 +3454,7 @@ H3RNN:
             Setting bidirectional to True may increase the compute
             and memory requirements of the model, but may also increase model performance
             on long sequences.
-        expected_impact: 3
+        expected_impact: 0
         literature_references:
             - https://devopedia.org/bidirectional-rnn#:~:text=RNN%20has%20the%20limitation%20that,forward%20and%20reverse%20time%20order.
         related_parameters:
@@ -3404,7 +3476,7 @@ H3RNN:
             (1) compute costs and (2) catastrophic forgetting (source: https://en.wikipedia.org/wiki/Catastrophic_interference
             ). RNNs have marginally less compute costs, but are prone to catastrophic
             forgetting."
-        expected_impact: 1
+        expected_impact: 3
         related_parameters:
             - "bidirectional
 
@@ -3460,7 +3532,7 @@ H3RNN:
 
             Increasing the embedding size may cause the model to train more slowly,
             but the higher dimensionality can also improve overall quality.'
-        expected_impact: 2
+        expected_impact: 3
         literature_references:
             - https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture
         suggested_values: 1.6 * sqrt(vocab_size)
@@ -3514,7 +3586,7 @@ H3RNN:
             performance for longer sequences or more complex tasks.
         example_value:
             - 1
-        expected_impact: 1
+        expected_impact: 3
         other_information:
             If you have multiple input features, varying the number
             of layers in the combiner or output feature decoder will have more impact.
@@ -3528,7 +3600,7 @@ H3RNN:
         ui_display_name: Number of Recurrent Layers
     recurrent_activation:
         default_value_reasoning: sigmoid' is commonly used
-        expected_impact: 3
+        expected_impact: 1
         other_information:
             I don't think that this parameter is used anywhere in the
             code base. It's being passed down but not used in the actual RNN forwarding
@@ -3549,7 +3621,7 @@ H3RNN:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -3563,10 +3635,13 @@ H3RNN:
         ui_display_name: Recurrent Dropout
     recurrent_initializer:
         ui_display_name: null
+        expected_impact: 1
     reduce_output:
         ui_display_name: null
+        expected_impact: 1
     unit_forget_bias:
         ui_display_name: null
+        expected_impact: 1
     use_bias:
         ui_display_name: null
     weights_initializer:
@@ -3584,7 +3659,7 @@ H3RNN:
             provides a few good options. See this nice discussion from [Weights and
             Biases](https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.)
             for more information.
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - "Weights and Biases blog post: https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.
 
@@ -3616,7 +3691,7 @@ H3WeightedSum:
             Changing the activation functions has an impact
             on the computational load of the model and might require further hypterparameter
             tuning
-        expected_impact: 1
+        expected_impact: 2
         suggested_values:
             The default value will work well in the majority of the
             cases
@@ -3692,7 +3767,7 @@ H3WeightedSum:
 
             Increasing the embedding size may cause the model to train more slowly,
             but the higher dimensionality can also improve overall quality.'
-        expected_impact: 2
+        expected_impact: 3
         literature_references:
             - https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture
         suggested_values: 1.6 * sqrt(vocab_size)
@@ -3767,7 +3842,7 @@ H3WeightedSum:
             rate.
         example_value:
             - batch
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/
         related_parameters:
@@ -3844,7 +3919,7 @@ H3WeightedSum:
             and there's a higher risk of overfitting. If it seems like the model could
             use even more capacity, consider increasing the number of fully connected
             layers, or explore other architectures.
-        expected_impact: 2
+        expected_impact: 3
         other_information:
             If num_fc_layers=0 and fc_layers=None, and there are no
             fully connected layers defined on the module, then this parameter may
@@ -3860,8 +3935,10 @@ H3WeightedSum:
         ui_display_name: Output Size
     should_softmax:
         ui_display_name: null
+        expected_impact: 1
     use_bias:
         ui_display_name: null
+        expected_impact: 1
     weights_initializer:
         default_value_reasoning: Taken from [this paper](http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf).
         description_implications:
@@ -3877,7 +3954,7 @@ H3WeightedSum:
             provides a few good options. See this nice discussion from [Weights and
             Biases](https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.)
             for more information.
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - "Weights and Biases blog post: https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.
 
@@ -3907,7 +3984,7 @@ Longformer:
         default_value_reasoning:
             Sets the maximum sequence length of the expected
             inputs, so input/output shapes are computed accurately.
-        expected_impact: 1
+        internal_only: true
         ui_display_name: null
     num_tokens:
         ui_display_name: null
@@ -3915,8 +3992,10 @@ Longformer:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
+        expected_impact: 3
     reduce_output:
         ui_display_name: null
+        expected_impact: 1
     saved_weights_in_checkpoint:
         default_value_reasoning:
             The weights of the encoder are not necessarily saved
@@ -3924,7 +4003,7 @@ Longformer:
         description_implications:
             The memory footprint for some of these encoders
             can be large.
-        expected_impact: 1
+        internal_only: true
         related_parameters:
             - skip_save_model
         suggested_values:
@@ -3937,10 +4016,11 @@ Longformer:
     sep_token_id:
         ui_display_name: null
     trainable:
-        expected_impact: 2
+        expected_impact: 3
         ui_display_name: null
     use_pretrained:
         ui_display_name: null
+        expected_impact: 2
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -3949,7 +4029,6 @@ Longformer:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -4008,7 +4087,7 @@ MLPMixer:
             performance for larger images or more complex image tasks.
         example_value:
             - 8
-        expected_impact: 1
+        expected_impact: 3
         literature_references:
             - "MLP-Mixer: An all-MLP Architecture for Vision
 
@@ -4102,7 +4181,7 @@ MT5:
         default_value_reasoning:
             Sets the maximum sequence length of the expected
             inputs, so input/output shapes are computed accurately.
-        expected_impact: 1
+        internal_only: true
         ui_display_name: null
     num_decoder_layers:
         ui_display_name: null
@@ -4121,7 +4200,7 @@ MT5:
             from the pre-trained model."
         example_value:
             - 8
-        expected_impact: 1
+        expected_impact: 3
         related_parameters:
             - pretrained_model_or_path
         suggested_values: 1 - 12
@@ -4136,8 +4215,10 @@ MT5:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
+        expected_impact: 3
     reduce_output:
         ui_display_name: null
+        expected_impact: 1
     relative_attention_num_buckets:
         ui_display_name: null
     saved_weights_in_checkpoint:
@@ -4147,7 +4228,7 @@ MT5:
         description_implications:
             The memory footprint for some of these encoders
             can be large.
-        expected_impact: 1
+        internal_only: true
         related_parameters:
             - skip_save_model
         suggested_values:
@@ -4187,12 +4268,13 @@ MT5:
     tokenizer_class:
         ui_display_name: null
     trainable:
-        expected_impact: 2
+        expected_impact: 3
         ui_display_name: null
     use_cache:
         ui_display_name: null
     use_pretrained:
         ui_display_name: null
+        expected_impact: 2
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -4201,7 +4283,6 @@ MT5:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -4228,7 +4309,7 @@ ParallelCNN:
             Changing the activation functions has an impact
             on the computational load of the model and might require further hypterparameter
             tuning
-        expected_impact: 1
+        expected_impact: 2
         suggested_values:
             The default value will work well in the majority of the
             cases
@@ -4320,7 +4401,7 @@ ParallelCNN:
 
             Increasing the embedding size may cause the model to train more slowly,
             but the higher dimensionality can also improve overall quality.'
-        expected_impact: 2
+        expected_impact: 3
         literature_references:
             - https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture
         suggested_values: 1.6 * sqrt(vocab_size)
@@ -4351,6 +4432,7 @@ ParallelCNN:
         ui_display_name: Embeddings on CPU
     embeddings_trainable:
         ui_display_name: null
+        expected_impact: 1
     fc_layers:
         default_value_reasoning:
             By default the stack is built by using num_fc_layers,
@@ -4387,11 +4469,12 @@ ParallelCNN:
         ui_display_name: Fully Connected Layers
     filter_size:
         ui_display_name: null
+        expected_impact: 2
     max_sequence_length:
         default_value_reasoning:
             Sets the maximum sequence length of the expected
             inputs, so input/output shapes are computed accurately.
-        expected_impact: 1
+        internal_only: true
         ui_display_name: null
     norm:
         default_value_reasoning:
@@ -4405,7 +4488,7 @@ ParallelCNN:
             rate.
         example_value:
             - batch
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/
         related_parameters:
@@ -4453,7 +4536,7 @@ ParallelCNN:
             achieve better performance when a large amount of data is provided, but
             also makes the model more computationally expensive and potentially more
             prone to overfitting.
-        expected_impact: 2
+        expected_impact: 3
         related_parameters:
             - conv_layers
         ui_display_name: Number of Convolutional Layers
@@ -4495,7 +4578,7 @@ ParallelCNN:
             and there's a higher risk of overfitting. If it seems like the model could
             use even more capacity, consider increasing the number of fully connected
             layers, or explore other architectures.
-        expected_impact: 2
+        expected_impact: 3
         other_information:
             If num_fc_layers=0 and fc_layers=None, and there are no
             fully connected layers defined on the module, then this parameter may
@@ -4511,14 +4594,19 @@ ParallelCNN:
         ui_display_name: Output Size
     pool_function:
         ui_display_name: Pooling function
+        expected_impact: 1
     pool_size:
         ui_display_name: null
+        expected_impact: 1
     pretrained_embeddings:
         ui_display_name: null
+        expected_impact: 0
     reduce_output:
         ui_display_name: null
+        expected_impact: 1
     representation:
         ui_display_name: null
+        expected_impact: 1
     should_embed:
         internal_only: true
         ui_display_name: Not displayed
@@ -4556,7 +4644,6 @@ ParallelCNN:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     weights_initializer:
@@ -4574,7 +4661,7 @@ ParallelCNN:
             provides a few good options. See this nice discussion from [Weights and
             Biases](https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.)
             for more information.
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - "Weights and Biases blog post: https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.
 
@@ -4597,6 +4684,7 @@ PassthroughEncoder:
             placeholders as outputs. Inputs are of size `b` while outputs are of size `b x 1` where `b` is
             the batch size.
     input_size:
+        internal_only: true
         other_information: Internal Only
         related_parameters:
             - "No"
@@ -4610,6 +4698,7 @@ BinaryPassthroughEncoder:
             placeholders as outputs. Inputs are of size `b` while outputs are of size `b x 1` where `b` is
             the batch size.
     input_size:
+        internal_only: true
         other_information: Internal Only
         related_parameters:
             - "No"
@@ -4623,6 +4712,7 @@ CategoricalPassthroughEncoder:
             placeholders as outputs. Inputs are of size `b` while outputs are of size `b x 1` where `b` is
             the batch size.
     input_size:
+        internal_only: true
         other_information: Internal Only
         related_parameters:
             - "No"
@@ -4644,7 +4734,7 @@ ResNet:
             Changing the activation functions has an impact
             on the computational load of the model and might require further hypterparameter
             tuning
-        expected_impact: 1
+        expected_impact: 2
         suggested_values:
             The default value will work well in the majority of the
             cases
@@ -4742,8 +4832,10 @@ ResNet:
         ui_display_name: Fully Connected Layers
     first_pool_kernel_size:
         ui_display_name: null
+        expected_impact: 1
     first_pool_stride:
         ui_display_name: null
+        expected_impact: 1
     height:
         internal_only: true
         ui_display_name: null
@@ -4761,7 +4853,7 @@ ResNet:
             rate.
         example_value:
             - batch
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/
         related_parameters:
@@ -4842,7 +4934,7 @@ ResNet:
             and there's a higher risk of overfitting. If it seems like the model could
             use even more capacity, consider increasing the number of fully connected
             layers, or explore other architectures.
-        expected_impact: 2
+        expected_impact: 3
         other_information:
             If num_fc_layers=0 and fc_layers=None, and there are no
             fully connected layers defined on the module, then this parameter may
@@ -4860,6 +4952,7 @@ ResNet:
         ui_display_name: null
     use_bias:
         ui_display_name: null
+        expected_impact: 1
     weights_initializer:
         default_value_reasoning: Taken from [this paper](http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf).
         description_implications:
@@ -4875,7 +4968,7 @@ ResNet:
             provides a few good options. See this nice discussion from [Weights and
             Biases](https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.)
             for more information.
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - "Weights and Biases blog post: https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.
 
@@ -4916,7 +5009,7 @@ RoBERTa:
         default_value_reasoning:
             Sets the maximum sequence length of the expected
             inputs, so input/output shapes are computed accurately.
-        expected_impact: 1
+        internal_only: true
         ui_display_name: null
     pad_token_id:
         ui_display_name: null
@@ -4924,8 +5017,10 @@ RoBERTa:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
+        expected_impact: 3
     reduce_output:
         ui_display_name: null
+        expected_impact: 1
     saved_weights_in_checkpoint:
         default_value_reasoning:
             The weights of the encoder are not necessarily saved
@@ -4933,7 +5028,7 @@ RoBERTa:
         description_implications:
             The memory footprint for some of these encoders
             can be large.
-        expected_impact: 1
+        internal_only: true
         related_parameters:
             - skip_save_model
         suggested_values:
@@ -4944,10 +5039,11 @@ RoBERTa:
             2. the user doesn't have a lot of storage.
         ui_display_name: null
     trainable:
-        expected_impact: 2
+        expected_impact: 3
         ui_display_name: null
     use_pretrained:
         ui_display_name: null
+        expected_impact: 2
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -4956,7 +5052,6 @@ RoBERTa:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -5015,7 +5110,7 @@ SequenceEmbed:
 
             Increasing the embedding size may cause the model to train more slowly,
             but the higher dimensionality can also improve overall quality.'
-        expected_impact: 2
+        expected_impact: 3
         literature_references:
             - https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture
         suggested_values: 1.6 * sqrt(vocab_size)
@@ -5046,18 +5141,22 @@ SequenceEmbed:
         ui_display_name: Embeddings on CPU
     embeddings_trainable:
         ui_display_name: null
+        expected_impact: 1
     max_sequence_length:
         default_value_reasoning:
             Sets the maximum sequence length of the expected
             inputs, so input/output shapes are computed accurately.
-        expected_impact: 1
+        internal_only: true
         ui_display_name: null
     pretrained_embeddings:
         ui_display_name: null
+        expected_impact: 0
     reduce_output:
         ui_display_name: null
+        expected_impact: 1
     representation:
         ui_display_name: null
+        expected_impact: 1
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -5066,7 +5165,6 @@ SequenceEmbed:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     weights_initializer:
@@ -5084,7 +5182,7 @@ SequenceEmbed:
             provides a few good options. See this nice discussion from [Weights and
             Biases](https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.)
             for more information.
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - "Weights and Biases blog post: https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.
 
@@ -5125,10 +5223,11 @@ SequencePassthrough:
         default_value_reasoning:
             Sets the maximum sequence length of the expected
             inputs, so input/output shapes are computed accurately.
-        expected_impact: 1
+        internal_only: true
         ui_display_name: null
     reduce_output:
         ui_display_name: null
+        expected_impact: 1
 SetSparseEncoder:
     type:
         short_description:
@@ -5148,7 +5247,7 @@ SetSparseEncoder:
             Changing the activation functions has an impact
             on the computational load of the model and might require further hypterparameter
             tuning
-        expected_impact: 1
+        expected_impact: 2
         suggested_values:
             The default value will work well in the majority of the
             cases
@@ -5224,7 +5323,7 @@ SetSparseEncoder:
 
             Increasing the embedding size may cause the model to train more slowly,
             but the higher dimensionality can also improve overall quality.'
-        expected_impact: 2
+        expected_impact: 3
         literature_references:
             - https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture
         suggested_values: 1.6 * sqrt(vocab_size)
@@ -5255,6 +5354,7 @@ SetSparseEncoder:
         ui_display_name: Embeddings on CPU
     embeddings_trainable:
         ui_display_name: null
+        expected_impact: 1
     fc_layers:
         default_value_reasoning:
             By default the stack is built by using num_fc_layers,
@@ -5301,7 +5401,7 @@ SetSparseEncoder:
             rate.
         example_value:
             - batch
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/
         related_parameters:
@@ -5378,7 +5478,7 @@ SetSparseEncoder:
             and there's a higher risk of overfitting. If it seems like the model could
             use even more capacity, consider increasing the number of fully connected
             layers, or explore other architectures.
-        expected_impact: 2
+        expected_impact: 3
         other_information:
             If num_fc_layers=0 and fc_layers=None, and there are no
             fully connected layers defined on the module, then this parameter may
@@ -5394,8 +5494,10 @@ SetSparseEncoder:
         ui_display_name: Output Size
     pretrained_embeddings:
         ui_display_name: null
+        expected_impact: 0
     representation:
         ui_display_name: null
+        expected_impact: 1
     use_bias:
         default_value_reasoning:
             "Bias terms may improve model accuracy, and don't
@@ -5430,7 +5532,6 @@ SetSparseEncoder:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     weights_initializer:
@@ -5448,7 +5549,7 @@ SetSparseEncoder:
             provides a few good options. See this nice discussion from [Weights and
             Biases](https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.)
             for more information.
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - "Weights and Biases blog post: https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.
 
@@ -5590,7 +5691,7 @@ Stacked2DCNN:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -5695,7 +5796,7 @@ Stacked2DCNN:
             achieve better performance when a large amount of data is provided, but
             also makes the model more computationally expensive and potentially more
             prone to overfitting.
-        expected_impact: 2
+        expected_impact: 3
         related_parameters:
             - conv_layers
         ui_display_name: Number of Convolutional Layers
@@ -5738,7 +5839,7 @@ Stacked2DCNN:
             and there's a higher risk of overfitting. If it seems like the model could
             use even more capacity, consider increasing the number of fully connected
             layers, or explore other architectures.
-        expected_impact: 2
+        expected_impact: 3
         other_information:
             If num_fc_layers=0 and fc_layers=None, and there are no
             fully connected layers defined on the module, then this parameter may
@@ -5846,7 +5947,7 @@ StackedCNN:
             Changing the activation functions has an impact
             on the computational load of the model and might require further hypterparameter
             tuning
-        expected_impact: 1
+        expected_impact: 2
         suggested_values:
             The default value will work well in the majority of the
             cases
@@ -5957,7 +6058,7 @@ StackedCNN:
 
             Increasing the embedding size may cause the model to train more slowly,
             but the higher dimensionality can also improve overall quality.'
-        expected_impact: 2
+        expected_impact: 3
         literature_references:
             - https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture
         suggested_values: 1.6 * sqrt(vocab_size)
@@ -5988,6 +6089,7 @@ StackedCNN:
         ui_display_name: Embeddings on CPU
     embeddings_trainable:
         ui_display_name: null
+        expected_impact: 1
     fc_layers:
         default_value_reasoning:
             By default the stack is built by using num_fc_layers,
@@ -6024,11 +6126,12 @@ StackedCNN:
         ui_display_name: Fully Connected Layers
     filter_size:
         ui_display_name: null
+        expected_impact: 2
     max_sequence_length:
         default_value_reasoning:
             Sets the maximum sequence length of the expected
             inputs, so input/output shapes are computed accurately.
-        expected_impact: 1
+        internal_only: true
         ui_display_name: null
     norm:
         default_value_reasoning:
@@ -6042,7 +6145,7 @@ StackedCNN:
             rate.
         example_value:
             - batch
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/
         related_parameters:
@@ -6090,7 +6193,7 @@ StackedCNN:
             achieve better performance when a large amount of data is provided, but
             also makes the model more computationally expensive and potentially more
             prone to overfitting.
-        expected_impact: 2
+        expected_impact: 3
         related_parameters:
             - conv_layers
         ui_display_name: Number of Convolutional Layers
@@ -6132,7 +6235,7 @@ StackedCNN:
             and there's a higher risk of overfitting. If it seems like the model could
             use even more capacity, consider increasing the number of fully connected
             layers, or explore other architectures.
-        expected_impact: 2
+        expected_impact: 3
         other_information:
             If num_fc_layers=0 and fc_layers=None, and there are no
             fully connected layers defined on the module, then this parameter may
@@ -6150,18 +6253,25 @@ StackedCNN:
         ui_display_name: null
     pool_function:
         ui_display_name: null
+        expected_impact: 1
     pool_padding:
         ui_display_name: null
+        expected_impact: 1
     pool_size:
         ui_display_name: null
+        expected_impact: 1
     pool_strides:
         ui_display_name: null
+        expected_impact: 1
     pretrained_embeddings:
         ui_display_name: null
+        expected_impact: 0
     reduce_output:
         ui_display_name: null
+        expected_impact: 1
     representation:
         ui_display_name: null
+        expected_impact: 1
     should_embed:
         internal_only: true
         ui_display_name: Not displayed
@@ -6202,6 +6312,7 @@ StackedCNN:
         ui_display_name: Stride
     use_bias:
         ui_display_name: null
+        expected_impact: 1
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -6210,7 +6321,6 @@ StackedCNN:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     weights_initializer:
@@ -6228,7 +6338,7 @@ StackedCNN:
             provides a few good options. See this nice discussion from [Weights and
             Biases](https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.)
             for more information.
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - "Weights and Biases blog post: https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.
 
@@ -6254,6 +6364,7 @@ StackedCNNRNN:
             last output, but can perform other reduce functions.
     activation:
         ui_display_name: null
+        expected_impact: 2
     bias_initializer:
         default_value_reasoning:
             It is possible and common to initialize the biases
@@ -6283,10 +6394,13 @@ StackedCNNRNN:
         ui_display_name: Bias Initializer
     bidirectional:
         ui_display_name: null
+        expected_impact: 0
     cell_type:
         ui_display_name: null
+        expected_impact: 3
     conv_activation:
         ui_display_name: null
+        expected_impact: 1
     conv_dropout:
         default_value_reasoning:
             Dropout can cause training to become less stable.
@@ -6406,7 +6520,7 @@ StackedCNNRNN:
 
             Increasing the embedding size may cause the model to train more slowly,
             but the higher dimensionality can also improve overall quality.'
-        expected_impact: 2
+        expected_impact: 3
         literature_references:
             - https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture
         suggested_values: 1.6 * sqrt(vocab_size)
@@ -6437,6 +6551,7 @@ StackedCNNRNN:
         ui_display_name: Embeddings on CPU
     embeddings_trainable:
         ui_display_name: null
+        expected_impact: 1
     fc_activation:
         default_value_reasoning:
             The Rectified Linear Units (ReLU) function is the
@@ -6472,7 +6587,7 @@ StackedCNNRNN:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -6526,11 +6641,12 @@ StackedCNNRNN:
         ui_display_name: Fully Connected Layers
     filter_size:
         ui_display_name: null
+        expected_impact: 2
     max_sequence_length:
         default_value_reasoning:
             Sets the maximum sequence length of the expected
             inputs, so input/output shapes are computed accurately.
-        expected_impact: 1
+        internal_only: true
         ui_display_name: null
     norm:
         default_value_reasoning:
@@ -6544,7 +6660,7 @@ StackedCNNRNN:
             rate.
         example_value:
             - batch
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/
         related_parameters:
@@ -6592,7 +6708,7 @@ StackedCNNRNN:
             achieve better performance when a large amount of data is provided, but
             also makes the model more computationally expensive and potentially more
             prone to overfitting.
-        expected_impact: 2
+        expected_impact: 3
         related_parameters:
             - conv_layers
         ui_display_name: Number of Convolutional Layers
@@ -6636,7 +6752,7 @@ StackedCNNRNN:
             and there's a higher risk of overfitting. If it seems like the model could
             use even more capacity, consider increasing the number of fully connected
             layers, or explore other architectures.
-        expected_impact: 2
+        expected_impact: 3
         other_information:
             If num_fc_layers=0 and fc_layers=None, and there are no
             fully connected layers defined on the module, then this parameter may
@@ -6654,17 +6770,22 @@ StackedCNNRNN:
         ui_display_name: null
     pool_function:
         ui_display_name: null
+        expected_impact: 1
     pool_padding:
         ui_display_name: null
+        expected_impact: 1
     pool_size:
         ui_display_name: null
+        expected_impact: 1
     pool_strides:
         ui_display_name: null
+        expected_impact: 1
     pretrained_embeddings:
         ui_display_name: null
+        expected_impact: 0
     recurrent_activation:
         default_value_reasoning: sigmoid' is commonly used
-        expected_impact: 3
+        expected_impact: 1
         other_information:
             I don't think that this parameter is used anywhere in the
             code base. It's being passed down but not used in the actual RNN forwarding
@@ -6685,7 +6806,7 @@ StackedCNNRNN:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -6705,15 +6826,19 @@ StackedCNNRNN:
         ui_display_name: Recurrent Dropout
     recurrent_initializer:
         ui_display_name: null
+        expected_impact: 1
     reduce_output:
         ui_display_name: null
+        expected_impact: 1
     representation:
         ui_display_name: null
+        expected_impact: 1
     should_embed:
         internal_only: true
         ui_display_name: Not displayed
     state_size:
         ui_display_name: null
+        expected_impact: 3
     strides:
         default_value_reasoning:
             In general, it makes sense to have a smaller stride
@@ -6751,6 +6876,7 @@ StackedCNNRNN:
         ui_display_name: Stride
     unit_forget_bias:
         ui_display_name: null
+        expected_impact: 1
     use_bias:
         default_value_reasoning:
             "Bias terms may improve model accuracy, and don't
@@ -6785,7 +6911,6 @@ StackedCNNRNN:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     weights_initializer:
@@ -6803,7 +6928,7 @@ StackedCNNRNN:
             provides a few good options. See this nice discussion from [Weights and
             Biases](https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.)
             for more information.
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - "Weights and Biases blog post: https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.
 
@@ -6839,7 +6964,7 @@ StackedParallelCNN:
             Changing the activation functions has an impact
             on the computational load of the model and might require further hypterparameter
             tuning
-        expected_impact: 1
+        expected_impact: 2
         suggested_values:
             The default value will work well in the majority of the
             cases
@@ -6915,7 +7040,7 @@ StackedParallelCNN:
 
             Increasing the embedding size may cause the model to train more slowly,
             but the higher dimensionality can also improve overall quality.'
-        expected_impact: 2
+        expected_impact: 3
         literature_references:
             - https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture
         suggested_values: 1.6 * sqrt(vocab_size)
@@ -6946,6 +7071,7 @@ StackedParallelCNN:
         ui_display_name: Embeddings on CPU
     embeddings_trainable:
         ui_display_name: null
+        expected_impact: 1
     fc_layers:
         default_value_reasoning:
             By default the stack is built by using num_fc_layers,
@@ -6982,11 +7108,12 @@ StackedParallelCNN:
         ui_display_name: Fully Connected Layers
     filter_size:
         ui_display_name: null
+        expected_impact: 2
     max_sequence_length:
         default_value_reasoning:
             Sets the maximum sequence length of the expected
             inputs, so input/output shapes are computed accurately.
-        expected_impact: 1
+        internal_only: true
         ui_display_name: null
     norm:
         default_value_reasoning:
@@ -7000,7 +7127,7 @@ StackedParallelCNN:
             rate.
         example_value:
             - batch
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/
         related_parameters:
@@ -7089,7 +7216,7 @@ StackedParallelCNN:
             and there's a higher risk of overfitting. If it seems like the model could
             use even more capacity, consider increasing the number of fully connected
             layers, or explore other architectures.
-        expected_impact: 2
+        expected_impact: 3
         other_information:
             If num_fc_layers=0 and fc_layers=None, and there are no
             fully connected layers defined on the module, then this parameter may
@@ -7105,14 +7232,19 @@ StackedParallelCNN:
         ui_display_name: Output Size
     pool_function:
         ui_display_name: null
+        expected_impact: 1
     pool_size:
         ui_display_name: null
+        expected_impact: 1
     pretrained_embeddings:
         ui_display_name: null
+        expected_impact: 0
     reduce_output:
         ui_display_name: null
+        expected_impact: 1
     representation:
         ui_display_name: null
+        expected_impact: 1
     should_embed:
         internal_only: true
         ui_display_name: Not displayed
@@ -7152,7 +7284,6 @@ StackedParallelCNN:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     weights_initializer:
@@ -7170,7 +7301,7 @@ StackedParallelCNN:
             provides a few good options. See this nice discussion from [Weights and
             Biases](https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.)
             for more information.
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - "Weights and Biases blog post: https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.
 
@@ -7195,6 +7326,7 @@ StackedRNN:
             operation that by default only returns the last output, but can perform other reduce functions.
     activation:
         ui_display_name: null
+        expected_impact: 2
     bias_initializer:
         default_value_reasoning:
             It is possible and common to initialize the biases
@@ -7224,8 +7356,10 @@ StackedRNN:
         ui_display_name: Bias Initializer
     bidirectional:
         ui_display_name: null
+        expected_impact: 0
     cell_type:
         ui_display_name: null
+        expected_impact: 3
     dropout:
         default_value_reasoning:
             Dropout can cause training to become less stable.
@@ -7276,7 +7410,7 @@ StackedRNN:
 
             Increasing the embedding size may cause the model to train more slowly,
             but the higher dimensionality can also improve overall quality.'
-        expected_impact: 2
+        expected_impact: 3
         literature_references:
             - https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture
         suggested_values: 1.6 * sqrt(vocab_size)
@@ -7307,6 +7441,7 @@ StackedRNN:
         ui_display_name: Embeddings on CPU
     embeddings_trainable:
         ui_display_name: null
+        expected_impact: 1
     fc_activation:
         default_value_reasoning:
             The Rectified Linear Units (ReLU) function is the
@@ -7342,7 +7477,7 @@ StackedRNN:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -7392,7 +7527,7 @@ StackedRNN:
         default_value_reasoning:
             Sets the maximum sequence length of the expected
             inputs, so input/output shapes are computed accurately.
-        expected_impact: 1
+        internal_only: true
         ui_display_name: null
     norm:
         default_value_reasoning:
@@ -7406,7 +7541,7 @@ StackedRNN:
             rate.
         example_value:
             - batch
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/
         related_parameters:
@@ -7483,7 +7618,7 @@ StackedRNN:
             performance for longer sequences or more complex tasks.
         example_value:
             - 1
-        expected_impact: 1
+        expected_impact: 3
         suggested_values: 1-3
         suggested_values_reasoning:
             Increasing the number of layers may improve encoder
@@ -7499,7 +7634,7 @@ StackedRNN:
             and there's a higher risk of overfitting. If it seems like the model could
             use even more capacity, consider increasing the number of fully connected
             layers, or explore other architectures.
-        expected_impact: 2
+        expected_impact: 3
         other_information:
             If num_fc_layers=0 and fc_layers=None, and there are no
             fully connected layers defined on the module, then this parameter may
@@ -7515,9 +7650,10 @@ StackedRNN:
         ui_display_name: Output Size
     pretrained_embeddings:
         ui_display_name: null
+        expected_impact: 0
     recurrent_activation:
         default_value_reasoning: sigmoid' is commonly used
-        expected_impact: 3
+        expected_impact: 1
         other_information:
             I don't think that this parameter is used anywhere in the
             code base. It's being passed down but not used in the actual RNN forwarding
@@ -7538,7 +7674,7 @@ StackedRNN:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -7556,17 +7692,22 @@ StackedRNN:
         ui_display_name: Recurrent Dropout
     recurrent_initializer:
         ui_display_name: null
+        expected_impact: 1
     reduce_output:
         ui_display_name: null
+        expected_impact: 1
     representation:
         ui_display_name: null
+        expected_impact: 1
     should_embed:
         internal_only: true
         ui_display_name: Not displayed
     state_size:
         ui_display_name: null
+        expected_impact: 3
     unit_forget_bias:
         ui_display_name: null
+        expected_impact: 1
     use_bias:
         default_value_reasoning:
             "Bias terms may improve model accuracy, and don't
@@ -7601,7 +7742,6 @@ StackedRNN:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     weights_initializer:
@@ -7619,7 +7759,7 @@ StackedRNN:
             provides a few good options. See this nice discussion from [Weights and
             Biases](https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.)
             for more information.
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - "Weights and Biases blog post: https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.
 
@@ -7713,7 +7853,7 @@ StackedTransformer:
 
             Increasing the embedding size may cause the model to train more slowly,
             but the higher dimensionality can also improve overall quality.'
-        expected_impact: 2
+        expected_impact: 3
         literature_references:
             - https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture
         suggested_values: 1.6 * sqrt(vocab_size)
@@ -7744,6 +7884,7 @@ StackedTransformer:
         ui_display_name: Embeddings on CPU
     embeddings_trainable:
         ui_display_name: null
+        expected_impact: 1
     fc_activation:
         default_value_reasoning:
             The Rectified Linear Units (ReLU) function is the
@@ -7779,7 +7920,7 @@ StackedTransformer:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -7844,7 +7985,7 @@ StackedTransformer:
             Sets the maximum sequence length of the expected
             inputs, so input/output shapes and the positional embedding matrix are
             computed accurately.
-        expected_impact: 1
+        internal_only: true
         ui_display_name: null
     norm:
         default_value_reasoning:
@@ -7858,7 +7999,7 @@ StackedTransformer:
             rate.
         example_value:
             - batch
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/
         related_parameters:
@@ -7940,7 +8081,7 @@ StackedTransformer:
             while providing diminishing returns of model performance."
         example_value:
             - 1
-        expected_impact: 1
+        expected_impact: 3
         suggested_values: 1 - 12
         suggested_values_reasoning:
             Increasing the number of layers may improve encoder
@@ -7956,7 +8097,7 @@ StackedTransformer:
             and there's a higher risk of overfitting. If it seems like the model could
             use even more capacity, consider increasing the number of fully connected
             layers, or explore other architectures.
-        expected_impact: 2
+        expected_impact: 3
         other_information:
             If num_fc_layers=0 and fc_layers=None, and there are no
             fully connected layers defined on the module, then this parameter may
@@ -7972,10 +8113,13 @@ StackedTransformer:
         ui_display_name: Output Size
     pretrained_embeddings:
         ui_display_name: null
+        expected_impact: 0
     reduce_output:
         ui_display_name: null
+        expected_impact: 1
     representation:
         ui_display_name: null
+        expected_impact: 1
     should_embed:
         internal_only: true
         ui_display_name: Not displayed
@@ -8036,7 +8180,6 @@ StackedTransformer:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     weights_initializer:
@@ -8054,7 +8197,7 @@ StackedTransformer:
             provides a few good options. See this nice discussion from [Weights and
             Biases](https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.)
             for more information.
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - "Weights and Biases blog post: https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.
 
@@ -8118,7 +8261,7 @@ T5:
         default_value_reasoning:
             Sets the maximum sequence length of the expected
             inputs, so input/output shapes are computed accurately.
-        expected_impact: 1
+        internal_only: true
         ui_display_name: null
     num_decoder_layers:
         ui_display_name: null
@@ -8137,7 +8280,7 @@ T5:
             from the pre-trained model."
         example_value:
             - 6
-        expected_impact: 1
+        expected_impact: 3
         related_parameters:
             - pretrained_model_or_path
         suggested_values: 1 - 12
@@ -8150,8 +8293,10 @@ T5:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
+        expected_impact: 3
     reduce_output:
         ui_display_name: null
+        expected_impact: 1
     relative_attention_num_buckets:
         ui_display_name: null
     saved_weights_in_checkpoint:
@@ -8161,7 +8306,7 @@ T5:
         description_implications:
             The memory footprint for some of these encoders
             can be large.
-        expected_impact: 1
+        internal_only: true
         related_parameters:
             - skip_save_model
         suggested_values:
@@ -8172,10 +8317,11 @@ T5:
             2. the user doesn't have a lot of storage.
         ui_display_name: null
     trainable:
-        expected_impact: 2
+        expected_impact: 3
         ui_display_name: null
     use_pretrained:
         ui_display_name: null
+        expected_impact: 2
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -8184,7 +8330,6 @@ T5:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -8264,7 +8409,7 @@ TransformerXL:
         default_value_reasoning:
             Sets the maximum sequence length of the expected
             inputs, so input/output shapes are computed accurately.
-        expected_impact: 1
+        internal_only: true
         ui_display_name: null
     mem_len:
         ui_display_name: null
@@ -8278,12 +8423,14 @@ TransformerXL:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
+        expected_impact: 3
     proj_init_std:
         ui_display_name: null
     proj_share_all_but_first:
         ui_display_name: null
     reduce_output:
         ui_display_name: null
+        expected_impact: 1
     same_length:
         ui_display_name: null
     sample_softmax:
@@ -8295,7 +8442,7 @@ TransformerXL:
         description_implications:
             The memory footprint for some of these encoders
             can be large.
-        expected_impact: 1
+        internal_only: true
         related_parameters:
             - skip_save_model
         suggested_values:
@@ -8306,12 +8453,13 @@ TransformerXL:
             2. the user doesn't have a lot of storage.
         ui_display_name: null
     trainable:
-        expected_impact: 2
+        expected_impact: 3
         ui_display_name: null
     untie_r:
         ui_display_name: null
     use_pretrained:
         ui_display_name: null
+        expected_impact: 2
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -8320,7 +8468,6 @@ TransformerXL:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -8341,7 +8488,7 @@ TVBaseEncoder:
         description_implications:
             The memory footprint for some of these encoders
             can be large.
-        expected_impact: 1
+        internal_only: true
         related_parameters:
             - skip_save_model
         suggested_values:
@@ -8358,7 +8505,7 @@ TVBaseEncoder:
             and flexibility. If False, less weights are subject to change and the
             model will therefore train faster. However, the representations output
             by this component are fixed for each input.
-        expected_impact: 2
+        expected_impact: 3
         literature_references:
             - "https://www.ibm.com/cloud/learn/overfitting
 
@@ -8382,7 +8529,7 @@ TVBaseEncoder:
             Pretrained models have typically already learned
             features that are difficult to learn from scratch. They are particularly
             beneficial when training on small amounts of data.
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
         related_parameters:
@@ -8662,7 +8809,7 @@ ViT:
         description_implications:
             The memory footprint for some of these encoders
             can be large.
-        expected_impact: 1
+        internal_only: true
         related_parameters:
             - skip_save_model
         suggested_values:
@@ -8679,7 +8826,7 @@ ViT:
             and flexibility. If False, less weights are subject to change and the
             model will therefore train faster. However, the representations output
             by this component are fixed for each input.
-        expected_impact: 2
+        expected_impact: 3
         literature_references:
             - "https://www.ibm.com/cloud/learn/overfitting
 
@@ -8703,7 +8850,7 @@ ViT:
             Pretrained models have typically already learned
             features that are difficult to learn from scratch. They are particularly
             beneficial when training on small amounts of data.
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
         related_parameters:
@@ -8790,6 +8937,7 @@ XLM:
         ui_display_name: null
     gelu_activation:
         ui_display_name: null
+        expected_impact: 1
     init_std:
         ui_display_name: null
     is_encoder:
@@ -8826,7 +8974,7 @@ XLM:
         default_value_reasoning:
             Sets the maximum sequence length of the expected
             inputs, so input/output shapes are computed accurately.
-        expected_impact: 1
+        internal_only: true
         ui_display_name: null
     n_heads:
         ui_display_name: null
@@ -8844,8 +8992,10 @@ XLM:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
+        expected_impact: 3
     reduce_output:
         ui_display_name: null
+        expected_impact: 1
     saved_weights_in_checkpoint:
         default_value_reasoning:
             The weights of the encoder are not necessarily saved
@@ -8853,7 +9003,7 @@ XLM:
         description_implications:
             The memory footprint for some of these encoders
             can be large.
-        expected_impact: 1
+        internal_only: true
         related_parameters:
             - skip_save_model
         suggested_values:
@@ -8868,7 +9018,7 @@ XLM:
     start_n_top:
         ui_display_name: null
     trainable:
-        expected_impact: 2
+        expected_impact: 3
         ui_display_name: null
     unk_index:
         ui_display_name: null
@@ -8876,6 +9026,7 @@ XLM:
         ui_display_name: null
     use_pretrained:
         ui_display_name: null
+        expected_impact: 2
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -8884,7 +9035,6 @@ XLM:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -8911,7 +9061,7 @@ XLMRoBERTa:
         default_value_reasoning:
             Sets the maximum sequence length of the expected
             inputs, so input/output shapes are computed accurately.
-        expected_impact: 1
+        internal_only: true
         ui_display_name: null
     pad_token_id:
         ui_display_name: null
@@ -8919,8 +9069,10 @@ XLMRoBERTa:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
+        expected_impact: 3
     reduce_output:
         ui_display_name: null
+        expected_impact: 1
     saved_weights_in_checkpoint:
         default_value_reasoning:
             The weights of the encoder are not necessarily saved
@@ -8928,7 +9080,7 @@ XLMRoBERTa:
         description_implications:
             The memory footprint for some of these encoders
             can be large.
-        expected_impact: 1
+        internal_only: true
         related_parameters:
             - skip_save_model
         suggested_values:
@@ -8939,10 +9091,11 @@ XLMRoBERTa:
             2. the user doesn't have a lot of storage.
         ui_display_name: null
     trainable:
-        expected_impact: 2
+        expected_impact: 3
         ui_display_name: null
     use_pretrained:
         ui_display_name: null
+        expected_impact: 2
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -8951,7 +9104,6 @@ XLMRoBERTa:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -9010,6 +9162,7 @@ XLNet:
         ui_display_name: End-of-Sequence Token Id
     ff_activation:
         ui_display_name: null
+        expected_impact: 1
     initializer_range:
         description_implications:
             There is an ideal value for this variable that doesn't
@@ -9031,7 +9184,7 @@ XLNet:
         default_value_reasoning:
             Sets the maximum sequence length of the expected
             inputs, so input/output shapes are computed accurately.
-        expected_impact: 1
+        internal_only: true
         ui_display_name: null
     mem_len:
         ui_display_name: null
@@ -9045,8 +9198,10 @@ XLNet:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
+        expected_impact: 3
     reduce_output:
         ui_display_name: null
+        expected_impact: 1
     reuse_len:
         ui_display_name: null
     same_length:
@@ -9058,7 +9213,7 @@ XLNet:
         description_implications:
             The memory footprint for some of these encoders
             can be large.
-        expected_impact: 1
+        internal_only: true
         related_parameters:
             - skip_save_model
         suggested_values:
@@ -9073,6 +9228,7 @@ XLNet:
     summary_activation:
         default_value_reasoning: Default value used in pre-trained HF encoder.
         ui_display_name: Summary Activation Function
+        expected_impact: 1
     summary_last_dropout:
         default_value_reasoning: Huggingface default.
         description_implications:
@@ -9101,7 +9257,7 @@ XLNet:
     summary_use_proj:
         ui_display_name: null
     trainable:
-        expected_impact: 2
+        expected_impact: 3
         ui_display_name: null
     untie_r:
         ui_display_name: null
@@ -9111,6 +9267,7 @@ XLNet:
         ui_display_name: null
     use_pretrained:
         ui_display_name: null
+        expected_impact: 2
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -9119,7 +9276,6 @@ XLNet:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:

@@ -17,9 +17,18 @@ def test_rmse_metric(preds: torch.Tensor, target: torch.Tensor, output: torch.Te
 @pytest.mark.parametrize("target", [torch.tensor([0, 0, 1, 1])])
 @pytest.mark.parametrize("output", [torch.tensor(0.5)])
 def test_roc_auc_metric(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor):
-    metric = metric_modules.ROCAUCMetric()
+    metric = metric_modules.AUROCMetric()
     metric.update(preds, target)
     assert output == metric.compute()
+
+
+@pytest.mark.parametrize("preds", [torch.tensor([0.2, 0.3, 0.8, 0.1, 0.8])])
+@pytest.mark.parametrize("target", [torch.tensor([0, 0, 1, 1, 0])])
+@pytest.mark.parametrize("output", [torch.tensor(0.6667).float()])
+def test_specificity_metric(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor):
+    metric = metric_modules.SpecificityMetric()
+    metric.update(preds, target)
+    assert torch.isclose(output, metric.compute(), rtol=0.0001)
 
 
 @pytest.mark.parametrize("preds", [torch.arange(6).reshape(3, 2).float()])

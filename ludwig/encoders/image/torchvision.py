@@ -8,9 +8,9 @@ import torchvision.models as tvm
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import IMAGE
-from ludwig.encoders.image_encoders import ImageEncoder
+from ludwig.encoders.image.base import ImageEncoder
 from ludwig.encoders.registry import register_encoder
-from ludwig.schema.encoders.image_torchvision_encoders import (
+from ludwig.schema.encoders.image.torchvision import (
     TVAlexNetEncoderConfig,
     TVConvNeXtEncoderConfig,
     TVDenseNetEncoderConfig,
@@ -58,6 +58,7 @@ class TVBaseEncoder(ImageEncoder):
         # remove any Ludwig specific keyword parameters
         kwargs.pop("encoder_config", None)
         kwargs.pop("type", None)
+        kwargs.pop("skip", None)
 
         # cache pre-trained models if requested
         # based on https://github.com/pytorch/vision/issues/616#issuecomment-428637564

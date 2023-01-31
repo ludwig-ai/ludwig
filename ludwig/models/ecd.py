@@ -14,6 +14,7 @@ from ludwig.schema.model_config import ModelConfig
 from ludwig.utils import output_feature_utils
 from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.fs_utils import open_file
+from ludwig.utils.state_dict_backward_compatibility import update_state_dict
 from ludwig.utils.torch_utils import get_torch_device
 
 logger = logging.getLogger(__name__)
@@ -140,6 +141,10 @@ class ECD(BaseModel):
         combiner_outputs = self.combine(encoder_outputs)
         return self.decode(combiner_outputs, targets, mask)
 
+    def unskip(self):
+        for k in self.input_features.keys():
+            self.input_features[k] = self.input_features[k].unskip()
+
     def save(self, save_path):
         """Saves the model to the given path."""
         weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
@@ -150,7 +155,8 @@ class ECD(BaseModel):
         weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
         device = torch.device(get_torch_device())
         with open_file(weights_save_path, "rb") as f:
-            self.load_state_dict(torch.load(f, map_location=device))
+            state_dict = torch.load(f, map_location=device)
+            self.load_state_dict(update_state_dict(state_dict))
 
     def get_args(self):
         """Returns init arguments for constructing this model."""

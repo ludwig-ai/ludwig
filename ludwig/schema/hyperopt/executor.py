@@ -2,26 +2,27 @@ from dataclasses import field
 from typing import Dict, Optional, Union
 
 from marshmallow import fields, ValidationError
-from marshmallow_dataclass import dataclass
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import RAY
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.hyperopt.scheduler import BaseSchedulerConfig, SchedulerDataclassField
+from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
-@dataclass
+@ludwig_dataclass
 class ExecutorConfig(schema_utils.BaseMarshmallowConfig):
     """Basic executor settings."""
 
     type: str = schema_utils.ProtectedString(RAY)
 
     num_samples: int = schema_utils.PositiveInteger(
-        default=10,
+        default=None,
+        allow_none=True,
         description=(
             "This parameter, along with the space specifications in the parameters section, controls how many "
-            "trials are generated "
+            "trials are generated."
         ),
     )
 

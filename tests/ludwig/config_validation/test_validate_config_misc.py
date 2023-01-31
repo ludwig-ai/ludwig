@@ -3,6 +3,7 @@ from marshmallow import ValidationError
 
 from ludwig.constants import (
     ACTIVE,
+    BACKEND,
     CATEGORY,
     COLUMN,
     DECODER,
@@ -121,7 +122,7 @@ def test_config_encoders():
         validate_config(config)
 
 
-def test_config_tabnet():
+def test_config_with_backend():
     config = {
         "input_features": [
             category_feature(encoder={"type": "dense", "vocab_size": 2}, reduce_input="sum"),
@@ -154,6 +155,7 @@ def test_config_tabnet():
             "regularization_type": "l2",
             "validation_field": "label",
         },
+        BACKEND: {"type": "ray", "trainer": {"num_workers": 2}},
     }
     validate_config(config)
 

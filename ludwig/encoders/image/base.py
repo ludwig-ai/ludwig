@@ -25,7 +25,7 @@ from ludwig.encoders.registry import register_encoder
 from ludwig.modules.convolutional_modules import Conv2DStack, ResNet
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.mlp_mixer_modules import MLPMixer
-from ludwig.schema.encoders.image_encoders import MLPMixerConfig, ResNetConfig, Stacked2DCNNConfig, ViTConfig
+from ludwig.schema.encoders.image.base import MLPMixerConfig, ResNetConfig, Stacked2DCNNConfig, ViTConfig
 from ludwig.utils.torch_utils import FreezeModule
 
 logger = logging.getLogger(__name__)
@@ -162,7 +162,7 @@ class Stacked2DCNN(ImageEncoder):
 
 
 @DeveloperAPI
-@register_encoder("resnet_legacy", IMAGE)
+@register_encoder("_resnet_legacy", IMAGE)
 class ResNetEncoder(ImageEncoder):
     def __init__(
         self,
@@ -318,7 +318,7 @@ class MLPMixerEncoder(ImageEncoder):
 
 
 @DeveloperAPI
-@register_encoder("vit_legacy", IMAGE)
+@register_encoder("_vit_legacy", IMAGE)
 class ViTEncoder(ImageEncoder):
     def __init__(
         self,
