@@ -34,7 +34,7 @@ def get_current_dist_strategy(allow_local=True) -> Type[DistributedStrategy]:
         try:
             strategy_cls = strategy_loader()
         except ImportError:
-            logging.info(f"Distributed strategy {strategy_name} is not available due to import error")
+            # logging.info(f"Distributed strategy {strategy_name} is not available due to import error")
             continue
 
         if strategy_cls.is_available():
