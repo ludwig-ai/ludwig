@@ -1,7 +1,5 @@
-from typing import Any, Dict
-
 import ludwig
-from ludwig.constants import DEFAULTS, ENCODER, INPUT_FEATURES, NAME, OUTPUT_FEATURES, PREPROCESSING, TYPE
+from ludwig.constants import DEFAULTS, INPUT_FEATURES, NAME, OUTPUT_FEATURES, PREPROCESSING, TYPE
 from ludwig.data.cache.types import CacheableDataset
 from ludwig.types import ModelConfigDict
 from ludwig.utils.data_utils import hash_dict
@@ -19,9 +17,3 @@ def calculate_checksum(original_dataset: CacheableDataset, config: ModelConfigDi
         "feature_preprocessing": [feature.get(PREPROCESSING, {}) for feature in features],
     }
     return hash_dict(info, max_length=None).decode("ascii")
-
-
-def _merge_encoder_cache_params(preprocessing_params: Dict[str, Any], encoder_params: Dict[str, Any]) -> Dict[str, Any]:
-    if preprocessing_params.get("cache_encoder_embeddings"):
-        preprocessing_params[ENCODER] = encoder_params
-    return preprocessing_params
