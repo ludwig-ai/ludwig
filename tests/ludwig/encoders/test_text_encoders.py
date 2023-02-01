@@ -6,14 +6,14 @@ import pytest
 import torch
 
 from ludwig.api import LudwigModel
-from ludwig.constants import ENCODER, NAME, TRAINER
+from ludwig.constants import ENCODER, NAME, TEXT, TRAINER
 from ludwig.encoders import text_encoders
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
-from ludwig.schema.encoders import text_encoders as configs
+from ludwig.schema.encoders.utils import get_encoder_cls
 from ludwig.schema.model_config import ModelConfig
 from ludwig.utils.data_utils import load_json
 from tests.integration_tests.parameter_update_utils import check_module_parameters_updated
-from tests.integration_tests.utils import category_feature, generate_data, LocalTestBackend, slow, text_feature
+from tests.integration_tests.utils import category_feature, generate_data, HF_ENCODERS, LocalTestBackend, text_feature
 
 
 def _load_pretrained_hf_model_no_weights(
@@ -63,44 +63,26 @@ def get_mismatched_config_params(ludwig_results_dir, ludwig_model):
     return mismatches
 
 
-@slow
+@pytest.mark.slow
 @pytest.mark.parametrize(
-    "encoder_config_cls",
-    [
-        configs.AutoTransformerConfig,
-        configs.ALBERTConfig,
-        configs.BERTConfig,
-        configs.XLMConfig,
-        configs.GPTConfig,
-        configs.RoBERTaConfig,
-        configs.GPT2Config,
-        configs.DistilBERTConfig,
-        configs.TransformerXLConfig,
-        pytest.param(configs.CTRLConfig, marks=pytest.mark.skip("Disabled in the schema")),
-        configs.CamemBERTConfig,
-        pytest.param(configs.MT5Config, marks=pytest.mark.skip("Disabled in the schema")),
-        configs.XLMRoBERTaConfig,
-        configs.LongformerConfig,
-        configs.ELECTRAConfig,
-        configs.FlauBERTConfig,
-        configs.T5Config,
-        configs.XLNetConfig,
-    ],
+    "encoder_name",
+    HF_ENCODERS
 )
-def test_hf_ludwig_model_e2e(tmpdir, csv_filename, mock_load_encoder_from_hf_hub, encoder_config_cls):
+def test_hf_ludwig_model_e2e(tmpdir, csv_filename, mock_load_encoder_from_hf_hub, encoder_name):
     """Tests HuggingFace encoders end-to-end.
 
     This test validates the following:
-        1. Encoder config defaults are compatible with Ludwig training.
+        1. Encoder config defaults are compatible with Ludwig experiments.
         2. Ludwig correctly updates the encoder config with the parameters introduced by the HF encoder.
         3. Ludwig correctly loads checkpoints containing HF encoder weights.
     """
+    encoder_config_cls = get_encoder_cls(TEXT, encoder_name)
     input_features = [
         text_feature(
             encoder={
                 "vocab_size": 30,
                 "min_len": 1,
-                "type": encoder_config_cls.type,
+                "type": encoder_name,
                 "use_pretrained": True,
             }
         )
@@ -116,7 +98,7 @@ def test_hf_ludwig_model_e2e(tmpdir, csv_filename, mock_load_encoder_from_hf_hub
     model = LudwigModel(config=config, backend=LocalTestBackend())
 
     # Validates that the defaults associated with the encoder are compatible with Ludwig training.
-    _, _, results_dir = model.train(dataset=rel_path, output_directory=tmpdir)
+    _, _, _, results_dir = model.experiment(dataset=rel_path, output_directory=tmpdir)
 
     # Validate that the saved config reflects the parameters introduced by the HF encoder.
     # This ensures that the config updates after initializing the encoder.

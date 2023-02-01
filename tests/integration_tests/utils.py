@@ -79,12 +79,12 @@ HF_ENCODERS = [
     "bert",
     "gpt",
     "gpt2",
-    # 'transformer_xl',
+    "transformer_xl",
     "xlnet",
     "xlm",
     "roberta",
     "distilbert",
-    "ctrl",
+    # "ctrl",  # disabled in the schema: https://github.com/ludwig-ai/ludwig/pull/2976
     "camembert",
     "albert",
     "t5",
@@ -92,7 +92,7 @@ HF_ENCODERS = [
     "longformer",
     "flaubert",
     "electra",
-    "mt5",
+    # "mt5",    # disabled in the schema: https://github.com/ludwig-ai/ludwig/pull/2982
 ]
 
 RAY_BACKEND_CONFIG = {
