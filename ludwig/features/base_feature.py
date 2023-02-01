@@ -270,6 +270,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         self.eval_loss_metric = get_metric_cls(self.type(), self.loss.type)(**loss_kwargs)
 
     def _setup_metrics(self):
+        print(f"get_metric_classes(self.type()).keys(): {get_metric_classes(self.type()).keys()}")
         self._metric_functions = {
             LOSS: self.eval_loss_metric,
             **{
@@ -344,6 +345,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             targets: Tensor with target values for this output feature.
             predictions: Dict of tensors returned by predictions().
         """
+        print(f"self._metric_functions.keys(): {self._metric_functions.keys()}")
         for metric_name, metric_fn in self._metric_functions.items():
             metric_class = type(metric_fn)
             prediction_key = metric_class.get_inputs()

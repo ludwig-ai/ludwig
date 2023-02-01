@@ -192,9 +192,7 @@ class BinaryAUROCMetric(BinaryAUROC, LudwigMetric):
 class CategoryAUROCMetric(MulticlassAUROC, LudwigMetric):
     """Area under the receiver operating curve."""
 
-    def __init__(self, **kwargs):
-        num_classes = kwargs.pop("num_classes", None)
-
+    def __init__(self, num_classes: int, **kwargs):
         super().__init__(num_classes=num_classes, dist_sync_fn=_gather_all_tensors_fn())
 
     @classmethod
@@ -538,6 +536,9 @@ class CategoryAccuracy(MulticlassAccuracy, LudwigMetric):
 class HitsAtKMetric(MulticlassAccuracy, LudwigMetric):
     def __init__(self, num_classes: int, top_k: int, **kwargs):
         super().__init__(num_classes=num_classes, top_k=top_k, dist_sync_fn=_gather_all_tensors_fn(), **kwargs)
+
+    def update(self, preds: Tensor, target: Tensor) -> None:
+        super().update(preds, target.type(torch.long))
 
     @classmethod
     def get_objective(cls):
