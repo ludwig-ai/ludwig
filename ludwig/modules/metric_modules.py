@@ -19,11 +19,18 @@ from typing import Any, Callable, Generator, Optional, Type
 
 import torch
 from torch import Tensor, tensor
-from torchmetrics import Accuracy as _Accuracy
 from torchmetrics import CharErrorRate, MeanAbsoluteError
 from torchmetrics import MeanMetric as _MeanMetric
-from torchmetrics import MeanSquaredError, Metric, Precision, Recall
-from torchmetrics.classification import BinaryAUROC, BinarySpecificity, MulticlassAccuracy, MulticlassAUROC
+from torchmetrics import MeanSquaredError, Metric
+from torchmetrics.classification import (
+    BinaryAccuracy,
+    BinaryAUROC,
+    BinaryPrecision,
+    BinaryRecall,
+    BinarySpecificity,
+    MulticlassAccuracy,
+    MulticlassAUROC,
+)
 from torchmetrics.functional.regression.r2 import _r2_score_compute, _r2_score_update
 from torchmetrics.metric import jit_distributed_available
 from torchmetrics.text.perplexity import Perplexity
@@ -137,7 +144,7 @@ class RMSEMetric(MeanSquaredError, LudwigMetric):
 
 
 @register_metric(PRECISION, [BINARY])
-class PrecisionMetric(Precision, LudwigMetric):
+class PrecisionMetric(BinaryPrecision, LudwigMetric):
     """Precision metric."""
 
     def __init__(self, **kwargs):
@@ -153,7 +160,7 @@ class PrecisionMetric(Precision, LudwigMetric):
 
 
 @register_metric(RECALL, [BINARY])
-class RecallMetric(Recall, LudwigMetric):
+class RecallMetric(BinaryRecall, LudwigMetric):
     """Recall metric."""
 
     def __init__(self, **kwargs):
@@ -500,7 +507,7 @@ class CharErrorRateMetric(CharErrorRate, LudwigMetric):
 
 
 @register_metric(ACCURACY, [BINARY])
-class Accuracy(_Accuracy, LudwigMetric):
+class Accuracy(BinaryAccuracy, LudwigMetric):
     """R-squared metric."""
 
     def __init__(self, **kwargs):

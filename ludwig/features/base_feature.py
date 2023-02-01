@@ -347,6 +347,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         """
         print(f"self._metric_functions.keys(): {self._metric_functions.keys()}")
         for metric_name, metric_fn in self._metric_functions.items():
+            print(f"metric_name: {metric_name}")
             metric_class = type(metric_fn)
             prediction_key = metric_class.get_inputs()
             # TODO(shreya): Metrics should ideally just move to the correct device
@@ -357,6 +358,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
                 metric_fn.update(predictions[prediction_key].detach(), targets.to(torch.int64))
             else:
                 metric_fn.update(predictions[prediction_key].detach(), targets)
+            print(f"Finished metric_name: {metric_name}")
 
     def get_metrics(self):
         metric_vals = {}
