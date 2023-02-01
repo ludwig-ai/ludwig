@@ -6,7 +6,7 @@ from urllib.parse import quote
 
 import pytest
 
-from ludwig.utils.fs_utils import get_fs_and_path, safe_move_directory
+from ludwig.utils.fs_utils import get_fs_and_path
 
 logger = logging.getLogger(__name__)
 
