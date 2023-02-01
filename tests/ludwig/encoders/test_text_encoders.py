@@ -64,10 +64,7 @@ def get_mismatched_config_params(ludwig_results_dir, ludwig_model):
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize(
-    "encoder_name",
-    HF_ENCODERS
-)
+@pytest.mark.parametrize("encoder_name", HF_ENCODERS)
 def test_hf_ludwig_model_e2e(tmpdir, csv_filename, mock_load_encoder_from_hf_hub, encoder_name):
     """Tests HuggingFace encoders end-to-end.
 
