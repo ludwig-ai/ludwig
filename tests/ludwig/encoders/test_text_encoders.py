@@ -73,7 +73,6 @@ def test_hf_ludwig_model_e2e(tmpdir, csv_filename, mock_load_encoder_from_hf_hub
         2. Ludwig correctly updates the encoder config with the parameters introduced by the HF encoder.
         3. Ludwig correctly loads checkpoints containing HF encoder weights.
     """
-    encoder_config_cls = get_encoder_cls(TEXT, encoder_name)
     input_features = [
         text_feature(
             encoder={
