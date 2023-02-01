@@ -43,11 +43,10 @@ import os
 import psutil
 from pympler.tracker import SummaryTracker
 
-tracker = SummaryTracker()
 
-
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=True, scope="module")
 def check_memory():
+    tracker = SummaryTracker()
     start_mib = psutil.Process(os.getpid()).memory_info().rss / 1024**2
     yield
     gc.collect()
