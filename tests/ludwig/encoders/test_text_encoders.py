@@ -6,10 +6,9 @@ import pytest
 import torch
 
 from ludwig.api import LudwigModel
-from ludwig.constants import ENCODER, NAME, TEXT, TRAINER
+from ludwig.constants import ENCODER, NAME, TRAINER
 from ludwig.encoders import text_encoders
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
-from ludwig.schema.encoders.utils import get_encoder_cls
 from ludwig.schema.model_config import ModelConfig
 from ludwig.utils.data_utils import load_json
 from tests.integration_tests.parameter_update_utils import check_module_parameters_updated
