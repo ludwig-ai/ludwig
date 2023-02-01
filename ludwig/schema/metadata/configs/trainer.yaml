@@ -441,7 +441,7 @@ ecd:
             suggested_values_reasoning:
                 You don't want to warm up for too long, as after the model is starting to hill climb, you want to use the
                 full weight of the learning rate to descend into good loss minima.
-    
+
                 If you observe your loss curve converging very early into training, within the first few epochs, then
                 increasing learning rate warmup may help to mitigate this effect. Pretrained models can benefit from more
                 warmup to help offset the effects of catastrophic forgetting due to an overly high learning rate.

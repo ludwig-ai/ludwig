@@ -565,7 +565,6 @@ class GBMTrainerConfig(BaseTrainerConfig):
         default=10.0,
         description="L2 regularization factor for categorical split in the GBM trainer.",
         parameter_metadata=TRAINER_METADATA[MODEL_GBM]["cat_l2"],
-
     )
 
     cat_smooth: float = schema_utils.NonNegativeFloat(
