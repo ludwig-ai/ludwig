@@ -115,7 +115,7 @@ jobs:
           python -m pip install -U pip
           cmake --version
 
-          echo "MARKERS:" $MARKERS 
+          echo "MARKERS:" $MARKERS
 
           if [ "$PYTORCH" == "nightly" ]; then
             cat requirements.txt | sed '/^torch[>=<]/d' | sed '/^torchtext[>=<]/d' | sed '/^torchvision[>=<]/d' | sed '/^torchaudio[>=<]/d' > requirements-temp && mv requirements-temp requirements.txt
