@@ -237,6 +237,7 @@ def run_hyperopt_executor(
         output_directory=ray_mock_dir,
         skip_save_processed_input=True,
         skip_save_unprocessed_output=True,
+        skip_save_log=True,
     )
 
 

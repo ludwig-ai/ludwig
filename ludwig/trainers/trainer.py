@@ -553,6 +553,9 @@ class Trainer(BaseTrainer):
         :param validation_set: The validation dataset
         :param test_set: The test dataset
         """
+
+        print("!!! TRAINING !!! RemoteTrainer.train - save_path: ", save_path)
+
         # ====== General setup =======
         output_features = self.model.output_features
 

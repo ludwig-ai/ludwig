@@ -190,6 +190,12 @@ def train_fn(
         model = model.to(device)
 
         trainer = RemoteTrainer(model=model, distributed=distributed, report_tqdm_to_ray=True, **executable_kwargs)
+
+        import pprint
+
+        print("!!! train_fn kwargs")
+        pprint.pprint(kwargs)
+
         results = trainer.train(train_shard, val_shard, test_shard, **kwargs)
 
         if results is not None:
@@ -350,6 +356,8 @@ class RayAirRunner:
         stream_window_size: Dict[str, Union[None, float]],
         callbacks: List[Any] = [],
     ) -> Tuple[Dict, TorchCheckpoint]:
+        print("!!! RayAirRunner.run() config: ", config)
+
         trainer_cls = HorovodTrainerRay210 if not _ray220 else HorovodTrainer
         trainer = trainer_cls(
             train_loop_per_worker=train_loop_per_worker,
@@ -392,6 +400,8 @@ class RayTrainerV2(BaseTrainer):
         **kwargs,
     ):
         executable_kwargs = self.executable_kwargs
+
+        print("!!! RayTrainerV2 train kwargs: ", kwargs)
 
         kwargs = {
             "training_set_metadata": training_set.training_set_metadata,
@@ -791,6 +801,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
             "executable_kwargs": executable_kwargs,
         }
         all_kwargs.update(kwargs)
+
         return trainer_cls(**all_kwargs)
 
     def create_predictor(self, model: BaseModel, **kwargs):

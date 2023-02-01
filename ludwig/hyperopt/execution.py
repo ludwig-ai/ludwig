@@ -517,12 +517,25 @@ class RayTuneExecutor:
                     return
                 checkpoint(progress_tracker, save_path)
 
+            def on_train_init(
+                self,
+                base_config: ModelConfigDict,
+                experiment_directory: str,
+                experiment_name: str,
+                model_name: str,
+                output_directory: str,
+                resume_directory: Union[str, None],
+            ):
+                print("!!! on_train_init - resume_directory: ", resume_directory)
+                print("!!! on_train_init - output_directory: ", output_directory)
+
             def on_train_start(self, model, config: ModelConfigDict, config_fp: Union[str, None]):
                 print("!!! on_train_start - checkpoint_dir: ", checkpoint_dir)
                 if is_using_ray_backend and checkpoint_dir:
                     # When using the Ray backend and resuming from a previous checkpoint, we must sync
                     # the checkpoint files from the trial driver to the trainer worker.
                     resume_ckpt = Checkpoint.from_directory(checkpoint_dir)
+                    print("!!! on_train_start - resume_ckpt: ", resume_ckpt)
                     self.resume_ckpt_ref = ray.put(resume_ckpt)
 
             def on_trainer_train_setup(self, trainer, save_path, is_coordinator):
@@ -537,16 +550,17 @@ class RayTuneExecutor:
                     # Load the checkpoint directly from the reference in the object store.
                     trainer_ckpt = ray.get(self.resume_ckpt_ref)
                     with trainer_ckpt.as_directory() as ckpt_path:
-                        save_path = save_path.rstrip(".")
-                        print(f"!!! on_trainer_train_setup save_path after rstrip: {save_path}")
-
                         # Attempt an atomic move from the ckpt_path to the save_path
                         # This may first require removing the existing save_path
                         tmp_path = save_path + ".tmp"
                         if os.path.exists(save_path):
                             os.rename(save_path, tmp_path)
+                            print(f"!!! Renamed {save_path} to {tmp_path}")
 
                         try:
+                            print("!!! on_trainer_train_setup - src: ", os.path.join(ckpt_path, "model"))
+                            print("!!! on_trainer_train_setup - dst: ", save_path)
+                            breakpoint()
                             safe_move_file(os.path.join(ckpt_path, "model"), save_path)
                         except Exception:
                             # Rollback from partial changes. Remove the save_path
@@ -568,8 +582,9 @@ class RayTuneExecutor:
                 progress_tracker.tune_checkpoint_num += 1
                 self.last_steps = progress_tracker.steps
                 print("!!! on_eval_end - save_path: ", save_path)
-                if save_path:
-                    save_path += "/."
+                # if save_path:
+                #     save_path = save_path.replace("/./", "/")
+                #     print("!!! on_eval_end - save_path after replace: ", save_path)
                 self._checkpoint_progress(trainer, progress_tracker, save_path)
                 if not is_using_ray_backend:
                     report(progress_tracker)
@@ -782,8 +797,8 @@ class RayTuneExecutor:
             # Checkpoint dir exists when trials are temporarily paused and resumed, for e.g.,
             # when using the HB_BOHB scheduler. In this case, the checkpoint_dir that's set
             if checkpoint_dir:
-                checkpoint_dir = checkpoint_dir.rstrip("/.")
-            print("run_experiment_trial - Checkpoint Dir: ", checkpoint_dir)
+                checkpoint_dir = os.path.normpath(checkpoint_dir)
+            print("!!! run_experiment_trial - Checkpoint dir: ", checkpoint_dir)
             return self._run_experiment(
                 config,
                 checkpoint_dir,
@@ -1040,6 +1055,7 @@ def run_experiment(
     )
 
     try:
+        print("!!! run_experiment - model_resume_path: ", model_resume_path)
         eval_stats, train_stats, _, _ = model.experiment(
             dataset=dataset,
             training_set=training_set,
