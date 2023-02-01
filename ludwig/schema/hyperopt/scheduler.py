@@ -3,10 +3,10 @@ from dataclasses import field
 from typing import Callable, Dict, Optional, Tuple, Union
 
 from marshmallow import fields, ValidationError
-from marshmallow_dataclass import dataclass
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils.registry import Registry
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -41,7 +41,7 @@ def register_scheduler_config(name: str):
 
 
 @DeveloperAPI
-@dataclass
+@ludwig_dataclass
 class BaseSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Base class for schedulers.
 
@@ -95,7 +95,7 @@ def max_t_alias(default=100):
 
 
 @DeveloperAPI
-@dataclass
+@ludwig_dataclass
 class CommonSchedulerOptions:
     time_attr: str = time_attr_alias()
 
@@ -113,7 +113,7 @@ class CommonSchedulerOptions:
 @DeveloperAPI
 @register_scheduler_config("async_hyperband")
 @register_scheduler_config("asynchyperband")
-@dataclass
+@ludwig_dataclass
 class AsyncHyperbandSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions):
     """Asynchronous hyperband (ASHA) scheduler settings."""
 
@@ -135,7 +135,7 @@ class AsyncHyperbandSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions)
 
 @DeveloperAPI
 @register_scheduler_config("hyperband")
-@dataclass
+@ludwig_dataclass
 class HyperbandSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions):
     """Standard hyperband scheduler settings."""
 
@@ -155,7 +155,7 @@ class HyperbandSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions):
 @DeveloperAPI
 @register_scheduler_config("median_stopping_rule")
 @register_scheduler_config("medianstoppingrule")
-@dataclass
+@ludwig_dataclass
 class MedianStoppingRuleSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions):
     """Median Stopping Rule scheduler settings."""
 
@@ -195,7 +195,7 @@ class MedianStoppingRuleSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOpti
 
 @DeveloperAPI
 @register_scheduler_config("pbt")
-@dataclass
+@ludwig_dataclass
 class PopulationBasedTrainingSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions):
     """Population Based Training scheduler settings."""
 
@@ -300,7 +300,7 @@ class PopulationBasedTrainingSchedulerConfig(BaseSchedulerConfig, CommonSchedule
 
 @DeveloperAPI
 @register_scheduler_config("pbt_replay")
-@dataclass
+@ludwig_dataclass
 class PopulationBasedTrainingReplaySchedulerConfig(BaseSchedulerConfig):
     """Population Based Training Replay scheduler settings."""
 
@@ -317,7 +317,7 @@ class PopulationBasedTrainingReplaySchedulerConfig(BaseSchedulerConfig):
 
 @DeveloperAPI
 @register_scheduler_config("pb2")
-@dataclass
+@ludwig_dataclass
 class PopulationBasedBanditsSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions):
     """Population Based Bandits (PB2) scheduler settings."""
 
@@ -382,7 +382,7 @@ class PopulationBasedBanditsSchedulerConfig(BaseSchedulerConfig, CommonScheduler
 
 @DeveloperAPI
 @register_scheduler_config("hb_bohb")
-@dataclass
+@ludwig_dataclass
 class BOHBSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions):
     """Hyperband for BOHB (hb_bohb) scheduler settings."""
 
@@ -402,7 +402,7 @@ class BOHBSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions):
 # TODO: Double-check support for this
 @DeveloperAPI
 @register_scheduler_config("fifo")
-@dataclass
+@ludwig_dataclass
 class FIFOSchedulerConfig(BaseSchedulerConfig):
     """FIFO trial scheduler settings."""
 
@@ -412,7 +412,7 @@ class FIFOSchedulerConfig(BaseSchedulerConfig):
 # TODO: Double-check support for this as well as whether Callable args work properly
 @DeveloperAPI
 @register_scheduler_config("resource_changing")
-@dataclass
+@ludwig_dataclass
 class ResourceChangingSchedulerConfig(BaseSchedulerConfig):
     """Resource changing scheduler settings."""
 

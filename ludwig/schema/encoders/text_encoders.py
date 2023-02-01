@@ -1,7 +1,5 @@
 from typing import Callable, List, Union
 
-from marshmallow_dataclass import dataclass
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import TEXT
 from ludwig.schema import utils as schema_utils
@@ -9,11 +7,12 @@ from ludwig.schema.encoders.sequence_encoders import SequenceEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.metadata import ENCODER_METADATA
 from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
+from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
 @register_encoder_config("albert", TEXT)
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class ALBERTConfig(SequenceEncoderConfig):
     """This dataclass configures the schema used for an ALBERT encoder."""
 
@@ -210,7 +209,7 @@ class ALBERTConfig(SequenceEncoderConfig):
 # TODO: uncomment when sentencepiece doesn't cause segfaults: https://github.com/ludwig-ai/ludwig/issues/2983
 # @register_encoder_config("mt5", TEXT)
 @DeveloperAPI
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class MT5Config(SequenceEncoderConfig):
     """This dataclass configures the schema used for an MT5 encoder."""
 
@@ -397,7 +396,7 @@ class MT5Config(SequenceEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("xlmroberta", TEXT)
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class XLMRoBERTaConfig(SequenceEncoderConfig):
     """This dataclass configures the schema used for an XLMRoBERTa encoder."""
 
@@ -492,7 +491,7 @@ class XLMRoBERTaConfig(SequenceEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("bert", TEXT)
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class BERTConfig(SequenceEncoderConfig):
     """This dataclass configures the schema used for an BERT encoder."""
 
@@ -663,7 +662,7 @@ class BERTConfig(SequenceEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("xlm", TEXT)
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class XLMConfig(SequenceEncoderConfig):
     """This dataclass configures the schema used for an XLM encoder."""
 
@@ -910,7 +909,7 @@ class XLMConfig(SequenceEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("gpt", TEXT)
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class GPTConfig(SequenceEncoderConfig):
     """This dataclass configures the schema used for an GPT encoder."""
 
@@ -1050,7 +1049,7 @@ class GPTConfig(SequenceEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("gpt2", TEXT)
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class GPT2Config(SequenceEncoderConfig):
     """This dataclass configures the schema used for an GPT2 encoder."""
 
@@ -1201,7 +1200,7 @@ class GPT2Config(SequenceEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("roberta", TEXT)
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class RoBERTaConfig(SequenceEncoderConfig):
     """This dataclass configures the schema used for an RoBERTa encoder."""
 
@@ -1290,7 +1289,7 @@ class RoBERTaConfig(SequenceEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("transformer_xl", TEXT)
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class TransformerXLConfig(SequenceEncoderConfig):
     """This dataclass configures the schema used for an TransformerXL encoder."""
 
@@ -1517,7 +1516,7 @@ class TransformerXLConfig(SequenceEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("xlnet", TEXT)
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class XLNetConfig(SequenceEncoderConfig):
     """This dataclass configures the schema used for an XLNet encoder."""
 
@@ -1754,7 +1753,7 @@ class XLNetConfig(SequenceEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("distilbert", TEXT)
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class DistilBERTConfig(SequenceEncoderConfig):
     """This dataclass configures the schema used for an DistilBERT encoder."""
 
@@ -1909,7 +1908,7 @@ class DistilBERTConfig(SequenceEncoderConfig):
 # TODO: uncomment when CTRL bug (https://github.com/ludwig-ai/ludwig/issues/2977) has been fixed to add back in
 # @register_encoder_config("ctrl", TEXT)
 @DeveloperAPI
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class CTRLConfig(SequenceEncoderConfig):
     """This dataclass configures the schema used for an CTRL encoder."""
 
@@ -2050,7 +2049,7 @@ class CTRLConfig(SequenceEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("camembert", TEXT)
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class CamemBERTConfig(SequenceEncoderConfig):
     """This dataclass configures the schema used for an CamemBERT encoder."""
 
@@ -2220,7 +2219,7 @@ class CamemBERTConfig(SequenceEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("t5", TEXT)
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class T5Config(SequenceEncoderConfig):
     """This dataclass configures the schema used for an T5 encoder."""
 
@@ -2365,7 +2364,7 @@ class T5Config(SequenceEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("flaubert", TEXT)
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class FlauBERTConfig(SequenceEncoderConfig):
     """This dataclass configures the schema used for an FlauBERT encoder."""
 
@@ -2604,7 +2603,7 @@ class FlauBERTConfig(SequenceEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("electra", TEXT)
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class ELECTRAConfig(SequenceEncoderConfig):
     """This dataclass configures the schema used for an ELECTRA encoder."""
 
@@ -2769,7 +2768,7 @@ class ELECTRAConfig(SequenceEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("longformer", TEXT)
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class LongformerConfig(SequenceEncoderConfig):
     """This dataclass configures the schema used for a Longformer encoder."""
 
@@ -2864,7 +2863,7 @@ class LongformerConfig(SequenceEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("auto_transformer", TEXT)
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class AutoTransformerConfig(SequenceEncoderConfig):
     """This dataclass configures the schema used for an AutoTransformer encoder."""
 

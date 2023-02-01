@@ -22,6 +22,15 @@ def test_roc_auc_metric(preds: torch.Tensor, target: torch.Tensor, output: torch
     assert output == metric.compute()
 
 
+@pytest.mark.parametrize("preds", [torch.tensor([0.2, 0.3, 0.8, 0.1, 0.8])])
+@pytest.mark.parametrize("target", [torch.tensor([0, 0, 1, 1, 0])])
+@pytest.mark.parametrize("output", [torch.tensor(0.6667).float()])
+def test_specificity_metric(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor):
+    metric = metric_modules.SpecificityMetric()
+    metric.update(preds, target)
+    assert torch.isclose(output, metric.compute(), rtol=0.0001)
+
+
 @pytest.mark.parametrize("preds", [torch.arange(6).reshape(3, 2).float()])
 @pytest.mark.parametrize("target", [torch.arange(6, 12).reshape(3, 2).float()])
 @pytest.mark.parametrize("output", [torch.tensor(0.7527).float()])

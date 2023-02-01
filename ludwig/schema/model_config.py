@@ -2,7 +2,6 @@ import copy
 import logging
 import sys
 import warnings
-from dataclasses import dataclass
 from typing import Dict, List
 
 import yaml
@@ -62,7 +61,7 @@ from ludwig.schema.optimizers import get_optimizer_cls
 from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.schema.split import get_split_cls
 from ludwig.schema.trainer import BaseTrainerConfig, ECDTrainerConfig, GBMTrainerConfig
-from ludwig.schema.utils import BaseMarshmallowConfig, convert_submodules, RECURSION_STOP_ENUM
+from ludwig.schema.utils import BaseMarshmallowConfig, convert_submodules, ludwig_dataclass, RECURSION_STOP_ENUM
 from ludwig.types import FeatureConfigDict, ModelConfigDict
 from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
 from ludwig.utils.metric_utils import get_feature_to_metric_names_map
@@ -128,7 +127,7 @@ class OutputFeaturesContainer(BaseFeatureContainer):
 
 
 @DeveloperAPI
-@dataclass(repr=False)
+@ludwig_dataclass
 class ModelConfig(BaseMarshmallowConfig):
     """Configures the end-to-end LudwigModel machine learning pipeline.
 
@@ -188,7 +187,7 @@ class ModelConfig(BaseMarshmallowConfig):
 
         # ===== Combiner =====
         if COMBINER in upgraded_config_dict:
-            if self.combiner.type != upgraded_config_dict[COMBINER][TYPE]:
+            if self.combiner.type != upgraded_config_dict.get(COMBINER, {}).get(TYPE, None):
                 self.combiner = combiner_registry.get(upgraded_config_dict[COMBINER][TYPE]).get_schema_cls()()
 
             if self.combiner.type == SEQUENCE:

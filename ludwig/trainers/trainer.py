@@ -69,6 +69,8 @@ from ludwig.utils.trainer_utils import (
     ProgressTracker,
 )
 
+MAX_CPU_BATCH_SIZE = 128
+
 logger = logging.getLogger(__name__)
 
 
@@ -372,11 +374,18 @@ class Trainer(BaseTrainer):
         self.skip_save_progress = True
         self.skip_save_log = True
 
+        # When training on CPU, larger batch sizes offer limited benefits due to lack of effective
+        # parallelization within a batch. As such, to increase chances of stable training, we cap the maximum
+        # batch size at MAX_CPU_BATCH_SIZE
+        max_batch_size = (
+            self.max_batch_size if torch.cuda.is_available() else min(self.max_batch_size, MAX_CPU_BATCH_SIZE)
+        )
+
         self.dist_model.train()  # Sets model training mode.
 
         evaluator = self._create_batch_size_evaluator()
         try:
-            return evaluator.select_best_batch_size(len(training_set), self.max_batch_size, max_trials)
+            return evaluator.select_best_batch_size(len(training_set), max_batch_size, max_trials)
         finally:
             # Restore original parameters to defaults
             self.skip_save_model = skip_save_model
@@ -645,7 +654,7 @@ class Trainer(BaseTrainer):
             with training_set.initialize_batcher(
                 batch_size=self.batch_size,
                 should_shuffle=self.should_shuffle,
-                seed=self.random_seed,
+                random_seed=self.random_seed,
                 distributed=self.distributed,
                 ignore_last=True,
             ) as batcher:
@@ -835,6 +844,10 @@ class Trainer(BaseTrainer):
                     f"{psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
                 )
 
+            # Executing `on_batch_end` calls before `run_evaluation` enables more accurate
+            # batch duration measurements when using timer callbacks.
+            self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path))
+
             if progress_tracker.steps % final_steps_per_checkpoint == 0:
                 # Checkpoint the model.
                 if self.is_coordinator() and not self.skip_save_progress:
@@ -859,8 +872,6 @@ class Trainer(BaseTrainer):
                 )
                 if should_break:
                     return should_break
-
-            self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path))
 
         return False
 

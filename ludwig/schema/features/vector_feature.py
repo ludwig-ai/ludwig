@@ -1,5 +1,3 @@
-from marshmallow_dataclass import dataclass
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import MEAN_SQUARED_ERROR, VECTOR
 from ludwig.schema import utils as schema_utils
@@ -20,12 +18,12 @@ from ludwig.schema.features.utils import (
 )
 from ludwig.schema.metadata import FEATURE_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
-from ludwig.schema.utils import BaseMarshmallowConfig
+from ludwig.schema.utils import BaseMarshmallowConfig, ludwig_dataclass
 
 
 @DeveloperAPI
 @input_mixin_registry.register(VECTOR)
-@dataclass
+@ludwig_dataclass
 class VectorInputFeatureConfigMixin(BaseMarshmallowConfig):
     """VectorInputFeatureConfigMixin is a dataclass that configures the parameters used in both the vector input
     feature and the vector global defaults section of the Ludwig Config."""
@@ -40,7 +38,7 @@ class VectorInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @input_config_registry.register(VECTOR)
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class VectorInputFeatureConfig(BaseInputFeatureConfig, VectorInputFeatureConfigMixin):
     """VectorInputFeatureConfig is a dataclass that configures the parameters used for a vector input feature."""
 
@@ -49,7 +47,7 @@ class VectorInputFeatureConfig(BaseInputFeatureConfig, VectorInputFeatureConfigM
 
 @DeveloperAPI
 @output_mixin_registry.register(VECTOR)
-@dataclass
+@ludwig_dataclass
 class VectorOutputFeatureConfigMixin(BaseMarshmallowConfig):
     """VectorOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the vector output
     feature and the vector global defaults section of the Ludwig Config."""
@@ -67,7 +65,7 @@ class VectorOutputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @output_config_registry.register(VECTOR)
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class VectorOutputFeatureConfig(BaseOutputFeatureConfig, VectorOutputFeatureConfigMixin):
     """VectorOutputFeatureConfig is a dataclass that configures the parameters used for a vector output feature."""
 
