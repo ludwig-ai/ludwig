@@ -1,120 +1,3 @@
-learning_rate:
-    commonly_used: true
-    default_value_reasoning: Middle of the road learning rate to start with.
-    description_implications:
-        The learning rate is a hyperparameter that controls
-        how much to change the model in response to the estimated error each time
-        the model weights are updated. Increasing the learning rate may decrease learning
-        curve stability but also increase learning speed and efficiency, leading to
-        faster model convergence. Decreasing the learning rate can help stabilize
-        learning curves at the cost of slower time to convergence.
-    expected_impact: 3
-    suggested_values: 0.00001 - 0.1 or auto
-    related_parameters:
-        - decay
-    suggested_values_reasoning:
-        Tabular models trained from scratch typically use
-        learning rates around 1e-3 while learning rates for pre-trained models should
-        be much smaller, typically around 1e-5, which is important to mitigate catastrophic
-        forgetting. To make the model more robust to any specific choice of learning
-        rate, consider turning enabling learning rate decay.
-    ui_display_name: Learning Rate
-early_stop:
-    default_value_reasoning:
-        Deep learning models are prone to overfitting. It's generally
-        a good policy to set up some early stopping criteria as it's not useful to
-        have a model train after it's maximized what it can learn. 5 consecutive rounds
-        of evaluation where there hasn't been any improvement on the validation set
-        (including chance) is a reasonable policy to start with.
-    description_implications:
-        Decreasing this value is a more aggressive policy. Decreasing
-        early stopping makes model training less forgiving, as the model has less
-        runway to demonstrate consecutive metric improvements before the training
-        run is quit. This can be efficient for pruning bad models earlier, but since
-        the training process is inherently non-deterministic and noisy, sometimes
-        improvements happen very gradually over a long period of time.
-        Extending this value leads to longer training times,
-        but potentially also better final performance.
-    expected_impact: 3
-    related_parameters:
-        - epochs
-        - train_steps
-    suggested_values: 5 - 10
-    suggested_values_reasoning:
-        There's potentially a lot of randomness in how models
-        train, but so many consecutive rounds of no improvement is usually a good
-        indicator that the model converged or overfitted.
-    ui_display_name: Early Stop
-eval_batch_size:
-    default_value_reasoning:
-        Use the same batch size used for training.
-    description_implications:
-        By increasing the `eval_batch_size` past the `batch_size`
-        parameter set value, you allow for more parallelism in the batch evaluation
-        step and speed up evaluation. For example, if you have to evaluate the model
-        on a test set of size 1000, it is faster to evaluate two times with two batches
-        of size 500 as opposed to ten times with ten batches of 100.
-        Setting this parameter higher without getting past out memory limits
-        will speed up the model training process overall.
-    example_value:
-        - 512
-    expected_impact: 1
-    other_information:
-        Should only set the eval_batch_size to a level that you can fit
-        in memory.
-    related_parameters:
-        - batch_size
-    suggested_values:
-        - 256
-        - 512
-        - 1024
-    suggested_values_reasoning:
-        By observing memory consumption on training jobs,
-        you can get a sense of how much extra memory is available for increasing this
-        value. A good rule of thumb can be experimentally doubling the eval batch
-        size if you do not have insight into memory usage.
-    ui_display_name: Evaluation Batch Size
-evaluate_training_set:
-    default_value_reasoning:
-        It could be useful to monitor evaluation metrics on the
-        training set to understand convergence.
-    description_implications:
-        Running evaluation on the full training set, when your
-        training set is large, can be a huge computational cost. Turning off training
-        set evaluation will lead to significant gains in training throughput and efficiency.
-        For small datasets that train and evaluate quickly, the choice is trivial.
-    expected_impact: 1
-    suggested_values: false
-    suggested_values_reasoning:
-        Running full-scale evaluation on the full training
-        set doesn't usually provide any useful information over the validation dataset.
-        Even with this set to False, continuous training loss metrics are still computed,
-        so it will still be easy to spot signs of overfitting like when the training-validation
-        loss curves diverge.
-    ui_display_name: Evaluate Training Set
-validation_field:
-    default_value_reasoning:
-        Concrete evaluation metrics are usually better than loss,
-        the penalty for a bad prediction, which is only a proxy for prediction correctness.
-    description_implications:
-        This parameter affects 1) what the early stopping policy
-        looks at to determine when to early stop and 2) hyperparameter optimization
-        for determining the best trial.
-    expected_impact: 1
-    related_parameters:
-        - validation_metric
-    suggested_values: default behavior
-    ui_display_name: Validation Field
-validation_metric:
-    description_implications:
-        This parameter affects 1) what the early stopping policy
-        looks at to determine when to early stop and 2) hyperparameter optimization
-        for determining the best trial.
-    expected_impact: 1
-    related_parameters:
-        - validation_field
-    suggested_values: default behavior
-    ui_display_name: Validation Metric
 ecd:
     batch_size:
         commonly_used: true
@@ -160,16 +43,13 @@ ecd:
             "Epoch-based evaluation (using the default: 0) is an
             appropriate fit for small datasets that fit in memory and
             train quickly. Commonly available tabular datasets fit in this cateogry.
-
             However, this is a poor fit for unstructured datasets, which tend to be much
             larger, and train more slowly due to larger models.
-
             It's important to setup evaluation such that you do not wait several hours
             before getting a single evaluation result. In general, it is not necessary
             for models to train over the entirety of a dataset, nor evaluate over the
             entirety of a test set, to produce useful monitoring metrics and signals to
             indicate model health.
-
             It is also more engaging and more valuable to ensure a frequent pulse of evaluation
             metrics, even if they are partial."
         expected_impact: 2
@@ -183,6 +63,32 @@ ecd:
             In many large-scale training runs, evaluation is often configured to run on
             a sub-epoch time scale, or every few thousand steps.
         ui_display_name: Checkpoints per epoch
+    early_stop:
+        default_value_reasoning:
+            Deep learning models are prone to overfitting. It's generally
+            a good policy to set up some early stopping criteria as it's not useful to
+            have a model train after it's maximized what it can learn. 5 consecutive rounds
+            of evaluation where there hasn't been any improvement on the validation set
+            (including chance) is a reasonable policy to start with.
+        description_implications:
+            Decreasing this value is a more aggressive policy. Decreasing
+            early stopping makes model training less forgiving, as the model has less
+            runway to demonstrate consecutive metric improvements before the training
+            run is quit. This can be efficient for pruning bad models earlier, but since
+            the training process is inherently non-deterministic and noisy, sometimes
+            improvements happen very gradually over a long period of time.
+            Extending this value leads to longer training times,
+            but potentially also better final performance.
+        expected_impact: 3
+        related_parameters:
+            - epochs
+            - train_steps
+        suggested_values: 5 - 10
+        suggested_values_reasoning:
+            There's potentially a lot of randomness in how models
+            train, but so many consecutive rounds of no improvement is usually a good
+            indicator that the model converged or overfitted.
+        ui_display_name: Early Stop
     epochs:
         default_value_reasoning:
             A very high training length ceiling. Models will almost
@@ -201,6 +107,53 @@ ecd:
             through the dataset to converge while others converge before a single epoch
             through the data.
         ui_display_name: Epochs
+    eval_batch_size:
+        default_value_reasoning:
+            Use the same batch size used for training.
+        description_implications:
+            By increasing the `eval_batch_size` past the `batch_size`
+            parameter set value, you allow for more parallelism in the batch evaluation
+            step and speed up evaluation. For example, if you have to evaluate the model
+            on a test set of size 1000, it is faster to evaluate two times with two batches
+            of size 500 as opposed to ten times with ten batches of 100.
+            Setting this parameter higher without getting past out memory limits
+            will speed up the model training process overall.
+        example_value:
+            - 512
+        expected_impact: 1
+        other_information:
+            Should only set the eval_batch_size to a level that you can fit
+            in memory.
+        related_parameters:
+            - batch_size
+        suggested_values:
+            - 256
+            - 512
+            - 1024
+        suggested_values_reasoning:
+            By observing memory consumption on training jobs,
+            you can get a sense of how much extra memory is available for increasing this
+            value. A good rule of thumb can be experimentally doubling the eval batch
+            size if you do not have insight into memory usage.
+        ui_display_name: Evaluation Batch Size
+    evaluate_training_set:
+        default_value_reasoning:
+            It could be useful to monitor evaluation metrics on the
+            training set to understand convergence.
+        description_implications:
+            Running evaluation on the full training set, when your
+            training set is large, can be a huge computational cost. Turning off training
+            set evaluation will lead to significant gains in training throughput and efficiency.
+            For small datasets that train and evaluate quickly, the choice is trivial.
+        expected_impact: 1
+        suggested_values: false
+        suggested_values_reasoning:
+            Running full-scale evaluation on the full training
+            set doesn't usually provide any useful information over the validation dataset.
+            Even with this set to False, continuous training loss metrics are still computed,
+            so it will still be easy to spot signs of overfitting like when the training-validation
+            loss curves diverge.
+        ui_display_name: Evaluate Training Set
     gradient_clipping:
         default_value_reasoning:
             A conservative cap on the maximum gradient size to apply
@@ -315,13 +268,9 @@ ecd:
         description_implications:
             "When choosing a lambda value, the goal is to strike
             the right balance between simplicity and training-data fit:
-
-
             If your lambda value is too high, your model will be simple, but you run the
             risk of underfitting your data. Your model won't learn enough about the training
             data to make useful predictions.
-
-
             If your lambda value is too low, your model will be more complex, and you
             run the risk of overfitting your data. Your model will learn too much about
             the particularities of the training data, and won't be able to generalize
@@ -347,11 +296,9 @@ ecd:
             "L1 regularization penalizes the sum of absolute values
              of the weights, whereas L2 regularization penalizes the sum of squares of
              the weights.
-
              The L1 regularization solution is sparse, meaning some weights will be zero,
              others will be large.
              The L2 regularization solution is non-sparse, most weights will be small.
-
              L2 regularization does not perform feature
              selection, since weights are only reduced to values near 0 instead of 0.
              L1 regularization implicitly performs feature selection. L1 regularization is more
@@ -391,16 +338,13 @@ ecd:
             "Epoch-based evaluation (using the default: 0) is an
             appropriate fit for tabular datasets, which are small, fit in memory, and
             train quickly.
-
             However, this is a poor fit for unstructured datasets, which tend to be much
             larger, and train more slowly due to larger models.
-
             It's important to setup evaluation such that you do not wait several hours
             before getting a single evaluation result. In general, it is not necessary
             for models to train over the entirety of a dataset, nor evaluate over the
             entirety of a test set, to produce useful monitoring metrics and signals to
             indicate model health.
-
             It is also more engaging and more valuable to ensure a frequent pulse of evaluation
             metrics, even if they are partial."
         expected_impact: 1
@@ -447,6 +391,29 @@ ecd:
             Suggested to enable this if training is taking too
             long on GPU.
         ui_display_name: Use Mixed Precision
+    validation_field:
+        default_value_reasoning:
+            Concrete evaluation metrics are usually better than loss,
+            the penalty for a bad prediction, which is only a proxy for prediction correctness.
+        description_implications:
+            This parameter affects 1) what the early stopping policy
+            looks at to determine when to early stop and 2) hyperparameter optimization
+            for determining the best trial.
+        expected_impact: 1
+        related_parameters:
+            - validation_metric
+        suggested_values: default behavior
+        ui_display_name: Validation Field
+    validation_metric:
+        description_implications:
+            This parameter affects 1) what the early stopping policy
+            looks at to determine when to early stop and 2) hyperparameter optimization
+            for determining the best trial.
+        expected_impact: 1
+        related_parameters:
+            - validation_field
+        suggested_values: default behavior
+        ui_display_name: Validation Metric
     learning_rate_scheduler:
         warmup_evaluations:
             default_value_reasoning:
@@ -455,7 +422,6 @@ ecd:
                 process getting stuck in a local optimum. Conventional wisdom when training with large batch sizes is
                 to use a larger learning rate (see: `learning_rate_scaling`) but gradually warm up to the larger learning
                 rate over a few epochs of training in the beginning.
-
                 Even when not training with large batch sizes, the randomness of how weights are initialized can result
                 in strange, noisy gradient updates during the beginning of your training run. As such, it's generally
                 recommended to use a small amount of warmup (e.g., 1 epoch / evaluation) even when the batch size is
@@ -475,7 +441,7 @@ ecd:
             suggested_values_reasoning:
                 You don't want to warm up for too long, as after the model is starting to hill climb, you want to use the
                 full weight of the learning rate to descend into good loss minima.
-
+    
                 If you observe your loss curve converging very early into training, within the first few epochs, then
                 increasing learning rate warmup may help to mitigate this effect. Pretrained models can benefit from more
                 warmup to help offset the effects of catastrophic forgetting due to an overly high learning rate.
@@ -598,6 +564,123 @@ ecd:
             expected_impact: 1
             ui_display_name: Reduce Eval Split
 gbm:
+    learning_rate:
+        commonly_used: true
+        default_value_reasoning: Middle of the road learning rate to start with.
+        description_implications:
+            The learning rate is a hyperparameter that controls
+            how much to change the model in response to the estimated error each time
+            the model weights are updated. Increasing the learning rate may decrease learning
+            curve stability but also increase learning speed and efficiency, leading to
+            faster model convergence. Decreasing the learning rate can help stabilize
+            learning curves at the cost of slower time to convergence.
+        expected_impact: 3
+        suggested_values: 0.00001 - 0.1 or auto
+        related_parameters:
+            - decay
+        suggested_values_reasoning:
+            Tabular models trained from scratch typically use
+            learning rates around 1e-3 while learning rates for pre-trained models should
+            be much smaller, typically around 1e-5, which is important to mitigate catastrophic
+            forgetting. To make the model more robust to any specific choice of learning
+            rate, consider turning enabling learning rate decay.
+        ui_display_name: Learning Rate
+    early_stop:
+        default_value_reasoning:
+            Deep learning models are prone to overfitting. It's generally
+            a good policy to set up some early stopping criteria as it's not useful to
+            have a model train after it's maximized what it can learn. 5 consecutive rounds
+            of evaluation where there hasn't been any improvement on the validation set
+            (including chance) is a reasonable policy to start with.
+        description_implications:
+            Decreasing this value is a more aggressive policy. Decreasing
+            early stopping makes model training less forgiving, as the model has less
+            runway to demonstrate consecutive metric improvements before the training
+            run is quit. This can be efficient for pruning bad models earlier, but since
+            the training process is inherently non-deterministic and noisy, sometimes
+            improvements happen very gradually over a long period of time.
+            Extending this value leads to longer training times,
+            but potentially also better final performance.
+        expected_impact: 3
+        related_parameters:
+            - epochs
+            - train_steps
+        suggested_values: 5 - 10
+        suggested_values_reasoning:
+            There's potentially a lot of randomness in how models
+            train, but so many consecutive rounds of no improvement is usually a good
+            indicator that the model converged or overfitted.
+        ui_display_name: Early Stop
+    eval_batch_size:
+        default_value_reasoning:
+            Use the same batch size used for training.
+        description_implications:
+            By increasing the `eval_batch_size` past the `batch_size`
+            parameter set value, you allow for more parallelism in the batch evaluation
+            step and speed up evaluation. For example, if you have to evaluate the model
+            on a test set of size 1000, it is faster to evaluate two times with two batches
+            of size 500 as opposed to ten times with ten batches of 100.
+            Setting this parameter higher without getting past out memory limits
+            will speed up the model training process overall.
+        example_value:
+            - 512
+        expected_impact: 1
+        other_information:
+            Should only set the eval_batch_size to a level that you can fit
+            in memory.
+        related_parameters:
+            - batch_size
+        suggested_values:
+            - 256
+            - 512
+            - 1024
+        suggested_values_reasoning:
+            By observing memory consumption on training jobs,
+            you can get a sense of how much extra memory is available for increasing this
+            value. A good rule of thumb can be experimentally doubling the eval batch
+            size if you do not have insight into memory usage.
+        ui_display_name: Evaluation Batch Size
+    evaluate_training_set:
+        default_value_reasoning:
+            It could be useful to monitor evaluation metrics on the
+            training set to understand convergence.
+        description_implications:
+            Running evaluation on the full training set, when your
+            training set is large, can be a huge computational cost. Turning off training
+            set evaluation will lead to significant gains in training throughput and efficiency.
+            For small datasets that train and evaluate quickly, the choice is trivial.
+        expected_impact: 1
+        suggested_values: false
+        suggested_values_reasoning:
+            Running full-scale evaluation on the full training
+            set doesn't usually provide any useful information over the validation dataset.
+            Even with this set to False, continuous training loss metrics are still computed,
+            so it will still be easy to spot signs of overfitting like when the training-validation
+            loss curves diverge.
+        ui_display_name: Evaluate Training Set
+    validation_field:
+        default_value_reasoning:
+            Concrete evaluation metrics are usually better than loss,
+            the penalty for a bad prediction, which is only a proxy for prediction correctness.
+        description_implications:
+            This parameter affects 1) what the early stopping policy
+            looks at to determine when to early stop and 2) hyperparameter optimization
+            for determining the best trial.
+        expected_impact: 1
+        related_parameters:
+            - validation_metric
+        suggested_values: default behavior
+        ui_display_name: Validation Field
+    validation_metric:
+        description_implications:
+            This parameter affects 1) what the early stopping policy
+            looks at to determine when to early stop and 2) hyperparameter optimization
+            for determining the best trial.
+        expected_impact: 1
+        related_parameters:
+            - validation_field
+        suggested_values: default behavior
+        ui_display_name: Validation Metric
     max_depth:
         expected_impact: 3
     drop_rate:
