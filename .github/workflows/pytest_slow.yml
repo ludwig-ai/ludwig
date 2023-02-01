@@ -78,7 +78,7 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.python-version }}m
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
@@ -114,6 +114,8 @@ jobs:
           pip --version
           python -m pip install -U pip
           cmake --version
+
+          echo "MARKERS:" $MARKERS 
 
           if [ "$MARKERS" != "distributed" ]; then
             # Skip distributed and hyperopt requirements to test optional imports
@@ -183,7 +185,7 @@ jobs:
 
       - name: Tests
         run: |
-          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=4500 pytest -v --timeout 300 --durations 100 -m "(slow) and ($MARKERS)" --junitxml pytest_slow.xml tests
+          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=4500 pytest -v --timeout 300 --durations 100 -m "(slow) and ($MARKERS) and (not $EXCLUDED_MARKERS)" --junitxml pytest_slow.xml tests
 
       - name: Upload Unit Test Results
         if: ${{ always() && !env.ACT }}
