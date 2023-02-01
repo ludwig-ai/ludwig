@@ -51,7 +51,6 @@ from tests.integration_tests.utils import (
     run_experiment,
     sequence_feature,
     set_feature,
-    slow,
     text_feature,
     timeseries_feature,
     vector_feature,
