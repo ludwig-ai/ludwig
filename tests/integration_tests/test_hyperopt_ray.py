@@ -37,7 +37,7 @@ from tests.integration_tests.utils import category_feature, generate_data, text_
 try:
     import ray
     from ray.tune import Callback as TuneCallback
-    from ray.tune.trial import Trial
+    from ray.tune.experiment.trial import Trial
 
     from ludwig.hyperopt.execution import get_build_hyperopt_executor
 except ImportError:
