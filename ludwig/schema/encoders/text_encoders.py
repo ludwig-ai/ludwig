@@ -34,7 +34,7 @@ class ALBERTConfig(SequenceEncoderConfig):
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
         description="Whether to use the pretrained weights for the model. If false, the model will train from "
-                    "scratch which is very computationally expensive.",
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["ALBERT"]["use_pretrained"],
     )
 
@@ -232,7 +232,7 @@ class MT5Config(SequenceEncoderConfig):
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
         description="Whether to use the pretrained weights for the model. If false, the model will train from "
-                    "scratch which is very computationally expensive.",
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["MT5"]["use_pretrained"],
     )
 
@@ -420,7 +420,7 @@ class XLMRoBERTaConfig(SequenceEncoderConfig):
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
         description="Whether to use the pretrained weights for the model. If false, the model will train from "
-                    "scratch which is very computationally expensive.",
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["XLMRoBERTa"]["use_pretrained"],
     )
 
@@ -516,7 +516,7 @@ class BERTConfig(SequenceEncoderConfig):
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
         description="Whether to use the pretrained weights for the model. If false, the model will train from "
-                    "scratch which is very computationally expensive.",
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["BERT"]["use_pretrained"],
     )
 
@@ -688,7 +688,7 @@ class XLMConfig(SequenceEncoderConfig):
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
         description="Whether to use the pretrained weights for the model. If false, the model will train from "
-                    "scratch which is very computationally expensive.",
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["XLM"]["use_pretrained"],
     )
 
@@ -942,7 +942,7 @@ class GPTConfig(SequenceEncoderConfig):
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
         description="Whether to use the pretrained weights for the model. If false, the model will train from "
-                    "scratch which is very computationally expensive.",
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["GPT"]["use_pretrained"],
     )
 
@@ -1077,7 +1077,7 @@ class GPT2Config(SequenceEncoderConfig):
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
         description="Whether to use the pretrained weights for the model. If false, the model will train from "
-                    "scratch which is very computationally expensive.",
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["GPT2"]["use_pretrained"],
     )
 
@@ -1229,7 +1229,7 @@ class RoBERTaConfig(SequenceEncoderConfig):
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
         description="Whether to use the pretrained weights for the model. If false, the model will train from "
-                    "scratch which is very computationally expensive.",
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["RoBERTa"]["use_pretrained"],
     )
 
@@ -1319,7 +1319,7 @@ class TransformerXLConfig(SequenceEncoderConfig):
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
         description="Whether to use the pretrained weights for the model. If false, the model will train from "
-                    "scratch which is very computationally expensive.",
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["TransformerXL"]["use_pretrained"],
     )
 
@@ -1547,7 +1547,7 @@ class XLNetConfig(SequenceEncoderConfig):
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
         description="Whether to use the pretrained weights for the model. If false, the model will train from "
-                    "scratch which is very computationally expensive.",
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["XLNet"]["use_pretrained"],
     )
 
@@ -1785,7 +1785,7 @@ class DistilBERTConfig(SequenceEncoderConfig):
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
         description="Whether to use the pretrained weights for the model. If false, the model will train from "
-                    "scratch which is very computationally expensive.",
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["DistilBERT"]["use_pretrained"],
     )
 
@@ -1941,7 +1941,7 @@ class CTRLConfig(SequenceEncoderConfig):
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
         description="Whether to use the pretrained weights for the model. If false, the model will train from "
-                    "scratch which is very computationally expensive.",
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["CTRL"]["use_pretrained"],
     )
 
@@ -2083,7 +2083,7 @@ class CamemBERTConfig(SequenceEncoderConfig):
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
         description="Whether to use the pretrained weights for the model. If false, the model will train from "
-                    "scratch which is very computationally expensive.",
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["CamemBERT"]["use_pretrained"],
     )
 
@@ -2254,7 +2254,7 @@ class T5Config(SequenceEncoderConfig):
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
         description="Whether to use the pretrained weights for the model. If false, the model will train from "
-                    "scratch which is very computationally expensive.",
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["T5"]["use_pretrained"],
     )
 
@@ -2400,7 +2400,7 @@ class FlauBERTConfig(SequenceEncoderConfig):
     use_pretrained: bool = schema_utils.Boolean(
         default=False,
         description="Whether to use the pretrained weights for the model. If false, the model will train from "
-                    "scratch which is very computationally expensive.",
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["FlauBERT"]["use_pretrained"],
     )
 
@@ -2640,7 +2640,7 @@ class ELECTRAConfig(SequenceEncoderConfig):
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
         description="Whether to use the pretrained weights for the model. If false, the model will train from "
-                    "scratch which is very computationally expensive.",
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["ELECTRA"]["use_pretrained"],
     )
 
@@ -2806,7 +2806,7 @@ class LongformerConfig(SequenceEncoderConfig):
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
         description="Whether to use the pretrained weights for the model. If false, the model will train from "
-                    "scratch which is very computationally expensive.",
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["Longformer"]["use_pretrained"],
     )
 
