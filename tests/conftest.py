@@ -37,6 +37,17 @@ from tests.integration_tests.utils import category_feature, generate_data, text_
 
 TEST_SUITE_TIMEOUT_S = int(os.environ.get("LUDWIG_TEST_SUITE_TIMEOUT_S", 3600))
 
+import os
+import psutil
+
+
+@pytest.fixture(autouse=True)
+def check_memory():
+    start_mib = psutil.Process(os.getpid()).memory_info().rss / 1024**2
+    yield
+    end_mib = psutil.Process(os.getpid()).memory_info().rss / 1024**2
+    print(f"!!! MEMORY USAGE {start_mib} -> {end_mib} ({end_mib - start_mib})")
+
 
 def pytest_sessionstart(session):
     session.start_time = time.time()
