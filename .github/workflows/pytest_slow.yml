@@ -53,7 +53,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         python-version: [3.8]
-        test-markers: ["not distributed", "distributed"]
+        test-markers: ["slow"]
         include:
           - python-version: 3.8
             pytorch-version: 1.13.1
@@ -117,14 +117,6 @@ jobs:
 
           echo "MARKERS:" $MARKERS 
 
-          if [ "$MARKERS" != "distributed" ]; then
-            # Skip distributed and hyperopt requirements to test optional imports
-            echo > requirements-temp && mv requirements-temp requirements_distributed.txt
-            echo > requirements-temp && mv requirements-temp requirements_hyperopt.txt
-            # Skip distributed tree requirement (lightgbm-ray)
-            cat requirements_tree.txt | sed '/^lightgbm-ray/d' > requirements-temp && mv requirements-temp requirements_tree.txt
-          fi
-
           if [ "$PYTORCH" == "nightly" ]; then
             cat requirements.txt | sed '/^torch[>=<]/d' | sed '/^torchtext[>=<]/d' | sed '/^torchvision[>=<]/d' | sed '/^torchaudio[>=<]/d' > requirements-temp && mv requirements-temp requirements.txt
             extra_index_url=https://download.pytorch.org/whl/nightly/cpu
@@ -135,17 +127,15 @@ jobs:
           fi
           pip install protobuf==3.20.1 # https://github.com/databrickslabs/dbx/issues/257
 
-          if [ "$MARKERS" == "distributed" ]; then
-            if [ "$RAY_VERSION" == "nightly" ]; then
-              # NOTE: hardcoded for python 3.9 on Linux
-              pip install https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-3.0.0.dev0-cp39-cp39-manylinux2014_x86_64.whl
-            else
-              # installing `six` early resolves ModuleNotFound error in ray==2.1.0
-              pip install six
-              pip install ray==$RAY_VERSION
-            fi
-            ray_expected=$(python -c "import ray; print(ray.__version__)")
+          if [ "$RAY_VERSION" == "nightly" ]; then
+            # NOTE: hardcoded for python 3.9 on Linux
+            pip install https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-3.0.0.dev0-cp39-cp39-manylinux2014_x86_64.whl
+          else
+            # installing `six` early resolves ModuleNotFound error in ray==2.1.0
+            pip install six
+            pip install ray==$RAY_VERSION
           fi
+          ray_expected=$(python -c "import ray; print(ray.__version__)")
 
           torch_expected=$(python -c "import torch; print(torch.__version__)")
 
@@ -154,11 +144,7 @@ jobs:
           pip list
 
           python -c "import torch; assert torch.__version__ == \"$torch_expected\", f\"torch {torch.__version__} != $torch_expected\""
-          if [ "$MARKERS" == "distributed" ]; then
-            python -c "import ray; assert ray.__version__ == \"$ray_expected\", f\"ray {ray.__version__} != $ray_expected\""
-          else
-            python -c "import importlib.util; assert importlib.util.find_spec('ray') is None, \"found ray but expected it to not be installed\""
-          fi
+          python -c "import ray; assert ray.__version__ == \"$ray_expected\", f\"ray {ray.__version__} != $ray_expected\""
         shell: bash
 
       - name: Install Neuropod backend
@@ -168,7 +154,6 @@ jobs:
         shell: bash
 
       - name: Reinstall Horovod if necessary
-        if: matrix.test-markers == 'distributed'
         env:
           HOROVOD_WITH_PYTORCH: 1
           HOROVOD_WITHOUT_MPI: 1
@@ -185,7 +170,7 @@ jobs:
 
       - name: Tests
         run: |
-          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=4500 pytest -v --timeout 300 --durations 100 -m "(slow) and ($MARKERS) and (not $EXCLUDED_MARKERS)" --junitxml pytest_slow.xml tests
+          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=4500 pytest -v --timeout 300 --durations 100 -m "($MARKERS) and (not $EXCLUDED_MARKERS)" --junitxml pytest_slow.xml tests
 
       - name: Upload Unit Test Results
         if: ${{ always() && !env.ACT }}
