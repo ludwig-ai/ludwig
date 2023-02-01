@@ -25,7 +25,6 @@ from tests.integration_tests.utils import (
     number_feature,
     sequence_feature,
     set_feature,
-    slow,
     text_feature,
     timeseries_feature,
     vector_feature,
@@ -370,7 +369,7 @@ def test_model_save_reload_tv_model(torch_encoder, variant, tmpdir, csv_filename
     check_model_equal(ludwig_model_exp)
 
 
-@slow
+@pytest.mark.slow
 def test_model_save_reload_hf_model(tmpdir, csv_filename, tmp_path):
     torch.manual_seed(1)
     random.seed(1)
