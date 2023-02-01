@@ -1225,6 +1225,7 @@ class StackedTransformerConfig(SequenceEncoderConfig):
     representation: str = schema_utils.StringOptions(
         ["dense", "sparse"],
         default="dense",
+        allow_none=False,
         description="The representation of the embeddings. 'Dense' means the embeddings are initialized randomly. "
         "'Sparse' means they are initialized to be one-hot encodings.",
         parameter_metadata=ENCODER_METADATA["StackedTransformer"]["representation"],
