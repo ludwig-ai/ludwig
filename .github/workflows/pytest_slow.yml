@@ -115,7 +115,7 @@ jobs:
           python -m pip install -U pip
           cmake --version
 
-          echo "MARKERS:" $MARKERS 
+          echo "MARKERS:" $MARKERS
 
           if [ "$MARKERS" != "distributed" ]; then
             # Skip distributed and hyperopt requirements to test optional imports
