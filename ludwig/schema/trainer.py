@@ -5,7 +5,7 @@ from typing import Optional, Union
 from marshmallow_dataclass import dataclass
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import DEFAULT_BATCH_SIZE, LOSS, MAX_POSSIBLE_BATCH_SIZE, MODEL_ECD, MODEL_GBM, TRAINING
+from ludwig.constants import COMBINED, DEFAULT_BATCH_SIZE, LOSS, MAX_POSSIBLE_BATCH_SIZE, MODEL_ECD, MODEL_GBM, TRAINING
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.lr_scheduler import LRSchedulerConfig, LRSchedulerDataclassField
 from ludwig.schema.metadata import TRAINER_METADATA
@@ -41,18 +41,16 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
         "stopping, parameter change plateaus, as well as what hyperparameter optimization uses to determine the best "
         "trial. If unset (default), the first output feature is used. If explicitly specified, neither "
         "`validation_field` nor `validation_metric` are overwritten.",
-        parameter_metadata=TRAINER_METADATA["validation_field"],
     )
 
     validation_metric: str = schema_utils.String(
-        default=None,
+        default=LOSS,
         description=(
             "Metric from `validation_field` that is used. If validation_field is not explicitly specified, this is "
             "overwritten to be the first output feature type's `default_validation_metric`, consistent with "
             "validation_field. If the validation_metric is specified, then we will use the first output feature that "
             "produces this metric as the `validation_field`."
         ),
-        parameter_metadata=TRAINER_METADATA["validation_metric"],
     )
 
 
