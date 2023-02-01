@@ -34,7 +34,7 @@ gpustat
 rich~=12.4.4
 packaging
 retry
-
+pympler
 # required for TransfoXLTokenizer when using transformer_xl
 sacremoses
 
