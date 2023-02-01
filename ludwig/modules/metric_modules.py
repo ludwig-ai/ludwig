@@ -19,12 +19,11 @@ from typing import Any, Callable, Generator, Optional, Type
 
 import torch
 from torch import Tensor, tensor
-from torchmetrics import CharErrorRate, MeanAbsoluteError
+from torchmetrics import AUROC, CharErrorRate, MeanAbsoluteError
 from torchmetrics import MeanMetric as _MeanMetric
 from torchmetrics import MeanSquaredError, Metric
 from torchmetrics.classification import (
     BinaryAccuracy,
-    BinaryAUROC,
     BinaryPrecision,
     BinaryRecall,
     BinarySpecificity,
@@ -138,8 +137,7 @@ class RMSEMetric(MeanSquaredError, LudwigMetric):
     def get_objective(cls):
         return MINIMIZE
 
-    @classmethod
-    def get_inputs(cls):
+    def get_inputs(self):
         return PREDICTIONS
 
 
@@ -154,8 +152,7 @@ class PrecisionMetric(BinaryPrecision, LudwigMetric):
     def get_objective(cls):
         return MAXIMIZE
 
-    @classmethod
-    def get_inputs(cls):
+    def get_inputs(self):
         return PROBABILITIES
 
 
@@ -170,8 +167,7 @@ class RecallMetric(BinaryRecall, LudwigMetric):
     def get_objective(cls):
         return MAXIMIZE
 
-    @classmethod
-    def get_inputs(cls):
+    def get_inputs(self):
         return PROBABILITIES
 
 
@@ -180,18 +176,21 @@ class RecallMetric(BinaryRecall, LudwigMetric):
 # "Argument `num_classes` was set to X in metric `precision_recall_curve` but detected Y number of classes from
 # predictions.", where Y >> X.
 @register_metric(ROC_AUC, [BINARY])
-class BinaryAUROCMetric(BinaryAUROC, LudwigMetric):
+# class BinaryAUROCMetric(BinaryAUROC, LudwigMetric):
+class BinaryAUROCMetric(LudwigMetric, AUROC):
     """Area under the receiver operating curve."""
 
     def __init__(self, **kwargs):
         super().__init__(dist_sync_fn=_gather_all_tensors_fn())
 
+    def update(self, preds: Tensor, target: Tensor) -> None:
+        super().update(preds, target.type(torch.int8))
+
     @classmethod
     def get_objective(cls):
         return MAXIMIZE
 
-    @classmethod
-    def get_inputs(cls):
+    def get_inputs(self):
         return PROBABILITIES
 
 
@@ -206,8 +205,7 @@ class CategoryAUROCMetric(MulticlassAUROC, LudwigMetric):
     def get_objective(cls):
         return MAXIMIZE
 
-    @classmethod
-    def get_inputs(cls):
+    def get_inputs(self):
         return PROBABILITIES
 
 
@@ -222,8 +220,7 @@ class SpecificityMetric(BinarySpecificity, LudwigMetric):
     def get_objective(cls):
         return MAXIMIZE
 
-    @classmethod
-    def get_inputs(cls):
+    def get_inputs(self):
         return PROBABILITIES
 
 
@@ -263,8 +260,7 @@ class RMSPEMetric(MeanMetric):
     def get_objective(cls):
         return MINIMIZE
 
-    @classmethod
-    def get_inputs(cls):
+    def get_inputs(self):
         return PREDICTIONS
 
 
@@ -332,8 +328,7 @@ class R2Score(LudwigMetric):
     def get_objective(cls):
         return MAXIMIZE
 
-    @classmethod
-    def get_inputs(cls):
+    def get_inputs(self):
         return PREDICTIONS
 
 
@@ -350,8 +345,7 @@ class LossMetric(MeanMetric, ABC):
     def get_objective(cls):
         return MINIMIZE
 
-    @classmethod
-    def get_inputs(cls):
+    def get_inputs(self):
         return LOGITS
 
     @classmethod
@@ -427,8 +421,7 @@ class TokenAccuracyMetric(MeanMetric):
     def get_objective(cls):
         return MAXIMIZE
 
-    @classmethod
-    def get_inputs(cls):
+    def get_inputs(self):
         return PREDICTIONS
 
 
@@ -444,8 +437,7 @@ class SequenceAccuracyMetric(MeanMetric):
     def get_objective(cls):
         return MAXIMIZE
 
-    @classmethod
-    def get_inputs(cls):
+    def get_inputs(self):
         return PREDICTIONS
 
 
@@ -458,8 +450,7 @@ class PerplexityMetric(Perplexity, LudwigMetric):
     def get_objective(cls):
         return MINIMIZE
 
-    @classmethod
-    def get_inputs(cls):
+    def get_inputs(self):
         return PROBABILITIES
 
 
@@ -501,8 +492,7 @@ class CharErrorRateMetric(CharErrorRate, LudwigMetric):
     def get_objective(cls):
         return MINIMIZE
 
-    @classmethod
-    def get_inputs(cls):
+    def get_inputs(self):
         return PREDICTIONS
 
 
@@ -517,8 +507,7 @@ class Accuracy(BinaryAccuracy, LudwigMetric):
     def get_objective(cls):
         return MAXIMIZE
 
-    @classmethod
-    def get_inputs(cls):
+    def get_inputs(self):
         return PREDICTIONS
 
 
@@ -534,8 +523,7 @@ class CategoryAccuracy(MulticlassAccuracy, LudwigMetric):
     def get_objective(cls):
         return MAXIMIZE
 
-    @classmethod
-    def get_inputs(cls):
+    def get_inputs(self):
         return PREDICTIONS
 
 
@@ -551,8 +539,7 @@ class HitsAtKMetric(MulticlassAccuracy, LudwigMetric):
     def get_objective(cls):
         return MAXIMIZE
 
-    @classmethod
-    def get_inputs(cls):
+    def get_inputs(self):
         return LOGITS
 
     @classmethod
@@ -572,8 +559,7 @@ class MAEMetric(MeanAbsoluteError, LudwigMetric):
     def get_objective(cls):
         return MINIMIZE
 
-    @classmethod
-    def get_inputs(cls):
+    def get_inputs(self):
         return PREDICTIONS
 
 
@@ -589,8 +575,7 @@ class MSEMetric(MeanSquaredError, LudwigMetric):
     def get_objective(cls):
         return MINIMIZE
 
-    @classmethod
-    def get_inputs(cls):
+    def get_inputs(self):
         return PREDICTIONS
 
 
@@ -616,8 +601,7 @@ class JaccardMetric(MeanMetric):
     def get_objective(cls):
         return MAXIMIZE
 
-    @classmethod
-    def get_inputs(cls):
+    def get_inputs(self):
         return PROBABILITIES
 
 

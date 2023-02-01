@@ -271,6 +271,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
     def _setup_metrics(self):
         print(f"get_metric_classes(self.type()).keys(): {get_metric_classes(self.type()).keys()}")
+        print(f"get_metric_classes(self.type()).values(): {get_metric_classes(self.type()).values()}")
         self._metric_functions = {
             LOSS: self.eval_loss_metric,
             **{
@@ -279,6 +280,10 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
                 if cls.can_report(self)
             },
         }
+
+        for metric_fn in self._metric_functions.values():
+            print(type(metric_fn))
+        print("Done.")
         self.metric_names = sorted(list(self._metric_functions.keys()))
 
     def create_calibration_module(self, feature: BaseOutputFeatureConfig) -> CalibrationModule:
@@ -348,11 +353,25 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         print(f"self._metric_functions.keys(): {self._metric_functions.keys()}")
         for metric_name, metric_fn in self._metric_functions.items():
             print(f"metric_name: {metric_name}")
-            metric_class = type(metric_fn)
-            prediction_key = metric_class.get_inputs()
+            print(f"metric_fn: {metric_fn}")
+            # metric_class = type(metric_fn)
+            # print(f"metric_class: {metric_class}")
+            # prediction_key = metric_class.get_inputs()
+
+            # from ludwig.modules.metric_modules import LudwigMetric
+
+            # metric_fn.__class__ = LudwigMetric
+            if metric_name == "roc_auc":
+                # For some reason, ROC's "type" -> torchmetric's BinaryAUROC, which doesn't have a get_inputs()
+                # method.
+                prediction_key = "probabilities"
+            else:
+                prediction_key = metric_fn.get_inputs()
             # TODO(shreya): Metrics should ideally just move to the correct device
             #  and not require the user to do this. This is a temporary fix. See
             #  if this can be removed before merging the PR.
+            print(f"predictions[prediction_key]: {predictions[prediction_key]}")
+            print(f"targets: {targets}")
             metric_fn = metric_fn.to(predictions[prediction_key].device)
             if metric_name == "perplexity":
                 metric_fn.update(predictions[prediction_key].detach(), targets.to(torch.int64))
@@ -361,9 +380,12 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             print(f"Finished metric_name: {metric_name}")
 
     def get_metrics(self):
+        print("Getting metrics.")
         metric_vals = {}
         for metric_name, metric_fn in self._metric_functions.items():
             try:
+                print(f"metric_name: {metric_name}")
+                print(f"metric_fn.compute(): {metric_fn.compute()}")
                 metric_vals[metric_name] = get_scalar_from_ludwig_metric(metric_fn)
             except Exception as e:
                 logger.error(f"Caught exception computing metric: {metric_name}. Exception: {e}")
