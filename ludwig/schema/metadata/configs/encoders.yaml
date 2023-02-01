@@ -84,7 +84,7 @@ ALBERT:
 
             Increasing the embedding size may cause the model to train more slowly,
             but the higher dimensionality can also improve overall quality.'
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture
         suggested_values: 1.6 * sqrt(vocab_size)
@@ -335,7 +335,7 @@ AutoTransformer:
         expected_impact: 1
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 2
+        expected_impact: 3
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -377,7 +377,7 @@ BERT:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -400,7 +400,7 @@ BERT:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -422,7 +422,7 @@ BERT:
             the feed-forward layers of the transformer.
         example_value:
             - relu
-        expected_impact: 2
+        expected_impact: 1
         literature_references:
             - "[Huggingface docs for BERT config](https://huggingface.co/docs/transformers/model_doc/bert#transformers.BertConfig.hidden_act)\n\
               \r\n[Relevant StackOverflow discussion](https://ai.stackexchange.com/questions/30341/why-does-a-transformer-not-use-an-activation-function-following-the-multi-head-a)"
@@ -440,7 +440,7 @@ BERT:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -458,7 +458,7 @@ BERT:
             Increasing the hidden size makes the model larger
             and slower to train, increases the model's capacity to capture more complexity.
             It also increases the chance of overfitting.
-        expected_impact: 2
+        expected_impact: 1
         suggested_values: 10 - 2048
         suggested_values_reasoning:
             Increasing the hidden size makes sense if the
@@ -472,7 +472,7 @@ BERT:
             lead to the outputs of these matrices to vanish or explode
         example_value:
             - 0.02
-        expected_impact: 3
+        expected_impact: 1
         other_information: Must be greater than 0
         related_parameters:
             - weights_initializer
@@ -995,7 +995,7 @@ CTRL:
             lead to the outputs of these matrices to vanish or explode
         example_value:
             - 0.02
-        expected_impact: 3
+        expected_impact: 1
         other_information: Must be greater than 0
         related_parameters:
             - weights_initializer
@@ -1105,7 +1105,7 @@ CamemBERT:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -1128,7 +1128,7 @@ CamemBERT:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -1149,7 +1149,7 @@ CamemBERT:
             the feed-forward layers of the transformer.
         example_value:
             - relu
-        expected_impact: 2
+        expected_impact: 1
         literature_references:
             - "[Relevant StackOverflow discussion](https://ai.stackexchange.com/questions/30341/why-does-a-transformer-not-use-an-activation-function-following-the-multi-head-a)"
         suggested_values: gelu
@@ -1166,7 +1166,7 @@ CamemBERT:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -1184,7 +1184,7 @@ CamemBERT:
             Increasing the hidden size makes the model larger
             and slower to train, increases the model's capacity to capture more complexity.
             It also increases the chance of overfitting.
-        expected_impact: 2
+        expected_impact: 1
         suggested_values: 10 - 2048
         suggested_values_reasoning:
             Increasing the hidden size makes sense if the
@@ -1198,7 +1198,7 @@ CamemBERT:
             lead to the outputs of these matrices to vanish or explode
         example_value:
             - 0.02
-        expected_impact: 3
+        expected_impact: 1
         other_information: Must be greater than 0
         related_parameters:
             - weights_initializer
@@ -2390,7 +2390,7 @@ DistilBERT:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -2588,7 +2588,7 @@ ELECTRA:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -2611,7 +2611,7 @@ ELECTRA:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -2643,7 +2643,7 @@ ELECTRA:
 
             Increasing the embedding size may cause the model to train more slowly,
             but the higher dimensionality can also improve overall quality.'
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture
         suggested_values: 1.6 * sqrt(vocab_size)
@@ -2659,7 +2659,7 @@ ELECTRA:
             the feed-forward layers of the transformer.
         example_value:
             - relu
-        expected_impact: 2
+        expected_impact: 1
         literature_references:
             - "[Huggingface docs for ELECTRA config](https://huggingface.co/docs/transformers/model_doc/electra#transformers.ElectraConfig.hidden_act)
 
@@ -2679,7 +2679,7 @@ ELECTRA:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -2699,7 +2699,7 @@ ELECTRA:
             Increasing the hidden size makes the model larger
             and slower to train, increases the model's capacity to capture more complexity.
             It also increases the chance of overfitting.
-        expected_impact: 2
+        expected_impact: 1
         suggested_values: 10 - 2048
         suggested_values_reasoning:
             Increasing the hidden size makes sense if the
@@ -2713,7 +2713,7 @@ ELECTRA:
             lead to the outputs of these matrices to vanish or explode
         example_value:
             - 0.02
-        expected_impact: 3
+        expected_impact: 1
         other_information: Must be greater than 0
         related_parameters:
             - weights_initializer
@@ -2873,7 +2873,7 @@ FlauBERT:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -3053,7 +3053,7 @@ GPT2:
             lead to the outputs of these matrices to vanish or explode
         example_value:
             - 0.02
-        expected_impact: 3
+        expected_impact: 1
         other_information: Must be greater than 0
         related_parameters:
             - weights_initializer
@@ -3152,7 +3152,7 @@ GPT:
             lead to the outputs of these matrices to vanish or explode
         example_value:
             - 0.02
-        expected_impact: 3
+        expected_impact: 1
         other_information: Must be greater than 0
         related_parameters:
             - weights_initializer
@@ -8445,7 +8445,7 @@ T5:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         suggested_values: 0.05 - 0.8
@@ -8484,7 +8484,7 @@ T5:
             from the pre-trained model."
         example_value:
             - 6
-        expected_impact: 3
+        expected_impact: 2
         related_parameters:
             - pretrained_model_or_path
         suggested_values: 1 - 12
@@ -8605,7 +8605,7 @@ TransformerXL:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         suggested_values: 0.05 - 0.8
@@ -8968,7 +8968,7 @@ ViT:
             lead to the outputs of these matrices to vanish or explode
         example_value:
             - 0.02
-        expected_impact: 3
+        expected_impact: 1
         other_information: Must be greater than 0
         related_parameters:
             - weights_initializer
@@ -9153,7 +9153,7 @@ XLM:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -9415,7 +9415,7 @@ XLNet:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -9441,7 +9441,7 @@ XLNet:
             lead to the outputs of these matrices to vanish or explode
         example_value:
             - 0.02
-        expected_impact: 3
+        expected_impact: 1
         other_information: Must be greater than 0
         related_parameters:
             - weights_initializer
@@ -9512,7 +9512,7 @@ XLNet:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
