@@ -81,11 +81,12 @@ class HFTextEncoder(Encoder):
         encoder_config_dict = encoder_config.to_dict()
         encoder_config_dict.update(final_hf_config_params)
         return self.get_schema_cls().from_dict(encoder_config_dict)
-    
+
     def _init_transformer_from_scratch(
-        self, hf_model_cls: Type, hf_config_cls: Type, hf_config_params: Dict[str, Any], vocab_size: int):
+        self, hf_model_cls: Type, hf_config_cls: Type, hf_config_params: Dict[str, Any], vocab_size: int
+    ):
         """Initializes the transformer model from scratch. This is in contrast to loading a pre-trained model.
-        
+
         Args:
             hf_model_cls: The HuggingFace model class.
             hf_config_cls: The HuggingFace config class.
@@ -220,8 +221,7 @@ class ALBERTEncoder(HFTextEncoder):
             pretrained_kwargs = pretrained_kwargs or {}
             transformer = load_pretrained_hf_model(AlbertModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
-            transformer = self._init_transformer_from_scratch(
-                AlbertModel, AlbertConfig, hf_config_params, vocab_size)
+            transformer = self._init_transformer_from_scratch(AlbertModel, AlbertConfig, hf_config_params, vocab_size)
 
         if encoder_config is not None:
             self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
@@ -341,8 +341,7 @@ class MT5Encoder(HFTextEncoder):
             pretrained_kwargs = pretrained_kwargs or {}
             transformer = load_pretrained_hf_model(MT5EncoderModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
-            transformer = self._init_transformer_from_scratch(
-                MT5EncoderModel, MT5Config, hf_config_params, vocab_size)
+            transformer = self._init_transformer_from_scratch(MT5EncoderModel, MT5Config, hf_config_params, vocab_size)
 
         if encoder_config is not None:
             self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
@@ -433,7 +432,8 @@ class XLMRoBERTaEncoder(HFTextEncoder):
             transformer = load_pretrained_hf_model(XLMRobertaModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             transformer = self._init_transformer_from_scratch(
-                XLMRobertaModel, XLMRobertaConfig, hf_config_params, vocab_size)
+                XLMRobertaModel, XLMRobertaConfig, hf_config_params, vocab_size
+            )
 
         if encoder_config is not None:
             self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
@@ -547,8 +547,7 @@ class BERTEncoder(HFTextEncoder):
             pretrained_kwargs = pretrained_kwargs or {}
             transformer = load_pretrained_hf_model(BertModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
-            transformer = self._init_transformer_from_scratch(
-                BertModel, BertConfig, hf_config_params, vocab_size)
+            transformer = self._init_transformer_from_scratch(BertModel, BertConfig, hf_config_params, vocab_size)
 
         if encoder_config is not None:
             self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
@@ -689,8 +688,7 @@ class XLMEncoder(HFTextEncoder):
             pretrained_kwargs = pretrained_kwargs or {}
             transformer = load_pretrained_hf_model(XLMModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
-            transformer = self._init_transformer_from_scratch(
-                XLMModel, XLMConfig, hf_config_params, vocab_size)
+            transformer = self._init_transformer_from_scratch(XLMModel, XLMConfig, hf_config_params, vocab_size)
 
         self.config = self._init_config(transformer, hf_config_params, encoder_config)
 
@@ -792,7 +790,8 @@ class GPTEncoder(HFTextEncoder):
             transformer = load_pretrained_hf_model(OpenAIGPTModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             transformer = self._init_transformer_from_scratch(
-                OpenAIGPTModel, OpenAIGPTConfig, hf_config_params, vocab_size)
+                OpenAIGPTModel, OpenAIGPTConfig, hf_config_params, vocab_size
+            )
 
         if encoder_config is not None:
             self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
@@ -892,8 +891,7 @@ class GPT2Encoder(HFTextEncoder):
             pretrained_kwargs = pretrained_kwargs or {}
             transformer = load_pretrained_hf_model(GPT2Model, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
-            transformer = self._init_transformer_from_scratch(
-                GPT2Model, GPT2Config, hf_config_params, vocab_size)
+            transformer = self._init_transformer_from_scratch(GPT2Model, GPT2Config, hf_config_params, vocab_size)
 
         if encoder_config is not None:
             self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
@@ -977,8 +975,7 @@ class RoBERTaEncoder(HFTextEncoder):
             pretrained_kwargs = pretrained_kwargs or {}
             transformer = load_pretrained_hf_model(RobertaModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
-            transformer = self._init_transformer_from_scratch(
-                RobertaModel, RobertaConfig, hf_config_params, vocab_size)
+            transformer = self._init_transformer_from_scratch(RobertaModel, RobertaConfig, hf_config_params, vocab_size)
 
         if encoder_config is not None:
             self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
@@ -1228,8 +1225,7 @@ class XLNetEncoder(HFTextEncoder):
             pretrained_kwargs = pretrained_kwargs or {}
             transformer = load_pretrained_hf_model(XLNetModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
-            transformer = self._init_transformer_from_scratch(
-                XLNetModel, XLNetConfig, hf_config_params, vocab_size)
+            transformer = self._init_transformer_from_scratch(XLNetModel, XLNetConfig, hf_config_params, vocab_size)
 
         if encoder_config is not None:
             self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
@@ -1330,7 +1326,8 @@ class DistilBERTEncoder(HFTextEncoder):
             transformer = load_pretrained_hf_model(DistilBertModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             transformer = self._init_transformer_from_scratch(
-                DistilBertModel, DistilBertConfig, hf_config_params, vocab_size)
+                DistilBertModel, DistilBertConfig, hf_config_params, vocab_size
+            )
 
         if encoder_config is not None:
             self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
@@ -1433,8 +1430,7 @@ class CTRLEncoder(HFTextEncoder):
             transformer = load_pretrained_hf_model(CTRLModel, pretrained_model_name_or_path, **pretrained_kwargs)
             self.vocab_size = transformer.config.vocab_size
         else:
-            transformer = self._init_transformer_from_scratch(
-                CTRLModel, CTRLConfig, hf_config_params, vocab_size)
+            transformer = self._init_transformer_from_scratch(CTRLModel, CTRLConfig, hf_config_params, vocab_size)
             self.vocab_size = vocab_size
 
         if encoder_config is not None:
@@ -1541,7 +1537,8 @@ class CamemBERTEncoder(HFTextEncoder):
             transformer = load_pretrained_hf_model(CamembertModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             transformer = self._init_transformer_from_scratch(
-                CamembertModel, CamembertConfig, hf_config_params, vocab_size)
+                CamembertModel, CamembertConfig, hf_config_params, vocab_size
+            )
 
         if encoder_config is not None:
             self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
@@ -1647,8 +1644,7 @@ class T5Encoder(HFTextEncoder):
             pretrained_kwargs = pretrained_kwargs or {}
             transformer = load_pretrained_hf_model(T5Model, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
-            transformer = self._init_transformer_from_scratch(
-                T5Model, T5Config, hf_config_params, vocab_size)
+            transformer = self._init_transformer_from_scratch(T5Model, T5Config, hf_config_params, vocab_size)
 
         if encoder_config is not None:
             self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
@@ -1780,7 +1776,8 @@ class FlauBERTEncoder(HFTextEncoder):
             transformer = load_pretrained_hf_model(FlaubertModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             transformer = self._init_transformer_from_scratch(
-                FlaubertModel, FlaubertConfig, hf_config_params, vocab_size)
+                FlaubertModel, FlaubertConfig, hf_config_params, vocab_size
+            )
 
         if encoder_config is not None:
             self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
@@ -1889,8 +1886,7 @@ class ELECTRAEncoder(HFTextEncoder):
             pretrained_kwargs = pretrained_kwargs or {}
             transformer = load_pretrained_hf_model(ElectraModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
-            transformer = self._init_transformer_from_scratch(
-                ElectraModel, ElectraConfig, hf_config_params, vocab_size)
+            transformer = self._init_transformer_from_scratch(ElectraModel, ElectraConfig, hf_config_params, vocab_size)
 
         if encoder_config is not None:
             self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
@@ -1978,7 +1974,8 @@ class LongformerEncoder(HFTextEncoder):
             transformer = load_pretrained_hf_model(LongformerModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             transformer = self._init_transformer_from_scratch(
-                LongformerModel, LongformerConfig, hf_config_params, vocab_size)
+                LongformerModel, LongformerConfig, hf_config_params, vocab_size
+            )
 
         if encoder_config is not None:
             self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
