@@ -38,6 +38,7 @@ from tests.integration_tests.utils import category_feature, generate_data, text_
 TEST_SUITE_TIMEOUT_S = int(os.environ.get("LUDWIG_TEST_SUITE_TIMEOUT_S", 3600))
 
 import os
+
 import psutil
 
 
