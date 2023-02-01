@@ -285,7 +285,7 @@ regularization_lambda:
         is data-dependent, so you'll need to do some tuning. We recommend trying
         a handful of values (0.001, 0.02, ... 0.4) gradually increasing the value until
         training curves get worse"
-    expected_impact: 2
+    expected_impact: 3
     literature_references:
         - "https://developers.google.com/machine-learning/crash-course/regularization-for-simplicity/lambda "
     related_parameters:

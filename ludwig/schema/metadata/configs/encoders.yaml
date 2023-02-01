@@ -237,7 +237,7 @@ ALBERT:
             \nModels pretrained on highly-related source tasks are more likely to\
             \ be successful on the target task. Consider searching the HuggingFace\
             \ model repository for models trained on similar tasks."
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://arxiv.org/abs/1909.11942
         related_parameters:
@@ -281,8 +281,25 @@ ALBERT:
         ui_display_name: null
         expected_impact: 1
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -318,7 +335,7 @@ AutoTransformer:
         expected_impact: 1
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -512,7 +529,7 @@ BERT:
         expected_impact: 1
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -540,8 +557,25 @@ BERT:
         ui_display_name: null
         expected_impact: 1
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -992,7 +1026,7 @@ CTRL:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -1019,8 +1053,25 @@ CTRL:
         expected_impact: 3
         ui_display_name: null
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -1197,7 +1248,7 @@ CamemBERT:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -1224,8 +1275,25 @@ CamemBERT:
     type_vocab_size:
         ui_display_name: null
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -2297,7 +2365,7 @@ DistilBERT:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -2346,7 +2414,7 @@ DistilBERT:
             lead to the outputs of these matrices to vanish or explode
         example_value:
             - 0.02
-        expected_impact: 3
+        expected_impact: 1
         other_information: Must be greater than 0
         related_parameters:
             - weights_initializer
@@ -2388,7 +2456,7 @@ DistilBERT:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     qa_dropout:
         default_value_reasoning: Huggingface default.
         description_implications:
@@ -2400,7 +2468,7 @@ DistilBERT:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -2443,7 +2511,7 @@ DistilBERT:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -2465,8 +2533,25 @@ DistilBERT:
         expected_impact: 3
         ui_display_name: null
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -2676,7 +2761,7 @@ ELECTRA:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -2703,8 +2788,25 @@ ELECTRA:
     type_vocab_size:
         ui_display_name: null
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -2863,7 +2965,7 @@ FlauBERT:
         expected_impact: 1
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -2897,8 +2999,25 @@ FlauBERT:
         ui_display_name: null
         expected_impact: 1
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -2967,7 +3086,7 @@ GPT2:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -2979,8 +3098,25 @@ GPT2:
         expected_impact: 3
         ui_display_name: null
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -3047,7 +3183,7 @@ GPT:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -3074,8 +3210,25 @@ GPT:
         expected_impact: 3
         ui_display_name: null
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -3992,7 +4145,7 @@ Longformer:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -4019,8 +4172,25 @@ Longformer:
         expected_impact: 3
         ui_display_name: null
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -4215,7 +4385,7 @@ MT5:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -4273,8 +4443,25 @@ MT5:
     use_cache:
         ui_display_name: null
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -5017,7 +5204,7 @@ RoBERTa:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -5042,8 +5229,25 @@ RoBERTa:
         expected_impact: 3
         ui_display_name: null
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -8293,7 +8497,7 @@ T5:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -8320,8 +8524,25 @@ T5:
         expected_impact: 3
         ui_display_name: null
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -8423,7 +8644,7 @@ TransformerXL:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     proj_init_std:
         ui_display_name: null
     proj_share_all_but_first:
@@ -8458,8 +8679,25 @@ TransformerXL:
     untie_r:
         ui_display_name: null
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -8529,7 +8767,7 @@ TVBaseEncoder:
             Pretrained models have typically already learned
             features that are difficult to learn from scratch. They are particularly
             beneficial when training on small amounts of data.
-        expected_impact: 2
+        expected_impact: 3
         literature_references:
             - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
         related_parameters:
@@ -8540,7 +8778,7 @@ TVBaseEncoder:
             If you have a large amount of data and/or you
             have data that differs from the typical distribution, then it might be
             worth training the model from scratch.
-        ui_display_name: Use pretrained model
+        ui_display_name: Use Pretrained
 TVConvNeXtEncoder:
     model_variant:
         ui_display_name: Model Variant
@@ -8850,7 +9088,7 @@ ViT:
             Pretrained models have typically already learned
             features that are difficult to learn from scratch. They are particularly
             beneficial when training on small amounts of data.
-        expected_impact: 2
+        expected_impact: 3
         literature_references:
             - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
         related_parameters:
@@ -8861,7 +9099,7 @@ ViT:
             If you have a large amount of data and/or you
             have data that differs from the typical distribution, then it might be
             worth training the model from scratch.
-        ui_display_name: Use pretrained model
+        ui_display_name: Use Pretrained
     width:
         internal_only: true
         ui_display_name: null
@@ -8885,7 +9123,7 @@ XLM:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -8992,7 +9230,7 @@ XLM:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -9025,8 +9263,25 @@ XLM:
     use_lang_emb:
         ui_display_name: null
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -9069,7 +9324,7 @@ XLMRoBERTa:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -9094,8 +9349,25 @@ XLMRoBERTa:
         expected_impact: 3
         ui_display_name: null
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -9198,7 +9470,7 @@ XLNet:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -9266,8 +9538,25 @@ XLNet:
     use_mems_train:
         ui_display_name: null
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to

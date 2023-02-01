@@ -33,7 +33,8 @@ class ALBERTConfig(SequenceEncoderConfig):
 
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
-        description="Whether to use the pretrained weights for the model.",
+        description="Whether to use the pretrained weights for the model. If false, the model will train from "
+                    "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["ALBERT"]["use_pretrained"],
     )
 
@@ -52,7 +53,7 @@ class ALBERTConfig(SequenceEncoderConfig):
 
     trainable: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to train the model.",
+        description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["ALBERT"]["trainable"],
     )
 
