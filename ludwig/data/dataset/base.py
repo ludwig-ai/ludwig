@@ -17,6 +17,9 @@
 import contextlib
 from abc import ABC, abstractmethod
 
+from ludwig.distributed import DistributedStrategy
+from ludwig.utils.defaults import default_random_seed
+
 
 class Dataset(ABC):
     @abstractmethod
@@ -25,7 +28,14 @@ class Dataset(ABC):
 
     @contextlib.contextmanager
     @abstractmethod
-    def initialize_batcher(self, batch_size=128, should_shuffle=True, seed=0, ignore_last=False, distributed=None):
+    def initialize_batcher(
+        self,
+        batch_size: int = 128,
+        should_shuffle: bool = True,
+        random_seed: int = default_random_seed,
+        ignore_last: bool = False,
+        distributed: DistributedStrategy = None,
+    ):
         raise NotImplementedError()
 
     def to_df(self):

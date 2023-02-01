@@ -188,7 +188,7 @@ class _ModelConfig(BaseMarshmallowConfig):
 
         # ===== Combiner =====
         if COMBINER in upgraded_config_dict:
-            if self.combiner.type != upgraded_config_dict[COMBINER][TYPE]:
+            if self.combiner.type != upgraded_config_dict.get(COMBINER, {}).get(TYPE, None):
                 self.combiner = combiner_registry.get(upgraded_config_dict[COMBINER][TYPE]).get_schema_cls()()
 
             if self.combiner.type == SEQUENCE:
