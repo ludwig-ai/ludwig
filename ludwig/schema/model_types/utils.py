@@ -13,28 +13,23 @@ from ludwig.constants import (
     DECODER,
     DEFAULTS,
     ENCODER,
-    EXECUTOR,
     GRID_SEARCH,
-    HYPEROPT,
     INPUT_FEATURES,
     LOSS,
     NAME,
-    NUM_SAMPLES,
     OUTPUT_FEATURES,
     PARAMETERS,
     PREPROCESSING,
     PROC_COLUMN,
-    RAY,
     SPACE,
-    TRAINER,
     TYPE,
 )
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.schema.encoders.utils import get_encoder_cls
-from ludwig.schema.features.base import BaseOutputFeatureConfig, FeatureCollection
 from ludwig.schema.features.utils import input_config_registry, output_config_registry
+from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.types import HyperoptConfigDict, ModelConfigDict
-from ludwig.utils.misc_utils import merge_dict, set_default_value
+from ludwig.utils.misc_utils import merge_dict
 
 if TYPE_CHECKING:
     from ludwig.schema.model_types.base import ModelConfig
@@ -173,109 +168,62 @@ def set_derived_feature_columns_(config: ModelConfigDict):
             feature[PROC_COLUMN] = compute_feature_hash(feature)
 
 
-def set_hyperopt_defaults_(config: ModelConfigDict):
+def set_hyperopt_defaults_(config: "ModelConfig"):
     """This function was migrated from defaults.py with the intention of setting some hyperopt defaults while the
     hyperopt section of the config object is not fully complete.
 
     Returns:
         None -> modifies trainer and hyperopt sections
     """
-    hyperopt = config.get(HYPEROPT)
-    if not hyperopt:
+    if not config.hyperopt:
         return
 
     # Set default num_samples based on search space if not set by user
-    if hyperopt[EXECUTOR].get(NUM_SAMPLES) is None:
-        _contains_grid_search_params = contains_grid_search_parameters(hyperopt)
+    if config.hyperopt.executor.num_samples is None:
+        _contains_grid_search_params = contains_grid_search_parameters(config.hyperopt.to_dict())
         if _contains_grid_search_params:
             logger.info(
                 "Setting hyperopt num_samples to 1 to prevent duplicate trials from being run. Duplicate trials are"
                 " created when there are hyperopt parameters that use the `grid_search` search space.",
             )
-            hyperopt[EXECUTOR][NUM_SAMPLES] = 1
+            config.hyperopt.executor.num_samples = 1
         else:
             logger.info("Setting hyperopt num_samples to 10.")
-            hyperopt[EXECUTOR][NUM_SAMPLES] = 10
+            config.hyperopt.executor.num_samples = 10
 
-    scheduler = hyperopt.get(EXECUTOR, {}).get("scheduler")
-    if not scheduler:
+    scheduler = config.hyperopt.executor.scheduler
+    if scheduler.type == "fifo":
+        # FIFO scheduler has no constraints
         return
-
-    if EXECUTOR in hyperopt:
-        set_default_value(hyperopt[EXECUTOR], TYPE, RAY)
-
-    trainer = config.get(TRAINER, {})
 
     # Disable early stopping when using a scheduler. We achieve this by setting the parameter
     # to -1, which ensures the condition to apply early stopping is never met.
-    early_stop = trainer.get("early_stop")
+    early_stop = config.trainer.early_stop
     if early_stop is not None and early_stop != -1:
         warnings.warn("Can't utilize `early_stop` while using a hyperopt scheduler. Setting early stop to -1.")
-    trainer["early_stop"] = -1
+    config.trainer.early_stop = -1
 
-    max_t = scheduler.get("max_t")
-    time_attr = scheduler.get("time_attr")
-    epochs = trainer.get("epochs")
-    if max_t is not None:
-        if time_attr == "time_total_s":
-            if epochs is None:
-                # Continue training until time limit hit
-                trainer["epochs"] = sys.maxsize
-            # else continue training until either time or trainer epochs limit hit
-        elif epochs is not None and epochs != max_t:
-            raise ValueError(
-                "Cannot set trainer `epochs` when using hyperopt scheduler w/different training_iteration `max_t`. "
-                "Unset one of these parameters in your config or make sure their values match."
-            )
-        else:
-            # Run trainer until scheduler epochs limit hit
-            trainer["epochs"] = max_t
-    elif epochs is not None:
-        scheduler["max_t"] = epochs  # run scheduler until trainer epochs limit hit
-
-    config[TRAINER] = trainer
-
-    hyperopt = config.get(HYPEROPT)
-    if not hyperopt:
-        return
-
-    scheduler = hyperopt.get("executor", {}).get("scheduler")
-    if not scheduler:
-        return
-
-    if EXECUTOR in hyperopt:
-        set_default_value(hyperopt[EXECUTOR], TYPE, RAY)
-
-    trainer = config.get(TRAINER, {})
-
-    # Disable early stopping when using a scheduler. We achieve this by setting the parameter
-    # to -1, which ensures the condition to apply early stopping is never met.
-    early_stop = trainer.get("early_stop")
-    if early_stop is not None and early_stop != -1:
-        warnings.warn("Can't utilize `early_stop` while using a hyperopt scheduler. Setting early stop to -1.")
-    trainer["early_stop"] = -1
-
-    max_t = scheduler.get("max_t")
-    time_attr = scheduler.get("time_attr")
-    epochs = trainer.get("epochs")
-    if max_t is not None:
-        if time_attr == "time_total_s":
-            if epochs is None:
-                # Continue training until time limit hit
-                trainer["epochs"] = sys.maxsize
-            # else continue training until either time or trainer epochs limit hit
-        elif epochs is not None and epochs != max_t:
-            raise ValueError(
-                "Cannot set trainer `epochs` when using hyperopt scheduler w/different training_iteration `max_t`. "
-                "Unset one of these parameters in your config or make sure their values match."
-            )
-        else:
-            # Run trainer until scheduler epochs limit hit
-            trainer["epochs"] = max_t
-    elif epochs is not None:
-        scheduler["max_t"] = epochs  # run scheduler until trainer epochs limit hit
-
-    config[TRAINER] = trainer
+    if isinstance(config.trainer, ECDTrainerConfig):
+        # TODO(travis): explore similar contraints for GBMs, which don't have epochs
+        max_t = scheduler.max_t
+        time_attr = scheduler.time_attr
+        epochs = config.trainer.epochs
+        if max_t is not None:
+            if time_attr == "time_total_s":
+                if epochs is None:
+                    # Continue training until time limit hit
+                    config.trainer.epochs = sys.maxsize
+                # else continue training until either time or trainer epochs limit hit
+            elif epochs is not None and epochs != max_t:
+                raise ValueError(
+                    "Cannot set trainer `epochs` when using hyperopt scheduler w/different training_iteration `max_t`. "
+                    "Unset one of these parameters in your config or make sure their values match."
+                )
+            else:
+                # Run trainer until scheduler epochs limit hit
+                config.trainer.epochs = max_t
+        elif epochs is not None:
+            scheduler.max_t = epochs  # run scheduler until trainer epochs limit hit
 
 
 @DeveloperAPI

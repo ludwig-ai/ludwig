@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional
 from marshmallow import ValidationError
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import ENCODER, HYPEROPT, INPUT_FEATURES, MODEL_ECD, PREPROCESSING, TYPE
+from ludwig.constants import ENCODER, INPUT_FEATURES, MODEL_ECD, PREPROCESSING, TYPE
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.defaults.defaults import DefaultsConfig
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig, FeatureCollection
@@ -47,13 +47,6 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
         config = merge_with_defaults(config)
         set_derived_feature_columns_(config)
 
-        hyperopt = config.get(HYPEROPT)
-        if hyperopt:
-            # Convert hyperopt config to hyperopt schema to populate with schema defaults
-            # This fills in missing splits, executor config, search_alg, etc.
-            config[HYPEROPT] = HyperoptConfig.from_dict(hyperopt).to_dict()
-            set_hyperopt_defaults_(config)
-
         model_type = config.get("model_type", MODEL_ECD)
         if model_type not in model_type_schema_registry:
             raise ValidationError(
@@ -77,10 +70,11 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
         cls = model_type_schema_registry[model_type]
         schema = cls.get_class_schema()()
-        config_obj = schema.load(config)
+        config_obj: ModelConfig = schema.load(config)
 
         # TODO(travis): do this post-processing stuff at the dict level before we load
         set_validation_parameters(config_obj)
+        set_hyperopt_defaults_(config_obj)
 
         return config_obj
 

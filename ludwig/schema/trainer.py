@@ -52,6 +52,15 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
         ),
     )
 
+    early_stop: int = schema_utils.IntegerRange(
+        default=5,
+        min=-1,
+        description=(
+            "Number of consecutive rounds of evaluation without any improvement on the `validation_metric` that "
+            "triggers training to stop. Can be set to -1, which disables early stopping entirely."
+        ),
+    )
+
 
 @DeveloperAPI
 @register_trainer_schema(MODEL_ECD)
