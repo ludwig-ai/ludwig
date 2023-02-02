@@ -37,23 +37,6 @@ from tests.integration_tests.utils import category_feature, generate_data, text_
 
 TEST_SUITE_TIMEOUT_S = int(os.environ.get("LUDWIG_TEST_SUITE_TIMEOUT_S", 3600))
 
-import gc
-import os
-
-import psutil
-from pympler.tracker import SummaryTracker
-
-
-@pytest.fixture(autouse=True, scope="module")
-def check_memory():
-    tracker = SummaryTracker()
-    start_mib = psutil.Process(os.getpid()).memory_info().rss / 1024**2
-    yield
-    gc.collect()
-    end_mib = psutil.Process(os.getpid()).memory_info().rss / 1024**2
-    print(f"!!! MEMORY USAGE {start_mib} -> {end_mib} ({end_mib - start_mib})")
-    tracker.print_diff()
-
 
 def pytest_sessionstart(session):
     session.start_time = time.time()
