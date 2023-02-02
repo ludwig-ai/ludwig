@@ -209,7 +209,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
         default=0.0,
         min=0,
         max=1,
-        description="Strength of the $L2$ regularization.",
+        description="Strength of the regularization.",
         parameter_metadata=TRAINER_METADATA[MODEL_ECD]["regularization_lambda"],
     )
 

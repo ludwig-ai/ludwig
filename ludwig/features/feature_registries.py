@@ -47,6 +47,7 @@ from ludwig.utils.misc_utils import get_from_registry
 
 if TYPE_CHECKING:
     from ludwig.schema.model_types.base import ModelConfig
+    from ludwig.models.base import BaseModel
 
 
 @DeveloperAPI
@@ -110,3 +111,15 @@ def update_config_with_metadata(config_obj: "ModelConfig", training_set_metadata
     for output_feature in config_obj.output_features:
         feature = get_from_registry(output_feature.type, get_output_type_registry())
         feature.update_config_with_metadata(output_feature, training_set_metadata[output_feature.name])
+
+
+def update_config_with_model(config_obj: "ModelConfig", model: "BaseModel"):
+    """Updates the config with the final input feature params given a model.
+
+    This function should only be called to update the config after the model is initialized. Currently only implemented
+    for input features because it is only relevant for HuggingFace text encoders. HuggingFace text encoders only know
+    their final config after class initialization.
+    """
+    for input_feature in config_obj.input_features:
+        model_input_feature = model.input_features[input_feature.name]
+        model_input_feature.update_config_after_module_init(input_feature)

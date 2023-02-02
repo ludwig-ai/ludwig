@@ -62,7 +62,8 @@ class ALBERTConfig(HFEncoderConfig):
 
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
-        description="Whether to use the pretrained weights for the model.",
+        description="Whether to use the pretrained weights for the model. If false, the model will train from "
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["ALBERT"]["use_pretrained"],
     )
 
@@ -81,7 +82,7 @@ class ALBERTConfig(HFEncoderConfig):
 
     trainable: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to train the model.",
+        description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["ALBERT"]["trainable"],
     )
 
@@ -111,7 +112,7 @@ class ALBERTConfig(HFEncoderConfig):
     )
 
     hidden_size: int = schema_utils.PositiveInteger(
-        default=4096,
+        default=768,
         description="Dimensionality of the encoder layers and the pooler layer.",
         parameter_metadata=ENCODER_METADATA["ALBERT"]["hidden_size"],
     )
@@ -129,13 +130,13 @@ class ALBERTConfig(HFEncoderConfig):
     )
 
     num_attention_heads: int = schema_utils.PositiveInteger(
-        default=64,
+        default=12,
         description="Number of attention heads for each attention layer in the Transformer encoder.",
         parameter_metadata=ENCODER_METADATA["ALBERT"]["num_attention_heads"],
     )
 
     intermediate_size: int = schema_utils.PositiveInteger(
-        default=16384,
+        default=3072,
         description="The dimensionality of the “intermediate” (often named feed-forward) layer in the Transformer "
         "encoder.",
         parameter_metadata=ENCODER_METADATA["ALBERT"]["intermediate_size"],
@@ -260,7 +261,8 @@ class MT5Config(HFEncoderConfig):
 
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
-        description="Whether to use the pretrained weights for the model.",
+        description="Whether to use the pretrained weights for the model. If false, the model will train from "
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["MT5"]["use_pretrained"],
     )
 
@@ -279,7 +281,7 @@ class MT5Config(HFEncoderConfig):
 
     trainable: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to train the model.",
+        description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["MT5"]["trainable"],
     )
 
@@ -447,7 +449,8 @@ class XLMRoBERTaConfig(HFEncoderConfig):
 
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
-        description="Whether to use the pretrained weights for the model.",
+        description="Whether to use the pretrained weights for the model. If false, the model will train from "
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["XLMRoBERTa"]["use_pretrained"],
     )
 
@@ -472,7 +475,7 @@ class XLMRoBERTaConfig(HFEncoderConfig):
 
     trainable: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to train the model.",
+        description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["XLMRoBERTa"]["trainable"],
     )
 
@@ -504,6 +507,19 @@ class XLMRoBERTaConfig(HFEncoderConfig):
         default=2,
         description="The end of sequence token ID.",
         parameter_metadata=ENCODER_METADATA["XLMRoBERTa"]["eos_token_id"],
+    )
+
+    max_position_embeddings: int = schema_utils.PositiveInteger(
+        default=514,
+        description="The maximum sequence length that this model might ever be used with. Typically set this to "
+        "something large just in case (e.g., 512 or 1024 or 2048).",
+        parameter_metadata=ENCODER_METADATA["XLMRoBERTa"]["max_position_embeddings"],
+    )
+
+    type_vocab_size: int = schema_utils.PositiveInteger(
+        default=1,
+        description="The vocabulary size of the token_type_ids passed in.",
+        parameter_metadata=ENCODER_METADATA["XLMRoBERTa"]["type_vocab_size"],
     )
 
     add_pooling_layer: bool = schema_utils.Boolean(
@@ -542,7 +558,8 @@ class BERTConfig(HFEncoderConfig):
 
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
-        description="Whether to use the pretrained weights for the model.",
+        description="Whether to use the pretrained weights for the model. If false, the model will train from "
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["BERT"]["use_pretrained"],
     )
 
@@ -561,7 +578,7 @@ class BERTConfig(HFEncoderConfig):
 
     trainable: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to train the model.",
+        description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["BERT"]["trainable"],
     )
 
@@ -713,7 +730,8 @@ class XLMConfig(HFEncoderConfig):
 
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
-        description="Whether to use the pretrained weights for the model.",
+        description="Whether to use the pretrained weights for the model. If false, the model will train from "
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["XLM"]["use_pretrained"],
     )
 
@@ -732,7 +750,7 @@ class XLMConfig(HFEncoderConfig):
 
     trainable: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to train the model.",
+        description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["XLM"]["trainable"],
     )
 
@@ -966,7 +984,8 @@ class GPTConfig(HFEncoderConfig):
 
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
-        description="Whether to use the pretrained weights for the model.",
+        description="Whether to use the pretrained weights for the model. If false, the model will train from "
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["GPT"]["use_pretrained"],
     )
 
@@ -985,7 +1004,7 @@ class GPTConfig(HFEncoderConfig):
 
     trainable: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to train the model.",
+        description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["GPT"]["trainable"],
     )
 
@@ -1100,7 +1119,8 @@ class GPT2Config(HFEncoderConfig):
 
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
-        description="Whether to use the pretrained weights for the model.",
+        description="Whether to use the pretrained weights for the model. If false, the model will train from "
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["GPT2"]["use_pretrained"],
     )
 
@@ -1118,7 +1138,7 @@ class GPT2Config(HFEncoderConfig):
 
     trainable: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to train the model.",
+        description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["GPT2"]["trainable"],
     )
 
@@ -1174,7 +1194,7 @@ class GPT2Config(HFEncoderConfig):
 
     activation_function: str = schema_utils.StringOptions(
         ["relu", "silu", "gelu", "tanh", "gelu_new"],
-        default="gelu",
+        default="gelu_new",
         description="Activation function, to be selected in the list ['relu', 'silu', 'gelu', 'tanh', 'gelu_new'].",
         parameter_metadata=ENCODER_METADATA["GPT2"]["activation_function"],
     )
@@ -1251,7 +1271,8 @@ class RoBERTaConfig(HFEncoderConfig):
 
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
-        description="Whether to use the pretrained weights for the model.",
+        description="Whether to use the pretrained weights for the model. If false, the model will train from "
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["RoBERTa"]["use_pretrained"],
     )
 
@@ -1276,7 +1297,7 @@ class RoBERTaConfig(HFEncoderConfig):
 
     trainable: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to train the model.",
+        description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["RoBERTa"]["trainable"],
     )
 
@@ -1340,7 +1361,8 @@ class TransformerXLConfig(HFEncoderConfig):
 
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
-        description="Whether to use the pretrained weights for the model.",
+        description="Whether to use the pretrained weights for the model. If false, the model will train from "
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["TransformerXL"]["use_pretrained"],
     )
 
@@ -1365,7 +1387,7 @@ class TransformerXLConfig(HFEncoderConfig):
 
     trainable: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to train the model.",
+        description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["TransformerXL"]["trainable"],
     )
 
@@ -1567,7 +1589,8 @@ class XLNetConfig(HFEncoderConfig):
 
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
-        description="Whether to use the pretrained weights for the model.",
+        description="Whether to use the pretrained weights for the model. If false, the model will train from "
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["XLNet"]["use_pretrained"],
     )
 
@@ -1592,7 +1615,7 @@ class XLNetConfig(HFEncoderConfig):
 
     trainable: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to train the model.",
+        description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["XLNet"]["trainable"],
     )
 
@@ -1610,25 +1633,25 @@ class XLNetConfig(HFEncoderConfig):
     )
 
     d_model: int = schema_utils.PositiveInteger(
-        default=1024,
+        default=768,
         description="Dimensionality of the encoder layers and the pooler layer.",
         parameter_metadata=ENCODER_METADATA["XLNet"]["d_model"],
     )
 
     n_layer: int = schema_utils.PositiveInteger(
-        default=24,
+        default=12,
         description="Number of hidden layers in the Transformer encoder.",
         parameter_metadata=ENCODER_METADATA["XLNet"]["n_layer"],
     )
 
     n_head: int = schema_utils.PositiveInteger(
-        default=16,
+        default=12,
         description="Number of attention heads for each attention layer in the Transformer encoder.",
         parameter_metadata=ENCODER_METADATA["XLNet"]["n_head"],
     )
 
     d_inner: int = schema_utils.PositiveInteger(
-        default=4096,
+        default=3072,
         description="Dimensionality of the “intermediate” (often named feed-forward) layer in the Transformer encoder.",
         parameter_metadata=ENCODER_METADATA["XLNet"]["d_inner"],
     )
@@ -1673,7 +1696,7 @@ class XLNetConfig(HFEncoderConfig):
     )
 
     mem_len: int = schema_utils.PositiveInteger(
-        default=512,
+        default=None,
         description="The number of tokens to cache. The key/value pairs that have already been pre-computed in a "
         "previous forward pass won’t be re-computed. ",
         parameter_metadata=ENCODER_METADATA["XLNet"]["mem_len"],
@@ -1802,6 +1825,13 @@ class DistilBERTConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["DistilBERT"]["max_sequence_length"],
     )
 
+    use_pretrained: bool = schema_utils.Boolean(
+        default=True,
+        description="Whether to use the pretrained weights for the model. If false, the model will train from "
+        "scratch which is very computationally expensive.",
+        parameter_metadata=ENCODER_METADATA["DistilBERT"]["use_pretrained"],
+    )
+
     pretrained_model_name_or_path: str = schema_utils.String(
         default="distilbert-base-uncased",
         description="Name or path of the pretrained model.",
@@ -1823,14 +1853,8 @@ class DistilBERTConfig(HFEncoderConfig):
 
     trainable: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to train the model.",
+        description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["DistilBERT"]["trainable"],
-    )
-
-    use_pretrained: bool = schema_utils.Boolean(
-        default=True,
-        description="Whether to use the pretrained weights for the model.",
-        parameter_metadata=ENCODER_METADATA["DistilBERT"]["use_pretrained"],
     )
 
     vocab: list = schema_utils.List(
@@ -1844,6 +1868,14 @@ class DistilBERTConfig(HFEncoderConfig):
         description="Vocabulary size of the DistilBERT model. Defines the number of different tokens that can be "
         "represented by the inputs_ids passed when calling DistilBertModel or TFDistilBertModel.",
         parameter_metadata=ENCODER_METADATA["DistilBERT"]["vocab_size"],
+    )
+
+    dropout: float = schema_utils.FloatRange(
+        default=0.1,
+        min=0,
+        max=1,
+        description="The dropout probability for all fully connected layers in the embeddings, encoder, and pooler.",
+        parameter_metadata=ENCODER_METADATA["DistilBERT"]["dropout"],
     )
 
     max_position_embeddings: int = schema_utils.PositiveInteger(
@@ -1881,14 +1913,6 @@ class DistilBERTConfig(HFEncoderConfig):
         default=3072,
         description="The size of the “intermediate” (often named feed-forward) layer in the Transformer encoder.",
         parameter_metadata=ENCODER_METADATA["DistilBERT"]["hidden_dim"],
-    )
-
-    dropout: float = schema_utils.FloatRange(
-        default=0.1,
-        min=0,
-        max=1,
-        description="The dropout probability for all fully connected layers in the embeddings, encoder, and pooler.",
-        parameter_metadata=ENCODER_METADATA["DistilBERT"]["dropout"],
     )
 
     attention_dropout: float = schema_utils.NonNegativeFloat(
@@ -1960,7 +1984,8 @@ class CTRLConfig(HFEncoderConfig):
 
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
-        description="Whether to use the pretrained weights for the model.",
+        description="Whether to use the pretrained weights for the model. If false, the model will train from "
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["CTRL"]["use_pretrained"],
     )
 
@@ -1985,7 +2010,7 @@ class CTRLConfig(HFEncoderConfig):
 
     trainable: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to train the model.",
+        description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["CTRL"]["trainable"],
     )
 
@@ -2101,7 +2126,8 @@ class CamemBERTConfig(HFEncoderConfig):
 
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
-        description="Whether to use the pretrained weights for the model.",
+        description="Whether to use the pretrained weights for the model. If false, the model will train from "
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["CamemBERT"]["use_pretrained"],
     )
 
@@ -2126,7 +2152,7 @@ class CamemBERTConfig(HFEncoderConfig):
 
     trainable: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to train the model.",
+        description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["CamemBERT"]["trainable"],
     )
 
@@ -2137,7 +2163,7 @@ class CamemBERTConfig(HFEncoderConfig):
     )
 
     vocab_size: int = schema_utils.PositiveInteger(
-        default=30522,
+        default=32005,
         description="Vocabulary size of the CamemBERT model.",
         parameter_metadata=ENCODER_METADATA["CamemBERT"]["vocab_size"],
     )
@@ -2190,14 +2216,14 @@ class CamemBERTConfig(HFEncoderConfig):
     )
 
     max_position_embeddings: int = schema_utils.PositiveInteger(
-        default=512,
+        default=514,
         description="The maximum sequence length that this model might ever be used with. Typically set this to "
         "something large just in case (e.g., 512 or 1024 or 2048).",
         parameter_metadata=ENCODER_METADATA["CamemBERT"]["max_position_embeddings"],
     )
 
     type_vocab_size: int = schema_utils.PositiveInteger(
-        default=2,
+        default=1,
         description="The vocabulary size of the token_type_ids passed when calling BertModel or TFBertModel.",
         parameter_metadata=ENCODER_METADATA["CamemBERT"]["type_vocab_size"],
     )
@@ -2209,13 +2235,13 @@ class CamemBERTConfig(HFEncoderConfig):
     )
 
     layer_norm_eps: float = schema_utils.NonNegativeFloat(
-        default=1e-12,
+        default=1e-05,
         description="The epsilon used by the layer normalization layers.",
         parameter_metadata=ENCODER_METADATA["CamemBERT"]["layer_norm_eps"],
     )
 
     pad_token_id: int = schema_utils.Integer(
-        default=0,
+        default=1,
         description="The ID of the token to use as padding.",
         parameter_metadata=ENCODER_METADATA["CamemBERT"]["pad_token_id"],
     )
@@ -2271,7 +2297,8 @@ class T5Config(HFEncoderConfig):
 
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
-        description="Whether to use the pretrained weights for the model.",
+        description="Whether to use the pretrained weights for the model. If false, the model will train from "
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["T5"]["use_pretrained"],
     )
 
@@ -2296,7 +2323,7 @@ class T5Config(HFEncoderConfig):
 
     trainable: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to train the model.",
+        description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["T5"]["trainable"],
     )
 
@@ -2339,7 +2366,7 @@ class T5Config(HFEncoderConfig):
     )
 
     num_decoder_layers: int = schema_utils.PositiveInteger(
-        default=None,
+        default=6,
         description="Number of hidden layers in the Transformer decoder. Will use the same value as num_layers if not "
         "set.",
         parameter_metadata=ENCODER_METADATA["T5"]["num_decoder_layers"],
@@ -2416,13 +2443,14 @@ class FlauBERTConfig(HFEncoderConfig):
 
     use_pretrained: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to use the pretrained weights for the model.",
+        description="Whether to use the pretrained weights for the model. If false, the model will train from "
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["FlauBERT"]["use_pretrained"],
     )
 
     pretrained_model_name_or_path: str = schema_utils.String(
-        default="t5-small",
-        description="flaubert/flaubert_small_cased",
+        default="flaubert/flaubert_small_cased",
+        description="Name of path of the pretrained model.",
         parameter_metadata=ENCODER_METADATA["FlauBERT"]["pretrained_model_name_or_path"],
     )
 
@@ -2441,7 +2469,7 @@ class FlauBERTConfig(HFEncoderConfig):
 
     trainable: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to train the model.",
+        description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["FlauBERT"]["trainable"],
     )
 
@@ -2459,14 +2487,14 @@ class FlauBERTConfig(HFEncoderConfig):
     )
 
     pre_norm: bool = schema_utils.Boolean(
-        default=False,
+        default=True,
         description="Whether to apply the layer normalization before or after the feed forward layer following the "
         "attention in each layer (Vaswani et al., Tensor2Tensor for Neural Machine Translation. 2018)",
         parameter_metadata=ENCODER_METADATA["FlauBERT"]["pre_norm"],
     )
 
     layerdrop: float = schema_utils.FloatRange(
-        default=0.0,
+        default=0.2,
         min=0,
         max=1,
         description="Probability to drop layers during training (Fan et al., Reducing Transformer Depth on Demand "
@@ -2475,21 +2503,21 @@ class FlauBERTConfig(HFEncoderConfig):
     )
 
     emb_dim: int = schema_utils.PositiveInteger(
-        default=2048,
+        default=512,
         description="Dimensionality of the encoder layers and the pooler layer.",
         parameter_metadata=ENCODER_METADATA["FlauBERT"]["emb_dim"],
     )
 
-    n_layer: int = schema_utils.PositiveInteger(
-        default=12,
+    n_layers: int = schema_utils.PositiveInteger(
+        default=6,
         description="Number of hidden layers in the Transformer encoder.",
-        parameter_metadata=ENCODER_METADATA["FlauBERT"]["n_layer"],
+        parameter_metadata=ENCODER_METADATA["FlauBERT"]["n_layers"],
     )
 
-    n_head: int = schema_utils.PositiveInteger(
-        default=16,
+    n_heads: int = schema_utils.PositiveInteger(
+        default=8,
         description="Number of attention heads for each attention layer in the Transformer encoder.",
-        parameter_metadata=ENCODER_METADATA["FlauBERT"]["n_head"],
+        parameter_metadata=ENCODER_METADATA["FlauBERT"]["n_heads"],
     )
 
     dropout: float = schema_utils.FloatRange(
@@ -2562,15 +2590,15 @@ class FlauBERTConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["FlauBERT"]["embed_init_std"],
     )
 
-    init_std: int = schema_utils.PositiveInteger(
-        default=50257,
+    init_std: int = schema_utils.NonNegativeFloat(
+        default=0.02,
         description="The standard deviation of the truncated_normal_initializer for initializing all weight matrices "
         "except the embedding matrices.",
         parameter_metadata=ENCODER_METADATA["FlauBERT"]["init_std"],
     )
 
     layer_norm_eps: float = schema_utils.NonNegativeFloat(
-        default=1e-12,
+        default=1e-06,
         description="The epsilon used by the layer normalization layers.",
         parameter_metadata=ENCODER_METADATA["FlauBERT"]["layer_norm_eps"],
     )
@@ -2619,7 +2647,7 @@ class FlauBERTConfig(HFEncoderConfig):
     )
 
     lang_id: int = schema_utils.Integer(
-        default=1,
+        default=0,
         description="The ID of the language used by the model. This parameter is used when generating text in a given "
         "language.",
         parameter_metadata=ENCODER_METADATA["FlauBERT"]["lang_id"],
@@ -2655,7 +2683,8 @@ class ELECTRAConfig(HFEncoderConfig):
 
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
-        description="Whether to use the pretrained weights for the model.",
+        description="Whether to use the pretrained weights for the model. If false, the model will train from "
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["ELECTRA"]["use_pretrained"],
     )
 
@@ -2680,7 +2709,7 @@ class ELECTRAConfig(HFEncoderConfig):
 
     trainable: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to train the model.",
+        description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["ELECTRA"]["trainable"],
     )
 
@@ -2820,7 +2849,8 @@ class LongformerConfig(HFEncoderConfig):
 
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
-        description="Whether to use the pretrained weights for the model.",
+        description="Whether to use the pretrained weights for the model. If false, the model will train from "
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["Longformer"]["use_pretrained"],
     )
 
@@ -2863,7 +2893,7 @@ class LongformerConfig(HFEncoderConfig):
 
     trainable: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to train the model.",
+        description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["Longformer"]["trainable"],
     )
 
@@ -2874,15 +2904,22 @@ class LongformerConfig(HFEncoderConfig):
     )
 
     vocab_size: int = schema_utils.PositiveInteger(
-        default=None,
+        default=50265,
         description="Vocabulary size of the Longformer model.",
         parameter_metadata=ENCODER_METADATA["Longformer"]["vocab_size"],
     )
 
-    num_tokens: int = schema_utils.PositiveInteger(
-        default=None,
-        description="Number of tokens",
-        parameter_metadata=ENCODER_METADATA["Longformer"]["num_tokens"],
+    max_position_embeddings: int = schema_utils.PositiveInteger(
+        default=4098,
+        description="The maximum sequence length that this model might ever be used with. Typically set this to "
+        "something large just in case (e.g., 512 or 1024 or 2048).",
+        parameter_metadata=ENCODER_METADATA["Longformer"]["max_position_embeddings"],
+    )
+
+    type_vocab_size: int = schema_utils.PositiveInteger(
+        default=1,
+        description="The vocabulary size of the token_type_ids passed when calling LongformerEncoder",
+        parameter_metadata=ENCODER_METADATA["Longformer"]["type_vocab_size"],
     )
 
     pretrained_kwargs: dict = schema_utils.Dict(
@@ -2927,7 +2964,7 @@ class AutoTransformerConfig(HFEncoderConfig):
 
     trainable: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to train the model.",
+        description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["AutoTransformer"]["trainable"],
     )
 
@@ -2939,7 +2976,10 @@ class AutoTransformerConfig(HFEncoderConfig):
 
     vocab_size: int = schema_utils.PositiveInteger(
         default=None,
-        description="Vocabulary size of the XLMRoBERTa model.",
+        description=(
+            "Vocabulary size of the AutoTransformer model. If None, the vocab size will be inferred "
+            "from the given pretrained model"
+        ),
         parameter_metadata=ENCODER_METADATA["AutoTransformer"]["vocab_size"],
     )
 
