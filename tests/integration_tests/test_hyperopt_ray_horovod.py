@@ -146,7 +146,7 @@ class MockRayTuneExecutor(RayTuneExecutor):
         return mock_storage_client(remote_checkpoint_dir), remote_checkpoint_dir
 
 
-class TestCallback(Callback):
+class CustomTestCallback(Callback):
     def __init__(self):
         self.preprocessed = False
 
@@ -310,7 +310,7 @@ def run_hyperopt(
     out_dir,
     experiment_name="ray_hyperopt",
 ):
-    callback = TestCallback()
+    callback = CustomTestCallback()
     hyperopt_results = hyperopt(
         config,
         dataset=rel_path,
