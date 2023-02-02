@@ -116,7 +116,9 @@ def set_validation_parameters(config: "ModelConfig"):
         else:
             # Determine the proper validation field for the user, like if the user specifies "accuracy" but forgets to
             # change the validation field from "combined" to the name of the feature that produces accuracy metrics.
-            feature_to_metric_names_map = get_feature_to_metric_names_map(config.output_features)
+            from ludwig.utils.metric_utils import get_feature_to_metric_names_map
+
+            feature_to_metric_names_map = get_feature_to_metric_names_map(config.output_features.to_list())
             validation_field = None
             for feature_name, metric_names in feature_to_metric_names_map.items():
                 if config.trainer.validation_metric in metric_names:
@@ -161,21 +163,6 @@ def set_validation_parameters(config: "ModelConfig"):
         # Default to using the first output feature's default validation metric.
         out_type = validation_feature.type
         config.trainer.validation_metric = output_config_registry[out_type].default_validation_metric
-
-
-def get_feature_to_metric_names_map(
-    output_features: FeatureCollection[BaseOutputFeatureConfig],
-) -> Dict[str, List[str]]:
-    """Returns a dict of output_feature_name -> list of metric names."""
-    from ludwig.features.feature_registries import get_output_type_registry
-
-    metrics_names = {}
-    for output_feature in output_features:
-        output_feature_name = output_feature.name
-        output_feature_type = output_feature.type
-        metrics_names[output_feature_name] = get_output_type_registry()[output_feature_type].metric_functions
-    metrics_names[COMBINED] = [LOSS]
-    return metrics_names
 
 
 def set_derived_feature_columns_(config: ModelConfigDict):
