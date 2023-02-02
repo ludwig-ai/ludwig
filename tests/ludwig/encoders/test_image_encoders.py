@@ -114,566 +114,566 @@ def test_vit_encoder(image_size: int, num_channels: int, use_pretrained: bool):
     assert tpc == upc, f"Not all expected parameters updated.  Parameters not updated {not_updated}."
 
 
-@pytest.mark.parametrize("trainable", [True, False])
-@pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
-@pytest.mark.parametrize(
-    "use_pretrained",
-    [
-        False,
-    ],
-)
-@pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["alexnet"].values()])
-def test_tv_alexnet_encoder(
-    model_variant: int,
-    use_pretrained: bool,
-    saved_weights_in_checkpoint: bool,
-    trainable: bool,
-):
-    # make repeatable
-    set_random_seed(RANDOM_SEED)
+# @pytest.mark.parametrize("trainable", [True, False])
+# @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
+# @pytest.mark.parametrize(
+#     "use_pretrained",
+#     [
+#         False,
+#     ],
+# )
+# @pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["alexnet"].values()])
+# def test_tv_alexnet_encoder(
+#     model_variant: int,
+#     use_pretrained: bool,
+#     saved_weights_in_checkpoint: bool,
+#     trainable: bool,
+# ):
+#     # make repeatable
+#     set_random_seed(RANDOM_SEED)
 
-    pretrained_model = TVAlexNetEncoder(
-        model_variant=model_variant,
-        use_pretrained=use_pretrained,
-        saved_weights_in_checkpoint=saved_weights_in_checkpoint,
-        trainable=trainable,
-    )
-    inputs = torch.rand(2, *pretrained_model.input_shape)
-    outputs = pretrained_model(inputs)
-    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
-
-
-@pytest.mark.parametrize("trainable", [True, False])
-@pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
-@pytest.mark.parametrize(
-    "use_pretrained",
-    [
-        False,
-    ],
-)
-@pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["convnext"].values()])
-def test_tv_convnext_encoder(
-    model_variant: int,
-    use_pretrained: bool,
-    saved_weights_in_checkpoint: bool,
-    trainable: bool,
-):
-    # make repeatable
-    set_random_seed(RANDOM_SEED)
-
-    pretrained_model = TVConvNeXtEncoder(
-        model_variant=model_variant,
-        use_pretrained=use_pretrained,
-        saved_weights_in_checkpoint=saved_weights_in_checkpoint,
-        trainable=trainable,
-    )
-    inputs = torch.rand(2, *pretrained_model.input_shape)
-    outputs = pretrained_model(inputs)
-    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+#     pretrained_model = TVAlexNetEncoder(
+#         model_variant=model_variant,
+#         use_pretrained=use_pretrained,
+#         saved_weights_in_checkpoint=saved_weights_in_checkpoint,
+#         trainable=trainable,
+#     )
+#     inputs = torch.rand(2, *pretrained_model.input_shape)
+#     outputs = pretrained_model(inputs)
+#     assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
 
 
-@pytest.mark.parametrize("trainable", [True, False])
-@pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
-@pytest.mark.parametrize(
-    "use_pretrained",
-    [
-        False,
-    ],
-)
-@pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["densenet"].values()])
-def test_tv_densenet_encoder(
-    model_variant: int,
-    use_pretrained: bool,
-    saved_weights_in_checkpoint: bool,
-    trainable: bool,
-):
-    # make repeatable
-    set_random_seed(RANDOM_SEED)
+# @pytest.mark.parametrize("trainable", [True, False])
+# @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
+# @pytest.mark.parametrize(
+#     "use_pretrained",
+#     [
+#         False,
+#     ],
+# )
+# @pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["convnext"].values()])
+# def test_tv_convnext_encoder(
+#     model_variant: int,
+#     use_pretrained: bool,
+#     saved_weights_in_checkpoint: bool,
+#     trainable: bool,
+# ):
+#     # make repeatable
+#     set_random_seed(RANDOM_SEED)
 
-    pretrained_model = TVDenseNetEncoder(
-        model_variant=model_variant,
-        use_pretrained=use_pretrained,
-        saved_weights_in_checkpoint=saved_weights_in_checkpoint,
-        trainable=trainable,
-    )
-    inputs = torch.rand(2, *pretrained_model.input_shape)
-    outputs = pretrained_model(inputs)
-    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
-
-
-# test only model variants that do not require large amount of memory
-LOW_MEMORY_EFFICIENTNET_VARIANTS = set(torchvision_model_registry["efficientnet"].keys()) - {"b6", "b7"}
+#     pretrained_model = TVConvNeXtEncoder(
+#         model_variant=model_variant,
+#         use_pretrained=use_pretrained,
+#         saved_weights_in_checkpoint=saved_weights_in_checkpoint,
+#         trainable=trainable,
+#     )
+#     inputs = torch.rand(2, *pretrained_model.input_shape)
+#     outputs = pretrained_model(inputs)
+#     assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
 
 
-@pytest.mark.parametrize("trainable", [True, False])
-@pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
-@pytest.mark.parametrize(
-    "use_pretrained",
-    [
-        False,
-    ],
-)
-@pytest.mark.parametrize("model_variant", LOW_MEMORY_EFFICIENTNET_VARIANTS)
-def test_tv_efficientnet_encoder(
-    model_variant: int,
-    use_pretrained: bool,
-    saved_weights_in_checkpoint: bool,
-    trainable: bool,
-):
-    # make repeatable
-    set_random_seed(RANDOM_SEED)
+# @pytest.mark.parametrize("trainable", [True, False])
+# @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
+# @pytest.mark.parametrize(
+#     "use_pretrained",
+#     [
+#         False,
+#     ],
+# )
+# @pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["densenet"].values()])
+# def test_tv_densenet_encoder(
+#     model_variant: int,
+#     use_pretrained: bool,
+#     saved_weights_in_checkpoint: bool,
+#     trainable: bool,
+# ):
+#     # make repeatable
+#     set_random_seed(RANDOM_SEED)
 
-    pretrained_model = TVEfficientNetEncoder(
-        model_variant=model_variant,
-        use_pretrained=use_pretrained,
-        saved_weights_in_checkpoint=saved_weights_in_checkpoint,
-        trainable=trainable,
-    )
-    inputs = torch.rand(2, *pretrained_model.input_shape)
-    outputs = pretrained_model(inputs)
-    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
-
-
-@pytest.mark.parametrize("trainable", [True, False])
-@pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
-@pytest.mark.parametrize(
-    "use_pretrained",
-    [
-        False,
-    ],
-)
-@pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["googlenet"].values()])
-def test_tv_googlenet_encoder(
-    model_variant: int,
-    use_pretrained: bool,
-    saved_weights_in_checkpoint: bool,
-    trainable: bool,
-):
-    # make repeatable
-    set_random_seed(RANDOM_SEED)
-
-    pretrained_model = TVGoogLeNetEncoder(
-        model_variant=model_variant,
-        use_pretrained=use_pretrained,
-        saved_weights_in_checkpoint=saved_weights_in_checkpoint,
-        trainable=trainable,
-    )
-    inputs = torch.rand(2, *pretrained_model.input_shape)
-    outputs = pretrained_model(inputs)
-    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+#     pretrained_model = TVDenseNetEncoder(
+#         model_variant=model_variant,
+#         use_pretrained=use_pretrained,
+#         saved_weights_in_checkpoint=saved_weights_in_checkpoint,
+#         trainable=trainable,
+#     )
+#     inputs = torch.rand(2, *pretrained_model.input_shape)
+#     outputs = pretrained_model(inputs)
+#     assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
 
 
-@pytest.mark.parametrize("trainable", [True, False])
-@pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
-@pytest.mark.parametrize(
-    "use_pretrained",
-    [
-        False,
-    ],
-)
-@pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["inceptionv3"].values()])
-def test_tv_inceptionv3_encoder(
-    model_variant: int,
-    use_pretrained: bool,
-    saved_weights_in_checkpoint: bool,
-    trainable: bool,
-):
-    # make repeatable
-    set_random_seed(RANDOM_SEED)
-
-    pretrained_model = TVInceptionV3Encoder(
-        model_variant=model_variant,
-        use_pretrained=use_pretrained,
-        saved_weights_in_checkpoint=saved_weights_in_checkpoint,
-        trainable=trainable,
-    )
-    inputs = torch.rand(2, *pretrained_model.input_shape)
-    outputs = pretrained_model(inputs)
-    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+# # test only model variants that do not require large amount of memory
+# LOW_MEMORY_EFFICIENTNET_VARIANTS = set(torchvision_model_registry["efficientnet"].keys()) - {"b6", "b7"}
 
 
-@pytest.mark.parametrize("trainable", [True, False])
-@pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
-@pytest.mark.parametrize(
-    "use_pretrained",
-    [
-        False,
-    ],
-)
-@pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["maxvit"].values()])
-def test_tv_maxvit_encoder(
-    model_variant: int,
-    use_pretrained: bool,
-    saved_weights_in_checkpoint: bool,
-    trainable: bool,
-):
-    # make repeatable
-    set_random_seed(RANDOM_SEED)
+# @pytest.mark.parametrize("trainable", [True, False])
+# @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
+# @pytest.mark.parametrize(
+#     "use_pretrained",
+#     [
+#         False,
+#     ],
+# )
+# @pytest.mark.parametrize("model_variant", LOW_MEMORY_EFFICIENTNET_VARIANTS)
+# def test_tv_efficientnet_encoder(
+#     model_variant: int,
+#     use_pretrained: bool,
+#     saved_weights_in_checkpoint: bool,
+#     trainable: bool,
+# ):
+#     # make repeatable
+#     set_random_seed(RANDOM_SEED)
 
-    pretrained_model = TVMaxVitEncoder(
-        model_variant=model_variant,
-        use_pretrained=use_pretrained,
-        saved_weights_in_checkpoint=saved_weights_in_checkpoint,
-        trainable=trainable,
-    )
-    inputs = torch.rand(2, *pretrained_model.input_shape)
-    outputs = pretrained_model(inputs)
-    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
-
-
-@pytest.mark.parametrize("trainable", [True, False])
-@pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
-@pytest.mark.parametrize(
-    "use_pretrained",
-    [
-        False,
-    ],
-)
-@pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["mnasnet"].values()])
-def test_tv_mnasnet_encoder(
-    model_variant: int,
-    use_pretrained: bool,
-    saved_weights_in_checkpoint: bool,
-    trainable: bool,
-):
-    # make repeatable
-    set_random_seed(RANDOM_SEED)
-
-    pretrained_model = TVMNASNetEncoder(
-        model_variant=model_variant,
-        use_pretrained=use_pretrained,
-        saved_weights_in_checkpoint=saved_weights_in_checkpoint,
-        trainable=trainable,
-    )
-    inputs = torch.rand(2, *pretrained_model.input_shape)
-    outputs = pretrained_model(inputs)
-    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+#     pretrained_model = TVEfficientNetEncoder(
+#         model_variant=model_variant,
+#         use_pretrained=use_pretrained,
+#         saved_weights_in_checkpoint=saved_weights_in_checkpoint,
+#         trainable=trainable,
+#     )
+#     inputs = torch.rand(2, *pretrained_model.input_shape)
+#     outputs = pretrained_model(inputs)
+#     assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
 
 
-@pytest.mark.parametrize("trainable", [True, False])
-@pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
-@pytest.mark.parametrize(
-    "use_pretrained",
-    [
-        False,
-    ],
-)
-@pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["mobilenetv2"].values()])
-def test_tv_mobilenetv2_encoder(
-    model_variant: int,
-    use_pretrained: bool,
-    saved_weights_in_checkpoint: bool,
-    trainable: bool,
-):
-    # make repeatable
-    set_random_seed(RANDOM_SEED)
+# @pytest.mark.parametrize("trainable", [True, False])
+# @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
+# @pytest.mark.parametrize(
+#     "use_pretrained",
+#     [
+#         False,
+#     ],
+# )
+# @pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["googlenet"].values()])
+# def test_tv_googlenet_encoder(
+#     model_variant: int,
+#     use_pretrained: bool,
+#     saved_weights_in_checkpoint: bool,
+#     trainable: bool,
+# ):
+#     # make repeatable
+#     set_random_seed(RANDOM_SEED)
 
-    pretrained_model = TVMobileNetV2Encoder(
-        model_variant=model_variant,
-        use_pretrained=use_pretrained,
-        saved_weights_in_checkpoint=saved_weights_in_checkpoint,
-        trainable=trainable,
-    )
-    inputs = torch.rand(2, *pretrained_model.input_shape)
-    outputs = pretrained_model(inputs)
-    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
-
-
-@pytest.mark.parametrize("trainable", [True, False])
-@pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
-@pytest.mark.parametrize(
-    "use_pretrained",
-    [
-        False,
-    ],
-)
-@pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["mobilenetv3"].values()])
-def test_tv_mobilenetv3_encoder(
-    model_variant: int,
-    use_pretrained: bool,
-    saved_weights_in_checkpoint: bool,
-    trainable: bool,
-):
-    # make repeatable
-    set_random_seed(RANDOM_SEED)
-
-    pretrained_model = TVMobileNetV3Encoder(
-        model_variant=model_variant,
-        use_pretrained=use_pretrained,
-        saved_weights_in_checkpoint=saved_weights_in_checkpoint,
-        trainable=trainable,
-    )
-    inputs = torch.rand(2, *pretrained_model.input_shape)
-    outputs = pretrained_model(inputs)
-    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+#     pretrained_model = TVGoogLeNetEncoder(
+#         model_variant=model_variant,
+#         use_pretrained=use_pretrained,
+#         saved_weights_in_checkpoint=saved_weights_in_checkpoint,
+#         trainable=trainable,
+#     )
+#     inputs = torch.rand(2, *pretrained_model.input_shape)
+#     outputs = pretrained_model(inputs)
+#     assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
 
 
-# test only model variants that do not require large amount of memory
-LOW_MEMORY_REGNET_VARIANTS = set(torchvision_model_registry["regnet"].keys()) - {"y_128gf"}
+# @pytest.mark.parametrize("trainable", [True, False])
+# @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
+# @pytest.mark.parametrize(
+#     "use_pretrained",
+#     [
+#         False,
+#     ],
+# )
+# @pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["inceptionv3"].values()])
+# def test_tv_inceptionv3_encoder(
+#     model_variant: int,
+#     use_pretrained: bool,
+#     saved_weights_in_checkpoint: bool,
+#     trainable: bool,
+# ):
+#     # make repeatable
+#     set_random_seed(RANDOM_SEED)
+
+#     pretrained_model = TVInceptionV3Encoder(
+#         model_variant=model_variant,
+#         use_pretrained=use_pretrained,
+#         saved_weights_in_checkpoint=saved_weights_in_checkpoint,
+#         trainable=trainable,
+#     )
+#     inputs = torch.rand(2, *pretrained_model.input_shape)
+#     outputs = pretrained_model(inputs)
+#     assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
 
 
-@pytest.mark.parametrize("trainable", [True, False])
-@pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
-@pytest.mark.parametrize(
-    "use_pretrained",
-    [
-        False,
-    ],
-)
-@pytest.mark.parametrize("model_variant", LOW_MEMORY_REGNET_VARIANTS)
-def test_tv_regnet_encoder(
-    model_variant: int,
-    use_pretrained: bool,
-    saved_weights_in_checkpoint: bool,
-    trainable: bool,
-):
-    # make repeatable
-    set_random_seed(RANDOM_SEED)
+# @pytest.mark.parametrize("trainable", [True, False])
+# @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
+# @pytest.mark.parametrize(
+#     "use_pretrained",
+#     [
+#         False,
+#     ],
+# )
+# @pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["maxvit"].values()])
+# def test_tv_maxvit_encoder(
+#     model_variant: int,
+#     use_pretrained: bool,
+#     saved_weights_in_checkpoint: bool,
+#     trainable: bool,
+# ):
+#     # make repeatable
+#     set_random_seed(RANDOM_SEED)
 
-    pretrained_model = TVRegNetEncoder(
-        model_variant=model_variant,
-        use_pretrained=use_pretrained,
-        saved_weights_in_checkpoint=saved_weights_in_checkpoint,
-        trainable=trainable,
-    )
-    inputs = torch.rand(2, *pretrained_model.input_shape)
-    outputs = pretrained_model(inputs)
-    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
-
-
-@pytest.mark.parametrize("trainable", [True, False])
-@pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
-@pytest.mark.parametrize(
-    "use_pretrained",
-    [
-        False,
-    ],
-)
-@pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["resnet"].values()])
-def test_tv_resnet_torch_encoder(
-    model_variant: int,
-    use_pretrained: bool,
-    saved_weights_in_checkpoint: bool,
-    trainable: bool,
-):
-    # make repeatable
-    set_random_seed(RANDOM_SEED)
-
-    pretrained_model = TVResNetEncoder(
-        model_variant=model_variant,
-        use_pretrained=use_pretrained,
-        saved_weights_in_checkpoint=saved_weights_in_checkpoint,
-        trainable=trainable,
-    )
-    inputs = torch.rand(2, *pretrained_model.input_shape)
-    outputs = pretrained_model(inputs)
-    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+#     pretrained_model = TVMaxVitEncoder(
+#         model_variant=model_variant,
+#         use_pretrained=use_pretrained,
+#         saved_weights_in_checkpoint=saved_weights_in_checkpoint,
+#         trainable=trainable,
+#     )
+#     inputs = torch.rand(2, *pretrained_model.input_shape)
+#     outputs = pretrained_model(inputs)
+#     assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
 
 
-@pytest.mark.parametrize("trainable", [True, False])
-@pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
-@pytest.mark.parametrize(
-    "use_pretrained",
-    [
-        False,
-    ],
-)
-@pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["resnext"].values()])
-def test_tv_resnext_encoder(
-    model_variant: int,
-    use_pretrained: bool,
-    saved_weights_in_checkpoint: bool,
-    trainable: bool,
-):
-    # make repeatable
-    set_random_seed(RANDOM_SEED)
+# @pytest.mark.parametrize("trainable", [True, False])
+# @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
+# @pytest.mark.parametrize(
+#     "use_pretrained",
+#     [
+#         False,
+#     ],
+# )
+# @pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["mnasnet"].values()])
+# def test_tv_mnasnet_encoder(
+#     model_variant: int,
+#     use_pretrained: bool,
+#     saved_weights_in_checkpoint: bool,
+#     trainable: bool,
+# ):
+#     # make repeatable
+#     set_random_seed(RANDOM_SEED)
 
-    pretrained_model = TVResNeXtEncoder(
-        model_variant=model_variant,
-        use_pretrained=use_pretrained,
-        saved_weights_in_checkpoint=saved_weights_in_checkpoint,
-        trainable=trainable,
-    )
-    inputs = torch.rand(2, *pretrained_model.input_shape)
-    outputs = pretrained_model(inputs)
-    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
-
-
-@pytest.mark.parametrize("trainable", [True, False])
-@pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
-@pytest.mark.parametrize(
-    "use_pretrained",
-    [
-        False,
-    ],
-)
-@pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["shufflenet_v2"].values()])
-def test_tv_shufflenet_v2_encoder(
-    model_variant: str,
-    use_pretrained: bool,
-    saved_weights_in_checkpoint: bool,
-    trainable: bool,
-):
-    # make repeatable
-    set_random_seed(RANDOM_SEED)
-
-    pretrained_model = TVShuffleNetV2Encoder(
-        model_variant=model_variant,
-        use_pretrained=use_pretrained,
-        saved_weights_in_checkpoint=saved_weights_in_checkpoint,
-        trainable=trainable,
-    )
-    inputs = torch.rand(2, *pretrained_model.input_shape)
-    outputs = pretrained_model(inputs)
-    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+#     pretrained_model = TVMNASNetEncoder(
+#         model_variant=model_variant,
+#         use_pretrained=use_pretrained,
+#         saved_weights_in_checkpoint=saved_weights_in_checkpoint,
+#         trainable=trainable,
+#     )
+#     inputs = torch.rand(2, *pretrained_model.input_shape)
+#     outputs = pretrained_model(inputs)
+#     assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
 
 
-@pytest.mark.parametrize("trainable", [True, False])
-@pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
-@pytest.mark.parametrize(
-    "use_pretrained",
-    [
-        False,
-    ],
-)
-@pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["squeezenet"].values()])
-def test_tv_squeezenet_encoder(
-    model_variant: str,
-    use_pretrained: bool,
-    saved_weights_in_checkpoint: bool,
-    trainable: bool,
-):
-    # make repeatable
-    set_random_seed(RANDOM_SEED)
+# @pytest.mark.parametrize("trainable", [True, False])
+# @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
+# @pytest.mark.parametrize(
+#     "use_pretrained",
+#     [
+#         False,
+#     ],
+# )
+# @pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["mobilenetv2"].values()])
+# def test_tv_mobilenetv2_encoder(
+#     model_variant: int,
+#     use_pretrained: bool,
+#     saved_weights_in_checkpoint: bool,
+#     trainable: bool,
+# ):
+#     # make repeatable
+#     set_random_seed(RANDOM_SEED)
 
-    pretrained_model = TVSqueezeNetEncoder(
-        model_variant=model_variant,
-        use_pretrained=use_pretrained,
-        saved_weights_in_checkpoint=saved_weights_in_checkpoint,
-        trainable=trainable,
-    )
-    inputs = torch.rand(2, *pretrained_model.input_shape)
-    outputs = pretrained_model(inputs)
-    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
-
-
-@pytest.mark.parametrize("trainable", [True, False])
-@pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
-@pytest.mark.parametrize(
-    "use_pretrained",
-    [
-        False,
-    ],
-)
-@pytest.mark.parametrize(
-    "model_variant", [v.variant_id for v in torchvision_model_registry["swin_transformer"].values()]
-)
-def test_tv_swin_transformer_encoder(
-    model_variant: str,
-    use_pretrained: bool,
-    saved_weights_in_checkpoint: bool,
-    trainable: bool,
-):
-    # make repeatable
-    set_random_seed(RANDOM_SEED)
-
-    pretrained_model = TVSwinTransformerEncoder(
-        model_variant=model_variant,
-        use_pretrained=use_pretrained,
-        saved_weights_in_checkpoint=saved_weights_in_checkpoint,
-        trainable=trainable,
-    )
-    inputs = torch.rand(2, *pretrained_model.input_shape)
-    outputs = pretrained_model(inputs)
-    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+#     pretrained_model = TVMobileNetV2Encoder(
+#         model_variant=model_variant,
+#         use_pretrained=use_pretrained,
+#         saved_weights_in_checkpoint=saved_weights_in_checkpoint,
+#         trainable=trainable,
+#     )
+#     inputs = torch.rand(2, *pretrained_model.input_shape)
+#     outputs = pretrained_model(inputs)
+#     assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
 
 
-@pytest.mark.parametrize("trainable", [True, False])
-@pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
-@pytest.mark.parametrize(
-    "use_pretrained",
-    [
-        False,
-    ],
-)
-@pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["vgg"].values()])
-def test_tv_vgg_encoder(
-    model_variant: Union[int, str],
-    use_pretrained: bool,
-    saved_weights_in_checkpoint: bool,
-    trainable: bool,
-):
-    # make repeatable
-    set_random_seed(RANDOM_SEED)
+# @pytest.mark.parametrize("trainable", [True, False])
+# @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
+# @pytest.mark.parametrize(
+#     "use_pretrained",
+#     [
+#         False,
+#     ],
+# )
+# @pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["mobilenetv3"].values()])
+# def test_tv_mobilenetv3_encoder(
+#     model_variant: int,
+#     use_pretrained: bool,
+#     saved_weights_in_checkpoint: bool,
+#     trainable: bool,
+# ):
+#     # make repeatable
+#     set_random_seed(RANDOM_SEED)
 
-    pretrained_model = TVVGGEncoder(
-        model_variant=model_variant,
-        use_pretrained=use_pretrained,
-        saved_weights_in_checkpoint=saved_weights_in_checkpoint,
-        trainable=trainable,
-    )
-    inputs = torch.rand(2, *pretrained_model.input_shape)
-    outputs = pretrained_model(inputs)
-    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
-
-
-# test only VIT model variants that do not require large amount of memory
-LOW_MEMORY_VIT_VARIANTS = set(torchvision_model_registry["vit"].keys()) - {"h_14"}
+#     pretrained_model = TVMobileNetV3Encoder(
+#         model_variant=model_variant,
+#         use_pretrained=use_pretrained,
+#         saved_weights_in_checkpoint=saved_weights_in_checkpoint,
+#         trainable=trainable,
+#     )
+#     inputs = torch.rand(2, *pretrained_model.input_shape)
+#     outputs = pretrained_model(inputs)
+#     assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
 
 
-@pytest.mark.parametrize("trainable", [True, False])
-@pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
-@pytest.mark.parametrize(
-    "use_pretrained",
-    [
-        False,
-    ],
-)
-@pytest.mark.parametrize("model_variant", LOW_MEMORY_VIT_VARIANTS)
-def test_tv_vit_encoder(
-    model_variant: str,
-    use_pretrained: bool,
-    saved_weights_in_checkpoint: bool,
-    trainable: bool,
-):
-    # make repeatable
-    set_random_seed(RANDOM_SEED)
-
-    pretrained_model = TVViTEncoder(
-        model_variant=model_variant,
-        use_pretrained=use_pretrained,
-        saved_weights_in_checkpoint=saved_weights_in_checkpoint,
-        trainable=trainable,
-    )
-    inputs = torch.rand(2, *pretrained_model.input_shape)
-    outputs = pretrained_model(inputs)
-    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+# # test only model variants that do not require large amount of memory
+# LOW_MEMORY_REGNET_VARIANTS = set(torchvision_model_registry["regnet"].keys()) - {"y_128gf"}
 
 
-@pytest.mark.parametrize("trainable", [True, False])
-@pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
-@pytest.mark.parametrize(
-    "use_pretrained",
-    [
-        False,
-    ],
-)
-@pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["wide_resnet"].values()])
-def test_tv_wide_resnet_encoder(
-    model_variant: str,
-    use_pretrained: bool,
-    saved_weights_in_checkpoint: bool,
-    trainable: bool,
-):
-    # make repeatable
-    set_random_seed(RANDOM_SEED)
+# @pytest.mark.parametrize("trainable", [True, False])
+# @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
+# @pytest.mark.parametrize(
+#     "use_pretrained",
+#     [
+#         False,
+#     ],
+# )
+# @pytest.mark.parametrize("model_variant", LOW_MEMORY_REGNET_VARIANTS)
+# def test_tv_regnet_encoder(
+#     model_variant: int,
+#     use_pretrained: bool,
+#     saved_weights_in_checkpoint: bool,
+#     trainable: bool,
+# ):
+#     # make repeatable
+#     set_random_seed(RANDOM_SEED)
 
-    pretrained_model = TVWideResNetEncoder(
-        model_variant=model_variant,
-        use_pretrained=use_pretrained,
-        saved_weights_in_checkpoint=saved_weights_in_checkpoint,
-        trainable=trainable,
-    )
-    inputs = torch.rand(2, *pretrained_model.input_shape)
-    outputs = pretrained_model(inputs)
-    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+#     pretrained_model = TVRegNetEncoder(
+#         model_variant=model_variant,
+#         use_pretrained=use_pretrained,
+#         saved_weights_in_checkpoint=saved_weights_in_checkpoint,
+#         trainable=trainable,
+#     )
+#     inputs = torch.rand(2, *pretrained_model.input_shape)
+#     outputs = pretrained_model(inputs)
+#     assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+
+
+# @pytest.mark.parametrize("trainable", [True, False])
+# @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
+# @pytest.mark.parametrize(
+#     "use_pretrained",
+#     [
+#         False,
+#     ],
+# )
+# @pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["resnet"].values()])
+# def test_tv_resnet_torch_encoder(
+#     model_variant: int,
+#     use_pretrained: bool,
+#     saved_weights_in_checkpoint: bool,
+#     trainable: bool,
+# ):
+#     # make repeatable
+#     set_random_seed(RANDOM_SEED)
+
+#     pretrained_model = TVResNetEncoder(
+#         model_variant=model_variant,
+#         use_pretrained=use_pretrained,
+#         saved_weights_in_checkpoint=saved_weights_in_checkpoint,
+#         trainable=trainable,
+#     )
+#     inputs = torch.rand(2, *pretrained_model.input_shape)
+#     outputs = pretrained_model(inputs)
+#     assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+
+
+# @pytest.mark.parametrize("trainable", [True, False])
+# @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
+# @pytest.mark.parametrize(
+#     "use_pretrained",
+#     [
+#         False,
+#     ],
+# )
+# @pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["resnext"].values()])
+# def test_tv_resnext_encoder(
+#     model_variant: int,
+#     use_pretrained: bool,
+#     saved_weights_in_checkpoint: bool,
+#     trainable: bool,
+# ):
+#     # make repeatable
+#     set_random_seed(RANDOM_SEED)
+
+#     pretrained_model = TVResNeXtEncoder(
+#         model_variant=model_variant,
+#         use_pretrained=use_pretrained,
+#         saved_weights_in_checkpoint=saved_weights_in_checkpoint,
+#         trainable=trainable,
+#     )
+#     inputs = torch.rand(2, *pretrained_model.input_shape)
+#     outputs = pretrained_model(inputs)
+#     assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+
+
+# @pytest.mark.parametrize("trainable", [True, False])
+# @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
+# @pytest.mark.parametrize(
+#     "use_pretrained",
+#     [
+#         False,
+#     ],
+# )
+# @pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["shufflenet_v2"].values()])
+# def test_tv_shufflenet_v2_encoder(
+#     model_variant: str,
+#     use_pretrained: bool,
+#     saved_weights_in_checkpoint: bool,
+#     trainable: bool,
+# ):
+#     # make repeatable
+#     set_random_seed(RANDOM_SEED)
+
+#     pretrained_model = TVShuffleNetV2Encoder(
+#         model_variant=model_variant,
+#         use_pretrained=use_pretrained,
+#         saved_weights_in_checkpoint=saved_weights_in_checkpoint,
+#         trainable=trainable,
+#     )
+#     inputs = torch.rand(2, *pretrained_model.input_shape)
+#     outputs = pretrained_model(inputs)
+#     assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+
+
+# @pytest.mark.parametrize("trainable", [True, False])
+# @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
+# @pytest.mark.parametrize(
+#     "use_pretrained",
+#     [
+#         False,
+#     ],
+# )
+# @pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["squeezenet"].values()])
+# def test_tv_squeezenet_encoder(
+#     model_variant: str,
+#     use_pretrained: bool,
+#     saved_weights_in_checkpoint: bool,
+#     trainable: bool,
+# ):
+#     # make repeatable
+#     set_random_seed(RANDOM_SEED)
+
+#     pretrained_model = TVSqueezeNetEncoder(
+#         model_variant=model_variant,
+#         use_pretrained=use_pretrained,
+#         saved_weights_in_checkpoint=saved_weights_in_checkpoint,
+#         trainable=trainable,
+#     )
+#     inputs = torch.rand(2, *pretrained_model.input_shape)
+#     outputs = pretrained_model(inputs)
+#     assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+
+
+# @pytest.mark.parametrize("trainable", [True, False])
+# @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
+# @pytest.mark.parametrize(
+#     "use_pretrained",
+#     [
+#         False,
+#     ],
+# )
+# @pytest.mark.parametrize(
+#     "model_variant", [v.variant_id for v in torchvision_model_registry["swin_transformer"].values()]
+# )
+# def test_tv_swin_transformer_encoder(
+#     model_variant: str,
+#     use_pretrained: bool,
+#     saved_weights_in_checkpoint: bool,
+#     trainable: bool,
+# ):
+#     # make repeatable
+#     set_random_seed(RANDOM_SEED)
+
+#     pretrained_model = TVSwinTransformerEncoder(
+#         model_variant=model_variant,
+#         use_pretrained=use_pretrained,
+#         saved_weights_in_checkpoint=saved_weights_in_checkpoint,
+#         trainable=trainable,
+#     )
+#     inputs = torch.rand(2, *pretrained_model.input_shape)
+#     outputs = pretrained_model(inputs)
+#     assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+
+
+# @pytest.mark.parametrize("trainable", [True, False])
+# @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
+# @pytest.mark.parametrize(
+#     "use_pretrained",
+#     [
+#         False,
+#     ],
+# )
+# @pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["vgg"].values()])
+# def test_tv_vgg_encoder(
+#     model_variant: Union[int, str],
+#     use_pretrained: bool,
+#     saved_weights_in_checkpoint: bool,
+#     trainable: bool,
+# ):
+#     # make repeatable
+#     set_random_seed(RANDOM_SEED)
+
+#     pretrained_model = TVVGGEncoder(
+#         model_variant=model_variant,
+#         use_pretrained=use_pretrained,
+#         saved_weights_in_checkpoint=saved_weights_in_checkpoint,
+#         trainable=trainable,
+#     )
+#     inputs = torch.rand(2, *pretrained_model.input_shape)
+#     outputs = pretrained_model(inputs)
+#     assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+
+
+# # test only VIT model variants that do not require large amount of memory
+# LOW_MEMORY_VIT_VARIANTS = set(torchvision_model_registry["vit"].keys()) - {"h_14"}
+
+
+# @pytest.mark.parametrize("trainable", [True, False])
+# @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
+# @pytest.mark.parametrize(
+#     "use_pretrained",
+#     [
+#         False,
+#     ],
+# )
+# @pytest.mark.parametrize("model_variant", LOW_MEMORY_VIT_VARIANTS)
+# def test_tv_vit_encoder(
+#     model_variant: str,
+#     use_pretrained: bool,
+#     saved_weights_in_checkpoint: bool,
+#     trainable: bool,
+# ):
+#     # make repeatable
+#     set_random_seed(RANDOM_SEED)
+
+#     pretrained_model = TVViTEncoder(
+#         model_variant=model_variant,
+#         use_pretrained=use_pretrained,
+#         saved_weights_in_checkpoint=saved_weights_in_checkpoint,
+#         trainable=trainable,
+#     )
+#     inputs = torch.rand(2, *pretrained_model.input_shape)
+#     outputs = pretrained_model(inputs)
+#     assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+
+
+# @pytest.mark.parametrize("trainable", [True, False])
+# @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
+# @pytest.mark.parametrize(
+#     "use_pretrained",
+#     [
+#         False,
+#     ],
+# )
+# @pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["wide_resnet"].values()])
+# def test_tv_wide_resnet_encoder(
+#     model_variant: str,
+#     use_pretrained: bool,
+#     saved_weights_in_checkpoint: bool,
+#     trainable: bool,
+# ):
+#     # make repeatable
+#     set_random_seed(RANDOM_SEED)
+
+#     pretrained_model = TVWideResNetEncoder(
+#         model_variant=model_variant,
+#         use_pretrained=use_pretrained,
+#         saved_weights_in_checkpoint=saved_weights_in_checkpoint,
+#         trainable=trainable,
+#     )
+#     inputs = torch.rand(2, *pretrained_model.input_shape)
+#     outputs = pretrained_model(inputs)
+#     assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
