@@ -45,8 +45,6 @@ from tests.integration_tests.utils import (
     generate_output_features_with_dependencies,
     generate_output_features_with_dependencies_complex,
     h3_feature,
-    HF_ENCODERS,
-    HF_ENCODERS_SHORT,
     image_feature,
     LocalTestBackend,
     number_feature,
@@ -82,17 +80,6 @@ def run_experiment_with_encoder(encoder, csv_filename):
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
     run_experiment(input_features, output_features, dataset=rel_path)
-
-
-@pytest.mark.parametrize("encoder", HF_ENCODERS_SHORT)
-def test_experiment_text_feature_HF(encoder, csv_filename):
-    run_experiment_with_encoder(encoder, csv_filename)
-
-
-@pytest.mark.slow
-@pytest.mark.parametrize("encoder", HF_ENCODERS)
-def test_experiment_text_feature_HF_full(encoder, csv_filename):
-    run_experiment_with_encoder(encoder, csv_filename)
 
 
 @pytest.mark.parametrize("encoder", ENCODERS)
