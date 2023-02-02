@@ -1,5 +1,4 @@
 from dataclasses import field
-from functools import lru_cache
 
 from marshmallow import fields, ValidationError
 
@@ -32,7 +31,6 @@ def DefaultsDataclassField(feature_type: str):
             raise ValidationError(f"Invalid params: {value}")
 
         @staticmethod
-        @lru_cache(maxsize=1)
         def _jsonschema_type_mapping():
             defaults_cls = defaults_config_registry[feature_type]
             props = schema_utils.unload_jsonschema_from_marshmallow_class(defaults_cls)["properties"]

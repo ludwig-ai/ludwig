@@ -1,5 +1,4 @@
 from abc import ABC
-from functools import lru_cache
 from typing import Optional, Union
 
 from marshmallow_dataclass import dataclass
@@ -671,7 +670,6 @@ class ECDTrainerField(schema_utils.DictMarshmallowField):
         super().__init__(ECDTrainerConfig)
 
     @staticmethod
-    @lru_cache(maxsize=1)
     def _jsonschema_type_mapping():
         return get_trainer_jsonschema(MODEL_ECD)
 
@@ -682,6 +680,5 @@ class GBMTrainerField(schema_utils.DictMarshmallowField):
         super().__init__(GBMTrainerConfig)
 
     @staticmethod
-    @lru_cache(maxsize=1)
     def _jsonschema_type_mapping():
         return get_trainer_jsonschema(MODEL_GBM)

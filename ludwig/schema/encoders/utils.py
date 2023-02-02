@@ -1,5 +1,4 @@
 from dataclasses import Field
-from functools import lru_cache
 from typing import Any, Dict, List, Optional, Type, TYPE_CHECKING, Union
 
 from ludwig.api_annotations import DeveloperAPI
@@ -104,7 +103,6 @@ def EncoderDataclassField(model_type: str, feature_type: str, default: str) -> F
             return encoder_registry[key]
 
         @staticmethod
-        @lru_cache(maxsize=1)
         def _jsonschema_type_mapping():
             return {
                 "type": "object",
