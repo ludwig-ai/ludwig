@@ -5,7 +5,7 @@ import pytest
 import torch
 
 from ludwig.features.number_feature import NumberInputFeature
-from ludwig.schema.features.number_feature import ECDNumberInputFeatureConfig, NumberInputFeatureConfig
+from ludwig.schema.features.number_feature import ECDNumberInputFeatureConfig
 from ludwig.schema.utils import load_config_with_kwargs
 from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.torch_utils import get_torch_device

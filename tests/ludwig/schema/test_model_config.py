@@ -18,6 +18,8 @@ from ludwig.constants import (
     INPUT_FEATURES,
     INPUT_SIZE,
     LOSS,
+    MODEL_ECD,
+    MODEL_GBM,
     NAME,
     NUM_CLASSES,
     OPTIMIZER,
@@ -258,10 +260,11 @@ def test_update_config_object():
     assert config_object.input_features.text_feature.encoder.max_sequence_length == 10
 
 
-def test_config_object_validation_parameters_defaults():
+@pytest.mark.parametrize("model_type", [MODEL_ECD, MODEL_GBM])
+def test_config_object_validation_parameters_defaults(model_type: str):
     config = {
         "input_features": [
-            {"name": "text_feature", "type": "text"},
+            {"name": "category_feature", "type": "category"},
         ],
         "output_features": [
             {
@@ -269,6 +272,7 @@ def test_config_object_validation_parameters_defaults():
                 "type": "number",
             },
         ],
+        "model_type": model_type,
     }
 
     config_object = ModelConfig.from_dict(config)
