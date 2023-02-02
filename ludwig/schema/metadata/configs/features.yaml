@@ -202,7 +202,7 @@ binary:
             ui_display_name: Missing Value Strategy
             expected_impact: 3
     calibration:
-        expected_impact: 2
+        expected_impact: 3
     dependencies:
         expected_impact: 1
     reduce_dependencies:
@@ -263,7 +263,7 @@ category:
                 substantially
             ui_display_name: Most common (vocabulary size)
     calibration:
-        expected_impact: 2
+        expected_impact: 3
     dependencies:
         expected_impact: 1
     reduce_dependencies:

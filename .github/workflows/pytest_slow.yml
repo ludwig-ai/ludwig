@@ -1,0 +1,205 @@
+# This workflow will install Python dependencies and run all tests marked as `slow` on a single Python version.
+# The tests will run on a high-memory AWS compute instance to accommodate memory-intensive workloads.
+
+name: pytest (slow)
+
+on:
+  push:
+    branches: ["master", "release-*"]
+    tags: ["v*.*.*"]
+
+jobs:
+  start-runner:
+    name: Start self-hosted EC2 runner
+    if: >
+      github.event_name == 'schedule' && github.repository == 'ludwig-ai/ludwig' ||
+      github.event_name == 'push' && github.repository == 'ludwig-ai/ludwig' ||
+      github.event_name == 'pull_request' && github.event.pull_request.base.repo.full_name == 'ludwig-ai/ludwig' && !github.event.pull_request.head.repo.fork
+    runs-on: ubuntu-latest
+    outputs:
+      label: ${{ steps.start-ec2-runner.outputs.label }}
+      ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Start EC2 runner
+        id: start-ec2-runner
+        uses: machulav/ec2-github-runner@v2.3.2
+        with:
+          mode: start
+          github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+          ec2-image-id: ami-0759580dedc953d1f
+          ec2-instance-type: r5.large
+          subnet-id: subnet-0983be43
+          security-group-id: sg-4cba0d08
+          aws-resource-tags: >
+            [
+              {"Key": "Name", "Value": "ludwig-github-${{ github.head_ref || github.sha }}"},
+              {"Key": "GitHubRepository", "Value": "${{ github.repository }}"},
+              {"Key": "GitHubHeadRef", "Value": "${{ github.head_ref }}"},
+              {"Key": "GitHubSHA", "Value": "${{ github.sha }}"}
+            ]
+
+  slow-pytest:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python-version: [3.8]
+        test-markers: ["slow"]
+        include:
+          - python-version: 3.8
+            pytorch-version: 1.13.1
+            torchscript-version: 1.10.2
+            ray-version: 2.0.0
+    env:
+      PYTORCH: ${{ matrix.pytorch-version }}
+      MARKERS: ${{ matrix.test-markers }}
+      NEUROPOD_BASE_DIR: "/usr/local/lib/neuropod"
+      NEUROPOD_VERSION: "0.3.0-rc6"
+      TORCHSCRIPT_VERSION: ${{ matrix.torchscript-version }}
+      RAY_VERSION: ${{ matrix.ray-version }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.LUDWIG_TESTS_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.LUDWIG_TESTS_AWS_SECRET_ACCESS_KEY }}
+      EXCLUDED_MARKERS: "benchmark"
+
+    name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, ${{ matrix.test-markers }}, ${{ matrix.os }}, ray ${{ matrix.ray-version }}
+    if: needs.start-runner.result != 'skipped'
+    needs: start-runner # required to start the main job when the runner is ready
+    runs-on: ${{ needs.start-runner.outputs.label }} # run the job on the newly created runners
+
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Setup Linux
+        if: runner.os == 'linux'
+        run: |
+          sudo apt-get update && sudo apt-get install -y libsndfile1 cmake ccache build-essential g++-8 gcc-8
+          cmake --version
+
+      - name: Setup macOS
+        if: runner.os == 'macOS'
+        run: |
+          brew install libuv
+
+      - name: pip cache
+        if: ${{ !env.ACT }}
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-py${{ matrix.python-version }}-torch${{ matrix.pytorch-version }}-${{ matrix.test-markers }}-${{ hashFiles('requirements*.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-py${{ matrix.python-version }}-torch${{ matrix.pytorch-version }}-${{ matrix.test-markers }}-
+
+      - name: Install dependencies
+        env:
+          HOROVOD_WITH_PYTORCH: 1
+          HOROVOD_WITHOUT_MPI: 1
+          HOROVOD_WITHOUT_TENSORFLOW: 1
+          HOROVOD_WITHOUT_MXNET: 1
+        run: |
+          python --version
+          pip --version
+          python -m pip install -U pip
+          cmake --version
+
+          echo "MARKERS:" $MARKERS
+
+          if [ "$PYTORCH" == "nightly" ]; then
+            cat requirements.txt | sed '/^torch[>=<]/d' | sed '/^torchtext[>=<]/d' | sed '/^torchvision[>=<]/d' | sed '/^torchaudio[>=<]/d' > requirements-temp && mv requirements-temp requirements.txt
+            extra_index_url=https://download.pytorch.org/whl/nightly/cpu
+            pip install --pre torch torchtext torchvision torchaudio --extra-index-url $extra_index_url
+          else
+            extra_index_url=https://download.pytorch.org/whl/cpu
+            pip install torch==$PYTORCH torchtext torchvision torchaudio --extra-index-url $extra_index_url
+          fi
+          pip install protobuf==3.20.1 # https://github.com/databrickslabs/dbx/issues/257
+
+          if [ "$RAY_VERSION" == "nightly" ]; then
+            # NOTE: hardcoded for python 3.9 on Linux
+            pip install https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-3.0.0.dev0-cp39-cp39-manylinux2014_x86_64.whl
+          else
+            # installing `six` early resolves ModuleNotFound error in ray==2.1.0
+            pip install six
+            pip install ray==$RAY_VERSION
+          fi
+          ray_expected=$(python -c "import ray; print(ray.__version__)")
+
+          torch_expected=$(python -c "import torch; print(torch.__version__)")
+
+          pip install --no-build-isolation --no-use-pep517 ConfigSpace # temporary fix: https://github.com/automl/ConfigSpace/issues/173
+          pip install '.[test]' --extra-index-url $extra_index_url
+          pip list
+
+          python -c "import torch; assert torch.__version__ == \"$torch_expected\", f\"torch {torch.__version__} != $torch_expected\""
+          python -c "import ray; assert ray.__version__ == \"$ray_expected\", f\"ray {ray.__version__} != $ray_expected\""
+        shell: bash
+
+      - name: Install Neuropod backend
+        run: |
+          sudo mkdir -p "$NEUROPOD_BASE_DIR"
+          curl -L https://github.com/uber/neuropod/releases/download/v${{ env.NEUROPOD_VERSION }}/libneuropod-cpu-linux-v${{ env.NEUROPOD_VERSION }}-torchscript-${{ env.TORCHSCRIPT_VERSION }}-backend.tar.gz | sudo tar -xz -C "$NEUROPOD_BASE_DIR"
+        shell: bash
+
+      - name: Reinstall Horovod if necessary
+        env:
+          HOROVOD_WITH_PYTORCH: 1
+          HOROVOD_WITHOUT_MPI: 1
+          HOROVOD_WITHOUT_TENSORFLOW: 1
+          HOROVOD_WITHOUT_MXNET: 1
+        run: |
+          HOROVOD_BUILT=$(python -c "import horovod.torch; horovod.torch.nccl_built(); print('SUCCESS')" || true)
+          if [[ $HOROVOD_BUILT != "SUCCESS" ]]; then
+            pip uninstall -y horovod
+            pip install --no-cache-dir git+https://github.com/horovod/horovod.git@master
+          fi
+          horovodrun --check-build
+        shell: bash
+
+      - name: Tests
+        run: |
+          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=4500 pytest -v --timeout 300 --durations 100 -m "($MARKERS) and (not $EXCLUDED_MARKERS)" --junitxml pytest_slow.xml tests
+
+      - name: Upload Unit Test Results
+        if: ${{ always() && !env.ACT }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: Unit Test Results (Python ${{ matrix.python-version }} ${{ matrix.test-markers }})
+          path: pytest.xml
+
+  stop-runner:
+    name: Stop self-hosted EC2 runner
+
+    # required to stop the runner even if the error happened in the previous job
+    if: always() && needs.start-runner.result != 'skipped'
+    needs:
+      - start-runner # required to get output from the start-runner job
+      - slow-pytest  # required to wait when the main job is done
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Stop EC2 runner
+        uses: machulav/ec2-github-runner@v2.3.2
+        with:
+          mode: stop
+          github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+          label: ${{ needs.start-runner.outputs.label }}
+          ec2-instance-id: ${{ needs.start-runner.outputs.ec2-instance-id }}

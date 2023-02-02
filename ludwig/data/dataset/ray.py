@@ -35,8 +35,10 @@ from ludwig.backend.base import Backend
 from ludwig.constants import BINARY, CATEGORY, NAME, NUMBER, TYPE
 from ludwig.data.batcher.base import Batcher
 from ludwig.data.dataset.base import Dataset, DatasetManager
+from ludwig.distributed import DistributedStrategy
 from ludwig.types import FeatureConfigDict, ModelConfigDict, TrainingSetMetadataDict
-from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP, DATA_TRAIN_PARQUET_FP, from_numpy_dataset, to_numpy_dataset
+from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP, DATA_TRAIN_PARQUET_FP
+from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.error_handling_utils import default_retry
 from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.misc_utils import get_proc_features
@@ -109,7 +111,7 @@ class RayDataset(Dataset):
         self,
         batch_size=128,
         should_shuffle=True,
-        seed=0,
+        random_seed=0,
         ignore_last=False,
         distributed=None,
         augmentation_pipeline=None,
@@ -223,11 +225,11 @@ class RayDatasetShard(Dataset):
     @contextlib.contextmanager
     def initialize_batcher(
         self,
-        batch_size=128,
-        should_shuffle=True,
-        seed=0,
-        ignore_last=False,
-        distributed=None,
+        batch_size: int = 128,
+        should_shuffle: bool = True,
+        random_seed: int = default_random_seed,
+        ignore_last: bool = False,
+        distributed: DistributedStrategy = None,
         augmentation_pipeline=None,
     ):
         yield RayDatasetBatcher(
