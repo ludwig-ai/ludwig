@@ -559,7 +559,7 @@ def GradientClippingDataclassField(description: str, default: Dict = {}):
     if not isinstance(default, dict):
         raise ValidationError(f"Invalid default: `{default}`")
 
-    load_default = GradientClippingConfig.Schema().load(default)
+    load_default = lambda: GradientClippingConfig.Schema().load(default)
     dump_default = GradientClippingConfig.Schema().dump(default)
 
     return field(
