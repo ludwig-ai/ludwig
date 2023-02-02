@@ -46,8 +46,8 @@ from ludwig.features.vector_feature import VectorFeatureMixin, VectorInputFeatur
 from ludwig.utils.misc_utils import get_from_registry
 
 if TYPE_CHECKING:
-    from ludwig.schema.model_types.base import ModelConfig
     from ludwig.models.base import BaseModel
+    from ludwig.schema.model_types.base import ModelConfig
 
 
 @DeveloperAPI
