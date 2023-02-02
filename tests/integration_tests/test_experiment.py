@@ -53,7 +53,6 @@ from tests.integration_tests.utils import (
     run_experiment,
     sequence_feature,
     set_feature,
-    slow,
     text_feature,
     timeseries_feature,
     vector_feature,
@@ -90,7 +89,7 @@ def test_experiment_text_feature_HF(encoder, csv_filename):
     run_experiment_with_encoder(encoder, csv_filename)
 
 
-@slow
+@pytest.mark.slow
 @pytest.mark.parametrize("encoder", HF_ENCODERS)
 def test_experiment_text_feature_HF_full(encoder, csv_filename):
     run_experiment_with_encoder(encoder, csv_filename)
