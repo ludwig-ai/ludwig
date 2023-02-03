@@ -6,6 +6,7 @@ from marshmallow import ValidationError
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import ENCODER, INPUT_FEATURES, MODEL_ECD, PREPROCESSING, TYPE
+from ludwig.globals import LUDWIG_VERSION
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.defaults.defaults import DefaultsConfig
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig, FeatureCollection
@@ -39,6 +40,9 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
     preprocessing: PreprocessingConfig
     defaults: DefaultsConfig
     hyperopt: Optional[HyperoptConfig] = None
+
+    backend: Dict[str, Any] = schema_utils.Dict()
+    ludwig_version: str = LUDWIG_VERSION
 
     @staticmethod
     def from_dict(config: Dict[str, Any]) -> "ModelConfig":
