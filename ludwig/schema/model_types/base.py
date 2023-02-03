@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional
 from marshmallow import ValidationError
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import ENCODER, INPUT_FEATURES, MODEL_ECD, PREPROCESSING, TYPE
+from ludwig.constants import BACKEND, ENCODER, INPUT_FEATURES, MODEL_ECD, PREPROCESSING, TYPE
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.defaults.defaults import DefaultsConfig
@@ -71,6 +71,11 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
                 preprocessing_parameters, feature_config.get(ENCODER, {})
             )
             feature_config[PREPROCESSING] = preprocessing_parameters
+
+        # TODO(travis): handle this with helper function
+        backend = config.get(BACKEND)
+        if isinstance(backend, str):
+            config[BACKEND] = {"type": backend}
 
         cls = model_type_schema_registry[model_type]
         schema = cls.get_class_schema()()
