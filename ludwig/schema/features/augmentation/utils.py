@@ -42,7 +42,7 @@ def get_augmentation_classes(feature: str):
 
 
 @DeveloperAPI
-def AugmentationContainerDataclassField(feature_type: str, default=[], description=""):
+def AugmentationDataclassField(feature_type: str, default=[], description=""):
     """Custom dataclass field that when used inside a dataclass will allow the user to specify an augmentation
     config.
 
@@ -63,7 +63,7 @@ def AugmentationContainerDataclassField(feature_type: str, default=[], descripti
             augmentation_list = []
             for augmentation in value:
                 augmentation_op = augmentation[TYPE]
-                augmentation_cls = get_augmentation_cls(augmentation_op)
+                augmentation_cls = get_augmentation_cls(feature_type, augmentation_op)
                 pre = augmentation_cls()
                 try:
                     augmentation_list.append(pre.Schema().load(augmentation))
@@ -75,7 +75,7 @@ def AugmentationContainerDataclassField(feature_type: str, default=[], descripti
 
         @staticmethod
         def _jsonschema_type_mapping():
-            return get_augmentation_jsonschema(feature_type)
+            return get_augmentation_list_jsonschema(feature_type)
 
     try:
         assert isinstance(default, list), "Augmentation config must be a list."
@@ -108,8 +108,8 @@ def AugmentationContainerDataclassField(feature_type: str, default=[], descripti
 
 
 @DeveloperAPI
-def get_augmentation_jsonschema(feature_type: str):
-    """This function returns a JSON augmenation schema.
+def get_augmentation_list_jsonschema(feature_type: str):
+    """This function returns a JSON augmentation schema.
 
     Returns: JSON Schema
     """

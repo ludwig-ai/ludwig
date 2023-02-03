@@ -6,7 +6,7 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.features.augmentation.base import BaseAugmentationConfig
-from ludwig.schema.features.augmentation.utils import AugmentationContainerDataclassField
+from ludwig.schema.features.augmentation.utils import AugmentationDataclassField
 from ludwig.schema.features.base import BaseInputFeatureConfig
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
@@ -36,7 +36,7 @@ class ImageInputFeatureConfigMixin(BaseMarshmallowConfig):
                 default=False,
                 description="Whether to use augmentation or not.",
             ),
-            AugmentationContainerDataclassField(
+            AugmentationDataclassField(
                 feature_type=IMAGE,
                 description="Augmentation operation configuration.",
             ),

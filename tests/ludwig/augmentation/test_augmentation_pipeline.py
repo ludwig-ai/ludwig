@@ -6,6 +6,8 @@ import tempfile
 import pytest
 import torch
 
+from jsonschema.exceptions import ValidationError
+
 from ludwig.api import LudwigModel
 from ludwig.constants import IMAGENET1K
 from ludwig.data.dataset_synthesizer import cli_synthesize_dataset
@@ -261,3 +263,24 @@ def test_ludwig_encoder_gray_scale_image_augmentation_pipeline(
         {},
         augmentation_pipeline_ops,
     )
+
+
+# this test invalid augmentation pipeline specification
+@pytest.mark.parametrize(
+    "augmentation_pipeline_ops",
+    [
+        [{"type": "random_rotate", "degree": "45"}, ],
+    ],
+)
+def test_invalid_augmentation_parameters(
+    train_data_gray_scale,
+    augmentation_pipeline_ops,
+):
+    with pytest.raises(ValidationError):
+        run_augmentation_training(
+            train_data_gray_scale,
+            "local",
+            {"type": "stacked_cnn", },
+            {},
+            augmentation_pipeline_ops,
+        )
