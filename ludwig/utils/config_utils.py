@@ -2,10 +2,9 @@ from typing import Set
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import DECODER, ENCODER, IMAGE, PREPROCESSING, SEQUENCE, TEXT, TIMESERIES, TYPE
-from ludwig.features.feature_registries import get_input_type_registry, get_output_type_registry
+from ludwig.features.feature_registries import get_input_type_registry
 from ludwig.schema.model_config import ModelConfig
 from ludwig.types import FeatureConfigDict, FeatureTypeDefaultsDict, PreprocessingConfigDict
-from ludwig.utils.misc_utils import get_from_registry
 
 
 @DeveloperAPI
@@ -65,18 +64,6 @@ def merge_config_preprocessing_with_feature_specific_defaults(
     for feature_type in config_defaults:
         preprocessing_params[feature_type] = config_defaults[feature_type].get(PREPROCESSING, {})
     return preprocessing_params
-
-
-@DeveloperAPI
-def get_default_encoder_type(model_type: str, feature_type: str) -> str:
-    feature_schema = get_from_registry(feature_type, get_input_type_registry()).get_schema_cls()
-    return feature_schema().encoder.type
-
-
-@DeveloperAPI
-def get_default_decoder_type(feature_type: str) -> str:
-    feature_schema = get_from_registry(feature_type, get_output_type_registry()).get_schema_cls()
-    return feature_schema().decoder.type
 
 
 def has_trainable_encoder(config: ModelConfig) -> bool:

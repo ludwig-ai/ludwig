@@ -65,3 +65,54 @@ def test_incorrect_output_features_config():
     # Invalid decoder for binary output feature
     with pytest.raises(ValidationError):
         validate_config(config)
+
+
+def test_too_few_features_config():
+    ifeatures = [number_feature()]
+    ofeatures = [binary_feature()]
+
+    validate_config(
+        {
+            "input_features": ifeatures,
+            "output_features": ofeatures,
+        }
+    )
+
+    # Must have at least one input feature
+    with pytest.raises(ValidationError, match=r"Error: \[\] is too short"):
+        validate_config(
+            {
+                "input_features": [],
+                "output_features": ofeatures,
+            }
+        )
+
+    # Must have at least one output feature
+    with pytest.raises(ValidationError, match=r"Error: \[\] is too short"):
+        validate_config(
+            {
+                "input_features": ifeatures,
+                "output_features": [],
+            }
+        )
+
+
+def test_too_many_features_config():
+    # GBMs Must have exactly one output feature
+    with pytest.raises(ValidationError, match=r"Error: .* is too long"):
+        validate_config(
+            {
+                "input_features": [number_feature()],
+                "output_features": [binary_feature(), number_feature()],
+                "model_type": "gbm",
+            }
+        )
+
+    # Multi-output is fine for ECD
+    validate_config(
+        {
+            "input_features": [number_feature()],
+            "output_features": [binary_feature(), number_feature()],
+            "model_type": "ecd",
+        }
+    )
