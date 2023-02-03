@@ -407,6 +407,9 @@ image:
         width:
             ui_display_name: null
             expected_impact: 2
+        requires_equal_dimensions:
+            ui_display_name: null
+            expected_impact: 1
 number:
     preprocessing:
         computed_fill_value:

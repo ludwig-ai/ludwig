@@ -137,4 +137,5 @@ class ImagePreprocessingConfig(BasePreprocessingConfig):
     requires_equal_dimensions: bool = schema_utils.Boolean(
         default=False,
         description="If true, then width and height must be equal.",
+        parameter_metadata=FEATURE_METADATA[IMAGE][PREPROCESSING]["requires_equal_dimensions"],
     )

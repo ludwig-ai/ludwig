@@ -127,6 +127,7 @@ class OutputFeaturesContainer(BaseFeatureContainer):
     pass
 
 
+# TODO(travis): remove this in a follow-up PR
 @DeveloperAPI
 @ludwig_dataclass
 class _ModelConfig(BaseMarshmallowConfig):
