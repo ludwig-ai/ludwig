@@ -816,7 +816,7 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
         else:
             self.encoder_obj = self.initialize_encoder(input_feature_config.encoder)
 
-        # set up for augmentation if specified
+        # set up for augmentation if it is enabled
         if input_feature_config.augmentation:
             # assume no image normalize is required
             normalize_mean = normalize_std = None
