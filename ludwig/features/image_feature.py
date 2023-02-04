@@ -58,6 +58,7 @@ from ludwig.utils.fs_utils import has_remote_protocol, upload_h5
 from ludwig.utils.image_utils import (
     get_gray_default_image,
     grayscale,
+    is_torchvision_encoder,
     num_channels_in_image,
     read_image_from_bytes_obj,
     read_image_from_path,
@@ -821,7 +822,7 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
             normalize_mean = normalize_std = None
 
             # determine if specified encoder is a torchvision model
-            if hasattr(self.encoder_obj, "torchvision_model_type"):
+            if is_torchvision_encoder(self.encoder_obj):
                 # encoder is a torchvision model
                 normalize_mean = self.encoder_obj.normalize_mean
                 normalize_std = self.encoder_obj.normalize_std
@@ -862,6 +863,13 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
     @property
     def output_shape(self) -> torch.Size:
         return self.encoder_obj.output_shape
+
+    def update_config_after_module_init(self, feature_config):
+        if is_torchvision_encoder(self.encoder_obj):
+            # update feature preprocessing parameters to reflect used in torchvision pretrained model
+            feature_config.preprocessing.height = self.encoder_obj.crop_size[0]
+            feature_config.preprocessing.width = self.encoder_obj.crop_size[0]
+            feature_config.preprocessing.num_channels = self.encoder_obj.num_channels
 
     @staticmethod
     def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
