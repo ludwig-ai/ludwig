@@ -28,8 +28,9 @@ class ImageInputFeatureConfigMixin(BaseMarshmallowConfig):
         default="stacked_cnn",
     )
 
-    augmentation: Union[bool, List[BaseAugmentationConfig]] = schema_utils.OneOfOptionsField(
+    augmentation: Union[None, bool, List[BaseAugmentationConfig]] = schema_utils.OneOfOptionsField(
         default=False,
+        allow_none=False,
         description="Augmentation configuration.",
         field_options=[
             schema_utils.Boolean(

@@ -50,7 +50,7 @@ def AugmentationDataclassField(feature_type: str, default=[], description=""):
         default: The default augmentation config to use.
         description: The description of the augmentation config.
 
-    Returns: Initialized dataclass field that converts an untyped dict with params to an augmentation config.
+    Returns: Initialized dataclass field that converts a list with params to an augmentation config.
     """
 
     class AugmentationContainerMarshmallowField(fields.Field):
@@ -128,7 +128,7 @@ def get_augmentation_list_jsonschema(feature_type: str):
                 },
             },
             "additionalProperties": True,
-            "allOf": get_augmentation_conds(feature_type),
+            "allOf": get_augmentation_list_conds(feature_type),
             "required": ["type"],
             "title": "augmentation",
         },
@@ -139,7 +139,7 @@ def get_augmentation_list_jsonschema(feature_type: str):
 
 
 @DeveloperAPI
-def get_augmentation_conds(feature_type: str):
+def get_augmentation_list_conds(feature_type: str):
     """This function returns a list of if-then JSON clauses for each augmentation type along with their properties
     and constraints.
 
