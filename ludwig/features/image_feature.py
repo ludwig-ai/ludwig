@@ -350,6 +350,8 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
         if isinstance(img_entry, bytes):
             img = read_image_from_bytes_obj(img_entry, num_channels)
+        elif isinstance(img_entry, str):
+            img = read_image_from_path(img_entry, num_channels)
         elif isinstance(img_entry, np.ndarray):
             img = torch.from_numpy(np.array(img_entry, copy=True)).permute(2, 0, 1)
         else:
@@ -424,6 +426,8 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
         if isinstance(img_entry, bytes):
             img = read_image_from_bytes_obj(img_entry)
+        elif isinstance(img_entry, str):
+            img = read_image_from_path(img_entry)
         elif isinstance(img_entry, np.ndarray):
             img = torch.from_numpy(img_entry).permute(2, 0, 1)
         else:
@@ -713,6 +717,10 @@ class ImageFeatureMixin(BaseFeatureMixin):
             # add torchvision model id to preprocessing section for torchscript
             preprocessing_parameters["torchvision_model_type"] = model_type
             preprocessing_parameters["torchvision_model_variant"] = model_variant
+
+            # get required setup parameters for in_memory = False processing
+            width = height = read_image_if_bytes_obj_and_resize.keywords["transform_fn"].crop_size[0]
+            num_channels = len(read_image_if_bytes_obj_and_resize.keywords["transform_fn"].mean)
         else:
             # torchvision_parameters is None
             # perform Ludwig specified transformations
@@ -743,9 +751,9 @@ class ImageFeatureMixin(BaseFeatureMixin):
                 standardize_image=standardize_image,
             )
 
-            # TODO: alternatively use get_average_image() for unreachable images
-            default_image = get_gray_default_image(num_channels, height, width)
-            metadata[name]["reshape"] = (num_channels, height, width)
+        # TODO: alternatively use get_average_image() for unreachable images
+        default_image = get_gray_default_image(num_channels, height, width)
+        metadata[name]["reshape"] = (num_channels, height, width)
 
         # check to see if the active backend can support lazy loading of
         # image features from the hdf5 cache.
@@ -782,6 +790,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
                     if isinstance(res, np.ndarray):
                         image_dataset[i, :height, :width, :] = res
                     else:
+                        logger.warning(f"Failed to read image {img_entry} while preprocessing feature `{name}`. ")
                         image_dataset[i, :height, :width, :] = default_image
                         num_failed_image_reads += 1
                 h5_file.flush()
