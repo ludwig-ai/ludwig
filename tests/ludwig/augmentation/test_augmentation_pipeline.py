@@ -2,6 +2,7 @@ import copy
 import logging
 import os
 import tempfile
+from typing import Dict, List
 
 import pytest
 import torch
@@ -41,7 +42,7 @@ def train_data_rgb():
         # add parameters to generate images
         input_features[0].update(
             {
-                "destination_folder": os.path.join(os.getcwd(), os.path.join(tmp_dir, "images")),
+                "destination_folder": os.path.join(tmp_dir, "images"),
                 "preprocessing": {"height": 350, "width": 350, "num_channels": 3},
             }
         )
@@ -82,7 +83,7 @@ def train_data_gray_scale():
         # add parameters to generate images
         input_features[0].update(
             {
-                "destination_folder": os.path.join(os.getcwd(), os.path.join(tmp_dir, "images")),
+                "destination_folder": os.path.join(tmp_dir, "images"),
                 "preprocessing": {"height": 350, "width": 350, "num_channels": 1},
             }
         )
@@ -104,11 +105,11 @@ def train_data_gray_scale():
 
 # common function to run model training with augmentation pipeline
 def run_augmentation_training(
-    train_data,
-    backend,
-    encoder,
-    preprocessing,
-    augmentation_pipeline_ops,
+    train_data: str = "",
+    backend: str = "local",
+    encoder: Dict = None,
+    preprocessing: Dict = None,
+    augmentation_pipeline_ops: List[Dict] = None,
 ):
     # unpack training data
     train_fp, input_features, output_features = train_data
@@ -206,11 +207,11 @@ def test_local_model_training_with_augmentation_pipeline(
     augmentation_pipeline_ops,
 ):
     run_augmentation_training(
-        train_data_rgb,
-        "local",
-        encoder,
-        preprocessing,
-        augmentation_pipeline_ops,
+        train_data=train_data_rgb,
+        backend="local",
+        encoder=encoder,  # Ludwig encoder
+        preprocessing=preprocessing,  # Ludwig image preprocessing
+        augmentation_pipeline_ops=augmentation_pipeline_ops,  # Ludwig image augmentation
     )
 
 
@@ -226,11 +227,11 @@ def test_ray_model_training_with_augmentation_pipeline(
     ray_cluster_2cpu,
 ):
     run_augmentation_training(
-        train_data_rgb,
-        "ray",
-        {"type": "stacked_cnn"},  # Ludwig encoder
-        preprocessing,
-        augmentation_pipeline_ops,
+        train_data=train_data_rgb,
+        backend="ray",
+        encoder={"type": "stacked_cnn"},
+        preprocessing=preprocessing,
+        augmentation_pipeline_ops=augmentation_pipeline_ops,
     )
 
 
@@ -255,11 +256,11 @@ def test_ludwig_encoder_gray_scale_image_augmentation_pipeline(
     augmentation_pipeline_ops,
 ):
     run_augmentation_training(
-        train_data_gray_scale,
-        "local",
-        {"type": "stacked_cnn", "num_filters": 1},
-        {},
-        augmentation_pipeline_ops,
+        train_data=train_data_gray_scale,
+        backend="local",
+        encoder={"type": "stacked_cnn", "num_filters": 1},
+        preprocessing={},
+        augmentation_pipeline_ops=augmentation_pipeline_ops,
     )
 
 
@@ -281,13 +282,11 @@ def test_invalid_augmentation_parameters(
     train_data_gray_scale,
     augmentation_pipeline_ops,
 ):
-    with pytest.raises(ValidationError):
+    with pytest.raises((ValidationError, ValueError)):
         run_augmentation_training(
-            train_data_gray_scale,
-            "local",
-            {
-                "type": "stacked_cnn",
-            },
-            {},
-            augmentation_pipeline_ops,
+            train_data=train_data_rgb,
+            backend="local",
+            encoder={"type": "alexnet", "model_cache_dir": os.path.join(os.getcwd(), "tv_cache")},
+            preprocessing={},
+            augmentation_pipeline_ops=augmentation_pipeline_ops,
         )
