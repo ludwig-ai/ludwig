@@ -123,8 +123,7 @@ def run_augmentation_training(
 
     # add augmentation pipeline to input feature if specified
     test_input_features = copy.deepcopy(input_features)
-    if augmentation_pipeline_ops:
-        test_input_features[0].update({"augmentation": augmentation_pipeline_ops})
+    test_input_features[0].update({"augmentation": augmentation_pipeline_ops})
 
     config = {
         "input_features": test_input_features,
@@ -268,6 +267,14 @@ def test_ludwig_encoder_gray_scale_image_augmentation_pipeline(
 @pytest.mark.parametrize(
     "augmentation_pipeline_ops",
     [
+        None,
+        [
+            {"type": "invalid_string"}
+        ],
+        [
+            "random_horizontal_flip"
+        ],
+        "random_horizontal_flip",
         [
             {"type": "random_rotate", "degree": "45"},
         ],
