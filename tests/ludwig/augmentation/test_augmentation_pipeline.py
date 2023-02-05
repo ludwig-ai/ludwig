@@ -268,12 +268,8 @@ def test_ludwig_encoder_gray_scale_image_augmentation_pipeline(
     "augmentation_pipeline_ops",
     [
         None,
-        [
-            {"type": "invalid_string"}
-        ],
-        [
-            "random_horizontal_flip"
-        ],
+        [{"type": "invalid_string"}],
+        ["random_horizontal_flip"],
         "random_horizontal_flip",
         [
             {"type": "random_rotate", "degree": "45"},
