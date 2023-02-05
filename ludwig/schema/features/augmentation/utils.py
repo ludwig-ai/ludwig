@@ -59,6 +59,8 @@ def AugmentationDataclassField(feature_type: str, default=[], description=""):
 
         def _deserialize(self, value, attr, data, **kwargs):
             assert isinstance(value, list), "Augmentation config must be a list."
+            if len(value) == 0:
+                raise ValidationError("Augmentation config list must not be empty.")
 
             augmentation_list = []
             for augmentation in value:

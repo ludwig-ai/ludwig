@@ -278,6 +278,7 @@ def test_ludwig_encoder_gray_scale_image_augmentation_pipeline(
         [
             {"type": "random_rotate", "degree": "45"},
         ],
+        [],
     ],
 )
 def test_invalid_augmentation_parameters(
