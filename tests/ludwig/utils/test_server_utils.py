@@ -4,7 +4,7 @@ from ludwig.utils.server_utils import NumpyJSONResponse
 
 
 def test_numpy_json_response():
-    response = NumpyJSONResponse()
+    response = NumpyJSONResponse({"message": "Ludwig server is up"})
 
     # Test Python builtin data type encoding.
     assert response.render(None) == b"null"
