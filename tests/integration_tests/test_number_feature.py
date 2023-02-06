@@ -26,7 +26,7 @@ def test_number_feature_zscore_normalization_error():
 
 
 def test_number_feature_zscore_preprocessing_default():
-    """Tests that the default value for the number feature preprocessing is 'zscore'"""
+    """Tests that the default value for the number feature preprocessing is 'zscore'."""
     input_features = [number_feature(name="num_input")]
     output_features = [number_feature(name="num_output")]
 
