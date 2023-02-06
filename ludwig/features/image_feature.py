@@ -867,6 +867,10 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
     def update_config_after_module_init(self, feature_config):
         if is_torchvision_encoder(self.encoder_obj):
             # update feature preprocessing parameters to reflect used in torchvision pretrained model
+            # Note: image height and width is determined by the encoder crop_size attribute.  Source of this
+            # attribute is from the torchvision.transforms._presets.ImageClassification class.  This class stores
+            # crop_size as a single element list.  the single element in this list is used to set both the height
+            # and width of an image.
             feature_config.preprocessing.height = self.encoder_obj.crop_size[0]
             feature_config.preprocessing.width = self.encoder_obj.crop_size[0]
             feature_config.preprocessing.num_channels = self.encoder_obj.num_channels
