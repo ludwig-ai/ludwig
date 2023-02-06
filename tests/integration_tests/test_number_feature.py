@@ -23,3 +23,20 @@ def test_number_feature_zscore_normalization_error():
 
     with pytest.raises(RuntimeError):
         model.preprocess(dataset=df)
+
+
+def test_number_feature_zscore_preprocessing_default():
+    """Tests that the default value for the number feature preprocessing is 'zscore'"""
+    input_features = [number_feature(name="num_input")]
+    output_features = [number_feature(name="num_output")]
+
+    input_features[0]["preprocessing"].pop("normalization")
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+    }
+
+    model = LudwigModel(config, backend="local")
+
+    assert model.config["input_features"][0]["preprocessing"]["normalization"] == "zscore"
