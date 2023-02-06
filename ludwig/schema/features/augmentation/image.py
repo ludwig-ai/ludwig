@@ -43,7 +43,7 @@ class RandomRotateConfig(BaseAugmentationConfig):
         parameter_metadata=FEATURE_METADATA[IMAGE][AUGMENTATION]["type"],
     )
     degree: int = schema_utils.Integer(
-        default=45,
+        default=15,
         description="Range of angle for random rotation, i.e.,  [-degree, +degree].",
         parameter_metadata=FEATURE_METADATA[IMAGE][AUGMENTATION]["rotation_degree"],
     )
@@ -84,7 +84,7 @@ class RandomBrightnessOperation(BaseAugmentationConfig):
     )
 
     max: int = schema_utils.FloatRange(
-        default=1.5,
+        default=2.0,
         description="Maximum factor for random brightness.",
         parameter_metadata=FEATURE_METADATA[IMAGE][AUGMENTATION]["max_brightness"],
     )
@@ -108,7 +108,7 @@ class RandomContrastOperation(BaseAugmentationConfig):
     )
 
     max: int = schema_utils.FloatRange(
-        default=1.5,
+        default=2.0,
         description="Maximum factor for random brightness.",
         parameter_metadata=FEATURE_METADATA[IMAGE][AUGMENTATION]["max_contrast"],
     )
