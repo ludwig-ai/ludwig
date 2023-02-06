@@ -2,7 +2,6 @@ from unittest import mock
 
 import pytest
 
-
 # Skip these tests if Ray is not installed
 ray = pytest.importorskip("ray")  # noqa
 
