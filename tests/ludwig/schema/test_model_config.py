@@ -602,7 +602,7 @@ def test_initializer_recursion():
 
 
 def test_number_feature_zscore_preprocessing_default():
-    """Tests that the default value for the number feature preprocessing is 'zscore'"""
+    """Tests that the default value for the number feature preprocessing is 'zscore'."""
     config = {
         "input_features": [
             {
