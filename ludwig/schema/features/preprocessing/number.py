@@ -38,7 +38,7 @@ class NumberPreprocessingConfig(BasePreprocessingConfig):
 
     normalization: str = schema_utils.StringOptions(
         ["zscore", "minmax", "log1p", "iq"],
-        default=None,
+        default="zscore",
         allow_none=True,
         description="Normalization strategy to use for this number feature.",
         parameter_metadata=FEATURE_METADATA[NUMBER][PREPROCESSING]["normalization"],

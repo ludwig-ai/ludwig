@@ -312,7 +312,7 @@ class Trainer(BaseTrainer):
         if self.gradient_clipping_config.clipglobalnorm:
             torch.nn.utils.clip_grad_norm_(variables, self.gradient_clipping_config.clipglobalnorm)
         if self.gradient_clipping_config.clipnorm:
-            torch.nn.utils.clip_grad_norm_(variables, self.gradient_clipping_config.clipglobalnorm)
+            torch.nn.utils.clip_grad_norm_(variables, self.gradient_clipping_config.clipnorm)
         if self.gradient_clipping_config.clipvalue:
             torch.nn.utils.clip_grad_value_(variables, self.gradient_clipping_config.clipvalue)
 
