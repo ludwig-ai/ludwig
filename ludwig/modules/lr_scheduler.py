@@ -25,9 +25,26 @@ class ReduceLROnPLateauCappedDecreases(ReduceLROnPlateau):
 
         return super().step(metrics)
 
+    @property
+    def num_reduce_lr(self) -> int:
+        return self._num_reduce_lr
+
     def _reduce_lr(self, epoch):
-        super()._reduce_lr(epoch)
         self._num_reduce_lr += 1
+        self.apply_lr(epoch)
+
+    def apply_lr(self, epoch=None):
+        if self._num_reduce_lr == 0:
+            return
+
+        for i, param_group in enumerate(self.optimizer.param_groups):
+            old_lr = float(param_group["lr"])
+            new_lr = max(old_lr * math.pow(self.factor, self._num_reduce_lr), self.min_lrs[i])
+            if old_lr - new_lr > self.eps:
+                param_group["lr"] = new_lr
+                if self.verbose:
+                    epoch_str = ("%.2f" if isinstance(epoch, float) else "%.5d") % epoch
+                    print("Epoch {}: reducing learning rate" " of group {} to {:.4e}.".format(epoch_str, i, new_lr))
 
 
 class LRScheduler:
@@ -67,6 +84,12 @@ class LRScheduler:
     def step(self):
         self._train_scheduler.step()
 
+        if self._eval_scheduler is not None:
+            # We apply this scheduler every eval step, not train step, so we don't want to call step() here.
+            # However, we need to re-apply the LR reduction to the LR from the train scheduler, as the first scheduler
+            # resets the LR back to the base LR.
+            self._eval_scheduler.apply_lr()
+
     def eval_step(self, progress_tracker: ProgressTracker, validation_field: str):
         if self._eval_scheduler is None:
             # No reduce on plateau
@@ -83,7 +106,19 @@ class LRScheduler:
         last_metric: TrainerMetric = split_metrics[validation_field][validation_metric][-1]
         last_metric_value = last_metric[-1]
 
+        prev_num_reductions = self._eval_scheduler.num_reduce_lr
         self._eval_scheduler.step(last_metric_value)
+
+        num_reductions = self._eval_scheduler.num_reduce_lr
+        if num_reductions > prev_num_reductions:
+            # LR reduction -> update progress tracker
+            progress_tracker.last_learning_rate_reduction_steps = progress_tracker.steps
+            progress_tracker.last_learning_rate_reduction = 0
+            progress_tracker.num_reductions_learning_rate += 1
+        else:
+            progress_tracker.last_learning_rate_reduction = (
+                progress_tracker.steps - progress_tracker.last_learning_rate_reduction_steps
+            )
 
     def state_dict(self) -> Dict[str, Any]:
         return {
