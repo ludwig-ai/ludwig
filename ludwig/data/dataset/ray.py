@@ -395,20 +395,28 @@ class RayDatasetBatcher(Batcher):
 
         def producer():
             nonlocal pipeline
-            # if augmentation is specified, setup prefetching batch of data
-            if self.augmentation_pipeline:
-                pipeline = pipeline.map_batches(augment_batch, batch_size=batch_size, batch_format="pandas")
 
-            for batch in pipeline.iter_batches(prefetch_blocks=0, batch_size=batch_size, batch_format="pandas"):
-                res = self._prepare_batch(batch)
-                q.put(res)
-            q.put(None)
+            try:
+                # if augmentation is specified, setup prefetching batch of data
+                if self.augmentation_pipeline:
+                    pipeline = pipeline.map_batches(augment_batch, batch_size=batch_size, batch_format="pandas")
+
+                for batch in pipeline.iter_batches(prefetch_blocks=0, batch_size=batch_size, batch_format="pandas"):
+                    res = self._prepare_batch(batch)
+                    q.put(res)
+                q.put(None)
+            except Exception as e:
+                # Ensure any exceptions raised in this background thread are raised on the main thread
+                q.put(e)
 
         def async_read():
             t = threading.Thread(target=producer)
             t.start()
             while True:
                 batch = q.get(block=True)
+                if isinstance(batch, Exception):
+                    # Raise any exceptions from the producer thread
+                    raise batch
                 if batch is None:
                     break
                 yield batch
