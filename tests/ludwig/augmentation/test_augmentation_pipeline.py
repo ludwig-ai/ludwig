@@ -279,7 +279,7 @@ def test_ludwig_encoder_gray_scale_image_augmentation_pipeline(
     ],
 )
 def test_invalid_augmentation_parameters(
-    train_data_gray_scale,
+    train_data_rgb,
     augmentation_pipeline_ops,
 ):
     with pytest.raises((ValidationError, ValueError)):
