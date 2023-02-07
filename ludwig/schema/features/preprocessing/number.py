@@ -2,6 +2,7 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
     DROP_ROW,
     FILL_WITH_CONST,
+    FILL_WITH_MEAN,
     MISSING_VALUE_STRATEGY_OPTIONS,
     NUMBER,
     PREPROCESSING,
@@ -20,7 +21,7 @@ class NumberPreprocessingConfig(BasePreprocessingConfig):
     """NumberPreprocessingConfig is a dataclass that configures the parameters used for a number input feature."""
 
     missing_value_strategy: str = schema_utils.StringOptions(
-        MISSING_VALUE_STRATEGY_OPTIONS,
+        MISSING_VALUE_STRATEGY_OPTIONS + [FILL_WITH_MEAN],
         default=FILL_WITH_CONST,
         allow_none=False,
         description="What strategy to follow when there's a missing value in a number column",
