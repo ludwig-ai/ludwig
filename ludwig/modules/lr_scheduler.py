@@ -116,7 +116,9 @@ class LRScheduler:
             progress_tracker.last_learning_rate_reduction = 0
             progress_tracker.num_reductions_learning_rate += 1
         else:
-            progress_tracker.steps - progress_tracker.last_learning_rate_reduction_steps
+            progress_tracker.last_learning_rate_reduction = (
+                progress_tracker.steps - progress_tracker.last_learning_rate_reduction_steps
+            )
 
     def state_dict(self) -> Dict[str, Any]:
         return {
