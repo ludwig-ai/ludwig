@@ -3,7 +3,6 @@ from dataclasses import Field, field
 from typing import Any, Dict, Generic, Iterable, List, Optional, Tuple, TypeVar
 
 from marshmallow import fields, validate
-from marshmallow_dataclass import dataclass
 from rich.console import Console
 
 from ludwig.api_annotations import DeveloperAPI
@@ -33,6 +32,7 @@ from ludwig.schema.features.utils import (
     output_config_registry,
 )
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY, ParameterMetadata
+from ludwig.schema.utils import ludwig_dataclass
 
 logger = logging.getLogger(__name__)
 _error_console = Console(stderr=True, style="bold red")
@@ -40,7 +40,7 @@ _info_console = Console(stderr=True, style="bold green")
 
 
 @DeveloperAPI
-@dataclass(repr=False)
+@ludwig_dataclass
 class BaseFeatureConfig(schema_utils.BaseMarshmallowConfig):
     """Base class for feature configs."""
 
@@ -100,7 +100,7 @@ class BaseFeatureConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-@dataclass(repr=False)
+@ludwig_dataclass
 class BaseInputFeatureConfig(BaseFeatureConfig):
     """Base input feature config class."""
 
@@ -113,19 +113,19 @@ class BaseInputFeatureConfig(BaseFeatureConfig):
 
 
 @DeveloperAPI
-@dataclass(repr=False)
+@ludwig_dataclass
 class ECDInputFeatureConfig(BaseFeatureConfig):
     pass
 
 
 @DeveloperAPI
-@dataclass(repr=False)
+@ludwig_dataclass
 class GBMInputFeatureConfig(BaseFeatureConfig):
     pass
 
 
 @DeveloperAPI
-@dataclass(repr=False)
+@ludwig_dataclass
 class BaseOutputFeatureConfig(BaseFeatureConfig):
     """Base output feature config class."""
 
