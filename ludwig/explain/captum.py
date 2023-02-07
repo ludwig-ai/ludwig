@@ -429,7 +429,10 @@ def get_token_attributions(
     )
 
     # Normalize token-level attributions to visualize the relative importance of each token.
-    token_attributions = token_attributions / torch.norm(token_attributions)
+    norm = torch.linalg.norm(token_attributions, dim=1)
+    # Safe divide by zero by setting the norm to 1 if the norm is 0.
+    norm = torch.where(norm == 0, torch.ones_like(norm), norm)
+    token_attributions = token_attributions / norm.unsqueeze(-1)
 
     # map input ids to input tokens via the vocabulary
     feature = model.training_set_metadata[feature_name]

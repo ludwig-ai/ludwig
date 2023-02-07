@@ -612,3 +612,25 @@ def test_initializer_recursion():
     config_obj = ModelConfig.from_dict(config)
 
     assert isinstance(config_obj.combiner.weights_initializer, dict)
+
+
+def test_number_feature_zscore_preprocessing_default():
+    """Tests that the default value for the number feature preprocessing is 'zscore'."""
+    config = {
+        "input_features": [
+            {
+                "name": "number_input_feature1",
+                "type": "number",
+            },
+        ],
+        "output_features": [
+            {
+                "name": "number_output_feature1",
+                "type": "number",
+            },
+        ],
+    }
+
+    config_obj = ModelConfig(config)
+
+    assert config_obj.input_features.number_input_feature1.preprocessing.normalization == "zscore"
