@@ -631,6 +631,6 @@ def test_number_feature_zscore_preprocessing_default():
         ],
     }
 
-    config_obj = ModelConfig(config)
+    config_obj = ModelConfig.from_dict(config)
 
     assert config_obj.input_features.number_input_feature1.preprocessing.normalization == "zscore"
