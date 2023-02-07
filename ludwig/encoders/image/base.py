@@ -19,7 +19,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import torch
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import HEIGHT, IMAGE, REQUIRES_EQUAL_DIMENSIONS, TRAINABLE, USE_PRETRAINED, WIDTH
+from ludwig.constants import IMAGE
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.modules.convolutional_modules import Conv2DStack, ResNet
@@ -33,33 +33,7 @@ logger = logging.getLogger(__name__)
 
 @DeveloperAPI
 class ImageEncoder(Encoder):
-    @classmethod
-    def requires_equal_dimensions(cls) -> bool:
-        """If the encoder requires images of equal width and height."""
-        return False
-
-    @classmethod
-    def required_width(cls) -> Optional[int]:
-        """Required image width for the pretrained encoder."""
-        return None
-
-    @classmethod
-    def required_height(cls) -> Optional[int]:
-        """Required image height for the pretrained encoder."""
-        return None
-
-    @classmethod
-    def get_fixed_preprocessing_params(cls, encoder_params: Dict[str, Any]) -> Dict[str, Any]:
-        """If the encoder is not in trainable mode, override the image width and height to be compatible with the
-        pretrained encoder image dimension requirements."""
-        if cls.requires_equal_dimensions() and cls.required_width() != cls.required_height():
-            raise ValueError("Invalid definition. required_width and required_height are not equal")
-        preprocessing_parameters = {REQUIRES_EQUAL_DIMENSIONS: cls.requires_equal_dimensions()}
-        if not encoder_params.get(TRAINABLE, False) or encoder_params.get(USE_PRETRAINED, False):
-            preprocessing_parameters[HEIGHT] = cls.required_height()
-            preprocessing_parameters[WIDTH] = cls.required_width()
-            return preprocessing_parameters
-        return preprocessing_parameters
+    pass
 
 
 @DeveloperAPI
@@ -443,19 +417,3 @@ class ViTEncoder(ImageEncoder):
     @property
     def output_shape(self) -> torch.Size:
         return torch.Size(self._output_shape)
-
-    @classmethod
-    def requires_equal_dimensions(cls) -> bool:
-        return True
-
-    @classmethod
-    def required_width(cls) -> Optional[int]:
-        return 224
-
-    @classmethod
-    def required_height(cls) -> Optional[int]:
-        return 224
-
-    @classmethod
-    def is_pretrained(cls, encoder_params: Dict[str, Any]) -> bool:
-        return encoder_params.get("use_pretrained", True)

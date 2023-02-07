@@ -61,7 +61,7 @@ def PreprocessingDataclassField(feature_type: str):
 
     try:
         preprocessor = preprocessing_registry[feature_type]
-        load_default = preprocessor.Schema().load({"feature_type": feature_type})
+        load_default = lambda: preprocessor.Schema().load({"feature_type": feature_type})
         dump_default = preprocessor.Schema().dump({"feature_type": feature_type})
 
         return field(
@@ -72,7 +72,7 @@ def PreprocessingDataclassField(feature_type: str):
                     load_default=load_default,
                 )
             },
-            default_factory=lambda: load_default,
+            default_factory=load_default,
         )
     except Exception as e:
         raise ValidationError(

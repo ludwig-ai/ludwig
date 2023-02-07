@@ -4,7 +4,7 @@ from typing import Optional, Union
 from marshmallow_dataclass import dataclass
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import COMBINED, DEFAULT_BATCH_SIZE, LOSS, MAX_POSSIBLE_BATCH_SIZE, MODEL_ECD, MODEL_GBM, TRAINING
+from ludwig.constants import DEFAULT_BATCH_SIZE, LOSS, MAX_POSSIBLE_BATCH_SIZE, MODEL_ECD, MODEL_GBM, TRAINING
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.lr_scheduler import LRSchedulerConfig, LRSchedulerDataclassField
 from ludwig.schema.metadata import TRAINER_METADATA
@@ -34,7 +34,32 @@ def register_trainer_schema(model_type: str):
 class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Common trainer parameter values."""
 
-    pass
+    validation_field: str = schema_utils.String(
+        default=None,
+        description="The field for which the `validation_metric` is used for validation-related mechanics like early "
+        "stopping, parameter change plateaus, as well as what hyperparameter optimization uses to determine the best "
+        "trial. If unset (default), the first output feature is used. If explicitly specified, neither "
+        "`validation_field` nor `validation_metric` are overwritten.",
+    )
+
+    validation_metric: str = schema_utils.String(
+        default=None,
+        description=(
+            "Metric from `validation_field` that is used. If validation_field is not explicitly specified, this is "
+            "overwritten to be the first output feature type's `default_validation_metric`, consistent with "
+            "validation_field. If the validation_metric is specified, then we will use the first output feature that "
+            "produces this metric as the `validation_field`."
+        ),
+    )
+
+    early_stop: int = schema_utils.IntegerRange(
+        default=5,
+        min=-1,
+        description=(
+            "Number of consecutive rounds of evaluation without any improvement on the `validation_metric` that "
+            "triggers training to stop. Can be set to -1, which disables early stopping entirely."
+        ),
+    )
 
 
 @DeveloperAPI
@@ -169,7 +194,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
     )
 
     validation_metric: str = schema_utils.String(
-        default=LOSS,
+        default=None,
         description=(
             "Metric from `validation_field` that is used. If validation_field is not explicitly specified, this is "
             "overwritten to be the first output feature type's `default_validation_metric`, consistent with "
@@ -330,13 +355,13 @@ class GBMTrainerConfig(BaseTrainerConfig):
 
     # TODO(#1673): Need some more logic here for validating against output features
     validation_field: str = schema_utils.String(
-        default=COMBINED,
+        default=None,
         description="First output feature, by default it is set as the same field of the first output feature.",
         parameter_metadata=TRAINER_METADATA[MODEL_GBM]["validation_field"],
     )
 
     validation_metric: str = schema_utils.String(
-        default=LOSS,
+        default=None,
         description=(
             "Metric used on `validation_field`, set by default to the "
             "output feature type's `default_validation_metric`."
@@ -646,3 +671,23 @@ def get_trainer_jsonschema(model_type: str):
         "additionalProperties": False,
         "description": "Schema for trainer determined by Model Type",
     }
+
+
+@DeveloperAPI
+class ECDTrainerField(schema_utils.DictMarshmallowField):
+    def __init__(self):
+        super().__init__(ECDTrainerConfig)
+
+    @staticmethod
+    def _jsonschema_type_mapping():
+        return get_trainer_jsonschema(MODEL_ECD)
+
+
+@DeveloperAPI
+class GBMTrainerField(schema_utils.DictMarshmallowField):
+    def __init__(self):
+        super().__init__(GBMTrainerConfig)
+
+    @staticmethod
+    def _jsonschema_type_mapping():
+        return get_trainer_jsonschema(MODEL_GBM)

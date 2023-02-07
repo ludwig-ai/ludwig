@@ -64,3 +64,13 @@ def get_defaults_jsonschema():
         "title": "global_defaults_options",
         "description": "Set global defaults for input and output features",
     }
+
+
+@DeveloperAPI
+class DefaultsField(schema_utils.DictMarshmallowField):
+    def __init__(self):
+        super().__init__(DefaultsConfig)
+
+    @staticmethod
+    def _jsonschema_type_mapping():
+        return get_defaults_jsonschema()

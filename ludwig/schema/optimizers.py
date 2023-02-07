@@ -441,18 +441,18 @@ def OptimizerDataclassField(default={"type": "adam"}, description="TODO"):
             if value is None:
                 return None
             if isinstance(value, dict):
-                if "type" in value and value["type"] in optimizer_registry:
-                    opt = optimizer_registry[value["type"].lower()][1]
+                opt_type = value.get("type")
+                opt_type = opt_type.lower() if opt_type else opt_type
+                if opt_type in optimizer_registry:
+                    opt = optimizer_registry[opt_type][1]
                     try:
                         return opt.Schema().load(value)
                     except (TypeError, ValidationError) as e:
-                        raise ValidationError(
-                            f"Invalid params for optimizer: {value}, see `{opt}` definition. Error: {e}"
-                        )
+                        raise ValidationError(f"Invalid params for optimizer: {value}, see `{opt}` definition") from e
                 raise ValidationError(
-                    f"Invalid params for optimizer: {value}, expect dict with at least a valid `type` attribute."
+                    f"Invalid optimizer type: '{opt_type}', expected one of: {list(optimizer_registry.keys())}."
                 )
-            raise ValidationError("Field should be None or dict")
+            raise ValidationError(f"Invalid optimizer param {value}, expected `None` or `dict`")
 
         @staticmethod
         def _jsonschema_type_mapping():
@@ -477,8 +477,7 @@ def OptimizerDataclassField(default={"type": "adam"}, description="TODO"):
         raise ValidationError(f"Invalid default: `{default}`")
     try:
         opt = optimizer_registry[default["type"].lower()][1]
-        load_default = opt.Schema()
-        load_default = load_default.load(default)
+        load_default = lambda: opt.Schema().load(default)
         dump_default = opt.Schema().dump(default)
 
         return field(
@@ -490,7 +489,7 @@ def OptimizerDataclassField(default={"type": "adam"}, description="TODO"):
                     metadata={"description": description},
                 )
             },
-            default_factory=lambda: load_default,
+            default_factory=load_default,
         )
     except Exception as e:
         raise ValidationError(f"Unsupported optimizer type: {default['type']}. See optimizer_registry. Details: {e}")
@@ -560,7 +559,7 @@ def GradientClippingDataclassField(description: str, default: Dict = {}):
     if not isinstance(default, dict):
         raise ValidationError(f"Invalid default: `{default}`")
 
-    load_default = GradientClippingConfig.Schema().load(default)
+    load_default = lambda: GradientClippingConfig.Schema().load(default)
     dump_default = GradientClippingConfig.Schema().dump(default)
 
     return field(
@@ -575,5 +574,5 @@ def GradientClippingDataclassField(description: str, default: Dict = {}):
                 },
             )
         },
-        default_factory=lambda: load_default,
+        default_factory=load_default,
     )

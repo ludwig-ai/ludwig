@@ -41,7 +41,6 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.features.feature_utils import compute_feature_hash
-from ludwig.hyperopt.utils import contains_grid_search_parameters
 from ludwig.modules.loss_modules import get_loss_cls
 from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.combiners.concat import ConcatCombinerConfig
@@ -57,6 +56,8 @@ from ludwig.schema.features.utils import (
     output_config_registry,
 )
 from ludwig.schema.hyperopt import HyperoptConfig
+from ludwig.schema.model_types.base import ModelConfig  # noqa
+from ludwig.schema.model_types.utils import contains_grid_search_parameters
 from ludwig.schema.optimizers import get_optimizer_cls
 from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.schema.split import get_split_cls
@@ -126,9 +127,10 @@ class OutputFeaturesContainer(BaseFeatureContainer):
     pass
 
 
+# TODO(travis): remove this in a follow-up PR
 @DeveloperAPI
 @ludwig_dataclass
-class ModelConfig(BaseMarshmallowConfig):
+class _ModelConfig(BaseMarshmallowConfig):
     """Configures the end-to-end LudwigModel machine learning pipeline.
 
     Refer to https://ludwig.ai/latest/configuration/ for full documentation.
