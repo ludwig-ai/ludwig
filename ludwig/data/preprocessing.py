@@ -67,6 +67,7 @@ from ludwig.utils.config_utils import (
     merge_config_preprocessing_with_feature_specific_defaults,
     merge_fixed_preprocessing_params,
 )
+from ludwig.utils.dataframe_utils import is_dask_series_or_df
 from ludwig.utils.data_utils import (
     CACHEABLE_FORMATS,
     CSV_FORMATS,
@@ -1487,7 +1488,13 @@ def precompute_fill_value(dataset_cols, feature, preprocessing_parameters: Prepr
     if missing_value_strategy == FILL_WITH_CONST:
         return preprocessing_parameters["fill_value"]
     elif missing_value_strategy == FILL_WITH_MODE:
-        return dataset_cols[feature[COLUMN]].value_counts().index[0]
+        # Requires separate handling if Dask since Dask has lazy evaluation
+        # Otherwise, dask returns a Dask index structure instead of a value to use as a fill value
+        return (
+            dataset_cols[feature[COLUMN]].value_counts().index.compute()[0]
+            if is_dask_series_or_df(dataset_cols[feature[COLUMN]], backend)
+            else dataset_cols[feature[COLUMN]].value_counts().index[0]
+        )
     elif missing_value_strategy == FILL_WITH_MEAN:
         if feature[TYPE] != NUMBER:
             raise ValueError(
