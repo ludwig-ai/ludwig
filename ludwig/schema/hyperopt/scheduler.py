@@ -105,6 +105,10 @@ class BaseSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
         ),
     )
 
+
+@DeveloperAPI
+@ludwig_dataclass
+class BaseHyperbandSchedulerConfig(BaseSchedulerConfig):
     max_t: int = max_t_alias()
 
 
@@ -112,7 +116,7 @@ class BaseSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 @register_scheduler_config("async_hyperband")
 @register_scheduler_config("asynchyperband")
 @ludwig_dataclass
-class AsyncHyperbandSchedulerConfig(BaseSchedulerConfig):
+class AsyncHyperbandSchedulerConfig(BaseHyperbandSchedulerConfig):
     """Asynchronous hyperband (ASHA) scheduler settings."""
 
     type: str = schema_utils.ProtectedString("async_hyperband")
@@ -134,7 +138,7 @@ class AsyncHyperbandSchedulerConfig(BaseSchedulerConfig):
 @DeveloperAPI
 @register_scheduler_config("hyperband")
 @ludwig_dataclass
-class HyperbandSchedulerConfig(BaseSchedulerConfig):
+class HyperbandSchedulerConfig(BaseHyperbandSchedulerConfig):
     """Standard hyperband scheduler settings."""
 
     type: str = schema_utils.ProtectedString("hyperband")
@@ -381,7 +385,7 @@ class PopulationBasedBanditsSchedulerConfig(BaseSchedulerConfig):
 @DeveloperAPI
 @register_scheduler_config("hb_bohb")
 @ludwig_dataclass
-class BOHBSchedulerConfig(BaseSchedulerConfig):
+class BOHBSchedulerConfig(BaseHyperbandSchedulerConfig):
     """Hyperband for BOHB (hb_bohb) scheduler settings."""
 
     type: str = schema_utils.ProtectedString("hb_bohb")

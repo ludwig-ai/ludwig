@@ -1,5 +1,4 @@
 from collections import defaultdict
-from typing import Dict
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import MODEL_ECD, MODEL_GBM
@@ -32,20 +31,6 @@ def get_output_feature_cls(name: str):
     return output_config_registry[name]
 
 
-def prune_gbm_features(schema: Dict):
-    """Removes unsupported feature types from the given JSON schema.
-
-    Designed for use with `get_{input/output}_feature_jsonschema`.
-    """
-    gbm_feature_types = ["binary", "category", "number"]
-    pruned_all_of = []
-    for cond in schema["items"]["allOf"]:
-        if_type = cond["if"]["properties"]["type"]["const"]
-        if if_type in gbm_feature_types:
-            pruned_all_of += [cond]
-    schema["items"]["allOf"] = pruned_all_of
-
-
 @DeveloperAPI
 def get_input_feature_jsonschema(model_type: str):
     """This function returns a JSON schema structured to only requires a `type` key and then conditionally applies
@@ -66,6 +51,7 @@ def get_input_feature_jsonschema(model_type: str):
             },
             "column": {"type": "string", "title": "column", "description": "Name of the column."},
         },
+        "uniqueItemProperties": ["name"],
         "additionalProperties": True,
         "allOf": get_input_feature_conds(model_type),
         "required": ["name", "type"],

@@ -27,6 +27,7 @@ from ludwig.constants import (
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.schema.encoders.utils import get_encoder_cls
 from ludwig.schema.features.utils import input_config_registry, output_config_registry
+from ludwig.schema.hyperopt.scheduler import BaseHyperbandSchedulerConfig
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.types import HyperoptConfigDict, ModelConfigDict
 from ludwig.utils.misc_utils import merge_dict
@@ -203,7 +204,7 @@ def set_hyperopt_defaults_(config: "ModelConfig"):
         warnings.warn("Can't utilize `early_stop` while using a hyperopt scheduler. Setting early stop to -1.")
     config.trainer.early_stop = -1
 
-    if isinstance(config.trainer, ECDTrainerConfig):
+    if isinstance(config.trainer, ECDTrainerConfig) and isinstance(scheduler, BaseHyperbandSchedulerConfig):
         # TODO(travis): explore similar contraints for GBMs, which don't have epochs
         max_t = scheduler.max_t
         time_attr = scheduler.time_attr
