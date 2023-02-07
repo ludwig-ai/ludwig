@@ -67,7 +67,6 @@ from ludwig.utils.config_utils import (
     merge_config_preprocessing_with_feature_specific_defaults,
     merge_fixed_preprocessing_params,
 )
-from ludwig.utils.dataframe_utils import is_dask_series_or_df
 from ludwig.utils.data_utils import (
     CACHEABLE_FORMATS,
     CSV_FORMATS,
@@ -109,6 +108,7 @@ from ludwig.utils.data_utils import (
     STATA_FORMATS,
     TSV_FORMATS,
 )
+from ludwig.utils.dataframe_utils import is_dask_series_or_df
 from ludwig.utils.defaults import default_preprocessing_parameters, default_random_seed
 from ludwig.utils.fs_utils import file_lock, path_exists
 from ludwig.utils.misc_utils import get_from_registry, merge_dict
