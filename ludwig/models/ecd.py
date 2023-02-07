@@ -177,10 +177,6 @@ class ECD(BaseModel):
         for i_feat_name, i_feat_config in self.config_obj.input_features.to_dict().items():
             augmentation = i_feat_config.get("augmentation")
 
-            # check for empty list
-            if isinstance(augmentation, list) and len(augmentation) == 0:
-                raise ValueError("If augmentation is a list it must be non-empty.")
-
             # if augmentation was specified for this input feature, add AugmentationPipeline to dictionary
             if augmentation:
                 # use input feature proc_column as key because that is what is used in the Batcher

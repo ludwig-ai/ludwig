@@ -282,7 +282,7 @@ def test_invalid_augmentation_parameters(
     train_data_rgb,
     augmentation_pipeline_ops,
 ):
-    with pytest.raises((ValidationError, ValueError)):
+    with pytest.raises(ValidationError):
         run_augmentation_training(
             train_data=train_data_rgb,
             backend="local",

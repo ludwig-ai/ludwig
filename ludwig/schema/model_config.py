@@ -218,7 +218,7 @@ class ModelConfig(BaseMarshmallowConfig):
 
         # TODO: alternative approaches
         # special handling for image augmentation default
-        self.defaults.image.augmentation = []
+        # self.defaults.image.augmentation = []
 
         self._validate_config(self.to_dict())
 

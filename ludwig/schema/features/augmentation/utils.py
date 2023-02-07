@@ -118,7 +118,7 @@ def get_augmentation_list_jsonschema(feature_type: str):
     augmentation_types = sorted(list(get_augmentation_config_registry()[feature_type].keys()))
     schema = {
         "type": "array",
-        "minItems": 0,
+        "minItems": 1,
         "items": {
             "type": "object",
             "properties": {
