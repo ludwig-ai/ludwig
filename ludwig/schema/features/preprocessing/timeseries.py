@@ -1,5 +1,5 @@
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING, TIMESERIES
+from ludwig.constants import FILL_WITH_CONST, MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING, TIMESERIES
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor
@@ -44,7 +44,7 @@ class TimeseriesPreprocessingConfig(BasePreprocessingConfig):
 
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
-        default="fill_with_const",
+        default=FILL_WITH_CONST,
         allow_none=False,
         description="What strategy to follow when there's a missing value in a text column",
         parameter_metadata=FEATURE_METADATA[TIMESERIES][PREPROCESSING]["missing_value_strategy"],

@@ -1,5 +1,5 @@
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import DROP_ROW, MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING, TEXT
+from ludwig.constants import DROP_ROW, FILL_WITH_CONST, MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING, TEXT
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor
@@ -86,7 +86,7 @@ class TextPreprocessingConfig(BasePreprocessingConfig):
 
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
-        default="fill_with_const",
+        default=FILL_WITH_CONST,
         allow_none=False,
         description="What strategy to follow when there's a missing value in a text column",
         parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["missing_value_strategy"],
@@ -126,7 +126,7 @@ class TextPreprocessingConfig(BasePreprocessingConfig):
 @ludwig_dataclass
 class TextOutputPreprocessingConfig(TextPreprocessingConfig):
     missing_value_strategy: str = schema_utils.StringOptions(
-        MISSING_VALUE_STRATEGY_OPTIONS,
+        MISSING_VALUE_STRATEGY_OPTIONS + [DROP_ROW],
         default=DROP_ROW,
         allow_none=False,
         description="What strategy to follow when there's a missing value in a text output feature",

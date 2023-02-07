@@ -1,5 +1,5 @@
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import DATE, MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING
+from ludwig.constants import BFILL, DATE, FFILL, FILL_WITH_CONST, PREPROCESSING
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor
@@ -12,8 +12,8 @@ from ludwig.schema.utils import ludwig_dataclass
 @ludwig_dataclass
 class DatePreprocessingConfig(BasePreprocessingConfig):
     missing_value_strategy: str = schema_utils.StringOptions(
-        MISSING_VALUE_STRATEGY_OPTIONS,
-        default="fill_with_const",
+        [FILL_WITH_CONST, BFILL, FFILL],
+        default=FILL_WITH_CONST,
         allow_none=False,
         description="What strategy to follow when there's a missing value in a date column",
         parameter_metadata=FEATURE_METADATA[DATE][PREPROCESSING]["missing_value_strategy"],

@@ -103,7 +103,6 @@ MISSING_VALUE_STRATEGY_OPTIONS = [
     FILL_WITH_MEAN,
     BFILL,
     FFILL,
-    DROP_ROW,
 ]
 
 CROP_OR_PAD = "crop_or_pad"
