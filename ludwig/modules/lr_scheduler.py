@@ -26,8 +26,21 @@ class ReduceLROnPLateauCappedDecreases(ReduceLROnPlateau):
         return super().step(metrics)
 
     def _reduce_lr(self, epoch):
-        super()._reduce_lr(epoch)
         self._num_reduce_lr += 1
+        self.apply_lr(epoch)
+
+    def apply_lr(self, epoch=None):
+        if self._num_reduce_lr == 0:
+            return
+
+        for i, param_group in enumerate(self.optimizer.param_groups):
+            old_lr = float(param_group["lr"])
+            new_lr = max(old_lr * math.pow(self.factor, self._num_reduce_lr), self.min_lrs[i])
+            if old_lr - new_lr > self.eps:
+                param_group["lr"] = new_lr
+                if self.verbose:
+                    epoch_str = ("%.2f" if isinstance(epoch, float) else "%.5d") % epoch
+                    print("Epoch {}: reducing learning rate" " of group {} to {:.4e}.".format(epoch_str, i, new_lr))
 
 
 class LRScheduler:
@@ -67,6 +80,12 @@ class LRScheduler:
     def step(self):
         self._train_scheduler.step()
 
+        if self._eval_scheduler is not None:
+            # We apply this scheduler every eval step, not train step, so we don't want to call step() here.
+            # However, we need to re-apply the LR reduction to the LR from the train scheduler, as the first scheduler
+            # resets the LR back to the base LR.
+            self._eval_scheduler.apply_lr()
+
     def eval_step(self, progress_tracker: ProgressTracker, validation_field: str):
         if self._eval_scheduler is None:
             # No reduce on plateau
@@ -82,7 +101,6 @@ class LRScheduler:
         validation_metric = self.config.reduce_eval_metric
         last_metric: TrainerMetric = split_metrics[validation_field][validation_metric][-1]
         last_metric_value = last_metric[-1]
-
         self._eval_scheduler.step(last_metric_value)
 
     def state_dict(self) -> Dict[str, Any]:
