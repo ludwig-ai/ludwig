@@ -25,6 +25,10 @@ class ReduceLROnPLateauCappedDecreases(ReduceLROnPlateau):
 
         return super().step(metrics)
 
+    @property
+    def num_reduce_lr(self) -> int:
+        return self._num_reduce_lr
+
     def _reduce_lr(self, epoch):
         self._num_reduce_lr += 1
         self.apply_lr(epoch)
@@ -101,7 +105,18 @@ class LRScheduler:
         validation_metric = self.config.reduce_eval_metric
         last_metric: TrainerMetric = split_metrics[validation_field][validation_metric][-1]
         last_metric_value = last_metric[-1]
+
+        prev_num_reductions = self._eval_scheduler.num_reduce_lr
         self._eval_scheduler.step(last_metric_value)
+
+        num_reductions = self._eval_scheduler.num_reduce_lr
+        if num_reductions > prev_num_reductions:
+            # LR reduction -> update progress tracker
+            progress_tracker.last_learning_rate_reduction_steps = progress_tracker.steps
+            progress_tracker.last_learning_rate_reduction = 0
+            progress_tracker.num_reductions_learning_rate += 1
+        else:
+            progress_tracker.steps - progress_tracker.last_learning_rate_reduction_steps
 
     def state_dict(self) -> Dict[str, Any]:
         return {
