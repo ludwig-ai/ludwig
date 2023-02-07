@@ -293,7 +293,7 @@ def test_validate_defaults_schema():
         "defaults": {
             "category": {
                 "preprocessing": {
-                    "missing_value_strategy": "drop_row",
+                    "missing_value_strategy": "fill_with_mode",
                 },
                 "encoder": {
                     "type": "sparse",
