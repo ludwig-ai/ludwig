@@ -64,8 +64,6 @@ class CategoricalEmbedConfig(BaseEncoderConfig):
             "uniform",
             "truncated_normal",
             "variance_scaling",
-            "glorot_normal",
-            "glorot_uniform",
             "xavier_normal",
             "xavier_uniform",
             "he_normal",

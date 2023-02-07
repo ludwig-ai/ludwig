@@ -28,7 +28,6 @@ from torchmetrics.classification import (
     BinaryRecall,
     BinarySpecificity,
     MulticlassAccuracy,
-    MulticlassAUROC,
 )
 from torchmetrics.functional.regression.r2 import _r2_score_compute, _r2_score_update
 from torchmetrics.metric import jit_distributed_available
@@ -177,7 +176,7 @@ class RecallMetric(BinaryRecall, LudwigMetric):
 # predictions.", where Y >> X.
 @register_metric(ROC_AUC, [BINARY])
 # class BinaryAUROCMetric(BinaryAUROC, LudwigMetric):
-class BinaryAUROCMetric(LudwigMetric, AUROC):
+class BinaryAUROCMetric(AUROC, LudwigMetric):
     """Area under the receiver operating curve."""
 
     def __init__(self, **kwargs):
@@ -195,7 +194,7 @@ class BinaryAUROCMetric(LudwigMetric, AUROC):
 
 
 @register_metric(ROC_AUC, [CATEGORY])
-class CategoryAUROCMetric(MulticlassAUROC, LudwigMetric):
+class CategoryAUROCMetric(AUROC, LudwigMetric):
     """Area under the receiver operating curve."""
 
     def __init__(self, num_classes: int, **kwargs):

@@ -354,10 +354,10 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             targets: Tensor with target values for this output feature.
             predictions: Dict of tensors returned by predictions().
         """
-        print(f"self._metric_functions.keys(): {self._metric_functions.keys()}")
+        # print(f"self._metric_functions.keys(): {self._metric_functions.keys()}")
         for metric_name, metric_fn in self._metric_functions.items():
-            print(f"metric_name: {metric_name}")
-            print(f"metric_fn: {metric_fn}")
+            # print(f"metric_name: {metric_name}")
+            # print(f"metric_fn: {metric_fn}")
             # metric_class = type(metric_fn)
             # print(f"metric_class: {metric_class}")
             # prediction_key = metric_class.get_inputs()
@@ -374,8 +374,8 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             # TODO(shreya): Metrics should ideally just move to the correct device
             #  and not require the user to do this. This is a temporary fix. See
             #  if this can be removed before merging the PR.
-            print(f"predictions[prediction_key]: {predictions[prediction_key]}")
-            print(f"targets: {targets}")
+            # print(f"predictions[prediction_key]: {predictions[prediction_key]}")
+            # print(f"targets: {targets}")
             metric_fn = metric_fn.to(predictions[prediction_key].device)
             if metric_name == "perplexity":
                 metric_fn.update(predictions[prediction_key].detach(), targets.to(torch.int64))

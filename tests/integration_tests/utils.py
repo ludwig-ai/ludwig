@@ -880,6 +880,7 @@ def train_with_backend(
                 assert read_preds is not None
 
         if evaluate:
+            print("RUNNING EVALUATION!")
             eval_stats, eval_preds, _ = model.evaluate(
                 dataset=dataset, collect_overall_stats=False, collect_predictions=True
             )
@@ -906,13 +907,22 @@ def train_with_backend(
                         for k, v in stats.items()
                     }
 
-                for (k1, v1), (k2, v2) in zip(filter(eval_stats).items(), filter(local_eval_stats).items()):
-                    assert k1 == k2
-                    for (name1, metric1), (name2, metric2) in zip(v1.items(), v2.items()):
-                        assert name1 == name2
-                        assert np.isclose(
-                            metric1, metric2, rtol=1e-03, atol=1e-04
-                        ), f"metric {name1} for feature {k1}: {metric1} != {metric2}"
+                for (feature_name_from_eval, metrics_dict_from_eval), (
+                    feature_name_from_local,
+                    metrics_dict_from_local,
+                ) in zip(filter(eval_stats).items(), filter(local_eval_stats).items()):
+                    for (metric_name_from_eval, metric_value_from_eval), (
+                        metric_name_from_local,
+                        metric_value_from_local,
+                    ) in zip(metrics_dict_from_eval.items(), metrics_dict_from_local.items()):
+                        assert metric_name_from_eval == metric_name_from_local, (
+                            f"Metric mismatch between eval and local. Metrics from eval: "
+                            f"{metrics_dict_from_eval.keys()}. Metrics from local: {metrics_dict_from_local.keys()}"
+                        )
+                        assert np.isclose(metric_value_from_eval, metric_value_from_local, rtol=1e-03, atol=1e-04), (
+                            f"Metric {metric_name_from_eval} for feature {feature_name_from_eval}: "
+                            f"{metric_value_from_eval} != {metric_value_from_local}"
+                        )
 
         return model
 
