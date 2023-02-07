@@ -1,808 +1,878 @@
 audio:
-  preprocessing:
-    audio_file_length_limit_in_s:
-      ui_display_name: null
-      expected_impact: 2
-    computed_fill_value:
-      internal_only: true
-      ui_display_name: null
-    fill_value:
-      ui_display_name: Fill Value
-      expected_impact: 1
-    in_memory:
-      ui_display_name: null
-      expected_impact: 1
-    missing_value_strategy:
-      default_value_reasoning: The default `fill_with_const` replaces missing
-        values with the value specified by `fill_value`.
-      description_implications: Determines how missing values will be handled
-        in the dataset. Not all strategies are valid for all datatypes. For
-        example, `fill_with_mean` is applicable to continuous numerical data.
-        Note that choosing to drop rows with missing values could result in
-        losing information, especially if there is a high proportion of missing
-        values in the dataset.
-      expected_impact: 3
-      related_parameters:
-        - fill_value
-      ui_display_name: Missing Value Strategy
-    norm:
-      default_value_reasoning: While batch normalization and layer normalization
-        usually lead to improvements, it can be useful to start with fewer
-        bells and whistles.
-      description_implications:
-        Normalization helps stabilize the learning process
-        and can have a regularizing effect that can help with generalization.
-        It's often suggested that with normalization, you can use a higher
-        learning rate.
-      example_value:
-        - batch
-      expected_impact: 2
-      literature_references:
-        - https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/
-      related_parameters:
-        - norm_params
-      suggested_values: '"batch" or "layer"'
-      suggested_values_reasoning:
-        Normalization tries to solve "internal covariate
-        shift" that comes from the changing distributions of the inputs to
-        layers deep in the network when weights are updated. For example,
-        batch normalization standardizes the inputs to a layer for each mini-batch.
-        Try out different normalizations to see if that helps with training
-        stability
-      ui_display_name: Normalization Type
-    num_fft_points:
-      ui_display_name: null
-      expected_impact: 1
-    num_filter_bands:
-      literature_references:
-        - "https://medium.com/analytics-vidhya/simplifying-audio-data-fft-stft-mfcc-for-machine-learning-and-deep-learning-443a2f962e0e "
-      related_parameters:
-        - window_length_in_s
-        - type
-        - window_shift_in_s
-      ui_display_name: Type
-      expected_impact: 1
-    padding_value:
-      ui_display_name: null
-      expected_impact: 1
-    type:
-      default_value_reasoning: The default type fbank is set based on values
-        that we have tested and determined to be a good starting point for
-        audio feature preprocessing. This is not to say that it is the best
-        way to process every audio feature, it is just a good starting place
-        that performs well in general.
-      description_implications: The different type of audio you select hear
-        will determine how your audio feature is preprocessed and transformed
-        into trainable data for the model.
-      example_value:
-        - stft
-      expected_impact: 3
-      literature_references:
-        - "https://medium.com/analytics-vidhya/simplifying-audio-data-fft-stft-mfcc-for-machine-learning-and-deep-learning-443a2f962e0e "
-      other_information: Audio feature preprocessing depends heavily on the
-        type of audio data you are dealing with. The type of audio preprocessing
-        you will want to use will be dictated by the audio data you are dealing
-        with.
-      related_parameters:
-        - audio_file_length_limit_in_s
-        - norm
-        - padding_value
-        - in_memory
-      ui_display_name: Type
-    window_length_in_s:
-      literature_references:
-        - "https://medium.com/analytics-vidhya/simplifying-audio-data-fft-stft-mfcc-for-machine-learning-and-deep-learning-443a2f962e0e "
-      related_parameters:
-        - window_shift_in_s
-        - type
-        - num_filter_bands
-      ui_display_name: Window Length in Seconds
-      expected_impact: 2
-    window_shift_in_s:
-      literature_references:
-        - "https://medium.com/analytics-vidhya/simplifying-audio-data-fft-stft-mfcc-for-machine-learning-and-deep-learning-443a2f962e0e "
-      related_parameters:
-        - window_length_in_s
-        - type
-        - num_filter_bands
-      ui_display_name: Window Shift in Seconds
-      expected_impact: 2
-    window_type:
-      ui_display_name: null
-      expected_impact: 2
+    preprocessing:
+        audio_file_length_limit_in_s:
+            ui_display_name: null
+            expected_impact: 2
+        computed_fill_value:
+            internal_only: true
+            ui_display_name: null
+        fill_value:
+            ui_display_name: Fill Value
+            expected_impact: 1
+        in_memory:
+            ui_display_name: null
+            expected_impact: 1
+        missing_value_strategy:
+            default_value_reasoning:
+                The default `fill_with_const` replaces missing
+                values with the value specified by `fill_value`.
+            description_implications:
+                Determines how missing values will be handled
+                in the dataset. Not all strategies are valid for all datatypes. For
+                example, `fill_with_mean` is applicable to continuous numerical data.
+                Note that choosing to drop rows with missing values could result in
+                losing information, especially if there is a high proportion of missing
+                values in the dataset.
+            expected_impact: 3
+            related_parameters:
+                - fill_value
+            ui_display_name: Missing Value Strategy
+        norm:
+            default_value_reasoning:
+                While batch normalization and layer normalization
+                usually lead to improvements, it can be useful to start with fewer
+                bells and whistles.
+            description_implications:
+                Normalization helps stabilize the learning process
+                and can have a regularizing effect that can help with generalization.
+                It's often suggested that with normalization, you can use a higher
+                learning rate.
+            example_value:
+                - batch
+            expected_impact: 2
+            literature_references:
+                - https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/
+            related_parameters:
+                - norm_params
+            suggested_values: '"batch" or "layer"'
+            suggested_values_reasoning:
+                Normalization tries to solve "internal covariate
+                shift" that comes from the changing distributions of the inputs to
+                layers deep in the network when weights are updated. For example,
+                batch normalization standardizes the inputs to a layer for each mini-batch.
+                Try out different normalizations to see if that helps with training
+                stability
+            ui_display_name: Normalization Type
+        num_fft_points:
+            ui_display_name: null
+            expected_impact: 1
+        num_filter_bands:
+            literature_references:
+                - "https://medium.com/analytics-vidhya/simplifying-audio-data-fft-stft-mfcc-for-machine-learning-and-deep-learning-443a2f962e0e "
+            related_parameters:
+                - window_length_in_s
+                - type
+                - window_shift_in_s
+            ui_display_name: Type
+            expected_impact: 1
+        padding_value:
+            ui_display_name: null
+            expected_impact: 1
+        type:
+            default_value_reasoning:
+                The default type fbank is set based on values
+                that we have tested and determined to be a good starting point for
+                audio feature preprocessing. This is not to say that it is the best
+                way to process every audio feature, it is just a good starting place
+                that performs well in general.
+            description_implications:
+                The different type of audio you select hear
+                will determine how your audio feature is preprocessed and transformed
+                into trainable data for the model.
+            example_value:
+                - stft
+            expected_impact: 3
+            literature_references:
+                - "https://medium.com/analytics-vidhya/simplifying-audio-data-fft-stft-mfcc-for-machine-learning-and-deep-learning-443a2f962e0e "
+            other_information:
+                Audio feature preprocessing depends heavily on the
+                type of audio data you are dealing with. The type of audio preprocessing
+                you will want to use will be dictated by the audio data you are dealing
+                with.
+            related_parameters:
+                - audio_file_length_limit_in_s
+                - norm
+                - padding_value
+                - in_memory
+            ui_display_name: Type
+        window_length_in_s:
+            literature_references:
+                - "https://medium.com/analytics-vidhya/simplifying-audio-data-fft-stft-mfcc-for-machine-learning-and-deep-learning-443a2f962e0e "
+            related_parameters:
+                - window_shift_in_s
+                - type
+                - num_filter_bands
+            ui_display_name: Window Length in Seconds
+            expected_impact: 2
+        window_shift_in_s:
+            literature_references:
+                - "https://medium.com/analytics-vidhya/simplifying-audio-data-fft-stft-mfcc-for-machine-learning-and-deep-learning-443a2f962e0e "
+            related_parameters:
+                - window_length_in_s
+                - type
+                - num_filter_bands
+            ui_display_name: Window Shift in Seconds
+            expected_impact: 2
+        window_type:
+            ui_display_name: null
+            expected_impact: 2
 bag:
-  preprocessing:
-    computed_fill_value:
-      internal_only: true
-      ui_display_name: null
-    fill_value:
-      ui_display_name: Fill Value
-      expected_impact: 1
-    lowercase:
-      ui_display_name: null
-      expected_impact: 2
-    missing_value_strategy:
-      default_value_reasoning: The default `fill_with_const` replaces missing
-        values with the value specified by `fill_value`.
-      description_implications: Determines how missing values will be handled
-        in the dataset. Not all strategies are valid for all datatypes. For
-        example, `fill_with_mean` is applicable to continuous numerical data.
-        Note that choosing to drop rows with missing values could result in
-        losing information, especially if there is a high proportion of missing
-        values in the dataset.
-      expected_impact: 3
-      related_parameters:
-        - fill_value
-      ui_display_name: Missing Value Strategy
-    most_common:
-      default_value_reasoning: If there are more than 10000 unique categories
-        in the data, it is likely that they will follow a long-tailed distribution
-        and the least common ones may not provide a lot of information
-      description_implications: A smaller number will reduce the vocabulary,
-        making the embedding matrix smaller and reduce the memory footprint,
-        but will also collapse more tokens into the rare one, so the model
-        may perform worse when rare tokens appear in the data
-      example_value:
-        - 10000
-      expected_impact: 2
-      other_information: Specifying a vocab_file overrides this parameter
-      related_parameters:
-        - vocab_file, pretrained_embeddings
-      suggested_values: A value that covers at least 95% of the tokens in the
-        data
-      suggested_values_reasoning: Depending on the data distribution and how
-        important rare tokens are, 90%, 95% or 99% of the number of tokens
-        will leave out only very rare tokens that should not influence performance
-        substantially
-      ui_display_name: Most common (vocabulary size)
-    tokenizer:
-      ui_display_name: null
-      expected_impact: 3
+    preprocessing:
+        computed_fill_value:
+            internal_only: true
+            ui_display_name: null
+        fill_value:
+            ui_display_name: Fill Value
+            expected_impact: 1
+        lowercase:
+            ui_display_name: null
+            expected_impact: 2
+        missing_value_strategy:
+            default_value_reasoning:
+                The default `fill_with_const` replaces missing
+                values with the value specified by `fill_value`.
+            description_implications:
+                Determines how missing values will be handled
+                in the dataset. Not all strategies are valid for all datatypes. For
+                example, `fill_with_mean` is applicable to continuous numerical data.
+                Note that choosing to drop rows with missing values could result in
+                losing information, especially if there is a high proportion of missing
+                values in the dataset.
+            expected_impact: 3
+            related_parameters:
+                - fill_value
+            ui_display_name: Missing Value Strategy
+        most_common:
+            default_value_reasoning:
+                If there are more than 10000 unique categories
+                in the data, it is likely that they will follow a long-tailed distribution
+                and the least common ones may not provide a lot of information
+            description_implications:
+                A smaller number will reduce the vocabulary,
+                making the embedding matrix smaller and reduce the memory footprint,
+                but will also collapse more tokens into the rare one, so the model
+                may perform worse when rare tokens appear in the data
+            example_value:
+                - 10000
+            expected_impact: 2
+            other_information: Specifying a vocab_file overrides this parameter
+            related_parameters:
+                - vocab_file, pretrained_embeddings
+            suggested_values:
+                A value that covers at least 95% of the tokens in the
+                data
+            suggested_values_reasoning:
+                Depending on the data distribution and how
+                important rare tokens are, 90%, 95% or 99% of the number of tokens
+                will leave out only very rare tokens that should not influence performance
+                substantially
+            ui_display_name: Most common (vocabulary size)
+        tokenizer:
+            ui_display_name: null
+            expected_impact: 3
 binary:
-  preprocessing:
-    computed_fill_value:
-      internal_only: true
-      ui_display_name: null
-    fallback_true_label:
-      description_implications: Modeling performance should not be affected,
-        but the semantics of some binary metrics may change like for "false
-        positives", "false negatives", etc. if the true label is pinned to
-        the other value.
-      expected_impact: 2
-      ui_display_name: Fallback True Label
-    fill_value:
-      expected_impact: 1
-      ui_display_name: Fill Value
-    missing_value_strategy:
-      default_value_reasoning: The default `fill_with_const` replaces missing
-        values with the value specified by `fill_value`.
-      description_implications: Determines how missing values will be handled
-        in the dataset. Not all strategies are valid for all datatypes. For
-        example, `fill_with_mean` is applicable to continuous numerical data.
-        Note that choosing to drop rows with missing values could result in
-        losing information, especially if there is a high proportion of missing
-        values in the dataset.
-      related_parameters:
-        - fill_value
-      ui_display_name: Missing Value Strategy
-      expected_impact: 3
-  calibration:
-    expected_impact: 3
-  dependencies:
-    expected_impact: 1
-  reduce_dependencies:
-    expected_impact: 1
-  reduce_input:
-    expected_impact: 1
-  threshold:
-    expected_impact: 3
+    preprocessing:
+        computed_fill_value:
+            internal_only: true
+            ui_display_name: null
+        fallback_true_label:
+            description_implications:
+                Modeling performance should not be affected,
+                but the semantics of some binary metrics may change like for "false
+                positives", "false negatives", etc. if the true label is pinned to
+                the other value.
+            expected_impact: 2
+            ui_display_name: Fallback True Label
+        fill_value:
+            expected_impact: 1
+            ui_display_name: Fill Value
+        missing_value_strategy:
+            default_value_reasoning:
+                The default `fill_with_const` replaces missing
+                values with the value specified by `fill_value`.
+            description_implications:
+                Determines how missing values will be handled
+                in the dataset. Not all strategies are valid for all datatypes. For
+                example, `fill_with_mean` is applicable to continuous numerical data.
+                Note that choosing to drop rows with missing values could result in
+                losing information, especially if there is a high proportion of missing
+                values in the dataset.
+            related_parameters:
+                - fill_value
+            ui_display_name: Missing Value Strategy
+            expected_impact: 3
+    calibration:
+        expected_impact: 3
+    dependencies:
+        expected_impact: 1
+    reduce_dependencies:
+        expected_impact: 1
+    reduce_input:
+        expected_impact: 1
+    threshold:
+        expected_impact: 3
 category:
-  preprocessing:
-    computed_fill_value:
-      internal_only: true
-      ui_display_name: null
-    fill_value:
-      expected_impact: 1
-      ui_display_name: Fill Value
-    lowercase:
-      ui_display_name: null
-      expected_impact: 2
-    missing_value_strategy:
-      default_value_reasoning: The default `fill_with_const` replaces missing
-        values with the value specified by `fill_value`.
-      description_implications: Determines how missing values will be handled
-        in the dataset. Not all strategies are valid for all datatypes. For
-        example, `fill_with_mean` is applicable to continuous numerical data.
-        Note that choosing to drop rows with missing values could result in
-        losing information, especially if there is a high proportion of missing
-        values in the dataset.
-      related_parameters:
-        - fill_value
-      ui_display_name: Missing Value Strategy
-      expected_impact: 3
-    most_common:
-      default_value_reasoning: If there are more than 10000 unique categories
-        in the data, it is likely that they will follow a long-tailed distribution
-        and the least common ones may not provide a lot of information
-      description_implications: A smaller number will reduce the vocabulary,
-        making the embedding matrix smaller and reduce the memory footprint,
-        but will also collapse more tokens into the rare one, so the model
-        may perform worse when rare tokens appear in the data
-      example_value:
-        - 10000
-      expected_impact: 2
-      other_information: Specifying a vocab_file overrides this parameter
-      related_parameters:
-        - vocab_file, pretrained_embeddings
-      suggested_values: A value that covers at least 95% of the tokens in the
-        data
-      suggested_values_reasoning: Depending on the data distribution and how
-        important rare tokens are, 90%, 95% or 99% of the number of tokens
-        will leave out only very rare tokens that should not influence performance
-        substantially
-      ui_display_name: Most common (vocabulary size)
-  calibration:
-    expected_impact: 3
-  dependencies:
-    expected_impact: 1
-  reduce_dependencies:
-    expected_impact: 1
-  reduce_input:
-    expected_impact: 1
-  top_k:
-    expected_impact: 3
+    preprocessing:
+        computed_fill_value:
+            internal_only: true
+            ui_display_name: null
+        fill_value:
+            expected_impact: 1
+            ui_display_name: Fill Value
+        lowercase:
+            ui_display_name: null
+            expected_impact: 2
+        missing_value_strategy:
+            default_value_reasoning:
+                The default `fill_with_const` replaces missing
+                values with the value specified by `fill_value`.
+            description_implications:
+                Determines how missing values will be handled
+                in the dataset. Not all strategies are valid for all datatypes. For
+                example, `fill_with_mean` is applicable to continuous numerical data.
+                Note that choosing to drop rows with missing values could result in
+                losing information, especially if there is a high proportion of missing
+                values in the dataset.
+            related_parameters:
+                - fill_value
+            ui_display_name: Missing Value Strategy
+            expected_impact: 3
+        most_common:
+            default_value_reasoning:
+                If there are more than 10000 unique categories
+                in the data, it is likely that they will follow a long-tailed distribution
+                and the least common ones may not provide a lot of information
+            description_implications:
+                A smaller number will reduce the vocabulary,
+                making the embedding matrix smaller and reduce the memory footprint,
+                but will also collapse more tokens into the rare one, so the model
+                may perform worse when rare tokens appear in the data
+            example_value:
+                - 10000
+            expected_impact: 2
+            other_information: Specifying a vocab_file overrides this parameter
+            related_parameters:
+                - vocab_file, pretrained_embeddings
+            suggested_values:
+                A value that covers at least 95% of the tokens in the
+                data
+            suggested_values_reasoning:
+                Depending on the data distribution and how
+                important rare tokens are, 90%, 95% or 99% of the number of tokens
+                will leave out only very rare tokens that should not influence performance
+                substantially
+            ui_display_name: Most common (vocabulary size)
+    calibration:
+        expected_impact: 3
+    dependencies:
+        expected_impact: 1
+    reduce_dependencies:
+        expected_impact: 1
+    reduce_input:
+        expected_impact: 1
+    top_k:
+        expected_impact: 3
 date:
-  preprocessing:
-    computed_fill_value:
-      internal_only: true
-      ui_display_name: null
-    datetime_format:
-      default_value_reasoning:
-        Ludwig will try to infer the date format automatically,
-        but a specific format can be provided. The date string spec is the
-        same as the one described in python's datetime.
-      description_implications: If Ludwig has trouble parsing dates, it could
-        be useful to specify an explicit format that Ludwig should parse date
-        feature values as. This could also serve as a form of normalization,
-        for example, if not all datetimes have the same granularity (some
-        have days, some have times), then the common format (i.e. %d %m %Y)
-        serves as a truncator.
-      example_value:
-        - "%d %b %Y"
-      expected_impact: 2
-      suggested_values_reasoning: Have Ludwig figure out the date format automatically.
-      ui_display_name: Datetime format
-    fill_value:
-      expected_impact: 1
-      ui_display_name: Fill Value
-    missing_value_strategy:
-      default_value_reasoning: The default `fill_with_const` replaces missing
-        values with the value specified by `fill_value`.
-      description_implications: Determines how missing values will be handled
-        in the dataset. Not all strategies are valid for all datatypes. For
-        example, `fill_with_mean` is applicable to continuous numerical data.
-        Note that choosing to drop rows with missing values could result in
-        losing information, especially if there is a high proportion of missing
-        values in the dataset.
-      related_parameters:
-        - fill_value
-      ui_display_name: Missing Value Strategy
-      expected_impact: 3
+    preprocessing:
+        computed_fill_value:
+            internal_only: true
+            ui_display_name: null
+        datetime_format:
+            default_value_reasoning:
+                Ludwig will try to infer the date format automatically,
+                but a specific format can be provided. The date string spec is the
+                same as the one described in python's datetime.
+            description_implications:
+                If Ludwig has trouble parsing dates, it could
+                be useful to specify an explicit format that Ludwig should parse date
+                feature values as. This could also serve as a form of normalization,
+                for example, if not all datetimes have the same granularity (some
+                have days, some have times), then the common format (i.e. %d %m %Y)
+                serves as a truncator.
+            example_value:
+                - "%d %b %Y"
+            expected_impact: 2
+            suggested_values_reasoning: Have Ludwig figure out the date format automatically.
+            ui_display_name: Datetime format
+        fill_value:
+            expected_impact: 1
+            ui_display_name: Fill Value
+        missing_value_strategy:
+            default_value_reasoning:
+                The default `fill_with_const` replaces missing
+                values with the value specified by `fill_value`.
+            description_implications:
+                Determines how missing values will be handled
+                in the dataset. Not all strategies are valid for all datatypes. For
+                example, `fill_with_mean` is applicable to continuous numerical data.
+                Note that choosing to drop rows with missing values could result in
+                losing information, especially if there is a high proportion of missing
+                values in the dataset.
+            related_parameters:
+                - fill_value
+            ui_display_name: Missing Value Strategy
+            expected_impact: 3
 h3:
-  preprocessing:
-    computed_fill_value:
-      internal_only: true
-      ui_display_name: null
-    fill_value:
-      expected_impact: 1
-      ui_display_name: Fill Value
-    missing_value_strategy:
-      default_value_reasoning: The default `fill_with_const` replaces missing
-        values with the value specified by `fill_value`.
-      description_implications: Determines how missing values will be handled
-        in the dataset. Not all strategies are valid for all datatypes. For
-        example, `fill_with_mean` is applicable to continuous numerical data.
-        Note that choosing to drop rows with missing values could result in
-        losing information, especially if there is a high proportion of missing
-        values in the dataset.
-      related_parameters:
-        - fill_value
-      ui_display_name: Missing Value Strategy
-      expected_impact: 3
+    preprocessing:
+        computed_fill_value:
+            internal_only: true
+            ui_display_name: null
+        fill_value:
+            expected_impact: 1
+            ui_display_name: Fill Value
+        missing_value_strategy:
+            default_value_reasoning:
+                The default `fill_with_const` replaces missing
+                values with the value specified by `fill_value`.
+            description_implications:
+                Determines how missing values will be handled
+                in the dataset. Not all strategies are valid for all datatypes. For
+                example, `fill_with_mean` is applicable to continuous numerical data.
+                Note that choosing to drop rows with missing values could result in
+                losing information, especially if there is a high proportion of missing
+                values in the dataset.
+            related_parameters:
+                - fill_value
+            ui_display_name: Missing Value Strategy
+            expected_impact: 3
 image:
-  preprocessing:
-    computed_fill_value:
-      internal_only: true
-      ui_display_name: null
-    fill_value:
-      expected_impact: 1
-      ui_display_name: Fill Value
-    height:
-      ui_display_name: null
-      expected_impact: 2
-    in_memory:
-      ui_display_name: null
-      expected_impact: 1
-    infer_image_dimensions:
-      ui_display_name: null
-      expected_impact: 1
-    infer_image_max_height:
-      ui_display_name: null
-      expected_impact: 1
-    infer_image_max_width:
-      ui_display_name: null
-      expected_impact: 1
-    infer_image_num_channels:
-      ui_display_name: null
-      expected_impact: 1
-    infer_image_sample_size:
-      ui_display_name: null
-      expected_impact: 1
-    missing_value_strategy:
-      default_value_reasoning: The default `fill_with_const` replaces missing
-        values with the value specified by `fill_value`.
-      description_implications: Determines how missing values will be handled
-        in the dataset. Not all strategies are valid for all datatypes. For
-        example, `fill_with_mean` is applicable to continuous numerical data.
-        Note that choosing to drop rows with missing values could result in
-        losing information, especially if there is a high proportion of missing
-        values in the dataset.
-      related_parameters:
-        - fill_value
-      ui_display_name: Missing Value Strategy
-      expected_impact: 3
-    num_channels:
-      ui_display_name: null
-      expected_impact: 2
-    num_processes:
-      ui_display_name: null
-      expected_impact: 2
-    resize_method:
-      default_value_reasoning: Interpolation may stretch or squish the image,
-        but it does not remove content or change the statistical distribution
-        of image values so it is more appropriate for most tasks.
-      description_implications: "interpolation will not change the content of
-        the image, but it will change the aspect ratio.
+    preprocessing:
+        computed_fill_value:
+            internal_only: true
+            ui_display_name: null
+        fill_value:
+            expected_impact: 1
+            ui_display_name: Fill Value
+        height:
+            ui_display_name: null
+            expected_impact: 2
+        in_memory:
+            ui_display_name: null
+            expected_impact: 1
+        infer_image_dimensions:
+            ui_display_name: null
+            expected_impact: 1
+        infer_image_max_height:
+            ui_display_name: null
+            expected_impact: 1
+        infer_image_max_width:
+            ui_display_name: null
+            expected_impact: 1
+        infer_image_num_channels:
+            ui_display_name: null
+            expected_impact: 1
+        infer_image_sample_size:
+            ui_display_name: null
+            expected_impact: 1
+        missing_value_strategy:
+            default_value_reasoning:
+                The default `fill_with_const` replaces missing
+                values with the value specified by `fill_value`.
+            description_implications:
+                Determines how missing values will be handled
+                in the dataset. Not all strategies are valid for all datatypes. For
+                example, `fill_with_mean` is applicable to continuous numerical data.
+                Note that choosing to drop rows with missing values could result in
+                losing information, especially if there is a high proportion of missing
+                values in the dataset.
+            related_parameters:
+                - fill_value
+            ui_display_name: Missing Value Strategy
+            expected_impact: 3
+        num_channels:
+            ui_display_name: null
+            expected_impact: 2
+        num_processes:
+            ui_display_name: null
+            expected_impact: 2
+        resize_method:
+            default_value_reasoning:
+                Interpolation may stretch or squish the image,
+                but it does not remove content or change the statistical distribution
+                of image values so it is more appropriate for most tasks.
+            description_implications:
+                "interpolation will not change the content of
+                the image, but it will change the aspect ratio.
 
 
-        crop_or_pad will preserve the aspect ratio of the image, but may remove
-        some content (in the case of cropping)."
-      expected_impact: 1
-      related_parameters:
-        - height, width
-      ui_display_name: Resize Method
-    standardize_image:
-      ui_display_name: null
-      expected_impact: 1
-    width:
-      ui_display_name: null
-      expected_impact: 2
+                crop_or_pad will preserve the aspect ratio of the image, but may remove
+                some content (in the case of cropping)."
+            expected_impact: 1
+            related_parameters:
+                - height, width
+            ui_display_name: Resize Method
+        standardize_image:
+            ui_display_name: null
+            expected_impact: 1
+        width:
+            ui_display_name: null
+            expected_impact: 2
 number:
-  preprocessing:
-    computed_fill_value:
-      internal_only: true
-      ui_display_name: null
-    fill_value:
-      expected_impact: 1
-      ui_display_name: Fill Value
-    missing_value_strategy:
-      default_value_reasoning: The default `fill_with_const` replaces missing
-        values with the value specified by `fill_value`.
-      description_implications: Determines how missing values will be handled
-        in the dataset. Not all strategies are valid for all datatypes. For
-        example, `fill_with_mean` is applicable to continuous numerical data.
-        Note that choosing to drop rows with missing values could result in
-        losing information, especially if there is a high proportion of missing
-        values in the dataset.
-      related_parameters:
-        - fill_value
-      ui_display_name: Missing Value Strategy
-      expected_impact: 3
-    normalization:
-      default_value_reasoning:
-        Z-score normalization helps improve the training stability and convergence
-        of neural networks by rescaling the numeric input features to have a mean
-        of 0 and a standard deviation of 1, reducing the variability and distribution
-        of the data. This improves neural network training.
-      description_implications:
-        The goal of normalization is to transform features
-        to be on a similar scale. Normalization can be a form of feature smoothing
-        that improves the performance and training stability of the model.
-        Normalizations may result in different effects on the semantics of
-        your number features. The best normalization technique is one that
-        empirically works well, so try new ideas if you think they'll work
-        well on your feature distribution.
-      expected_impact: 3
-      literature_references:
-        - https://developers.google.com/machine-learning/data-prep/transform/normalization
-      suggested_values: z-score
-      suggested_values_reasoning:
-        "Z-score is a variation of scaling that represents\
-        \ the number of standard deviations away from the mean. You would\
-        \ use z-score to ensure your feature distributions have mean = 0 and\
-        \ std = 1. It\u2019s useful when there are a few outliers, but not\
-        \ so extreme that you need clipping."
-      ui_display_name: Normalization
-  clip:
-    expected_impact: 2
-  dependencies:
-    expected_impact: 1
-  reduce_dependencies:
-    expected_impact: 1
-  reduce_input:
-    expected_impact: 1
+    preprocessing:
+        computed_fill_value:
+            internal_only: true
+            ui_display_name: null
+        fill_value:
+            expected_impact: 1
+            ui_display_name: Fill Value
+        missing_value_strategy:
+            default_value_reasoning:
+                The default `fill_with_const` replaces missing
+                values with the value specified by `fill_value`.
+            description_implications:
+                Determines how missing values will be handled
+                in the dataset. Not all strategies are valid for all datatypes. For
+                example, `fill_with_mean` is applicable to continuous numerical data.
+                Note that choosing to drop rows with missing values could result in
+                losing information, especially if there is a high proportion of missing
+                values in the dataset.
+            related_parameters:
+                - fill_value
+            ui_display_name: Missing Value Strategy
+            expected_impact: 3
+        normalization:
+            default_value_reasoning:
+                Z-score normalization helps improve the training stability and convergence
+                of neural networks by rescaling the numeric input features to have a mean
+                of 0 and a standard deviation of 1, reducing the variability and distribution
+                of the data. This improves neural network training.
+            description_implications:
+                The goal of normalization is to transform features
+                to be on a similar scale. Normalization can be a form of feature smoothing
+                that improves the performance and training stability of the model.
+                Normalizations may result in different effects on the semantics of
+                your number features. The best normalization technique is one that
+                empirically works well, so try new ideas if you think they'll work
+                well on your feature distribution.
+            expected_impact: 3
+            literature_references:
+                - https://developers.google.com/machine-learning/data-prep/transform/normalization
+            suggested_values: z-score
+            suggested_values_reasoning:
+                "Z-score is a variation of scaling that represents\
+                \ the number of standard deviations away from the mean. You would\
+                \ use z-score to ensure your feature distributions have mean = 0 and\
+                \ std = 1. It\u2019s useful when there are a few outliers, but not\
+                \ so extreme that you need clipping."
+            ui_display_name: Normalization
+    clip:
+        expected_impact: 2
+    dependencies:
+        expected_impact: 1
+    reduce_dependencies:
+        expected_impact: 1
+    reduce_input:
+        expected_impact: 1
 sequence:
-  preprocessing:
-    computed_fill_value:
-      internal_only: true
-      ui_display_name: null
-    fill_value:
-      expected_impact: 1
-      ui_display_name: Fill Value
-    lowercase:
-      ui_display_name: null
-      expected_impact: 2
-    max_sequence_length:
-      default_value_reasoning: The default value is 256. Every sequence will
-        be truncated to this length.
-      description_implications: A larger sequence length keeps more information
-        from the data, but also makes it more computationally expensive (more
-        memory and longer training time). A smaller sequence length keeps
-        less information from the data, but also makes it less computationally
-        expensive (less memory and shorter training time).
-      expected_impact: 3
-      related_parameters:
-        - vocab_size, embedding_size
-      suggested_values: Use the lowest value that covers most of your input
-        data. Only increase the value if crucial parts of the input data are
-        truncated.
-      ui_display_name: Maximum Sequence Length
-    missing_value_strategy:
-      default_value_reasoning: The default `fill_with_const` replaces missing
-        values with the value specified by `fill_value`.
-      description_implications: Determines how missing values will be handled
-        in the dataset. Not all strategies are valid for all datatypes. For
-        example, `fill_with_mean` is applicable to continuous numerical data.
-        Note that choosing to drop rows with missing values could result in
-        losing information, especially if there is a high proportion of missing
-        values in the dataset.
-      related_parameters:
-        - fill_value
-      ui_display_name: Missing Value Strategy
-      expected_impact: 3
-    most_common:
-      default_value_reasoning: If there are more than 10000 unique categories
-        in the data, it is likely that they will follow a long-tailed distribution
-        and the least common ones may not provide a lot of information
-      description_implications: A smaller number will reduce the vocabulary,
-        making the embedding matrix smaller and reduce the memory footprint,
-        but will also collapse more tokens into the rare one, so the model
-        may perform worse when rare tokens appear in the data
-      example_value:
-        - 10000
-      expected_impact: 2
-      other_information: Specifying a vocab_file overrides this parameter
-      related_parameters:
-        - vocab_file, pretrained_embeddings
-      suggested_values: A value that covers at least 95% of the tokens in the
-        data
-      suggested_values_reasoning: Depending on the data distribution and how
-        important rare tokens are, 90%, 95% or 99% of the number of tokens
-        will leave out only very rare tokens that should not influence performance
-        substantially
-      ui_display_name: Most common (vocabulary size)
-    ngram_size:
-      default_value_reasoning: Size of the n-gram when using the `ngram` tokenizer.
-      example_value:
-        - 3
-      ui_display_name: n-gram size
-      expected_impact: 2
-    padding:
-      ui_display_name: null
-      expected_impact: 1
-    padding_symbol:
-      ui_display_name: null
-      expected_impact: 1
-    tokenizer:
-      ui_display_name: null
-      expected_impact: 3
-    unknown_symbol:
-      ui_display_name: null
-      expected_impact: 1
-    vocab_file:
-      default_value_reasoning: The vocabulary can be parsed automatically from
-        the incoming input features.
-      description_implications: It can be useful to specify your own vocabulary
-        list if the vocabulary is very large, there's no out of the box tokenizer
-        that fits your data, or if there are several uncommon or infrequently
-        occurring tokens that we want to guarantee to be a part of the vocabulary,
-        rather than treated as an unknown.
-      expected_impact: 0
-      ui_display_name: Vocab File
-  dependencies:
-    expected_impact: 1
-  reduce_dependencies:
-    expected_impact: 1
-  reduce_input:
-    expected_impact: 1
+    preprocessing:
+        computed_fill_value:
+            internal_only: true
+            ui_display_name: null
+        fill_value:
+            expected_impact: 1
+            ui_display_name: Fill Value
+        lowercase:
+            ui_display_name: null
+            expected_impact: 2
+        max_sequence_length:
+            default_value_reasoning:
+                The default value is 256. Every sequence will
+                be truncated to this length.
+            description_implications:
+                A larger sequence length keeps more information
+                from the data, but also makes it more computationally expensive (more
+                memory and longer training time). A smaller sequence length keeps
+                less information from the data, but also makes it less computationally
+                expensive (less memory and shorter training time).
+            expected_impact: 3
+            related_parameters:
+                - vocab_size, embedding_size
+            suggested_values:
+                Use the lowest value that covers most of your input
+                data. Only increase the value if crucial parts of the input data are
+                truncated.
+            ui_display_name: Maximum Sequence Length
+        missing_value_strategy:
+            default_value_reasoning:
+                The default `fill_with_const` replaces missing
+                values with the value specified by `fill_value`.
+            description_implications:
+                Determines how missing values will be handled
+                in the dataset. Not all strategies are valid for all datatypes. For
+                example, `fill_with_mean` is applicable to continuous numerical data.
+                Note that choosing to drop rows with missing values could result in
+                losing information, especially if there is a high proportion of missing
+                values in the dataset.
+            related_parameters:
+                - fill_value
+            ui_display_name: Missing Value Strategy
+            expected_impact: 3
+        most_common:
+            default_value_reasoning:
+                If there are more than 10000 unique categories
+                in the data, it is likely that they will follow a long-tailed distribution
+                and the least common ones may not provide a lot of information
+            description_implications:
+                A smaller number will reduce the vocabulary,
+                making the embedding matrix smaller and reduce the memory footprint,
+                but will also collapse more tokens into the rare one, so the model
+                may perform worse when rare tokens appear in the data
+            example_value:
+                - 10000
+            expected_impact: 2
+            other_information: Specifying a vocab_file overrides this parameter
+            related_parameters:
+                - vocab_file, pretrained_embeddings
+            suggested_values:
+                A value that covers at least 95% of the tokens in the
+                data
+            suggested_values_reasoning:
+                Depending on the data distribution and how
+                important rare tokens are, 90%, 95% or 99% of the number of tokens
+                will leave out only very rare tokens that should not influence performance
+                substantially
+            ui_display_name: Most common (vocabulary size)
+        ngram_size:
+            default_value_reasoning: Size of the n-gram when using the `ngram` tokenizer.
+            example_value:
+                - 3
+            ui_display_name: n-gram size
+            expected_impact: 2
+        padding:
+            ui_display_name: null
+            expected_impact: 1
+        padding_symbol:
+            ui_display_name: null
+            expected_impact: 1
+        tokenizer:
+            ui_display_name: null
+            expected_impact: 3
+        unknown_symbol:
+            ui_display_name: null
+            expected_impact: 1
+        vocab_file:
+            default_value_reasoning:
+                The vocabulary can be parsed automatically from
+                the incoming input features.
+            description_implications:
+                It can be useful to specify your own vocabulary
+                list if the vocabulary is very large, there's no out of the box tokenizer
+                that fits your data, or if there are several uncommon or infrequently
+                occurring tokens that we want to guarantee to be a part of the vocabulary,
+                rather than treated as an unknown.
+            expected_impact: 0
+            ui_display_name: Vocab File
+    dependencies:
+        expected_impact: 1
+    reduce_dependencies:
+        expected_impact: 1
+    reduce_input:
+        expected_impact: 1
 set:
-  preprocessing:
-    computed_fill_value:
-      internal_only: true
-      ui_display_name: null
-    fill_value:
-      expected_impact: 1
-      ui_display_name: Fill Value
-    lowercase:
-      ui_display_name: null
-      expected_impact: 2
-    missing_value_strategy:
-      default_value_reasoning: The default `fill_with_const` replaces missing
-        values with the value specified by `fill_value`.
-      description_implications: Determines how missing values will be handled
-        in the dataset. Not all strategies are valid for all datatypes. For
-        example, `fill_with_mean` is applicable to continuous numerical data.
-        Note that choosing to drop rows with missing values could result in
-        losing information, especially if there is a high proportion of missing
-        values in the dataset.
-      expected_impact: 3
-      related_parameters:
-        - fill_value
-      ui_display_name: Missing Value Strategy
-    most_common:
-      default_value_reasoning: If there are more than 10000 unique categories
-        in the data, it is likely that they will follow a long-tailed distribution
-        and the least common ones may not provide a lot of information
-      description_implications: A smaller number will reduce the vocabulary,
-        making the embedding matrix smaller and reduce the memory footprint,
-        but will also collapse more tokens into the rare one, so the model
-        may perform worse when rare tokens appear in the data
-      example_value:
-        - 10000
-      expected_impact: 2
-      other_information: Specifying a vocab_file overrides this parameter
-      related_parameters:
-        - vocab_file, pretrained_embeddings
-      suggested_values: A value that covers at least 95% of the tokens in the
-        data
-      suggested_values_reasoning: Depending on the data distribution and how
-        important rare tokens are, 90%, 95% or 99% of the number of tokens
-        will leave out only very rare tokens that should not influence performance
-        substantially
-      ui_display_name: Most common (vocabulary size)
-    tokenizer:
-      ui_display_name: null
-      expected_impact: 3
-  dependencies:
-    expected_impact: 1
-  reduce_dependencies:
-    expected_impact: 1
-  reduce_input:
-    expected_impact: 1
-  threshold:
-    expected_impact: 3
+    preprocessing:
+        computed_fill_value:
+            internal_only: true
+            ui_display_name: null
+        fill_value:
+            expected_impact: 1
+            ui_display_name: Fill Value
+        lowercase:
+            ui_display_name: null
+            expected_impact: 2
+        missing_value_strategy:
+            default_value_reasoning:
+                The default `fill_with_const` replaces missing
+                values with the value specified by `fill_value`.
+            description_implications:
+                Determines how missing values will be handled
+                in the dataset. Not all strategies are valid for all datatypes. For
+                example, `fill_with_mean` is applicable to continuous numerical data.
+                Note that choosing to drop rows with missing values could result in
+                losing information, especially if there is a high proportion of missing
+                values in the dataset.
+            expected_impact: 3
+            related_parameters:
+                - fill_value
+            ui_display_name: Missing Value Strategy
+        most_common:
+            default_value_reasoning:
+                If there are more than 10000 unique categories
+                in the data, it is likely that they will follow a long-tailed distribution
+                and the least common ones may not provide a lot of information
+            description_implications:
+                A smaller number will reduce the vocabulary,
+                making the embedding matrix smaller and reduce the memory footprint,
+                but will also collapse more tokens into the rare one, so the model
+                may perform worse when rare tokens appear in the data
+            example_value:
+                - 10000
+            expected_impact: 2
+            other_information: Specifying a vocab_file overrides this parameter
+            related_parameters:
+                - vocab_file, pretrained_embeddings
+            suggested_values:
+                A value that covers at least 95% of the tokens in the
+                data
+            suggested_values_reasoning:
+                Depending on the data distribution and how
+                important rare tokens are, 90%, 95% or 99% of the number of tokens
+                will leave out only very rare tokens that should not influence performance
+                substantially
+            ui_display_name: Most common (vocabulary size)
+        tokenizer:
+            ui_display_name: null
+            expected_impact: 3
+    dependencies:
+        expected_impact: 1
+    reduce_dependencies:
+        expected_impact: 1
+    reduce_input:
+        expected_impact: 1
+    threshold:
+        expected_impact: 3
 text:
-  preprocessing:
-    computed_fill_value:
-      example_value:
-        - Depends on dtype
-      internal_only: true
-      related_parameters:
-        - missing_value_strategy, fill_value
-      ui_display_name: DOCSTRING ONLY
-    fill_value:
-      expected_impact: 1
-      ui_display_name: Fill Value
-    lowercase:
-      default_value_reasoning: Reading the text in lowercase enables the model
-        to treat capitalized and lowercase words as the same, effectively
-        increasing the number of data points per word.
-      description_implications: If you set lowercase to False, then capitalized
-        words are seen as completely separate entities than lowercase words.
-      example_value:
-        - true
-      expected_impact: 2
-      related_parameters:
-        - vocab_size
-      suggested_values: "TRUE"
-      suggested_values_reasoning:
-        If there is a strong reason to treat capitalized
-        words and lowercased words differently, then set this to False. Otherwise,
-        it is preferable to bucket the words and make the model case-insensitive.
-      ui_display_name: Convert to lowercase
-    max_sequence_length:
-      default_value_reasoning: The default value is 256. Every sequence will
-        be truncated to this length.
-      description_implications: A larger sequence length keeps more information
-        from the data, but also makes it more computationally expensive (more
-        memory and longer training time). A smaller sequence length keeps
-        less information from the data, but also makes it less computationally
-        expensive (less memory and shorter training time).
-      expected_impact: 3
-      related_parameters:
-        - vocab_size, embedding_size
-      suggested_values: Use the lowest value that covers most of your input
-        data. Only increase the value if crucial parts of the input data are
-        truncated.
-      ui_display_name: Maximum Sequence Length
-    missing_value_strategy:
-      default_value_reasoning: The default `fill_with_const` replaces missing
-        values with the value specified by `fill_value`.
-      description_implications: Determines how missing values will be handled
-        in the dataset. Not all strategies are valid for all datatypes. For
-        example, `fill_with_mean` is applicable to continuous numerical data.
-        Note that choosing to drop rows with missing values could result in
-        losing information, especially if there is a high proportion of missing
-        values in the dataset.
-      related_parameters:
-        - fill_value
-      ui_display_name: Missing Value Strategy
-      expected_impact: 3
-    most_common:
-      default_value_reasoning: If there are more than 10000 unique categories
-        in the data, it is likely that they will follow a long-tailed distribution
-        and the least common ones may not provide a lot of information
-      description_implications: A smaller number will reduce the vocabulary,
-        making the embedding matrix smaller and reduce the memory footprint,
-        but will also collapse more tokens into the rare one, so the model
-        may perform worse when rare tokens appear in the data
-      example_value:
-        - 10000
-      expected_impact: 2
-      other_information: Specifying a vocab_file overrides this parameter
-      related_parameters:
-        - vocab_file, pretrained_embeddings
-      suggested_values: A value that covers at least 95% of the tokens in the
-        data
-      suggested_values_reasoning: Depending on the data distribution and how
-        important rare tokens are, 90%, 95% or 99% of the number of tokens
-        will leave out only very rare tokens that should not influence performance
-        substantially
-      ui_display_name: Most common (vocabulary size)
-    ngram_size:
-      default_value_reasoning: Size of the n-gram when using the `ngram` tokenizer.
-      example_value:
-        - 3
-      ui_display_name: n-gram size
-      expected_impact: 2
-    padding:
-      default_value_reasoning: We usually want to add padding to the end of
-        a text sequence to fill in any remaining space as opposed to the beggining
-        so we set the default to right.
-      description_implications: If you pad to the left, the encoded vector will
-        have leading padding tokens as opposed to trailing padding tokens.
-        This could matter based on the type of text input you are expecting.
-      expected_impact: 1
-      related_parameters:
-        - "padding_symbol,
+    preprocessing:
+        computed_fill_value:
+            example_value:
+                - Depends on dtype
+            internal_only: true
+            related_parameters:
+                - missing_value_strategy, fill_value
+            ui_display_name: DOCSTRING ONLY
+        fill_value:
+            expected_impact: 1
+            ui_display_name: Fill Value
+        lowercase:
+            default_value_reasoning:
+                Reading the text in lowercase enables the model
+                to treat capitalized and lowercase words as the same, effectively
+                increasing the number of data points per word.
+            description_implications:
+                If you set lowercase to False, then capitalized
+                words are seen as completely separate entities than lowercase words.
+            example_value:
+                - true
+            expected_impact: 2
+            related_parameters:
+                - vocab_size
+            suggested_values: "TRUE"
+            suggested_values_reasoning:
+                If there is a strong reason to treat capitalized
+                words and lowercased words differently, then set this to False. Otherwise,
+                it is preferable to bucket the words and make the model case-insensitive.
+            ui_display_name: Convert to lowercase
+        max_sequence_length:
+            default_value_reasoning:
+                The default value is 256. Every sequence will
+                be truncated to this length.
+            description_implications:
+                A larger sequence length keeps more information
+                from the data, but also makes it more computationally expensive (more
+                memory and longer training time). A smaller sequence length keeps
+                less information from the data, but also makes it less computationally
+                expensive (less memory and shorter training time).
+            expected_impact: 3
+            related_parameters:
+                - vocab_size, embedding_size
+            suggested_values:
+                Use the lowest value that covers most of your input
+                data. Only increase the value if crucial parts of the input data are
+                truncated.
+            ui_display_name: Maximum Sequence Length
+        missing_value_strategy:
+            default_value_reasoning:
+                The default `fill_with_const` replaces missing
+                values with the value specified by `fill_value`.
+            description_implications:
+                Determines how missing values will be handled
+                in the dataset. Not all strategies are valid for all datatypes. For
+                example, `fill_with_mean` is applicable to continuous numerical data.
+                Note that choosing to drop rows with missing values could result in
+                losing information, especially if there is a high proportion of missing
+                values in the dataset.
+            related_parameters:
+                - fill_value
+            ui_display_name: Missing Value Strategy
+            expected_impact: 3
+        most_common:
+            default_value_reasoning:
+                If there are more than 10000 unique categories
+                in the data, it is likely that they will follow a long-tailed distribution
+                and the least common ones may not provide a lot of information
+            description_implications:
+                A smaller number will reduce the vocabulary,
+                making the embedding matrix smaller and reduce the memory footprint,
+                but will also collapse more tokens into the rare one, so the model
+                may perform worse when rare tokens appear in the data
+            example_value:
+                - 10000
+            expected_impact: 2
+            other_information: Specifying a vocab_file overrides this parameter
+            related_parameters:
+                - vocab_file, pretrained_embeddings
+            suggested_values:
+                A value that covers at least 95% of the tokens in the
+                data
+            suggested_values_reasoning:
+                Depending on the data distribution and how
+                important rare tokens are, 90%, 95% or 99% of the number of tokens
+                will leave out only very rare tokens that should not influence performance
+                substantially
+            ui_display_name: Most common (vocabulary size)
+        ngram_size:
+            default_value_reasoning: Size of the n-gram when using the `ngram` tokenizer.
+            example_value:
+                - 3
+            ui_display_name: n-gram size
+            expected_impact: 2
+        padding:
+            default_value_reasoning:
+                We usually want to add padding to the end of
+                a text sequence to fill in any remaining space as opposed to the beggining
+                so we set the default to right.
+            description_implications:
+                If you pad to the left, the encoded vector will
+                have leading padding tokens as opposed to trailing padding tokens.
+                This could matter based on the type of text input you are expecting.
+            expected_impact: 1
+            related_parameters:
+                - "padding_symbol,
 
-          max_sequence_length"
-      suggested_values: "'right'"
-      suggested_values_reasoning: right padding is the usual way to add padding
-        to a text sequence
-      ui_display_name: Padding
-    padding_symbol:
-      ui_display_name: null
-      expected_impact: 1
-    pretrained_model_name_or_path:
-      ui_display_name: null
-      expected_impact: 0
-    tokenizer:
-      default_value_reasoning:
-        'The default tokenizer is `space_punct`, an abbreviation
-        of "Space punctuation". This tokenizer creates sub-words by dividing
-        the text on whitespace and punctuation characters. For example: The
-        text `''hello world!isn''t this great?''` would be transformed to
-        `[''hello'', ''world'', ''!'', ''isn'', "''", ''t'', ''this'', ''great'',
-        ''?'']`. This is the default value because it is a fast tokenizer
-        that works reasonably well.'
-      description_implications:
-        Choosing a tokenizer can be difficult. The primary
-        thing to check is that the tokenizer you have selected is compatible
-        with the language(s) in your text data. This means either selecting
-        a tokenizer that is language-specific (i.e. `french_tokenize` if working
-        with French text) or general enough that its tokenizations are language-agnostic
-        (i.e. `space_punct`).
-      example_value:
-        - space_punct
-      expected_impact: 3
-      literature_references:
-        - https://huggingface.co/course/chapter2/4?fw=pt
-      related_parameters:
-        - vocab_file, pretrained_model_name_or_path
-      suggested_values: sentencepiece
-      suggested_values_reasoning: "SentencePiece is a tokenizer developed by
-        Google which utilizes Byte-Pair Encoding (BPE), which strikes a good
-        balance between character-level and word-level tokenization (more
-        info on BPE here: https://towardsdatascience.com/byte-pair-encoding-the-dark-horse-of-modern-nlp-eb36c7df4f10
-        ). This tokenizer is language-agnostic and more sophisticated than
-        the default."
-      ui_display_name: Tokenizer
-    unknown_symbol:
-      ui_display_name: null
-      expected_impact: 1
-    vocab_file:
-      default_value_reasoning: The vocabulary can be parsed automatically from
-        the incoming input features.
-      description_implications: It can be useful to specify your own vocabulary
-        list if the vocabulary is very large, there's no out of the box tokenizer
-        that fits your data, or if there are several uncommon or infrequently
-        occurring tokens that we want to guarantee to be a part of the vocabulary,
-        rather than treated as an unknown.
-      expected_impact: 0
-      ui_display_name: Vocab File
-  class_similarities:
-    expected_impact: 1
-  dependencies:
-    expected_impact: 1
-  reduce_dependencies:
-    expected_impact: 1
-  reduce_input:
-    expected_impact: 1
+                  max_sequence_length"
+            suggested_values: "'right'"
+            suggested_values_reasoning:
+                right padding is the usual way to add padding
+                to a text sequence
+            ui_display_name: Padding
+        padding_symbol:
+            ui_display_name: null
+            expected_impact: 1
+        pretrained_model_name_or_path:
+            ui_display_name: null
+            expected_impact: 0
+        tokenizer:
+            default_value_reasoning:
+                'The default tokenizer is `space_punct`, an abbreviation
+                of "Space punctuation". This tokenizer creates sub-words by dividing
+                the text on whitespace and punctuation characters. For example: The
+                text `''hello world!isn''t this great?''` would be transformed to
+                `[''hello'', ''world'', ''!'', ''isn'', "''", ''t'', ''this'', ''great'',
+                ''?'']`. This is the default value because it is a fast tokenizer
+                that works reasonably well.'
+            description_implications:
+                Choosing a tokenizer can be difficult. The primary
+                thing to check is that the tokenizer you have selected is compatible
+                with the language(s) in your text data. This means either selecting
+                a tokenizer that is language-specific (i.e. `french_tokenize` if working
+                with French text) or general enough that its tokenizations are language-agnostic
+                (i.e. `space_punct`).
+            example_value:
+                - space_punct
+            expected_impact: 3
+            literature_references:
+                - https://huggingface.co/course/chapter2/4?fw=pt
+            related_parameters:
+                - vocab_file, pretrained_model_name_or_path
+            suggested_values: sentencepiece
+            suggested_values_reasoning:
+                "SentencePiece is a tokenizer developed by
+                Google which utilizes Byte-Pair Encoding (BPE), which strikes a good
+                balance between character-level and word-level tokenization (more
+                info on BPE here: https://towardsdatascience.com/byte-pair-encoding-the-dark-horse-of-modern-nlp-eb36c7df4f10
+                ). This tokenizer is language-agnostic and more sophisticated than
+                the default."
+            ui_display_name: Tokenizer
+        unknown_symbol:
+            ui_display_name: null
+            expected_impact: 1
+        vocab_file:
+            default_value_reasoning:
+                The vocabulary can be parsed automatically from
+                the incoming input features.
+            description_implications:
+                It can be useful to specify your own vocabulary
+                list if the vocabulary is very large, there's no out of the box tokenizer
+                that fits your data, or if there are several uncommon or infrequently
+                occurring tokens that we want to guarantee to be a part of the vocabulary,
+                rather than treated as an unknown.
+            expected_impact: 0
+            ui_display_name: Vocab File
+    class_similarities:
+        expected_impact: 1
+    dependencies:
+        expected_impact: 1
+    reduce_dependencies:
+        expected_impact: 1
+    reduce_input:
+        expected_impact: 1
 timeseries:
-  preprocessing:
-    computed_fill_value:
-      internal_only: true
-      ui_display_name: null
-    fill_value:
-      expected_impact: 1
-      ui_display_name: Fill Value
-    missing_value_strategy:
-      default_value_reasoning: The default `fill_with_const` replaces missing
-        values with the value specified by `fill_value`.
-      description_implications: Determines how missing values will be handled
-        in the dataset. Not all strategies are valid for all datatypes. For
-        example, `fill_with_mean` is applicable to continuous numerical data.
-        Note that choosing to drop rows with missing values could result in
-        losing information, especially if there is a high proportion of missing
-        values in the dataset.
-      related_parameters:
-        - fill_value
-      ui_display_name: Missing Value Strategy
-      expected_impact: 3
-    padding:
-      ui_display_name: null
-      expected_impact: 1
-    padding_value:
-      ui_display_name: null
-      expected_impact: 1
-    timeseries_length_limit:
-      ui_display_name: null
-      expected_impact: 2
-    tokenizer:
-      ui_display_name: null
-      expected_impact: 3
+    preprocessing:
+        computed_fill_value:
+            internal_only: true
+            ui_display_name: null
+        fill_value:
+            expected_impact: 1
+            ui_display_name: Fill Value
+        missing_value_strategy:
+            default_value_reasoning:
+                The default `fill_with_const` replaces missing
+                values with the value specified by `fill_value`.
+            description_implications:
+                Determines how missing values will be handled
+                in the dataset. Not all strategies are valid for all datatypes. For
+                example, `fill_with_mean` is applicable to continuous numerical data.
+                Note that choosing to drop rows with missing values could result in
+                losing information, especially if there is a high proportion of missing
+                values in the dataset.
+            related_parameters:
+                - fill_value
+            ui_display_name: Missing Value Strategy
+            expected_impact: 3
+        padding:
+            ui_display_name: null
+            expected_impact: 1
+        padding_value:
+            ui_display_name: null
+            expected_impact: 1
+        timeseries_length_limit:
+            ui_display_name: null
+            expected_impact: 2
+        tokenizer:
+            ui_display_name: null
+            expected_impact: 3
 vector:
-  preprocessing:
-    computed_fill_value:
-      internal_only: true
-      ui_display_name: null
-    fill_value:
-      expected_impact: 1
-      ui_display_name: Fill Value
-    missing_value_strategy:
-      default_value_reasoning: The default `fill_with_const` replaces missing
-        values with the value specified by `fill_value`.
-      description_implications: Determines how missing values will be handled
-        in the dataset. Not all strategies are valid for all datatypes. For
-        example, `fill_with_mean` is applicable to continuous numerical data.
-        Note that choosing to drop rows with missing values could result in
-        losing information, especially if there is a high proportion of missing
-        values in the dataset.
-      expected_impact: 3
-      related_parameters:
-        - fill_value
-      ui_display_name: Missing Value Strategy
+    preprocessing:
+        computed_fill_value:
+            internal_only: true
+            ui_display_name: null
+        fill_value:
+            expected_impact: 1
+            ui_display_name: Fill Value
+        missing_value_strategy:
+            default_value_reasoning:
+                The default `fill_with_const` replaces missing
+                values with the value specified by `fill_value`.
+            description_implications:
+                Determines how missing values will be handled
+                in the dataset. Not all strategies are valid for all datatypes. For
+                example, `fill_with_mean` is applicable to continuous numerical data.
+                Note that choosing to drop rows with missing values could result in
+                losing information, especially if there is a high proportion of missing
+                values in the dataset.
+            expected_impact: 3
+            related_parameters:
+                - fill_value
+            ui_display_name: Missing Value Strategy
+        vector_size:
+            ui_display_name: null
+            expected_impact: 3
+    dependencies:
+        expected_impact: 1
+    reduce_dependencies:
+        expected_impact: 1
+    reduce_input:
+        expected_impact: 1
+    softmax:
+        expected_impact: 3
     vector_size:
-      ui_display_name: null
-      expected_impact: 3
-  dependencies:
-    expected_impact: 1
-  reduce_dependencies:
-    expected_impact: 1
-  reduce_input:
-    expected_impact: 1
-  softmax:
-    expected_impact: 3
-  vector_size:
-    expected_impact: 3
+        expected_impact: 3
