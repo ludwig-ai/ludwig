@@ -1122,7 +1122,7 @@ class TypeSelection(fields.Field):
                 except (TypeError, ValidationError) as e:
                     raise ValidationError(f"Invalid params: {value}, see `{cls}` definition") from e
             raise ValidationError(f"Invalid type: '{cls_type}', expected one of: {list(self.registry.keys())}")
-        raise ValidationError(f"Invalud param {value}, expected `None` or `dict`")
+        raise ValidationError(f"Invalid param {value}, expected `None` or `dict`")
 
     def get_schema_from_registry(self, key: str) -> Type[BaseMarshmallowConfig]:
         return self.registry[key]
@@ -1174,7 +1174,7 @@ class DictMarshmallowField(fields.Field):
             except (TypeError, ValidationError) as e:
                 # TODO(travis): this seems much too verbose, does the validation error not show the specific error?
                 raise ValidationError(f"Invalid params: {value}, see `{self.cls}` definition. Error: {e}")
-        raise ValidationError(f"Invalud param {value}, expected `None` or `dict`")
+        raise ValidationError(f"Invalid param {value}, expected `None` or `dict`")
 
     def get_default_field(self) -> Field:
         default_factory = lambda: None

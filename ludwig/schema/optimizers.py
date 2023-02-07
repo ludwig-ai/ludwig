@@ -452,7 +452,7 @@ def OptimizerDataclassField(default={"type": "adam"}, description="TODO"):
                 raise ValidationError(
                     f"Invalid optimizer type: '{opt_type}', expected one of: {list(optimizer_registry.keys())}."
                 )
-            raise ValidationError(f"Invalud optimizer param {value}, expected `None` or `dict`")
+            raise ValidationError(f"Invalid optimizer param {value}, expected `None` or `dict`")
 
         @staticmethod
         def _jsonschema_type_mapping():
