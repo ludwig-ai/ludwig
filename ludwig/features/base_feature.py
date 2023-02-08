@@ -19,14 +19,14 @@ from typing import Any, Dict, Optional
 import torch
 from torch import Tensor
 
-from ludwig.constants import HIDDEN, LENGTHS, LOGITS, LOSS, PREDICTIONS, PROBABILITIES, ROC_AUC
+from ludwig.constants import HIDDEN, LENGTHS, LOGITS, LOSS, PREDICTIONS, PROBABILITIES
 from ludwig.decoders.registry import get_decoder_cls
 from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_utils import compute_feature_hash, get_input_size_with_dependencies
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.loss_modules import get_loss_cls
 from ludwig.modules.metric_modules import MeanMetric
-from ludwig.modules.metric_registry import get_metric_classes, get_metric_cls
+from ludwig.modules.metric_registry import get_metric_classes, get_metric_cls, get_metric_tensor_input
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.schema.features.base import BaseFeatureConfig, BaseOutputFeatureConfig
 from ludwig.types import FeatureConfigDict, FeatureMetadataDict, PreprocessingConfigDict, TrainingSetMetadataDict
@@ -349,12 +349,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             predictions: Dict of tensors returned by predictions().
         """
         for metric_name, metric_fn in self._metric_functions.items():
-            if metric_name == ROC_AUC:
-                # Special case for ROC metrics, whose class loses the get_inputs() method.
-                prediction_key = PROBABILITIES
-            else:
-                prediction_key = metric_fn.get_inputs()
-
+            prediction_key = get_metric_tensor_input(metric_name)
             metric_fn = metric_fn.to(predictions[prediction_key].device)
             metric_fn.update(predictions[prediction_key].detach(), targets)
 
