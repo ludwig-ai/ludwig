@@ -26,8 +26,8 @@ class DatasetCache:
 
         try:
             cached_training_set_metadata = data_utils.load_json(training_set_metadata_fp)
-        except Exception as e:
-            logger.error(f"Failed to load cached training set metadata at {training_set_metadata_fp}", exc_info=e)
+        except Exception:
+            logger.exception(f"Failed to load cached training set metadata at {training_set_metadata_fp}")
             return None
 
         cached_training_set = self.cache_map[TRAINING] if path_exists(self.cache_map[TRAINING]) else None
@@ -88,9 +88,7 @@ class DatasetCache:
                 delete(fname, recursive=True)
 
     def get_cached_obj_path(self, cached_obj_name: str) -> str:
-        if cached_obj_name in self.cache_map:
-            return self.cache_map[cached_obj_name]
-        return None
+        return self.cache_map.get(cached_obj_name)
 
 
 class CacheManager:
