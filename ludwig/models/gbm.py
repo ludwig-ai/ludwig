@@ -8,11 +8,12 @@ import torch
 import torchmetrics
 from hummingbird.ml import convert
 
-from ludwig.constants import BINARY, LOGITS, MODEL_GBM, NAME, NUMBER
+from ludwig.constants import BINARY, LOGITS, MODEL_GBM, NUMBER
 from ludwig.features.base_feature import OutputFeature
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
-from ludwig.schema.model_config import ModelConfig, OutputFeaturesContainer
+from ludwig.schema.features.base import BaseOutputFeatureConfig, FeatureCollection
+from ludwig.schema.model_config import ModelConfig
 from ludwig.utils import output_feature_utils
 from ludwig.utils.fs_utils import path_exists
 from ludwig.utils.gbm_utils import reshape_logits
@@ -58,21 +59,19 @@ class GBM(BaseModel):
 
     @classmethod
     def build_outputs(
-        cls, output_feature_configs: OutputFeaturesContainer, input_size: int
+        cls, output_feature_configs: FeatureCollection[BaseOutputFeatureConfig], input_size: int
     ) -> Dict[str, OutputFeature]:
         """Builds and returns output feature."""
         # TODO: only single task currently
-        if len(output_feature_configs.to_dict()) > 1:
+        if len(output_feature_configs) > 1:
             raise ValueError("Only single task currently supported")
 
-        output_feature_def = output_feature_configs.to_list()[0]
-        output_features = {}
+        output_feature_config = output_feature_configs[0]
+        output_feature_config.input_size = input_size
 
-        setattr(getattr(output_feature_configs, output_feature_def[NAME]), "input_size", input_size)
-        output_feature = cls.build_single_output(
-            getattr(output_feature_configs, output_feature_def[NAME]), output_features
-        )
-        output_features[output_feature_def[NAME]] = output_feature
+        output_features = {}
+        output_feature = cls.build_single_output(output_feature_config, output_features)
+        output_features[output_feature_config.name] = output_feature
 
         return output_features
 

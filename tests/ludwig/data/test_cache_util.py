@@ -6,6 +6,7 @@ import pytest
 
 from ludwig.constants import INPUT_FEATURES, OUTPUT_FEATURES
 from ludwig.data.cache.util import calculate_checksum
+from ludwig.schema.model_types.base import ModelConfig
 from ludwig.types import FeatureConfigDict, ModelConfigDict
 from ludwig.utils.misc_utils import merge_dict
 
@@ -59,4 +60,7 @@ def test_calculate_checksum(input_features: List[FeatureConfigDict], diff: List[
     mock_dataset = mock.Mock()
     mock_dataset.checksum = uuid.uuid4().hex
 
-    assert (calculate_checksum(mock_dataset, config) == calculate_checksum(mock_dataset, diff_config)) == expected
+    assert (
+        calculate_checksum(mock_dataset, ModelConfig.from_dict(config).to_dict())
+        == calculate_checksum(mock_dataset, ModelConfig.from_dict(diff_config).to_dict())
+    ) == expected

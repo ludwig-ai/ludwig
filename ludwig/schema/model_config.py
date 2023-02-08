@@ -8,7 +8,6 @@ import yaml
 from marshmallow import ValidationError
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.config_validation.checks import check_basic_required_parameters, get_config_check_registry
 from ludwig.constants import (
     ACTIVE,
     BINARY,
@@ -41,7 +40,6 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.features.feature_utils import compute_feature_hash
-from ludwig.hyperopt.utils import contains_grid_search_parameters
 from ludwig.modules.loss_modules import get_loss_cls
 from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.combiners.concat import ConcatCombinerConfig
@@ -57,6 +55,8 @@ from ludwig.schema.features.utils import (
     output_config_registry,
 )
 from ludwig.schema.hyperopt import HyperoptConfig
+from ludwig.schema.model_types.base import ModelConfig  # noqa
+from ludwig.schema.model_types.utils import contains_grid_search_parameters
 from ludwig.schema.optimizers import get_optimizer_cls
 from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.schema.split import get_split_cls
@@ -126,9 +126,10 @@ class OutputFeaturesContainer(BaseFeatureContainer):
     pass
 
 
+# TODO(travis): remove this in a follow-up PR
 @DeveloperAPI
 @ludwig_dataclass
-class ModelConfig(BaseMarshmallowConfig):
+class _ModelConfig(BaseMarshmallowConfig):
     """Configures the end-to-end LudwigModel machine learning pipeline.
 
     Refer to https://ludwig.ai/latest/configuration/ for full documentation.
@@ -137,9 +138,6 @@ class ModelConfig(BaseMarshmallowConfig):
     def __init__(self, config_dict: ModelConfigDict):
         # ===== Backwards Compatibility =====
         upgraded_config_dict = self._upgrade_config(config_dict)
-
-        # Schema validation.
-        check_basic_required_parameters(upgraded_config_dict)
 
         # ===== Save the original (upgraded) user config =====
         self._user_config_dict = upgraded_config_dict
@@ -179,7 +177,7 @@ class ModelConfig(BaseMarshmallowConfig):
 
         # ===== Combiner =====
         if COMBINER in upgraded_config_dict:
-            if self.combiner.type != upgraded_config_dict[COMBINER][TYPE]:
+            if self.combiner.type != upgraded_config_dict.get(COMBINER, {}).get(TYPE, None):
                 self.combiner = combiner_registry.get(upgraded_config_dict[COMBINER][TYPE]).get_schema_cls()()
 
             if self.combiner.type == SEQUENCE:
@@ -207,8 +205,6 @@ class ModelConfig(BaseMarshmallowConfig):
         # ===== Validate Config =====
         if self.model_type == MODEL_GBM:
             self.combiner = None
-
-        self._validate_config(self.to_dict())
 
     def get_user_config(self) -> ModelConfigDict:
         return self._user_config_dict
@@ -253,16 +249,6 @@ class ModelConfig(BaseMarshmallowConfig):
             config_dict: Config Dictionary
         """
         return upgrade_config_dict_to_latest_version(config_dict)
-
-    @staticmethod
-    def _validate_config(comprehensive_config: ModelConfigDict) -> None:
-        """Helper function used to validate the config.
-
-        Args:
-            config_dict: Config Dictionary
-        """
-        for config_check_cls in get_config_check_registry().values():
-            config_check_cls.check(comprehensive_config)
 
     @staticmethod
     def _get_config_nested_cls(section: str, section_type: str, feature_type: str) -> BaseMarshmallowConfig:

@@ -22,7 +22,6 @@ import shutil
 import sys
 import tempfile
 import traceback
-import unittest
 import uuid
 from distutils.util import strtobool
 from typing import Any, Dict, List, Optional, Set, Union
@@ -79,12 +78,12 @@ HF_ENCODERS = [
     "bert",
     "gpt",
     "gpt2",
-    # 'transformer_xl',
+    "transformer_xl",
     "xlnet",
     "xlm",
     "roberta",
     "distilbert",
-    "ctrl",
+    # "ctrl",  # disabled in the schema: https://github.com/ludwig-ai/ludwig/pull/2976
     "camembert",
     "albert",
     "t5",
@@ -92,7 +91,7 @@ HF_ENCODERS = [
     "longformer",
     "flaubert",
     "electra",
-    "mt5",
+    # "mt5",    # disabled in the schema: https://github.com/ludwig-ai/ludwig/pull/2982
 ]
 
 RAY_BACKEND_CONFIG = {
@@ -149,18 +148,7 @@ def parse_flag_from_env(key, default=False):
     return _value
 
 
-_run_slow_tests = parse_flag_from_env("RUN_SLOW", default=False)
 _run_private_tests = parse_flag_from_env("RUN_PRIVATE", default=False)
-
-
-def slow(test_case):
-    """Decorator marking a test as slow.
-
-    Slow tests are skipped by default. Set the RUN_SLOW environment variable to a truth value to run them.
-    """
-    if not _run_slow_tests:
-        test_case = unittest.skip("Skipping: this test is too slow")(test_case)
-    return test_case
 
 
 def private_param(param):
@@ -262,7 +250,7 @@ def category_feature(output_feature=False, **kwargs):
     else:
         feature.update(
             {
-                ENCODER: {"type": "dense", "vocab_size": 10, "embedding_size": 5},
+                ENCODER: {"vocab_size": 10, "embedding_size": 5},
             }
         )
     recursive_update(feature, kwargs)
@@ -577,8 +565,8 @@ def generate_output_features_with_dependencies_complex():
     )
 
     # The correct order ids[tf, sf, nf, vf, set_f, cf]
-    # # shuffling it to test the robustness of the topological sort
-    output_features = [nf, tf, set_f, vf, cf, sf, nf]
+    # shuffling it to test the robustness of the topological sort
+    output_features = [nf, tf, set_f, vf, cf, sf]
 
     return output_features
 

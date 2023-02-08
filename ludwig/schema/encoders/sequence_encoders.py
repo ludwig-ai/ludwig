@@ -1,4 +1,4 @@
-from typing import List
+from typing import Any, Dict, List
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import AUDIO, SEQUENCE, TEXT, TIMESERIES
@@ -14,7 +14,8 @@ from ludwig.schema.utils import ludwig_dataclass
 class SequenceEncoderConfig(BaseEncoderConfig):
     """Base class for sequence encoders."""
 
-    pass
+    def get_fixed_preprocessing_params(self) -> Dict[str, Any]:
+        return {"cache_encoder_embeddings": False}
 
 
 @DeveloperAPI
@@ -1224,6 +1225,7 @@ class StackedTransformerConfig(SequenceEncoderConfig):
     representation: str = schema_utils.StringOptions(
         ["dense", "sparse"],
         default="dense",
+        allow_none=False,
         description="The representation of the embeddings. 'Dense' means the embeddings are initialized randomly. "
         "'Sparse' means they are initialized to be one-hot encodings.",
         parameter_metadata=ENCODER_METADATA["StackedTransformer"]["representation"],

@@ -1,7 +1,7 @@
 import logging
 import os
 from abc import abstractmethod
-from typing import Any, Dict, Optional, Union
+from typing import Dict, Optional, Union
 
 import torch
 import torchvision.models as tvm
@@ -138,10 +138,6 @@ class TVBaseEncoder(ImageEncoder):
         # transforms_obj.crop_size determines the height and width of image
         # [num_channels, height, width]
         return torch.Size([self.num_channels, *(2 * self.crop_size)])
-
-    @classmethod
-    def is_pretrained(cls, encoder_params: Dict[str, Any]) -> bool:
-        return encoder_params.get("use_pretrained", True)
 
 
 @DeveloperAPI

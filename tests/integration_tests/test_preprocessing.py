@@ -540,3 +540,34 @@ def test_vit_encoder_different_dimension_image(tmpdir, csv_filename, use_pretrai
     # Failure happens post preprocessing but before training during the ECD model creation phase
     # so make sure the model can be created properly and training can proceed
     model.train(dataset=data_csv)
+
+
+@pytest.mark.parametrize(
+    "df_engine",
+    [
+        pytest.param("pandas", id="pandas"),
+        pytest.param("dask", id="dask", marks=pytest.mark.distributed),
+    ],
+)
+def test_fill_with_mode_different_df_engine(tmpdir, csv_filename, df_engine, ray_cluster_2cpu):
+    config = {
+        "input_features": [category_feature(preprocessing={"missing_value_strategy": "fill_with_mode"})],
+        "output_features": [binary_feature()],
+    }
+
+    training_data_csv_path = generate_data(
+        config["input_features"], config["output_features"], os.path.join(tmpdir, csv_filename)
+    )
+
+    df = pd.read_csv(training_data_csv_path)
+
+    if df_engine == "dask":
+        import dask.dataframe as dd
+
+        df = dd.from_pandas(df, npartitions=1)
+
+        # Only support Dask on Ray backend
+        config["backend"] = {"type": "ray"}
+
+    ludwig_model = LudwigModel(config)
+    ludwig_model.preprocess(dataset=df)

@@ -1,6 +1,7 @@
 import pytest
-from jsonschema.exceptions import ValidationError
+from marshmallow import ValidationError
 
+from ludwig.config_validation.validate_config import validate_config
 from ludwig.config_validation.validation import get_schema
 from ludwig.constants import (
     ACTIVE,
@@ -88,12 +89,12 @@ def test_config_features():
         "input_features": all_input_features,
         "output_features": all_output_features,
     }
-    ModelConfig(config)
+    validate_config(config)
 
     # make sure all defaults provided also registers as valid
 
     config = ModelConfig.from_dict(config).to_dict()
-    ModelConfig(config)
+    validate_config(config)
 
     # test various invalid output features
     input_only_features = [
@@ -106,7 +107,7 @@ def test_config_features():
         }
 
         with pytest.raises(ConfigValidationError):
-            ModelConfig(config)
+            validate_config(config)
 
 
 def test_config_encoders():
@@ -119,7 +120,7 @@ def test_config_encoders():
             "output_features": [category_feature(decoder={"type": "classifier", "vocab_size": 2}, reduce_input="sum")],
             "combiner": {"type": "concat", "output_size": 14},
         }
-        ModelConfig(config)
+        validate_config(config)
 
 
 def test_config_with_backend():
@@ -153,11 +154,10 @@ def test_config_with_backend():
             "staircase": True,
             "regularization_lambda": 1,
             "regularization_type": "l2",
-            "validation_field": "label",
         },
         BACKEND: {"type": "ray", "trainer": {"num_workers": 2}},
     }
-    ModelConfig(config)
+    validate_config(config)
 
 
 def test_config_bad_feature_type():
@@ -168,7 +168,7 @@ def test_config_bad_feature_type():
     }
 
     with pytest.raises(ConfigValidationError):
-        ModelConfig(config)
+        validate_config(config)
 
 
 def test_config_bad_encoder_name():
@@ -179,7 +179,7 @@ def test_config_bad_encoder_name():
     }
 
     with pytest.raises(ConfigValidationError):
-        ModelConfig(config)
+        validate_config(config)
 
 
 # TODO(ksbrar): Circle back after discussing whether additional properties should be allowed long-term.
@@ -203,7 +203,7 @@ def test_config_bad_encoder_name():
 #     }
 
 #     with pytest.raises(ValidationError, match=r"^Additional properties are not allowed .*"):
-#         ModelConfig(config)
+#         validate_config(config)
 
 
 def test_config_fill_values():
@@ -216,7 +216,7 @@ def test_config_fill_values():
             ],
             "output_features": [binary_feature(preprocessing={"fill_value": binary_fill_value})],
         }
-        ModelConfig(config)
+        validate_config(config)
 
     bad_vector_fill_values = ["one two three", "1,2,3", 0]
     bad_binary_fill_values = ["one", 2, "maybe"]
@@ -228,7 +228,7 @@ def test_config_fill_values():
             "output_features": [binary_feature(preprocessing={"fill_value": binary_fill_value})],
         }
         with pytest.raises(ValidationError):
-            ModelConfig(config)
+            validate_config(config)
 
 
 def test_validate_with_preprocessing_defaults():
@@ -267,9 +267,9 @@ def test_validate_with_preprocessing_defaults():
         },
     }
 
-    ModelConfig(config)
+    validate_config(config)
     config = ModelConfig.from_dict(config).to_dict()
-    ModelConfig(config)
+    validate_config(config)
 
 
 def test_defaults_schema():
@@ -319,12 +319,12 @@ def test_validate_defaults_schema():
         },
     }
 
-    ModelConfig(config)
+    validate_config(config)
 
-    config[DEFAULTS][CATEGORY][NAME] = "TEST"
+    config[DEFAULTS][CATEGORY]["hello"] = "TEST"
 
     with pytest.raises(ValidationError):
-        ModelConfig(config)
+        validate_config(config)
 
 
 def test_validate_no_trainer_type():
@@ -339,23 +339,25 @@ def test_validate_no_trainer_type():
     }
 
     # Ensure validation succeeds with ECD trainer params and ECD model type
-    ModelConfig(config)
+    validate_config(config)
 
     # Ensure validation fails with ECD trainer params and GBM model type
     config[MODEL_TYPE] = MODEL_GBM
     with pytest.raises(ValidationError):
-        ModelConfig(config)
+        validate_config(config)
 
     # Switch to trainer with valid GBM params
     config[TRAINER] = {"tree_learner": "serial"}
 
     # Ensure validation succeeds with GBM trainer params and GBM model type
-    ModelConfig(config)
+    validate_config(config)
 
     # Ensure validation fails with GBM trainer params and ECD model type
+    # config[MODEL_TYPE] = MODEL_ECD
     config[MODEL_TYPE] = MODEL_ECD
+    config[TRAINER] = {"tree_learner": "serial", "NON-PARAM": "what"}
     with pytest.raises(ValidationError):
-        ModelConfig(config)
+        validate_config(config)
 
 
 def test_schema_no_duplicates():
@@ -400,7 +402,7 @@ def test_encoder_descriptions():
     """This test tests that each encoder in the enum for each feature type has a description."""
     schema = get_input_feature_jsonschema(MODEL_ECD)
 
-    for feature_schema in schema["items"]["allOf"]:
+    for feature_schema in schema["allOf"]:
         type_data = feature_schema["then"]["properties"]["encoder"]["properties"]["type"]
         assert len(set(type_data["enumDescriptions"].keys())) > 0
         assert set(type_data["enumDescriptions"].keys()).issubset(set(type_data["enum"]))
@@ -418,7 +420,7 @@ def test_decoder_descriptions():
     """This test tests that each decoder in the enum for each feature type has a description."""
     schema = get_output_feature_jsonschema(MODEL_ECD)
 
-    for feature_schema in schema["items"]["allOf"]:
+    for feature_schema in schema["allOf"]:
         type_data = feature_schema["then"]["properties"]["decoder"]["properties"]["type"]
         assert len(type_data["enumDescriptions"].keys()) > 0
         assert set(type_data["enumDescriptions"].keys()).issubset(set(type_data["enum"]))

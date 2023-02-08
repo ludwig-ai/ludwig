@@ -1,5 +1,5 @@
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import JACCARD, SET, SIGMOID_CROSS_ENTROPY
+from ludwig.constants import JACCARD, MODEL_ECD, SET, SIGMOID_CROSS_ENTROPY
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -11,7 +11,8 @@ from ludwig.schema.features.loss.utils import LossDataclassField
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
 from ludwig.schema.features.utils import (
-    input_config_registry,
+    defaults_config_registry,
+    ecd_input_config_registry,
     input_mixin_registry,
     output_config_registry,
     output_mixin_registry,
@@ -31,13 +32,14 @@ class SetInputFeatureConfigMixin(BaseMarshmallowConfig):
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=SET)
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_ECD,
         feature_type=SET,
         default="embed",
     )
 
 
 @DeveloperAPI
-@input_config_registry.register(SET)
+@ecd_input_config_registry.register(SET)
 @ludwig_dataclass
 class SetInputFeatureConfig(BaseInputFeatureConfig, SetInputFeatureConfigMixin):
     """SetInputFeatureConfig is a dataclass that configures the parameters used for a set input feature."""
@@ -105,3 +107,10 @@ class SetOutputFeatureConfig(BaseOutputFeatureConfig, SetOutputFeatureConfigMixi
         "probabilities greater than or equal to threshold are predicted to be in the output set (True).",
         parameter_metadata=FEATURE_METADATA[SET]["threshold"],
     )
+
+
+@DeveloperAPI
+@defaults_config_registry.register(SET)
+@ludwig_dataclass
+class SetDefaultsConfig(SetInputFeatureConfigMixin, SetOutputFeatureConfigMixin):
+    pass

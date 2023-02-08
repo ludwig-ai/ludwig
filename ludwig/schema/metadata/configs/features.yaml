@@ -202,7 +202,7 @@ binary:
             ui_display_name: Missing Value Strategy
             expected_impact: 3
     calibration:
-        expected_impact: 2
+        expected_impact: 3
     dependencies:
         expected_impact: 1
     reduce_dependencies:
@@ -263,7 +263,7 @@ category:
                 substantially
             ui_display_name: Most common (vocabulary size)
     calibration:
-        expected_impact: 2
+        expected_impact: 3
     dependencies:
         expected_impact: 1
     reduce_dependencies:
@@ -407,6 +407,9 @@ image:
         width:
             ui_display_name: null
             expected_impact: 2
+        requires_equal_dimensions:
+            ui_display_name: null
+            expected_impact: 1
 number:
     preprocessing:
         computed_fill_value:
@@ -432,9 +435,10 @@ number:
             expected_impact: 3
         normalization:
             default_value_reasoning:
-                It could be valuable to observe how the model
-                trains without normalization, and see how the performance changes
-                after.
+                Z-score normalization helps improve the training stability and convergence
+                of neural networks by rescaling the numeric input features to have a mean
+                of 0 and a standard deviation of 1, reducing the variability and distribution
+                of the data. This improves neural network training.
             description_implications:
                 The goal of normalization is to transform features
                 to be on a similar scale. Normalization can be a form of feature smoothing

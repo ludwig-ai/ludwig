@@ -189,6 +189,8 @@ class CheckGBMHorovodIncompatibility(ConfigCheck):
     def check(config: ModelConfigDict) -> None:
         if BACKEND not in config:
             return
+        if config[BACKEND] is None:
+            return
         if config[MODEL_TYPE] == MODEL_GBM and config[BACKEND][TYPE] == "horovod":
             raise ConfigValidationError("Horovod backend does not support GBM models.")
 
@@ -219,6 +221,12 @@ class CheckRayBackendInMemoryPreprocessing(ConfigCheck):
     @staticmethod
     def check(config: ModelConfigDict) -> None:
         if BACKEND not in config:
+            return
+
+        if config[BACKEND] is None:
+            return
+
+        if PREPROCESSING not in config[TRAINER] or IN_MEMORY not in config[TRAINER][PREPROCESSING]:
             return
 
         if config[BACKEND][TYPE] == "ray" and not config[TRAINER][PREPROCESSING][IN_MEMORY]:
@@ -331,4 +339,5 @@ class CheckSplitter(ConfigCheck):
 class CheckSchema(ConfigCheck):
     @staticmethod
     def check(config: ModelConfigDict) -> None:
+        print("Called check_schema.")
         check_schema(config)

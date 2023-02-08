@@ -1,3 +1,4 @@
+import numpy as np
 from torch.optim import SGD
 
 from ludwig.features.number_feature import NumberInputFeature, NumberOutputFeature
@@ -72,7 +73,13 @@ def test_lr_scheduler_reduce_on_plateau():
     )
 
     optimizer = SGD(module.parameters(), lr=base_lr)
-    config = LRSchedulerConfig(warmup_evaluations=0, reduce_on_plateau=reduce_limit)
+    config = LRSchedulerConfig(
+        warmup_evaluations=0,
+        decay=None,
+        reduce_on_plateau=reduce_limit,
+        reduce_on_plateau_patience=10,
+        reduce_on_plateau_rate=0.1,
+    )
     scheduler = LRScheduler(config=config, optimizer=optimizer)
 
     progress_tracker = get_new_progress_tracker(
@@ -89,6 +96,11 @@ def test_lr_scheduler_reduce_on_plateau():
     steps_to_plateau = 5
     loss = 10.0
     for epoch in range(total_eval_steps):
+        for i in range(100):
+            # Simulate batch-wise steps. If we make a mistake, then this will reset
+            # the learning rate.
+            scheduler.step()
+
         steps_to_plateau -= 1
         if steps_to_plateau > 0:
             loss -= 0.1
@@ -105,6 +117,9 @@ def test_lr_scheduler_reduce_on_plateau():
         last_lr = lr
 
     assert num_reductions == reduce_limit
+
+    # 3 reductions that multiply by 0.1 each time
+    assert np.isclose(lr, 0.001)
 
 
 def test_lr_scheduler_save_load():
@@ -139,7 +154,6 @@ def test_lr_scheduler_save_load():
 
     optimizer_state = optimizer.state_dict()
     scheduler_state = scheduler.state_dict()
-    print(scheduler_state)
 
     optimizer2 = SGD(module.parameters(), lr=base_lr)
     scheduler2 = LRScheduler(config=config, optimizer=optimizer2)

@@ -207,6 +207,9 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
     def input_shape(self):
         return torch.Size([self.encoder_obj.config.max_sequence_length])
 
+    def update_config_after_module_init(self, feature_config):
+        feature_config.encoder = self.encoder_obj.config
+
     @staticmethod
     def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
         feature_config.encoder.vocab = feature_metadata["idx2str"]

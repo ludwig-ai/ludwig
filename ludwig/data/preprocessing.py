@@ -39,6 +39,7 @@ from ludwig.constants import (
     FILL_WITH_MODE,
     FULL,
     MIN_DATASET_SPLIT_ROWS,
+    MODEL_ECD,
     NAME,
     NUMBER,
     PREPROCESSING,
@@ -55,17 +56,14 @@ from ludwig.data.concatenate_datasets import concatenate_df, concatenate_files, 
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.split import get_splitter, split_dataset
 from ludwig.data.utils import set_fixed_split
-from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_registries import get_base_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.models.embedder import create_embed_batch_size_evaluator, create_embed_transform_fn
+from ludwig.schema.encoders.utils import get_encoder_cls
 from ludwig.types import FeatureConfigDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils import data_utils, strings_utils
 from ludwig.utils.backward_compatibility import upgrade_metadata
-from ludwig.utils.config_utils import (
-    merge_config_preprocessing_with_feature_specific_defaults,
-    merge_fixed_preprocessing_params,
-)
+from ludwig.utils.config_utils import merge_config_preprocessing_with_feature_specific_defaults
 from ludwig.utils.data_utils import (
     CACHEABLE_FORMATS,
     CSV_FORMATS,
@@ -107,6 +105,7 @@ from ludwig.utils.data_utils import (
     STATA_FORMATS,
     TSV_FORMATS,
 )
+from ludwig.utils.dataframe_utils import is_dask_series_or_df
 from ludwig.utils.defaults import default_preprocessing_parameters, default_random_seed
 from ludwig.utils.fs_utils import file_lock, path_exists
 from ludwig.utils.misc_utils import get_from_registry, merge_dict
@@ -1281,15 +1280,21 @@ def get_features_with_cacheable_fixed_embeddings(
     for feature_config in feature_configs:
         # deal with encoders that have fixed preprocessing
         if ENCODER in feature_config:
-            encoder = feature_config[ENCODER]
-            if TYPE in encoder:
+            encoder_params = feature_config[ENCODER]
+            if TYPE in encoder_params:
                 preprocessing = metadata[feature_config[NAME]][PREPROCESSING]
                 if preprocessing.get("cache_encoder_embeddings"):
-                    encoder_class = get_encoder_cls(feature_config[TYPE], encoder[TYPE])
-                    if not encoder_class.can_cache_embeddings(encoder):
+                    # TODO(travis): passing in MODEL_ECD is a hack here that can be removed once we move to using
+                    # the config object everywhere in preprocessing. Then we won't need to do the lookup on the
+                    # encoder schema at all. This hack works for now because all encoders are supported by ECD, so
+                    # there is no chance of a GBM model using an encoder not supported by ECD, but this could change
+                    # in the future.
+                    encoder_class = get_encoder_cls(MODEL_ECD, feature_config[TYPE], encoder_params[TYPE])
+                    encoder = encoder_class.from_dict(encoder_params)
+                    if not encoder.can_cache_embeddings():
                         raise ValueError(
                             f"Set `cache_encoder_embeddings=True` for feature {feature_config[NAME]} with "
-                            f"encoder {encoder[TYPE]}, but encoder embeddings are not static."
+                            f"encoder {encoder_params[TYPE]}, but encoder embeddings are not static."
                         )
 
                     # Convert to Ray Datasets, map batches to encode, then convert back to Dask
@@ -1342,15 +1347,8 @@ def build_preprocessing_parameters(
             feature_name_to_preprocessing_parameters[feature_name] = metadata[feature_name][PREPROCESSING]
             continue
 
-        preprocessing_parameters = merge_preprocessing(feature_config, global_preprocessing_parameters)
-
-        # Update preprocessing parameters if encoders require fixed preprocessing parameters
-        preprocessing_parameters = merge_fixed_preprocessing_params(
-            feature_config[TYPE], preprocessing_parameters, feature_config.get(ENCODER, {})
-        )
-
+        preprocessing_parameters = feature_config[PREPROCESSING]
         fill_value = precompute_fill_value(dataset_cols, feature_config, preprocessing_parameters, backend)
-
         if fill_value is not None:
             preprocessing_parameters.update({"computed_fill_value": fill_value})
 
@@ -1474,7 +1472,13 @@ def precompute_fill_value(dataset_cols, feature, preprocessing_parameters: Prepr
     if missing_value_strategy == FILL_WITH_CONST:
         return preprocessing_parameters["fill_value"]
     elif missing_value_strategy == FILL_WITH_MODE:
-        return dataset_cols[feature[COLUMN]].value_counts().index[0]
+        # Requires separate handling if Dask since Dask has lazy evaluation
+        # Otherwise, dask returns a Dask index structure instead of a value to use as a fill value
+        return (
+            dataset_cols[feature[COLUMN]].value_counts().index.compute()[0]
+            if is_dask_series_or_df(dataset_cols[feature[COLUMN]], backend)
+            else dataset_cols[feature[COLUMN]].value_counts().index[0]
+        )
     elif missing_value_strategy == FILL_WITH_MEAN:
         if feature[TYPE] != NUMBER:
             raise ValueError(

@@ -70,7 +70,7 @@ def setup_model_scaffolding(raw_df, input_features, output_features):
     # setup model scaffolding to for testing
     model = LudwigModel(config)
     training_set, _, _, training_set_metadata = preprocess_for_training(
-        config, training_set=raw_df, skip_save_processed_input=True
+        model.config, training_set=raw_df, skip_save_processed_input=True
     )
     model.training_set_metadata = training_set_metadata
     update_config_with_metadata(model.config_obj, training_set_metadata)
