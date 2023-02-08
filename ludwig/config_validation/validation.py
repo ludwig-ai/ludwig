@@ -6,12 +6,11 @@ from jsonschema import Draft7Validator, validate
 from jsonschema.validators import extend
 
 from ludwig.api_annotations import DeveloperAPI
+from ludwig.config_validation.checks import get_config_check_registry
 from ludwig.constants import MODEL_ECD, MODEL_TYPE
 from ludwig.error import ConfigValidationError
+from ludwig.schema.model_types.base import ModelConfig
 from ludwig.schema.utils import unload_jsonschema_from_marshmallow_class
-
-# from marshmallow import ValidationError
-
 
 VALIDATION_LOCK = Lock()
 
@@ -79,22 +78,14 @@ def check_schema(updated_config):
         raise ConfigValidationError(f"Failed to validate JSON schema for config. Error: {error.message}")
 
 
-# def validate_config(config):
-#     from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
+def validate_config(config):
+    from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
 
-#     # Update config from previous versions to check that backwards compatibility will enable a valid config
-#     updated_config = upgrade_config_dict_to_latest_version(config)
+    # Update config from previous versions to check that backwards compatibility will enable a valid config
+    updated_config = upgrade_config_dict_to_latest_version(config)
+    check_schema(updated_config)
 
-#     model_config = ModelConfig.from_dict(updated_config)
+    model_config = ModelConfig.from_dict(updated_config)
 
-#     for config_check_cls in get_config_check_registry().values():
-#         config_check_cls.check(model_config.to_dict())
-
-# Update config from previous versions to check that backwards compatibility will enable a valid config
-# NOTE: import here to prevent circular import
-# from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
-
-# Update config from previous versions to check that backwards compatibility will enable a valid config
-# updated_config = upgrade_config_dict_to_latest_version(config)
-
-# validate_upgraded_config(updated_config)
+    for config_check_cls in get_config_check_registry().values():
+        config_check_cls.check(model_config.to_dict())

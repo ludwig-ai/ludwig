@@ -171,9 +171,20 @@ class _ModelConfig(BaseMarshmallowConfig):
             if upgraded_config_dict[MODEL_TYPE] == MODEL_GBM:
                 self.model_type = MODEL_GBM
                 self.trainer = GBMTrainerConfig()
+                if (
+                    TYPE in upgraded_config_dict.get(TRAINER, {})
+                    and upgraded_config_dict[TRAINER][TYPE] != "lightgbm_trainer"
+                ):
+                    raise ValidationError("GBM Model trainer must be of type: 'lightgbm_trainer'")
+
                 for feature in self.input_features.to_dict().keys():
                     feature_cls = getattr(self.input_features, feature)
-                    feature_cls.encoder = PassthroughEncoderConfig()
+                    if feature_cls.type in [BINARY, CATEGORY, NUMBER]:
+                        feature_cls.encoder = PassthroughEncoderConfig()
+                    else:
+                        raise ValidationError(
+                            "GBM Models currently only support Binary, Category, and Number " "features"
+                        )
 
         # ===== Combiner =====
         if COMBINER in upgraded_config_dict:
@@ -432,11 +443,15 @@ class _ModelConfig(BaseMarshmallowConfig):
         """
         self.model_type = MODEL_GBM
         self.trainer = GBMTrainerConfig()
+        if TYPE in config_dict.get(TRAINER, {}) and config_dict[TRAINER][TYPE] != "lightgbm_trainer":
+            raise ValidationError("GBM Model trainer must be of type: 'lightgbm_trainer'")
 
         for feature in self.input_features.to_dict().keys():
             feature_cls = getattr(self.input_features, feature)
             if feature_cls.type in [BINARY, CATEGORY, NUMBER]:
                 feature_cls.encoder = PassthroughEncoderConfig()
+            else:
+                raise ValidationError("GBM Models currently only support Binary, Category, and Number " "features")
 
     def _set_validation_parameters(self):
         """Sets validation-related parameters used for early stopping, determining the best hyperopt trial, etc."""
@@ -468,6 +483,8 @@ class _ModelConfig(BaseMarshmallowConfig):
                             "specify the validation_field that should be used with the validation_metric "
                             f"'{self.trainer.validation_metric}'."
                         )
+            if validation_field is None:
+                raise ValidationError("User-specified trainer.validation_metric is not valid for any output feature.")
             self.trainer.validation_field = validation_field
             return
 

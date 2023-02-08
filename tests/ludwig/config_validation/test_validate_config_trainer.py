@@ -1,7 +1,7 @@
 import pytest
 from marshmallow import ValidationError
 
-from ludwig.config_validation.validate_config import validate_config
+from ludwig.config_validation.validation import validate_config
 from ludwig.constants import TRAINER
 from ludwig.error import ConfigValidationError
 from ludwig.schema.optimizers import optimizer_registry

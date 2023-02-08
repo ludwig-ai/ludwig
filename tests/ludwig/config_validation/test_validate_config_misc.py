@@ -1,8 +1,7 @@
 import pytest
 from marshmallow import ValidationError
 
-from ludwig.config_validation.validate_config import validate_config
-from ludwig.config_validation.validation import get_schema
+from ludwig.config_validation.validation import get_schema, validate_config
 from ludwig.constants import (
     ACTIVE,
     BACKEND,

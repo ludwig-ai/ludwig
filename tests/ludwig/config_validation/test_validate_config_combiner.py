@@ -1,8 +1,7 @@
 import pytest
 from marshmallow import ValidationError
 
-from ludwig.config_validation.validate_config import validate_config
-from ludwig.config_validation.validation import get_schema
+from ludwig.config_validation.validation import get_schema, validate_config
 from ludwig.constants import MODEL_ECD, TRAINER
 from ludwig.error import ConfigValidationError
 from tests.integration_tests.utils import binary_feature, category_feature, number_feature

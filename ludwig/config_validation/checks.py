@@ -6,7 +6,6 @@ Assumes incoming configs are comprehensive (all parameters and defaults filled i
 from abc import ABC, abstractmethod
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.config_validation.validation import check_schema
 from ludwig.constants import (
     AUDIO,
     BACKEND,
@@ -333,11 +332,3 @@ class CheckSplitter(ConfigCheck):
 
         splitter = get_splitter(**config[PREPROCESSING][SPLIT])
         splitter.validate(config)
-
-
-@register_config_check("Checks the schema.")
-class CheckSchema(ConfigCheck):
-    @staticmethod
-    def check(config: ModelConfigDict) -> None:
-        print("Called check_schema.")
-        check_schema(config)
