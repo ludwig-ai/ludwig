@@ -108,3 +108,27 @@ def to_batches(df: pd.DataFrame, batch_size: int) -> List[pd.DataFrame]:
 @DeveloperAPI
 def from_batches(batches: List[pd.DataFrame]) -> pd.DataFrame:
     return pd.concat(batches)
+
+
+@DeveloperAPI
+def to_scalar_df(df: pd.DataFrame) -> pd.DataFrame:
+    """Converts all columns in a pd.DataFrame to be scalar types.
+    For object columns of lists, each element of the list is expanded into its own column named {column}_{index}. We
+    assume all object columns are lists of the same length (i.e., tensor format output from preprocessing).
+    It's also important that the relative order of the columns is preserved, to maintain consistency with other
+    conversions like the one for Hummingbird.
+    """
+    scalar_df = df
+    column_ordering = []
+    for c in df.columns:
+        s = df[c]
+        if s.dtype == "object":
+            s_list = s.to_list()
+            ncols = s_list[0].shape[0]
+            split_cols = [f"{c}_{k}" for k in range(ncols)]
+            sdf = pd.DataFrame(s_list, columns=split_cols)
+            scalar_df = pd.concat([scalar_df, sdf], axis=1)
+            column_ordering += split_cols
+        else:
+            column_ordering.append(c)
+    return scalar_df[column_ordering]
