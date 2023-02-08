@@ -1,8 +1,8 @@
 from typing import Any, Dict, Optional
 
 import pytest
-from ludwig.constants import MODEL_ECD
 
+from ludwig.constants import MODEL_ECD
 from ludwig.schema.model_types.utils import merge_fixed_preprocessing_params
 
 
