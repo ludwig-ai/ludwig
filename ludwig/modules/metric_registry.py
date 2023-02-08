@@ -80,5 +80,5 @@ def get_metric_objective(metric_name: str) -> Literal[MINIMIZE, MAXIMIZE]:
 
 
 @DeveloperAPI
-def get_metric_tensor_input(metric_name: str) -> Literal[PREDICTIONS, PROBABILITIES]:
+def get_metric_tensor_input(metric_name: str) -> Literal[PREDICTIONS, PROBABILITIES, LOGITS]:
     return metric_tensor_input_registry[metric_name]
