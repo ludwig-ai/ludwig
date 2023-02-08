@@ -1,5 +1,4 @@
 import pytest
-from marshmallow import ValidationError
 
 from ludwig.config_validation.validation import get_schema, validate_config
 from ludwig.constants import (
@@ -226,7 +225,7 @@ def test_config_fill_values():
             ],
             "output_features": [binary_feature(preprocessing={"fill_value": binary_fill_value})],
         }
-        with pytest.raises(ValidationError):
+        with pytest.raises(ConfigValidationError):
             validate_config(config)
 
 
@@ -320,9 +319,9 @@ def test_validate_defaults_schema():
 
     validate_config(config)
 
-    config[DEFAULTS][CATEGORY]["hello"] = "TEST"
+    config[DEFAULTS][CATEGORY][NAME] = "TEST"
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         validate_config(config)
 
 
@@ -342,7 +341,7 @@ def test_validate_no_trainer_type():
 
     # Ensure validation fails with ECD trainer params and GBM model type
     config[MODEL_TYPE] = MODEL_GBM
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         validate_config(config)
 
     # Switch to trainer with valid GBM params
@@ -352,10 +351,9 @@ def test_validate_no_trainer_type():
     validate_config(config)
 
     # Ensure validation fails with GBM trainer params and ECD model type
-    # config[MODEL_TYPE] = MODEL_ECD
     config[MODEL_TYPE] = MODEL_ECD
-    config[TRAINER] = {"tree_learner": "serial", "NON-PARAM": "what"}
-    with pytest.raises(ValidationError):
+    config[TRAINER] = {"tree_learner": "serial"}
+    with pytest.raises(ConfigValidationError):
         validate_config(config)
 
 
