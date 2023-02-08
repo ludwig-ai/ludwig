@@ -25,6 +25,7 @@ from ludwig.encoders.registry import register_encoder
 from ludwig.modules.embedding_modules import Embed
 from ludwig.schema.encoders.category_encoders import (
     CategoricalEmbedConfig,
+    CategoricalOneHotEncoderConfig,
     CategoricalPassthroughEncoderConfig,
     CategoricalSparseConfig,
 )
@@ -171,3 +172,39 @@ class CategoricalSparseEncoder(Encoder):
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([1])
+
+
+@DeveloperAPI
+@register_encoder("onehot", [CATEGORY])
+class CategoricalOneHotEncoder(Encoder):
+    def __init__(
+        self,
+        vocab: List[str],
+        encoder_config=None,
+        **kwargs,
+    ):
+        super().__init__()
+        self.config = encoder_config
+
+        logger.debug(f" {self.name}")
+        self.vocab_size = len(vocab)
+
+    def forward(self, inputs, mask=None):
+        """
+        :param inputs: The inputs fed into the encoder.
+               Shape: [batch x 1]
+        """
+        t = inputs.squeeze(1).long()
+        return torch.nn.functional.one_hot(t, num_classes=self.vocab_size)
+
+    @staticmethod
+    def get_schema_cls():
+        return CategoricalOneHotEncoderConfig
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([1])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([self.vocab_size])

@@ -60,7 +60,7 @@ class GBMCategoryInputFeatureConfig(CategoryInputFeatureConfig):
     encoder: BaseEncoderConfig = EncoderDataclassField(
         MODEL_GBM,
         feature_type=CATEGORY,
-        default="passthrough",
+        default="onehot",
     )
 
 

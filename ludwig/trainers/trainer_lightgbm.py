@@ -850,8 +850,8 @@ class LightGBMTrainer(BaseTrainer):
         validation_set: Optional["Dataset"] = None,  # noqa: F821
         test_set: Optional["Dataset"] = None,  # noqa: F821
     ) -> Tuple[lgb.Dataset, List[lgb.Dataset], List[str]]:
-        X_train = training_set.to_df(self.model.input_features.values())
-        y_train = training_set.to_df(self.model.output_features.values())
+        X_train = training_set.to_scalar_df(self.model.input_features.values())
+        y_train = training_set.to_scalar_df(self.model.output_features.values())
 
         # create dataset for lightgbm
         # keep raw data for continued training https://github.com/microsoft/LightGBM/issues/4965#issuecomment-1019344293
@@ -869,8 +869,8 @@ class LightGBMTrainer(BaseTrainer):
         eval_sets = [lgb_train]
         eval_names = [LightGBMTrainer.TRAIN_KEY]
         if validation_set is not None:
-            X_val = validation_set.to_df(self.model.input_features.values())
-            y_val = validation_set.to_df(self.model.output_features.values())
+            X_val = validation_set.to_scalar_df(self.model.input_features.values())
+            y_val = validation_set.to_scalar_df(self.model.output_features.values())
             try:
                 lgb_val = lgb.Dataset(X_val, label=y_val, reference=lgb_train, free_raw_data=False).construct()
             except lgb.basic.LightGBMError as e:
@@ -888,8 +888,8 @@ class LightGBMTrainer(BaseTrainer):
             pass
 
         if test_set is not None:
-            X_test = test_set.to_df(self.model.input_features.values())
-            y_test = test_set.to_df(self.model.output_features.values())
+            X_test = test_set.to_scalar_df(self.model.input_features.values())
+            y_test = test_set.to_scalar_df(self.model.output_features.values())
             try:
                 lgb_test = lgb.Dataset(X_test, label=y_test, reference=lgb_train, free_raw_data=False).construct()
             except lgb.basic.LightGBMError as e:
@@ -1044,19 +1044,16 @@ class LightGBMRayTrainer(LightGBMTrainer):
         output_feature = get_single_output_feature(self.model)
         label_col = output_feature.proc_column
 
-        in_feat = [f.proc_column for f in self.model.input_features.values()]
-        out_feat = [f.proc_column for f in self.model.output_features.values()]
-        feat_cols = in_feat + out_feat
-
         # TODO(shreya): Refactor preprocessing so that this can be moved upstream.
         if training_set.ds.num_blocks() < self.ray_params.num_actors:
             # Repartition to ensure that there is at least one block per actor
             training_set.repartition(self.ray_params.num_actors)
 
+        features = list(self.model.input_features.values()) + list(self.model.output_features.values())
         lgb_train = RayDMatrix(
             # NOTE: batch_size=None to make sure map_batches doesn't change num_blocks.
             # Need num_blocks to equal num_actors in order to feed all actors.
-            training_set.ds.map_batches(lambda df: df[feat_cols], batch_size=None),
+            training_set.to_scalar(features),
             label=label_col,
             distributed=False,
         )
@@ -1069,7 +1066,7 @@ class LightGBMRayTrainer(LightGBMTrainer):
                 validation_set.repartition(self.ray_params.num_actors)
 
             lgb_val = RayDMatrix(
-                validation_set.ds.map_batches(lambda df: df[feat_cols], batch_size=None),
+                validation_set.to_scalar(features),
                 label=label_col,
                 distributed=False,
             )
@@ -1082,7 +1079,7 @@ class LightGBMRayTrainer(LightGBMTrainer):
                 test_set.repartition(self.ray_params.num_actors)
 
             lgb_test = RayDMatrix(
-                test_set.ds.map_batches(lambda df: df[feat_cols], batch_size=None),
+                test_set.to_scalar(features),
                 label=label_col,
                 distributed=False,
             )

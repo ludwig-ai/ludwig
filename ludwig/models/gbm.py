@@ -118,8 +118,19 @@ class GBM(BaseModel):
         # the Hummingbird compiled model. Notably, when compiling the model to torchscript, compiling with Hummingbird
         # first should preserve the torch predictions code path.
         if self.compiled_model is None:
+            feature_vectors = []
+            for a in inputs.values():
+                if len(a.shape) > 1:
+                    # Input feature is a vector of shape [batch_size, nfeatures]
+                    # We need to expand this into `nfeatures` individual vectors of shape [batch_size]
+                    nfeatures = a.shape[1]
+                    vectors = [v.squeeze() for v in np.hsplit(a, nfeatures)]
+                    feature_vectors += vectors
+                else:
+                    feature_vectors.append(a)
+
             # The LGBM sklearn interface works with array-likes, so we place the inputs into a 2D numpy array.
-            in_array = np.stack(list(inputs.values()), axis=0).T
+            in_array = np.stack(feature_vectors, axis=0).T
 
             # Predict on the input batch and convert the predictions to torch tensors so that they are compatible with
             # the existing metrics modules.

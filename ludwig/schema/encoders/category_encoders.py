@@ -1,4 +1,4 @@
-from typing import List
+from typing import Any, Dict, List
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import CATEGORY, MODEL_ECD, MODEL_GBM
@@ -197,3 +197,27 @@ class CategoricalSparseConfig(BaseEncoderConfig):
         "representation is dense.",
         parameter_metadata=ENCODER_METADATA["CategoricalSparse"]["pretrained_embeddings"],
     )
+
+
+@DeveloperAPI
+@register_encoder_config("onehot", CATEGORY, model_types=[MODEL_ECD, MODEL_GBM])
+@ludwig_dataclass
+class CategoricalOneHotEncoderConfig(BaseEncoderConfig):
+    """CategoricalOneHotEncoderConfig is a dataclass that configures the parameters used for a categorical onehot
+    encoder."""
+
+    type: str = schema_utils.ProtectedString(
+        "onehot",
+        description="Type of encoder.",
+    )
+
+    vocab: List[str] = schema_utils.List(
+        default=None,
+        description="[internal] Vocabulary of the encoder",
+        parameter_metadata=ENCODER_METADATA["CategoricalSparse"]["vocab"],
+    )
+
+    def get_fixed_preprocessing_params(self) -> Dict[str, Any]:
+        return {
+            "cache_encoder_embeddings": True,
+        }
