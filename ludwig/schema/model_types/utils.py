@@ -181,7 +181,9 @@ def set_hyperopt_defaults_(config: "ModelConfig"):
 
     # Set default num_samples based on search space if not set by user
     if config.hyperopt.executor.num_samples is None:
-        _contains_grid_search_params = contains_grid_search_parameters(config.hyperopt.to_dict())
+        from ludwig.schema.hyperopt import HyperoptConfig
+
+        _contains_grid_search_params = contains_grid_search_parameters(HyperoptConfig.Schema().dump(config.hyperopt))
         if _contains_grid_search_params:
             logger.info(
                 "Setting hyperopt num_samples to 1 to prevent duplicate trials from being run. Duplicate trials are"
