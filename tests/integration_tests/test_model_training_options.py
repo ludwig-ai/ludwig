@@ -251,7 +251,7 @@ def test_optimizers(optimizer_type, tmp_path):
     if optimizer_type == "adadelta":
         config[TRAINER]["learning_rate"] = 0.1
     if optimizer_type == "lbfgs":
-        config[TRAINER]["learning_rate"] = 0.1
+        config[TRAINER]["learning_rate"] = 0.05
 
     model = LudwigModel(config)
 
@@ -274,7 +274,6 @@ def test_optimizers(optimizer_type, tmp_path):
 
     # retrieve training losses for first and last entries.
     train_losses = train_stats[TRAINING]["combined"]["loss"]
-    print(f"train_losses: {train_losses}")
     last_entry = len(train_losses)
 
     # ensure train loss for last entry is less than or equal to the first entry.
