@@ -441,23 +441,24 @@ def test_gbm_category_one_hot_encoding(tmpdir, backend, ray_cluster_4cpu):
     assert prob_col.apply(sum).mean() == pytest.approx(1.0)
 
 
-@pytest.mark.parametrize(
-    "backend",
-    [
-        pytest.param(LOCAL_BACKEND, id="local"),
-        pytest.param(RAY_BACKEND, id="ray", marks=pytest.mark.distributed),
-    ],
-)
-def test_gbm_text_pretrained_embedding(tmpdir, backend, ray_cluster_4cpu):
-    """Test that the GBM model can train and predict with non-number inputs."""
-    input_features = [binary_feature(), text_feature(encoder={"type": "distilbert"})]
-    output_feature = binary_feature()
-    output_features = [output_feature]
+# TODO(travis): add when we support pretrained text models for gbms
+# @pytest.mark.parametrize(
+#     "backend",
+#     [
+#         pytest.param(LOCAL_BACKEND, id="local"),
+#         pytest.param(RAY_BACKEND, id="ray", marks=pytest.mark.distributed),
+#     ],
+# )
+# def test_gbm_text_pretrained_embedding(tmpdir, backend, ray_cluster_4cpu):
+#     """Test that the GBM model can train and predict with non-number inputs."""
+#     input_features = [binary_feature(), text_feature(encoder={"type": "distilbert"})]
+#     output_feature = binary_feature()
+#     output_features = [output_feature]
 
-    preds, _ = _train_and_predict_gbm(input_features, output_features, tmpdir, backend)
+#     preds, _ = _train_and_predict_gbm(input_features, output_features, tmpdir, backend)
 
-    prob_col = preds[output_feature["name"] + "_probabilities"]
-    if backend["type"] == "ray":
-        prob_col = prob_col.compute()
-    assert len(prob_col.iloc[0]) == 2
-    assert prob_col.apply(sum).mean() == pytest.approx(1.0)
+#     prob_col = preds[output_feature["name"] + "_probabilities"]
+#     if backend["type"] == "ray":
+#         prob_col = prob_col.compute()
+#     assert len(prob_col.iloc[0]) == 2
+#     assert prob_col.apply(sum).mean() == pytest.approx(1.0)
