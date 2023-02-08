@@ -2056,8 +2056,8 @@ def _get_cache_hit_message(cache: DatasetCache) -> str:
     return (
         "Found cached dataset and meta.json with the same filename of the dataset.\n"
         "Using cached values instead of preprocessing the dataset again.\n"
-        f"Cached training set metadata path: {cache.get_cached_obj_path(META)}\n"
-        f"Cached training set path: {cache.get_cached_obj_path(TRAINING)}"
-        f"Cached validation set path: {cache.get_cached_obj_path(VALIDATION)}"
-        f"Cached test set path: {cache.get_cached_obj_path(TEST)}"
+        f"- Cached training set metadata path: {cache.get_cached_obj_path(META)}\n"
+        f"- Cached training set path: {cache.get_cached_obj_path(TRAINING)}\n"
+        f"- Cached validation set path: {cache.get_cached_obj_path(VALIDATION)}\n"
+        f"- Cached test set path: {cache.get_cached_obj_path(TEST)}"
     )
