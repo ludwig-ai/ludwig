@@ -47,9 +47,9 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend._ray210_compat import HorovodTrainerRay210
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.backend.datasource import BinaryIgnoreNoneTypeDatasource
-from ludwig.constants import CPU_RESOURCES_PER_TRIAL, EXECUTOR, MODEL_ECD, NAME, PREPROCESSING, PROC_COLUMN, TYPE
+from ludwig.constants import BINARY, CATEGORY, CPU_RESOURCES_PER_TRIAL, EXECUTOR, MODEL_ECD, NAME, NUMBER, PREPROCESSING, PROC_COLUMN, TYPE
 from ludwig.data.dataframe.base import DataFrameEngine
-from ludwig.data.dataset.ray import _SCALAR_TYPES, RayDataset, RayDatasetManager, RayDatasetShard
+from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetShard
 from ludwig.models.base import BaseModel
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
@@ -71,6 +71,7 @@ logger = logging.getLogger(__name__)
 
 RAY_DEFAULT_PARALLELISM = 200
 FIFTEEN_MINS_IN_S = 15 * 60
+_SCALAR_TYPES = {BINARY, CATEGORY, NUMBER}
 
 
 def _num_nodes() -> int:
