@@ -26,6 +26,7 @@ from ludwig.constants import (
     LOGITS,
     NAME,
     PREDICTIONS,
+    PREPROCESSING,
     PROBABILITIES,
     PROBABILITY,
     PROC_COLUMN,
@@ -253,6 +254,7 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
     @staticmethod
     def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
         feature_config.encoder.vocab = feature_metadata["idx2str"]
+        feature_config.encoder.skip = feature_metadata[PREPROCESSING].get("cache_encoder_embeddings", False)
 
     @staticmethod
     def get_schema_cls():
