@@ -19,31 +19,31 @@ from tests.integration_tests.utils import generate_data, number_feature, text_fe
 
 BOOSTING_TYPES = ["gbdt", "goss", "dart"]
 TREE_LEARNERS = ["serial", "feature", "data", "voting"]
+LOCAL_BACKEND = {"type": "local"}
+RAY_BACKEND = {
+    "type": "ray",
+    "processor": {
+        "parallelism": 4,
+    },
+    "trainer": {
+        "use_gpu": False,
+        "num_workers": 2,
+        "resources_per_worker": {
+            "CPU": 2,
+            "GPU": 0,
+        },
+    },
+}
 
 
 @pytest.fixture(scope="module")
 def local_backend():
-    return {"type": "local"}
+    return LOCAL_BACKEND
 
 
 @pytest.fixture(scope="module")
 def ray_backend():
-    num_workers = 2
-    num_cpus_per_worker = 2
-    return {
-        "type": "ray",
-        "processor": {
-            "parallelism": num_cpus_per_worker * num_workers,
-        },
-        "trainer": {
-            "use_gpu": False,
-            "num_workers": num_workers,
-            "resources_per_worker": {
-                "CPU": num_cpus_per_worker,
-                "GPU": 0,
-            },
-        },
-    }
+    return RAY_BACKEND
 
 
 def category_feature(**kwargs):
@@ -413,3 +413,51 @@ def test_dart_boosting_type(tmpdir, local_backend):
     output_features = [binary_feature()]
 
     _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend, boosting_type="dart")
+
+
+@pytest.mark.parametrize(
+    "backend",
+    [
+        pytest.param(LOCAL_BACKEND, id="local"),
+        pytest.param(RAY_BACKEND, id="ray", marks=pytest.mark.distributed),
+    ],
+)
+def test_gbm_category_one_hot_encoding(tmpdir, backend, ray_cluster_4cpu):
+    """Test that the GBM model can train and predict with non-number inputs."""
+    input_features = [
+        binary_feature(),
+        category_feature(encoder={"type": "onehot"}),
+        number_feature(),
+    ]
+    output_feature = binary_feature()
+    output_features = [output_feature]
+
+    preds, _ = _train_and_predict_gbm(input_features, output_features, tmpdir, backend)
+
+    prob_col = preds[output_feature["name"] + "_probabilities"]
+    if backend["type"] == "ray":
+        prob_col = prob_col.compute()
+    assert len(prob_col.iloc[0]) == 2
+    assert prob_col.apply(sum).mean() == pytest.approx(1.0)
+
+
+@pytest.mark.parametrize(
+    "backend",
+    [
+        pytest.param(LOCAL_BACKEND, id="local"),
+        pytest.param(RAY_BACKEND, id="ray", marks=pytest.mark.distributed),
+    ],
+)
+def test_gbm_text_pretrained_embedding(tmpdir, backend, ray_cluster_4cpu):
+    """Test that the GBM model can train and predict with non-number inputs."""
+    input_features = [binary_feature(), text_feature(encoder={"type": "distilbert"})]
+    output_feature = binary_feature()
+    output_features = [output_feature]
+
+    preds, _ = _train_and_predict_gbm(input_features, output_features, tmpdir, backend)
+
+    prob_col = preds[output_feature["name"] + "_probabilities"]
+    if backend["type"] == "ray":
+        prob_col = prob_col.compute()
+    assert len(prob_col.iloc[0]) == 2
+    assert prob_col.apply(sum).mean() == pytest.approx(1.0)
