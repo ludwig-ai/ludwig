@@ -811,7 +811,7 @@ def test_tune_batch_size_lr_cpu(
         "output_features": [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")],
         "combiner": {"type": "concat", "output_size": 14},
         TRAINER: {
-            "epochs": 1,
+            "epochs": 2,
             "batch_size": "auto",
             "learning_rate": "auto",
             "max_batch_size": max_batch_size,

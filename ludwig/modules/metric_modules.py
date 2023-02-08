@@ -170,12 +170,7 @@ class RecallMetric(BinaryRecall, LudwigMetric):
         return PROBABILITIES
 
 
-# TODO(Justin): Re-register metric for CATEGORY features when aggregation using Ray/Horovod is clearer.
-# As is, registering this metric produces the following error:
-# "Argument `num_classes` was set to X in metric `precision_recall_curve` but detected Y number of classes from
-# predictions.", where Y >> X.
 @register_metric(ROC_AUC, [BINARY])
-# class BinaryAUROCMetric(BinaryAUROC, LudwigMetric):
 class BinaryAUROCMetric(AUROC, LudwigMetric):
     """Area under the receiver operating curve."""
 
@@ -445,41 +440,15 @@ class PerplexityMetric(Perplexity, LudwigMetric):
     def __init__(self, **kwargs):
         super().__init__(dist_sync_fn=_gather_all_tensors_fn())
 
+    def update(self, preds: Tensor, target: Tensor) -> None:
+        super().update(preds, target.type(torch.int64))
+
     @classmethod
     def get_objective(cls):
         return MINIMIZE
 
     def get_inputs(self):
         return PROBABILITIES
-
-
-# TODO(Justin): Add post-processed metrics.
-# @register_metric("BLEU", [SEQUENCE, TEXT])
-# class BLEUMetric(BLEUScore, LudwigMetric):
-#     def __init__(self, **kwargs):
-#         super().__init__(dist_sync_fn=_gather_all_tensors_fn())
-
-#     @classmethod
-#     def get_objective(cls):
-#         return MAXIMIZE
-
-#     @classmethod
-#     def get_inputs(cls):
-#         return POST_PROCESSED_PREDICTIONS
-
-# Add post-processed metrics.
-# @register_metric("extended_edit_distance", [SEQUENCE, TEXT])
-# class ExtendedEditDistanceMetric(ExtendedEditDistance, LudwigMetric):
-#     def __init__(self, **kwargs):
-#         super().__init__(dist_sync_fn=_gather_all_tensors_fn())
-
-#     @classmethod
-#     def get_objective(cls):
-#         return MINIMIZE
-
-#     @classmethod
-#     def get_inputs(cls):
-#         return POST_PROCESSED_PREDICTIONS
 
 
 @register_metric("char_error_rate", [SEQUENCE, TEXT])

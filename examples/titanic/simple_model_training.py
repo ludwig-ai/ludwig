@@ -45,7 +45,7 @@ input_features:
 
 output_features:
     - name: Survived
-      type: category
+      type: binary
 
 """
 )

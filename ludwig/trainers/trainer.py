@@ -963,7 +963,6 @@ class Trainer(BaseTrainer):
 
         all_validation_metrics = progress_tracker.validation_metrics[validation_output_feature_name]
         # The most recent validation_metric metric.
-        print(f"all_validation_metrics: {all_validation_metrics}")
         eval_metric: TrainerMetric = all_validation_metrics[validation_metric][-1]
         eval_metric_value = eval_metric[-1]
 

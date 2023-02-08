@@ -880,7 +880,6 @@ def train_with_backend(
                 assert read_preds is not None
 
         if evaluate:
-            print("RUNNING EVALUATION!")
             eval_stats, eval_preds, _ = model.evaluate(
                 dataset=dataset, collect_overall_stats=False, collect_predictions=True
             )
