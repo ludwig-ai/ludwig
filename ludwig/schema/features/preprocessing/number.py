@@ -57,7 +57,7 @@ class NumberPreprocessingConfig(BasePreprocessingConfig):
 @ludwig_dataclass
 class NumberOutputPreprocessingConfig(NumberPreprocessingConfig):
     missing_value_strategy: str = schema_utils.StringOptions(
-        MISSING_VALUE_STRATEGY_OPTIONS + [DROP_ROW, FILL_WITH_MEAN],
+        MISSING_VALUE_STRATEGY_OPTIONS + [FILL_WITH_MEAN],
         default=DROP_ROW,
         allow_none=False,
         description="What strategy to follow when there's a missing value in a number output feature",

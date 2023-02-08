@@ -115,7 +115,7 @@ class SequencePreprocessingConfig(BasePreprocessingConfig):
 @ludwig_dataclass
 class SequenceOutputPreprocessingConfig(SequencePreprocessingConfig):
     missing_value_strategy: str = schema_utils.StringOptions(
-        MISSING_VALUE_STRATEGY_OPTIONS + [DROP_ROW],
+        MISSING_VALUE_STRATEGY_OPTIONS,
         default=DROP_ROW,
         allow_none=False,
         description="What strategy to follow when there's a missing value in a sequence output feature",

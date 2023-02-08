@@ -45,7 +45,7 @@ def test_config_object():
                 "name": "text_feature",
                 "type": "text",
                 "preprocessing": {
-                    "missing_value_strategy": "fill_with_mode",
+                    "missing_value_strategy": "drop_row",
                 },
                 "encoder": {
                     "type": "rnn",
@@ -105,10 +105,10 @@ def test_config_object():
     config_object = ModelConfig.from_dict(config)
     assert config_object.input_features.text_feature.encoder.type == "rnn"
     assert config_object.input_features.text_feature.encoder.num_layers == 2
-    assert config_object.input_features.text_feature.preprocessing.missing_value_strategy == "fill_with_mode"
+    assert config_object.input_features.text_feature.preprocessing.missing_value_strategy == "drop_row"
 
     assert config_object.defaults.text.encoder.type != "rnn"
-    assert config_object.defaults.text.preprocessing.missing_value_strategy != "fill_with_mode"
+    assert config_object.defaults.text.preprocessing.missing_value_strategy != "drop_row"
 
     assert config_object.output_features.category_feature.decoder.num_classes == 10
     assert config_object.output_features.category_feature.top_k == 3
@@ -150,10 +150,10 @@ def test_config_object_defaults():
             },
         ],
         "defaults": {
-            "number": {"preprocessing": {"missing_value_strategy": "fill_with_mean"}, "encoder": {"type": "dense"}},
+            "number": {"preprocessing": {"missing_value_strategy": "drop_row"}, "encoder": {"type": "dense"}},
             "text": {
                 "preprocessing": {
-                    "missing_value_strategy": "fill_with_mode",
+                    "missing_value_strategy": "drop_row",
                 },
                 "encoder": {
                     "type": "stacked_parallel_cnn",
@@ -164,16 +164,16 @@ def test_config_object_defaults():
     }
 
     config_object = ModelConfig.from_dict(config)
-    assert config_object.input_features.number_feature.preprocessing.missing_value_strategy == "fill_with_mean"
+    assert config_object.input_features.number_feature.preprocessing.missing_value_strategy == "drop_row"
     assert config_object.input_features.number_feature.encoder.type == "dense"
 
     assert config_object.input_features.text_feature_1.encoder.type == "rnn"
     assert config_object.input_features.text_feature_1.encoder.activation == "sigmoid"
-    assert config_object.input_features.text_feature_1.preprocessing.missing_value_strategy == "fill_with_mode"
+    assert config_object.input_features.text_feature_1.preprocessing.missing_value_strategy == "drop_row"
 
     assert config_object.input_features.text_feature_2.encoder.type == "stacked_parallel_cnn"
     assert config_object.input_features.text_feature_2.encoder.activation == "tanh"
-    assert config_object.input_features.text_feature_2.preprocessing.missing_value_strategy == "fill_with_mode"
+    assert config_object.input_features.text_feature_2.preprocessing.missing_value_strategy == "drop_row"
 
 
 def test_config_object_to_config_dict():

@@ -58,7 +58,7 @@ class CategoryPreprocessingConfig(BasePreprocessingConfig):
 @ludwig_dataclass
 class CategoryOutputPreprocessingConfig(CategoryPreprocessingConfig):
     missing_value_strategy: str = schema_utils.StringOptions(
-        MISSING_VALUE_STRATEGY_OPTIONS + [DROP_ROW],
+        MISSING_VALUE_STRATEGY_OPTIONS,
         default=DROP_ROW,
         allow_none=False,
         description="What strategy to follow when there's a missing value in a category output feature",
