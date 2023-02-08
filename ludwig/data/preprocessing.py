@@ -39,6 +39,7 @@ from ludwig.constants import (
     FILL_WITH_MEAN,
     FILL_WITH_MODE,
     FULL,
+    META,
     MIN_DATASET_SPLIT_ROWS,
     MODEL_ECD,
     NAME,
@@ -52,6 +53,7 @@ from ludwig.constants import (
     TYPE,
     VALIDATION,
 )
+from ludwig.data.cache.manager import DatasetCache
 from ludwig.data.cache.types import wrap
 from ludwig.data.concatenate_datasets import concatenate_df, concatenate_files, concatenate_splits
 from ludwig.data.dataset.base import Dataset
@@ -1651,14 +1653,14 @@ def preprocess_for_training(
 
         if data_format in CACHEABLE_FORMATS:
             with backend.storage.cache.use_credentials():
+                # cache.get() returns valid indicating if the checksum for the current config
+                # is equal to that from the cached training set metadata, as well as the paths to the
+                # cached training set metadata, training set, validation_set, test set
                 cache_results = cache.get()
                 if cache_results is not None:
                     valid, *cache_values = cache_results
                     if valid:
-                        logger.info(
-                            "Found cached dataset and meta.json with the same filename "
-                            "of the dataset, using them instead"
-                        )
+                        logger.info(_get_cache_hit_message(cache))
                         training_set_metadata, training_set, test_set, validation_set = cache_values
                         config["data_hdf5_fp"] = training_set
                         data_format = backend.cache.data_format
@@ -1994,10 +1996,7 @@ def preprocess_for_prediction(
             if cache_results is not None:
                 valid, *cache_values = cache_results
                 if valid:
-                    logger.info(
-                        "Found cached dataset and meta.json with the same filename "
-                        "of the input file, using them instead"
-                    )
+                    logger.info(_get_cache_hit_message(cache))
                     training_set_metadata, training_set, test_set, validation_set = cache_values
                     config["data_hdf5_fp"] = training_set
                     data_format = backend.cache.data_format
@@ -2051,3 +2050,14 @@ def preprocess_for_prediction(
         )
 
     return dataset, training_set_metadata
+
+
+def _get_cache_hit_message(cache: DatasetCache) -> str:
+    return (
+        "Found cached dataset and meta.json with the same filename of the dataset.\n"
+        "Using cached values instead of preprocessing the dataset again.\n"
+        f"Cached training set metadata path: {cache.get_cached_obj_path(META)}\n"
+        f"Cached training set path: {cache.get_cached_obj_path(TRAINING)}"
+        f"Cached validation set path: {cache.get_cached_obj_path(VALIDATION)}"
+        f"Cached test set path: {cache.get_cached_obj_path(TEST)}"
+    )
