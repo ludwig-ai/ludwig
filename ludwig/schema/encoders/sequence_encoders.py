@@ -19,7 +19,7 @@ class SequenceEncoderConfig(BaseEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("passthrough", [SEQUENCE, TEXT, TIMESERIES])
+@register_encoder_config("passthrough", [TIMESERIES])
 @ludwig_dataclass
 class SequencePassthroughConfig(SequenceEncoderConfig):
     @staticmethod
