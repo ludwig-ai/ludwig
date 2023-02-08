@@ -39,6 +39,7 @@ from ludwig.constants import (
     INPUT_FEATURES,
     LOSS,
     MISSING_VALUE_STRATEGY,
+    MODEL_ECD,
     NAME,
     NUM_SAMPLES,
     NUMBER,
@@ -719,6 +720,8 @@ def learning_rate_scheduler(trainer: TrainerConfigDict) -> TrainerConfigDict:
                 if old_key == "decay" and isinstance(value, bool):
                     # Decay has changed from a bool to an optional enum
                     lr_scheduler[new_key] = "exponential" if value else None
+                elif old_key == "reduce_learning_rate_on_plateau":
+                    lr_scheduler[new_key] = int(value)
                 else:
                     lr_scheduler[new_key] = value
             del trainer[old_key]
@@ -744,10 +747,11 @@ def _upgrade_legacy_image_encoders(feature: FeatureConfigDict) -> FeatureConfigD
     if encoder_type not in encoder_mapping:
         return feature
 
-    new_encoder_cls = get_encoder_cls(feature[TYPE], encoder_type)
+    # For this version of Ludwig, only ECD supported these encoders.
+    new_encoder_cls = get_encoder_cls(MODEL_ECD, feature[TYPE], encoder_type)
     new_encoder_fields = new_encoder_cls.get_valid_field_names()
 
-    legacy_encoder_cls = get_encoder_cls(feature[TYPE], encoder_mapping[encoder_type])
+    legacy_encoder_cls = get_encoder_cls(MODEL_ECD, feature[TYPE], encoder_mapping[encoder_type])
     legacy_encoder_fields = legacy_encoder_cls.get_valid_field_names()
 
     user_fields = set(encoder.keys())

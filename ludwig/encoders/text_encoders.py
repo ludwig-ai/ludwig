@@ -20,7 +20,7 @@ import torch
 from torch import nn
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import TEXT, TYPE
+from ludwig.constants import TEXT
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.modules.reduction_modules import SequenceReducer
@@ -123,34 +123,6 @@ class HFTextEncoder(Encoder):
 
     def get_embedding_layer(self) -> nn.Module:
         return next(self.transformer.module.children())
-
-    @classmethod
-    def get_fixed_preprocessing_params(cls, encoder_params: Dict[str, Any]) -> Dict[str, Any]:
-        model_name = encoder_params.get("pretrained_model_name_or_path", cls.DEFAULT_MODEL_NAME)
-        if model_name is None:
-            # no default model name, so model name is required by the subclass
-            raise ValueError(
-                f"Missing required parameter for `{encoder_params[TYPE]}` encoder: `pretrained_model_name_or_path`"
-            )
-
-        params = {
-            "tokenizer": "hf_tokenizer",
-            "pretrained_model_name_or_path": model_name,
-        }
-
-        if not cls.can_cache_embeddings(encoder_params):
-            params["cache_encoder_embeddings"] = False
-
-        return params
-
-    @classmethod
-    def is_pretrained(cls, encoder_params: Dict[str, Any]) -> bool:
-        return encoder_params.get("use_pretrained", True)
-
-    @classmethod
-    def can_cache_embeddings(cls, encoder_params: Dict[str, Any]) -> bool:
-        """Returns true if the encoder's output embeddings will not change during training."""
-        return not encoder_params.get("trainable", False) and encoder_params.get("reduce_output") != "attention"
 
 
 @DeveloperAPI

@@ -1,5 +1,5 @@
 import pytest
-from jsonschema.exceptions import ValidationError
+from marshmallow import ValidationError
 
 from ludwig.config_validation.validation import validate_config
 from ludwig.constants import TRAINER

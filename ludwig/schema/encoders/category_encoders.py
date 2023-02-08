@@ -1,7 +1,7 @@
 from typing import List
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import CATEGORY
+from ludwig.constants import CATEGORY, MODEL_ECD, MODEL_GBM
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
@@ -10,7 +10,7 @@ from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
-@register_encoder_config("passthrough", CATEGORY)
+@register_encoder_config("passthrough", CATEGORY, model_types=[MODEL_ECD, MODEL_GBM])
 @ludwig_dataclass
 class CategoricalPassthroughEncoderConfig(BaseEncoderConfig):
     """CategoricalPassthroughEncoderConfig is a dataclass that configures the parameters used for a categorical

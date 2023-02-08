@@ -12,8 +12,7 @@ from ludwig.encoders.base import Encoder
 from ludwig.features.base_feature import create_passthrough_input_feature, InputFeature, OutputFeature
 from ludwig.features.feature_registries import get_input_type_registry, get_output_type_registry
 from ludwig.features.feature_utils import LudwigFeatureDict
-from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig
-from ludwig.schema.model_config import InputFeaturesContainer, OutputFeaturesContainer
+from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig, FeatureCollection
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
 from ludwig.utils.metric_utils import get_scalar_from_ludwig_metric
 from ludwig.utils.misc_utils import get_from_registry
@@ -50,7 +49,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         self.output_features = LudwigFeatureDict()
 
     @classmethod
-    def build_inputs(cls, input_feature_configs: InputFeaturesContainer) -> Dict[str, InputFeature]:
+    def build_inputs(cls, input_feature_configs: FeatureCollection[BaseInputFeatureConfig]) -> Dict[str, InputFeature]:
         """Builds and returns input features in topological order."""
         input_features = OrderedDict()
         input_features_def = topological_sort_feature_dependencies(input_feature_configs.to_list())
@@ -77,7 +76,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
 
     @classmethod
     def build_outputs(
-        cls, output_feature_configs: OutputFeaturesContainer, combiner: Combiner
+        cls, output_feature_configs: FeatureCollection[BaseOutputFeatureConfig], combiner: Combiner
     ) -> Dict[str, OutputFeature]:
         """Builds and returns output features in topological order."""
         output_features_def = topological_sort_feature_dependencies(output_feature_configs.to_list())

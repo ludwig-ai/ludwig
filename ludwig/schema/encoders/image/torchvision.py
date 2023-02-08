@@ -34,6 +34,9 @@ class TVBaseEncoderConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["TVBaseEncoder"]["trainable"],
     )
 
+    def is_pretrained(self) -> bool:
+        return self.use_pretrained
+
 
 @DeveloperAPI
 @register_encoder_config("alexnet", IMAGE)

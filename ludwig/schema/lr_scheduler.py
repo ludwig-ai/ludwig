@@ -123,10 +123,10 @@ def LRSchedulerDataclassField(description: str, default: Dict = None):
             if isinstance(value, dict):
                 try:
                     return LRSchedulerConfig.Schema().load(value)
-                except (TypeError, ValidationError):
+                except (TypeError, ValidationError) as e:
                     # TODO(travis): this seems much too verbose, does the validation error not show the specific error?
                     raise ValidationError(
-                        f"Invalid params for learning rate scheduler: {value}, see LRSchedulerConfig class."
+                        f"Invalid params for learning rate scheduler: {value}, see LRSchedulerConfig class. Error: {e}"
                     )
             raise ValidationError("Field should be None or dict")
 
@@ -141,7 +141,7 @@ def LRSchedulerDataclassField(description: str, default: Dict = None):
     if not isinstance(default, dict):
         raise ValidationError(f"Invalid default: `{default}`")
 
-    load_default = LRSchedulerConfig.Schema().load(default)
+    load_default = lambda: LRSchedulerConfig.Schema().load(default)
     dump_default = LRSchedulerConfig.Schema().dump(default)
 
     return field(
@@ -155,5 +155,5 @@ def LRSchedulerDataclassField(description: str, default: Dict = None):
                 },
             )
         },
-        default_factory=lambda: load_default,
+        default_factory=load_default,
     )

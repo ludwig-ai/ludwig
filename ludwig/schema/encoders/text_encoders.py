@@ -1,4 +1,4 @@
-from typing import Callable, List, Union
+from typing import Any, Callable, Dict, List, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import TEXT
@@ -10,10 +10,39 @@ from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
 from ludwig.schema.utils import ludwig_dataclass
 
 
+class HFEncoderConfig(SequenceEncoderConfig):
+    trainable: bool
+    use_pretrained: bool
+    pretrained_model_name_or_path: str
+    reduce_output: str
+
+    def get_fixed_preprocessing_params(self) -> Dict[str, Any]:
+        model_name = self.pretrained_model_name_or_path
+        if model_name is None:
+            # no default model name, so model name is required by the subclass
+            raise ValueError(f"Missing required parameter for `{self.type}` encoder: `pretrained_model_name_or_path`")
+        params = {
+            "tokenizer": "hf_tokenizer",
+            "pretrained_model_name_or_path": model_name,
+        }
+
+        if not self.can_cache_embeddings():
+            params["cache_encoder_embeddings"] = False
+
+        return params
+
+    def is_pretrained(self) -> bool:
+        return self.use_pretrained
+
+    def can_cache_embeddings(self) -> bool:
+        """Returns true if the encoder's output embeddings will not change during training."""
+        return not self.trainable and self.reduce_output != "attention"
+
+
 @DeveloperAPI
 @register_encoder_config("albert", TEXT)
 @ludwig_dataclass
-class ALBERTConfig(SequenceEncoderConfig):
+class ALBERTConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an ALBERT encoder."""
 
     @staticmethod
@@ -210,8 +239,9 @@ class ALBERTConfig(SequenceEncoderConfig):
 # TODO: uncomment when sentencepiece doesn't cause segfaults: https://github.com/ludwig-ai/ludwig/issues/2983
 # @register_encoder_config("mt5", TEXT)
 @DeveloperAPI
+@register_encoder_config("mt5", TEXT)
 @ludwig_dataclass
-class MT5Config(SequenceEncoderConfig):
+class MT5Config(HFEncoderConfig):
     """This dataclass configures the schema used for an MT5 encoder."""
 
     @staticmethod
@@ -399,7 +429,7 @@ class MT5Config(SequenceEncoderConfig):
 @DeveloperAPI
 @register_encoder_config("xlmroberta", TEXT)
 @ludwig_dataclass
-class XLMRoBERTaConfig(SequenceEncoderConfig):
+class XLMRoBERTaConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an XLMRoBERTa encoder."""
 
     @staticmethod
@@ -508,7 +538,7 @@ class XLMRoBERTaConfig(SequenceEncoderConfig):
 @DeveloperAPI
 @register_encoder_config("bert", TEXT)
 @ludwig_dataclass
-class BERTConfig(SequenceEncoderConfig):
+class BERTConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an BERT encoder."""
 
     @staticmethod
@@ -680,7 +710,7 @@ class BERTConfig(SequenceEncoderConfig):
 @DeveloperAPI
 @register_encoder_config("xlm", TEXT)
 @ludwig_dataclass
-class XLMConfig(SequenceEncoderConfig):
+class XLMConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an XLM encoder."""
 
     @staticmethod
@@ -928,7 +958,7 @@ class XLMConfig(SequenceEncoderConfig):
 @DeveloperAPI
 @register_encoder_config("gpt", TEXT)
 @ludwig_dataclass
-class GPTConfig(SequenceEncoderConfig):
+class GPTConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an GPT encoder."""
 
     @staticmethod
@@ -1069,7 +1099,7 @@ class GPTConfig(SequenceEncoderConfig):
 @DeveloperAPI
 @register_encoder_config("gpt2", TEXT)
 @ludwig_dataclass
-class GPT2Config(SequenceEncoderConfig):
+class GPT2Config(HFEncoderConfig):
     """This dataclass configures the schema used for an GPT2 encoder."""
 
     @staticmethod
@@ -1221,7 +1251,7 @@ class GPT2Config(SequenceEncoderConfig):
 @DeveloperAPI
 @register_encoder_config("roberta", TEXT)
 @ludwig_dataclass
-class RoBERTaConfig(SequenceEncoderConfig):
+class RoBERTaConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an RoBERTa encoder."""
 
     @staticmethod
@@ -1311,7 +1341,7 @@ class RoBERTaConfig(SequenceEncoderConfig):
 @DeveloperAPI
 @register_encoder_config("transformer_xl", TEXT)
 @ludwig_dataclass
-class TransformerXLConfig(SequenceEncoderConfig):
+class TransformerXLConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an TransformerXL encoder."""
 
     @staticmethod
@@ -1539,7 +1569,7 @@ class TransformerXLConfig(SequenceEncoderConfig):
 @DeveloperAPI
 @register_encoder_config("xlnet", TEXT)
 @ludwig_dataclass
-class XLNetConfig(SequenceEncoderConfig):
+class XLNetConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an XLNet encoder."""
 
     @staticmethod
@@ -1777,7 +1807,7 @@ class XLNetConfig(SequenceEncoderConfig):
 @DeveloperAPI
 @register_encoder_config("distilbert", TEXT)
 @ludwig_dataclass
-class DistilBERTConfig(SequenceEncoderConfig):
+class DistilBERTConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an DistilBERT encoder."""
 
     @staticmethod
@@ -1932,8 +1962,9 @@ class DistilBERTConfig(SequenceEncoderConfig):
 # TODO: uncomment when CTRL bug (https://github.com/ludwig-ai/ludwig/issues/2977) has been fixed to add back in
 # @register_encoder_config("ctrl", TEXT)
 @DeveloperAPI
+@register_encoder_config("ctrl", TEXT)
 @ludwig_dataclass
-class CTRLConfig(SequenceEncoderConfig):
+class CTRLConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an CTRL encoder."""
 
     @staticmethod
@@ -2075,7 +2106,7 @@ class CTRLConfig(SequenceEncoderConfig):
 @DeveloperAPI
 @register_encoder_config("camembert", TEXT)
 @ludwig_dataclass
-class CamemBERTConfig(SequenceEncoderConfig):
+class CamemBERTConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an CamemBERT encoder."""
 
     @staticmethod
@@ -2246,7 +2277,7 @@ class CamemBERTConfig(SequenceEncoderConfig):
 @DeveloperAPI
 @register_encoder_config("t5", TEXT)
 @ludwig_dataclass
-class T5Config(SequenceEncoderConfig):
+class T5Config(HFEncoderConfig):
     """This dataclass configures the schema used for an T5 encoder."""
 
     @staticmethod
@@ -2392,7 +2423,7 @@ class T5Config(SequenceEncoderConfig):
 @DeveloperAPI
 @register_encoder_config("flaubert", TEXT)
 @ludwig_dataclass
-class FlauBERTConfig(SequenceEncoderConfig):
+class FlauBERTConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an FlauBERT encoder."""
 
     @staticmethod
@@ -2632,7 +2663,7 @@ class FlauBERTConfig(SequenceEncoderConfig):
 @DeveloperAPI
 @register_encoder_config("electra", TEXT)
 @ludwig_dataclass
-class ELECTRAConfig(SequenceEncoderConfig):
+class ELECTRAConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an ELECTRA encoder."""
 
     @staticmethod
@@ -2798,7 +2829,7 @@ class ELECTRAConfig(SequenceEncoderConfig):
 @DeveloperAPI
 @register_encoder_config("longformer", TEXT)
 @ludwig_dataclass
-class LongformerConfig(SequenceEncoderConfig):
+class LongformerConfig(HFEncoderConfig):
     """This dataclass configures the schema used for a Longformer encoder."""
 
     @staticmethod
@@ -2901,7 +2932,7 @@ class LongformerConfig(SequenceEncoderConfig):
 @DeveloperAPI
 @register_encoder_config("auto_transformer", TEXT)
 @ludwig_dataclass
-class AutoTransformerConfig(SequenceEncoderConfig):
+class AutoTransformerConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an AutoTransformer encoder."""
 
     @staticmethod

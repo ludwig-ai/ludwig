@@ -1,5 +1,5 @@
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import LOSS, SEQUENCE_SOFTMAX_CROSS_ENTROPY, TEXT
+from ludwig.constants import LOSS, MODEL_ECD, SEQUENCE_SOFTMAX_CROSS_ENTROPY, TEXT
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -11,7 +11,8 @@ from ludwig.schema.features.loss.utils import LossDataclassField
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
 from ludwig.schema.features.utils import (
-    input_config_registry,
+    defaults_config_registry,
+    ecd_input_config_registry,
     input_mixin_registry,
     output_config_registry,
     output_mixin_registry,
@@ -31,13 +32,14 @@ class TextInputFeatureConfigMixin(BaseMarshmallowConfig):
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=TEXT)
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_ECD,
         feature_type=TEXT,
         default="parallel_cnn",
     )
 
 
 @DeveloperAPI
-@input_config_registry.register(TEXT)
+@ecd_input_config_registry.register(TEXT)
 @ludwig_dataclass
 class TextInputFeatureConfig(BaseInputFeatureConfig, TextInputFeatureConfigMixin):
     """TextInputFeatureConfig is a dataclass that configures the parameters used for a text input feature."""
@@ -103,4 +105,14 @@ class TextOutputFeatureConfig(BaseOutputFeatureConfig, TextOutputFeatureConfigMi
         description="How to reduce an input that is not a vector, but a matrix or a higher order tensor, on the first "
         "dimension (second if you count the batch dimension)",
         parameter_metadata=FEATURE_METADATA[TEXT]["reduce_input"],
+    )
+
+
+@DeveloperAPI
+@defaults_config_registry.register(TEXT)
+@ludwig_dataclass
+class TextDefaultsConfig(TextInputFeatureConfigMixin, TextOutputFeatureConfigMixin):
+    loss: BaseLossConfig = LossDataclassField(
+        feature_type=TEXT,
+        default=SEQUENCE_SOFTMAX_CROSS_ENTROPY,
     )

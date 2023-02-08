@@ -13,6 +13,7 @@ from ludwig.api import LudwigModel
 from ludwig.constants import TRAINER
 from ludwig.contribs import MlflowCallback
 from ludwig.export import export_mlflow
+from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
 from tests.integration_tests.utils import category_feature, FakeRemoteBackend, generate_data, sequence_feature
 
 
@@ -56,7 +57,7 @@ def run_mlflow_callback_test(mlflow_client, config, training_data, val_data, tes
 
     with open(local_config_path) as f:
         config_artifact = yaml.safe_load(f)
-    assert config_artifact == config
+    assert config_artifact == upgrade_config_dict_to_latest_version(config)
 
     model_path = f"runs:/{callback.run.info.run_id}/model"
     loaded_model = mlflow.pyfunc.load_model(model_path)
