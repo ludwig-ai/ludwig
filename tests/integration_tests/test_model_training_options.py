@@ -247,8 +247,10 @@ def test_optimizers(optimizer_type, tmp_path):
         TRAINER: {"epochs": 5, "batch_size": 16, "evaluate_training_set": True, "optimizer": {"type": optimizer_type}},
     }
 
-    # special handling for adadelta, break out of local minima
+    # special handling for adadelta and lbfgs, break out of local minima
     if optimizer_type == "adadelta":
+        config[TRAINER]["learning_rate"] = 0.1
+    if optimizer_type == "lbfgs":
         config[TRAINER]["learning_rate"] = 0.1
 
     model = LudwigModel(config)
