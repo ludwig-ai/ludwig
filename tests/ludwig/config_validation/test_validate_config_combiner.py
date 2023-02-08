@@ -1,5 +1,4 @@
 import pytest
-from marshmallow import ValidationError
 
 from ludwig.config_validation.validation import get_schema, validate_config
 from ludwig.constants import MODEL_ECD, TRAINER
@@ -86,7 +85,7 @@ def test_config_bad_combiner():
         "num_layers": 10,
         "dropout": False,
     }
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         validate_config(config)
 
     # bad combiner parameter range
@@ -94,7 +93,7 @@ def test_config_bad_combiner():
         "type": "transformer",
         "dropout": -1,
     }
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         validate_config(config)
 
 
@@ -113,16 +112,16 @@ def test_config_bad_combiner_types_enums():
 
     # Test weights initializer:
     config["combiner"]["weights_initializer"] = {"test": "fail"}
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         validate_config(config)
     config["combiner"]["weights_initializer"] = "fail"
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         validate_config(config)
     config["combiner"]["weights_initializer"] = {}
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         validate_config(config)
     config["combiner"]["weights_initializer"] = {"type": "fail"}
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         validate_config(config)
     config["combiner"]["weights_initializer"] = {"type": "normal", "stddev": 0}
     validate_config(config)
@@ -132,13 +131,13 @@ def test_config_bad_combiner_types_enums():
     config["combiner"]["bias_initializer"] = "kaiming_uniform"
     validate_config(config)
     config["combiner"]["bias_initializer"] = "fail"
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         validate_config(config)
     config["combiner"]["bias_initializer"] = {}
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         validate_config(config)
     config["combiner"]["bias_initializer"] = {"type": "fail"}
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         validate_config(config)
     config["combiner"]["bias_initializer"] = {"type": "zeros", "stddev": 0}
     validate_config(config)
@@ -148,7 +147,7 @@ def test_config_bad_combiner_types_enums():
     config["combiner"]["norm"] = "batch"
     validate_config(config)
     config["combiner"]["norm"] = "fail"
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         validate_config(config)
 
     # Test activation:
@@ -156,7 +155,7 @@ def test_config_bad_combiner_types_enums():
     config["combiner"]["activation"] = "relu"
     validate_config(config)
     config["combiner"]["activation"] = 123
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         validate_config(config)
 
     # Test reduce_output:
@@ -166,7 +165,7 @@ def test_config_bad_combiner_types_enums():
     config2["combiner"]["reduce_output"] = "sum"
     validate_config(config)
     config2["combiner"]["reduce_output"] = "fail"
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         validate_config(config2)
 
     # Test reduce_output = None:

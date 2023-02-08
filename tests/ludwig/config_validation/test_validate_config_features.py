@@ -1,5 +1,4 @@
 import pytest
-from marshmallow import ValidationError
 
 from ludwig.config_validation.validation import validate_config
 from ludwig.error import ConfigValidationError
@@ -39,7 +38,7 @@ def test_incorrect_input_features_config():
     }
 
     # Incorrect type for padding_symbol preprocessing param
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         validate_config(config)
 
     config = {
@@ -80,7 +79,7 @@ def test_too_few_features_config():
     )
 
     # Must have at least one input feature
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         validate_config(
             {
                 "input_features": [],
@@ -89,7 +88,7 @@ def test_too_few_features_config():
         )
 
     # Must have at least one output feature
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         validate_config(
             {
                 "input_features": ifeatures,
@@ -100,7 +99,7 @@ def test_too_few_features_config():
 
 def test_too_many_features_config():
     # GBMs Must have exactly one output feature
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         validate_config(
             {
                 "input_features": [number_feature()],

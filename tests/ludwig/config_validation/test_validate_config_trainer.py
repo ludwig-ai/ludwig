@@ -1,5 +1,4 @@
 import pytest
-from marshmallow import ValidationError
 
 from ludwig.config_validation.validation import validate_config
 from ludwig.constants import TRAINER
@@ -87,7 +86,7 @@ def test_optimizer_property_validation():
     validate_config(config)
 
     config[TRAINER]["optimizer"]["momentum"] = "invalid"
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         validate_config(config)
 
     # Test extra keys are excluded and defaults are loaded appropriately:
@@ -98,7 +97,7 @@ def test_optimizer_property_validation():
 
     # Test bad parameter range:
     config[TRAINER]["optimizer"] = {"type": "rmsprop", "eps": -1}
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         validate_config(config)
 
     # Test config validation for tuple types:
@@ -132,10 +131,10 @@ def test_clipper_property_validation():
 
     # Test invalid clipper type:
     config[TRAINER]["gradient_clipping"] = 0
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         validate_config(config)
     config[TRAINER]["gradient_clipping"] = "invalid"
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         validate_config(config)
 
     # Test that an optimizer's property types are enforced:
@@ -144,7 +143,7 @@ def test_clipper_property_validation():
     config[TRAINER]["gradient_clipping"] = {"clipglobalnorm": 1}
     validate_config(config)
     config[TRAINER]["gradient_clipping"] = {"clipglobalnorm": "invalid"}
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         validate_config(config)
 
     # Test extra keys are excluded and defaults are loaded appropriately:
