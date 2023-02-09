@@ -646,12 +646,16 @@ def Dict(
             assert all([isinstance(k, str) for k in default.keys()])
         except Exception:
             raise ValidationError(f"Invalid default: `{default}`")
+    else:
+        default = {}
+
+    load_default = lambda: copy.deepcopy(default)
     return field(
         metadata={
             "marshmallow_field": fields.Dict(
                 fields.String(),
                 allow_none=allow_none,
-                load_default=default,
+                load_default=load_default,
                 dump_default=default,
                 metadata={
                     "description": description,
@@ -659,7 +663,7 @@ def Dict(
                 },
             )
         },
-        default_factory=lambda: default,
+        default_factory=load_default,
     )
 
 
@@ -678,6 +682,8 @@ def List(
 
         except Exception:
             raise ValidationError(f"Invalid default: `{default}`")
+    else:
+        default = []
 
     if list_type is str:
         field_type = fields.String()
@@ -690,12 +696,13 @@ def List(
     else:
         raise ValueError(f"Invalid list type: `{list_type}`")
 
+    load_default = lambda: copy.deepcopy(default)
     return field(
         metadata={
             "marshmallow_field": fields.List(
                 field_type,
                 allow_none=allow_none,
-                load_default=default,
+                load_default=load_default,
                 dump_default=default,
                 metadata={
                     "description": description,
@@ -703,7 +710,7 @@ def List(
                 },
             )
         },
-        default_factory=lambda: default,
+        default_factory=load_default,
     )
 
 
@@ -720,13 +727,16 @@ def DictList(
                 assert all([isinstance(k, str) for k in d.keys()])
         except Exception:
             raise ValidationError(f"Invalid default: `{default}`")
+    else:
+        default = []
 
+    load_default = lambda: copy.deepcopy(default)
     return field(
         metadata={
             "marshmallow_field": fields.List(
                 fields.Dict(fields.String()),
                 allow_none=True,
-                load_default=default,
+                load_default=load_default,
                 dump_default=default,
                 metadata={
                     "description": description,
@@ -734,7 +744,7 @@ def DictList(
                 },
             )
         },
-        default_factory=lambda: default,
+        default_factory=load_default,
     )
 
 
