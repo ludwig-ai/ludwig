@@ -49,6 +49,7 @@ from ludwig.constants import (
 from ludwig.data.cache.types import wrap
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.schema.features.augmentation.base import BaseAugmentationConfig
+from ludwig.schema.features.augmentation.image import RandomHorizontalFlipConfig, RandomRotateConfig
 from ludwig.schema.features.image_feature import ImageInputFeatureConfig
 from ludwig.types import FeatureMetadataDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils.augmentation_utils import get_augmentation_op, register_augmentation_op
@@ -74,8 +75,8 @@ IMAGENET1K_STD = [0.229, 0.224, 0.225]
 
 # Augmentation operations when augmentation is set to True
 AUGMENTATION_DEFAULT_OPERATIONS = [
-    {"type": "random_horizontal_flip"},
-    {"type": "random_rotate", "degree": 15},
+    RandomHorizontalFlipConfig(),
+    RandomRotateConfig(degree=15),
 ]
 
 logger = logging.getLogger(__name__)
