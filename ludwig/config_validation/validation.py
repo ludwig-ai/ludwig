@@ -95,5 +95,4 @@ def validate_config(config):
 
     model_config = ModelConfig.from_dict(updated_config)
 
-    for config_check_cls in get_config_check_registry().values():
-        config_check_cls.check(model_config.to_dict())
+    get_config_check_registry().check_config(model_config.to_dict())
