@@ -462,7 +462,7 @@ def OptimizerDataclassField(default={"type": "adam"}, description="TODO"):
                 "description": description,
             }
 
-    return OptimizerSelection.get_default_field()
+    return OptimizerSelection().get_default_field()
 
 
 @DeveloperAPI
