@@ -161,12 +161,20 @@ def set_validation_parameters(config: "ModelConfig"):
         config.trainer.validation_metric = output_config_registry[out_type].default_validation_metric
 
 
-def set_derived_feature_columns_(config: ModelConfigDict):
-    for feature in config.get(INPUT_FEATURES, []) + config.get(OUTPUT_FEATURES, []):
-        if COLUMN not in feature:
-            feature[COLUMN] = feature[NAME]
-        if PROC_COLUMN not in feature:
-            feature[PROC_COLUMN] = compute_feature_hash(feature)
+def set_derived_feature_columns_(config_obj: "ModelConfig"):
+    """Assigns column and proc_column values to features that do not have them set.
+    Proc_column is set to a hash of the feature's preprocessing configuration."""
+    for feature in config_obj.input_features:
+        if not feature.column:
+            feature.column = feature.name
+        if not feature.proc_column:
+            feature.proc_column = compute_feature_hash(feature.to_dict())
+
+    for feature in config_obj.output_features:
+        if not feature.column:
+            feature.column = feature.name
+        if not feature.proc_column:
+            feature.proc_column = compute_feature_hash(feature.to_dict())
 
 
 def set_hyperopt_defaults_(config: "ModelConfig"):
