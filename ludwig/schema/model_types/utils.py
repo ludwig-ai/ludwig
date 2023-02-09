@@ -231,9 +231,7 @@ def set_hyperopt_defaults_(config: "ModelConfig"):
 @DeveloperAPI
 def contains_grid_search_parameters(hyperopt_config: HyperoptConfigDict) -> bool:
     """Returns True if any hyperopt parameter in the config is using the grid_search space."""
-    from ludwig.schema.hyperopt import HyperoptConfig
-
-    for _, param_info in HyperoptConfig.Schema().dump(hyperopt_config)[PARAMETERS].items():
+    for _, param_info in hyperopt_config[PARAMETERS].items():
         if param_info.get(SPACE, None) == GRID_SEARCH:
             return True
     return False
