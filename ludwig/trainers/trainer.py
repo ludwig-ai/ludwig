@@ -657,6 +657,7 @@ class Trainer(BaseTrainer):
                 random_seed=self.random_seed,
                 distributed=self.distributed,
                 ignore_last=True,
+                augmentation_pipeline=self.model.get_augmentation_pipelines(),
             ) as batcher:
                 # ================ Training Loop ================
                 self.total_steps = get_total_steps(self.epochs, batcher.steps_per_epoch, self.train_steps)
