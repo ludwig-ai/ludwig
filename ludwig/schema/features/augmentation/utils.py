@@ -1,3 +1,4 @@
+import copy
 from dataclasses import field
 from typing import List, Union
 
@@ -92,7 +93,8 @@ def AugmentationDataclassField(feature_type: str, default=[], description=""):
                 dump_augmentation_list.append(pre.Schema().dump(augmentation))
             except (TypeError, ValidationError) as error:
                 raise ValidationError(f"Invalid augmentation params: {default}, see `{pre}` definition. Error: {error}")
-        load_default = load_augmentation_list
+
+        load_default = lambda: copy.deepcopy(load_augmentation_list)
         dump_default = dump_augmentation_list
 
         return field(
@@ -103,7 +105,7 @@ def AugmentationDataclassField(feature_type: str, default=[], description=""):
                     load_default=load_default,
                 )
             },
-            default_factory=lambda: load_default,
+            default_factory=load_default,
         )
     except Exception as e:
         raise ValidationError(f"Unsupported augmentation type. See augmentation_registry. " f"Details: {e}")
@@ -134,7 +136,6 @@ def get_augmentation_list_jsonschema(feature_type: str):
             "required": ["type"],
             "title": "augmentation",
         },
-        # "uniqueItemProperties": ["name"],
     }
 
     return schema
