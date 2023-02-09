@@ -6,7 +6,7 @@ from typing import Dict, List
 
 import pytest
 import torch
-from jsonschema.exceptions import ValidationError
+from marshmallow import ValidationError
 
 from ludwig.api import LudwigModel
 from ludwig.constants import IMAGENET1K
