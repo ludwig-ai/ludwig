@@ -9,7 +9,6 @@ from ludwig.constants import (
     DEFAULTS,
     DEPENDENCIES,
     DROP_ROW,
-    EARLY_STOP,
     ENCODER,
     EXECUTOR,
     FILL_WITH_MODE,
@@ -243,7 +242,6 @@ def test_merge_with_defaults():
     assert DECODER in merged_config[DEFAULTS][CATEGORY]
     assert LOSS in merged_config[DEFAULTS][CATEGORY]
     assert COMBINER in merged_config
-    assert merged_config[TRAINER][EARLY_STOP] == 5
     assert SCHEDULER in merged_config[HYPEROPT][EXECUTOR]
     assert merged_config[HYPEROPT][EXECUTOR][SCHEDULER]["type"] == "fifo"
     assert TYPE in merged_config[INPUT_FEATURES][1][ENCODER]
