@@ -178,3 +178,15 @@ def test_default_num_samples(parameters, expected_num_samples):
     processed_config = ModelConfig.from_dict(config).to_dict()
 
     assert processed_config["hyperopt"]["executor"]["num_samples"] == expected_num_samples
+
+
+def test_empty_hyperopt_parameters():
+    import copy
+
+    config = copy.deepcopy(_get_config())
+
+    del config["hyperopt"]["parameters"]
+
+    processed_config = ModelConfig.from_dict(config).to_dict()
+
+    assert isinstance(processed_config["hyperopt"]["parameters"], dict)
