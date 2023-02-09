@@ -1,16 +1,15 @@
-from marshmallow_dataclass import dataclass
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import AUGMENTATION, IMAGE, TYPE
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.augmentation.base import BaseAugmentationConfig
 from ludwig.schema.features.augmentation.utils import register_augmentation_config
 from ludwig.schema.metadata import FEATURE_METADATA
+from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
 @register_augmentation_config(name="random_horizontal_flip", features=IMAGE)
-@dataclass(repr=False)
+@ludwig_dataclass
 class RandomHorizontalFlipConfig(BaseAugmentationConfig):
     """Random horizontal flip augmentation operation."""
 
@@ -22,7 +21,7 @@ class RandomHorizontalFlipConfig(BaseAugmentationConfig):
 
 @DeveloperAPI
 @register_augmentation_config(name="random_vertical_flip", features=IMAGE)
-@dataclass(repr=False)
+@ludwig_dataclass
 class RandomVerticalFlipConfig(BaseAugmentationConfig):
     """Random vertical flip augmentation operation."""
 
@@ -34,7 +33,7 @@ class RandomVerticalFlipConfig(BaseAugmentationConfig):
 
 @DeveloperAPI
 @register_augmentation_config(name="random_rotate", features=IMAGE)
-@dataclass(repr=False)
+@ludwig_dataclass
 class RandomRotateConfig(BaseAugmentationConfig):
     """Random rotation augmentation operation."""
 
@@ -51,7 +50,7 @@ class RandomRotateConfig(BaseAugmentationConfig):
 
 @DeveloperAPI
 @register_augmentation_config(name="random_blur", features=IMAGE)
-@dataclass(repr=False)
+@ludwig_dataclass
 class RandomBlurOperation(BaseAugmentationConfig):
     """Random blur augmentation operation."""
 
@@ -68,7 +67,7 @@ class RandomBlurOperation(BaseAugmentationConfig):
 
 @DeveloperAPI
 @register_augmentation_config(name="random_brightness", features=IMAGE)
-@dataclass(repr=False)
+@ludwig_dataclass
 class RandomBrightnessOperation(BaseAugmentationConfig):
     """Random brightness augmentation operation."""
 
@@ -92,7 +91,7 @@ class RandomBrightnessOperation(BaseAugmentationConfig):
 
 @DeveloperAPI
 @register_augmentation_config(name="random_contrast", features=IMAGE)
-@dataclass(repr=False)
+@ludwig_dataclass
 class RandomContrastOperation(BaseAugmentationConfig):
     """Random Contrast augmentation operation."""
 
