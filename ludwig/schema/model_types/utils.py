@@ -163,7 +163,9 @@ def set_validation_parameters(config: "ModelConfig"):
 
 def set_derived_feature_columns_(config_obj: "ModelConfig"):
     """Assigns column and proc_column values to features that do not have them set.
-    Proc_column is set to a hash of the feature's preprocessing configuration."""
+
+    Proc_column is set to a hash of the feature's preprocessing configuration.
+    """
     for feature in config_obj.input_features:
         if not feature.column:
             feature.column = feature.name
