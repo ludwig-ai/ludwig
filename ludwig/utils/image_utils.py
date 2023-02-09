@@ -29,6 +29,7 @@ from torchvision.models._api import WeightsEnum
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import CROP_OR_PAD, INTERPOLATE
 from ludwig.encoders.base import Encoder
+from ludwig.encoders.image.torchvision import TVBaseEncoder
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.fs_utils import get_bytes_obj_from_path
 from ludwig.utils.registry import Registry
@@ -94,7 +95,8 @@ def is_image_score(src_path, img_entry, column: str):
 
 @DeveloperAPI
 def is_torchvision_encoder(encoder_obj: Encoder) -> bool:
-    return hasattr(encoder_obj, "torchvision_model_type")
+    # TODO(travis): do this through an interface rather than conditional logic
+    return isinstance(encoder_obj, TVBaseEncoder)
 
 
 @DeveloperAPI
