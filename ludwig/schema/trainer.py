@@ -53,7 +53,7 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     )
 
     early_stop: int = schema_utils.IntegerRange(
-        default=5,
+        default=15,
         min=-1,
         description=(
             "Number of consecutive rounds of evaluation without any improvement on the `validation_metric` that "
@@ -148,7 +148,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
     )
 
     early_stop: int = schema_utils.IntegerRange(
-        default=5,
+        default=15,
         min=-1,
         description=(
             "Number of consecutive rounds of evaluation without any improvement on the `validation_metric` that "
@@ -308,7 +308,7 @@ class GBMTrainerConfig(BaseTrainerConfig):
     )
 
     early_stop: int = schema_utils.IntegerRange(
-        default=5,
+        default=15,
         min=-1,
         description=(
             "Number of consecutive rounds of evaluation without any improvement on the `validation_metric` that "
