@@ -1094,10 +1094,15 @@ def confusion_matrix_plot(
     cax = ax.matshow(confusion_matrix, cmap="Blues", alpha=0.6)
     # Annotate confusion matrix plot
     for (i, j), z in np.ndenumerate(confusion_matrix):
+        # Format differently based on whether the value is normalized or not
+        if z.is_integer():
+            z_format = f"{z:.0f}"
+        else:
+            z_format = f"{z:.3f}"
         ax.text(
             j,
             i,
-            f"{z:.0f}",
+            z_format,
             ha="center",
             va="center",
             color="black",
