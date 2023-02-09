@@ -1,6 +1,6 @@
 from abc import ABC
 from dataclasses import field
-from typing import ClassVar, Dict, Optional, Tuple
+from typing import ClassVar, Dict, Optional, Tuple, Type
 
 import torch
 from marshmallow import fields, ValidationError
@@ -432,27 +432,16 @@ def OptimizerDataclassField(default={"type": "adam"}, description="TODO"):
     :return: Initialized dataclass field that converts untyped dicts with params to optimizer dataclass instances.
     """
 
-    class OptimizerMarshmallowField(fields.Field):
+    class OptimizerSelection(schema_utils.TypeSelection):
         """Custom marshmallow field that deserializes a dict to a valid optimizer from
         `ludwig.modules.optimization_modules.optimizer_registry` and creates a corresponding `oneOf` JSON schema
         for external usage."""
 
-        def _deserialize(self, value, attr, data, **kwargs):
-            if value is None:
-                return None
-            if isinstance(value, dict):
-                opt_type = value.get("type")
-                opt_type = opt_type.lower() if opt_type else opt_type
-                if opt_type in optimizer_registry:
-                    opt = optimizer_registry[opt_type][1]
-                    try:
-                        return opt.Schema().load(value)
-                    except (TypeError, ValidationError) as e:
-                        raise ValidationError(f"Invalid params for optimizer: {value}, see `{opt}` definition") from e
-                raise ValidationError(
-                    f"Invalid optimizer type: '{opt_type}', expected one of: {list(optimizer_registry.keys())}."
-                )
-            raise ValidationError(f"Invalid optimizer param {value}, expected `None` or `dict`")
+        def __init__(self):
+            super().__init__(registry=optimizer_registry, default_value=default)
+
+        def get_schema_from_registry(self, key: str) -> Type[schema_utils.BaseMarshmallowConfig]:
+            return get_optimizer_cls(key)
 
         @staticmethod
         def _jsonschema_type_mapping():
@@ -473,26 +462,7 @@ def OptimizerDataclassField(default={"type": "adam"}, description="TODO"):
                 "description": description,
             }
 
-    if not isinstance(default, dict) or "type" not in default or default["type"] not in optimizer_registry:
-        raise ValidationError(f"Invalid default: `{default}`")
-    try:
-        opt = optimizer_registry[default["type"].lower()][1]
-        load_default = lambda: opt.Schema().load(default)
-        dump_default = opt.Schema().dump(default)
-
-        return field(
-            metadata={
-                "marshmallow_field": OptimizerMarshmallowField(
-                    allow_none=False,
-                    dump_default=dump_default,
-                    load_default=load_default,
-                    metadata={"description": description},
-                )
-            },
-            default_factory=load_default,
-        )
-    except Exception as e:
-        raise ValidationError(f"Unsupported optimizer type: {default['type']}. See optimizer_registry. Details: {e}")
+    return OptimizerSelection.get_default_field()
 
 
 @DeveloperAPI
