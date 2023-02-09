@@ -8,7 +8,6 @@ from marshmallow import ValidationError
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
-    COLUMN,
     COMBINED,
     DECODER,
     DEFAULTS,
@@ -16,11 +15,9 @@ from ludwig.constants import (
     GRID_SEARCH,
     INPUT_FEATURES,
     LOSS,
-    NAME,
     OUTPUT_FEATURES,
     PARAMETERS,
     PREPROCESSING,
-    PROC_COLUMN,
     SPACE,
     TYPE,
 )
