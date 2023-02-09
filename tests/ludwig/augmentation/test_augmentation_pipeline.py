@@ -12,6 +12,7 @@ from ludwig.api import LudwigModel
 from ludwig.constants import IMAGENET1K
 from ludwig.data.dataset_synthesizer import cli_synthesize_dataset
 from ludwig.features.image_feature import ImageAugmentation
+from ludwig.schema.features.image_feature import ImageInputFeatureConfig
 
 
 # define fixture for test  image augmentation
@@ -167,7 +168,8 @@ def run_augmentation_training(
 # test image augmentation pipeline
 def test_image_augmentation(test_image, augmentation_pipeline_ops):
     # define augmentation pipeline
-    augmentation_pipeline = ImageAugmentation(augmentation_pipeline_ops)
+    feature: ImageInputFeatureConfig = ImageInputFeatureConfig.from_dict({"augmentation": augmentation_pipeline_ops})
+    augmentation_pipeline = ImageAugmentation(feature.augmentation)
     # apply augmentation pipeline to batch of test images
     augmentation_pipeline(test_image)
 
