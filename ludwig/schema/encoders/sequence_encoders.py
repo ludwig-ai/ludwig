@@ -1,4 +1,4 @@
-from typing import List
+from typing import Any, Dict, List
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import AUDIO, SEQUENCE, TEXT, TIMESERIES
@@ -14,7 +14,8 @@ from ludwig.schema.utils import ludwig_dataclass
 class SequenceEncoderConfig(BaseEncoderConfig):
     """Base class for sequence encoders."""
 
-    pass
+    def get_fixed_preprocessing_params(self) -> Dict[str, Any]:
+        return {"cache_encoder_embeddings": False}
 
 
 @DeveloperAPI

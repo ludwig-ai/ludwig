@@ -1,8 +1,8 @@
 from abc import ABC
-from typing import List, Union
+from typing import Any, Dict, List, Union
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import BINARY, NUMBER, VECTOR
+from ludwig.constants import BINARY, MODEL_ECD, MODEL_GBM, NUMBER, VECTOR
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.metadata import ENCODER_METADATA
@@ -22,9 +22,18 @@ class BaseEncoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
         parameter_metadata=ENCODER_METADATA["BaseEncoder"]["skip"],
     )
 
+    def get_fixed_preprocessing_params(self) -> Dict[str, Any]:
+        return {}
+
+    def is_pretrained(self) -> bool:
+        return False
+
+    def can_cache_embeddings(self) -> bool:
+        return False
+
 
 @DeveloperAPI
-@register_encoder_config("passthrough", [BINARY, NUMBER, VECTOR])
+@register_encoder_config("passthrough", [BINARY, NUMBER, VECTOR], model_types=[MODEL_ECD, MODEL_GBM])
 @ludwig_dataclass
 class PassthroughEncoderConfig(BaseEncoderConfig):
     """PassthroughEncoderConfig is a dataclass that configures the parameters used for a passthrough encoder."""

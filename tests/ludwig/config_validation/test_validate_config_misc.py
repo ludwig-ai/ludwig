@@ -1,6 +1,7 @@
 import pytest
-from jsonschema.exceptions import ValidationError
+from marshmallow import ValidationError
 
+from ludwig.config_validation.validation import get_schema, validate_config
 from ludwig.constants import (
     ACTIVE,
     BACKEND,
@@ -20,7 +21,6 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.features.feature_registries import get_output_type_registry
-from ludwig.schema import get_schema, validate_config
 from ludwig.schema.combiners.utils import get_combiner_jsonschema
 from ludwig.schema.defaults.defaults import DefaultsConfig
 from ludwig.schema.features.preprocessing.audio import AudioPreprocessingConfig
@@ -105,7 +105,7 @@ def test_config_features():
         }
 
         dtype = input_feature["type"]
-        with pytest.raises(ValidationError, match=rf"^'{dtype}' is not one of .*"):
+        with pytest.raises(ValidationError, match=rf"'{dtype}' is not one of .*"):
             validate_config(config)
 
 
@@ -167,7 +167,7 @@ def test_config_bad_feature_type():
         "combiner": {"type": "concat", "output_size": 14},
     }
 
-    with pytest.raises(ValidationError, match=r"^'fake' is not one of .*"):
+    with pytest.raises(ValidationError, match=r"'fake' is not one of .*"):
         validate_config(config)
 
 
@@ -178,7 +178,7 @@ def test_config_bad_encoder_name():
         "combiner": {"type": "concat", "output_size": 14},
     }
 
-    with pytest.raises(ValidationError, match=r"^'fake' is not one of .*"):
+    with pytest.raises(ValidationError, match=r"'fake' is not one of .*"):
         validate_config(config)
 
 
@@ -400,7 +400,7 @@ def test_encoder_descriptions():
     """This test tests that each encoder in the enum for each feature type has a description."""
     schema = get_input_feature_jsonschema(MODEL_ECD)
 
-    for feature_schema in schema["items"]["allOf"]:
+    for feature_schema in schema["allOf"]:
         type_data = feature_schema["then"]["properties"]["encoder"]["properties"]["type"]
         assert len(set(type_data["enumDescriptions"].keys())) > 0
         assert set(type_data["enumDescriptions"].keys()).issubset(set(type_data["enum"]))
@@ -418,7 +418,7 @@ def test_decoder_descriptions():
     """This test tests that each decoder in the enum for each feature type has a description."""
     schema = get_output_feature_jsonschema(MODEL_ECD)
 
-    for feature_schema in schema["items"]["allOf"]:
+    for feature_schema in schema["allOf"]:
         type_data = feature_schema["then"]["properties"]["decoder"]["properties"]["type"]
         assert len(type_data["enumDescriptions"].keys()) > 0
         assert set(type_data["enumDescriptions"].keys()).issubset(set(type_data["enum"]))

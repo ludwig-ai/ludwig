@@ -1,6 +1,6 @@
 import copy
-from abc import ABC
-from dataclasses import field
+from abc import ABC, abstractmethod
+from dataclasses import field, Field
 from typing import Any
 from typing import Dict as TDict
 from typing import List as TList
@@ -9,6 +9,7 @@ from typing import Optional, Set, Tuple, Type, Union
 import marshmallow_dataclass
 import yaml
 from marshmallow import EXCLUDE, fields, schema, validate, ValidationError
+from marshmallow.utils import missing
 from marshmallow_dataclass import dataclass as m_dataclass
 from marshmallow_jsonschema import JSONSchema as js
 
@@ -17,6 +18,7 @@ from ludwig.constants import ACTIVE, COLUMN, NAME, PROC_COLUMN, TYPE
 from ludwig.modules.reduction_modules import reduce_mode_registry
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, ParameterMetadata
 from ludwig.utils.misc_utils import memoized_method
+from ludwig.utils.registry import Registry
 from ludwig.utils.torch_utils import activations, initializer_registry
 
 RECURSION_STOP_ENUM = {"weights_initializer", "bias_initializer", "norm_params"}
@@ -90,6 +92,9 @@ def convert_submodules(config_dict: dict) -> TDict[str, any]:
             output_dict[k] = v.to_dict()
             convert_submodules(output_dict[k])
 
+        elif isinstance(v, ListSerializable):
+            output_dict[k] = v.to_list()
+
         else:
             continue
 
@@ -121,6 +126,13 @@ def remove_duplicate_fields(properties: dict, fields: Optional[TList[str]] = Non
     for key in duplicate_fields:  # TODO: Remove col/proc_col once train metadata decoupled
         if key in properties:
             del properties[key]
+
+
+@DeveloperAPI
+class ListSerializable(ABC):
+    @abstractmethod
+    def to_list(self) -> TList:
+        pass
 
 
 @DeveloperAPI
@@ -1070,3 +1082,106 @@ def OneOfOptionsField(
         },
         **default_kwarg,
     )
+
+
+class TypeSelection(fields.Field):
+    def __init__(
+        self, registry: Registry, default_value: Optional[str] = None, key: str = "type", description: str = ""
+    ):
+        self.registry = registry
+        self.default_value = default_value
+        self.key = key
+
+        dump_default = missing
+        load_default = missing
+        self.default_factory = None
+        if self.default_value is not None:
+            default_obj = {key: default_value}
+            cls = self.get_schema_from_registry(self.default_value.lower())
+            self.default_factory = lambda: cls.Schema().load(default_obj)
+            load_default = self.default_factory
+            dump_default = cls.Schema().dump(default_obj)
+
+        super().__init__(
+            allow_none=False,
+            dump_default=dump_default,
+            load_default=load_default,
+            metadata={"description": description},
+        )
+
+    def _deserialize(self, value, attr, data, **kwargs):
+        if value is None:
+            return None
+        if isinstance(value, dict):
+            cls_type = value.get(self.key)
+            cls_type = cls_type.lower() if cls_type else self.default_value
+            if cls_type in self.registry:
+                cls = self.get_schema_from_registry(cls_type)
+                try:
+                    return cls.Schema().load(value)
+                except (TypeError, ValidationError) as e:
+                    raise ValidationError(f"Invalid params: {value}, see `{cls}` definition") from e
+            raise ValidationError(f"Invalid type: '{cls_type}', expected one of: {list(self.registry.keys())}")
+        raise ValidationError(f"Invalid param {value}, expected `None` or `dict`")
+
+    def get_schema_from_registry(self, key: str) -> Type[BaseMarshmallowConfig]:
+        return self.registry[key]
+
+    def get_default_field(self) -> Field:
+        default_factory = lambda: None
+        if self.default_factory is not None:
+            default_factory = self.default_factory
+
+        return field(
+            metadata={"marshmallow_field": self},
+            default_factory=default_factory,
+        )
+
+
+@DeveloperAPI
+class DictMarshmallowField(fields.Field):
+    def __init__(
+        self,
+        cls: Type[BaseMarshmallowConfig],
+        allow_none: bool = True,
+        default_missing: bool = False,
+        description: str = "",
+    ):
+        self.cls = cls
+
+        dump_default = missing
+        load_default = missing
+        self.default_factory = None
+        if not default_missing:
+            default_obj = {}
+            self.default_factory = lambda: cls.Schema().load(default_obj)
+            load_default = self.default_factory
+            dump_default = cls.Schema().dump(default_obj)
+
+        super().__init__(
+            allow_none=allow_none,
+            dump_default=dump_default,
+            load_default=load_default,
+            metadata={"description": description},
+        )
+
+    def _deserialize(self, value, attr, data, **kwargs):
+        if value is None:
+            return value
+        if isinstance(value, dict):
+            try:
+                return self.cls.Schema().load(value)
+            except (TypeError, ValidationError) as e:
+                # TODO(travis): this seems much too verbose, does the validation error not show the specific error?
+                raise ValidationError(f"Invalid params: {value}, see `{self.cls}` definition. Error: {e}")
+        raise ValidationError(f"Invalid param {value}, expected `None` or `dict`")
+
+    def get_default_field(self) -> Field:
+        default_factory = lambda: None
+        if self.default_factory is not None:
+            default_factory = self.default_factory
+
+        return field(
+            metadata={"marshmallow_field": self},
+            default_factory=default_factory,
+        )

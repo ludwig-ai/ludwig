@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict, Optional
+from typing import Optional
 
 import torch
 from torch import nn
@@ -44,9 +44,7 @@ logger = logging.getLogger(__name__)
 
 
 class SequenceEncoder(Encoder):
-    @classmethod
-    def get_fixed_preprocessing_params(cls, encoder_params: Dict[str, Any]) -> Dict[str, Any]:
-        return {"cache_encoder_embeddings": False}
+    pass
 
 
 @DeveloperAPI

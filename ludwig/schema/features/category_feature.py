@@ -1,5 +1,5 @@
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import ACCURACY, CATEGORY, SOFTMAX_CROSS_ENTROPY
+from ludwig.constants import ACCURACY, CATEGORY, MODEL_ECD, MODEL_GBM, SOFTMAX_CROSS_ENTROPY
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -11,7 +11,9 @@ from ludwig.schema.features.loss.utils import LossDataclassField
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
 from ludwig.schema.features.utils import (
-    input_config_registry,
+    defaults_config_registry,
+    ecd_input_config_registry,
+    gbm_input_config_registry,
     input_mixin_registry,
     output_config_registry,
     output_mixin_registry,
@@ -30,20 +32,36 @@ class CategoryInputFeatureConfigMixin(BaseMarshmallowConfig):
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=CATEGORY)
 
+
+@DeveloperAPI
+@ludwig_dataclass
+class CategoryInputFeatureConfig(BaseInputFeatureConfig, CategoryInputFeatureConfigMixin):
+    """CategoryInputFeatureConfig is a dataclass that configures the parameters used for a category input
+    feature."""
+
+    encoder: BaseEncoderConfig = None
+
+
+@DeveloperAPI
+@ecd_input_config_registry.register(CATEGORY)
+@ludwig_dataclass
+class ECDCategoryInputFeatureConfig(CategoryInputFeatureConfig):
     encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_ECD,
         feature_type=CATEGORY,
         default="dense",
     )
 
 
 @DeveloperAPI
-@input_config_registry.register(CATEGORY)
+@gbm_input_config_registry.register(CATEGORY)
 @ludwig_dataclass
-class CategoryInputFeatureConfig(BaseInputFeatureConfig, CategoryInputFeatureConfigMixin):
-    """CategoryInputFeatureConfig is a dataclass that configures the parameters used for a category input
-    feature."""
-
-    pass
+class GBMCategoryInputFeatureConfig(CategoryInputFeatureConfig):
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_GBM,
+        feature_type=CATEGORY,
+        default="passthrough",
+    )
 
 
 @DeveloperAPI
@@ -111,4 +129,15 @@ class CategoryOutputFeatureConfig(BaseOutputFeatureConfig, CategoryOutputFeature
         "measure. It computes accuracy but considering as a match if the true category appears in the "
         "first k predicted categories ranked by decoder's confidence.",
         parameter_metadata=FEATURE_METADATA[CATEGORY]["top_k"],
+    )
+
+
+@DeveloperAPI
+@defaults_config_registry.register(CATEGORY)
+@ludwig_dataclass
+class CategoryDefaultsConfig(CategoryInputFeatureConfigMixin, CategoryOutputFeatureConfigMixin):
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_ECD,
+        feature_type=CATEGORY,
+        default="dense",
     )

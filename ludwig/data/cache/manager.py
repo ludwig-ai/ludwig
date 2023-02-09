@@ -25,20 +25,26 @@ class DatasetCache:
             return None
 
         try:
-            cache_training_set_metadata = data_utils.load_json(training_set_metadata_fp)
-        except Exception as e:
-            logger.error(f"failed to load cached training set metadata at {training_set_metadata_fp}", exc_info=e)
+            cached_training_set_metadata = data_utils.load_json(training_set_metadata_fp)
+        except Exception:
+            logger.exception(f"Failed to load cached training set metadata at {training_set_metadata_fp}")
             return None
 
         cached_training_set = self.cache_map[TRAINING] if path_exists(self.cache_map[TRAINING]) else None
-
-        cached_test_set = self.cache_map[TEST] if path_exists(self.cache_map[TEST]) else None
+        if not cached_training_set:
+            logger.warning(f"Failed to load cached training set at {self.cache_map[TRAINING]}")
 
         cached_validation_set = self.cache_map[VALIDATION] if path_exists(self.cache_map[VALIDATION]) else None
+        if not cached_validation_set:
+            logger.warning(f"Failed to load cached validation set at {self.cache_map[VALIDATION]}")
 
-        valid = self.checksum == cache_training_set_metadata.get(CHECKSUM) and cached_training_set is not None
+        cached_test_set = self.cache_map[TEST] if path_exists(self.cache_map[TEST]) else None
+        if not cached_test_set:
+            logger.warning(f"Failed to load cached test set at {self.cache_map[TEST]}")
 
-        return valid, cache_training_set_metadata, cached_training_set, cached_test_set, cached_validation_set
+        valid = self.checksum == cached_training_set_metadata.get(CHECKSUM) and cached_training_set is not None
+
+        return valid, cached_training_set_metadata, cached_training_set, cached_test_set, cached_validation_set
 
     def put(self, training_set, test_set, validation_set, training_set_metadata):
         logger.info("Writing preprocessed training set cache")
@@ -80,6 +86,9 @@ class DatasetCache:
             if path_exists(fname):
                 # Parquet entries in the cache_ma can be pointers to directories.
                 delete(fname, recursive=True)
+
+    def get_cached_obj_path(self, cached_obj_name: str) -> str:
+        return self.cache_map.get(cached_obj_name)
 
 
 class CacheManager:
