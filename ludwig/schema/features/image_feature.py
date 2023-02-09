@@ -46,6 +46,10 @@ class ImageInputFeatureConfigMixin(BaseMarshmallowConfig):
         ],
     )
 
+    def has_augmentation(self) -> bool:
+        # Check for None, False, and []
+        return bool(self.augmentation)
+
 
 @DeveloperAPI
 @ecd_input_config_registry.register(IMAGE)

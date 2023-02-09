@@ -174,14 +174,12 @@ class ECD(BaseModel):
         augmentation_pipelines = {}
 
         # loop through all input features and add their augmentation pipeline to the dictionary
-        for i_feat_name, i_feat_config in self.config_obj.input_features.to_dict().items():
-            augmentation = i_feat_config.get("augmentation")
-
+        for input_feature in self.config_obj.input_features:
             # if augmentation was specified for this input feature, add AugmentationPipeline to dictionary
-            if augmentation:
+            if input_feature.has_augmentation():
                 # use input feature proc_column as key because that is what is used in the Batcher
-                augmentation_pipelines[i_feat_config.get("proc_column")] = self.input_features[
-                    i_feat_name
+                augmentation_pipelines[input_feature.proc_column] = self.input_features[
+                    input_feature.name
                 ].get_augmentation_pipeline()
 
         return AugmentationPipelines(augmentation_pipelines)
