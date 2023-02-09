@@ -799,9 +799,7 @@ def _run_train_gpu_load_cpu(config, data_parquet):
     ("max_batch_size", "expected_final_learning_rate"),
     [(256, 0.001), (8, 0.001)],
 )
-def test_tune_batch_size_lr_cpu(
-    tmpdir, ray_cluster_2cpu, max_batch_size, expected_final_batch_size, expected_final_learning_rate
-):
+def test_tune_batch_size_lr_cpu(tmpdir, ray_cluster_2cpu, max_batch_size, expected_final_learning_rate):
     config = {
         "input_features": [
             number_feature(normalization="zscore"),
@@ -835,7 +833,7 @@ def test_tune_batch_size_lr_cpu(
         if max_batch_size is None
         else min(max_batch_size_by_train_examples, max_batch_size)
     )
-    assert 2 <= model.config[TRAINER]["batch_size"] <= max_batch_size
+    assert 2 < model.config[TRAINER]["batch_size"] <= max_batch_size
     assert model.config[TRAINER]["learning_rate"] == expected_final_learning_rate
 
 
