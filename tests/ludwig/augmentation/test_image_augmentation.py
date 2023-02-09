@@ -3,6 +3,7 @@ import torch
 
 from ludwig.constants import IMAGE
 from ludwig.features.image_feature import get_augmentation_op
+from ludwig.schema.features.augmentation.utils import get_augmentation_cls
 
 
 @pytest.fixture(scope="module")
@@ -19,11 +20,12 @@ def test_image():
         ("random_rotate", {"degree": 45}),
         ("random_blur", {"kernel_size": 9}),
         ("random_blur", {"kernel_size": 15}),
-        ("random_contrast", {"min_contrast": 0.5, "max_contrast": 1.5}),
-        ("random_brightness", {"min_brightness": 0.5, "max_brightness": 1.5}),
+        ("random_contrast", {"min": 0.5, "max": 1.5}),
+        ("random_brightness", {"min": 0.5, "max": 1.5}),
     ],
 )
 def test_image_augmentation(test_image, augmentation_type, augmentation_params):
+    aug_config = get_augmentation_cls(IMAGE, augmentation_type).from_dict(augmentation_params)
     augmentation_op_cls = get_augmentation_op(IMAGE, augmentation_type)
-    augmentation_op = augmentation_op_cls(**augmentation_params)
+    augmentation_op = augmentation_op_cls(aug_config)
     augmentation_op(test_image)
