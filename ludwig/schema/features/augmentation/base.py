@@ -8,4 +8,4 @@ from ludwig.schema.utils import ludwig_dataclass
 class BaseAugmentationConfig(schema_utils.BaseMarshmallowConfig):
     """Base class for augmentation."""
 
-    pass
+    type: str

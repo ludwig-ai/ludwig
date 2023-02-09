@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import copy
 import logging
 import os
 import warnings
@@ -49,6 +48,7 @@ from ludwig.constants import (
 )
 from ludwig.data.cache.types import wrap
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
+from ludwig.schema.features.augmentation.base import BaseAugmentationConfig
 from ludwig.schema.features.image_feature import ImageInputFeatureConfig
 from ludwig.types import FeatureMetadataDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils.augmentation_utils import get_augmentation_op, register_augmentation_op
@@ -175,7 +175,7 @@ class RandomBlur(torch.nn.Module):
 class ImageAugmentation(torch.nn.Module):
     def __init__(
         self,
-        augmentation_list: List[Dict],
+        augmentation_list: List[BaseAugmentationConfig],
         normalize_mean: Optional[List[float]] = None,
         normalize_std: Optional[List[float]] = None,
     ):
@@ -191,9 +191,13 @@ class ImageAugmentation(torch.nn.Module):
             self.augmentation_steps = torch.nn.Sequential()
             for aug in augmentation_list:
                 try:
-                    aug_copy = copy.deepcopy(aug)
-                    aug_op = get_augmentation_op(IMAGE, aug_copy.pop(TYPE))
-                    self.augmentation_steps.append(aug_op(**aug_copy))
+                    aug_op = get_augmentation_op(IMAGE, aug.type)
+
+                    # TODO(travis): instead of passing as kwargs, we should pass config directly to the op constructor
+                    params = aug.to_dict()
+                    params.pop("type")
+
+                    self.augmentation_steps.append(aug_op(**params))
                 except KeyError:
                     raise ValueError(f"Invalid augmentation operation specification: {aug}")
         else:
