@@ -646,7 +646,7 @@ def Dict(
             assert all([isinstance(k, str) for k in default.keys()])
         except Exception:
             raise ValidationError(f"Invalid default: `{default}`")
-    else:
+    elif not allow_none:
         default = {}
 
     load_default = lambda: copy.deepcopy(default)
@@ -682,7 +682,7 @@ def List(
 
         except Exception:
             raise ValidationError(f"Invalid default: `{default}`")
-    else:
+    elif not allow_none:
         default = []
 
     if list_type is str:
@@ -716,7 +716,10 @@ def List(
 
 @DeveloperAPI
 def DictList(
-    default: Union[None, TList[TDict]] = None, description: str = "", parameter_metadata: ParameterMetadata = None
+    default: Union[None, TList[TDict]] = None,
+    allow_none: bool = True,
+    description: str = "",
+    parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing input must be a list of dicts."""
     if default is not None:
@@ -727,7 +730,7 @@ def DictList(
                 assert all([isinstance(k, str) for k in d.keys()])
         except Exception:
             raise ValidationError(f"Invalid default: `{default}`")
-    else:
+    elif not allow_none:
         default = []
 
     load_default = lambda: copy.deepcopy(default)
