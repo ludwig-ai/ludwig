@@ -51,7 +51,7 @@ class RandomRotateConfig(BaseAugmentationConfig):
 @DeveloperAPI
 @register_augmentation_config(name="random_blur", features=IMAGE)
 @ludwig_dataclass
-class RandomBlurOperation(BaseAugmentationConfig):
+class RandomBlurConfig(BaseAugmentationConfig):
     """Random blur augmentation operation."""
 
     type: str = schema_utils.ProtectedString(
@@ -68,7 +68,7 @@ class RandomBlurOperation(BaseAugmentationConfig):
 @DeveloperAPI
 @register_augmentation_config(name="random_brightness", features=IMAGE)
 @ludwig_dataclass
-class RandomBrightnessOperation(BaseAugmentationConfig):
+class RandomBrightnessConfig(BaseAugmentationConfig):
     """Random brightness augmentation operation."""
 
     type: str = schema_utils.ProtectedString(
@@ -77,13 +77,13 @@ class RandomBrightnessOperation(BaseAugmentationConfig):
     )
 
     min: int = schema_utils.FloatRange(
-        default=0.5,
+        default=0.1,
         description="Minimum factor for random brightness.",
         parameter_metadata=FEATURE_METADATA[IMAGE][AUGMENTATION]["min_brightness"],
     )
 
     max: int = schema_utils.FloatRange(
-        default=2.0,
+        default=3.0,
         description="Maximum factor for random brightness.",
         parameter_metadata=FEATURE_METADATA[IMAGE][AUGMENTATION]["max_brightness"],
     )
@@ -92,7 +92,7 @@ class RandomBrightnessOperation(BaseAugmentationConfig):
 @DeveloperAPI
 @register_augmentation_config(name="random_contrast", features=IMAGE)
 @ludwig_dataclass
-class RandomContrastOperation(BaseAugmentationConfig):
+class RandomContrastConfig(BaseAugmentationConfig):
     """Random Contrast augmentation operation."""
 
     type: str = schema_utils.ProtectedString(
@@ -101,13 +101,13 @@ class RandomContrastOperation(BaseAugmentationConfig):
     )
 
     min: int = schema_utils.FloatRange(
-        default=0.5,
+        default=0.1,
         description="Minimum factor for random brightness.",
         parameter_metadata=FEATURE_METADATA[IMAGE][AUGMENTATION]["min_contrast"],
     )
 
     max: int = schema_utils.FloatRange(
-        default=2.0,
+        default=3.0,
         description="Maximum factor for random brightness.",
         parameter_metadata=FEATURE_METADATA[IMAGE][AUGMENTATION]["max_contrast"],
     )

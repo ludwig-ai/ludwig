@@ -49,7 +49,14 @@ from ludwig.constants import (
 from ludwig.data.cache.types import wrap
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.schema.features.augmentation.base import BaseAugmentationConfig
-from ludwig.schema.features.augmentation.image import RandomHorizontalFlipConfig, RandomRotateConfig
+from ludwig.schema.features.augmentation.image import (
+    RandomBlurConfig,
+    RandomBrightnessConfig,
+    RandomContrastConfig,
+    RandomHorizontalFlipConfig,
+    RandomRotateConfig,
+    RandomVerticalFlipConfig,
+)
 from ludwig.schema.features.image_feature import ImageInputFeatureConfig
 from ludwig.types import FeatureMetadataDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils.augmentation_utils import get_augmentation_op, register_augmentation_op
@@ -76,7 +83,7 @@ IMAGENET1K_STD = [0.229, 0.224, 0.225]
 # Augmentation operations when augmentation is set to True
 AUGMENTATION_DEFAULT_OPERATIONS = [
     RandomHorizontalFlipConfig(),
-    RandomRotateConfig(degree=15),
+    RandomRotateConfig(),
 ]
 
 logger = logging.getLogger(__name__)
@@ -89,6 +96,7 @@ logger = logging.getLogger(__name__)
 class RandomVFlip(torch.nn.Module):
     def __init__(
         self,
+        config: RandomVerticalFlipConfig,
     ):
         super().__init__()
 
@@ -103,6 +111,7 @@ class RandomVFlip(torch.nn.Module):
 class RandomHFlip(torch.nn.Module):
     def __init__(
         self,
+        config: RandomHorizontalFlipConfig,
     ):
         super().__init__()
 
@@ -115,9 +124,9 @@ class RandomHFlip(torch.nn.Module):
 
 @register_augmentation_op(name="random_rotate", features=IMAGE)
 class RandomRotate(torch.nn.Module):
-    def __init__(self, degree=15):
+    def __init__(self, config: RandomRotateConfig):
         super().__init__()
-        self.degree = degree
+        self.degree = config.degree
 
     def forward(self, imgs):
         if torch.rand(1) < 0.5:
@@ -130,10 +139,10 @@ class RandomRotate(torch.nn.Module):
 
 @register_augmentation_op(name="random_contrast", features=IMAGE)
 class RandomContrast(torch.nn.Module):
-    def __init__(self, min_contrast=0.1, max_contrast=3.0):
+    def __init__(self, config: RandomContrastConfig):
         super().__init__()
-        self.min_contrast = min_contrast
-        self.contrast_adjustment_range = max_contrast - min_contrast
+        self.min_contrast = config.min
+        self.contrast_adjustment_range = config.max - config.min
 
     def forward(self, imgs):
         if torch.rand(1) < 0.5:
@@ -146,10 +155,10 @@ class RandomContrast(torch.nn.Module):
 
 @register_augmentation_op(name="random_brightness", features=IMAGE)
 class RandomBrightness(torch.nn.Module):
-    def __init__(self, min_brightness=0.1, max_brightness=3.0):
+    def __init__(self, config: RandomBrightnessConfig):
         super().__init__()
-        self.min_brightness = min_brightness
-        self.brightness_adjustment_range = max_brightness - min_brightness
+        self.min_brightness = config.min
+        self.brightness_adjustment_range = config.max - config.min
 
     def forward(self, imgs):
         if torch.rand(1) < 0.5:
@@ -162,9 +171,9 @@ class RandomBrightness(torch.nn.Module):
 
 @register_augmentation_op(name="random_blur", features=IMAGE)
 class RandomBlur(torch.nn.Module):
-    def __init__(self, kernel_size=5):
+    def __init__(self, config: RandomBlurConfig):
         super().__init__()
-        self.kernel_size = [kernel_size, kernel_size]
+        self.kernel_size = [config.kernel_size, config.kernel_size]
 
     def forward(self, imgs):
         if torch.rand(1) < 0.5:
@@ -190,17 +199,12 @@ class ImageAugmentation(torch.nn.Module):
 
         if self.training:
             self.augmentation_steps = torch.nn.Sequential()
-            for aug in augmentation_list:
+            for aug_config in augmentation_list:
                 try:
-                    aug_op = get_augmentation_op(IMAGE, aug.type)
-
-                    # TODO(travis): instead of passing as kwargs, we should pass config directly to the op constructor
-                    params = aug.to_dict()
-                    params.pop("type")
-
-                    self.augmentation_steps.append(aug_op(**params))
+                    aug_op = get_augmentation_op(IMAGE, aug_config.type)
+                    self.augmentation_steps.append(aug_op(aug_config))
                 except KeyError:
-                    raise ValueError(f"Invalid augmentation operation specification: {aug}")
+                    raise ValueError(f"Invalid augmentation operation specification: {aug_config}")
         else:
             # TODO: should this raise an exception if not in training mode?
             self.augmentation_steps = None
