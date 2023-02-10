@@ -1,6 +1,8 @@
+import contextlib
 import os
 from tempfile import TemporaryDirectory
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Type, Union
+from marshmallow import ValidationError
 
 import pytest
 import yaml
@@ -645,9 +647,13 @@ def test_number_feature_zscore_preprocessing_default():
         (None, ZerosInitializer()),
         ("uniform", UniformInitializer()),
         ({"type": "normal", "mean": 7, "std": 10}, NormalInitializer(mean=7, std=10)),
+        ("invalid", ValidationError),
+        ({"type": "invalid"}, ValidationError),
     ],
 )
-def test_bias_initializer(initializer_params: Optional[Union[str, Dict[str, Any]]], expected: InitializerConfig):
+def test_bias_initializer(
+    initializer_params: Optional[Union[str, Dict[str, Any]]], expected: Union[Type[ValidationError], InitializerConfig]
+):
     config = {
         "input_features": [
             {
@@ -671,8 +677,9 @@ def test_bias_initializer(initializer_params: Optional[Union[str, Dict[str, Any]
         # Test default
         del config["combiner"]["bias_initializer"]
 
-    config_obj: ECDModelConfig = ModelConfig.from_dict(config)
+    with pytest.raises(ValidationError) if expected == ValidationError else contextlib.nullcontext():
+        config_obj: ECDModelConfig = ModelConfig.from_dict(config)
 
-    bias_initializer = config_obj.combiner.bias_initializer
-    assert isinstance(bias_initializer, InitializerConfig)
-    assert bias_initializer == expected
+        bias_initializer = config_obj.combiner.bias_initializer
+        assert isinstance(bias_initializer, InitializerConfig)
+        assert bias_initializer == expected

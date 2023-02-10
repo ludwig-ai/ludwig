@@ -1,6 +1,6 @@
 from abc import ABC
 from dataclasses import field
-from typing import Callable, ClassVar
+from typing import ClassVar
 
 from marshmallow import fields, ValidationError
 from torch import nn
