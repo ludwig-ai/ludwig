@@ -89,7 +89,7 @@ class RayDataset(Dataset):
         if isinstance(window_size_bytes, int):
             window_size = window_size_bytes
 
-        # If the user does not supply a window size and the dataset is large,
+        # If the user requests auto window sizing and the dataset is large,
         # set the window size to `<available memory> // 5`.
         elif window_size_bytes == "auto":
             ds_memory_size = self.in_memory_size_bytes
@@ -168,7 +168,7 @@ class RayDatasetManager(DatasetManager):
         training_set_metadata: TrainingSetMetadataDict,
     ) -> "RayDataset":
         """Create a new Ray dataset with config."""
-        window_size_bytes = config.get("backend", {}).get("loader", None).get("window_size_bytes", None)
+        window_size_bytes = self.backend._data_loader_kwargs.get("window_size_bytes", None)
         return RayDataset(
             dataset, get_proc_features(config), training_set_metadata, self.backend, window_size_bytes=window_size_bytes
         )
