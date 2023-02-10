@@ -987,7 +987,6 @@ def assert_preprocessed_dataset_shape_and_dtype_for_feature(
     Raises:
         AssertionError if the preprocessed dataset does not have the correct shape and dtype for the given feature type.
     """
-    
     if_config = [if_config for if_config in config_obj.input_features if feature_type in if_config.name][0]
     if_config_proc_column = if_config.proc_column
     for result in [preprocessed_dataset.training_set, preprocessed_dataset.validation_set, preprocessed_dataset.test_set]:

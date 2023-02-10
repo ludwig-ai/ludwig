@@ -11,7 +11,7 @@ from PIL import Image
 
 import ludwig
 from ludwig.api import LudwigModel
-from ludwig.constants import BATCH_SIZE, COLUMN, DECODER, NAME, PROC_COLUMN, TRAINER
+from ludwig.constants import BATCH_SIZE, COLUMN, DECODER, IMAGE, NAME, PROC_COLUMN, TRAINER
 from ludwig.data.concatenate_datasets import concatenate_df
 from tests.integration_tests.utils import (
     audio_feature,
