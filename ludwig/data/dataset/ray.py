@@ -60,7 +60,16 @@ def read_remote_parquet(path: str):
 
 @DeveloperAPI
 class RayDataset(Dataset):
-    """Wrapper around ray.data.Dataset."""
+    """Wrapper around ray.data.Dataset.
+
+    Args:
+        df: The data to wrap
+        features: Feature-level config indexed by feature name
+        training_set_metadata: Additional training set information
+        backend: The local/distributed compute coordinator
+        window_size_bytes: The requested size of a dataset window in bytes. If "auto", sets the window size relative to
+            the dataset size and object store size. If not specified, no windowing will occur.
+    """
 
     def __init__(
         self,
@@ -81,13 +90,9 @@ class RayDataset(Dataset):
 
     def get_window_size_bytes(self, window_size_bytes: Optional[Union[int, Literal["auto"]]] = None) -> int:
         """Return this dataset's window size in bytes, or translate auto-windowing into bytes."""
-        # By default, set to -1 so that an infinite window size
-        # will be used which effectively results in bulk data ingestion
-        window_size = -1
-
         # If user has specified a window size, use it as-is.
         if isinstance(window_size_bytes, int):
-            window_size = window_size_bytes
+            return window_size_bytes
 
         # If the user requests auto window sizing and the dataset is large,
         # set the window size to `<available memory> // 5`.
@@ -100,9 +105,11 @@ class RayDataset(Dataset):
                     "In-memory dataset size is greater than 20%% of object store memory. "
                     "Enabling windowed shuffling of data to prevent chances of OOMs. "
                 )
-                window_size = int(cluster_memory_size // 5)
+                return int(cluster_memory_size // 5)
 
-        return window_size
+        # By default, set to -1 so that an infinite window size
+        # will be used which effectively results in bulk data ingestion
+        return -1
 
     @contextlib.contextmanager
     def initialize_batcher(
