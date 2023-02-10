@@ -12,7 +12,7 @@ def calculate_checksum(original_dataset: CacheableDataset, config: ModelConfigDi
         "dataset_checksum": original_dataset.checksum,
         "global_preprocessing": config.get(PREPROCESSING, {}),
         "global_defaults": config.get(DEFAULTS, {}),
-        "feature_names": [feature[PROC_COLUMN] for feature in features],
+        "feature_proc_columns": [feature[PROC_COLUMN] for feature in features],
         "feature_types": [feature[TYPE] for feature in features],
         "feature_preprocessing": [feature.get(PREPROCESSING, {}) for feature in features],
     }

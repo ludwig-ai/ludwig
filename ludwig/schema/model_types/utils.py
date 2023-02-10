@@ -164,15 +164,15 @@ def set_derived_feature_columns_(config_obj: "ModelConfig"):
     Proc_column is set to a hash of the feature's preprocessing configuration.
     """
     for feature in config_obj.input_features:
-        if not feature.column:
+        if feature.column is None:
             feature.column = feature.name
-        if not feature.proc_column:
+        if feature.proc_column is None:
             feature.proc_column = compute_feature_hash(feature.to_dict())
 
     for feature in config_obj.output_features:
-        if not feature.column:
+        if feature.column is None:
             feature.column = feature.name
-        if not feature.proc_column:
+        if feature.proc_column is None:
             feature.proc_column = compute_feature_hash(feature.to_dict())
 
 
