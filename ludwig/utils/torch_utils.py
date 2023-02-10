@@ -20,17 +20,17 @@ def get_torch_device():
     if torch.cuda.is_available():
         return "cuda"
 
-    if bool(os.environ.get("LUDWIG_USE_MPS")):
+    if bool(os.environ.get("LUDWIG_ENABLE_MPS")):
         if torch.backends.mps.is_available() and torch.backends.mps.is_built():
             if not bool(os.environ.get("PYTORCH_ENABLE_MPS_FALLBACK")):
                 warnings.warn(
-                    "LUDWIG_USE_MPS is set and MPS is available, but PYTORCH_ENABLE_MPS_FALLBACK has not been set. "
+                    "LUDWIG_ENABLE_MPS is set and MPS is available, but PYTORCH_ENABLE_MPS_FALLBACK has not been set. "
                     "Depending on your model config, some operations may not be compatible. If errors occur, try "
-                    "setting `PYTORCH_ENABLE_MPS_FALLBACK=1` and retrying."
+                    "setting `PYTORCH_ENABLE_MPS_FALLBACK=1` and resubmitting."
                 )
             return "mps"
         else:
-            warnings.warn("LUDWIG_USE_MPS is set but MPS is not available, falling back to CPU.")
+            warnings.warn("LUDWIG_ENABLE_MPS is set but MPS is not available, falling back to CPU.")
 
     return "cpu"
 
