@@ -52,7 +52,7 @@ IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".tiff", ".bmp", ".gif")
 
 @DeveloperAPI
 def get_gray_default_image(num_channels: int, height: int, width: int) -> np.ndarray:
-    return np.full((num_channels, height, width), 128, dtype=np.uint8)
+    return np.full((num_channels, height, width), 128, dtype=np.float32)
 
 
 @DeveloperAPI
