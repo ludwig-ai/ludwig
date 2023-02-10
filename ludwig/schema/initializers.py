@@ -31,7 +31,10 @@ def get_initialize_cls(name: str):
 @DeveloperAPI
 @ludwig_dataclass
 class InitializerConfig(schema_utils.BaseMarshmallowConfig, ABC):
-    """Base class for initializers. Not meant to be used directly."""
+    """Base class for initializers.
+
+    Not meant to be used directly.
+    """
 
     initializer_fn: ClassVar
     "Class variable pointing to the corresponding initializer function."
@@ -39,8 +42,8 @@ class InitializerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     type: str
     """Name corresponding to an initializer.
 
-    Technically mutable, but attempting to load a derived initializer with `type` set to a mismatched value will 
-    result in a `ValidationError`.
+    Technically mutable, but attempting to load a derived initializer with `type` set to a mismatched value will result
+    in a `ValidationError`.
     """
 
     def initializer_params(self) -> Dict[str, Any]:
