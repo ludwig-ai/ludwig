@@ -68,6 +68,7 @@ class RayDataset(Dataset):
         features: Dict[str, FeatureConfigDict],
         training_set_metadata: TrainingSetMetadataDict,
         backend: Backend,
+        window_size_bytes: Optional[Union[int, Literal["auto"]]] = None,
     ):
         self.df_engine = backend.df_engine
         self.ds = self.df_engine.to_ray_dataset(df) if not isinstance(df, str) else read_remote_parquet(df)
@@ -76,8 +77,10 @@ class RayDataset(Dataset):
         self.data_hdf5_fp = training_set_metadata.get(DATA_TRAIN_HDF5_FP)
         self.data_parquet_fp = training_set_metadata.get(DATA_TRAIN_PARQUET_FP)
         self._processed_data_fp = df if isinstance(df, str) else None
+        self.window_size_bytes = self.get_window_size_bytes(window_size_bytes)
 
     def get_window_size_bytes(self, window_size_bytes: Optional[Union[int, Literal["auto"]]] = None) -> int:
+        """Return this dataset's window size in bytes, or translate auto-windowing into bytes."""
         # By default, set to -1 so that an infinite window size
         # will be used which effectively results in bulk data ingestion
         window_size = -1
@@ -165,7 +168,10 @@ class RayDatasetManager(DatasetManager):
         training_set_metadata: TrainingSetMetadataDict,
     ) -> "RayDataset":
         """Create a new Ray dataset with config."""
-        return RayDataset(dataset, get_proc_features(config), training_set_metadata, self.backend)
+        window_size_bytes = config.get("backend", {}).get("loader", None).get("window_size_bytes", None)
+        return RayDataset(
+            dataset, get_proc_features(config), training_set_metadata, self.backend, window_size_bytes=window_size_bytes
+        )
 
     def save(
         self,
