@@ -52,12 +52,12 @@ IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".tiff", ".bmp", ".gif")
 
 @DeveloperAPI
 def get_gray_default_image(num_channels: int, height: int, width: int) -> np.ndarray:
-    return np.full((num_channels, height, width), 128, dtype=np.uint8)
+    return np.full((num_channels, height, width), 128, dtype=np.float32)
 
 
 @DeveloperAPI
 def get_average_image(image_lst: List[np.ndarray]) -> np.array:
-    return np.mean([x for x in image_lst if x is not None], axis=(0))
+    return np.mean([x for x in image_lst if x is not None], axis=(0), dtype=np.float32)
 
 
 @DeveloperAPI

@@ -9,9 +9,11 @@ import pandas as pd
 import pytest
 from PIL import Image
 
+import ludwig
 from ludwig.api import LudwigModel
 from ludwig.constants import BATCH_SIZE, COLUMN, DECODER, NAME, PROC_COLUMN, TRAINER
 from ludwig.data.concatenate_datasets import concatenate_df
+from ludwig.features.feature_registries import get_input_type_registry
 from tests.integration_tests.utils import (
     audio_feature,
     binary_feature,
@@ -236,6 +238,53 @@ def test_read_image_from_numpy_array(tmpdir, csv_filename):
         df_with_images_as_numpy_arrays,
         skip_save_processed_input=False,
     )
+
+
+def test_read_image_failure_default_image(monkeypatch, tmpdir, csv_filename):
+    """Tests that the default image used when an image cannot be read has the correct properties."""
+
+    def mock_read_binary_files(self, column, map_fn, file_size):
+        """Mock read_binary_files to return None (failed image read) to test error handling."""
+        return column.map(lambda x: None)
+    
+    monkeypatch.setattr(ludwig.backend.base.LocalPreprocessingMixin, "read_binary_files", mock_read_binary_files)
+    
+    input_features = [image_feature(os.path.join(tmpdir, "generated_output"))]
+    output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+    }
+
+    data_csv = generate_data(
+        input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=NUM_EXAMPLES, nan_percent=0.2
+    )
+
+    model = LudwigModel(config)
+    preprocessed_dataset = model.preprocess(data_csv)
+    training_set_metadata = preprocessed_dataset.training_set_metadata
+    
+    preprocessing = training_set_metadata[input_features[0][NAME]]['preprocessing']
+    expected_shape = (preprocessing['num_channels'], preprocessing['height'], preprocessing['width'])
+    expected_dtype = np.float32
+    
+    if_config = [if_config for if_config in model.config_obj.input_features if "image" in if_config.name][0]
+    if_config_proc_column = if_config.proc_column
+    for result in [preprocessed_dataset.training_set, preprocessed_dataset.validation_set, preprocessed_dataset.test_set]:
+        result_df = result.to_df()
+        result_df_image_col = result_df[if_config_proc_column]
+        
+        # Check that the default image is of the correct dtype
+        result_df_image_col_dtypes = set(result_df_image_col.map(lambda x: x.dtype))
+        assert all([expected_dtype == dtype for dtype in result_df_image_col_dtypes]), (
+            f"image dtype should be {expected_dtype}, got the following set of values: {result_df_image_col_dtypes}")
+        
+        # Check that the default image is of the right dimensions
+        result_df_image_col_shapes = set(result_df_image_col.map(lambda x: x.shape))
+        assert all(expected_shape == shape for shape in result_df_image_col_shapes), (
+            f"image shape should be {expected_shape}, got the following set of values: {result_df_image_col_shapes}")
 
 
 def test_number_feature_wrong_dtype(csv_filename, tmpdir):

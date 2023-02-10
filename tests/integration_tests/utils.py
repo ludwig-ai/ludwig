@@ -181,8 +181,11 @@ def generate_data(
     :param nan_percent: percent of values in a feature to be NaN
     :return:
     """
-    df = generate_data_as_dataframe(input_features, output_features, num_examples, nan_percent)
+    df = generate_data_as_dataframe(input_features, output_features, num_examples)
     df.to_csv(filename, index=False)
+    if nan_percent > 0:
+        df_with_nans = read_csv_with_nan(filename, nan_percent)
+        df_with_nans.to_csv(filename, index=False)
     return filename
 
 
@@ -190,7 +193,6 @@ def generate_data_as_dataframe(
     input_features,
     output_features,
     num_examples=25,
-    nan_percent=0.0,
 ) -> pd.DataFrame:
     """Helper method to generate synthetic data based on input, output feature specs.
 
