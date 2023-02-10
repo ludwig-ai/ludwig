@@ -24,7 +24,7 @@ import tempfile
 import traceback
 import uuid
 from distutils.util import strtobool
-from typing import Any, Dict, List, Optional, Set, Union, Tuple, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, Set, Tuple, TYPE_CHECKING, Union
 
 import cloudpickle
 import numpy as np
@@ -966,14 +966,14 @@ def assert_all_required_metrics_exist(
 
 
 def assert_preprocessed_dataset_shape_and_dtype_for_feature(
-    feature_name: str, 
-    preprocessed_dataset: "Dataset", 
-    config_obj: "ModelConfig", 
-    expected_dtype: np.dtype, 
+    feature_name: str,
+    preprocessed_dataset: "Dataset",
+    config_obj: "ModelConfig",
+    expected_dtype: np.dtype,
     expected_shape: Tuple,
 ):
     """Asserts that the preprocessed dataset has the correct shape and dtype for a given feature type.
-    
+
     Args:
         feature_name: the name of the feature to check
         preprocessed_dataset: the preprocessed dataset
@@ -981,7 +981,7 @@ def assert_preprocessed_dataset_shape_and_dtype_for_feature(
         expected_dtype: the expected dtype
         expected_shape: the expected shape
     Returns:
-        None. 
+        None.
     Raises:
         AssertionError if the preprocessed dataset does not have the correct shape and dtype for the given feature type.
     """
@@ -990,21 +990,27 @@ def assert_preprocessed_dataset_shape_and_dtype_for_feature(
     if len(if_configs) != 1:
         raise ValueError(f"feature_name {feature_name} found {len(if_configs)} times in config_obj")
     if_config = if_configs[0]
-        
+
     if_config_proc_column = if_config.proc_column
-    for result in [preprocessed_dataset.training_set, preprocessed_dataset.validation_set, preprocessed_dataset.test_set]:
+    for result in [
+        preprocessed_dataset.training_set,
+        preprocessed_dataset.validation_set,
+        preprocessed_dataset.test_set,
+    ]:
         result_df = result.to_df()
         result_df_image_col = result_df[if_config_proc_column]
-        
+
         # Check that the default image is of the correct dtype
         result_df_image_col_dtypes = set(result_df_image_col.map(lambda x: x.dtype))
-        assert all([expected_dtype == dtype for dtype in result_df_image_col_dtypes]), (
-            f"image dtype should be {expected_dtype}, got the following set of values: {result_df_image_col_dtypes}")
-        
+        assert all(
+            [expected_dtype == dtype for dtype in result_df_image_col_dtypes]
+        ), f"image dtype should be {expected_dtype}, got the following set of values: {result_df_image_col_dtypes}"
+
         # Check that the default image is of the right dimensions
         result_df_image_col_shapes = set(result_df_image_col.map(lambda x: x.shape))
-        assert all(expected_shape == shape for shape in result_df_image_col_shapes), (
-            f"image shape should be {expected_shape}, got the following set of values: {result_df_image_col_shapes}")
+        assert all(
+            expected_shape == shape for shape in result_df_image_col_shapes
+        ), f"image shape should be {expected_shape}, got the following set of values: {result_df_image_col_shapes}"
 
 
 @contextlib.contextmanager

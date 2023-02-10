@@ -14,8 +14,8 @@ from ludwig.api import LudwigModel
 from ludwig.constants import BATCH_SIZE, COLUMN, DECODER, IMAGE, NAME, PROC_COLUMN, TRAINER
 from ludwig.data.concatenate_datasets import concatenate_df
 from tests.integration_tests.utils import (
-    audio_feature,
     assert_preprocessed_dataset_shape_and_dtype_for_feature,
+    audio_feature,
     binary_feature,
     category_feature,
     generate_data,
@@ -246,9 +246,9 @@ def test_read_image_failure_default_image(monkeypatch, tmpdir, csv_filename):
     def mock_read_binary_files(self, column, map_fn, file_size):
         """Mock read_binary_files to return None (failed image read) to test error handling."""
         return column.map(lambda x: None)
-    
+
     monkeypatch.setattr(ludwig.backend.base.LocalPreprocessingMixin, "read_binary_files", mock_read_binary_files)
-    
+
     image_feature_config = image_feature(os.path.join(tmpdir, "generated_output"))
     input_features = [image_feature_config]
     output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
@@ -266,13 +266,14 @@ def test_read_image_failure_default_image(monkeypatch, tmpdir, csv_filename):
     model = LudwigModel(config)
     preprocessed_dataset = model.preprocess(data_csv)
     training_set_metadata = preprocessed_dataset.training_set_metadata
-    
-    preprocessing = training_set_metadata[input_features[0][NAME]]['preprocessing']
-    expected_shape = (preprocessing['num_channels'], preprocessing['height'], preprocessing['width'])
+
+    preprocessing = training_set_metadata[input_features[0][NAME]]["preprocessing"]
+    expected_shape = (preprocessing["num_channels"], preprocessing["height"], preprocessing["width"])
     expected_dtype = np.float32
-    
+
     assert_preprocessed_dataset_shape_and_dtype_for_feature(
-        image_feature_config[NAME], preprocessed_dataset, model.config_obj, expected_dtype, expected_shape)
+        image_feature_config[NAME], preprocessed_dataset, model.config_obj, expected_dtype, expected_shape
+    )
 
 
 def test_number_feature_wrong_dtype(csv_filename, tmpdir):
