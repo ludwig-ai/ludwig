@@ -1133,8 +1133,6 @@ def build_dataset(
     feature_configs = []
     feature_hashes = set()
     for feature in features:
-        if PROC_COLUMN not in feature:
-            feature[PROC_COLUMN] = compute_feature_hash(feature)
         if feature[PROC_COLUMN] not in feature_hashes:
             feature_configs.append(feature)
             feature_hashes.add(feature[PROC_COLUMN])

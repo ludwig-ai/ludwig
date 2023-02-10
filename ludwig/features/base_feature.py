@@ -130,8 +130,6 @@ class BaseFeature:
             feature.column = self.feature_name
         self.column = feature.column
 
-        if not feature.proc_column:
-            feature.proc_column = compute_feature_hash(type(feature).Schema().dump(feature))
         self.proc_column = feature.proc_column
 
 
