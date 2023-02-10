@@ -5,6 +5,7 @@ from ludwig.constants import H3
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
+from ludwig.schema.initializers import InitializerConfig, InitializerDataclassField
 from ludwig.schema.metadata import ENCODER_METADATA
 from ludwig.schema.utils import ludwig_dataclass
 
@@ -41,7 +42,7 @@ class H3EmbedConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["H3Embed"]["use_bias"],
     )
 
-    bias_initializer: str = schema_utils.InitializerOptions(
+    bias_initializer: InitializerConfig = InitializerDataclassField(
         default="zeros",
         description="Initializer to use for the bias vector.",
         parameter_metadata=ENCODER_METADATA["H3Embed"]["bias_initializer"],

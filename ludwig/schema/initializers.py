@@ -1,6 +1,6 @@
 from abc import ABC
 from dataclasses import field
-from typing import ClassVar
+from typing import Any, ClassVar, Dict
 
 from marshmallow import fields, ValidationError
 from torch import nn
@@ -42,6 +42,13 @@ class InitializerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     Technically mutable, but attempting to load a derived initializer with `type` set to a mismatched value will 
     result in a `ValidationError`.
     """
+
+    def initializer_params(self) -> Dict[str, Any]:
+        """Returns all params for this initializers without meta params."""
+        params = self.to_dict()
+        params.pop("initializer_fn", None)
+        params.pop("type", None)
+        return params
 
 
 @DeveloperAPI

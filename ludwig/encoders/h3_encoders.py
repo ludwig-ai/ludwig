@@ -28,6 +28,7 @@ from ludwig.modules.initializer_modules import get_initializer
 from ludwig.modules.recurrent_modules import RecurrentStack
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.schema.encoders.h3_encoders import H3EmbedConfig, H3RNNConfig, H3WeightedSumConfig
+from ludwig.schema.initializers import InitializerConfig
 from ludwig.utils import torch_utils
 
 logger = logging.getLogger(__name__)
@@ -48,7 +49,7 @@ class H3Embed(Encoder):
         output_size: int = 10,
         use_bias: bool = True,
         weights_initializer: str = "xavier_uniform",
-        bias_initializer: str = "zeros",
+        bias_initializer: InitializerConfig = None,
         norm: str = None,
         norm_params: Dict = None,
         activation: str = "relu",
@@ -229,7 +230,7 @@ class H3WeightedSum(Encoder):
         output_size: int = 10,
         use_bias: bool = True,
         weights_initializer: str = "xavier_uniform",
-        bias_initializer: str = "zeros",
+        bias_initializer: InitializerConfig = None,
         norm: Optional[str] = None,
         norm_params: Dict = None,
         activation: str = "relu",
@@ -347,7 +348,7 @@ class H3RNN(Encoder):
         unit_forget_bias: bool = True,
         weights_initializer: str = "xavier_uniform",
         recurrent_initializer: str = "orthogonal",
-        bias_initializer: str = "zeros",
+        bias_initializer: InitializerConfig = None,
         dropout: float = 0.0,
         recurrent_dropout: float = 0.0,
         reduce_output: str = "last",
