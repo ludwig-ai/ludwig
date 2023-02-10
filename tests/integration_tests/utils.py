@@ -185,11 +185,8 @@ def generate_data(
     :param nan_percent: percent of values in a feature to be NaN
     :return:
     """
-    df = generate_data_as_dataframe(input_features, output_features, num_examples)
+    df = generate_data_as_dataframe(input_features, output_features, num_examples, nan_percent)
     df.to_csv(filename, index=False)
-    if nan_percent > 0:
-        df_with_nans = read_csv_with_nan(filename, nan_percent)
-        df_with_nans.to_csv(filename, index=False)
     return filename
 
 
@@ -197,6 +194,7 @@ def generate_data_as_dataframe(
     input_features,
     output_features,
     num_examples=25,
+    nan_percent=0.0,
 ) -> pd.DataFrame:
     """Helper method to generate synthetic data based on input, output feature specs.
 
@@ -968,7 +966,7 @@ def assert_all_required_metrics_exist(
 
 
 def assert_preprocessed_dataset_shape_and_dtype_for_feature(
-    feature_type: str, 
+    feature_name: str, 
     preprocessed_dataset: "Dataset", 
     config_obj: "ModelConfig", 
     expected_dtype: np.dtype, 
@@ -977,7 +975,7 @@ def assert_preprocessed_dataset_shape_and_dtype_for_feature(
     """Asserts that the preprocessed dataset has the correct shape and dtype for a given feature type.
     
     Args:
-        feature_type: the feature type to check
+        feature_name: the name of the feature to check
         preprocessed_dataset: the preprocessed dataset
         config_obj: the model config object
         expected_dtype: the expected dtype
@@ -987,7 +985,12 @@ def assert_preprocessed_dataset_shape_and_dtype_for_feature(
     Raises:
         AssertionError if the preprocessed dataset does not have the correct shape and dtype for the given feature type.
     """
-    if_config = [if_config for if_config in config_obj.input_features if feature_type in if_config.name][0]
+    if_configs = [if_config for if_config in config_obj.input_features if if_config.name == feature_name]
+    # fail fast if given `feature_name`` is not found or is not unique
+    if len(if_configs) != 1:
+        raise ValueError(f"feature_name {feature_name} found {len(if_configs)} times in config_obj")
+    if_config = if_configs[0]
+        
     if_config_proc_column = if_config.proc_column
     for result in [preprocessed_dataset.training_set, preprocessed_dataset.validation_set, preprocessed_dataset.test_set]:
         result_df = result.to_df()

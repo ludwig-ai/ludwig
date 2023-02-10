@@ -129,8 +129,8 @@ def get_input_tensors_task(
     model.model.unskip()
     model.model.to(get_torch_device())
     try:
-        get_input_tensors_with_retry = retry_on_cuda_oom(run_config)(get_input_tensors)
-        return get_input_tensors_with_retry(model, df, run_config), run_config
+        get_total_attribution_with_retry = retry_on_cuda_oom(run_config)(get_input_tensors)
+        return get_total_attribution_with_retry(model, df, run_config), run_config
     finally:
         model.model.cpu()
 

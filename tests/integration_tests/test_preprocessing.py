@@ -249,7 +249,8 @@ def test_read_image_failure_default_image(monkeypatch, tmpdir, csv_filename):
     
     monkeypatch.setattr(ludwig.backend.base.LocalPreprocessingMixin, "read_binary_files", mock_read_binary_files)
     
-    input_features = [image_feature(os.path.join(tmpdir, "generated_output"))]
+    image_feature_config = image_feature(os.path.join(tmpdir, "generated_output"))
+    input_features = [image_feature_config]
     output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
 
     config = {
@@ -271,7 +272,7 @@ def test_read_image_failure_default_image(monkeypatch, tmpdir, csv_filename):
     expected_dtype = np.float32
     
     assert_preprocessed_dataset_shape_and_dtype_for_feature(
-        IMAGE, preprocessed_dataset, model.config_obj, expected_shape, expected_dtype)
+        image_feature_config[NAME], preprocessed_dataset, model.config_obj, expected_dtype, expected_shape)
 
 
 def test_number_feature_wrong_dtype(csv_filename, tmpdir):
