@@ -18,9 +18,12 @@ class HFEncoderConfig(SequenceEncoderConfig):
 
     def get_fixed_preprocessing_params(self) -> Dict[str, Any]:
         model_name = self.pretrained_model_name_or_path
-        if model_name is None:
+        if model_name is None and self.use_pretrained:
             # no default model name, so model name is required by the subclass
-            raise ValueError(f"Missing required parameter for `{self.type}` encoder: `pretrained_model_name_or_path`")
+            raise ValueError(
+                f"Missing required parameter for `{self.type}` encoder: `pretrained_model_name_or_path` when "
+                "`use_pretrained` is True."
+            )
         params = {
             "tokenizer": "hf_tokenizer",
             "pretrained_model_name_or_path": model_name,
