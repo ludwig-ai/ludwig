@@ -52,17 +52,6 @@ class InitializerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
 
 @DeveloperAPI
-@register_initializer(name="zeros")
-@ludwig_dataclass
-class ZerosInitializer(InitializerConfig):
-    """Zeros initialization."""
-
-    initializer_fn: ClassVar = nn.init.zeros_
-
-    type: str = schema_utils.ProtectedString("zeros")
-
-
-@DeveloperAPI
 @register_initializer(name="uniform")
 @ludwig_dataclass
 class UniformInitializer(InitializerConfig):
@@ -74,14 +63,14 @@ class UniformInitializer(InitializerConfig):
 
     a: float = schema_utils.NonNegativeFloat(default=0.0, description="The lower bound of the uniform distribution")
 
-    b: float = schema_utils.NonNegativeFloat(default=0.0, description="The upper bound of the uniform distribution")
+    b: float = schema_utils.NonNegativeFloat(default=1.0, description="The upper bound of the uniform distribution")
 
 
 @DeveloperAPI
 @register_initializer(name="normal")
 @ludwig_dataclass
 class NormalInitializer(InitializerConfig):
-    """Uniform initialization."""
+    """Normal initialization."""
 
     initializer_fn: ClassVar = nn.init.normal_
 
@@ -95,7 +84,192 @@ class NormalInitializer(InitializerConfig):
 
 
 @DeveloperAPI
-def InitializerDataclassField(default, description="", parameter_metadata=None):
+@register_initializer(name="constant")
+@ludwig_dataclass
+class ConstantInitializer(InitializerConfig):
+    """Constant initialization."""
+
+    initializer_fn: ClassVar = nn.init.constant_
+
+    type: str = schema_utils.ProtectedString("constant")
+
+    val: float = schema_utils.NonNegativeFloat(default=0.0, description="The value to fill the tensor with")
+
+
+@DeveloperAPI
+@register_initializer(name="ones")
+@ludwig_dataclass
+class OnesInitializer(InitializerConfig):
+    """Ones initialization."""
+
+    initializer_fn: ClassVar = nn.init.ones_
+
+    type: str = schema_utils.ProtectedString("ones")
+
+
+@DeveloperAPI
+@register_initializer(name="zeros")
+@ludwig_dataclass
+class ZerosInitializer(InitializerConfig):
+    """Zeros initialization."""
+
+    initializer_fn: ClassVar = nn.init.zeros_
+
+    type: str = schema_utils.ProtectedString("zeros")
+
+
+@DeveloperAPI
+@register_initializer(name="identity")
+@register_initializer(name="eye")
+@ludwig_dataclass
+class EyeInitializer(InitializerConfig):
+    """Eye (identity matrix) initialization."""
+
+    initializer_fn: ClassVar = nn.init.eye_
+
+    type: str = schema_utils.ProtectedString("eye")
+
+
+@DeveloperAPI
+@register_initializer(name="dirac")
+@ludwig_dataclass
+class DiracInitializer(InitializerConfig):
+    """Diract initialization."""
+
+    initializer_fn: ClassVar = nn.init.dirac_
+
+    type: str = schema_utils.ProtectedString("dirac")
+
+    groups: int = schema_utils.PositiveInteger(default=1, description="Number of groups in the conv layer")
+
+
+@DeveloperAPI
+@register_initializer(name="xavier_uniform")
+@ludwig_dataclass
+class XavierUniformInitializer(InitializerConfig):
+    """Xavier Uniform initialization."""
+
+    initializer_fn: ClassVar = nn.init.xavier_uniform_
+
+    type: str = schema_utils.ProtectedString("xavier_uniform")
+
+    gain: float = schema_utils.NonNegativeFloat(default=1.0, description="An optional scaling factor")
+
+
+@DeveloperAPI
+@register_initializer(name="xavier_normal")
+@ludwig_dataclass
+class XavierNormalInitializer(InitializerConfig):
+    """Xavier Normal initialization."""
+
+    initializer_fn: ClassVar = nn.init.xavier_normal_
+
+    type: str = schema_utils.ProtectedString("xavier_normal")
+
+    gain: float = schema_utils.NonNegativeFloat(default=1.0, description="An optional scaling factor")
+
+
+@DeveloperAPI
+@register_initializer(name="kaiming_uniform")
+@ludwig_dataclass
+class KaimingUniformInitializer(InitializerConfig):
+    """Kaiming Uniform initialization."""
+
+    initializer_fn: ClassVar = nn.init.kaiming_uniform_
+
+    type: str = schema_utils.ProtectedString("kaiming_uniform")
+
+    a: float = schema_utils.NonNegativeFloat(
+        default=0.0,
+        description="The negative slope of the rectifier used after this layer (only used with ``'leaky_relu'``)",
+    )
+
+    mode: str = schema_utils.StringOptions(
+        ["fan_in", "fan_out"],
+        default="fan_in",
+        allow_none=False,
+        description=(
+            "Choosing ``'fan_in'`` preserves the magnitude of the variance of the weights in the forward pass. "
+            "Choosing ``'fan_out'`` preserves the magnitudes in the backwards pass."
+        ),
+    )
+
+    nonlinearity: str = schema_utils.StringOptions(
+        ["relu", "leaky_relu"],
+        default="leaky_relu",
+        allow_none=False,
+        description="The non-linear function",
+    )
+
+
+@DeveloperAPI
+@register_initializer(name="kaiming_normal")
+@ludwig_dataclass
+class KaimingNormalInitializer(InitializerConfig):
+    """Kaiming Normal initialization."""
+
+    initializer_fn: ClassVar = nn.init.kaiming_normal_
+
+    type: str = schema_utils.ProtectedString("kaiming_normal")
+
+    a: float = schema_utils.NonNegativeFloat(
+        default=0.0,
+        description="The negative slope of the rectifier used after this layer (only used with ``'leaky_relu'``)",
+    )
+
+    mode: str = schema_utils.StringOptions(
+        ["fan_in", "fan_out"],
+        default="fan_in",
+        allow_none=False,
+        description=(
+            "Choosing ``'fan_in'`` preserves the magnitude of the variance of the weights in the forward pass. "
+            "Choosing ``'fan_out'`` preserves the magnitudes in the backwards pass."
+        ),
+    )
+
+    nonlinearity: str = schema_utils.StringOptions(
+        ["relu", "leaky_relu"],
+        default="leaky_relu",
+        allow_none=False,
+        description="The non-linear function",
+    )
+
+
+@DeveloperAPI
+@register_initializer(name="orthogonal")
+@ludwig_dataclass
+class OrthogonalInitializer(InitializerConfig):
+    """Orthogonal initialization."""
+
+    initializer_fn: ClassVar = nn.init.orthogonal_
+
+    type: str = schema_utils.ProtectedString("orthogonal")
+
+    gain: float = schema_utils.NonNegativeFloat(default=1.0, description="An optional scaling factor")
+
+
+@DeveloperAPI
+@register_initializer(name="sparse")
+@ludwig_dataclass
+class SparseInitializer(InitializerConfig):
+    """Sparse initialization."""
+
+    initializer_fn: ClassVar = nn.init.sparse_
+
+    type: str = schema_utils.ProtectedString("sparse")
+
+    sparsity: float = schema_utils.NonNegativeFloat(
+        default=0.1, description="The fraction of elements in each column to be set to zero"
+    )
+
+    std: float = schema_utils.NonNegativeFloat(
+        default=1.0,
+        description="The standard deviation of the normal distribution used to generate the non-zero values",
+    )
+
+
+@DeveloperAPI
+def InitializerDataclassField(default="xavier_uniform", description="", parameter_metadata=None):
     """Custom dataclass field that when used inside of a dataclass will allow any initializer.
 
     :param default: Str or Dict specifying an initializer with a `type` field and its associated parameters. Will
