@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional, Union
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
+from ludwig.schema.initializers import InitializerConfig, InitializerDataclassField
 from ludwig.schema.metadata import COMBINER_METADATA
 from ludwig.schema.utils import ludwig_dataclass
 
@@ -54,7 +55,11 @@ class ConcatCombinerConfig(BaseCombinerConfig):
         parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["use_bias"],
     )
 
-    bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
+    bias_initializer: InitializerConfig = InitializerDataclassField(
+        default="zeros", parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["bias_initializer"]
+    )
+
+    schema_utils.InitializerOrDict(
         default="zeros",
         description="",
         parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["bias_initializer"],
