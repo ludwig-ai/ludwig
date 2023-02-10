@@ -2,10 +2,10 @@ import contextlib
 import os
 from tempfile import TemporaryDirectory
 from typing import Any, Dict, Optional, Type, Union
-from marshmallow import ValidationError
 
 import pytest
 import yaml
+from marshmallow import ValidationError
 
 from ludwig.constants import (
     ACTIVE,
