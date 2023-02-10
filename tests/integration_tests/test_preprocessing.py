@@ -13,9 +13,9 @@ import ludwig
 from ludwig.api import LudwigModel
 from ludwig.constants import BATCH_SIZE, COLUMN, DECODER, NAME, PROC_COLUMN, TRAINER
 from ludwig.data.concatenate_datasets import concatenate_df
-from ludwig.features.feature_registries import get_input_type_registry
 from tests.integration_tests.utils import (
     audio_feature,
+    assert_preprocessed_dataset_shape_and_dtype_for_feature,
     binary_feature,
     category_feature,
     generate_data,
@@ -270,21 +270,8 @@ def test_read_image_failure_default_image(monkeypatch, tmpdir, csv_filename):
     expected_shape = (preprocessing['num_channels'], preprocessing['height'], preprocessing['width'])
     expected_dtype = np.float32
     
-    if_config = [if_config for if_config in model.config_obj.input_features if "image" in if_config.name][0]
-    if_config_proc_column = if_config.proc_column
-    for result in [preprocessed_dataset.training_set, preprocessed_dataset.validation_set, preprocessed_dataset.test_set]:
-        result_df = result.to_df()
-        result_df_image_col = result_df[if_config_proc_column]
-        
-        # Check that the default image is of the correct dtype
-        result_df_image_col_dtypes = set(result_df_image_col.map(lambda x: x.dtype))
-        assert all([expected_dtype == dtype for dtype in result_df_image_col_dtypes]), (
-            f"image dtype should be {expected_dtype}, got the following set of values: {result_df_image_col_dtypes}")
-        
-        # Check that the default image is of the right dimensions
-        result_df_image_col_shapes = set(result_df_image_col.map(lambda x: x.shape))
-        assert all(expected_shape == shape for shape in result_df_image_col_shapes), (
-            f"image shape should be {expected_shape}, got the following set of values: {result_df_image_col_shapes}")
+    assert_preprocessed_dataset_shape_and_dtype_for_feature(
+        IMAGE, preprocessed_dataset, model.config_obj, expected_shape, expected_dtype)
 
 
 def test_number_feature_wrong_dtype(csv_filename, tmpdir):
