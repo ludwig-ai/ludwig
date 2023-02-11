@@ -1,4 +1,5 @@
 from typing import Optional
+
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
     DROP_ROW,
