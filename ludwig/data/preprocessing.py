@@ -60,7 +60,6 @@ from ludwig.data.dataset.base import Dataset
 from ludwig.data.split import get_splitter, split_dataset
 from ludwig.data.utils import set_fixed_split
 from ludwig.features.feature_registries import get_base_type_registry
-from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.models.embedder import create_embed_batch_size_evaluator, create_embed_transform_fn
 from ludwig.schema.encoders.utils import get_encoder_cls
 from ludwig.types import FeatureConfigDict, PreprocessingConfigDict, TrainingSetMetadataDict
@@ -1133,8 +1132,6 @@ def build_dataset(
     feature_configs = []
     feature_hashes = set()
     for feature in features:
-        if PROC_COLUMN not in feature:
-            feature[PROC_COLUMN] = compute_feature_hash(feature)
         if feature[PROC_COLUMN] not in feature_hashes:
             feature_configs.append(feature)
             feature_hashes.add(feature[PROC_COLUMN])

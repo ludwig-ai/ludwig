@@ -49,7 +49,6 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
         config = copy.deepcopy(config)
         config = upgrade_config_dict_to_latest_version(config)
         config = merge_with_defaults(config)
-        set_derived_feature_columns_(config)
 
         model_type = config.get("model_type", MODEL_ECD)
         if model_type not in model_type_schema_registry:
@@ -84,6 +83,10 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
         # TODO(travis): do this post-processing stuff at the dict level before we load
         set_validation_parameters(config_obj)
         set_hyperopt_defaults_(config_obj)
+
+        # Derive proc_col for each feature from the feature's preprocessing parameters
+        # after all preprocessing parameters have been set
+        set_derived_feature_columns_(config_obj)
 
         return config_obj
 
