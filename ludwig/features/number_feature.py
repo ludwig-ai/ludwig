@@ -239,13 +239,32 @@ class _NumberPreprocessing(torch.nn.Module):
         self.computed_fill_value = float(metadata["preprocessing"]["computed_fill_value"])
         self.numeric_transformer = get_transformer(metadata, metadata["preprocessing"])
 
+        # Optional outlier replacement
+        zscore_transformer = None
+        computed_outlier_fill_value = metadata["preprocessing"].get("computed_outlier_fill_value")
+        if computed_outlier_fill_value is not None:
+            computed_outlier_fill_value = float(computed_outlier_fill_value)
+            zscore_transformer = ZScoreTransformer(**metadata)
+
+        self.outlier_threshold = metadata["preprocessing"].get("outlier_threshold")
+        self.computed_outlier_fill_value = computed_outlier_fill_value
+        self.zscore_transformer = zscore_transformer
+
     def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
         if not torch.jit.isinstance(v, torch.Tensor):
             raise ValueError(f"Unsupported input: {v}")
 
         v = torch.nan_to_num(v, nan=self.computed_fill_value)
-
         v = v.to(dtype=torch.float32)
+
+        # Handle outliers if needed
+        if self.outlier_threshold is not None:
+            outliers = self.zscore_transformer.transform_inference(v).gt(self.outlier_threshold)
+            v_masked = torch.masked_fill(v, outliers, torch.nan)
+
+            v = torch.nan_to_num(v_masked, nan=self.computed_outlier_fill_value)
+            v = v.to(dtype=torch.float32)
+
         return self.numeric_transformer.transform_inference(v)
 
 
