@@ -1,3 +1,4 @@
+from typing import Optional
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
     DROP_ROW,
@@ -49,6 +50,29 @@ class NumberPreprocessingConfig(BasePreprocessingConfig):
         allow_none=True,
         description="Normalization strategy to use for this number feature.",
         parameter_metadata=FEATURE_METADATA[NUMBER][PREPROCESSING]["normalization"],
+    )
+
+    outlier_strategy: Optional[str] = schema_utils.StringOptions(
+        MISSING_VALUE_STRATEGY_OPTIONS + [FILL_WITH_MEAN, None],
+        default=None,
+        allow_none=True,
+        description="What strategy to follow when there's an outlier in a number column, "
+        "defaults to using the `missing_value_strategy`",
+    )
+
+    outlier_threshold: Optional[float] = schema_utils.FloatRange(
+        default=3.0,
+        allow_none=True,
+        description="Standard deviations from the mean past which a value is considered an outlier. "
+        "Set to `null` to disable",
+    )
+
+    computed_outlier_fill_value: float = schema_utils.FloatRange(
+        default=0.0,
+        allow_none=False,
+        description="The internally computed fill value to replace outliers with in case the "
+        "outlier_strategy is fill_with_mode or fill_with_mean",
+        parameter_metadata=FEATURE_METADATA[NUMBER][PREPROCESSING]["computed_fill_value"],
     )
 
 

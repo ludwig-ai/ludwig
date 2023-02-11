@@ -13,9 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+from abc import ABC, abstractmethod
 import copy
 import logging
-from typing import Dict, Union
+from typing import Any, Dict, Union
 
 import numpy as np
 import pandas as pd
@@ -38,7 +39,30 @@ from ludwig.utils.types import TorchscriptPreprocessingInput
 logger = logging.getLogger(__name__)
 
 
-class ZScoreTransformer(nn.Module):
+class NumberTransformer(nn.Module, ABC):
+    @abstractmethod
+    def transform(self, x: np.ndarray) -> np.ndarray:
+        pass
+
+    @abstractmethod
+    def inverse_transform(self, x: np.ndarray) -> np.ndarray:
+        pass
+
+    @abstractmethod
+    def transform_inference(self, x: torch.Tensor) -> torch.Tensor:
+        pass
+
+    @abstractmethod
+    def inverse_transform_inference(self, x: torch.Tensor) -> torch.Tensor:
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def fit_transform_params(column: np.ndarray, backend: Any) -> Dict[str, Any]:
+        pass
+
+
+class ZScoreTransformer(NumberTransformer):
     def __init__(self, mean: float = None, std: float = None, **kwargs: dict):
         super().__init__()
         self.mu = float(mean) if mean is not None else mean
@@ -65,7 +89,7 @@ class ZScoreTransformer(nn.Module):
         return x * self.sigma + self.mu
 
     @staticmethod
-    def fit_transform_params(column: np.ndarray, backend: "Backend") -> dict:  # noqa
+    def fit_transform_params(column: np.ndarray, backend: "Backend") -> Dict[str, Any]:  # noqa
         compute = backend.df_engine.compute
         return {
             "mean": compute(column.astype(np.float32).mean()),
@@ -73,7 +97,7 @@ class ZScoreTransformer(nn.Module):
         }
 
 
-class MinMaxTransformer(nn.Module):
+class MinMaxTransformer(NumberTransformer):
     def __init__(self, min: float = None, max: float = None, **kwargs: dict):
         super().__init__()
         self.min_value = float(min) if min is not None else min
@@ -100,7 +124,7 @@ class MinMaxTransformer(nn.Module):
         return x * self.range + self.min_value
 
     @staticmethod
-    def fit_transform_params(column: np.ndarray, backend: "Backend") -> dict:  # noqa
+    def fit_transform_params(column: np.ndarray, backend: "Backend") -> Dict[str, Any]:  # noqa
         compute = backend.df_engine.compute
         return {
             "min": compute(column.astype(np.float32).min()),
@@ -108,7 +132,7 @@ class MinMaxTransformer(nn.Module):
         }
 
 
-class InterQuartileTransformer(nn.Module):
+class InterQuartileTransformer(NumberTransformer):
     def __init__(self, q1: float = None, q2: float = None, q3: float = None, **kwargs: dict):
         super().__init__()
         self.q1 = float(q1) if q1 is not None else q1
@@ -138,7 +162,7 @@ class InterQuartileTransformer(nn.Module):
         return x * self.interquartile_range + self.q2
 
     @staticmethod
-    def fit_transform_params(column: np.ndarray, backend: "Backend") -> dict:  # noqa
+    def fit_transform_params(column: np.ndarray, backend: "Backend") -> Dict[str, Any]:  # noqa
         compute = backend.df_engine.compute
         return {
             "q1": compute(np.percentile(column.astype(np.float32), 25)),
@@ -147,7 +171,7 @@ class InterQuartileTransformer(nn.Module):
         }
 
 
-class Log1pTransformer(nn.Module):
+class Log1pTransformer(NumberTransformer):
     def __init__(self, **kwargs: dict):
         super().__init__()
 
@@ -168,11 +192,11 @@ class Log1pTransformer(nn.Module):
         return torch.expm1(x)
 
     @staticmethod
-    def fit_transform_params(column: np.ndarray, backend: "Backend") -> dict:  # noqa
+    def fit_transform_params(column: np.ndarray, backend: "Backend") -> Dict[str, Any]:  # noqa
         return {}
 
 
-class IdentityTransformer(nn.Module):
+class IdentityTransformer(NumberTransformer):
     def __init__(self, **kwargs):
         super().__init__()
 
@@ -189,7 +213,7 @@ class IdentityTransformer(nn.Module):
         return x
 
     @staticmethod
-    def fit_transform_params(column: np.ndarray, backend: "Backend") -> dict:  # noqa
+    def fit_transform_params(column: np.ndarray, backend: "Backend") -> Dict[str, Any]:  # noqa
         return {}
 
 
@@ -202,7 +226,7 @@ numeric_transformation_registry = {
 }
 
 
-def get_transformer(metadata, preprocessing_parameters):
+def get_transformer(metadata, preprocessing_parameters) -> NumberTransformer:
     return get_from_registry(
         preprocessing_parameters.get("normalization", None),
         numeric_transformation_registry,
@@ -266,12 +290,19 @@ class NumberFeatureMixin(BaseFeatureMixin):
     def get_feature_meta(
         column, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
     ) -> FeatureMetadataDict:
-        numeric_transformer = get_from_registry(
+        numeric_transformer: NumberTransformer = get_from_registry(
             preprocessing_parameters.get("normalization", None),
             numeric_transformation_registry,
         )
 
-        return numeric_transformer.fit_transform_params(column, backend)
+        params = numeric_transformer.fit_transform_params(column, backend)
+
+        # Ensure mean and std are computed if we're removing outliers
+        outlier_threshold = preprocessing_parameters.get("outlier_threshold")
+        if outlier_threshold is not None and ("mean" not in params or "std" not in params):
+            params.update(ZScoreTransformer.fit_transform_params(column, backend))
+
+        return params
 
     @staticmethod
     def add_feature_data(
