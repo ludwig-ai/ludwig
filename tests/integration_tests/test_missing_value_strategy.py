@@ -134,9 +134,9 @@ def test_missing_values_drop_rows(csv_filename, tmpdir):
         pytest.param("ray", id="ray", marks=pytest.mark.distributed),
     ],
 )
-@pytest.mark.parametrize("outlier_strategy", [None, "fill_with_mean", "fill_with_const"])
 @pytest.mark.parametrize("outlier_threshold", [1.0, 3.0])
-def test_outlier_strategy(outlier_threshold, outlier_strategy, backend, csv_filename, tmpdir, ray_cluster_2cpu):
+@pytest.mark.parametrize("outlier_strategy", [None, "fill_with_mean", "fill_with_const"])
+def test_outlier_strategy(outlier_strategy, outlier_threshold, backend, tmpdir, ray_cluster_2cpu):
     fill_value = 42
     kwargs = {
         PREPROCESSING: {
