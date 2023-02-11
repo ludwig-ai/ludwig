@@ -1,10 +1,11 @@
 from copy import deepcopy
 from typing import Dict
 
+import numpy as np
 import pytest
 import torch
 
-from ludwig.features.number_feature import NumberInputFeature
+from ludwig.features.number_feature import _OutlierReplacer, NumberInputFeature
 from ludwig.schema.features.number_feature import ECDNumberInputFeatureConfig
 from ludwig.schema.utils import load_config_with_kwargs
 from ludwig.utils.misc_utils import merge_dict
@@ -40,3 +41,15 @@ def test_number_input_feature(
 
     encoder_output = input_feature_obj(input_tensor)
     assert encoder_output["encoder_output"].shape == (BATCH_SIZE, *input_feature_obj.output_shape)
+
+
+def test_outlier_replacer():
+    replacer = _OutlierReplacer(
+        {"mean": 50, "std": 30, "preprocessing": {"outlier_threshold": 2.0, "computed_outlier_fill_value": 42}}
+    )
+
+    t = torch.from_numpy(np.array([10, 20, 1000, 30, 40], dtype=np.float32))
+    t_out_expected = torch.from_numpy(np.array([10, 20, 42, 30, 40], dtype=np.float32))
+
+    t_out = replacer(t)
+    assert torch.equal(t_out, t_out_expected)
