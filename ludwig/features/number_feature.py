@@ -233,6 +233,21 @@ def get_transformer(metadata, preprocessing_parameters) -> NumberTransformer:
     )(**metadata)
 
 
+class _OutlierReplacer(torch.nn.Module):
+    def __init__(self, metadata: TrainingSetMetadataDict):
+        super().__init__()
+        self.zscore_transformer = ZScoreTransformer(**metadata)
+        self.outlier_threshold = metadata["preprocessing"].get("outlier_threshold")
+        self.computed_outlier_fill_value = float(metadata["preprocessing"]["computed_outlier_fill_value"])
+
+    def forward(self, v: torch.Tensor) -> torch.Tensor:
+        outliers = self.zscore_transformer.transform_inference(v).abs().gt(self.outlier_threshold)
+        v_masked = torch.masked_fill(v, outliers, torch.nan)
+
+        v = torch.nan_to_num(v_masked, nan=self.computed_outlier_fill_value)
+        return v.to(dtype=torch.float32)
+
+
 class _NumberPreprocessing(torch.nn.Module):
     def __init__(self, metadata: TrainingSetMetadataDict):
         super().__init__()
@@ -240,16 +255,9 @@ class _NumberPreprocessing(torch.nn.Module):
         self.numeric_transformer = get_transformer(metadata, metadata["preprocessing"])
 
         # Optional outlier replacement
-        replace_outliers = False
-        zscore_transformer = None
+        self.outlier_replacer = None
         if metadata["preprocessing"].get("outlier_strategy") is not None:
-            zscore_transformer = ZScoreTransformer(**metadata)
-            replace_outliers = True
-
-        self.outlier_threshold = metadata["preprocessing"].get("outlier_threshold")
-        self.computed_outlier_fill_value = float(metadata["preprocessing"]["computed_outlier_fill_value"])
-        self.zscore_transformer = zscore_transformer
-        self.replace_outliers = replace_outliers
+            self.outlier_replacer = _OutlierReplacer(metadata)
 
     def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
         if not torch.jit.isinstance(v, torch.Tensor):
@@ -259,12 +267,8 @@ class _NumberPreprocessing(torch.nn.Module):
         v = v.to(dtype=torch.float32)
 
         # Handle outliers if needed
-        if self.replace_outliers:
-            outliers = self.zscore_transformer.transform_inference(v).abs().gt(self.outlier_threshold)
-            v_masked = torch.masked_fill(v, outliers, torch.nan)
-
-            v = torch.nan_to_num(v_masked, nan=self.computed_outlier_fill_value)
-            v = v.to(dtype=torch.float32)
+        if self.outlier_replacer is not None:
+            v = self.outlier_replacer(v)
 
         return self.numeric_transformer.transform_inference(v)
 
