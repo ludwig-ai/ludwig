@@ -48,8 +48,8 @@ def test_outlier_replacer():
         {"mean": 50, "std": 30, "preprocessing": {"outlier_threshold": 2.0, "computed_outlier_fill_value": 42}}
     )
 
-    t = torch.from_numpy(np.array([10, 20, 1000, 30, 40], dtype=np.float32))
-    t_out_expected = torch.from_numpy(np.array([10, 20, 42, 30, 40], dtype=np.float32))
+    t = torch.from_numpy(np.array([10, 20, 1000, -500, 80], dtype=np.float32))
+    t_out_expected = torch.from_numpy(np.array([10, 20, 42, 42, 80], dtype=np.float32))
 
     t_out = replacer(t)
     assert torch.equal(t_out, t_out_expected)
