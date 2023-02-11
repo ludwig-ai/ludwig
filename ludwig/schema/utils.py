@@ -242,7 +242,7 @@ def ReductionOptions(default: Union[None, str] = None, description="", parameter
 @DeveloperAPI
 def RegularizerOptions(
     default: Union[None, str] = None,
-    allow_none: bool = True,
+    allow_none: bool = False,
     description="",
     parameter_metadata: ParameterMetadata = None,
 ):
@@ -260,10 +260,11 @@ def RegularizerOptions(
 def String(
     description: str,
     default: Union[None, str] = None,
-    allow_none: bool = True,
+    allow_none: bool = False,
     pattern: str = None,
     parameter_metadata: ParameterMetadata = None,
 ):
+    allow_none = allow_none or default is None
     if not allow_none and not isinstance(default, str):
         raise ValidationError(f"Provided default `{default}` should be a string!")
 
@@ -634,7 +635,7 @@ def FloatRange(
 @DeveloperAPI
 def Dict(
     default: Union[None, TDict] = None,
-    allow_none: bool = True,
+    allow_none: bool = False,
     description: str = "",
     parameter_metadata: ParameterMetadata = None,
 ):
@@ -718,11 +719,12 @@ def List(
 @DeveloperAPI
 def DictList(
     default: Union[None, TList[TDict]] = None,
-    allow_none: bool = True,
+    allow_none: bool = False,
     description: str = "",
     parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing input must be a list of dicts."""
+    allow_none = allow_none or default is None
     if default is not None:
         try:
             assert isinstance(default, list)
@@ -891,7 +893,7 @@ def InitializerOrDict(
 def FloatRangeTupleDataclassField(
     n: int = 2,
     default: Union[Tuple, None] = (0.9, 0.999),
-    allow_none: bool = True,
+    allow_none: bool = False,
     min: Union[int, None] = 0,
     max: Union[int, None] = 1,
     description: str = "",
@@ -903,6 +905,7 @@ def FloatRangeTupleDataclassField(
     within [min, max] range, i.e. inclusive. The generated JSON schema uses a restricted array type as the equivalent
     representation of a Python tuple.
     """
+    allow_none = allow_none or default is None
     if default is not None and n != len(default):
         raise ValidationError(f"Dimension of tuple '{n}' must match dimension of default val. '{default}'")
 
@@ -975,7 +978,7 @@ def OneOfOptionsField(
     default: Any,
     description: str,
     field_options: TList,
-    allow_none: bool = True,
+    allow_none: bool = False,
     parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field that is a combination of the other fields defined in `ludwig.schema.utils`.
@@ -983,6 +986,7 @@ def OneOfOptionsField(
     NOTE: There can be at most one field_option with `allow_none=True`, or else a None value can be attributed to
     multiple field_options, which this JSON validator does not permit.
     """
+    allow_none = allow_none or default is None
     if default is None:
         # If the default is None, then this field allows none.
         allow_none = True
