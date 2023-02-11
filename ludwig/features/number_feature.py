@@ -240,15 +240,16 @@ class _NumberPreprocessing(torch.nn.Module):
         self.numeric_transformer = get_transformer(metadata, metadata["preprocessing"])
 
         # Optional outlier replacement
+        replace_outliers = False
         zscore_transformer = None
-        computed_outlier_fill_value = metadata["preprocessing"].get("computed_outlier_fill_value")
-        if computed_outlier_fill_value is not None:
-            computed_outlier_fill_value = float(computed_outlier_fill_value)
+        if metadata["preprocessing"].get("outlier_strategy") is not None:
             zscore_transformer = ZScoreTransformer(**metadata)
+            replace_outliers = True
 
         self.outlier_threshold = metadata["preprocessing"].get("outlier_threshold")
-        self.computed_outlier_fill_value = computed_outlier_fill_value
+        self.computed_outlier_fill_value = float(metadata["preprocessing"]["computed_outlier_fill_value"])
         self.zscore_transformer = zscore_transformer
+        self.replace_outliers = replace_outliers
 
     def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
         if not torch.jit.isinstance(v, torch.Tensor):
@@ -258,7 +259,7 @@ class _NumberPreprocessing(torch.nn.Module):
         v = v.to(dtype=torch.float32)
 
         # Handle outliers if needed
-        if self.outlier_threshold is not None:
+        if self.replace_outliers:
             outliers = self.zscore_transformer.transform_inference(v).abs().gt(self.outlier_threshold)
             v_masked = torch.masked_fill(v, outliers, torch.nan)
 
@@ -317,8 +318,8 @@ class NumberFeatureMixin(BaseFeatureMixin):
         params = numeric_transformer.fit_transform_params(column, backend)
 
         # Ensure mean and std are computed if we're removing outliers
-        outlier_threshold = preprocessing_parameters.get("outlier_threshold")
-        if outlier_threshold is not None and ("mean" not in params or "std" not in params):
+        outlier_strategy = preprocessing_parameters.get("outlier_strategy")
+        if outlier_strategy is not None and ("mean" not in params or "std" not in params):
             params.update(ZScoreTransformer.fit_transform_params(column, backend))
 
         return params

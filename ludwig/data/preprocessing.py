@@ -1356,14 +1356,14 @@ def build_preprocessing_parameters(
             preprocessing_parameters.update({"computed_fill_value": fill_value})
 
         # Handle outlier replacement
-        if preprocessing_parameters.get("outlier_threshold") is not None:
-            outlier_strategy = preprocessing_parameters.get("outlier_strategy")
-            if outlier_strategy is not None:
+        outlier_strategy = preprocessing_parameters.get("outlier_strategy")
+        if outlier_strategy is not None:
+            if outlier_strategy != missing_value_strategy:
                 outlier_fill_value = precompute_fill_value(
                     dataset_cols, feature_config, outlier_strategy, preprocessing_parameters, backend
                 )
             else:
-                # Use fill value from missing_value_strategy
+                # Use fill value from missing_value_strategy to avoid redundant computation
                 outlier_fill_value = fill_value
 
             if outlier_fill_value is not None:
@@ -1559,14 +1559,11 @@ def handle_missing_values(dataset_cols, feature, preprocessing_parameters: Prepr
 
 @DeveloperAPI
 def handle_outliers(dataset_cols, feature, preprocessing_parameters: PreprocessingConfigDict, metadata, backend):
-    outlier_threshold = preprocessing_parameters.get("outlier_threshold")
-    if outlier_threshold is None:
-        return
-
     outlier_strategy = preprocessing_parameters.get("outlier_strategy")
     if outlier_strategy is None:
-        outlier_strategy = preprocessing_parameters["missing_value_strategy"]
+        return
 
+    outlier_threshold = preprocessing_parameters["outlier_threshold"]
     computed_fill_value = preprocessing_parameters.get("computed_outlier_fill_value")
 
     # Identify all outliers and set them to NA so they can be removed

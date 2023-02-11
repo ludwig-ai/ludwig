@@ -58,14 +58,14 @@ class NumberPreprocessingConfig(BasePreprocessingConfig):
         default=None,
         allow_none=True,
         description="What strategy to follow when there's an outlier in a number column, "
-        "defaults to using the `missing_value_strategy`",
+        "defaults to doing nothing (leaving the outliers as-is)",
     )
 
     outlier_threshold: Optional[float] = schema_utils.FloatRange(
         default=3.0,
-        allow_none=True,
-        description="Standard deviations from the mean past which a value is considered an outlier. "
-        "Set to `null` to disable",
+        allow_none=False,
+        min=0.0,
+        description="Standard deviations from the mean past which a value is considered an outlier",
     )
 
     computed_outlier_fill_value: float = schema_utils.FloatRange(
