@@ -978,7 +978,7 @@ def OneOfOptionsField(
     default: Any,
     description: str,
     field_options: TList,
-    allow_none: bool = False,
+    allow_none: bool = True,
     parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field that is a combination of the other fields defined in `ludwig.schema.utils`.
@@ -986,7 +986,6 @@ def OneOfOptionsField(
     NOTE: There can be at most one field_option with `allow_none=True`, or else a None value can be attributed to
     multiple field_options, which this JSON validator does not permit.
     """
-    allow_none = allow_none or default is None
     if default is None:
         # If the default is None, then this field allows none.
         allow_none = True
