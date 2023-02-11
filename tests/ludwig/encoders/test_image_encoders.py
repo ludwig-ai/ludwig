@@ -690,7 +690,7 @@ def test_tv_wide_resnet_encoder(
         ("efficientnet", "b7"),
         ("regnet", "y_128gf"),
         ("vit", "h_14"),
-    ]
+    ],
 )
 @pytest.mark.parametrize("trainable", [True, False])
 @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
