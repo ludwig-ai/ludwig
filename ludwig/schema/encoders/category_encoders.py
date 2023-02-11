@@ -74,6 +74,7 @@ class CategoricalEmbedConfig(BaseEncoderConfig):
             "lecun_uniform",
         ],
         default=None,
+        allow_none=True,
         description="Initializer for the embedding matrix.",
         parameter_metadata=ENCODER_METADATA["CategoricalEmbed"]["embedding_initializer"],
     )
@@ -165,6 +166,7 @@ class CategoricalSparseConfig(BaseEncoderConfig):
             "lecun_uniform",
         ],
         default=None,
+        allow_none=True,
         description="Initializer for the embedding matrix.",
         parameter_metadata=ENCODER_METADATA["CategoricalEmbed"]["embedding_initializer"],
     )

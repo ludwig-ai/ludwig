@@ -16,6 +16,7 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     type: str = schema_utils.StringOptions(
         ["regressor", "classifier", "projector", "generator", "tagger"],
+        allow_none=True,
         description="The type of decoder to use.",
         parameter_metadata=DECODER_METADATA["BaseDecoder"]["type"],
     )
@@ -78,6 +79,7 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     fc_norm: str = schema_utils.StringOptions(
         ["batch", "layer"],
+        default="layer",
         description="The normalization to use for the layers in the fc_stack",
         parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_norm"],
     )

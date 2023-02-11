@@ -18,7 +18,7 @@ class LRSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     decay: str = schema_utils.StringOptions(
         options=["linear", "exponential"],
-        default=None,
+        default="exponential",
         description="Turn on decay of the learning rate.",
         parameter_metadata=TRAINER_METADATA[MODEL_ECD]["learning_rate_scheduler"]["decay"],
     )

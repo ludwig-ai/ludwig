@@ -112,7 +112,7 @@ class SetSparseEncoderConfig(BaseEncoderConfig):
 
     norm: str = schema_utils.StringOptions(
         ["batch", "layer"],
-        default=None,
+        default="layer",
         description="The default norm that will be used for each layer.",
         parameter_metadata=ENCODER_METADATA["SetSparseEncoder"]["norm"],
     )

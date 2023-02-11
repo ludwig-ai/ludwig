@@ -124,7 +124,7 @@ class LBFGSOptimizerConfig(BaseOptimizerConfig):
 
     line_search_fn: str = schema_utils.StringOptions(
         ["strong_wolfe"],
-        default=None,
+        default="strong_wolfe",
         description="Line search function to use.",
         parameter_metadata=OPTIMIZER_METADATA["line_search_fn"],
     )

@@ -109,8 +109,7 @@ class DenseEncoderConfig(BaseEncoderConfig):
 
     norm: str = schema_utils.StringOptions(
         ["batch", "layer"],
-        allow_none=True,
-        default=None,
+        default="layer",
         description="Normalization to use in the dense layer.",
         parameter_metadata=ENCODER_METADATA["DenseEncoder"]["norm"],
     )
