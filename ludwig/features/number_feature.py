@@ -259,7 +259,7 @@ class _NumberPreprocessing(torch.nn.Module):
 
         # Handle outliers if needed
         if self.outlier_threshold is not None:
-            outliers = self.zscore_transformer.transform_inference(v).gt(self.outlier_threshold)
+            outliers = self.zscore_transformer.transform_inference(v).abs().gt(self.outlier_threshold)
             v_masked = torch.masked_fill(v, outliers, torch.nan)
 
             v = torch.nan_to_num(v_masked, nan=self.computed_outlier_fill_value)
