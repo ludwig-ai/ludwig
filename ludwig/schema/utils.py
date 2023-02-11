@@ -294,7 +294,7 @@ def String(
 def StringOptions(
     options: TList[str],
     default: Union[None, str] = None,
-    allow_none: bool = True,
+    allow_none: bool = False,
     description: str = "",
     parameter_metadata: ParameterMetadata = None,
 ):
@@ -302,6 +302,7 @@ def StringOptions(
 
     By default, None is allowed (and automatically appended) to the allowed list of options.
     """
+    allow_none = allow_none or default is None
     # If None should be allowed for an enum field, it also has to be defined as a valid
     # [option](https://github.com/json-schema-org/json-schema-spec/issues/258):
     if len(options) <= 0:
@@ -354,7 +355,7 @@ def ProtectedString(
 def IntegerOptions(
     options: TList[int],
     default: Union[None, int] = None,
-    allow_none: bool = True,
+    allow_none: bool = False,
     description: str = "",
     parameter_metadata: ParameterMetadata = None,
 ):
@@ -449,7 +450,7 @@ def Integer(
 
 @DeveloperAPI
 def PositiveInteger(
-    description: str, default: Union[None, int], allow_none: bool = True, parameter_metadata: ParameterMetadata = None
+    description: str, default: Union[None, int], allow_none: bool = False, parameter_metadata: ParameterMetadata = None
 ):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be
     positive."""
@@ -484,7 +485,7 @@ def PositiveInteger(
 def NonNegativeInteger(
     description: str,
     default: Union[None, int] = None,
-    allow_none: bool = True,
+    allow_none: bool = False,
     parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be
@@ -559,7 +560,7 @@ def IntegerRange(
 @DeveloperAPI
 def NonNegativeFloat(
     default: Union[None, float] = None,
-    allow_none=False,
+    allow_none: bool = False,
     description: str = "",
     max: Optional[float] = None,
     parameter_metadata: ParameterMetadata = None,
@@ -594,7 +595,7 @@ def NonNegativeFloat(
 @DeveloperAPI
 def FloatRange(
     default: Union[None, float] = None,
-    allow_none: bool = True,
+    allow_none: bool = False,
     description: str = "",
     parameter_metadata: ParameterMetadata = None,
     min: int = None,
