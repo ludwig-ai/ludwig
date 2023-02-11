@@ -3,6 +3,7 @@ from typing import Union
 import pytest
 import torch
 
+from ludwig.constants import IMAGE
 from ludwig.encoders.image.base import MLPMixerEncoder, ResNetEncoder, Stacked2DCNN, ViTEncoder
 from ludwig.encoders.image.torchvision import (
     TVAlexNetEncoder,
@@ -25,6 +26,7 @@ from ludwig.encoders.image.torchvision import (
     TVViTEncoder,
     TVWideResNetEncoder,
 )
+from ludwig.encoders.registry import get_encoder_cls
 from ludwig.utils.image_utils import torchvision_model_registry
 from ludwig.utils.misc_utils import set_random_seed
 from tests.integration_tests.parameter_update_utils import check_module_parameters_updated
@@ -669,6 +671,48 @@ def test_tv_wide_resnet_encoder(
     set_random_seed(RANDOM_SEED)
 
     pretrained_model = TVWideResNetEncoder(
+        model_variant=model_variant,
+        use_pretrained=use_pretrained,
+        saved_weights_in_checkpoint=saved_weights_in_checkpoint,
+        trainable=trainable,
+    )
+    inputs = torch.rand(2, *pretrained_model.input_shape)
+    outputs = pretrained_model(inputs)
+    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+
+
+# test TorchVision encoders that were excluded from the earlier tests due to large memory requirements
+@pytest.mark.large_memory
+@pytest.mark.parametrize(
+    "model_type, model_variant",
+    [
+        ("efficientnet", "b6"),
+        ("efficientnet", "b7"),
+        ("regnet", "y_128gf"),
+        ("vit", "h_14"),
+    ]
+)
+@pytest.mark.parametrize("trainable", [True, False])
+@pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
+@pytest.mark.parametrize(
+    "use_pretrained",
+    [
+        False,
+    ],
+)
+def test_large_memory_tv_encoder(
+    model_type: str,
+    model_variant: str,
+    use_pretrained: bool,
+    saved_weights_in_checkpoint: bool,
+    trainable: bool,
+):
+    # make repeatable
+    set_random_seed(RANDOM_SEED)
+
+    encoder_cls = get_encoder_cls(IMAGE, model_type)
+
+    pretrained_model = encoder_cls(
         model_variant=model_variant,
         use_pretrained=use_pretrained,
         saved_weights_in_checkpoint=saved_weights_in_checkpoint,
