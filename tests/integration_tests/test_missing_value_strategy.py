@@ -134,9 +134,17 @@ def test_missing_values_drop_rows(csv_filename, tmpdir):
         pytest.param("ray", id="ray", marks=pytest.mark.distributed),
     ],
 )
+@pytest.mark.parametrize("outlier_strategy", [None, "fill_with_mean", "fill_with_const"])
 @pytest.mark.parametrize("outlier_threshold", [1.0, 3.0])
-def test_outliers_fill_with_mean(outlier_threshold, backend, csv_filename, tmpdir, ray_cluster_2cpu):
-    kwargs = {PREPROCESSING: {"outlier_strategy": FILL_WITH_MEAN, "outlier_threshold": outlier_threshold}}
+def test_outlier_strategy(outlier_threshold, outlier_strategy, backend, csv_filename, tmpdir, ray_cluster_2cpu):
+    fill_value = 42
+    kwargs = {
+        PREPROCESSING: {
+            "outlier_strategy": outlier_strategy,
+            "outlier_threshold": outlier_threshold,
+            "fill_value": fill_value,
+        }
+    }
     input_features = [
         number_feature(**kwargs),
     ]
@@ -147,7 +155,7 @@ def test_outliers_fill_with_mean(outlier_threshold, backend, csv_filename, tmpdi
     sigma3, sigma3_idx = 300, 11
 
     num_col = np.array([77, 24, 29, 29, sigma1, 71, 46, 95, 20, 52, 85, sigma3, 74, 10, 98, 53, 110, 94, 62, 13])
-    expected_fill_value = num_col.mean()
+    expected_fill_value = num_col.mean() if outlier_strategy == "fill_with_mean" else fill_value
 
     input_col = input_features[0][COLUMN]
     output_col = output_features[0][COLUMN]
@@ -180,61 +188,13 @@ def test_outliers_fill_with_mean(outlier_threshold, backend, csv_filename, tmpdi
     assert len(proc_df) == len(dataset_df)
 
     # Check that values over 1 std are replaced
-    if outlier_threshold <= 1.0:
+    if outlier_strategy is not None and outlier_threshold <= 1.0:
         assert np.isclose(proc_df[proc_col][sigma1_idx], expected_fill_value)
     else:
         assert np.isclose(proc_df[proc_col][sigma1_idx], dataset_df[input_col][sigma1_idx])
 
     # Check that values over 3 std are replaced
-    if outlier_threshold <= 3.0:
+    if outlier_strategy is not None and outlier_threshold <= 3.0:
         assert np.isclose(proc_df[proc_col][sigma3_idx], expected_fill_value)
     else:
         assert np.isclose(proc_df[proc_col][sigma3_idx], dataset_df[input_col][sigma3_idx])
-
-
-@pytest.mark.parametrize(
-    "backend",
-    [
-        pytest.param("local", id="local"),
-        pytest.param("ray", id="ray", marks=pytest.mark.distributed),
-    ],
-)
-def test_outliers_no_replacement(backend, csv_filename, tmpdir, ray_cluster_2cpu):
-    kwargs = {PREPROCESSING: {"outlier_strategy": None}}
-    input_features = [
-        number_feature(**kwargs),
-    ]
-    output_features = [binary_feature()]
-
-    input_col = input_features[0][COLUMN]
-    output_col = output_features[0][COLUMN]
-
-    num_col = np.array([77, 24, 29, 29, 1000, 71, 46, 95, 20, 52, 85, 42, 74, 10, 98, 53, 110, 94, 62, 13])
-    bin_col = np.array([1, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0], dtype=np.bool_)
-    dataset_df = pd.DataFrame(
-        data={
-            input_col: num_col,
-            output_col: bin_col,
-        }
-    )
-
-    dataset_fp = os.path.join(tmpdir, "dataset.csv")
-    dataset_df.to_csv(dataset_fp)
-
-    config = {
-        "input_features": input_features,
-        "output_features": output_features,
-        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
-    }
-
-    # Run preprocessing
-    ludwig_model = LudwigModel(config, backend=backend)
-    proc_dataset = ludwig_model.preprocess(training_set=dataset_fp)
-
-    # Check preprocessed output
-    proc_df = ludwig_model.backend.df_engine.compute(proc_dataset.training_set.to_df())
-    proc_col = input_features[0][PROC_COLUMN]
-
-    # Check that no outliers were replaced
-    assert len(proc_df) == len(dataset_df)
-    assert all(np.isclose(proc_df[proc_col], dataset_df[input_col]))
