@@ -5,6 +5,11 @@ from ludwig.constants import DATE
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
+from ludwig.schema.initializers import (
+    BiasInitializerDataclassField,
+    InitializerConfig,
+    WeightsInitializerDataclassField,
+)
 from ludwig.schema.metadata import ENCODER_METADATA
 from ludwig.schema.utils import ludwig_dataclass
 
@@ -41,13 +46,13 @@ class DateEmbedConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["DateEmbed"]["use_bias"],
     )
 
-    bias_initializer: str = schema_utils.InitializerOptions(
+    bias_initializer: InitializerConfig = BiasInitializerDataclassField(
         default="zeros",
         description="Initializer to use for the bias vector.",
         parameter_metadata=ENCODER_METADATA["DateEmbed"]["bias_initializer"],
     )
 
-    weights_initializer: str = schema_utils.InitializerOptions(
+    weights_initializer: InitializerConfig = WeightsInitializerDataclassField(
         description="Initializer to use for the weights matrix.",
         parameter_metadata=ENCODER_METADATA["DateEmbed"]["weights_initializer"],
     )
@@ -131,13 +136,13 @@ class DateWaveConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["DateWave"]["use_bias"],
     )
 
-    bias_initializer: str = schema_utils.InitializerOptions(
+    bias_initializer: InitializerConfig = BiasInitializerDataclassField(
         default="zeros",
         description="Initializer to use for the bias vector.",
         parameter_metadata=ENCODER_METADATA["DateWave"]["bias_initializer"],
     )
 
-    weights_initializer: str = schema_utils.InitializerOptions(
+    weights_initializer: InitializerConfig = WeightsInitializerDataclassField(
         description="Initializer to use for the weights matrix.",
         parameter_metadata=ENCODER_METADATA["DateWave"]["weights_initializer"],
     )

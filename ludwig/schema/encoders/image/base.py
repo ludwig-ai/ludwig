@@ -5,6 +5,11 @@ from ludwig.constants import HEIGHT, IMAGE, REQUIRES_EQUAL_DIMENSIONS, WIDTH
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
+from ludwig.schema.initializers import (
+    BiasInitializerDataclassField,
+    InitializerConfig,
+    WeightsInitializerDataclassField,
+)
 from ludwig.schema.metadata import ENCODER_METADATA
 from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils.torch_utils import initializer_registry
@@ -247,15 +252,13 @@ class Stacked2DCNNConfig(ImageEncoderConfig):
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["fc_use_bias"],
     )
 
-    fc_bias_initializer: Optional[str] = schema_utils.StringOptions(
-        sorted(list(initializer_registry.keys())),
+    fc_bias_initializer: InitializerConfig = BiasInitializerDataclassField(
         default="zeros",
         description="Initializer for the bias vector.",
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["fc_bias_initializer"],
     )
 
-    fc_weights_initializer: Optional[str] = schema_utils.StringOptions(
-        sorted(list(initializer_registry.keys())),
+    fc_weights_initializer: InitializerConfig = WeightsInitializerDataclassField(
         default="xavier_uniform",
         description="Initializer for the weights matrix.",
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["fc_weights_initializer"],

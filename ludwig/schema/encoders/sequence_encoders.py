@@ -5,6 +5,11 @@ from ludwig.constants import AUDIO, SEQUENCE, TEXT, TIMESERIES
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
+from ludwig.schema.initializers import (
+    BiasInitializerDataclassField,
+    InitializerConfig,
+    WeightsInitializerDataclassField,
+)
 from ludwig.schema.metadata import ENCODER_METADATA
 from ludwig.schema.utils import ludwig_dataclass
 
@@ -91,7 +96,7 @@ class SequenceEmbedConfig(SequenceEncoderConfig):
         parameter_metadata=ENCODER_METADATA["SequenceEmbed"]["vocab"],
     )
 
-    weights_initializer: str = schema_utils.InitializerOptions(
+    weights_initializer: InitializerConfig = WeightsInitializerDataclassField(
         default="uniform",
         description="Initializer to use for the weights matrix.",
         parameter_metadata=ENCODER_METADATA["SequenceEmbed"]["weights_initializer"],
@@ -217,13 +222,13 @@ class ParallelCNNConfig(SequenceEncoderConfig):
         parameter_metadata=ENCODER_METADATA["ParallelCNN"]["use_bias"],
     )
 
-    bias_initializer: str = schema_utils.InitializerOptions(
+    bias_initializer: InitializerConfig = BiasInitializerDataclassField(
         default="zeros",
         description="Initializer to use for the bias vector.",
         parameter_metadata=ENCODER_METADATA["ParallelCNN"]["bias_initializer"],
     )
 
-    weights_initializer: str = schema_utils.InitializerOptions(
+    weights_initializer: InitializerConfig = WeightsInitializerDataclassField(
         description="Initializer to use for the weights matrix.",
         parameter_metadata=ENCODER_METADATA["ParallelCNN"]["weights_initializer"],
     )
@@ -417,13 +422,13 @@ class StackedCNNConfig(SequenceEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedCNN"]["use_bias"],
     )
 
-    bias_initializer: str = schema_utils.InitializerOptions(
+    bias_initializer: InitializerConfig = BiasInitializerDataclassField(
         default="zeros",
         description="Initializer to use for the bias vector.",
         parameter_metadata=ENCODER_METADATA["StackedCNN"]["bias_initializer"],
     )
 
-    weights_initializer: str = schema_utils.InitializerOptions(
+    weights_initializer: InitializerConfig = WeightsInitializerDataclassField(
         description="Initializer to use for the weights matrix.",
         parameter_metadata=ENCODER_METADATA["StackedCNN"]["weights_initializer"],
     )
@@ -590,13 +595,13 @@ class StackedParallelCNNConfig(SequenceEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["use_bias"],
     )
 
-    bias_initializer: str = schema_utils.InitializerOptions(
+    bias_initializer: InitializerConfig = BiasInitializerDataclassField(
         default="zeros",
         description="Initializer to use for the bias vector.",
         parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["bias_initializer"],
     )
 
-    weights_initializer: str = schema_utils.InitializerOptions(
+    weights_initializer: InitializerConfig = WeightsInitializerDataclassField(
         description="Initializer to use for the weights matrix.",
         parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["weights_initializer"],
     )
@@ -790,13 +795,13 @@ class StackedRNNConfig(SequenceEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedRNN"]["use_bias"],
     )
 
-    bias_initializer: str = schema_utils.InitializerOptions(
+    bias_initializer: InitializerConfig = BiasInitializerDataclassField(
         default="zeros",
         description="Initializer to use for the bias vector.",
         parameter_metadata=ENCODER_METADATA["StackedRNN"]["bias_initializer"],
     )
 
-    weights_initializer: str = schema_utils.InitializerOptions(
+    weights_initializer: InitializerConfig = WeightsInitializerDataclassField(
         description="Initializer to use for the weights matrix.",
         parameter_metadata=ENCODER_METADATA["StackedRNN"]["weights_initializer"],
     )
@@ -1084,13 +1089,13 @@ class StackedCNNRNNConfig(SequenceEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["use_bias"],
     )
 
-    bias_initializer: str = schema_utils.InitializerOptions(
+    bias_initializer: InitializerConfig = BiasInitializerDataclassField(
         default="zeros",
         description="Initializer to use for the bias vector.",
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["bias_initializer"],
     )
 
-    weights_initializer: str = schema_utils.InitializerOptions(
+    weights_initializer: InitializerConfig = WeightsInitializerDataclassField(
         description="Initializer to use for the weights matrix.",
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["weights_initializer"],
     )
@@ -1266,13 +1271,13 @@ class StackedTransformerConfig(SequenceEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedTransformer"]["use_bias"],
     )
 
-    bias_initializer: str = schema_utils.InitializerOptions(
+    bias_initializer: InitializerConfig = BiasInitializerDataclassField(
         default="zeros",
         description="Initializer to use for the bias vector.",
         parameter_metadata=ENCODER_METADATA["StackedTransformer"]["bias_initializer"],
     )
 
-    weights_initializer: str = schema_utils.InitializerOptions(
+    weights_initializer: InitializerConfig = WeightsInitializerDataclassField(
         description="Initializer to use for the weights matrix.",
         parameter_metadata=ENCODER_METADATA["StackedTransformer"]["weights_initializer"],
     )

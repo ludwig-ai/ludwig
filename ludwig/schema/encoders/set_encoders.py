@@ -5,6 +5,11 @@ from ludwig.constants import SET
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
+from ludwig.schema.initializers import (
+    BiasInitializerDataclassField,
+    InitializerConfig,
+    WeightsInitializerDataclassField,
+)
 from ludwig.schema.metadata import ENCODER_METADATA
 from ludwig.schema.utils import ludwig_dataclass
 
@@ -54,13 +59,13 @@ class SetSparseEncoderConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["SetSparseEncoder"]["use_bias"],
     )
 
-    bias_initializer: str = schema_utils.InitializerOptions(
+    bias_initializer: InitializerConfig = BiasInitializerDataclassField(
         default="zeros",
         description="Initializer to use for the bias vector.",
         parameter_metadata=ENCODER_METADATA["SetSparseEncoder"]["bias_initializer"],
     )
 
-    weights_initializer: str = schema_utils.InitializerOptions(
+    weights_initializer: InitializerConfig = WeightsInitializerDataclassField(
         description="Initializer to use for the weights matrix.",
         parameter_metadata=ENCODER_METADATA["SetSparseEncoder"]["weights_initializer"],
     )

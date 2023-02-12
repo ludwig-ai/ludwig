@@ -1,8 +1,13 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
+from ludwig.schema.initializers import (
+    BiasInitializerDataclassField,
+    InitializerConfig,
+    WeightsInitializerDataclassField,
+)
 from ludwig.schema.metadata import COMBINER_METADATA
 from ludwig.schema.utils import ludwig_dataclass
 
@@ -53,13 +58,13 @@ class ComparatorCombinerConfig(BaseCombinerConfig):
         parameter_metadata=COMBINER_METADATA["ComparatorCombiner"]["use_bias"],
     )
 
-    bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
+    bias_initializer: InitializerConfig = BiasInitializerDataclassField(
         default="zeros",
         description="",
         parameter_metadata=COMBINER_METADATA["ComparatorCombiner"]["bias_initializer"],
     )
 
-    weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
+    weights_initializer: InitializerConfig = WeightsInitializerDataclassField(
         default="xavier_uniform",
         description="",
         parameter_metadata=COMBINER_METADATA["ComparatorCombiner"]["weights_initializer"],

@@ -1,10 +1,15 @@
 from abc import ABC
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BINARY, MODEL_ECD, MODEL_GBM, NUMBER, VECTOR
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.utils import register_encoder_config
+from ludwig.schema.initializers import (
+    BiasInitializerDataclassField,
+    InitializerConfig,
+    WeightsInitializerDataclassField,
+)
 from ludwig.schema.metadata import ENCODER_METADATA
 from ludwig.schema.utils import ludwig_dataclass
 
@@ -96,13 +101,13 @@ class DenseEncoderConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["DenseEncoder"]["use_bias"],
     )
 
-    bias_initializer: Union[str, dict] = schema_utils.InitializerOptions(
+    bias_initializer: InitializerConfig = BiasInitializerDataclassField(
         default="zeros",
         description="Initializer for the bias vector.",
         parameter_metadata=ENCODER_METADATA["DenseEncoder"]["bias_initializer"],
     )
 
-    weights_initializer: Union[str, dict] = schema_utils.InitializerOptions(
+    weights_initializer: InitializerConfig = WeightsInitializerDataclassField(
         description="Initializer for the weight matrix.",
         parameter_metadata=ENCODER_METADATA["DenseEncoder"]["weights_initializer"],
     )
