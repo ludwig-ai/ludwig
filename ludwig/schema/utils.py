@@ -4,7 +4,7 @@ from dataclasses import field, Field
 from typing import Any
 from typing import Dict as TDict
 from typing import List as TList
-from typing import Optional, Set, Tuple, Type, Union
+from typing import Optional, Set, Tuple, Type, TypeVar, Union
 
 import marshmallow_dataclass
 import yaml
@@ -135,6 +135,9 @@ class ListSerializable(ABC):
         pass
 
 
+ConfigT = TypeVar("ConfigT", bound="BaseMarshmallowConfig")
+
+
 @DeveloperAPI
 class BaseMarshmallowConfig(ABC):
     """Base marshmallow class for common attributes and metadata."""
@@ -163,7 +166,7 @@ class BaseMarshmallowConfig(ABC):
         return convert_submodules(self.__dict__)
 
     @classmethod
-    def from_dict(cls, d: TDict[str, Any]):
+    def from_dict(cls: Type[ConfigT], d: TDict[str, Any]) -> ConfigT:
         schema = cls.get_class_schema()()
         return schema.load(d)
 
