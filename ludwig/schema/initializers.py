@@ -11,10 +11,20 @@ from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils.registry import Registry
 
 initializer_registry = Registry()
+bias_initializer_registry = Registry()
 
 
 @DeveloperAPI
 def register_initializer(name: str):
+    def wrap(initializer_config: InitializerConfig):
+        initializer_registry[name] = (initializer_config.initializer_fn, initializer_config)
+        return initializer_config
+
+    return wrap
+
+
+@DeveloperAPI
+def register_bias_initializer(name: str):
     def wrap(initializer_config: InitializerConfig):
         initializer_registry[name] = (initializer_config.initializer_fn, initializer_config)
         return initializer_config
@@ -56,6 +66,7 @@ class InitializerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
 @DeveloperAPI
 @register_initializer(name="uniform")
+@register_bias_initializer(name="uniform")
 @ludwig_dataclass
 class UniformInitializer(InitializerConfig):
     """Uniform initialization."""
@@ -71,6 +82,7 @@ class UniformInitializer(InitializerConfig):
 
 @DeveloperAPI
 @register_initializer(name="normal")
+@register_bias_initializer(name="normal")
 @ludwig_dataclass
 class NormalInitializer(InitializerConfig):
     """Normal initialization."""
@@ -87,7 +99,30 @@ class NormalInitializer(InitializerConfig):
 
 
 @DeveloperAPI
+@register_initializer(name="trunc_normal")
+@register_bias_initializer(name="trunc_normal")
+@ludwig_dataclass
+class TruncNormalInitializer(InitializerConfig):
+    """Truncated normal initialization."""
+
+    initializer_fn: ClassVar = nn.init.normal_
+
+    type: str = schema_utils.ProtectedString("trunc_normal")
+
+    mean: float = schema_utils.NonNegativeFloat(default=0.0, description="The mean of the normal distribution")
+
+    std: float = schema_utils.NonNegativeFloat(
+        default=1.0, description="The standard deviation of the normal distribution"
+    )
+
+    a: float = schema_utils.NonNegativeFloat(default=-2.0, description="The minimum cutoff value.")
+
+    b: float = schema_utils.NonNegativeFloat(default=2.0, description="The maximum cutoff value.")
+
+
+@DeveloperAPI
 @register_initializer(name="constant")
+@register_bias_initializer(name="constant")
 @ludwig_dataclass
 class ConstantInitializer(InitializerConfig):
     """Constant initialization."""
@@ -101,6 +136,7 @@ class ConstantInitializer(InitializerConfig):
 
 @DeveloperAPI
 @register_initializer(name="ones")
+@register_bias_initializer(name="ones")
 @ludwig_dataclass
 class OnesInitializer(InitializerConfig):
     """Ones initialization."""
@@ -112,6 +148,7 @@ class OnesInitializer(InitializerConfig):
 
 @DeveloperAPI
 @register_initializer(name="zeros")
+@register_bias_initializer(name="zeros")
 @ludwig_dataclass
 class ZerosInitializer(InitializerConfig):
     """Zeros initialization."""
@@ -131,19 +168,6 @@ class EyeInitializer(InitializerConfig):
     initializer_fn: ClassVar = nn.init.eye_
 
     type: str = schema_utils.ProtectedString("eye")
-
-
-@DeveloperAPI
-@register_initializer(name="dirac")
-@ludwig_dataclass
-class DiracInitializer(InitializerConfig):
-    """Diract initialization."""
-
-    initializer_fn: ClassVar = nn.init.dirac_
-
-    type: str = schema_utils.ProtectedString("dirac")
-
-    groups: int = schema_utils.PositiveInteger(default=1, description="Number of groups in the conv layer")
 
 
 @DeveloperAPI
@@ -272,7 +296,7 @@ class SparseInitializer(InitializerConfig):
 
 
 @DeveloperAPI
-def InitializerDataclassField(default="xavier_uniform", description="", parameter_metadata=None):
+def InitializerDataclassField(default="xavier_uniform", description="", single_dim=False, parameter_metadata=None):
     """Custom dataclass field that when used inside of a dataclass will allow any initializer.
 
     :param default: Str or Dict specifying an initializer with a `type` field and its associated parameters. Will

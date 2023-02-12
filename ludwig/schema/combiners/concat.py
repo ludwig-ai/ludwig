@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
@@ -59,13 +59,7 @@ class ConcatCombinerConfig(BaseCombinerConfig):
         default="zeros", parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["bias_initializer"]
     )
 
-    schema_utils.InitializerOrDict(
-        default="zeros",
-        description="",
-        parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["bias_initializer"],
-    )
-
-    weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
+    weights_initializer: InitializerConfig = InitializerDataclassField(
         default="xavier_uniform",
         description="",
         parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["weights_initializer"],
