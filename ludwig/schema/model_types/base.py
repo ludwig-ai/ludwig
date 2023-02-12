@@ -56,6 +56,8 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
     def from_dict(config: Dict[str, Any]) -> "ModelConfig":
         config = copy.deepcopy(config)
         config = upgrade_config_dict_to_latest_version(config)
+
+        # TODO(travis): move as much of the below as possible into __post_init__
         config = merge_with_defaults(config)
 
         model_type = config.get("model_type", MODEL_ECD)
