@@ -73,7 +73,6 @@ class ComparatorCombinerConfig(BaseCombinerConfig):
 
     norm: Optional[str] = schema_utils.StringOptions(
         ["batch", "layer"],
-        default="layer",
         description="",
         parameter_metadata=COMBINER_METADATA["ComparatorCombiner"]["norm"],
     )

@@ -46,7 +46,6 @@ def metric_alias(default=None):
     return schema_utils.StringOptions(
         options=list(DEFAULT_RESULT_KEYS) + [RAY_TUNE_DESULT_DEFAULT_METRIC],
         default=default,
-        allow_none=default is None,
         description=(
             "The training result objective value attribute. Stopping procedures will use this attribute. If None but a "
             "mode was passed, the ray.tune.result.DEFAULT_METRIC will be used per default."
@@ -100,7 +99,7 @@ class BaseSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     mode: Optional[str] = schema_utils.StringOptions(
         options=["min", "max"],
-        default="min",
+        default=None,
         description=(
             "One of {min, max}. Determines whether objective is minimizing or maximizing the metric attribute."
         ),

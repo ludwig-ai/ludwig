@@ -202,7 +202,7 @@ class Stacked2DCNNConfig(ImageEncoderConfig):
 
     conv_norm: Optional[str] = schema_utils.StringOptions(
         ["batch", "layer"],
-        default="layer",
+        default=None,
         description="If a norm is not already specified in conv_layers this is the default norm that will be used for "
         "each layer. It indicates the normalization applied to the activations and can be null, "
         "batch or layer.",
@@ -263,7 +263,7 @@ class Stacked2DCNNConfig(ImageEncoderConfig):
 
     fc_norm: Optional[str] = schema_utils.StringOptions(
         ["batch", "layer"],
-        default="layer",
+        default=None,
         description="If a norm is not already specified in fc_layers this is the default norm that will be used for "
         "each layer. It indicates the norm of the output and can be null, batch or layer.",
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["fc_norm"],
@@ -438,7 +438,7 @@ class ResNetConfig(ImageEncoderConfig):
 
     norm: Optional[str] = schema_utils.StringOptions(
         ["batch", "layer"],
-        default="layer",
+        default=None,
         description="if a norm is not already specified in fc_layers this is the default norm that will be used for "
         "each layer. It indicates the norm of the output and can be null, batch or layer.",
         parameter_metadata=ENCODER_METADATA["ResNet"]["norm"],
