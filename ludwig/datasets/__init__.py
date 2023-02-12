@@ -19,7 +19,7 @@ from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.print_utils import print_ludwig
 from ludwig.utils.types import DataFrame
 
-# PublicApi
+# PublicAPI
 from ludwig.datasets.utils import model_configs_for_dataset  # noqa
 
 URI_PREFIX = "ludwig://"
@@ -90,13 +90,13 @@ def load_dataset_uris(
         if isinstance(dataset, str) and dataset.startswith(URI_PREFIX):
             dataset_out = _load_cacheable_dataset(dataset, backend)
     elif training_set is not None:
-        train_df = val_df = test_df = None
+        train_df = test_df = val_df = None
         training_set_checksum = None
         if isinstance(training_set, str) and training_set.startswith(URI_PREFIX):
             # For the training set, we only want to use the TRAINING split of the dataset
             dataset_name = training_set[len(URI_PREFIX) :]
             loader = get_dataset(dataset_name)
-            train_df, val_df, test_df = loader.load(split=True)
+            train_df, test_df, val_df = loader.load(split=True)
             training_set_checksum = str(loader.get_mtime())
             train_df = backend.df_engine.from_pandas(train_df)
             training_set_out = CacheableDataframe(df=train_df, name=training_set, checksum=training_set_checksum)
