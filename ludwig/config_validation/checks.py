@@ -325,3 +325,29 @@ def check_splitter(config: ModelConfigDict) -> None:
 
     splitter = get_splitter(**config[PREPROCESSING][SPLIT])
     splitter.validate(config)
+
+
+@register_config_check
+def check_hf_tokenizer_requirements(config: ModelConfigDict) -> None:
+    """Checks that the HuggingFace tokenizer has a pretrained_model_name_or_path specified."""
+
+    for input_feature in config[INPUT_FEATURES]:
+        if input_feature[TYPE] == TEXT:
+            if input_feature[PREPROCESSING]["tokenizer"] == "hf_tokenizer":
+                if input_feature[PREPROCESSING]["pretrained_model_name_or_path"] is None:
+                    raise ConfigValidationError(
+                        "Pretrained model name or path must be specified for HuggingFace tokenizer."
+                    )
+
+
+@register_config_check
+def check_hf_encoder_requirements(config: ModelConfigDict) -> None:
+    """Checks that a HuggingFace encoder has a pretrained_model_name_or_path specified."""
+
+    for input_feature in config[INPUT_FEATURES]:
+        if input_feature[TYPE] == TEXT:
+            if "use_pretrained" in input_feature[ENCODER] and input_feature[ENCODER]["use_pretrained"]:
+                if input_feature[PREPROCESSING]["pretrained_model_name_or_path"] is None:
+                    raise ConfigValidationError(
+                        "Pretrained model name or path must be specified for HuggingFace encoder."
+                    )
