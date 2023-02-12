@@ -208,6 +208,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
 
     regularization_type: Optional[str] = schema_utils.RegularizerOptions(
         default="l2",
+        allow_none=True,
         description="Type of regularization.",
         parameter_metadata=TRAINER_METADATA[MODEL_ECD]["regularization_type"],
     )

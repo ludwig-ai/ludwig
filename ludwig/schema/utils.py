@@ -295,7 +295,7 @@ def String(
 def StringOptions(
     options: TList[str],
     default: Union[None, str] = None,
-    allow_none: bool = False,
+    allow_none: bool = True,
     description: str = "",
     parameter_metadata: ParameterMetadata = None,
 ):
@@ -303,7 +303,6 @@ def StringOptions(
 
     By default, None is allowed (and automatically appended) to the allowed list of options.
     """
-    allow_none = allow_none or default is None
     # If None should be allowed for an enum field, it also has to be defined as a valid
     # [option](https://github.com/json-schema-org/json-schema-spec/issues/258):
     if len(options) <= 0:
