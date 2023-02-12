@@ -15,12 +15,12 @@ from ludwig.data.cache.types import CacheableDataframe
 from ludwig.datasets import configs
 from ludwig.datasets.dataset_config import DatasetConfig
 from ludwig.datasets.loaders.dataset_loader import DatasetLoader
-from ludwig.globals import LUDWIG_VERSION
-from ludwig.utils.print_utils import print_ludwig
-from ludwig.utils.types import DataFrame
 
 # PublicAPI
 from ludwig.datasets.utils import model_configs_for_dataset  # noqa
+from ludwig.globals import LUDWIG_VERSION
+from ludwig.utils.print_utils import print_ludwig
+from ludwig.utils.types import DataFrame
 
 URI_PREFIX = "ludwig://"
 
