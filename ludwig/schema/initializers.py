@@ -1,6 +1,11 @@
+"""Initializers come from PyTorch and are used to initialize the weights or bias of a model.
+
+https://pytorch.org/docs/stable/nn.init.html
+"""
+
 from abc import ABC
 from dataclasses import field
-from typing import Any, ClassVar, Dict
+from typing import Any, ClassVar, Dict, Union
 
 from marshmallow import fields, ValidationError
 from torch import nn
@@ -296,12 +301,30 @@ class SparseInitializer(InitializerConfig):
 
 
 @DeveloperAPI
-def InitializerDataclassField(default="xavier_uniform", description="", single_dim=False, parameter_metadata=None):
+def WeightsInitializerDataclassField(
+    default: Union[str, Dict] = "xavier_uniform", description: str = "", parameter_metadata=None
+):
+    return _InitializerDataclassField(default, description, single_dim=False, parameter_metadata=parameter_metadata)
+
+
+@DeveloperAPI
+def BiasInitializerDataclassField(
+    default: Union[str, Dict] = "xavier_uniform", description: str = "", parameter_metadata=None
+):
+    return _InitializerDataclassField(default, description, single_dim=True, parameter_metadata=parameter_metadata)
+
+
+@DeveloperAPI
+def _InitializerDataclassField(default: Union[str, Dict], description: str, single_dim: bool, parameter_metadata=None):
     """Custom dataclass field that when used inside of a dataclass will allow any initializer.
 
-    :param default: Str or Dict specifying an initializer with a `type` field and its associated parameters. Will
+    Args:
+        default: Str or Dict specifying an initializer with a `type` field and its associated parameters. Will
             attempt to load an initializer with given params.
-    :return: Initialized dataclass field that converts untyped dicts with params to initializer dataclass instances.
+        description: Description of the initializer.
+        single_dim: bool, if True, will only allow initializers that support single dimensional tensors like for bias.
+    Returns:
+        Initialized dataclass field that converts untyped dicts with params to initializer dataclass instances.
     """
 
     class InitializerMarshmallowField(fields.Field):
