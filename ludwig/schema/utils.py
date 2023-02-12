@@ -1,10 +1,10 @@
 import copy
 from abc import ABC, abstractmethod
 from dataclasses import field, Field
-from typing import Any, TypeVar
+from typing import Any
 from typing import Dict as TDict
 from typing import List as TList
-from typing import Optional, Set, Tuple, Type, Union
+from typing import Optional, Set, Tuple, Type, TypeVar, Union
 
 import marshmallow_dataclass
 import yaml
