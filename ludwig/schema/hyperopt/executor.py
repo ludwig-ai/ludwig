@@ -27,7 +27,7 @@ class ExecutorConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     time_budget_s: int = schema_utils.PositiveInteger(
-        default=3600, description="The number of seconds for the entire hyperopt run."
+        default=3600, allow_none=True, description="The number of seconds for the entire hyperopt run."
     )
 
     trial_driver_resources: Dict[str, float] = schema_utils.Dict(
