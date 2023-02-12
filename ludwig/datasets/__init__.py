@@ -5,15 +5,22 @@ import os
 from collections import OrderedDict
 from functools import lru_cache
 from io import BytesIO
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import yaml
 
 from ludwig.api_annotations import DeveloperAPI, PublicAPI
+from ludwig.backend.base import Backend
+from ludwig.data.cache.types import CacheableDataframe
 from ludwig.datasets import configs, model_configs
 from ludwig.datasets.dataset_config import DatasetConfig
+from ludwig.datasets.loaders.dataset_loader import DatasetLoader
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.print_utils import print_ludwig
+from ludwig.utils.types import DataFrame
+
+
+URI_PREFIX = "ludwig://"
 
 
 def _load_dataset_config(config_filename: str):
@@ -68,7 +75,7 @@ def _get_model_configs(dataset_name: str) -> Dict[str, Dict]:
 
 
 @PublicAPI
-def get_dataset(dataset_name, cache_dir=None) -> Any:
+def get_dataset(dataset_name, cache_dir=None) -> DatasetLoader:
     """Gets an instance of the dataset loader for a dataset."""
     config = _get_dataset_config(dataset_name)
     class_name = config.loader.split(".")[-1]
@@ -78,6 +85,71 @@ def get_dataset(dataset_name, cache_dir=None) -> Any:
     if cache_dir:
         return loader_cls(config, cache_dir=cache_dir)
     return loader_cls(config)
+
+
+@DeveloperAPI
+def load_dataset_uris(
+    dataset: Optional[Union[str, DataFrame]],
+    training_set: Optional[Union[str, DataFrame]],
+    validation_set: Optional[Union[str, DataFrame]],
+    test_set: Optional[Union[str, DataFrame]],
+    backend: Backend,
+) -> Tuple[
+    Optional[CacheableDataframe],
+    Optional[CacheableDataframe],
+    Optional[CacheableDataframe],
+    Optional[CacheableDataframe],
+]:
+    """Loads and returns any Ludwig dataset URIs as CacheableDataframes.
+
+    Returns the input unmodified for any non-Ludwig datasets.
+    """
+    dataset_out = dataset
+    training_set_out = training_set
+    validation_set_out = validation_set
+    test_set_out = test_set
+
+    # Check that any of the datasets begin with the `ludwig://` prefix denoting a Ludwig dataset URI
+    if dataset is not None:
+        if isinstance(dataset, str) and dataset.startswith(URI_PREFIX):
+            dataset_out = _load_cacheable_dataset(dataset, backend)
+    elif training_set is not None:
+        train_df = val_df = test_df = None
+        training_set_checksum = None
+        if isinstance(training_set, str) and training_set.startswith(URI_PREFIX):
+            # For the training set, we only want to use the TRAINING split of the dataset
+            dataset_name = training_set[len(URI_PREFIX) :]
+            loader = get_dataset(dataset_name)
+            train_df, val_df, test_df = loader.load(split=True)
+            training_set_checksum = str(loader.get_mtime())
+            train_df = backend.df_engine.from_pandas(train_df)
+            training_set_out = CacheableDataframe(df=train_df, name=training_set, checksum=training_set_checksum)
+
+        if isinstance(validation_set, str) and validation_set.startswith(URI_PREFIX):
+            if validation_set == training_set:
+                # Reuse the loaded DF from the training split
+                val_df = backend.df_engine.from_pandas(val_df)
+                validation_set_out = CacheableDataframe(df=val_df, name=validation_set, checksum=training_set_checksum)
+            else:
+                validation_set_out = _load_cacheable_dataset(validation_set, backend)
+
+        if isinstance(test_set, str) and test_set.startswith(URI_PREFIX):
+            if test_set == training_set:
+                # Reuse the loaded DF from the training split
+                test_df = backend.df_engine.from_pandas(test_df)
+                test_set_out = CacheableDataframe(df=test_df, name=test_set, checksum=training_set_checksum)
+            else:
+                test_set_out = _load_cacheable_dataset(test_set, backend)
+
+    return dataset_out, training_set_out, validation_set_out, test_set_out
+
+
+def _load_cacheable_dataset(dataset: str, backend: Backend) -> CacheableDataframe:
+    dataset_name = dataset[len(URI_PREFIX) :]
+    loader = get_dataset(dataset_name)
+    df = loader.load(split=False)
+    df = backend.df_engine.from_pandas(df)
+    return CacheableDataframe(df=df, name=dataset, checksum=str(loader.get_mtime()))
 
 
 @PublicAPI

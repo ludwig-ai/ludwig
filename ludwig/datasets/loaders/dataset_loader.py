@@ -449,6 +449,10 @@ class DatasetLoader:
         """Load processed dataset into a dataframe."""
         return pd.read_parquet(self.processed_dataset_path)
 
+    def get_mtime(self) -> float:
+        """Last modified time of the processed dataset after downloading successfully."""
+        return os.path.getmtime(self.processed_dataset_path)
+
     def split(self, dataset: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         if SPLIT in dataset:
             dataset[SPLIT] = pd.to_numeric(dataset[SPLIT])
