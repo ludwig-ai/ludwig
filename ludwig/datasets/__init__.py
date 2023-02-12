@@ -19,7 +19,6 @@ from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.print_utils import print_ludwig
 from ludwig.utils.types import DataFrame
 
-
 URI_PREFIX = "ludwig://"
 
 
