@@ -1227,9 +1227,11 @@ def build_dataset(
     len_dataset_before_drop_rows = len(dataset)
     dataset = dataset.dropna()
     len_dataset_after_drop_rows = len(dataset)
-    
-    logger.warning(f"Dropped a total of {len_dataset_before_drop_rows - len_dataset_after_drop_rows} rows out of "
-                   f"{len_dataset_before_drop_rows} due to missing values")
+
+    logger.warning(
+        f"Dropped a total of {len_dataset_before_drop_rows - len_dataset_after_drop_rows} rows out of "
+        f"{len_dataset_before_drop_rows} due to missing values"
+    )
 
     # NaNs introduced by outer join change dtype of dataset cols (upcast to float64), so we need to cast them back.
     col_name_to_dtype = {}
@@ -1567,9 +1569,11 @@ def handle_missing_values(dataset_cols, feature, preprocessing_parameters: Prepr
         dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].dropna()
         len_after_dropped_rows = len(dataset_cols[feature[COLUMN]])
 
-        logger.warning(f"DROP_ROW missing value strategy applied. Dropped "
-                       f"{len_before_dropped_rows - len_after_dropped_rows} rows out of "
-                       f"{len_before_dropped_rows} from column {feature[COLUMN]}")
+        logger.warning(
+            f"DROP_ROW missing value strategy applied. Dropped "
+            f"{len_before_dropped_rows - len_after_dropped_rows} rows out of "
+            f"{len_before_dropped_rows} from column {feature[COLUMN]}"
+        )
     else:
         raise ValueError(f"Invalid missing value strategy {missing_value_strategy}")
 
