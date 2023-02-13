@@ -1,7 +1,7 @@
-# This workflow will install Python dependencies and run all tests marked that require a GPU on a single Python version.
+# This workflow will install Python dependencies and run all tests marked that require a gpu on a single Python version.
 # The tests will run on a gpu-enabled AWS compute instance to accommodate gpu-specific workloads.
 
-name: pytest (GPU)
+name: pytest (gpu)
 
 on:
   push:
@@ -56,7 +56,6 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         python-version: [3.8]
-        test-markers: ["slow"]
         include:
           - python-version: 3.8
             pytorch-version: 1.13.1
@@ -113,23 +112,44 @@ jobs:
           python --version
           pip --version
           python -m pip install -U pip
-          if [ $PYTORCH == "nightly" ]; then
-            cat requirements.txt | sed '/^torch[>=<]/d' > requirements-temp && mv requirements-temp requirements.txt
-            pip install --pre torch torchvision -f https://download.pytorch.org/whl/torch_stable.html
+          cmake --version
+
+          echo "MARKERS:" $MARKERS
+
+          if [ "$PYTORCH" == "nightly" ]; then
+            cat requirements.txt | sed '/^torch[>=<]/d' | sed '/^torchtext[>=<]/d' | sed '/^torchvision[>=<]/d' | sed '/^torchaudio[>=<]/d' > requirements-temp && mv requirements-temp requirements.txt
+            extra_index_url=https://download.pytorch.org/whl/nightly/cpu
+            pip install --pre torch torchtext torchvision torchaudio --extra-index-url $extra_index_url
           else
-            pip install torch==${PYTORCH}+cu111 -f https://download.pytorch.org/whl/torch_stable.html
+            extra_index_url=https://download.pytorch.org/whl/cpu
+            pip install torch==$PYTORCH torchtext torchvision torchaudio --extra-index-url $extra_index_url
           fi
-          # pip install --no-cache-dir git+https://github.com/horovod/horovod.git@master
-          pip install dulwich==0.20.26 # workaround for `/usr/bin/ld: cannot find -lpython3.7m`
+          pip install protobuf==3.20.1 # https://github.com/databrickslabs/dbx/issues/257
+
+          if [ "$RAY_VERSION" == "nightly" ]; then
+            # NOTE: hardcoded for python 3.9 on Linux
+            pip install https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-3.0.0.dev0-cp39-cp39-manylinux2014_x86_64.whl
+          else
+            # installing `six` early resolves ModuleNotFound error in ray==2.1.0
+            pip install six
+            pip install ray==$RAY_VERSION
+          fi
+          ray_expected=$(python -c "import ray; print(ray.__version__)")
+
+          torch_expected=$(python -c "import torch; print(torch.__version__)")
+
           pip install --no-build-isolation --no-use-pep517 ConfigSpace # temporary fix: https://github.com/automl/ConfigSpace/issues/173
-          pip install '.[test]'
+          pip install '.[test]' --extra-index-url $extra_index_url
           pip list
+
+          python -c "import torch; assert torch.__version__ == \"$torch_expected\", f\"torch {torch.__version__} != $torch_expected\""
+          python -c "import ray; assert ray.__version__ == \"$ray_expected\", f\"ray {ray.__version__} != $ray_expected\""
         shell: bash
 
       - name: Install Neuropod backend
         run: |
           sudo mkdir -p "$NEUROPOD_BASE_DIR"
-          curl -L https://github.com/uber/neuropod/releases/download/v${{ env.NEUROPOD_VERISON }}/libneuropod-cpu-linux-v${{ env.NEUROPOD_VERISON }}-torchscript-${{ env.TORCHSCRIPT_VERISON }}-backend.tar.gz | sudo tar -xz -C "$NEUROPOD_BASE_DIR"
+          curl -L https://github.com/uber/neuropod/releases/download/v${{ env.NEUROPOD_VERSION }}/libneuropod-cpu-linux-v${{ env.NEUROPOD_VERSION }}-torchscript-${{ env.TORCHSCRIPT_VERSION }}-backend.tar.gz | sudo tar -xz -C "$NEUROPOD_BASE_DIR"
         shell: bash
 
       - name: Reinstall Horovod if necessary
