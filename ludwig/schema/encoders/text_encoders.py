@@ -694,6 +694,7 @@ class BERTConfig(HFEncoderConfig):
 
     classifier_dropout: float = schema_utils.FloatRange(
         default=None,
+        allow_none=True,
         min=0,
         max=1,
         description="The dropout ratio for the classification head.",

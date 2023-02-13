@@ -241,7 +241,7 @@ def ReductionOptions(default: Union[None, str] = None, description="", parameter
 
 @DeveloperAPI
 def RegularizerOptions(
-    default: Union[None, str] = None,
+    default: Union[None, str],
     allow_none: bool = False,
     description="",
     parameter_metadata: ParameterMetadata = None,
@@ -259,12 +259,11 @@ def RegularizerOptions(
 @DeveloperAPI
 def String(
     description: str,
-    default: Union[None, str] = None,
+    default: Union[None, str],
     allow_none: bool = False,
     pattern: str = None,
     parameter_metadata: ParameterMetadata = None,
 ):
-    allow_none = allow_none or default is None
     if not allow_none and not isinstance(default, str):
         raise ValidationError(f"Provided default `{default}` should be a string!")
 
@@ -354,7 +353,7 @@ def ProtectedString(
 @DeveloperAPI
 def IntegerOptions(
     options: TList[int],
-    default: Union[None, int] = None,
+    default: Union[None, int],
     allow_none: bool = False,
     description: str = "",
     parameter_metadata: ParameterMetadata = None,
@@ -420,11 +419,9 @@ def Boolean(default: bool, description: str, parameter_metadata: ParameterMetada
 
 
 @DeveloperAPI
-def Integer(
-    default: Union[None, int] = None, allow_none=False, description="", parameter_metadata: ParameterMetadata = None
-):
+def Integer(default: Union[None, int], allow_none=False, description="", parameter_metadata: ParameterMetadata = None):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs."""
-    allow_none = allow_none or default is None
+    # allow_none = allow_none or default is None
 
     if default is not None:
         try:
@@ -455,7 +452,7 @@ def PositiveInteger(
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be
     positive."""
     val = validate.Range(min=1)
-    allow_none = allow_none or default is None
+    # allow_none = allow_none or default is None
 
     if default is not None:
         try:
@@ -484,14 +481,14 @@ def PositiveInteger(
 @DeveloperAPI
 def NonNegativeInteger(
     description: str,
-    default: Union[None, int] = None,
+    default: Union[None, int],
     allow_none: bool = False,
     parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be
     nonnegative."""
     val = validate.Range(min=0)
-    allow_none = allow_none or default is None
+    # allow_none = allow_none or default is None
 
     if default is not None:
         try:
@@ -520,8 +517,8 @@ def NonNegativeInteger(
 @DeveloperAPI
 def IntegerRange(
     description: str,
-    default: Union[None, int] = None,
-    allow_none=False,
+    default: Union[None, int],
+    allow_none: bool = False,
     parameter_metadata: ParameterMetadata = None,
     min: int = None,
     max: int = None,
@@ -531,7 +528,7 @@ def IntegerRange(
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be in range
     set by relevant keyword args."""
     val = validate.Range(min=min, max=max, min_inclusive=min_inclusive, max_inclusive=max_inclusive)
-    allow_none = allow_none or default is None
+    # allow_none = allow_none or default is None
 
     if default is not None:
         try:
@@ -559,7 +556,7 @@ def IntegerRange(
 
 @DeveloperAPI
 def NonNegativeFloat(
-    default: Union[None, float] = None,
+    default: Union[None, float],
     allow_none: bool = False,
     description: str = "",
     max: Optional[float] = None,
@@ -567,7 +564,7 @@ def NonNegativeFloat(
 ):
     """Returns a dataclass field with marshmallow metadata enforcing numeric inputs must be nonnegative."""
     val = validate.Range(min=0.0, max=max)
-    allow_none = allow_none or default is None
+    # allow_none = allow_none or default is None
 
     if default is not None:
         try:
@@ -594,7 +591,7 @@ def NonNegativeFloat(
 
 @DeveloperAPI
 def FloatRange(
-    default: Union[None, float] = None,
+    default: Union[None, float],
     allow_none: bool = False,
     description: str = "",
     parameter_metadata: ParameterMetadata = None,
@@ -606,7 +603,7 @@ def FloatRange(
     """Returns a dataclass field with marshmallow metadata enforcing numeric inputs must be in range set by
     relevant keyword args."""
     val = validate.Range(min=min, max=max, min_inclusive=min_inclusive, max_inclusive=max_inclusive)
-    allow_none = allow_none or default is None
+    # allow_none = allow_none or default is None
 
     if default is not None:
         try:
@@ -634,7 +631,7 @@ def FloatRange(
 @DeveloperAPI
 def Dict(
     default: Union[None, TDict] = None,
-    allow_none: bool = False,
+    allow_none: bool = True,
     description: str = "",
     parameter_metadata: ParameterMetadata = None,
 ):
@@ -718,12 +715,11 @@ def List(
 @DeveloperAPI
 def DictList(
     default: Union[None, TList[TDict]] = None,
-    allow_none: bool = False,
+    allow_none: bool = True,
     description: str = "",
     parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing input must be a list of dicts."""
-    allow_none = allow_none or default is None
     if default is not None:
         try:
             assert isinstance(default, list)
@@ -904,7 +900,6 @@ def FloatRangeTupleDataclassField(
     within [min, max] range, i.e. inclusive. The generated JSON schema uses a restricted array type as the equivalent
     representation of a Python tuple.
     """
-    allow_none = allow_none or default is None
     if default is not None and n != len(default):
         raise ValidationError(f"Dimension of tuple '{n}' must match dimension of default val. '{default}'")
 

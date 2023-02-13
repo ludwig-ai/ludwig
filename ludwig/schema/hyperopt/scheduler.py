@@ -266,11 +266,13 @@ class PopulationBasedTrainingSchedulerConfig(BaseSchedulerConfig):
 
     # TODO: Add schema support for Callable
     custom_explore_fn: Union[str, Callable] = schema_utils.String(
+        default=None,
+        allow_none=True,
         description=(
             "You can also specify a custom exploration function. This function is invoked as f(config) after built-in "
             "perturbations from hyperparam_mutations are applied, and should return config updated as needed. You must "
             "specify at least one of hyperparam_mutations or custom_explore_fn."
-        )
+        ),
     )
 
     log_config: bool = schema_utils.Boolean(
@@ -310,10 +312,12 @@ class PopulationBasedTrainingReplaySchedulerConfig(BaseSchedulerConfig):
 
     # TODO: This should technically be a required paremeter. Do we need to add support for required params?
     policy_file: str = schema_utils.String(
+        default=None,
+        allow_none=True,
         description=(
             "The PBT policy file. Usually this is stored in ~/ray_results/experiment_name/pbt_policy_xxx.txt where xxx "
             "is the trial ID."
-        )
+        ),
     )
 
 
@@ -421,10 +425,14 @@ class ResourceChangingSchedulerConfig(BaseSchedulerConfig):
     type: str = schema_utils.ProtectedString("resource_changing")
 
     base_scheduler: Union[str, None, Callable] = schema_utils.String(
-        description=("The scheduler to provide decisions about trials. If None, a default FIFOScheduler will be used.")
+        default=None,
+        allow_none=True,
+        description=("The scheduler to provide decisions about trials. If None, a default FIFOScheduler will be used."),
     )
 
     resources_allocation_function: Union[str, Callable] = schema_utils.String(
+        default=None,
+        allow_none=True,
         description=(
             "The callable used to change live trial resource requiements during tuning. This callable will be called on"
             " each trial as it finishes one step of training. The callable must take four arguments: TrialRunner, "
@@ -433,7 +441,7 @@ class ResourceChangingSchedulerConfig(BaseSchedulerConfig):
             "resources_allocation_function is None, no resource requirements will be changed at any time. By default, "
             "DistributeResources will be used, distributing available CPUs and GPUs over all running trials in a robust"
             " way, without any prioritization."
-        )
+        ),
     )
 
 

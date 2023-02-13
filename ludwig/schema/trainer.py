@@ -34,6 +34,7 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     validation_field: str = schema_utils.String(
         default=None,
+        allow_none=True,
         description="The field for which the `validation_metric` is used for validation-related mechanics like early "
         "stopping, parameter change plateaus, as well as what hyperparameter optimization uses to determine the best "
         "trial. If unset (default), the first output feature is used. If explicitly specified, neither "
@@ -42,6 +43,7 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     validation_metric: str = schema_utils.String(
         default=None,
+        allow_none=True,
         description=(
             "Metric from `validation_field` that is used. If validation_field is not explicitly specified, this is "
             "overwritten to be the first output feature type's `default_validation_metric`, consistent with "
@@ -184,6 +186,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
 
     validation_field: str = schema_utils.String(
         default=None,
+        allow_none=True,
         description="The field for which the `validation_metric` is used for validation-related mechanics like early "
         "stopping, parameter change plateaus, as well as what hyperparameter optimization uses to determine the best "
         "trial. If unset (default), the first output feature is used. If explicitly specified, neither "
@@ -193,6 +196,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
 
     validation_metric: str = schema_utils.String(
         default=None,
+        allow_none=True,
         description=(
             "Metric from `validation_field` that is used. If validation_field is not explicitly specified, this is "
             "overwritten to be the first output feature type's `default_validation_metric`, consistent with "
@@ -278,6 +282,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
 
     bucketing_field: str = schema_utils.String(
         default=None,
+        allow_none=True,
         description="Feature to use for bucketing datapoints",
         parameter_metadata=TRAINER_METADATA[MODEL_ECD]["bucketing_field"],
     )
@@ -355,12 +360,14 @@ class GBMTrainerConfig(BaseTrainerConfig):
     # TODO(#1673): Need some more logic here for validating against output features
     validation_field: str = schema_utils.String(
         default=None,
+        allow_none=True,
         description="First output feature, by default it is set as the same field of the first output feature.",
         parameter_metadata=TRAINER_METADATA[MODEL_GBM]["validation_field"],
     )
 
     validation_metric: str = schema_utils.String(
         default=None,
+        allow_none=True,
         description=(
             "Metric used on `validation_field`, set by default to the "
             "output feature type's `default_validation_metric`."

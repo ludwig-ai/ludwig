@@ -48,18 +48,21 @@ class Stacked2DCNNConfig(ImageEncoderConfig):
 
     height: int = schema_utils.NonNegativeInteger(
         default=None,
+        allow_none=True,
         description="Height of the input image.",
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["height"],
     )
 
     width: int = schema_utils.NonNegativeInteger(
         default=None,
+        allow_none=True,
         description="Width of the input image.",
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["width"],
     )
 
     num_channels: Optional[int] = schema_utils.NonNegativeInteger(
         default=None,
+        allow_none=True,
         description="Number of channels to use in the encoder. ",
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["num_channels"],
     )
@@ -110,7 +113,7 @@ class Stacked2DCNNConfig(ImageEncoderConfig):
         description="An int, pair of ints (h, w), or one of ['valid', 'same'] specifying the padding used for"
         "convolution kernels.",
         field_options=[
-            schema_utils.NonNegativeInteger(allow_none=False, description="", default=None),
+            schema_utils.NonNegativeInteger(allow_none=True, description="", default=None),
             schema_utils.List(list_type=int, allow_none=False),
             schema_utils.StringOptions(options=["valid", "same"], default="valid", allow_none=False),
         ],
@@ -171,7 +174,7 @@ class Stacked2DCNNConfig(ImageEncoderConfig):
         default=0,
         description="An integer or pair of ints specifying pooling padding (h, w).",
         field_options=[
-            schema_utils.NonNegativeInteger(allow_none=False, description="", default=None),
+            schema_utils.NonNegativeInteger(allow_none=True, description="", default=None),
             schema_utils.List(list_type=int, allow_none=False),
         ],
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["pool_padding"],
@@ -217,6 +220,7 @@ class Stacked2DCNNConfig(ImageEncoderConfig):
 
     num_conv_layers: Optional[int] = schema_utils.NonNegativeInteger(
         default=None,
+        allow_none=True,
         description="Number of convolutional layers to use in the encoder. ",
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["num_conv_layers"],
     )
@@ -324,12 +328,14 @@ class ResNetConfig(ImageEncoderConfig):
 
     height: int = schema_utils.NonNegativeInteger(
         default=None,
+        allow_none=True,
         description="Height of the input image.",
         parameter_metadata=ENCODER_METADATA["ResNet"]["height"],
     )
 
     width: int = schema_utils.NonNegativeInteger(
         default=None,
+        allow_none=True,
         description="Width of the input image.",
         parameter_metadata=ENCODER_METADATA["ResNet"]["width"],
     )
@@ -342,6 +348,7 @@ class ResNetConfig(ImageEncoderConfig):
 
     num_channels: Optional[int] = schema_utils.NonNegativeInteger(
         default=None,
+        allow_none=True,
         description="Number of channels to use in the encoder. ",
         parameter_metadata=ENCODER_METADATA["ResNet"]["num_channels"],
     )
@@ -493,18 +500,21 @@ class MLPMixerConfig(ImageEncoderConfig):
 
     height: int = schema_utils.NonNegativeInteger(
         default=None,
+        allow_none=True,
         description="Height of the input image.",
         parameter_metadata=ENCODER_METADATA["MLPMixer"]["height"],
     )
 
     width: int = schema_utils.NonNegativeInteger(
         default=None,
+        allow_none=True,
         description="Width of the input image.",
         parameter_metadata=ENCODER_METADATA["MLPMixer"]["width"],
     )
 
     num_channels: int = schema_utils.NonNegativeInteger(
         default=None,
+        allow_none=True,
         description="Number of channels to use in the encoder. ",
         parameter_metadata=ENCODER_METADATA["MLPMixer"]["num_channels"],
     )
@@ -564,12 +574,14 @@ class ViTConfig(ImageEncoderConfig):
 
     height: int = schema_utils.NonNegativeInteger(
         default=None,
+        allow_none=True,
         description="Height of the input image.",
         parameter_metadata=ENCODER_METADATA["ViT"]["height"],
     )
 
     width: int = schema_utils.NonNegativeInteger(
         default=None,
+        allow_none=True,
         description="Width of the input image.",
         parameter_metadata=ENCODER_METADATA["ViT"]["width"],
     )

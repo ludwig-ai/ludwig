@@ -49,6 +49,7 @@ class ExecutorConfig(schema_utils.BaseMarshmallowConfig):
 
     kubernetes_namespace: Optional[str] = schema_utils.String(
         default=None,
+        allow_none=True,
         description=(
             "When running on Kubernetes, provide the namespace of the Ray cluster to sync results between "
             "pods. See the Ray docs for more info."

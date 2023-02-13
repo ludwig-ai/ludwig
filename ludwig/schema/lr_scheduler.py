@@ -82,6 +82,7 @@ class LRSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     reduce_eval_metric: str = schema_utils.String(
         default=LOSS,
+        allow_none=False,
         description=(
             "Metric plateau used to trigger when we reduce the learning rate " "when `reduce_on_plateau > 0`."
         ),
@@ -90,6 +91,7 @@ class LRSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     reduce_eval_split: str = schema_utils.String(
         default=TRAINING,
+        allow_none=False,
         description=(
             "Which dataset split to listen on for reducing the learning rate " "when `reduce_on_plateau > 0`."
         ),

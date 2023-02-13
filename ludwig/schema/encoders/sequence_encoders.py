@@ -125,6 +125,7 @@ class SequenceEmbedConfig(SequenceEncoderConfig):
 
     pretrained_embeddings: str = schema_utils.String(
         default=None,
+        allow_none=True,
         description="Path to a file containing pretrained embeddings.",
         parameter_metadata=ENCODER_METADATA["SequenceEmbed"]["pretrained_embeddings"],
     )
@@ -255,6 +256,7 @@ class ParallelCNNConfig(SequenceEncoderConfig):
 
     pretrained_embeddings: str = schema_utils.String(
         default=None,
+        allow_none=True,
         description="Path to a file containing pretrained embeddings.",
         parameter_metadata=ENCODER_METADATA["ParallelCNN"]["pretrained_embeddings"],
     )
@@ -455,6 +457,7 @@ class StackedCNNConfig(SequenceEncoderConfig):
 
     pretrained_embeddings: str = schema_utils.String(
         default=None,
+        allow_none=True,
         description="Path to a file containing pretrained embeddings.",
         parameter_metadata=ENCODER_METADATA["StackedCNN"]["pretrained_embeddings"],
     )
@@ -635,6 +638,7 @@ class StackedParallelCNNConfig(SequenceEncoderConfig):
 
     pretrained_embeddings: str = schema_utils.String(
         default=None,
+        allow_none=True,
         description="By default dense embeddings are initialized randomly, but this parameter allows to specify a "
         "path to a file containing embeddings in the GloVe format. When the file containing the "
         "embeddings is loaded, only the embeddings with labels present in the vocabulary are kept, "
@@ -835,6 +839,7 @@ class StackedRNNConfig(SequenceEncoderConfig):
 
     pretrained_embeddings: str = schema_utils.String(
         default=None,
+        allow_none=True,
         description="By default dense embeddings are initialized randomly, but this parameter allows to specify a "
         "path to a file containing embeddings in the GloVe format. When the file containing the "
         "embeddings is loaded, only the embeddings with labels present in the vocabulary are kept, "
@@ -1129,6 +1134,7 @@ class StackedCNNRNNConfig(SequenceEncoderConfig):
 
     pretrained_embeddings: str = schema_utils.String(
         default=None,
+        allow_none=True,
         description="By default dense embeddings are initialized randomly, but this parameter allows to specify a "
         "path to a file containing embeddings in the GloVe format. When the file containing the "
         "embeddings is loaded, only the embeddings with labels present in the vocabulary are kept, "
@@ -1304,6 +1310,7 @@ class StackedTransformerConfig(SequenceEncoderConfig):
 
     pretrained_embeddings: str = schema_utils.String(
         default=None,
+        allow_none=True,
         description="Path to a file containing pretrained embeddings.",
         parameter_metadata=ENCODER_METADATA["StackedTransformer"]["pretrained_embeddings"],
     )

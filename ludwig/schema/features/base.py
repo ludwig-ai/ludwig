@@ -47,6 +47,7 @@ class BaseFeatureConfig(schema_utils.BaseMarshmallowConfig):
     active: bool = True
 
     name: str = schema_utils.String(
+        default=None,
         allow_none=True,
         description="Name of the feature.",
     )
@@ -140,6 +141,7 @@ class BaseOutputFeatureConfig(BaseFeatureConfig):
 
     default_validation_metric: str = schema_utils.String(
         default=None,
+        allow_none=True,
         description="Internal only use parameter: default validation metric for output feature.",
         parameter_metadata=INTERNAL_ONLY,
     )
