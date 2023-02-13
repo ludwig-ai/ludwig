@@ -333,6 +333,7 @@ class MT5Config(HFEncoderConfig):
 
     num_decoder_layers: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Number of hidden layers in the Transformer decoder. Will use the same value as num_layers if not "
         "set.",
         parameter_metadata=ENCODER_METADATA["MT5"]["num_decoder_layers"],
@@ -490,6 +491,7 @@ class XLMRoBERTaConfig(HFEncoderConfig):
 
     vocab_size: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Vocabulary size of the XLMRoBERTa model.",
         parameter_metadata=ENCODER_METADATA["XLMRoBERTa"]["vocab_size"],
     )
@@ -1196,6 +1198,7 @@ class GPT2Config(HFEncoderConfig):
 
     n_inner: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Dimensionality of the inner feed-forward layers. None will set it to 4 times n_embd",
         parameter_metadata=ENCODER_METADATA["GPT2"]["n_inner"],
     )
@@ -1318,6 +1321,7 @@ class RoBERTaConfig(HFEncoderConfig):
 
     vocab_size: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Vocabulary size of the RoBERTa model.",
         parameter_metadata=ENCODER_METADATA["RoBERTa"]["vocab_size"],
     )
@@ -1708,6 +1712,7 @@ class XLNetConfig(HFEncoderConfig):
 
     mem_len: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="The number of tokens to cache. The key/value pairs that have already been pre-computed in a "
         "previous forward pass won’t be re-computed. ",
         parameter_metadata=ENCODER_METADATA["XLNet"]["mem_len"],
@@ -1715,6 +1720,7 @@ class XLNetConfig(HFEncoderConfig):
 
     reuse_len: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="The number of tokens in the current batch to be cached and reused in the future.",
         parameter_metadata=ENCODER_METADATA["XLNet"]["reuse_len"],
     )
@@ -2831,6 +2837,7 @@ class ELECTRAConfig(HFEncoderConfig):
 
     classifier_dropout: float = schema_utils.FloatRange(
         default=None,
+        allow_none=True,
         min=0,
         max=1,
         description="The dropout ratio for the classification head.",
@@ -2996,6 +3003,7 @@ class AutoTransformerConfig(HFEncoderConfig):
 
     vocab_size: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description=(
             "Vocabulary size of the AutoTransformer model. If None, the vocab size will be inferred "
             "from the given pretrained model"

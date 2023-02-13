@@ -294,6 +294,7 @@ class ParallelCNNConfig(SequenceEncoderConfig):
 
     num_fc_layers: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Number of parallel fully connected layers to use.",
         parameter_metadata=ENCODER_METADATA["ParallelCNN"]["num_fc_layers"],
     )
@@ -403,12 +404,14 @@ class StackedCNNConfig(SequenceEncoderConfig):
 
     pool_size: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="The default pool_size that will be used for each layer.",
         parameter_metadata=ENCODER_METADATA["StackedCNN"]["pool_size"],
     )
 
     pool_strides: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Factor to scale down.",
         parameter_metadata=ENCODER_METADATA["StackedCNN"]["pool_strides"],
     )
@@ -497,6 +500,7 @@ class StackedCNNConfig(SequenceEncoderConfig):
 
     num_fc_layers: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Number of parallel fully connected layers to use.",
         parameter_metadata=ENCODER_METADATA["StackedCNN"]["num_fc_layers"],
     )
@@ -557,6 +561,7 @@ class StackedParallelCNNConfig(SequenceEncoderConfig):
 
     num_stacked_layers: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="If stacked_layers is null, this is the number of elements in the stack of parallel convolutional "
         "layers. ",
         parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["num_stacked_layers"],
@@ -591,6 +596,7 @@ class StackedParallelCNNConfig(SequenceEncoderConfig):
 
     pool_size: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="The default pool_size that will be used for each layer.",
         parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["pool_size"],
     )
@@ -685,6 +691,7 @@ class StackedParallelCNNConfig(SequenceEncoderConfig):
 
     num_fc_layers: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Number of parallel fully connected layers to use.",
         parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["num_fc_layers"],
     )
@@ -1039,6 +1046,7 @@ class StackedCNNRNNConfig(SequenceEncoderConfig):
 
     pool_strides: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Factor to scale down.",
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["pool_strides"],
     )
