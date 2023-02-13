@@ -13,11 +13,9 @@ jobs:
   start-runner:
     name: Start self-hosted EC2 runner
     if: >
-      always() && needs.pytest.result != 'failure' && (
       github.event_name == 'schedule' && github.repository == 'ludwig-ai/ludwig' ||
       github.event_name == 'push' && github.repository == 'ludwig-ai/ludwig' ||
-      github.event_name == 'pull_request' && github.event.pull_request.base.repo.full_name == 'ludwig-ai/ludwig' && !github.event.pull_request.head.repo.fork)
-    needs: pytest
+      github.event_name == 'pull_request' && github.event.pull_request.base.repo.full_name == 'ludwig-ai/ludwig' && !github.event.pull_request.head.repo.fork
     runs-on: ubuntu-latest
     outputs:
       label: ${{ steps.start-ec2-runner.outputs.label }}
@@ -163,6 +161,7 @@ jobs:
         with:
           name: Unit Test Results (Python ${{ matrix.python-version }} gpu
           path: pytest.xml
+
   stop-runner:
     name: Stop self-hosted EC2 runner
 
