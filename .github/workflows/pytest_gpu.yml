@@ -64,8 +64,11 @@ jobs:
     env:
       PYTORCH: ${{ matrix.pytorch-version }}
       NEUROPOD_BASE_DIR: "/usr/local/lib/neuropod"
-      NEUROPOD_VERISON: "0.3.0-rc6"
-      TORCHSCRIPT_VERISON: ${{ matrix.torchscript-version }}
+      NEUROPOD_VERSION: "0.3.0-rc6"
+      TORCHSCRIPT_VERSION: ${{ matrix.torchscript-version }}
+      RAY_VERSION: ${{ matrix.ray-version }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.LUDWIG_TESTS_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.LUDWIG_TESTS_AWS_SECRET_ACCESS_KEY }}
 
     name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, gpu
 
