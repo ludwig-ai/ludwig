@@ -121,11 +121,9 @@ jobs:
 
           if [ "$PYTORCH" == "nightly" ]; then
             cat requirements.txt | sed '/^torch[>=<]/d' | sed '/^torchtext[>=<]/d' | sed '/^torchvision[>=<]/d' | sed '/^torchaudio[>=<]/d' > requirements-temp && mv requirements-temp requirements.txt
-            extra_index_url=https://download.pytorch.org/whl/nightly/cpu
-            pip install --pre torch torchtext torchvision torchaudio --extra-index-url $extra_index_url
+            pip install --pre torch torchtext torchvision torchaudio
           else
-            extra_index_url=https://download.pytorch.org/whl/cpu
-            pip install torch==$PYTORCH torchtext torchvision torchaudio --extra-index-url $extra_index_url
+            pip install torch==$PYTORCH torchtext torchvision torchaudio
           fi
           pip install protobuf==3.20.1 # https://github.com/databrickslabs/dbx/issues/257
 
@@ -142,7 +140,7 @@ jobs:
           torch_expected=$(python -c "import torch; print(torch.__version__)")
 
           pip install --no-build-isolation --no-use-pep517 ConfigSpace # temporary fix: https://github.com/automl/ConfigSpace/issues/173
-          pip install '.[test]' --extra-index-url $extra_index_url
+          pip install '.[test]'
           pip list
 
           python -c "import torch; assert torch.__version__ == \"$torch_expected\", f\"torch {torch.__version__} != $torch_expected\""
@@ -176,14 +174,14 @@ jobs:
 
       - name: Tests
         run: |
-          pytest -v --timeout 300 --durations 10 --junitxml pytest.xml tests
+          pytest -v --timeout 300 --durations 10 --junitxml pytest_gpu.xml tests
 
       - name: Upload Unit Test Results
         if: always()
         uses: actions/upload-artifact@v2
         with:
           name: Unit Test Results (Python ${{ matrix.python-version }} gpu
-          path: pytest.xml
+          path: pytest_gpu.xml
 
   stop-runner:
     name: Stop self-hosted EC2 runner

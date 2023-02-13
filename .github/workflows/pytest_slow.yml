@@ -46,7 +46,7 @@ jobs:
               {"Key": "GitHubSHA", "Value": "${{ github.sha }}"}
             ]
 
-  slow-pytest:
+  pytest-slow:
     strategy:
       fail-fast: false
       matrix:
@@ -176,7 +176,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: Unit Test Results (Python ${{ matrix.python-version }} ${{ matrix.test-markers }})
-          path: pytest.xml
+          path: pytest_slow.xml
 
   stop-runner:
     name: Stop self-hosted EC2 runner
@@ -185,7 +185,7 @@ jobs:
     if: always() && needs.start-runner.result != 'skipped'
     needs:
       - start-runner # required to get output from the start-runner job
-      - slow-pytest  # required to wait when the main job is done
+      - pytest-slow  # required to wait when the main job is done
     runs-on: ubuntu-latest
 
     steps:
