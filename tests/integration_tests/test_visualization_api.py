@@ -660,6 +660,34 @@ def test_binary_threshold_vs_metric_vis_api(experiment_to_use):
             assert 1 == len(figure_cnt)
 
 
+def test_precision_recall_curves_vis_api(experiment_to_use):
+    """Ensure pdf and png figures can be saved via visualization API call.
+
+    :param experiment_to_use: Object containing trained model and results to
+        test visualization
+    :return: None
+    """
+    experiment = experiment_to_use
+    probabilities = experiment.probabilities
+    viz_outputs = ("pdf", "png")
+    positive_label = 1
+    with TemporaryDirectory() as tmpvizdir:
+        for viz_output in viz_outputs:
+            vis_output_pattern_pdf = tmpvizdir + f"/*.{viz_output}"
+            visualize.precision_recall_curves(
+                [probabilities, probabilities],
+                experiment.ground_truth,
+                experiment.ground_truth_metadata,
+                experiment.output_feature_name,
+                positive_label,
+                model_names=["Model1", "Model2"],
+                output_directory=tmpvizdir,
+                file_format=viz_output,
+            )
+            figure_cnt = glob.glob(vis_output_pattern_pdf)
+            assert 1 == len(figure_cnt)
+
+
 def test_roc_curves_vis_api(experiment_to_use):
     """Ensure pdf and png figures can be saved via visualization API call.
 
