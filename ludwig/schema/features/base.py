@@ -158,12 +158,14 @@ class BaseOutputFeatureConfig(BaseFeatureConfig):
 
     input_size: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Size of the input to the decoder.",
         parameter_metadata=ParameterMetadata(internal_only=True),
     )
 
     num_classes: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Size of the input to the decoder.",
         parameter_metadata=ParameterMetadata(internal_only=True),
     )

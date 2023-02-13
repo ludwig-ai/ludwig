@@ -143,6 +143,7 @@ class RegressorConfig(BaseDecoderConfig):
 
     input_size: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Size of the input to the decoder.",
         parameter_metadata=DECODER_METADATA["Regressor"]["input_size"],
     )
@@ -182,12 +183,14 @@ class ProjectorConfig(BaseDecoderConfig):
 
     input_size: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Size of the input to the decoder.",
         parameter_metadata=DECODER_METADATA["Projector"]["input_size"],
     )
 
     output_size: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Size of the output of the decoder.",
         parameter_metadata=DECODER_METADATA["Projector"]["output_size"],
     )
@@ -241,12 +244,14 @@ class ClassifierConfig(BaseDecoderConfig):
 
     input_size: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Size of the input to the decoder.",
         parameter_metadata=DECODER_METADATA["Classifier"]["input_size"],
     )
 
     num_classes: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Number of classes to predict.",
         parameter_metadata=DECODER_METADATA["Classifier"]["num_classes"],
     )

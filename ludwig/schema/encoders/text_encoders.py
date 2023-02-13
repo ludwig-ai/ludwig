@@ -56,6 +56,7 @@ class ALBERTConfig(HFEncoderConfig):
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Maximum length of the input sequence.",
         parameter_metadata=ENCODER_METADATA["ALBERT"]["max_sequence_length"],
     )
@@ -255,6 +256,7 @@ class MT5Config(HFEncoderConfig):
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Maximum length of the input sequence.",
         parameter_metadata=ENCODER_METADATA["MT5"]["max_sequence_length"],
     )
@@ -443,6 +445,7 @@ class XLMRoBERTaConfig(HFEncoderConfig):
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Maximum length of the input sequence.",
         parameter_metadata=ENCODER_METADATA["XLMRoBERTa"]["max_sequence_length"],
     )
@@ -552,6 +555,7 @@ class BERTConfig(HFEncoderConfig):
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Maximum length of the input sequence.",
         parameter_metadata=ENCODER_METADATA["BERT"]["max_sequence_length"],
     )
@@ -725,6 +729,7 @@ class XLMConfig(HFEncoderConfig):
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Maximum length of the input sequence.",
         parameter_metadata=ENCODER_METADATA["XLM"]["max_sequence_length"],
     )
@@ -973,6 +978,7 @@ class GPTConfig(HFEncoderConfig):
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Maximum length of the input sequence.",
         parameter_metadata=ENCODER_METADATA["GPT"]["max_sequence_length"],
     )
@@ -1114,6 +1120,7 @@ class GPT2Config(HFEncoderConfig):
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Maximum length of the input sequence.",
         parameter_metadata=ENCODER_METADATA["GPT2"]["max_sequence_length"],
     )
@@ -1266,6 +1273,7 @@ class RoBERTaConfig(HFEncoderConfig):
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Maximum length of the input sequence.",
         parameter_metadata=ENCODER_METADATA["RoBERTa"]["max_sequence_length"],
     )
@@ -1356,6 +1364,7 @@ class TransformerXLConfig(HFEncoderConfig):
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Maximum length of the input sequence.",
         parameter_metadata=ENCODER_METADATA["TransformerXL"]["max_sequence_length"],
     )
@@ -1584,6 +1593,7 @@ class XLNetConfig(HFEncoderConfig):
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Maximum length of the input sequence.",
         parameter_metadata=ENCODER_METADATA["XLNet"]["max_sequence_length"],
     )
@@ -1822,6 +1832,7 @@ class DistilBERTConfig(HFEncoderConfig):
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Maximum length of the input sequence.",
         parameter_metadata=ENCODER_METADATA["DistilBERT"]["max_sequence_length"],
     )
@@ -1979,6 +1990,7 @@ class CTRLConfig(HFEncoderConfig):
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Maximum length of the input sequence.",
         parameter_metadata=ENCODER_METADATA["CTRL"]["max_sequence_length"],
     )
@@ -2121,6 +2133,7 @@ class CamemBERTConfig(HFEncoderConfig):
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Maximum length of the input sequence.",
         parameter_metadata=ENCODER_METADATA["CamemBERT"]["max_sequence_length"],
     )
@@ -2262,6 +2275,7 @@ class CamemBERTConfig(HFEncoderConfig):
 
     classifier_dropout: float = schema_utils.FloatRange(
         default=None,
+        allow_none=True,
         min=0,
         max=1,
         description="The dropout ratio for the classification head.",
@@ -2292,6 +2306,7 @@ class T5Config(HFEncoderConfig):
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Maximum length of the input sequence.",
         parameter_metadata=ENCODER_METADATA["T5"]["max_sequence_length"],
     )
@@ -2438,6 +2453,7 @@ class FlauBERTConfig(HFEncoderConfig):
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Maximum length of the input sequence.",
         parameter_metadata=ENCODER_METADATA["FlauBERT"]["max_sequence_length"],
     )
@@ -2678,6 +2694,7 @@ class ELECTRAConfig(HFEncoderConfig):
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Maximum length of the input sequence.",
         parameter_metadata=ENCODER_METADATA["ELECTRA"]["max_sequence_length"],
     )
@@ -2844,6 +2861,7 @@ class LongformerConfig(HFEncoderConfig):
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Maximum length of the input sequence.",
         parameter_metadata=ENCODER_METADATA["Longformer"]["max_sequence_length"],
     )
@@ -2953,6 +2971,7 @@ class AutoTransformerConfig(HFEncoderConfig):
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Maximum length of the input sequence.",
         parameter_metadata=ENCODER_METADATA["AutoTransformer"]["max_sequence_length"],
     )

@@ -105,6 +105,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
 
     train_steps: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description=(
             "Maximum number of training steps the algorithm is intended to be run over. Unset by default. "
             "If set, will override `epochs` and if left unset then `epochs` is used to determine training length."

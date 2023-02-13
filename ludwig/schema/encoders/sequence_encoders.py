@@ -39,6 +39,7 @@ class SequencePassthroughConfig(SequenceEncoderConfig):
 
     encoding_size: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="The size of the encoding vector, or None if sequence elements are scalars.",
         parameter_metadata=ENCODER_METADATA["SequencePassthrough"]["encoding_size"],
     )
@@ -74,6 +75,7 @@ class SequenceEmbedConfig(SequenceEncoderConfig):
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="The maximum length of a sequence.",
         parameter_metadata=ENCODER_METADATA["SequenceEmbed"]["max_sequence_length"],
     )
@@ -159,6 +161,7 @@ class ParallelCNNConfig(SequenceEncoderConfig):
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="The maximum length of all sequences",
         parameter_metadata=ENCODER_METADATA["ParallelCNN"]["max_sequence_length"],
     )
@@ -178,6 +181,7 @@ class ParallelCNNConfig(SequenceEncoderConfig):
 
     num_conv_layers: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Number of parallel convolutional layers to use.",
         parameter_metadata=ENCODER_METADATA["ParallelCNN"]["num_conv_layers"],
     )
@@ -208,6 +212,7 @@ class ParallelCNNConfig(SequenceEncoderConfig):
 
     pool_size: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="The default pool_size that will be used for each layer.",
         parameter_metadata=ENCODER_METADATA["ParallelCNN"]["pool_size"],
     )
@@ -328,6 +333,7 @@ class StackedCNNConfig(SequenceEncoderConfig):
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="The maximum length of all sequences",
         parameter_metadata=ENCODER_METADATA["StackedCNN"]["max_sequence_length"],
     )
@@ -347,6 +353,7 @@ class StackedCNNConfig(SequenceEncoderConfig):
 
     num_conv_layers: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Number of parallel convolutional layers to use.",
         parameter_metadata=ENCODER_METADATA["StackedCNN"]["num_conv_layers"],
     )
@@ -529,6 +536,7 @@ class StackedParallelCNNConfig(SequenceEncoderConfig):
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="The maximum length of all sequences",
         parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["max_sequence_length"],
     )
@@ -731,6 +739,7 @@ class StackedRNNConfig(SequenceEncoderConfig):
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="The maximum length of all sequences",
         parameter_metadata=ENCODER_METADATA["StackedRNN"]["max_sequence_length"],
     )
@@ -958,6 +967,7 @@ class StackedCNNRNNConfig(SequenceEncoderConfig):
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="The maximum length of all sequences",
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["max_sequence_length"],
     )
@@ -1073,6 +1083,7 @@ class StackedCNNRNNConfig(SequenceEncoderConfig):
 
     num_conv_layers: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Number of parallel convolutional layers to use.",
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["num_conv_layers"],
     )
@@ -1220,6 +1231,7 @@ class StackedTransformerConfig(SequenceEncoderConfig):
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Max length of all sequences",
         parameter_metadata=ENCODER_METADATA["StackedTransformer"]["max_sequence_length"],
     )
