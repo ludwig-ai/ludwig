@@ -3988,6 +3988,7 @@ def get_visualizations_registry() -> Dict[str, Callable]:
         "binary_threshold_vs_metric": binary_threshold_vs_metric_cli,
         "roc_curves": roc_curves_cli,
         "roc_curves_from_test_statistics": roc_curves_from_test_statistics_cli,
+        "precision_recall_curves": precision_recall_curves_cli,
         "calibration_1_vs_all": calibration_1_vs_all_cli,
         "calibration_multiclass": calibration_multiclass_cli,
         "confusion_matrix": confusion_matrix_cli,
