@@ -111,6 +111,9 @@ class BaseInputFeatureConfig(BaseFeatureConfig):
         "feature of the same type and with the same encoder parameters.",
     )
 
+    def has_augmentation(self) -> bool:
+        return False
+
 
 @DeveloperAPI
 @ludwig_dataclass

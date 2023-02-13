@@ -796,12 +796,10 @@ def _run_train_gpu_load_cpu(config, data_parquet):
 # TODO(geoffrey): add a GPU test for batch size tuning
 @pytest.mark.distributed
 @pytest.mark.parametrize(
-    ("max_batch_size", "expected_final_batch_size", "expected_final_learning_rate"),
-    [(256, None, 0.001), (8, 8, 0.001)],
+    ("max_batch_size", "expected_final_learning_rate"),
+    [(256, 0.001), (8, 0.001)],
 )
-def test_tune_batch_size_lr_cpu(
-    tmpdir, ray_cluster_2cpu, max_batch_size, expected_final_batch_size, expected_final_learning_rate
-):
+def test_tune_batch_size_lr_cpu(tmpdir, ray_cluster_2cpu, max_batch_size, expected_final_learning_rate):
     config = {
         "input_features": [
             number_feature(normalization="zscore"),
@@ -828,13 +826,14 @@ def test_tune_batch_size_lr_cpu(
     dataset_parquet = create_data_set_to_use("parquet", dataset_csv)
     model = run_api_experiment(config, dataset=dataset_parquet, backend_config=backend_config)
 
-    if expected_final_batch_size is not None:
-        assert model.config[TRAINER]["batch_size"] == expected_final_batch_size
-    else:
-        # If we don't specify a batch size, we should validate the batch size against the training dataset size
-        num_train_samples = num_samples * DEFAULT_PROBABILITIES[0]
-        assert 2 < model.config[TRAINER]["batch_size"] <= MAX_BATCH_SIZE_DATASET_FRACTION * num_train_samples
-
+    num_train_samples = num_samples * DEFAULT_PROBABILITIES[0]
+    max_batch_size_by_train_examples = MAX_BATCH_SIZE_DATASET_FRACTION * num_train_samples
+    max_batch_size = (
+        max_batch_size_by_train_examples
+        if max_batch_size is None
+        else min(max_batch_size_by_train_examples, max_batch_size)
+    )
+    assert 2 < model.config[TRAINER]["batch_size"] <= max_batch_size
     assert model.config[TRAINER]["learning_rate"] == expected_final_learning_rate
 
 
