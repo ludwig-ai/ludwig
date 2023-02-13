@@ -1572,7 +1572,8 @@ def handle_missing_values(dataset_cols, feature, preprocessing_parameters: Prepr
         logger.warning(
             f"DROP_ROW missing value strategy applied. Dropped {len_before_dropped_rows - len_after_dropped_rows} "
             f"samples out of {len_before_dropped_rows} from column {feature[COLUMN]}. The rows containing these "
-            f"samples will ultimately be dropped from the dataset.")
+            f"samples will ultimately be dropped from the dataset."
+        )
     else:
         raise ValueError(f"Invalid missing value strategy {missing_value_strategy}")
 
