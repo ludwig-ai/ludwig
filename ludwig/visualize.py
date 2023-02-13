@@ -1188,7 +1188,7 @@ def roc_curves_from_test_statistics_cli(test_statistics: Union[str, List[str]], 
 
 
 @DeveloperAPI
-def precision_recall_curve_from_test_statistics_cli(test_statistics: Union[str, List[str]], **kwargs: dict) -> None:
+def precision_recall_curves_from_test_statistics_cli(test_statistics: Union[str, List[str]], **kwargs: dict) -> None:
     """Load model data from files to be shown by precision_recall_curves_from_test_statistics_cli.
 
     Args:
