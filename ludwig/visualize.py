@@ -1188,6 +1188,24 @@ def roc_curves_from_test_statistics_cli(test_statistics: Union[str, List[str]], 
 
 
 @DeveloperAPI
+def precision_recall_curve_from_test_statistics_cli(test_statistics: Union[str, List[str]], **kwargs: dict) -> None:
+    """Load model data from files to be shown by precision_recall_curves_from_test_statistics_cli.
+
+    Args:
+
+    :param test_statistics: (Union[str, List[str]]) path to experiment test
+        statistics file.
+    :param kwargs: (dict) parameters for the requested visualizations.
+
+    Return:
+
+    :return None:
+    """
+    test_stats_per_model = load_data_for_viz("load_json", test_statistics)
+    precision_recall_curves_from_test_statistics(test_stats_per_model, **kwargs)
+
+
+@DeveloperAPI
 def calibration_1_vs_all_cli(
     probabilities: Union[str, List[str]],
     ground_truth: str,
@@ -3252,6 +3270,53 @@ def precision_recall_curves(
 
 
 @DeveloperAPI
+def precision_recall_curves_from_test_statistics(
+    test_stats_per_model: List[dict],
+    output_feature_name: str,
+    model_names: Union[str, List[str]] = None,
+    output_directory: str = None,
+    file_format: str = "pdf",
+    **kwargs,
+) -> None:
+    """Show the PR curves for the specified models output binary `output_feature_name`.
+
+    This visualization uses `output_feature_name`, `test_stats_per_model` and
+    `model_names` parameters. `output_feature_name` needs to be binary feature.
+    This visualization produces a line chart plotting the PR curves for the
+    specified `output_feature_name`.
+
+    Args:
+
+    :param test_stats_per_model: (List[dict]) dictionary containing evaluation
+        performance statistics.
+    :param output_feature_name: (str) name of the output feature to use
+        for the visualization.
+    :param model_names: (Union[str, List[str]], default: `None`) model name or
+        list of the model names to use as labels.
+    :param output_directory: (str, default: `None`) directory where to save
+        plots. If not specified, plots will be displayed in a window
+    :param file_format: (str, default: `'pdf'`) file format of output plots -
+        `'pdf'` or `'png'`.
+
+    Return
+
+    :return: (None)
+    """
+    model_names_list = convert_to_list(model_names)
+    filename_template = "precision_recall_curves_from_prediction_statistics." + file_format
+    filename_template_path = generate_filename_template_path(output_directory, filename_template)
+    precision_recalls = []
+    for curr_test_statistics in test_stats_per_model:
+        precisions = curr_test_statistics[output_feature_name]["precision_recall_curve"]["precisions"]
+        recalls = curr_test_statistics[output_feature_name]["precision_recall_curve"]["recalls"]
+        precision_recalls.append({"precisions": precisions, "recalls": recalls})
+
+    visualization_utils.precision_recall_curves_plot(
+        precision_recalls, model_names_list, title="Precision Recall Curves", filename=filename_template_path
+    )
+
+
+@DeveloperAPI
 def roc_curves(
     probabilities_per_model: List[np.array],
     ground_truth: Union[pd.Series, np.ndarray],
@@ -3989,6 +4054,7 @@ def get_visualizations_registry() -> Dict[str, Callable]:
         "roc_curves": roc_curves_cli,
         "roc_curves_from_test_statistics": roc_curves_from_test_statistics_cli,
         "precision_recall_curves": precision_recall_curves_cli,
+        "precision_recall_curves_from_test_statistics": precision_recall_curves_from_test_statistics_cli,
         "calibration_1_vs_all": calibration_1_vs_all_cli,
         "calibration_multiclass": calibration_multiclass_cli,
         "confusion_matrix": confusion_matrix_cli,
