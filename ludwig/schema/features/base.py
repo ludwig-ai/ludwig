@@ -53,6 +53,7 @@ class BaseFeatureConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     type: str = schema_utils.StringOptions(
+        default=None,
         allow_none=True,
         options=[AUDIO, BAG, BINARY, CATEGORY, DATE, H3, IMAGE, NUMBER, SEQUENCE, SET, TEXT, TIMESERIES, VECTOR],
         description="Type of the feature.",

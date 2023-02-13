@@ -160,6 +160,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
 
     eval_batch_size: Union[None, int, str] = schema_utils.OneOfOptionsField(
         default=None,
+        allow_none=True,
         description=(
             "Size of batch to pass to the model for evaluation. If it is `0` or `None`, the same value of `batch_size` "
             "is used. This is useful to speedup evaluation with a much bigger batch size than training, if enough "

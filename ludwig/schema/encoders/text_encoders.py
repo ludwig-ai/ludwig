@@ -2882,11 +2882,12 @@ class LongformerConfig(HFEncoderConfig):
 
     attention_window: Union[List[int], int] = schema_utils.OneOfOptionsField(
         default=512,
+        allow_none=True,
         description="Size of an attention window around each token. If an int, use the same size for all layers. To "
         "specify a different window size for each layer, use a List[int] where len(attention_window) == "
         "num_hidden_layers.",
         field_options=[
-            schema_utils.PositiveInteger(allow_none=False, description="", default=None),
+            schema_utils.PositiveInteger(allow_none=True, description="", default=None),
             schema_utils.List(list_type=int, allow_none=False),
         ],
         parameter_metadata=ENCODER_METADATA["Longformer"]["attention_window"],

@@ -282,6 +282,7 @@ class ParallelCNNConfig(SequenceEncoderConfig):
     norm: str = schema_utils.StringOptions(
         ["batch", "layer"],
         default=None,
+        allow_none=True,
         description="The default norm that will be used for each layer.",
         parameter_metadata=ENCODER_METADATA["ParallelCNN"]["norm"],
     )
@@ -488,6 +489,7 @@ class StackedCNNConfig(SequenceEncoderConfig):
     norm: str = schema_utils.StringOptions(
         ["batch", "layer"],
         default=None,
+        allow_none=True,
         description="The default norm that will be used for each layer.",
         parameter_metadata=ENCODER_METADATA["StackedCNN"]["norm"],
     )
@@ -679,6 +681,7 @@ class StackedParallelCNNConfig(SequenceEncoderConfig):
     norm: str = schema_utils.StringOptions(
         ["batch", "layer"],
         default=None,
+        allow_none=True,
         description="The default norm that will be used for each layer.",
         parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["norm"],
     )
@@ -882,6 +885,7 @@ class StackedRNNConfig(SequenceEncoderConfig):
     norm: str = schema_utils.StringOptions(
         ["batch", "layer"],
         default=None,
+        allow_none=True,
         description="The default norm that will be used for each layer.",
         parameter_metadata=ENCODER_METADATA["StackedRNN"]["norm"],
     )
@@ -1180,6 +1184,7 @@ class StackedCNNRNNConfig(SequenceEncoderConfig):
     norm: str = schema_utils.StringOptions(
         ["batch", "layer"],
         default=None,
+        allow_none=True,
         description="The default norm that will be used for each layer.",
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["norm"],
     )
@@ -1351,6 +1356,7 @@ class StackedTransformerConfig(SequenceEncoderConfig):
     norm: str = schema_utils.StringOptions(
         ["batch", "layer"],
         default=None,
+        allow_none=True,
         description="The default norm that will be used for each layer.",
         parameter_metadata=ENCODER_METADATA["StackedTransformer"]["norm"],
     )

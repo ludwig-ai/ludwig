@@ -293,8 +293,8 @@ def String(
 @DeveloperAPI
 def StringOptions(
     options: TList[str],
-    default: Union[None, str] = None,
-    allow_none: bool = True,
+    default: Union[None, str],
+    allow_none: bool = False,
     description: str = "",
     parameter_metadata: ParameterMetadata = None,
 ):
@@ -972,7 +972,7 @@ def OneOfOptionsField(
     default: Any,
     description: str,
     field_options: TList,
-    allow_none: bool = True,
+    allow_none: bool = False,
     parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field that is a combination of the other fields defined in `ludwig.schema.utils`.

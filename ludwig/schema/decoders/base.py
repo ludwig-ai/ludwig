@@ -16,6 +16,8 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     type: str = schema_utils.StringOptions(
         ["regressor", "classifier", "projector", "generator", "tagger"],
+        default=None,
+        allow_none=True,
         description="The type of decoder to use.",
         parameter_metadata=DECODER_METADATA["BaseDecoder"]["type"],
     )
@@ -46,6 +48,7 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     fc_weights_initializer: Union[str, Dict] = schema_utils.OneOfOptionsField(
         default="xavier_uniform",
+        allow_none=True,
         description="The weights initializer to use for the layers in the fc_stack",
         field_options=[
             schema_utils.InitializerOptions(
@@ -62,6 +65,7 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     fc_bias_initializer: Union[str, Dict] = schema_utils.OneOfOptionsField(
         default="zeros",
+        allow_none=True,
         description="The bias initializer to use for the layers in the fc_stack",
         field_options=[
             schema_utils.InitializerOptions(
@@ -78,6 +82,8 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     fc_norm: str = schema_utils.StringOptions(
         ["batch", "layer"],
+        default=None,
+        allow_none=True,
         description="The normalization to use for the layers in the fc_stack",
         parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_norm"],
     )
