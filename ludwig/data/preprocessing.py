@@ -1227,9 +1227,11 @@ def build_dataset(
     len_dataset_before_drop_rows = len(dataset)
     dataset = dataset.dropna()
     len_dataset_after_drop_rows = len(dataset)
-    
-    logger.warning(f"Dropped a total of {len_dataset_before_drop_rows - len_dataset_after_drop_rows} rows out of "
-                   f"{len_dataset_before_drop_rows} due to missing values")
+
+    logger.warning(
+        f"Dropped a total of {len_dataset_before_drop_rows - len_dataset_after_drop_rows} rows out of "
+        f"{len_dataset_before_drop_rows} due to missing values"
+    )
 
     # NaNs introduced by outer join change dtype of dataset cols (upcast to float64), so we need to cast them back.
     col_name_to_dtype = {}
