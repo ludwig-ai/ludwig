@@ -1068,6 +1068,57 @@ def binary_threshold_vs_metric_cli(
 
 
 @DeveloperAPI
+def precision_recall_curves_cli(
+    probabilities: Union[str, List[str]],
+    ground_truth: str,
+    ground_truth_split: int,
+    split_file: str,
+    ground_truth_metadata: str,
+    output_feature_name: str,
+    output_directory: str,
+    **kwargs: dict,
+) -> None:
+    """Load model data from files to be shown by precision_recall_curves_cli.
+
+    Args
+
+    :param probabilities: (Union[str, List[str]]) list of prediction results file names
+        to extract probabilities from.
+    :param ground_truth: (str) path to ground truth file.
+    :param ground_truth_split: (str) type of ground truth split -
+        `0` for training split, `1` for validation split or
+        2 for `'test'` split.
+    :param split_file: (str, None) file path to csv file containing split values
+    :param ground_truth_metadata: (str) file path to feature metadata json file
+        created during training.
+    :param output_feature_name: (str) name of the output feature to visualize.
+    :param output_directory: (str) name of output directory containing training
+         results.
+    :param kwargs: (dict) parameters for the requested visualizations.
+
+    Return
+
+    :return None:
+    """
+    # retrieve feature metadata to convert raw predictions to encoded value
+    metadata = load_json(ground_truth_metadata)
+
+    # retrieve ground truth from source data set
+    ground_truth = _extract_ground_truth_values(ground_truth, output_feature_name, ground_truth_split, split_file)
+
+    col = f"{output_feature_name}{_PROBABILITIES_SUFFIX}"
+    probabilities_per_model = _get_cols_from_predictions(probabilities, [col], metadata)
+    precision_recall_curves(
+        probabilities_per_model,
+        ground_truth,
+        metadata,
+        output_feature_name,
+        output_directory=output_directory,
+        **kwargs,
+    )
+
+
+@DeveloperAPI
 def roc_curves_cli(
     probabilities: Union[str, List[str]],
     ground_truth: str,
@@ -1531,7 +1582,6 @@ def compare_classifiers_performance_from_prob(
     mrrs = []
 
     for i, prob in enumerate(probs):
-
         if labels_limit > 0 and prob.shape[1] > labels_limit + 1:
             prob_limit = prob[:, : labels_limit + 1]
             prob_limit[:, labels_limit] = prob[:, labels_limit:].sum(1)
@@ -1725,7 +1775,6 @@ def compare_classifiers_performance_subset(
     hits_at_ks = []
 
     for i, prob in enumerate(probs):
-
         if labels_limit > 0 and prob.shape[1] > labels_limit + 1:
             prob_limit = prob[:, : labels_limit + 1]
             prob_limit[:, labels_limit] = prob[:, labels_limit:].sum(1)
@@ -1833,7 +1882,6 @@ def compare_classifiers_performance_changing_k(
     hits_at_ks = []
     model_names_list = convert_to_list(model_names)
     for i, prob in enumerate(probs):
-
         if labels_limit > 0 and prob.shape[1] > labels_limit + 1:
             prob_limit = prob[:, : labels_limit + 1]
             prob_limit[:, labels_limit] = prob[:, labels_limit:].sum(1)
@@ -2284,7 +2332,6 @@ def confidence_thresholding(
     dataset_kept = []
 
     for i, prob in enumerate(probs):
-
         if labels_limit > 0 and prob.shape[1] > labels_limit + 1:
             prob_limit = prob[:, : labels_limit + 1]
             prob_limit[:, labels_limit] = prob[:, labels_limit:].sum(1)
@@ -2378,7 +2425,6 @@ def confidence_thresholding_data_vs_acc(
     dataset_kept = []
 
     for i, prob in enumerate(probs):
-
         if labels_limit > 0 and prob.shape[1] > labels_limit + 1:
             prob_limit = prob[:, : labels_limit + 1]
             prob_limit[:, labels_limit] = prob[:, labels_limit:].sum(1)
@@ -2503,7 +2549,6 @@ def confidence_thresholding_data_vs_acc_subset(
         logger.info(f"Subset is {len(gt_subset) / len(ground_truth) * 100:.2f}% of the data")
 
     for i, prob in enumerate(probs):
-
         if labels_limit > 0 and prob.shape[1] > labels_limit + 1:
             prob_limit = prob[:, : labels_limit + 1]
             prob_limit[:, labels_limit] = prob[:, labels_limit:].sum(1)
@@ -2653,7 +2698,6 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
             logger.info(f"Subset is {len(gt_subset) / len(ground_truth) * 100:.2f}% of the data")
 
         for i, prob in enumerate(probs):
-
             if labels_limit > 0 and prob.shape[1] > labels_limit + 1:
                 prob_limit = prob[:, : labels_limit + 1]
                 prob_limit[:, labels_limit] = prob[:, labels_limit:].sum(1)
@@ -3090,7 +3134,6 @@ def binary_threshold_vs_metric(
     supported_metrics = {"f1", "precision", "recall", "accuracy"}
 
     for metric in metrics_list:
-
         if metric not in supported_metrics:
             logger.error(f"Metric {metric} not supported")
             continue
@@ -3098,7 +3141,6 @@ def binary_threshold_vs_metric(
         scores = []
 
         for i, prob in enumerate(probs):
-
             scores_alg = []
 
             if len(prob.shape) == 2:
@@ -3135,6 +3177,78 @@ def binary_threshold_vs_metric(
         visualization_utils.threshold_vs_metric_plot(
             thresholds, scores, model_names_list, title=f"Binary threshold vs {metric}", filename=filename
         )
+
+
+@DeveloperAPI
+def precision_recall_curves(
+    probabilities_per_model: List[np.array],
+    ground_truth: Union[pd.Series, np.ndarray],
+    metadata: dict,
+    output_feature_name: str,
+    positive_label: int = 1,
+    model_names: Union[str, List[str]] = None,
+    output_directory: str = None,
+    file_format: str = "pdf",
+    ground_truth_apply_idx: bool = True,
+    **kwargs,
+) -> None:
+    """Show the precision recall curves for output features in the specified models.
+
+    This visualization produces a line chart plotting a precision recall curve for the
+    specified output feature name. If output feature name is a category feature,
+    `positive_label` indicates which is the class to be considered positive
+    class and all the others will be considered negative. `positive_label` is
+    the encoded numeric value for category classes. The numeric value can be
+    determined by association between classes and integers captured in the
+    training metadata JSON file.
+
+    # Inputs
+
+    :param probabilities_per_model: (List[numpy.array]) list of model
+        probabilities.
+    :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
+    :param metadata: (dict) feature metadata dictionary
+    :param output_feature_name: (str) output feature name
+    :param positive_label: (int, default: `1`) numeric encoded value for the
+        positive class.
+    :param model_names: (Union[str, List[str]], default: `None`) model name or
+        list of the model names to use as labels.
+    :param output_directory: (str, default: `None`) directory where to save
+        plots. If not specified, plots will be displayed in a window
+    :param file_format: (str, default: `'pdf'`) file format of output plots -
+        `'pdf'` or `'png'`.
+    :param ground_truth_apply_idx: (bool, default: `True`) whether to use
+        metadata['str2idx'] in np.vectorize
+
+    # Return
+
+    :return: (None)
+    """
+    if not isinstance(ground_truth, np.ndarray):
+        # not np array, assume we need to translate raw value to encoded value
+        feature_metadata = metadata[output_feature_name]
+        ground_truth, positive_label = _convert_ground_truth(
+            ground_truth, feature_metadata, ground_truth_apply_idx, positive_label
+        )
+
+    probs = probabilities_per_model
+    model_names_list = convert_to_list(model_names)
+    precision_recalls = []
+
+    for _, prob in enumerate(probs):
+        if len(prob.shape) > 1:
+            prob = prob[:, positive_label]
+        precision, recall, _ = sklearn.metrics.precision_recall_curve(ground_truth, prob, pos_label=positive_label)
+        precision_recalls.append({"precisions": precision, "recalls": recall})
+
+    filename = None
+    if output_directory:
+        os.makedirs(output_directory, exist_ok=True)
+        filename = os.path.join(output_directory, "precision_recall_curve." + file_format)
+
+    visualization_utils.precision_recall_curves_plot(
+        precision_recalls, model_names_list, title="Precision Recall Curves", filename=filename
+    )
 
 
 @DeveloperAPI
@@ -3668,7 +3782,6 @@ def frequency_vs_f1(
 
     for i, test_stats in enumerate(test_stats_per_model_list):
         for of_name in output_feature_names:
-
             # Figure out model name
             model_name = model_names_list[i] if model_names_list is not None and i < len(model_names_list) else ""
 
