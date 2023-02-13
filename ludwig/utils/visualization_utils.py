@@ -907,8 +907,7 @@ def precision_recall_curves_plot(
     filename: str = None,
     callbacks=None,
 ):
-    """
-    Generates a precision recall curve for each model in the model_names list.
+    """Generates a precision recall curve for each model in the model_names list.
 
     Args:
         precision_recalls: A list of dictionaries representing the precision and recall values for each model
