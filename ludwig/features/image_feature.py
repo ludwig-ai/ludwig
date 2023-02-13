@@ -807,7 +807,12 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
             proc_df[feature_config[PROC_COLUMN]] = np.arange(num_images)
 
-        if num_failed_image_reads > 0:
+        if num_failed_image_reads == len(proc_col):
+            raise ValueError(
+                f"Failed to read any images from column {feature_config[COLUMN]}. "
+                f"Please check that the paths are correct and that the images are readable."
+            )
+        elif num_failed_image_reads > 0:
             logger.warning(
                 f"Failed to read {num_failed_image_reads} images while preprocessing feature `{name}`. "
                 "Using default image for these rows in the dataset."
