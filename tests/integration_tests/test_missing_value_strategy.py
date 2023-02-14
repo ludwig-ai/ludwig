@@ -174,7 +174,6 @@ def test_outlier_strategy(outlier_strategy, outlier_threshold, backend, tmpdir, 
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
     }
 
     # Run preprocessing
