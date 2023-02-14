@@ -26,7 +26,7 @@ def explore_properties(properties: Dict[str, Any], parent_key: str, dq: Deque[Tu
             if only_include and key not in only_include:
                 continue
 
-            key_so_far = parent_key + "." + key
+            key_so_far = parent_key + "." + key if parent_key else key
             config_options, _ = dq.popleft()
             item = properties[key]
 
@@ -101,8 +101,15 @@ def get_potential_values(item: Dict[str, Any]):
 
 
 def handle_property_type(property_type, item):
-    # don't explore internal only parameters
+    # don't explore internal only parameters.
     if "parameter_metadata" in item and item["parameter_metadata"] and item["parameter_metadata"]["internal_only"]:
+        return []
+    # don't explore parameters that have priority less than HIGH.
+    if (
+        "parameter_metadata" in item
+        and item["parameter_metadata"]
+        and item["parameter_metadata"]["expected_impact"] < 3
+    ):
         return []
 
     if property_type == "number":
@@ -139,7 +146,8 @@ def explore_number(item):
 def explore_integer(item):
     # add min and max rules
     minimum, maximum = 0, 10
-    if item["default"] is None:
+
+    if "default" not in item or item["default"] is None:
         candidates = []
     else:
         candidates = [item["default"], 2 * (item["default"] + 1), item["default"] // 2, -1 * item["default"]]

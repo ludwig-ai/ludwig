@@ -7,8 +7,8 @@ import yaml
 from explore_schema import create_nested_dict, explore_properties, generate_possible_configs
 
 from ludwig.api import LudwigModel
+from ludwig.config_validation.validation import get_schema
 from ludwig.datasets import get_dataset
-from ludwig.schema import get_schema
 from ludwig.utils.misc_utils import merge_dict
 
 AMES_HOUSING_CONFIG = """
