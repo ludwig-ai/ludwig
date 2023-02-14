@@ -693,41 +693,45 @@ def test_torchscript_preproc_with_nans(tmpdir, csv_filename, feature):
         assert utils.is_all_close(feature_values, feature_values_expected), f"feature: {feature_name}"
 
 
+@pytest.mark.gpu
 @pytest.mark.skipif(torch.cuda.device_count() == 0, reason="test requires at least 1 gpu")
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="test requires gpu support")
 @pytest.mark.distributed
-@pytest.mark.parametrize(
-    "feature_fn",
-    [
-        number_feature,
-        image_feature,
-        audio_feature,
-        h3_feature,
-        date_feature,
-        # TODO: future support
-        # binary_feature(),                # Torchscript takes List[str] as input, so currently CPU only
-        # category_feature(encoder={"vocab_size": 3}),  # Torchscript takes List[str] as input, so currently CPU only
-        # set_feature(encoder={"vocab_size": 3}),       # Torchscript takes List[str] as input, so currently CPU only
-        # sequence_feature(encoder={"vocab_size": 3}),  # Torchscript takes List[str] as input, so currently CPU only
-        # text_feature(encoder={"vocab_size": 3}),      # Torchscript takes List[str] as input, so currently CPU only
-        # vector_feature(),                # Torchscript takes List[str] as input, so currently CPU only
-        # bag_feature(encoder={"vocab_size": 3}),       # Torchscript takes List[str] as input, so currently CPU only
-        # timeseries_feature(),            # Torchscript takes List[str] as input, so currently CPU only
-    ],
-)
-def test_torchscript_preproc_gpu(tmpdir, csv_filename, feature_fn):
+def test_torchscript_preproc_gpu(tmpdir, csv_filename):
     data_csv_path = os.path.join(tmpdir, csv_filename)
-
-    feature_kwargs = {}
-    if feature_fn in {image_feature, audio_feature}:
-        dest_folder = os.path.join(tmpdir, "generated_samples")
-        feature_kwargs["folder"] = dest_folder
-
+    image_dest_folder = os.path.join(tmpdir, "generated_images")
+    audio_dest_folder = os.path.join(tmpdir, "generated_audio")
+    
+    # Configure features to be tested:
+    bin_str_feature_input_feature = binary_feature()
+    bin_str_feature_output_feature = binary_feature(output_feature=True)
+    transformed_number_features = [
+        number_feature(preprocessing={"normalization": numeric_transformer})
+        for numeric_transformer in numeric_transformation_registry.keys()
+    ]
     input_features = [
-        feature_fn(**feature_kwargs),
+        bin_str_feature_input_feature,
+        binary_feature(),
+        *transformed_number_features,
+        category_feature(encoder={"vocab_size": 3}),
+        bag_feature(encoder={"vocab_size": 3}),
+        set_feature(encoder={"vocab_size": 3}),
+        vector_feature(),
+        image_feature(image_dest_folder),
+        audio_feature(audio_dest_folder),
+        # TODO: future support
+        # date_feature(),
+        # h3_feature(),
     ]
     output_features = [
-        binary_feature(),
+        bin_str_feature_output_feature,
+        binary_feature(output_feature=True),
+        number_feature(),
+        category_feature(decoder={"vocab_size": 3}),
+        set_feature(decoder={"vocab_size": 3}),
+        vector_feature(),
+        sequence_feature(decoder={"vocab_size": 3}),
+        text_feature(decoder={"vocab_size": 3}),
     ]
 
     config = {

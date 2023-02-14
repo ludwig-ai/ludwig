@@ -90,6 +90,7 @@ def test_horovod_implicit(csv_filename):
     _run_horovod(csv_filename, **ludwig_kwargs)
 
 
+@pytest.mark.gpu
 @pytest.mark.skipif(platform.system() == "Windows", reason="Horovod is not supported on Windows")
 @pytest.mark.skipif(not _nccl_available(), reason="test requires Horovod with NCCL support")
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="test requires multi-GPU machine")
