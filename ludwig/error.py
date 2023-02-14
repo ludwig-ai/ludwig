@@ -20,7 +20,12 @@ from ludwig.api_annotations import PublicAPI
 class LudwigError(Exception):
     """Base class for all custom exceptions raised by the Ludwig framework."""
 
-    pass
+    def __reduce__(self):
+        """Docs: https://docs.python.org/3/library/pickle.html#object.__reduce__."""
+        raise NotImplementedError(
+            "Implement __reduce__ for all subclasses of LudwigError as it's necessary for "
+            "serialization by Ray. See https://github.com/ludwig-ai/ludwig/pull/2695."
+        )
 
 
 @PublicAPI
@@ -62,3 +67,6 @@ class ConfigValidationError(LudwigError, ValueError):
     def __init__(self, message: str):
         self.message = message
         super().__init__(message)
+
+    def __reduce__(self):
+        return type(self), (self.message,)
