@@ -141,9 +141,9 @@ class InterQuartileTransformer(nn.Module):
     def fit_transform_params(column: np.ndarray, backend: "Backend") -> dict:  # noqa
         compute = backend.df_engine.compute
         return {
-            "q1": compute(np.percentile(column.astype(np.float32), 25)),
-            "q2": compute(np.percentile(column.astype(np.float32), 50)),
-            "q3": compute(np.percentile(column.astype(np.float32), 75)),
+            "q1": np.percentile(compute(column.astype(np.float32)), 25),
+            "q2": np.percentile(compute(column.astype(np.float32)), 50),
+            "q3": np.percentile(compute(column.astype(np.float32)), 75),
         }
 
 
