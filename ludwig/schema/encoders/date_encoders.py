@@ -75,6 +75,7 @@ class DateEmbedConfig(BaseEncoderConfig):
     norm: str = schema_utils.StringOptions(
         ["batch", "layer"],
         default=None,
+        allow_none=True,
         description="The default norm that will be used for each layer.",
         parameter_metadata=ENCODER_METADATA["DateEmbed"]["norm"],
     )
@@ -152,6 +153,7 @@ class DateWaveConfig(BaseEncoderConfig):
     norm: str = schema_utils.StringOptions(
         ["batch", "layer"],
         default=None,
+        allow_none=True,
         description="The default norm that will be used for each layer.",
         parameter_metadata=ENCODER_METADATA["DateWave"]["norm"],
     )
