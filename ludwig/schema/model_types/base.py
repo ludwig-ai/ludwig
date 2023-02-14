@@ -93,7 +93,7 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
         try:
             config_obj: ModelConfig = schema.load(config)
         except ValidationError as e:
-            raise ConfigValidationError("Config validation error raised during config deserialization") from e
+            raise ConfigValidationError(f"Config validation error raised during config deserialization: {e}") from e
         return config_obj
 
     @staticmethod

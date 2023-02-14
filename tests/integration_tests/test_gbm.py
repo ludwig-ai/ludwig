@@ -8,10 +8,10 @@ try:
     import ray as _ray
 except ImportError:
     _ray = None
-from marshmallow import ValidationError
 
 from ludwig.api import LudwigModel
 from ludwig.constants import COLUMN, INPUT_FEATURES, MODEL_TYPE, NAME, OUTPUT_FEATURES, TRAINER
+from ludwig.error import ConfigValidationError
 from tests.integration_tests import synthetic_test_data
 from tests.integration_tests.utils import binary_feature
 from tests.integration_tests.utils import category_feature as _category_feature
@@ -319,7 +319,7 @@ def test_boosting_type_rf_invalid(tmpdir, local_backend):
     input_features = [number_feature()]
     output_features = [binary_feature()]
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend, boosting_type="rf")
 
 
@@ -344,7 +344,7 @@ def test_boosting_type_null_invalid(tree_learner, tmpdir, local_backend):
     input_features = [number_feature()]
     output_features = [binary_feature()]
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         _train_and_predict_gbm(
             input_features, output_features, tmpdir, local_backend, boosting_type=None, tree_learner=tree_learner
         )
@@ -359,7 +359,7 @@ def test_tree_learner_null_invalid(boosting_type, tmpdir, local_backend):
     input_features = [number_feature()]
     output_features = [binary_feature()]
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         _train_and_predict_gbm(
             input_features, output_features, tmpdir, local_backend, boosting_type=boosting_type, tree_learner=None
         )
