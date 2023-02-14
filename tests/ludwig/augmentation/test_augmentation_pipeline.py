@@ -300,9 +300,20 @@ def test_invalid_augmentation_parameters(
 def test_load_model_with_augmentation_pipeline(
     train_data_rgb,
 ):
-    augmentation_pipeline_ops = [{"type": "random_blur"}, {"type": "random_rotate"}, ]
-    preprocessing = {"standardize_image": None, "width": 300, "height": 300, }
-    encoder = {"type": "alexnet", "use_pretrained": False, "model_cache_dir": os.path.join(os.getcwd(), "tv_cache"), }
+    augmentation_pipeline_ops = [
+        {"type": "random_blur"},
+        {"type": "random_rotate"},
+    ]
+    preprocessing = {
+        "standardize_image": None,
+        "width": 300,
+        "height": 300,
+    }
+    encoder = {
+        "type": "alexnet",
+        "use_pretrained": False,
+        "model_cache_dir": os.path.join(os.getcwd(), "tv_cache"),
+    }
 
     model = run_augmentation_training(
         train_data=train_data_rgb,
