@@ -19,7 +19,7 @@ from typing import Dict, List, Optional, Tuple, Union
 import numpy as np
 import torch
 
-from ludwig.constants import NAME, PREPROCESSING, SEQUENCE, TEXT, TIMESERIES
+from ludwig.constants import NAME, PREPROCESSING, SEQUENCE, TEXT, TIMESERIES, TYPE
 from ludwig.utils.data_utils import hash_dict
 from ludwig.utils.strings_utils import get_tokenizer_from_registry, UNKNOWN_SYMBOL
 
@@ -101,22 +101,20 @@ def sanitize(name):
 
 def compute_feature_hash(feature: dict) -> str:
     """
-    This function computes a hash for each feature based on the preprocessing dictionary associated with each feature.
-    The input is always the feature dict, however sometimes, this is called from BaseFeature which dumps the feature
-    dict from a ConfigObject and the preprocessing key corresponds to a nested Preprocessing config. This is why it
-    includes the if/else statement.
+    This function computes a hash for each feature based on the preprocessing dictionary associated with each feature,
+    as well as the feature's type.
+
     Args:
         feature: Feature dictionary
 
     Returns: Feature hash name
-
     """
-    preproc = feature.get(PREPROCESSING, {})
-    if isinstance(preproc, dict):
-        preproc_hash = hash_dict(preproc)
-    else:
-        preproc_hash = hash_dict(preproc.to_dict())
-    return sanitize(feature[NAME]) + "_" + preproc_hash.decode("ascii")
+    feature_data = dict(
+        preprocessing=feature.get(PREPROCESSING, {}),
+        type=feature[TYPE],
+    )
+    feature_data_hash = hash_dict(feature_data)
+    return sanitize(feature[NAME]) + "_" + feature_data_hash.decode("ascii")
 
 
 def get_input_size_with_dependencies(
