@@ -39,6 +39,7 @@ from ludwig.constants import (
     FILL_WITH_MEAN,
     FILL_WITH_MODE,
     FULL,
+    META,
     MIN_DATASET_SPLIT_ROWS,
     MODEL_ECD,
     NAME,
@@ -52,13 +53,13 @@ from ludwig.constants import (
     TYPE,
     VALIDATION,
 )
+from ludwig.data.cache.manager import DatasetCache
 from ludwig.data.cache.types import wrap
 from ludwig.data.concatenate_datasets import concatenate_df, concatenate_files, concatenate_splits
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.split import get_splitter, split_dataset
 from ludwig.data.utils import set_fixed_split
 from ludwig.features.feature_registries import get_base_type_registry
-from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.models.embedder import create_embed_batch_size_evaluator, create_embed_transform_fn
 from ludwig.schema.encoders.utils import get_encoder_cls
 from ludwig.types import FeatureConfigDict, PreprocessingConfigDict, TrainingSetMetadataDict
@@ -1131,8 +1132,6 @@ def build_dataset(
     feature_configs = []
     feature_hashes = set()
     for feature in features:
-        if PROC_COLUMN not in feature:
-            feature[PROC_COLUMN] = compute_feature_hash(feature)
         if feature[PROC_COLUMN] not in feature_hashes:
             feature_configs.append(feature)
             feature_hashes.add(feature[PROC_COLUMN])
@@ -1225,7 +1224,14 @@ def build_dataset(
     # At this point, there should be no missing values left in the dataframe, unless
     # the DROP_ROW preprocessing option was selected, in which case we need to drop those
     # rows.
+    len_dataset_before_drop_rows = len(dataset)
     dataset = dataset.dropna()
+    len_dataset_after_drop_rows = len(dataset)
+
+    logger.warning(
+        f"Dropped a total of {len_dataset_before_drop_rows - len_dataset_after_drop_rows} rows out of "
+        f"{len_dataset_before_drop_rows} due to missing values"
+    )
 
     # NaNs introduced by outer join change dtype of dataset cols (upcast to float64), so we need to cast them back.
     col_name_to_dtype = {}
@@ -1559,7 +1565,15 @@ def handle_missing_values(dataset_cols, feature, preprocessing_parameters: Prepr
         # Here we only drop from this series, but after preprocessing we'll do a second
         # round of dropping NA values from the entire output dataframe, which will
         # result in the removal of the rows.
+        len_before_dropped_rows = len(dataset_cols[feature[COLUMN]])
         dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].dropna()
+        len_after_dropped_rows = len(dataset_cols[feature[COLUMN]])
+
+        logger.warning(
+            f"DROP_ROW missing value strategy applied. Dropped {len_before_dropped_rows - len_after_dropped_rows} "
+            f"samples out of {len_before_dropped_rows} from column {feature[COLUMN]}. The rows containing these "
+            f"samples will ultimately be dropped from the dataset."
+        )
     else:
         raise ValueError(f"Invalid missing value strategy {missing_value_strategy}")
 
@@ -1651,14 +1665,14 @@ def preprocess_for_training(
 
         if data_format in CACHEABLE_FORMATS:
             with backend.storage.cache.use_credentials():
+                # cache.get() returns valid indicating if the checksum for the current config
+                # is equal to that from the cached training set metadata, as well as the paths to the
+                # cached training set metadata, training set, validation_set, test set
                 cache_results = cache.get()
                 if cache_results is not None:
                     valid, *cache_values = cache_results
                     if valid:
-                        logger.info(
-                            "Found cached dataset and meta.json with the same filename "
-                            "of the dataset, using them instead"
-                        )
+                        logger.info(_get_cache_hit_message(cache))
                         training_set_metadata, training_set, test_set, validation_set = cache_values
                         config["data_hdf5_fp"] = training_set
                         data_format = backend.cache.data_format
@@ -1994,10 +2008,7 @@ def preprocess_for_prediction(
             if cache_results is not None:
                 valid, *cache_values = cache_results
                 if valid:
-                    logger.info(
-                        "Found cached dataset and meta.json with the same filename "
-                        "of the input file, using them instead"
-                    )
+                    logger.info(_get_cache_hit_message(cache))
                     training_set_metadata, training_set, test_set, validation_set = cache_values
                     config["data_hdf5_fp"] = training_set
                     data_format = backend.cache.data_format
@@ -2051,3 +2062,14 @@ def preprocess_for_prediction(
         )
 
     return dataset, training_set_metadata
+
+
+def _get_cache_hit_message(cache: DatasetCache) -> str:
+    return (
+        "Found cached dataset and meta.json with the same filename of the dataset.\n"
+        "Using cached values instead of preprocessing the dataset again.\n"
+        f"- Cached training set metadata path: {cache.get_cached_obj_path(META)}\n"
+        f"- Cached training set path: {cache.get_cached_obj_path(TRAINING)}\n"
+        f"- Cached validation set path: {cache.get_cached_obj_path(VALIDATION)}\n"
+        f"- Cached test set path: {cache.get_cached_obj_path(TEST)}"
+    )

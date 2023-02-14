@@ -100,7 +100,6 @@ MISSING_VALUE_STRATEGY = "missing_value_strategy"
 MISSING_VALUE_STRATEGY_OPTIONS = [
     FILL_WITH_CONST,
     FILL_WITH_MODE,
-    FILL_WITH_MEAN,
     BFILL,
     FFILL,
     DROP_ROW,
@@ -278,3 +277,5 @@ JITTER = (0, 1)
 
 # image support constants
 IMAGENET1K = "imagenet1k"
+
+AUGMENTATION = "augmentation"

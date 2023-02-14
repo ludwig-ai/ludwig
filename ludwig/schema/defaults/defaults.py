@@ -57,6 +57,7 @@ def get_defaults_jsonschema():
     combiner's field constraints."""
     preproc_schema = schema_utils.unload_jsonschema_from_marshmallow_class(DefaultsConfig)
     props = preproc_schema["properties"]
+
     return {
         "type": "object",
         "properties": props,

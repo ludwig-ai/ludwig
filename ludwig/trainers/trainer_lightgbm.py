@@ -11,7 +11,7 @@ import lightgbm as lgb
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from ludwig.constants import BINARY, CATEGORY, LOSS, MINIMIZE, MODEL_GBM, NUMBER, TEST, TRAIN, TRAINING, VALIDATION
+from ludwig.constants import BINARY, CATEGORY, MINIMIZE, MODEL_GBM, NUMBER, TEST, TRAIN, TRAINING, VALIDATION
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.globals import is_progressbar_disabled, TRAINING_CHECKPOINTS_DIR_PATH, TRAINING_PROGRESS_TRACKER_FILE_NAME
@@ -572,33 +572,6 @@ class LightGBMTrainer(BaseTrainer):
             signal.signal(signal.SIGINT, self.set_steps_to_1_or_quit)
 
         # TODO: construct new datasets by running encoders (for text, image)
-
-        metrics_names = get_metric_names(output_features)
-
-        # check if validation_field is valid
-        valid_validation_field = False
-        if self.validation_field == "combined":
-            valid_validation_field = True
-            if self.validation_metric is not LOSS and len(output_features) == 1:
-                only_of = next(iter(output_features))
-                if self.validation_metric in metrics_names[only_of]:
-                    self._validation_field = only_of
-                    logger.warning(
-                        "Replacing 'combined' validation field "
-                        "with '{}' as the specified validation "
-                        "metric {} is invalid for 'combined' "
-                        "but is valid for '{}'.".format(only_of, self.validation_metric, only_of)
-                    )
-        else:
-            for output_feature in output_features:
-                if self.validation_field == output_feature:
-                    valid_validation_field = True
-
-        if not valid_validation_field:
-            raise ValueError(
-                "The specified validation_field {} is not valid."
-                "Available ones are: {}".format(self.validation_field, list(output_features.keys()) + ["combined"])
-            )
 
         # ====== Setup file names =======
         training_checkpoints_path = None

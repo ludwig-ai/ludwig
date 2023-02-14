@@ -19,7 +19,7 @@ class SequenceEncoderConfig(BaseEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("passthrough", [SEQUENCE, TEXT, TIMESERIES])
+@register_encoder_config("passthrough", [TIMESERIES])
 @ludwig_dataclass
 class SequencePassthroughConfig(SequenceEncoderConfig):
     @staticmethod
@@ -740,12 +740,10 @@ class StackedRNNConfig(SequenceEncoderConfig):
     )
 
     cell_type: str = schema_utils.StringOptions(
-        ["rnn", "lstm", "lstm_block", "ln", "lstm_cudnn", "gru", "gru_block", "gru_cudnn"],
+        ["rnn", "lstm", "gru"],
         default="rnn",
-        description="The type of recurrent cell to use. Available values are: `rnn`, `lstm`, `lstm_block`, `lstm`, "
-        "`ln`, `lstm_cudnn`, `gru`, `gru_block`, `gru_cudnn`. For reference about the differences between "
-        "the cells please refer to PyTorch's documentation. We suggest to use the `block` variants on "
-        "CPU and the `cudnn` variants on GPU because of their increased speed. ",
+        description="The type of recurrent cell to use. Available values are: `rnn`, `lstm`, `gru`. For reference "
+        "about the differences between the cells please refer to PyTorch's documentation",
         parameter_metadata=ENCODER_METADATA["StackedRNN"]["cell_type"],
     )
 
@@ -968,12 +966,10 @@ class StackedCNNRNNConfig(SequenceEncoderConfig):
     )
 
     cell_type: str = schema_utils.StringOptions(
-        ["rnn", "lstm", "lstm_block", "ln", "lstm_cudnn", "gru", "gru_block", "gru_cudnn"],
+        ["rnn", "lstm", "gru"],
         default="rnn",
-        description="The type of recurrent cell to use. Available values are: `rnn`, `lstm`, `lstm_block`, `lstm`, "
-        "`ln`, `lstm_cudnn`, `gru`, `gru_block`, `gru_cudnn`. For reference about the differences between "
-        "the cells please refer to PyTorch's documentation. We suggest to use the `block` variants on "
-        "CPU and the `cudnn` variants on GPU because of their increased speed. ",
+        description="The type of recurrent cell to use. Available values are: `rnn`, `lstm`, `gru`. For reference "
+        "about the differences between the cells please refer to PyTorch's documentation.",
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["cell_type"],
     )
 
