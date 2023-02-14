@@ -146,6 +146,8 @@ def run_augmentation_training(
         skip_save_model=True,
     )
 
+    return model
+
 
 @pytest.mark.parametrize(
     "augmentation_pipeline_ops",
@@ -182,7 +184,7 @@ AUGMENTATION_PIPELINE_OPS = [
 
 IMAGE_ENCODER = [
     {"type": "stacked_cnn"},
-    {"type": "alexnet", "model_cache_dir": os.path.join(os.getcwd(), "tv_cache")},
+    {"type": "alexnet", "use_pretrained": False, "model_cache_dir": os.path.join(os.getcwd(), "tv_cache")},
 ]
 
 IMAGE_PREPROCESSING = [
@@ -292,3 +294,24 @@ def test_invalid_augmentation_parameters(
             preprocessing={},
             augmentation_pipeline_ops=augmentation_pipeline_ops,
         )
+
+
+# tests saving and loading a model with augmentation pipeline
+def test_load_model_with_augmentation_pipeline(
+    train_data_rgb,
+):
+    augmentation_pipeline_ops = [{"type": "random_blur"}, {"type": "random_rotate"}, ]
+    preprocessing = {"standardize_image": None, "width": 300, "height": 300, }
+    encoder = {"type": "alexnet", "use_pretrained": False, "model_cache_dir": os.path.join(os.getcwd(), "tv_cache"), }
+
+    model = run_augmentation_training(
+        train_data=train_data_rgb,
+        backend="local",
+        encoder=encoder,  # Ludwig encoder
+        preprocessing=preprocessing,  # Ludwig image preprocessing
+        augmentation_pipeline_ops=augmentation_pipeline_ops,  # Ludwig image augmentation
+    )
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        model.save(tmp_dir)
+        LudwigModel.load(tmp_dir)
