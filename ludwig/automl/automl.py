@@ -50,6 +50,7 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.contrib import add_contrib_callback_args
+from ludwig.datasets import load_dataset_uris
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.hyperopt.run import hyperopt
 from ludwig.profiling import dataset_profile_pb2
@@ -264,6 +265,8 @@ def create_auto_config(
     backend = initialize_backend(backend)
 
     if not isinstance(dataset, DatasetInfo):
+        # preload ludwig datasets
+        dataset, _, _, _ = load_dataset_uris(dataset, None, None, None, backend)
         dataset = load_dataset(dataset, df_lib=backend.df_engine.df_lib)
 
     dataset_info = get_dataset_info(dataset) if not isinstance(dataset, DatasetInfo) else dataset
