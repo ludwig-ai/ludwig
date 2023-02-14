@@ -1954,6 +1954,9 @@ def preprocess_for_prediction(
     if isinstance(dataset, Dataset):
         return dataset, training_set_metadata
 
+    # preload ludwig datasets
+    dataset, _, _, _ = load_dataset_uris(dataset, None, None, None, backend)
+
     # determine data format if not provided or auto
     if not data_format or data_format == "auto":
         data_format = figure_data_format(dataset)
