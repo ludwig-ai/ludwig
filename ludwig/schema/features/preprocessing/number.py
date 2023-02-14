@@ -59,6 +59,7 @@ class NumberPreprocessingConfig(BasePreprocessingConfig):
         allow_none=True,
         description="What strategy to follow when there's an outlier in a number column, "
         "defaults to doing nothing (leaving the outliers as-is)",
+        parameter_metadata=FEATURE_METADATA[NUMBER][PREPROCESSING]["outlier_strategy"],
     )
 
     outlier_threshold: Optional[float] = schema_utils.FloatRange(
@@ -66,6 +67,7 @@ class NumberPreprocessingConfig(BasePreprocessingConfig):
         allow_none=False,
         min=0.0,
         description="Standard deviations from the mean past which a value is considered an outlier",
+        parameter_metadata=FEATURE_METADATA[NUMBER][PREPROCESSING]["outlier_threshold"],
     )
 
     computed_outlier_fill_value: float = schema_utils.FloatRange(
@@ -73,7 +75,7 @@ class NumberPreprocessingConfig(BasePreprocessingConfig):
         allow_none=False,
         description="The internally computed fill value to replace outliers with in case the "
         "outlier_strategy is fill_with_mode or fill_with_mean",
-        parameter_metadata=FEATURE_METADATA[NUMBER][PREPROCESSING]["computed_fill_value"],
+        parameter_metadata=FEATURE_METADATA[NUMBER][PREPROCESSING]["computed_outlier_fill_value"],
     )
 
 
