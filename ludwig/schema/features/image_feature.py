@@ -13,7 +13,6 @@ from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassFie
 from ludwig.schema.features.utils import defaults_config_registry, ecd_input_config_registry, input_mixin_registry
 from ludwig.schema.utils import BaseMarshmallowConfig, ludwig_dataclass
 
-
 # Augmentation operations when augmentation is set to True
 AUGMENTATION_DEFAULT_OPERATIONS = [
     RandomHorizontalFlipConfig(),
