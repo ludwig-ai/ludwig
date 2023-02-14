@@ -674,6 +674,12 @@ def test_augmentation_pipeline(augmentation, expected):
     config_obj = ModelConfig.from_dict(config)
     assert config_obj.input_features[0].augmentation == expected
 
+    # Test serialized dict form is fully rendered
+    config_dict = config_obj.to_dict()
+    assert len(config_dict["input_features"][0]["augmentation"]) == len(expected)
+    for aug in config_dict["input_features"][0]["augmentation"]:
+        assert isinstance(aug, dict)
+
     # Test the serializing and reloading yields the same results
-    config_obj2 = ModelConfig.from_dict(config_obj.to_dict())
+    config_obj2 = ModelConfig.from_dict(config_dict)
     assert config_obj2.input_features[0].augmentation == config_obj.input_features[0].augmentation
