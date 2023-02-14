@@ -756,9 +756,10 @@ def test_torchscript_gpu(tmpdir, csv_filename, ray_cluster_2cpu):
         load_paths=True,
         device=torch.device("cuda"),
     )
-    preproc_inputs = script_module.preprocessor_forward(inputs)
+    preproc_inputs = script_module.preprocessor_forward(inputs)  # may or may not be on GPU due to preproc of strings
+    predictions_flattened = script_module.predictor_forward(preproc_inputs)
 
-    for name, values in preproc_inputs.items():
+    for name, values in predictions_flattened.items():
         assert values.is_cuda, f'feature "{name}" tensors are not on GPU'
 
 
