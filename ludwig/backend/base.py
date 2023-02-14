@@ -27,6 +27,7 @@ import torch
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend.utils.storage import StorageManager
 from ludwig.data.cache.manager import CacheManager
+from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataframe.pandas import PANDAS
 from ludwig.data.dataset.base import DatasetManager
 from ludwig.data.dataset.pandas import PandasDatasetManager
@@ -94,7 +95,7 @@ class Backend(ABC):
 
     @property
     @abstractmethod
-    def df_engine(self):
+    def df_engine(self) -> DataFrameEngine:
         raise NotImplementedError()
 
     @property

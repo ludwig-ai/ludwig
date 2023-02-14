@@ -59,6 +59,7 @@ from ludwig.data.concatenate_datasets import concatenate_df, concatenate_files, 
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.split import get_splitter, split_dataset
 from ludwig.data.utils import set_fixed_split
+from ludwig.datasets import load_dataset_uris
 from ludwig.features.feature_registries import get_base_type_registry
 from ludwig.models.embedder import create_embed_batch_size_evaluator, create_embed_transform_fn
 from ludwig.schema.encoders.utils import get_encoder_cls
@@ -1224,7 +1225,14 @@ def build_dataset(
     # At this point, there should be no missing values left in the dataframe, unless
     # the DROP_ROW preprocessing option was selected, in which case we need to drop those
     # rows.
+    len_dataset_before_drop_rows = len(dataset)
     dataset = dataset.dropna()
+    len_dataset_after_drop_rows = len(dataset)
+
+    logger.warning(
+        f"Dropped a total of {len_dataset_before_drop_rows - len_dataset_after_drop_rows} rows out of "
+        f"{len_dataset_before_drop_rows} due to missing values"
+    )
 
     # NaNs introduced by outer join change dtype of dataset cols (upcast to float64), so we need to cast them back.
     col_name_to_dtype = {}
@@ -1600,7 +1608,15 @@ def _handle_missing_values(
         # Here we only drop from this series, but after preprocessing we'll do a second
         # round of dropping NA values from the entire output dataframe, which will
         # result in the removal of the rows.
+        len_before_dropped_rows = len(dataset_cols[feature[COLUMN]])
         dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].dropna()
+        len_after_dropped_rows = len(dataset_cols[feature[COLUMN]])
+
+        logger.warning(
+            f"DROP_ROW missing value strategy applied. Dropped {len_before_dropped_rows - len_after_dropped_rows} "
+            f"samples out of {len_before_dropped_rows} from column {feature[COLUMN]}. The rows containing these "
+            f"samples will ultimately be dropped from the dataset."
+        )
     else:
         raise ValueError(f"Invalid missing value strategy {missing_value_strategy}")
 
@@ -1655,6 +1671,11 @@ def preprocess_for_training(
     if dataset is None and training_set is None:
         raise ValueError("No training data is provided!")
 
+    # preload ludwig datasets
+    dataset, training_set, validation_set, test_set = load_dataset_uris(
+        dataset, training_set, validation_set, test_set, backend
+    )
+
     # determine data format if not provided or auto
     if not data_format or data_format == "auto":
         data_format = figure_data_format(dataset, training_set, validation_set, test_set)
@@ -1708,7 +1729,7 @@ def preprocess_for_training(
                     else:
                         logger.info(
                             "Found cached dataset and meta.json with the same filename "
-                            "of the dataset, but checksum don't match, "
+                            "of the dataset, but checksums don't match, "
                             "if saving of processed input is not skipped "
                             "they will be overridden"
                         )
@@ -1989,6 +2010,9 @@ def preprocess_for_prediction(
 
     if isinstance(dataset, Dataset):
         return dataset, training_set_metadata
+
+    # preload ludwig datasets
+    dataset, _, _, _ = load_dataset_uris(dataset, None, None, None, backend)
 
     # determine data format if not provided or auto
     if not data_format or data_format == "auto":
