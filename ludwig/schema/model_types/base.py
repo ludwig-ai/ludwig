@@ -1,6 +1,6 @@
 import copy
 from abc import ABC
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Set
 
 from marshmallow import ValidationError
 
@@ -99,6 +99,22 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
     @staticmethod
     def from_yaml(config_path: str) -> "ModelConfig":
         return ModelConfig.from_dict(load_yaml(config_path))
+
+    def get_feature_names(self) -> Set[str]:
+        """Returns a set of all feature names."""
+        feature_names = set()
+        feature_names.update([f.column for f in self.input_features])
+        feature_names.update([f.column for f in self.output_features])
+        return feature_names
+
+    def get_feature_config(self, feature_column_name: str) -> Optional[BaseInputFeatureConfig]:
+        """Returns the feature config for the given feature name."""
+        for feature in self.input_features:
+            if feature.column == feature_column_name:
+                return feature
+        for feature in self.output_features:
+            if feature.column == feature_column_name:
+                return feature
 
 
 @DeveloperAPI
