@@ -192,7 +192,7 @@ class FeatureCollection(Generic[T], schema_utils.ListSerializable):
     def __len__(self):
         return len(self._features)
 
-    def __getitem__(self, i):
+    def __getitem__(self, i) -> T:
         if isinstance(i, str):
             return self._name_to_features[i]
         else:

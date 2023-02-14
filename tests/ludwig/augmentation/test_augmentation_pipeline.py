@@ -145,6 +145,7 @@ def run_augmentation_training(
         skip_save_processed_input=True,
         skip_save_model=True,
     )
+    return model
 
 
 @pytest.mark.parametrize(
@@ -208,13 +209,18 @@ def test_local_model_training_with_augmentation_pipeline(
     preprocessing,
     augmentation_pipeline_ops,
 ):
-    run_augmentation_training(
+    model = run_augmentation_training(
         train_data=train_data_rgb,
         backend="local",
         encoder=encoder,  # Ludwig encoder
         preprocessing=preprocessing,  # Ludwig image preprocessing
         augmentation_pipeline_ops=augmentation_pipeline_ops,  # Ludwig image augmentation
     )
+
+    if augmentation_pipeline_ops is not False:
+        assert model.config_obj.input_features[0].has_augmentation()
+    else:
+        assert not model.config_obj.input_features[0].has_augmentation()
 
 
 # due to the time it takes to run the tests, run only a subset of the tests
@@ -228,13 +234,18 @@ def test_ray_model_training_with_augmentation_pipeline(
     augmentation_pipeline_ops,
     ray_cluster_2cpu,
 ):
-    run_augmentation_training(
+    model = run_augmentation_training(
         train_data=train_data_rgb,
         backend="ray",
         encoder={"type": "stacked_cnn"},
         preprocessing=preprocessing,
         augmentation_pipeline_ops=augmentation_pipeline_ops,
     )
+
+    if augmentation_pipeline_ops is not False:
+        assert model.config_obj.input_features[0].has_augmentation()
+    else:
+        assert not model.config_obj.input_features[0].has_augmentation()
 
 
 # this test gray-scale image augmentation pipeline

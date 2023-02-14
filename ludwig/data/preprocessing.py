@@ -58,6 +58,7 @@ from ludwig.data.concatenate_datasets import concatenate_df, concatenate_files, 
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.split import get_splitter, split_dataset
 from ludwig.data.utils import set_fixed_split
+from ludwig.datasets import load_dataset_uris
 from ludwig.features.feature_registries import get_base_type_registry
 from ludwig.models.embedder import create_embed_batch_size_evaluator, create_embed_transform_fn
 from ludwig.schema.encoders.utils import get_encoder_cls
@@ -1616,6 +1617,11 @@ def preprocess_for_training(
     if dataset is None and training_set is None:
         raise ValueError("No training data is provided!")
 
+    # preload ludwig datasets
+    dataset, training_set, validation_set, test_set = load_dataset_uris(
+        dataset, training_set, validation_set, test_set, backend
+    )
+
     # determine data format if not provided or auto
     if not data_format or data_format == "auto":
         data_format = figure_data_format(dataset, training_set, validation_set, test_set)
@@ -1669,7 +1675,7 @@ def preprocess_for_training(
                     else:
                         logger.info(
                             "Found cached dataset and meta.json with the same filename "
-                            "of the dataset, but checksum don't match, "
+                            "of the dataset, but checksums don't match, "
                             "if saving of processed input is not skipped "
                             "they will be overridden"
                         )
@@ -1950,6 +1956,9 @@ def preprocess_for_prediction(
 
     if isinstance(dataset, Dataset):
         return dataset, training_set_metadata
+
+    # preload ludwig datasets
+    dataset, _, _, _ = load_dataset_uris(dataset, None, None, None, backend)
 
     # determine data format if not provided or auto
     if not data_format or data_format == "auto":
