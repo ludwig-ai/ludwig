@@ -12,7 +12,6 @@ from ludwig.schema.initializers import (
 )
 from ludwig.schema.metadata import ENCODER_METADATA
 from ludwig.schema.utils import ludwig_dataclass
-from ludwig.utils.torch_utils import initializer_registry
 
 
 class ImageEncoderConfig(BaseEncoderConfig):
@@ -418,15 +417,13 @@ class ResNetConfig(ImageEncoderConfig):
         parameter_metadata=ENCODER_METADATA["ResNet"]["use_bias"],
     )
 
-    bias_initializer: Optional[str] = schema_utils.StringOptions(
-        sorted(list(initializer_registry.keys())),
+    bias_initializer: Optional[str] = BiasInitializerDataclassField(
         default="zeros",
         description="initializer for the bias vector.",
         parameter_metadata=ENCODER_METADATA["ResNet"]["bias_initializer"],
     )
 
-    weights_initializer: Optional[str] = schema_utils.StringOptions(
-        sorted(list(initializer_registry.keys())),
+    weights_initializer: InitializerConfig = WeightsInitializerDataclassField(
         default="xavier_uniform",
         description="Initializer for the weights matrix.",
         parameter_metadata=ENCODER_METADATA["ResNet"]["weights_initializer"],

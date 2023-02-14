@@ -24,7 +24,6 @@ from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.modules.embedding_modules import Embed, EmbedSequence
 from ludwig.modules.fully_connected_modules import FCStack
-from ludwig.modules.initializer_modules import get_initializer
 from ludwig.modules.recurrent_modules import RecurrentStack
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.schema.encoders.h3_encoders import H3EmbedConfig, H3RNNConfig, H3WeightedSumConfig
@@ -275,9 +274,7 @@ class H3WeightedSum(Encoder):
             reduce_output="None",
         )
 
-        self.register_buffer(
-            "aggregation_weights", torch.Tensor(get_initializer(weights_initializer)([H3_INPUT_SIZE, 1]))
-        )
+        self.register_buffer("aggregation_weights", torch.Tensor(weights_initializer([H3_INPUT_SIZE, 1])))
 
         logger.debug("  FCStack")
         self.fc_stack = FCStack(

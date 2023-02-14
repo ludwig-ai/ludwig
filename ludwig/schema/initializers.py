@@ -3,10 +3,11 @@
 https://pytorch.org/docs/stable/nn.init.html
 """
 
-from abc import ABC
+from abc import ABC, abstractmethod
 from dataclasses import field
-from typing import Any, ClassVar, Dict, Union
+from typing import Any, Dict, Union
 
+import torch
 from marshmallow import fields, ValidationError
 from torch import nn
 
@@ -15,14 +16,18 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils.registry import Registry
 
-initializer_registry = Registry()
-bias_initializer_registry = Registry()
+_initializer_registry = Registry()
+
+_bias_initializer_registry = Registry()
+"""A subset of the _initializer_registry, specifically for bias (1-dim) initializers."""
 
 
 @DeveloperAPI
 def register_initializer(name: str):
+    """Register a weights initializer."""
+
     def wrap(initializer_config: InitializerConfig):
-        initializer_registry[name] = (initializer_config.initializer_fn, initializer_config)
+        _initializer_registry[name] = initializer_config
         return initializer_config
 
     return wrap
@@ -30,8 +35,10 @@ def register_initializer(name: str):
 
 @DeveloperAPI
 def register_bias_initializer(name: str):
+    """Register a bias (1-dim) initializer."""
+
     def wrap(initializer_config: InitializerConfig):
-        initializer_registry[name] = (initializer_config.initializer_fn, initializer_config)
+        _bias_initializer_registry[name] = initializer_config
         return initializer_config
 
     return wrap
@@ -40,7 +47,7 @@ def register_bias_initializer(name: str):
 @DeveloperAPI
 def get_initialize_cls(name: str):
     """Get the initializer schema class from the initializer schema class registry."""
-    return initializer_registry[name][1]
+    return _initializer_registry[name]
 
 
 @DeveloperAPI
@@ -50,9 +57,6 @@ class InitializerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     Not meant to be used directly.
     """
-
-    initializer_fn: ClassVar
-    "Class variable pointing to the corresponding initializer function."
 
     type: str
     """Name corresponding to an initializer.
@@ -64,9 +68,13 @@ class InitializerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     def initializer_params(self) -> Dict[str, Any]:
         """Returns all params for this initializers without meta params."""
         params = self.to_dict()
-        params.pop("initializer_fn", None)
         params.pop("type", None)
         return params
+
+    @abstractmethod
+    def __call__(self, tensor: torch.Tensor) -> torch.Tensor:
+        """Call the initializer function on the given tensor."""
+        raise NotImplementedError("Must implement initialization function manually in derived classes.")
 
 
 @DeveloperAPI
@@ -76,13 +84,14 @@ class InitializerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 class UniformInitializer(InitializerConfig):
     """Uniform initialization."""
 
-    initializer_fn: ClassVar = nn.init.uniform_
-
     type: str = schema_utils.ProtectedString("uniform")
 
-    a: float = schema_utils.NonNegativeFloat(default=0.0, description="The lower bound of the uniform distribution")
+    a: float = schema_utils.NonNegativeFloat(default=0.5, description="The lower bound of the uniform distribution")
 
     b: float = schema_utils.NonNegativeFloat(default=1.0, description="The upper bound of the uniform distribution")
+
+    def __call__(self, tensor: torch.Tensor) -> torch.Tensor:
+        return nn.init.uniform_(tensor, **self.initializer_params())
 
 
 @DeveloperAPI
@@ -92,8 +101,6 @@ class UniformInitializer(InitializerConfig):
 class NormalInitializer(InitializerConfig):
     """Normal initialization."""
 
-    initializer_fn: ClassVar = nn.init.normal_
-
     type: str = schema_utils.ProtectedString("normal")
 
     mean: float = schema_utils.NonNegativeFloat(default=0.0, description="The mean of the normal distribution")
@@ -102,6 +109,9 @@ class NormalInitializer(InitializerConfig):
         default=1.0, description="The standard deviation of the normal distribution"
     )
 
+    def __call__(self, tensor: torch.Tensor) -> torch.Tensor:
+        return nn.init.normal_(tensor, **self.initializer_params())
+
 
 @DeveloperAPI
 @register_initializer(name="trunc_normal")
@@ -109,8 +119,6 @@ class NormalInitializer(InitializerConfig):
 @ludwig_dataclass
 class TruncNormalInitializer(InitializerConfig):
     """Truncated normal initialization."""
-
-    initializer_fn: ClassVar = nn.init.normal_
 
     type: str = schema_utils.ProtectedString("trunc_normal")
 
@@ -124,6 +132,9 @@ class TruncNormalInitializer(InitializerConfig):
 
     b: float = schema_utils.NonNegativeFloat(default=2.0, description="The maximum cutoff value.")
 
+    def __call__(self, tensor: torch.Tensor) -> torch.Tensor:
+        return nn.init.trunc_normal_(tensor, **self.initializer_params())
+
 
 @DeveloperAPI
 @register_initializer(name="constant")
@@ -132,11 +143,12 @@ class TruncNormalInitializer(InitializerConfig):
 class ConstantInitializer(InitializerConfig):
     """Constant initialization."""
 
-    initializer_fn: ClassVar = nn.init.constant_
-
     type: str = schema_utils.ProtectedString("constant")
 
     val: float = schema_utils.NonNegativeFloat(default=0.0, description="The value to fill the tensor with")
+
+    def __call__(self, tensor: torch.Tensor) -> torch.Tensor:
+        return nn.init.constant_(tensor, **self.initializer_params())
 
 
 @DeveloperAPI
@@ -146,9 +158,10 @@ class ConstantInitializer(InitializerConfig):
 class OnesInitializer(InitializerConfig):
     """Ones initialization."""
 
-    initializer_fn: ClassVar = nn.init.ones_
-
     type: str = schema_utils.ProtectedString("ones")
+
+    def __call__(self, tensor: torch.Tensor) -> torch.Tensor:
+        return nn.init.ones_(tensor, **self.initializer_params())
 
 
 @DeveloperAPI
@@ -158,9 +171,10 @@ class OnesInitializer(InitializerConfig):
 class ZerosInitializer(InitializerConfig):
     """Zeros initialization."""
 
-    initializer_fn: ClassVar = nn.init.zeros_
-
     type: str = schema_utils.ProtectedString("zeros")
+
+    def __call__(self, tensor: torch.Tensor) -> torch.Tensor:
+        return nn.init.zeros_(tensor, **self.initializer_params())
 
 
 @DeveloperAPI
@@ -170,9 +184,10 @@ class ZerosInitializer(InitializerConfig):
 class EyeInitializer(InitializerConfig):
     """Eye (identity matrix) initialization."""
 
-    initializer_fn: ClassVar = nn.init.eye_
-
     type: str = schema_utils.ProtectedString("eye")
+
+    def __call__(self, tensor: torch.Tensor) -> torch.Tensor:
+        return nn.init.eye_(tensor, **self.initializer_params())
 
 
 @DeveloperAPI
@@ -181,11 +196,12 @@ class EyeInitializer(InitializerConfig):
 class XavierUniformInitializer(InitializerConfig):
     """Xavier Uniform initialization."""
 
-    initializer_fn: ClassVar = nn.init.xavier_uniform_
-
     type: str = schema_utils.ProtectedString("xavier_uniform")
 
     gain: float = schema_utils.NonNegativeFloat(default=1.0, description="An optional scaling factor")
+
+    def __call__(self, tensor: torch.Tensor) -> torch.Tensor:
+        return nn.init.xavier_uniform_(tensor, **self.initializer_params())
 
 
 @DeveloperAPI
@@ -194,11 +210,12 @@ class XavierUniformInitializer(InitializerConfig):
 class XavierNormalInitializer(InitializerConfig):
     """Xavier Normal initialization."""
 
-    initializer_fn: ClassVar = nn.init.xavier_normal_
-
     type: str = schema_utils.ProtectedString("xavier_normal")
 
     gain: float = schema_utils.NonNegativeFloat(default=1.0, description="An optional scaling factor")
+
+    def __call__(self, tensor: torch.Tensor) -> torch.Tensor:
+        return nn.init.xavier_normal_(tensor, **self.initializer_params())
 
 
 @DeveloperAPI
@@ -206,8 +223,6 @@ class XavierNormalInitializer(InitializerConfig):
 @ludwig_dataclass
 class KaimingUniformInitializer(InitializerConfig):
     """Kaiming Uniform initialization."""
-
-    initializer_fn: ClassVar = nn.init.kaiming_uniform_
 
     type: str = schema_utils.ProtectedString("kaiming_uniform")
 
@@ -233,14 +248,15 @@ class KaimingUniformInitializer(InitializerConfig):
         description="The non-linear function",
     )
 
+    def __call__(self, tensor: torch.Tensor) -> torch.Tensor:
+        return nn.init.kaiming_uniform_(tensor, **self.initializer_params())
+
 
 @DeveloperAPI
 @register_initializer(name="kaiming_normal")
 @ludwig_dataclass
 class KaimingNormalInitializer(InitializerConfig):
     """Kaiming Normal initialization."""
-
-    initializer_fn: ClassVar = nn.init.kaiming_normal_
 
     type: str = schema_utils.ProtectedString("kaiming_normal")
 
@@ -266,6 +282,9 @@ class KaimingNormalInitializer(InitializerConfig):
         description="The non-linear function",
     )
 
+    def __call__(self, tensor: torch.Tensor) -> torch.Tensor:
+        return nn.init.kaiming_normal_(tensor, **self.initializer_params())
+
 
 @DeveloperAPI
 @register_initializer(name="orthogonal")
@@ -273,11 +292,12 @@ class KaimingNormalInitializer(InitializerConfig):
 class OrthogonalInitializer(InitializerConfig):
     """Orthogonal initialization."""
 
-    initializer_fn: ClassVar = nn.init.orthogonal_
-
     type: str = schema_utils.ProtectedString("orthogonal")
 
     gain: float = schema_utils.NonNegativeFloat(default=1.0, description="An optional scaling factor")
+
+    def __call__(self, tensor: torch.Tensor) -> torch.Tensor:
+        return nn.init.orthogonal_(tensor, **self.initializer_params())
 
 
 @DeveloperAPI
@@ -285,8 +305,6 @@ class OrthogonalInitializer(InitializerConfig):
 @ludwig_dataclass
 class SparseInitializer(InitializerConfig):
     """Sparse initialization."""
-
-    initializer_fn: ClassVar = nn.init.sparse_
 
     type: str = schema_utils.ProtectedString("sparse")
 
@@ -299,23 +317,32 @@ class SparseInitializer(InitializerConfig):
         description="The standard deviation of the normal distribution used to generate the non-zero values",
     )
 
+    def __call__(self, tensor: torch.Tensor) -> torch.Tensor:
+        return nn.init.sparse_(tensor, **self.initializer_params())
+
 
 @DeveloperAPI
 def WeightsInitializerDataclassField(
     default: Union[str, Dict] = "xavier_uniform", description: str = "", parameter_metadata=None
 ):
-    return _InitializerDataclassField(default, description, single_dim=False, parameter_metadata=parameter_metadata)
+    return _InitializerDataclassField(
+        default, description, initializer_registry=_initializer_registry, parameter_metadata=parameter_metadata
+    )
 
 
 @DeveloperAPI
 def BiasInitializerDataclassField(
     default: Union[str, Dict] = "xavier_uniform", description: str = "", parameter_metadata=None
 ):
-    return _InitializerDataclassField(default, description, single_dim=True, parameter_metadata=parameter_metadata)
+    return _InitializerDataclassField(
+        default, description, initializer_registry=_bias_initializer_registry, parameter_metadata=parameter_metadata
+    )
 
 
 @DeveloperAPI
-def _InitializerDataclassField(default: Union[str, Dict], description: str, single_dim: bool, parameter_metadata=None):
+def _InitializerDataclassField(
+    default: Union[str, Dict], description: str, initializer_registry: Registry, parameter_metadata=None
+):
     """Custom dataclass field that when used inside of a dataclass will allow any initializer.
 
     Args:
@@ -343,7 +370,7 @@ def _InitializerDataclassField(default: Union[str, Dict], description: str, sing
                 init_type = value.get("type")
                 init_type = init_type.lower() if init_type else init_type
                 if init_type in initializer_registry:
-                    initializer = initializer_registry[init_type][1]
+                    initializer = initializer_registry[init_type]
                     try:
                         return initializer.Schema().load(value)
                     except (TypeError, ValidationError) as e:
@@ -357,10 +384,7 @@ def _InitializerDataclassField(default: Union[str, Dict], description: str, sing
 
         @staticmethod
         def _jsonschema_type_mapping():
-            if single_dim:
-                initializer_list = list(initializer_registry.keys())
-            else:
-                initializer_list = list(bias_initializer_registry.keys())
+            accepted_keys = list(initializer_registry.keys())
             return {
                 "type": "object",
                 "properties": {
@@ -370,17 +394,17 @@ def _InitializerDataclassField(default: Union[str, Dict], description: str, sing
                             "properties": {
                                 "type": {
                                     "type": "string",
-                                    "enum": initializer_list,
+                                    "enum": accepted_keys,
                                     "default": default["type"],
                                     "description": "The type of initializer to use during the learning process",
                                 },
                             },
-                            "allOf": get_initializer_conds(),
+                            "allOf": get_initializer_conds(initializer_registry),
                             "required": ["type"],
                         },
                         {
                             "type": "string",
-                            "enum": list(initializer_registry.keys()),
+                            "enum": accepted_keys,
                             "default": default["type"],
                             "description": "The type of initializer to use during the learning process",
                         },
@@ -398,7 +422,7 @@ def _InitializerDataclassField(default: Union[str, Dict], description: str, sing
         raise ValidationError(f"Invalid default: `{default}`")
 
     try:
-        initializer = initializer_registry[default["type"].lower()][1]
+        initializer = initializer_registry[default["type"].lower()]
         load_default = lambda: initializer.Schema().load(default)
         dump_default = initializer.Schema().dump(default)
 
@@ -421,11 +445,11 @@ def _InitializerDataclassField(default: Union[str, Dict], description: str, sing
 
 
 @DeveloperAPI
-def get_initializer_conds():
+def get_initializer_conds(initializer_registry: Registry):
     """Returns a JSON schema of conditionals to validate against initializer types."""
     conds = []
     for initializer in initializer_registry:
-        initializer_cls = initializer_registry[initializer][1]
+        initializer_cls = initializer_registry[initializer]
         other_props = schema_utils.unload_jsonschema_from_marshmallow_class(initializer_cls)["properties"]
         schema_utils.remove_duplicate_fields(other_props)
         preproc_cond = schema_utils.create_cond(

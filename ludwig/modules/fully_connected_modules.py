@@ -20,7 +20,8 @@ import torch
 from torch.nn import Dropout, Linear, ModuleList
 
 from ludwig.modules.normalization_modules import create_norm_layer
-from ludwig.utils.torch_utils import activations, initializer_registry, LudwigModule
+from ludwig.schema.initializers import InitializerConfig
+from ludwig.utils.torch_utils import activations, LudwigModule
 
 logger = logging.getLogger(__name__)
 
@@ -45,11 +46,11 @@ class FCLayer(LudwigModule):
     def __init__(
         self,
         input_size: int,
+        weights_initializer: InitializerConfig,
+        bias_initializer: InitializerConfig,
         input_rank: int = 2,
         output_size: int = 256,
         use_bias: bool = True,
-        weights_initializer: str = "xavier_uniform",
-        bias_initializer: str = "zeros",
         norm: Optional[str] = None,
         norm_params: Optional[Dict] = None,
         activation: str = "relu",
@@ -64,11 +65,9 @@ class FCLayer(LudwigModule):
         fc = Linear(in_features=input_size, out_features=output_size, bias=use_bias)
         self.layers.append(fc)
 
-        weights_initializer = initializer_registry[weights_initializer]
         weights_initializer(fc.weight)
 
         if use_bias:
-            bias_initializer = initializer_registry[bias_initializer]
             bias_initializer(fc.bias)
 
         if norm is not None:
