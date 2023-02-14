@@ -1575,8 +1575,10 @@ def handle_outliers(dataset_cols, feature, preprocessing_parameters: Preprocessi
     computed_fill_value = preprocessing_parameters.get("computed_outlier_fill_value")
 
     # Identify all outliers and set them to NA so they can be removed
-    s = dataset_cols[feature[COLUMN]]
-    dataset_cols[feature[COLUMN]] = s.mask(s.sub(metadata["mean"]).div(metadata["std"]).abs().gt(outlier_threshold))
+    series = dataset_cols[feature[COLUMN]]
+    dataset_cols[feature[COLUMN]] = series.mask(
+        series.sub(metadata["mean"]).div(metadata["std"]).abs().gt(outlier_threshold)
+    )
 
     _handle_missing_values(dataset_cols, feature, outlier_strategy, computed_fill_value, backend)
 
