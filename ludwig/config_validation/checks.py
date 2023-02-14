@@ -9,7 +9,6 @@ from typing import Callable
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
     AUDIO,
-    BACKEND,
     BINARY,
     COMBINER,
     DECODER,
@@ -22,10 +21,8 @@ from ludwig.constants import (
     MODEL_TYPE,
     NAME,
     OUTPUT_FEATURES,
-    PREPROCESSING,
     SEQUENCE,
     SET,
-    SPLIT,
     TEXT,
     TRAINER,
     TYPE,
@@ -37,7 +34,7 @@ from ludwig.error import ConfigValidationError
 from ludwig.schema.combiners.utils import get_combiner_registry
 from ludwig.schema.optimizers import optimizer_registry
 from ludwig.types import ModelConfigDict
-from ludwig.utils.metric_utils import get_feature_to_metric_names_map
+from ludwig.utils.metric_utils import get_feature_to_metric_names_map_from_feature_collection
 
 # Set of all sequence feature types.
 SEQUENCE_OUTPUT_FEATURE_TYPES = {SEQUENCE, TEXT, SET, VECTOR}
@@ -152,11 +149,11 @@ def check_basic_required_parameters(config: ModelConfigDict) -> None:
 @register_config_check
 def check_feature_names_unique(config: ModelConfigDict) -> None:
     """Checks that all feature names are unique."""
-    input_features = config[INPUT_FEATURES]
-    input_feature_names = {input_feature[NAME] for input_feature in input_features}
+    input_features = config.input_features
+    input_feature_names = {input_feature.name for input_feature in input_features}
 
-    output_features = config[OUTPUT_FEATURES]
-    output_feature_names = {output_feature[NAME] for output_feature in output_features}
+    output_features = config.output_features
+    output_feature_names = {output_feature.name for output_feature in output_features}
 
     if len(input_feature_names) + len(output_feature_names) != len(input_features) + len(output_features):
         raise ConfigValidationError("Feature names must be unique.")
@@ -165,23 +162,22 @@ def check_feature_names_unique(config: ModelConfigDict) -> None:
 @register_config_check
 def check_tied_features_valid(config: ModelConfigDict) -> None:
     """Checks that all tied features are valid."""
-    print("CHECKING TIED FEATURES!")
-    input_features = config[INPUT_FEATURES]
-    input_feature_names = {input_feature[NAME] for input_feature in input_features}
+    input_features = config.input_features
+    input_feature_names = {input_feature.name for input_feature in input_features}
 
     for input_feature in input_features:
-        if input_feature["tied"] and input_feature["tied"] not in input_feature_names:
+        if input_feature.tied and input_feature.tied not in input_feature_names:
             raise ConfigValidationError(
-                f"Feature {input_feature[NAME]} is tied to feature {input_feature['tied']}, but the "
-                f"'{input_feature['tied']}' feature does not exist."
+                f"Feature {input_feature.name} is tied to feature {input_feature.tied}, but the "
+                f"'{input_feature.tied}' feature does not exist."
             )
 
 
 @register_config_check
 def check_training_runway(config: ModelConfigDict) -> None:
     """Checks that checkpoints_per_epoch and steps_per_checkpoint aren't simultaneously defined."""
-    if config[MODEL_TYPE] == MODEL_ECD:
-        if config[TRAINER]["checkpoints_per_epoch"] != 0 and config[TRAINER]["steps_per_checkpoint"] != 0:
+    if config.model_type == MODEL_ECD:
+        if config.trainer.checkpoints_per_epoch != 0 and config.trainer.steps_per_checkpoint != 0:
             raise ConfigValidationError(
                 "It is invalid to specify both trainer.checkpoints_per_epoch AND "
                 "trainer.steps_per_checkpoint. Please specify one or the other, or specify neither to "
@@ -192,50 +188,44 @@ def check_training_runway(config: ModelConfigDict) -> None:
 @register_config_check
 def check_gbm_horovod_incompatibility(config: ModelConfigDict) -> None:
     """Checks that GBM model type isn't being used with the horovod backend."""
-    if BACKEND not in config:
+    if config.backend is None:
         return
-    if config[BACKEND] is None:
-        return
-    if config[MODEL_TYPE] == MODEL_GBM and config[BACKEND][TYPE] == "horovod":
+    if config.model_type == MODEL_GBM and config.backend.type == "horovod":
         raise ConfigValidationError("Horovod backend does not support GBM models.")
 
 
 @register_config_check
 def check_ray_backend_in_memory_preprocessing(config: ModelConfigDict) -> None:
     """Checks that in memory preprocessing is used with Ray backend."""
-    if BACKEND not in config:
+    if config.backend is None:
+        return
+    if not hasattr(config.trainer, "preprocessing") or not hasattr(config.trainer.preprocessing, IN_MEMORY):
         return
 
-    if config[BACKEND] is None:
-        return
-
-    if PREPROCESSING not in config[TRAINER] or IN_MEMORY not in config[TRAINER][PREPROCESSING]:
-        return
-
-    if config[BACKEND][TYPE] == "ray" and not config[TRAINER][PREPROCESSING][IN_MEMORY]:
+    if config.backend.type == "ray" and not config.trainer.preprocessing.in_memory:
         raise ConfigValidationError(
             "RayBackend does not support lazy loading of data files at train time. "
             "Set preprocessing config `in_memory: True`"
         )
 
-    for input_feature in config[INPUT_FEATURES]:
-        if input_feature[TYPE] == AUDIO or input_feature[TYPE] == IMAGE:
-            if not input_feature[PREPROCESSING][IN_MEMORY] and config[BACKEND][TYPE] != "ray":
+    for input_feature in config.input_features:
+        if input_feature.type == AUDIO or input_feature.type == IMAGE:
+            if not input_feature.preprocessing.in_memory and config.backend.type != "ray":
                 raise ConfigValidationError(
                     "RayBackend does not support lazy loading of data files at train time. "
-                    f"Set preprocessing config `in_memory: True` for input feature {input_feature[NAME]}"
+                    f"Set preprocessing config `in_memory: True` for input feature {input_feature.name}"
                 )
 
 
 def check_sequence_concat_combiner_requirements(config: ModelConfigDict) -> None:
     """Checks that sequence concat combiner has at least one input feature that's sequential."""
-    if config[MODEL_TYPE] != MODEL_ECD:
+    if config.model_type != MODEL_ECD:
         return
-    if config[COMBINER] != "sequence_concat":
+    if config.combiner != "sequence_concat":
         return
     has_sequence_input = False
-    for input_feature in config[INPUT_FEATURES]:
-        if input_feature[TYPE] in SEQUENCE_OUTPUT_FEATURE_TYPES:
+    for input_feature in config.input_features:
+        if input_feature.type in SEQUENCE_OUTPUT_FEATURE_TYPES:
             has_sequence_input = True
             break
     if not has_sequence_input:
@@ -247,35 +237,38 @@ def check_sequence_concat_combiner_requirements(config: ModelConfigDict) -> None
 @register_config_check
 def check_comparator_combiner_requirements(config: ModelConfigDict) -> None:
     """Checks that all of the feature names for entity_1 and entity_2 are valid features."""
-    if config[MODEL_TYPE] != MODEL_ECD:
+    if config.model_type != MODEL_ECD:
         return
-    if config[COMBINER] != "comparator":
+    if config.combiner != "comparator":
         return
 
-    input_feature_names = {input_feature[NAME] for input_feature in config[INPUT_FEATURES]}
-    for entity in ["entity_1", "entity_2"]:
-        for feature_name in config[COMBINER][entity]:
-            if feature_name not in input_feature_names:
-                raise ConfigValidationError(
-                    f"Feature {feature_name} in {entity} for the comparator combiner is not a valid "
-                    "input feature name."
-                )
+    input_feature_names = {input_feature.name for input_feature in config.input_features}
+    for feature_name in config.combiner.entity_1:
+        if feature_name not in input_feature_names:
+            raise ConfigValidationError(
+                f"Feature {feature_name} in entity_1 for the comparator combiner is not a valid " "input feature name."
+            )
+    for feature_name in config.combiner.entity_2:
+        if feature_name not in input_feature_names:
+            raise ConfigValidationError(
+                f"Feature {feature_name} in entity_2 for the comparator combiner is not a valid " "input feature name."
+            )
 
 
 @register_config_check
 def check_class_balance_preprocessing(config: ModelConfigDict) -> None:
     """Class balancing is only available for datasets with a single output feature."""
-    if config[PREPROCESSING]["oversample_minority"] or config[PREPROCESSING]["undersample_majority"]:
-        if len(config[OUTPUT_FEATURES]) != 1:
+    if config.preprocessing.oversample_minority or config.preprocessing.undersample_majority:
+        if len(config.output_features) != 1:
             raise ConfigValidationError("Class balancing is only available for datasets with a single output feature.")
-        if config[OUTPUT_FEATURES][0][TYPE] != BINARY:
+        if config.output_features[0].type != BINARY:
             raise ConfigValidationError("Class balancing is only supported for binary output features.")
 
 
 @register_config_check
 def check_sampling_exclusivity(config: ModelConfigDict) -> None:
     """Oversample minority and undersample majority are mutually exclusive."""
-    if config[PREPROCESSING]["oversample_minority"] and config[PREPROCESSING]["undersample_majority"]:
+    if config.preprocessing.oversample_minority and config.preprocessing.undersample_majority:
         raise ConfigValidationError(
             "Oversample minority and undersample majority are mutually exclusive. Specify only one method."
         )
@@ -284,10 +277,10 @@ def check_sampling_exclusivity(config: ModelConfigDict) -> None:
 @register_config_check
 def check_validation_metric_exists(config: ModelConfigDict) -> None:
     """Checks that the specified validation metric exists."""
-    validation_metric_name = config[TRAINER]["validation_metric"]
+    validation_metric_name = config.trainer.validation_metric
 
     # Get all valid metrics.
-    feature_to_metric_names_map = get_feature_to_metric_names_map(config[OUTPUT_FEATURES])
+    feature_to_metric_names_map = get_feature_to_metric_names_map_from_feature_collection(config.output_features)
     all_valid_metrics = set()
     for metric_names in feature_to_metric_names_map.values():
         all_valid_metrics.update(metric_names)
@@ -304,7 +297,7 @@ def check_splitter(config: ModelConfigDict) -> None:
     """Checks the validity of the splitter configuration."""
     from ludwig.data.split import get_splitter
 
-    splitter = get_splitter(**config[PREPROCESSING][SPLIT])
+    splitter = get_splitter(**config.preprocessing.split.to_dict())
     splitter.validate(config)
 
 
@@ -312,10 +305,10 @@ def check_splitter(config: ModelConfigDict) -> None:
 def check_hf_tokenizer_requirements(config: ModelConfigDict) -> None:
     """Checks that the HuggingFace tokenizer has a pretrained_model_name_or_path specified."""
 
-    for input_feature in config[INPUT_FEATURES]:
-        if input_feature[TYPE] == TEXT:
-            if input_feature[PREPROCESSING]["tokenizer"] == "hf_tokenizer":
-                if input_feature[PREPROCESSING]["pretrained_model_name_or_path"] is None:
+    for input_feature in config.input_features:
+        if input_feature.type == TEXT:
+            if input_feature.preprocessing.tokenizer == "hf_tokenizer":
+                if input_feature.preprocessing.pretrained_model_name_or_path is None:
                     raise ConfigValidationError(
                         "Pretrained model name or path must be specified for HuggingFace tokenizer."
                     )
@@ -325,10 +318,10 @@ def check_hf_tokenizer_requirements(config: ModelConfigDict) -> None:
 def check_hf_encoder_requirements(config: ModelConfigDict) -> None:
     """Checks that a HuggingFace encoder has a pretrained_model_name_or_path specified."""
 
-    for input_feature in config[INPUT_FEATURES]:
-        if input_feature[TYPE] == TEXT:
-            if "use_pretrained" in input_feature[ENCODER] and input_feature[ENCODER]["use_pretrained"]:
-                if input_feature[PREPROCESSING]["pretrained_model_name_or_path"] is None:
+    for input_feature in config.input_features:
+        if input_feature.type == TEXT:
+            if hasattr(input_feature.encoder, "use_pretrained"):
+                if input_feature.preprocessing.pretrained_model_name_or_path is None:
                     raise ConfigValidationError(
                         "Pretrained model name or path must be specified for HuggingFace encoder."
                     )
