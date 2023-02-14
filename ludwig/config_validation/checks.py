@@ -1,7 +1,4 @@
-"""Checks that are not easily covered by marshmallow JSON schema validation like parameter interdependencies.
-
-Assumes incoming configs are comprehensive (all parameters and defaults filled in), and has been schema-validated.
-"""
+"""Checks that are not easily covered by marshmallow JSON schema validation like parameter interdependencies."""
 
 from abc import ABC, abstractmethod
 from typing import Callable
