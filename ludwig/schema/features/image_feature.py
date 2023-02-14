@@ -14,6 +14,7 @@ from ludwig.schema.features.utils import defaults_config_registry, ecd_input_con
 from ludwig.schema.utils import BaseMarshmallowConfig, ludwig_dataclass
 
 
+# Augmentation operations when augmentation is set to True
 AUGMENTATION_DEFAULT_OPERATIONS = [
     RandomHorizontalFlipConfig(),
     RandomRotateConfig(),

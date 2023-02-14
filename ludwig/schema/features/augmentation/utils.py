@@ -1,12 +1,13 @@
 import copy
 from dataclasses import field
-from typing import List, Union
+from typing import List, Optional, Union
 
 from marshmallow import fields, ValidationError
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import TYPE
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.features.augmentation.base import BaseAugmentationConfig
 from ludwig.utils.registry import Registry
 
 _augmentation_config_registry = Registry()
@@ -43,7 +44,12 @@ def get_augmentation_classes(feature: str):
 
 
 @DeveloperAPI
-def AugmentationDataclassField(feature_type: str, default=False, default_augmentations=None, description=""):
+def AugmentationDataclassField(
+    feature_type: str,
+    default: Union[str, BaseAugmentationConfig] = False,
+    default_augmentations: Optional[List[BaseAugmentationConfig]] = None,
+    description: str = "",
+):
     """Custom dataclass field that when used inside a dataclass will allow the user to specify an augmentation
     config.
 
@@ -56,6 +62,8 @@ def AugmentationDataclassField(feature_type: str, default=False, default_augment
     """
 
     default_augmentations = default_augmentations or []
+    default_augmentations = [a.to_dict() for a in default_augmentations]
+
     if isinstance(default, bool):
         default = default_augmentations if default else []
 
@@ -68,9 +76,6 @@ def AugmentationDataclassField(feature_type: str, default=False, default_augment
                 value = default_augmentations if value else []
 
             assert isinstance(value, list), "Augmentation config must be a list."
-            if len(value) == 0:
-                raise ValidationError("Augmentation config list must not be empty.")
-
             augmentation_list = []
             for augmentation in value:
                 augmentation_op = augmentation[TYPE]

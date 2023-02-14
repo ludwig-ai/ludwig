@@ -32,8 +32,8 @@ from ludwig.constants import (
     TRAINER,
     TYPE,
 )
-from ludwig.features.image_feature import AUGMENTATION_DEFAULT_OPERATIONS
 from ludwig.schema.features.augmentation.image import RandomBlurConfig, RandomRotateConfig
+from ludwig.schema.features.image_feature import AUGMENTATION_DEFAULT_OPERATIONS
 from ludwig.schema.features.number_feature import NumberOutputFeatureConfig
 from ludwig.schema.features.text_feature import TextOutputFeatureConfig
 from ludwig.schema.model_config import ModelConfig

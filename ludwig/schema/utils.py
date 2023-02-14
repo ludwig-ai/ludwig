@@ -92,6 +92,10 @@ def convert_submodules(config_dict: dict) -> TDict[str, any]:
             output_dict[k] = v.to_dict()
             convert_submodules(output_dict[k])
 
+        elif isinstance(v, list):
+            # Handle generic lists
+            output_dict[k] = [x.to_dict() if isinstance(x, BaseMarshmallowConfig) else x for x in v]
+
         elif isinstance(v, ListSerializable):
             output_dict[k] = v.to_list()
 
