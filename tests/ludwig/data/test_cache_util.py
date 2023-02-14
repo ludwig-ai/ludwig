@@ -95,7 +95,7 @@ def test_proc_col_checksum_consistency():
 
 
 def test_proc_col_checksum_consistency_same_preprocessing_different_types():
-    """Tests that proc_col is equal if checksum are equal."""
+    """Tests that proc_col is different if preprocessing and names are the same but types are different."""
     config = {
         "input_features": [
             # Same name, different types, same preprocessing
