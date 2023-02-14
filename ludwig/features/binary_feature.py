@@ -393,3 +393,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     @staticmethod
     def create_postproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
         return _BinaryPostprocessing(metadata)
+
+    def metric_kwargs(self) -> dict:
+        """Returns arguments that are used to instantiate an instance of each metric class."""
+        return {"task": "binary"}

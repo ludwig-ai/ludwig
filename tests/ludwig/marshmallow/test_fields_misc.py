@@ -114,7 +114,7 @@ def test_FloatRangeTupleDataclassField():
     # Test default schema creation:
     @dataclass
     class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
-        foo: Tuple[float, float] = schema_utils.FloatRangeTupleDataclassField()
+        foo: Tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(allow_none=True)
 
     # Test empty load:
     assert CustomTestSchema.Schema().load({}).foo == (0.9, 0.999)

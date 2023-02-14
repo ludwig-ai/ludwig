@@ -39,6 +39,7 @@ class SequencePassthroughConfig(SequenceEncoderConfig):
 
     encoding_size: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="The size of the encoding vector, or None if sequence elements are scalars.",
         parameter_metadata=ENCODER_METADATA["SequencePassthrough"]["encoding_size"],
     )
@@ -74,6 +75,7 @@ class SequenceEmbedConfig(SequenceEncoderConfig):
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="The maximum length of a sequence.",
         parameter_metadata=ENCODER_METADATA["SequenceEmbed"]["max_sequence_length"],
     )
@@ -125,6 +127,7 @@ class SequenceEmbedConfig(SequenceEncoderConfig):
 
     pretrained_embeddings: str = schema_utils.String(
         default=None,
+        allow_none=True,
         description="Path to a file containing pretrained embeddings.",
         parameter_metadata=ENCODER_METADATA["SequenceEmbed"]["pretrained_embeddings"],
     )
@@ -158,6 +161,7 @@ class ParallelCNNConfig(SequenceEncoderConfig):
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="The maximum length of all sequences",
         parameter_metadata=ENCODER_METADATA["ParallelCNN"]["max_sequence_length"],
     )
@@ -177,6 +181,7 @@ class ParallelCNNConfig(SequenceEncoderConfig):
 
     num_conv_layers: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Number of parallel convolutional layers to use.",
         parameter_metadata=ENCODER_METADATA["ParallelCNN"]["num_conv_layers"],
     )
@@ -207,6 +212,7 @@ class ParallelCNNConfig(SequenceEncoderConfig):
 
     pool_size: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="The default pool_size that will be used for each layer.",
         parameter_metadata=ENCODER_METADATA["ParallelCNN"]["pool_size"],
     )
@@ -255,6 +261,7 @@ class ParallelCNNConfig(SequenceEncoderConfig):
 
     pretrained_embeddings: str = schema_utils.String(
         default=None,
+        allow_none=True,
         description="Path to a file containing pretrained embeddings.",
         parameter_metadata=ENCODER_METADATA["ParallelCNN"]["pretrained_embeddings"],
     )
@@ -275,6 +282,7 @@ class ParallelCNNConfig(SequenceEncoderConfig):
     norm: str = schema_utils.StringOptions(
         ["batch", "layer"],
         default=None,
+        allow_none=True,
         description="The default norm that will be used for each layer.",
         parameter_metadata=ENCODER_METADATA["ParallelCNN"]["norm"],
     )
@@ -287,6 +295,7 @@ class ParallelCNNConfig(SequenceEncoderConfig):
 
     num_fc_layers: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Number of parallel fully connected layers to use.",
         parameter_metadata=ENCODER_METADATA["ParallelCNN"]["num_fc_layers"],
     )
@@ -326,6 +335,7 @@ class StackedCNNConfig(SequenceEncoderConfig):
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="The maximum length of all sequences",
         parameter_metadata=ENCODER_METADATA["StackedCNN"]["max_sequence_length"],
     )
@@ -345,6 +355,7 @@ class StackedCNNConfig(SequenceEncoderConfig):
 
     num_conv_layers: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Number of parallel convolutional layers to use.",
         parameter_metadata=ENCODER_METADATA["StackedCNN"]["num_conv_layers"],
     )
@@ -394,12 +405,14 @@ class StackedCNNConfig(SequenceEncoderConfig):
 
     pool_size: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="The default pool_size that will be used for each layer.",
         parameter_metadata=ENCODER_METADATA["StackedCNN"]["pool_size"],
     )
 
     pool_strides: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Factor to scale down.",
         parameter_metadata=ENCODER_METADATA["StackedCNN"]["pool_strides"],
     )
@@ -455,6 +468,7 @@ class StackedCNNConfig(SequenceEncoderConfig):
 
     pretrained_embeddings: str = schema_utils.String(
         default=None,
+        allow_none=True,
         description="Path to a file containing pretrained embeddings.",
         parameter_metadata=ENCODER_METADATA["StackedCNN"]["pretrained_embeddings"],
     )
@@ -475,6 +489,7 @@ class StackedCNNConfig(SequenceEncoderConfig):
     norm: str = schema_utils.StringOptions(
         ["batch", "layer"],
         default=None,
+        allow_none=True,
         description="The default norm that will be used for each layer.",
         parameter_metadata=ENCODER_METADATA["StackedCNN"]["norm"],
     )
@@ -487,6 +502,7 @@ class StackedCNNConfig(SequenceEncoderConfig):
 
     num_fc_layers: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Number of parallel fully connected layers to use.",
         parameter_metadata=ENCODER_METADATA["StackedCNN"]["num_fc_layers"],
     )
@@ -526,6 +542,7 @@ class StackedParallelCNNConfig(SequenceEncoderConfig):
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="The maximum length of all sequences",
         parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["max_sequence_length"],
     )
@@ -546,6 +563,7 @@ class StackedParallelCNNConfig(SequenceEncoderConfig):
 
     num_stacked_layers: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="If stacked_layers is null, this is the number of elements in the stack of parallel convolutional "
         "layers. ",
         parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["num_stacked_layers"],
@@ -580,6 +598,7 @@ class StackedParallelCNNConfig(SequenceEncoderConfig):
 
     pool_size: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="The default pool_size that will be used for each layer.",
         parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["pool_size"],
     )
@@ -635,6 +654,7 @@ class StackedParallelCNNConfig(SequenceEncoderConfig):
 
     pretrained_embeddings: str = schema_utils.String(
         default=None,
+        allow_none=True,
         description="By default dense embeddings are initialized randomly, but this parameter allows to specify a "
         "path to a file containing embeddings in the GloVe format. When the file containing the "
         "embeddings is loaded, only the embeddings with labels present in the vocabulary are kept, "
@@ -661,6 +681,7 @@ class StackedParallelCNNConfig(SequenceEncoderConfig):
     norm: str = schema_utils.StringOptions(
         ["batch", "layer"],
         default=None,
+        allow_none=True,
         description="The default norm that will be used for each layer.",
         parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["norm"],
     )
@@ -673,6 +694,7 @@ class StackedParallelCNNConfig(SequenceEncoderConfig):
 
     num_fc_layers: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Number of parallel fully connected layers to use.",
         parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["num_fc_layers"],
     )
@@ -727,6 +749,7 @@ class StackedRNNConfig(SequenceEncoderConfig):
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="The maximum length of all sequences",
         parameter_metadata=ENCODER_METADATA["StackedRNN"]["max_sequence_length"],
     )
@@ -835,6 +858,7 @@ class StackedRNNConfig(SequenceEncoderConfig):
 
     pretrained_embeddings: str = schema_utils.String(
         default=None,
+        allow_none=True,
         description="By default dense embeddings are initialized randomly, but this parameter allows to specify a "
         "path to a file containing embeddings in the GloVe format. When the file containing the "
         "embeddings is loaded, only the embeddings with labels present in the vocabulary are kept, "
@@ -861,6 +885,7 @@ class StackedRNNConfig(SequenceEncoderConfig):
     norm: str = schema_utils.StringOptions(
         ["batch", "layer"],
         default=None,
+        allow_none=True,
         description="The default norm that will be used for each layer.",
         parameter_metadata=ENCODER_METADATA["StackedRNN"]["norm"],
     )
@@ -953,6 +978,7 @@ class StackedCNNRNNConfig(SequenceEncoderConfig):
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="The maximum length of all sequences",
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["max_sequence_length"],
     )
@@ -1024,6 +1050,7 @@ class StackedCNNRNNConfig(SequenceEncoderConfig):
 
     pool_strides: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Factor to scale down.",
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["pool_strides"],
     )
@@ -1068,6 +1095,7 @@ class StackedCNNRNNConfig(SequenceEncoderConfig):
 
     num_conv_layers: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Number of parallel convolutional layers to use.",
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["num_conv_layers"],
     )
@@ -1129,6 +1157,7 @@ class StackedCNNRNNConfig(SequenceEncoderConfig):
 
     pretrained_embeddings: str = schema_utils.String(
         default=None,
+        allow_none=True,
         description="By default dense embeddings are initialized randomly, but this parameter allows to specify a "
         "path to a file containing embeddings in the GloVe format. When the file containing the "
         "embeddings is loaded, only the embeddings with labels present in the vocabulary are kept, "
@@ -1155,6 +1184,7 @@ class StackedCNNRNNConfig(SequenceEncoderConfig):
     norm: str = schema_utils.StringOptions(
         ["batch", "layer"],
         default=None,
+        allow_none=True,
         description="The default norm that will be used for each layer.",
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["norm"],
     )
@@ -1214,6 +1244,7 @@ class StackedTransformerConfig(SequenceEncoderConfig):
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Max length of all sequences",
         parameter_metadata=ENCODER_METADATA["StackedTransformer"]["max_sequence_length"],
     )
@@ -1304,6 +1335,7 @@ class StackedTransformerConfig(SequenceEncoderConfig):
 
     pretrained_embeddings: str = schema_utils.String(
         default=None,
+        allow_none=True,
         description="Path to a file containing pretrained embeddings.",
         parameter_metadata=ENCODER_METADATA["StackedTransformer"]["pretrained_embeddings"],
     )
@@ -1324,6 +1356,7 @@ class StackedTransformerConfig(SequenceEncoderConfig):
     norm: str = schema_utils.StringOptions(
         ["batch", "layer"],
         default=None,
+        allow_none=True,
         description="The default norm that will be used for each layer.",
         parameter_metadata=ENCODER_METADATA["StackedTransformer"]["norm"],
     )
