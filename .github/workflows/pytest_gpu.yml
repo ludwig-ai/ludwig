@@ -95,6 +95,9 @@ jobs:
           sudo apt-key add /var/cuda-repo-ubuntu2004-11-5-local/7fa2af80.pub
           sudo apt-get update
           sudo apt-get -y install cuda
+          # Downgrade NCCL to 2.11.4 to for compatibility with CUDA 11.6
+          # https://github.com/horovod/horovod/issues/3625#issuecomment-1309786643
+          sudo apt install --allow-change-held-packages --allow-downgrades -y libnccl2=2.11.4-1+cuda11.6 libnccl-dev=2.11.4-1+cuda11.6
         shell: bash
 
       - name: pip cache
@@ -111,6 +114,7 @@ jobs:
           HOROVOD_WITHOUT_MPI: 1
           HOROVOD_WITHOUT_TENSORFLOW: 1
           HOROVOD_WITHOUT_MXNET: 1
+          HOROVOD_GPU_OPERATIONS: NCCL
         run: |
           python --version
           pip --version
@@ -121,9 +125,11 @@ jobs:
 
           if [ "$PYTORCH" == "nightly" ]; then
             cat requirements.txt | sed '/^torch[>=<]/d' | sed '/^torchtext[>=<]/d' | sed '/^torchvision[>=<]/d' | sed '/^torchaudio[>=<]/d' > requirements-temp && mv requirements-temp requirements.txt
-            pip install --pre torch torchtext torchvision torchaudio
+            extra_index_url=https://download.pytorch.org/whl/cu116
+            pip install --pre torch torchtext torchvision torchaudio --extra-index-url $extra_index_url
           else
-            pip install torch==$PYTORCH torchtext torchvision torchaudio
+            extra_index_url=https://download.pytorch.org/whl/cu116
+            pip install torch==$PYTORCH torchtext torchvision torchaudio --extra-index-url $extra_index_url
           fi
           pip install protobuf==3.20.1 # https://github.com/databrickslabs/dbx/issues/257
 
@@ -140,7 +146,7 @@ jobs:
           torch_expected=$(python -c "import torch; print(torch.__version__)")
 
           pip install --no-build-isolation --no-use-pep517 ConfigSpace # temporary fix: https://github.com/automl/ConfigSpace/issues/173
-          pip install '.[test]'
+          pip install '.[test]' --extra-index-url $extra_index_url
           pip list
 
           python -c "import torch; assert torch.__version__ == \"$torch_expected\", f\"torch {torch.__version__} != $torch_expected\""
@@ -159,6 +165,7 @@ jobs:
           HOROVOD_WITHOUT_MPI: 1
           HOROVOD_WITHOUT_TENSORFLOW: 1
           HOROVOD_WITHOUT_MXNET: 1
+          HOROVOD_GPU_OPERATIONS: NCCL
         run: |
           HOROVOD_BUILT=$(python -c "import horovod.torch; horovod.torch.nccl_built(); print('SUCCESS')" || true)
           if [[ $HOROVOD_BUILT != "SUCCESS" ]]; then
