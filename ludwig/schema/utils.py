@@ -421,8 +421,6 @@ def Boolean(default: bool, description: str, parameter_metadata: ParameterMetada
 @DeveloperAPI
 def Integer(default: Union[None, int], allow_none=False, description="", parameter_metadata: ParameterMetadata = None):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs."""
-    # allow_none = allow_none or default is None
-
     if default is not None:
         try:
             assert isinstance(default, int)
@@ -452,7 +450,6 @@ def PositiveInteger(
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be
     positive."""
     val = validate.Range(min=1)
-    # allow_none = allow_none or default is None
 
     if default is not None:
         try:
@@ -488,7 +485,6 @@ def NonNegativeInteger(
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be
     nonnegative."""
     val = validate.Range(min=0)
-    # allow_none = allow_none or default is None
 
     if default is not None:
         try:
@@ -528,7 +524,6 @@ def IntegerRange(
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be in range
     set by relevant keyword args."""
     val = validate.Range(min=min, max=max, min_inclusive=min_inclusive, max_inclusive=max_inclusive)
-    # allow_none = allow_none or default is None
 
     if default is not None:
         try:
@@ -564,7 +559,6 @@ def NonNegativeFloat(
 ):
     """Returns a dataclass field with marshmallow metadata enforcing numeric inputs must be nonnegative."""
     val = validate.Range(min=0.0, max=max)
-    # allow_none = allow_none or default is None
 
     if default is not None:
         try:
@@ -603,7 +597,6 @@ def FloatRange(
     """Returns a dataclass field with marshmallow metadata enforcing numeric inputs must be in range set by
     relevant keyword args."""
     val = validate.Range(min=min, max=max, min_inclusive=min_inclusive, max_inclusive=max_inclusive)
-    # allow_none = allow_none or default is None
 
     if default is not None:
         try:
