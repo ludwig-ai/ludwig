@@ -1,20 +1,48 @@
-from typing import Callable, List, Union
-
-from marshmallow_dataclass import dataclass
+from typing import Any, Callable, Dict, List, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import TEXT
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.encoders.base import BaseEncoderConfig
+from ludwig.schema.encoders.sequence_encoders import SequenceEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.metadata import ENCODER_METADATA
 from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
+from ludwig.schema.utils import ludwig_dataclass
+
+
+class HFEncoderConfig(SequenceEncoderConfig):
+    trainable: bool
+    use_pretrained: bool
+    pretrained_model_name_or_path: str
+    reduce_output: str
+
+    def get_fixed_preprocessing_params(self) -> Dict[str, Any]:
+        model_name = self.pretrained_model_name_or_path
+        if model_name is None:
+            # no default model name, so model name is required by the subclass
+            raise ValueError(f"Missing required parameter for `{self.type}` encoder: `pretrained_model_name_or_path`")
+        params = {
+            "tokenizer": "hf_tokenizer",
+            "pretrained_model_name_or_path": model_name,
+        }
+
+        if not self.can_cache_embeddings():
+            params["cache_encoder_embeddings"] = False
+
+        return params
+
+    def is_pretrained(self) -> bool:
+        return self.use_pretrained
+
+    def can_cache_embeddings(self) -> bool:
+        """Returns true if the encoder's output embeddings will not change during training."""
+        return not self.trainable and self.reduce_output != "attention"
 
 
 @DeveloperAPI
 @register_encoder_config("albert", TEXT)
-@dataclass(repr=False)
-class ALBERTConfig(BaseEncoderConfig):
+@ludwig_dataclass
+class ALBERTConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an ALBERT encoder."""
 
     @staticmethod
@@ -34,7 +62,8 @@ class ALBERTConfig(BaseEncoderConfig):
 
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
-        description="Whether to use the pretrained weights for the model.",
+        description="Whether to use the pretrained weights for the model. If false, the model will train from "
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["ALBERT"]["use_pretrained"],
     )
 
@@ -53,7 +82,7 @@ class ALBERTConfig(BaseEncoderConfig):
 
     trainable: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to train the model.",
+        description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["ALBERT"]["trainable"],
     )
 
@@ -83,7 +112,7 @@ class ALBERTConfig(BaseEncoderConfig):
     )
 
     hidden_size: int = schema_utils.PositiveInteger(
-        default=4096,
+        default=768,
         description="Dimensionality of the encoder layers and the pooler layer.",
         parameter_metadata=ENCODER_METADATA["ALBERT"]["hidden_size"],
     )
@@ -101,13 +130,13 @@ class ALBERTConfig(BaseEncoderConfig):
     )
 
     num_attention_heads: int = schema_utils.PositiveInteger(
-        default=64,
+        default=12,
         description="Number of attention heads for each attention layer in the Transformer encoder.",
         parameter_metadata=ENCODER_METADATA["ALBERT"]["num_attention_heads"],
     )
 
     intermediate_size: int = schema_utils.PositiveInteger(
-        default=16384,
+        default=3072,
         description="The dimensionality of the “intermediate” (often named feed-forward) layer in the Transformer "
         "encoder.",
         parameter_metadata=ENCODER_METADATA["ALBERT"]["intermediate_size"],
@@ -207,11 +236,12 @@ class ALBERTConfig(BaseEncoderConfig):
     )
 
 
-@DeveloperAPI
 # TODO: uncomment when sentencepiece doesn't cause segfaults: https://github.com/ludwig-ai/ludwig/issues/2983
 # @register_encoder_config("mt5", TEXT)
-@dataclass(repr=False)
-class MT5Config(BaseEncoderConfig):
+@DeveloperAPI
+@register_encoder_config("mt5", TEXT)
+@ludwig_dataclass
+class MT5Config(HFEncoderConfig):
     """This dataclass configures the schema used for an MT5 encoder."""
 
     @staticmethod
@@ -231,7 +261,8 @@ class MT5Config(BaseEncoderConfig):
 
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
-        description="Whether to use the pretrained weights for the model.",
+        description="Whether to use the pretrained weights for the model. If false, the model will train from "
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["MT5"]["use_pretrained"],
     )
 
@@ -250,7 +281,7 @@ class MT5Config(BaseEncoderConfig):
 
     trainable: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to train the model.",
+        description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["MT5"]["trainable"],
     )
 
@@ -397,8 +428,8 @@ class MT5Config(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("xlmroberta", TEXT)
-@dataclass(repr=False)
-class XLMRoBERTaConfig(BaseEncoderConfig):
+@ludwig_dataclass
+class XLMRoBERTaConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an XLMRoBERTa encoder."""
 
     @staticmethod
@@ -418,7 +449,8 @@ class XLMRoBERTaConfig(BaseEncoderConfig):
 
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
-        description="Whether to use the pretrained weights for the model.",
+        description="Whether to use the pretrained weights for the model. If false, the model will train from "
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["XLMRoBERTa"]["use_pretrained"],
     )
 
@@ -443,7 +475,7 @@ class XLMRoBERTaConfig(BaseEncoderConfig):
 
     trainable: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to train the model.",
+        description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["XLMRoBERTa"]["trainable"],
     )
 
@@ -477,6 +509,19 @@ class XLMRoBERTaConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["XLMRoBERTa"]["eos_token_id"],
     )
 
+    max_position_embeddings: int = schema_utils.PositiveInteger(
+        default=514,
+        description="The maximum sequence length that this model might ever be used with. Typically set this to "
+        "something large just in case (e.g., 512 or 1024 or 2048).",
+        parameter_metadata=ENCODER_METADATA["XLMRoBERTa"]["max_position_embeddings"],
+    )
+
+    type_vocab_size: int = schema_utils.PositiveInteger(
+        default=1,
+        description="The vocabulary size of the token_type_ids passed in.",
+        parameter_metadata=ENCODER_METADATA["XLMRoBERTa"]["type_vocab_size"],
+    )
+
     add_pooling_layer: bool = schema_utils.Boolean(
         default=True,
         description="Whether to add a pooling layer to the encoder.",
@@ -492,8 +537,8 @@ class XLMRoBERTaConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("bert", TEXT)
-@dataclass(repr=False)
-class BERTConfig(BaseEncoderConfig):
+@ludwig_dataclass
+class BERTConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an BERT encoder."""
 
     @staticmethod
@@ -513,7 +558,8 @@ class BERTConfig(BaseEncoderConfig):
 
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
-        description="Whether to use the pretrained weights for the model.",
+        description="Whether to use the pretrained weights for the model. If false, the model will train from "
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["BERT"]["use_pretrained"],
     )
 
@@ -532,7 +578,7 @@ class BERTConfig(BaseEncoderConfig):
 
     trainable: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to train the model.",
+        description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["BERT"]["trainable"],
     )
 
@@ -663,8 +709,8 @@ class BERTConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("xlm", TEXT)
-@dataclass(repr=False)
-class XLMConfig(BaseEncoderConfig):
+@ludwig_dataclass
+class XLMConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an XLM encoder."""
 
     @staticmethod
@@ -684,7 +730,8 @@ class XLMConfig(BaseEncoderConfig):
 
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
-        description="Whether to use the pretrained weights for the model.",
+        description="Whether to use the pretrained weights for the model. If false, the model will train from "
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["XLM"]["use_pretrained"],
     )
 
@@ -703,7 +750,7 @@ class XLMConfig(BaseEncoderConfig):
 
     trainable: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to train the model.",
+        description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["XLM"]["trainable"],
     )
 
@@ -910,8 +957,8 @@ class XLMConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("gpt", TEXT)
-@dataclass(repr=False)
-class GPTConfig(BaseEncoderConfig):
+@ludwig_dataclass
+class GPTConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an GPT encoder."""
 
     @staticmethod
@@ -937,7 +984,8 @@ class GPTConfig(BaseEncoderConfig):
 
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
-        description="Whether to use the pretrained weights for the model.",
+        description="Whether to use the pretrained weights for the model. If false, the model will train from "
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["GPT"]["use_pretrained"],
     )
 
@@ -956,7 +1004,7 @@ class GPTConfig(BaseEncoderConfig):
 
     trainable: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to train the model.",
+        description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["GPT"]["trainable"],
     )
 
@@ -1050,8 +1098,8 @@ class GPTConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("gpt2", TEXT)
-@dataclass(repr=False)
-class GPT2Config(BaseEncoderConfig):
+@ludwig_dataclass
+class GPT2Config(HFEncoderConfig):
     """This dataclass configures the schema used for an GPT2 encoder."""
 
     @staticmethod
@@ -1071,7 +1119,8 @@ class GPT2Config(BaseEncoderConfig):
 
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
-        description="Whether to use the pretrained weights for the model.",
+        description="Whether to use the pretrained weights for the model. If false, the model will train from "
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["GPT2"]["use_pretrained"],
     )
 
@@ -1089,7 +1138,7 @@ class GPT2Config(BaseEncoderConfig):
 
     trainable: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to train the model.",
+        description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["GPT2"]["trainable"],
     )
 
@@ -1145,7 +1194,7 @@ class GPT2Config(BaseEncoderConfig):
 
     activation_function: str = schema_utils.StringOptions(
         ["relu", "silu", "gelu", "tanh", "gelu_new"],
-        default="gelu",
+        default="gelu_new",
         description="Activation function, to be selected in the list ['relu', 'silu', 'gelu', 'tanh', 'gelu_new'].",
         parameter_metadata=ENCODER_METADATA["GPT2"]["activation_function"],
     )
@@ -1201,8 +1250,8 @@ class GPT2Config(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("roberta", TEXT)
-@dataclass(repr=False)
-class RoBERTaConfig(BaseEncoderConfig):
+@ludwig_dataclass
+class RoBERTaConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an RoBERTa encoder."""
 
     @staticmethod
@@ -1222,7 +1271,8 @@ class RoBERTaConfig(BaseEncoderConfig):
 
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
-        description="Whether to use the pretrained weights for the model.",
+        description="Whether to use the pretrained weights for the model. If false, the model will train from "
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["RoBERTa"]["use_pretrained"],
     )
 
@@ -1247,7 +1297,7 @@ class RoBERTaConfig(BaseEncoderConfig):
 
     trainable: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to train the model.",
+        description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["RoBERTa"]["trainable"],
     )
 
@@ -1290,8 +1340,8 @@ class RoBERTaConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("transformer_xl", TEXT)
-@dataclass(repr=False)
-class TransformerXLConfig(BaseEncoderConfig):
+@ludwig_dataclass
+class TransformerXLConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an TransformerXL encoder."""
 
     @staticmethod
@@ -1311,7 +1361,8 @@ class TransformerXLConfig(BaseEncoderConfig):
 
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
-        description="Whether to use the pretrained weights for the model.",
+        description="Whether to use the pretrained weights for the model. If false, the model will train from "
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["TransformerXL"]["use_pretrained"],
     )
 
@@ -1336,7 +1387,7 @@ class TransformerXLConfig(BaseEncoderConfig):
 
     trainable: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to train the model.",
+        description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["TransformerXL"]["trainable"],
     )
 
@@ -1517,8 +1568,8 @@ class TransformerXLConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("xlnet", TEXT)
-@dataclass(repr=False)
-class XLNetConfig(BaseEncoderConfig):
+@ludwig_dataclass
+class XLNetConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an XLNet encoder."""
 
     @staticmethod
@@ -1538,7 +1589,8 @@ class XLNetConfig(BaseEncoderConfig):
 
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
-        description="Whether to use the pretrained weights for the model.",
+        description="Whether to use the pretrained weights for the model. If false, the model will train from "
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["XLNet"]["use_pretrained"],
     )
 
@@ -1563,7 +1615,7 @@ class XLNetConfig(BaseEncoderConfig):
 
     trainable: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to train the model.",
+        description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["XLNet"]["trainable"],
     )
 
@@ -1581,25 +1633,25 @@ class XLNetConfig(BaseEncoderConfig):
     )
 
     d_model: int = schema_utils.PositiveInteger(
-        default=1024,
+        default=768,
         description="Dimensionality of the encoder layers and the pooler layer.",
         parameter_metadata=ENCODER_METADATA["XLNet"]["d_model"],
     )
 
     n_layer: int = schema_utils.PositiveInteger(
-        default=24,
+        default=12,
         description="Number of hidden layers in the Transformer encoder.",
         parameter_metadata=ENCODER_METADATA["XLNet"]["n_layer"],
     )
 
     n_head: int = schema_utils.PositiveInteger(
-        default=16,
+        default=12,
         description="Number of attention heads for each attention layer in the Transformer encoder.",
         parameter_metadata=ENCODER_METADATA["XLNet"]["n_head"],
     )
 
     d_inner: int = schema_utils.PositiveInteger(
-        default=4096,
+        default=3072,
         description="Dimensionality of the “intermediate” (often named feed-forward) layer in the Transformer encoder.",
         parameter_metadata=ENCODER_METADATA["XLNet"]["d_inner"],
     )
@@ -1644,7 +1696,7 @@ class XLNetConfig(BaseEncoderConfig):
     )
 
     mem_len: int = schema_utils.PositiveInteger(
-        default=512,
+        default=None,
         description="The number of tokens to cache. The key/value pairs that have already been pre-computed in a "
         "previous forward pass won’t be re-computed. ",
         parameter_metadata=ENCODER_METADATA["XLNet"]["mem_len"],
@@ -1754,8 +1806,8 @@ class XLNetConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("distilbert", TEXT)
-@dataclass(repr=False)
-class DistilBERTConfig(BaseEncoderConfig):
+@ludwig_dataclass
+class DistilBERTConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an DistilBERT encoder."""
 
     @staticmethod
@@ -1771,6 +1823,13 @@ class DistilBERTConfig(BaseEncoderConfig):
         default=None,
         description="Maximum length of the input sequence.",
         parameter_metadata=ENCODER_METADATA["DistilBERT"]["max_sequence_length"],
+    )
+
+    use_pretrained: bool = schema_utils.Boolean(
+        default=True,
+        description="Whether to use the pretrained weights for the model. If false, the model will train from "
+        "scratch which is very computationally expensive.",
+        parameter_metadata=ENCODER_METADATA["DistilBERT"]["use_pretrained"],
     )
 
     pretrained_model_name_or_path: str = schema_utils.String(
@@ -1794,14 +1853,8 @@ class DistilBERTConfig(BaseEncoderConfig):
 
     trainable: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to train the model.",
+        description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["DistilBERT"]["trainable"],
-    )
-
-    use_pretrained: bool = schema_utils.Boolean(
-        default=True,
-        description="Whether to use the pretrained weights for the model.",
-        parameter_metadata=ENCODER_METADATA["DistilBERT"]["use_pretrained"],
     )
 
     vocab: list = schema_utils.List(
@@ -1815,6 +1868,14 @@ class DistilBERTConfig(BaseEncoderConfig):
         description="Vocabulary size of the DistilBERT model. Defines the number of different tokens that can be "
         "represented by the inputs_ids passed when calling DistilBertModel or TFDistilBertModel.",
         parameter_metadata=ENCODER_METADATA["DistilBERT"]["vocab_size"],
+    )
+
+    dropout: float = schema_utils.FloatRange(
+        default=0.1,
+        min=0,
+        max=1,
+        description="The dropout probability for all fully connected layers in the embeddings, encoder, and pooler.",
+        parameter_metadata=ENCODER_METADATA["DistilBERT"]["dropout"],
     )
 
     max_position_embeddings: int = schema_utils.PositiveInteger(
@@ -1852,14 +1913,6 @@ class DistilBERTConfig(BaseEncoderConfig):
         default=3072,
         description="The size of the “intermediate” (often named feed-forward) layer in the Transformer encoder.",
         parameter_metadata=ENCODER_METADATA["DistilBERT"]["hidden_dim"],
-    )
-
-    dropout: float = schema_utils.FloatRange(
-        default=0.1,
-        min=0,
-        max=1,
-        description="The dropout probability for all fully connected layers in the embeddings, encoder, and pooler.",
-        parameter_metadata=ENCODER_METADATA["DistilBERT"]["dropout"],
     )
 
     attention_dropout: float = schema_utils.NonNegativeFloat(
@@ -1906,11 +1959,12 @@ class DistilBERTConfig(BaseEncoderConfig):
     )
 
 
-@DeveloperAPI
 # TODO: uncomment when CTRL bug (https://github.com/ludwig-ai/ludwig/issues/2977) has been fixed to add back in
 # @register_encoder_config("ctrl", TEXT)
-@dataclass(repr=False)
-class CTRLConfig(BaseEncoderConfig):
+@DeveloperAPI
+@register_encoder_config("ctrl", TEXT)
+@ludwig_dataclass
+class CTRLConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an CTRL encoder."""
 
     @staticmethod
@@ -1930,7 +1984,8 @@ class CTRLConfig(BaseEncoderConfig):
 
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
-        description="Whether to use the pretrained weights for the model.",
+        description="Whether to use the pretrained weights for the model. If false, the model will train from "
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["CTRL"]["use_pretrained"],
     )
 
@@ -1955,7 +2010,7 @@ class CTRLConfig(BaseEncoderConfig):
 
     trainable: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to train the model.",
+        description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["CTRL"]["trainable"],
     )
 
@@ -2050,8 +2105,8 @@ class CTRLConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("camembert", TEXT)
-@dataclass(repr=False)
-class CamemBERTConfig(BaseEncoderConfig):
+@ludwig_dataclass
+class CamemBERTConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an CamemBERT encoder."""
 
     @staticmethod
@@ -2071,7 +2126,8 @@ class CamemBERTConfig(BaseEncoderConfig):
 
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
-        description="Whether to use the pretrained weights for the model.",
+        description="Whether to use the pretrained weights for the model. If false, the model will train from "
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["CamemBERT"]["use_pretrained"],
     )
 
@@ -2096,7 +2152,7 @@ class CamemBERTConfig(BaseEncoderConfig):
 
     trainable: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to train the model.",
+        description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["CamemBERT"]["trainable"],
     )
 
@@ -2107,7 +2163,7 @@ class CamemBERTConfig(BaseEncoderConfig):
     )
 
     vocab_size: int = schema_utils.PositiveInteger(
-        default=30522,
+        default=32005,
         description="Vocabulary size of the CamemBERT model.",
         parameter_metadata=ENCODER_METADATA["CamemBERT"]["vocab_size"],
     )
@@ -2160,14 +2216,14 @@ class CamemBERTConfig(BaseEncoderConfig):
     )
 
     max_position_embeddings: int = schema_utils.PositiveInteger(
-        default=512,
+        default=514,
         description="The maximum sequence length that this model might ever be used with. Typically set this to "
         "something large just in case (e.g., 512 or 1024 or 2048).",
         parameter_metadata=ENCODER_METADATA["CamemBERT"]["max_position_embeddings"],
     )
 
     type_vocab_size: int = schema_utils.PositiveInteger(
-        default=2,
+        default=1,
         description="The vocabulary size of the token_type_ids passed when calling BertModel or TFBertModel.",
         parameter_metadata=ENCODER_METADATA["CamemBERT"]["type_vocab_size"],
     )
@@ -2179,13 +2235,13 @@ class CamemBERTConfig(BaseEncoderConfig):
     )
 
     layer_norm_eps: float = schema_utils.NonNegativeFloat(
-        default=1e-12,
+        default=1e-05,
         description="The epsilon used by the layer normalization layers.",
         parameter_metadata=ENCODER_METADATA["CamemBERT"]["layer_norm_eps"],
     )
 
     pad_token_id: int = schema_utils.Integer(
-        default=0,
+        default=1,
         description="The ID of the token to use as padding.",
         parameter_metadata=ENCODER_METADATA["CamemBERT"]["pad_token_id"],
     )
@@ -2220,8 +2276,8 @@ class CamemBERTConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("t5", TEXT)
-@dataclass(repr=False)
-class T5Config(BaseEncoderConfig):
+@ludwig_dataclass
+class T5Config(HFEncoderConfig):
     """This dataclass configures the schema used for an T5 encoder."""
 
     @staticmethod
@@ -2241,7 +2297,8 @@ class T5Config(BaseEncoderConfig):
 
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
-        description="Whether to use the pretrained weights for the model.",
+        description="Whether to use the pretrained weights for the model. If false, the model will train from "
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["T5"]["use_pretrained"],
     )
 
@@ -2266,7 +2323,7 @@ class T5Config(BaseEncoderConfig):
 
     trainable: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to train the model.",
+        description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["T5"]["trainable"],
     )
 
@@ -2309,7 +2366,7 @@ class T5Config(BaseEncoderConfig):
     )
 
     num_decoder_layers: int = schema_utils.PositiveInteger(
-        default=None,
+        default=6,
         description="Number of hidden layers in the Transformer decoder. Will use the same value as num_layers if not "
         "set.",
         parameter_metadata=ENCODER_METADATA["T5"]["num_decoder_layers"],
@@ -2365,8 +2422,8 @@ class T5Config(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("flaubert", TEXT)
-@dataclass(repr=False)
-class FlauBERTConfig(BaseEncoderConfig):
+@ludwig_dataclass
+class FlauBERTConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an FlauBERT encoder."""
 
     @staticmethod
@@ -2386,13 +2443,14 @@ class FlauBERTConfig(BaseEncoderConfig):
 
     use_pretrained: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to use the pretrained weights for the model.",
+        description="Whether to use the pretrained weights for the model. If false, the model will train from "
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["FlauBERT"]["use_pretrained"],
     )
 
     pretrained_model_name_or_path: str = schema_utils.String(
-        default="t5-small",
-        description="flaubert/flaubert_small_cased",
+        default="flaubert/flaubert_small_cased",
+        description="Name of path of the pretrained model.",
         parameter_metadata=ENCODER_METADATA["FlauBERT"]["pretrained_model_name_or_path"],
     )
 
@@ -2411,7 +2469,7 @@ class FlauBERTConfig(BaseEncoderConfig):
 
     trainable: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to train the model.",
+        description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["FlauBERT"]["trainable"],
     )
 
@@ -2429,14 +2487,14 @@ class FlauBERTConfig(BaseEncoderConfig):
     )
 
     pre_norm: bool = schema_utils.Boolean(
-        default=False,
+        default=True,
         description="Whether to apply the layer normalization before or after the feed forward layer following the "
         "attention in each layer (Vaswani et al., Tensor2Tensor for Neural Machine Translation. 2018)",
         parameter_metadata=ENCODER_METADATA["FlauBERT"]["pre_norm"],
     )
 
     layerdrop: float = schema_utils.FloatRange(
-        default=0.0,
+        default=0.2,
         min=0,
         max=1,
         description="Probability to drop layers during training (Fan et al., Reducing Transformer Depth on Demand "
@@ -2445,21 +2503,21 @@ class FlauBERTConfig(BaseEncoderConfig):
     )
 
     emb_dim: int = schema_utils.PositiveInteger(
-        default=2048,
+        default=512,
         description="Dimensionality of the encoder layers and the pooler layer.",
         parameter_metadata=ENCODER_METADATA["FlauBERT"]["emb_dim"],
     )
 
-    n_layer: int = schema_utils.PositiveInteger(
-        default=12,
+    n_layers: int = schema_utils.PositiveInteger(
+        default=6,
         description="Number of hidden layers in the Transformer encoder.",
-        parameter_metadata=ENCODER_METADATA["FlauBERT"]["n_layer"],
+        parameter_metadata=ENCODER_METADATA["FlauBERT"]["n_layers"],
     )
 
-    n_head: int = schema_utils.PositiveInteger(
-        default=16,
+    n_heads: int = schema_utils.PositiveInteger(
+        default=8,
         description="Number of attention heads for each attention layer in the Transformer encoder.",
-        parameter_metadata=ENCODER_METADATA["FlauBERT"]["n_head"],
+        parameter_metadata=ENCODER_METADATA["FlauBERT"]["n_heads"],
     )
 
     dropout: float = schema_utils.FloatRange(
@@ -2532,15 +2590,15 @@ class FlauBERTConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["FlauBERT"]["embed_init_std"],
     )
 
-    init_std: int = schema_utils.PositiveInteger(
-        default=50257,
+    init_std: int = schema_utils.NonNegativeFloat(
+        default=0.02,
         description="The standard deviation of the truncated_normal_initializer for initializing all weight matrices "
         "except the embedding matrices.",
         parameter_metadata=ENCODER_METADATA["FlauBERT"]["init_std"],
     )
 
     layer_norm_eps: float = schema_utils.NonNegativeFloat(
-        default=1e-12,
+        default=1e-06,
         description="The epsilon used by the layer normalization layers.",
         parameter_metadata=ENCODER_METADATA["FlauBERT"]["layer_norm_eps"],
     )
@@ -2589,7 +2647,7 @@ class FlauBERTConfig(BaseEncoderConfig):
     )
 
     lang_id: int = schema_utils.Integer(
-        default=1,
+        default=0,
         description="The ID of the language used by the model. This parameter is used when generating text in a given "
         "language.",
         parameter_metadata=ENCODER_METADATA["FlauBERT"]["lang_id"],
@@ -2604,8 +2662,8 @@ class FlauBERTConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("electra", TEXT)
-@dataclass(repr=False)
-class ELECTRAConfig(BaseEncoderConfig):
+@ludwig_dataclass
+class ELECTRAConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an ELECTRA encoder."""
 
     @staticmethod
@@ -2625,7 +2683,8 @@ class ELECTRAConfig(BaseEncoderConfig):
 
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
-        description="Whether to use the pretrained weights for the model.",
+        description="Whether to use the pretrained weights for the model. If false, the model will train from "
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["ELECTRA"]["use_pretrained"],
     )
 
@@ -2650,7 +2709,7 @@ class ELECTRAConfig(BaseEncoderConfig):
 
     trainable: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to train the model.",
+        description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["ELECTRA"]["trainable"],
     )
 
@@ -2769,8 +2828,8 @@ class ELECTRAConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("longformer", TEXT)
-@dataclass(repr=False)
-class LongformerConfig(BaseEncoderConfig):
+@ludwig_dataclass
+class LongformerConfig(HFEncoderConfig):
     """This dataclass configures the schema used for a Longformer encoder."""
 
     @staticmethod
@@ -2790,7 +2849,8 @@ class LongformerConfig(BaseEncoderConfig):
 
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
-        description="Whether to use the pretrained weights for the model.",
+        description="Whether to use the pretrained weights for the model. If false, the model will train from "
+        "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["Longformer"]["use_pretrained"],
     )
 
@@ -2833,7 +2893,7 @@ class LongformerConfig(BaseEncoderConfig):
 
     trainable: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to train the model.",
+        description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["Longformer"]["trainable"],
     )
 
@@ -2844,15 +2904,22 @@ class LongformerConfig(BaseEncoderConfig):
     )
 
     vocab_size: int = schema_utils.PositiveInteger(
-        default=None,
+        default=50265,
         description="Vocabulary size of the Longformer model.",
         parameter_metadata=ENCODER_METADATA["Longformer"]["vocab_size"],
     )
 
-    num_tokens: int = schema_utils.PositiveInteger(
-        default=None,
-        description="Number of tokens",
-        parameter_metadata=ENCODER_METADATA["Longformer"]["num_tokens"],
+    max_position_embeddings: int = schema_utils.PositiveInteger(
+        default=4098,
+        description="The maximum sequence length that this model might ever be used with. Typically set this to "
+        "something large just in case (e.g., 512 or 1024 or 2048).",
+        parameter_metadata=ENCODER_METADATA["Longformer"]["max_position_embeddings"],
+    )
+
+    type_vocab_size: int = schema_utils.PositiveInteger(
+        default=1,
+        description="The vocabulary size of the token_type_ids passed when calling LongformerEncoder",
+        parameter_metadata=ENCODER_METADATA["Longformer"]["type_vocab_size"],
     )
 
     pretrained_kwargs: dict = schema_utils.Dict(
@@ -2864,8 +2931,8 @@ class LongformerConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("auto_transformer", TEXT)
-@dataclass(repr=False)
-class AutoTransformerConfig(BaseEncoderConfig):
+@ludwig_dataclass
+class AutoTransformerConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an AutoTransformer encoder."""
 
     @staticmethod
@@ -2878,7 +2945,7 @@ class AutoTransformerConfig(BaseEncoderConfig):
     )
 
     pretrained_model_name_or_path: str = schema_utils.String(
-        default="xlm-roberta-base",
+        default="bert-base-uncased",
         description="Name or path of the pretrained model.",
         parameter_metadata=ENCODER_METADATA["AutoTransformer"]["pretrained_model_name_or_path"],
     )
@@ -2897,7 +2964,7 @@ class AutoTransformerConfig(BaseEncoderConfig):
 
     trainable: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to train the model.",
+        description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["AutoTransformer"]["trainable"],
     )
 
@@ -2909,7 +2976,10 @@ class AutoTransformerConfig(BaseEncoderConfig):
 
     vocab_size: int = schema_utils.PositiveInteger(
         default=None,
-        description="Vocabulary size of the XLMRoBERTa model.",
+        description=(
+            "Vocabulary size of the AutoTransformer model. If None, the vocab size will be inferred "
+            "from the given pretrained model"
+        ),
         parameter_metadata=ENCODER_METADATA["AutoTransformer"]["vocab_size"],
     )
 

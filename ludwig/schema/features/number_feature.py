@@ -1,9 +1,7 @@
 from typing import List, Tuple, Union
 
-from marshmallow_dataclass import dataclass
-
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import MEAN_SQUARED_ERROR, NUMBER
+from ludwig.constants import MEAN_SQUARED_ERROR, MODEL_ECD, MODEL_GBM, NUMBER
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -15,43 +13,61 @@ from ludwig.schema.features.loss.utils import LossDataclassField
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
 from ludwig.schema.features.utils import (
-    input_config_registry,
+    defaults_config_registry,
+    ecd_input_config_registry,
+    gbm_input_config_registry,
     input_mixin_registry,
     output_config_registry,
     output_mixin_registry,
 )
 from ludwig.schema.metadata import FEATURE_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
-from ludwig.schema.utils import BaseMarshmallowConfig
+from ludwig.schema.utils import BaseMarshmallowConfig, ludwig_dataclass
 
 
 @DeveloperAPI
 @input_mixin_registry.register(NUMBER)
-@dataclass
+@ludwig_dataclass
 class NumberInputFeatureConfigMixin(BaseMarshmallowConfig):
     """NumberInputFeatureConfigMixin is a dataclass that configures the parameters used in both the number input
     feature and the number global defaults section of the Ludwig Config."""
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=NUMBER)
 
+
+@DeveloperAPI
+@ludwig_dataclass
+class NumberInputFeatureConfig(BaseInputFeatureConfig, NumberInputFeatureConfigMixin):
+    """NumberInputFeatureConfig is a dataclass that configures the parameters used for a number input feature."""
+
+    encoder: BaseEncoderConfig = None
+
+
+@DeveloperAPI
+@ecd_input_config_registry.register(NUMBER)
+@ludwig_dataclass
+class ECDNumberInputFeatureConfig(NumberInputFeatureConfig):
     encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_ECD,
         feature_type=NUMBER,
         default="passthrough",
     )
 
 
 @DeveloperAPI
-@input_config_registry.register(NUMBER)
-@dataclass(repr=False)
-class NumberInputFeatureConfig(BaseInputFeatureConfig, NumberInputFeatureConfigMixin):
-    """NumberInputFeatureConfig is a dataclass that configures the parameters used for a number input feature."""
-
-    pass
+@gbm_input_config_registry.register(NUMBER)
+@ludwig_dataclass
+class GBMNumberInputFeatureConfig(NumberInputFeatureConfig):
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_GBM,
+        feature_type=NUMBER,
+        default="passthrough",
+    )
 
 
 @DeveloperAPI
 @output_mixin_registry.register(NUMBER)
-@dataclass
+@ludwig_dataclass
 class NumberOutputFeatureConfigMixin(BaseMarshmallowConfig):
     """NumberOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the number output
     feature and the number global defaults section of the Ludwig Config."""
@@ -69,7 +85,7 @@ class NumberOutputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @output_config_registry.register(NUMBER)
-@dataclass(repr=False)
+@ludwig_dataclass
 class NumberOutputFeatureConfig(BaseOutputFeatureConfig, NumberOutputFeatureConfigMixin):
     """NumberOutputFeatureConfig is a dataclass that configures the parameters used for a category output
     feature."""
@@ -111,3 +127,14 @@ class NumberOutputFeatureConfig(BaseOutputFeatureConfig, NumberOutputFeatureConf
     )
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="number_output")
+
+
+@DeveloperAPI
+@defaults_config_registry.register(NUMBER)
+@ludwig_dataclass
+class NumberDefaultsConfig(NumberInputFeatureConfigMixin, NumberOutputFeatureConfigMixin):
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_ECD,
+        feature_type=NUMBER,
+        default="passthrough",
+    )

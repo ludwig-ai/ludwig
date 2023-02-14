@@ -30,7 +30,7 @@ jobs:
     env:
       PYTORCH: ${{ matrix.pytorch-version }}
       MARKERS: ${{ matrix.test-markers }}
-      TORCHSCRIPT_VERISON: ${{ matrix.torchscript-version }}
+      TORCHSCRIPT_VERSION: ${{ matrix.torchscript-version }}
       RAY_VERSION: ${{ matrix.ray-version }}
 
     name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, backend-ray-${{ matrix.ray-version }}

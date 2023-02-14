@@ -16,6 +16,9 @@ from ludwig.distributed.base import DistributedStrategy
 class DDPStrategy(DistributedStrategy):
     def __init__(self):
         self._local_rank, self._local_size = local_rank_and_size()
+        self._log_on_init()
+
+    def _log_on_init(self):
         logging.info("Using DDP strategy")
 
     def wrap_model(self, model: nn.Module) -> nn.Module:

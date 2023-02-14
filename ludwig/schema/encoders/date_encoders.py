@@ -1,18 +1,17 @@
 from typing import List
 
-from marshmallow_dataclass import dataclass
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import DATE
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.metadata import ENCODER_METADATA
+from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
 @register_encoder_config("embed", DATE)
-@dataclass(repr=False)
+@ludwig_dataclass
 class DateEmbedConfig(BaseEncoderConfig):
     @staticmethod
     def module_name():
@@ -102,7 +101,7 @@ class DateEmbedConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("wave", DATE)
-@dataclass(repr=False)
+@ludwig_dataclass
 class DateWaveConfig(BaseEncoderConfig):
     @staticmethod
     def module_name():

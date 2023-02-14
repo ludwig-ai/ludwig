@@ -3,10 +3,10 @@ from dataclasses import field
 from typing import Callable, Dict, Optional, Tuple, Union
 
 from marshmallow import fields, ValidationError
-from marshmallow_dataclass import dataclass
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils.registry import Registry
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -38,22 +38,6 @@ def register_scheduler_config(name: str):
         return scheduler_config
 
     return wrap
-
-
-@DeveloperAPI
-@dataclass
-class BaseSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
-    """Base class for schedulers.
-
-    Not meant to be used directly.
-    """
-
-    type: str
-    """Name corresponding to a scheduler in `ludwig.schema.hyperopt.scheduler.scheduler_registry`.
-
-    Technically mutable, but attempting to load a derived scheduler with `type` set to a mismatched value will result in
-    a `ValidationError`.
-    """
 
 
 # Field aliases to cut down on code reuse:
@@ -95,8 +79,20 @@ def max_t_alias(default=100):
 
 
 @DeveloperAPI
-@dataclass
-class CommonSchedulerOptions:
+@ludwig_dataclass
+class BaseSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
+    """Base class for schedulers.
+
+    Not meant to be used directly.
+    """
+
+    type: str
+    """Name corresponding to a scheduler in `ludwig.schema.hyperopt.scheduler.scheduler_registry`.
+
+    Technically mutable, but attempting to load a derived scheduler with `type` set to a mismatched value will result in
+    a `ValidationError`.
+    """
+
     time_attr: str = time_attr_alias()
 
     metric: Optional[str] = metric_alias()
@@ -111,10 +107,16 @@ class CommonSchedulerOptions:
 
 
 @DeveloperAPI
+@ludwig_dataclass
+class BaseHyperbandSchedulerConfig(BaseSchedulerConfig):
+    max_t: int = max_t_alias()
+
+
+@DeveloperAPI
 @register_scheduler_config("async_hyperband")
 @register_scheduler_config("asynchyperband")
-@dataclass
-class AsyncHyperbandSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions):
+@ludwig_dataclass
+class AsyncHyperbandSchedulerConfig(BaseHyperbandSchedulerConfig):
     """Asynchronous hyperband (ASHA) scheduler settings."""
 
     type: str = schema_utils.ProtectedString("async_hyperband")
@@ -135,8 +137,8 @@ class AsyncHyperbandSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions)
 
 @DeveloperAPI
 @register_scheduler_config("hyperband")
-@dataclass
-class HyperbandSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions):
+@ludwig_dataclass
+class HyperbandSchedulerConfig(BaseHyperbandSchedulerConfig):
     """Standard hyperband scheduler settings."""
 
     type: str = schema_utils.ProtectedString("hyperband")
@@ -155,8 +157,8 @@ class HyperbandSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions):
 @DeveloperAPI
 @register_scheduler_config("median_stopping_rule")
 @register_scheduler_config("medianstoppingrule")
-@dataclass
-class MedianStoppingRuleSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions):
+@ludwig_dataclass
+class MedianStoppingRuleSchedulerConfig(BaseSchedulerConfig):
     """Median Stopping Rule scheduler settings."""
 
     type: str = schema_utils.ProtectedString("median_stopping_rule")
@@ -195,8 +197,8 @@ class MedianStoppingRuleSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOpti
 
 @DeveloperAPI
 @register_scheduler_config("pbt")
-@dataclass
-class PopulationBasedTrainingSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions):
+@ludwig_dataclass
+class PopulationBasedTrainingSchedulerConfig(BaseSchedulerConfig):
     """Population Based Training scheduler settings."""
 
     type: str = schema_utils.ProtectedString("pbt")
@@ -300,7 +302,7 @@ class PopulationBasedTrainingSchedulerConfig(BaseSchedulerConfig, CommonSchedule
 
 @DeveloperAPI
 @register_scheduler_config("pbt_replay")
-@dataclass
+@ludwig_dataclass
 class PopulationBasedTrainingReplaySchedulerConfig(BaseSchedulerConfig):
     """Population Based Training Replay scheduler settings."""
 
@@ -317,8 +319,8 @@ class PopulationBasedTrainingReplaySchedulerConfig(BaseSchedulerConfig):
 
 @DeveloperAPI
 @register_scheduler_config("pb2")
-@dataclass
-class PopulationBasedBanditsSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions):
+@ludwig_dataclass
+class PopulationBasedBanditsSchedulerConfig(BaseSchedulerConfig):
     """Population Based Bandits (PB2) scheduler settings."""
 
     type: str = schema_utils.ProtectedString("pb2")
@@ -382,8 +384,8 @@ class PopulationBasedBanditsSchedulerConfig(BaseSchedulerConfig, CommonScheduler
 
 @DeveloperAPI
 @register_scheduler_config("hb_bohb")
-@dataclass
-class BOHBSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions):
+@ludwig_dataclass
+class BOHBSchedulerConfig(BaseHyperbandSchedulerConfig):
     """Hyperband for BOHB (hb_bohb) scheduler settings."""
 
     type: str = schema_utils.ProtectedString("hb_bohb")
@@ -402,7 +404,7 @@ class BOHBSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions):
 # TODO: Double-check support for this
 @DeveloperAPI
 @register_scheduler_config("fifo")
-@dataclass
+@ludwig_dataclass
 class FIFOSchedulerConfig(BaseSchedulerConfig):
     """FIFO trial scheduler settings."""
 
@@ -412,7 +414,7 @@ class FIFOSchedulerConfig(BaseSchedulerConfig):
 # TODO: Double-check support for this as well as whether Callable args work properly
 @DeveloperAPI
 @register_scheduler_config("resource_changing")
-@dataclass
+@ludwig_dataclass
 class ResourceChangingSchedulerConfig(BaseSchedulerConfig):
     """Resource changing scheduler settings."""
 
@@ -507,7 +509,7 @@ def SchedulerDataclassField(default={"type": "fifo"}, description="Hyperopt sche
         raise ValidationError(f"Invalid default: `{default}`")
     try:
         opt = scheduler_config_registry[default["type"].lower()]
-        load_default = opt.Schema().load(default)
+        load_default = lambda: opt.Schema().load(default)
         dump_default = opt.Schema().dump(default)
 
         return field(
@@ -519,7 +521,7 @@ def SchedulerDataclassField(default={"type": "fifo"}, description="Hyperopt sche
                     metadata={"description": description},
                 )
             },
-            default_factory=lambda: load_default,
+            default_factory=load_default,
         )
     except Exception as e:
         raise ValidationError(

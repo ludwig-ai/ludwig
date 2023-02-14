@@ -1,6 +1,4 @@
-from typing import List
-
-from marshmallow_dataclass import dataclass
+from typing import Any, Dict, List
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import AUDIO, SEQUENCE, TEXT, TIMESERIES
@@ -8,12 +6,22 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.metadata import ENCODER_METADATA
+from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
-@register_encoder_config("passthrough", [SEQUENCE, TEXT, TIMESERIES])
-@dataclass(repr=False)
-class SequencePassthroughConfig(BaseEncoderConfig):
+@ludwig_dataclass
+class SequenceEncoderConfig(BaseEncoderConfig):
+    """Base class for sequence encoders."""
+
+    def get_fixed_preprocessing_params(self) -> Dict[str, Any]:
+        return {"cache_encoder_embeddings": False}
+
+
+@DeveloperAPI
+@register_encoder_config("passthrough", [TIMESERIES])
+@ludwig_dataclass
+class SequencePassthroughConfig(SequenceEncoderConfig):
     @staticmethod
     def module_name():
         return "SequencePassthrough"
@@ -45,8 +53,8 @@ class SequencePassthroughConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("embed", [SEQUENCE, TEXT])
-@dataclass(repr=False)
-class SequenceEmbedConfig(BaseEncoderConfig):
+@ludwig_dataclass
+class SequenceEmbedConfig(SequenceEncoderConfig):
     @staticmethod
     def module_name():
         return "SequenceEmbed"
@@ -124,8 +132,8 @@ class SequenceEmbedConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("parallel_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
-@dataclass(repr=False)
-class ParallelCNNConfig(BaseEncoderConfig):
+@ludwig_dataclass
+class ParallelCNNConfig(SequenceEncoderConfig):
     @staticmethod
     def module_name():
         return "ParallelCNN"
@@ -292,8 +300,8 @@ class ParallelCNNConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("stacked_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
-@dataclass(repr=False)
-class StackedCNNConfig(BaseEncoderConfig):
+@ludwig_dataclass
+class StackedCNNConfig(SequenceEncoderConfig):
     @staticmethod
     def module_name():
         return "StackedCNN"
@@ -492,8 +500,8 @@ class StackedCNNConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("stacked_parallel_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
-@dataclass(repr=False)
-class StackedParallelCNNConfig(BaseEncoderConfig):
+@ludwig_dataclass
+class StackedParallelCNNConfig(SequenceEncoderConfig):
     @staticmethod
     def module_name():
         return "StackedParallelCNN"
@@ -678,8 +686,8 @@ class StackedParallelCNNConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("rnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
-@dataclass(repr=False)
-class StackedRNNConfig(BaseEncoderConfig):
+@ludwig_dataclass
+class StackedRNNConfig(SequenceEncoderConfig):
     @staticmethod
     def module_name():
         return "StackedRNN"
@@ -732,12 +740,10 @@ class StackedRNNConfig(BaseEncoderConfig):
     )
 
     cell_type: str = schema_utils.StringOptions(
-        ["rnn", "lstm", "lstm_block", "ln", "lstm_cudnn", "gru", "gru_block", "gru_cudnn"],
+        ["rnn", "lstm", "gru"],
         default="rnn",
-        description="The type of recurrent cell to use. Available values are: `rnn`, `lstm`, `lstm_block`, `lstm`, "
-        "`ln`, `lstm_cudnn`, `gru`, `gru_block`, `gru_cudnn`. For reference about the differences between "
-        "the cells please refer to PyTorch's documentation. We suggest to use the `block` variants on "
-        "CPU and the `cudnn` variants on GPU because of their increased speed. ",
+        description="The type of recurrent cell to use. Available values are: `rnn`, `lstm`, `gru`. For reference "
+        "about the differences between the cells please refer to PyTorch's documentation",
         parameter_metadata=ENCODER_METADATA["StackedRNN"]["cell_type"],
     )
 
@@ -893,8 +899,8 @@ class StackedRNNConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("cnnrnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
-@dataclass(repr=False)
-class StackedCNNRNNConfig(BaseEncoderConfig):
+@ludwig_dataclass
+class StackedCNNRNNConfig(SequenceEncoderConfig):
     @staticmethod
     def module_name():
         return "StackedCNNRNN"
@@ -960,12 +966,10 @@ class StackedCNNRNNConfig(BaseEncoderConfig):
     )
 
     cell_type: str = schema_utils.StringOptions(
-        ["rnn", "lstm", "lstm_block", "ln", "lstm_cudnn", "gru", "gru_block", "gru_cudnn"],
+        ["rnn", "lstm", "gru"],
         default="rnn",
-        description="The type of recurrent cell to use. Available values are: `rnn`, `lstm`, `lstm_block`, `lstm`, "
-        "`ln`, `lstm_cudnn`, `gru`, `gru_block`, `gru_cudnn`. For reference about the differences between "
-        "the cells please refer to PyTorch's documentation. We suggest to use the `block` variants on "
-        "CPU and the `cudnn` variants on GPU because of their increased speed. ",
+        description="The type of recurrent cell to use. Available values are: `rnn`, `lstm`, `gru`. For reference "
+        "about the differences between the cells please refer to PyTorch's documentation.",
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["cell_type"],
     )
 
@@ -1189,8 +1193,8 @@ class StackedCNNRNNConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("transformer", [SEQUENCE, TEXT, TIMESERIES])
-@dataclass(repr=False)
-class StackedTransformerConfig(BaseEncoderConfig):
+@ludwig_dataclass
+class StackedTransformerConfig(SequenceEncoderConfig):
     @staticmethod
     def module_name():
         return "StackedTransformer"
@@ -1217,6 +1221,7 @@ class StackedTransformerConfig(BaseEncoderConfig):
     representation: str = schema_utils.StringOptions(
         ["dense", "sparse"],
         default="dense",
+        allow_none=False,
         description="The representation of the embeddings. 'Dense' means the embeddings are initialized randomly. "
         "'Sparse' means they are initialized to be one-hot encodings.",
         parameter_metadata=ENCODER_METADATA["StackedTransformer"]["representation"],

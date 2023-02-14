@@ -17,7 +17,7 @@
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Callable, Dict, Optional, Type, Union
 
 import numpy as np
 import pandas as pd
@@ -27,17 +27,20 @@ import torch
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend.utils.storage import StorageManager
 from ludwig.data.cache.manager import CacheManager
+from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataframe.pandas import PANDAS
 from ludwig.data.dataset.base import DatasetManager
 from ludwig.data.dataset.pandas import PandasDatasetManager
 from ludwig.models.base import BaseModel
 from ludwig.schema.trainer import ECDTrainerConfig, GBMTrainerConfig
 from ludwig.types import HyperoptConfigDict
+from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
+from ludwig.utils.dataframe_utils import from_batches, to_batches
 from ludwig.utils.fs_utils import get_bytes_obj_from_path
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.system_utils import Resources
 from ludwig.utils.torch_utils import initialize_pytorch
-from ludwig.utils.types import Series
+from ludwig.utils.types import DataFrame, Series
 
 
 @DeveloperAPI
@@ -92,7 +95,7 @@ class Backend(ABC):
 
     @property
     @abstractmethod
-    def df_engine(self):
+    def df_engine(self) -> DataFrameEngine:
         raise NotImplementedError()
 
     @property
@@ -119,6 +122,20 @@ class Backend(ABC):
 
     @abstractmethod
     def max_concurrent_trials(self, hyperopt_config: HyperoptConfigDict) -> Union[int, None]:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def tune_batch_size(self, evaluator_cls: Type[BatchSizeEvaluator], dataset_len: int) -> int:
+        """Returns best batch size (measured in samples / s) on the given evaluator.
+
+        The evaluator class will need to be instantiated on each worker in the backend cluster, then call
+        `evaluator.select_best_batch_size(dataset_len)`.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def batch_transform(self, df: DataFrame, batch_size: int, transform_fn: Callable) -> DataFrame:
+        """Applies `transform_fn` to every `batch_size` length batch of `df` and returns the result."""
         raise NotImplementedError()
 
 
@@ -154,6 +171,13 @@ class LocalPreprocessingMixin:
 
         return pd.Series(result, index=column.index, name=column.name)
 
+    def batch_transform(self, df: DataFrame, batch_size: int, transform_fn: Callable) -> DataFrame:
+        batches = to_batches(df, batch_size)
+        transform = transform_fn()
+        out_batches = [transform(batch.reset_index(drop=True)) for batch in batches]
+        out_df = from_batches(out_batches).reset_index(drop=True)
+        return out_df
+
 
 class LocalTrainingMixin:
     def initialize_pytorch(self, *args, **kwargs):
@@ -181,6 +205,10 @@ class LocalTrainingMixin:
 
     def is_coordinator(self):
         return True
+
+    def tune_batch_size(self, evaluator_cls: Type[BatchSizeEvaluator], dataset_len: int) -> int:
+        evaluator = evaluator_cls()
+        return evaluator.select_best_batch_size(dataset_len)
 
 
 class RemoteTrainingMixin:

@@ -1,3 +1,8 @@
+BaseEncoder:
+    skip:
+        internal_only: true
+        other_information: Internal Only
+        ui_display_name: Not Displayed
 ALBERT:
     type:
         short_description:
@@ -79,7 +84,7 @@ ALBERT:
 
             Increasing the embedding size may cause the model to train more slowly,
             but the higher dimensionality can also improve overall quality.'
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture
         suggested_values: 1.6 * sqrt(vocab_size)
@@ -175,15 +180,9 @@ ALBERT:
     max_position_embeddings:
         default_value_reasoning: Taken from huggingface.
         description_implications:
-            "An embedding is a relatively low-dimensional space
-            that is used to translate high-dimensional vectors like words or positions,
-            which can have a large vocbulary size. Ideally, after an embedding is
-            trained, it captures some of the semantics of the input by placing semantically
-            similar inputs close together in the embedding space.
-
-
-            Increasing the embedding size may cause the model to train more slowly,
-            but the higher dimensionality can also improve overall quality."
+            The size of the position embeddings table. This typically coincides with the
+            maximum sequence length this model might ever be used with. Typically set this
+            to something large just in case (e.g. 512, 1024, 2048).
         expected_impact: 1
         suggested_values: 512
         suggested_values_reasoning:
@@ -232,7 +231,7 @@ ALBERT:
             \nModels pretrained on highly-related source tasks are more likely to\
             \ be successful on the target task. Consider searching the HuggingFace\
             \ model repository for models trained on similar tasks."
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://arxiv.org/abs/1909.11942
         related_parameters:
@@ -276,8 +275,25 @@ ALBERT:
         ui_display_name: null
         expected_impact: 1
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -286,7 +302,6 @@ ALBERT:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -329,7 +344,6 @@ AutoTransformer:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -357,7 +371,7 @@ BERT:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -380,7 +394,7 @@ BERT:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -402,7 +416,7 @@ BERT:
             the feed-forward layers of the transformer.
         example_value:
             - relu
-        expected_impact: 2
+        expected_impact: 1
         literature_references:
             - "[Huggingface docs for BERT config](https://huggingface.co/docs/transformers/model_doc/bert#transformers.BertConfig.hidden_act)\n\
               \r\n[Relevant StackOverflow discussion](https://ai.stackexchange.com/questions/30341/why-does-a-transformer-not-use-an-activation-function-following-the-multi-head-a)"
@@ -420,7 +434,7 @@ BERT:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -438,7 +452,7 @@ BERT:
             Increasing the hidden size makes the model larger
             and slower to train, increases the model's capacity to capture more complexity.
             It also increases the chance of overfitting.
-        expected_impact: 2
+        expected_impact: 1
         suggested_values: 10 - 2048
         suggested_values_reasoning:
             Increasing the hidden size makes sense if the
@@ -452,7 +466,7 @@ BERT:
             lead to the outputs of these matrices to vanish or explode
         example_value:
             - 0.02
-        expected_impact: 3
+        expected_impact: 1
         other_information: Must be greater than 0
         related_parameters:
             - weights_initializer
@@ -470,15 +484,9 @@ BERT:
     max_position_embeddings:
         default_value_reasoning: Taken from huggingface.
         description_implications:
-            "An embedding is a relatively low-dimensional space
-            that is used to translate high-dimensional vectors like words or positions,
-            which can have a large vocbulary size. Ideally, after an embedding is
-            trained, it captures some of the semantics of the input by placing semantically
-            similar inputs close together in the embedding space.
-
-
-            Increasing the embedding size may cause the model to train more slowly,
-            but the higher dimensionality can also improve overall quality."
+            The size of the position embeddings table. This typically coincides with the
+            maximum sequence length this model might ever be used with. Typically set this
+            to something large just in case (e.g. 512, 1024, 2048).
         expected_impact: 2
         suggested_values: 512
         suggested_values_reasoning:
@@ -509,7 +517,7 @@ BERT:
         expected_impact: 1
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -537,8 +545,25 @@ BERT:
         ui_display_name: null
         expected_impact: 1
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -547,7 +572,6 @@ BERT:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -905,7 +929,6 @@ BagEmbedWeighted:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     weights_initializer:
@@ -960,7 +983,7 @@ CTRL:
             lead to the outputs of these matrices to vanish or explode
         example_value:
             - 0.02
-        expected_impact: 3
+        expected_impact: 1
         other_information: Must be greater than 0
         related_parameters:
             - weights_initializer
@@ -991,7 +1014,7 @@ CTRL:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -1018,8 +1041,25 @@ CTRL:
         expected_impact: 3
         ui_display_name: null
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -1028,7 +1068,6 @@ CTRL:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -1054,7 +1093,7 @@ CamemBERT:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -1077,7 +1116,7 @@ CamemBERT:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -1098,7 +1137,7 @@ CamemBERT:
             the feed-forward layers of the transformer.
         example_value:
             - relu
-        expected_impact: 2
+        expected_impact: 1
         literature_references:
             - "[Relevant StackOverflow discussion](https://ai.stackexchange.com/questions/30341/why-does-a-transformer-not-use-an-activation-function-following-the-multi-head-a)"
         suggested_values: gelu
@@ -1115,7 +1154,7 @@ CamemBERT:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -1133,7 +1172,7 @@ CamemBERT:
             Increasing the hidden size makes the model larger
             and slower to train, increases the model's capacity to capture more complexity.
             It also increases the chance of overfitting.
-        expected_impact: 2
+        expected_impact: 1
         suggested_values: 10 - 2048
         suggested_values_reasoning:
             Increasing the hidden size makes sense if the
@@ -1147,7 +1186,7 @@ CamemBERT:
             lead to the outputs of these matrices to vanish or explode
         example_value:
             - 0.02
-        expected_impact: 3
+        expected_impact: 1
         other_information: Must be greater than 0
         related_parameters:
             - weights_initializer
@@ -1163,15 +1202,9 @@ CamemBERT:
     max_position_embeddings:
         default_value_reasoning: Taken from huggingface.
         description_implications:
-            "An embedding is a relatively low-dimensional space
-            that is used to translate high-dimensional vectors like words or positions,
-            which can have a large vocbulary size. Ideally, after an embedding is
-            trained, it captures some of the semantics of the input by placing semantically
-            similar inputs close together in the embedding space.
-
-
-            Increasing the embedding size may cause the model to train more slowly,
-            but the higher dimensionality can also improve overall quality."
+            The size of the position embeddings table. This typically coincides with the
+            maximum sequence length this model might ever be used with. Typically set this
+            to something large just in case (e.g. 512, 1024, 2048).
         expected_impact: 2
         suggested_values: 512
         suggested_values_reasoning:
@@ -1197,7 +1230,7 @@ CamemBERT:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -1224,8 +1257,25 @@ CamemBERT:
     type_vocab_size:
         ui_display_name: null
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -1234,7 +1284,6 @@ CamemBERT:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -1464,7 +1513,6 @@ CategoricalSparse:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
 DateEmbed:
@@ -2299,7 +2347,7 @@ DistilBERT:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -2324,7 +2372,7 @@ DistilBERT:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -2348,7 +2396,7 @@ DistilBERT:
             lead to the outputs of these matrices to vanish or explode
         example_value:
             - 0.02
-        expected_impact: 3
+        expected_impact: 1
         other_information: Must be greater than 0
         related_parameters:
             - weights_initializer
@@ -2360,15 +2408,9 @@ DistilBERT:
     max_position_embeddings:
         default_value_reasoning: Taken from huggingface.
         description_implications:
-            "An embedding is a relatively low-dimensional space
-            that is used to translate high-dimensional vectors like words or positions,
-            which can have a large vocbulary size. Ideally, after an embedding is
-            trained, it captures some of the semantics of the input by placing semantically
-            similar inputs close together in the embedding space.
-
-
-            Increasing the embedding size may cause the model to train more slowly,
-            but the higher dimensionality can also improve overall quality."
+            The size of the position embeddings table. This typically coincides with the
+            maximum sequence length this model might ever be used with. Typically set this
+            to something large just in case (e.g. 512, 1024, 2048).
         expected_impact: 2
         suggested_values: 512
         suggested_values_reasoning:
@@ -2390,7 +2432,7 @@ DistilBERT:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     qa_dropout:
         default_value_reasoning: Huggingface default.
         description_implications:
@@ -2402,7 +2444,7 @@ DistilBERT:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -2445,7 +2487,7 @@ DistilBERT:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -2467,8 +2509,25 @@ DistilBERT:
         expected_impact: 3
         ui_display_name: null
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -2477,7 +2536,6 @@ DistilBERT:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -2506,7 +2564,7 @@ ELECTRA:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -2529,7 +2587,7 @@ ELECTRA:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -2561,7 +2619,7 @@ ELECTRA:
 
             Increasing the embedding size may cause the model to train more slowly,
             but the higher dimensionality can also improve overall quality.'
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture
         suggested_values: 1.6 * sqrt(vocab_size)
@@ -2577,7 +2635,7 @@ ELECTRA:
             the feed-forward layers of the transformer.
         example_value:
             - relu
-        expected_impact: 2
+        expected_impact: 1
         literature_references:
             - "[Huggingface docs for ELECTRA config](https://huggingface.co/docs/transformers/model_doc/electra#transformers.ElectraConfig.hidden_act)
 
@@ -2597,7 +2655,7 @@ ELECTRA:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -2617,7 +2675,7 @@ ELECTRA:
             Increasing the hidden size makes the model larger
             and slower to train, increases the model's capacity to capture more complexity.
             It also increases the chance of overfitting.
-        expected_impact: 2
+        expected_impact: 1
         suggested_values: 10 - 2048
         suggested_values_reasoning:
             Increasing the hidden size makes sense if the
@@ -2631,7 +2689,7 @@ ELECTRA:
             lead to the outputs of these matrices to vanish or explode
         example_value:
             - 0.02
-        expected_impact: 3
+        expected_impact: 1
         other_information: Must be greater than 0
         related_parameters:
             - weights_initializer
@@ -2647,15 +2705,9 @@ ELECTRA:
     max_position_embeddings:
         default_value_reasoning: Taken from huggingface.
         description_implications:
-            "An embedding is a relatively low-dimensional space
-            that is used to translate high-dimensional vectors like words or positions,
-            which can have a large vocbulary size. Ideally, after an embedding is
-            trained, it captures some of the semantics of the input by placing semantically
-            similar inputs close together in the embedding space.
-
-
-            Increasing the embedding size may cause the model to train more slowly,
-            but the higher dimensionality can also improve overall quality."
+            The size of the position embeddings table. This typically coincides with the
+            maximum sequence length this model might ever be used with. Typically set this
+            to something large just in case (e.g. 512, 1024, 2048).
         expected_impact: 2
         suggested_values: 512
         suggested_values_reasoning:
@@ -2679,7 +2731,7 @@ ELECTRA:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -2706,8 +2758,25 @@ ELECTRA:
     type_vocab_size:
         ui_display_name: null
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -2716,7 +2785,6 @@ ELECTRA:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -2775,7 +2843,7 @@ FlauBERT:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -2824,15 +2892,9 @@ FlauBERT:
     max_position_embeddings:
         default_value_reasoning: Taken from huggingface.
         description_implications:
-            "An embedding is a relatively low-dimensional space
-            that is used to translate high-dimensional vectors like words or positions,
-            which can have a large vocbulary size. Ideally, after an embedding is
-            trained, it captures some of the semantics of the input by placing semantically
-            similar inputs close together in the embedding space.
-
-
-            Increasing the embedding size may cause the model to train more slowly,
-            but the higher dimensionality can also improve overall quality."
+            The size of the position embeddings table. This typically coincides with the
+            maximum sequence length this model might ever be used with. Typically set this
+            to something large just in case (e.g. 512, 1024, 2048).
         expected_impact: 1
         suggested_values: 512
         suggested_values_reasoning:
@@ -2846,14 +2908,14 @@ FlauBERT:
             inputs, so input/output shapes are computed accurately.
         internal_only: true
         ui_display_name: null
-    n_head:
+    n_heads:
         ui_display_name: null
         expected_impact: 1
     n_langs:
         default_value_reasoning: Default value used in pre-trained HF encoder.
         expected_impact: 1
         ui_display_name: Number of Languages
-    n_layer:
+    n_layers:
         ui_display_name: null
         expected_impact: 1
     pad_index:
@@ -2867,7 +2929,7 @@ FlauBERT:
         expected_impact: 1
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -2901,8 +2963,25 @@ FlauBERT:
         ui_display_name: null
         expected_impact: 1
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -2911,7 +2990,6 @@ FlauBERT:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -2939,7 +3017,7 @@ GPT2:
             lead to the outputs of these matrices to vanish or explode
         example_value:
             - 0.02
-        expected_impact: 3
+        expected_impact: 1
         other_information: Must be greater than 0
         related_parameters:
             - weights_initializer
@@ -2972,7 +3050,7 @@ GPT2:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -2984,8 +3062,25 @@ GPT2:
         expected_impact: 3
         ui_display_name: null
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -2994,7 +3089,6 @@ GPT2:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -3022,7 +3116,7 @@ GPT:
             lead to the outputs of these matrices to vanish or explode
         example_value:
             - 0.02
-        expected_impact: 3
+        expected_impact: 1
         other_information: Must be greater than 0
         related_parameters:
             - weights_initializer
@@ -3053,7 +3147,7 @@ GPT:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -3080,8 +3174,25 @@ GPT:
         expected_impact: 3
         ui_display_name: null
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -3994,11 +4105,31 @@ Longformer:
         ui_display_name: null
     num_tokens:
         ui_display_name: null
+    max_position_embeddings:
+        default_value_reasoning: Taken from huggingface.
+        description_implications:
+            "An embedding is a relatively low-dimensional space
+            that is used to translate high-dimensional vectors like words or positions,
+            which can have a large vocbulary size. Ideally, after an embedding is
+            trained, it captures some of the semantics of the input by placing semantically
+            similar inputs close together in the embedding space.
+
+            Increasing the embedding size may cause the model to train more slowly,
+            but the higher dimensionality can also improve overall quality."
+        expected_impact: 2
+        suggested_values: 512
+        suggested_values_reasoning:
+            Out of the box value based on published literature.
+            Try models with smaller or larger embedding sizes to observe relative
+            impact.
+        ui_display_name: Max Position Embeddings
+    type_vocab_size:
+        ui_display_name: null
     pretrained_kwargs:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -4025,8 +4156,25 @@ Longformer:
         expected_impact: 3
         ui_display_name: null
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -4035,7 +4183,6 @@ Longformer:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -4222,7 +4369,7 @@ MT5:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -4280,8 +4427,25 @@ MT5:
     use_cache:
         ui_display_name: null
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -4290,7 +4454,6 @@ MT5:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -4652,7 +4815,6 @@ ParallelCNN:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     weights_initializer:
@@ -5026,7 +5188,7 @@ RoBERTa:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -5051,8 +5213,25 @@ RoBERTa:
         expected_impact: 3
         ui_display_name: null
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -5061,7 +5240,6 @@ RoBERTa:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -5175,7 +5353,6 @@ SequenceEmbed:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     weights_initializer:
@@ -5543,7 +5720,6 @@ SetSparseEncoder:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     weights_initializer:
@@ -6333,7 +6509,6 @@ StackedCNN:
             - a
             - b
             - c
-        expected_impact: 1
         internal_only: true
         ui_display_name: Not Displayed
     weights_initializer:
@@ -6924,7 +7099,6 @@ StackedCNNRNN:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     weights_initializer:
@@ -7298,7 +7472,6 @@ StackedParallelCNN:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     weights_initializer:
@@ -7757,7 +7930,6 @@ StackedRNN:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     weights_initializer:
@@ -8196,7 +8368,6 @@ StackedTransformer:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     weights_initializer:
@@ -8258,7 +8429,7 @@ T5:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         suggested_values: 0.05 - 0.8
@@ -8297,7 +8468,7 @@ T5:
             from the pre-trained model."
         example_value:
             - 6
-        expected_impact: 3
+        expected_impact: 2
         related_parameters:
             - pretrained_model_or_path
         suggested_values: 1 - 12
@@ -8310,7 +8481,7 @@ T5:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -8337,8 +8508,25 @@ T5:
         expected_impact: 3
         ui_display_name: null
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -8347,7 +8535,6 @@ T5:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -8402,7 +8589,7 @@ TransformerXL:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         suggested_values: 0.05 - 0.8
@@ -8441,7 +8628,7 @@ TransformerXL:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     proj_init_std:
         ui_display_name: null
     proj_share_all_but_first:
@@ -8476,8 +8663,25 @@ TransformerXL:
     untie_r:
         ui_display_name: null
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -8486,7 +8690,6 @@ TransformerXL:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -8548,7 +8751,7 @@ TVBaseEncoder:
             Pretrained models have typically already learned
             features that are difficult to learn from scratch. They are particularly
             beneficial when training on small amounts of data.
-        expected_impact: 2
+        expected_impact: 3
         literature_references:
             - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
         related_parameters:
@@ -8559,7 +8762,7 @@ TVBaseEncoder:
             If you have a large amount of data and/or you
             have data that differs from the typical distribution, then it might be
             worth training the model from scratch.
-        ui_display_name: Use pretrained model
+        ui_display_name: Use Pretrained
 TVConvNeXtEncoder:
     model_variant:
         ui_display_name: Model Variant
@@ -8749,7 +8952,7 @@ ViT:
             lead to the outputs of these matrices to vanish or explode
         example_value:
             - 0.02
-        expected_impact: 3
+        expected_impact: 1
         other_information: Must be greater than 0
         related_parameters:
             - weights_initializer
@@ -8869,7 +9072,7 @@ ViT:
             Pretrained models have typically already learned
             features that are difficult to learn from scratch. They are particularly
             beneficial when training on small amounts of data.
-        expected_impact: 2
+        expected_impact: 3
         literature_references:
             - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
         related_parameters:
@@ -8880,7 +9083,7 @@ ViT:
             If you have a large amount of data and/or you
             have data that differs from the typical distribution, then it might be
             worth training the model from scratch.
-        ui_display_name: Use pretrained model
+        ui_display_name: Use Pretrained
     width:
         internal_only: true
         ui_display_name: null
@@ -8904,7 +9107,7 @@ XLM:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -8934,7 +9137,7 @@ XLM:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -8973,15 +9176,9 @@ XLM:
     max_position_embeddings:
         default_value_reasoning: Taken from huggingface.
         description_implications:
-            "An embedding is a relatively low-dimensional space
-            that is used to translate high-dimensional vectors like words or positions,
-            which can have a large vocbulary size. Ideally, after an embedding is
-            trained, it captures some of the semantics of the input by placing semantically
-            similar inputs close together in the embedding space.
-
-
-            Increasing the embedding size may cause the model to train more slowly,
-            but the higher dimensionality can also improve overall quality."
+            The size of the position embeddings table. This typically coincides with the
+            maximum sequence length this model might ever be used with. Typically set this
+            to something large just in case (e.g. 512, 1024, 2048).
         expected_impact: 2
         suggested_values: 512
         suggested_values_reasoning:
@@ -9011,7 +9208,7 @@ XLM:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -9044,8 +9241,25 @@ XLM:
     use_lang_emb:
         ui_display_name: null
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -9054,7 +9268,6 @@ XLM:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -9077,6 +9290,19 @@ XLMRoBERTa:
     eos_token_id:
         default_value_reasoning: Default value used in pre-trained HF encoder.
         ui_display_name: End-of-Sentence Token Id
+    max_position_embeddings:
+        default_value_reasoning: Taken from huggingface.
+        description_implications:
+            The size of the position embeddings table. This typically coincides with the
+            maximum sequence length this model might ever be used with. Typically set this
+            to something large just in case (e.g. 512, 1024, 2048).
+        expected_impact: 1
+        suggested_values: 512
+        suggested_values_reasoning:
+            Out of the box value based on published literature.
+            Try models with smaller or larger embedding sizes to observe relative
+            impact.
+        ui_display_name: Max Position Embeddings
     max_sequence_length:
         default_value_reasoning:
             Sets the maximum sequence length of the expected
@@ -9089,7 +9315,7 @@ XLMRoBERTa:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -9113,9 +9339,29 @@ XLMRoBERTa:
     trainable:
         expected_impact: 3
         ui_display_name: null
-    use_pretrained:
+    type_vocab_size:
         ui_display_name: null
-        expected_impact: 2
+        expected_impact: 1
+    use_pretrained:
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -9124,7 +9370,6 @@ XLMRoBERTa:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -9164,7 +9409,7 @@ XLNet:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -9190,7 +9435,7 @@ XLNet:
             lead to the outputs of these matrices to vanish or explode
         example_value:
             - 0.02
-        expected_impact: 3
+        expected_impact: 1
         other_information: Must be greater than 0
         related_parameters:
             - weights_initializer
@@ -9219,7 +9464,7 @@ XLNet:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -9261,7 +9506,7 @@ XLNet:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -9287,8 +9532,25 @@ XLNet:
     use_mems_train:
         ui_display_name: null
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -9297,7 +9559,6 @@ XLNet:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:

@@ -25,6 +25,7 @@ from ludwig.constants import (
     LENGTHS,
     NAME,
     PREDICTIONS,
+    PREPROCESSING,
     PROBABILITIES,
     PROBABILITY,
     PROC_COLUMN,
@@ -206,6 +207,9 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
     def input_shape(self):
         return torch.Size([self.encoder_obj.config.max_sequence_length])
 
+    def update_config_after_module_init(self, feature_config):
+        feature_config.encoder = self.encoder_obj.config
+
     @staticmethod
     def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
         feature_config.encoder.vocab = feature_metadata["idx2str"]
@@ -213,6 +217,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         feature_config.encoder.max_sequence_length = feature_metadata["max_sequence_length"]
         feature_config.encoder.pad_idx = feature_metadata["pad_idx"]
         feature_config.encoder.num_tokens = len(feature_metadata["idx2str"])
+        feature_config.encoder.skip = feature_metadata[PREPROCESSING].get("cache_encoder_embeddings", False)
 
     @staticmethod
     def get_schema_cls():

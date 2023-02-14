@@ -1,7 +1,5 @@
-from marshmallow_dataclass import dataclass
-
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import LOSS, SEQUENCE, SEQUENCE_SOFTMAX_CROSS_ENTROPY
+from ludwig.constants import LOSS, MODEL_ECD, SEQUENCE, SEQUENCE_SOFTMAX_CROSS_ENTROPY
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -13,19 +11,20 @@ from ludwig.schema.features.loss.utils import LossDataclassField
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
 from ludwig.schema.features.utils import (
-    input_config_registry,
+    defaults_config_registry,
+    ecd_input_config_registry,
     input_mixin_registry,
     output_config_registry,
     output_mixin_registry,
 )
 from ludwig.schema.metadata import FEATURE_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
-from ludwig.schema.utils import BaseMarshmallowConfig
+from ludwig.schema.utils import BaseMarshmallowConfig, ludwig_dataclass
 
 
 @DeveloperAPI
 @input_mixin_registry.register(SEQUENCE)
-@dataclass
+@ludwig_dataclass
 class SequenceInputFeatureConfigMixin(BaseMarshmallowConfig):
     """SequenceInputFeatureConfigMixin is a dataclass that configures the parameters used in both the sequence
     input feature and the sequence global defaults section of the Ludwig Config."""
@@ -33,14 +32,15 @@ class SequenceInputFeatureConfigMixin(BaseMarshmallowConfig):
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=SEQUENCE)
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_ECD,
         feature_type=SEQUENCE,
         default="embed",
     )
 
 
 @DeveloperAPI
-@input_config_registry.register(SEQUENCE)
-@dataclass(repr=False)
+@ecd_input_config_registry.register(SEQUENCE)
+@ludwig_dataclass
 class SequenceInputFeatureConfig(BaseInputFeatureConfig, SequenceInputFeatureConfigMixin):
     """SequenceInputFeatureConfig is a dataclass that configures the parameters used for a sequence input
     feature."""
@@ -50,7 +50,7 @@ class SequenceInputFeatureConfig(BaseInputFeatureConfig, SequenceInputFeatureCon
 
 @DeveloperAPI
 @output_mixin_registry.register(SEQUENCE)
-@dataclass
+@ludwig_dataclass
 class SequenceOutputFeatureConfigMixin(BaseMarshmallowConfig):
     """SequenceOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the sequence
     output feature and the sequence global defaults section of the Ludwig Config."""
@@ -68,7 +68,7 @@ class SequenceOutputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @output_config_registry.register(SEQUENCE)
-@dataclass(repr=False)
+@ludwig_dataclass
 class SequenceOutputFeatureConfig(BaseOutputFeatureConfig, SequenceOutputFeatureConfigMixin):
     """SequenceOutputFeatureConfig is a dataclass that configures the parameters used for a sequence output
     feature."""
@@ -100,3 +100,10 @@ class SequenceOutputFeatureConfig(BaseOutputFeatureConfig, SequenceOutputFeature
         "dimension (second if you count the batch dimension)",
         parameter_metadata=FEATURE_METADATA[SEQUENCE]["reduce_input"],
     )
+
+
+@DeveloperAPI
+@defaults_config_registry.register(SEQUENCE)
+@ludwig_dataclass
+class SequenceDefaultsConfig(SequenceInputFeatureConfigMixin, SequenceOutputFeatureConfigMixin):
+    pass

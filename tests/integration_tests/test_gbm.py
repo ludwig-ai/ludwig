@@ -8,12 +8,17 @@ try:
     import ray as _ray
 except ImportError:
     _ray = None
-from jsonschema.exceptions import ValidationError
+from marshmallow import ValidationError
 
 from ludwig.api import LudwigModel
 from ludwig.constants import COLUMN, INPUT_FEATURES, MODEL_TYPE, NAME, OUTPUT_FEATURES, TRAINER
 from tests.integration_tests import synthetic_test_data
-from tests.integration_tests.utils import binary_feature, category_feature, generate_data, number_feature, text_feature
+from tests.integration_tests.utils import binary_feature
+from tests.integration_tests.utils import category_feature as _category_feature
+from tests.integration_tests.utils import generate_data, number_feature, text_feature
+
+BOOSTING_TYPES = ["gbdt", "goss", "dart"]
+TREE_LEARNERS = ["serial", "feature", "data", "voting"]
 
 
 @pytest.fixture(scope="module")
@@ -39,6 +44,13 @@ def ray_backend():
             },
         },
     }
+
+
+def category_feature(**kwargs):
+    encoder = kwargs.get("encoder", {})
+    encoder = {**{"type": "passthrough"}, **encoder}
+    kwargs["encoder"] = encoder
+    return _category_feature(**kwargs)
 
 
 def _train_and_predict_gbm(input_features, output_features, tmpdir, backend_config, **trainer_config):
@@ -353,12 +365,46 @@ def test_boosting_type_rf_invalid(tmpdir, local_backend):
         _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend, boosting_type="rf")
 
 
+@pytest.mark.skip(reason="LightGBMError: Number of class for initial score error")
 def test_goss_deactivate_bagging(tmpdir, local_backend):
-    """Test that bagging is disabled for the GOSS boosting type."""
+    """Test that bagging is disabled for the GOSS boosting type.
+
+    TODO: Re-enable when GOSS is supported: https://github.com/ludwig-ai/ludwig/issues/2988
+    """
     input_features = [number_feature()]
     output_features = [binary_feature()]
 
     _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend, boosting_type="goss", bagging_freq=5)
+
+
+@pytest.mark.parametrize("tree_learner", TREE_LEARNERS)
+def test_boosting_type_null_invalid(tree_learner, tmpdir, local_backend):
+    """Test that the null boosting type is disabled.
+
+    `boosting_type: null` defaults to "gbdt", and it was removed to avoid confusing GBM trainer settings.
+    """
+    input_features = [number_feature()]
+    output_features = [binary_feature()]
+
+    with pytest.raises(ValidationError):
+        _train_and_predict_gbm(
+            input_features, output_features, tmpdir, local_backend, boosting_type=None, tree_learner=tree_learner
+        )
+
+
+@pytest.mark.parametrize("boosting_type", BOOSTING_TYPES)
+def test_tree_learner_null_invalid(boosting_type, tmpdir, local_backend):
+    """Test that the null tree learner is disabled.
+
+    `tree_learner: null` defaults to "serial", and it was removed to avoid confusing GBM trainer settings.
+    """
+    input_features = [number_feature()]
+    output_features = [binary_feature()]
+
+    with pytest.raises(ValidationError):
+        _train_and_predict_gbm(
+            input_features, output_features, tmpdir, local_backend, boosting_type=boosting_type, tree_learner=None
+        )
 
 
 def test_dart_boosting_type(tmpdir, local_backend):

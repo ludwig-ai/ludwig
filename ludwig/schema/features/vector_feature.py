@@ -1,7 +1,5 @@
-from marshmallow_dataclass import dataclass
-
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import MEAN_SQUARED_ERROR, VECTOR
+from ludwig.constants import MEAN_SQUARED_ERROR, MODEL_ECD, VECTOR
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -13,19 +11,20 @@ from ludwig.schema.features.loss.utils import LossDataclassField
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
 from ludwig.schema.features.utils import (
-    input_config_registry,
+    defaults_config_registry,
+    ecd_input_config_registry,
     input_mixin_registry,
     output_config_registry,
     output_mixin_registry,
 )
 from ludwig.schema.metadata import FEATURE_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
-from ludwig.schema.utils import BaseMarshmallowConfig
+from ludwig.schema.utils import BaseMarshmallowConfig, ludwig_dataclass
 
 
 @DeveloperAPI
 @input_mixin_registry.register(VECTOR)
-@dataclass
+@ludwig_dataclass
 class VectorInputFeatureConfigMixin(BaseMarshmallowConfig):
     """VectorInputFeatureConfigMixin is a dataclass that configures the parameters used in both the vector input
     feature and the vector global defaults section of the Ludwig Config."""
@@ -33,14 +32,15 @@ class VectorInputFeatureConfigMixin(BaseMarshmallowConfig):
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=VECTOR)
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_ECD,
         feature_type=VECTOR,
         default="dense",
     )
 
 
 @DeveloperAPI
-@input_config_registry.register(VECTOR)
-@dataclass(repr=False)
+@ecd_input_config_registry.register(VECTOR)
+@ludwig_dataclass
 class VectorInputFeatureConfig(BaseInputFeatureConfig, VectorInputFeatureConfigMixin):
     """VectorInputFeatureConfig is a dataclass that configures the parameters used for a vector input feature."""
 
@@ -49,7 +49,7 @@ class VectorInputFeatureConfig(BaseInputFeatureConfig, VectorInputFeatureConfigM
 
 @DeveloperAPI
 @output_mixin_registry.register(VECTOR)
-@dataclass
+@ludwig_dataclass
 class VectorOutputFeatureConfigMixin(BaseMarshmallowConfig):
     """VectorOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the vector output
     feature and the vector global defaults section of the Ludwig Config."""
@@ -67,7 +67,7 @@ class VectorOutputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @output_config_registry.register(VECTOR)
-@dataclass(repr=False)
+@ludwig_dataclass
 class VectorOutputFeatureConfig(BaseOutputFeatureConfig, VectorOutputFeatureConfigMixin):
     """VectorOutputFeatureConfig is a dataclass that configures the parameters used for a vector output feature."""
 
@@ -112,3 +112,10 @@ class VectorOutputFeatureConfig(BaseOutputFeatureConfig, VectorOutputFeatureConf
         description="The size of the vector. If None, the vector size will be inferred from the data.",
         parameter_metadata=FEATURE_METADATA[VECTOR]["vector_size"],
     )
+
+
+@DeveloperAPI
+@defaults_config_registry.register(VECTOR)
+@ludwig_dataclass
+class VectorDefaultsConfig(VectorInputFeatureConfigMixin, VectorOutputFeatureConfigMixin):
+    pass

@@ -22,10 +22,9 @@ import shutil
 import sys
 import tempfile
 import traceback
-import unittest
 import uuid
 from distutils.util import strtobool
-from typing import Any, Dict, List, Optional, Set, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, TYPE_CHECKING, Union
 
 import cloudpickle
 import numpy as np
@@ -67,6 +66,10 @@ from ludwig.trainers.trainer import Trainer
 from ludwig.utils import fs_utils
 from ludwig.utils.data_utils import read_csv, replace_file_extension, use_credentials
 
+if TYPE_CHECKING:
+    from ludwig.data.dataset.base import Dataset
+    from ludwig.schema.model_types.base import ModelConfig
+
 logger = logging.getLogger(__name__)
 
 # Used in sequence-related unit tests (encoders, features) as well as end-to-end integration tests.
@@ -79,12 +82,12 @@ HF_ENCODERS = [
     "bert",
     "gpt",
     "gpt2",
-    # 'transformer_xl',
+    "transformer_xl",
     "xlnet",
     "xlm",
     "roberta",
     "distilbert",
-    "ctrl",
+    # "ctrl",  # disabled in the schema: https://github.com/ludwig-ai/ludwig/pull/2976
     "camembert",
     "albert",
     "t5",
@@ -92,7 +95,7 @@ HF_ENCODERS = [
     "longformer",
     "flaubert",
     "electra",
-    "mt5",
+    # "mt5",    # disabled in the schema: https://github.com/ludwig-ai/ludwig/pull/2982
 ]
 
 RAY_BACKEND_CONFIG = {
@@ -149,18 +152,7 @@ def parse_flag_from_env(key, default=False):
     return _value
 
 
-_run_slow_tests = parse_flag_from_env("RUN_SLOW", default=False)
 _run_private_tests = parse_flag_from_env("RUN_PRIVATE", default=False)
-
-
-def slow(test_case):
-    """Decorator marking a test as slow.
-
-    Slow tests are skipped by default. Set the RUN_SLOW environment variable to a truth value to run them.
-    """
-    if not _run_slow_tests:
-        test_case = unittest.skip("Skipping: this test is too slow")(test_case)
-    return test_case
 
 
 def private_param(param):
@@ -262,7 +254,7 @@ def category_feature(output_feature=False, **kwargs):
     else:
         feature.update(
             {
-                ENCODER: {"type": "dense", "vocab_size": 10, "embedding_size": 5},
+                ENCODER: {"vocab_size": 10, "embedding_size": 5},
             }
         )
     recursive_update(feature, kwargs)
@@ -577,8 +569,8 @@ def generate_output_features_with_dependencies_complex():
     )
 
     # The correct order ids[tf, sf, nf, vf, set_f, cf]
-    # # shuffling it to test the robustness of the topological sort
-    output_features = [nf, tf, set_f, vf, cf, sf, nf]
+    # shuffling it to test the robustness of the topological sort
+    output_features = [nf, tf, set_f, vf, cf, sf]
 
     return output_features
 
@@ -876,6 +868,7 @@ def train_with_backend(
 
         if dataset is None:
             dataset = training_set
+
         if predict:
             preds, _ = model.predict(
                 dataset=dataset, skip_save_predictions=skip_save_predictions, output_directory=output_directory
@@ -970,6 +963,54 @@ def assert_all_required_metrics_exist(
             assert required_metric_names.issubset(
                 metric_names
             ), f"required metrics {required_metric_names} not in metrics {metric_names} for feature {feature_name}"
+
+
+def assert_preprocessed_dataset_shape_and_dtype_for_feature(
+    feature_name: str,
+    preprocessed_dataset: "Dataset",
+    config_obj: "ModelConfig",
+    expected_dtype: np.dtype,
+    expected_shape: Tuple,
+):
+    """Asserts that the preprocessed dataset has the correct shape and dtype for a given feature type.
+
+    Args:
+        feature_name: the name of the feature to check
+        preprocessed_dataset: the preprocessed dataset
+        config_obj: the model config object
+        expected_dtype: the expected dtype
+        expected_shape: the expected shape
+    Returns:
+        None.
+    Raises:
+        AssertionError if the preprocessed dataset does not have the correct shape and dtype for the given feature type.
+    """
+    if_configs = [if_config for if_config in config_obj.input_features if if_config.name == feature_name]
+    # fail fast if given `feature_name`` is not found or is not unique
+    if len(if_configs) != 1:
+        raise ValueError(f"feature_name {feature_name} found {len(if_configs)} times in config_obj")
+    if_config = if_configs[0]
+
+    if_config_proc_column = if_config.proc_column
+    for result in [
+        preprocessed_dataset.training_set,
+        preprocessed_dataset.validation_set,
+        preprocessed_dataset.test_set,
+    ]:
+        result_df = result.to_df()
+        result_df_proc_col = result_df[if_config_proc_column]
+
+        # Check that the proc col is of the correct dtype
+        result_df_proc_col_dtypes = set(result_df_proc_col.map(lambda x: x.dtype))
+        assert all(
+            [expected_dtype == dtype for dtype in result_df_proc_col_dtypes]
+        ), f"proc dtype should be {expected_dtype}, got the following set of values: {result_df_proc_col_dtypes}"
+
+        # Check that the proc col is of the right dimensions
+        result_df_proc_col_shapes = set(result_df_proc_col.map(lambda x: x.shape))
+        assert all(
+            expected_shape == shape for shape in result_df_proc_col_shapes
+        ), f"proc shape should be {expected_shape}, got the following set of values: {result_df_proc_col_shapes}"
 
 
 @contextlib.contextmanager

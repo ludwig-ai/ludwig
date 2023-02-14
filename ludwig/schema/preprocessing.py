@@ -1,14 +1,13 @@
-from marshmallow_dataclass import dataclass
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import RANDOM
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata import PREPROCESSING_METADATA
 from ludwig.schema.split import BaseSplitConfig, SplitDataclassField
+from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class PreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     """Global preprocessing config is a dataclass that configures the parameters used for global preprocessing."""
 
@@ -53,3 +52,13 @@ def get_preprocessing_jsonschema():
         "title": "global_preprocessing_options",
         "description": "Select the preprocessing type.",
     }
+
+
+@DeveloperAPI
+class PreprocessingField(schema_utils.DictMarshmallowField):
+    def __init__(self):
+        super().__init__(PreprocessingConfig)
+
+    @staticmethod
+    def _jsonschema_type_mapping():
+        return get_preprocessing_jsonschema()

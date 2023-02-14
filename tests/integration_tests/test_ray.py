@@ -37,6 +37,7 @@ from ludwig.constants import (
     DATE,
     H3,
     IMAGE,
+    MAX_BATCH_SIZE_DATASET_FRACTION,
     NAME,
     NUMBER,
     PREPROCESSING,
@@ -49,7 +50,9 @@ from ludwig.constants import (
     VECTOR,
 )
 from ludwig.data.preprocessing import balance_data
+from ludwig.data.split import DEFAULT_PROBABILITIES
 from ludwig.utils.data_utils import read_parquet
+from ludwig.utils.misc_utils import merge_dict
 from tests.integration_tests.utils import (
     audio_feature,
     augment_dataset_with_none,
@@ -298,6 +301,7 @@ def run_test_with_features(
     last_row_none=False,
     nan_cols=None,
     required_metrics=None,
+    backend_kwargs=None,
 ):
     preprocessing = preprocessing or {}
     config = {
@@ -309,7 +313,8 @@ def run_test_with_features(
     if preprocessing:
         config[PREPROCESSING] = preprocessing
 
-    backend_config = {**RAY_BACKEND_CONFIG}
+    backend_kwargs = copy.deepcopy(backend_kwargs or {})
+    backend_config = merge_dict(RAY_BACKEND_CONFIG, backend_kwargs)
     if df_engine:
         backend_config["processor"]["type"] = df_engine
 
@@ -791,12 +796,10 @@ def _run_train_gpu_load_cpu(config, data_parquet):
 # TODO(geoffrey): add a GPU test for batch size tuning
 @pytest.mark.distributed
 @pytest.mark.parametrize(
-    ("max_batch_size", "expected_final_batch_size", "expected_final_learning_rate"),
-    [(256, 128, 0.001), (32, 32, 0.001)],
+    ("max_batch_size", "expected_final_learning_rate"),
+    [(256, 0.001), (8, 0.001)],
 )
-def test_tune_batch_size_lr_cpu(
-    tmpdir, ray_cluster_2cpu, max_batch_size, expected_final_batch_size, expected_final_learning_rate
-):
+def test_tune_batch_size_lr_cpu(tmpdir, ray_cluster_2cpu, max_batch_size, expected_final_learning_rate):
     config = {
         "input_features": [
             number_feature(normalization="zscore"),
@@ -815,11 +818,22 @@ def test_tune_batch_size_lr_cpu(
 
     backend_config = {**RAY_BACKEND_CONFIG}
 
+    num_samples = 200
     csv_filename = os.path.join(tmpdir, "dataset.csv")
-    dataset_csv = generate_data(config["input_features"], config["output_features"], csv_filename, num_examples=200)
+    dataset_csv = generate_data(
+        config["input_features"], config["output_features"], csv_filename, num_examples=num_samples
+    )
     dataset_parquet = create_data_set_to_use("parquet", dataset_csv)
     model = run_api_experiment(config, dataset=dataset_parquet, backend_config=backend_config)
-    assert model.config[TRAINER]["batch_size"] == expected_final_batch_size
+
+    num_train_samples = num_samples * DEFAULT_PROBABILITIES[0]
+    max_batch_size_by_train_examples = MAX_BATCH_SIZE_DATASET_FRACTION * num_train_samples
+    max_batch_size = (
+        max_batch_size_by_train_examples
+        if max_batch_size is None
+        else min(max_batch_size_by_train_examples, max_batch_size)
+    )
+    assert 2 < model.config[TRAINER]["batch_size"] <= max_batch_size
     assert model.config[TRAINER]["learning_rate"] == expected_final_learning_rate
 
 

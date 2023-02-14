@@ -9,10 +9,12 @@ import pandas as pd
 import pytest
 from PIL import Image
 
+import ludwig
 from ludwig.api import LudwigModel
 from ludwig.constants import BATCH_SIZE, COLUMN, DECODER, NAME, PROC_COLUMN, TRAINER
 from ludwig.data.concatenate_datasets import concatenate_df
 from tests.integration_tests.utils import (
+    assert_preprocessed_dataset_shape_and_dtype_for_feature,
     audio_feature,
     binary_feature,
     category_feature,
@@ -37,7 +39,7 @@ def test_sample_ratio(backend, tmpdir, ray_cluster_2cpu):
     num_examples = 100
     sample_ratio = 0.25
 
-    input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
+    input_features = [sequence_feature(encoder={"reduce_output": "sum"}), audio_feature(folder=tmpdir)]
     output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
     data_csv = generate_data(
         input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=num_examples
@@ -235,6 +237,42 @@ def test_read_image_from_numpy_array(tmpdir, csv_filename):
     model.preprocess(
         df_with_images_as_numpy_arrays,
         skip_save_processed_input=False,
+    )
+
+
+def test_read_image_failure_default_image(monkeypatch, tmpdir, csv_filename):
+    """Tests that the default image used when an image cannot be read has the correct properties."""
+
+    def mock_read_binary_files(self, column, map_fn, file_size):
+        """Mock read_binary_files to return None (failed image read) to test error handling."""
+        return column.map(lambda x: None)
+
+    monkeypatch.setattr(ludwig.backend.base.LocalPreprocessingMixin, "read_binary_files", mock_read_binary_files)
+
+    image_feature_config = image_feature(os.path.join(tmpdir, "generated_output"))
+    input_features = [image_feature_config]
+    output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+    }
+
+    data_csv = generate_data(
+        input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=NUM_EXAMPLES, nan_percent=0.2
+    )
+
+    model = LudwigModel(config)
+    preprocessed_dataset = model.preprocess(data_csv)
+    training_set_metadata = preprocessed_dataset.training_set_metadata
+
+    preprocessing = training_set_metadata[input_features[0][NAME]]["preprocessing"]
+    expected_shape = (preprocessing["num_channels"], preprocessing["height"], preprocessing["width"])
+    expected_dtype = np.float32
+
+    assert_preprocessed_dataset_shape_and_dtype_for_feature(
+        image_feature_config[NAME], preprocessed_dataset, model.config_obj, expected_dtype, expected_shape
     )
 
 
@@ -540,3 +578,34 @@ def test_vit_encoder_different_dimension_image(tmpdir, csv_filename, use_pretrai
     # Failure happens post preprocessing but before training during the ECD model creation phase
     # so make sure the model can be created properly and training can proceed
     model.train(dataset=data_csv)
+
+
+@pytest.mark.parametrize(
+    "df_engine",
+    [
+        pytest.param("pandas", id="pandas"),
+        pytest.param("dask", id="dask", marks=pytest.mark.distributed),
+    ],
+)
+def test_fill_with_mode_different_df_engine(tmpdir, csv_filename, df_engine, ray_cluster_2cpu):
+    config = {
+        "input_features": [category_feature(preprocessing={"missing_value_strategy": "fill_with_mode"})],
+        "output_features": [binary_feature()],
+    }
+
+    training_data_csv_path = generate_data(
+        config["input_features"], config["output_features"], os.path.join(tmpdir, csv_filename)
+    )
+
+    df = pd.read_csv(training_data_csv_path)
+
+    if df_engine == "dask":
+        import dask.dataframe as dd
+
+        df = dd.from_pandas(df, npartitions=1)
+
+        # Only support Dask on Ray backend
+        config["backend"] = {"type": "ray"}
+
+    ludwig_model = LudwigModel(config)
+    ludwig_model.preprocess(dataset=df)

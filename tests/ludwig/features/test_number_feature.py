@@ -5,7 +5,7 @@ import pytest
 import torch
 
 from ludwig.features.number_feature import NumberInputFeature
-from ludwig.schema.features.number_feature import NumberInputFeatureConfig
+from ludwig.schema.features.number_feature import ECDNumberInputFeatureConfig
 from ludwig.schema.utils import load_config_with_kwargs
 from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.torch_utils import get_torch_device
@@ -26,11 +26,11 @@ def test_number_input_feature(
     number_def = deepcopy(number_config)
 
     # pickup any other missing parameters
-    defaults = NumberInputFeatureConfig().to_dict()
+    defaults = ECDNumberInputFeatureConfig().to_dict()
     set_def = merge_dict(defaults, number_def)
 
     # ensure no exceptions raised during build
-    number_config, _ = load_config_with_kwargs(NumberInputFeatureConfig, set_def)
+    number_config, _ = load_config_with_kwargs(ECDNumberInputFeatureConfig, set_def)
     input_feature_obj = NumberInputFeature(number_config).to(DEVICE)
 
     # check one forward pass through input feature

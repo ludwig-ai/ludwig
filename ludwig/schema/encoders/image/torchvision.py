@@ -1,16 +1,15 @@
 from typing import Optional, Union
 
-from marshmallow_dataclass import dataclass
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import IMAGE
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.metadata import ENCODER_METADATA
+from ludwig.schema.utils import ludwig_dataclass
 
 
-@dataclass
+@ludwig_dataclass
 class TVBaseEncoderConfig(BaseEncoderConfig):
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
@@ -35,10 +34,13 @@ class TVBaseEncoderConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["TVBaseEncoder"]["trainable"],
     )
 
+    def is_pretrained(self) -> bool:
+        return self.use_pretrained
+
 
 @DeveloperAPI
 @register_encoder_config("alexnet", IMAGE)
-@dataclass
+@ludwig_dataclass
 class TVAlexNetEncoderConfig(TVBaseEncoderConfig):
     type: str = schema_utils.ProtectedString("alexnet", description="Type of encoder.")
 
@@ -53,7 +55,7 @@ class TVAlexNetEncoderConfig(TVBaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("convnext", IMAGE)
-@dataclass
+@ludwig_dataclass
 class TVConvNeXtEncoderConfig(TVBaseEncoderConfig):
     type: str = schema_utils.ProtectedString("convnext", description="Type of encoder.")
 
@@ -68,7 +70,7 @@ class TVConvNeXtEncoderConfig(TVBaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("densenet", IMAGE)
-@dataclass
+@ludwig_dataclass
 class TVDenseNetEncoderConfig(TVBaseEncoderConfig):
     type: str = schema_utils.ProtectedString("densenet", description="Type of encoder.")
 
@@ -83,7 +85,7 @@ class TVDenseNetEncoderConfig(TVBaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("efficientnet", IMAGE)
-@dataclass
+@ludwig_dataclass
 class TVEfficientNetEncoderConfig(TVBaseEncoderConfig):
     type: str = schema_utils.ProtectedString("efficientnet", description="Type of encoder.")
 
@@ -110,7 +112,7 @@ class TVEfficientNetEncoderConfig(TVBaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("googlenet", IMAGE)
-@dataclass
+@ludwig_dataclass
 class TVGoogLeNetEncoderConfig(TVBaseEncoderConfig):
     type: str = schema_utils.ProtectedString("googlenet", description="Type of encoder.")
 
@@ -125,7 +127,7 @@ class TVGoogLeNetEncoderConfig(TVBaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("inceptionv3", IMAGE)
-@dataclass
+@ludwig_dataclass
 class TVInceptionV3EncoderConfig(TVBaseEncoderConfig):
     type: str = schema_utils.ProtectedString("inceptionv3", description="Type of encoder.")
 
@@ -140,7 +142,7 @@ class TVInceptionV3EncoderConfig(TVBaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("maxvit", IMAGE)
-@dataclass
+@ludwig_dataclass
 class TVMaxVitEncoderConfig(TVBaseEncoderConfig):
     type: str = schema_utils.ProtectedString("maxvit", description="Type of encoder.")
 
@@ -155,7 +157,7 @@ class TVMaxVitEncoderConfig(TVBaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("mnasnet", IMAGE)
-@dataclass
+@ludwig_dataclass
 class TVMNASNetEncoderConfig(TVBaseEncoderConfig):
     type: str = schema_utils.ProtectedString("mnasnet", description="Type of encoder.")
 
@@ -170,7 +172,7 @@ class TVMNASNetEncoderConfig(TVBaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("mobilenetv2", IMAGE)
-@dataclass
+@ludwig_dataclass
 class TVMobileNetV2EncoderConfig(TVBaseEncoderConfig):
     type: str = schema_utils.ProtectedString("mobilenetv2", description="Type of encoder.")
 
@@ -185,7 +187,7 @@ class TVMobileNetV2EncoderConfig(TVBaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("mobilenetv3", IMAGE)
-@dataclass
+@ludwig_dataclass
 class TVMobileNetV3EncoderConfig(TVBaseEncoderConfig):
     type: str = schema_utils.ProtectedString("mobilenetv3", description="Type of encoder.")
 
@@ -203,7 +205,7 @@ class TVMobileNetV3EncoderConfig(TVBaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("regnet", IMAGE)
-@dataclass
+@ludwig_dataclass
 class TVRegNetEncoderConfig(TVBaseEncoderConfig):
     type: str = schema_utils.ProtectedString("regnet", description="Type of encoder.")
 
@@ -234,7 +236,7 @@ class TVRegNetEncoderConfig(TVBaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("resnet", IMAGE)
-@dataclass
+@ludwig_dataclass
 class TVResNetEncoderConfig(TVBaseEncoderConfig):
     type: str = schema_utils.ProtectedString("resnet", description="Type of encoder.")
 
@@ -249,7 +251,7 @@ class TVResNetEncoderConfig(TVBaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("resnext", IMAGE)
-@dataclass
+@ludwig_dataclass
 class TVResNeXtEncoderConfig(TVBaseEncoderConfig):
     type: str = schema_utils.ProtectedString("resnext", description="Type of encoder.")
 
@@ -264,7 +266,7 @@ class TVResNeXtEncoderConfig(TVBaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("shufflenet_v2", IMAGE)
-@dataclass
+@ludwig_dataclass
 class TVShuffleNetV2EncoderConfig(TVBaseEncoderConfig):
     type: str = schema_utils.ProtectedString("shufflenet_v2", description="Type of encoder.")
 
@@ -284,7 +286,7 @@ class TVShuffleNetV2EncoderConfig(TVBaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("squeezenet", IMAGE)
-@dataclass
+@ludwig_dataclass
 class TVSqueezeNetEncoderConfig(TVBaseEncoderConfig):
     type: str = schema_utils.ProtectedString("squeezenet", description="Type of encoder.")
 
@@ -302,7 +304,7 @@ class TVSqueezeNetEncoderConfig(TVBaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("swin_transformer", IMAGE)
-@dataclass
+@ludwig_dataclass
 class TVSwinTransformerEncoderConfig(TVBaseEncoderConfig):
     type: str = schema_utils.ProtectedString("swin_transformer", description="Type of encoder.")
 
@@ -321,7 +323,7 @@ class TVSwinTransformerEncoderConfig(TVBaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("vit", IMAGE)
-@dataclass
+@ludwig_dataclass
 class TVViTEncoderConfig(TVBaseEncoderConfig):
     type: str = schema_utils.ProtectedString("vit", description="Type of encoder.")
 
@@ -342,7 +344,7 @@ class TVViTEncoderConfig(TVBaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("vgg", IMAGE)
-@dataclass
+@ludwig_dataclass
 class TVVGGEncoderConfig(TVBaseEncoderConfig):
     type: str = schema_utils.ProtectedString("vgg", description="Type of encoder.")
 
@@ -378,7 +380,7 @@ class TVVGGEncoderConfig(TVBaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("wide_resnet", IMAGE)
-@dataclass
+@ludwig_dataclass
 class TVWideResNetEncoderConfig(TVBaseEncoderConfig):
     type: str = schema_utils.ProtectedString("wide_resnet", description="Type of encoder.")
 
