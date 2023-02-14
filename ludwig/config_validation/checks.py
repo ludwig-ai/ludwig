@@ -11,7 +11,6 @@ from ludwig.constants import (
     AUDIO,
     BACKEND,
     BINARY,
-    CATEGORY,
     COMBINER,
     DECODER,
     ENCODER,
@@ -22,7 +21,6 @@ from ludwig.constants import (
     MODEL_GBM,
     MODEL_TYPE,
     NAME,
-    NUMBER,
     OUTPUT_FEATURES,
     PREPROCESSING,
     SEQUENCE,
@@ -200,23 +198,6 @@ def check_gbm_horovod_incompatibility(config: ModelConfigDict) -> None:
         return
     if config[MODEL_TYPE] == MODEL_GBM and config[BACKEND][TYPE] == "horovod":
         raise ConfigValidationError("Horovod backend does not support GBM models.")
-
-
-@register_config_check
-def check_gbm_single_output_feature(config: ModelConfigDict) -> None:
-    """GBM models only support a single output feature."""
-    if config[MODEL_TYPE] == MODEL_GBM:
-        if len(config[OUTPUT_FEATURES]) != 1:
-            raise ConfigValidationError("GBM models only support a single output feature.")
-
-
-@register_config_check
-def check_gbm_feature_types(config: ModelConfigDict) -> None:
-    """Checks that all input features for GBMs are of supported types."""
-    if config[MODEL_TYPE] == MODEL_GBM:
-        for input_feature in config[INPUT_FEATURES]:
-            if input_feature[TYPE] not in {BINARY, CATEGORY, NUMBER}:
-                raise ConfigValidationError("GBM Models currently only support Binary, Category, and Number features")
 
 
 @register_config_check
