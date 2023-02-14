@@ -1,4 +1,3 @@
 hummingbird-ml @ git+https://github.com/microsoft/hummingbird.git
 lightgbm
 lightgbm-ray
-xgboost-ray<0.1.14
