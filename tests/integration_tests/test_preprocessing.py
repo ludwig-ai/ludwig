@@ -246,9 +246,11 @@ def test_read_image_failure_all_images_raise_error(monkeypatch, tmpdir, csv_file
     def mock_read_binary_files_no_success(self, column, map_fn, file_size):
         """Mock read_binary_files to return None (failed image read) to test error handling."""
         return column.map(lambda x: None)
-    
-    monkeypatch.setattr(ludwig.backend.base.LocalPreprocessingMixin, "read_binary_files", mock_read_binary_files_no_success)
-    
+
+    monkeypatch.setattr(
+        ludwig.backend.base.LocalPreprocessingMixin, "read_binary_files", mock_read_binary_files_no_success
+    )
+
     image_feature_config = image_feature(os.path.join(tmpdir, "generated_output"))
     input_features = [image_feature_config]
     output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
@@ -264,7 +266,7 @@ def test_read_image_failure_all_images_raise_error(monkeypatch, tmpdir, csv_file
     )
 
     model = LudwigModel(config)
-    
+
     with pytest.raises(RuntimeError):
         model.preprocess(data_csv)
 
@@ -276,7 +278,9 @@ def test_read_image_failure_default_image(monkeypatch, tmpdir, csv_filename):
         """Mock read_binary_files to return None (failed image read) to test error handling."""
         return column.map(lambda x: None if random.random() < 0.5 else x)
 
-    monkeypatch.setattr(ludwig.backend.base.LocalPreprocessingMixin, "read_binary_files", mock_read_binary_files_partial_success)
+    monkeypatch.setattr(
+        ludwig.backend.base.LocalPreprocessingMixin, "read_binary_files", mock_read_binary_files_partial_success
+    )
 
     image_feature_config = image_feature(os.path.join(tmpdir, "generated_output"))
     input_features = [image_feature_config]
