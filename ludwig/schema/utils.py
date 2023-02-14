@@ -19,7 +19,7 @@ from ludwig.modules.reduction_modules import reduce_mode_registry
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, ParameterMetadata
 from ludwig.utils.misc_utils import memoized_method
 from ludwig.utils.registry import Registry
-from ludwig.utils.torch_utils import activations, initializer_registry
+from ludwig.utils.torch_utils import activations
 
 RECURSION_STOP_ENUM = {"weights_initializer", "bias_initializer", "norm_params"}
 ludwig_dataclass = m_dataclass(repr=False, order=True)
@@ -201,18 +201,6 @@ def unload_jsonschema_from_marshmallow_class(mclass, additional_properties: bool
             prop_schema["parameter_metadata"] = copy.deepcopy(prop_schema["parameter_metadata"])
     schema["additionalProperties"] = additional_properties
     return schema
-
-
-@DeveloperAPI
-def InitializerOptions(default: str = "xavier_uniform", description="", parameter_metadata: ParameterMetadata = None):
-    """Utility wrapper that returns a `StringOptions` field with keys from `initializer_registry`."""
-    return StringOptions(
-        list(initializer_registry.keys()),
-        default=default,
-        allow_none=False,
-        description=description,
-        parameter_metadata=parameter_metadata,
-    )
 
 
 @DeveloperAPI
@@ -806,83 +794,6 @@ def Embed(description: str = "", parameter_metadata: ParameterMetadata = None):
             )
         },
         default=None,
-    )
-
-
-@DeveloperAPI
-def InitializerOrDict(
-    default: str = "xavier_uniform", description: str = "", parameter_metadata: ParameterMetadata = None
-):
-    """Returns a dataclass field with marshmallow metadata allowing customizable initializers.
-
-    In particular, allows str or dict types; in the former case the field is equivalent to `InitializerOptions` while in
-    the latter case a dict can be defined with the `type` field enforced to be one of `initializer_registry` as usual
-    while additional properties are unrestricted.
-    """
-    initializers = list(initializer_registry.keys())
-    if not isinstance(default, str) or default not in initializers:
-        raise ValidationError(f"Invalid default: `{default}`")
-
-    class InitializerOptionsOrCustomDictField(fields.Field):
-        def _deserialize(self, value, attr, data, **kwargs):
-            if isinstance(value, str):
-                if value not in initializers:
-                    raise ValidationError(f"Expected one of: {initializers}, found: {value}")
-                return value
-
-            if isinstance(value, dict):
-                if "type" not in value:
-                    raise ValidationError("Dict must contain 'type'")
-                if value["type"] not in initializers:
-                    raise ValidationError(f"Dict expected key 'type' to be one of: {initializers}, found: {value}")
-                return value
-
-            raise ValidationError("Field should be str or dict")
-
-        def _jsonschema_type_mapping(self):
-            initializers = list(initializer_registry.keys())
-            param_metadata = convert_metadata_to_json(parameter_metadata) if parameter_metadata else None
-            return {
-                "oneOf": [
-                    # Note: default not provided in the custom dict option:
-                    {
-                        "type": "object",
-                        "properties": {
-                            "type": {"type": "string", "enum": initializers},
-                        },
-                        "required": ["type"],
-                        "title": f"{self.name}_custom_option",
-                        "additionalProperties": True,
-                        "description": "Customize an existing initializer.",
-                        "parameter_metadata": param_metadata,
-                    },
-                    {
-                        "type": "string",
-                        "enum": initializers,
-                        "default": default,
-                        "title": f"{self.name}_preconfigured_option",
-                        "description": "Pick a preconfigured initializer.",
-                        "parameter_metadata": param_metadata,
-                    },
-                ],
-                "title": self.name,
-                "default": default,
-                "description": description,
-            }
-
-    return field(
-        metadata={
-            "marshmallow_field": InitializerOptionsOrCustomDictField(
-                allow_none=False,
-                load_default=default,
-                dump_default=default,
-                metadata={
-                    "description": description,
-                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
-                },
-            )
-        },
-        default=default,
     )
 
 

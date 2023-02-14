@@ -60,7 +60,7 @@ class ConcatCombinerConfig(BaseCombinerConfig):
     )
 
     bias_initializer: InitializerConfig = BiasInitializerDataclassField(
-        default="zeros", single_dim=True, parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["bias_initializer"]
+        default="zeros", parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["bias_initializer"]
     )
 
     weights_initializer: InitializerConfig = WeightsInitializerDataclassField(

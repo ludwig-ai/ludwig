@@ -8,7 +8,6 @@ from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.initializers import (
     BiasInitializerDataclassField,
     InitializerConfig,
-    InitializerDataclassField,
     WeightsInitializerDataclassField,
 )
 from ludwig.schema.metadata import ENCODER_METADATA
@@ -47,7 +46,7 @@ class H3EmbedConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["H3Embed"]["use_bias"],
     )
 
-    bias_initializer: InitializerConfig = InitializerDataclassField(
+    bias_initializer: InitializerConfig = BiasInitializerDataclassField(
         default="zeros",
         description="Initializer to use for the bias vector.",
         parameter_metadata=ENCODER_METADATA["H3Embed"]["bias_initializer"],
@@ -295,7 +294,7 @@ class H3RNNConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["H3RNN"]["weights_initializer"],
     )
 
-    recurrent_initializer: str = schema_utils.InitializerOptions(
+    recurrent_initializer: InitializerConfig = WeightsInitializerDataclassField(
         default="orthogonal",
         description="The initializer for recurrent matrix weights",
         parameter_metadata=ENCODER_METADATA["H3RNN"]["recurrent_initializer"],

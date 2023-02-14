@@ -120,7 +120,7 @@ def test_config_object():
     assert config_object.output_features.category_feature.top_k == 3
 
     assert config_object.combiner.output_size == 512
-    assert config_object.combiner.weights_initializer == "xavier_uniform"
+    assert config_object.combiner.weights_initializer.type == "xavier_uniform"
     assert config_object.combiner.fc_layers is None
 
     assert config_object.trainer.epochs == 50
@@ -616,7 +616,7 @@ def test_initializer_recursion():
 
     config_obj = ModelConfig.from_dict(config)
 
-    assert isinstance(config_obj.combiner.weights_initializer, dict)
+    assert config_obj.combiner.weights_initializer.to_dict() == {"type": "normal", "mean": 0.0, "std": 1.0}
 
 
 def test_number_feature_zscore_preprocessing_default():

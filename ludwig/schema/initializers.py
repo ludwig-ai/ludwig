@@ -120,7 +120,7 @@ class TruncNormalInitializer(InitializerConfig):
         default=1.0, description="The standard deviation of the normal distribution"
     )
 
-    a: float = schema_utils.NonNegativeFloat(default=-2.0, description="The minimum cutoff value.")
+    a: float = schema_utils.NonNegativeFloat(default=2.0, description="The minimum cutoff value.")
 
     b: float = schema_utils.NonNegativeFloat(default=2.0, description="The maximum cutoff value.")
 
@@ -357,6 +357,10 @@ def _InitializerDataclassField(default: Union[str, Dict], description: str, sing
 
         @staticmethod
         def _jsonschema_type_mapping():
+            if single_dim:
+                initializer_list = list(initializer_registry.keys())
+            else:
+                initializer_list = list(bias_initializer_registry.keys())
             return {
                 "type": "object",
                 "properties": {
@@ -366,7 +370,7 @@ def _InitializerDataclassField(default: Union[str, Dict], description: str, sing
                             "properties": {
                                 "type": {
                                     "type": "string",
-                                    "enum": list(initializer_registry.keys()),
+                                    "enum": initializer_list,
                                     "default": default["type"],
                                     "description": "The type of initializer to use during the learning process",
                                 },
