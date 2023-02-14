@@ -113,8 +113,7 @@ def compute_feature_hash(feature: dict) -> str:
         preprocessing=feature.get(PREPROCESSING, {}),
         type=feature[TYPE],
     )
-    feature_data_hash = hash_dict(feature_data)
-    return sanitize(feature[NAME]) + "_" + feature_data_hash.decode("ascii")
+    return sanitize(feature[NAME]) + "_" + hash_dict(feature_data).decode("ascii")
 
 
 def get_input_size_with_dependencies(
