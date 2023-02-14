@@ -1671,9 +1671,9 @@ class XLNetConfig(HFEncoderConfig):
     )
 
     attn_type: str = schema_utils.StringOptions(
-        ["bi", "uni"],
+        ["bi"],
         default="bi",
-        description="The attention type used by the model. Set 'bi' for XLNet, 'uni' for Transformer-XL.",
+        description="The attention type used by the model. Currently only 'bi' is supported.",
         parameter_metadata=ENCODER_METADATA["XLNet"]["attn_type"],
     )
 
