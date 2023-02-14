@@ -100,9 +100,8 @@ def sanitize(name):
 
 
 def compute_feature_hash(feature: dict) -> str:
-    """
-    This function computes a hash for each feature based on the preprocessing dictionary associated with each feature,
-    as well as the feature's type.
+    """This function computes a hash for each feature based on the preprocessing dictionary associated with each
+    feature, as well as the feature's type.
 
     Args:
         feature: Feature dictionary
