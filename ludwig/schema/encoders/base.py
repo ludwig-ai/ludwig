@@ -80,6 +80,7 @@ class DenseEncoderConfig(BaseEncoderConfig):
 
     input_size: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Size of the input to the dense encoder.",
         parameter_metadata=ENCODER_METADATA["DenseEncoder"]["input_size"],
     )

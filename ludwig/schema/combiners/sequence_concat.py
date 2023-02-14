@@ -23,6 +23,7 @@ class SequenceConcatCombinerConfig(BaseCombinerConfig):
 
     main_sequence_feature: Optional[str] = schema_utils.String(
         default=None,
+        allow_none=True,
         description="",
         parameter_metadata=COMBINER_METADATA["SequenceConcatCombiner"]["main_sequence_feature"],
     )

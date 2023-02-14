@@ -276,8 +276,8 @@ def test_optimizers(optimizer_type, tmp_path):
     train_losses = train_stats[TRAINING]["combined"]["loss"]
     last_entry = len(train_losses)
 
-    # ensure train loss for last entry is less than or equal to the first entry.
-    assert train_losses[last_entry - 1] <= train_losses[0]
+    # ensure train loss for last entry is less than to the first entry.
+    np.testing.assert_array_less(train_losses[last_entry - 1], train_losses[0])
 
 
 def test_regularization(tmp_path):
