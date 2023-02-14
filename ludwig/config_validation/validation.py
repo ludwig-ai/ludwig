@@ -92,7 +92,8 @@ def validate_config(config):
     # Update config from previous versions to check that backwards compatibility will enable a valid config
     updated_config = upgrade_config_dict_to_latest_version(config)
 
-    # TODO(Justin). Consolidate with ModelConfig. JSON schema validation checks a bit more than schema.load().
+    # TODO(Justin). Consolidate with ModelConfig. JSON schema validation checks and JSON deserialization don't have
+    # parity.
     check_schema(updated_config)
 
     model_config = ModelConfig.from_dict(updated_config)

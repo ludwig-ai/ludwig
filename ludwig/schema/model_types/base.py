@@ -7,6 +7,7 @@ from marshmallow import ValidationError
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.config_validation.checks import check_basic_required_parameters
 from ludwig.constants import BACKEND, ENCODER, INPUT_FEATURES, MODEL_ECD, PREPROCESSING, TYPE
+from ludwig.error import ConfigValidationError
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.defaults.defaults import DefaultsConfig
@@ -89,7 +90,10 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
         cls = model_type_schema_registry[model_type]
         schema = cls.get_class_schema()()
-        config_obj: ModelConfig = schema.load(config)
+        try:
+            config_obj: ModelConfig = schema.load(config)
+        except ValidationError as e:
+            raise ConfigValidationError("Config validation error raised during config deserialization") from e
         return config_obj
 
     @staticmethod

@@ -7,6 +7,7 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
     AUDIO,
     BINARY,
+    CATEGORY,
     COMBINER,
     DECODER,
     ENCODER,
@@ -17,6 +18,7 @@ from ludwig.constants import (
     MODEL_GBM,
     MODEL_TYPE,
     NAME,
+    NUMBER,
     OUTPUT_FEATURES,
     SEQUENCE,
     SET,
@@ -193,6 +195,17 @@ def check_gbm_horovod_incompatibility(config: "ModelConfig") -> None:  # noqa: F
         return
     if config.model_type == MODEL_GBM and config.backend.type == "horovod":
         raise ConfigValidationError("Horovod backend does not support GBM models.")
+
+
+@register_config_check
+def check_gbm_output_type(config: "ModelConfig") -> None:  # noqa: F821
+    """Checks that the output features for GBMs are of supported types."""
+    if config.model_type == MODEL_GBM:
+        for output_feature in config.output_features:
+            if output_feature.type not in {BINARY, CATEGORY, NUMBER}:
+                raise ConfigValidationError(
+                    "GBM Models currently only support Binary, Category, and Number output features."
+                )
 
 
 @register_config_check
