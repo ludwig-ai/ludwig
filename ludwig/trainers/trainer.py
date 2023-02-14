@@ -558,31 +558,6 @@ class Trainer(BaseTrainer):
 
         metrics_names = get_metric_names(output_features)
 
-        # check if validation_field is valid
-        valid_validation_field = False
-        if self.validation_field == "combined":
-            valid_validation_field = True
-            if self.validation_metric is not LOSS and len(output_features) == 1:
-                only_of = next(iter(output_features))
-                if self.validation_metric in metrics_names[only_of]:
-                    self._validation_field = only_of
-                    logger.warning(
-                        "Replacing 'combined' validation field "
-                        "with '{}' as the specified validation "
-                        "metric {} is invalid for 'combined' "
-                        "but is valid for '{}'.".format(only_of, self.validation_metric, only_of)
-                    )
-        else:
-            for output_feature in output_features:
-                if self.validation_field == output_feature:
-                    valid_validation_field = True
-
-        if not valid_validation_field:
-            raise ValueError(
-                "The specified validation_field {} is not valid."
-                "Available ones are: {}".format(self.validation_field, list(output_features.keys()) + ["combined"])
-            )
-
         # ====== Setup file names =======
         model_hyperparameters_path = None
         tensorboard_log_dir = None
@@ -649,6 +624,7 @@ class Trainer(BaseTrainer):
                 random_seed=self.random_seed,
                 distributed=self.distributed,
                 ignore_last=True,
+                augmentation_pipeline=self.model.get_augmentation_pipelines(),
             ) as batcher:
                 # ================ Training Loop ================
                 self.total_steps = get_total_steps(self.epochs, batcher.steps_per_epoch, self.train_steps)

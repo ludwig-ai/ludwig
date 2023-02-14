@@ -46,13 +46,20 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
     backend: Dict[str, Any] = schema_utils.Dict()
     ludwig_version: str = LUDWIG_VERSION
 
+    def __post_init__(self):
+        set_validation_parameters(self)
+        set_hyperopt_defaults_(self)
+
+        # Derive proc_col for each feature from the feature's preprocessing parameters
+        # after all preprocessing parameters have been set
+        set_derived_feature_columns_(self)
+
     @staticmethod
     def from_dict(config: ModelConfigDict) -> "ModelConfig":
         config = copy.deepcopy(config)
         config = upgrade_config_dict_to_latest_version(config)
         check_basic_required_parameters(config)
         config = merge_with_defaults(config)
-        set_derived_feature_columns_(config)
 
         model_type = config.get("model_type", MODEL_ECD)
         if model_type not in model_type_schema_registry:
@@ -83,11 +90,6 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
         cls = model_type_schema_registry[model_type]
         schema = cls.get_class_schema()()
         config_obj: ModelConfig = schema.load(config)
-
-        # TODO(travis): do this post-processing stuff at the dict level before we load
-        set_validation_parameters(config_obj)
-        set_hyperopt_defaults_(config_obj)
-
         return config_obj
 
     @staticmethod

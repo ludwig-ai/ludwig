@@ -17,6 +17,7 @@ import copy
 import logging
 from collections import Counter
 from sys import platform
+from typing import Dict, List
 
 import numpy as np
 import pandas as pd
@@ -899,6 +900,57 @@ def roc_curves(
         plt.show()
 
 
+def precision_recall_curves_plot(
+    precision_recalls: Dict[str, List[float]],
+    model_names: List[str],
+    title: str = None,
+    filename: str = None,
+    callbacks=None,
+):
+    """Generates a precision recall curve for each model in the model_names list.
+
+    Args:
+        precision_recalls: A list of dictionaries representing the precision and recall values for each model
+            in model_names. Each dictionary has two keys: "precisions" and "recalls".
+    """
+    sns.set_style("whitegrid")
+
+    colors = plt.get_cmap("tab10").colors
+
+    _, ax = plt.subplots()
+
+    ax.set_xlim(0, 1)
+    # Create ticks for every 0.1 increment
+    ax.set_xticks(np.linspace(0, 1, 11))
+    ax.set_xlabel("Recall")
+
+    ax.set_ylim(0, 1)
+    # Create ticks for every 0.1 increment
+    ax.set_yticks(np.linspace(0, 1, 11))
+    ax.set_ylabel("Precision")
+
+    if title is not None:
+        ax.set_title(title)
+
+    for i in range(len(precision_recalls)):
+        model_name = model_names[i] if model_names is not None and i < len(model_names) else ""
+        ax.plot(
+            precision_recalls[i]["recalls"],
+            precision_recalls[i]["precisions"],
+            label=model_name,
+            color=colors[i],
+            linewidth=3,
+        )
+
+    ax.legend(frameon=True)
+    plt.tight_layout()
+    visualize_callbacks(callbacks, plt.gcf())
+    if filename:
+        plt.savefig(filename)
+    else:
+        plt.show()
+
+
 def calibration_plot(
     fraction_positives,
     mean_predicted_values,
@@ -1094,10 +1146,15 @@ def confusion_matrix_plot(
     cax = ax.matshow(confusion_matrix, cmap="Blues", alpha=0.6)
     # Annotate confusion matrix plot
     for (i, j), z in np.ndenumerate(confusion_matrix):
+        # Format differently based on whether the value is normalized or not
+        if z.is_integer():
+            z_format = f"{z:.0f}"
+        else:
+            z_format = f"{z:.3f}"
         ax.text(
             j,
             i,
-            f"{z:.0f}",
+            z_format,
             ha="center",
             va="center",
             color="black",
