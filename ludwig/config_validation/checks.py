@@ -49,7 +49,7 @@ class ConfigCheckRegistry:
     def register(self, check_fn):
         self._registry.append(check_fn)
 
-    def check_config(self, config: ModelConfigDict) -> None:
+    def check_config(self, config: "ModelConfig") -> None:  # noqa: F821
         for check_fn in self._registry:
             check_fn(config)
 
@@ -73,7 +73,7 @@ class ConfigCheck(ABC):
 
     @staticmethod
     @abstractmethod
-    def check(config: ModelConfigDict) -> None:
+    def check(config: "ModelConfig") -> None:  # noqa: F821
         """Checks config for validity."""
         raise NotImplementedError
 
@@ -147,7 +147,7 @@ def check_basic_required_parameters(config: ModelConfigDict) -> None:
 
 
 @register_config_check
-def check_feature_names_unique(config: ModelConfigDict) -> None:
+def check_feature_names_unique(config: "ModelConfig") -> None:  # noqa: F821
     """Checks that all feature names are unique."""
     input_features = config.input_features
     input_feature_names = {input_feature.name for input_feature in input_features}
@@ -160,7 +160,7 @@ def check_feature_names_unique(config: ModelConfigDict) -> None:
 
 
 @register_config_check
-def check_tied_features_valid(config: ModelConfigDict) -> None:
+def check_tied_features_valid(config: "ModelConfig") -> None:  # noqa: F821
     """Checks that all tied features are valid."""
     input_features = config.input_features
     input_feature_names = {input_feature.name for input_feature in input_features}
@@ -174,7 +174,7 @@ def check_tied_features_valid(config: ModelConfigDict) -> None:
 
 
 @register_config_check
-def check_training_runway(config: ModelConfigDict) -> None:
+def check_training_runway(config: "ModelConfig") -> None:  # noqa: F821
     """Checks that checkpoints_per_epoch and steps_per_checkpoint aren't simultaneously defined."""
     if config.model_type == MODEL_ECD:
         if config.trainer.checkpoints_per_epoch != 0 and config.trainer.steps_per_checkpoint != 0:
@@ -186,7 +186,7 @@ def check_training_runway(config: ModelConfigDict) -> None:
 
 
 @register_config_check
-def check_gbm_horovod_incompatibility(config: ModelConfigDict) -> None:
+def check_gbm_horovod_incompatibility(config: "ModelConfig") -> None:  # noqa: F821
     """Checks that GBM model type isn't being used with the horovod backend.
 
     TODO(Justin): This is fine for now because we don't validate on the backend, but can be removed in the future when
@@ -199,7 +199,7 @@ def check_gbm_horovod_incompatibility(config: ModelConfigDict) -> None:
 
 
 @register_config_check
-def check_ray_backend_in_memory_preprocessing(config: ModelConfigDict) -> None:
+def check_ray_backend_in_memory_preprocessing(config: "ModelConfig") -> None:  # noqa: F821
     """Checks that in memory preprocessing is used with Ray backend."""
     if config.backend is None:
         return
@@ -221,7 +221,7 @@ def check_ray_backend_in_memory_preprocessing(config: ModelConfigDict) -> None:
                 )
 
 
-def check_sequence_concat_combiner_requirements(config: ModelConfigDict) -> None:
+def check_sequence_concat_combiner_requirements(config: "ModelConfig") -> None:  # noqa: F821
     """Checks that sequence concat combiner has at least one input feature that's sequential."""
     if config.model_type != MODEL_ECD:
         return
@@ -239,7 +239,7 @@ def check_sequence_concat_combiner_requirements(config: ModelConfigDict) -> None
 
 
 @register_config_check
-def check_comparator_combiner_requirements(config: ModelConfigDict) -> None:
+def check_comparator_combiner_requirements(config: "ModelConfig") -> None:  # noqa: F821
     """Checks that all of the feature names for entity_1 and entity_2 are valid features."""
     if config.model_type != MODEL_ECD:
         return
@@ -260,7 +260,7 @@ def check_comparator_combiner_requirements(config: ModelConfigDict) -> None:
 
 
 @register_config_check
-def check_class_balance_preprocessing(config: ModelConfigDict) -> None:
+def check_class_balance_preprocessing(config: "ModelConfig") -> None:  # noqa: F821
     """Class balancing is only available for datasets with a single output feature."""
     if config.preprocessing.oversample_minority or config.preprocessing.undersample_majority:
         if len(config.output_features) != 1:
@@ -270,7 +270,7 @@ def check_class_balance_preprocessing(config: ModelConfigDict) -> None:
 
 
 @register_config_check
-def check_sampling_exclusivity(config: ModelConfigDict) -> None:
+def check_sampling_exclusivity(config: "ModelConfig") -> None:  # noqa: F821
     """Oversample minority and undersample majority are mutually exclusive."""
     if config.preprocessing.oversample_minority and config.preprocessing.undersample_majority:
         raise ConfigValidationError(
@@ -279,7 +279,7 @@ def check_sampling_exclusivity(config: ModelConfigDict) -> None:
 
 
 @register_config_check
-def check_validation_metric_exists(config: ModelConfigDict) -> None:
+def check_validation_metric_exists(config: "ModelConfig") -> None:  # noqa: F821
     """Checks that the specified validation metric exists."""
     validation_metric_name = config.trainer.validation_metric
 
@@ -297,7 +297,7 @@ def check_validation_metric_exists(config: ModelConfigDict) -> None:
 
 
 @register_config_check
-def check_splitter(config: ModelConfigDict) -> None:
+def check_splitter(config: "ModelConfig") -> None:  # noqa: F821
     """Checks the validity of the splitter configuration."""
     from ludwig.data.split import get_splitter
 
@@ -306,7 +306,7 @@ def check_splitter(config: ModelConfigDict) -> None:
 
 
 @register_config_check
-def check_hf_tokenizer_requirements(config: ModelConfigDict) -> None:
+def check_hf_tokenizer_requirements(config: "ModelConfig") -> None:  # noqa: F821
     """Checks that the HuggingFace tokenizer has a pretrained_model_name_or_path specified."""
 
     for input_feature in config.input_features:
@@ -319,7 +319,7 @@ def check_hf_tokenizer_requirements(config: ModelConfigDict) -> None:
 
 
 @register_config_check
-def check_hf_encoder_requirements(config: ModelConfigDict) -> None:
+def check_hf_encoder_requirements(config: "ModelConfig") -> None:  # noqa: F821
     """Checks that a HuggingFace encoder has a pretrained_model_name_or_path specified."""
 
     for input_feature in config.input_features:
