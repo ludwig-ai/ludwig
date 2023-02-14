@@ -1,6 +1,6 @@
 import copy
 from dataclasses import field
-from typing import List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from marshmallow import fields, ValidationError
 
@@ -91,7 +91,7 @@ def AugmentationDataclassField(
 
         @staticmethod
         def _jsonschema_type_mapping():
-            return get_augmentation_list_jsonschema(feature_type)
+            return get_augmentation_list_jsonschema(feature_type, default)
 
     try:
         assert isinstance(default, list), "Augmentation config must be a list."
@@ -125,42 +125,37 @@ def AugmentationDataclassField(
 
 
 @DeveloperAPI
-def get_augmentation_list_jsonschema(feature_type: str):
+def get_augmentation_list_jsonschema(feature_type: str, default: List[Dict[str, Any]]):
     """This function returns a JSON augmentation schema.
 
     Returns: JSON Schema
     """
     augmentation_types = sorted(list(get_augmentation_config_registry()[feature_type].keys()))
     schema = {
-        "type": "object",
-        "properties": {
-            "oneOf": [
-                {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "type": {
-                                "type": "string",
-                                "enum": augmentation_types,
-                                "title": "type",
-                                "description": "Type of augmentation to apply.",
-                            },
+        "oneOf": [
+            {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "enum": augmentation_types,
+                            "title": "type",
+                            "description": "Type of augmentation to apply.",
                         },
-                        "additionalProperties": True,
-                        "allOf": get_augmentation_list_conds(feature_type),
-                        "required": ["type"],
-                        "title": "augmentation",
                     },
+                    "additionalProperties": True,
+                    "allOf": get_augmentation_list_conds(feature_type),
+                    "required": ["type"],
+                    "title": "augmentation",
                 },
-                {
-                    "type": "boolean",
-                    "default": False,
-                    "description": "Apply standard augmentation pipeline.",
-                },
-            ],
-        },
-        "title": "augmentation",
+            },
+            {
+                "type": "boolean",
+                "description": "Apply standard augmentation pipeline.",
+            },
+        ],
     }
 
     return schema
