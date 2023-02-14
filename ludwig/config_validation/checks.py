@@ -187,7 +187,11 @@ def check_training_runway(config: ModelConfigDict) -> None:
 
 @register_config_check
 def check_gbm_horovod_incompatibility(config: ModelConfigDict) -> None:
-    """Checks that GBM model type isn't being used with the horovod backend."""
+    """Checks that GBM model type isn't being used with the horovod backend.
+
+    TODO(Justin): This is fine for now because we don't validate on the backend, but can be removed in the future when
+    backend is schema-fied (separate schemas for ECD and GBM).
+    """
     if config.backend is None:
         return
     if config.model_type == MODEL_GBM and config.backend.type == "horovod":
