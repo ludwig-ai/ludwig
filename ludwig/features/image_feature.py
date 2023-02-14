@@ -701,6 +701,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
             column,
             lambda row: get_abs_path(src_path, row) if isinstance(row, str) and not has_remote_protocol(row) else row,
         )
+        num_images = len(abs_path_column)
 
         # determine if specified encoder is a torchvision model
         model_type = feature_config[ENCODER].get("type", None)
@@ -786,7 +787,6 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
             proc_df[feature_config[PROC_COLUMN]] = proc_col
         else:
-            num_images = len(abs_path_column)
             num_failed_image_reads = 0
 
             data_fp = backend.cache.get_cache_path(wrap(metadata.get(SRC)), metadata.get(CHECKSUM), TRAINING)
@@ -807,7 +807,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
             proc_df[feature_config[PROC_COLUMN]] = np.arange(num_images)
 
-        if num_failed_image_reads == len(proc_col):
+        if num_failed_image_reads == num_images:
             raise ValueError(
                 f"Failed to read any images from column {feature_config[COLUMN]}. "
                 f"Please check that the paths are correct and that the images are readable."
