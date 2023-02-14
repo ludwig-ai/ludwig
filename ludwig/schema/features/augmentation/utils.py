@@ -43,22 +43,30 @@ def get_augmentation_classes(feature: str):
 
 
 @DeveloperAPI
-def AugmentationDataclassField(feature_type: str, default=[], description=""):
+def AugmentationDataclassField(feature_type: str, default=False, default_augmentations=None, description=""):
     """Custom dataclass field that when used inside a dataclass will allow the user to specify an augmentation
     config.
 
     Args:
         default: The default augmentation config to use.
+        default_augmentations: The default list of augmentations to use when param value is set to `True`.
         description: The description of the augmentation config.
 
     Returns: Initialized dataclass field that converts a list with params to an augmentation config.
     """
+
+    default_augmentations = default_augmentations or []
+    if isinstance(default, bool):
+        default = default_augmentations if default else []
 
     class AugmentationContainerMarshmallowField(fields.Field):
         """Custom marshmallow field that deserializes a list for a valid augmentation config from the
         augmentation_registry and creates a corresponding JSON schema for external usage."""
 
         def _deserialize(self, value, attr, data, **kwargs):
+            if isinstance(value, bool):
+                value = default_augmentations if value else []
+
             assert isinstance(value, list), "Augmentation config must be a list."
             if len(value) == 0:
                 raise ValidationError("Augmentation config list must not be empty.")
@@ -119,23 +127,35 @@ def get_augmentation_list_jsonschema(feature_type: str):
     """
     augmentation_types = sorted(list(get_augmentation_config_registry()[feature_type].keys()))
     schema = {
-        "type": "array",
-        "minItems": 1,
-        "items": {
-            "type": "object",
-            "properties": {
-                "type": {
-                    "type": "string",
-                    "enum": augmentation_types,
-                    "title": "type",
-                    "description": "Type of augmentation to apply.",
+        "type": "object",
+        "properties": {
+            "oneOf": [
+                {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "enum": augmentation_types,
+                                "title": "type",
+                                "description": "Type of augmentation to apply.",
+                            },
+                        },
+                        "additionalProperties": True,
+                        "allOf": get_augmentation_list_conds(feature_type),
+                        "required": ["type"],
+                        "title": "augmentation",
+                    },
                 },
-            },
-            "additionalProperties": True,
-            "allOf": get_augmentation_list_conds(feature_type),
-            "required": ["type"],
-            "title": "augmentation",
+                {
+                    "type": "boolean",
+                    "default": False,
+                    "description": "Apply standard augmentation pipeline.",
+                },
+            ],
         },
+        "title": "augmentation",
     }
 
     return schema
