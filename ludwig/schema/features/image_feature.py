@@ -54,7 +54,7 @@ class ImageInputFeatureConfigMixin(BaseMarshmallowConfig):
 @DeveloperAPI
 @ecd_input_config_registry.register(IMAGE)
 @ludwig_dataclass
-class ImageInputFeatureConfig(BaseInputFeatureConfig, ImageInputFeatureConfigMixin):
+class ImageInputFeatureConfig(ImageInputFeatureConfigMixin, BaseInputFeatureConfig):
     """ImageInputFeatureConfig is a dataclass that configures the parameters used for an image input feature."""
 
     pass
