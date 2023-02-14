@@ -43,7 +43,7 @@ from ludwig.models.ecd import ECD
 from ludwig.models.predictor import Predictor
 from ludwig.modules.lr_scheduler import LRScheduler
 from ludwig.modules.metric_modules import get_improved_fn, get_initial_validation_value
-from ludwig.modules.metric_registry import get_metric_registry
+from ludwig.modules.metric_registry import get_metric_objective
 from ludwig.modules.optimization_modules import create_clipper, create_optimizer
 from ludwig.progress_bar import LudwigProgressBar
 from ludwig.schema.trainer import ECDTrainerConfig
@@ -971,7 +971,7 @@ class Trainer(BaseTrainer):
                 absolute_eval_metric_value_change = round(
                     abs(previous_best_eval_metric_value - progress_tracker.best_eval_metric_value), 3
                 )
-                if get_metric_registry()[validation_metric].get_objective() == MINIMIZE:
+                if get_metric_objective(validation_metric) == MINIMIZE:
                     logger.info(
                         f"'{validation_output_feature_name}' '{validation_metric}' decreased by "
                         f"{absolute_eval_metric_value_change}."
