@@ -701,7 +701,7 @@ def test_torchscript_preproc_gpu(tmpdir, csv_filename):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     image_dest_folder = os.path.join(tmpdir, "generated_images")
     audio_dest_folder = os.path.join(tmpdir, "generated_audio")
-    
+
     # Configure features to be tested:
     bin_str_feature_input_feature = binary_feature()
     bin_str_feature_output_feature = binary_feature(output_feature=True)
