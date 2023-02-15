@@ -115,8 +115,8 @@ def test_should_exclude_text(column_count, avg_words, expected):
 
 
 def test_type_inference_with_negative_positive_binary_values():
-    """This test ensures that we infer binary type for a feature with negative
-    and positive values, specifically -1 and 1"""
+    """This test ensures that we infer binary type for a feature with negative and positive values, specifically -1
+    and 1."""
     field = FieldInfo(
         name="foo",
         dtype="object",
