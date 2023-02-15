@@ -696,8 +696,7 @@ def test_torchscript_preproc_with_nans(tmpdir, csv_filename, feature):
 @pytest.mark.gpu
 @pytest.mark.skipif(torch.cuda.device_count() == 0, reason="test requires at least 1 gpu")
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="test requires gpu support")
-@pytest.mark.distributed
-def test_torchscript_gpu(tmpdir, csv_filename, ray_cluster_2cpu):
+def test_torchscript_gpu(tmpdir, csv_filename):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     image_dest_folder = os.path.join(tmpdir, "generated_images")
     audio_dest_folder = os.path.join(tmpdir, "generated_audio")
@@ -739,7 +738,7 @@ def test_torchscript_gpu(tmpdir, csv_filename, ray_cluster_2cpu):
         "output_features": output_features,
         TRAINER: {"epochs": 2, BATCH_SIZE: 128},
     }
-    backend = RAY
+    backend = LocalTestBackend()
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
     _, script_module = initialize_torchscript_module(
         tmpdir,
