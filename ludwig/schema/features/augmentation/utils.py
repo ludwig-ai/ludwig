@@ -75,17 +75,26 @@ def AugmentationDataclassField(
             if isinstance(value, bool):
                 value = default_augmentations if value else []
 
-            assert isinstance(value, list), "Augmentation config must be a list."
+            if not isinstance(value, list):
+                raise ValidationError(f"Augmentation config must be a list, found: {type(value)}")
+
+            augmentation_classes = get_augmentation_classes(feature_type)
             augmentation_list = []
             for augmentation in value:
                 augmentation_op = augmentation[TYPE]
-                augmentation_cls = get_augmentation_cls(feature_type, augmentation_op)
-                pre = augmentation_cls()
-                try:
-                    augmentation_list.append(pre.Schema().load(augmentation))
-                except (TypeError, ValidationError) as error:
+                if augmentation_op in augmentation_classes:
+                    augmentation_cls = augmentation_classes[augmentation_op]
+                    pre = augmentation_cls()
+                    try:
+                        augmentation_list.append(pre.Schema().load(augmentation))
+                    except (TypeError, ValidationError) as error:
+                        raise ValidationError(
+                            f"Invalid augmentation params: {value}, see `{pre}` definition. Error: {error}"
+                        )
+                else:
                     raise ValidationError(
-                        f"Invalid augmentation params: {value}, see `{pre}` definition. Error: {error}"
+                        f"Invalid augmentation type: '{augmentation_op}', "
+                        f"expected one of: {list(augmentation_classes.keys())}"
                     )
             return augmentation_list
 
