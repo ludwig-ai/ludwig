@@ -95,6 +95,10 @@ jobs:
           sudo apt-key add /var/cuda-repo-ubuntu2004-11-5-local/7fa2af80.pub
           sudo apt-get update
           sudo apt-get -y install cuda
+          # Downgrade NCCL to 2.11.4 to for compatibility with CUDA 11.6
+          # https://github.com/horovod/horovod/issues/3625#issuecomment-1309786643
+          sudo apt update
+          sudo apt install --allow-change-held-packages --allow-downgrades -y libnccl2=2.11.4-1+cuda11.6 libnccl-dev=2.11.4-1+cuda11.6
         shell: bash
 
       - name: pip cache
