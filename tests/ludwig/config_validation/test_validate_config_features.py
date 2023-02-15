@@ -1,7 +1,7 @@
 import pytest
 
-from ludwig.schema.model_types.base import ModelConfig
 from ludwig.error import ConfigValidationError
+from ludwig.schema.model_types.base import ModelConfig
 from tests.integration_tests.utils import binary_feature, category_feature, number_feature, text_feature
 
 

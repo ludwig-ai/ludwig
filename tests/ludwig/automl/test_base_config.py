@@ -8,6 +8,7 @@ from ludwig.automl.base_config import get_dataset_info, get_reference_configs, i
 from ludwig.data.dataframe.dask import DaskEngine  # noqa
 from ludwig.data.dataframe.pandas import PandasEngine  # noqa
 from ludwig.utils.automl.data_source import wrap_data_source  # noqa
+from ludwig.schema.model_types.base import ModelConfig
 
 pytestmark = pytest.mark.distributed
 

@@ -1,9 +1,9 @@
 import pytest
 
 from ludwig.config_validation.validation import get_schema
-from ludwig.schema.model_types.base import ModelConfig
 from ludwig.constants import MODEL_ECD, TRAINER
 from ludwig.error import ConfigValidationError
+from ludwig.schema.model_types.base import ModelConfig
 from tests.integration_tests.utils import binary_feature, category_feature, number_feature
 
 

@@ -27,12 +27,11 @@ from ludwig.constants import (
     TYPE,
     VECTOR,
 )
-
 from ludwig.decoders.registry import get_decoder_registry
-from ludwig.schema.features.utils import input_config_registry
 from ludwig.encoders.registry import get_encoder_registry
 from ludwig.error import ConfigValidationError
 from ludwig.schema.combiners.utils import get_combiner_registry
+from ludwig.schema.features.utils import input_config_registry
 from ludwig.schema.optimizers import optimizer_registry
 from ludwig.types import ModelConfigDict
 from ludwig.utils.metric_utils import get_feature_to_metric_names_map_from_feature_collection

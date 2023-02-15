@@ -5,7 +5,8 @@ from typing import Any, Dict, Optional, Set
 from marshmallow import ValidationError
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.config_validation.checks import check_basic_required_parameters
+from ludwig.config_validation.checks import check_basic_required_parameters, get_config_check_registry
+from ludwig.config_validation.validation import check_schema
 from ludwig.constants import BACKEND, ENCODER, INPUT_FEATURES, MODEL_ECD, PREPROCESSING, TYPE
 from ludwig.error import ConfigValidationError
 from ludwig.globals import LUDWIG_VERSION
@@ -27,8 +28,6 @@ from ludwig.types import ModelConfigDict
 from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
 from ludwig.utils.data_utils import load_yaml
 from ludwig.utils.registry import Registry
-from ludwig.config_validation.checks import get_config_check_registry
-from ludwig.config_validation.validation import check_schema
 
 model_type_schema_registry = Registry()
 
