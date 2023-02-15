@@ -28,6 +28,7 @@ from ludwig.schema.encoders.category_encoders import (
     CategoricalPassthroughEncoderConfig,
     CategoricalSparseConfig,
 )
+from ludwig.schema.initializers import InitializerConfig
 
 logger = logging.getLogger(__name__)
 
@@ -68,12 +69,12 @@ class CategoricalEmbedEncoder(Encoder):
     def __init__(
         self,
         vocab: List[str],
+        embedding_initializer: InitializerConfig,
         embedding_size: int = 50,
         embeddings_trainable: bool = True,
         pretrained_embeddings: Optional[str] = None,
         embeddings_on_cpu: bool = False,
         dropout: float = 0.0,
-        embedding_initializer: Optional[Union[str, Dict]] = None,
         encoder_config=None,
         **kwargs,
     ):

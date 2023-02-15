@@ -5,6 +5,7 @@ from ludwig.constants import CATEGORY, MODEL_ECD, MODEL_GBM
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
+from ludwig.schema.initializers import InitializerConfig, WeightsInitializerDataclassField
 from ludwig.schema.metadata import ENCODER_METADATA
 from ludwig.schema.utils import ludwig_dataclass
 
@@ -53,27 +54,8 @@ class CategoricalEmbedConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["CategoricalEmbed"]["vocab"],
     )
 
-    embedding_initializer: str = schema_utils.StringOptions(
-        [
-            "constant",
-            "identity",
-            "zeros",
-            "ones",
-            "orthogonal",
-            "normal",
-            "uniform",
-            "truncated_normal",
-            "variance_scaling",
-            "glorot_normal",
-            "glorot_uniform",
-            "xavier_normal",
-            "xavier_uniform",
-            "he_normal",
-            "he_uniform",
-            "lecun_normal",
-            "lecun_uniform",
-        ],
-        default=None,
+    embedding_initializer: InitializerConfig = WeightsInitializerDataclassField(
+        default="uniform",
         description="Initializer for the embedding matrix.",
         parameter_metadata=ENCODER_METADATA["CategoricalEmbed"]["embedding_initializer"],
     )
@@ -144,27 +126,8 @@ class CategoricalSparseConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["CategoricalSparse"]["vocab"],
     )
 
-    embedding_initializer: str = schema_utils.StringOptions(
-        [
-            "constant",
-            "identity",
-            "zeros",
-            "ones",
-            "orthogonal",
-            "normal",
-            "uniform",
-            "truncated_normal",
-            "variance_scaling",
-            "glorot_normal",
-            "glorot_uniform",
-            "xavier_normal",
-            "xavier_uniform",
-            "he_normal",
-            "he_uniform",
-            "lecun_normal",
-            "lecun_uniform",
-        ],
-        default=None,
+    embedding_initializer: InitializerConfig = WeightsInitializerDataclassField(
+        default="uniform",
         description="Initializer for the embedding matrix.",
         parameter_metadata=ENCODER_METADATA["CategoricalEmbed"]["embedding_initializer"],
     )
