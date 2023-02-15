@@ -114,14 +114,14 @@ def test_should_exclude_text(column_count, avg_words, expected):
     assert should_exclude(0, field, TEXT, column_count, ROW_COUNT, {TARGET_NAME}) == expected
 
 
-def test_type_inference_with_negative_positive_binary_values():
+@pytest.mark.parametrize("negative_class", ("-1", "-1.0"), ids=["-1", "-1.0"])
+def test_type_inference_with_negative_positive_binary_values(negative_class):
     """This test ensures that we infer binary type for a feature with negative and positive values, specifically -1
     and 1."""
     field = FieldInfo(
         name="foo",
         dtype="object",
         num_distinct_values=2,
-        distinct_values=["1", "-1"],
+        distinct_values=["1", negative_class],
     )
-
     assert infer_type(field=field, missing_value_percent=0, row_count=ROW_COUNT) == BINARY

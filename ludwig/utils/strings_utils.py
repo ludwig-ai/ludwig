@@ -34,7 +34,7 @@ PANDAS_TRUE_STRS = {"true"}
 PANDAS_FALSE_STRS = {"false"}
 
 BOOL_TRUE_STRS = {"yes", "y", "true", "t", "1", "1.0"}
-BOOL_FALSE_STRS = {"no", "n", "false", "f", "0", "0.0", "-1"}
+BOOL_FALSE_STRS = {"no", "n", "false", "f", "0", "0.0", "-1", "-1.0"}
 
 logger = logging.getLogger(__name__)
 
