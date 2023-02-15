@@ -27,6 +27,8 @@ from ludwig.types import ModelConfigDict
 from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
 from ludwig.utils.data_utils import load_yaml
 from ludwig.utils.registry import Registry
+from ludwig.config_validation.checks import get_config_check_registry
+from ludwig.config_validation.validation import check_schema
 
 model_type_schema_registry = Registry()
 
@@ -59,14 +61,16 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
     def from_dict(config: ModelConfigDict) -> "ModelConfig":
         config = copy.deepcopy(config)
         config = upgrade_config_dict_to_latest_version(config)
-        check_basic_required_parameters(config)
-        config = merge_with_defaults(config)
 
-        model_type = config.get("model_type", MODEL_ECD)
+        config["model_type"] = config.get("model_type", MODEL_ECD)
+        model_type = config["model_type"]
         if model_type not in model_type_schema_registry:
             raise ValidationError(
                 f"Invalid model type: '{model_type}', expected one of: {list(model_type_schema_registry.keys())}"
             )
+
+        check_basic_required_parameters(config)
+        config = merge_with_defaults(config)
 
         # TODO(travis): move this into helper function
         # Update preprocessing parameters if encoders require fixed preprocessing parameters
@@ -88,12 +92,17 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
         if isinstance(backend, str):
             config[BACKEND] = {"type": backend}
 
+        # JSON schema validation.
+        check_schema(config)
+
         cls = model_type_schema_registry[model_type]
         schema = cls.get_class_schema()()
         try:
             config_obj: ModelConfig = schema.load(config)
         except ValidationError as e:
             raise ConfigValidationError(f"Config validation error raised during config deserialization: {e}") from e
+
+        get_config_check_registry().check_config(config_obj)
         return config_obj
 
     @staticmethod

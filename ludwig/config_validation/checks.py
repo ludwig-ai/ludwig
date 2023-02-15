@@ -27,7 +27,9 @@ from ludwig.constants import (
     TYPE,
     VECTOR,
 )
+
 from ludwig.decoders.registry import get_decoder_registry
+from ludwig.schema.features.utils import input_config_registry
 from ludwig.encoders.registry import get_encoder_registry
 from ludwig.error import ConfigValidationError
 from ludwig.schema.combiners.utils import get_combiner_registry
@@ -79,13 +81,15 @@ class ConfigCheck(ABC):
 
 def check_basic_required_parameters(config: ModelConfigDict) -> None:
     """Checks basic required parameters like that all features have names and types, and all types are valid."""
+    model_type = config["model_type"]
+
     # Check input features.
     for input_feature in config[INPUT_FEATURES]:
         if NAME not in input_feature:
             raise ConfigValidationError("All input features must have a name.")
         if TYPE not in input_feature:
             raise ConfigValidationError(f"Input feature {input_feature[NAME]} must have a type.")
-        if input_feature[TYPE] not in get_encoder_registry():
+        if input_feature[TYPE] not in input_config_registry(model_type):
             raise ConfigValidationError(
                 f"Input feature {input_feature[NAME]} uses an invalid/unsupported type "
                 f"'{input_feature[TYPE]}'. Input feature types: {list(get_encoder_registry().keys())}."

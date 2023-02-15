@@ -1,6 +1,6 @@
 import pytest
 
-from ludwig.config_validation.validation import validate_config
+from ludwig.schema.model_types.base import ModelConfig
 from ludwig.error import ConfigValidationError
 from tests.integration_tests.utils import binary_feature, category_feature
 
@@ -21,7 +21,7 @@ def test_config_preprocessing():
         },
     }
 
-    validate_config(config)
+    ModelConfig.from_dict(config)
 
     # TODO(ksbrar): Circle back after discussing whether additional properties should be allowed long-term.
     # config["preprocessing"]["fake_parameter"] = True
@@ -42,7 +42,7 @@ def test_balance_non_binary_failure():
     }
 
     with pytest.raises(ConfigValidationError):
-        validate_config(config)
+        ModelConfig.from_dict(config)
 
 
 def test_balance_multiple_class_failure():
@@ -60,4 +60,4 @@ def test_balance_multiple_class_failure():
     }
 
     with pytest.raises(ConfigValidationError):
-        validate_config(config)
+        ModelConfig.from_dict(config)

@@ -2,8 +2,6 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from ludwig.config_validation.validation import validate_config
-
 ray = pytest.importorskip("ray")  # noqa
 
 from ludwig.automl.base_config import get_dataset_info, get_reference_configs, is_field_boolean  # noqa
@@ -104,4 +102,4 @@ def test_reference_configs():
         config = dataset["config"]
 
         # Ensure config is valid with the latest Ludwig schema
-        validate_config(config)
+        ModelConfig.from_dict(config)
