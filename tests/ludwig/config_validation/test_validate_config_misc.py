@@ -1,5 +1,4 @@
 import pytest
-from marshmallow import ValidationError
 
 from ludwig.config_validation.validation import get_schema, validate_config
 from ludwig.constants import (
@@ -20,6 +19,7 @@ from ludwig.constants import (
     TRAINER,
     TYPE,
 )
+from ludwig.error import ConfigValidationError
 from ludwig.features.feature_registries import get_output_type_registry
 from ludwig.schema.combiners.utils import get_combiner_jsonschema
 from ludwig.schema.defaults.defaults import DefaultsConfig
@@ -104,8 +104,7 @@ def test_config_features():
             "output_features": all_output_features + [input_feature],
         }
 
-        dtype = input_feature["type"]
-        with pytest.raises(ValidationError, match=rf"'{dtype}' is not one of .*"):
+        with pytest.raises(ConfigValidationError):
             validate_config(config)
 
 
@@ -128,7 +127,7 @@ def test_config_with_backend():
             category_feature(encoder={"type": "dense", "vocab_size": 2}, reduce_input="sum"),
             number_feature(),
         ],
-        "output_features": [binary_feature(weight_regularization=None)],
+        "output_features": [binary_feature()],
         "combiner": {
             "type": "tabnet",
             "size": 24,
@@ -153,7 +152,6 @@ def test_config_with_backend():
             "staircase": True,
             "regularization_lambda": 1,
             "regularization_type": "l2",
-            "validation_field": "label",
         },
         BACKEND: {"type": "ray", "trainer": {"num_workers": 2}},
     }
@@ -167,7 +165,7 @@ def test_config_bad_feature_type():
         "combiner": {"type": "concat", "output_size": 14},
     }
 
-    with pytest.raises(ValidationError, match=r"'fake' is not one of .*"):
+    with pytest.raises(ConfigValidationError):
         validate_config(config)
 
 
@@ -178,7 +176,7 @@ def test_config_bad_encoder_name():
         "combiner": {"type": "concat", "output_size": 14},
     }
 
-    with pytest.raises(ValidationError, match=r"'fake' is not one of .*"):
+    with pytest.raises(ConfigValidationError):
         validate_config(config)
 
 
@@ -227,7 +225,7 @@ def test_config_fill_values():
             ],
             "output_features": [binary_feature(preprocessing={"fill_value": binary_fill_value})],
         }
-        with pytest.raises(ValidationError):
+        with pytest.raises(ConfigValidationError):
             validate_config(config)
 
 
@@ -289,7 +287,7 @@ def test_validate_defaults_schema():
             category_feature(),
             number_feature(),
         ],
-        "output_features": [category_feature()],
+        "output_features": [category_feature(output_feature=True)],
         "defaults": {
             "category": {
                 "preprocessing": {
@@ -323,7 +321,7 @@ def test_validate_defaults_schema():
 
     config[DEFAULTS][CATEGORY][NAME] = "TEST"
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         validate_config(config)
 
 
@@ -343,7 +341,7 @@ def test_validate_no_trainer_type():
 
     # Ensure validation fails with ECD trainer params and GBM model type
     config[MODEL_TYPE] = MODEL_GBM
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         validate_config(config)
 
     # Switch to trainer with valid GBM params
@@ -354,7 +352,8 @@ def test_validate_no_trainer_type():
 
     # Ensure validation fails with GBM trainer params and ECD model type
     config[MODEL_TYPE] = MODEL_ECD
-    with pytest.raises(ValidationError):
+    config[TRAINER] = {"tree_learner": "serial"}
+    with pytest.raises(ConfigValidationError):
         validate_config(config)
 
 

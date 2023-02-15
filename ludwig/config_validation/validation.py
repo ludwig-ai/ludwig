@@ -4,19 +4,21 @@ from threading import Lock
 import jsonschema.exceptions
 from jsonschema import Draft7Validator, validate
 from jsonschema.validators import extend
-from marshmallow import ValidationError
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import MODEL_ECD, MODEL_TYPE, PREPROCESSING, SPLIT
-from ludwig.schema import utils as schema_utils
+from ludwig.config_validation.checks import get_config_check_registry
+from ludwig.constants import MODEL_ECD, MODEL_TYPE
+from ludwig.error import ConfigValidationError
 
 # TODO(travis): figure out why we need these imports to avoid circular import error
 from ludwig.schema.combiners.utils import get_combiner_jsonschema  # noqa
 from ludwig.schema.defaults.defaults import get_defaults_jsonschema  # noqa
 from ludwig.schema.features.utils import get_input_feature_jsonschema, get_output_feature_jsonschema  # noqa
 from ludwig.schema.hyperopt import get_hyperopt_jsonschema  # noqa
+from ludwig.schema.model_types.base import ModelConfig
 from ludwig.schema.preprocessing import get_preprocessing_jsonschema  # noqa
 from ludwig.schema.trainer import get_model_type_jsonschema, get_trainer_jsonschema  # noqa
+from ludwig.schema.utils import unload_jsonschema_from_marshmallow_class
 
 VALIDATION_LOCK = Lock()
 
@@ -47,7 +49,7 @@ def get_schema(model_type: str = MODEL_ECD):
     from ludwig.schema.model_types.base import model_type_schema_registry
 
     cls = model_type_schema_registry[model_type]
-    props = schema_utils.unload_jsonschema_from_marshmallow_class(cls)["properties"]
+    props = unload_jsonschema_from_marshmallow_class(cls)["properties"]
     return {
         "type": "object",
         "properties": props,
@@ -68,14 +70,9 @@ def get_validator():
     return extend(Draft7Validator, type_checker=type_checker)
 
 
-def validate_upgraded_config(updated_config):
-    from ludwig.data.split import get_splitter
-
+@DeveloperAPI
+def check_schema(updated_config):
     model_type = updated_config.get(MODEL_TYPE, MODEL_ECD)
-
-    splitter = get_splitter(**updated_config.get(PREPROCESSING, {}).get(SPLIT, {}))
-    splitter.validate(updated_config)
-
     error = None
     with VALIDATION_LOCK:
         try:
@@ -86,14 +83,19 @@ def validate_upgraded_config(updated_config):
             error = e
 
     if error is not None:
-        raise ValidationError(f"Failed to validate JSON schema for config. Error: {error.message}")
+        raise ConfigValidationError(f"Failed to validate JSON schema for config. Error: {error.message}")
 
 
 def validate_config(config):
-    # Update config from previous versions to check that backwards compatibility will enable a valid config
-    # NOTE: import here to prevent circular import
     from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
 
     # Update config from previous versions to check that backwards compatibility will enable a valid config
     updated_config = upgrade_config_dict_to_latest_version(config)
-    validate_upgraded_config(updated_config)
+
+    # TODO(Justin). Consolidate with ModelConfig. JSON schema validation checks and JSON deserialization don't have
+    # parity.
+    check_schema(updated_config)
+
+    model_config = ModelConfig.from_dict(updated_config)
+
+    get_config_check_registry().check_config(model_config)

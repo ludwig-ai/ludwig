@@ -325,7 +325,7 @@ def run_test_with_features(
         dataset = augment_dataset_with_none(dataset, first_row_none, last_row_none, nan_cols)
 
         if expect_error:
-            with pytest.raises(RuntimeError):
+            with pytest.raises((RuntimeError, ray.exceptions.RayTaskError)):
                 run_fn(
                     config,
                     dataset=dataset,
@@ -709,7 +709,7 @@ def test_ray_lazy_load_audio_error(tmpdir, ray_cluster_2cpu):
 
 
 @pytest.mark.distributed
-def test_ray_lazy_load_image_error(tmpdir, ray_cluster_2cpu):
+def test_ray_lazy_load_image_works(tmpdir, ray_cluster_2cpu):
     image_dest_folder = os.path.join(tmpdir, "generated_images")
     input_features = [
         image_feature(
@@ -724,7 +724,7 @@ def test_ray_lazy_load_image_error(tmpdir, ray_cluster_2cpu):
     output_features = [
         binary_feature(),
     ]
-    run_test_with_features(input_features, output_features, expect_error=True)
+    run_test_with_features(input_features, output_features, expect_error=False)
 
 
 # TODO(travis): move this to separate gpu module so we only have one ray cluster running at a time

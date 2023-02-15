@@ -817,7 +817,7 @@ def test_load_config_missing_hyperopt():
         "output_features": [
             {"name": "Survived", "type": "category"},
         ],
-        "combiner": {},
+        "combiner": {"type": "concat"},
         "trainer": {},
         "hyperopt": {},
     }

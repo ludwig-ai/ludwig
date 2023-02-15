@@ -47,7 +47,7 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend._ray210_compat import HorovodTrainerRay210
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.backend.datasource import BinaryIgnoreNoneTypeDatasource
-from ludwig.constants import CPU_RESOURCES_PER_TRIAL, EXECUTOR, MODEL_ECD, NAME, PREPROCESSING, PROC_COLUMN, TYPE
+from ludwig.constants import CPU_RESOURCES_PER_TRIAL, EXECUTOR, MODEL_ECD, NAME, PROC_COLUMN, TYPE
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataset.ray import _SCALAR_TYPES, RayDataset, RayDatasetManager, RayDatasetShard
 from ludwig.models.base import BaseModel
@@ -810,13 +810,6 @@ class RayBackend(RemoteTrainingMixin, Backend):
     @property
     def supports_multiprocessing(self):
         return False
-
-    def check_lazy_load_supported(self, feature):
-        if not feature[PREPROCESSING]["in_memory"]:
-            raise ValueError(
-                f"RayBackend does not support lazy loading of data files at train time. "
-                f"Set preprocessing config `in_memory: True` for feature {feature[NAME]}"
-            )
 
     def read_binary_files(
         self, column: Series, map_fn: Optional[Callable] = None, file_size: Optional[int] = None

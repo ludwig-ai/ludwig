@@ -6,11 +6,11 @@ from typing import Dict, List
 
 import pytest
 import torch
-from marshmallow import ValidationError
 
 from ludwig.api import LudwigModel
 from ludwig.constants import IMAGENET1K
 from ludwig.data.dataset_synthesizer import cli_synthesize_dataset
+from ludwig.error import ConfigValidationError
 from ludwig.features.image_feature import ImageAugmentation
 from ludwig.schema.features.image_feature import ImageInputFeatureConfig
 
@@ -295,7 +295,7 @@ def test_invalid_augmentation_parameters(
     train_data_rgb,
     augmentation_pipeline_ops,
 ):
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         run_augmentation_training(
             train_data=train_data_rgb,
             backend="local",

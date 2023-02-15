@@ -104,10 +104,6 @@ class Backend(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def check_lazy_load_supported(self, feature):
-        raise NotImplementedError()
-
-    @abstractmethod
     def read_binary_files(self, column: Series, map_fn: Optional[Callable] = None) -> Series:
         raise NotImplementedError()
 
@@ -147,9 +143,6 @@ class LocalPreprocessingMixin:
     @property
     def supports_multiprocessing(self):
         return True
-
-    def check_lazy_load_supported(self, feature):
-        pass
 
     def read_binary_files(
         self, column: pd.Series, map_fn: Optional[Callable] = None, file_size: Optional[int] = None

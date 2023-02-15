@@ -27,7 +27,6 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend import Backend, LOCAL_BACKEND
 from ludwig.constants import (
     BFILL,
-    BINARY,
     CHECKSUM,
     COLUMN,
     DEFAULTS,
@@ -1448,11 +1447,6 @@ def balance_data(dataset_df: DataFrame, output_features: List[Dict], preprocessi
 
     Returns: An over-sampled or under-sampled training dataset.
     """
-    if len(output_features) != 1:
-        raise ValueError("Class balancing is only available for datasets with a single output feature")
-    if output_features[0][TYPE] != BINARY:
-        raise ValueError("Class balancing is only supported for binary output types")
-
     target = output_features[0][PROC_COLUMN]
 
     if backend.df_engine.partitioned:
@@ -1463,12 +1457,6 @@ def balance_data(dataset_df: DataFrame, output_features: List[Dict], preprocessi
         minority_class = dataset_df[target].value_counts().idxmin()
     majority_df = dataset_df[dataset_df[target] == majority_class]
     minority_df = dataset_df[dataset_df[target] == minority_class]
-
-    if preprocessing_parameters["oversample_minority"] and preprocessing_parameters["undersample_majority"]:
-        raise ValueError(
-            "Cannot balance data if both oversampling an undersampling are specified in the config. "
-            "Must specify only one method"
-        )
 
     if preprocessing_parameters["oversample_minority"]:
         sample_fraction = (len(majority_df) * preprocessing_parameters["oversample_minority"]) / len(minority_df)
