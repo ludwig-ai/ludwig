@@ -244,32 +244,6 @@ class FreezeModule(nn.Module):
 
 
 @DeveloperAPI
-class Dense(LudwigModule):
-    def __init__(
-        self,
-        input_size,
-        output_size,
-        use_bias=True,
-        weights_initializer="xavier_uniform",
-        bias_initializer="zeros",
-    ):
-        super().__init__()
-        self.dense = nn.Linear(in_features=input_size, out_features=output_size, bias=use_bias)
-        weights_initializer(self.dense.weight)
-
-        if use_bias:
-            bias_initializer(self.dense.bias)
-
-    @property
-    def input_shape(self) -> torch.Size:
-        return self.dense.input_shape
-
-    def forward(self, input: torch.Tensor) -> torch.Tensor:
-        output = torch.squeeze(self.dense(input), dim=-1)
-        return output
-
-
-@DeveloperAPI
 def initialize_pytorch(
     gpus: Optional[Union[int, str, List[int]]] = None,
     gpu_memory_limit: Optional[float] = None,

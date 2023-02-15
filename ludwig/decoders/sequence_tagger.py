@@ -8,8 +8,8 @@ from ludwig.constants import HIDDEN, LOGITS, SEQUENCE, TEXT
 from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
 from ludwig.modules.attention_modules import MultiHeadSelfAttention
+from ludwig.modules.fully_connected_modules import Dense
 from ludwig.schema.decoders.sequence_decoders import SequenceTaggerDecoderConfig
-from ludwig.utils.torch_utils import Dense
 
 logger = logging.getLogger(__name__)
 

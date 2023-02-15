@@ -19,6 +19,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import torch
 import torch.nn as nn
 
+from ludwig.schema.initializers import get_initialize_cls, InitializerConfig
 from ludwig.utils.image_utils import get_img_output_shape
 from ludwig.utils.torch_utils import get_activation, LudwigModule
 
@@ -37,8 +38,8 @@ class Conv1DLayer(LudwigModule):
         dilation=1,
         groups=1,
         use_bias=True,
-        weights_initializer="xavier_uniform",
-        bias_initializer="zeros",
+        weights_initializer: InitializerConfig = get_initialize_cls("xavier_uniform"),
+        bias_initializer: InitializerConfig = get_initialize_cls("zeros"),
         norm=None,
         norm_params=None,
         activation="relu",
@@ -137,8 +138,8 @@ class Conv1DStack(LudwigModule):
         default_padding="same",
         default_dilation_rate=1,
         default_use_bias=True,
-        default_weights_initializer="xavier_uniform",
-        default_bias_initializer="zeros",
+        default_weights_initializer: InitializerConfig = get_initialize_cls("xavier_uniform"),
+        default_bias_initializer: InitializerConfig = get_initialize_cls("zeros"),
         default_norm=None,
         default_norm_params=None,
         default_activation="relu",
@@ -288,8 +289,8 @@ class ParallelConv1D(LudwigModule):
         default_padding="same",
         default_dilation_rate=1,
         default_use_bias=True,
-        default_weights_initializer="xavier_uniform",
-        default_bias_initializer="zeros",
+        default_weights_initializer: InitializerConfig = get_initialize_cls("xavier_uniform"),
+        default_bias_initializer: InitializerConfig = get_initialize_cls("zeros"),
         default_norm=None,
         default_norm_params=None,
         default_activation="relu",
@@ -419,8 +420,8 @@ class ParallelConv1DStack(LudwigModule):
         default_padding="same",
         default_dilation_rate=1,
         default_use_bias=True,
-        default_weights_initializer="xavier_uniform",
-        default_bias_initializer="zeros",
+        default_weights_initializer: InitializerConfig = get_initialize_cls("xavier_uniform"),
+        default_bias_initializer: InitializerConfig = get_initialize_cls("zeros"),
         default_norm=None,
         default_norm_params=None,
         default_activation="relu",

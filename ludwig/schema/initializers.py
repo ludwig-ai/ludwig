@@ -86,9 +86,9 @@ class UniformInitializer(InitializerConfig):
 
     type: str = schema_utils.ProtectedString("uniform")
 
-    a: float = schema_utils.NonNegativeFloat(default=0.5, description="The lower bound of the uniform distribution")
+    a: float = schema_utils.FloatRange(default=0.5, description="The lower bound of the uniform distribution")
 
-    b: float = schema_utils.NonNegativeFloat(default=1.0, description="The upper bound of the uniform distribution")
+    b: float = schema_utils.FloatRange(default=1.0, description="The upper bound of the uniform distribution")
 
     def __call__(self, tensor: torch.Tensor) -> torch.Tensor:
         return nn.init.uniform_(tensor, **self.initializer_params())
@@ -103,7 +103,7 @@ class NormalInitializer(InitializerConfig):
 
     type: str = schema_utils.ProtectedString("normal")
 
-    mean: float = schema_utils.NonNegativeFloat(default=0.0, description="The mean of the normal distribution")
+    mean: float = schema_utils.FloatRange(default=0.0, description="The mean of the normal distribution")
 
     std: float = schema_utils.NonNegativeFloat(
         default=1.0, description="The standard deviation of the normal distribution"
@@ -122,15 +122,15 @@ class TruncNormalInitializer(InitializerConfig):
 
     type: str = schema_utils.ProtectedString("trunc_normal")
 
-    mean: float = schema_utils.NonNegativeFloat(default=0.0, description="The mean of the normal distribution")
+    mean: float = schema_utils.FloatRange(default=0.0, description="The mean of the normal distribution")
 
     std: float = schema_utils.NonNegativeFloat(
         default=1.0, description="The standard deviation of the normal distribution"
     )
 
-    a: float = schema_utils.NonNegativeFloat(default=2.0, description="The minimum cutoff value.")
+    a: float = schema_utils.FloatRange(default=-2.0, description="The minimum cutoff value.")
 
-    b: float = schema_utils.NonNegativeFloat(default=2.0, description="The maximum cutoff value.")
+    b: float = schema_utils.FloatRange(default=2.0, description="The maximum cutoff value.")
 
     def __call__(self, tensor: torch.Tensor) -> torch.Tensor:
         return nn.init.trunc_normal_(tensor, **self.initializer_params())
@@ -145,7 +145,7 @@ class ConstantInitializer(InitializerConfig):
 
     type: str = schema_utils.ProtectedString("constant")
 
-    val: float = schema_utils.NonNegativeFloat(default=0.0, description="The value to fill the tensor with")
+    val: float = schema_utils.FloatRange(default=0.0, description="The value to fill the tensor with")
 
     def __call__(self, tensor: torch.Tensor) -> torch.Tensor:
         return nn.init.constant_(tensor, **self.initializer_params())
@@ -198,7 +198,7 @@ class XavierUniformInitializer(InitializerConfig):
 
     type: str = schema_utils.ProtectedString("xavier_uniform")
 
-    gain: float = schema_utils.NonNegativeFloat(default=1.0, description="An optional scaling factor")
+    gain: float = schema_utils.FloatRange(default=1.0, description="An optional scaling factor")
 
     def __call__(self, tensor: torch.Tensor) -> torch.Tensor:
         return nn.init.xavier_uniform_(tensor, **self.initializer_params())
@@ -212,7 +212,7 @@ class XavierNormalInitializer(InitializerConfig):
 
     type: str = schema_utils.ProtectedString("xavier_normal")
 
-    gain: float = schema_utils.NonNegativeFloat(default=1.0, description="An optional scaling factor")
+    gain: float = schema_utils.FloatRange(default=1.0, description="An optional scaling factor")
 
     def __call__(self, tensor: torch.Tensor) -> torch.Tensor:
         return nn.init.xavier_normal_(tensor, **self.initializer_params())
@@ -226,7 +226,7 @@ class KaimingUniformInitializer(InitializerConfig):
 
     type: str = schema_utils.ProtectedString("kaiming_uniform")
 
-    a: float = schema_utils.NonNegativeFloat(
+    a: float = schema_utils.FloatRange(
         default=0.0,
         description="The negative slope of the rectifier used after this layer (only used with ``'leaky_relu'``)",
     )
@@ -260,7 +260,7 @@ class KaimingNormalInitializer(InitializerConfig):
 
     type: str = schema_utils.ProtectedString("kaiming_normal")
 
-    a: float = schema_utils.NonNegativeFloat(
+    a: float = schema_utils.FloatRange(
         default=0.0,
         description="The negative slope of the rectifier used after this layer (only used with ``'leaky_relu'``)",
     )
@@ -294,7 +294,7 @@ class OrthogonalInitializer(InitializerConfig):
 
     type: str = schema_utils.ProtectedString("orthogonal")
 
-    gain: float = schema_utils.NonNegativeFloat(default=1.0, description="An optional scaling factor")
+    gain: float = schema_utils.FloatRange(default=1.0, description="An optional scaling factor")
 
     def __call__(self, tensor: torch.Tensor) -> torch.Tensor:
         return nn.init.orthogonal_(tensor, **self.initializer_params())
@@ -309,7 +309,7 @@ class SparseInitializer(InitializerConfig):
     type: str = schema_utils.ProtectedString("sparse")
 
     sparsity: float = schema_utils.NonNegativeFloat(
-        default=0.1, description="The fraction of elements in each column to be set to zero"
+        default=0.1, max=1.0, description="The fraction of elements in each column to be set to zero"
     )
 
     std: float = schema_utils.NonNegativeFloat(

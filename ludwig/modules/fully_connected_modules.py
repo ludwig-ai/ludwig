@@ -20,7 +20,7 @@ import torch
 from torch.nn import Dropout, Linear, ModuleList
 
 from ludwig.modules.normalization_modules import create_norm_layer
-from ludwig.schema.initializers import InitializerConfig
+from ludwig.schema.initializers import get_initialize_cls, InitializerConfig
 from ludwig.utils.torch_utils import activations, LudwigModule
 
 logger = logging.getLogger(__name__)
@@ -46,8 +46,8 @@ class FCLayer(LudwigModule):
     def __init__(
         self,
         input_size: int,
-        weights_initializer: InitializerConfig = None,
-        bias_initializer: InitializerConfig = None,
+        weights_initializer: InitializerConfig = get_initialize_cls("xavier_uniform"),
+        bias_initializer: InitializerConfig = get_initialize_cls("zeros"),
         input_rank: int = 2,
         output_size: int = 256,
         use_bias: bool = True,
@@ -114,8 +114,8 @@ class FCStack(LudwigModule):
         default_input_rank: int = 2,
         default_output_size: int = 256,
         default_use_bias: bool = True,
-        default_weights_initializer: InitializerConfig = None,
-        default_bias_initializer: InitializerConfig = None,
+        default_weights_initializer: InitializerConfig = get_initialize_cls("xavier_uniform"),
+        default_bias_initializer: InitializerConfig = get_initialize_cls("zeros"),
         default_norm: Optional[str] = None,
         default_norm_params: Optional[Dict] = None,
         default_activation: str = "relu",
@@ -211,3 +211,28 @@ class FCStack(LudwigModule):
         if len(self.stack) > 0:
             return self.stack[-1].output_shape
         return torch.Size([self.input_size])
+
+
+class Dense(LudwigModule):
+    def __init__(
+        self,
+        input_size,
+        output_size,
+        use_bias=True,
+        weights_initializer: InitializerConfig = get_initialize_cls("xavier_uniform"),
+        bias_initializer: InitializerConfig = get_initialize_cls("zeros"),
+    ):
+        super().__init__()
+        self.dense = torch.nn.Linear(in_features=input_size, out_features=output_size, bias=use_bias)
+        weights_initializer(self.dense.weight)
+
+        if use_bias:
+            bias_initializer(self.dense.bias)
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return self.dense.input_shape
+
+    def forward(self, input: torch.Tensor) -> torch.Tensor:
+        output = torch.squeeze(self.dense(input), dim=-1)
+        return output

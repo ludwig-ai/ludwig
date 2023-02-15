@@ -39,6 +39,7 @@ from ludwig.schema.encoders.sequence_encoders import (
     StackedRNNConfig,
     StackedTransformerConfig,
 )
+from ludwig.schema.initializers import get_initialize_cls, InitializerConfig
 
 logger = logging.getLogger(__name__)
 
@@ -115,7 +116,7 @@ class SequenceEmbedEncoder(SequenceEncoder):
         embeddings_trainable=True,
         pretrained_embeddings=None,
         embeddings_on_cpu=False,
-        weights_initializer=None,
+        weights_initializer: InitializerConfig = get_initialize_cls("xavier_normal"),
         dropout=0,
         reduce_output="sum",
         encoder_config=None,
@@ -176,7 +177,7 @@ class SequenceEmbedEncoder(SequenceEncoder):
                 `{type: normal, mean: 0, stddev: 0}`.
                 To know the parameters of each initializer, please refer to
                 PyTorch's documentation.
-        :type weights_initializer: str
+        :type weights_initializer: InitializerConfig
         :param dropout: Tensor (torch.float) The dropout probability.
         :type dropout: Tensor
         :param reduce_output: defines how to reduce the output tensor along
@@ -200,6 +201,7 @@ class SequenceEmbedEncoder(SequenceEncoder):
             self.supports_masking = True
 
         logger.debug("  EmbedSequence")
+        print(f"weights_initializer: {weights_initializer}")
         self.embed_sequence = EmbedSequence(
             vocab,
             embedding_size,
@@ -265,8 +267,8 @@ class ParallelCNN(SequenceEncoder):
         num_fc_layers=None,
         output_size=256,
         use_bias=True,
-        weights_initializer="xavier_uniform",
-        bias_initializer="zeros",
+        weights_initializer: InitializerConfig = get_initialize_cls("xavier_uniform"),
+        bias_initializer: InitializerConfig = get_initialize_cls("zeros"),
         norm=None,
         norm_params=None,
         activation="relu",
@@ -573,8 +575,8 @@ class StackedCNN(SequenceEncoder):
         num_fc_layers=None,
         output_size=256,
         use_bias=True,
-        weights_initializer="xavier_uniform",
-        bias_initializer="zeros",
+        weights_initializer: InitializerConfig = get_initialize_cls("xavier_uniform"),
+        bias_initializer: InitializerConfig = get_initialize_cls("zeros"),
         norm=None,
         norm_params=None,
         activation="relu",
@@ -904,8 +906,8 @@ class StackedParallelCNN(SequenceEncoder):
         num_fc_layers=None,
         output_size=256,
         use_bias=True,
-        weights_initializer="xavier_uniform",
-        bias_initializer="zeros",
+        weights_initializer: InitializerConfig = get_initialize_cls("xavier_uniform"),
+        bias_initializer: InitializerConfig = get_initialize_cls("zeros"),
         norm=None,
         norm_params=None,
         activation="relu",
@@ -1221,8 +1223,8 @@ class StackedRNN(SequenceEncoder):
         num_fc_layers=0,
         output_size=256,
         use_bias=True,
-        weights_initializer="xavier_uniform",
-        bias_initializer="zeros",
+        weights_initializer: InitializerConfig = get_initialize_cls("xavier_uniform"),
+        bias_initializer: InitializerConfig = get_initialize_cls("zeros"),
         norm=None,
         norm_params=None,
         fc_activation="relu",
@@ -1505,8 +1507,8 @@ class StackedCNNRNN(SequenceEncoder):
         num_fc_layers=0,
         output_size=256,
         use_bias=True,
-        weights_initializer="xavier_uniform",
-        bias_initializer="zeros",
+        weights_initializer: InitializerConfig = get_initialize_cls("xavier_uniform"),
+        bias_initializer: InitializerConfig = get_initialize_cls("zeros"),
         norm=None,
         norm_params=None,
         fc_activation="relu",
@@ -1773,8 +1775,8 @@ class StackedTransformer(SequenceEncoder):
         num_fc_layers=0,
         output_size=256,
         use_bias=True,
-        weights_initializer="xavier_uniform",
-        bias_initializer="zeros",
+        weights_initializer: InitializerConfig = get_initialize_cls("xavier_uniform"),
+        bias_initializer: InitializerConfig = get_initialize_cls("zeros"),
         norm=None,
         norm_params=None,
         fc_activation="relu",

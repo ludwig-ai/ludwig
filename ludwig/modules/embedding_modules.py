@@ -49,7 +49,9 @@ def get_dense_embeddings(
             "be equal to vocab_size."
         )
         embedding_size = vocab_size
-    return embedding_initializer(torch.empty([vocab_size, embedding_size]))
+    embeddings = torch.empty([vocab_size, embedding_size])
+    embedding_initializer(embeddings)
+    return embeddings
 
 
 def get_sparse_embeddings(vocab_size):
@@ -76,6 +78,7 @@ def embedding_matrix(
         embeddings = get_dense_embeddings(
             pretrained_embeddings, force_embedding_size, vocab, embedding_size, vocab_size, embedding_initializer
         )
+        print(f"get_dense_embeddings embeddings: {embeddings}")
     elif representation == "sparse":
         embeddings = get_sparse_embeddings(vocab_size)
     else:

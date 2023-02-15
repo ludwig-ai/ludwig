@@ -23,6 +23,7 @@ from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.schema.encoders.base import DenseEncoderConfig, PassthroughEncoderConfig
+from ludwig.schema.initializers import get_initialize_cls, InitializerConfig
 
 logger = logging.getLogger(__name__)
 
@@ -67,8 +68,8 @@ class DenseEncoder(Encoder):
         num_layers=1,
         output_size=256,
         use_bias=True,
-        weights_initializer="xavier_uniform",
-        bias_initializer="zeros",
+        weights_initializer: InitializerConfig = get_initialize_cls("xavier_uniform"),
+        bias_initializer: InitializerConfig = get_initialize_cls("zeros"),
         norm=None,
         norm_params=None,
         activation="relu",

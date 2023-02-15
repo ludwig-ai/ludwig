@@ -25,7 +25,7 @@ from ludwig.encoders.registry import register_encoder
 from ludwig.modules.embedding_modules import Embed
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.schema.encoders.date_encoders import DateEmbedConfig, DateWaveConfig
-from ludwig.schema.initializers import InitializerConfig
+from ludwig.schema.initializers import get_initialize_cls, InitializerConfig
 from ludwig.utils import torch_utils
 
 logger = logging.getLogger(__name__)
@@ -46,8 +46,8 @@ class DateEmbed(Encoder):
         num_fc_layers: int = 0,
         output_size: int = 10,
         use_bias: bool = True,
-        weights_initializer: InitializerConfig = None,
-        bias_initializer: InitializerConfig = None,
+        weights_initializer: InitializerConfig = get_initialize_cls("xavier_uniform"),
+        bias_initializer: InitializerConfig = get_initialize_cls("zeros"),
         norm: Optional[str] = None,
         norm_params: Optional[Dict] = None,
         activation: str = "relu",
@@ -287,8 +287,8 @@ class DateWave(Encoder):
         num_fc_layers: int = 1,
         output_size: int = 10,
         use_bias: bool = True,
-        weights_initializer: InitializerConfig = None,
-        bias_initializer: InitializerConfig = None,
+        weights_initializer: InitializerConfig = get_initialize_cls("xavier_uniform"),
+        bias_initializer: InitializerConfig = get_initialize_cls("zeros"),
         norm: Optional[str] = None,
         norm_params: Optional[Dict] = None,
         activation: str = "relu",

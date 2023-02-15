@@ -83,6 +83,8 @@ def test_sequence_encoders(
     encoder_parameters["norm"] = enc_norm
     encoder_parameters["reduce_output"] = enc_reduce_output
 
+    print(f"encoder_parameters: {encoder_parameters}")
+
     # retrieve encoder to test
     encoder_obj = get_encoder_cls(SEQUENCE, enc_encoder)(**encoder_parameters)
     if torch.cuda.is_available():

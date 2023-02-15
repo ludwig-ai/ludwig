@@ -26,7 +26,7 @@ from ludwig.modules.convolutional_modules import Conv2DStack, ResNet
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.mlp_mixer_modules import MLPMixer
 from ludwig.schema.encoders.image.base import MLPMixerConfig, ResNetConfig, Stacked2DCNNConfig, ViTConfig
-from ludwig.schema.initializers import InitializerConfig
+from ludwig.schema.initializers import get_initialize_cls, InitializerConfig
 from ludwig.utils.torch_utils import FreezeModule
 
 logger = logging.getLogger(__name__)
@@ -68,8 +68,8 @@ class Stacked2DCNN(ImageEncoder):
         num_fc_layers: Optional[int] = 1,
         output_size: int = 128,
         fc_use_bias: bool = True,
-        fc_weights_initializer: InitializerConfig = None,
-        fc_bias_initializer: InitializerConfig = None,
+        fc_weights_initializer: InitializerConfig = get_initialize_cls("xavier_uniform"),
+        fc_bias_initializer: InitializerConfig = get_initialize_cls("zeros"),
         fc_norm: Optional[str] = None,
         fc_norm_params: Optional[Dict[str, Any]] = None,
         fc_activation: str = "relu",
@@ -182,8 +182,8 @@ class ResNetEncoder(ImageEncoder):
         num_fc_layers: Optional[int] = 1,
         output_size: int = 256,
         use_bias: bool = True,
-        weights_initializer: InitializerConfig = None,
-        bias_initializer: InitializerConfig = None,
+        weights_initializer: InitializerConfig = get_initialize_cls("xavier_uniform"),
+        bias_initializer: InitializerConfig = get_initialize_cls("zeros"),
         norm: Optional[str] = None,
         norm_params: Optional[Dict[str, Any]] = None,
         activation: str = "relu",

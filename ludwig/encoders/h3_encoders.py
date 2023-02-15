@@ -27,7 +27,7 @@ from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.recurrent_modules import RecurrentStack
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.schema.encoders.h3_encoders import H3EmbedConfig, H3RNNConfig, H3WeightedSumConfig
-from ludwig.schema.initializers import InitializerConfig
+from ludwig.schema.initializers import get_initialize_cls, InitializerConfig
 from ludwig.utils import torch_utils
 
 logger = logging.getLogger(__name__)
@@ -47,8 +47,8 @@ class H3Embed(Encoder):
         num_fc_layers: int = 0,
         output_size: int = 10,
         use_bias: bool = True,
-        weights_initializer: str = "xavier_uniform",
-        bias_initializer: InitializerConfig = None,
+        weights_initializer: InitializerConfig = get_initialize_cls("xavier_uniform"),
+        bias_initializer: InitializerConfig = get_initialize_cls("zeros"),
         norm: str = None,
         norm_params: Dict = None,
         activation: str = "relu",
@@ -228,8 +228,8 @@ class H3WeightedSum(Encoder):
         num_fc_layers: int = 0,
         output_size: int = 10,
         use_bias: bool = True,
-        weights_initializer: str = "xavier_uniform",
-        bias_initializer: InitializerConfig = None,
+        weights_initializer: InitializerConfig = get_initialize_cls("xavier_uniform"),
+        bias_initializer: InitializerConfig = get_initialize_cls("zeros"),
         norm: Optional[str] = None,
         norm_params: Dict = None,
         activation: str = "relu",
@@ -343,9 +343,9 @@ class H3RNN(Encoder):
         recurrent_activation: str = "sigmoid",
         use_bias: bool = True,
         unit_forget_bias: bool = True,
-        weights_initializer: InitializerConfig = None,
-        recurrent_initializer: InitializerConfig = None,
-        bias_initializer: InitializerConfig = None,
+        weights_initializer: InitializerConfig = get_initialize_cls("xavier_uniform"),
+        recurrent_initializer: InitializerConfig = get_initialize_cls("xavier_uniform"),
+        bias_initializer: InitializerConfig = get_initialize_cls("zeros"),
         dropout: float = 0.0,
         recurrent_dropout: float = 0.0,
         reduce_output: str = "last",

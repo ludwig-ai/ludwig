@@ -22,8 +22,10 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BINARY, CATEGORY, LOSS, NUMBER, SEQUENCE, SET, TEXT, TYPE, VECTOR
 from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
+from ludwig.modules.fully_connected_modules import Dense
 from ludwig.schema.decoders.base import ClassifierConfig, PassthroughDecoderConfig, ProjectorConfig, RegressorConfig
-from ludwig.utils.torch_utils import Dense, get_activation
+from ludwig.schema.initializers import get_initialize_cls, InitializerConfig
+from ludwig.utils.torch_utils import get_activation
 
 logger = logging.getLogger(__name__)
 
@@ -62,8 +64,8 @@ class Regressor(Decoder):
         self,
         input_size,
         use_bias=True,
-        weights_initializer="xavier_uniform",
-        bias_initializer="zeros",
+        weights_initializer: InitializerConfig = get_initialize_cls("xavier_uniform"),
+        bias_initializer: InitializerConfig = get_initialize_cls("zeros"),
         decoder_config=None,
         **kwargs,
     ):
@@ -102,8 +104,8 @@ class Projector(Decoder):
         input_size,
         output_size,
         use_bias=True,
-        weights_initializer="xavier_uniform",
-        bias_initializer="zeros",
+        weights_initializer: InitializerConfig = get_initialize_cls("xavier_uniform"),
+        bias_initializer: InitializerConfig = get_initialize_cls("zeros"),
         activation=None,
         clip=None,
         decoder_config=None,
@@ -159,8 +161,8 @@ class Classifier(Decoder):
         input_size,
         num_classes,
         use_bias=True,
-        weights_initializer="xavier_uniform",
-        bias_initializer="zeros",
+        weights_initializer: InitializerConfig = get_initialize_cls("xavier_uniform"),
+        bias_initializer: InitializerConfig = get_initialize_cls("zeros"),
         decoder_config=None,
         **kwargs,
     ):
