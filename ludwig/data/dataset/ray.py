@@ -19,7 +19,7 @@ import math
 import queue
 import threading
 from functools import lru_cache
-from typing import Dict, Iterator, Optional, Union
+from typing import Dict, Iterator, Literal, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -62,9 +62,13 @@ def read_remote_parquet(path: str):
 class RayDataset(Dataset):
     """Wrapper around ray.data.Dataset.
 
-    Attributes:
-        auto_window: If True and the dataset is larger than available memory,
-            automatically set window size to `<available memory> // 5`.
+    Args:
+        df: The data to wrap
+        features: Feature-level config indexed by feature name
+        training_set_metadata: Additional training set information
+        backend: The local/distributed compute coordinator
+        window_size_bytes: The requested size of a dataset window in bytes. If "auto", sets the window size relative to
+            the dataset size and object store size. If not specified, no windowing will occur.
     """
 
     def __init__(
@@ -73,7 +77,7 @@ class RayDataset(Dataset):
         features: Dict[str, FeatureConfigDict],
         training_set_metadata: TrainingSetMetadataDict,
         backend: Backend,
-        auto_window: bool = False,
+        window_size_bytes: Optional[Union[int, Literal["auto"]]] = None,
     ):
         self.df_engine = backend.df_engine
         self.ds = self.df_engine.to_ray_dataset(df) if not isinstance(df, str) else read_remote_parquet(df)
@@ -82,16 +86,17 @@ class RayDataset(Dataset):
         self.data_hdf5_fp = training_set_metadata.get(DATA_TRAIN_HDF5_FP)
         self.data_parquet_fp = training_set_metadata.get(DATA_TRAIN_PARQUET_FP)
         self._processed_data_fp = df if isinstance(df, str) else None
-        self.auto_window = auto_window
+        self.window_size_bytes = self.get_window_size_bytes(window_size_bytes)
 
-    def get_window_size_bytes(self, window_size_bytes: Optional[int] = None) -> int:
-        # If user has specified a window size, use it as is
-        if window_size_bytes:
+    def get_window_size_bytes(self, window_size_bytes: Optional[Union[int, Literal["auto"]]] = None) -> int:
+        """Return this dataset's window size in bytes, or translate auto-windowing into bytes."""
+        # If user has specified a window size, use it as-is.
+        if isinstance(window_size_bytes, int):
             return window_size_bytes
 
-        # If the user does not supply a window size and the dataset is large,
+        # If the user requests auto window sizing and the dataset is large,
         # set the window size to `<available memory> // 5`.
-        if self.auto_window and window_size_bytes is None:
+        elif window_size_bytes == "auto":
             ds_memory_size = self.in_memory_size_bytes
             cluster_memory_size = ray.cluster_resources()["object_store_memory"]
             if ds_memory_size > cluster_memory_size // 5:
@@ -100,8 +105,8 @@ class RayDataset(Dataset):
                     "In-memory dataset size is greater than 20%% of object store memory. "
                     "Enabling windowed shuffling of data to prevent chances of OOMs. "
                 )
-                window_size_bytes = int(cluster_memory_size // 5)
-                return window_size_bytes
+                return int(cluster_memory_size // 5)
+
         # By default, set to -1 so that an infinite window size
         # will be used which effectively results in bulk data ingestion
         return -1
@@ -168,15 +173,11 @@ class RayDatasetManager(DatasetManager):
         dataset: Union[str, DataFrame],
         config: ModelConfigDict,
         training_set_metadata: TrainingSetMetadataDict,
-        auto_window: bool = False,
     ) -> "RayDataset":
-        """Create a new Ray dataset with config.
-
-        Args:
-            auto_window: If True, enable autosizing of data windows for large datasets.
-        """
+        """Create a new Ray dataset with config."""
+        window_size_bytes = self.backend._data_loader_kwargs.get("window_size_bytes", None)
         return RayDataset(
-            dataset, get_proc_features(config), training_set_metadata, self.backend, auto_window=auto_window
+            dataset, get_proc_features(config), training_set_metadata, self.backend, window_size_bytes=window_size_bytes
         )
 
     def save(

@@ -235,7 +235,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
 class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     def __init__(
         self,
-        output_feature_config: Union[TextInputFeatureConfig, Dict],
+        output_feature_config: Union[TextOutputFeatureConfig, Dict],
         output_features: Dict[str, OutputFeature],
         **kwargs,
     ):
