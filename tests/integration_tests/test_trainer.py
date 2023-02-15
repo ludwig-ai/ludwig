@@ -231,8 +231,8 @@ def test_lightgbm_dataset_partition(ray_cluster_2cpu):
     def create_dataset(model: LudwigModel, size: int) -> RayDataset:
         df = pd.DataFrame(
             {
-                "in_column_mZFLky": np.random.randint(0, 1, size=(size,), dtype=np.uint8),
-                "out_column_mZFLky": np.random.randint(0, 1, size=(size,), dtype=np.uint8),
+                "in_column_MFjIZ4": np.random.randint(0, 1, size=(size,), dtype=np.uint8),
+                "out_column_TFqFe_": np.random.randint(0, 1, size=(size,), dtype=np.uint8),
             }
         )
         df = dask.dataframe.from_pandas(df, npartitions=1)

@@ -88,6 +88,7 @@ class BagEmbedWeightedConfig(BaseEncoderConfig):
 
     pretrained_embeddings: str = schema_utils.String(
         default=None,
+        allow_none=True,
         description="By default dense embeddings are initialized randomly, but this parameter allows to specify a "
         "path to a file containing embeddings in the GloVe format. When the file containing the "
         "embeddings is loaded, only the embeddings with labels present in the vocabulary are kept, "
@@ -125,6 +126,7 @@ class BagEmbedWeightedConfig(BaseEncoderConfig):
     norm: str = schema_utils.StringOptions(
         ["batch", "layer"],
         default=None,
+        allow_none=True,
         description="The default norm that will be used for each layer.",
         parameter_metadata=ENCODER_METADATA["BagEmbedWeighted"]["norm"],
     )

@@ -28,10 +28,10 @@ from tqdm import tqdm
 
 from ludwig.api_annotations import DeveloperAPI, PublicAPI
 from ludwig.constants import SPLIT
-from ludwig.datasets import model_configs_for_dataset
 from ludwig.datasets.archives import extract_archive, is_archive, list_archive
 from ludwig.datasets.dataset_config import DatasetConfig
 from ludwig.datasets.kaggle import download_kaggle_dataset
+from ludwig.datasets.utils import model_configs_for_dataset
 from ludwig.utils.strings_utils import make_safe_filename
 
 logger = logging.getLogger(__name__)
@@ -448,6 +448,10 @@ class DatasetLoader:
     def load_transformed_dataset(self) -> pd.DataFrame:
         """Load processed dataset into a dataframe."""
         return pd.read_parquet(self.processed_dataset_path)
+
+    def get_mtime(self) -> float:
+        """Last modified time of the processed dataset after downloading successfully."""
+        return os.path.getmtime(self.processed_dataset_path)
 
     def split(self, dataset: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         if SPLIT in dataset:
