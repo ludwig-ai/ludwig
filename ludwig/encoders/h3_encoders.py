@@ -343,8 +343,8 @@ class H3RNN(Encoder):
         recurrent_activation: str = "sigmoid",
         use_bias: bool = True,
         unit_forget_bias: bool = True,
-        weights_initializer: str = "xavier_uniform",
-        recurrent_initializer: str = "orthogonal",
+        weights_initializer: InitializerConfig = None,
+        recurrent_initializer: InitializerConfig = None,
         bias_initializer: InitializerConfig = None,
         dropout: float = 0.0,
         recurrent_dropout: float = 0.0,
@@ -396,12 +396,12 @@ class H3RNN(Encoder):
         :type unit_forget_bias: bool
         :param weights_initializer: Initializer for the weights (aka kernel)
                matrix
-        :type weights_initializer: string
+        :type weights_initializer: InitializerConfig
         :param recurrent_initializer: Initializer for the recurrent weights
                matrix
-        :type recurrent_initializer: string
+        :type recurrent_initializer: InitializerConfig
         :param bias_initializer: Initializer for the bias vector
-        :type bias_initializer: string
+        :type bias_initializer: InitializerConfig
         :param dropout: determines if there should be a dropout layer before
                returning the encoder output.
         :type dropout: float

@@ -25,6 +25,7 @@ from ludwig.encoders.registry import register_encoder
 from ludwig.modules.embedding_modules import EmbedSet
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.schema.encoders.set_encoders import SetSparseEncoderConfig
+from ludwig.schema.initializers import InitializerConfig
 
 logger = logging.getLogger(__name__)
 
@@ -44,8 +45,8 @@ class SetSparseEncoder(Encoder):
         num_fc_layers: int = 0,
         output_size: int = 10,
         use_bias: bool = True,
-        weights_initializer: str = "xavier_uniform",
-        bias_initializer: str = "zeros",
+        weights_initializer: InitializerConfig = None,
+        bias_initializer: InitializerConfig = None,
         norm: Optional[str] = None,
         norm_params: Optional[Dict[str, Any]] = None,
         activation: str = "relu",

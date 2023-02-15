@@ -53,14 +53,12 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     fc_weights_initializer: InitializerConfig = WeightsInitializerDataclassField(
         default="xavier_uniform",
-        allow_none=True,
         description="The weights initializer to use for the layers in the fc_stack",
         parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_weights_initializer"],
     )
 
     fc_bias_initializer: InitializerConfig = BiasInitializerDataclassField(
         default="zeros",
-        allow_none=True,
         description="The bias initializer to use for the layers in the fc_stack",
         parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_bias_initializer"],
     )

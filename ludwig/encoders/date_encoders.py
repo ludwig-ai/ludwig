@@ -25,6 +25,7 @@ from ludwig.encoders.registry import register_encoder
 from ludwig.modules.embedding_modules import Embed
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.schema.encoders.date_encoders import DateEmbedConfig, DateWaveConfig
+from ludwig.schema.initializers import InitializerConfig
 from ludwig.utils import torch_utils
 
 logger = logging.getLogger(__name__)
@@ -45,8 +46,8 @@ class DateEmbed(Encoder):
         num_fc_layers: int = 0,
         output_size: int = 10,
         use_bias: bool = True,
-        weights_initializer: str = "xavier_uniform",
-        bias_initializer: str = "zeros",
+        weights_initializer: InitializerConfig = None,
+        bias_initializer: InitializerConfig = None,
         norm: Optional[str] = None,
         norm_params: Optional[Dict] = None,
         activation: str = "relu",
@@ -80,9 +81,9 @@ class DateEmbed(Encoder):
         :type use_bias: bool
         :param weights_initializer: Initializer for the weights (aka kernel)
             matrix.
-        :type weights_initializer: string
+        :type weights_initializer: InitializerConfig
         :param bias_initializer: Initializer for the bias vector.
-        :type bias_initializer: string
+        :type bias_initializer: InitializerConfig
         :param norm: type of normalization to use 'batch' or 'layer'.
         :type norm: string, default None
         :param norm_params: parameters to pass to normalization function.
@@ -286,8 +287,8 @@ class DateWave(Encoder):
         num_fc_layers: int = 1,
         output_size: int = 10,
         use_bias: bool = True,
-        weights_initializer: str = "xavier_uniform",
-        bias_initializer: str = "zeros",
+        weights_initializer: InitializerConfig = None,
+        bias_initializer: InitializerConfig = None,
         norm: Optional[str] = None,
         norm_params: Optional[Dict] = None,
         activation: str = "relu",
@@ -307,9 +308,9 @@ class DateWave(Encoder):
         :type use_bias: bool
         :param weights_initializer: Initializer for the weights (aka kernel)
             matrix.
-        :type weights_initializer: string
+        :type weights_initializer: InitializerConfig
         :param bias_initializer: Initializer for the bias vector.
-        :type bias_initializer: string
+        :type bias_initializer: InitializerConfig
         :param norm: type of normalization to use 'batch' or 'layer'.
         :type norm: string, default None
         :param norm_params: parameters to pass to normalization function.
