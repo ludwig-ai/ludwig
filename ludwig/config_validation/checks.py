@@ -23,6 +23,7 @@ from ludwig.constants import (
     SEQUENCE,
     SET,
     TEXT,
+    TIMESERIES,
     TRAINER,
     TYPE,
     VECTOR,
@@ -339,3 +340,34 @@ def check_hf_encoder_requirements(config: "ModelConfig") -> None:  # noqa: F821
                     raise ConfigValidationError(
                         "Pretrained model name or path must be specified for HuggingFace encoder."
                     )
+
+
+@register_config_check
+def check_stacked_transformer_requirements(config: "ModelConfig") -> None:  # noqa: F821
+    """Checks that the transformer encoder type correctly configures `num_heads` and `hidden_size`"""
+
+    def is_divisible(hidden_size: int, num_heads: int) -> bool:
+        """Checks that hidden_size is divisible by num_heads."""
+        return hidden_size % num_heads == 0
+
+    sequence_types = [SEQUENCE, TEXT, TIMESERIES]
+    for sequence_type in sequence_types:
+        encoder = config.defaults.__getattribute__(sequence_type).encoder
+        if encoder.type == "transformer" and not is_divisible(encoder.hidden_size, encoder.num_heads):
+            raise ConfigValidationError(
+                f"Default {sequence_type} transformer encoder requires encoder.hidden_size to be divisible by "
+                f"encoder.num_heads. Found hidden_size {encoder.hidden_size} and num_heads {encoder.num_heads}."
+            )
+
+    for input_feature in config.input_features:
+        if_type = input_feature.type
+        encoder = input_feature.encoder
+        if (
+            if_type in sequence_types
+            and encoder.type == "transformer"
+            and not is_divisible(encoder.hidden_size, encoder.num_heads)
+        ):
+            raise ConfigValidationError(
+                f"Input feature {input_feature.name} transformer encoder requires encoder.hidden_size to be divisible "
+                f"by encoder.num_heads. Found hidden_size {encoder.hidden_size} and num_heads {encoder.num_heads}."
+            )
