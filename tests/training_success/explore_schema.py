@@ -114,7 +114,7 @@ def handle_property_type(property_type, item):
 
     if property_type == "number":
         return explore_number(item)
-    if property_type == "integer":
+    elif property_type == "integer":
         return explore_integer(item)
     elif property_type == "string":
         return explore_string(item)
@@ -122,14 +122,42 @@ def handle_property_type(property_type, item):
         return explore_boolean()
     elif property_type == "null":
         return explore_null()
+    elif property_type == "array":
+        return explore_array(item)
     else:
         return []
+
+
+def explore_array(item):
+    candidates = []
+    if "default" in item and item["default"]:
+        candidates.append(item["default"])
+
+    item_choices = []
+    maxlen = 0
+
+    # In the case where the length of the array isn't defined.
+    if not isinstance(item["items"], list):
+        return []
+
+    for it in item["items"]:
+        choices = handle_property_type(it["type"], it)
+        maxlen = max(maxlen, len(choices))
+        item_choices.append(choices)
+
+    # pad to same length
+    for i in range(len(item_choices)):
+        item_choices[i] = maxlen * item_choices[i]
+        item_choices[i] = item_choices[i][:maxlen]
+
+    merged = list(zip(*item_choices))
+    return merged + candidates
 
 
 def explore_number(item):
     # add min and max rules
     minimum, maximum = 0, 1
-    if item["default"] is None:
+    if "default" not in item or item["default"] is None:
         candidates = []
     else:
         candidates = [1, 2, item["default"], 2 * (item["default"] + 1), item["default"] // 2, -1 * item["default"]]
