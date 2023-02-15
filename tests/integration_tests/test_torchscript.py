@@ -24,7 +24,6 @@ import torch
 import torchtext
 
 from ludwig.api import LudwigModel
-from ludwig.backend import RAY
 from ludwig.constants import BATCH_SIZE, COMBINER, LOGITS, NAME, PREDICTIONS, PROBABILITIES, TRAINER
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.features.number_feature import numeric_transformation_registry
