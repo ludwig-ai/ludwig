@@ -112,3 +112,14 @@ def test_auto_type_inference_single_value_binary_feature():
 def test_should_exclude_text(column_count, avg_words, expected):
     field = FieldInfo(name="sentence", dtype=TEXT, avg_words=avg_words, num_distinct_values=ROW_COUNT)
     assert should_exclude(0, field, TEXT, column_count, ROW_COUNT, {TARGET_NAME}) == expected
+
+
+def test_feature_with_negative_positive_binary_values():
+    field = FieldInfo(
+        name="foo",
+        dtype="object",
+        num_distinct_values=2,
+        distinct_values=["1", "-1"],
+    )
+
+    assert infer_type(field=field, missing_value_percent=0, row_count=ROW_COUNT) == BINARY
