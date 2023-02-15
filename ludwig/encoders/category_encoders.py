@@ -28,7 +28,7 @@ from ludwig.schema.encoders.category_encoders import (
     CategoricalPassthroughEncoderConfig,
     CategoricalSparseConfig,
 )
-from ludwig.schema.initializers import InitializerConfig, get_initialize_cls
+from ludwig.schema.initializers import get_initialize_cls, InitializerConfig
 
 logger = logging.getLogger(__name__)
 
