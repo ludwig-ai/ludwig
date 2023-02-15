@@ -159,7 +159,7 @@ ComparatorCombiner:
             risk of overfitting.
         example_value:
             - 1
-        expected_impact: 1
+        expected_impact: 3
         other_information:
             Not all modules that have fc_layers also have an accompanying
             num_fc_layers parameter. Where both are present, fc_layers takes precedent
@@ -404,7 +404,7 @@ ConcatCombiner:
             risk of overfitting.
         example_value:
             - 1
-        expected_impact: 1
+        expected_impact: 3
         other_information:
             Not all modules that have fc_layers also have an accompanying
             num_fc_layers parameter. Where both are present, fc_layers takes precedent
@@ -643,7 +643,7 @@ ProjectAggregateCombiner:
             risk of overfitting.
         example_value:
             - 1
-        expected_impact: 1
+        expected_impact: 3
         other_information:
             Not all modules that have fc_layers also have an accompanying
             num_fc_layers parameter. Where both are present, fc_layers takes precedent
@@ -1155,7 +1155,7 @@ TabTransformerCombiner:
             risk of overfitting.
         example_value:
             - 1
-        expected_impact: 1
+        expected_impact: 3
         other_information:
             Not all modules that have fc_layers also have an accompanying
             num_fc_layers parameter. Where both are present, fc_layers takes precedent
@@ -1501,7 +1501,7 @@ TransformerCombiner:
             risk of overfitting.
         example_value:
             - 1
-        expected_impact: 1
+        expected_impact: 3
         other_information:
             Not all modules that have fc_layers also have an accompanying
             num_fc_layers parameter. Where both are present, fc_layers takes precedent
