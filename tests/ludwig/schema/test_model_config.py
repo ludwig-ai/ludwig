@@ -32,6 +32,8 @@ from ludwig.constants import (
     TRAINER,
     TYPE,
 )
+from ludwig.schema.features.augmentation.image import RandomBlurConfig, RandomRotateConfig
+from ludwig.schema.features.image_feature import AUGMENTATION_DEFAULT_OPERATIONS
 from ludwig.schema.features.number_feature import NumberOutputFeatureConfig
 from ludwig.schema.features.text_feature import TextOutputFeatureConfig
 from ludwig.schema.model_config import ModelConfig
@@ -633,3 +635,50 @@ def test_number_feature_zscore_preprocessing_default():
     config_obj = ModelConfig.from_dict(config)
 
     assert config_obj.input_features.number_input_feature1.preprocessing.normalization == "zscore"
+
+
+@pytest.mark.parametrize(
+    "augmentation,expected",
+    [
+        (None, []),
+        (False, []),
+        (True, AUGMENTATION_DEFAULT_OPERATIONS),
+        (
+            [{"type": "random_blur"}, {"type": "random_rotate", "degree": 30}],
+            [RandomBlurConfig(), RandomRotateConfig(degree=30)],
+        ),
+    ],
+)
+def test_augmentation_pipeline(augmentation, expected):
+    """Tests that augmentation pipeline is correctly deserialized and serialized between config."""
+    config = {
+        "input_features": [
+            {
+                "name": "input1",
+                "type": "image",
+                "augmentation": augmentation,
+            },
+        ],
+        "output_features": [
+            {
+                "name": "output1",
+                "type": "number",
+            },
+        ],
+    }
+
+    if augmentation is None:
+        del config["input_features"][0]["augmentation"]
+
+    config_obj = ModelConfig.from_dict(config)
+    assert config_obj.input_features[0].augmentation == expected
+
+    # Test serialized dict form is fully rendered
+    config_dict = config_obj.to_dict()
+    assert len(config_dict["input_features"][0]["augmentation"]) == len(expected)
+    for aug in config_dict["input_features"][0]["augmentation"]:
+        assert isinstance(aug, dict)
+
+    # Test the serializing and reloading yields the same results
+    config_obj2 = ModelConfig.from_dict(config_dict)
+    assert config_obj2.input_features[0].augmentation == config_obj.input_features[0].augmentation
