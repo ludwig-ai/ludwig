@@ -18,7 +18,7 @@ from typing import Dict, List, Optional, Tuple, Union
 import torch
 from torch import nn
 
-from ludwig.schema.initializers import InitializerConfig, get_initialize_cls
+from ludwig.schema.initializers import get_initialize_cls, InitializerConfig
 from ludwig.utils.data_utils import load_pretrained_embeddings
 from ludwig.utils.torch_utils import get_torch_device, LudwigModule
 
