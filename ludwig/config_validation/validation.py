@@ -82,11 +82,3 @@ def check_schema(updated_config):
 
     if error is not None:
         raise ConfigValidationError(f"Failed to validate JSON schema for config. Error: {error.message}")
-
-
-# def validate_config(config):
-#     from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
-
-#     # Update config from previous versions to check that backwards compatibility will enable a valid config
-#     updated_config = upgrade_config_dict_to_latest_version(config)
-#     check_schema(updated_config)
