@@ -344,7 +344,7 @@ class H3RNN(Encoder):
         use_bias: bool = True,
         unit_forget_bias: bool = True,
         weights_initializer: InitializerConfig = get_initialize_cls("xavier_uniform"),
-        recurrent_initializer: InitializerConfig = get_initialize_cls("xavier_uniform"),
+        recurrent_initializer: InitializerConfig = get_initialize_cls("orthogonal"),
         bias_initializer: InitializerConfig = get_initialize_cls("zeros"),
         dropout: float = 0.0,
         recurrent_dropout: float = 0.0,

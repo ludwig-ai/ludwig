@@ -78,7 +78,6 @@ def train_and_predict_model(input_features, output_features, data_csv, output_di
 
 def train_and_predict_model_with_stratified_split(input_features, output_features, data_csv, output_directory):
     """Same as above, but with stratified split."""
-    print(f'output_features[0]["column"]: {output_features[0]["column"]}')
     config = {
         "input_features": input_features,
         "output_features": output_features,

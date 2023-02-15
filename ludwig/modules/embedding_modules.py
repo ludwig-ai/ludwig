@@ -45,7 +45,7 @@ def get_dense_embeddings(
 
     if vocab_size < embedding_size and not force_embedding_size:
         logger.info(
-            f"Embedding_size ({embedding_size}) is greater than vocab_size ({vocab_size}). Setting embedding size to "
+            f"embedding_size ({embedding_size}) is greater than vocab_size ({vocab_size}). Setting embedding size to "
             "be equal to vocab_size."
         )
         embedding_size = vocab_size
@@ -78,12 +78,12 @@ def embedding_matrix(
         embeddings = get_dense_embeddings(
             pretrained_embeddings, force_embedding_size, vocab, embedding_size, vocab_size, embedding_initializer
         )
-        print(f"get_dense_embeddings embeddings: {embeddings}")
     elif representation == "sparse":
         embeddings = get_sparse_embeddings(vocab_size)
     else:
         raise Exception(f"Embedding representation {representation} not supported.")
 
+    embedding_size = embeddings.shape[-1]
     embeddings = nn.Embedding.from_pretrained(embeddings, freeze=not embeddings_trainable)
     return embeddings, embedding_size
 

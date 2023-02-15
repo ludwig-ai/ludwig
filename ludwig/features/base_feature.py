@@ -199,6 +199,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         logger.debug(" output feature fully connected layers")
         logger.debug("  FCStack")
 
+        # NOTE: The output's feature.input_size is set at ECD construction time, based on the combiner's output_shape.
         self.input_size = get_input_size_with_dependencies(feature.input_size, self.dependencies, other_output_features)
         feature.input_size = self.input_size
 
