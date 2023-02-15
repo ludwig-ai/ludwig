@@ -27,63 +27,121 @@ logger = logging.getLogger(__name__)
 DEVICE = get_torch_device()
 
 
-def get_dense_embeddings(
-    pretrained_embeddings, force_embedding_size, vocab, embedding_size, vocab_size, embedding_initializer
-):
-    if pretrained_embeddings:
-        embeddings_matrix = load_pretrained_embeddings(pretrained_embeddings, vocab)
-        if embeddings_matrix.shape[-1] != embedding_size:
-            if not force_embedding_size:
-                embedding_size = embeddings_matrix.shape[-1]
-                logger.info(f"Setting embedding size to be equal to {embeddings_matrix.shape[-1]}.")
-            else:
-                raise ValueError(
-                    f"The size of the pretrained embeddings is {embeddings_matrix.shape[-1]}, but the specified "
-                    f"embedding_size is {embedding_size}. Please change the embedding_size accordingly."
-                )
-        return torch.tensor(embeddings_matrix, dtype=torch.float32)
+# def get_dense_embeddings(
+#     pretrained_embeddings, force_embedding_size, vocab, embedding_size, vocab_size, embedding_initializer
+# ):
+#     if pretrained_embeddings:
+#         embeddings_matrix = load_pretrained_embeddings(pretrained_embeddings, vocab)
+#         if embeddings_matrix.shape[-1] != embedding_size:
+#             if not force_embedding_size:
+#                 embedding_size = embeddings_matrix.shape[-1]
+#                 logger.info(f"Setting embedding size to be equal to {embeddings_matrix.shape[-1]}.")
+#             else:
+#                 raise ValueError(
+#                     f"The size of the pretrained embeddings is {embeddings_matrix.shape[-1]}, but the specified "
+#                     f"embedding_size is {embedding_size}. Please change the embedding_size accordingly."
+#                 )
+#         return torch.tensor(embeddings_matrix, dtype=torch.float32)
 
-    if vocab_size < embedding_size and not force_embedding_size:
-        logger.info(
-            f"embedding_size ({embedding_size}) is greater than vocab_size ({vocab_size}). Setting embedding size to "
-            "be equal to vocab_size."
-        )
-        embedding_size = vocab_size
-    embeddings = torch.empty([vocab_size, embedding_size])
-    embedding_initializer(embeddings)
-    return embeddings
+#     if vocab_size < embedding_size and not force_embedding_size:
+#         logger.info(
+#             f"embedding_size ({embedding_size}) is greater than vocab_size ({vocab_size}). Setting embedding size to "
+#             "be equal to vocab_size."
+#         )
+#         embedding_size = vocab_size
+#     embeddings = torch.empty([vocab_size, embedding_size])
+#     embedding_initializer(embeddings)
+#     return embeddings
 
 
-def get_sparse_embeddings(vocab_size):
-    embedding_size = vocab_size
-    embeddings = torch.empty([vocab_size, embedding_size])
-    embeddings = nn.init.eye_(embeddings)
-    embeddings.requires_grad = False
-    return embeddings
+# def get_sparse_embeddings(vocab_size):
+#     embedding_size = vocab_size
+#     embeddings = torch.empty([vocab_size, embedding_size])
+#     embeddings = nn.init.eye_(embeddings)
+#     embeddings.requires_grad = False
+#     return embeddings
+
+
+# def embedding_matrix(
+#     vocab: List[str],
+#     embedding_size: int,
+#     embedding_initializer: InitializerConfig,
+#     representation: str = "dense",
+#     embeddings_trainable: bool = True,
+#     pretrained_embeddings: Optional[str] = None,
+#     force_embedding_size: bool = False,
+# ) -> Tuple[nn.Module, int]:
+#     """Returns initialized torch.nn.Embedding module and embedding size."""
+
+#     vocab_size = len(vocab)
+#     if representation == "dense":
+#         embeddings = get_dense_embeddings(
+#             pretrained_embeddings, force_embedding_size, vocab, embedding_size, vocab_size, embedding_initializer
+#         )
+#     elif representation == "sparse":
+#         embeddings = get_sparse_embeddings(vocab_size)
+#     else:
+#         raise Exception(f"Embedding representation {representation} not supported.")
+
+#     embedding_size = embeddings.shape[-1]
+#     embeddings = nn.Embedding.from_pretrained(embeddings, freeze=not embeddings_trainable)
+#     return embeddings, embedding_size
 
 
 def embedding_matrix(
     vocab: List[str],
     embedding_size: int,
-    embedding_initializer: InitializerConfig,
     representation: str = "dense",
     embeddings_trainable: bool = True,
     pretrained_embeddings: Optional[str] = None,
     force_embedding_size: bool = False,
+    embedding_initializer: Optional[Union[str, Dict]] = None,
 ) -> Tuple[nn.Module, int]:
     """Returns initialized torch.nn.Embedding module and embedding size."""
 
     vocab_size = len(vocab)
     if representation == "dense":
-        embeddings = get_dense_embeddings(
-            pretrained_embeddings, force_embedding_size, vocab, embedding_size, vocab_size, embedding_initializer
-        )
+        if pretrained_embeddings:
+            embeddings_matrix = load_pretrained_embeddings(pretrained_embeddings, vocab)
+            if embeddings_matrix.shape[-1] != embedding_size:
+                if not force_embedding_size:
+                    embedding_size = embeddings_matrix.shape[-1]
+                    logger.info(f"Setting embedding size to be equal to {embeddings_matrix.shape[-1]}.")
+                else:
+                    raise ValueError(
+                        f"The size of the pretrained embeddings is "
+                        f"{embeddings_matrix.shape[-1]}, but the specified "
+                        f"embedding_size is {embedding_size}. Please change "
+                        f"the embedding_size accordingly."
+                    )
+            embedding_initializer_obj = torch.tensor(embeddings_matrix, dtype=torch.float32)
+
+        else:
+            if vocab_size < embedding_size and not force_embedding_size:
+                logger.info(
+                    f"  embedding_size ({embedding_size}) is greater than "
+                    f"vocab_size ({vocab_size}). Setting embedding size to be "
+                    f"equal to vocab_size."
+                )
+                embedding_size = vocab_size
+
+            # if embedding_initializer is not None:
+            #     embedding_initializer_obj_ref = get_initializer(embedding_initializer)
+            # else:
+            #     embedding_initializer_obj_ref = get_initializer({TYPE: "uniform", "a": -1.0, "b": 1.0})
+            # embedding_initializer_obj = embedding_initializer_obj_ref([vocab_size, embedding_size])
+            embedding_initializer_obj = torch.empty([vocab_size, embedding_size])
+
+        embeddings = embedding_initializer_obj
+
     elif representation == "sparse":
-        embeddings = get_sparse_embeddings(vocab_size)
+        embedding_size = vocab_size
+        embeddings = torch.empty([vocab_size, embedding_size])
+        # embeddings = get_initializer("identity")([vocab_size, embedding_size])
+        embeddings.requires_grad = False
     else:
         raise Exception(f"Embedding representation {representation} not supported.")
 
-    embedding_size = embeddings.shape[-1]
     embeddings = nn.Embedding.from_pretrained(embeddings, freeze=not embeddings_trainable)
     return embeddings, embedding_size
 
@@ -101,7 +159,7 @@ def embedding_matrix_on_device(
     embeddings, embedding_size = embedding_matrix(
         vocab,
         embedding_size,
-        embedding_initializer,
+        embedding_initializer=embedding_initializer,
         representation=representation,
         embeddings_trainable=embeddings_trainable,
         pretrained_embeddings=pretrained_embeddings,
@@ -137,7 +195,7 @@ class Embed(LudwigModule):
         self.embeddings, self.embedding_size = embedding_matrix_on_device(
             vocab,
             embedding_size,
-            embedding_initializer,
+            embedding_initializer=embedding_initializer,
             representation=representation,
             embeddings_trainable=embeddings_trainable,
             pretrained_embeddings=pretrained_embeddings,
@@ -193,7 +251,7 @@ class EmbedSet(LudwigModule):
         self.embeddings, self.embedding_size = embedding_matrix_on_device(
             vocab,
             embedding_size,
-            embedding_initializer,
+            embedding_initializer=embedding_initializer,
             representation=representation,
             embeddings_trainable=embeddings_trainable,
             pretrained_embeddings=pretrained_embeddings,
@@ -266,7 +324,7 @@ class EmbedWeighted(LudwigModule):
         self.embeddings, self.embedding_size = embedding_matrix_on_device(
             vocab,
             embedding_size,
-            embedding_initializer,
+            embedding_initializer=embedding_initializer,
             representation=representation,
             embeddings_trainable=embeddings_trainable,
             pretrained_embeddings=pretrained_embeddings,
@@ -396,7 +454,7 @@ class EmbedSequence(LudwigModule):
         self.embeddings, self.embedding_size = embedding_matrix_on_device(
             vocab,
             embedding_size,
-            embedding_initializer,
+            embedding_initializer=embedding_initializer,
             representation=representation,
             embeddings_trainable=embeddings_trainable,
             pretrained_embeddings=pretrained_embeddings,

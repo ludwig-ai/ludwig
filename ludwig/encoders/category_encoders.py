@@ -28,7 +28,7 @@ from ludwig.schema.encoders.category_encoders import (
     CategoricalPassthroughEncoderConfig,
     CategoricalSparseConfig,
 )
-from ludwig.schema.initializers import InitializerConfig
+from ludwig.schema.initializers import InitializerConfig, get_initialize_cls
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +69,7 @@ class CategoricalEmbedEncoder(Encoder):
     def __init__(
         self,
         vocab: List[str],
-        embedding_initializer: InitializerConfig,
+        embedding_initializer: InitializerConfig = get_initialize_cls("xavier_normal"),
         embedding_size: int = 50,
         embeddings_trainable: bool = True,
         pretrained_embeddings: Optional[str] = None,
