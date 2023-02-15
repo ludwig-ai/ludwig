@@ -181,7 +181,7 @@ jobs:
 
       - name: Tests
         run: |
-          pytest -v --timeout 300 --durations 10 -m "gpu and not distributed" --junitxml pytest_gpu.xml tests
+          pytest -v --timeout 300 --durations 10 -m "not distributed" --junitxml pytest_gpu.xml tests
 
       - name: Upload Unit Test Results
         if: always()

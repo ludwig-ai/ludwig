@@ -268,7 +268,6 @@ def test_lightgbm_dataset_partition(ray_cluster_2cpu):
     assert test_ds.ds.num_blocks() == 2
 
 
-@pytest.mark.gpu
 @pytest.mark.skipif(torch.cuda.device_count() == 0, reason="test requires at least 1 gpu")
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="test requires gpu support")
 def test_mixed_precision(tmpdir):
