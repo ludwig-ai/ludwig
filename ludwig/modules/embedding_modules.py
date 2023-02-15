@@ -18,7 +18,7 @@ from typing import Dict, List, Optional, Tuple, Union
 import torch
 from torch import nn
 
-from ludwig.schema.initializers import InitializerConfig
+from ludwig.schema.initializers import InitializerConfig, get_initialize_cls
 from ludwig.utils.data_utils import load_pretrained_embeddings
 from ludwig.utils.torch_utils import get_torch_device, LudwigModule
 
@@ -122,7 +122,7 @@ class Embed(LudwigModule):
         self,
         vocab: List[str],
         embedding_size: int,
-        embedding_initializer: InitializerConfig,
+        embedding_initializer: InitializerConfig = get_initialize_cls("xavier_normal"),
         representation: str = "dense",
         embeddings_trainable: bool = True,
         pretrained_embeddings: Optional[str] = None,

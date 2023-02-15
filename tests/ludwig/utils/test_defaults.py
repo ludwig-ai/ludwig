@@ -34,6 +34,7 @@ from ludwig.schema.model_config import ModelConfig
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
 from ludwig.utils.misc_utils import merge_dict, set_default_values
+from ludwig.utils.defaults import render_config
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
@@ -248,3 +249,21 @@ def test_merge_with_defaults():
     assert merged_config[HYPEROPT][EXECUTOR][SCHEDULER]["type"] == "fifo"
     assert TYPE in merged_config[INPUT_FEATURES][1][ENCODER]
     assert TYPE in merged_config[OUTPUT_FEATURES][0][DECODER]
+
+
+def test_render_config():
+    """Test rendering a full config from a partial user config."""
+    input_features = [
+        number_feature(),
+        number_feature(),
+        category_feature(encoder={"vocab_size": 3}),
+        category_feature(encoder={"vocab_size": 3}),
+    ]
+    output_features = [category_feature(decoder={"vocab_size": 3})]
+
+    user_config = {
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+    }
+
+    render_config(user_config)

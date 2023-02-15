@@ -386,31 +386,19 @@ def _InitializerDataclassField(
         def _jsonschema_type_mapping():
             accepted_keys = list(initializer_registry.keys())
             return {
+                # Note that this uses the same conditional pattern as optimizers:
                 "type": "object",
                 "properties": {
-                    "oneOf": [
-                        {
-                            "type": "object",
-                            "properties": {
-                                "type": {
-                                    "type": "string",
-                                    "enum": accepted_keys,
-                                    "default": default["type"],
-                                    "description": "The type of initializer to use during the learning process",
-                                },
-                            },
-                            "allOf": get_initializer_conds(initializer_registry),
-                            "required": ["type"],
-                        },
-                        {
-                            "type": "string",
-                            "enum": accepted_keys,
-                            "default": default["type"],
-                            "description": "The type of initializer to use during the learning process",
-                        },
-                    ],
+                    "type": {
+                        "type": "string",
+                        "enum": accepted_keys,
+                        "default": default["type"],
+                        "description": "The type of initializer to use during the learning process.",
+                    },
                 },
                 "title": "initializer_options",
+                "allOf": get_initializer_conds(initializer_registry),
+                "required": ["type"],
                 "description": description,
             }
 
@@ -448,12 +436,11 @@ def _InitializerDataclassField(
 def get_initializer_conds(initializer_registry: Registry):
     """Returns a JSON schema of conditionals to validate against initializer types."""
     conds = []
-    for initializer in initializer_registry:
-        initializer_cls = initializer_registry[initializer]
+    for initializer_name, initializer_cls in initializer_registry.items():
         other_props = schema_utils.unload_jsonschema_from_marshmallow_class(initializer_cls)["properties"]
         schema_utils.remove_duplicate_fields(other_props)
         preproc_cond = schema_utils.create_cond(
-            {"type": initializer},
+            {"type": initializer_name},
             other_props,
         )
         conds.append(preproc_cond)
