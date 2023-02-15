@@ -129,6 +129,7 @@ def test_unsupported_features_config():
             }
         )
 
+    # GBMs don't support output text features.
     with pytest.raises(ConfigValidationError):
         validate_config(
             {
@@ -138,11 +139,11 @@ def test_unsupported_features_config():
             }
         )
 
-    # Multi-output is fine for ECD
+    # ECD supports output text features.
     validate_config(
         {
-            "input_features": [text_feature()],
-            "output_features": [binary_feature()],
+            "input_features": [binary_feature()],
+            "output_features": [text_feature()],
             "model_type": "ecd",
         }
     )

@@ -19,8 +19,6 @@ def test_input_data_error_serializeable():
 def test_config_validation_error_serializeable():
     err = ConfigValidationError(message="At least 2 distinct values are required, column only contains ['here']")
 
-    print(f"pickle.dumps(err): {pickle.dumps(err)}")
-
     loaded_err: ConfigValidationError = pickle.loads(pickle.dumps(err))
 
     assert loaded_err.message == err.message
