@@ -1031,7 +1031,6 @@ class LightGBMRayTrainer(LightGBMTrainer):
             # Need num_blocks to equal num_actors in order to feed all actors.
             training_set.ds.map_batches(lambda df: df[feat_cols], batch_size=None),
             label=label_col,
-            distributed=False,
         )
 
         eval_sets = [lgb_train]
@@ -1044,7 +1043,6 @@ class LightGBMRayTrainer(LightGBMTrainer):
             lgb_val = RayDMatrix(
                 validation_set.ds.map_batches(lambda df: df[feat_cols], batch_size=None),
                 label=label_col,
-                distributed=False,
             )
             eval_sets.append(lgb_val)
             eval_names.append(LightGBMTrainer.VALID_KEY)
@@ -1057,7 +1055,6 @@ class LightGBMRayTrainer(LightGBMTrainer):
             lgb_test = RayDMatrix(
                 test_set.ds.map_batches(lambda df: df[feat_cols], batch_size=None),
                 label=label_col,
-                distributed=False,
             )
             eval_sets.append(lgb_test)
             eval_names.append(LightGBMTrainer.TEST_KEY)

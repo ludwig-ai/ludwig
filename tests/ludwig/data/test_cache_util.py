@@ -92,3 +92,20 @@ def test_proc_col_checksum_consistency():
     for of1, of2 in zip(config1.output_features, config2.output_features):
         assert of1.name == of2.name
         assert of1.proc_column == of2.proc_column
+
+
+def test_proc_col_checksum_consistency_same_preprocessing_different_types():
+    """Tests that proc_col is different if preprocessing and names are the same but types are different."""
+    config = {
+        "input_features": [
+            # Same name, different types, same preprocessing
+            {"name": "num1", "type": "number", "preprocessing": {"missing_value_strategy": "fill_with_mode"}},
+            {"name": "num1", "type": "category", "preprocessing": {"missing_value_strategy": "fill_with_mode"}},
+        ],
+        "output_features": [
+            {"name": "num1", "type": "number", "preprocessing": {"missing_value_strategy": "fill_with_mode"}}
+        ],
+    }
+    config = ModelConfig.from_dict(config)
+
+    assert config.input_features[0].proc_column != config.input_features[1].proc_column

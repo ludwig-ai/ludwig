@@ -63,6 +63,13 @@ class CommonTransformerConfig:
         parameter_metadata=COMBINER_METADATA["TransformerCombiner"]["weights_initializer"],
     )
 
+    # TODO(#1673): Add conditional logic for fields like this one:
+    num_fc_layers: int = schema_utils.NonNegativeInteger(
+        default=0,
+        description="The number of stacked fully connected layers (only applies if `reduce_output` is not null).",
+        parameter_metadata=COMBINER_METADATA["TransformerCombiner"]["num_fc_layers"],
+    )
+
     output_size: int = schema_utils.PositiveInteger(
         default=256,
         description="Output size of a fully connected layer.",
@@ -80,13 +87,6 @@ class CommonTransformerConfig:
     norm_params: Optional[dict] = schema_utils.Dict(
         description="",
         parameter_metadata=COMBINER_METADATA["TransformerCombiner"]["norm_params"],
-    )
-
-    # TODO(#1673): Add conditional logic for fields like this one:
-    num_fc_layers: int = schema_utils.NonNegativeInteger(
-        default=0,
-        description="The number of stacked fully connected layers (only applies if `reduce_output` is not null).",
-        parameter_metadata=COMBINER_METADATA["TransformerCombiner"]["num_fc_layers"],
     )
 
     fc_layers: Optional[List[Dict[str, Any]]] = schema_utils.DictList(

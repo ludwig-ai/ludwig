@@ -33,7 +33,7 @@ def ray_backend():
     return {
         "type": "ray",
         "processor": {
-            "parallelism": num_cpus_per_worker * num_workers,
+            "parallelism": 1,
         },
         "trainer": {
             "use_gpu": False,
@@ -104,7 +104,7 @@ def test_local_gbm_binary(tmpdir, local_backend):
 
 
 @pytest.mark.distributed
-def test_ray_gbm_binary(tmpdir, ray_backend, ray_cluster_4cpu):
+def test_ray_gbm_binary(tmpdir, ray_backend, ray_cluster_5cpu):
     run_test_gbm_binary(tmpdir, ray_backend)
 
 
@@ -128,7 +128,7 @@ def test_local_gbm_non_number_inputs(tmpdir, local_backend):
 
 
 @pytest.mark.distributed
-def test_ray_gbm_non_number_inputs(tmpdir, ray_backend, ray_cluster_4cpu):
+def test_ray_gbm_non_number_inputs(tmpdir, ray_backend, ray_cluster_5cpu):
     run_test_gbm_non_number_inputs(tmpdir, ray_backend)
 
 
@@ -154,7 +154,7 @@ def test_local_gbm_category(vocab_size, tmpdir, local_backend):
 
 @pytest.mark.distributed
 @pytest.mark.parametrize("vocab_size", [2, 3])
-def test_ray_gbm_category(vocab_size, tmpdir, ray_backend, ray_cluster_4cpu):
+def test_ray_gbm_category(vocab_size, tmpdir, ray_backend, ray_cluster_5cpu):
     run_test_gbm_category(vocab_size, tmpdir, ray_backend)
 
 
@@ -180,7 +180,7 @@ def test_local_gbm_number(tmpdir, local_backend):
 
 
 @pytest.mark.distributed
-def test_ray_gbm_number(tmpdir, ray_backend, ray_cluster_4cpu):
+def test_ray_gbm_number(tmpdir, ray_backend, ray_cluster_5cpu):
     run_test_gbm_number(tmpdir, ray_backend)
 
 
