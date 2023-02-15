@@ -114,7 +114,9 @@ def test_should_exclude_text(column_count, avg_words, expected):
     assert should_exclude(0, field, TEXT, column_count, ROW_COUNT, {TARGET_NAME}) == expected
 
 
-def test_feature_with_negative_positive_binary_values():
+def test_type_inference_with_negative_positive_binary_values():
+    """This test ensures that we infer binary type for a feature with negative
+    and positive values, specifically -1 and 1"""
     field = FieldInfo(
         name="foo",
         dtype="object",
