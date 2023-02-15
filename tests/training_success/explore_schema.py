@@ -150,8 +150,8 @@ def explore_array(item):
         item_choices[i] = maxlen * item_choices[i]
         item_choices[i] = item_choices[i][:maxlen]
 
-    merged = list(zip(*item_choices))
-    return merged + candidates
+    merged = list(zip(*item_choices)) + candidates
+    return [list(tup) for tup in merged]
 
 
 def explore_number(item):
