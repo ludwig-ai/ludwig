@@ -33,7 +33,7 @@ def ray_backend():
     return {
         "type": "ray",
         "processor": {
-            "parallelism": num_cpus_per_worker * num_workers,
+            "parallelism": 1,
         },
         "trainer": {
             "use_gpu": False,
