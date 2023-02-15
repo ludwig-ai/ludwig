@@ -66,6 +66,13 @@ class ConcatCombinerConfig(BaseCombinerConfig):
         parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["weights_initializer"],
     )
 
+    num_fc_layers: int = schema_utils.NonNegativeInteger(
+        default=0,
+        allow_none=False,
+        description="",
+        parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["num_fc_layers"],
+    )
+
     output_size: int = schema_utils.PositiveInteger(
         default=256,
         description="Output size of a fully connected layer.",
@@ -81,13 +88,6 @@ class ConcatCombinerConfig(BaseCombinerConfig):
     norm_params: Optional[dict] = schema_utils.Dict(
         description="",
         parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["norm_params"],
-    )
-
-    num_fc_layers: int = schema_utils.NonNegativeInteger(
-        default=0,
-        allow_none=False,
-        description="",
-        parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["num_fc_layers"],
     )
 
     fc_layers: Optional[List[Dict[str, Any]]] = schema_utils.DictList(

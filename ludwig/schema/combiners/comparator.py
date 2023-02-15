@@ -65,6 +65,12 @@ class ComparatorCombinerConfig(BaseCombinerConfig):
         parameter_metadata=COMBINER_METADATA["ComparatorCombiner"]["weights_initializer"],
     )
 
+    num_fc_layers: int = schema_utils.NonNegativeInteger(
+        default=1,
+        description="",
+        parameter_metadata=COMBINER_METADATA["ComparatorCombiner"]["num_fc_layers"],
+    )
+
     output_size: int = schema_utils.PositiveInteger(
         default=256,
         description="Output size of a fully connected layer",
@@ -80,12 +86,6 @@ class ComparatorCombinerConfig(BaseCombinerConfig):
     norm_params: Optional[dict] = schema_utils.Dict(
         description="",
         parameter_metadata=COMBINER_METADATA["ComparatorCombiner"]["norm_params"],
-    )
-
-    num_fc_layers: int = schema_utils.NonNegativeInteger(
-        default=1,
-        description="",
-        parameter_metadata=COMBINER_METADATA["ComparatorCombiner"]["num_fc_layers"],
     )
 
     fc_layers: Optional[List[Dict[str, Any]]] = schema_utils.DictList(
