@@ -36,8 +36,8 @@ def test_model_save_reload_api(tmpdir, csv_filename, tmp_path):
     random.seed(1)
     np.random.seed(1)
 
-    image_dest_folder = os.path.join(os.getcwd(), "generated_images")
-    audio_dest_folder = os.path.join(os.getcwd(), "generated_audio")
+    image_dest_folder = os.path.join(tmpdir, "generated_images")
+    audio_dest_folder = os.path.join(tmpdir, "generated_audio")
 
     input_features = [
         binary_feature(),

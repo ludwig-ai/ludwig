@@ -274,7 +274,7 @@ class H3WeightedSum(Encoder):
             reduce_output="None",
         )
 
-        self.register_buffer("aggregation_weights", torch.Tensor(weights_initializer([H3_INPUT_SIZE, 1])))
+        self.register_buffer("aggregation_weights", torch.Tensor(weights_initializer(torch.empty([H3_INPUT_SIZE, 1]))))
 
         logger.debug("  FCStack")
         self.fc_stack = FCStack(
