@@ -70,6 +70,8 @@ def get_validator():
 
 @DeveloperAPI
 def check_schema(updated_config):
+    """Emulates the pure JSONSchema validation that would occur in a pure JS environment."""
+
     model_type = updated_config.get(MODEL_TYPE, MODEL_ECD)
     error = None
     with VALIDATION_LOCK:
