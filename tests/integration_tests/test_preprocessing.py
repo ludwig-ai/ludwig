@@ -262,7 +262,7 @@ def test_read_image_failure_all_images_raise_error(monkeypatch, tmpdir, csv_file
     }
 
     data_csv = generate_data(
-        input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=NUM_EXAMPLES, nan_percent=0.2
+        input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=NUM_EXAMPLES,
     )
 
     model = LudwigModel(config)
