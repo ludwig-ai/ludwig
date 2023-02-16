@@ -241,8 +241,7 @@ class ALBERTConfig(HFEncoderConfig):
 
 
 # TODO: uncomment when sentencepiece doesn't cause segfaults: https://github.com/ludwig-ai/ludwig/issues/2983
-# @register_encoder_config("mt5", TEXT) 
-# quick test
+# @register_encoder_config("mt5", TEXT)
 @DeveloperAPI
 @register_encoder_config("mt5", TEXT)
 @ludwig_dataclass
