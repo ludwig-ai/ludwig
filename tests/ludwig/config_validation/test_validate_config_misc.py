@@ -1,6 +1,6 @@
 import pytest
 
-from ludwig.config_validation.validation import get_schema
+from ludwig.config_validation.validation import check_schema, get_schema
 from ludwig.constants import (
     ACTIVE,
     BACKEND,
@@ -37,7 +37,6 @@ from ludwig.schema.features.preprocessing.text import TextPreprocessingConfig
 from ludwig.schema.features.preprocessing.timeseries import TimeseriesPreprocessingConfig
 from ludwig.schema.features.preprocessing.vector import VectorPreprocessingConfig
 from ludwig.schema.features.utils import get_input_feature_jsonschema, get_output_feature_jsonschema
-from ludwig.schema.model_types.base import ModelConfig
 from tests.integration_tests.utils import (
     audio_feature,
     bag_feature,
@@ -87,7 +86,7 @@ def test_config_features():
         "input_features": all_input_features,
         "output_features": all_output_features,
     }
-    ModelConfig.from_dict(config)
+    check_schema(config)
 
     # test various invalid output features
     input_only_features = [
@@ -100,7 +99,7 @@ def test_config_features():
         }
 
         with pytest.raises(ConfigValidationError):
-            ModelConfig.from_dict(config)
+            check_schema(config)
 
 
 def test_config_encoders():
@@ -113,7 +112,7 @@ def test_config_encoders():
             "output_features": [category_feature(decoder={"type": "classifier", "vocab_size": 2}, reduce_input="sum")],
             "combiner": {"type": "concat", "output_size": 14},
         }
-        ModelConfig.from_dict(config)
+        check_schema(config)
 
 
 def test_config_with_backend():
@@ -141,16 +140,18 @@ def test_config_with_backend():
             "early_stop": 20,
             "learning_rate": 0.02,
             "optimizer": {"type": "adam"},
-            "decay": True,
-            "decay_steps": 20000,
-            "decay_rate": 0.9,
-            "staircase": True,
+            "learning_rate_scheduler": {
+                "decay": "linear",
+                "decay_steps": 20000,
+                "decay_rate": 0.9,
+                "staircase": True,
+            },
             "regularization_lambda": 1,
             "regularization_type": "l2",
         },
         BACKEND: {"type": "ray", "trainer": {"num_workers": 2}},
     }
-    ModelConfig.from_dict(config)
+    check_schema(config)
 
 
 def test_config_bad_feature_type():
@@ -161,7 +162,7 @@ def test_config_bad_feature_type():
     }
 
     with pytest.raises(ConfigValidationError):
-        ModelConfig.from_dict(config)
+        check_schema(config)
 
 
 def test_config_bad_encoder_name():
@@ -172,7 +173,7 @@ def test_config_bad_encoder_name():
     }
 
     with pytest.raises(ConfigValidationError):
-        ModelConfig.from_dict(config)
+        check_schema(config)
 
 
 # TODO(ksbrar): Circle back after discussing whether additional properties should be allowed long-term.
@@ -196,7 +197,7 @@ def test_config_bad_encoder_name():
 #     }
 
 #     with pytest.raises(ValidationError, match=r"^Additional properties are not allowed .*"):
-#         ModelConfig.from_dict(config)
+#         check_schema(config)
 
 
 def test_config_fill_values():
@@ -209,7 +210,7 @@ def test_config_fill_values():
             ],
             "output_features": [binary_feature(preprocessing={"fill_value": binary_fill_value})],
         }
-        ModelConfig.from_dict(config)
+        check_schema(config)
 
     bad_vector_fill_values = ["one two three", "1,2,3", 0]
     bad_binary_fill_values = ["one", 2, "maybe"]
@@ -221,7 +222,7 @@ def test_config_fill_values():
             "output_features": [binary_feature(preprocessing={"fill_value": binary_fill_value})],
         }
         with pytest.raises(ConfigValidationError):
-            ModelConfig.from_dict(config)
+            check_schema(config)
 
 
 def test_validate_with_preprocessing_defaults():
@@ -253,14 +254,16 @@ def test_validate_with_preprocessing_defaults():
         ],
         "output_features": [{"name": "target", "type": "category"}],
         TRAINER: {
-            "decay": True,
+            "learning_rate_scheduler": {
+                "decay": "linear",
+            },
             "learning_rate": 0.001,
             "validation_field": "target",
             "validation_metric": "accuracy",
         },
     }
 
-    ModelConfig.from_dict(config)
+    check_schema(config)
 
 
 def test_defaults_schema():
@@ -310,12 +313,12 @@ def test_validate_defaults_schema():
         },
     }
 
-    ModelConfig.from_dict(config)
+    check_schema(config)
 
     config[DEFAULTS][CATEGORY][NAME] = "TEST"
 
     with pytest.raises(ConfigValidationError):
-        ModelConfig.from_dict(config)
+        check_schema(config)
 
 
 def test_validate_no_trainer_type():
@@ -330,24 +333,24 @@ def test_validate_no_trainer_type():
     }
 
     # Ensure validation succeeds with ECD trainer params and ECD model type
-    ModelConfig.from_dict(config)
+    check_schema(config)
 
     # Ensure validation fails with ECD trainer params and GBM model type
     config[MODEL_TYPE] = MODEL_GBM
     with pytest.raises(ConfigValidationError):
-        ModelConfig.from_dict(config)
+        check_schema(config)
 
     # Switch to trainer with valid GBM params
     config[TRAINER] = {"tree_learner": "serial"}
 
     # Ensure validation succeeds with GBM trainer params and GBM model type
-    ModelConfig.from_dict(config)
+    check_schema(config)
 
     # Ensure validation fails with GBM trainer params and ECD model type
     config[MODEL_TYPE] = MODEL_ECD
     config[TRAINER] = {"tree_learner": "serial"}
     with pytest.raises(ConfigValidationError):
-        ModelConfig.from_dict(config)
+        check_schema(config)
 
 
 def test_schema_no_duplicates():

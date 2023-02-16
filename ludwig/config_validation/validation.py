@@ -70,8 +70,10 @@ def get_validator():
 
 @DeveloperAPI
 def check_schema(updated_config):
-    """Emulates the pure JSONSchema validation that could be used in an environment without marshmallow."""
+    """Emulates the pure JSONSchema validation that could be used in an environment without marshmallow.
 
+    The incoming config may not be comprehensive, but is assumed to be up to date with the latest ludwig schema.
+    """
     model_type = updated_config.get(MODEL_TYPE, MODEL_ECD)
     error = None
     with VALIDATION_LOCK:

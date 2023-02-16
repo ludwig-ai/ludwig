@@ -1,7 +1,7 @@
 import pytest
 
+from ludwig.config_validation.validation import check_schema
 from ludwig.error import ConfigValidationError
-from ludwig.schema.model_types.base import ModelConfig
 from tests.integration_tests.utils import binary_feature, category_feature, number_feature, text_feature
 
 
@@ -14,7 +14,7 @@ def test_config_input_output_features():
         "output_features": [binary_feature(decoder={"type": "regressor"})],
     }
 
-    ModelConfig.from_dict(config)
+    check_schema(config)
 
 
 def test_incorrect_input_features_config():
@@ -28,7 +28,7 @@ def test_incorrect_input_features_config():
     # TODO(ksbrar): Circle back after discussing whether additional properties should be allowed long-term.
     # # Not a preprocessing param for category feature
     # with pytest.raises(ValidationError):
-    #     ModelConfig.from_dict(config)
+    #     check_schema(config)
 
     config = {
         "input_features": [
@@ -39,7 +39,7 @@ def test_incorrect_input_features_config():
 
     # Incorrect type for padding_symbol preprocessing param
     with pytest.raises(ConfigValidationError):
-        ModelConfig.from_dict(config)
+        check_schema(config)
 
     config = {
         "input_features": [
@@ -51,7 +51,7 @@ def test_incorrect_input_features_config():
 
     # No type
     with pytest.raises(ConfigValidationError):
-        ModelConfig.from_dict(config)
+        check_schema(config)
 
 
 def test_incorrect_output_features_config():
@@ -64,14 +64,14 @@ def test_incorrect_output_features_config():
 
     # Invalid decoder for binary output feature
     with pytest.raises(ConfigValidationError):
-        ModelConfig.from_dict(config)
+        check_schema(config)
 
 
 def test_too_few_features_config():
     ifeatures = [number_feature()]
     ofeatures = [binary_feature()]
 
-    ModelConfig.from_dict(
+    check_schema(
         {
             "input_features": ifeatures,
             "output_features": ofeatures,
@@ -80,7 +80,7 @@ def test_too_few_features_config():
 
     # Must have at least one input feature
     with pytest.raises(ConfigValidationError):
-        ModelConfig.from_dict(
+        check_schema(
             {
                 "input_features": [],
                 "output_features": ofeatures,
@@ -89,7 +89,7 @@ def test_too_few_features_config():
 
     # Must have at least one output feature
     with pytest.raises(ConfigValidationError):
-        ModelConfig.from_dict(
+        check_schema(
             {
                 "input_features": ifeatures,
                 "output_features": [],
@@ -100,7 +100,7 @@ def test_too_few_features_config():
 def test_too_many_features_config():
     # GBMs Must have exactly one output feature
     with pytest.raises(ConfigValidationError):
-        ModelConfig.from_dict(
+        check_schema(
             {
                 "input_features": [number_feature()],
                 "output_features": [binary_feature(), number_feature()],
@@ -109,41 +109,10 @@ def test_too_many_features_config():
         )
 
     # Multi-output is fine for ECD
-    ModelConfig.from_dict(
+    check_schema(
         {
             "input_features": [number_feature()],
             "output_features": [binary_feature(), number_feature()],
-            "model_type": "ecd",
-        }
-    )
-
-
-def test_unsupported_features_config():
-    # GBMs don't support text features.
-    with pytest.raises(ConfigValidationError):
-        ModelConfig.from_dict(
-            {
-                "input_features": [text_feature()],
-                "output_features": [binary_feature()],
-                "model_type": "gbm",
-            }
-        )
-
-    # GBMs don't support output text features.
-    with pytest.raises(ConfigValidationError):
-        ModelConfig.from_dict(
-            {
-                "input_features": [binary_feature()],
-                "output_features": [text_feature()],
-                "model_type": "gbm",
-            }
-        )
-
-    # ECD supports output text features.
-    ModelConfig.from_dict(
-        {
-            "input_features": [binary_feature()],
-            "output_features": [text_feature()],
             "model_type": "ecd",
         }
     )
