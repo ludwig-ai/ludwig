@@ -17,8 +17,11 @@
 from abc import ABC
 from typing import Any, Callable, Dict, List, Union
 
+import numpy as np
+
 from ludwig.api_annotations import PublicAPI
 from ludwig.types import HyperoptConfigDict, ModelConfigDict, TrainingSetMetadataDict
+from ludwig.utils.types import DataFrame
 
 
 @PublicAPI
@@ -373,5 +376,56 @@ class Callback(ABC):
 
         Importing required 3rd-party libraries should be done here i.e. import wandb. preload is guaranteed to be called
         before any other callback method, and will only be called once per process.
+        """
+        pass
+
+    def on_kfold_start(self, num_folds: int, data_df: DataFrame, random_seed: int):
+        """Called at the beginning of k-fold cross validation
+
+        :param num_folds: Number of folds to train across (aka, "k").
+        :param data_df: Full dataset before being split into folds.
+        :param random_seed: Seed used to perform splitting.
+        """
+        pass
+
+    def on_kfold_fold_start(
+        self,
+        fold_num: int,
+        curr_train_df: DataFrame,
+        curr_test_df: DataFrame,
+        train_indices: np.ndarray,
+        test_indices: np.ndarray,
+    ):
+        """Called at the start of training on the given `fold_num` in k-fold cross validation.
+
+        :param fold_num: Current fold being evaluated.
+        :param curr_train_df: Training dataset for current fold.
+        :param curr_test_df: Test dataset for current fold.
+        :param train_indices: Indices from the full dataset used to form `curr_train_df`.
+        :param test_indices: Indices from the full dataset used to form `curr_test_df`.
+        """
+        pass
+
+    def on_kfold_fold_end(
+        self,
+        fold_num: int,
+        train_stats_dict: Dict[str, Any],
+    ):
+        """Called at the start of training on the given `fold_num` in k-fold cross validation.
+
+        :param fold_num: Current fold being evaluated.
+        :param train_stats_dict: Training statistics computed during evaluation.
+        """
+        pass
+
+    def on_kfold_end(
+        self,
+        kfold_cv_stats: Dict[str, Any],
+        kfold_split_indices: Dict[str, Any],
+    ):
+        """Called at the end of k-fold cross validation.
+
+        :param kfold_cv_stats: Dict of stats computed across all folds.
+        :param train_stats_dict: Dict of indices for all folds.
         """
         pass

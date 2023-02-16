@@ -1714,6 +1714,7 @@ def kfold_cross_validate(
     gpus: Union[str, int, List[int]] = None,
     gpu_memory_limit: Optional[float] = None,
     allow_parallel_threads: bool = True,
+    callbacks: List[Callback] = None,
     backend: Union[Backend, str] = None,
     logging_level: int = logging.INFO,
     **kwargs,
@@ -1827,10 +1828,16 @@ def kfold_cross_validate(
     kfold_cv_stats = {}
     kfold_split_indices = {}
 
+    for callback in callbacks or []:
+        callback.on_kfold_start(num_folds, data_df, random_seed)
+
     for train_indices, test_indices, fold_num in generate_kfold_splits(data_df, num_folds, random_seed):
         with tempfile.TemporaryDirectory() as temp_dir_name:
             curr_train_df = data_df.iloc[train_indices]
             curr_test_df = data_df.iloc[test_indices]
+
+            for callback in callbacks or []:
+                callback.on_kfold_fold_start(fold_num, curr_train_df, curr_test_df, train_indices, test_indices)
 
             kfold_split_indices["fold_" + str(fold_num)] = {
                 "training_indices": train_indices,
@@ -1843,6 +1850,7 @@ def kfold_cross_validate(
             model = LudwigModel(
                 config=config,
                 logging_level=logging_level,
+                callbacks=callbacks,
                 backend=backend,
                 gpus=gpus,
                 gpu_memory_limit=gpu_memory_limit,
@@ -1874,6 +1882,9 @@ def kfold_cross_validate(
 
             # collect training statistics for this fold
             kfold_cv_stats["fold_" + str(fold_num)] = train_stats_dict
+
+            for callback in callbacks or []:
+                callback.on_kfold_fold_end(fold_num, train_stats_dict)
 
     # consolidate raw fold metrics across all folds
     raw_kfold_stats = {}
@@ -1909,6 +1920,9 @@ def kfold_cross_validate(
             overall_kfold_stats[of_name][metric + "_std"] = std
 
     kfold_cv_stats["overall"] = overall_kfold_stats
+
+    for callback in callbacks or []:
+        callback.on_kfold_end(kfold_cv_stats, kfold_split_indices)
 
     logger.info(f"completed {num_folds:d}-fold cross validation")
 
