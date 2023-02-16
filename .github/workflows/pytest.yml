@@ -115,7 +115,7 @@ jobs:
           if [ "$PYTORCH" == "nightly" ]; then
             cat requirements.txt | sed '/^torch[>=<]/d' | sed '/^torchtext[>=<]/d' | sed '/^torchvision[>=<]/d' | sed '/^torchaudio[>=<]/d' > requirements-temp && mv requirements-temp requirements.txt
             extra_index_url=https://download.pytorch.org/whl/nightly/cpu
-            pip install --pre torch torchtext torchvision torchaudio --extra-index-url $extra_index_url
+            pip install --pre torch==2.0.0.dev20230213+cpu torchtext torchvision torchaudio --extra-index-url $extra_index_url
           else
             extra_index_url=https://download.pytorch.org/whl/cpu
             pip install torch==$PYTORCH torchtext torchvision torchaudio --extra-index-url $extra_index_url
