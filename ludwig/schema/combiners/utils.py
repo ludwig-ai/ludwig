@@ -1,9 +1,14 @@
+from typing import Any, Dict, List, Type
+
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import TYPE
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata import COMBINER_METADATA
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, ParameterMetadata
 from ludwig.utils.registry import Registry
+
+DEFAULT_VALUE = "concat"
+DESCRIPTION = "Select the combiner type."
 
 combiner_registry = Registry()
 
@@ -15,6 +20,11 @@ def register_combiner(name: str):
         return cls
 
     return wrap
+
+
+@DeveloperAPI
+def get_combiner_registry():
+    return combiner_registry
 
 
 @DeveloperAPI
@@ -38,9 +48,9 @@ def get_combiner_jsonschema():
                 "type": "string",
                 "enum": combiner_types,
                 "enumDescriptions": get_combiner_descriptions(),
-                "default": "concat",
+                "default": DEFAULT_VALUE,
                 "title": "combiner_options",
-                "description": "Select the combiner type.",
+                "description": DESCRIPTION,
                 "parameter_metadata": parameter_metadata,
             },
         },
@@ -72,7 +82,7 @@ def get_combiner_descriptions():
 
 
 @DeveloperAPI
-def get_combiner_conds():
+def get_combiner_conds() -> List[Dict[str, Any]]:
     """Returns a list of if-then JSON clauses for each combiner type in `combiner_registry` and its properties'
     constraints."""
     combiner_types = sorted(list(combiner_registry.keys()))
@@ -86,3 +96,18 @@ def get_combiner_conds():
         combiner_cond = schema_utils.create_cond({"type": combiner_type}, combiner_props)
         conds.append(combiner_cond)
     return conds
+
+
+class CombinerSelection(schema_utils.TypeSelection):
+    def __init__(self):
+        # For registration of all combiners
+        import ludwig.combiners.combiners  # noqa
+
+        super().__init__(registry=combiner_registry, default_value=DEFAULT_VALUE, description=DESCRIPTION)
+
+    def get_schema_from_registry(self, key: str) -> Type[schema_utils.BaseMarshmallowConfig]:
+        return self.registry[key].get_schema_cls()
+
+    @staticmethod
+    def _jsonschema_type_mapping():
+        return get_combiner_jsonschema()

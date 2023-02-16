@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict, Optional
+from typing import Optional
 
 import torch
 from torch import nn
@@ -44,9 +44,7 @@ logger = logging.getLogger(__name__)
 
 
 class SequenceEncoder(Encoder):
-    @classmethod
-    def get_fixed_preprocessing_params(cls, encoder_params: Dict[str, Any]) -> Dict[str, Any]:
-        return {"cache_encoder_embeddings": False}
+    pass
 
 
 @DeveloperAPI
@@ -1313,12 +1311,9 @@ class StackedRNN(SequenceEncoder):
         :param num_rec_layers: the number of stacked recurrent layers.
         :type num_rec_layers: Integer
         :param cell_type: the type of recurrent cell to use.
-               Available values are: `rnn`, `lstm`, `lstm_block`, `lstm`,
-               `ln`, `lstm_cudnn`, `gru`, `gru_block`, `gru_cudnn`.
+               Available values are: `rnn`, `lstm`, `gru`.
                For reference about the differences between the cells please
-               refer to PyTorch's documentation. We suggest to use the
-               `block` variants on CPU and the `cudnn` variants on GPU
-               because of their increased speed.
+               refer to PyTorch's documentation.
         :type cell_type: str
         :param state_size: the size of the state of the rnn.
         :type state_size: Integer
@@ -1566,12 +1561,9 @@ class StackedCNNRNN(SequenceEncoder):
         :param num_layers: the number of stacked recurrent layers.
         :type num_layers: Integer
         :param cell_type: the type of recurrent cell to use.
-               Available values are: `rnn`, `lstm`, `lstm_block`, `lstm`,
-               `ln`, `lstm_cudnn`, `gru`, `gru_block`, `gru_cudnn`.
+               Available values are: `rnn`, `lstm`, `gru`.
                For reference about the differences between the cells please
-               refer to PyTorch's documentation. We suggest to use the
-               `block` variants on CPU and the `cudnn` variants on GPU
-               because of their increased speed.
+               refer to PyTorch's documentation.
         :type cell_type: str
         :param state_size: the size of the state of the rnn.
         :type state_size: Integer

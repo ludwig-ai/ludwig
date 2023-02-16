@@ -377,7 +377,7 @@ class RayTuneExecutor:
         checkpoint = analysis.get_best_checkpoint(trial=trial_path)
         if checkpoint is None:
             logger.warning("No best model found")
-            return None
+            yield None
 
         ckpt_type, ckpt_path = checkpoint.get_internal_representation()
         if ckpt_type == "uri":

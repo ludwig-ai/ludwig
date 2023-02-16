@@ -1,7 +1,7 @@
 from typing import List, Tuple, Union
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import MEAN_SQUARED_ERROR, NUMBER
+from ludwig.constants import MEAN_SQUARED_ERROR, MODEL_ECD, MODEL_GBM, NUMBER
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -13,7 +13,9 @@ from ludwig.schema.features.loss.utils import LossDataclassField
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
 from ludwig.schema.features.utils import (
-    input_config_registry,
+    defaults_config_registry,
+    ecd_input_config_registry,
+    gbm_input_config_registry,
     input_mixin_registry,
     output_config_registry,
     output_mixin_registry,
@@ -32,19 +34,35 @@ class NumberInputFeatureConfigMixin(BaseMarshmallowConfig):
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=NUMBER)
 
+
+@DeveloperAPI
+@ludwig_dataclass
+class NumberInputFeatureConfig(BaseInputFeatureConfig, NumberInputFeatureConfigMixin):
+    """NumberInputFeatureConfig is a dataclass that configures the parameters used for a number input feature."""
+
+    encoder: BaseEncoderConfig = None
+
+
+@DeveloperAPI
+@ecd_input_config_registry.register(NUMBER)
+@ludwig_dataclass
+class ECDNumberInputFeatureConfig(NumberInputFeatureConfig):
     encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_ECD,
         feature_type=NUMBER,
         default="passthrough",
     )
 
 
 @DeveloperAPI
-@input_config_registry.register(NUMBER)
+@gbm_input_config_registry.register(NUMBER)
 @ludwig_dataclass
-class NumberInputFeatureConfig(BaseInputFeatureConfig, NumberInputFeatureConfigMixin):
-    """NumberInputFeatureConfig is a dataclass that configures the parameters used for a number input feature."""
-
-    pass
+class GBMNumberInputFeatureConfig(NumberInputFeatureConfig):
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_GBM,
+        feature_type=NUMBER,
+        default="passthrough",
+    )
 
 
 @DeveloperAPI
@@ -109,3 +127,14 @@ class NumberOutputFeatureConfig(BaseOutputFeatureConfig, NumberOutputFeatureConf
     )
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="number_output")
+
+
+@DeveloperAPI
+@defaults_config_registry.register(NUMBER)
+@ludwig_dataclass
+class NumberDefaultsConfig(NumberInputFeatureConfigMixin, NumberOutputFeatureConfigMixin):
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_ECD,
+        feature_type=NUMBER,
+        default="passthrough",
+    )

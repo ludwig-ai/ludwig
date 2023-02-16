@@ -1,5 +1,14 @@
+from typing import Optional
+
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import DROP_ROW, MISSING_VALUE_STRATEGY_OPTIONS, NUMBER, PREPROCESSING
+from ludwig.constants import (
+    DROP_ROW,
+    FILL_WITH_CONST,
+    FILL_WITH_MEAN,
+    MISSING_VALUE_STRATEGY_OPTIONS,
+    NUMBER,
+    PREPROCESSING,
+)
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor
@@ -14,8 +23,8 @@ class NumberPreprocessingConfig(BasePreprocessingConfig):
     """NumberPreprocessingConfig is a dataclass that configures the parameters used for a number input feature."""
 
     missing_value_strategy: str = schema_utils.StringOptions(
-        MISSING_VALUE_STRATEGY_OPTIONS,
-        default="fill_with_const",
+        MISSING_VALUE_STRATEGY_OPTIONS + [FILL_WITH_MEAN],
+        default=FILL_WITH_CONST,
         allow_none=False,
         description="What strategy to follow when there's a missing value in a number column",
         parameter_metadata=FEATURE_METADATA[NUMBER][PREPROCESSING]["missing_value_strategy"],
@@ -38,10 +47,35 @@ class NumberPreprocessingConfig(BasePreprocessingConfig):
 
     normalization: str = schema_utils.StringOptions(
         ["zscore", "minmax", "log1p", "iq"],
-        default=None,
+        default="zscore",
         allow_none=True,
         description="Normalization strategy to use for this number feature.",
         parameter_metadata=FEATURE_METADATA[NUMBER][PREPROCESSING]["normalization"],
+    )
+
+    outlier_strategy: Optional[str] = schema_utils.StringOptions(
+        MISSING_VALUE_STRATEGY_OPTIONS + [FILL_WITH_MEAN, None],
+        default=None,
+        allow_none=True,
+        description="What strategy to follow when there's an outlier in a number column, "
+        "defaults to doing nothing (leaving the outliers as-is)",
+        parameter_metadata=FEATURE_METADATA[NUMBER][PREPROCESSING]["outlier_strategy"],
+    )
+
+    outlier_threshold: Optional[float] = schema_utils.FloatRange(
+        default=3.0,
+        allow_none=False,
+        min=0.0,
+        description="Standard deviations from the mean past which a value is considered an outlier",
+        parameter_metadata=FEATURE_METADATA[NUMBER][PREPROCESSING]["outlier_threshold"],
+    )
+
+    computed_outlier_fill_value: float = schema_utils.FloatRange(
+        default=0.0,
+        allow_none=False,
+        description="The internally computed fill value to replace outliers with in case the "
+        "outlier_strategy is fill_with_mode or fill_with_mean",
+        parameter_metadata=FEATURE_METADATA[NUMBER][PREPROCESSING]["computed_outlier_fill_value"],
     )
 
 
@@ -50,7 +84,7 @@ class NumberPreprocessingConfig(BasePreprocessingConfig):
 @ludwig_dataclass
 class NumberOutputPreprocessingConfig(NumberPreprocessingConfig):
     missing_value_strategy: str = schema_utils.StringOptions(
-        MISSING_VALUE_STRATEGY_OPTIONS,
+        MISSING_VALUE_STRATEGY_OPTIONS + [FILL_WITH_MEAN],
         default=DROP_ROW,
         allow_none=False,
         description="What strategy to follow when there's a missing value in a number output feature",

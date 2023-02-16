@@ -1,7 +1,7 @@
 from typing import Optional
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import SEQUENCE
+from ludwig.constants import MODEL_ECD, SEQUENCE
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.encoders.base import BaseEncoderConfig
@@ -26,11 +26,13 @@ class SequenceCombinerConfig(BaseCombinerConfig):
 
     main_sequence_feature: Optional[str] = schema_utils.String(
         default=None,
+        allow_none=True,
         description="",
         parameter_metadata=COMBINER_METADATA["SequenceCombiner"]["main_sequence_feature"],
     )
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_ECD,
         feature_type=SEQUENCE,
         default="parallel_cnn",
     )
