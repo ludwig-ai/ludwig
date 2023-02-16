@@ -717,8 +717,9 @@ class BERTConfig(HFEncoderConfig):
     )
 
 
+# TODO: uncomment once we figure out host memory issue: https://github.com/ludwig-ai/ludwig/issues/3107
 @DeveloperAPI
-@register_encoder_config("xlm", TEXT)
+# @register_encoder_config("xlm", TEXT)
 @ludwig_dataclass
 class XLMConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an XLM encoder."""
