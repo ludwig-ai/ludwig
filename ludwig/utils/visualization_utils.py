@@ -1134,8 +1134,8 @@ def confusion_matrix_plot(
     # Dynamically set the size of the plot based on the number of labels
     # Use minimum size to prevent plot from being too small
     default_width, default_height = plt.rcParams.get("figure.figsize")
-    width = max(default_width, len(labels) / 2)
-    height = max(default_height, len(labels) / 2)
+    width = max(default_width, len(labels))
+    height = max(default_height, len(labels))
     fig, ax = plt.subplots(figsize=(width, height))
 
     ax.invert_yaxis()
