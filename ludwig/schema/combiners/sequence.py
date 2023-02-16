@@ -26,6 +26,7 @@ class SequenceCombinerConfig(BaseCombinerConfig):
 
     main_sequence_feature: Optional[str] = schema_utils.String(
         default=None,
+        allow_none=True,
         description="",
         parameter_metadata=COMBINER_METADATA["SequenceCombiner"]["main_sequence_feature"],
     )

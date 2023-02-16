@@ -23,6 +23,11 @@ def register_combiner(name: str):
 
 
 @DeveloperAPI
+def get_combiner_registry():
+    return combiner_registry
+
+
+@DeveloperAPI
 def get_combiner_jsonschema():
     """Returns a JSON schema structured to only require a `type` key and then conditionally apply a corresponding
     combiner's field constraints."""

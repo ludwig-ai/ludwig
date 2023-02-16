@@ -1,6 +1,7 @@
-# import pytest
+import pytest
 
 from ludwig.config_validation.validation import validate_config
+from ludwig.error import ConfigValidationError
 from tests.integration_tests.utils import binary_feature, category_feature
 
 
@@ -26,4 +27,37 @@ def test_config_preprocessing():
     # config["preprocessing"]["fake_parameter"] = True
 
     # with pytest.raises(Exception):
-    #     validate_config(config)
+    #     ModelConfig(config)
+
+
+def test_balance_non_binary_failure():
+    config = {
+        "input_features": [
+            {"name": "Index", "proc_column": "Index", "type": "number"},
+            {"name": "random_1", "proc_column": "random_1", "type": "number"},
+            {"name": "random_2", "proc_column": "random_2", "type": "number"},
+        ],
+        "output_features": [{"name": "Label", "proc_column": "Label", "type": "number"}],
+        "preprocessing": {"oversample_minority": 0.2},
+    }
+
+    with pytest.raises(ConfigValidationError):
+        validate_config(config)
+
+
+def test_balance_multiple_class_failure():
+    config = {
+        "input_features": [
+            {"name": "Index", "proc_column": "Index", "type": "number"},
+            {"name": "random_1", "proc_column": "random_1", "type": "number"},
+            {"name": "random_2", "proc_column": "random_2", "type": "number"},
+        ],
+        "output_features": [
+            {"name": "Label", "proc_column": "Label", "type": "binary"},
+            {"name": "Label2", "proc_column": "Label2", "type": "binary"},
+        ],
+        "preprocessing": {"oversample_minority": 0.2},
+    }
+
+    with pytest.raises(ConfigValidationError):
+        validate_config(config)

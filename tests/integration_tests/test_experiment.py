@@ -581,7 +581,7 @@ def test_experiment_sequence_combiner_with_reduction_fails(csv_filename):
 
     # Encoding sequence features with 'embed' should fail with SequenceConcatCombiner, since at least one sequence
     # feature should be rank 3.
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         run_experiment(config=config, dataset=rel_path)
 
 
