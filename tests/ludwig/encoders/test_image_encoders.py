@@ -682,7 +682,7 @@ def test_tv_wide_resnet_encoder(
 
 
 # test TorchVision encoders that were excluded from the earlier tests due to large memory requirements
-@pytest.mark.large_memory
+@pytest.mark.slow
 @pytest.mark.parametrize(
     "model_type, model_variant",
     [
