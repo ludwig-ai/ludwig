@@ -89,6 +89,7 @@ class AudioPreprocessingConfig(BasePreprocessingConfig):
 
     num_fft_points: float = schema_utils.NonNegativeFloat(
         default=None,
+        allow_none=True,
         description="Defines the number of fft points used for the short time Fourier transformation",
         parameter_metadata=FEATURE_METADATA[AUDIO][PREPROCESSING]["num_fft_points"],
     )

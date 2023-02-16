@@ -71,6 +71,8 @@ class CommonTransformerConfig:
 
     norm: Optional[str] = schema_utils.StringOptions(
         ["batch", "layer"],
+        default=None,
+        allow_none=True,
         description="",
         parameter_metadata=COMBINER_METADATA["TransformerCombiner"]["norm"],
     )
