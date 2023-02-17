@@ -241,9 +241,8 @@ class ALBERTConfig(HFEncoderConfig):
 
 
 # TODO: uncomment when sentencepiece doesn't cause segfaults: https://github.com/ludwig-ai/ludwig/issues/2983
-# @register_encoder_config("mt5", TEXT)
 @DeveloperAPI
-@register_encoder_config("mt5", TEXT)
+# @register_encoder_config("mt5", TEXT)
 @ludwig_dataclass
 class MT5Config(HFEncoderConfig):
     """This dataclass configures the schema used for an MT5 encoder."""
@@ -717,8 +716,9 @@ class BERTConfig(HFEncoderConfig):
     )
 
 
+# TODO: uncomment once we figure out host memory issue: https://github.com/ludwig-ai/ludwig/issues/3107
 @DeveloperAPI
-@register_encoder_config("xlm", TEXT)
+# @register_encoder_config("xlm", TEXT)
 @ludwig_dataclass
 class XLMConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an XLM encoder."""
@@ -1981,9 +1981,8 @@ class DistilBERTConfig(HFEncoderConfig):
 
 
 # TODO: uncomment when CTRL bug (https://github.com/ludwig-ai/ludwig/issues/2977) has been fixed to add back in
-# @register_encoder_config("ctrl", TEXT)
 @DeveloperAPI
-@register_encoder_config("ctrl", TEXT)
+# @register_encoder_config("ctrl", TEXT)
 @ludwig_dataclass
 class CTRLConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an CTRL encoder."""
