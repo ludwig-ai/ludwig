@@ -1831,10 +1831,13 @@ def kfold_cross_validate(
     for callback in callbacks or []:
         callback.on_kfold_start(num_folds, data_df, random_seed)
 
+    # Only in-memory datasets for now
+    data_df = backend.df_engine.compute(data_df)
+
     for train_indices, test_indices, fold_num in generate_kfold_splits(data_df, num_folds, random_seed):
         with tempfile.TemporaryDirectory() as temp_dir_name:
-            curr_train_df = data_df.iloc[train_indices]
-            curr_test_df = data_df.iloc[test_indices]
+            curr_train_df = backend.df_engine.from_pandas(data_df.iloc[train_indices])
+            curr_test_df = backend.df_engine.from_pandas(data_df.iloc[test_indices])
 
             for callback in callbacks or []:
                 callback.on_kfold_fold_start(fold_num, curr_train_df, curr_test_df, train_indices, test_indices)
