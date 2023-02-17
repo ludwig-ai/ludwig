@@ -1,6 +1,6 @@
 import pytest
 
-from ludwig.constants import DEFAULTS, ENCODER, INPUT_FEATURES, OUTPUT_FEATURES, SEQUENCE, TEXT, TIMESERIES, TYPE
+from ludwig.constants import DEFAULTS, ENCODER, INPUT_FEATURES, NAME, OUTPUT_FEATURES, SEQUENCE, TEXT, TIMESERIES, TYPE
 from ludwig.error import ConfigValidationError
 from ludwig.schema.model_config import ModelConfig
 from tests.integration_tests.utils import (
@@ -20,7 +20,7 @@ def test_default_transformer_encoder(feature_type):
     the values from the original error.
     """
     config = {
-        INPUT_FEATURES: [number_feature(), sequence_feature(), text_feature(), timeseries_feature()],
+        INPUT_FEATURES: [number_feature(), {TYPE: feature_type, NAME: f"test_{feature_type}"}],
         OUTPUT_FEATURES: [binary_feature()],
         DEFAULTS: {feature_type: {ENCODER: {TYPE: "transformer", "hidden_size": 9, "num_heads": 18}}},
     }
@@ -35,8 +35,8 @@ def test_default_transformer_encoder(feature_type):
     ModelConfig.from_dict(config)
 
 
-@pytest.mark.parametrize("feature_type", [sequence_feature, text_feature, timeseries_feature])
-def test_input_feature_transformer_encoder(feature_type):
+@pytest.mark.parametrize("feature_gen", [sequence_feature, text_feature, timeseries_feature])
+def test_input_feature_transformer_encoder(feature_gen):
     """Tests that a transformer hyperparameter divisibility error is correctly recognized for a specific feature.
 
     Transformers require that `hidden_size % num_heads == 0`. 9 and 18 were selected as test values because they were
@@ -45,7 +45,7 @@ def test_input_feature_transformer_encoder(feature_type):
     config = {
         INPUT_FEATURES: [
             number_feature(),
-            feature_type(**{ENCODER: {TYPE: "transformer", "hidden_size": 9, "num_heads": 18}}),
+            feature_gen(**{ENCODER: {TYPE: "transformer", "hidden_size": 9, "num_heads": 18}}),
         ],
         OUTPUT_FEATURES: [binary_feature()],
     }
