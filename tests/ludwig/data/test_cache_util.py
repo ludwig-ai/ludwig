@@ -100,10 +100,10 @@ def test_proc_col_checksum_consistency_same_preprocessing_different_types():
         "input_features": [
             # Same name, different types, same preprocessing
             {"name": "num1", "type": "number", "preprocessing": {"missing_value_strategy": "fill_with_mode"}},
-            {"name": "num1", "type": "category", "preprocessing": {"missing_value_strategy": "fill_with_mode"}},
+            {"name": "num2", "type": "category", "preprocessing": {"missing_value_strategy": "fill_with_mode"}},
         ],
         "output_features": [
-            {"name": "num1", "type": "number", "preprocessing": {"missing_value_strategy": "fill_with_mode"}}
+            {"name": "num3", "type": "number", "preprocessing": {"missing_value_strategy": "fill_with_mode"}}
         ],
     }
     config = ModelConfig.from_dict(config)

@@ -6,7 +6,6 @@ from jsonschema import Draft7Validator, validate
 from jsonschema.validators import extend
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.config_validation.checks import get_config_check_registry
 from ludwig.constants import MODEL_ECD, MODEL_TYPE
 from ludwig.error import ConfigValidationError
 
@@ -15,7 +14,6 @@ from ludwig.schema.combiners.utils import get_combiner_jsonschema  # noqa
 from ludwig.schema.defaults.defaults import get_defaults_jsonschema  # noqa
 from ludwig.schema.features.utils import get_input_feature_jsonschema, get_output_feature_jsonschema  # noqa
 from ludwig.schema.hyperopt import get_hyperopt_jsonschema  # noqa
-from ludwig.schema.model_types.base import ModelConfig
 from ludwig.schema.preprocessing import get_preprocessing_jsonschema  # noqa
 from ludwig.schema.trainer import get_model_type_jsonschema, get_trainer_jsonschema  # noqa
 from ludwig.schema.utils import unload_jsonschema_from_marshmallow_class
@@ -72,6 +70,10 @@ def get_validator():
 
 @DeveloperAPI
 def check_schema(updated_config):
+    """Emulates the pure JSONSchema validation that could be used in an environment without marshmallow.
+
+    The incoming config may not be comprehensive, but is assumed to be up to date with the latest ludwig schema.
+    """
     model_type = updated_config.get(MODEL_TYPE, MODEL_ECD)
     error = None
     with VALIDATION_LOCK:
@@ -84,18 +86,3 @@ def check_schema(updated_config):
 
     if error is not None:
         raise ConfigValidationError(f"Failed to validate JSON schema for config. Error: {error.message}")
-
-
-def validate_config(config):
-    from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
-
-    # Update config from previous versions to check that backwards compatibility will enable a valid config
-    updated_config = upgrade_config_dict_to_latest_version(config)
-
-    # TODO(Justin). Consolidate with ModelConfig. JSON schema validation checks and JSON deserialization don't have
-    # parity.
-    check_schema(updated_config)
-
-    model_config = ModelConfig.from_dict(updated_config)
-
-    get_config_check_registry().check_config(model_config)
