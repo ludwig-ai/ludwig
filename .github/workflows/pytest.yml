@@ -84,7 +84,7 @@ jobs:
           brew install libuv
 
       - name: pip cache
-        if: ${{ !env.ACT && "$PYTORCH" != "nightly" }}
+        if: ${{ !env.ACT }}
         uses: actions/cache@v2
         with:
           path: ~/.cache/pip
