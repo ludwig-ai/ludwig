@@ -156,7 +156,7 @@ class BaseMarshmallowConfig(ABC):
         filled in as necessary.
         """
 
-        unknown = EXCLUDE
+        unknown = EXCLUDE  # TODO: Change to RAISE and update descriptions once we want to enforce strict schemas.
         "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter."
 
         ordered = True
