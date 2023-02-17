@@ -18,7 +18,6 @@ import uuid
 from unittest.mock import patch
 
 import pytest
-from packaging import version
 
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
@@ -32,18 +31,14 @@ from tests.integration_tests.utils import binary_feature, create_data_set_to_use
 
 try:
     import ray
-
-    _ray_200 = version.parse(ray.__version__) > version.parse("1.13")
-    if _ray_200:
-        from ray.tune.syncer import get_node_to_storage_syncer, SyncConfig
-    else:
-        from ray.tune.syncer import get_sync_client
+    from ray.tune.syncer import get_node_to_storage_syncer, SyncConfig
 
     from ludwig.backend.ray import RayBackend
     from ludwig.hyperopt.execution import _get_relative_checkpoints_dir_parts, RayTuneExecutor
 except ImportError:
     ray = None
     RayTuneExecutor = object
+
 
 # Dummy sync templates
 LOCAL_SYNC_TEMPLATE = "echo {source}/ {target}/"
@@ -53,10 +48,7 @@ LOCAL_DELETE_TEMPLATE = "echo {target}"
 def mock_storage_client(path):
     """Mocks storage client that treats a local dir as durable storage."""
     os.makedirs(path, exist_ok=True)
-    if _ray_200:
-        syncer = get_node_to_storage_syncer(SyncConfig(upload_dir=path))
-    else:
-        syncer = get_sync_client(LOCAL_SYNC_TEMPLATE, LOCAL_DELETE_TEMPLATE)
+    syncer = get_node_to_storage_syncer(SyncConfig(upload_dir=path))
     return syncer
 
 
@@ -154,7 +146,7 @@ class MockRayTuneExecutor(RayTuneExecutor):
         return mock_storage_client(remote_checkpoint_dir), remote_checkpoint_dir
 
 
-class TestCallback(Callback):
+class CustomTestCallback(Callback):
     def __init__(self):
         self.preprocessed = False
 
@@ -237,18 +229,26 @@ def run_hyperopt_executor(
         output_directory=ray_mock_dir,
         skip_save_processed_input=True,
         skip_save_unprocessed_output=True,
-        skip_save_log=True,
+        resume=False,
     )
 
 
 @pytest.mark.distributed
-@pytest.mark.parametrize("scenario", SCENARIOS, ids=["variant_generator", "bohb"])
-def test_hyperopt_executor(scenario, csv_filename, ray_mock_dir, ray_cluster_7cpu):
-    search_alg = scenario["search_alg"]
-    executor = scenario["executor"]
+def test_hyperopt_executor_variant_generator(csv_filename, ray_mock_dir, ray_cluster_7cpu):
+    search_alg = SCENARIOS[0]["search_alg"]
+    executor = SCENARIOS[0]["executor"]
     run_hyperopt_executor(search_alg, executor, csv_filename, ray_mock_dir)
 
 
+@pytest.mark.skip(reason="PG/resource cleanup bugs in Ray 2.x: https://github.com/ray-project/ray/issues/31738")
+@pytest.mark.distributed
+def test_hyperopt_executor_bohb(csv_filename, ray_mock_dir, ray_cluster_7cpu):
+    search_alg = SCENARIOS[1]["search_alg"]
+    executor = SCENARIOS[1]["executor"]
+    run_hyperopt_executor(search_alg, executor, csv_filename, ray_mock_dir)
+
+
+@pytest.mark.distributed
 @pytest.mark.skip(reason="https://github.com/ludwig-ai/ludwig/issues/1441")
 @pytest.mark.distributed
 def test_hyperopt_executor_with_metric(csv_filename, ray_mock_dir, ray_cluster_7cpu):
@@ -310,7 +310,7 @@ def run_hyperopt(
     out_dir,
     experiment_name="ray_hyperopt",
 ):
-    callback = TestCallback()
+    callback = CustomTestCallback()
     hyperopt_results = hyperopt(
         config,
         dataset=rel_path,

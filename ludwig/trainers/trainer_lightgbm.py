@@ -11,14 +11,14 @@ import lightgbm as lgb
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from ludwig.constants import BINARY, CATEGORY, LOSS, MINIMIZE, MODEL_GBM, NUMBER, TEST, TRAIN, TRAINING, VALIDATION
+from ludwig.constants import BINARY, CATEGORY, MINIMIZE, MODEL_GBM, NUMBER, TEST, TRAIN, TRAINING, VALIDATION
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.globals import is_progressbar_disabled, TRAINING_CHECKPOINTS_DIR_PATH, TRAINING_PROGRESS_TRACKER_FILE_NAME
 from ludwig.models.gbm import GBM
 from ludwig.models.predictor import Predictor
 from ludwig.modules.metric_modules import get_improved_fn, get_initial_validation_value
-from ludwig.modules.metric_registry import get_metric_registry
+from ludwig.modules.metric_registry import get_metric_objective
 from ludwig.progress_bar import LudwigProgressBar
 from ludwig.schema.trainer import BaseTrainerConfig, GBMTrainerConfig
 from ludwig.trainers.base import BaseTrainer
@@ -449,7 +449,7 @@ class LightGBMTrainer(BaseTrainer):
                 absolute_eval_metric_value_change = round(
                     abs(previous_best_eval_metric_value - progress_tracker.best_eval_metric_value), 3
                 )
-                if get_metric_registry()[validation_metric].get_objective() == MINIMIZE:
+                if get_metric_objective(validation_metric) == MINIMIZE:
                     logger.info(
                         f"'{validation_output_feature_name}' '{validation_metric}' decreased by "
                         f"{absolute_eval_metric_value_change}."
@@ -572,33 +572,6 @@ class LightGBMTrainer(BaseTrainer):
             signal.signal(signal.SIGINT, self.set_steps_to_1_or_quit)
 
         # TODO: construct new datasets by running encoders (for text, image)
-
-        metrics_names = get_metric_names(output_features)
-
-        # check if validation_field is valid
-        valid_validation_field = False
-        if self.validation_field == "combined":
-            valid_validation_field = True
-            if self.validation_metric is not LOSS and len(output_features) == 1:
-                only_of = next(iter(output_features))
-                if self.validation_metric in metrics_names[only_of]:
-                    self._validation_field = only_of
-                    logger.warning(
-                        "Replacing 'combined' validation field "
-                        "with '{}' as the specified validation "
-                        "metric {} is invalid for 'combined' "
-                        "but is valid for '{}'.".format(only_of, self.validation_metric, only_of)
-                    )
-        else:
-            for output_feature in output_features:
-                if self.validation_field == output_feature:
-                    valid_validation_field = True
-
-        if not valid_validation_field:
-            raise ValueError(
-                "The specified validation_field {} is not valid."
-                "Available ones are: {}".format(self.validation_field, list(output_features.keys()) + ["combined"])
-            )
 
         # ====== Setup file names =======
         training_checkpoints_path = None
@@ -1058,7 +1031,6 @@ class LightGBMRayTrainer(LightGBMTrainer):
             # Need num_blocks to equal num_actors in order to feed all actors.
             training_set.ds.map_batches(lambda df: df[feat_cols], batch_size=None),
             label=label_col,
-            distributed=False,
         )
 
         eval_sets = [lgb_train]
@@ -1071,7 +1043,6 @@ class LightGBMRayTrainer(LightGBMTrainer):
             lgb_val = RayDMatrix(
                 validation_set.ds.map_batches(lambda df: df[feat_cols], batch_size=None),
                 label=label_col,
-                distributed=False,
             )
             eval_sets.append(lgb_val)
             eval_names.append(LightGBMTrainer.VALID_KEY)
@@ -1084,7 +1055,6 @@ class LightGBMRayTrainer(LightGBMTrainer):
             lgb_test = RayDMatrix(
                 test_set.ds.map_batches(lambda df: df[feat_cols], batch_size=None),
                 label=label_col,
-                distributed=False,
             )
             eval_sets.append(lgb_test)
             eval_names.append(LightGBMTrainer.TEST_KEY)

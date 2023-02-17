@@ -806,3 +806,22 @@ def test_legacy_image_encoders(encoder: Dict[str, Any], upgraded_type: str):
         **{"type": upgraded_type},
     }
     assert updated_config["input_features"][0]["encoder"] == expected_encoder
+
+
+def test_load_config_missing_hyperopt():
+    old_valid_config = {
+        "input_features": [
+            {"name": "feature_1", "type": "category"},
+            {"name": "Sex", "type": "category", "encoder": "dense"},
+        ],
+        "output_features": [
+            {"name": "Survived", "type": "category"},
+        ],
+        "combiner": {"type": "concat"},
+        "trainer": {},
+        "hyperopt": {},
+    }
+
+    config_obj = ModelConfig.from_dict(old_valid_config)
+    assert config_obj.hyperopt is None
+    assert config_obj.to_dict()[HYPEROPT] is None

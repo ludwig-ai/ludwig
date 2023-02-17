@@ -96,6 +96,7 @@ class BWCEWLossConfig(BaseLossConfig):
 
     positive_class_weight: int = schema_utils.NonNegativeInteger(
         default=None,
+        allow_none=True,
         description="Weight of the positive class.",
         parameter_metadata=LOSS_METADATA["BWCEWLoss"]["positive_class_weight"],
     )

@@ -45,15 +45,12 @@ from tests.integration_tests.utils import (
     generate_output_features_with_dependencies,
     generate_output_features_with_dependencies_complex,
     h3_feature,
-    HF_ENCODERS,
-    HF_ENCODERS_SHORT,
     image_feature,
     LocalTestBackend,
     number_feature,
     run_experiment,
     sequence_feature,
     set_feature,
-    slow,
     text_feature,
     timeseries_feature,
     vector_feature,
@@ -85,17 +82,6 @@ def run_experiment_with_encoder(encoder, csv_filename):
     run_experiment(input_features, output_features, dataset=rel_path)
 
 
-@pytest.mark.parametrize("encoder", HF_ENCODERS_SHORT)
-def test_experiment_text_feature_HF(encoder, csv_filename):
-    run_experiment_with_encoder(encoder, csv_filename)
-
-
-@slow
-@pytest.mark.parametrize("encoder", HF_ENCODERS)
-def test_experiment_text_feature_HF_full(encoder, csv_filename):
-    run_experiment_with_encoder(encoder, csv_filename)
-
-
 @pytest.mark.parametrize("encoder", ENCODERS)
 def test_experiment_seq_seq_generator(csv_filename, encoder):
     input_features = [text_feature(encoder={"type": encoder, "reduce_output": None})]
@@ -108,7 +94,7 @@ def test_experiment_seq_seq_generator(csv_filename, encoder):
 @pytest.mark.parametrize("encoder", ["embed", "rnn", "parallel_cnn", "stacked_parallel_cnn", "transformer"])
 def test_experiment_seq_seq_tagger(csv_filename, encoder):
     input_features = [text_feature(encoder={"type": encoder, "reduce_output": None})]
-    output_features = [text_feature(decoder={"type": "tagger"})]
+    output_features = [text_feature(decoder={"type": "tagger"}, reduce_input=None)]
     rel_path = generate_data(input_features, output_features, csv_filename)
 
     run_experiment(input_features, output_features, dataset=rel_path)
@@ -117,7 +103,7 @@ def test_experiment_seq_seq_tagger(csv_filename, encoder):
 @pytest.mark.parametrize("encoder", ["cnnrnn", "stacked_cnn"])
 def test_experiment_seq_seq_tagger_fails_for_non_length_preserving_encoders(csv_filename, encoder):
     input_features = [text_feature(encoder={"type": encoder, "reduce_output": None})]
-    output_features = [text_feature(decoder={"type": "tagger"})]
+    output_features = [text_feature(decoder={"type": "tagger"}, reduce_input=None)]
     rel_path = generate_data(input_features, output_features, csv_filename)
 
     with pytest.raises(ValueError):
@@ -127,7 +113,7 @@ def test_experiment_seq_seq_tagger_fails_for_non_length_preserving_encoders(csv_
 def test_experiment_seq_seq_model_def_file(csv_filename, yaml_filename):
     # seq-to-seq test to use config file instead of dictionary
     input_features = [text_feature(encoder={"reduce_output": None, "type": "embed"})]
-    output_features = [text_feature(decoder={"reduce_input": None, "vocab_size": 3, "type": "tagger"})]
+    output_features = [text_feature(decoder={"vocab_size": 3, "type": "tagger"}, reduce_input=None)]
 
     # Save the config to a yaml file
     config = {
@@ -146,7 +132,7 @@ def test_experiment_seq_seq_model_def_file(csv_filename, yaml_filename):
 def test_experiment_seq_seq_train_test_valid(tmpdir):
     # seq-to-seq test to use train, test, validation files
     input_features = [text_feature(encoder={"reduce_output": None, "type": "rnn"})]
-    output_features = [text_feature(decoder={"reduce_input": None, "vocab_size": 3, "type": "tagger"})]
+    output_features = [text_feature(decoder={"vocab_size": 3, "type": "tagger"}, reduce_input=None)]
 
     train_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "train.csv"))
     test_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "test.csv"), 20)
@@ -224,7 +210,7 @@ def test_experiment_multilabel_with_class_weights(csv_filename):
         # Generator decoder and reduce_input = None
         [
             category_feature(decoder={"vocab_size": 2, "reduce_input": "sum"}),
-            sequence_feature(decoder={"max_len": 5, "reduce_input": None, "type": "generator"}),
+            sequence_feature(decoder={"max_len": 5, "type": "generator"}, reduce_input=None),
             number_feature(normalization="minmax"),
         ],
         # output features with dependencies single dependency
@@ -391,11 +377,17 @@ def test_experiment_image_dataset(train_format, train_in_memory, test_format, te
     config["input_features"][0]["preprocessing"]["in_memory"] = train_in_memory
     training_set_metadata = None
 
+    # define Ludwig model
     backend = LocalTestBackend()
+    model = LudwigModel(
+        config=config,
+        backend=backend,
+    )
+
     if train_format == "hdf5":
         # hdf5 format
         train_set, _, _, training_set_metadata = preprocess_for_training(
-            config,
+            model.config,
             dataset=train_data,
             backend=backend,
         )
@@ -403,11 +395,6 @@ def test_experiment_image_dataset(train_format, train_in_memory, test_format, te
     else:
         train_dataset_to_use = create_data_set_to_use(train_format, train_data)
 
-    # define Ludwig model
-    model = LudwigModel(
-        config=config,
-        backend=backend,
-    )
     model.train(dataset=train_dataset_to_use, training_set_metadata=training_set_metadata)
 
     model.config_obj.input_features.to_list()[0]["preprocessing"]["in_memory"] = test_in_memory
@@ -472,15 +459,16 @@ def test_experiment_dataset_formats(data_format, csv_filename):
 
     training_set_metadata = None
 
+    # define Ludwig model
+    model = LudwigModel(config=config)
+
     if data_format == "hdf5":
         # hdf5 format
-        training_set, _, _, training_set_metadata = preprocess_for_training(config, dataset=raw_data)
+        training_set, _, _, training_set_metadata = preprocess_for_training(model.config, dataset=raw_data)
         dataset_to_use = training_set.data_hdf5_fp
     else:
         dataset_to_use = create_data_set_to_use(data_format, raw_data)
 
-    # define Ludwig model
-    model = LudwigModel(config=config)
     model.train(dataset=dataset_to_use, training_set_metadata=training_set_metadata, random_seed=default_random_seed)
 
     # # run functions with the specified data format
@@ -526,7 +514,7 @@ def test_sequence_tagger(enc_cell_type, attention, csv_filename):
         sequence_feature(encoder={"max_len": 10, "type": "rnn", "cell_type": enc_cell_type, "reduce_output": None})
     ]
     output_features = [
-        sequence_feature(decoder={"max_len": 10, "type": "tagger", "reduce_input": None, "attention": attention})
+        sequence_feature(decoder={"max_len": 10, "type": "tagger", "attention": attention}, reduce_input=None)
     ]
 
     # Generate test data
@@ -539,7 +527,12 @@ def test_sequence_tagger(enc_cell_type, attention, csv_filename):
 def test_sequence_tagger_text(csv_filename):
     # Define input and output features
     input_features = [text_feature(encoder={"max_len": 10, "type": "rnn", "reduce_output": None})]
-    output_features = [sequence_feature(decoder={"max_len": 10, "reduce_input": None, "type": "tagger"})]
+    output_features = [
+        sequence_feature(
+            decoder={"max_len": 10, "type": "tagger"},
+            reduce_input=None,
+        )
+    ]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
@@ -588,7 +581,7 @@ def test_experiment_sequence_combiner_with_reduction_fails(csv_filename):
 
     # Encoding sequence features with 'embed' should fail with SequenceConcatCombiner, since at least one sequence
     # feature should be rank 3.
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         run_experiment(config=config, dataset=rel_path)
 
 
