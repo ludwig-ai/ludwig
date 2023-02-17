@@ -84,7 +84,7 @@ HF_ENCODERS = [
     "gpt2",
     "transformer_xl",
     "xlnet",
-    "xlm",
+    # "xlm",  # disabled in the schema: https://github.com/ludwig-ai/ludwig/pull/3108
     "roberta",
     "distilbert",
     # "ctrl",  # disabled in the schema: https://github.com/ludwig-ai/ludwig/pull/2976
