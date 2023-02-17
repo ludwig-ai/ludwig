@@ -84,13 +84,11 @@ jobs:
           brew install libuv
 
       - name: pip cache
-        if: ${{ !env.ACT }}
+        if: ${{ !env.ACT && "$PYTORCH" != "nightly" }}
         uses: actions/cache@v2
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-py${{ matrix.python-version }}-torch${{ matrix.pytorch-version }}-${{ matrix.test-markers }}-${{ hashFiles('requirements*.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-py${{ matrix.python-version }}-torch${{ matrix.pytorch-version }}-${{ matrix.test-markers }}-
+          key: ${{ runner.os }}-pip-py${{ matrix.python-version }}-torch${{ matrix.pytorch-version }}-${{ matrix.test-markers }}-${{ hashFiles('requirements*.txt', '.github/workflows/pytest.yml') }}
 
       - name: Install dependencies
         env:
