@@ -1,8 +1,8 @@
 import pytest
 
-from ludwig.config_validation.validation import validate_config
 from ludwig.constants import DEFAULTS, ENCODER, INPUT_FEATURES, OUTPUT_FEATURES, SEQUENCE, TEXT, TIMESERIES, TYPE
 from ludwig.error import ConfigValidationError
+from ludwig.schema.model_config import ModelConfig
 from tests.integration_tests.utils import (
     binary_feature,
     number_feature,
@@ -26,12 +26,13 @@ def test_default_transformer_encoder(feature_type):
     }
 
     with pytest.raises(ConfigValidationError):
-        validate_config(config)
+        m = ModelConfig.from_dict(config)
+        print(m)
 
     config[DEFAULTS][feature_type][ENCODER]["hidden_size"] = 18
     config[DEFAULTS][feature_type][ENCODER]["num_heads"] = 9
 
-    validate_config(config)
+    ModelConfig.from_dict(config)
 
 
 @pytest.mark.parametrize("feature_type", [sequence_feature, text_feature, timeseries_feature])
@@ -50,9 +51,9 @@ def test_input_feature_transformer_encoder(feature_type):
     }
 
     with pytest.raises(ConfigValidationError):
-        validate_config(config)
+        ModelConfig.from_dict(config)
 
     config[INPUT_FEATURES][1][ENCODER]["hidden_size"] = 18
     config[INPUT_FEATURES][1][ENCODER]["num_heads"] = 9
 
-    validate_config(config)
+    ModelConfig.from_dict(config)
