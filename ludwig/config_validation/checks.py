@@ -354,13 +354,6 @@ def check_stacked_transformer_requirements(config: "ModelConfig") -> None:  # no
         return hidden_size % num_heads == 0
 
     sequence_types = [SEQUENCE, TEXT, TIMESERIES]
-    for sequence_type in sequence_types:
-        encoder = config.defaults.__getattribute__(sequence_type).encoder
-        if encoder.type == "transformer" and not is_divisible(encoder.hidden_size, encoder.num_heads):
-            raise ConfigValidationError(
-                f"Default {sequence_type} transformer encoder requires encoder.hidden_size to be divisible by "
-                f"encoder.num_heads. Found hidden_size {encoder.hidden_size} and num_heads {encoder.num_heads}."
-            )
 
     for input_feature in config.input_features:
         if_type = input_feature.type
