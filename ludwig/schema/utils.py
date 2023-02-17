@@ -1,4 +1,5 @@
 import copy
+import warnings
 from abc import ABC, abstractmethod
 from dataclasses import field, Field
 from typing import Any
@@ -8,7 +9,7 @@ from typing import Optional, Set, Tuple, Type, TypeVar, Union
 
 import marshmallow_dataclass
 import yaml
-from marshmallow import EXCLUDE, fields, schema, validate, ValidationError
+from marshmallow import EXCLUDE, fields, pre_load, schema, validate, ValidationError
 from marshmallow.utils import missing
 from marshmallow_dataclass import dataclass as m_dataclass
 from marshmallow_jsonschema import JSONSchema as js
@@ -146,6 +147,11 @@ ConfigT = TypeVar("ConfigT", bound="BaseMarshmallowConfig")
 class BaseMarshmallowConfig(ABC):
     """Base marshmallow class for common attributes and metadata."""
 
+    @abstractmethod
+    def __init__(self):
+        # Force subclasses to log warnings for additional parameters before deserialization:
+        self.log_deprecation_warnings = pre_load(self.log_deprecation_warnings)
+
     class Meta:
         """Sub-class specifying meta information for Marshmallow.
 
@@ -168,6 +174,14 @@ class BaseMarshmallowConfig(ABC):
         Returns: dict for this dataclass
         """
         return convert_submodules(self.__dict__)
+
+    def log_deprecation_warnings(self, data):
+        for key in data.keys():
+            if key not in self.fields:
+                warnings.warn(
+                    f'"{key}" is not a valid property on {self.name}\'s schema, will be flagged as error in v0.8',
+                    DeprecationWarning,
+                )
 
     @classmethod
     def from_dict(cls: Type[ConfigT], d: TDict[str, Any]) -> ConfigT:
