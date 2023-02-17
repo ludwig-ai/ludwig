@@ -3,11 +3,11 @@
 
 name: pytest
 
-on:
-  push:
-    branches: ["master", "release-*"]
-  pull_request:
-    branches: ["master", "release-*"]
+#on:
+#  push:
+#    branches: ["master", "release-*"]
+#  pull_request:
+#    branches: ["master", "release-*"]
 
 # we want an ongoing run of this workflow to be canceled by a later commit
 # so that there is only one concurrent run of this workflow for each branch
