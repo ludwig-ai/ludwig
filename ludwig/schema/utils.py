@@ -850,7 +850,7 @@ def InitializerOrDict(
                         },
                         "required": ["type"],
                         "title": f"{self.name}_custom_option",
-                        "additionalProperties": True,
+                        "additionalProperties": True,  # Will be removed by initializer refactor PR.
                         "description": "Customize an existing initializer.",
                         "parameter_metadata": param_metadata,
                     },

@@ -56,7 +56,7 @@ def PreprocessingDataclassField(feature_type: str):
                 "type": "object",
                 "properties": props,
                 "title": "preprocessing_options",
-                "additionalProperties": True,
+                "additionalProperties": False,
             }
 
     try:
