@@ -110,3 +110,14 @@ def get_feature_to_metric_names_map(output_features: List[FeatureConfigDict]) ->
         metrics_names[output_feature_name] = get_metric_names_for_type(output_feature_type)
     metrics_names[COMBINED] = [LOSS]
     return metrics_names
+
+
+def get_feature_to_metric_names_map_from_feature_collection(
+    output_features: "FeatureCollection",  # noqa
+) -> Dict[str, List[str]]:
+    """Returns a dict of output_feature_name -> list of metric names."""
+    metrics_names = {
+        output_feature.name: get_metric_names_for_type(output_feature.type) for output_feature in output_features
+    }
+    metrics_names[COMBINED] = [LOSS]
+    return metrics_names

@@ -22,11 +22,11 @@ from torch import Tensor
 from ludwig.constants import HIDDEN, LENGTHS, LOGITS, LOSS, PREDICTIONS, PROBABILITIES
 from ludwig.decoders.registry import get_decoder_cls
 from ludwig.encoders.registry import get_encoder_cls
-from ludwig.features.feature_utils import compute_feature_hash, get_input_size_with_dependencies
+from ludwig.features.feature_utils import get_input_size_with_dependencies
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.loss_modules import get_loss_cls
 from ludwig.modules.metric_modules import MeanMetric
-from ludwig.modules.metric_registry import get_metric_classes, get_metric_cls
+from ludwig.modules.metric_registry import get_metric_classes, get_metric_cls, get_metric_tensor_input
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.schema.features.base import BaseFeatureConfig, BaseOutputFeatureConfig
 from ludwig.types import FeatureConfigDict, FeatureMetadataDict, PreprocessingConfigDict, TrainingSetMetadataDict
@@ -130,8 +130,6 @@ class BaseFeature:
             feature.column = self.feature_name
         self.column = feature.column
 
-        if not feature.proc_column:
-            feature.proc_column = compute_feature_hash(type(feature).Schema().dump(feature))
         self.proc_column = feature.proc_column
 
 
@@ -149,6 +147,10 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
     @staticmethod
     @abstractmethod
     def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
+        pass
+
+    def update_config_after_module_init(self, feature_config):
+        """Updates the config after the torch.nn.Module objects have been initialized."""
         pass
 
     def initialize_encoder(self, encoder_config):
@@ -344,12 +346,8 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             targets: Tensor with target values for this output feature.
             predictions: Dict of tensors returned by predictions().
         """
-        for _, metric_fn in self._metric_functions.items():
-            metric_class = type(metric_fn)
-            prediction_key = metric_class.get_inputs()
-            # TODO(shreya): Metrics should ideally just move to the correct device
-            #  and not require the user to do this. This is a temporary fix. See
-            #  if this can be removed before merging the PR.
+        for metric_name, metric_fn in self._metric_functions.items():
+            prediction_key = get_metric_tensor_input(metric_name)
             metric_fn = metric_fn.to(predictions[prediction_key].device)
             metric_fn.update(predictions[prediction_key].detach(), targets)
 

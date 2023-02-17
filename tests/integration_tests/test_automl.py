@@ -8,8 +8,8 @@ import pandas as pd
 import pytest
 
 from ludwig.api import LudwigModel
-from ludwig.config_validation.validation import validate_upgraded_config
 from ludwig.constants import COLUMN, ENCODER, INPUT_FEATURES, NAME, OUTPUT_FEATURES, PREPROCESSING, SPLIT, TYPE
+from ludwig.schema.model_types.base import ModelConfig
 from ludwig.types import FeatureConfigDict, ModelConfigDict
 from ludwig.utils.misc_utils import merge_dict
 from tests.integration_tests.utils import (
@@ -196,7 +196,7 @@ def test_create_auto_config(test_data, expectations, ray_cluster_2cpu, request):
     config = create_auto_config(df, targets, time_limit_s=600, backend="ray")
 
     # Ensure our configs are using the latest Ludwig schema
-    validate_upgraded_config(config)
+    ModelConfig.from_dict(config)
 
     assert to_name_set(config[INPUT_FEATURES]) == to_name_set(input_features)
     assert to_name_set(config[OUTPUT_FEATURES]) == to_name_set(output_features)
@@ -214,7 +214,7 @@ def test_create_auto_config_with_dataset_profile(test_data_tabular_large, ray_cl
     config = create_auto_config_with_dataset_profile(dataset=df, target=targets[0], backend="ray")
 
     # Ensure our configs are using the latest Ludwig schema
-    validate_upgraded_config(config)
+    ModelConfig.from_dict(config)
 
     assert to_name_set(config[INPUT_FEATURES]) == to_name_set(input_features)
     assert to_name_set(config[OUTPUT_FEATURES]) == to_name_set([output_features[0]])
@@ -244,7 +244,7 @@ def test_autoconfig_preprocessing_balanced():
     config = create_auto_config(dataset=df, target="category", time_limit_s=1)
 
     # Ensure our configs are using the latest Ludwig schema
-    validate_upgraded_config(config)
+    ModelConfig.from_dict(config)
 
     assert PREPROCESSING not in config
 
@@ -256,7 +256,7 @@ def test_autoconfig_preprocessing_imbalanced():
     config = create_auto_config(dataset=df, target="category", time_limit_s=1)
 
     # Ensure our configs are using the latest Ludwig schema
-    validate_upgraded_config(config)
+    ModelConfig.from_dict(config)
 
     assert PREPROCESSING in config
     assert SPLIT in config[PREPROCESSING]
@@ -278,7 +278,7 @@ def test_autoconfig_preprocessing_text_image(tmpdir):
     config = create_auto_config(dataset=df, target=target, time_limit_s=1)
 
     # Ensure our configs are using the latest Ludwig schema
-    validate_upgraded_config(config)
+    ModelConfig.from_dict(config)
 
     # Check no features shuffled around
     assert len(input_features) == 2

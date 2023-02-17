@@ -35,10 +35,12 @@ from ludwig.constants import (
     EXECUTOR,
     FORCE_SPLIT,
     HEIGHT,
+    HYPEROPT,
     IMAGE,
     INPUT_FEATURES,
     LOSS,
     MISSING_VALUE_STRATEGY,
+    MODEL_ECD,
     NAME,
     NUM_SAMPLES,
     NUMBER,
@@ -638,7 +640,7 @@ def update_training(config: ModelConfigDict) -> ModelConfigDict:
 
 
 @register_config_transformation("0.6")
-def upgrade_missing_value_strategy(config: FeatureConfigDict) -> FeatureConfigDict:
+def upgrade_missing_value_strategy(config: ModelConfigDict) -> ModelConfigDict:
     for input_feature in config.get(INPUT_FEATURES, []):
         if _is_old_missing_value_strategy(input_feature):
             _update_old_missing_value_strategy(input_feature)
@@ -719,6 +721,8 @@ def learning_rate_scheduler(trainer: TrainerConfigDict) -> TrainerConfigDict:
                 if old_key == "decay" and isinstance(value, bool):
                     # Decay has changed from a bool to an optional enum
                     lr_scheduler[new_key] = "exponential" if value else None
+                elif old_key == "reduce_learning_rate_on_plateau":
+                    lr_scheduler[new_key] = int(value)
                 else:
                     lr_scheduler[new_key] = value
             del trainer[old_key]
@@ -744,10 +748,11 @@ def _upgrade_legacy_image_encoders(feature: FeatureConfigDict) -> FeatureConfigD
     if encoder_type not in encoder_mapping:
         return feature
 
-    new_encoder_cls = get_encoder_cls(feature[TYPE], encoder_type)
+    # For this version of Ludwig, only ECD supported these encoders.
+    new_encoder_cls = get_encoder_cls(MODEL_ECD, feature[TYPE], encoder_type)
     new_encoder_fields = new_encoder_cls.get_valid_field_names()
 
-    legacy_encoder_cls = get_encoder_cls(feature[TYPE], encoder_mapping[encoder_type])
+    legacy_encoder_cls = get_encoder_cls(MODEL_ECD, feature[TYPE], encoder_mapping[encoder_type])
     legacy_encoder_fields = legacy_encoder_cls.get_valid_field_names()
 
     user_fields = set(encoder.keys())
@@ -778,6 +783,19 @@ def _upgrade_legacy_image_encoders(feature: FeatureConfigDict) -> FeatureConfigD
         encoder[TYPE] = encoder_mapping[encoder_type]
 
     return feature
+
+
+@register_config_transformation("0.7")
+def upgrade_missing_hyperopt(config: ModelConfigDict) -> ModelConfigDict:
+    hyperopt = config.get(HYPEROPT)
+    if hyperopt == {}:
+        # This is a deprecated form of providing a missing hyperopt section, as it violates the schema definition
+        warnings.warn(
+            "Config section `hyperopt: {}` is deprecated, please set `hyperopt: null` to disable hyperopt.",
+            DeprecationWarning,
+        )
+        del config[HYPEROPT]
+    return config
 
 
 def upgrade_metadata(metadata: TrainingSetMetadataDict) -> TrainingSetMetadataDict:

@@ -397,8 +397,6 @@ class AudioFeatureMixin(BaseFeatureMixin):
                 backend,
             )
             proc_df[feature_config[PROC_COLUMN]] = audio_features
-        else:
-            backend.check_lazy_load_supported(feature_config)
 
         return proc_df
 

@@ -18,6 +18,8 @@ from ludwig.constants import (
     INPUT_FEATURES,
     INPUT_SIZE,
     LOSS,
+    MODEL_ECD,
+    MODEL_GBM,
     NAME,
     NUM_CLASSES,
     OPTIMIZER,
@@ -30,6 +32,8 @@ from ludwig.constants import (
     TRAINER,
     TYPE,
 )
+from ludwig.schema.features.augmentation.image import RandomBlurConfig, RandomRotateConfig
+from ludwig.schema.features.image_feature import AUGMENTATION_DEFAULT_OPERATIONS
 from ludwig.schema.features.number_feature import NumberOutputFeatureConfig
 from ludwig.schema.features.text_feature import TextOutputFeatureConfig
 from ludwig.schema.model_config import ModelConfig
@@ -95,9 +99,8 @@ def test_config_object():
             "batch_size": "auto",
             "optimizer": {
                 "type": "adam",
-                "beta1": 0.8,
-                "beta2": 0.999,
-                "epsilon": 5e-09,
+                "betas": [0.8, 0.999],
+                "eps": 5e-09,
             },
         },
     }
@@ -121,9 +124,9 @@ def test_config_object():
     assert config_object.trainer.batch_size == "auto"
 
     assert config_object.trainer.optimizer.type == "adam"
-    assert config_object.trainer.optimizer.beta1 == 0.8
-    assert config_object.trainer.optimizer.beta2 == 0.999
-    assert config_object.trainer.optimizer.epsilon == 5e-09
+    assert config_object.trainer.optimizer.betas[0] == 0.8
+    assert config_object.trainer.optimizer.betas[1] == 0.999
+    assert config_object.trainer.optimizer.eps == 5e-09
 
 
 def test_config_object_defaults():
@@ -254,15 +257,16 @@ def test_update_config_object():
         ],
     }
 
-    config_object.update_with_dict(temp_config)
+    config_object = ModelConfig.from_dict(temp_config)
 
     assert config_object.input_features.text_feature.encoder.max_sequence_length == 10
 
 
-def test_config_object_validation_parameters_defaults():
+@pytest.mark.parametrize("model_type", [MODEL_ECD, MODEL_GBM])
+def test_config_object_validation_parameters_defaults(model_type: str):
     config = {
         "input_features": [
-            {"name": "text_feature", "type": "text"},
+            {"name": "category_feature", "type": "category"},
         ],
         "output_features": [
             {
@@ -270,6 +274,7 @@ def test_config_object_validation_parameters_defaults():
                 "type": "number",
             },
         ],
+        "model_type": model_type,
     }
 
     config_object = ModelConfig.from_dict(config)
@@ -299,6 +304,16 @@ def test_config_object_validation_parameters_multiple_output_features():
 
     assert config_object.trainer.validation_field == "text_output_feature"
     assert config_object.trainer.validation_metric == TextOutputFeatureConfig.default_validation_metric
+
+    # swap features
+    tmp = config["output_features"][0]
+    config["output_features"][0] = config["output_features"][1]
+    config["output_features"][1] = tmp
+
+    config_object = ModelConfig.from_dict(config)
+
+    assert config_object.trainer.validation_field == "number_output_feature"
+    assert config_object.trainer.validation_metric == NumberOutputFeatureConfig.default_validation_metric
 
 
 def test_config_object_validation_parameters_explicitly_set_validation_field():
@@ -539,7 +554,7 @@ def test_convert_submodules():
 
     config_obj = ModelConfig.from_dict(config)
     trainer = convert_submodules(config_obj.trainer.__dict__)
-    input_features = list(convert_submodules(config_obj.input_features.__dict__).values())
+    input_features = config_obj.input_features.to_list()
 
     assert not isinstance(trainer[OPTIMIZER], BaseMarshmallowConfig)
     assert not isinstance(input_features[0][PREPROCESSING], BaseMarshmallowConfig)
@@ -588,7 +603,6 @@ def test_initializer_recursion():
             {
                 "name": "binary_52912",
                 "type": "binary",
-                "weight_regularization": None,
                 "column": "binary_52912",
                 "proc_column": "binary_52912_mZFLky",
             }
@@ -596,6 +610,75 @@ def test_initializer_recursion():
         "combiner": {"type": "concat", "weights_initializer": {"type": "normal", "stddev": 0}},
     }
 
-    config_obj = ModelConfig(config)
+    config_obj = ModelConfig.from_dict(config)
 
     assert isinstance(config_obj.combiner.weights_initializer, dict)
+
+
+def test_number_feature_zscore_preprocessing_default():
+    """Tests that the default value for the number feature preprocessing is 'zscore'."""
+    config = {
+        "input_features": [
+            {
+                "name": "number_input_feature1",
+                "type": "number",
+            },
+        ],
+        "output_features": [
+            {
+                "name": "number_output_feature1",
+                "type": "number",
+            },
+        ],
+    }
+
+    config_obj = ModelConfig.from_dict(config)
+
+    assert config_obj.input_features.number_input_feature1.preprocessing.normalization == "zscore"
+
+
+@pytest.mark.parametrize(
+    "augmentation,expected",
+    [
+        (None, []),
+        (False, []),
+        (True, AUGMENTATION_DEFAULT_OPERATIONS),
+        (
+            [{"type": "random_blur"}, {"type": "random_rotate", "degree": 30}],
+            [RandomBlurConfig(), RandomRotateConfig(degree=30)],
+        ),
+    ],
+)
+def test_augmentation_pipeline(augmentation, expected):
+    """Tests that augmentation pipeline is correctly deserialized and serialized between config."""
+    config = {
+        "input_features": [
+            {
+                "name": "input1",
+                "type": "image",
+                "augmentation": augmentation,
+            },
+        ],
+        "output_features": [
+            {
+                "name": "output1",
+                "type": "number",
+            },
+        ],
+    }
+
+    if augmentation is None:
+        del config["input_features"][0]["augmentation"]
+
+    config_obj = ModelConfig.from_dict(config)
+    assert config_obj.input_features[0].augmentation == expected
+
+    # Test serialized dict form is fully rendered
+    config_dict = config_obj.to_dict()
+    assert len(config_dict["input_features"][0]["augmentation"]) == len(expected)
+    for aug in config_dict["input_features"][0]["augmentation"]:
+        assert isinstance(aug, dict)
+
+    # Test the serializing and reloading yields the same results
+    config_obj2 = ModelConfig.from_dict(config_dict)
+    assert config_obj2.input_features[0].augmentation == config_obj.input_features[0].augmentation

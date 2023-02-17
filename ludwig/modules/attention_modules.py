@@ -46,7 +46,10 @@ class MultiHeadSelfAttention(LudwigModule):
         self.embedding_size = hidden_size
         self.num_heads = num_heads
         if hidden_size % num_heads != 0:
-            raise ValueError(f"hidden size = {hidden_size}, " f"should be divisible by number of heads = {num_heads}")
+            raise ValueError(
+                f"When using multi-head attention, `hidden_size` ({hidden_size}), should be divisible by "
+                f"`num_heads` ({num_heads}). Please update the `transformer` section of the model config."
+            )
         self.projection_dim = hidden_size // num_heads
         self.query_dense = nn.Linear(input_size, hidden_size)
         self.key_dense = nn.Linear(input_size, hidden_size)

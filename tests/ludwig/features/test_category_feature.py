@@ -6,7 +6,7 @@ import torch
 
 from ludwig.constants import ENCODER, TYPE
 from ludwig.features.category_feature import CategoryInputFeature
-from ludwig.schema.features.category_feature import CategoryInputFeatureConfig
+from ludwig.schema.features.category_feature import ECDCategoryInputFeatureConfig
 from ludwig.schema.utils import load_config_with_kwargs
 from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.torch_utils import get_torch_device
@@ -43,11 +43,11 @@ def test_category_input_feature(
     category_def[ENCODER][TYPE] = encoder
 
     # pickup any other missing parameters
-    defaults = CategoryInputFeatureConfig().to_dict()
+    defaults = ECDCategoryInputFeatureConfig().to_dict()
     category_def = merge_dict(defaults, category_def)
 
     # ensure no exceptions raised during build
-    category_config, _ = load_config_with_kwargs(CategoryInputFeatureConfig, category_def)
+    category_config, _ = load_config_with_kwargs(ECDCategoryInputFeatureConfig, category_def)
     input_feature_obj = CategoryInputFeature(category_config).to(DEVICE)
 
     # check one forward pass through input feature

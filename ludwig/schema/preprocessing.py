@@ -52,3 +52,13 @@ def get_preprocessing_jsonschema():
         "title": "global_preprocessing_options",
         "description": "Select the preprocessing type.",
     }
+
+
+@DeveloperAPI
+class PreprocessingField(schema_utils.DictMarshmallowField):
+    def __init__(self):
+        super().__init__(PreprocessingConfig)
+
+    @staticmethod
+    def _jsonschema_type_mapping():
+        return get_preprocessing_jsonschema()
