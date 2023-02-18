@@ -20,6 +20,7 @@ class FieldInfo:
     image_values: int = 0
     audio_values: int = 0
     avg_words: int = None
+    collinear: bool = False
 
 
 @DeveloperAPI

@@ -16,6 +16,7 @@ from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
+from statsmodels.stats.outliers_influence import variance_inflation_factor
 import yaml
 
 from ludwig.api import LudwigModel
@@ -271,6 +272,18 @@ def create_auto_config(
 
     dataset_info = get_dataset_info(dataset) if not isinstance(dataset, DatasetInfo) else dataset
     features_config = create_features_config(dataset_info, target)
+
+    # update dataset_info with results of collinearity analysis
+    # this update will affect all features including non-numeric input features and output features, which will
+    # set collinear to False
+    collinear_flags = _mark_collinear_features(dataset, features_config)
+    for f in dataset_info.fields:
+        f.collinear = collinear_flags.get(f.name, False)
+    # TODO: remove after development
+    print("updated FieldInfo")
+    for f in dataset_info.fields:
+        print(f)
+
     return create_automl_config_for_features(
         features_config,
         dataset_info,
@@ -366,6 +379,69 @@ def train_with_config(
 
     experiment_analysis = hyperopt_results.experiment_analysis
     return AutoTrainResults(experiment_analysis, creds)
+
+
+def _mark_collinear_features(dataset, features) -> Dict:
+    """"""
+
+    # TODO: (jmt) remove after developemnt
+    logger.info("Marking collinear features")
+
+    # TODO: (jmt) this is for development and testing, convert threshold to a configuration parameter
+    threshold = 5.0
+
+    # create dataframe of all numeric input features,
+    # use heuristic that if a feature has an encoder, it is input feature
+    i_numeric_feats = [i_feat["name"] for i_feat in features["input_features"] if i_feat['type'] == 'number']
+    # TODO: (jmt) convert to debug level
+    logger.info(f"input numeric features: {i_numeric_feats}")
+
+    # assume no collinear features
+    collinear_flags = {c: False for c in i_numeric_feats}
+
+    # create dataframe of all numeric input features only and make sure dtype is float
+    df_X = dataset[i_numeric_feats].astype(float)
+
+    # setup array to perform VIF calculation
+    columns = i_numeric_feats
+    X_arr = df_X.values
+    array_indices = list(range(X_arr.shape[1]))
+
+    # loop until all collinear features are found
+    found_all_collinear = False
+    while not found_all_collinear:
+        # compute VIF for each feature
+        vif = [variance_inflation_factor(X_arr, ix) for ix in array_indices]
+
+        # TODO: (jmt) convert to debug level
+        logger.info(f"\nvif values: {[(f, f'{v:0.5f}') for f, v in zip(columns, vif)]}")
+
+        # if VIF score for a feature is above threshold, drop feature
+        if max(vif) > threshold:
+            # get index of feature with highest VIF score to drop
+            maxloc = vif.index(max(vif))
+
+            # TODO: (jmt) convert to debug level
+            logger.info(f'dropping column {columns[maxloc]}')
+
+            # mark feature as collinear
+            collinear_flags[columns[maxloc]] = True
+
+            # drop feature from array and column list
+            del columns[maxloc]
+
+            print(f"remaining columns: {columns}")
+            # update array and indices
+            X_arr = df_X.loc[:, columns].values
+            array_indices = list(range(X_arr.shape[1]))
+        else:
+            # no collinear features found, exit loop
+            found_all_collinear = True
+
+    # all done, record collinear flags
+    # TODO: (jmt) convert to debug level
+    logger.info(f'collinear status: {collinear_flags}')
+    return collinear_flags
 
 
 def _model_select(
