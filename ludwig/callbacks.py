@@ -380,7 +380,7 @@ class Callback(ABC):
         pass
 
     def on_kfold_start(self, num_folds: int, data_df: DataFrame, random_seed: int):
-        """Called at the beginning of k-fold cross validation
+        """Called at the beginning of k-fold cross validation.
 
         :param num_folds: Number of folds to train across (aka, "k").
         :param data_df: Full dataset before being split into folds.
