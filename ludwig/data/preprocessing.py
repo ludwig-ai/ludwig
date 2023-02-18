@@ -1119,8 +1119,14 @@ def build_dataset(
 
     sample_ratio = global_preprocessing_parameters["sample_ratio"]
     if sample_ratio < 1.0:
-        logger.debug(f"sample {sample_ratio} of data")
-        dataset_df = dataset_df.sample(frac=sample_ratio)
+        if len(dataset_df) * sample_ratio < 1:
+            warnings.warn(
+                f"sample_ratio {sample_ratio} is too small for dataset of length {len(dataset_df)}. "
+                f"Please increase sample_ratio or use a larger dataset."
+            )
+        else:
+            logger.debug(f"sample {sample_ratio} of data")
+            dataset_df = dataset_df.sample(frac=sample_ratio)
 
     # If persisting DataFrames in memory is enabled, we want to do this after
     # each batch of parallel ops in order to avoid redundant computation
