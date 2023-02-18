@@ -16,8 +16,8 @@ from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
-from statsmodels.stats.outliers_influence import variance_inflation_factor
 import yaml
+from statsmodels.stats.outliers_influence import variance_inflation_factor
 
 from ludwig.api import LudwigModel
 from ludwig.api_annotations import DeveloperAPI, PublicAPI
@@ -392,7 +392,7 @@ def _mark_collinear_features(dataset, features) -> Dict:
 
     # create dataframe of all numeric input features,
     # use heuristic that if a feature has an encoder, it is input feature
-    i_numeric_feats = [i_feat["name"] for i_feat in features["input_features"] if i_feat['type'] == 'number']
+    i_numeric_feats = [i_feat["name"] for i_feat in features["input_features"] if i_feat["type"] == "number"]
     # TODO: (jmt) convert to debug level
     logger.info(f"input numeric features: {i_numeric_feats}")
 
@@ -422,7 +422,7 @@ def _mark_collinear_features(dataset, features) -> Dict:
             maxloc = vif.index(max(vif))
 
             # TODO: (jmt) convert to debug level
-            logger.info(f'dropping column {columns[maxloc]}')
+            logger.info(f"dropping column {columns[maxloc]}")
 
             # mark feature as collinear
             collinear_flags[columns[maxloc]] = True
@@ -440,7 +440,7 @@ def _mark_collinear_features(dataset, features) -> Dict:
 
     # all done, record collinear flags
     # TODO: (jmt) convert to debug level
-    logger.info(f'collinear status: {collinear_flags}')
+    logger.info(f"collinear status: {collinear_flags}")
     return collinear_flags
 
 
