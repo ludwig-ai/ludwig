@@ -761,9 +761,10 @@ trainer:
   evaluate_training_set: false
   learning_rate: 0.02465493752015043
   batch_size: 33
-  early_stop: 10
 defaults:
   number:
     preprocessing:
       normalization: null
       missing_value_strategy: fill_with_const
+backend:
+  type: local
