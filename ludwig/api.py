@@ -55,6 +55,7 @@ from ludwig.constants import (
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.postprocessing import convert_predictions, postprocess
 from ludwig.data.preprocessing import load_metadata, preprocess_for_prediction, preprocess_for_training
+from ludwig.datasets import load_dataset_uris
 from ludwig.features.feature_registries import update_config_with_metadata, update_config_with_model
 from ludwig.globals import (
     LUDWIG_VERSION,
@@ -1803,11 +1804,15 @@ def kfold_cross_validate(
     # if config is a path, convert to dictionary
     if isinstance(config, str):  # assume path
         config = load_yaml(config)
+    config_obj = ModelConfig.from_dict(config)
     backend = initialize_backend(backend or config.get("backend"))
 
     # check for k_fold
     if num_folds is None:
-        raise ValueError("k_fold parameter must be specified")
+        if config_obj.cross_validation:
+            num_folds = config_obj.cross_validation.num_folds
+        else:
+            raise ValueError("k_fold parameter must be specified")
 
     logger.info(f"starting {num_folds:d}-fold cross validation")
 
@@ -1823,6 +1828,7 @@ def kfold_cross_validate(
     if not data_format or data_format == "auto":
         data_format = figure_data_format(dataset)
 
+    dataset, _, _, _ = load_dataset_uris(dataset, None, None, None, backend)
     data_df = load_dataset(dataset, data_format=data_format, df_lib=backend.df_engine.df_lib)
 
     kfold_cv_stats = {}

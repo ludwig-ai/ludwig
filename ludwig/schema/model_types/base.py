@@ -10,6 +10,7 @@ from ludwig.constants import BACKEND, ENCODER, INPUT_FEATURES, MODEL_ECD, PREPRO
 from ludwig.error import ConfigValidationError
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.cross_validation import CrossValidationConfig
 from ludwig.schema.defaults.defaults import DefaultsConfig
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig, FeatureCollection
 from ludwig.schema.hyperopt import HyperoptConfig
@@ -43,6 +44,9 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
     preprocessing: PreprocessingConfig
     defaults: DefaultsConfig
     hyperopt: Optional[HyperoptConfig] = None
+
+    # TODO(travis): flesh-out the cross validation configuration to support more robust options
+    cross_validation: Optional[CrossValidationConfig] = None
 
     backend: Dict[str, Any] = schema_utils.Dict()
     ludwig_version: str = LUDWIG_VERSION

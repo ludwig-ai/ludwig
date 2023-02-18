@@ -1,8 +1,6 @@
 from abc import ABC
 from typing import Dict
 
-from marshmallow_dataclass import dataclass
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import LOSS, TEST, TRAIN, VALIDATION
 from ludwig.modules import metric_modules  # noqa: Needed to ensure that the metric registry is populated.
@@ -10,10 +8,11 @@ from ludwig.modules.metric_registry import get_metric_registry
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.hyperopt.executor import ExecutorConfig, ExecutorDataclassField
 from ludwig.schema.hyperopt.search_algorithm import BaseSearchAlgorithmConfig, SearchAlgorithmDataclassField
+from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
-@dataclass
+@ludwig_dataclass
 class HyperoptConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Basic hyperopt settings."""
 
