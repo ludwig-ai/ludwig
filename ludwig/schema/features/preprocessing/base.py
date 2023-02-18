@@ -11,4 +11,4 @@ class BasePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     from the preprocessing of each feature.
     """
 
-    pass
+    something = 1

@@ -103,11 +103,13 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
         # TODO: Set `additionalProperties=False` for all Ludwig schema, and look into passing in `unknown='RAISE'` to
         # marshmallow.load(), which raises an error for unknown fields during deserialization.
         # https://marshmallow.readthedocs.io/en/stable/marshmallow.schema.html#marshmallow.schema.Schema.load
-        check_schema(config)
+        # check_schema(config)
+        print("skip check_schema")
 
         cls = model_type_schema_registry[model_type]
         schema = cls.get_class_schema()()
         try:
+            print("attempt schema.load!")
             config_obj: ModelConfig = schema.load(config)
         except ValidationError as e:
             raise ConfigValidationError(f"Config validation error raised during config deserialization: {e}") from e

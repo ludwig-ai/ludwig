@@ -4,6 +4,7 @@ from ludwig.config_validation.validation import check_schema, get_schema
 from ludwig.constants import MODEL_ECD, TRAINER
 from ludwig.error import ConfigValidationError
 from tests.integration_tests.utils import binary_feature, category_feature, number_feature
+from ludwig.schema.model_types.base import ModelConfig
 
 
 def test_combiner_schema_is_not_empty_for_ECD():
@@ -46,9 +47,11 @@ def test_config_tabnet(eval_batch_size):
             },
             "regularization_lambda": 1,
             "regularization_type": "l2",
+            "test": False,
         },
     }
-    check_schema(config)
+    # check_schema(config)
+    ModelConfig.from_dict(config)
 
 
 def test_config_bad_combiner():

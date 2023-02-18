@@ -1,6 +1,6 @@
 import copy
 import warnings
-from abc import ABC, abstractmethod
+from abc import ABC, ABCMeta, abstractmethod
 from dataclasses import field, Field
 from typing import Any
 from typing import Dict as TDict
@@ -9,7 +9,7 @@ from typing import Optional, Set, Tuple, Type, TypeVar, Union
 
 import marshmallow_dataclass
 import yaml
-from marshmallow import EXCLUDE, fields, pre_load, schema, validate, ValidationError
+from marshmallow import EXCLUDE, fields, INCLUDE, pre_load, RAISE, schema, validate, ValidationError
 from marshmallow.utils import missing
 from marshmallow_dataclass import dataclass as m_dataclass
 from marshmallow_jsonschema import JSONSchema as js
@@ -144,13 +144,13 @@ ConfigT = TypeVar("ConfigT", bound="BaseMarshmallowConfig")
 
 
 @DeveloperAPI
-class BaseMarshmallowConfig(ABC):
+class BaseMarshmallowConfig(metaclass=ABCMeta):
     """Base marshmallow class for common attributes and metadata."""
 
-    @abstractmethod
-    def __init__(self):
-        # Force subclasses to log warnings for additional parameters before deserialization:
-        self.log_deprecation_warnings = pre_load(self.log_deprecation_warnings)
+    # @abstractmethod
+    # def __init__(self):
+    # Force subclasses to log warnings for additional parameters before deserialization:
+    # self.log_deprecation_warnings = pre_load(self.log_deprecation_warnings)
 
     class Meta:
         """Sub-class specifying meta information for Marshmallow.
@@ -162,7 +162,7 @@ class BaseMarshmallowConfig(ABC):
         filled in as necessary.
         """
 
-        unknown = EXCLUDE  # TODO: Change to RAISE and update descriptions once we want to enforce strict schemas.
+        unknown = INCLUDE  # TODO: Change to RAISE and update descriptions once we want to enforce strict schemas.
         "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter."
 
         ordered = True
@@ -175,13 +175,24 @@ class BaseMarshmallowConfig(ABC):
         """
         return convert_submodules(self.__dict__)
 
-    def log_deprecation_warnings(self, data):
+    # @classmethod
+    @pre_load
+    def log_deprecation_warnings(self, data, **kwargs):
+        print(data)
+        print()
+        print(self.fields)
+        print()
+        left = copy.deepcopy(data)
         for key in data.keys():
             if key not in self.fields:
+                print("key not in fields")
+                print(key)
+                del left[key]
                 warnings.warn(
-                    f'"{key}" is not a valid property on {self.name}\'s schema, will be flagged as error in v0.8',
+                    f'"{key}" is not a valid property on \'s schema, will be flagged as error in v0.8',
                     DeprecationWarning,
                 )
+        return left
 
     @classmethod
     def from_dict(cls: Type[ConfigT], d: TDict[str, Any]) -> ConfigT:
