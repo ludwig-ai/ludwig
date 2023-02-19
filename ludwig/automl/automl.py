@@ -398,9 +398,7 @@ def train_with_config(
 
 
 def _mark_collinear_features(dataset, features, threshold) -> Dict:
-    """
-    Create dictionary indicating collinearity status for numeric input features.
-    """
+    """Create dictionary indicating collinearity status for numeric input features."""
 
     # TODO: (jmt) remove after developemnt
     logger.info("Marking collinear features")
