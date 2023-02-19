@@ -21,6 +21,7 @@ class FieldInfo:
     audio_values: int = 0
     avg_words: int = None
     collinear: bool = False
+    vif_score: float = 0.0
 
 
 @DeveloperAPI

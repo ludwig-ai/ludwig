@@ -84,6 +84,7 @@ logger = logging.getLogger(__name__)
 
 OUTPUT_DIR = "."
 TABULAR_TYPES = {CATEGORY, NUMBER, BINARY}
+VIF_SCORE = "vif_score"
 
 
 class AutoTrainResults:
@@ -276,11 +277,19 @@ def create_auto_config(
 
     # update dataset_info with results of collinearity analysis
     # For numeric input features set collinear attribute based on results of
-    # _mark_collinear_features()
+    # mark_collinear_features()
     # For non-numeric input features and output features set collinear attribute to False
-    collinear_flags = _mark_collinear_features(dataset, features_config, collinear_threshold)
+    collinear_flags = mark_collinear_features(dataset, features_config, collinear_threshold)
     for f in dataset_info.fields:
-        f.collinear = collinear_flags.get(f.name, False)
+        try:
+            # numeric input features
+            f.collinear = collinear_flags.get(f.name).get("collinear", False)
+            f.vif_score = collinear_flags.get(f.name).get(VIF_SCORE, 0.0)
+        except AttributeError:
+            # non-numeric input features and output features
+            f.collinear = False
+            f.vif_score = 0.0
+
     # TODO: remove after development
     print("updated FieldInfo")
     for f in dataset_info.fields:
@@ -397,9 +406,22 @@ def train_with_config(
     return AutoTrainResults(experiment_analysis, creds)
 
 
-def _mark_collinear_features(dataset, features, threshold) -> Dict:
+@DeveloperAPI
+def mark_collinear_features(
+    dataset: Union[pd.DataFrame, dd.core.DataFrame],
+    features: ModelConfigDict,
+    threshold: Optional[float] = None
+) -> Dict:
     """
     Create dictionary indicating collinearity status for numeric input features.
+
+        # Inputs
+    :param dataset: (str, pd.DataFrame, dd.core.DataFrame, DatasetInfo) data source to train over.
+    :param features: (ModelConfigDict) model configuration with input and output features
+
+    # Return
+    :return: (dict) dictionary with keys as input feature names, boolean indicating collinearity and
+            variance inflation factor (VIF) value
     """
 
     # TODO: (jmt) remove after developemnt
@@ -412,7 +434,7 @@ def _mark_collinear_features(dataset, features, threshold) -> Dict:
     logger.info(f"input numeric features: {i_numeric_feats}")
 
     # assume no collinear features
-    collinear_flags = {c: False for c in i_numeric_feats}
+    collinear_flags = {c: {"collinear": False, VIF_SCORE: 0.0} for c in i_numeric_feats}
 
     # if threshold is not None, then check for collinear features
     if threshold:
@@ -429,9 +451,13 @@ def _mark_collinear_features(dataset, features, threshold) -> Dict:
         while not found_all_collinear:
             # compute VIF for each feature
             vif = [variance_inflation_factor(X_arr, ix) for ix in array_indices]
+            for c, v in zip(columns, vif):
+                collinear_flags[c][VIF_SCORE] = v
 
             # TODO: (jmt) convert to debug level
-            logger.info(f"\nvif values: {[(f, f'{v:0.5f}') for f, v in zip(columns, vif)]}")
+            logger.info(
+                f"\nvif values:\n{[(c, v['collinear'], f'{v[VIF_SCORE]:0.5f}') for c, v in collinear_flags.items()]}"
+            )
 
             # if VIF score for a feature is above threshold, drop feature
             if max(vif) > threshold:
@@ -442,7 +468,7 @@ def _mark_collinear_features(dataset, features, threshold) -> Dict:
                 logger.info(f"dropping feature {columns[maxloc]} with VIF score {vif[maxloc]:0.5f}")
 
                 # mark feature as collinear
-                collinear_flags[columns[maxloc]] = True
+                collinear_flags[columns[maxloc]]["collinear"] = True
 
                 # drop feature from array and column list
                 del columns[maxloc]
