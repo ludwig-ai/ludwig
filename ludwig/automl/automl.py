@@ -240,6 +240,7 @@ def create_auto_config(
     imbalance_threshold: float = 0.9,
     use_reference_config: bool = False,
     backend: Union[Backend, str] = None,
+    collinear_threshold: Optional[float] = None,  # TODO: (jmt) confirm this is correct approach
 ) -> ModelConfigDict:
     """Returns an auto-generated Ludwig config with the intent of training the best model on given given dataset /
     target in the given time limit.
@@ -274,15 +275,30 @@ def create_auto_config(
     features_config = create_features_config(dataset_info, target)
 
     # update dataset_info with results of collinearity analysis
-    # this update will affect all features including non-numeric input features and output features, which will
-    # set collinear to False
-    collinear_flags = _mark_collinear_features(dataset, features_config)
+    # For numeric input features set collinear attribute based on results of
+    # _mark_collinear_features()
+    # For non-numeric input features and output features set collinear attribute to False
+    collinear_flags = _mark_collinear_features(dataset, features_config, collinear_threshold)
     for f in dataset_info.fields:
         f.collinear = collinear_flags.get(f.name, False)
     # TODO: remove after development
     print("updated FieldInfo")
     for f in dataset_info.fields:
         print(f)
+
+    # TODO: (jmt) need to figure mechanism to toggle this on/off
+    # if collinear_threshold is not None then remove collinear features from input features config
+    if collinear_threshold:
+        # convert field info list dict to facilitate lookup by field name
+        field_info_dict = {f.name: f for f in dataset_info.fields}
+
+        # extract input features that are not collinear
+        no_collinear_input_features = []
+        for i_f in features_config[INPUT_FEATURES]:
+            if not field_info_dict[i_f["name"]].collinear:
+                no_collinear_input_features.append(i_f)
+        # replace input features config with collinear numeric input features removed
+        features_config[INPUT_FEATURES] = no_collinear_input_features
 
     return create_automl_config_for_features(
         features_config,
@@ -381,14 +397,13 @@ def train_with_config(
     return AutoTrainResults(experiment_analysis, creds)
 
 
-def _mark_collinear_features(dataset, features) -> Dict:
-    """"""
+def _mark_collinear_features(dataset, features, threshold) -> Dict:
+    """
+    Create dictionary indicating collinearity status for numeric input features.
+    """
 
     # TODO: (jmt) remove after developemnt
     logger.info("Marking collinear features")
-
-    # TODO: (jmt) this is for development and testing, convert threshold to a configuration parameter
-    threshold = 5.0
 
     # create dataframe of all numeric input features,
     # use heuristic that if a feature has an encoder, it is input feature
@@ -399,44 +414,47 @@ def _mark_collinear_features(dataset, features) -> Dict:
     # assume no collinear features
     collinear_flags = {c: False for c in i_numeric_feats}
 
-    # create dataframe of all numeric input features only and make sure dtype is float
-    df_X = dataset[i_numeric_feats].astype(float)
+    # if threshold is not None, then check for collinear features
+    if threshold:
+        # create dataframe of all numeric input features only and make sure dtype is float
+        df_X = dataset[i_numeric_feats].astype(float)
 
-    # setup array to perform VIF calculation
-    columns = i_numeric_feats
-    X_arr = df_X.values
-    array_indices = list(range(X_arr.shape[1]))
+        # setup array to perform VIF calculation
+        columns = i_numeric_feats
+        X_arr = df_X.values
+        array_indices = list(range(X_arr.shape[1]))
 
-    # loop until all collinear features are found
-    found_all_collinear = False
-    while not found_all_collinear:
-        # compute VIF for each feature
-        vif = [variance_inflation_factor(X_arr, ix) for ix in array_indices]
-
-        # TODO: (jmt) convert to debug level
-        logger.info(f"\nvif values: {[(f, f'{v:0.5f}') for f, v in zip(columns, vif)]}")
-
-        # if VIF score for a feature is above threshold, drop feature
-        if max(vif) > threshold:
-            # get index of feature with highest VIF score to drop
-            maxloc = vif.index(max(vif))
+        # loop until all collinear features are found
+        found_all_collinear = False
+        while not found_all_collinear:
+            # compute VIF for each feature
+            vif = [variance_inflation_factor(X_arr, ix) for ix in array_indices]
 
             # TODO: (jmt) convert to debug level
-            logger.info(f"dropping column {columns[maxloc]}")
+            logger.info(f"\nvif values: {[(f, f'{v:0.5f}') for f, v in zip(columns, vif)]}")
 
-            # mark feature as collinear
-            collinear_flags[columns[maxloc]] = True
+            # if VIF score for a feature is above threshold, drop feature
+            if max(vif) > threshold:
+                # get index of feature with highest VIF score to drop
+                maxloc = vif.index(max(vif))
 
-            # drop feature from array and column list
-            del columns[maxloc]
+                # TODO: (jmt) convert to debug level
+                logger.info(f"dropping feature {columns[maxloc]} with VIF score {vif[maxloc]:0.5f}")
 
-            print(f"remaining columns: {columns}")
-            # update array and indices
-            X_arr = df_X.loc[:, columns].values
-            array_indices = list(range(X_arr.shape[1]))
-        else:
-            # no collinear features found, exit loop
-            found_all_collinear = True
+                # mark feature as collinear
+                collinear_flags[columns[maxloc]] = True
+
+                # drop feature from array and column list
+                del columns[maxloc]
+
+                # TODO: (jmt) convert to debug level
+                logger.info(f"remaining input features: {columns}")
+                # update array and indices
+                X_arr = df_X.loc[:, columns].values
+                array_indices = list(range(X_arr.shape[1]))
+            else:
+                # no collinear features found, exit loop
+                found_all_collinear = True
 
     # all done, record collinear flags
     # TODO: (jmt) convert to debug level
