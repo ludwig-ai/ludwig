@@ -41,50 +41,42 @@ def test_OptimizerDataclassField():
     assert get_marshmallow_from_dataclass_field(optimizer_field).allow_none is False
     assert optimizer_field.default_factory() == lso.AdamaxOptimizerConfig()
 
-    # optimizer_field = lso.OptimizerDataclassField({"type": "adamax", "betas": (0.1, 0.1)})
-    # assert optimizer_field.default_factory is not None
-    # assert get_marshmallow_from_dataclass_field(optimizer_field).allow_none is False
-    # assert optimizer_field.default_factory().betas == (0.1, 0.1)
-
     # Test invalid default case:
-    with pytest.raises(MarshmallowValidationError):
+    with pytest.raises(AttributeError):
         lso.OptimizerDataclassField({})
-    # with pytest.raises(MarshmallowValidationError):
-    #     lso.OptimizerDataclassField("test")
-    # with pytest.raises(MarshmallowValidationError):
-    #     lso.OptimizerDataclassField(None)
-    with pytest.raises(MarshmallowValidationError):
+    with pytest.raises(KeyError):
+        lso.OptimizerDataclassField("test")
+    with pytest.raises(AttributeError):
         lso.OptimizerDataclassField(1)
 
     # Test creating a schema with default options:
-    # @dataclass
-    # class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
-    #     foo: Optional[lso.BaseOptimizerConfig] = lso.OptimizerDataclassField()
+    @dataclass
+    class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
+        foo: Optional[lso.BaseOptimizerConfig] = lso.OptimizerDataclassField()
 
-    # with pytest.raises(MarshmallowValidationError):
-    #     CustomTestSchema.Schema().load({"foo": "test"})
+    with pytest.raises(MarshmallowValidationError):
+        CustomTestSchema.Schema().load({"foo": "test"})
 
-    # assert CustomTestSchema.Schema().load({}).foo == lso.AdamOptimizerConfig()
+    assert CustomTestSchema.Schema().load({}).foo == lso.AdamOptimizerConfig()
 
     # Test creating a schema with set default:
-    # @dataclass
-    # class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
-    #     foo: Optional[lso.BaseOptimizerConfig] = lso.OptimizerDataclassField({"type": "adamax", "betas": (0.1, 0.1)})
+    @dataclass
+    class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
+        foo: Optional[lso.BaseOptimizerConfig] = lso.OptimizerDataclassField("adamax")
 
-    # with pytest.raises(MarshmallowValidationError):
-    #     CustomTestSchema.Schema().load({"foo": None})
-    # with pytest.raises(MarshmallowValidationError):
-    #     CustomTestSchema.Schema().load({"foo": "test"})
-    # with pytest.raises(MarshmallowValidationError):
-    #     CustomTestSchema.Schema().load({"foo": {"type": "invalid", "betas": (0.2, 0.2)}})
+    with pytest.raises(MarshmallowValidationError):
+        CustomTestSchema.Schema().load({"foo": None})
+    with pytest.raises(MarshmallowValidationError):
+        CustomTestSchema.Schema().load({"foo": "test"})
+    with pytest.raises(MarshmallowValidationError):
+        CustomTestSchema.Schema().load({"foo": {"type": "invalid", "betas": (0.2, 0.2)}})
 
-    # assert CustomTestSchema.Schema().load({}).foo == lso.AdamaxOptimizerConfig(betas=(0.1, 0.1))
-    # assert CustomTestSchema.Schema().load(
-    #     {"foo": {"type": "adamax", "betas": (0.2, 0.2)}}
-    # ).foo == lso.AdamaxOptimizerConfig(betas=(0.2, 0.2))
-    # assert CustomTestSchema.Schema().load(
-    #     {"foo": {"type": "adamax", "betas": (0.2, 0.2), "extra_key": 1}}
-    # ).foo == lso.AdamaxOptimizerConfig(betas=(0.2, 0.2))
+    assert CustomTestSchema.Schema().load(
+        {"foo": {"type": "adamax", "betas": (0.2, 0.2)}}
+    ).foo == lso.AdamaxOptimizerConfig(betas=(0.2, 0.2))
+    assert CustomTestSchema.Schema().load(
+        {"foo": {"type": "adamax", "betas": (0.2, 0.2), "extra_key": 1}}
+    ).foo == lso.AdamaxOptimizerConfig(betas=(0.2, 0.2))
 
 
 def test_ClipperDataclassField():
