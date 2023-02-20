@@ -175,9 +175,9 @@ class BaseMarshmallowConfig(ABC):
         leftover = copy.deepcopy(data)
         for key in data.keys():
             if key not in self.fields:
+                del leftover[key]
                 # `type` is not declared on most schemas and is instead added dynamically:
-                if key != "type":
-                    del leftover[key]
+                if key != "type" and key != "feature_type":
                     warnings.warn(
                         f'"{key}" is not a valid parameter for the "{self.__class__.__name__}" schema, will be flagged '
                         "as an error in v0.8",
