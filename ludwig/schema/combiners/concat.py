@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Optional, Union
 
 from ludwig.api_annotations import DeveloperAPI
+from ludwig.schema import common_fields
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.metadata import COMBINER_METADATA
@@ -21,17 +22,10 @@ class ConcatCombinerConfig(BaseCombinerConfig):
         description=COMBINER_METADATA["ConcatCombiner"]["type"].long_description,
     )
 
-    dropout: float = schema_utils.FloatRange(
-        default=0.0,
-        min=0,
-        max=1,
-        description="",
-        parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["dropout"],
-    )
+    dropout: float = common_fields.DropoutField(parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["dropout"])
 
     activation: str = schema_utils.ActivationOptions(
         default="relu",
-        description="",
         parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["activation"],
     )
 
@@ -56,21 +50,18 @@ class ConcatCombinerConfig(BaseCombinerConfig):
 
     bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
         default="zeros",
-        description="",
+        description="Initializer for the bias vector.",
         parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["bias_initializer"],
     )
 
     weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
         default="xavier_uniform",
-        description="",
+        description="Initializer for the weight matrix.",
         parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["weights_initializer"],
     )
 
-    num_fc_layers: int = schema_utils.NonNegativeInteger(
-        default=0,
-        allow_none=False,
-        description="",
-        parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["num_fc_layers"],
+    num_fc_layers: int = common_fields.NumFCLayersField(
+        parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["num_fc_layers"]
     )
 
     output_size: int = schema_utils.PositiveInteger(
@@ -79,11 +70,7 @@ class ConcatCombinerConfig(BaseCombinerConfig):
         parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["output_size"],
     )
 
-    norm: Optional[str] = schema_utils.StringOptions(
-        ["batch", "layer", "ghost"],
-        default=None,
-        allow_none=True,
-        description="",
+    norm: Optional[str] = common_fields.NormField(
         parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["norm"],
     )
 

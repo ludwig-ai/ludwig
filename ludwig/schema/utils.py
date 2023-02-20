@@ -223,8 +223,11 @@ def InitializerOptions(default: str = "xavier_uniform", description="", paramete
 
 
 @DeveloperAPI
-def ActivationOptions(default: Union[str, None] = "relu", description="", parameter_metadata: ParameterMetadata = None):
+def ActivationOptions(
+    default: Union[str, None] = "relu", description=None, parameter_metadata: ParameterMetadata = None
+):
     """Utility wrapper that returns a `StringOptions` field with keys from `activations` registry."""
+    description = description or "Default activation function applied to the output of the fully connected layers."
     return StringOptions(
         list(activations.keys()),
         default=default,
