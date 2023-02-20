@@ -389,7 +389,9 @@ def test_mark_collinear_features(csv_filename):
         {"name": "num_4", "type": "number"},
         {"name": "num_5", "type": "number"},
     ]
-    OUTPUT_FEATURES = [{"name": "target", "type": "number"}, ]
+    OUTPUT_FEATURES = [
+        {"name": "target", "type": "number"},
+    ]
 
     # create base dataset
     FEATURES_LIST = INPUT_FEATURES + OUTPUT_FEATURES
