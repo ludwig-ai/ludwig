@@ -1,4 +1,5 @@
 import os
+import random
 import tempfile
 from typing import List, Set
 from unittest import mock
@@ -395,6 +396,12 @@ def test_mark_collinear_features(csv_filename):
 
     # create base dataset
     FEATURES_LIST = INPUT_FEATURES + OUTPUT_FEATURES
+
+    # set seed for reproducibility
+    np.random.seed(42)
+    random.seed(42)
+
+    # create base dataset
     cli_synthesize_dataset(N_SAMPLES, FEATURES_LIST, csv_filename)
     df_X = pd.read_csv(csv_filename)
 
