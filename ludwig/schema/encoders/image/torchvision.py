@@ -18,6 +18,8 @@ class TVBaseEncoderConfig(BaseEncoderConfig):
     )
 
     model_cache_dir: Optional[str] = schema_utils.String(
+        default=None,
+        allow_none=True,
         description="Directory path to cache pretrained model weights.",
         parameter_metadata=ENCODER_METADATA["TVBaseEncoder"]["model_cache_dir"],
     )

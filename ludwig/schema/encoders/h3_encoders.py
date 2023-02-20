@@ -82,6 +82,7 @@ class H3EmbedConfig(BaseEncoderConfig):
     norm: str = schema_utils.StringOptions(
         ["batch", "layer"],
         default=None,
+        allow_none=True,
         description="The default norm that will be used for each layer.",
         parameter_metadata=ENCODER_METADATA["H3Embed"]["norm"],
     )
@@ -178,6 +179,7 @@ class H3WeightedSumConfig(BaseEncoderConfig):
     norm: str = schema_utils.StringOptions(
         ["batch", "layer"],
         default=None,
+        allow_none=True,
         description="The default norm that will be used for each layer.",
         parameter_metadata=ENCODER_METADATA["H3WeightedSum"]["norm"],
     )

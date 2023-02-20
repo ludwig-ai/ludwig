@@ -8,7 +8,7 @@ from torch import nn, Tensor
 
 from ludwig.api import LudwigModel
 from ludwig.combiners.combiners import Combiner, register_combiner
-from ludwig.constants import BATCH_SIZE, NUMBER, TRAINER
+from ludwig.constants import BATCH_SIZE, LOGITS, MINIMIZE, NUMBER, TRAINER
 from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
 from ludwig.encoders.base import Encoder
@@ -134,7 +134,7 @@ class CustomLoss(nn.Module, LogitsInputsMixin):
         return CustomLossConfig
 
 
-@register_metric("custom_loss", [NUMBER])
+@register_metric("custom_loss", [NUMBER], MINIMIZE, LOGITS)
 class CustomLossMetric(LossMetric):
     def __init__(self, **kwargs):
         super().__init__()

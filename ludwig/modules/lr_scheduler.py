@@ -6,7 +6,7 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LambdaLR, ReduceLROnPlateau
 
 from ludwig.constants import MINIMIZE, TRAINING, VALIDATION
-from ludwig.modules.metric_modules import get_metric_cls
+from ludwig.modules.metric_registry import get_metric_objective
 from ludwig.schema.lr_scheduler import LRSchedulerConfig
 from ludwig.utils.metric_utils import TrainerMetric
 from ludwig.utils.trainer_utils import ProgressTracker
@@ -57,7 +57,6 @@ class LRScheduler:
     ):
         self.config = config
         self.optimizer = optimizer
-        self.validation_metric = get_metric_cls(self.config.reduce_eval_metric)
 
         # Scheduler updated each training step
         self.step_info = StepInfo(steps_per_checkpoint, total_steps, self.config)
@@ -66,7 +65,7 @@ class LRScheduler:
         # Scheduler updated each eval step
         self._eval_scheduler = None
         if self.config.reduce_on_plateau > 0:
-            mode = "min" if self.validation_metric.get_objective() == MINIMIZE else "max"
+            mode = "min" if get_metric_objective(self.config.reduce_eval_metric) == MINIMIZE else "max"
             self._eval_scheduler = ReduceLROnPLateauCappedDecreases(
                 optimizer=self.optimizer,
                 mode=mode,

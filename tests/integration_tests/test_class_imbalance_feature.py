@@ -101,8 +101,8 @@ def run_test_imbalance_local(
 
     input_train_set = input_df.sample(frac=0.7, replace=False)
     processed_len = output_dataset[0].size
-    processed_target_pos = sum(output_dataset[0].dataset["Label_mZFLky"])
-    processed_target_neg = len(output_dataset[0].dataset["Label_mZFLky"]) - processed_target_pos
+    processed_target_pos = sum(output_dataset[0].dataset["Label_2Xl8CP"])
+    processed_target_neg = len(output_dataset[0].dataset["Label_2Xl8CP"]) - processed_target_pos
     assert len(input_train_set) == 140
     assert 0.05 <= len(input_train_set[input_train_set["Label"] == 1]) / len(input_train_set) <= 0.15
     assert round(processed_target_pos / processed_target_neg, 1) == 0.5

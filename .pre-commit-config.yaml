@@ -4,6 +4,8 @@
 #   pre-commit run
 # Update this file:
 #   pre-commit autoupdate
+# Run a specific hook:
+#   pre-commit run <hook id>
 
 ci:
   autofix_prs: true
