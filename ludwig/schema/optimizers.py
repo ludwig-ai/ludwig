@@ -502,15 +502,25 @@ class GradientClippingConfig(schema_utils.BaseMarshmallowConfig):
     """Dataclass that holds gradient clipping parameters."""
 
     clipglobalnorm: Optional[float] = schema_utils.FloatRange(
-        default=0.5, allow_none=True, description="", parameter_metadata=OPTIMIZER_METADATA["gradient_clipping"]
+        default=0.5,
+        allow_none=True,
+        description="Maximum allowed norm of the gradients",
+        parameter_metadata=OPTIMIZER_METADATA["gradient_clipping"],
     )
 
+    # TODO(travis): is this redundant with `clipglobalnorm`?
     clipnorm: Optional[float] = schema_utils.FloatRange(
-        default=None, allow_none=True, description="", parameter_metadata=OPTIMIZER_METADATA["gradient_clipping"]
+        default=None,
+        allow_none=True,
+        description="Maximum allowed norm of the gradients",
+        parameter_metadata=OPTIMIZER_METADATA["gradient_clipping"],
     )
 
     clipvalue: Optional[float] = schema_utils.FloatRange(
-        default=None, allow_none=True, description="", parameter_metadata=OPTIMIZER_METADATA["gradient_clipping"]
+        default=None,
+        allow_none=True,
+        description="Maximum allowed value of the gradients",
+        parameter_metadata=OPTIMIZER_METADATA["gradient_clipping"],
     )
 
 

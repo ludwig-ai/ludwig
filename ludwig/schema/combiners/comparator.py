@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional, Union
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.schema import utils as schema_utils
+from ludwig.schema import common_fields, utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.metadata import COMBINER_METADATA
 from ludwig.schema.utils import ludwig_dataclass
@@ -23,29 +23,25 @@ class ComparatorCombinerConfig(BaseCombinerConfig):
 
     entity_1: List[str] = schema_utils.List(
         default=None,
-        description="The list of input features composing the first entity to compare.",
+        description=(
+            "The list of input feature names `[feature_1, feature_2, ...]` constituting the first entity to compare. "
+            "*Required*."
+        ),
         parameter_metadata=COMBINER_METADATA["ComparatorCombiner"]["entity_1"],
     )
 
     entity_2: List[str] = schema_utils.List(
         default=None,
-        description="The list of input features composing the second entity to compare.",
+        description=(
+            "The list of input feature names `[feature_1, feature_2, ...]` constituting the first entity to compare. "
+            "*Required*."
+        ),
         parameter_metadata=COMBINER_METADATA["ComparatorCombiner"]["entity_2"],
     )
 
-    dropout: float = schema_utils.FloatRange(
-        default=0.0,
-        min=0,
-        max=1,
-        description="Dropout rate for the transformer block.",
-        parameter_metadata=COMBINER_METADATA["ComparatorCombiner"]["dropout"],
-    )
+    dropout: float = common_fields.DropoutField()
 
-    activation: str = schema_utils.ActivationOptions(
-        default="relu",
-        description="",
-        parameter_metadata=COMBINER_METADATA["ComparatorCombiner"]["activation"],
-    )
+    activation: str = schema_utils.ActivationOptions(default="relu")
 
     use_bias: bool = schema_utils.Boolean(
         default=True,
@@ -53,44 +49,20 @@ class ComparatorCombinerConfig(BaseCombinerConfig):
         parameter_metadata=COMBINER_METADATA["ComparatorCombiner"]["use_bias"],
     )
 
-    bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="zeros",
-        description="",
-        parameter_metadata=COMBINER_METADATA["ComparatorCombiner"]["bias_initializer"],
-    )
+    bias_initializer: Union[str, Dict] = common_fields.BiasInitializerField()
 
-    weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="xavier_uniform",
-        description="",
-        parameter_metadata=COMBINER_METADATA["ComparatorCombiner"]["weights_initializer"],
-    )
+    weights_initializer: Union[str, Dict] = common_fields.WeightsInitializerField()
 
-    num_fc_layers: int = schema_utils.NonNegativeInteger(
-        default=1,
-        description="",
-        parameter_metadata=COMBINER_METADATA["ComparatorCombiner"]["num_fc_layers"],
-    )
+    num_fc_layers: int = common_fields.NumFCLayersField()
 
     output_size: int = schema_utils.PositiveInteger(
         default=256,
-        description="Output size of a fully connected layer",
+        description="Output size of a fully connected layer.",
         parameter_metadata=COMBINER_METADATA["ComparatorCombiner"]["output_size"],
     )
 
-    norm: Optional[str] = schema_utils.StringOptions(
-        ["batch", "layer"],
-        default=None,
-        allow_none=True,
-        description="",
-        parameter_metadata=COMBINER_METADATA["ComparatorCombiner"]["norm"],
-    )
+    norm: Optional[str] = common_fields.NormField()
 
-    norm_params: Optional[dict] = schema_utils.Dict(
-        description="",
-        parameter_metadata=COMBINER_METADATA["ComparatorCombiner"]["norm_params"],
-    )
+    norm_params: Optional[dict] = common_fields.NormParamsField()
 
-    fc_layers: Optional[List[Dict[str, Any]]] = schema_utils.DictList(
-        description="",
-        parameter_metadata=COMBINER_METADATA["ComparatorCombiner"]["fc_layers"],
-    )
+    fc_layers: Optional[List[Dict[str, Any]]] = common_fields.FCLayersField()

@@ -17,11 +17,6 @@ output tensor, the combiner will concatenate them alongside the `s` dimension. A
 have identical `s` dimension, otherwise an error will be thrown.
 """
 
-REDUCE_OUTPUT_DESCRIPTION = """
-Strategy to use to aggregate the embeddings of the items of the set. When `sqrt` is selected,
-yields the weighted sum divided by the square root of the sum of the squares of the weights).
-"""
-
 
 @DeveloperAPI
 @ludwig_dataclass
@@ -46,6 +41,6 @@ class SequenceConcatCombinerConfig(BaseCombinerConfig):
 
     reduce_output: Optional[str] = schema_utils.ReductionOptions(
         default=None,
-        description=REDUCE_OUTPUT_DESCRIPTION,
+        description="Strategy to use to aggregate the embeddings of the items of the set.",
         parameter_metadata=COMBINER_METADATA["SequenceConcatCombiner"]["reduce_output"],
     )

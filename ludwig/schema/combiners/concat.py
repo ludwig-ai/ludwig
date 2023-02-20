@@ -22,7 +22,7 @@ class ConcatCombinerConfig(BaseCombinerConfig):
         description=COMBINER_METADATA["ConcatCombiner"]["type"].long_description,
     )
 
-    dropout: float = common_fields.DropoutField(parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["dropout"])
+    dropout: float = common_fields.DropoutField()
 
     activation: str = schema_utils.ActivationOptions(default="relu")
 
@@ -32,14 +32,7 @@ class ConcatCombinerConfig(BaseCombinerConfig):
         parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["flatten_inputs"],
     )
 
-    residual: bool = schema_utils.Boolean(
-        default=False,
-        description=(
-            "Whether to add a residual connection to each fully connected layer block. "
-            "Requires all fully connected layers to have the same `output_size`."
-        ),
-        parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["residual"],
-    )
+    residual: bool = common_fields.ResidualField()
 
     use_bias: bool = schema_utils.Boolean(
         default=True,

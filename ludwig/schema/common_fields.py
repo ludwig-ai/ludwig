@@ -21,6 +21,21 @@ def DropoutField(default: float = 0.0, description: str = None, parameter_metada
     )
 
 
+def ResidualField(
+    default: bool = False, description: str = None, parameter_metadata: ParameterMetadata = None
+) -> Field:
+    description = description or (
+        "Whether to add a residual connection to each fully connected layer block. "
+        "Requires all fully connected layers to have the same `output_size`."
+    )
+    parameter_metadata = parameter_metadata or COMMON_METADATA["residual"]
+    return schema_utils.Boolean(
+        default=False,
+        description=description,
+        parameter_metadata=parameter_metadata,
+    )
+
+
 def NumFCLayersField(default: int = 0, description: str = None, parameter_metadata: ParameterMetadata = None) -> Field:
     description = description or (
         "Number of stacked fully connected layers to apply. "
