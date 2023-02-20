@@ -34,8 +34,10 @@ class ConcatCombinerConfig(BaseCombinerConfig):
 
     residual: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to add a residual connection to each fully connected layer block. All fully connected "
-        "layers must have the same size ",
+        description=(
+            "Whether to add a residual connection to each fully connected layer block. "
+            "Requires all fully connected layers to have the same `output_size`."
+        ),
         parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["residual"],
     )
 
@@ -45,17 +47,9 @@ class ConcatCombinerConfig(BaseCombinerConfig):
         parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["use_bias"],
     )
 
-    bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="zeros",
-        description="Initializer for the bias vector.",
-        parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["bias_initializer"],
-    )
+    bias_initializer: Union[str, Dict] = common_fields.BiasInitializerField()
 
-    weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="xavier_uniform",
-        description="Initializer for the weight matrix.",
-        parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["weights_initializer"],
-    )
+    weights_initializer: Union[str, Dict] = common_fields.WeightsInitializerField()
 
     num_fc_layers: int = common_fields.NumFCLayersField()
 

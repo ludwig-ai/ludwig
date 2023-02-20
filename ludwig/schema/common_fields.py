@@ -3,6 +3,7 @@ from typing import Optional
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata import COMMON_METADATA
 from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
+from ludwig.utils.torch_utils import initializer_registry
 
 
 def DropoutField(default: float = 0.0, description: str = None, parameter_metadata: ParameterMetadata = None) -> Field:
@@ -68,6 +69,39 @@ def FCLayersField(description: str = None, parameter_metadata: ParameterMetadata
     )
     parameter_metadata = parameter_metadata or COMMON_METADATA["fc_layers"]
     return schema_utils.DictList(
+        description=description,
+        parameter_metadata=parameter_metadata,
+    )
+
+
+INITIALIZER_SUFFIX = """
+Alternatively it is possible to specify a dictionary with a key `type` that identifies the type of initializer and
+other keys for its parameters, e.g. `{type: normal, mean: 0, stddev: 0}`. For a description of the parameters of each
+initializer, see [torch.nn.init](https://pytorch.org/docs/stable/nn.init.html).
+"""
+
+
+def BiasInitializerField(
+    default: str = "zeros", description: str = None, parameter_metadata: ParameterMetadata = None
+) -> Field:
+    initializers_str = ", ".join([f"`{i}`" for i in initializer_registry.keys()])
+    description = description or f"Initializer for the bias vector. Options: {initializers_str}. {INITIALIZER_SUFFIX}"
+    parameter_metadata = parameter_metadata or COMMON_METADATA["bias_initializer"]
+    return schema_utils.InitializerOrDict(
+        default=default,
+        description=description,
+        parameter_metadata=parameter_metadata,
+    )
+
+
+def WeightsInitializerField(
+    default: str = "xavier_uniform", description: str = None, parameter_metadata: ParameterMetadata = None
+) -> Field:
+    initializers_str = ", ".join([f"`{i}`" for i in initializer_registry.keys()])
+    description = description or f"Initializer for the weight matrix. Options: {initializers_str}. {INITIALIZER_SUFFIX}"
+    parameter_metadata = parameter_metadata or COMMON_METADATA["weights_initializer"]
+    return schema_utils.InitializerOrDict(
+        default=default,
         description=description,
         parameter_metadata=parameter_metadata,
     )
