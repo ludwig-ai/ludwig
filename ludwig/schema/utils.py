@@ -1,6 +1,6 @@
 import copy
 import warnings
-from abc import ABC, ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from dataclasses import field, Field
 from typing import Any
 from typing import Dict as TDict
@@ -9,7 +9,7 @@ from typing import Optional, Set, Tuple, Type, TypeVar, Union
 
 import marshmallow_dataclass
 import yaml
-from marshmallow import EXCLUDE, fields, INCLUDE, pre_load, RAISE, schema, validate, ValidationError
+from marshmallow import fields, INCLUDE, pre_load, schema, validate, ValidationError
 from marshmallow.utils import missing
 from marshmallow_dataclass import dataclass as m_dataclass
 from marshmallow_jsonschema import JSONSchema as js
@@ -144,13 +144,8 @@ ConfigT = TypeVar("ConfigT", bound="BaseMarshmallowConfig")
 
 
 @DeveloperAPI
-class BaseMarshmallowConfig(metaclass=ABCMeta):
+class BaseMarshmallowConfig(ABC):
     """Base marshmallow class for common attributes and metadata."""
-
-    # @abstractmethod
-    # def __init__(self):
-    # Force subclasses to log warnings for additional parameters before deserialization:
-    # self.log_deprecation_warnings = pre_load(self.log_deprecation_warnings)
 
     class Meta:
         """Sub-class specifying meta information for Marshmallow.
@@ -175,24 +170,21 @@ class BaseMarshmallowConfig(metaclass=ABCMeta):
         """
         return convert_submodules(self.__dict__)
 
-    # @classmethod
     @pre_load
     def log_deprecation_warnings(self, data, **kwargs):
-        print(data)
-        print()
-        print(self.fields)
-        print()
-        left = copy.deepcopy(data)
+        leftover = copy.deepcopy(data)
         for key in data.keys():
             if key not in self.fields:
-                print("key not in fields")
-                print(key)
-                del left[key]
-                warnings.warn(
-                    f'"{key}" is not a valid property on \'s schema, will be flagged as error in v0.8',
-                    DeprecationWarning,
-                )
-        return left
+                # `type` is not declared on most schemas and is instead added dynamically:
+                if key != "type" and key != "feature_type":
+                    del leftover[key]
+                    print(self.fields)
+                    warnings.warn(
+                        f'"{key}" is not a valid parameter for the "{self.__class__.__name__}" schema, will be flagged '
+                        "as an error in v0.8",
+                        DeprecationWarning,
+                    )
+        return leftover
 
     @classmethod
     def from_dict(cls: Type[ConfigT], d: TDict[str, Any]) -> ConfigT:

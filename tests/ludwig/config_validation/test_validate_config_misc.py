@@ -37,6 +37,7 @@ from ludwig.schema.features.preprocessing.text import TextPreprocessingConfig
 from ludwig.schema.features.preprocessing.timeseries import TimeseriesPreprocessingConfig
 from ludwig.schema.features.preprocessing.vector import VectorPreprocessingConfig
 from ludwig.schema.features.utils import get_input_feature_jsonschema, get_output_feature_jsonschema
+from ludwig.schema.model_types.base import ModelConfig
 from tests.integration_tests.utils import (
     audio_feature,
     bag_feature,
@@ -417,3 +418,22 @@ def test_decoder_descriptions():
         type_data = feature_schema["then"]["properties"]["decoder"]["properties"]["type"]
         assert len(type_data["enumDescriptions"].keys()) > 0
         assert set(type_data["enumDescriptions"].keys()).issubset(set(type_data["enum"]))
+
+
+def test_deprecation_warning_raised_for_unknown_parameters():
+    config = {
+        "input_features": [
+            category_feature(encoder={"type": "dense", "vocab_size": 2}, reduce_input="sum"),
+            number_feature(),
+        ],
+        "output_features": [binary_feature()],
+        "combiner": {
+            "type": "tabnet",
+            "unknown_parameter_combiner": False,
+        },
+        TRAINER: {
+            "epochs": 1000,
+            "unknown_parameter_trainer": False,
+        },
+    }
+    ModelConfig.from_dict(config)

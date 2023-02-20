@@ -1,7 +1,4 @@
-import warnings
 from typing import Optional
-
-from marshmallow import pre_load
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
@@ -14,13 +11,6 @@ from ludwig.schema.utils import ludwig_dataclass
 @ludwig_dataclass
 class TabNetCombinerConfig(BaseCombinerConfig):
     """Parameters for tabnet combiner."""
-
-    # @pre_load
-    # def test(self, data, **kwargs):
-    #     print("pre_load_tabnet" * 10)
-    #     print(data)
-    #     warnings.warn("warning")
-    #     return data
 
     @staticmethod
     def module_name():
