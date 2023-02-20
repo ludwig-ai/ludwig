@@ -262,6 +262,11 @@ def create_auto_config(
     :param imbalance_threshold: (float) maximum imbalance ratio (minority / majority) to perform stratified sampling
     :param use_reference_config: (bool) refine hyperopt search space by setting first
                                  search point from reference model config, if any
+    :param backend: (str, Backend) backend to use for processing
+    :param collinear_threshold: (float, default: None) threshold for collinearity analysis. If None, no collinearity
+            analysis is performed.  If float, this will be the threhsold for VIF (Variance Inflation Factor) to mark
+            an input feature as collinear.
+
 
     # Return
     :return: (dict) selected model configuration
@@ -296,19 +301,18 @@ def create_auto_config(
     for f in dataset_info.fields:
         print(f)
 
-    # TODO: (jmt) need to figure mechanism to toggle this on/off
     # if collinear_threshold is not None then remove collinear features from input features config
     if collinear_threshold:
         # convert field info list dict to facilitate lookup by field name
         field_info_dict = {f.name: f for f in dataset_info.fields}
 
         # extract input features that are not collinear
-        no_collinear_input_features = []
+        non_collinear_input_features = []
         for i_f in features_config[INPUT_FEATURES]:
             if not field_info_dict[i_f["name"]].collinear:
-                no_collinear_input_features.append(i_f)
-        # replace input features config with collinear numeric input features removed
-        features_config[INPUT_FEATURES] = no_collinear_input_features
+                non_collinear_input_features.append(i_f)
+        # replace original input features config with collinear numeric input features removed
+        features_config[INPUT_FEATURES] = non_collinear_input_features
 
     return create_automl_config_for_features(
         features_config,
