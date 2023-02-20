@@ -18,6 +18,7 @@ import numpy as np
 import pandas as pd
 import yaml
 from statsmodels.stats.outliers_influence import variance_inflation_factor
+from statsmodels.tools.sm_exceptions import MissingDataError
 
 from ludwig.api import LudwigModel
 from ludwig.api_annotations import DeveloperAPI, PublicAPI
@@ -449,11 +450,16 @@ def mark_collinear_features(
         # loop until all collinear features are found
         found_all_collinear = False
         while not found_all_collinear:
-            # compute VIF for each feature
-            vif = [variance_inflation_factor(X_arr, ix) for ix in array_indices]
-            for c, v in zip(columns, vif):
-                collinear_flags[c][VIF_SCORE] = v
-
+            try:
+                # compute VIF for each feature
+                vif = [variance_inflation_factor(X_arr, ix) for ix in array_indices]
+                for c, v in zip(columns, vif):
+                    collinear_flags[c][VIF_SCORE] = v
+            except MissingDataError as vif_e:
+                raise RuntimeError(
+                    f"Error computing VIF: {vif_e}. "
+                    f"Ensure all numeric input features are valid and there are no missing values."
+                )
             # TODO: (jmt) convert to debug level
             logger.info(
                 f"\nvif values:\n{[(c, v['collinear'], f'{v[VIF_SCORE]:0.5f}') for c, v in collinear_flags.items()]}"
