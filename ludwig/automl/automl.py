@@ -415,6 +415,9 @@ def mark_collinear_features(
         # Inputs
     :param dataset: (str, pd.DataFrame, dd.core.DataFrame, DatasetInfo) data source to train over.
     :param features: (ModelConfigDict) model configuration with input and output features
+    :param threshold: (float) threshold for collinearity determination, if None, then no collinear detection.
+                    If float value is specified, it will be used as the threshold for collinearity detection
+                    using variance inflation factor (VIF) score.
 
     # Return
     :return: (dict) dictionary with keys as input feature names, boolean indicating collinearity and
