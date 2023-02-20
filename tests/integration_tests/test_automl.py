@@ -378,6 +378,7 @@ def _run_train_with_config(time_budget, test_data, tmpdir, **kwargs):
             assert mock_fn.call_count == 0
 
 
+@pytest.mark.distributed
 def test_mark_collinear_features(csv_filename):
     N_SAMPLES = 100
     INPUT_FEATURES = [
