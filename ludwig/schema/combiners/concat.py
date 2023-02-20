@@ -24,10 +24,7 @@ class ConcatCombinerConfig(BaseCombinerConfig):
 
     dropout: float = common_fields.DropoutField(parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["dropout"])
 
-    activation: str = schema_utils.ActivationOptions(
-        default="relu",
-        parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["activation"],
-    )
+    activation: str = schema_utils.ActivationOptions(default="relu")
 
     flatten_inputs: bool = schema_utils.Boolean(
         default=False,
@@ -60,9 +57,7 @@ class ConcatCombinerConfig(BaseCombinerConfig):
         parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["weights_initializer"],
     )
 
-    num_fc_layers: int = common_fields.NumFCLayersField(
-        parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["num_fc_layers"]
-    )
+    num_fc_layers: int = common_fields.NumFCLayersField()
 
     output_size: int = schema_utils.PositiveInteger(
         default=256,
@@ -70,16 +65,8 @@ class ConcatCombinerConfig(BaseCombinerConfig):
         parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["output_size"],
     )
 
-    norm: Optional[str] = common_fields.NormField(
-        parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["norm"],
-    )
+    norm: Optional[str] = common_fields.NormField()
 
-    norm_params: Optional[dict] = schema_utils.Dict(
-        description="",
-        parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["norm_params"],
-    )
+    norm_params: Optional[dict] = common_fields.NormParamsField()
 
-    fc_layers: Optional[List[Dict[str, Any]]] = schema_utils.DictList(
-        description="",
-        parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["fc_layers"],
-    )
+    fc_layers: Optional[List[Dict[str, Any]]] = common_fields.FCLayersField()

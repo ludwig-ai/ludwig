@@ -1,16 +1,18 @@
 from dataclasses import Field
 from typing import Optional
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.metadata import COMMON_METADATA
 from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
 
 
-def DropoutField(description: str = None, parameter_metadata: ParameterMetadata = None) -> Field:
+def DropoutField(default: float = 0.0, description: str = None, parameter_metadata: ParameterMetadata = None) -> Field:
     description = description or (
         "Default dropout rate applied to fully connected layers. "
         "Increasing dropout is a common form of regularization to combat overfitting."
     )
+    parameter_metadata = parameter_metadata or COMMON_METADATA["dropout"]
     return schema_utils.FloatRange(
-        default=0.0,
+        default=default,
         min=0,
         max=1,
         description=description,
@@ -23,6 +25,7 @@ def NumFCLayersField(default: int = 0, description: str = None, parameter_metada
         "Number of stacked fully connected layers to apply. "
         "Increasing layers adds capacity to the model, enabling it to learn more complex feature interactions."
     )
+    parameter_metadata = parameter_metadata or COMMON_METADATA["num_fc_layers"]
     return schema_utils.NonNegativeInteger(
         default=default,
         allow_none=False,
@@ -35,10 +38,36 @@ def NormField(
     default: Optional[str] = None, description: str = None, parameter_metadata: ParameterMetadata = None
 ) -> Field:
     description = description or "Default normalization applied at the beginnging of fully connected layers."
+    parameter_metadata = parameter_metadata or COMMON_METADATA["norm"]
     return schema_utils.StringOptions(
         ["batch", "layer", "ghost"],
         default=default,
         allow_none=True,
-        description="",
+        description=description,
+        parameter_metadata=parameter_metadata,
+    )
+
+
+def NormParamsField(description: str = None, parameter_metadata: ParameterMetadata = None) -> Field:
+    description = description or "Default parameters passed to the `norm` module."
+    parameter_metadata = parameter_metadata or COMMON_METADATA["norm_params"]
+    return schema_utils.Dict(
+        description=description,
+        parameter_metadata=parameter_metadata,
+    )
+
+
+def FCLayersField(description: str = None, parameter_metadata: ParameterMetadata = None) -> Field:
+    description = description or (
+        "List of dictionaries containing the parameters of all the fully connected layers. "
+        "The length of the list determines the number of stacked fully connected layers "
+        "and the content of each dictionary determines the parameters for a specific layer. "
+        "The available parameters for each layer are: `activation`, `dropout`, `norm`, `norm_params`, "
+        "`output_size`, `use_bias`, `bias_initializer` and `weights_initializer`. If any of those values "
+        "is missing from the dictionary, the default one provided as a standalone parameter will be used instead."
+    )
+    parameter_metadata = parameter_metadata or COMMON_METADATA["fc_layers"]
+    return schema_utils.DictList(
+        description=description,
         parameter_metadata=parameter_metadata,
     )
