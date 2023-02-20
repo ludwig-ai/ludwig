@@ -62,7 +62,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-py${{ matrix.python-version }}-torch${{ matrix.pytorch-version }}-${{ matrix.test-markers }}-${{ hashFiles('requirements*.txt', '.github/workflows/pytest.yml') }}
+          key: ${{ runner.os }}-pip-py${{ matrix.python-version }}-torch${{ matrix.pytorch-version }}-${{ matrix.test-markers }}-${{ hashFiles('requirements*.txt', '.github/workflows/pytest_benchmarks.yml') }}
 
       - name: Install dependencies
         env:

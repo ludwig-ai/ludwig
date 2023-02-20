@@ -766,5 +766,3 @@ defaults:
     preprocessing:
       normalization: null
       missing_value_strategy: fill_with_const
-backend:
-  type: ray
