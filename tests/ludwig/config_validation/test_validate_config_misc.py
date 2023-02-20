@@ -22,7 +22,7 @@ from ludwig.constants import (
 from ludwig.error import ConfigValidationError
 from ludwig.features.feature_registries import get_output_type_registry
 from ludwig.schema.combiners.utils import get_combiner_jsonschema
-from ludwig.schema.defaults.defaults import DefaultsConfig
+from ludwig.schema.defaults.ecd import ECDDefaultsConfig
 from ludwig.schema.features.preprocessing.audio import AudioPreprocessingConfig
 from ludwig.schema.features.preprocessing.bag import BagPreprocessingConfig
 from ludwig.schema.features.preprocessing.binary import BinaryPreprocessingConfig
@@ -266,8 +266,8 @@ def test_validate_with_preprocessing_defaults():
     check_schema(config)
 
 
-def test_defaults_schema():
-    schema = DefaultsConfig()
+def test_ecd_defaults_schema():
+    schema = ECDDefaultsConfig()
     assert schema.binary.decoder.type == "regressor"
     assert schema.binary.encoder.type == "passthrough"
     assert schema.category.encoder.dropout == 0.0
