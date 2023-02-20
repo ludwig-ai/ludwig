@@ -178,7 +178,6 @@ class BaseMarshmallowConfig(ABC):
                 # `type` is not declared on most schemas and is instead added dynamically:
                 if key != "type" and key != "feature_type":
                     del leftover[key]
-                    print(self.fields)
                     warnings.warn(
                         f'"{key}" is not a valid parameter for the "{self.__class__.__name__}" schema, will be flagged '
                         "as an error in v0.8",
