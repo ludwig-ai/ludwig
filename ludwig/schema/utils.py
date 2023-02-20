@@ -176,7 +176,7 @@ class BaseMarshmallowConfig(ABC):
         for key in data.keys():
             if key not in self.fields:
                 # `type` is not declared on most schemas and is instead added dynamically:
-                if key != "type" and key != "feature_type":
+                if key != "type":
                     del leftover[key]
                     warnings.warn(
                         f'"{key}" is not a valid parameter for the "{self.__class__.__name__}" schema, will be flagged '
