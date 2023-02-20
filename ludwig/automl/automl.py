@@ -408,12 +408,9 @@ def train_with_config(
 
 @DeveloperAPI
 def mark_collinear_features(
-    dataset: Union[pd.DataFrame, dd.core.DataFrame],
-    features: ModelConfigDict,
-    threshold: Optional[float] = None
+    dataset: Union[pd.DataFrame, dd.core.DataFrame], features: ModelConfigDict, threshold: Optional[float] = None
 ) -> Dict:
-    """
-    Create dictionary indicating collinearity status for numeric input features.
+    """Create dictionary indicating collinearity status for numeric input features.
 
         # Inputs
     :param dataset: (str, pd.DataFrame, dd.core.DataFrame, DatasetInfo) data source to train over.
