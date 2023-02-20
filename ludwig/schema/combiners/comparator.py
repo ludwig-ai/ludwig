@@ -33,7 +33,7 @@ class ComparatorCombinerConfig(BaseCombinerConfig):
     entity_2: List[str] = schema_utils.List(
         default=None,
         description=(
-            "The list of input feature names `[feature_1, feature_2, ...]` constituting the first entity to compare. "
+            "The list of input feature names `[feature_1, feature_2, ...]` constituting the second entity to compare. "
             "*Required*."
         ),
         parameter_metadata=COMBINER_METADATA["ComparatorCombiner"]["entity_2"],
@@ -53,7 +53,7 @@ class ComparatorCombinerConfig(BaseCombinerConfig):
 
     weights_initializer: Union[str, Dict] = common_fields.WeightsInitializerField()
 
-    num_fc_layers: int = common_fields.NumFCLayersField()
+    num_fc_layers: int = common_fields.NumFCLayersField(default=1)
 
     output_size: int = schema_utils.PositiveInteger(
         default=256,
