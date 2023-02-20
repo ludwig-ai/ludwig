@@ -9,7 +9,6 @@ import pandas as pd
 import pytest
 
 from ludwig.api import LudwigModel
-from ludwig.automl.automl import mark_collinear_features
 from ludwig.constants import COLUMN, ENCODER, INPUT_FEATURES, NAME, OUTPUT_FEATURES, PREPROCESSING, SPLIT, TYPE
 from ludwig.data.dataset_synthesizer import cli_synthesize_dataset
 from ludwig.schema.model_types.base import ModelConfig
@@ -380,6 +379,8 @@ def _run_train_with_config(time_budget, test_data, tmpdir, **kwargs):
 
 @pytest.mark.distributed
 def test_mark_collinear_features(csv_filename):
+    from ludwig.automl.automl import mark_collinear_features
+
     N_SAMPLES = 100
     INPUT_FEATURES = [
         {"name": "bin_feature", "type": "binary"},
