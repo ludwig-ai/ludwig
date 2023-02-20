@@ -421,7 +421,7 @@ def get_optimizer_conds():
 
 
 @DeveloperAPI
-def OptimizerDataclassField(default={"type": "adam"}, description="TODO"):
+def OptimizerDataclassField(default="adam", description="TODO"):
     """Custom dataclass field that when used inside of a dataclass will allow any optimizer in
     `ludwig.modules.optimization_modules.optimizer_registry`.
 

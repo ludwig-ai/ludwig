@@ -36,7 +36,7 @@ def test_OptimizerDataclassField():
     assert default_optimizer_field.default_factory() == lso.AdamOptimizerConfig()
 
     # Test normal cases:
-    optimizer_field = lso.OptimizerDataclassField({"type": "adamax"})
+    optimizer_field = lso.OptimizerDataclassField("adamax")
     assert optimizer_field.default_factory is not None
     assert get_marshmallow_from_dataclass_field(optimizer_field).allow_none is False
     assert optimizer_field.default_factory() == lso.AdamaxOptimizerConfig()

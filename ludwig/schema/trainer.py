@@ -203,7 +203,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
     )
 
     optimizer: BaseOptimizerConfig = OptimizerDataclassField(
-        default={"type": "adam"}, description="Parameter values for selected torch optimizer."
+        default="adam", description="Parameter values for selected torch optimizer."
     )
 
     regularization_type: Optional[str] = schema_utils.RegularizerOptions(
