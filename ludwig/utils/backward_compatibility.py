@@ -67,6 +67,7 @@ from ludwig.constants import (
 )
 from ludwig.features.feature_registries import get_base_type_registry, get_input_type_registry, get_output_type_registry
 from ludwig.globals import LUDWIG_VERSION
+from ludwig.schema.defaults.gbm import GBMDefaultsConfig
 from ludwig.schema.encoders.utils import get_encoder_cls
 from ludwig.types import (
     FeatureConfigDict,
@@ -795,6 +796,17 @@ def upgrade_missing_hyperopt(config: ModelConfigDict) -> ModelConfigDict:
             DeprecationWarning,
         )
         del config[HYPEROPT]
+    return config
+
+
+@register_config_transformation("0.7")
+def upgrade_defaults_config_for_gbm(config: ModelConfigDict) -> ModelConfigDict:
+    defaults_ref = config.get(DEFAULTS, {})
+    defaults = copy.deepcopy(config.get(DEFAULTS, {}))
+    gbm_feature_types = GBMDefaultsConfig.Schema().fields.keys()
+    for feature_type in defaults_ref:
+        if feature_type not in gbm_feature_types:
+            del defaults[feature_type]
     return config
 
 
