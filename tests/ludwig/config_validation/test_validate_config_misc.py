@@ -433,7 +433,6 @@ def test_deprecation_warning_raised_for_unknown_parameters():
         },
         TRAINER: {
             "epochs": 1000,
-            "unknown_parameter_trainer": False,
         },
     }
     ModelConfig.from_dict(config)

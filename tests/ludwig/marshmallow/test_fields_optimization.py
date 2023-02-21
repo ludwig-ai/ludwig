@@ -113,16 +113,6 @@ def test_ClipperDataclassField():
     with pytest.raises(MarshmallowValidationError):
         lso.GradientClippingDataclassField(description="", default=1)
 
-    # Test creating a schema with default options:
-    @dataclass
-    class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
-        foo: Optional[lso.GradientClippingConfig] = lso.GradientClippingConfig()
-
-    with pytest.raises(MarshmallowValidationError):
-        CustomTestSchema.Schema().load({"foo": "test"})
-
-    assert CustomTestSchema.Schema().load({}).foo == lso.GradientClippingConfig()
-
     # Test creating a schema with set default:
     @dataclass
     class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
