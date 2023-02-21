@@ -71,6 +71,7 @@ from ludwig.schema.defaults.gbm import GBMDefaultsConfig
 from ludwig.schema.encoders.utils import get_encoder_cls
 from ludwig.types import (
     FeatureConfigDict,
+    FeatureTypeDefaultsDict,
     HyperoptConfigDict,
     ModelConfigDict,
     PreprocessingConfigDict,
@@ -799,15 +800,15 @@ def upgrade_missing_hyperopt(config: ModelConfigDict) -> ModelConfigDict:
     return config
 
 
-@register_config_transformation("0.7")
-def upgrade_defaults_config_for_gbm(config: ModelConfigDict) -> ModelConfigDict:
-    defaults_ref = config.get(DEFAULTS, {})
-    defaults = copy.deepcopy(config.get(DEFAULTS, {}))
+@register_config_transformation("0.7", ["defaults"])
+def upgrade_defaults_config_for_gbm(config: FeatureTypeDefaultsDict) -> FeatureTypeDefaultsDict:
+    defaults_ref = config
+    defaults = copy.deepcopy(defaults_ref)
     gbm_feature_types = GBMDefaultsConfig.Schema().fields.keys()
     for feature_type in defaults_ref:
         if feature_type not in gbm_feature_types:
             del defaults[feature_type]
-    return config
+    return defaults
 
 
 def upgrade_metadata(metadata: TrainingSetMetadataDict) -> TrainingSetMetadataDict:
