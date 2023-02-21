@@ -1,7 +1,7 @@
 """Checks that are not easily covered by marshmallow JSON schema validation like parameter interdependencies."""
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Callable
+from typing import Callable, TYPE_CHECKING
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
