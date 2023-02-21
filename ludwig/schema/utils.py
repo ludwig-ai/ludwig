@@ -691,15 +691,6 @@ def List(
     parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing input must be a list."""
-    if default is not None:
-        try:
-            assert isinstance(default, list)
-
-        except Exception:
-            raise ValidationError(f"Invalid default: `{default}`")
-    elif not allow_none:
-        default = []
-
     if list_type is str:
         field_type = fields.String()
     elif list_type is int:
@@ -710,6 +701,15 @@ def List(
         field_type = fields.List(fields.Float())
     else:
         raise ValueError(f"Invalid list type: `{list_type}`")
+
+    if not allow_none and default is None:
+        default = []
+
+    def _validate(value):
+        if value is not None:
+            fields.List(field_type).validate(value)
+
+    _validate(default)
 
     load_default = lambda: copy.deepcopy(default)
     return field(
@@ -737,16 +737,21 @@ def DictList(
     parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing input must be a list of dicts."""
-    if default is not None:
-        try:
-            assert isinstance(default, list)
-            assert all([isinstance(d, dict) for d in default])
-            for d in default:
-                assert all([isinstance(k, str) for k in d.keys()])
-        except Exception:
-            raise ValidationError(f"Invalid default: `{default}`")
-    elif not allow_none:
+
+    def _validate(value):
+        if value is not None:
+            try:
+                assert isinstance(value, list)
+                assert all([isinstance(d, dict) for d in value])
+                for d in value:
+                    assert all([isinstance(k, str) for k in d.keys()])
+            except Exception:
+                raise ValidationError(f"Invalid: `{value}`")
+
+    if default is None and not allow_none:
         default = []
+
+    _validate(default)
 
     load_default = lambda: copy.deepcopy(default)
     return field(
@@ -776,20 +781,18 @@ def Embed(description: str = "", parameter_metadata: ParameterMetadata = None):
     """
     _embed_options = ["add"]
 
+    def _validate(value):
+        if value is None or isinstance(value, int):
+            return value
+        if isinstance(value, str):
+            if value not in _embed_options:
+                raise ValidationError(f"Expected one of: {_embed_options}, found: {value}")
+            return value
+        raise ValidationError("Field should be int or str")
+
     class EmbedInputFeatureNameField(fields.Field):
         def _deserialize(self, value, attr, data, **kwargs):
-            if value is None:
-                return value
-
-            if isinstance(value, str):
-                if value not in _embed_options:
-                    raise ValidationError(f"Expected one of: {_embed_options}, found: {value}")
-                return value
-
-            if isinstance(value, int):
-                return value
-
-            raise ValidationError("Field should be int or str")
+            return _validate(value)
 
         def _jsonschema_type_mapping(self):
             return {
@@ -835,24 +838,27 @@ def InitializerOrDict(
     while additional properties are unrestricted.
     """
     initializers = list(initializer_registry.keys())
-    if not isinstance(default, str) or default not in initializers:
-        raise ValidationError(f"Invalid default: `{default}`")
+
+    def _validate(value):
+        if isinstance(value, str):
+            if value not in initializers:
+                raise ValidationError(f"Expected one of: {initializers}, found: {value}")
+            return value
+
+        if isinstance(value, dict):
+            if "type" not in value:
+                raise ValidationError("Dict must contain 'type'")
+            if value["type"] not in initializers:
+                raise ValidationError(f"Dict expected key 'type' to be one of: {initializers}, found: {value}")
+            return value
+
+        raise ValidationError("Field should be str or dict")
+
+    _validate(default)
 
     class InitializerOptionsOrCustomDictField(fields.Field):
         def _deserialize(self, value, attr, data, **kwargs):
-            if isinstance(value, str):
-                if value not in initializers:
-                    raise ValidationError(f"Expected one of: {initializers}, found: {value}")
-                return value
-
-            if isinstance(value, dict):
-                if "type" not in value:
-                    raise ValidationError("Dict must contain 'type'")
-                if value["type"] not in initializers:
-                    raise ValidationError(f"Dict expected key 'type' to be one of: {initializers}, found: {value}")
-                return value
-
-            raise ValidationError("Field should be str or dict")
+            return _validate(value)
 
         def _jsonschema_type_mapping(self):
             initializers = list(initializer_registry.keys())
@@ -917,8 +923,25 @@ def FloatRangeTupleDataclassField(
     within [min, max] range, i.e. inclusive. The generated JSON schema uses a restricted array type as the equivalent
     representation of a Python tuple.
     """
-    if default is not None and n != len(default):
-        raise ValidationError(f"Dimension of tuple '{n}' must match dimension of default val. '{default}'")
+
+    def validate_range(data: Tuple):
+        if isinstance(data, tuple) and all([isinstance(x, float) or isinstance(x, int) for x in data]):
+            minmax_checks = []
+            if min is not None:
+                minmax_checks += list(map(lambda b: min <= b, data))
+            if max is not None:
+                minmax_checks += list(map(lambda b: b <= max, data))
+            if all(minmax_checks):
+                return data
+            raise ValidationError(
+                f"Values in received tuple should be in range [{min},{max}], instead received: {data}"
+            )
+        raise ValidationError(f'Received value should be of {n}-dimensional "Tuple[float]", instead received: {data}')
+
+    def _validate(value):
+        if default is not None and n != len(default):
+            raise ValidationError(f"Dimension of tuple '{n}' must match dimension of default val. '{default}'")
+        return validate_range(value)
 
     class FloatTupleMarshmallowField(fields.Tuple):
         def _jsonschema_type_mapping(self):
@@ -944,34 +967,14 @@ def FloatRangeTupleDataclassField(
                 "description": "Valid options for FloatRangeTupleDataclassField.",
             }
 
-    def validate_range(data: Tuple):
-        if isinstance(data, tuple) and all([isinstance(x, float) or isinstance(x, int) for x in data]):
-            minmax_checks = []
-            if min is not None:
-                minmax_checks += list(map(lambda b: min <= b, data))
-            if max is not None:
-                minmax_checks += list(map(lambda b: b <= max, data))
-            if all(minmax_checks):
-                return data
-            raise ValidationError(
-                f"Values in received tuple should be in range [{min},{max}], instead received: {data}"
-            )
-        raise ValidationError(f'Received value should be of {n}-dimensional "Tuple[float]", instead received: {data}')
-
-    try:
-        if default is not None:
-            validate_range(default)
-        if default is None and not allow_none:
-            raise ValidationError("Default value must not be None if allow_none is False")
-    except Exception:
-        raise ValidationError(f"Invalid default: `{default}`")
+    _validate(default)
 
     return field(
         metadata={
             "marshmallow_field": FloatTupleMarshmallowField(
                 tuple_fields=[fields.Float()] * n,
                 allow_none=allow_none,
-                validate=validate_range,
+                validate=_validate,
                 load_default=default,
                 dump_default=default,
                 metadata={
