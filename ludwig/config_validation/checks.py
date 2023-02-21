@@ -1,7 +1,7 @@
 """Checks that are not easily covered by marshmallow JSON schema validation like parameter interdependencies."""
 
 from abc import ABC, abstractmethod
-from typing import Callable
+from typing import Callable, TYPE_CHECKING
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
@@ -35,6 +35,9 @@ from ludwig.schema.features.utils import input_config_registry
 from ludwig.schema.optimizers import optimizer_registry
 from ludwig.types import ModelConfigDict
 from ludwig.utils.metric_utils import get_feature_to_metric_names_map_from_feature_collection
+
+if TYPE_CHECKING:
+    from ludwig.schema.model_config import ModelConfig
 
 # Set of all sequence feature types.
 SEQUENCE_OUTPUT_FEATURE_TYPES = {SEQUENCE, TEXT, SET, VECTOR}

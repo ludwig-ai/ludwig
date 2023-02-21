@@ -209,7 +209,11 @@ class ECDTrainerConfig(BaseTrainerConfig):
     )
 
     optimizer: BaseOptimizerConfig = OptimizerDataclassField(
-        default={"type": "adam"}, description="Parameter values for selected torch optimizer."
+        default={"type": "adam"},
+        description=(
+            "Optimizer type and its parameters. The optimizer is responsble for applying the gradients computed "
+            "from the loss during backpropagation as updates to the model weights."
+        ),
     )
 
     regularization_type: Optional[str] = schema_utils.RegularizerOptions(
