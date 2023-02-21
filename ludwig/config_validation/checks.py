@@ -30,7 +30,6 @@ from ludwig.constants import (
 from ludwig.decoders.registry import get_decoder_registry
 from ludwig.encoders.registry import get_encoder_registry
 from ludwig.error import ConfigValidationError
-from ludwig.schema.combiners.comparator import ComparatorCombinerConfig
 from ludwig.schema.combiners.utils import get_combiner_registry
 from ludwig.schema.features.utils import input_config_registry
 from ludwig.schema.optimizers import optimizer_registry
@@ -346,18 +345,3 @@ def check_hf_encoder_requirements(config: "ModelConfig") -> None:  # noqa: F821
                     raise ConfigValidationError(
                         "Pretrained model name or path must be specified for HuggingFace encoder."
                     )
-
-
-@register_config_check
-def check_comparator_combiner_fc_layers(config: "ModelConfig") -> None:  # noqa: F821
-    """Checks that a comparator combiner has at least 1 fully connected layer."""
-
-    # TODO(travis): consider moving this into a validator on ECDModelConfig to avoid this hack
-    if not hasattr(config, "combiner") and not isinstance(config.combiner, ComparatorCombinerConfig):
-        return
-
-    combiner = config.combiner
-    if combiner.num_fc_layers == 0 and combiner.fc_layers is None:
-        raise ConfigValidationError(
-            "Comparator combiner requires at least one fully connected layer. Set `num_fc_layers > 0` or `fc_layers`."
-        )

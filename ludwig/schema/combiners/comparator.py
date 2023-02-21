@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Optional, Union
 
 from ludwig.api_annotations import DeveloperAPI
+from ludwig.error import ConfigValidationError
 from ludwig.schema import common_fields
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
@@ -12,6 +13,13 @@ from ludwig.schema.utils import ludwig_dataclass
 @ludwig_dataclass
 class ComparatorCombinerConfig(BaseCombinerConfig):
     """Parameters for comparator combiner."""
+
+    def __post_init__(self):
+        if self.num_fc_layers == 0 and self.fc_layers is None:
+            raise ConfigValidationError(
+                "`combiner.type=comparator` requires at least one fully connected layer. "
+                "Set `num_fc_layers > 0` or `fc_layers`."
+            )
 
     @staticmethod
     def module_name():
