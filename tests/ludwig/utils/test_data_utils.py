@@ -29,7 +29,7 @@ from ludwig.utils.data_utils import (
     get_abs_path,
     hash_dict,
     NumpyEncoder,
-    use_credentials, sanitize_data,
+    use_credentials, sanitize_data_for_json,
 )
 
 try:
@@ -171,9 +171,9 @@ def test_dataset_synthesizer_output_feature_decoder():
     LudwigModel(config=config, logging_level=logging.INFO)
 
 
-def test_data_json_sanitize():
+def test_sanitize_data_for_json():
     metric_kappa, metric_accuracy = "kappa_score", "accuracy"
     data = {metric_kappa: np.nan, metric_accuracy: 0.98}
-    sanitized_data = sanitize_data(data)
+    sanitized_data = sanitize_data_for_json(data)
     assert sanitized_data[metric_kappa] == "NaN"
     assert sanitized_data[metric_accuracy] == 0.98

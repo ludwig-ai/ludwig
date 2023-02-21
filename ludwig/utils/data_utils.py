@@ -392,14 +392,14 @@ def json_constant_convertor(x):
 
 
 @DeveloperAPI
-def sanitize_data(data):
+def sanitize_data_for_json(data):
     return json.loads(json.dumps(data), parse_constant=json_constant_convertor)
 
 
 @DeveloperAPI
 def save_json(data_fp, data, sort_keys=True, indent=4):
     with open_file(data_fp, "w") as output_file:
-        json.dump(sanitize_data(data), output_file, cls=NumpyEncoder, sort_keys=sort_keys, indent=indent)
+        json.dump(sanitize_data_for_json(data), output_file, cls=NumpyEncoder, sort_keys=sort_keys, indent=indent)
 
 
 @DeveloperAPI
