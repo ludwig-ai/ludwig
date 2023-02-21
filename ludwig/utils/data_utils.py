@@ -387,9 +387,19 @@ def load_json(data_fp):
 
 
 @DeveloperAPI
+def json_constant_convertor(x):
+    return str(x)
+
+
+@DeveloperAPI
+def sanitize_data(data):
+    return json.loads(json.dumps(data, parse_constant=json_constant_convertor))
+
+
+@DeveloperAPI
 def save_json(data_fp, data, sort_keys=True, indent=4):
     with open_file(data_fp, "w") as output_file:
-        json.dump(data, output_file, cls=NumpyEncoder, sort_keys=sort_keys, indent=indent)
+        json.dump(sanitize_data(data), output_file, cls=NumpyEncoder, sort_keys=sort_keys, indent=indent)
 
 
 @DeveloperAPI
