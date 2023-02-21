@@ -29,7 +29,7 @@ from ludwig.utils.data_utils import (
     get_abs_path,
     hash_dict,
     NumpyEncoder,
-    use_credentials,
+    use_credentials, sanitize_data,
 )
 
 try:
@@ -169,3 +169,10 @@ def test_dataset_synthesizer_output_feature_decoder():
     }
     build_synthetic_dataset_df(dataset_size=100, config=config)
     LudwigModel(config=config, logging_level=logging.INFO)
+
+
+def test_data_json_sanitize():
+    metric = "kappa_score"
+    data = {metric: np.nan}
+    sanitized_data = sanitize_data(data)
+    assert sanitized_data[metric] == "nan"
