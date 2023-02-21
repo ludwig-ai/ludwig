@@ -9,6 +9,7 @@ ModelConfig.from_dict(config)
 
 import contextlib
 from typing import Any, Dict, Optional
+
 import pytest
 
 from ludwig.error import ConfigValidationError
