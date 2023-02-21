@@ -5,8 +5,10 @@ from typing import Optional, Type, Union
 import pytest
 import torch
 
+import ludwig.encoders.registry as encoders_registry
+import ludwig.schema.encoders.utils as schema_encoders_utils
 from ludwig.api import LudwigModel
-from ludwig.constants import ENCODER, NAME, TRAINER
+from ludwig.constants import MODEL_ECD, ENCODER, NAME, TEXT, TRAINER
 from ludwig.encoders import text_encoders
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.schema.model_config import ModelConfig
@@ -137,3 +139,9 @@ def test_distilbert_param_updates(trainable: bool):
     else:
         # Outputs should be the same if the model wasn't updated
         assert torch.equal(encoder_output1, encoder_output2)
+
+
+@pytest.mark.parametrize("encoder_name", HF_ENCODERS)
+def test_encoder_names_constant_synced_with_schema(encoder_name):
+    """Ensures that each value in the HF_ENCODERS constant is represented by an equivalent schema object."""
+    schema_encoders_utils.get_encoder_cls(MODEL_ECD, TEXT, encoder_name)
