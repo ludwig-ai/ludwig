@@ -29,11 +29,11 @@ class BackendConfig(schema_utils.BaseMarshmallowConfig):
         description="Optional dictionary of credentials (or path to credential JSON file) used to write to the cache.",
     )
 
-    processor: Optional[ProcessorConfig]  # noqa: F821
+    processor: Optional["ProcessorConfig"]  # noqa: F821
 
-    trainer: Optional[TrainerConfig]  # noqa: F821
+    trainer: Optional["TrainerConfig"]  # noqa: F821
 
-    loader: Optional[LoaderConfig]  # noqa: F821
+    loader: Optional["LoaderConfig"]  # noqa: F821
 
 
 @DeveloperAPI
