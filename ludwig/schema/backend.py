@@ -11,7 +11,7 @@ class BackendConfig(schema_utils.BaseMarshmallowConfig):
     """Global backend compute resource/usage configuration."""
 
     type: str = schema_utils.StringOptions(
-        options=["local", "ray", "ray"],
+        options=["local", "ray", "horovod"],
         default="local",
         description='How the job will be distributed, one of "local", "ray", or "horovod".',
     )
