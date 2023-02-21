@@ -23,7 +23,7 @@ class TabNetCombinerConfig(BaseCombinerConfig):
 
     size: int = schema_utils.PositiveInteger(
         default=32,
-        description="Size of the hidden layers. `N_a` in the paper.",
+        description="Size of the hidden layers. `N_a` in (Arik and Pfister, 2019).",
         parameter_metadata=COMBINER_METADATA["TabNetCombiner"]["size"],
     )
 
@@ -37,14 +37,14 @@ class TabNetCombinerConfig(BaseCombinerConfig):
 
     output_size: int = schema_utils.PositiveInteger(
         default=128,
-        description="Output size of a fully connected layer. `N_d` in the paper.",
+        description="Output size of a fully connected layer. `N_d` in (Arik and Pfister, 2019).",
         parameter_metadata=COMBINER_METADATA["TabNetCombiner"]["output_size"],
     )
 
     num_steps: int = schema_utils.NonNegativeInteger(
         default=3,
         description="Number of steps / repetitions of the the attentive transformer and feature transformer "
-        "computations. `N_steps` in the paper.",
+        "computations. `N_steps` in (Arik and Pfister, 2019).",
         parameter_metadata=COMBINER_METADATA["TabNetCombiner"]["num_steps"],
     )
 
@@ -64,7 +64,7 @@ class TabNetCombinerConfig(BaseCombinerConfig):
         default=1.5,
         description="Factor that influences how many times a feature should be used across the steps of computation. "
         "a value of 1 implies it each feature should be use once, a higher value allows for multiple "
-        "usages. `gamma` in the paper.",
+        "usages. `gamma` in (Arik and Pfister, 2019).",
         parameter_metadata=COMBINER_METADATA["TabNetCombiner"]["relaxation_factor"],
     )
 
@@ -90,7 +90,7 @@ class TabNetCombinerConfig(BaseCombinerConfig):
 
     sparsity: float = schema_utils.FloatRange(
         default=1e-4,
-        description="Multiplier of the sparsity inducing loss. `lambda_sparse` in the paper.",
+        description="Multiplier of the sparsity inducing loss. `lambda_sparse` in (Arik and Pfister, 2019).",
         parameter_metadata=COMBINER_METADATA["TabNetCombiner"]["sparsity"],
     )
 

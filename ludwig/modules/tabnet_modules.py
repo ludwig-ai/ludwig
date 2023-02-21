@@ -261,7 +261,7 @@ class AttentiveTransformer(LudwigModule):
         # removing the mean to try to avoid numerical instability
         # https://github.com/tensorflow/addons/issues/2314
         # https://github.com/tensorflow/tensorflow/pull/21183/files
-        # In the paper, they call the logits z.
+        # In (Arik and Pfister, 2019), they call the logits z.
         # The mean(logits) can be substracted from logits to make the algorithm
         # more numerically stable. the instability in this algorithm comes mostly
         # from the z_cumsum. Substacting the mean will cause z_cumsum to be close
