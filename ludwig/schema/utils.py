@@ -325,6 +325,7 @@ def StringOptions(
             options_full.remove(None)
         if value not in options_full:
             raise ValidationError(f"Provided `{value}` is not one of allowed options: {options_full} ")
+        validate.OneOf(options_full)(value)
 
     _validate(default)
 
@@ -376,22 +377,29 @@ def IntegerOptions(
 
     By default, None is allowed (and automatically appended) to the allowed list of options.
     """
-    # If None should be allowed for an enum field, it also has to be defined as a valid
-    # [option](https://github.com/json-schema-org/json-schema-spec/issues/258):
-    if len(options) <= 0:
-        raise ValidationError("Must provide non-empty list of options!")
-    if default is not None and not isinstance(default, int):
-        raise ValidationError(f"Provided default `{default}` should be an int!")
-    if allow_none and None not in options:
-        options += [None]
-    if not allow_none and None in options:
-        options.remove(None)
-    if default not in options:
-        raise ValidationError(f"Provided default `{default}` is not one of allowed options: {options} ")
+
+    def _validate(value):
+        # If None should be allowed for an enum field, it also has to be defined as a valid
+        # [option](https://github.com/json-schema-org/json-schema-spec/issues/258):
+        options_full = options
+        if len(options_full) <= 0:
+            raise ValidationError("Must provide non-empty list of options!")
+        if value is not None and not isinstance(value, int):
+            raise ValidationError(f"Provided default `{value}` should be an int!")
+        if allow_none and None not in options_full:
+            options_full += [None]
+        if not allow_none and None in options_full:
+            options_full.remove(None)
+        if value not in options_full:
+            raise ValidationError(f"Provided `{value}` is not one of allowed options: {options_full} ")
+        validate.OneOf(options_full)(value)
+
+    _validate(default)
+
     return field(
         metadata={
             "marshmallow_field": fields.Integer(
-                validate=validate.OneOf(options),
+                validate=_validate,
                 allow_none=allow_none,
                 load_default=default,
                 dump_default=default,
@@ -407,18 +415,18 @@ def IntegerOptions(
 
 @DeveloperAPI
 def Boolean(default: bool, description: str, parameter_metadata: ParameterMetadata = None):
-    if default is not None:
-        try:
-            assert isinstance(default, bool)
-        except Exception:
-            raise ValidationError(f"Invalid default: `{default}`")
+    def _validate(value):
+        validate.OneOf([True, False])(value)
+
+    _validate(default)
+
     return field(
         metadata={
             "marshmallow_field": fields.Boolean(
                 truthy={True},
                 falsy={False},
                 # Necessary because marshmallow will otherwise cast any non-boolean value to a boolean:
-                validate=validate.OneOf([True, False]),
+                validate=_validate,
                 allow_none=False,
                 load_default=default,
                 dump_default=default,
@@ -435,11 +443,16 @@ def Boolean(default: bool, description: str, parameter_metadata: ParameterMetada
 @DeveloperAPI
 def Integer(default: Union[None, int], allow_none=False, description="", parameter_metadata: ParameterMetadata = None):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs."""
-    if default is not None:
-        try:
-            assert isinstance(default, int)
-        except Exception:
-            raise ValidationError(f"Invalid default: `{default}`")
+
+    def _validate(value):
+        if value is not None:
+            try:
+                assert isinstance(value, int)
+            except Exception:
+                raise ValidationError(f"Invalid value: `{value}`")
+
+    _validate(default)
+
     return field(
         metadata={
             "marshmallow_field": fields.Integer(
@@ -463,19 +476,16 @@ def PositiveInteger(
 ):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be
     positive."""
-    val = validate.Range(min=1)
 
-    if default is not None:
-        try:
-            assert isinstance(default, int)
-            val(default)
-        except Exception:
-            raise ValidationError(f"Invalid default: `{default}`")
+    def _validate(value):
+        if value is not None:
+            validate.Range(min=1)(value)
+
     return field(
         metadata={
             "marshmallow_field": fields.Integer(
                 strict=True,
-                validate=val,
+                validate=_validate,
                 allow_none=allow_none,
                 load_default=default,
                 dump_default=default,
@@ -498,19 +508,18 @@ def NonNegativeInteger(
 ):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be
     nonnegative."""
-    val = validate.Range(min=0)
 
-    if default is not None:
-        try:
-            assert isinstance(default, int)
-            val(default)
-        except Exception:
-            raise ValidationError(f"Invalid default: `{default}`")
+    def _validate(value):
+        if value is not None:
+            validate.Range(min=0)(value)
+
+    _validate(default)
+
     return field(
         metadata={
             "marshmallow_field": fields.Integer(
                 strict=True,
-                validate=val,
+                validate=_validate,
                 allow_none=allow_none,
                 load_default=default,
                 dump_default=default,
@@ -537,19 +546,18 @@ def IntegerRange(
 ):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be in range
     set by relevant keyword args."""
-    val = validate.Range(min=min, max=max, min_inclusive=min_inclusive, max_inclusive=max_inclusive)
 
-    if default is not None:
-        try:
-            assert isinstance(default, int)
-            val(default)
-        except Exception:
-            raise ValidationError(f"Invalid default: `{default}`")
+    def _validate(value):
+        if value is not None:
+            validate.Range(min=min, max=max, min_inclusive=min_inclusive, max_inclusive=max_inclusive)(value)
+
+    _validate(default)
+
     return field(
         metadata={
             "marshmallow_field": fields.Integer(
                 strict=True,
-                validate=val,
+                validate=_validate,
                 allow_none=allow_none,
                 load_default=default,
                 dump_default=default,
@@ -572,18 +580,17 @@ def NonNegativeFloat(
     parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing numeric inputs must be nonnegative."""
-    val = validate.Range(min=0.0, max=max)
 
-    if default is not None:
-        try:
-            assert isinstance(default, float) or isinstance(default, int)
-            val(default)
-        except Exception:
-            raise ValidationError(f"Invalid default: `{default}`")
+    def _validate(value):
+        if value is not None:
+            validate.Range(min=0.0, max=max)(value)
+
+    _validate(default)
+
     return field(
         metadata={
             "marshmallow_field": fields.Float(
-                validate=val,
+                validate=_validate,
                 allow_none=allow_none,
                 load_default=default,
                 dump_default=default,
@@ -610,18 +617,17 @@ def FloatRange(
 ):
     """Returns a dataclass field with marshmallow metadata enforcing numeric inputs must be in range set by
     relevant keyword args."""
-    val = validate.Range(min=min, max=max, min_inclusive=min_inclusive, max_inclusive=max_inclusive)
 
-    if default is not None:
-        try:
-            assert isinstance(default, float) or isinstance(default, int)
-            val(default)
-        except Exception:
-            raise ValidationError(f"Invalid default: `{default}`")
+    def _validate(value):
+        if value is not None:
+            validate.Range(min=min, max=max, min_inclusive=min_inclusive, max_inclusive=max_inclusive)(value)
+
+    _validate(default)
+
     return field(
         metadata={
             "marshmallow_field": fields.Float(
-                validate=val,
+                validate=_validate,
                 allow_none=allow_none,
                 load_default=default,
                 dump_default=default,
@@ -645,14 +651,18 @@ def Dict(
     """Returns a dataclass field with marshmallow metadata enforcing input must be a dict."""
     allow_none = allow_none or default is None
 
-    if default is not None:
-        try:
-            assert isinstance(default, dict)
-            assert all([isinstance(k, str) for k in default.keys()])
-        except Exception:
-            raise ValidationError(f"Invalid default: `{default}`")
-    elif not allow_none:
+    def _validate(value):
+        if value is not None:
+            try:
+                assert isinstance(value, dict)
+                assert all([isinstance(k, str) for k in value.keys()])
+            except Exception:
+                raise ValidationError(f"Invalid: `{default}`")
+
+    if not allow_none and default is None:
         default = {}
+
+    _validate(default)
 
     load_default = lambda: copy.deepcopy(default)
     return field(
