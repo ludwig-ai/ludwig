@@ -271,18 +271,19 @@ def String(
     pattern: str = None,
     parameter_metadata: ParameterMetadata = None,
 ):
-    if not allow_none and not isinstance(default, str):
-        raise ValidationError(f"Provided default `{default}` should be a string!")
+    def _validate(value):
+        if not allow_none and not isinstance(value, str):
+            raise ValidationError(f"Provided `{value}` should be a string!")
 
-    if pattern is not None:
-        validation = validate.Regexp(pattern)
-    else:
-        validation = None
+        if pattern is not None:
+            validate.Regexp(pattern)(value)
+
+    _validate(default)
 
     return field(
         metadata={
             "marshmallow_field": fields.String(
-                validate=validation,
+                validate=_validate,
                 allow_none=allow_none,
                 load_default=default,
                 dump_default=default,
@@ -309,22 +310,28 @@ def StringOptions(
 
     By default, None is allowed (and automatically appended) to the allowed list of options.
     """
-    # If None should be allowed for an enum field, it also has to be defined as a valid
-    # [option](https://github.com/json-schema-org/json-schema-spec/issues/258):
-    if len(options) <= 0:
-        raise ValidationError("Must provide non-empty list of options!")
-    if default is not None and not isinstance(default, str):
-        raise ValidationError(f"Provided default `{default}` should be a string!")
-    if allow_none and None not in options:
-        options += [None]
-    if not allow_none and None in options:
-        options.remove(None)
-    if default not in options:
-        raise ValidationError(f"Provided default `{default}` is not one of allowed options: {options} ")
+
+    def _validate(value):
+        # If None should be allowed for an enum field, it also has to be defined as a valid
+        # [option](https://github.com/json-schema-org/json-schema-spec/issues/258):
+        options_full = options
+        if len(options_full) <= 0:
+            raise ValidationError("Must provide non-empty list of options!")
+        if value is not None and not isinstance(value, str):
+            raise ValidationError(f"Provided `{value}` should be a string!")
+        if allow_none and None not in options_full:
+            options_full += [None]
+        if not allow_none and None in options_full:
+            options_full.remove(None)
+        if value not in options_full:
+            raise ValidationError(f"Provided `{value}` is not one of allowed options: {options_full} ")
+
+    _validate(default)
+
     return field(
         metadata={
             "marshmallow_field": fields.String(
-                validate=validate.OneOf(options),
+                validate=_validate,
                 allow_none=allow_none,
                 load_default=default,
                 dump_default=default,
