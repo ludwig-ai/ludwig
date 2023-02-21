@@ -1,0 +1,209 @@
+activation:
+  default_value_reasoning: The Rectified Linear Units (ReLU) function is the
+    standard activation function used for adding non-linearity. It is simple,
+    fast, and empirically works well (https://arxiv.org/abs/1803.08375).
+  description_implications: Changing the activation functions has an impact
+    on the computational load of the model and might require further hypterparameter
+    tuning
+  expected_impact: 2
+  suggested_values: relu
+  suggested_values_reasoning: ReLU will work well in the majority of the cases
+  ui_display_name: Activation
+bias_initializer:
+  default_value_reasoning: It is possible and common to initialize the biases
+    to be zero, since the asymmetry breaking is provided by the small random
+    numbers in the weights.
+  description_implications: It's rare to see any performance gains from choosing
+    a different bias initialization. Some practitioners like to use a small
+    constant value such as 0.01 for all biases to ensure that all ReLU units
+    are activated in the beginning and have some effect on the gradient. However,
+    it's still an open question as to whether this provides consistent improvement.
+  expected_impact: 1
+  literature_references:
+    - https://cs231n.github.io/neural-networks-2/
+  related_parameters:
+    - weights_initializer
+  suggested_values: zeros
+  suggested_values_reasoning: It is possible and common to initialize the biases
+    to be zero, since the asymmetry breaking is provided by the small random
+    numbers in the weights. For ReLU non-linearities, some people like to
+    use small constant value such as 0.01 for all biases because this ensures
+    that all ReLU units fire in the beginning and therefore obtain and propagate
+    some gradient. However, it is not clear if this provides a consistent
+    improvement (in fact some results seem to indicate that this performs
+    worse) and it is more common to simply use 0 bias initialization.
+  ui_display_name: Bias Initializer
+dropout:
+  default_value_reasoning: Dropout can cause training to become less stable.
+    Consider start with a dropout-free baseline, and add dropout gradually
+    in subsequent experiments.
+  description_implications: "Dropout is a computationally cheap regularization\
+    \ method where during training, some neurons are randomly ignored or \u201C\
+    dropped out\u201D. Increasing dropout has the effect of making the training\
+    \ process more noisy and lowering overall network capacity, but it can\
+    \ be an effective regularization method to reduce overfitting and improve\
+    \ generalization."
+  example_value:
+    - 0.2
+  expected_impact: 3
+  literature_references:
+    - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
+  suggested_values: 0.05 - 0.8
+  suggested_values_reasoning: Tuning dropout is really something to be done
+    when all of the big choices about architecture have been settled. Consider
+    starting with 0.5 and adjusting the dropout depending on observed model
+    performance.
+  ui_display_name: Dropout
+fc_layers:
+  default_value_reasoning: By default the stack is built by using num_fc_layers,
+    output_size, use_bias, weights_initializer, bias_initializer, norm, norm_params,
+    activation, dropout. When a list of dictionaries is provided, the stack
+    is built following the parameters of each dict for building each layer.
+  description_implications: The more layers that are specified the deeper and
+    higher capacity the model will be. This makes it possible to potentially
+    achieve better performance when a big anough amount of data is provided,
+    but also makes the model more computationally expensive and potentially
+    more prone to overfitting.
+  example_value:
+    - dropout: 0.1
+      output_size: 128
+    - norm: layer
+      output_size: 64
+  expected_impact: 1
+  related_parameters:
+    - output_size
+    - use_bias
+    - weights_initializer
+    - bias_initializer
+    - norm
+    - norm_params
+    - activation
+    - dropout
+  suggested_values_reasoning: It is easier to define a stack of fully connected
+    layers by just specifying num_fc_layers, output_size and the other individual
+    parameters. It will create a stack of layers with identical properties.
+    Use this parameter only if you need a fine grained level of control of
+    each individual layer in the stack.
+  ui_display_name: Fully Connected Layers
+flatten_inputs:
+  ui_display_name: null
+  expected_impact: 1
+norm:
+  default_value_reasoning: While batch normalization and layer normalization
+    usually lead to improvements, it can be useful to start with fewer bells
+    and whistles.
+  description_implications: Normalization helps stabilize the learning process
+    and can have a regularizing effect that can help with generalization.
+    It's often suggested that with normalization, you can use a higher learning
+    rate.
+  example_value:
+    - batch
+  expected_impact: 3
+  literature_references:
+    - https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/
+  related_parameters:
+    - norm_params
+  suggested_values_reasoning: Normalization tries to solve "internal covariate
+    shift" that comes from the changing distributions of the inputs to layers
+    deep in the network when weights are updated. For example, batch normalization
+    standardizes the inputs to a layer for each mini-batch. Try out different
+    normalizations to see if that helps with training stability
+  ui_display_name: Normalization Type
+norm_params:
+  ui_display_name: null
+  expected_impact: 1
+num_fc_layers:
+  default_value_reasoning:
+    The encoder already has learnable parameters.Sometimes
+    the default is 1 for modules where the FC stack is used for shape management,
+    or the only source of learnable parameters.
+  description_implications: Increasing num_fc_layers will increase the capacity
+    of the model. The model will be slower to train, and there's a higher
+    risk of overfitting.
+  example_value:
+    - 1
+  expected_impact: 3
+  other_information:
+    Not all modules that have fc_layers also have an accompanying
+    num_fc_layers parameter. Where both are present, fc_layers takes precedent
+    over num_fc_layers. Specifying num_fc_layers alone uses fully connected
+    layers that are configured by the defaults in FCStack.
+  related_parameters:
+    - fc_layers
+  suggested_values: 0-1
+  suggested_values_reasoning: The full model likely contains many learnable
+    parameters. Consider starting with very few, or without any additional
+    fully connected layers and add them if you observe evidence of limited
+    model capacity. Sometimes the default is 1 for modules where the FC stack
+    is used for shape management, or the only source of learnable parameters.
+  ui_display_name: Number of Fully Connected Layers
+output_size:
+  default_value_reasoning: A modest value, not too small, not too large.
+  description_implications: If there are fully connected layers in this module,
+    increasing the output size of each fully connected layer will increase
+    the capacity of the model. However, the model may be slower to train,
+    and there's a higher risk of overfitting. If it seems like the model could
+    use even more capacity, consider increasing the number of fully connected
+    layers, or explore other architectures.
+  expected_impact: 3
+  other_information: If num_fc_layers=0 and fc_layers=None, and there are no
+    fully connected layers defined on the module, then this parameter may
+    have no effect on the module's final output shape.
+  related_parameters:
+    - num_fc_layers, fc_layers
+  suggested_values: 16 - 1024
+  suggested_values_reasoning: Increasing the output size increases the capacity
+    of the model. If this seems to have a positive effect, then it could be
+    worth increasing the number of layers, or trying a different architecture
+    with a larger capacity.
+  ui_display_name: Output Size
+residual:
+  ui_display_name: null
+  expected_impact: 1
+use_bias:
+  default_value_reasoning: "Bias terms may improve model accuracy, and don't
+    have much impact in terms of memory or training speed. For most models
+    it is reasonable to use bias terms.
+
+
+    Batch Normalization, however, adds a trainable shift parameter which is
+    added to the activation. When Batch Normalization is used in a layer,
+    bias terms are redundant and may be removed."
+  description_implications: Bias terms may improve model accuracy, and don't
+    have much impact in terms of memory or training speed. For most models
+    it is reasonable to leave this parameter set to True.
+  example_value:
+    - true
+  expected_impact: 1
+  other_information: If fc_layers is not specified, or use_bias is not specified
+    for individual layers, the value of use_bias will be used as the default
+    for all layers.
+  related_parameters:
+    - bias_initializer, fc_layers
+  suggested_values: "TRUE"
+  ui_display_name: Use Bias
+weights_initializer:
+  default_value_reasoning: Taken from [this paper](http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf).
+  description_implications: The method you choose to initialize layer weights
+    during training can have a big impact on performance as well as the reproducibility
+    of your final model between runs. As an example, if you were to randomly
+    initialize weights you would risk non-reproducibility (and possibly general
+    training performance), but sticking with constant values for initialization
+    might significantly increase the time needed for model convergence. Generally,
+    choosing one of the probabilistic approaches strikes a balance between
+    the two extremes, and the literature kicked off by the landmark [*Xavier
+    et al.* paper](http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf)
+    provides a few good options. See this nice discussion from [Weights and
+    Biases](https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.)
+    for more information.
+  expected_impact: 1
+  literature_references:
+    - "Weights and Biases blog post: https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster."
+    - "Xavier et al. paper: http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf"
+  suggested_values: xavier_uniform
+  suggested_values_reasoning: Changing the weights initialization scheme is
+    something to consider if a model is having trouble with convergence, or
+    otherwise it is something to experiment with after other factors are considered.
+    The default choice (`xavier_uniform`) is a suitable starting point for
+    most tasks.
+  ui_display_name: Layer Weights Initializer

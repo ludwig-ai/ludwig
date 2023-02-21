@@ -88,7 +88,7 @@ def get_encoder_conds(encoder_classes: Dict[str, Type["BaseEncoderConfig"]]) -> 
 
 
 @DeveloperAPI
-def EncoderDataclassField(model_type: str, feature_type: str, default: str) -> Field:
+def EncoderDataclassField(model_type: str, feature_type: str, default: str, description: str = "") -> Field:
     """Custom dataclass field that when used inside a dataclass will allow the user to specify an encoder config.
 
     Returns: Initialized dataclass field that converts an untyped dict with params to an encoder config.
@@ -97,7 +97,7 @@ def EncoderDataclassField(model_type: str, feature_type: str, default: str) -> F
 
     class EncoderSelection(schema_utils.TypeSelection):
         def __init__(self):
-            super().__init__(registry=encoder_registry, default_value=default)
+            super().__init__(registry=encoder_registry, default_value=default, description=description)
 
         def get_schema_from_registry(self, key: str) -> Type[schema_utils.BaseMarshmallowConfig]:
             return encoder_registry[key]
