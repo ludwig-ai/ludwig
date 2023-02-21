@@ -83,6 +83,8 @@ def convert_metadata_to_json(pm: ParameterMetadata):
     NOTE: Without the json.loads call, to_json() returns
     a string repr that is improperly parsed.
     """
+    if not pm:
+        return None
     return json.loads(pm.to_json())
 
 
