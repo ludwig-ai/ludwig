@@ -1,7 +1,7 @@
 """Checks that are not easily covered by marshmallow JSON schema validation like parameter interdependencies."""
 
 from abc import ABC, abstractmethod
-from typing import Callable
+from typing import Callable, TYPE_CHECKING
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
@@ -23,6 +23,7 @@ from ludwig.constants import (
     SEQUENCE,
     SET,
     TEXT,
+    TIMESERIES,
     TRAINER,
     TYPE,
     VECTOR,
@@ -31,9 +32,13 @@ from ludwig.decoders.registry import get_decoder_registry
 from ludwig.encoders.registry import get_encoder_registry
 from ludwig.error import ConfigValidationError
 from ludwig.schema.combiners.utils import get_combiner_registry
+from ludwig.schema.features.utils import input_config_registry
 from ludwig.schema.optimizers import optimizer_registry
 from ludwig.types import ModelConfigDict
 from ludwig.utils.metric_utils import get_feature_to_metric_names_map_from_feature_collection
+
+if TYPE_CHECKING:
+    from ludwig.schema.model_config import ModelConfig
 
 # Set of all sequence feature types.
 SEQUENCE_OUTPUT_FEATURE_TYPES = {SEQUENCE, TEXT, SET, VECTOR}
@@ -79,13 +84,15 @@ class ConfigCheck(ABC):
 
 def check_basic_required_parameters(config: ModelConfigDict) -> None:
     """Checks basic required parameters like that all features have names and types, and all types are valid."""
+    model_type = config["model_type"]
+
     # Check input features.
     for input_feature in config[INPUT_FEATURES]:
         if NAME not in input_feature:
             raise ConfigValidationError("All input features must have a name.")
         if TYPE not in input_feature:
             raise ConfigValidationError(f"Input feature {input_feature[NAME]} must have a type.")
-        if input_feature[TYPE] not in get_encoder_registry():
+        if input_feature[TYPE] not in input_config_registry(model_type):
             raise ConfigValidationError(
                 f"Input feature {input_feature[NAME]} uses an invalid/unsupported type "
                 f"'{input_feature[TYPE]}'. Input feature types: {list(get_encoder_registry().keys())}."
@@ -339,3 +346,27 @@ def check_hf_encoder_requirements(config: "ModelConfig") -> None:  # noqa: F821
                     raise ConfigValidationError(
                         "Pretrained model name or path must be specified for HuggingFace encoder."
                     )
+
+
+@register_config_check
+def check_stacked_transformer_requirements(config: "ModelConfig") -> None:  # noqa: F821
+    """Checks that the transformer encoder type correctly configures `num_heads` and `hidden_size`"""
+
+    def is_divisible(hidden_size: int, num_heads: int) -> bool:
+        """Checks that hidden_size is divisible by num_heads."""
+        return hidden_size % num_heads == 0
+
+    sequence_types = [SEQUENCE, TEXT, TIMESERIES]
+
+    for input_feature in config.input_features:
+        if_type = input_feature.type
+        encoder = input_feature.encoder
+        if (
+            if_type in sequence_types
+            and encoder.type == "transformer"
+            and not is_divisible(encoder.hidden_size, encoder.num_heads)
+        ):
+            raise ConfigValidationError(
+                f"Input feature {input_feature.name} transformer encoder requires encoder.hidden_size to be divisible "
+                f"by encoder.num_heads. Found hidden_size {encoder.hidden_size} and num_heads {encoder.num_heads}."
+            )

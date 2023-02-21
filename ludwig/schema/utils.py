@@ -16,6 +16,7 @@ from marshmallow_jsonschema import JSONSchema as js
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import ACTIVE, COLUMN, NAME, PROC_COLUMN, TYPE
 from ludwig.modules.reduction_modules import reduce_mode_registry
+from ludwig.schema.metadata import COMMON_METADATA
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, ParameterMetadata
 from ludwig.utils.misc_utils import memoized_method
 from ludwig.utils.registry import Registry
@@ -223,8 +224,12 @@ def InitializerOptions(default: str = "xavier_uniform", description="", paramete
 
 
 @DeveloperAPI
-def ActivationOptions(default: Union[str, None] = "relu", description="", parameter_metadata: ParameterMetadata = None):
+def ActivationOptions(
+    default: Union[str, None] = "relu", description=None, parameter_metadata: ParameterMetadata = None
+):
     """Utility wrapper that returns a `StringOptions` field with keys from `activations` registry."""
+    description = description or "Default activation function applied to the output of the fully connected layers."
+    parameter_metadata = parameter_metadata or COMMON_METADATA["activation"]
     return StringOptions(
         list(activations.keys()),
         default=default,
