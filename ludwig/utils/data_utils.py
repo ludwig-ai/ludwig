@@ -393,7 +393,7 @@ def json_constant_convertor(x):
 
 @DeveloperAPI
 def sanitize_data(data):
-    return json.loads(json.dumps(data, parse_constant=json_constant_convertor))
+    return json.loads(json.dumps(data), parse_constant=json_constant_convertor)
 
 
 @DeveloperAPI

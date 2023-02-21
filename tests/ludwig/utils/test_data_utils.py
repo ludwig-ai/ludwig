@@ -172,7 +172,8 @@ def test_dataset_synthesizer_output_feature_decoder():
 
 
 def test_data_json_sanitize():
-    metric = "kappa_score"
-    data = {metric: np.nan}
+    metric_kappa, metric_accuracy = "kappa_score", "accuracy"
+    data = {metric_kappa: np.nan, metric_accuracy: 0.98}
     sanitized_data = sanitize_data(data)
-    assert sanitized_data[metric] == "nan"
+    assert sanitized_data[metric_kappa] == "NaN"
+    assert sanitized_data[metric_accuracy] == 0.98
