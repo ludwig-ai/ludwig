@@ -28,6 +28,7 @@ class GhostBatchNormalization(LudwigModule):
             if batch_size == 1:
                 logger.warning(
                     "Batch size is 1, but batch normalization requires batch size >= 2. Skipping batch normalization."
+                    "Make sure to set `batch_size` to a value greater than 1."
                 )
                 # Skip batch normalization if the batch size is 1.
                 return torch.cat(splits, 0)
