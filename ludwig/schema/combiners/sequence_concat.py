@@ -6,7 +6,6 @@ from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.metadata import COMBINER_METADATA
 from ludwig.schema.utils import ludwig_dataclass
 
-
 MAIN_SEQUENCE_FEATURE_DESCRIPTION = """
 Name of a sequence, text, or time series feature to concatenate the outputs
 of the other features to. If no `main_sequence_feature` is specified, the combiner will look through all the features in
