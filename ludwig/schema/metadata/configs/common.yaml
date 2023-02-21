@@ -6,8 +6,8 @@ activation:
     on the computational load of the model and might require further hypterparameter
     tuning
   expected_impact: 2
-  suggested_values: The default value will work well in the majority of the
-    cases
+  suggested_values: relu
+  suggested_values_reasoning: ReLU will work well in the majority of the cases
   ui_display_name: Activation
 bias_initializer:
   default_value_reasoning: It is possible and common to initialize the biases
@@ -103,7 +103,6 @@ norm:
     - https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/
   related_parameters:
     - norm_params
-  suggested_values: '"batch" or "layer"'
   suggested_values_reasoning: Normalization tries to solve "internal covariate
     shift" that comes from the changing distributions of the inputs to layers
     deep in the network when weights are updated. For example, batch normalization
