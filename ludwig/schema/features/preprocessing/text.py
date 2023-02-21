@@ -116,7 +116,10 @@ class TextPreprocessingConfig(BasePreprocessingConfig):
 
     cache_encoder_embeddings: bool = schema_utils.Boolean(
         default=False,
-        description="Compute encoder embeddings in preprocessing, speeding up training time considerably.",
+        description=(
+            "For pretrained encoders, compute encoder embeddings in preprocessing, "
+            "speeding up training time considerably. Only supported when `encoder.trainable=false`."
+        ),
         parameter_metadata=PREPROCESSING_METADATA["cache_encoder_embeddings"],
     )
 
