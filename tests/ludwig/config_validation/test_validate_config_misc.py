@@ -435,4 +435,5 @@ def test_deprecation_warning_raised_for_unknown_parameters():
             "epochs": 1000,
         },
     }
-    ModelConfig.from_dict(config)
+    with pytest.warns(DeprecationWarning, match="not a valid parameter"):
+        ModelConfig.from_dict(config)
