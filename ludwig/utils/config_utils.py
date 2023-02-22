@@ -49,7 +49,8 @@ def get_preprocessing_params(config_obj: ModelConfig) -> PreprocessingConfigDict
     preprocessing_params = {}
     preprocessing_params.update(config_obj.preprocessing.to_dict())
     for feat_type in get_input_type_registry().keys():
-        preprocessing_params[feat_type] = getattr(config_obj.defaults, feat_type).preprocessing.to_dict()
+        if hasattr(config_obj.defaults, feat_type):
+            preprocessing_params[feat_type] = getattr(config_obj.defaults, feat_type).preprocessing.to_dict()
     return preprocessing_params
 
 
