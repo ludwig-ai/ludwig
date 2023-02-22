@@ -5,7 +5,6 @@ from typing import Optional, Type, Union
 import pytest
 import torch
 
-import ludwig.encoders.registry as encoders_registry
 import ludwig.schema.encoders.utils as schema_encoders_utils
 from ludwig.api import LudwigModel
 from ludwig.constants import ENCODER, MODEL_ECD, NAME, TEXT, TRAINER
