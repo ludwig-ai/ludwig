@@ -209,7 +209,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
     )
 
     optimizer: BaseOptimizerConfig = OptimizerDataclassField(
-        default={"type": "adam"},
+        default="adam",
         description=(
             "Optimizer type and its parameters. The optimizer is responsble for applying the gradients computed "
             "from the loss during backpropagation as updates to the model weights."
