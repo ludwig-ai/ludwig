@@ -207,14 +207,6 @@ class Trainer(BaseTrainer):
         # and before set_steps_to_1_or_quit returns
         self.original_sigint_handler = None
 
-        # TODO(Justin): Move to config validation when that's ready.
-        if config.checkpoints_per_epoch != 0 and config.steps_per_checkpoint != 0:
-            raise ValueError(
-                "It is invalid to specify both trainer.checkpoints_per_epoch AND "
-                "trainer.steps_per_checkpoint. Please specify one or the other, or specify neither to checkpoint/eval "
-                "the model every epoch."
-            )
-
     def train_step(
         self, inputs: Dict[str, torch.Tensor], targets: Dict[str, torch.Tensor]
     ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:

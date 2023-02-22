@@ -27,7 +27,6 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend import Backend, LOCAL_BACKEND
 from ludwig.constants import (
     BFILL,
-    BINARY,
     CHECKSUM,
     COLUMN,
     DEFAULTS,
@@ -1357,9 +1356,26 @@ def build_preprocessing_parameters(
             continue
 
         preprocessing_parameters = feature_config[PREPROCESSING]
-        fill_value = precompute_fill_value(dataset_cols, feature_config, preprocessing_parameters, backend)
+        missing_value_strategy = preprocessing_parameters["missing_value_strategy"]
+        fill_value = precompute_fill_value(
+            dataset_cols, feature_config, missing_value_strategy, preprocessing_parameters, backend
+        )
         if fill_value is not None:
             preprocessing_parameters.update({"computed_fill_value": fill_value})
+
+        # Handle outlier replacement
+        outlier_strategy = preprocessing_parameters.get("outlier_strategy")
+        if outlier_strategy is not None:
+            if outlier_strategy != missing_value_strategy:
+                outlier_fill_value = precompute_fill_value(
+                    dataset_cols, feature_config, outlier_strategy, preprocessing_parameters, backend
+                )
+            else:
+                # Use fill value from missing_value_strategy to avoid redundant computation
+                outlier_fill_value = fill_value
+
+            if outlier_fill_value is not None:
+                preprocessing_parameters.update({"computed_outlier_fill_value": outlier_fill_value})
 
         feature_name_to_preprocessing_parameters[feature_name] = preprocessing_parameters
 
@@ -1423,6 +1439,11 @@ def build_data(
         # Need to run this again here as cast_columns may have introduced new missing values
         handle_missing_values(input_cols, feature_config, preprocessing_parameters, backend)
 
+        # For features that support it, we perform outlier removal here using metadata computed on the full dataset
+        handle_outliers(
+            input_cols, feature_config, preprocessing_parameters, training_set_metadata[feature_config[NAME]], backend
+        )
+
         get_from_registry(feature_config[TYPE], get_base_type_registry()).add_feature_data(
             feature_config,
             input_cols,
@@ -1448,11 +1469,6 @@ def balance_data(dataset_df: DataFrame, output_features: List[Dict], preprocessi
 
     Returns: An over-sampled or under-sampled training dataset.
     """
-    if len(output_features) != 1:
-        raise ValueError("Class balancing is only available for datasets with a single output feature")
-    if output_features[0][TYPE] != BINARY:
-        raise ValueError("Class balancing is only supported for binary output types")
-
     target = output_features[0][PROC_COLUMN]
 
     if backend.df_engine.partitioned:
@@ -1463,12 +1479,6 @@ def balance_data(dataset_df: DataFrame, output_features: List[Dict], preprocessi
         minority_class = dataset_df[target].value_counts().idxmin()
     majority_df = dataset_df[dataset_df[target] == majority_class]
     minority_df = dataset_df[dataset_df[target] == minority_class]
-
-    if preprocessing_parameters["oversample_minority"] and preprocessing_parameters["undersample_majority"]:
-        raise ValueError(
-            "Cannot balance data if both oversampling an undersampling are specified in the config. "
-            "Must specify only one method"
-        )
 
     if preprocessing_parameters["oversample_minority"]:
         sample_fraction = (len(majority_df) * preprocessing_parameters["oversample_minority"]) / len(minority_df)
@@ -1482,13 +1492,14 @@ def balance_data(dataset_df: DataFrame, output_features: List[Dict], preprocessi
     return balanced_df
 
 
-def precompute_fill_value(dataset_cols, feature, preprocessing_parameters: PreprocessingConfigDict, backend):
+def precompute_fill_value(
+    dataset_cols, feature, missing_value_strategy: str, preprocessing_parameters: PreprocessingConfigDict, backend
+):
     """Precomputes the fill value for a feature.
 
     NOTE: this is called before NaNs are removed from the dataset. Modifications here must handle NaNs gracefully.
     NOTE: this is called before columns are cast. Modifications here must handle dtype conversion gracefully.
     """
-    missing_value_strategy = preprocessing_parameters["missing_value_strategy"]
     if missing_value_strategy == FILL_WITH_CONST:
         return preprocessing_parameters["fill_value"]
     elif missing_value_strategy == FILL_WITH_MODE:
@@ -1539,10 +1550,31 @@ def precompute_fill_value(dataset_cols, feature, preprocessing_parameters: Prepr
 @DeveloperAPI
 def handle_missing_values(dataset_cols, feature, preprocessing_parameters: PreprocessingConfigDict, backend):
     missing_value_strategy = preprocessing_parameters["missing_value_strategy"]
-
-    # Check for the precomputed fill value in the metadata
     computed_fill_value = preprocessing_parameters.get("computed_fill_value")
+    _handle_missing_values(dataset_cols, feature, missing_value_strategy, computed_fill_value, backend)
 
+
+@DeveloperAPI
+def handle_outliers(dataset_cols, feature, preprocessing_parameters: PreprocessingConfigDict, metadata, backend):
+    outlier_strategy = preprocessing_parameters.get("outlier_strategy")
+    if outlier_strategy is None:
+        return
+
+    outlier_threshold = preprocessing_parameters["outlier_threshold"]
+    computed_fill_value = preprocessing_parameters.get("computed_outlier_fill_value")
+
+    # Identify all outliers and set them to NA so they can be removed
+    series = dataset_cols[feature[COLUMN]]
+    dataset_cols[feature[COLUMN]] = series.mask(
+        series.sub(metadata["mean"]).div(metadata["std"]).abs().gt(outlier_threshold)
+    )
+
+    _handle_missing_values(dataset_cols, feature, outlier_strategy, computed_fill_value, backend)
+
+
+def _handle_missing_values(
+    dataset_cols, feature, missing_value_strategy: str, computed_fill_value: Optional[float], backend
+):
     if (
         missing_value_strategy in {FILL_WITH_CONST, FILL_WITH_MODE, FILL_WITH_MEAN, FILL_WITH_FALSE}
         and computed_fill_value is not None

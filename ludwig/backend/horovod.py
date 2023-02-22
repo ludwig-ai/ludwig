@@ -21,7 +21,6 @@ import psutil
 import torch
 
 from ludwig.backend.base import Backend, LocalPreprocessingMixin
-from ludwig.constants import MODEL_GBM, MODEL_TYPE
 from ludwig.data.dataset.pandas import PandasDatasetManager
 from ludwig.distributed.horovod import HorovodStrategy
 from ludwig.models.base import BaseModel
@@ -49,8 +48,6 @@ class HorovodBackend(LocalPreprocessingMixin, Backend):
         )
 
     def create_trainer(self, **kwargs) -> "BaseTrainer":  # noqa: F821
-        if kwargs.get(MODEL_TYPE, "") == MODEL_GBM:
-            raise ValueError("Horovod backend does not support GBM models.")
         return Trainer(distributed=self._distributed, **kwargs)
 
     def create_predictor(self, model: BaseModel, **kwargs):

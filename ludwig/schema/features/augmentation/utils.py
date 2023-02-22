@@ -1,12 +1,13 @@
 import copy
 from dataclasses import field
-from typing import List, Union
+from typing import Any, Dict, List, Optional, Union
 
 from marshmallow import fields, ValidationError
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import TYPE
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.features.augmentation.base import BaseAugmentationConfig
 from ludwig.utils.registry import Registry
 
 _augmentation_config_registry = Registry()
@@ -43,42 +44,63 @@ def get_augmentation_classes(feature: str):
 
 
 @DeveloperAPI
-def AugmentationDataclassField(feature_type: str, default=[], description=""):
+def AugmentationDataclassField(
+    feature_type: str,
+    default: Union[str, BaseAugmentationConfig] = False,
+    default_augmentations: Optional[List[BaseAugmentationConfig]] = None,
+    description: str = "",
+):
     """Custom dataclass field that when used inside a dataclass will allow the user to specify an augmentation
     config.
 
     Args:
         default: The default augmentation config to use.
+        default_augmentations: The default list of augmentations to use when param value is set to `True`.
         description: The description of the augmentation config.
 
     Returns: Initialized dataclass field that converts a list with params to an augmentation config.
     """
+
+    default_augmentations = default_augmentations or []
+    default_augmentations = [a.to_dict() for a in default_augmentations]
+
+    if isinstance(default, bool):
+        default = default_augmentations if default else []
 
     class AugmentationContainerMarshmallowField(fields.Field):
         """Custom marshmallow field that deserializes a list for a valid augmentation config from the
         augmentation_registry and creates a corresponding JSON schema for external usage."""
 
         def _deserialize(self, value, attr, data, **kwargs):
-            assert isinstance(value, list), "Augmentation config must be a list."
-            if len(value) == 0:
-                raise ValidationError("Augmentation config list must not be empty.")
+            if isinstance(value, bool):
+                value = default_augmentations if value else []
 
+            if not isinstance(value, list):
+                raise ValidationError(f"Augmentation config must be a list, found: {type(value)}")
+
+            augmentation_classes = get_augmentation_classes(feature_type)
             augmentation_list = []
             for augmentation in value:
                 augmentation_op = augmentation[TYPE]
-                augmentation_cls = get_augmentation_cls(feature_type, augmentation_op)
-                pre = augmentation_cls()
-                try:
-                    augmentation_list.append(pre.Schema().load(augmentation))
-                except (TypeError, ValidationError) as error:
+                if augmentation_op in augmentation_classes:
+                    augmentation_cls = augmentation_classes[augmentation_op]
+                    pre = augmentation_cls()
+                    try:
+                        augmentation_list.append(pre.Schema().load(augmentation))
+                    except (TypeError, ValidationError) as error:
+                        raise ValidationError(
+                            f"Invalid augmentation params: {value}, see `{pre}` definition. Error: {error}"
+                        )
+                else:
                     raise ValidationError(
-                        f"Invalid augmentation params: {value}, see `{pre}` definition. Error: {error}"
+                        f"Invalid augmentation type: '{augmentation_op}', "
+                        f"expected one of: {list(augmentation_classes.keys())}"
                     )
             return augmentation_list
 
         @staticmethod
         def _jsonschema_type_mapping():
-            return get_augmentation_list_jsonschema(feature_type)
+            return get_augmentation_list_jsonschema(feature_type, default)
 
     try:
         assert isinstance(default, list), "Augmentation config must be a list."
@@ -112,30 +134,37 @@ def AugmentationDataclassField(feature_type: str, default=[], description=""):
 
 
 @DeveloperAPI
-def get_augmentation_list_jsonschema(feature_type: str):
+def get_augmentation_list_jsonschema(feature_type: str, default: List[Dict[str, Any]]):
     """This function returns a JSON augmentation schema.
 
     Returns: JSON Schema
     """
     augmentation_types = sorted(list(get_augmentation_config_registry()[feature_type].keys()))
     schema = {
-        "type": "array",
-        "minItems": 1,
-        "items": {
-            "type": "object",
-            "properties": {
-                "type": {
-                    "type": "string",
-                    "enum": augmentation_types,
-                    "title": "type",
-                    "description": "Type of augmentation to apply.",
+        "oneOf": [
+            {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "enum": augmentation_types,
+                            "title": "type",
+                            "description": "Type of augmentation to apply.",
+                        },
+                    },
+                    "additionalProperties": True,
+                    "allOf": get_augmentation_list_conds(feature_type),
+                    "required": ["type"],
+                    "title": "augmentation",
                 },
             },
-            "additionalProperties": True,
-            "allOf": get_augmentation_list_conds(feature_type),
-            "required": ["type"],
-            "title": "augmentation",
-        },
+            {
+                "type": "boolean",
+                "description": "Apply standard augmentation pipeline.",
+            },
+        ],
     }
 
     return schema

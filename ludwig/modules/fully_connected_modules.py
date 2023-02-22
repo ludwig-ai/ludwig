@@ -132,6 +132,10 @@ class FCStack(LudwigModule):
             norm_params = default_norm_params or {}
             self.norm_layer = create_norm_layer(default_norm, default_input_rank, self.input_size, **norm_params)
 
+        self.dropout = None
+        if default_dropout > 0:
+            self.dropout = torch.nn.Dropout(default_dropout)
+
         if layers is None:
             self.layers = []
             for i in range(num_layers):
@@ -188,6 +192,9 @@ class FCStack(LudwigModule):
 
         if self.norm_layer is not None:
             hidden = self.norm_layer(hidden)
+
+        if self.dropout is not None:
+            hidden = self.dropout(hidden)
 
         prev_fc_layer_size = self.input_size
         for layer in self.stack:

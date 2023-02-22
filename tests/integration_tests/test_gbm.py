@@ -8,14 +8,14 @@ try:
     import ray as _ray
 except ImportError:
     _ray = None
-from marshmallow import ValidationError
 
 from ludwig.api import LudwigModel
 from ludwig.constants import COLUMN, INPUT_FEATURES, MODEL_TYPE, NAME, OUTPUT_FEATURES, TRAINER
+from ludwig.error import ConfigValidationError
 from tests.integration_tests import synthetic_test_data
 from tests.integration_tests.utils import binary_feature
 from tests.integration_tests.utils import category_feature as _category_feature
-from tests.integration_tests.utils import generate_data, number_feature, text_feature
+from tests.integration_tests.utils import generate_data, number_feature
 
 BOOSTING_TYPES = ["gbdt", "goss", "dart"]
 TREE_LEARNERS = ["serial", "feature", "data", "voting"]
@@ -33,7 +33,7 @@ def ray_backend():
     return {
         "type": "ray",
         "processor": {
-            "parallelism": num_cpus_per_worker * num_workers,
+            "parallelism": 1,
         },
         "trainer": {
             "use_gpu": False,
@@ -84,48 +84,6 @@ def _train_and_predict_gbm(input_features, output_features, tmpdir, backend_conf
     return preds, model
 
 
-def run_test_gbm_output_not_supported(tmpdir, backend_config):
-    """Test that an error is raised when the output feature is not supported by the model."""
-    input_features = [number_feature(), category_feature(encoder={"reduce_output": "sum"})]
-    output_features = [text_feature(output_feature=True)]
-
-    with pytest.raises(
-        ValueError, match="Model type GBM only supports numerical, categorical, or binary output " "features.*"
-    ):
-        _train_and_predict_gbm(input_features, output_features, tmpdir, backend_config)
-
-
-def test_local_gbm_output_not_supported(tmpdir, local_backend):
-    run_test_gbm_output_not_supported(tmpdir, local_backend)
-
-
-@pytest.mark.distributed
-def test_ray_gbm_output_not_supported(tmpdir, ray_backend, ray_cluster_4cpu):
-    run_test_gbm_output_not_supported(tmpdir, ray_backend)
-
-
-def run_test_gbm_multiple_outputs(tmpdir, backend_config):
-    """Test that an error is raised when the model is trained with multiple outputs."""
-    input_features = [number_feature(), category_feature(encoder={"reduce_output": "sum"})]
-    output_features = [
-        category_feature(decoder={"vocab_size": 3}),
-        binary_feature(),
-        category_feature(decoder={"vocab_size": 3}),
-    ]
-
-    with pytest.raises(ValidationError):
-        _train_and_predict_gbm(input_features, output_features, tmpdir, backend_config)
-
-
-def test_local_gbm_multiple_outputs(tmpdir, local_backend):
-    run_test_gbm_multiple_outputs(tmpdir, local_backend)
-
-
-@pytest.mark.distributed
-def test_ray_gbm_multiple_outputs(tmpdir, ray_backend, ray_cluster_4cpu):
-    run_test_gbm_multiple_outputs(tmpdir, ray_backend)
-
-
 def run_test_gbm_binary(tmpdir, backend_config):
     """Test that the GBM model can train and predict a binary variable (binary classification)."""
     input_features = [number_feature(), category_feature(encoder={"reduce_output": "sum"})]
@@ -146,7 +104,7 @@ def test_local_gbm_binary(tmpdir, local_backend):
 
 
 @pytest.mark.distributed
-def test_ray_gbm_binary(tmpdir, ray_backend, ray_cluster_4cpu):
+def test_ray_gbm_binary(tmpdir, ray_backend, ray_cluster_5cpu):
     run_test_gbm_binary(tmpdir, ray_backend)
 
 
@@ -170,7 +128,7 @@ def test_local_gbm_non_number_inputs(tmpdir, local_backend):
 
 
 @pytest.mark.distributed
-def test_ray_gbm_non_number_inputs(tmpdir, ray_backend, ray_cluster_4cpu):
+def test_ray_gbm_non_number_inputs(tmpdir, ray_backend, ray_cluster_5cpu):
     run_test_gbm_non_number_inputs(tmpdir, ray_backend)
 
 
@@ -196,7 +154,7 @@ def test_local_gbm_category(vocab_size, tmpdir, local_backend):
 
 @pytest.mark.distributed
 @pytest.mark.parametrize("vocab_size", [2, 3])
-def test_ray_gbm_category(vocab_size, tmpdir, ray_backend, ray_cluster_4cpu):
+def test_ray_gbm_category(vocab_size, tmpdir, ray_backend, ray_cluster_5cpu):
     run_test_gbm_category(vocab_size, tmpdir, ray_backend)
 
 
@@ -222,7 +180,7 @@ def test_local_gbm_number(tmpdir, local_backend):
 
 
 @pytest.mark.distributed
-def test_ray_gbm_number(tmpdir, ray_backend, ray_cluster_4cpu):
+def test_ray_gbm_number(tmpdir, ray_backend, ray_cluster_5cpu):
     run_test_gbm_number(tmpdir, ray_backend)
 
 
@@ -361,7 +319,7 @@ def test_boosting_type_rf_invalid(tmpdir, local_backend):
     input_features = [number_feature()]
     output_features = [binary_feature()]
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend, boosting_type="rf")
 
 
@@ -386,7 +344,7 @@ def test_boosting_type_null_invalid(tree_learner, tmpdir, local_backend):
     input_features = [number_feature()]
     output_features = [binary_feature()]
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         _train_and_predict_gbm(
             input_features, output_features, tmpdir, local_backend, boosting_type=None, tree_learner=tree_learner
         )
@@ -401,7 +359,7 @@ def test_tree_learner_null_invalid(boosting_type, tmpdir, local_backend):
     input_features = [number_feature()]
     output_features = [binary_feature()]
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         _train_and_predict_gbm(
             input_features, output_features, tmpdir, local_backend, boosting_type=boosting_type, tree_learner=None
         )

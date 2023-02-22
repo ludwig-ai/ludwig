@@ -47,7 +47,7 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend._ray210_compat import HorovodTrainerRay210
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.backend.datasource import BinaryIgnoreNoneTypeDatasource
-from ludwig.constants import CPU_RESOURCES_PER_TRIAL, EXECUTOR, MODEL_ECD, NAME, PREPROCESSING, PROC_COLUMN, TYPE
+from ludwig.constants import CPU_RESOURCES_PER_TRIAL, EXECUTOR, MODEL_ECD, NAME, PROC_COLUMN, TYPE
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataset.ray import _SCALAR_TYPES, RayDataset, RayDatasetManager, RayDatasetShard
 from ludwig.models.base import BaseModel
@@ -400,19 +400,13 @@ class RayTrainerV2(BaseTrainer):
         }
 
         dataset = {"train": training_set.ds}
-        stream_window_size = {
-            "train": training_set.get_window_size_bytes(self.data_loader_kwargs.get("window_size_bytes", None))
-        }
+        stream_window_size = {"train": training_set.window_size_bytes}
         if validation_set is not None:
             dataset["val"] = validation_set.ds
-            stream_window_size["val"] = validation_set.get_window_size_bytes(
-                self.data_loader_kwargs.get("window_size_bytes", None)
-            )
+            stream_window_size["val"] = validation_set.window_size_bytes
         if test_set is not None:
             dataset["test"] = test_set.ds
-            stream_window_size["test"] = test_set.get_window_size_bytes(
-                self.data_loader_kwargs.get("window_size_bytes", None)
-            )
+            stream_window_size["test"] = test_set.window_size_bytes
 
         with create_runner(**self.trainer_kwargs) as runner:
             trainer_results = runner.run(
@@ -623,9 +617,7 @@ class RayPredictor(BasePredictor):
         with create_runner(**self.trainer_kwargs) as runner:
             # Collect eval metrics by distributing work across nodes / gpus with Horovod
             datasets = {"eval": dataset.ds}
-            stream_window_size = {
-                "eval": dataset.get_window_size_bytes(self.data_loader_kwargs.get("window_size_bytes", None))
-            }
+            stream_window_size = {"eval": dataset.window_size_bytes}
             predictor_kwargs = {**self.predictor_kwargs, "collect_predictions": False}
             eval_results = runner.run(
                 lambda config: eval_fn(**config),
@@ -818,13 +810,6 @@ class RayBackend(RemoteTrainingMixin, Backend):
     @property
     def supports_multiprocessing(self):
         return False
-
-    def check_lazy_load_supported(self, feature):
-        if not feature[PREPROCESSING]["in_memory"]:
-            raise ValueError(
-                f"RayBackend does not support lazy loading of data files at train time. "
-                f"Set preprocessing config `in_memory: True` for feature {feature[NAME]}"
-            )
 
     def read_binary_files(
         self, column: Series, map_fn: Optional[Callable] = None, file_size: Optional[int] = None

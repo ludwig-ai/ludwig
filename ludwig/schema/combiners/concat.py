@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Optional, Union
 
 from ludwig.api_annotations import DeveloperAPI
+from ludwig.schema import common_fields
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.metadata import COMBINER_METADATA
@@ -21,19 +22,9 @@ class ConcatCombinerConfig(BaseCombinerConfig):
         description=COMBINER_METADATA["ConcatCombiner"]["type"].long_description,
     )
 
-    dropout: float = schema_utils.FloatRange(
-        default=0.0,
-        min=0,
-        max=1,
-        description="",
-        parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["dropout"],
-    )
+    dropout: float = common_fields.DropoutField()
 
-    activation: str = schema_utils.ActivationOptions(
-        default="relu",
-        description="",
-        parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["activation"],
-    )
+    activation: str = schema_utils.ActivationOptions(default="relu")
 
     flatten_inputs: bool = schema_utils.Boolean(
         default=False,
@@ -41,12 +32,7 @@ class ConcatCombinerConfig(BaseCombinerConfig):
         parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["flatten_inputs"],
     )
 
-    residual: bool = schema_utils.Boolean(
-        default=False,
-        description="Whether to add a residual connection to each fully connected layer block. All fully connected "
-        "layers must have the same size ",
-        parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["residual"],
-    )
+    residual: bool = common_fields.ResidualField()
 
     use_bias: bool = schema_utils.Boolean(
         default=True,
@@ -54,17 +40,11 @@ class ConcatCombinerConfig(BaseCombinerConfig):
         parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["use_bias"],
     )
 
-    bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="zeros",
-        description="",
-        parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["bias_initializer"],
-    )
+    bias_initializer: Union[str, Dict] = common_fields.BiasInitializerField()
 
-    weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="xavier_uniform",
-        description="",
-        parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["weights_initializer"],
-    )
+    weights_initializer: Union[str, Dict] = common_fields.WeightsInitializerField()
+
+    num_fc_layers: int = common_fields.NumFCLayersField()
 
     output_size: int = schema_utils.PositiveInteger(
         default=256,
@@ -72,27 +52,8 @@ class ConcatCombinerConfig(BaseCombinerConfig):
         parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["output_size"],
     )
 
-    norm: Optional[str] = schema_utils.StringOptions(
-        ["batch", "layer", "ghost"],
-        default=None,
-        allow_none=True,
-        description="",
-        parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["norm"],
-    )
+    norm: Optional[str] = common_fields.NormField()
 
-    norm_params: Optional[dict] = schema_utils.Dict(
-        description="",
-        parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["norm_params"],
-    )
+    norm_params: Optional[dict] = common_fields.NormParamsField()
 
-    num_fc_layers: int = schema_utils.NonNegativeInteger(
-        default=0,
-        allow_none=False,
-        description="",
-        parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["num_fc_layers"],
-    )
-
-    fc_layers: Optional[List[Dict[str, Any]]] = schema_utils.DictList(
-        description="",
-        parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["fc_layers"],
-    )
+    fc_layers: Optional[List[Dict[str, Any]]] = common_fields.FCLayersField()
