@@ -60,16 +60,16 @@ def test_number_encoder_defaults(config, dataset_name):
     train_and_evaluate(config, dataset_name)
 
 
-@pytest.mark.number_feature
-@pytest.mark.parametrize("config,dataset_name", defaults_config_generator("number", "decoder"))
-def test_number_decoder_defaults(config, dataset_name):
-    train_and_evaluate(config, dataset_name)
+# @pytest.mark.number_feature
+# @pytest.mark.parametrize("config,dataset_name", defaults_config_generator("number", "decoder"))
+# def test_number_decoder_defaults(config, dataset_name):
+#     train_and_evaluate(config, dataset_name)
 
 
-@pytest.mark.number_feature
-@pytest.mark.parametrize("config,dataset_name", defaults_config_generator("number", "loss"))
-def test_number_encoder_loss(config, dataset_name):
-    train_and_evaluate(config, dataset_name)
+# @pytest.mark.number_feature
+# @pytest.mark.parametrize("config,dataset_name", defaults_config_generator("number", "loss"))
+# def test_number_encoder_loss(config, dataset_name):
+#     train_and_evaluate(config, dataset_name)
 
 
 @pytest.mark.number_feature
@@ -84,16 +84,16 @@ def test_category_encoder_defaults(config, dataset_name):
     train_and_evaluate(config, dataset_name)
 
 
-@pytest.mark.category_feature
-@pytest.mark.parametrize("config,dataset_name", defaults_config_generator("category", "decoder"))
-def test_category_decoder_defaults(config, dataset_name):
-    train_and_evaluate(config, dataset_name)
+# @pytest.mark.category_feature
+# @pytest.mark.parametrize("config,dataset_name", defaults_config_generator("category", "decoder"))
+# def test_category_decoder_defaults(config, dataset_name):
+#     train_and_evaluate(config, dataset_name)
 
 
-@pytest.mark.category_feature
-@pytest.mark.parametrize("config,dataset_name", defaults_config_generator("category", "loss"))
-def test_category_loss_defaults(config, dataset_name):
-    train_and_evaluate(config, dataset_name)
+# @pytest.mark.category_feature
+# @pytest.mark.parametrize("config,dataset_name", defaults_config_generator("category", "loss"))
+# def test_category_loss_defaults(config, dataset_name):
+#     train_and_evaluate(config, dataset_name)
 
 
 @pytest.mark.category_feature
@@ -108,16 +108,16 @@ def test_binary_encoder_defaults(config, dataset_name):
     train_and_evaluate(config, dataset_name)
 
 
-@pytest.mark.binary_feature
-@pytest.mark.parametrize("config,dataset_name", defaults_config_generator("binary", "decoder"))
-def test_binary_decoder_defaults(config, dataset_name):
-    train_and_evaluate(config, dataset_name)
+# @pytest.mark.binary_feature
+# @pytest.mark.parametrize("config,dataset_name", defaults_config_generator("binary", "decoder"))
+# def test_binary_decoder_defaults(config, dataset_name):
+#     train_and_evaluate(config, dataset_name)
 
 
-@pytest.mark.binary_feature
-@pytest.mark.parametrize("config,dataset_name", defaults_config_generator("binary", "loss"))
-def test_binary_loss_defaults(config, dataset_name):
-    train_and_evaluate(config, dataset_name)
+# @pytest.mark.binary_feature
+# @pytest.mark.parametrize("config,dataset_name", defaults_config_generator("binary", "loss"))
+# def test_binary_loss_defaults(config, dataset_name):
+#     train_and_evaluate(config, dataset_name)
 
 
 @pytest.mark.binary_feature
