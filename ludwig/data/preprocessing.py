@@ -1142,7 +1142,7 @@ def build_dataset(
     sample_ratio = global_preprocessing_parameters["sample_ratio"]
     if sample_ratio < 1.0:
         if len(dataset_df) * sample_ratio < 1:
-            warnings.warn(
+            raise ValueError(
                 f"sample_ratio {sample_ratio} is too small for dataset of length {len(dataset_df)}. "
                 f"Please increase sample_ratio or use a larger dataset."
             )
