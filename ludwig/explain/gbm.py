@@ -1,20 +1,20 @@
-from typing import List, Tuple
-
 from ludwig.api_annotations import PublicAPI
 from ludwig.explain.explainer import Explainer
-from ludwig.explain.explanation import Explanation
+from ludwig.explain.explanation import ExplanationsResult
 from ludwig.models.gbm import GBM
 
 
 @PublicAPI(stability="experimental")
 class GBMExplainer(Explainer):
-    def explain(self) -> Tuple[List[Explanation], List[float]]:
+    def explain(self) -> ExplanationsResult:
         """Explain the model's predictions. Uses the feature importances from the model.
 
         # Return
 
-        :return: (Tuple[List[Explanation], List[float]]) `(explanations, expected_values)`
-            `explanations`: (List[Explanation]) A list of explanations, one for each row in the input data. Each
+        :return: ExplanationsResult containing the explanations.
+            `global_explanations`: (Explanation) Aggregate explanation for the entire input data.
+
+            `row_explanations`: (List[Explanation]) A list of explanations, one for each row in the input data. Each
             explanation contains the feature attributions for each label in the target feature's vocab.
 
             `expected_values`: (List[float]) of length [output feature cardinality] Expected value for each label in
@@ -32,13 +32,15 @@ class GBMExplainer(Explainer):
         # Scale the feature importance to sum to 1.
         feat_imp = feat_imp / feat_imp.sum() if feat_imp.sum() > 0 else feat_imp
 
+        self.global_explanation.add(base_model.input_features.keys(), feat_imp)
+
         expected_values = []
         for _ in range(self.vocab_size):
-            for explanation in self.explanations:
+            for explanation in self.row_explanations:
                 # Add the feature attributions to the explanation object for this row.
                 explanation.add(base_model.input_features.keys(), feat_imp)
 
             # TODO:
             expected_values.append(0.0)
 
-        return self.explanations, expected_values
+        return ExplanationsResult(self.global_explanation, self.row_explanations, expected_values)

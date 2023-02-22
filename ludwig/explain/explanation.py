@@ -22,6 +22,7 @@ class FeatureAttribution:
     token_attributions: List[Tuple[str, float]] = None
 
 
+@DeveloperAPI
 @dataclass
 class LabelExplanation:
     """Stores the feature attributions for a single label in the target feature's vocab."""
@@ -38,7 +39,7 @@ class LabelExplanation:
         return np.array([fa.attribution for fa in self.feature_attributions])
 
 
-@PublicAPI(stability="experimental")
+@DeveloperAPI
 @dataclass
 class Explanation:
     """Stores the explanations for a single row of input data.
@@ -81,3 +82,17 @@ class Explanation:
     def to_array(self) -> npt.NDArray[np.float64]:
         """Convert the explanation to a 2D array of shape (num_labels, num_features)."""
         return np.array([le.to_array() for le in self.label_explanations])
+
+
+@PublicAPI(stability="experimental")
+@dataclass
+class ExplanationsResult:
+    # Aggregate explanation for the entire input data.
+    global_explanation: Explanation  # GlobalExplanation
+
+    # A list of explanations, one for each row in the input data.
+    # Each explanation contains the feature attributions for each label in the target feature's vocab.
+    row_explanations: List[Explanation]
+
+    # Expected value for each label in the target feature's vocab.
+    expected_values: List[float]
