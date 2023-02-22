@@ -451,15 +451,12 @@ class LudwigModel:
                         f"Model resume path '{model_resume_path}' does not exist, starting training from scratch"
                     )
                 model_resume_path = None
-        print("!!! api.py output_directory (1): ", output_directory)
-        print("!!! api.py model_resume_path: ", model_resume_path)
 
         if model_resume_path is None:
             if self.backend.is_coordinator():
                 output_directory = get_output_directory(output_directory, experiment_name, model_name)
             else:
                 output_directory = None
-        print("!!! api.py output_directory (2): ", output_directory)
 
         # if we are skipping all saving,
         # there is no need to create a directory that will remain empty
@@ -492,7 +489,6 @@ class LudwigModel:
                 if should_create_output_directory:
                     makedirs(output_directory, exist_ok=True)
                 description_fn, training_stats_fn, model_dir = get_file_names(output_directory)
-                print("!!! api.py model_dir: ", model_dir)
 
             if isinstance(training_set, Dataset) and training_set_metadata is not None:
                 preprocessed_data = (training_set, validation_set, test_set, training_set_metadata)
@@ -630,7 +626,6 @@ class LudwigModel:
                     )
 
                 try:
-                    print("!!! api.py model_dir: ", model_dir)
                     train_stats = trainer.train(
                         training_set,
                         validation_set=validation_set,

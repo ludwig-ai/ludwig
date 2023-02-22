@@ -772,9 +772,7 @@ class RayTuneExecutor:
 
         def run_experiment_trial(config, local_hyperopt_dict, checkpoint_dir=None):
             # Checkpoint dir exists when trials are temporarily paused and resumed, for e.g.,
-            # when using the HB_BOHB scheduler. In this case, the checkpoint_dir that's set
-            if checkpoint_dir:
-                checkpoint_dir = os.path.normpath(checkpoint_dir)
+            # when using the HB_BOHB scheduler.
             return self._run_experiment(
                 config,
                 checkpoint_dir,
