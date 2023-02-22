@@ -108,7 +108,11 @@ from ludwig.utils.data_utils import (
     TSV_FORMATS,
 )
 from ludwig.utils.dataframe_utils import is_dask_series_or_df
-from ludwig.utils.defaults import default_preprocessing_parameters, default_random_seed
+from ludwig.utils.defaults import (
+    default_training_preprocessing_parameters,
+    default_prediction_preprocessing_parameters,
+    default_random_seed,
+)
 from ludwig.utils.fs_utils import file_lock, path_exists
 from ludwig.utils.misc_utils import get_from_registry, merge_dict
 from ludwig.utils.types import DataFrame, Series
@@ -130,7 +134,7 @@ class DataFormatPreprocessor(ABC):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
         callbacks=None,
@@ -152,7 +156,7 @@ class DataFormatPreprocessor(ABC):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
     ):
@@ -170,7 +174,7 @@ class DictPreprocessor(DataFormatPreprocessor):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
         callbacks=None,
@@ -208,10 +212,10 @@ class DictPreprocessor(DataFormatPreprocessor):
             pd.DataFrame(dataset),
             features,
             preprocessing_params,
+            mode="prediction",
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            mode="prediction",
         )
         return dataset, training_set_metadata, None
 
@@ -227,7 +231,7 @@ class DataFramePreprocessor(DataFormatPreprocessor):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
         callbacks=None,
@@ -262,10 +266,10 @@ class DataFramePreprocessor(DataFormatPreprocessor):
             dataset,
             features,
             preprocessing_params,
+            mode="prediction",
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            mode="prediction",
         )
         return dataset, training_set_metadata, None
 
@@ -281,7 +285,7 @@ class CSVPreprocessor(DataFormatPreprocessor):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
         callbacks=None,
@@ -310,10 +314,10 @@ class CSVPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
+            mode="prediction",
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            mode="prediction",
         )
         return dataset, training_set_metadata, None
 
@@ -329,7 +333,7 @@ class TSVPreprocessor(DataFormatPreprocessor):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
         callbacks=None,
@@ -358,10 +362,10 @@ class TSVPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
+            mode="prediction",
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            mode="prediction",
         )
         return dataset, training_set_metadata, None
 
@@ -377,7 +381,7 @@ class JSONPreprocessor(DataFormatPreprocessor):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
         callbacks=None,
@@ -406,10 +410,10 @@ class JSONPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
+            mode="prediction",
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            mode="prediction",
         )
         return dataset, training_set_metadata, None
 
@@ -425,7 +429,7 @@ class JSONLPreprocessor(DataFormatPreprocessor):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
         callbacks=None,
@@ -454,10 +458,10 @@ class JSONLPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
+            mode="prediction",
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            mode="prediction",
         )
         return dataset, training_set_metadata, None
 
@@ -473,7 +477,7 @@ class ExcelPreprocessor(DataFormatPreprocessor):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
         callbacks=None,
@@ -502,10 +506,10 @@ class ExcelPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
+            mode="prediction",
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            mode="prediction",
         )
         return dataset, training_set_metadata, None
 
@@ -521,7 +525,7 @@ class ParquetPreprocessor(DataFormatPreprocessor):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
         callbacks=None,
@@ -550,10 +554,10 @@ class ParquetPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
+            mode="prediction",
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            mode="prediction",
         )
         return dataset, training_set_metadata, None
 
@@ -566,7 +570,7 @@ class ParquetPreprocessor(DataFormatPreprocessor):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
     ):
@@ -598,7 +602,7 @@ class PicklePreprocessor(DataFormatPreprocessor):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
         callbacks=None,
@@ -627,10 +631,10 @@ class PicklePreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
+            mode="prediction",
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            mode="prediction",
         )
         return dataset, training_set_metadata, None
 
@@ -646,7 +650,7 @@ class FatherPreprocessor(DataFormatPreprocessor):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
         callbacks=None,
@@ -675,10 +679,10 @@ class FatherPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
+            mode="prediction",
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            mode="prediction",
         )
         return dataset, training_set_metadata, None
 
@@ -694,7 +698,7 @@ class FWFPreprocessor(DataFormatPreprocessor):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
         callbacks=None,
@@ -723,10 +727,10 @@ class FWFPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
+            mode="prediction",
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            mode="prediction",
         )
         return dataset, training_set_metadata, None
 
@@ -742,7 +746,7 @@ class HTMLPreprocessor(DataFormatPreprocessor):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
         callbacks=None,
@@ -771,10 +775,10 @@ class HTMLPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
+            mode="prediction",
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            mode="prediction",
         )
         return dataset, training_set_metadata, None
 
@@ -790,7 +794,7 @@ class ORCPreprocessor(DataFormatPreprocessor):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
         callbacks=None,
@@ -819,10 +823,10 @@ class ORCPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
+            mode="prediction",
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            mode="prediction",
         )
         return dataset, training_set_metadata, None
 
@@ -838,7 +842,7 @@ class SASPreprocessor(DataFormatPreprocessor):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
         callbacks=None,
@@ -867,10 +871,10 @@ class SASPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
+            mode="prediction",
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            mode="prediction",
         )
         return dataset, training_set_metadata, None
 
@@ -886,7 +890,7 @@ class SPSSPreprocessor(DataFormatPreprocessor):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
         callbacks=None,
@@ -915,10 +919,10 @@ class SPSSPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
+            mode="prediction",
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            mode="prediction",
         )
         return dataset, training_set_metadata, None
 
@@ -934,7 +938,7 @@ class StataPreprocessor(DataFormatPreprocessor):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
         callbacks=None,
@@ -963,10 +967,10 @@ class StataPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
+            mode="prediction",
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            mode="prediction",
         )
         return dataset, training_set_metadata, None
 
@@ -982,7 +986,7 @@ class HDF5Preprocessor(DataFormatPreprocessor):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
         callbacks=None,
@@ -1015,7 +1019,7 @@ class HDF5Preprocessor(DataFormatPreprocessor):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
     ):
@@ -1086,13 +1090,31 @@ def build_dataset(
     dataset_df,
     features,
     global_preprocessing_parameters,
+    mode,
     metadata=None,
     backend=LOCAL_BACKEND,
     random_seed=default_random_seed,
     skip_save_processed_input=False,
     callbacks=None,
-    mode=None,
 ):
+    """
+    Builds a dataset from a dataframe and a list of features.
+
+    Args:
+        dataset_df: Pandas or Dask dataframe
+        features: List of features
+        global_preprocessing_parameters: Global preprocessing parameters
+        mode: One of ['training', 'prediction']
+        metadata: Training set metadata if available
+        backend: Backend
+        random_seed: Random seed
+        skip_save_processed_input: Whether to skip saving the processed input
+        callbacks: List of callbacks
+
+    Returns:
+        A tuple of (dataset, metadata)
+    """
+
     df_engine = backend.df_engine
 
     if df_engine.partitioned:
@@ -1132,6 +1154,12 @@ def build_dataset(
     # each batch of parallel ops in order to avoid redundant computation
     dataset_df = df_engine.persist(dataset_df)
 
+    if mode == "training":
+        default_preprocessing_parameters = default_training_preprocessing_parameters
+    elif mode == "prediction":
+        default_preprocessing_parameters = default_prediction_preprocessing_parameters
+    else:
+        raise ValueError(f"Invalid mode {mode}")
     global_preprocessing_parameters = merge_dict(default_preprocessing_parameters, global_preprocessing_parameters)
 
     # Get all the unique preprocessing features to compute
@@ -1658,7 +1686,7 @@ def preprocess_for_training(
     training_set_metadata=None,
     data_format=None,
     skip_save_processed_input=False,
-    preprocessing_params=default_preprocessing_parameters,
+    preprocessing_params=default_training_preprocessing_parameters,
     backend=LOCAL_BACKEND,
     random_seed=default_random_seed,
     callbacks=None,
@@ -1836,7 +1864,7 @@ def _preprocess_file_for_training(
     training_set_metadata=None,
     read_fn=read_csv,
     skip_save_processed_input=False,
-    preprocessing_params=default_preprocessing_parameters,
+    preprocessing_params=default_training_preprocessing_parameters,
     backend=LOCAL_BACKEND,
     random_seed=default_random_seed,
     callbacks=None,
@@ -1868,12 +1896,12 @@ def _preprocess_file_for_training(
             dataset_df,
             features,
             preprocessing_params,
+            mode="training",
             metadata=training_set_metadata,
             backend=backend,
             random_seed=random_seed,
             skip_save_processed_input=skip_save_processed_input,
             callbacks=callbacks,
-            mode="training",
         )
 
     elif training_set:
@@ -1893,11 +1921,11 @@ def _preprocess_file_for_training(
             concatenated_df,
             features,
             preprocessing_params,
+            mode="training",
             metadata=training_set_metadata,
             backend=backend,
             random_seed=random_seed,
             callbacks=callbacks,
-            mode="training",
         )
 
     else:
@@ -1933,7 +1961,7 @@ def _preprocess_df_for_training(
     validation_set=None,
     test_set=None,
     training_set_metadata=None,
-    preprocessing_params=default_preprocessing_parameters,
+    preprocessing_params=default_training_preprocessing_parameters,
     backend=LOCAL_BACKEND,
     random_seed=default_random_seed,
     callbacks=None,
@@ -1960,11 +1988,11 @@ def _preprocess_df_for_training(
         dataset,
         features,
         preprocessing_params,
+        mode="training",
         metadata=training_set_metadata,
         random_seed=random_seed,
         backend=backend,
         callbacks=callbacks,
-        mode="training",
     )
 
     logger.debug("split train-val-test")
@@ -2025,7 +2053,7 @@ def preprocess_for_prediction(
     preprocessing_params = merge_config_preprocessing_with_feature_specific_defaults(
         config.get(PREPROCESSING, {}), config.get(DEFAULTS, {})
     )
-    preprocessing_params = merge_dict(default_preprocessing_parameters, preprocessing_params)
+    preprocessing_params = merge_dict(default_prediction_preprocessing_parameters, preprocessing_params)
 
     # if training_set_metadata is a string, assume it's a path to load the json
     if training_set_metadata and isinstance(training_set_metadata, str):
