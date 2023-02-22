@@ -8,7 +8,7 @@ import torch
 import ludwig.encoders.registry as encoders_registry
 import ludwig.schema.encoders.utils as schema_encoders_utils
 from ludwig.api import LudwigModel
-from ludwig.constants import MODEL_ECD, ENCODER, NAME, TEXT, TRAINER
+from ludwig.constants import ENCODER, MODEL_ECD, NAME, TEXT, TRAINER
 from ludwig.encoders import text_encoders
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.schema.model_config import ModelConfig
