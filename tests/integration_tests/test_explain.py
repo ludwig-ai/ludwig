@@ -118,7 +118,7 @@ def test_explainer_text_hf(explainer_class, model_type, cache_encoder_embeddings
         )
     ]
     run_test_explainer_api(
-        explainer_class, model_type, [binary_feature()], {}, False, tmpdir, input_features=input_features
+        explainer_class, model_type, [binary_feature()], {}, tmpdir, input_features=input_features
     )
 
 
