@@ -3,11 +3,11 @@
 
 name: pytest
 
-#on:
-#  push:
-#    branches: ["master", "release-*"]
-#  pull_request:
-#    branches: ["master", "release-*"]
+on:
+  push:
+    branches: ["master", "release-*"]
+  pull_request:
+    branches: ["master", "release-*"]
 
 # we want an ongoing run of this workflow to be canceled by a later commit
 # so that there is only one concurrent run of this workflow for each branch
@@ -46,7 +46,6 @@ jobs:
       RAY_VERSION: ${{ matrix.ray-version }}
       AWS_ACCESS_KEY_ID: ${{ secrets.LUDWIG_TESTS_AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.LUDWIG_TESTS_AWS_SECRET_ACCESS_KEY }}
-      EXCLUDED_MARKERS: "benchmark"
 
     name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, ${{ matrix.test-markers }}, ${{ matrix.os }}, ray ${{ matrix.ray-version }}
     services:
@@ -170,7 +169,7 @@ jobs:
 
       - name: Tests
         run: |
-          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=4500 pytest -v --timeout 300 --durations 100 -m "($MARKERS) and not ($EXCLUDED_MARKERS or slow)" --junitxml pytest.xml tests
+          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=4500 pytest -v --timeout 300 --durations 100 -m "benchmark and not slow" --junitxml pytest.xml tests
 
       - name: Upload Unit Test Results
         if: ${{ always() && !env.ACT }}
