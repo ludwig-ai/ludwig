@@ -1108,9 +1108,14 @@ def OneOfOptionsField(
     return field(
         metadata={
             "marshmallow_field": OneOfOptionsCombinatorialField(
-                allow_none=allow_none, load_default=default, dump_default=default, metadata={"description": description}
+                allow_none=allow_none,
+                load_default=default,
+                dump_default=default,
+                metadata={
+                    "description": description,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
+                },
             ),
-            "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
         },
         **default_kwarg,
     )
@@ -1118,7 +1123,12 @@ def OneOfOptionsField(
 
 class TypeSelection(fields.Field):
     def __init__(
-        self, registry: Registry, default_value: Optional[str] = None, key: str = "type", description: str = ""
+        self,
+        registry: Registry,
+        default_value: Optional[str] = None,
+        key: str = "type",
+        description: str = "",
+        parameter_metadata: ParameterMetadata = None,
     ):
         self.registry = registry
         self.default_value = default_value
@@ -1138,7 +1148,7 @@ class TypeSelection(fields.Field):
             allow_none=False,
             dump_default=dump_default,
             load_default=load_default,
-            metadata={"description": description},
+            metadata={"description": description, "parameter_metadata": convert_metadata_to_json(parameter_metadata)},
         )
 
     def _deserialize(self, value, attr, data, **kwargs):

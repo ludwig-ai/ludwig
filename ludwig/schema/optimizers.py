@@ -8,7 +8,7 @@ from marshmallow import fields, ValidationError
 import ludwig.schema.utils as schema_utils
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema.metadata import OPTIMIZER_METADATA
-from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json
+from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, ParameterMetadata
 from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils.registry import Registry
 
@@ -422,7 +422,7 @@ def get_optimizer_conds():
 
 
 @DeveloperAPI
-def OptimizerDataclassField(default="adam", description=""):
+def OptimizerDataclassField(default="adam", description="", parameter_metadata: ParameterMetadata = None):
     """Custom dataclass field that when used inside of a dataclass will allow any optimizer in
     `ludwig.modules.optimization_modules.optimizer_registry`.
 
@@ -439,7 +439,12 @@ def OptimizerDataclassField(default="adam", description=""):
         for external usage."""
 
         def __init__(self):
-            super().__init__(registry=optimizer_registry, default_value=default)
+            super().__init__(
+                registry=optimizer_registry,
+                default_value=default,
+                description=description,
+                parameter_metadata=parameter_metadata,
+            )
 
         def get_schema_from_registry(self, key: str) -> Type[schema_utils.BaseMarshmallowConfig]:
             return get_optimizer_cls(key)
