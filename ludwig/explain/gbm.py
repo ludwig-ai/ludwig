@@ -32,10 +32,10 @@ class GBMExplainer(Explainer):
         # Scale the feature importance to sum to 1.
         feat_imp = feat_imp / feat_imp.sum() if feat_imp.sum() > 0 else feat_imp
 
-        self.global_explanation.add(base_model.input_features.keys(), feat_imp)
-
         expected_values = []
         for _ in range(self.vocab_size):
+            self.global_explanation.add(base_model.input_features.keys(), feat_imp)
+
             for explanation in self.row_explanations:
                 # Add the feature attributions to the explanation object for this row.
                 explanation.add(base_model.input_features.keys(), feat_imp)
