@@ -26,7 +26,7 @@ from ludwig.features.feature_utils import get_input_size_with_dependencies
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.loss_modules import get_loss_cls
 from ludwig.modules.metric_modules import MeanMetric
-from ludwig.modules.metric_registry import get_metric_classes, get_metric_cls
+from ludwig.modules.metric_registry import get_metric_classes, get_metric_cls, get_metric_tensor_input
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.schema.features.base import BaseFeatureConfig, BaseOutputFeatureConfig
 from ludwig.types import FeatureConfigDict, FeatureMetadataDict, PreprocessingConfigDict, TrainingSetMetadataDict
@@ -346,12 +346,8 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             targets: Tensor with target values for this output feature.
             predictions: Dict of tensors returned by predictions().
         """
-        for _, metric_fn in self._metric_functions.items():
-            metric_class = type(metric_fn)
-            prediction_key = metric_class.get_inputs()
-            # TODO(shreya): Metrics should ideally just move to the correct device
-            #  and not require the user to do this. This is a temporary fix. See
-            #  if this can be removed before merging the PR.
+        for metric_name, metric_fn in self._metric_functions.items():
+            prediction_key = get_metric_tensor_input(metric_name)
             metric_fn = metric_fn.to(predictions[prediction_key].device)
             metric_fn.update(predictions[prediction_key].detach(), targets)
 

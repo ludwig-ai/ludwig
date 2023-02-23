@@ -22,12 +22,14 @@ class SequenceGeneratorDecoderConfig(BaseDecoderConfig):
 
     vocab_size: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Size of the vocabulary.",
         parameter_metadata=DECODER_METADATA["SequenceGeneratorDecoder"]["vocab_size"],
     )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Maximum length of the sequences.",
         parameter_metadata=DECODER_METADATA["SequenceGeneratorDecoder"]["max_sequence_length"],
     )
@@ -81,12 +83,14 @@ class SequenceTaggerDecoderConfig(BaseDecoderConfig):
 
     vocab_size: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Size of the vocabulary.",
         parameter_metadata=DECODER_METADATA["SequenceTaggerDecoder"]["vocab_size"],
     )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Maximum length of the sequences.",
         parameter_metadata=DECODER_METADATA["SequenceTaggerDecoder"]["max_sequence_length"],
     )

@@ -47,11 +47,13 @@ class BaseFeatureConfig(schema_utils.BaseMarshmallowConfig):
     active: bool = True
 
     name: str = schema_utils.String(
+        default=None,
         allow_none=True,
         description="Name of the feature.",
     )
 
     type: str = schema_utils.StringOptions(
+        default=None,
         allow_none=True,
         options=[AUDIO, BAG, BINARY, CATEGORY, DATE, H3, IMAGE, NUMBER, SEQUENCE, SET, TEXT, TIMESERIES, VECTOR],
         description="Type of the feature.",
@@ -140,6 +142,7 @@ class BaseOutputFeatureConfig(BaseFeatureConfig):
 
     default_validation_metric: str = schema_utils.String(
         default=None,
+        allow_none=True,
         description="Internal only use parameter: default validation metric for output feature.",
         parameter_metadata=INTERNAL_ONLY,
     )
@@ -156,12 +159,14 @@ class BaseOutputFeatureConfig(BaseFeatureConfig):
 
     input_size: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Size of the input to the decoder.",
         parameter_metadata=ParameterMetadata(internal_only=True),
     )
 
     num_classes: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Size of the input to the decoder.",
         parameter_metadata=ParameterMetadata(internal_only=True),
     )
@@ -192,7 +197,7 @@ class FeatureCollection(Generic[T], schema_utils.ListSerializable):
     def __len__(self):
         return len(self._features)
 
-    def __getitem__(self, i):
+    def __getitem__(self, i) -> T:
         if isinstance(i, str):
             return self._name_to_features[i]
         else:

@@ -229,6 +229,7 @@ def test_torchscript_e2e_tabular(csv_filename, tmpdir):
         bin_str_feature_input_feature,
         binary_feature(),
         *transformed_number_features,
+        number_feature(preprocessing={"outlier_strategy": "fill_with_mean"}),
         category_feature(encoder={"vocab_size": 3}),
         bag_feature(encoder={"vocab_size": 3}),
         set_feature(encoder={"vocab_size": 3}),

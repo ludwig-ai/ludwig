@@ -25,5 +25,6 @@ class EthosBinaryLoader(DatasetLoader):
     def transform_dataframe(self, dataframe: pd.DataFrame) -> pd.DataFrame:
         processed_df = super().transform_dataframe(dataframe)
         # convert float labels (0.0, 1.0) to binary labels
+        processed_df["isHate"] = processed_df["isHate"] >= 0.5
         processed_df["isHate"] = processed_df["isHate"].astype(int)
         return processed_df

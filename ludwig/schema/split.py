@@ -58,6 +58,7 @@ class FixedSplitConfig(BaseSplitConfig):
 
     column: str = schema_utils.String(
         default=SPLIT,
+        allow_none=False,
         description="The column name to use for fixed splitting.",
     )
 
@@ -74,6 +75,8 @@ class StratifySplitConfig(BaseSplitConfig):
     )
 
     column: str = schema_utils.String(
+        default=None,
+        allow_none=True,
         description="The column name to base the stratified splitting on.",
     )
 
@@ -97,6 +100,8 @@ class DateTimeSplitConfig(BaseSplitConfig):
     )
 
     column: str = schema_utils.String(
+        default=None,
+        allow_none=True,
         description="The column name to perform datetime splitting on.",
     )
 
@@ -129,6 +134,8 @@ class HashSplitConfig(BaseSplitConfig):
     )
 
     column: str = schema_utils.String(
+        default=None,
+        allow_none=True,
         description="The column name to perform hash splitting on.",
     )
 

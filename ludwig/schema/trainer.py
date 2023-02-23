@@ -34,6 +34,7 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     validation_field: str = schema_utils.String(
         default=None,
+        allow_none=True,
         description="The field for which the `validation_metric` is used for validation-related mechanics like early "
         "stopping, parameter change plateaus, as well as what hyperparameter optimization uses to determine the best "
         "trial. If unset (default), the first output feature is used. If explicitly specified, neither "
@@ -42,6 +43,7 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     validation_metric: str = schema_utils.String(
         default=None,
+        allow_none=True,
         description=(
             "Metric from `validation_field` that is used. If validation_field is not explicitly specified, this is "
             "overwritten to be the first output feature type's `default_validation_metric`, consistent with "
@@ -103,6 +105,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
 
     train_steps: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description=(
             "Maximum number of training steps the algorithm is intended to be run over. Unset by default. "
             "If set, will override `epochs` and if left unset then `epochs` is used to determine training length."
@@ -157,6 +160,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
 
     eval_batch_size: Union[None, int, str] = schema_utils.OneOfOptionsField(
         default=None,
+        allow_none=True,
         description=(
             "Size of batch to pass to the model for evaluation. If it is `0` or `None`, the same value of `batch_size` "
             "is used. This is useful to speedup evaluation with a much bigger batch size than training, if enough "
@@ -184,6 +188,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
 
     validation_field: str = schema_utils.String(
         default=None,
+        allow_none=True,
         description="The field for which the `validation_metric` is used for validation-related mechanics like early "
         "stopping, parameter change plateaus, as well as what hyperparameter optimization uses to determine the best "
         "trial. If unset (default), the first output feature is used. If explicitly specified, neither "
@@ -193,6 +198,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
 
     validation_metric: str = schema_utils.String(
         default=None,
+        allow_none=True,
         description=(
             "Metric from `validation_field` that is used. If validation_field is not explicitly specified, this is "
             "overwritten to be the first output feature type's `default_validation_metric`, consistent with "
@@ -203,11 +209,17 @@ class ECDTrainerConfig(BaseTrainerConfig):
     )
 
     optimizer: BaseOptimizerConfig = OptimizerDataclassField(
-        default={"type": "adam"}, description="Parameter values for selected torch optimizer."
+        default="adam",
+        description=(
+            "Optimizer type and its parameters. The optimizer is responsble for applying the gradients computed "
+            "from the loss during backpropagation as updates to the model weights."
+        ),
+        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["optimizer"],
     )
 
     regularization_type: Optional[str] = schema_utils.RegularizerOptions(
         default="l2",
+        allow_none=True,
         description="Type of regularization.",
         parameter_metadata=TRAINER_METADATA[MODEL_ECD]["regularization_type"],
     )
@@ -277,6 +289,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
 
     bucketing_field: str = schema_utils.String(
         default=None,
+        allow_none=True,
         description="Feature to use for bucketing datapoints",
         parameter_metadata=TRAINER_METADATA[MODEL_ECD]["bucketing_field"],
     )
@@ -354,12 +367,14 @@ class GBMTrainerConfig(BaseTrainerConfig):
     # TODO(#1673): Need some more logic here for validating against output features
     validation_field: str = schema_utils.String(
         default=None,
+        allow_none=True,
         description="First output feature, by default it is set as the same field of the first output feature.",
         parameter_metadata=TRAINER_METADATA[MODEL_GBM]["validation_field"],
     )
 
     validation_metric: str = schema_utils.String(
         default=None,
+        allow_none=True,
         description=(
             "Metric used on `validation_field`, set by default to the "
             "output feature type's `default_validation_metric`."

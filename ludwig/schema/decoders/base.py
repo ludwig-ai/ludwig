@@ -16,6 +16,8 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     type: str = schema_utils.StringOptions(
         ["regressor", "classifier", "projector", "generator", "tagger"],
+        default=None,
+        allow_none=True,
         description="The type of decoder to use.",
         parameter_metadata=DECODER_METADATA["BaseDecoder"]["type"],
     )
@@ -46,6 +48,7 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     fc_weights_initializer: Union[str, Dict] = schema_utils.OneOfOptionsField(
         default="xavier_uniform",
+        allow_none=True,
         description="The weights initializer to use for the layers in the fc_stack",
         field_options=[
             schema_utils.InitializerOptions(
@@ -62,6 +65,7 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     fc_bias_initializer: Union[str, Dict] = schema_utils.OneOfOptionsField(
         default="zeros",
+        allow_none=True,
         description="The bias initializer to use for the layers in the fc_stack",
         field_options=[
             schema_utils.InitializerOptions(
@@ -78,6 +82,8 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     fc_norm: str = schema_utils.StringOptions(
         ["batch", "layer"],
+        default=None,
+        allow_none=True,
         description="The normalization to use for the layers in the fc_stack",
         parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_norm"],
     )
@@ -143,6 +149,7 @@ class RegressorConfig(BaseDecoderConfig):
 
     input_size: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Size of the input to the decoder.",
         parameter_metadata=DECODER_METADATA["Regressor"]["input_size"],
     )
@@ -182,12 +189,14 @@ class ProjectorConfig(BaseDecoderConfig):
 
     input_size: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Size of the input to the decoder.",
         parameter_metadata=DECODER_METADATA["Projector"]["input_size"],
     )
 
     output_size: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Size of the output of the decoder.",
         parameter_metadata=DECODER_METADATA["Projector"]["output_size"],
     )
@@ -241,12 +250,14 @@ class ClassifierConfig(BaseDecoderConfig):
 
     input_size: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Size of the input to the decoder.",
         parameter_metadata=DECODER_METADATA["Classifier"]["input_size"],
     )
 
     num_classes: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Number of classes to predict.",
         parameter_metadata=DECODER_METADATA["Classifier"]["num_classes"],
     )

@@ -6,11 +6,11 @@ from typing import Dict, List
 
 import pytest
 import torch
-from marshmallow import ValidationError
 
 from ludwig.api import LudwigModel
 from ludwig.constants import IMAGENET1K
 from ludwig.data.dataset_synthesizer import cli_synthesize_dataset
+from ludwig.error import ConfigValidationError
 from ludwig.features.image_feature import ImageAugmentation
 from ludwig.schema.features.image_feature import ImageInputFeatureConfig
 
@@ -145,6 +145,9 @@ def run_augmentation_training(
         skip_save_processed_input=True,
         skip_save_model=True,
     )
+    return model
+
+    return model
 
 
 @pytest.mark.parametrize(
@@ -182,7 +185,7 @@ AUGMENTATION_PIPELINE_OPS = [
 
 IMAGE_ENCODER = [
     {"type": "stacked_cnn"},
-    {"type": "alexnet", "model_cache_dir": os.path.join(os.getcwd(), "tv_cache")},
+    {"type": "alexnet", "use_pretrained": False, "model_cache_dir": os.path.join(os.getcwd(), "tv_cache")},
 ]
 
 IMAGE_PREPROCESSING = [
@@ -208,13 +211,18 @@ def test_local_model_training_with_augmentation_pipeline(
     preprocessing,
     augmentation_pipeline_ops,
 ):
-    run_augmentation_training(
+    model = run_augmentation_training(
         train_data=train_data_rgb,
         backend="local",
         encoder=encoder,  # Ludwig encoder
         preprocessing=preprocessing,  # Ludwig image preprocessing
         augmentation_pipeline_ops=augmentation_pipeline_ops,  # Ludwig image augmentation
     )
+
+    if augmentation_pipeline_ops is not False:
+        assert model.config_obj.input_features[0].has_augmentation()
+    else:
+        assert not model.config_obj.input_features[0].has_augmentation()
 
 
 # due to the time it takes to run the tests, run only a subset of the tests
@@ -228,13 +236,18 @@ def test_ray_model_training_with_augmentation_pipeline(
     augmentation_pipeline_ops,
     ray_cluster_2cpu,
 ):
-    run_augmentation_training(
+    model = run_augmentation_training(
         train_data=train_data_rgb,
         backend="ray",
         encoder={"type": "stacked_cnn"},
         preprocessing=preprocessing,
         augmentation_pipeline_ops=augmentation_pipeline_ops,
     )
+
+    if augmentation_pipeline_ops is not False:
+        assert model.config_obj.input_features[0].has_augmentation()
+    else:
+        assert not model.config_obj.input_features[0].has_augmentation()
 
 
 # this test gray-scale image augmentation pipeline
@@ -277,14 +290,13 @@ def test_ludwig_encoder_gray_scale_image_augmentation_pipeline(
         [
             {"type": "random_rotate", "degree": "45"},
         ],
-        [],
     ],
 )
 def test_invalid_augmentation_parameters(
     train_data_rgb,
     augmentation_pipeline_ops,
 ):
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         run_augmentation_training(
             train_data=train_data_rgb,
             backend="local",
@@ -292,3 +304,35 @@ def test_invalid_augmentation_parameters(
             preprocessing={},
             augmentation_pipeline_ops=augmentation_pipeline_ops,
         )
+
+
+# tests saving and loading a model with augmentation pipeline
+def test_load_model_with_augmentation_pipeline(
+    train_data_rgb,
+):
+    augmentation_pipeline_ops = [
+        {"type": "random_blur"},
+        {"type": "random_rotate"},
+    ]
+    preprocessing = {
+        "standardize_image": None,
+        "width": 300,
+        "height": 300,
+    }
+    encoder = {
+        "type": "alexnet",
+        "use_pretrained": False,
+        "model_cache_dir": os.path.join(os.getcwd(), "tv_cache"),
+    }
+
+    model = run_augmentation_training(
+        train_data=train_data_rgb,
+        backend="local",
+        encoder=encoder,  # Ludwig encoder
+        preprocessing=preprocessing,  # Ludwig image preprocessing
+        augmentation_pipeline_ops=augmentation_pipeline_ops,  # Ludwig image augmentation
+    )
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        model.save(tmp_dir)
+        LudwigModel.load(tmp_dir)

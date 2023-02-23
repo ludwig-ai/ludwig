@@ -43,8 +43,8 @@ def DefaultsDataclassField(feature_type: str):
 
     try:
         defaults_cls = defaults_config_registry[feature_type]
-        dump_default = defaults_cls.Schema().dump({"type": feature_type})
-        load_default = lambda: defaults_cls.Schema().load({"type": feature_type})
+        dump_default = defaults_cls.Schema().dump({})
+        load_default = lambda: defaults_cls.Schema().load({})
 
         return field(
             metadata={

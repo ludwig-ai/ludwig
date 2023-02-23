@@ -80,11 +80,6 @@ from ludwig.utils.types import Series, TorchscriptPreprocessingInput
 IMAGENET1K_MEAN = [0.485, 0.456, 0.406]
 IMAGENET1K_STD = [0.229, 0.224, 0.225]
 
-# Augmentation operations when augmentation is set to True
-AUGMENTATION_DEFAULT_OPERATIONS = [
-    RandomHorizontalFlipConfig(),
-    RandomRotateConfig(),
-]
 
 logger = logging.getLogger(__name__)
 
@@ -765,10 +760,6 @@ class ImageFeatureMixin(BaseFeatureMixin):
         default_image = get_gray_default_image(num_channels, height, width)
         metadata[name]["reshape"] = (num_channels, height, width)
 
-        # check to see if the active backend can support lazy loading of
-        # image features from the hdf5 cache.
-        backend.check_lazy_load_supported(feature_config)
-
         in_memory = feature_config[PREPROCESSING]["in_memory"]
         if in_memory or skip_save_processed_input:
 
@@ -843,19 +834,14 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
 
             # create augmentation pipeline object
             self.augmentation_pipeline = ImageAugmentation(
-                (
-                    # if augmentation is a list, use it, otherwise use the default augmentation operations
-                    input_feature_config.augmentation
-                    if isinstance(input_feature_config.augmentation, list)
-                    else AUGMENTATION_DEFAULT_OPERATIONS
-                ),
+                input_feature_config.augmentation,
                 normalize_mean,
                 normalize_std,
             )
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
-        assert isinstance(inputs, torch.Tensor)
-        assert inputs.dtype in [torch.float32]
+        assert isinstance(inputs, torch.Tensor), f"inputs to image feature must be a torch tensor, got {type(inputs)}"
+        assert inputs.dtype in [torch.float32], f"inputs to image feature must be a float32 tensor, got {inputs.dtype}"
 
         inputs_encoded = self.encoder_obj(inputs)
 

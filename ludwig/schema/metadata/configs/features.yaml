@@ -480,6 +480,9 @@ number:
         computed_fill_value:
             internal_only: true
             ui_display_name: null
+        computed_outlier_fill_value:
+            internal_only: true
+            ui_display_name: null
         fill_value:
             expected_impact: 1
             ui_display_name: Fill Value
@@ -498,6 +501,37 @@ number:
                 - fill_value
             ui_display_name: Missing Value Strategy
             expected_impact: 3
+        outlier_strategy:
+            default_value_reasoning:
+                Outlier definitions and how to handle them are very task-specific, so we leave
+                this feature disabled by default and ask the user to choose the strategy that works best for them.
+            description_implications:
+                Determines how outliers will be handled in the dataset. In most cases replacing outliers with the
+                column mean (`fill_with_mean`) will be sufficient, but in others the outliers may be damaging enough
+                to merit dropping the entire row of data (`drop_row`). In some cases, the best way to handle outliers
+                is to leave them in the data, which is the behavior when this parameter is left as `null`.
+            related_parameters:
+                - outlier_threshold
+            suggested_values: fill_with_mean
+            ui_display_name: Outlier Strategy
+            expected_impact: 3
+        outlier_threshold:
+            default_value_reasoning:
+                The definition of an outlier is often dataset and task dependent, but 2 or 3 standard deviations from
+                the mean is a common heuristic.
+            description_implications:
+                "Determines the threshold past which a number will be considered an outlier in the dataset. The 3-sigma
+                rule in statistics tells us that when data is normally distributed, 95% of the data will lie within 2
+                standard deviations of the mean, and greater than 99% of the data will lie within 3 standard deviations
+                of the mean (see: 68–95–99.7 rule). As such anything farther away than that is highly likely to be an
+                outlier, and may distort the learning process by disproportionately affecting the model."
+            related_parameters:
+                - outlier_strategy
+            literature_references:
+                - https://en.wikipedia.org/wiki/68%E2%80%9395%E2%80%9399.7_rule
+            suggested_values: 2 - 3
+            ui_display_name: Outlier Threshold
+            expected_impact: 2
         normalization:
             default_value_reasoning:
                 Z-score normalization helps improve the training stability and convergence
@@ -816,6 +850,7 @@ text:
             ui_display_name: null
             expected_impact: 1
         pretrained_model_name_or_path:
+            internal_only: true
             ui_display_name: null
             expected_impact: 0
         tokenizer:
