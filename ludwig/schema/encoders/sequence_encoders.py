@@ -1,4 +1,5 @@
-from typing import Any, Dict, List
+from dataclasses import Field
+from typing import Any, Dict, List, Optional
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import AUDIO, SEQUENCE, TEXT, TIMESERIES
@@ -21,6 +22,46 @@ missing from the dictionary, the default one specified as a parameter of the enc
 """
 
 NUM_CONV_LAYERS_DESCRIPTION = "The number of stacked convolutional layers when `conv_layers` is `null`."
+
+
+def NumFiltersField(default: int = 256) -> Field:
+    return schema_utils.PositiveInteger(
+        default=default,
+        description="Number of filters, and by consequence number of output channels of the 1d convolution.",
+        parameter_metadata=ENCODER_METADATA["conv_params"]["num_filters"],
+    )
+
+
+def FilterSizeField(default: int = 3) -> Field:
+    return schema_utils.PositiveInteger(
+        default=default,
+        description="Size of the 1d convolutional filter. It indicates how wide the 1d convolutional filter is.",
+        parameter_metadata=ENCODER_METADATA["conv_params"]["filter_size"],
+    )
+
+
+def PoolFunctionField(default: str = "max") -> Field:
+    return schema_utils.ReductionOptions(
+        default=default,
+        description=(
+            "Pooling function to use. `max` will select the maximum value. Any of `average`, `avg`, or "
+            "`mean` will compute the mean value"
+        ),
+        parameter_metadata=ENCODER_METADATA["conv_params"]["pool_function"],
+    )
+
+
+def PoolSizeField(default: Optional[int] = None) -> Field:
+    return schema_utils.PositiveInteger(
+        default=None,
+        allow_none=True,
+        description=(
+            "The default pool_size that will be used for each layer. If a pool_size is not already specified "
+            "in conv_layers this is the default pool_size that will be used for each layer. It indicates the size of "
+            "the max pooling that will be performed along the `s` sequence dimension after the convolution operation."
+        ),
+        parameter_metadata=ENCODER_METADATA["conv_params"]["pool_size"],
+    )
 
 
 @DeveloperAPI
@@ -132,31 +173,6 @@ class ParallelCNNConfig(SequenceEncoderConfig, ConvLayersMixin):
 
     vocab: list = common_fields.VocabField()
 
-    num_filters: int = schema_utils.PositiveInteger(
-        default=256,
-        description="Number of filters, and by consequence number of output channels of the 1d convolution.",
-        parameter_metadata=ENCODER_METADATA["ParallelCNN"]["num_filters"],
-    )
-
-    filter_size: int = schema_utils.PositiveInteger(
-        default=3,
-        description="Size of the 1d convolutional filter.",
-        parameter_metadata=ENCODER_METADATA["ParallelCNN"]["filter_size"],
-    )
-
-    pool_function: str = schema_utils.ReductionOptions(
-        default="max",
-        description="Pooling function to use.",
-        parameter_metadata=ENCODER_METADATA["ParallelCNN"]["pool_function"],
-    )
-
-    pool_size: int = schema_utils.PositiveInteger(
-        default=None,
-        allow_none=True,
-        description="The default pool_size that will be used for each layer.",
-        parameter_metadata=ENCODER_METADATA["ParallelCNN"]["pool_size"],
-    )
-
     use_bias: bool = schema_utils.Boolean(
         default=True,
         description="Whether to use a bias vector.",
@@ -182,6 +198,14 @@ class ParallelCNNConfig(SequenceEncoderConfig, ConvLayersMixin):
     pretrained_embeddings: str = common_fields.PretrainedEmbeddingsField()
 
     reduce_output: str = common_fields.ReduceOutputField()
+
+    num_filters: int = NumFiltersField()
+
+    filter_size: int = FilterSizeField()
+
+    pool_function: str = PoolFunctionField()
+
+    pool_size: int = PoolSizeField()
 
     output_size: int = schema_utils.PositiveInteger(
         default=256,
@@ -242,17 +266,13 @@ class StackedCNNConfig(SequenceEncoderConfig, ConvLayersMixin):
 
     vocab: list = common_fields.VocabField()
 
-    num_filters: int = schema_utils.PositiveInteger(
-        default=256,
-        description="Number of filters, and by consequence number of output channels of the 1d convolution.",
-        parameter_metadata=ENCODER_METADATA["StackedCNN"]["num_filters"],
-    )
+    num_filters: int = NumFiltersField()
 
-    filter_size: int = schema_utils.PositiveInteger(
-        default=3,
-        description="Size of the 1d convolutional filter.",
-        parameter_metadata=ENCODER_METADATA["StackedCNN"]["filter_size"],
-    )
+    filter_size: int = FilterSizeField()
+
+    pool_function: str = PoolFunctionField()
+
+    pool_size: int = PoolSizeField()
 
     strides: int = schema_utils.PositiveInteger(
         default=1,
@@ -271,19 +291,6 @@ class StackedCNNConfig(SequenceEncoderConfig, ConvLayersMixin):
         default=1,
         description="Dilation rate to use for dilated convolution.",
         parameter_metadata=ENCODER_METADATA["StackedCNN"]["dilation_rate"],
-    )
-
-    pool_function: str = schema_utils.ReductionOptions(
-        default="max",
-        description="Pooling function to use.",
-        parameter_metadata=ENCODER_METADATA["StackedCNN"]["pool_function"],
-    )
-
-    pool_size: int = schema_utils.PositiveInteger(
-        default=None,
-        allow_none=True,
-        description="The default pool_size that will be used for each layer.",
-        parameter_metadata=ENCODER_METADATA["StackedCNN"]["pool_size"],
     )
 
     pool_strides: int = schema_utils.PositiveInteger(
@@ -402,30 +409,13 @@ class StackedParallelCNNConfig(SequenceEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["stacked_layers"],
     )
 
-    num_filters: int = schema_utils.PositiveInteger(
-        default=256,
-        description="Number of filters, and by consequence number of output channels of the 1d convolution.",
-        parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["num_filters"],
-    )
+    num_filters: int = NumFiltersField()
 
-    filter_size: int = schema_utils.PositiveInteger(
-        default=3,
-        description="Size of the 1d convolutional filter.",
-        parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["filter_size"],
-    )
+    filter_size: int = FilterSizeField()
 
-    pool_function: str = schema_utils.ReductionOptions(
-        default="max",
-        description="Pooling function to use.",
-        parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["pool_function"],
-    )
+    pool_function: str = PoolFunctionField()
 
-    pool_size: int = schema_utils.PositiveInteger(
-        default=None,
-        allow_none=True,
-        description="The default pool_size that will be used for each layer.",
-        parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["pool_size"],
-    )
+    pool_size: int = PoolSizeField()
 
     use_bias: bool = schema_utils.Boolean(
         default=True,
@@ -670,17 +660,13 @@ class StackedCNNRNNConfig(SequenceEncoderConfig, ConvLayersMixin):
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["cell_type"],
     )
 
-    num_filters: int = schema_utils.PositiveInteger(
-        default=256,
-        description="Number of filters, and by consequence number of output channels of the 1d convolution.",
-        parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["num_filters"],
-    )
+    num_filters: int = NumFiltersField()
 
-    filter_size: int = schema_utils.PositiveInteger(
-        default=5,
-        description="Size of the 1d convolutional filter.",
-        parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["filter_size"],
-    )
+    filter_size: int = FilterSizeField(default=5)
+
+    pool_function: str = PoolFunctionField()
+
+    pool_size: int = PoolSizeField(default=2)
 
     strides: int = schema_utils.PositiveInteger(
         default=1,
@@ -699,18 +685,6 @@ class StackedCNNRNNConfig(SequenceEncoderConfig, ConvLayersMixin):
         default=1,
         description="Dilation rate to use for dilated convolution.",
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["dilation_rate"],
-    )
-
-    pool_function: str = schema_utils.ReductionOptions(
-        default="max",
-        description="Pooling function to use.",
-        parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["pool_function"],
-    )
-
-    pool_size: int = schema_utils.PositiveInteger(
-        default=2,
-        description="The default pool_size that will be used for each layer.",
-        parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["pool_size"],
     )
 
     pool_strides: int = schema_utils.PositiveInteger(

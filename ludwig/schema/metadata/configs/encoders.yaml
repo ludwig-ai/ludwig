@@ -4688,8 +4688,6 @@ ParallelCNN:
             model capacity. Sometimes the default is 1 for modules where the FC stack
             is used for shape management, or the only source of learnable parameters.
         ui_display_name: Number of Fully Connected Layers
-    num_filters:
-        ui_display_name: null
     output_size:
         default_value_reasoning: A modest value, not too small, not too large.
         description_implications:
@@ -5989,27 +5987,6 @@ Stacked2DCNN:
     pool_dilation:
         expected_impact: 1
         ui_display_name: Pool Dilation
-    pool_function:
-        default_value_reasoning:
-            "Within a given sliding window (e.g. a \"patch\"\
-            \ of a 3-channel image), the maximum value for each channel is kept. All\
-            \ other values in the patch are discarded. Repeat this step for every\
-            \ patch and you have a more compact representation of the image. \n\n\
-            Intuitively, each patch encodes the features from a particular part of\
-            \ an image, and it is more informative to look at the most prominent features\
-            \ of an image than the average of all of them."
-        description_implications:
-            Both average and max pooling can achieve strong
-            performance.
-        expected_impact: 1
-        literature_references:
-            - "https://pytorch.org/docs/stable/generated/torch.nn.MaxPool2d.html
-
-
-              https://machinelearningmastery.com/pooling-layers-for-convolutional-neural-networks/"
-        suggested_values: Default
-        suggested_values_reasoning: "No"
-        ui_display_name: Pooling function
     pool_kernel_size:
         expected_impact: 1
         ui_display_name: Pool Kernel Size
@@ -6209,9 +6186,6 @@ StackedCNN:
             Use this parameter only if you need a fine grained level of control of
             each individual layer in the stack.
         ui_display_name: Fully Connected Layers
-    filter_size:
-        ui_display_name: null
-        expected_impact: 2
     max_sequence_length:
         default_value_reasoning:
             Sets the maximum sequence length of the expected
@@ -7276,9 +7250,6 @@ StackedParallelCNN:
             with a larger capacity.
         ui_display_name: Output Size
     pool_function:
-        ui_display_name: null
-        expected_impact: 1
-    pool_size:
         ui_display_name: null
         expected_impact: 1
     pretrained_embeddings:
@@ -9436,3 +9407,32 @@ conv_params:
         related_parameters:
             - num_conv_layers
         ui_display_name: Convolutional Layers
+    pool_function:
+        default_value_reasoning:
+            "Within a given sliding window (e.g. a \"patch\"\
+            \ of a 3-channel image), the maximum value for each channel is kept. All\
+            \ other values in the patch are discarded. Repeat this step for every\
+            \ patch and you have a more compact representation of the image. \n\n\
+            Intuitively, each patch encodes the features from a particular part of\
+            \ an image, and it is more informative to look at the most prominent features\
+            \ of an image than the average of all of them."
+        description_implications:
+            Both average and max pooling can achieve strong
+            performance.
+        expected_impact: 1
+        literature_references:
+            - "https://pytorch.org/docs/stable/generated/torch.nn.MaxPool2d.html
+
+
+              https://machinelearningmastery.com/pooling-layers-for-convolutional-neural-networks/"
+        suggested_values: Default
+        suggested_values_reasoning: "No"
+        ui_display_name: Pooling function
+    pool_size:
+        ui_display_name: null
+        expected_impact: 1
+    num_filters:
+        ui_display_name: null
+    filter_size:
+        ui_display_name: null
+        expected_impact: 2
