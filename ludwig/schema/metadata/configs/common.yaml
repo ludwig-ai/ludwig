@@ -207,3 +207,72 @@ weights_initializer:
     The default choice (`xavier_uniform`) is a suitable starting point for
     most tasks.
   ui_display_name: Layer Weights Initializer
+embedding_size:
+  default_value_reasoning: Not too big, not too small.
+  description_implications: 'An embedding is a relatively low-dimensional space
+    that is used to translate high-dimensional vectors like words, which can
+    have a large vocbulary size. Ideally, after an embedding is trained, it
+    captures some of the semantics of the input by placing semantically similar
+    inputs close together in the embedding space.
+
+
+    In most cases, the embedding size is chosen empirically, by trial and
+    error. From https://www.amazon.com/dp/1098115783, "one rule of thumb is
+    to use the fourth root of the total number of unique categorical elements
+    while another is that the embedding dimension should be approximately
+    1.6 times the square root of the number of unique elements in the category,
+    and no less than 600."
+
+
+    Increasing the embedding size may cause the model to train more slowly,
+    but the higher dimensionality can also improve overall quality.'
+  expected_impact: 3
+  literature_references:
+    - https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture
+  suggested_values: 1.6 * sqrt(vocab_size)
+  suggested_values_reasoning:
+    Rule of thumb suggested by a deep learning textbook.
+    Try models with smaller or larger embedding sizes to observe relative
+    impact.
+  ui_display_name: Embedding Size
+embeddings_on_cpu:
+  default_value_reasoning: By default embeddings matrices are stored on GPU
+    memory if a GPU is used, as it allows for faster access.
+  description_implications: By default embeddings matrices are stored on GPU
+    memory if a GPU is used, as it allows for faster access. However, in some
+    cases when the vocabulary size is very large, the full embedding matrix
+    may be really big and unwieldy to have in GPU memory. This parameter forces
+    the placement of the embedding matrix in regular memory and the CPU is
+    used to access them. This may slow down training due to additional data
+    transfer between CPU and GPU memory, but can lead to healthier GPU memory
+    resource usage.
+  expected_impact: 1
+  suggested_values:
+    - false
+  suggested_values_reasoning:
+    If GPU memory is not a constraint, having embeddings
+    stored and accessed within the GPU is faster.
+  ui_display_name: Embeddings on CPU
+embeddings_trainable:
+  default_value_reasoning:
+    If trained from scratch, embedding vectors are typically
+    learned alongside the rest of the model.
+  description_implications:
+    Typically this value is only set to False if pre-trained
+    embeddings are uploaded. Even then, it is reasonable to leave it as True
+    in order to fine-tune the embeddings.
+  expected_impact: 1
+  related_parameters:
+    - embedding_size, representation, pretrained_embeddings
+  ui_display_name: (under Embeddings header) Trainable?
+pretrained_embeddings:
+  default_value_reasoning: Embeddings are commonly trained from scratch, or
+    incorporated as part of a pre-trained model package.
+  description_implications: If pretrained embeddings are specified, then the
+    model may have a head start in its representation of various input entities.
+  example_value:
+    - ~/Downloads/glove.6B.100d.txt
+  expected_impact: 0
+  related_parameters:
+    - embedding_size, embeddings_trainable
+  ui_display_name: Pretrained embeddings path

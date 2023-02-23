@@ -122,3 +122,73 @@ def WeightsInitializerField(
         description=description,
         parameter_metadata=parameter_metadata,
     )
+
+
+def EmbeddingSize(default: int = 256, description: str = None, parameter_metadata: ParameterMetadata = None) -> Field:
+    description = description or (
+        "The maximum embedding size. The actual size will be `min(vocabulary_size, embedding_size)` for "
+        "`dense` representations and exactly `vocabulary_size` for the `sparse` encoding, where `vocabulary_size` "
+        "is the number of unique strings appearing in the training set input column plus the number of "
+        "special tokens (`<UNK>`, `<PAD>`, `<SOS>`, `<EOS>`)."
+    )
+    parameter_metadata = parameter_metadata or COMMON_METADATA["embedding_size"]
+    return schema_utils.PositiveInteger(
+        default=default,
+        description=description,
+        parameter_metadata=parameter_metadata,
+    )
+
+
+def EmbeddingsOnCPU(
+    default: bool = False, description: str = None, parameter_metadata: ParameterMetadata = None
+) -> Field:
+    description = description or (
+        "Whether to force the placement of the embedding matrix in regular memory and have the CPU resolve them. "
+        "By default embedding matrices are stored on GPU memory if a GPU is used, as it allows for faster access, "
+        "but in some cases the embedding matrix may be too large. This parameter forces the placement of the "
+        "embedding matrix in regular memory and the CPU is used for embedding lookup, slightly slowing down the "
+        "process as a result of data transfer between CPU and GPU memory."
+    )
+    parameter_metadata = parameter_metadata or COMMON_METADATA["embeddings_on_cpu"]
+    return schema_utils.Boolean(
+        default=default,
+        description=description,
+        parameter_metadata=parameter_metadata,
+    )
+
+
+def EmbeddingsTrainable(
+    default: bool = True, description: str = None, parameter_metadata: ParameterMetadata = None
+) -> Field:
+    description = description or (
+        "If `true` embeddings are trained during the training process, if `false` embeddings are fixed. "
+        "It may be useful when loading pretrained embeddings for avoiding finetuning them. This parameter "
+        "has effect only when `representation` is `dense`; `sparse` one-hot encodings are not trainable."
+    )
+    parameter_metadata = parameter_metadata or COMMON_METADATA["embeddings_trainable"]
+    return schema_utils.Boolean(
+        default=default,
+        description=description,
+        parameter_metadata=parameter_metadata,
+    )
+
+
+def PretrainedEmbeddings(
+    default: Optional[str] = None, description: str = None, parameter_metadata: ParameterMetadata = None
+) -> Field:
+    description = description or (
+        "Path to a file containing pretrained embeddings. By default `dense` embeddings are initialized "
+        "randomly, but this parameter allows to specify a path to a file containing embeddings in the "
+        "[GloVe format](https://nlp.stanford.edu/projects/glove/). When the file containing the embeddings is "
+        "loaded, only the embeddings with labels present in the vocabulary are kept, the others are discarded. "
+        "If the vocabulary contains strings that have no match in the embeddings file, their embeddings are "
+        "initialized with the average of all other embedding plus some random noise to make them different "
+        "from each other. This parameter has effect only if `representation` is `dense`."
+    )
+    parameter_metadata = parameter_metadata or COMMON_METADATA["pretrained_embeddings"]
+    return schema_utils.String(
+        default=default,
+        allow_none=True,
+        description=description,
+        parameter_metadata=parameter_metadata,
+    )
