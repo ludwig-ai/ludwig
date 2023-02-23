@@ -11,7 +11,6 @@ from ludwig.error import ConfigValidationError
 
 # TODO(travis): figure out why we need these imports to avoid circular import error
 from ludwig.schema.combiners.utils import get_combiner_jsonschema  # noqa
-from ludwig.schema.defaults.defaults import get_defaults_jsonschema  # noqa
 from ludwig.schema.features.utils import get_input_feature_jsonschema, get_output_feature_jsonschema  # noqa
 from ludwig.schema.hyperopt import get_hyperopt_jsonschema  # noqa
 from ludwig.schema.preprocessing import get_preprocessing_jsonschema  # noqa
@@ -29,7 +28,7 @@ def get_ludwig_version_jsonschema():
     }
 
 
-def get_backend_jsonschema():
+def get_backend_jsonschema():  # TODO: Is this still necessary after setting backend = Dict()?
     # TODO(travis): implement full backend schema
     return {
         "type": "object",
