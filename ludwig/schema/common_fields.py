@@ -39,15 +39,15 @@ def ResidualField(
 
 
 def NumFCLayersField(default: int = 0, description: str = None, parameter_metadata: ParameterMetadata = None) -> Field:
-    description = description or (
-        "Number of stacked fully connected layers to apply. "
-        "Increasing layers adds capacity to the model, enabling it to learn more complex feature interactions."
+    description = description or "Number of stacked fully connected layers to apply."
+    full_description = description + (
+        " Increasing layers adds capacity to the model, enabling it to learn more complex feature interactions."
     )
     parameter_metadata = parameter_metadata or COMMON_METADATA["num_fc_layers"]
     return schema_utils.NonNegativeInteger(
         default=default,
         allow_none=False,
-        description=description,
+        description=full_description,
         parameter_metadata=parameter_metadata,
     )
 
@@ -124,7 +124,9 @@ def WeightsInitializerField(
     )
 
 
-def EmbeddingSize(default: int = 256, description: str = None, parameter_metadata: ParameterMetadata = None) -> Field:
+def EmbeddingSizeField(
+    default: int = 256, description: str = None, parameter_metadata: ParameterMetadata = None
+) -> Field:
     description = description or (
         "The maximum embedding size. The actual size will be `min(vocabulary_size, embedding_size)` for "
         "`dense` representations and exactly `vocabulary_size` for the `sparse` encoding, where `vocabulary_size` "
@@ -139,7 +141,7 @@ def EmbeddingSize(default: int = 256, description: str = None, parameter_metadat
     )
 
 
-def EmbeddingsOnCPU(
+def EmbeddingsOnCPUField(
     default: bool = False, description: str = None, parameter_metadata: ParameterMetadata = None
 ) -> Field:
     description = description or (
@@ -157,7 +159,7 @@ def EmbeddingsOnCPU(
     )
 
 
-def EmbeddingsTrainable(
+def EmbeddingsTrainableField(
     default: bool = True, description: str = None, parameter_metadata: ParameterMetadata = None
 ) -> Field:
     description = description or (
@@ -173,7 +175,7 @@ def EmbeddingsTrainable(
     )
 
 
-def PretrainedEmbeddings(
+def PretrainedEmbeddingsField(
     default: Optional[str] = None, description: str = None, parameter_metadata: ParameterMetadata = None
 ) -> Field:
     description = description or (
@@ -189,6 +191,62 @@ def PretrainedEmbeddings(
     return schema_utils.String(
         default=default,
         allow_none=True,
+        description=description,
+        parameter_metadata=parameter_metadata,
+    )
+
+
+def MaxSequenceLengthField(
+    default: Optional[int] = None, description: str = None, parameter_metadata: ParameterMetadata = None
+) -> Field:
+    description = description or "[internal] Maximum sequence length from preprocessing."
+    parameter_metadata = parameter_metadata or COMMON_METADATA["max_sequence_length"]
+    return schema_utils.PositiveInteger(
+        default=default,
+        allow_none=True,
+        description=description,
+        parameter_metadata=parameter_metadata,
+    )
+
+
+def VocabField(
+    default: Optional[list] = None, description: str = None, parameter_metadata: ParameterMetadata = None
+) -> Field:
+    description = description or "[internal] Vocabulary for the encoder from preprocessing."
+    parameter_metadata = parameter_metadata or COMMON_METADATA["vocab"]
+    return schema_utils.List(
+        default=default,
+        description=description,
+        parameter_metadata=parameter_metadata,
+    )
+
+
+def RepresentationField(
+    default: str = "dense", description: str = None, parameter_metadata: ParameterMetadata = None
+) -> Field:
+    description = description or (
+        "Representation of the embedding. `dense` means the embeddings are initialized randomly, "
+        "`sparse` means they are initialized to be one-hot encodings."
+    )
+    parameter_metadata = parameter_metadata or COMMON_METADATA["representation"]
+    return schema_utils.StringOptions(
+        ["dense", "sparse"],
+        default=default,
+        description=description,
+        parameter_metadata=parameter_metadata,
+    )
+
+
+def ReduceOutputField(
+    default: Optional[str] = "sum", description: str = None, parameter_metadata: ParameterMetadata = None
+) -> Field:
+    description = description or (
+        "How to reduce the output tensor along the `s` sequence length dimension if the rank of the "
+        "tensor is greater than 2."
+    )
+    parameter_metadata = parameter_metadata or COMMON_METADATA["reduce_output"]
+    return schema_utils.ReductionOptions(
+        default=default,
         description=description,
         parameter_metadata=parameter_metadata,
     )

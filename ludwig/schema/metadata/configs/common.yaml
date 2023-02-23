@@ -276,3 +276,54 @@ pretrained_embeddings:
   related_parameters:
     - embedding_size, embeddings_trainable
   ui_display_name: Pretrained embeddings path
+max_sequence_length:
+  default_value_reasoning: Sets the maximum sequence length of the expected
+    inputs, so input/output shapes are computed accurately.
+  internal_only: true
+  ui_display_name: null
+vocab:
+  default_value_reasoning: Computed and passed along internally according to
+    preprocessing settings.
+  example_value:
+    - a
+    - b
+    - c
+  internal_only: true
+  ui_display_name: Not Displayed
+representation:
+  default_value_reasoning: Trainable, randomly initialized embedding vectors
+    often lead to more subtle representations of input entities than one-hot
+    vectors.
+  description_implications: If set to sparse, the representations for input
+    entities are fixed as one-hot vectors. This leads to less flexible representations
+    for input entities, but could lead to faster training since there are
+    less learnable parameters.
+  expected_impact: 1
+  other_information: ""
+  related_parameters:
+    - embedding_size, embeddings_trainable, pretrained_embeddings
+  ui_display_name: Representation approach
+reduce_output:
+  default_value_reasoning: Sums the tensors along the sequence dimension.
+  description_implications: "\"last\", \"sum\", \"mean\", and \"max\" are the\
+    \ fastest and most memory-efficient operations\u2013 they result in tensors\
+    \ that are the same-size as a single item in the input sequence. However,\
+    \ these are simple aggregation operations, therefore some information\
+    \ may be lost. \n\n\"concat\" concatenates each tensor together, creating\
+    \ a `(sequence length)*(tensor size)`-element tensor. \"concat\" preserves\
+    \ this information, but can be very memory-intensive and should only be\
+    \ applied if the sequence length and/or tensor size is small. \n\n\"attention\"\
+    \ takes a weighted sum of the items in the sequence, where the weights\
+    \ for each item in the sequence are determined by the model on-the-fly\
+    \ based on the features of the item itself. This is both slower and and\
+    \ more memory-intensive than the other operations; however, it can also\
+    \ provide a richer \"global\" representation of the sequence."
+  expected_impact: 1
+  related_parameters:
+    - max_sequence_length
+  suggested_values: '"attention". This and the default covers 95% of use cases.'
+  suggested_values_reasoning: If you would like better performance and are not
+    compute/memory-constrained, attention-based reduction can potentially
+    provide a richer global representation than the default, but note that attention
+    reduction does not work with `cache_encoder_embeddings=true`.
+  ui_display_name: Sequence Reducer
