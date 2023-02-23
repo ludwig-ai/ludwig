@@ -55,7 +55,9 @@ def test_performance(config_filename, tmpdir):
         "export": {"export_artifacts": True, "export_base_path": tmpdir},
         "experiments": [{"dataset_name": dataset_name, "config_path": config_path}],
     }
-    benchmarking_artifacts = benchmark(benchmarking_config)
+    benchmarking_artifacts, err = benchmark(benchmarking_config)
+    if err is not None:
+        raise err
 
     experiment_artifact = benchmarking_artifacts[dataset_name]
     expected_metrics: List[ExpectedMetric] = [
