@@ -3,6 +3,7 @@ import pytest
 from ludwig.config_validation.validation import check_schema, get_schema
 from ludwig.constants import (
     ACTIVE,
+    AUDIO,
     BACKEND,
     CATEGORY,
     COLUMN,
@@ -22,7 +23,8 @@ from ludwig.constants import (
 from ludwig.error import ConfigValidationError
 from ludwig.features.feature_registries import get_output_type_registry
 from ludwig.schema.combiners.utils import get_combiner_jsonschema
-from ludwig.schema.defaults.defaults import DefaultsConfig
+from ludwig.schema.defaults.ecd import ECDDefaultsConfig
+from ludwig.schema.defaults.gbm import GBMDefaultsConfig
 from ludwig.schema.features.preprocessing.audio import AudioPreprocessingConfig
 from ludwig.schema.features.preprocessing.bag import BagPreprocessingConfig
 from ludwig.schema.features.preprocessing.binary import BinaryPreprocessingConfig
@@ -37,6 +39,7 @@ from ludwig.schema.features.preprocessing.text import TextPreprocessingConfig
 from ludwig.schema.features.preprocessing.timeseries import TimeseriesPreprocessingConfig
 from ludwig.schema.features.preprocessing.vector import VectorPreprocessingConfig
 from ludwig.schema.features.utils import get_input_feature_jsonschema, get_output_feature_jsonschema
+from ludwig.schema.model_types.base import ModelConfig
 from tests.integration_tests.utils import (
     audio_feature,
     bag_feature,
@@ -176,30 +179,6 @@ def test_config_bad_encoder_name():
         check_schema(config)
 
 
-# TODO(ksbrar): Circle back after discussing whether additional properties should be allowed long-term.
-# def test_config_bad_preprocessing_param():
-#     config = {
-#         "input_features": [
-#             sequence_feature(encoder={"type": "parallel_cnn", "reduce_output": "sum"}),
-#             image_feature(
-#                 "/tmp/destination_folder",
-#                 preprocessing={
-#                     "in_memory": True,
-#                     "height": 12,
-#                     "width": 12,
-#                     "num_channels": 3,
-#                     "tokenizer": "space",
-#                 },
-#             ),
-#         ],
-#         "output_features": [category_feature(encoder={"vocab_size": 2}, reduce_input="sum")],
-#         "combiner": {"type": "concat", "output_size": 14},
-#     }
-
-#     with pytest.raises(ValidationError, match=r"^Additional properties are not allowed .*"):
-#         check_schema(config)
-
-
 def test_config_fill_values():
     vector_fill_values = ["1.0 0.0 1.04 10.49", "1 2 3 4 5" "0" "1.0" ""]
     binary_fill_values = ["yes", "No", "1", "TRUE", 1]
@@ -266,8 +245,8 @@ def test_validate_with_preprocessing_defaults():
     check_schema(config)
 
 
-def test_defaults_schema():
-    schema = DefaultsConfig()
+def test_ecd_defaults_schema():
+    schema = ECDDefaultsConfig()
     assert schema.binary.decoder.type == "regressor"
     assert schema.binary.encoder.type == "passthrough"
     assert schema.category.encoder.dropout == 0.0
@@ -275,6 +254,13 @@ def test_defaults_schema():
     assert PREPROCESSING in schema.category.to_dict()
     assert DECODER in schema.category.to_dict()
     assert LOSS in schema.category.to_dict()
+
+
+def test_gbm_defaults_schema():
+    schema = GBMDefaultsConfig()
+    assert AUDIO not in schema.to_dict()
+    assert schema.category.encoder.dropout == 0.0
+    assert ENCODER in schema.category.to_dict()
 
 
 def test_validate_defaults_schema():
@@ -417,3 +403,22 @@ def test_decoder_descriptions():
         type_data = feature_schema["then"]["properties"]["decoder"]["properties"]["type"]
         assert len(type_data["enumDescriptions"].keys()) > 0
         assert set(type_data["enumDescriptions"].keys()).issubset(set(type_data["enum"]))
+
+
+def test_deprecation_warning_raised_for_unknown_parameters():
+    config = {
+        "input_features": [
+            category_feature(encoder={"type": "dense", "vocab_size": 2}, reduce_input="sum"),
+            number_feature(),
+        ],
+        "output_features": [binary_feature()],
+        "combiner": {
+            "type": "tabnet",
+            "unknown_parameter_combiner": False,
+        },
+        TRAINER: {
+            "epochs": 1000,
+        },
+    }
+    with pytest.warns(DeprecationWarning, match="not a valid parameter"):
+        ModelConfig.from_dict(config)
