@@ -4,7 +4,7 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.combiners.utils import CombinerSelection
-from ludwig.schema.defaults.defaults import DefaultsConfig, DefaultsField
+from ludwig.schema.defaults.ecd import ECDDefaultsConfig, ECDDefaultsField
 from ludwig.schema.features.base import (
     BaseInputFeatureConfig,
     BaseOutputFeatureConfig,
@@ -34,5 +34,5 @@ class ECDModelConfig(ModelConfig):
 
     trainer: ECDTrainerConfig = ECDTrainerField().get_default_field()
     preprocessing: PreprocessingConfig = PreprocessingField().get_default_field()
-    defaults: DefaultsConfig = DefaultsField().get_default_field()
+    defaults: ECDDefaultsConfig = ECDDefaultsField().get_default_field()
     hyperopt: Optional[HyperoptConfig] = HyperoptField().get_default_field()

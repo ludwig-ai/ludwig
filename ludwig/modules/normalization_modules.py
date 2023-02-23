@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 
 import numpy as np
@@ -5,6 +6,8 @@ import torch
 from torch.nn import BatchNorm1d, BatchNorm2d, LayerNorm, Module
 
 from ludwig.utils.torch_utils import LudwigModule
+
+logger = logging.getLogger(__name__)
 
 
 # implementation adapted from https://github.com/dreamquark-ai/tabnet
@@ -19,14 +22,24 @@ class GhostBatchNormalization(LudwigModule):
 
     def forward(self, inputs):
         batch_size = inputs.shape[0]
-        if self.training and self.virtual_batch_size:
 
+        if self.training and self.virtual_batch_size:
             splits = inputs.chunk(int(np.ceil(batch_size / self.virtual_batch_size)), 0)
             if batch_size == 1:
+                logger.warning(
+                    "Batch size is 1, but batch normalization requires batch size >= 2. Skipping batch normalization."
+                    "Make sure to set `batch_size` to a value greater than 1."
+                )
                 # Skip batch normalization if the batch size is 1.
                 return torch.cat(splits, 0)
-            x = [self.bn(x) for x in splits]
-            return torch.cat(x, 0)
+            if batch_size % self.virtual_batch_size == 1:
+                # Skip batch normalization for the last chunk if it is size 1.
+                logger.warning(
+                    f"Virtual batch size `{self.virtual_batch_size}` is not a factor of the batch size `{batch_size}`, "
+                    "resulting in a chunk of size 1. Skipping batch normalization for the last chunk of size 1."
+                )
+            splits_with_bn = [self.bn(x) if x.shape[0] > 1 else x for x in splits]
+            return torch.cat(splits_with_bn, 0)
 
         if batch_size != 1 or not self.training:
             return self.bn(inputs)

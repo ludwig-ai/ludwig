@@ -1,4 +1,5 @@
 import copy
+import warnings
 from abc import ABC, abstractmethod
 from dataclasses import field, Field
 from typing import Any
@@ -8,7 +9,7 @@ from typing import Optional, Set, Tuple, Type, TypeVar, Union
 
 import marshmallow_dataclass
 import yaml
-from marshmallow import EXCLUDE, fields, schema, validate, ValidationError
+from marshmallow import fields, INCLUDE, pre_load, schema, validate, ValidationError
 from marshmallow.utils import missing
 from marshmallow_dataclass import dataclass as m_dataclass
 from marshmallow_jsonschema import JSONSchema as js
@@ -157,7 +158,7 @@ class BaseMarshmallowConfig(ABC):
         filled in as necessary.
         """
 
-        unknown = EXCLUDE
+        unknown = INCLUDE  # TODO: Change to RAISE and update descriptions once we want to enforce strict schemas.
         "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter."
 
         ordered = True
@@ -169,6 +170,21 @@ class BaseMarshmallowConfig(ABC):
         Returns: dict for this dataclass
         """
         return convert_submodules(self.__dict__)
+
+    @pre_load
+    def log_deprecation_warnings(self, data, **kwargs):
+        leftover = copy.deepcopy(data)
+        for key in data.keys():
+            if key not in self.fields:
+                del leftover[key]
+                # `type` is not declared on most schemas and is instead added dynamically:
+                if key != "type" and key != "feature_type":
+                    warnings.warn(
+                        f'"{key}" is not a valid parameter for the "{self.__class__.__name__}" schema, will be flagged '
+                        "as an error in v0.8",
+                        DeprecationWarning,
+                    )
+        return leftover
 
     @classmethod
     def from_dict(cls: Type[ConfigT], d: TDict[str, Any]) -> ConfigT:
@@ -855,7 +871,7 @@ def InitializerOrDict(
                         },
                         "required": ["type"],
                         "title": f"{self.name}_custom_option",
-                        "additionalProperties": True,
+                        "additionalProperties": True,  # Will be removed by initializer refactor PR.
                         "description": "Customize an existing initializer.",
                         "parameter_metadata": param_metadata,
                     },
@@ -1107,7 +1123,12 @@ def OneOfOptionsField(
 
 class TypeSelection(fields.Field):
     def __init__(
-        self, registry: Registry, default_value: Optional[str] = None, key: str = "type", description: str = ""
+        self,
+        registry: Registry,
+        default_value: Optional[str] = None,
+        key: str = "type",
+        description: str = "",
+        parameter_metadata: ParameterMetadata = None,
     ):
         self.registry = registry
         self.default_value = default_value
@@ -1127,7 +1148,7 @@ class TypeSelection(fields.Field):
             allow_none=False,
             dump_default=dump_default,
             load_default=load_default,
-            metadata={"description": description},
+            metadata={"description": description, "parameter_metadata": convert_metadata_to_json(parameter_metadata)},
         )
 
     def _deserialize(self, value, attr, data, **kwargs):
