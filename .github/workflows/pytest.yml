@@ -171,7 +171,7 @@ jobs:
 
       - name: Tests
         run: |
-          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=4500 pytest -v --timeout 300 --durations 100 -m "benchmark and not slow" --junitxml pytest.xml tests
+          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=4500 pytest -v --timeout 300 --durations 100 -m "($MARKERS) and benchmark and not slow" --junitxml pytest.xml tests
 
       - name: Upload Unit Test Results
         if: ${{ always() && !env.ACT }}
