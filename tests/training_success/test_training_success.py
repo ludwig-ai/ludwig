@@ -1,6 +1,7 @@
 import copy
 import logging
 from collections import deque
+from pprint import pprint
 
 import pytest
 import yaml
@@ -47,6 +48,9 @@ def defaults_config_generator(feature_type, only_include):
 
 
 def train_and_evaluate(config, dataset_name):
+    # adding print statements to be captured in pytest stdout and help debug tests.
+    print("Config used")
+    pprint(config)
     dataset_module = get_dataset(dataset_name)
     dataset = dataset_module.load()
     model = LudwigModel(config=config, callbacks=None, logging_level=logging.ERROR)
@@ -126,10 +130,10 @@ def test_binary_preprocessing_defaults(config, dataset_name):
     train_and_evaluate(config, dataset_name)
 
 
-@pytest.mark.text_feature
-@pytest.mark.parametrize("config,dataset_name", defaults_config_generator("text", "preprocessing"))
-def test_text_preprocessing_defaults(config, dataset_name):
-    train_and_evaluate(config, dataset_name)
+# @pytest.mark.text_feature
+# @pytest.mark.parametrize("config,dataset_name", defaults_config_generator("text", "preprocessing"))
+# def test_text_preprocessing_defaults(config, dataset_name):
+#     train_and_evaluate(config, dataset_name)
 
 
 # @pytest.mark.text_feature

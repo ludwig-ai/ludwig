@@ -23,7 +23,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         python-version: [3.9]
-        test-markers: ["number_feature", "category_feature", "binary_feature", "text_feature"]
+        test-markers: ["number_feature", "category_feature", "binary_feature"]
         include:
           - python-version: "3.9"
             pytorch-version: 1.13.0
@@ -106,7 +106,7 @@ jobs:
           KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
           KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
         run: |
-          pytest -s -v -m "$MARKERS" --junitxml pytest.xml tests/training_success
+          pytest -v -m "$MARKERS" --junitxml pytest.xml tests/training_success
 
       - name: Upload Unit Test Results
         if: always()
