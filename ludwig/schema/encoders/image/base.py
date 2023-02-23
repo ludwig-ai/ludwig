@@ -229,13 +229,13 @@ class Stacked2DCNNConfig(ImageEncoderConfig):
         default=None,
         allow_none=True,
         description="Number of convolutional layers to use in the encoder. ",
-        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["num_conv_layers"],
+        parameter_metadata=ENCODER_METADATA["conv_params"]["num_conv_layers"],
     )
 
     conv_layers: Optional[List[dict]] = schema_utils.DictList(
         default=None,
         description="List of convolutional layers to use in the encoder. ",
-        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["conv_layers"],
+        parameter_metadata=ENCODER_METADATA["conv_params"]["conv_layers"],
     )
 
     fc_dropout: Optional[float] = schema_utils.FloatRange(

@@ -38,13 +38,13 @@ class ConvLayersMixin:
         default=None,
         allow_none=True,
         description=NUM_CONV_LAYERS_DESCRIPTION,
-        parameter_metadata=ENCODER_METADATA["SequenceEncoder"]["num_conv_layers"],
+        parameter_metadata=ENCODER_METADATA["conv_params"]["num_conv_layers"],
     )
 
     conv_layers: List[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for conv_layers
         default=None,
         description=CONV_LAYERS_DESCRIPTION,
-        parameter_metadata=ENCODER_METADATA["SequenceEncoder"]["conv_layers"],
+        parameter_metadata=ENCODER_METADATA["conv_params"]["conv_layers"],
     )
 
 
