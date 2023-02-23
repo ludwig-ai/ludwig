@@ -37,7 +37,7 @@ def defaults_config_generator(feature_type, only_include):
             del config[key]
 
     config["model_type"] = "ecd"
-    config["trainer"] = {"train_steps": 2}
+    config["trainer"] = {"train_steps": 1}
 
     for item in explored:
         for default_config in generate_possible_configs(config_options=item[0]):
