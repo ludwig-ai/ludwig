@@ -147,7 +147,7 @@ class Stacked2DCNNConfig(ImageEncoderConfig):
         ["max", "average", "avg", "mean"],
         default="max",
         description="Pooling function to use.",
-        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["pool_function"],
+        parameter_metadata=ENCODER_METADATA["conv_params"]["pool_function"],
     )
 
     pool_kernel_size: Optional[Union[int, Tuple[int]]] = schema_utils.OneOfOptionsField(
