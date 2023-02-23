@@ -8,9 +8,9 @@ from ludwig.utils.torch_utils import initializer_registry
 
 
 def DropoutField(default: float = 0.0, description: str = None, parameter_metadata: ParameterMetadata = None) -> Field:
-    description = description or (
-        "Default dropout rate applied to fully connected layers. "
-        "Increasing dropout is a common form of regularization to combat overfitting. "
+    description = description or "Default dropout rate applied to fully connected layers."
+    full_description = description + (
+        " Increasing dropout is a common form of regularization to combat overfitting. "
         "The dropout is expressed as the probability of an element to be zeroed out (0.0 means no dropout)."
     )
     parameter_metadata = parameter_metadata or COMMON_METADATA["dropout"]
@@ -18,7 +18,7 @@ def DropoutField(default: float = 0.0, description: str = None, parameter_metada
         default=default,
         min=0,
         max=1,
-        description=description,
+        description=full_description,
         parameter_metadata=parameter_metadata,
     )
 

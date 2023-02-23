@@ -2,7 +2,7 @@ from typing import Any, Dict, List
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import AUDIO, SEQUENCE, TEXT, TIMESERIES
-from ludwig.schema import utils as schema_utils
+from ludwig.schema import common_fields, utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.metadata import ENCODER_METADATA
@@ -65,25 +65,22 @@ class SequenceEmbedConfig(SequenceEncoderConfig):
         description=ENCODER_METADATA["SequenceEmbed"]["type"].long_description,
     )
 
-    dropout: float = schema_utils.FloatRange(
-        default=0.0,
-        min=0,
-        max=1,
-        description="Dropout probability for the embedding.",
-        parameter_metadata=ENCODER_METADATA["SequenceEmbed"]["dropout"],
-    )
+    dropout: float = common_fields.DropoutField(description="Dropout rate applied to the embedding.")
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
         allow_none=True,
-        description="The maximum length of a sequence.",
+        description="Maximum sequence length past which tokenized sequence inputs will be truncated.",
         parameter_metadata=ENCODER_METADATA["SequenceEmbed"]["max_sequence_length"],
     )
 
     representation: str = schema_utils.StringOptions(
         ["dense", "sparse"],
         default="dense",
-        description="Representation of the embedding.",
+        description=(
+            "Representation of the embedding. `dense` means the embeddings are initialized randomly, "
+            "`sparse` means they are initialized to be one-hot encodings."
+        ),
         parameter_metadata=ENCODER_METADATA["SequenceEmbed"]["representation"],
     )
 
@@ -93,11 +90,7 @@ class SequenceEmbedConfig(SequenceEncoderConfig):
         parameter_metadata=ENCODER_METADATA["SequenceEmbed"]["vocab"],
     )
 
-    weights_initializer: str = schema_utils.InitializerOptions(
-        default="uniform",
-        description="Initializer to use for the weights matrix.",
-        parameter_metadata=ENCODER_METADATA["SequenceEmbed"]["weights_initializer"],
-    )
+    weights_initializer: str = common_fields.WeightsInitializerField(default="uniform")
 
     reduce_output: str = schema_utils.ReductionOptions(
         default="sum",
@@ -108,27 +101,49 @@ class SequenceEmbedConfig(SequenceEncoderConfig):
 
     embedding_size: int = schema_utils.PositiveInteger(
         default=256,
-        description="Size of the embedding.",
+        description=(
+            "The maximum embedding size. The actual size will be `min(vocabulary_size, embedding_size)` for "
+            "`dense` representations and exactly `vocabulary_size` for the `sparse` encoding, where `vocabulary_size` "
+            "is the number of unique strings appearing in the training set input column plus the number of "
+            "special tokens (`<UNK>`, `<PAD>`, `<SOS>`, `<EOS>`)."
+        ),
         parameter_metadata=ENCODER_METADATA["SequenceEmbed"]["embedding_size"],
     )
 
     embeddings_on_cpu: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to force the placement of the embedding matrix in regular memory and have the CPU "
-        "resolve them.",
+        description=(
+            "Whether to force the placement of the embedding matrix in regular memory and have the CPU resolve them. "
+            "By default embedding matrices are stored on GPU memory if a GPU is used, as it allows for faster access, "
+            "but in some cases the embedding matrix may be too large. This parameter forces the placement of the "
+            "embedding matrix in regular memory and the CPU is used for embedding lookup, slightly slowing down the "
+            "process as a result of data transfer between CPU and GPU memory."
+        ),
         parameter_metadata=ENCODER_METADATA["SequenceEmbed"]["embeddings_on_cpu"],
     )
 
     embeddings_trainable: bool = schema_utils.Boolean(
         default=True,
-        description="Whether the embedding is trainable.",
+        description=(
+            "If `true` embeddings are trained during the training process, if `false` embeddings are fixed. "
+            "It may be useful when loading pretrained embeddings for avoiding finetuning them. This parameter "
+            "has effect only when `representation` is `dense`; `sparse` one-hot encodings are not trainable."
+        ),
         parameter_metadata=ENCODER_METADATA["SequenceEmbed"]["embeddings_trainable"],
     )
 
     pretrained_embeddings: str = schema_utils.String(
         default=None,
         allow_none=True,
-        description="Path to a file containing pretrained embeddings.",
+        description=(
+            "Path to a file containing pretrained embeddings. By default `dense` embeddings are initialized "
+            "randomly, but this parameter allows to specify a path to a file containing embeddings in the "
+            "[GloVe format](https://nlp.stanford.edu/projects/glove/). When the file containing the embeddings is "
+            "loaded, only the embeddings with labels present in the vocabulary are kept, the others are discarded. "
+            "If the vocabulary contains strings that have no match in the embeddings file, their embeddings are "
+            "initialized with the average of all other embedding plus some random noise to make them different "
+            "from each other. This parameter has effect only if `representation` is `dense`."
+        ),
         parameter_metadata=ENCODER_METADATA["SequenceEmbed"]["pretrained_embeddings"],
     )
 
