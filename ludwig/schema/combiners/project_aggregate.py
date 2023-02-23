@@ -45,6 +45,12 @@ class ProjectAggregateCombinerConfig(BaseCombinerConfig):
         parameter_metadata=COMBINER_METADATA["ProjectAggregateCombiner"]["activation"],
     )
 
+    num_fc_layers: int = schema_utils.NonNegativeInteger(
+        default=2,
+        description="Number of fully connected layers after aggregation.",
+        parameter_metadata=COMBINER_METADATA["ProjectAggregateCombiner"]["num_fc_layers"],
+    )
+
     output_size: int = schema_utils.PositiveInteger(
         default=128,
         description="Output size of each layer of the stack of fully connected layers.",
@@ -61,12 +67,6 @@ class ProjectAggregateCombinerConfig(BaseCombinerConfig):
     norm_params: Optional[dict] = schema_utils.Dict(
         description="Parameters of the normalization to apply to each projection and fully connected layer.",
         parameter_metadata=COMBINER_METADATA["ProjectAggregateCombiner"]["norm_params"],
-    )
-
-    num_fc_layers: int = schema_utils.NonNegativeInteger(
-        default=2,
-        description="Number of fully connected layers after aggregation.",
-        parameter_metadata=COMBINER_METADATA["ProjectAggregateCombiner"]["num_fc_layers"],
     )
 
     fc_layers: Optional[List[Dict[str, Any]]] = schema_utils.DictList(

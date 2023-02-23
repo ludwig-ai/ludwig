@@ -1,4 +1,5 @@
 uvicorn
+httpx
 fastapi
 python-multipart
 neuropod==0.3.0rc6 ; platform_system != "Windows" and python_version < '3.9'

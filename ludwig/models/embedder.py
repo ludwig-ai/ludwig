@@ -9,7 +9,7 @@ from ludwig.constants import BINARY, CATEGORY, NAME, NUMBER, PROC_COLUMN, TYPE
 from ludwig.features.feature_registries import get_input_type_registry
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.models.base import BaseModel
-from ludwig.schema.model_config import InputFeaturesContainer
+from ludwig.schema.features.base import BaseInputFeatureConfig, FeatureCollection
 from ludwig.types import FeatureConfigDict, TrainingSetMetadataDict
 from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
 from ludwig.utils.dataframe_utils import from_numpy_dataset
@@ -26,7 +26,7 @@ class Embedder(LudwigModule):
 
         self.input_features = LudwigFeatureDict()
 
-        input_feature_configs = InputFeaturesContainer()
+        input_feature_configs = []
         for feature in feature_configs:
             feature_cls = get_from_registry(feature[TYPE], get_input_type_registry())
             feature_obj = feature_cls.get_schema_cls().from_dict(feature)
@@ -37,10 +37,11 @@ class Embedder(LudwigModule):
             # through the saved weights and loading them dynamically after building the model.
             feature_obj.encoder.saved_weights_in_checkpoint = False
 
-            setattr(input_feature_configs, feature[NAME], feature_obj)
+            input_feature_configs.append(feature_obj)
 
+        feature_collection = FeatureCollection[BaseInputFeatureConfig](input_feature_configs)
         try:
-            self.input_features.update(BaseModel.build_inputs(input_feature_configs=input_feature_configs))
+            self.input_features.update(BaseModel.build_inputs(input_feature_configs=feature_collection))
         except KeyError as e:
             raise KeyError(
                 f"An input feature has a name that conflicts with a class attribute of torch's ModuleDict: {e}"

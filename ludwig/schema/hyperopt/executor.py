@@ -27,7 +27,7 @@ class ExecutorConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     time_budget_s: int = schema_utils.PositiveInteger(
-        default=3600, description="The number of seconds for the entire hyperopt run."
+        default=3600, allow_none=True, description="The number of seconds for the entire hyperopt run."
     )
 
     trial_driver_resources: Dict[str, float] = schema_utils.Dict(
@@ -49,6 +49,7 @@ class ExecutorConfig(schema_utils.BaseMarshmallowConfig):
 
     kubernetes_namespace: Optional[str] = schema_utils.String(
         default=None,
+        allow_none=True,
         description=(
             "When running on Kubernetes, provide the namespace of the Ray cluster to sync results between "
             "pods. See the Ray docs for more info."
@@ -96,7 +97,7 @@ def ExecutorDataclassField(description: str, default: Dict = {}):
     if not isinstance(default, dict):
         raise ValidationError(f"Invalid default: `{default}`")
 
-    load_default = ExecutorConfig.Schema().load(default)
+    load_default = lambda: ExecutorConfig.Schema().load(default)
     dump_default = ExecutorConfig.Schema().dump(default)
 
     return field(
@@ -108,5 +109,5 @@ def ExecutorDataclassField(description: str, default: Dict = {}):
                 metadata={"description": description, "parameter_metadata": None},
             )
         },
-        default_factory=lambda: load_default,
+        default_factory=load_default,
     )

@@ -1,5 +1,3 @@
-from marshmallow_dataclass import dataclass
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
     AUDIO,
@@ -17,13 +15,15 @@ from ludwig.constants import (
     VECTOR,
 )
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.defaults.base import BaseDefaultsConfig
 from ludwig.schema.defaults.utils import DefaultsDataclassField
 from ludwig.schema.features.base import BaseFeatureConfig
+from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
-@dataclass
-class DefaultsConfig(schema_utils.BaseMarshmallowConfig):
+@ludwig_dataclass
+class ECDDefaultsConfig(BaseDefaultsConfig):
     audio: BaseFeatureConfig = DefaultsDataclassField(feature_type=AUDIO)
 
     bag: BaseFeatureConfig = DefaultsDataclassField(feature_type=BAG)
@@ -52,11 +52,12 @@ class DefaultsConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-def get_defaults_jsonschema():
+def get_ecd_defaults_jsonschema():
     """Returns a JSON schema structured to only require a `type` key and then conditionally apply a corresponding
     combiner's field constraints."""
-    preproc_schema = schema_utils.unload_jsonschema_from_marshmallow_class(DefaultsConfig)
+    preproc_schema = schema_utils.unload_jsonschema_from_marshmallow_class(ECDDefaultsConfig)
     props = preproc_schema["properties"]
+
     return {
         "type": "object",
         "properties": props,
@@ -64,3 +65,13 @@ def get_defaults_jsonschema():
         "title": "global_defaults_options",
         "description": "Set global defaults for input and output features",
     }
+
+
+@DeveloperAPI
+class ECDDefaultsField(schema_utils.DictMarshmallowField):
+    def __init__(self):
+        super().__init__(ECDDefaultsConfig)
+
+    @staticmethod
+    def _jsonschema_type_mapping():
+        return get_ecd_defaults_jsonschema()

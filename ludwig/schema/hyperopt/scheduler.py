@@ -40,28 +40,13 @@ def register_scheduler_config(name: str):
     return wrap
 
 
-@DeveloperAPI
-@ludwig_dataclass
-class BaseSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
-    """Base class for schedulers.
-
-    Not meant to be used directly.
-    """
-
-    type: str
-    """Name corresponding to a scheduler in `ludwig.schema.hyperopt.scheduler.scheduler_registry`.
-
-    Technically mutable, but attempting to load a derived scheduler with `type` set to a mismatched value will result in
-    a `ValidationError`.
-    """
-
-
 # Field aliases to cut down on code reuse:
 @DeveloperAPI
 def metric_alias(default=None):
     return schema_utils.StringOptions(
         options=list(DEFAULT_RESULT_KEYS) + [RAY_TUNE_DESULT_DEFAULT_METRIC],
         default=default,
+        allow_none=default is None,
         description=(
             "The training result objective value attribute. Stopping procedures will use this attribute. If None but a "
             "mode was passed, the ray.tune.result.DEFAULT_METRIC will be used per default."
@@ -96,7 +81,19 @@ def max_t_alias(default=100):
 
 @DeveloperAPI
 @ludwig_dataclass
-class CommonSchedulerOptions:
+class BaseSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
+    """Base class for schedulers.
+
+    Not meant to be used directly.
+    """
+
+    type: str
+    """Name corresponding to a scheduler in `ludwig.schema.hyperopt.scheduler.scheduler_registry`.
+
+    Technically mutable, but attempting to load a derived scheduler with `type` set to a mismatched value will result in
+    a `ValidationError`.
+    """
+
     time_attr: str = time_attr_alias()
 
     metric: Optional[str] = metric_alias()
@@ -104,6 +101,7 @@ class CommonSchedulerOptions:
     mode: Optional[str] = schema_utils.StringOptions(
         options=["min", "max"],
         default=None,
+        allow_none=True,
         description=(
             "One of {min, max}. Determines whether objective is minimizing or maximizing the metric attribute."
         ),
@@ -111,10 +109,16 @@ class CommonSchedulerOptions:
 
 
 @DeveloperAPI
+@ludwig_dataclass
+class BaseHyperbandSchedulerConfig(BaseSchedulerConfig):
+    max_t: int = max_t_alias()
+
+
+@DeveloperAPI
 @register_scheduler_config("async_hyperband")
 @register_scheduler_config("asynchyperband")
 @ludwig_dataclass
-class AsyncHyperbandSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions):
+class AsyncHyperbandSchedulerConfig(BaseHyperbandSchedulerConfig):
     """Asynchronous hyperband (ASHA) scheduler settings."""
 
     type: str = schema_utils.ProtectedString("async_hyperband")
@@ -136,7 +140,7 @@ class AsyncHyperbandSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions)
 @DeveloperAPI
 @register_scheduler_config("hyperband")
 @ludwig_dataclass
-class HyperbandSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions):
+class HyperbandSchedulerConfig(BaseHyperbandSchedulerConfig):
     """Standard hyperband scheduler settings."""
 
     type: str = schema_utils.ProtectedString("hyperband")
@@ -156,7 +160,7 @@ class HyperbandSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions):
 @register_scheduler_config("median_stopping_rule")
 @register_scheduler_config("medianstoppingrule")
 @ludwig_dataclass
-class MedianStoppingRuleSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions):
+class MedianStoppingRuleSchedulerConfig(BaseSchedulerConfig):
     """Median Stopping Rule scheduler settings."""
 
     type: str = schema_utils.ProtectedString("median_stopping_rule")
@@ -196,7 +200,7 @@ class MedianStoppingRuleSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOpti
 @DeveloperAPI
 @register_scheduler_config("pbt")
 @ludwig_dataclass
-class PopulationBasedTrainingSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions):
+class PopulationBasedTrainingSchedulerConfig(BaseSchedulerConfig):
     """Population Based Training scheduler settings."""
 
     type: str = schema_utils.ProtectedString("pbt")
@@ -264,11 +268,13 @@ class PopulationBasedTrainingSchedulerConfig(BaseSchedulerConfig, CommonSchedule
 
     # TODO: Add schema support for Callable
     custom_explore_fn: Union[str, Callable] = schema_utils.String(
+        default=None,
+        allow_none=True,
         description=(
             "You can also specify a custom exploration function. This function is invoked as f(config) after built-in "
             "perturbations from hyperparam_mutations are applied, and should return config updated as needed. You must "
             "specify at least one of hyperparam_mutations or custom_explore_fn."
-        )
+        ),
     )
 
     log_config: bool = schema_utils.Boolean(
@@ -308,17 +314,19 @@ class PopulationBasedTrainingReplaySchedulerConfig(BaseSchedulerConfig):
 
     # TODO: This should technically be a required paremeter. Do we need to add support for required params?
     policy_file: str = schema_utils.String(
+        default=None,
+        allow_none=True,
         description=(
             "The PBT policy file. Usually this is stored in ~/ray_results/experiment_name/pbt_policy_xxx.txt where xxx "
             "is the trial ID."
-        )
+        ),
     )
 
 
 @DeveloperAPI
 @register_scheduler_config("pb2")
 @ludwig_dataclass
-class PopulationBasedBanditsSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions):
+class PopulationBasedBanditsSchedulerConfig(BaseSchedulerConfig):
     """Population Based Bandits (PB2) scheduler settings."""
 
     type: str = schema_utils.ProtectedString("pb2")
@@ -383,7 +391,7 @@ class PopulationBasedBanditsSchedulerConfig(BaseSchedulerConfig, CommonScheduler
 @DeveloperAPI
 @register_scheduler_config("hb_bohb")
 @ludwig_dataclass
-class BOHBSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions):
+class BOHBSchedulerConfig(BaseHyperbandSchedulerConfig):
     """Hyperband for BOHB (hb_bohb) scheduler settings."""
 
     type: str = schema_utils.ProtectedString("hb_bohb")
@@ -419,10 +427,14 @@ class ResourceChangingSchedulerConfig(BaseSchedulerConfig):
     type: str = schema_utils.ProtectedString("resource_changing")
 
     base_scheduler: Union[str, None, Callable] = schema_utils.String(
-        description=("The scheduler to provide decisions about trials. If None, a default FIFOScheduler will be used.")
+        default=None,
+        allow_none=True,
+        description=("The scheduler to provide decisions about trials. If None, a default FIFOScheduler will be used."),
     )
 
     resources_allocation_function: Union[str, Callable] = schema_utils.String(
+        default=None,
+        allow_none=True,
         description=(
             "The callable used to change live trial resource requiements during tuning. This callable will be called on"
             " each trial as it finishes one step of training. The callable must take four arguments: TrialRunner, "
@@ -431,7 +443,7 @@ class ResourceChangingSchedulerConfig(BaseSchedulerConfig):
             "resources_allocation_function is None, no resource requirements will be changed at any time. By default, "
             "DistributeResources will be used, distributing available CPUs and GPUs over all running trials in a robust"
             " way, without any prioritization."
-        )
+        ),
     )
 
 
@@ -507,7 +519,7 @@ def SchedulerDataclassField(default={"type": "fifo"}, description="Hyperopt sche
         raise ValidationError(f"Invalid default: `{default}`")
     try:
         opt = scheduler_config_registry[default["type"].lower()]
-        load_default = opt.Schema().load(default)
+        load_default = lambda: opt.Schema().load(default)
         dump_default = opt.Schema().dump(default)
 
         return field(
@@ -519,7 +531,7 @@ def SchedulerDataclassField(default={"type": "fifo"}, description="Hyperopt sche
                     metadata={"description": description},
                 )
             },
-            default_factory=lambda: load_default,
+            default_factory=load_default,
         )
     except Exception as e:
         raise ValidationError(

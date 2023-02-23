@@ -19,11 +19,12 @@ import math
 import queue
 import threading
 from functools import lru_cache
-from typing import Dict, Iterator, Optional, Union
+from typing import Dict, Iterator, Literal, Optional, Union
 
 import numpy as np
 import pandas as pd
 import ray
+import torch
 from packaging import version
 from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray.data import read_parquet
@@ -36,7 +37,7 @@ from ludwig.data.batcher.base import Batcher
 from ludwig.data.dataset.base import Dataset, DatasetManager
 from ludwig.distributed import DistributedStrategy
 from ludwig.types import FeatureConfigDict, ModelConfigDict, TrainingSetMetadataDict
-from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP, DATA_TRAIN_PARQUET_FP
+from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP, DATA_TRAIN_PARQUET_FP, from_numpy_dataset, to_numpy_dataset
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.error_handling_utils import default_retry
 from ludwig.utils.fs_utils import get_fs_and_path
@@ -61,9 +62,13 @@ def read_remote_parquet(path: str):
 class RayDataset(Dataset):
     """Wrapper around ray.data.Dataset.
 
-    Attributes:
-        auto_window: If True and the dataset is larger than available memory,
-            automatically set window size to `<available memory> // 5`.
+    Args:
+        df: The data to wrap
+        features: Feature-level config indexed by feature name
+        training_set_metadata: Additional training set information
+        backend: The local/distributed compute coordinator
+        window_size_bytes: The requested size of a dataset window in bytes. If "auto", sets the window size relative to
+            the dataset size and object store size. If not specified, no windowing will occur.
     """
 
     def __init__(
@@ -72,7 +77,7 @@ class RayDataset(Dataset):
         features: Dict[str, FeatureConfigDict],
         training_set_metadata: TrainingSetMetadataDict,
         backend: Backend,
-        auto_window: bool = False,
+        window_size_bytes: Optional[Union[int, Literal["auto"]]] = None,
     ):
         self.df_engine = backend.df_engine
         self.ds = self.df_engine.to_ray_dataset(df) if not isinstance(df, str) else read_remote_parquet(df)
@@ -81,16 +86,17 @@ class RayDataset(Dataset):
         self.data_hdf5_fp = training_set_metadata.get(DATA_TRAIN_HDF5_FP)
         self.data_parquet_fp = training_set_metadata.get(DATA_TRAIN_PARQUET_FP)
         self._processed_data_fp = df if isinstance(df, str) else None
-        self.auto_window = auto_window
+        self.window_size_bytes = self.get_window_size_bytes(window_size_bytes)
 
-    def _get_window_size_bytes_ray_2_2(self, window_size: Optional[int] = None) -> int:
-        # If user has specified a window size, use it as is
-        if window_size:
-            return window_size
+    def get_window_size_bytes(self, window_size_bytes: Optional[Union[int, Literal["auto"]]] = None) -> int:
+        """Return this dataset's window size in bytes, or translate auto-windowing into bytes."""
+        # If user has specified a window size, use it as-is.
+        if isinstance(window_size_bytes, int):
+            return window_size_bytes
 
-        # If the user does not supply a window size and the dataset is large,
+        # If the user requests auto window sizing and the dataset is large,
         # set the window size to `<available memory> // 5`.
-        if self.auto_window and window_size is None:
+        elif window_size_bytes == "auto":
             ds_memory_size = self.in_memory_size_bytes
             cluster_memory_size = ray.cluster_resources()["object_store_memory"]
             if ds_memory_size > cluster_memory_size // 5:
@@ -99,48 +105,15 @@ class RayDataset(Dataset):
                     "In-memory dataset size is greater than 20%% of object store memory. "
                     "Enabling windowed shuffling of data to prevent chances of OOMs. "
                 )
-                window_size_bytes = int(cluster_memory_size // 5)
-                return window_size_bytes
+                if _ray_nightly:
+                    # In Ray nightly (>= 2.3), window size is specified as either -1 or a percentage
+                    # from 0 to 1. Default to always using 20% of object store memory.
+                    return 0.2
+                return int(cluster_memory_size // 5)
 
         # By default, set to -1 so that an infinite window size
         # will be used which effectively results in bulk data ingestion
         return -1
-
-    def _get_window_size_bytes_ray_2_3(self, window_size: Optional[int] = None) -> int:
-        # In Ray 2.3, we can't specify window sizes in terms of bytes, but it is
-        # instead expressed as a percentage of the object store memory.
-        if window_size:
-            # A value of > 1 will result in disk spillage, which is something we want
-            # to avoid and not encourage users to do. It can be set to -1 to create an
-            # infinite pipeline. Values should be between 0 and 1.
-            if window_size > 1 or (window_size < 0 and window_size != -1):
-                raise ValueError(
-                    "Window size must be a percentage of object store memory in Ray 2.3."
-                    "Please specify a value between 0 and 1. A good value is 0.2."
-                )
-            else:
-                return window_size
-
-        if self.auto_window and window_size is None:
-            ds_memory_size = self.in_memory_size_bytes
-            cluster_memory_size = ray.cluster_resources()["object_store_memory"]
-            if ds_memory_size > cluster_memory_size // 5:
-                logger.info(
-                    "In-memory dataset size is greater than 20%% of object store memory. "
-                    "Enabling windowed shuffling of data to prevent chances of OOMs. "
-                )
-                # Default to always using 20% of object store memory.
-                return 0.2
-
-        # By default, set to -1 so that an infinite window size
-        # will be used which effectively results in bulk data ingestion
-        return -1
-
-    def get_window_size_bytes(self, window_size: Optional[int] = None) -> int:
-        if _ray_nightly:
-            return self._get_window_size_bytes_ray_2_3(window_size)
-        else:
-            return self._get_window_size_bytes_ray_2_2(window_size)
 
     @contextlib.contextmanager
     def initialize_batcher(
@@ -150,6 +123,7 @@ class RayDataset(Dataset):
         random_seed=0,
         ignore_last=False,
         distributed=None,
+        augmentation_pipeline=None,
     ):
         yield RayDatasetBatcher(
             self.ds.repeat().iter_datasets(),
@@ -158,6 +132,7 @@ class RayDataset(Dataset):
             batch_size,
             self.size,
             ignore_last,
+            augmentation_pipeline=augmentation_pipeline,
         )
 
     def __len__(self):
@@ -185,7 +160,6 @@ class RayDataset(Dataset):
 
         This operation occurs in place and overwrites `self.ds` with a
         new repartitioned dataset.
-
         Args:
             num_blocks: Number of blocks in the repartitioned data.
         """
@@ -202,15 +176,11 @@ class RayDatasetManager(DatasetManager):
         dataset: Union[str, DataFrame],
         config: ModelConfigDict,
         training_set_metadata: TrainingSetMetadataDict,
-        auto_window: bool = False,
     ) -> "RayDataset":
-        """Create a new Ray dataset with config.
-
-        Args:
-            auto_window: If True, enable autosizing of data windows for large datasets.
-        """
+        """Create a new Ray dataset with config."""
+        window_size_bytes = self.backend._data_loader_kwargs.get("window_size_bytes", None)
         return RayDataset(
-            dataset, get_proc_features(config), training_set_metadata, self.backend, auto_window=auto_window
+            dataset, get_proc_features(config), training_set_metadata, self.backend, window_size_bytes=window_size_bytes
         )
 
     def save(
@@ -277,6 +247,7 @@ class RayDatasetShard(Dataset):
         random_seed: int = default_random_seed,
         ignore_last: bool = False,
         distributed: DistributedStrategy = None,
+        augmentation_pipeline=None,
     ):
         yield RayDatasetBatcher(
             self.epoch_iter,
@@ -285,6 +256,7 @@ class RayDatasetShard(Dataset):
             batch_size,
             self.size,
             ignore_last,
+            augmentation_pipeline=augmentation_pipeline,
         )
 
     @lru_cache(1)
@@ -306,12 +278,15 @@ class RayDatasetBatcher(Batcher):
         batch_size: int,
         samples_per_epoch: int,
         ignore_last: bool = False,
+        # TODO: figure out correct typing for augmentation_pipeline after refactoring is done
+        augmentation_pipeline=None,
     ):
         self.dataset_epoch_iterator = dataset_epoch_iterator
         self.batch_size = batch_size
         self.samples_per_epoch = samples_per_epoch
         self.training_set_metadata = training_set_metadata
         self.ignore_last = ignore_last
+        self.augmentation_pipeline = augmentation_pipeline
 
         self.features = features
         self.columns = list(features.keys())
@@ -400,6 +375,28 @@ class RayDatasetBatcher(Batcher):
                 res[c] = res[c].reshape((-1, *reshape))
         return res
 
+    def _augment_batch_fn(self):
+        augmentation_pipeline = self.augmentation_pipeline
+
+        def augment_batch(df: pd.DataFrame) -> pd.DataFrame:
+            # df is pandas dataframe, where each column is Series, to use data as arrays
+            # convert dataframe to dict of arrays
+            dict_of_arrays = to_numpy_dataset(df)
+
+            if augmentation_pipeline:
+                for c, augmentations in augmentation_pipeline.items():
+                    # TODO: convert to debug message when done with development
+                    logger.info(f"RayDatasetBatcher applying augmentation pipeline to batch for feature {c}")
+
+                    # apply augmentation pipeline operations to the batch of np.array
+                    dict_of_arrays[c] = augmentations(torch.tensor(dict_of_arrays[c])).numpy()
+
+            # convert dict of arrays back to dataframe
+            df = from_numpy_dataset(dict_of_arrays)
+            return df
+
+        return augment_batch
+
     def _create_sync_reader(self, pipeline: DatasetPipeline):
         def sync_read():
             for batch in pipeline.iter_batches(prefetch_blocks=0, batch_size=self.batch_size, batch_format="pandas"):
@@ -410,18 +407,32 @@ class RayDatasetBatcher(Batcher):
     def _create_async_reader(self, pipeline: DatasetPipeline):
         q = queue.Queue(maxsize=100)
         batch_size = self.batch_size
+        augment_batch = self._augment_batch_fn()
 
         def producer():
-            for batch in pipeline.iter_batches(prefetch_blocks=0, batch_size=batch_size, batch_format="pandas"):
-                res = self._prepare_batch(batch)
-                q.put(res)
-            q.put(None)
+            nonlocal pipeline
+
+            try:
+                # if augmentation is specified, setup prefetching batch of data
+                if self.augmentation_pipeline:
+                    pipeline = pipeline.map_batches(augment_batch, batch_size=batch_size, batch_format="pandas")
+
+                for batch in pipeline.iter_batches(prefetch_blocks=0, batch_size=batch_size, batch_format="pandas"):
+                    res = self._prepare_batch(batch)
+                    q.put(res)
+                q.put(None)
+            except Exception as e:
+                # Ensure any exceptions raised in this background thread are raised on the main thread
+                q.put(e)
 
         def async_read():
             t = threading.Thread(target=producer)
             t.start()
             while True:
                 batch = q.get(block=True)
+                if isinstance(batch, Exception):
+                    # Raise any exceptions from the producer thread
+                    raise batch
                 if batch is None:
                     break
                 yield batch

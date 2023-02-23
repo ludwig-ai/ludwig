@@ -1,5 +1,5 @@
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import BINARY, BINARY_WEIGHTED_CROSS_ENTROPY, ROC_AUC
+from ludwig.constants import BINARY, BINARY_WEIGHTED_CROSS_ENTROPY, MODEL_ECD, MODEL_GBM, ROC_AUC
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -11,7 +11,9 @@ from ludwig.schema.features.loss.utils import LossDataclassField
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
 from ludwig.schema.features.utils import (
-    input_config_registry,
+    defaults_config_registry,
+    ecd_input_config_registry,
+    gbm_input_config_registry,
     input_mixin_registry,
     output_config_registry,
     output_mixin_registry,
@@ -30,19 +32,35 @@ class BinaryInputFeatureConfigMixin(BaseMarshmallowConfig):
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=BINARY)
 
+
+@DeveloperAPI
+@ludwig_dataclass
+class BinaryInputFeatureConfig(BaseInputFeatureConfig, BinaryInputFeatureConfigMixin):
+    """BinaryInputFeatureConfig is a dataclass that configures the parameters used for a binary input feature."""
+
+    encoder: BaseEncoderConfig = None
+
+
+@DeveloperAPI
+@ecd_input_config_registry.register(BINARY)
+@ludwig_dataclass
+class ECDBinaryInputFeatureConfig(BinaryInputFeatureConfig):
     encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_ECD,
         feature_type=BINARY,
         default="passthrough",
     )
 
 
 @DeveloperAPI
-@input_config_registry.register(BINARY)
+@gbm_input_config_registry.register(BINARY)
 @ludwig_dataclass
-class BinaryInputFeatureConfig(BaseInputFeatureConfig, BinaryInputFeatureConfigMixin):
-    """BinaryInputFeatureConfig is a dataclass that configures the parameters used for a binary input feature."""
-
-    pass
+class GBMBinaryInputFeatureConfig(BinaryInputFeatureConfig):
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_GBM,
+        feature_type=BINARY,
+        default="passthrough",
+    )
 
 
 @DeveloperAPI
@@ -110,4 +128,16 @@ class BinaryOutputFeatureConfig(BaseOutputFeatureConfig, BinaryOutputFeatureConf
         description="The threshold used to convert output probabilities to predictions. Predicted probabilities greater"
         "than or equal to threshold are mapped to True.",
         parameter_metadata=FEATURE_METADATA[BINARY]["threshold"],
+    )
+
+
+@DeveloperAPI
+@defaults_config_registry.register(BINARY)
+@ludwig_dataclass
+class BinaryDefaultsConfig(BinaryInputFeatureConfigMixin, BinaryOutputFeatureConfigMixin):
+    # NOTE(travis): defaults use ECD input feature as it contains all the encoders
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_ECD,
+        feature_type=BINARY,
+        default="passthrough",
     )

@@ -225,14 +225,14 @@ def test_lightgbm_dataset_partition(ray_cluster_2cpu):
     backend_config = {**RAY_BACKEND_CONFIG}
     backend_config["preprocessor_kwargs"] = {"num_cpu": 1}
     model = LudwigModel(config, backend=backend_config)
-    lgbm_model = GBM(ModelConfig(config))
+    lgbm_model = GBM(ModelConfig.from_dict(config))
     trainer = LightGBMRayTrainer(GBMTrainerConfig(), lgbm_model)
 
     def create_dataset(model: LudwigModel, size: int) -> RayDataset:
         df = pd.DataFrame(
             {
-                "in_column_mZFLky": np.random.randint(0, 1, size=(size,), dtype=np.uint8),
-                "out_column_mZFLky": np.random.randint(0, 1, size=(size,), dtype=np.uint8),
+                "in_column_lm_J5T": np.random.randint(0, 1, size=(size,), dtype=np.uint8),
+                "out_column_2Xl8CP": np.random.randint(0, 1, size=(size,), dtype=np.uint8),
             }
         )
         df = dask.dataframe.from_pandas(df, npartitions=1)

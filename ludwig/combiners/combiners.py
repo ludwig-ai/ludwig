@@ -200,8 +200,6 @@ class SequenceConcatCombiner(Combiner):
             if len(self.input_features[k].output_shape) == 2:
                 seq_size = self.input_features[k].output_shape[0]
                 break
-        if not seq_size:
-            raise ValueError("At least one of the input features for SequenceConcatCombiner should be a sequence.")
 
         # collect the size of the last dimension for all input feature
         # encoder outputs
@@ -567,8 +565,6 @@ class TabTransformerCombiner(Combiner):
         self.name = "TabTransformerCombiner"
         logger.debug(f"Initializing {self.name}")
 
-        if config.reduce_output is None:
-            raise ValueError("TabTransformer requires the `reduce_output` " "parameter")
         self.reduce_output = config.reduce_output
         self.reduce_sequence = SequenceReducer(
             reduce_mode=config.reduce_output, max_sequence_length=len(input_features), encoding_size=config.hidden_size

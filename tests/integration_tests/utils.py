@@ -24,7 +24,7 @@ import tempfile
 import traceback
 import uuid
 from distutils.util import strtobool
-from typing import Any, Dict, List, Optional, Set, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, TYPE_CHECKING, Union
 
 import cloudpickle
 import numpy as np
@@ -66,6 +66,10 @@ from ludwig.trainers.trainer import Trainer
 from ludwig.utils import fs_utils
 from ludwig.utils.data_utils import read_csv, replace_file_extension, use_credentials
 
+if TYPE_CHECKING:
+    from ludwig.data.dataset.base import Dataset
+    from ludwig.schema.model_types.base import ModelConfig
+
 logger = logging.getLogger(__name__)
 
 # Used in sequence-related unit tests (encoders, features) as well as end-to-end integration tests.
@@ -80,7 +84,7 @@ HF_ENCODERS = [
     "gpt2",
     "transformer_xl",
     "xlnet",
-    "xlm",
+    # "xlm",  # disabled in the schema: https://github.com/ludwig-ai/ludwig/pull/3108
     "roberta",
     "distilbert",
     # "ctrl",  # disabled in the schema: https://github.com/ludwig-ai/ludwig/pull/2976
@@ -250,7 +254,7 @@ def category_feature(output_feature=False, **kwargs):
     else:
         feature.update(
             {
-                ENCODER: {"type": "dense", "vocab_size": 10, "embedding_size": 5},
+                ENCODER: {"vocab_size": 10, "embedding_size": 5},
             }
         )
     recursive_update(feature, kwargs)
@@ -565,8 +569,8 @@ def generate_output_features_with_dependencies_complex():
     )
 
     # The correct order ids[tf, sf, nf, vf, set_f, cf]
-    # # shuffling it to test the robustness of the topological sort
-    output_features = [nf, tf, set_f, vf, cf, sf, nf]
+    # shuffling it to test the robustness of the topological sort
+    output_features = [nf, tf, set_f, vf, cf, sf]
 
     return output_features
 
@@ -906,13 +910,22 @@ def train_with_backend(
                         for k, v in stats.items()
                     }
 
-                for (k1, v1), (k2, v2) in zip(filter(eval_stats).items(), filter(local_eval_stats).items()):
-                    assert k1 == k2
-                    for (name1, metric1), (name2, metric2) in zip(v1.items(), v2.items()):
-                        assert name1 == name2
-                        assert np.isclose(
-                            metric1, metric2, rtol=1e-03, atol=1e-04
-                        ), f"metric {name1} for feature {k1}: {metric1} != {metric2}"
+                for (feature_name_from_eval, metrics_dict_from_eval), (
+                    feature_name_from_local,
+                    metrics_dict_from_local,
+                ) in zip(filter(eval_stats).items(), filter(local_eval_stats).items()):
+                    for (metric_name_from_eval, metric_value_from_eval), (
+                        metric_name_from_local,
+                        metric_value_from_local,
+                    ) in zip(metrics_dict_from_eval.items(), metrics_dict_from_local.items()):
+                        assert metric_name_from_eval == metric_name_from_local, (
+                            f"Metric mismatch between eval and local. Metrics from eval: "
+                            f"{metrics_dict_from_eval.keys()}. Metrics from local: {metrics_dict_from_local.keys()}"
+                        )
+                        assert np.isclose(metric_value_from_eval, metric_value_from_local, rtol=1e-03, atol=1e-04), (
+                            f"Metric {metric_name_from_eval} for feature {feature_name_from_eval}: "
+                            f"{metric_value_from_eval} != {metric_value_from_local}"
+                        )
 
         return model
 
@@ -959,6 +972,54 @@ def assert_all_required_metrics_exist(
             assert required_metric_names.issubset(
                 metric_names
             ), f"required metrics {required_metric_names} not in metrics {metric_names} for feature {feature_name}"
+
+
+def assert_preprocessed_dataset_shape_and_dtype_for_feature(
+    feature_name: str,
+    preprocessed_dataset: "Dataset",
+    config_obj: "ModelConfig",
+    expected_dtype: np.dtype,
+    expected_shape: Tuple,
+):
+    """Asserts that the preprocessed dataset has the correct shape and dtype for a given feature type.
+
+    Args:
+        feature_name: the name of the feature to check
+        preprocessed_dataset: the preprocessed dataset
+        config_obj: the model config object
+        expected_dtype: the expected dtype
+        expected_shape: the expected shape
+    Returns:
+        None.
+    Raises:
+        AssertionError if the preprocessed dataset does not have the correct shape and dtype for the given feature type.
+    """
+    if_configs = [if_config for if_config in config_obj.input_features if if_config.name == feature_name]
+    # fail fast if given `feature_name`` is not found or is not unique
+    if len(if_configs) != 1:
+        raise ValueError(f"feature_name {feature_name} found {len(if_configs)} times in config_obj")
+    if_config = if_configs[0]
+
+    if_config_proc_column = if_config.proc_column
+    for result in [
+        preprocessed_dataset.training_set,
+        preprocessed_dataset.validation_set,
+        preprocessed_dataset.test_set,
+    ]:
+        result_df = result.to_df()
+        result_df_proc_col = result_df[if_config_proc_column]
+
+        # Check that the proc col is of the correct dtype
+        result_df_proc_col_dtypes = set(result_df_proc_col.map(lambda x: x.dtype))
+        assert all(
+            [expected_dtype == dtype for dtype in result_df_proc_col_dtypes]
+        ), f"proc dtype should be {expected_dtype}, got the following set of values: {result_df_proc_col_dtypes}"
+
+        # Check that the proc col is of the right dimensions
+        result_df_proc_col_shapes = set(result_df_proc_col.map(lambda x: x.shape))
+        assert all(
+            expected_shape == shape for shape in result_df_proc_col_shapes
+        ), f"proc shape should be {expected_shape}, got the following set of values: {result_df_proc_col_shapes}"
 
 
 @contextlib.contextmanager

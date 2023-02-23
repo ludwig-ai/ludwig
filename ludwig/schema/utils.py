@@ -1,22 +1,25 @@
 import copy
-from abc import ABC
-from dataclasses import field
+from abc import ABC, abstractmethod
+from dataclasses import field, Field
 from typing import Any
 from typing import Dict as TDict
 from typing import List as TList
-from typing import Optional, Set, Tuple, Type, Union
+from typing import Optional, Set, Tuple, Type, TypeVar, Union
 
 import marshmallow_dataclass
 import yaml
 from marshmallow import EXCLUDE, fields, schema, validate, ValidationError
+from marshmallow.utils import missing
 from marshmallow_dataclass import dataclass as m_dataclass
 from marshmallow_jsonschema import JSONSchema as js
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import ACTIVE, COLUMN, NAME, PROC_COLUMN, TYPE
 from ludwig.modules.reduction_modules import reduce_mode_registry
+from ludwig.schema.metadata import COMMON_METADATA
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, ParameterMetadata
 from ludwig.utils.misc_utils import memoized_method
+from ludwig.utils.registry import Registry
 from ludwig.utils.torch_utils import activations, initializer_registry
 
 RECURSION_STOP_ENUM = {"weights_initializer", "bias_initializer", "norm_params"}
@@ -90,6 +93,13 @@ def convert_submodules(config_dict: dict) -> TDict[str, any]:
             output_dict[k] = v.to_dict()
             convert_submodules(output_dict[k])
 
+        elif isinstance(v, list):
+            # Handle generic lists
+            output_dict[k] = [x.to_dict() if isinstance(x, BaseMarshmallowConfig) else x for x in v]
+
+        elif isinstance(v, ListSerializable):
+            output_dict[k] = v.to_list()
+
         else:
             continue
 
@@ -124,6 +134,16 @@ def remove_duplicate_fields(properties: dict, fields: Optional[TList[str]] = Non
 
 
 @DeveloperAPI
+class ListSerializable(ABC):
+    @abstractmethod
+    def to_list(self) -> TList:
+        pass
+
+
+ConfigT = TypeVar("ConfigT", bound="BaseMarshmallowConfig")
+
+
+@DeveloperAPI
 class BaseMarshmallowConfig(ABC):
     """Base marshmallow class for common attributes and metadata."""
 
@@ -151,7 +171,7 @@ class BaseMarshmallowConfig(ABC):
         return convert_submodules(self.__dict__)
 
     @classmethod
-    def from_dict(cls, d: TDict[str, Any]):
+    def from_dict(cls: Type[ConfigT], d: TDict[str, Any]) -> ConfigT:
         schema = cls.get_class_schema()()
         return schema.load(d)
 
@@ -204,8 +224,12 @@ def InitializerOptions(default: str = "xavier_uniform", description="", paramete
 
 
 @DeveloperAPI
-def ActivationOptions(default: Union[str, None] = "relu", description="", parameter_metadata: ParameterMetadata = None):
+def ActivationOptions(
+    default: Union[str, None] = "relu", description=None, parameter_metadata: ParameterMetadata = None
+):
     """Utility wrapper that returns a `StringOptions` field with keys from `activations` registry."""
+    description = description or "Default activation function applied to the output of the fully connected layers."
+    parameter_metadata = parameter_metadata or COMMON_METADATA["activation"]
     return StringOptions(
         list(activations.keys()),
         default=default,
@@ -229,8 +253,8 @@ def ReductionOptions(default: Union[None, str] = None, description="", parameter
 
 @DeveloperAPI
 def RegularizerOptions(
-    default: Union[None, str] = None,
-    allow_none: bool = True,
+    default: Union[None, str],
+    allow_none: bool = False,
     description="",
     parameter_metadata: ParameterMetadata = None,
 ):
@@ -247,8 +271,8 @@ def RegularizerOptions(
 @DeveloperAPI
 def String(
     description: str,
-    default: Union[None, str] = None,
-    allow_none: bool = True,
+    default: Union[None, str],
+    allow_none: bool = False,
     pattern: str = None,
     parameter_metadata: ParameterMetadata = None,
 ):
@@ -281,8 +305,8 @@ def String(
 @DeveloperAPI
 def StringOptions(
     options: TList[str],
-    default: Union[None, str] = None,
-    allow_none: bool = True,
+    default: Union[None, str],
+    allow_none: bool = False,
     description: str = "",
     parameter_metadata: ParameterMetadata = None,
 ):
@@ -341,8 +365,8 @@ def ProtectedString(
 @DeveloperAPI
 def IntegerOptions(
     options: TList[int],
-    default: Union[None, int] = None,
-    allow_none: bool = True,
+    default: Union[None, int],
+    allow_none: bool = False,
     description: str = "",
     parameter_metadata: ParameterMetadata = None,
 ):
@@ -407,12 +431,8 @@ def Boolean(default: bool, description: str, parameter_metadata: ParameterMetada
 
 
 @DeveloperAPI
-def Integer(
-    default: Union[None, int] = None, allow_none=False, description="", parameter_metadata: ParameterMetadata = None
-):
+def Integer(default: Union[None, int], allow_none=False, description="", parameter_metadata: ParameterMetadata = None):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs."""
-    allow_none = allow_none or default is None
-
     if default is not None:
         try:
             assert isinstance(default, int)
@@ -437,12 +457,11 @@ def Integer(
 
 @DeveloperAPI
 def PositiveInteger(
-    description: str, default: Union[None, int], allow_none: bool = True, parameter_metadata: ParameterMetadata = None
+    description: str, default: Union[None, int], allow_none: bool = False, parameter_metadata: ParameterMetadata = None
 ):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be
     positive."""
     val = validate.Range(min=1)
-    allow_none = allow_none or default is None
 
     if default is not None:
         try:
@@ -471,14 +490,13 @@ def PositiveInteger(
 @DeveloperAPI
 def NonNegativeInteger(
     description: str,
-    default: Union[None, int] = None,
-    allow_none: bool = True,
+    default: Union[None, int],
+    allow_none: bool = False,
     parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be
     nonnegative."""
     val = validate.Range(min=0)
-    allow_none = allow_none or default is None
 
     if default is not None:
         try:
@@ -507,8 +525,8 @@ def NonNegativeInteger(
 @DeveloperAPI
 def IntegerRange(
     description: str,
-    default: Union[None, int] = None,
-    allow_none=False,
+    default: Union[None, int],
+    allow_none: bool = False,
     parameter_metadata: ParameterMetadata = None,
     min: int = None,
     max: int = None,
@@ -518,7 +536,6 @@ def IntegerRange(
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be in range
     set by relevant keyword args."""
     val = validate.Range(min=min, max=max, min_inclusive=min_inclusive, max_inclusive=max_inclusive)
-    allow_none = allow_none or default is None
 
     if default is not None:
         try:
@@ -546,15 +563,14 @@ def IntegerRange(
 
 @DeveloperAPI
 def NonNegativeFloat(
-    default: Union[None, float] = None,
-    allow_none=False,
+    default: Union[None, float],
+    allow_none: bool = False,
     description: str = "",
     max: Optional[float] = None,
     parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing numeric inputs must be nonnegative."""
     val = validate.Range(min=0.0, max=max)
-    allow_none = allow_none or default is None
 
     if default is not None:
         try:
@@ -581,8 +597,8 @@ def NonNegativeFloat(
 
 @DeveloperAPI
 def FloatRange(
-    default: Union[None, float] = None,
-    allow_none: bool = True,
+    default: Union[None, float],
+    allow_none: bool = False,
     description: str = "",
     parameter_metadata: ParameterMetadata = None,
     min: int = None,
@@ -593,7 +609,6 @@ def FloatRange(
     """Returns a dataclass field with marshmallow metadata enforcing numeric inputs must be in range set by
     relevant keyword args."""
     val = validate.Range(min=min, max=max, min_inclusive=min_inclusive, max_inclusive=max_inclusive)
-    allow_none = allow_none or default is None
 
     if default is not None:
         try:
@@ -634,12 +649,16 @@ def Dict(
             assert all([isinstance(k, str) for k in default.keys()])
         except Exception:
             raise ValidationError(f"Invalid default: `{default}`")
+    elif not allow_none:
+        default = {}
+
+    load_default = lambda: copy.deepcopy(default)
     return field(
         metadata={
             "marshmallow_field": fields.Dict(
                 fields.String(),
                 allow_none=allow_none,
-                load_default=default,
+                load_default=load_default,
                 dump_default=default,
                 metadata={
                     "description": description,
@@ -647,7 +666,7 @@ def Dict(
                 },
             )
         },
-        default_factory=lambda: default,
+        default_factory=load_default,
     )
 
 
@@ -666,6 +685,8 @@ def List(
 
         except Exception:
             raise ValidationError(f"Invalid default: `{default}`")
+    elif not allow_none:
+        default = []
 
     if list_type is str:
         field_type = fields.String()
@@ -678,12 +699,13 @@ def List(
     else:
         raise ValueError(f"Invalid list type: `{list_type}`")
 
+    load_default = lambda: copy.deepcopy(default)
     return field(
         metadata={
             "marshmallow_field": fields.List(
                 field_type,
                 allow_none=allow_none,
-                load_default=default,
+                load_default=load_default,
                 dump_default=default,
                 metadata={
                     "description": description,
@@ -691,13 +713,16 @@ def List(
                 },
             )
         },
-        default_factory=lambda: default,
+        default_factory=load_default,
     )
 
 
 @DeveloperAPI
 def DictList(
-    default: Union[None, TList[TDict]] = None, description: str = "", parameter_metadata: ParameterMetadata = None
+    default: Union[None, TList[TDict]] = None,
+    allow_none: bool = True,
+    description: str = "",
+    parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing input must be a list of dicts."""
     if default is not None:
@@ -708,13 +733,16 @@ def DictList(
                 assert all([isinstance(k, str) for k in d.keys()])
         except Exception:
             raise ValidationError(f"Invalid default: `{default}`")
+    elif not allow_none:
+        default = []
 
+    load_default = lambda: copy.deepcopy(default)
     return field(
         metadata={
             "marshmallow_field": fields.List(
                 fields.Dict(fields.String()),
                 allow_none=True,
-                load_default=default,
+                load_default=load_default,
                 dump_default=default,
                 metadata={
                     "description": description,
@@ -722,7 +750,7 @@ def DictList(
                 },
             )
         },
-        default_factory=lambda: default,
+        default_factory=load_default,
     )
 
 
@@ -865,7 +893,7 @@ def InitializerOrDict(
 def FloatRangeTupleDataclassField(
     n: int = 2,
     default: Union[Tuple, None] = (0.9, 0.999),
-    allow_none: bool = True,
+    allow_none: bool = False,
     min: Union[int, None] = 0,
     max: Union[int, None] = 1,
     description: str = "",
@@ -949,7 +977,7 @@ def OneOfOptionsField(
     default: Any,
     description: str,
     field_options: TList,
-    allow_none: bool = True,
+    allow_none: bool = False,
     parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field that is a combination of the other fields defined in `ludwig.schema.utils`.
@@ -1070,3 +1098,106 @@ def OneOfOptionsField(
         },
         **default_kwarg,
     )
+
+
+class TypeSelection(fields.Field):
+    def __init__(
+        self, registry: Registry, default_value: Optional[str] = None, key: str = "type", description: str = ""
+    ):
+        self.registry = registry
+        self.default_value = default_value
+        self.key = key
+
+        dump_default = missing
+        load_default = missing
+        self.default_factory = None
+        if self.default_value is not None:
+            default_obj = {key: default_value}
+            cls = self.get_schema_from_registry(self.default_value.lower())
+            self.default_factory = lambda: cls.Schema().load(default_obj)
+            load_default = self.default_factory
+            dump_default = cls.Schema().dump(default_obj)
+
+        super().__init__(
+            allow_none=False,
+            dump_default=dump_default,
+            load_default=load_default,
+            metadata={"description": description},
+        )
+
+    def _deserialize(self, value, attr, data, **kwargs):
+        if value is None:
+            return None
+        if isinstance(value, dict):
+            cls_type = value.get(self.key)
+            cls_type = cls_type.lower() if cls_type else self.default_value
+            if cls_type in self.registry:
+                cls = self.get_schema_from_registry(cls_type)
+                try:
+                    return cls.Schema().load(value)
+                except (TypeError, ValidationError) as e:
+                    raise ValidationError(f"Invalid params: {value}, see `{cls}` definition") from e
+            raise ValidationError(f"Invalid type: '{cls_type}', expected one of: {list(self.registry.keys())}")
+        raise ValidationError(f"Invalid param {value}, expected `None` or `dict`")
+
+    def get_schema_from_registry(self, key: str) -> Type[BaseMarshmallowConfig]:
+        return self.registry[key]
+
+    def get_default_field(self) -> Field:
+        default_factory = lambda: None
+        if self.default_factory is not None:
+            default_factory = self.default_factory
+
+        return field(
+            metadata={"marshmallow_field": self},
+            default_factory=default_factory,
+        )
+
+
+@DeveloperAPI
+class DictMarshmallowField(fields.Field):
+    def __init__(
+        self,
+        cls: Type[BaseMarshmallowConfig],
+        allow_none: bool = True,
+        default_missing: bool = False,
+        description: str = "",
+    ):
+        self.cls = cls
+
+        dump_default = missing
+        load_default = missing
+        self.default_factory = None
+        if not default_missing:
+            default_obj = {}
+            self.default_factory = lambda: cls.Schema().load(default_obj)
+            load_default = self.default_factory
+            dump_default = cls.Schema().dump(default_obj)
+
+        super().__init__(
+            allow_none=allow_none,
+            dump_default=dump_default,
+            load_default=load_default,
+            metadata={"description": description},
+        )
+
+    def _deserialize(self, value, attr, data, **kwargs):
+        if value is None:
+            return value
+        if isinstance(value, dict):
+            try:
+                return self.cls.Schema().load(value)
+            except (TypeError, ValidationError) as e:
+                # TODO(travis): this seems much too verbose, does the validation error not show the specific error?
+                raise ValidationError(f"Invalid params: {value}, see `{self.cls}` definition. Error: {e}")
+        raise ValidationError(f"Invalid param {value}, expected `None` or `dict`")
+
+    def get_default_field(self) -> Field:
+        default_factory = lambda: None
+        if self.default_factory is not None:
+            default_factory = self.default_factory
+
+        return field(
+            metadata={"marshmallow_field": self},
+            default_factory=default_factory,
+        )
