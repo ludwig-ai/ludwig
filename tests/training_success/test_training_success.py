@@ -130,13 +130,20 @@ def test_binary_preprocessing_defaults(config, dataset_name):
     train_and_evaluate(config, dataset_name)
 
 
-# @pytest.mark.text_feature
-# @pytest.mark.parametrize("config,dataset_name", defaults_config_generator("text", "preprocessing"))
-# def test_text_preprocessing_defaults(config, dataset_name):
-#     train_and_evaluate(config, dataset_name)
+@pytest.mark.text_feature
+@pytest.mark.parametrize("config,dataset_name", defaults_config_generator("text", "preprocessing"))
+def test_text_preprocessing_defaults(config, dataset_name):
+    pprint(config)
+    print()
+    # train_and_evaluate(config, dataset_name)
 
 
 # @pytest.mark.text_feature
 # @pytest.mark.parametrize("config,dataset_name", defaults_config_generator("text", "encoder"))
 # def test_text_encoder_defaults(config):
 #     train_and_evaluate(config, dataset_name)
+
+if __name__ == "__main__":
+    for config, dataset_name in defaults_config_generator("text", "preprocessing"):
+        pprint(config)
+        print()
