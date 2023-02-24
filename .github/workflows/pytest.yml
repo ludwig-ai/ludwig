@@ -46,7 +46,8 @@
 #       RAY_VERSION: ${{ matrix.ray-version }}
 #       AWS_ACCESS_KEY_ID: ${{ secrets.LUDWIG_TESTS_AWS_ACCESS_KEY_ID }}
 #       AWS_SECRET_ACCESS_KEY: ${{ secrets.LUDWIG_TESTS_AWS_SECRET_ACCESS_KEY }}
-#       EXCLUDED_MARKERS: "benchmark"
+#       KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+#       KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
 
 #     name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, ${{ matrix.test-markers }}, ${{ matrix.os }}, ray ${{ matrix.ray-version }}
 #     services:
@@ -168,9 +169,9 @@
 #           horovodrun --check-build
 #         shell: bash
 
-#       - name: Tests
-#         run: |
-#           RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=4500 pytest -v --timeout 300 --durations 100 -m "($MARKERS) and not ($EXCLUDED_MARKERS or slow)" --junitxml pytest.xml tests
+      # - name: Tests
+      #   run: |
+      #     RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=4500 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow or benchmark" --junitxml pytest.xml tests
 
 #       - name: Upload Unit Test Results
 #         if: ${{ always() && !env.ACT }}
