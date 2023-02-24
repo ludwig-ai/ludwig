@@ -74,22 +74,6 @@ class SequenceEncoderConfig(BaseEncoderConfig):
         return {"cache_encoder_embeddings": False}
 
 
-@ludwig_dataclass
-class ConvLayersMixin:
-    num_conv_layers: int = schema_utils.PositiveInteger(
-        default=None,
-        allow_none=True,
-        description=NUM_CONV_LAYERS_DESCRIPTION,
-        parameter_metadata=ENCODER_METADATA["conv_params"]["num_conv_layers"],
-    )
-
-    conv_layers: List[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for conv_layers
-        default=None,
-        description=CONV_LAYERS_DESCRIPTION,
-        parameter_metadata=ENCODER_METADATA["conv_params"]["conv_layers"],
-    )
-
-
 @DeveloperAPI
 @register_encoder_config("passthrough", [TIMESERIES])
 @ludwig_dataclass
@@ -152,7 +136,7 @@ class SequenceEmbedConfig(SequenceEncoderConfig):
 @DeveloperAPI
 @register_encoder_config("parallel_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 @ludwig_dataclass
-class ParallelCNNConfig(SequenceEncoderConfig, ConvLayersMixin):
+class ParallelCNNConfig(SequenceEncoderConfig):
     @staticmethod
     def module_name():
         return "ParallelCNN"
@@ -200,6 +184,19 @@ class ParallelCNNConfig(SequenceEncoderConfig, ConvLayersMixin):
 
     reduce_output: str = common_fields.ReduceOutputField()
 
+    num_conv_layers: int = schema_utils.PositiveInteger(
+        default=None,
+        allow_none=True,
+        description=NUM_CONV_LAYERS_DESCRIPTION,
+        parameter_metadata=ENCODER_METADATA["conv_params"]["num_conv_layers"],
+    )
+
+    conv_layers: List[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for conv_layers
+        default=None,
+        description=CONV_LAYERS_DESCRIPTION,
+        parameter_metadata=ENCODER_METADATA["conv_params"]["conv_layers"],
+    )
+
     num_filters: int = NumFiltersField()
 
     filter_size: int = FilterSizeField()
@@ -245,7 +242,7 @@ class ParallelCNNConfig(SequenceEncoderConfig, ConvLayersMixin):
 @DeveloperAPI
 @register_encoder_config("stacked_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 @ludwig_dataclass
-class StackedCNNConfig(SequenceEncoderConfig, ConvLayersMixin):
+class StackedCNNConfig(SequenceEncoderConfig):
     @staticmethod
     def module_name():
         return "StackedCNN"
@@ -266,6 +263,19 @@ class StackedCNNConfig(SequenceEncoderConfig, ConvLayersMixin):
     representation: str = common_fields.RepresentationField()
 
     vocab: list = common_fields.VocabField()
+
+    num_conv_layers: int = schema_utils.PositiveInteger(
+        default=None,
+        allow_none=True,
+        description=NUM_CONV_LAYERS_DESCRIPTION,
+        parameter_metadata=ENCODER_METADATA["conv_params"]["num_conv_layers"],
+    )
+
+    conv_layers: List[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for conv_layers
+        default=None,
+        description=CONV_LAYERS_DESCRIPTION,
+        parameter_metadata=ENCODER_METADATA["conv_params"]["conv_layers"],
+    )
 
     num_filters: int = NumFiltersField()
 
@@ -603,7 +613,7 @@ class StackedRNNConfig(SequenceEncoderConfig):
 @DeveloperAPI
 @register_encoder_config("cnnrnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 @ludwig_dataclass
-class StackedCNNRNNConfig(SequenceEncoderConfig, ConvLayersMixin):
+class StackedCNNRNNConfig(SequenceEncoderConfig):
     @staticmethod
     def module_name():
         return "StackedCNNRNN"
@@ -659,6 +669,19 @@ class StackedCNNRNNConfig(SequenceEncoderConfig, ConvLayersMixin):
         "about the differences between the cells please refer to "
         "[torch.nn Recurrent Layers](https://pytorch.org/docs/stable/nn.html#recurrent-layers).",
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["cell_type"],
+    )
+
+    num_conv_layers: int = schema_utils.PositiveInteger(
+        default=None,
+        allow_none=True,
+        description=NUM_CONV_LAYERS_DESCRIPTION,
+        parameter_metadata=ENCODER_METADATA["conv_params"]["num_conv_layers"],
+    )
+
+    conv_layers: List[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for conv_layers
+        default=None,
+        description=CONV_LAYERS_DESCRIPTION,
+        parameter_metadata=ENCODER_METADATA["conv_params"]["conv_layers"],
     )
 
     num_filters: int = NumFiltersField()
