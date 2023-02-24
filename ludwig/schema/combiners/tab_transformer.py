@@ -31,6 +31,6 @@ class TabTransformerCombinerConfig(BaseCombinerConfig, CommonTransformerConfig):
 
     reduce_output: str = schema_utils.ReductionOptions(
         default="concat",
-        description="",
+        description="Strategy to use to aggregate the output of the transformer.",
         parameter_metadata=COMBINER_METADATA["TabTransformerCombiner"]["reduce_output"],
     )

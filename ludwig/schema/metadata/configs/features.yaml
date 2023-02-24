@@ -850,6 +850,7 @@ text:
             ui_display_name: null
             expected_impact: 1
         pretrained_model_name_or_path:
+            internal_only: true
             ui_display_name: null
             expected_impact: 0
         tokenizer:

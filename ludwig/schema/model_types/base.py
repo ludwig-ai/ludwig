@@ -11,7 +11,7 @@ from ludwig.constants import BACKEND, ENCODER, INPUT_FEATURES, MODEL_ECD, PREPRO
 from ludwig.error import ConfigValidationError
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.defaults.defaults import DefaultsConfig
+from ludwig.schema.defaults.base import BaseDefaultsConfig
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig, FeatureCollection
 from ludwig.schema.hyperopt import HyperoptConfig
 from ludwig.schema.model_types.utils import (
@@ -42,7 +42,7 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     trainer: BaseTrainerConfig
     preprocessing: PreprocessingConfig
-    defaults: DefaultsConfig
+    defaults: BaseDefaultsConfig
     hyperopt: Optional[HyperoptConfig] = None
 
     backend: Dict[str, Any] = schema_utils.Dict()

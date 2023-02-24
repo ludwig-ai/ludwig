@@ -40,7 +40,9 @@ def test_get_column_profile_attributes():
     }
     # None doesn't count towards distinct values.
     assert get_num_distinct_values(column_profile_summaries["legs"]) == 4
-    assert get_distinct_values(column_profile_summaries["legs"]) == {"2.000000", "0.000000", "fins", "4.000000"}
+
+    # As of whylogs v1.1.27, 4 and 4.0 are parsed as separate distinct values.
+    assert get_distinct_values(column_profile_summaries["legs"]) == {"4", "fins", "4.000000", "2", "0"}
 
     # True fractionals have no frequent items.
     assert get_distinct_values(column_profile_summaries["weight"]) == {}
