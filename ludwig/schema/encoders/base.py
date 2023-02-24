@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BINARY, MODEL_ECD, MODEL_GBM, NUMBER, VECTOR
-from ludwig.schema import utils as schema_utils
+from ludwig.schema import common_fields, utils as schema_utils
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.metadata import ENCODER_METADATA
 from ludwig.schema.utils import ludwig_dataclass
@@ -63,20 +63,9 @@ class DenseEncoderConfig(BaseEncoderConfig):
         description=ENCODER_METADATA["DenseEncoder"]["type"].long_description,
     )
 
-    dropout: float = schema_utils.FloatRange(
-        default=0.0,
-        min=0,
-        max=1,
-        description="Dropout rate.",
-        parameter_metadata=ENCODER_METADATA["DenseEncoder"]["dropout"],
-    )
+    dropout: float = common_fields.DropoutField()
 
-    activation: str = schema_utils.StringOptions(
-        ["elu", "leakyRelu", "logSigmoid", "relu", "sigmoid", "tanh", "softmax"],
-        default="relu",
-        description="Activation function to apply to the output.",
-        parameter_metadata=ENCODER_METADATA["DenseEncoder"]["activation"],
-    )
+    activation: str = schema_utils.ActivationOptions()
 
     input_size: int = schema_utils.PositiveInteger(
         default=None,
@@ -97,39 +86,14 @@ class DenseEncoderConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["DenseEncoder"]["use_bias"],
     )
 
-    bias_initializer: Union[str, dict] = schema_utils.InitializerOptions(
-        default="zeros",
-        description="Initializer for the bias vector.",
-        parameter_metadata=ENCODER_METADATA["DenseEncoder"]["bias_initializer"],
-    )
+    bias_initializer: Union[str, dict] = common_fields.BiasInitializerField()
 
-    weights_initializer: Union[str, dict] = schema_utils.InitializerOptions(
-        description="Initializer for the weight matrix.",
-        parameter_metadata=ENCODER_METADATA["DenseEncoder"]["weights_initializer"],
-    )
+    weights_initializer: Union[str, dict] = common_fields.WeightsInitializerField()
 
-    norm: str = schema_utils.StringOptions(
-        ["batch", "layer"],
-        allow_none=True,
-        default=None,
-        description="Normalization to use in the dense layer.",
-        parameter_metadata=ENCODER_METADATA["DenseEncoder"]["norm"],
-    )
+    norm: str = common_fields.NormField()
 
-    norm_params: dict = schema_utils.Dict(
-        default=None,
-        description="Parameters for normalization if norm is either batch or layer.",
-        parameter_metadata=ENCODER_METADATA["DenseEncoder"]["norm_params"],
-    )
+    norm_params: dict = common_fields.NormParamsField()
 
-    num_layers: int = schema_utils.PositiveInteger(
-        default=1,
-        description="Number of stacked fully connected layers that the input to the feature passes through.",
-        parameter_metadata=ENCODER_METADATA["DenseEncoder"]["num_layers"],
-    )
+    num_layers: int = common_fields.NumFCLayersField(default=1)
 
-    fc_layers: List[dict] = schema_utils.DictList(
-        default=None,
-        description="List of fully connected layers to use in the encoder.",
-        parameter_metadata=ENCODER_METADATA["DenseEncoder"]["fc_layers"],
-    )
+    fc_layers: List[dict] = common_fields.FCLayersField()

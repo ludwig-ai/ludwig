@@ -68,6 +68,10 @@ class BaseLossConfig(schema_utils.BaseMarshmallowConfig):
 
     weight: float = 1.0
 
+    @classmethod
+    def name(cls) -> str:
+        return "[undefined]"
+
 
 _loss_registry = Registry[Type[BaseLossConfig]]()
 _loss_feature_registry = Registry[Dict[str, Type[BaseLossConfig]]]()
@@ -118,6 +122,10 @@ class MSELossConfig(BaseLossConfig):
         parameter_metadata=LOSS_METADATA["MSELoss"]["weight"],
     )
 
+    @classmethod
+    def name(self) -> str:
+        return "Mean Squared Error (MSE)"
+
 
 @DeveloperAPI
 @register_loss([NUMBER, TIMESERIES, VECTOR])
@@ -133,6 +141,10 @@ class MAELossConfig(BaseLossConfig):
         description="Weight of the loss.",
         parameter_metadata=LOSS_METADATA["MAELoss"]["weight"],
     )
+
+    @classmethod
+    def name(self) -> str:
+        return "Mean Absolute Error (MAE)"
 
 
 @DeveloperAPI
@@ -150,6 +162,10 @@ class RMSELossConfig(BaseLossConfig):
         parameter_metadata=LOSS_METADATA["RMSELoss"]["weight"],
     )
 
+    @classmethod
+    def name(self) -> str:
+        return "Root Mean Squared Error (RMSE)"
+
 
 @DeveloperAPI
 @register_loss([NUMBER])
@@ -165,6 +181,10 @@ class RMSPELossConfig(BaseLossConfig):
         description="Weight of the loss.",
         parameter_metadata=LOSS_METADATA["RMSPELoss"]["weight"],
     )
+
+    @classmethod
+    def name(self) -> str:
+        return "Root Mean Squared Percentage Error (RMSPE)"
 
 
 @DeveloperAPI
@@ -200,6 +220,10 @@ class BWCEWLossConfig(BaseLossConfig):
         description="Weight of the loss.",
         parameter_metadata=LOSS_METADATA["BWCEWLoss"]["weight"],
     )
+
+    @classmethod
+    def name(self) -> str:
+        return "Binary Weighted Cross Entropy (BWCE)"
 
 
 @DeveloperAPI
@@ -248,6 +272,10 @@ class SoftmaxCrossEntropyLossConfig(BaseLossConfig):
         description="Weight of the loss.",
         parameter_metadata=LOSS_METADATA["SoftmaxCrossEntropyLoss"]["weight"],
     )
+
+    @classmethod
+    def name(self) -> str:
+        return "Softmax Cross Entropy"
 
 
 @DeveloperAPI
@@ -303,6 +331,10 @@ class SequenceSoftmaxCrossEntropyLossConfig(BaseLossConfig):
         parameter_metadata=LOSS_METADATA["SequenceSoftmaxCrossEntropyLoss"]["unique"],
     )
 
+    @classmethod
+    def name(self) -> str:
+        return "Sequence Softmax Cross Entropy"
+
 
 @DeveloperAPI
 @register_loss([SET])
@@ -325,3 +357,7 @@ class SigmoidCrossEntropyLossConfig(BaseLossConfig):
         description="Weight of the loss.",
         parameter_metadata=LOSS_METADATA["SigmoidCrossEntropyLoss"]["weight"],
     )
+
+    @classmethod
+    def name(self) -> str:
+        return "Sigmoid Cross Entropy"
