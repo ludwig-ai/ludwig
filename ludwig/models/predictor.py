@@ -17,6 +17,7 @@ from ludwig.data.utils import convert_to_dict
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.globals import is_progressbar_disabled, PREDICTIONS_PARQUET_FILE_NAME, TEST_STATISTICS_FILE_NAME
 from ludwig.models.base import BaseModel
+from ludwig.models.gbm import GBM
 from ludwig.progress_bar import LudwigProgressBar
 from ludwig.utils.data_utils import save_csv, save_json
 from ludwig.utils.dataframe_utils import from_numpy_dataset
@@ -193,15 +194,16 @@ class Predictor(BasePredictor):
                         f"evaluation for {dataset_name}: obtained next batch "
                         f"memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
                     )
+                    # TODO (jeffkinnison): revert to using the requested device for GBMs when device usage is fixed
                     inputs = {
                         i_feat.feature_name: torch.from_numpy(np.array(batch[i_feat.proc_column], copy=True)).to(
-                            self.device
+                            self.device if not isinstance(self.model, GBM) else "cpu"
                         )
                         for i_feat in self.model.input_features.values()
                     }
                     targets = {
                         o_feat.feature_name: torch.from_numpy(np.array(batch[o_feat.proc_column], copy=True)).to(
-                            self.device
+                            self.device if not isinstance(self.model, GBM) else "cpu"
                         )
                         for o_feat in self.model.output_features.values()
                     }
