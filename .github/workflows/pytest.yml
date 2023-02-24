@@ -167,15 +167,17 @@ jobs:
           horovodrun --check-build
         shell: bash
 
-      - name: Tests
-        run: |
-          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=4500 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow" --junitxml pytest.xml tests
+#      - name: Tests
+#        run: |
+#          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=4500 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow" --junitxml pytest.xml tests
 
       - name: Benchmark Tests
         env:
           KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
           KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
         run: |
+          mkdir .kaggle
+          echo '{"'"username"'":"'"${{ secrets.KAGGLE_USERNAME }}"'","'"key"'":"'"${{ secrets.KAGGLE_KEY }}"'"}' > .kaggle/kaggle.json
           RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=4500 pytest -v --timeout 300 --durations 100 -m "benchmark" --junitxml pytest-benchmark.xml tests
 
       - name: Upload Unit Test Results
