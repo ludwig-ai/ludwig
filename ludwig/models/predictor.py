@@ -76,7 +76,8 @@ class Predictor(BasePredictor):
         self._distributed = distributed if distributed is not None else LocalStrategy()
         self.report_tqdm_to_ray = report_tqdm_to_ray
 
-        self.device = get_torch_device()
+        # TODO (jeffkinnison): revert to using the requested device for GBMs when device usage is fixed
+        self.device = get_torch_device() if not isinstance(model, GBM) else "cpu"
         self.model = model.to(self.device)
 
     def batch_predict(self, dataset: Dataset, dataset_name: str = None, collect_logits: bool = False):
@@ -194,16 +195,15 @@ class Predictor(BasePredictor):
                         f"evaluation for {dataset_name}: obtained next batch "
                         f"memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
                     )
-                    # TODO (jeffkinnison): revert to using the requested device for GBMs when device usage is fixed
                     inputs = {
                         i_feat.feature_name: torch.from_numpy(np.array(batch[i_feat.proc_column], copy=True)).to(
-                            self.device if not isinstance(self.model, GBM) else "cpu"
+                            self.device
                         )
                         for i_feat in self.model.input_features.values()
                     }
                     targets = {
                         o_feat.feature_name: torch.from_numpy(np.array(batch[o_feat.proc_column], copy=True)).to(
-                            self.device if not isinstance(self.model, GBM) else "cpu"
+                            self.device
                         )
                         for o_feat in self.model.output_features.values()
                     }
