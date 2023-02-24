@@ -24,7 +24,6 @@ from ludwig.schema.metadata import LOSS_METADATA
 from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils.registry import Registry
 
-
 ROBUST_LAMBDA_DESCRIPTION = (
     "Replaces the loss with `(1 - robust_lambda) * loss + robust_lambda / c` where `c` is the number of "
     "classes. Useful in case of noisy labels."

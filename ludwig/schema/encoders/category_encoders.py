@@ -2,7 +2,8 @@ from typing import List
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import CATEGORY, MODEL_ECD, MODEL_GBM
-from ludwig.schema import common_fields, utils as schema_utils
+from ludwig.schema import common_fields
+from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.metadata import ENCODER_METADATA

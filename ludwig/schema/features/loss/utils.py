@@ -2,8 +2,8 @@ from dataclasses import Field
 from typing import Type
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.schema.features.loss import get_loss_classes, get_loss_cls
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.features.loss import get_loss_classes, get_loss_cls
 
 
 @DeveloperAPI

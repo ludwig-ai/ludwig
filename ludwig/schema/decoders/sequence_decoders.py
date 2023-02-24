@@ -1,6 +1,7 @@
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import SEQUENCE, TEXT
-from ludwig.schema import common_fields, utils as schema_utils
+from ludwig.schema import common_fields
+from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import register_decoder_config
 from ludwig.schema.metadata import DECODER_METADATA
