@@ -167,9 +167,9 @@ jobs:
           horovodrun --check-build
         shell: bash
 
-#      - name: Tests
-#        run: |
-#          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=4500 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow" --junitxml pytest.xml tests
+      - name: Tests
+        run: |
+          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=4500 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow" --junitxml pytest.xml tests
 
       - name: Benchmark Tests
         env:
