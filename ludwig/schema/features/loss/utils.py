@@ -11,7 +11,7 @@ def get_loss_conds(feature_type: str):
     """Returns a JSON schema of conditionals to validate against loss types for specific feature types."""
     conds = []
     for loss in get_loss_classes(feature_type):
-        loss_cls = get_loss_cls(feature_type, loss).get_schema_cls()
+        loss_cls = get_loss_cls(feature_type, loss)
         other_props = schema_utils.unload_jsonschema_from_marshmallow_class(loss_cls)["properties"]
         schema_utils.remove_duplicate_fields(other_props)
         loss_cond = schema_utils.create_cond(
