@@ -239,6 +239,19 @@ def VocabField(
     )
 
 
+def VocabSizeField(
+    default: Optional[list] = None, description: str = None, parameter_metadata: ParameterMetadata = None
+) -> Field:
+    description = description or "[internal] Size of the vocabulary from preprocessing."
+    parameter_metadata = parameter_metadata or COMMON_METADATA["vocab_size"]
+    return schema_utils.PositiveInteger(
+        default=default,
+        allow_none=True,
+        description=description,
+        parameter_metadata=parameter_metadata,
+    )
+
+
 def RepresentationField(
     default: str = "dense", description: str = None, parameter_metadata: ParameterMetadata = None
 ) -> Field:

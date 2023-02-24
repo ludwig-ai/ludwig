@@ -306,6 +306,9 @@ vocab:
     - c
   internal_only: true
   ui_display_name: Not Displayed
+vocab_size:
+  internal_only: true
+  ui_display_name: Not displayed
 representation:
   default_value_reasoning: Trainable, randomly initialized embedding vectors
     often lead to more subtle representations of input entities than one-hot

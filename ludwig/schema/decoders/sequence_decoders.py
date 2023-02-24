@@ -21,7 +21,7 @@ class SequenceGeneratorDecoderConfig(BaseDecoderConfig):
         description=DECODER_METADATA["SequenceGeneratorDecoder"]["type"].long_description,
     )
 
-    vocab_size: int = common_fields.VocabField()
+    vocab_size: int = common_fields.VocabSizeField()
 
     max_sequence_length: int = common_fields.MaxSequenceLengthField()
 
@@ -72,7 +72,7 @@ class SequenceTaggerDecoderConfig(BaseDecoderConfig):
         parameter_metadata=DECODER_METADATA["SequenceTaggerDecoder"]["input_size"],
     )
 
-    vocab_size: int = common_fields.VocabField()
+    vocab_size: int = common_fields.VocabSizeField()
 
     max_sequence_length: int = common_fields.MaxSequenceLengthField()
 
