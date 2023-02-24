@@ -1,6 +1,6 @@
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import SEQUENCE, TEXT
-from ludwig.schema import utils as schema_utils
+from ludwig.schema import common_fields, utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import register_decoder_config
 from ludwig.schema.metadata import DECODER_METADATA
@@ -20,19 +20,9 @@ class SequenceGeneratorDecoderConfig(BaseDecoderConfig):
         description=DECODER_METADATA["SequenceGeneratorDecoder"]["type"].long_description,
     )
 
-    vocab_size: int = schema_utils.PositiveInteger(
-        default=None,
-        allow_none=True,
-        description="Size of the vocabulary.",
-        parameter_metadata=DECODER_METADATA["SequenceGeneratorDecoder"]["vocab_size"],
-    )
+    vocab_size: int = common_fields.VocabField()
 
-    max_sequence_length: int = schema_utils.PositiveInteger(
-        default=None,
-        allow_none=True,
-        description="Maximum length of the sequences.",
-        parameter_metadata=DECODER_METADATA["SequenceGeneratorDecoder"]["max_sequence_length"],
-    )
+    max_sequence_length: int = common_fields.MaxSequenceLengthField()
 
     cell_type: str = schema_utils.StringOptions(
         ["rnn", "lstm", "gru"],
@@ -81,19 +71,9 @@ class SequenceTaggerDecoderConfig(BaseDecoderConfig):
         parameter_metadata=DECODER_METADATA["SequenceTaggerDecoder"]["input_size"],
     )
 
-    vocab_size: int = schema_utils.PositiveInteger(
-        default=None,
-        allow_none=True,
-        description="Size of the vocabulary.",
-        parameter_metadata=DECODER_METADATA["SequenceTaggerDecoder"]["vocab_size"],
-    )
+    vocab_size: int = common_fields.VocabField()
 
-    max_sequence_length: int = schema_utils.PositiveInteger(
-        default=None,
-        allow_none=True,
-        description="Maximum length of the sequences.",
-        parameter_metadata=DECODER_METADATA["SequenceTaggerDecoder"]["max_sequence_length"],
-    )
+    max_sequence_length: int = common_fields.MaxSequenceLengthField()
 
     use_attention: bool = schema_utils.Boolean(
         default=False,

@@ -102,11 +102,12 @@ def BiasInitializerField(
     default: str = "zeros", description: str = None, parameter_metadata: ParameterMetadata = None
 ) -> Field:
     initializers_str = ", ".join([f"`{i}`" for i in initializer_registry.keys()])
-    description = description or f"Initializer for the bias vector. Options: {initializers_str}. {INITIALIZER_SUFFIX}"
+    description = description or "Initializer for the bias vector."
+    full_description = f"{description} Options: {initializers_str}. {INITIALIZER_SUFFIX}"
     parameter_metadata = parameter_metadata or COMMON_METADATA["bias_initializer"]
     return schema_utils.InitializerOrDict(
         default=default,
-        description=description,
+        description=full_description,
         parameter_metadata=parameter_metadata,
     )
 
@@ -115,11 +116,12 @@ def WeightsInitializerField(
     default: str = "xavier_uniform", description: str = None, parameter_metadata: ParameterMetadata = None
 ) -> Field:
     initializers_str = ", ".join([f"`{i}`" for i in initializer_registry.keys()])
-    description = description or f"Initializer for the weight matrix. Options: {initializers_str}. {INITIALIZER_SUFFIX}"
+    description = description or "Initializer for the weight matrix."
+    full_description = f"{description} Options: {initializers_str}. {INITIALIZER_SUFFIX}"
     parameter_metadata = parameter_metadata or COMMON_METADATA["weights_initializer"]
     return schema_utils.InitializerOrDict(
         default=default,
-        description=description,
+        description=full_description,
         parameter_metadata=parameter_metadata,
     )
 
