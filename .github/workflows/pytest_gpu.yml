@@ -35,7 +35,7 @@ jobs:
         with:
           mode: start
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          ec2-image-id: ami-02765732174baacc4
+          ec2-image-id: ami-0759580dedc953d1f
           ec2-instance-type: g4dn.xlarge
           subnet-id: subnet-0983be43
           security-group-id: sg-4cba0d08
@@ -75,6 +75,43 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Setup Linux
+        if: runner.os == 'linux'
+        run: |
+          sudo apt-get update && sudo apt-get install -y libsndfile1 cmake ccache build-essential g++-8 gcc-8
+          cmake --version
+
+      - name: Install CUDA drivers
+        run: |
+          wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-ubuntu2004.pin
+          sudo mv cuda-ubuntu2004.pin /etc/apt/preferences.d/cuda-repository-pin-600
+          wget https://developer.download.nvidia.com/compute/cuda/11.6.0/local_installers/cuda-repo-ubuntu2004-11-6-local_11.6.0-510.39.01-1_amd64.deb
+          sudo dpkg -i cuda-repo-ubuntu2004-11-6-local_11.6.0-510.39.01-1_amd64.deb
+          sudo apt-key add /var/cuda-repo-ubuntu2004-11-6-local/7fa2af80.pub
+          sudo apt-get update
+          sudo apt-get -y install cuda
+          # Downgrade NCCL to 2.11.4 to for compatibility with CUDA 11.6
+          # https://github.com/horovod/horovod/issues/3625#issuecomment-1309786643
+          sudo apt update
+          # sudo apt install --allow-change-held-packages --allow-downgrades -y libnccl2=2.11.4-1+cuda11.6 libnccl-dev=2.11.4-1+cuda11.6
+          wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/libnccl2_2.11.4-1+cuda11.6_amd64.deb
+          sudo dpkg -i libnccl2_2.11.4-1+cuda11.6_amd64.deb 
+          https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/libnccl-dev_2.11.4-1+cuda11.6_amd64.deb
+          sudo dpkg -i libnccl-dev_2.11.4-1+cuda11.6_amd64.deb
+        shell: bash
+
+      - name: pip cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-py${{ matrix.python-version }}-torch${{ matrix.pytorch-version }}-${{ hashFiles('requirements*.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-py${{ matrix.python-version }}-torch${{ matrix.pytorch-version }}-
 
       - name: Install dependencies
         env:
