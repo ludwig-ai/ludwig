@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BINARY, CATEGORY, NUMBER, SEQUENCE, SET, TEXT, VECTOR
@@ -23,10 +23,16 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
         parameter_metadata=DECODER_METADATA["BaseDecoder"]["type"],
     )
 
-    fc_layers: List[dict] = common_fields.FCLayersField()
+    fc_layers: List[Dict[str, Any]] = schema_utils.DictList(
+        default=None,
+        description="List of dictionaries containing the parameters for each fully connected layer.",
+        parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_layers"],
+    )
 
-    num_fc_layers: int = common_fields.NumFCLayersField(
-        description="Number of fully-connected layers if `fc_layers` not specified."
+    num_fc_layers: int = schema_utils.NonNegativeInteger(
+        default=0,
+        description="Number of fully-connected layers if fc_layers not specified.",
+        parameter_metadata=DECODER_METADATA["BaseDecoder"]["num_fc_layers"],
     )
 
     fc_output_size: int = schema_utils.PositiveInteger(
@@ -41,12 +47,38 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
         parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_use_bias"],
     )
 
-    fc_bias_initializer: Union[str, Dict] = common_fields.BiasInitializerField(
-        description="The bias initializer to use for the layers in the fc_stack."
+    fc_weights_initializer: Union[str, Dict] = schema_utils.OneOfOptionsField(
+        default="xavier_uniform",
+        allow_none=True,
+        description="The weights initializer to use for the layers in the fc_stack",
+        field_options=[
+            schema_utils.InitializerOptions(
+                description="Preconfigured initializer to use for the layers in the fc_stack.",
+                parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_weights_initializer"],
+            ),
+            schema_utils.Dict(
+                description="Custom initializer to use for the layers in the fc_stack.",
+                parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_weights_initializer"],
+            ),
+        ],
+        parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_weights_initializer"],
     )
 
-    fc_weights_initializer: Union[str, Dict] = common_fields.WeightsInitializerField(
-        description="The weights initializer to use for the layers in the `fc_stack`."
+    fc_bias_initializer: Union[str, Dict] = schema_utils.OneOfOptionsField(
+        default="zeros",
+        allow_none=True,
+        description="The bias initializer to use for the layers in the fc_stack",
+        field_options=[
+            schema_utils.InitializerOptions(
+                description="Preconfigured bias initializer to use for the layers in the fc_stack.",
+                parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_bias_initializer"],
+            ),
+            schema_utils.Dict(
+                description="Custom bias initializer to use for the layers in the fc_stack.",
+                parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_bias_initializer"],
+            ),
+        ],
+        parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_bias_initializer"],
     )
 
     fc_norm: str = common_fields.NormField()
