@@ -71,8 +71,6 @@ class TextOutputFeatureConfigMixin(BaseMarshmallowConfig):
 class TextOutputFeatureConfig(BaseOutputFeatureConfig, TextOutputFeatureConfigMixin):
     """TextOutputFeatureConfig is a dataclass that configures the parameters used for a text output feature."""
 
-    type: str = schema_utils.ProtectedString(TEXT)
-
     class_similarities: list = schema_utils.List(
         list,
         default=None,

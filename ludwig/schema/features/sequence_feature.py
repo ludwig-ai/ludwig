@@ -73,8 +73,6 @@ class SequenceOutputFeatureConfig(BaseOutputFeatureConfig, SequenceOutputFeature
     """SequenceOutputFeatureConfig is a dataclass that configures the parameters used for a sequence output
     feature."""
 
-    type: str = schema_utils.ProtectedString(SEQUENCE)
-
     default_validation_metric: str = schema_utils.StringOptions(
         [LOSS],
         default=LOSS,
