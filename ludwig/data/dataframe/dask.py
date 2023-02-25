@@ -243,11 +243,11 @@ class DaskEngine(DataFrameEngine):
 
         return from_dask(df)
 
-    def reset_index(self, df):
-        return reset_index_across_all_partitions(df)
-
     def from_ray_dataset(self, dataset) -> dd.DataFrame:
         return self._to_dask(dataset)
+
+    def reset_index(self, df):
+        return reset_index_across_all_partitions(df)
 
     def _to_dask(
         self,
