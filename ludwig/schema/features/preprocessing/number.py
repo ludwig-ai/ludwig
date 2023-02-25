@@ -61,7 +61,7 @@ class NumberPreprocessingConfig(BasePreprocessingConfig):
         default=None,
         allow_none=True,
         description=(
-            "Determines how outliers will be handled in the dataset. In most cases replacing outliers with the "
+            "Determines how outliers will be handled in the dataset. In most cases, replacing outliers with the "
             "column mean (`fill_with_mean`) will be sufficient, but in others the outliers may be damaging enough "
             "to merit dropping the entire row of data (`drop_row`). In some cases, the best way to handle outliers "
             "is to leave them in the data, which is the behavior when this parameter is left as `null`."
