@@ -65,7 +65,7 @@ from ludwig.utils.torch_utils import get_torch_device, initialize_pytorch
 from ludwig.utils.types import DataFrame, Series
 
 _ray220 = version.parse(ray.__version__) >= version.parse("2.2.0")
-_ray_nightly = version.parse(ray.__version__) >= version.parse("3.0.0.dev0")
+_ray_230 = version.parse(ray.__version__) >= version.parse("2.3.0")
 
 logger = logging.getLogger(__name__)
 
@@ -328,7 +328,7 @@ class RayAirRunner:
         """Generates DatasetConfigs for each dataset passed into the trainer."""
         dataset_configs = {}
         for dataset_name, _ in datasets.items():
-            if _ray_nightly:
+            if _ray_230:
                 # DatasetConfig.use_stream_api and DatasetConfig.stream_window_size have been removed as of Ray 2.3.
                 # We need to use DatasetConfig.max_object_store_memory_fraction instead -> default to 20% when windowing
                 # is enabled unless the end user specifies a different fraction.

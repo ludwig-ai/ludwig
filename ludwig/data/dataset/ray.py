@@ -46,7 +46,7 @@ from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
 
-_ray_nightly = version.parse(ray.__version__) >= version.parse("3.0.0.dev0")
+_ray_230 = version.parse(ray.__version__) >= version.parse("2.3.0")
 
 _SCALAR_TYPES = {BINARY, CATEGORY, NUMBER}
 
@@ -105,7 +105,7 @@ class RayDataset(Dataset):
                     "In-memory dataset size is greater than 20%% of object store memory. "
                     "Enabling windowed shuffling of data to prevent chances of OOMs. "
                 )
-                if _ray_nightly:
+                if _ray_230:
                     # In Ray nightly (>= 2.3), window size is specified as either -1 or a percentage
                     # from 0 to 1. Default to always using 20% of object store memory.
                     return 0.2
@@ -216,7 +216,7 @@ class RayDatasetShard(Dataset):
         self.create_epoch_iter()
 
     def create_epoch_iter(self) -> None:
-        if _ray_nightly:
+        if _ray_230:
             # In Ray >= 2.3, session.get_dataset_shard() returns a DatasetIterator object.
             if isinstance(self.dataset_shard, ray.data.DatasetIterator):
                 if hasattr(self.dataset_shard, "_base_dataset_pipeline"):
