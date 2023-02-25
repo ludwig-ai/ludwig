@@ -84,7 +84,6 @@ class Predictor(BasePredictor):
 
         with torch.no_grad():
             with dataset.initialize_batcher(self._batch_size, should_shuffle=False) as batcher:
-
                 progress_bar_config = {
                     "desc": "Prediction" if dataset_name is None else f"Prediction {dataset_name: <5.5}",
                     "total": batcher.steps_per_epoch,
