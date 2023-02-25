@@ -404,7 +404,6 @@ class RayTrainerV2(BaseTrainer):
         **kwargs,
     ):
         executable_kwargs = self.executable_kwargs
-
         kwargs = {
             "training_set_metadata": training_set.training_set_metadata,
             "features": training_set.features,
@@ -795,6 +794,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
             "executable_kwargs": executable_kwargs,
         }
         all_kwargs.update(kwargs)
+
         return trainer_cls(**all_kwargs)
 
     def create_predictor(self, model: BaseModel, **kwargs):

@@ -10,5 +10,3 @@ class BasePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     from the corresponding input feature class are copied over: check each class to check which attributes are different
     from the preprocessing of each feature.
     """
-
-    pass
