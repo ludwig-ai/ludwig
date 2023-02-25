@@ -166,7 +166,6 @@ def safe_move_file(src, dst):
     try:
         os.replace(src, dst)
     except OSError as err:
-
         if err.errno == errno.EXDEV:
             # Generate a unique ID, and copy `<src>` to the target directory with a temporary name `<dst>.<ID>.tmp`.
             # Because we're copying across a filesystem boundary, this initial copy may not be atomic.  We insert a
