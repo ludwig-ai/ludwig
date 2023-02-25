@@ -22,6 +22,7 @@ from ludwig.schema.decoders.utils import register_decoder_config
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.features.loss.loss import BaseLossConfig
+from ludwig.schema.features.loss.loss import register_loss as register_loss_schema
 from tests.integration_tests.utils import (
     category_feature,
     generate_data,
@@ -54,6 +55,7 @@ class CustomNumberDecoderConfig(BaseDecoderConfig):
     input_size: int = schema_utils.PositiveInteger(default=1, description="")
 
 
+@register_loss_schema([NUMBER])
 @dataclass
 class CustomLossConfig(BaseLossConfig):
     type: str = "custom_loss"
