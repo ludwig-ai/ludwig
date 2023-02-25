@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Any, Dict, List, Tuple, Union
+from typing import Dict, List, Tuple, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BINARY, CATEGORY, NUMBER, SEQUENCE, SET, TEXT, VECTOR
@@ -23,16 +23,10 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
         parameter_metadata=DECODER_METADATA["BaseDecoder"]["type"],
     )
 
-    fc_layers: List[Dict[str, Any]] = schema_utils.DictList(
-        default=None,
-        description="List of dictionaries containing the parameters for each fully connected layer.",
-        parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_layers"],
-    )
+    fc_layers: List[dict] = common_fields.FCLayersField()
 
-    num_fc_layers: int = schema_utils.NonNegativeInteger(
-        default=0,
-        description="Number of fully-connected layers if fc_layers not specified.",
-        parameter_metadata=DECODER_METADATA["BaseDecoder"]["num_fc_layers"],
+    num_fc_layers: int = common_fields.NumFCLayersField(
+        description="Number of fully-connected layers if `fc_layers` not specified."
     )
 
     fc_output_size: int = schema_utils.PositiveInteger(
