@@ -1,8 +1,9 @@
 import copy
 import random
 from collections import deque
-from typing import Any, Deque, Dict, Tuple, Union
+from typing import Any, Deque, Dict, List, Tuple, Union
 
+from ludwig.types import ModelConfigDict
 from ludwig.utils.misc_utils import merge_dict
 
 
@@ -57,6 +58,11 @@ def explore_properties(properties: Dict[str, Any], parent_key: str, dq: Deque[Tu
                 else:
                     config_options[key_so_far] = get_potential_values(item)
 
+                print("\n\n")
+                print(item)
+                print(config_options[key_so_far])
+                print("\n\n")
+
                 # for config parameters that are internal or for which we can't infer suggested values to explore
                 # e.g. parameters of type array, object, string (in some cases), etc.
                 if len(config_options[key_so_far]) == 0:
@@ -97,7 +103,11 @@ def get_potential_values(item: Dict[str, Any]):
             temp += handle_property_type(property_type, item)
     else:
         temp += handle_property_type(item["type"], item)
-    return list(set(temp))
+    unique_temp = []
+    for temp_item in temp:
+        if temp_item not in unique_temp:
+            unique_temp.append(temp_item)
+    return unique_temp
 
 
 def handle_property_type(property_type, item):
@@ -254,3 +264,13 @@ def create_nested_dict(flat_dict: Dict[str, Union[float, str]]) -> Dict[str, Any
     for key in flat_dict:
         config = merge_dict(config, to_nested_format(key, copy.deepcopy(flat_dict[key])))
     return config
+
+
+def combine_configs(explored, config, dataset_name) -> List[Tuple[Dict[ModelConfigDict, str], str]]:
+    ret = []
+    for item in explored:
+        for default_config in generate_possible_configs(config_options=item[0]):
+            default_config = create_nested_dict(default_config)
+            config = merge_dict(copy.deepcopy(config), default_config)
+            ret.append((config, dataset_name))
+    return ret

@@ -353,3 +353,7 @@ feature_type_to_config_for_decoder_loss = {
     "binary": (ADULT_CENSUS_INCOME, "adult_census_income"),
     "text": (FAKE_JOB_POSTINGS_MULTI_TO_TEXT, "fake_job_postings2"),
 }
+
+config_section_to_config = {
+    "trainer": (TITANIC, "titanic"),
+}

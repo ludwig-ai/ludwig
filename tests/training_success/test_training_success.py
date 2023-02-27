@@ -2,15 +2,21 @@ import copy
 import logging
 from collections import deque
 from pprint import pprint
+from typing import Dict, Tuple
 
 import pytest
 import yaml
-from configs import feature_type_to_config_for_decoder_loss, feature_type_to_config_for_encoder_preprocessing
-from explore_schema import create_nested_dict, explore_properties, generate_possible_configs
+from configs import (
+    config_section_to_config,
+    feature_type_to_config_for_decoder_loss,
+    feature_type_to_config_for_encoder_preprocessing,
+)
+from explore_schema import combine_configs, create_nested_dict, explore_properties, generate_possible_configs
 
 from ludwig.api import LudwigModel
 from ludwig.config_validation.validation import get_schema
 from ludwig.datasets import get_dataset
+from ludwig.types import ModelConfigDict
 from ludwig.utils.misc_utils import merge_dict
 
 
@@ -39,12 +45,23 @@ def defaults_config_generator(feature_type, only_include):
 
     config["model_type"] = "ecd"
     config["trainer"] = {"train_steps": 1}
+    for config, dataset_name in combine_configs(explored, config, dataset_name):
+        yield config, dataset_name
 
-    for item in explored:
-        for default_config in generate_possible_configs(config_options=item[0]):
-            default_config = create_nested_dict(default_config)
-            config = merge_dict(copy.deepcopy(config), default_config)
-            yield config, dataset_name
+
+def ecd_trainer_config_generator():
+    schema = get_schema()
+    properties = schema["properties"]
+
+    raw_entry = deque([(dict(), False)])
+    explored = explore_properties(properties, parent_key="", dq=raw_entry, only_include=["trainer"])
+    config, dataset_name = config_section_to_config["trainer"]
+    config = yaml.safe_load(config)
+    config["model_type"] = "ecd"
+    config["trainer"] = {"train_steps": 2}
+
+    for config, dataset_name in combine_configs(explored, config, dataset_name):
+        yield config, dataset_name
 
 
 def train_and_evaluate(config, dataset_name):
@@ -56,6 +73,12 @@ def train_and_evaluate(config, dataset_name):
     model = LudwigModel(config=config, callbacks=None, logging_level=logging.ERROR)
     model.train(dataset=dataset)
     model.evaluate(dataset=dataset)
+
+
+@pytest.mark.ecd_trainer
+@pytest.mark.parametrize("config,dataset_name", ecd_trainer_config_generator())
+def test_ecd_trainer(config, dataset_name):
+    train_and_evaluate(config, dataset_name)
 
 
 @pytest.mark.number_feature
@@ -130,12 +153,10 @@ def test_binary_preprocessing_defaults(config, dataset_name):
     train_and_evaluate(config, dataset_name)
 
 
-@pytest.mark.text_feature
-@pytest.mark.parametrize("config,dataset_name", defaults_config_generator("text", "preprocessing"))
-def test_text_preprocessing_defaults(config, dataset_name):
-    pprint(config)
-    print()
-    # train_and_evaluate(config, dataset_name)
+# @pytest.mark.text_feature
+# @pytest.mark.parametrize("config,dataset_name", defaults_config_generator("text", "preprocessing"))
+# def test_text_preprocessing_defaults(config, dataset_name):
+#     train_and_evaluate(config, dataset_name)
 
 
 # @pytest.mark.text_feature
@@ -144,6 +165,6 @@ def test_text_preprocessing_defaults(config, dataset_name):
 #     train_and_evaluate(config, dataset_name)
 
 if __name__ == "__main__":
-    for config, dataset_name in defaults_config_generator("text", "preprocessing"):
+    for config, dataset_name in ecd_trainer_config_generator():
         pprint(config)
         print()
