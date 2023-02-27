@@ -27,6 +27,7 @@ import pandas as pd
 import pyarrow as pa
 import ray
 from dask.diagnostics import ProgressBar
+from packaging import version
 from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray.data import Dataset, read_parquet
 from ray.data.block import Block, BlockAccessor
@@ -45,6 +46,9 @@ TMP_COLUMN = "__TMP_COLUMN__"
 PandasBlockSchema = collections.namedtuple("PandasBlockSchema", ["names", "types"])
 
 logger = logging.getLogger(__name__)
+
+
+_ray_230 = version.parse(ray.__version__) >= version.parse("2.3.0")
 
 
 @DeveloperAPI
@@ -266,6 +270,9 @@ class DaskEngine(DataFrameEngine):
 
         TODO(Arnav): Remove in Ray 2.2
         """
+        if _ray_230:
+            return dataset.to_dask()
+        
 
         @dask.delayed
         def block_to_df(block: Block):

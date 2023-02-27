@@ -49,6 +49,7 @@ from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.backend.datasource import BinaryIgnoreNoneTypeDatasource
 from ludwig.constants import CPU_RESOURCES_PER_TRIAL, EXECUTOR, MODEL_ECD, NAME, PROC_COLUMN, TYPE
 from ludwig.data.dataframe.base import DataFrameEngine
+from ludwig.data.dataframe.dask import tensor_extension_casting
 from ludwig.data.dataset.ray import _SCALAR_TYPES, RayDataset, RayDatasetManager, RayDatasetShard
 from ludwig.models.base import BaseModel
 from ludwig.models.ecd import ECD
@@ -595,16 +596,16 @@ class RayPredictor(BasePredictor):
 
         num_cpus, num_gpus = self.get_resources_per_worker()
 
-        predictions = dataset.ds.map_batches(
-            batch_predictor,
-            batch_size=self.batch_size,
-            compute="actors",
-            batch_format="pandas",
-            num_cpus=num_cpus,
-            num_gpus=num_gpus,
-        )
-
-        predictions = self.df_engine.from_ray_dataset(predictions)
+        with tensor_extension_casting(False):
+            predictions = dataset.ds.map_batches(
+                batch_predictor,
+                batch_size=self.batch_size,
+                compute="actors",
+                batch_format="pandas",
+                num_cpus=num_cpus,
+                num_gpus=num_gpus,
+            )
+            predictions = self.df_engine.from_ray_dataset(predictions)
 
         for of_feature in self.model.output_features.values():
             predictions = of_feature.unflatten(predictions)
@@ -859,10 +860,13 @@ class RayBackend(RemoteTrainingMixin, Backend):
 
             # The resulting column is named "value"
             ds = ray.data.read_datasource(BinaryIgnoreNoneTypeDatasource(), **read_datasource_fn_kwargs)
-            ds = ds.add_column("idx", lambda df: df["value"].map(lambda row: int(row["idx"])))
-            # Overwrite the "value" column with the actual data
-            ds = ds.add_column("value", lambda df: df["value"].map(lambda row: row["data"]))
-            df = self.df_engine.from_ray_dataset(ds).rename(columns={"value": column.name})
+            # ds = ds.add_column("idx", lambda df: df["value"].map(lambda row: int(row["idx"])))
+            # # Overwrite the "value" column with the actual data
+            # ds = ds.add_column("value", lambda df: df["value"].map(lambda row: row["data"]))
+            df = self.df_engine.from_ray_dataset(ds)
+            df['idx'] = self.df_engine.map_objects(df['value'], lambda row: int(row['idx']))
+            df['value'] = self.df_engine.map_objects(df['value'],lambda row: row['data'])
+            df = df.rename(columns={'value': column.name})
         else:
             # Assume the path has already been read in, so just convert directly to a dataset
             # Name the column "value" to match the behavior of the above
