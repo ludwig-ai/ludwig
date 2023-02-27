@@ -35,7 +35,7 @@ jobs:
         with:
           mode: start
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          ec2-image-id: ami-0e9c44e4ddb8012f0
+          ec2-image-id: ami-0759580dedc953d1f
           ec2-instance-type: g4dn.xlarge
           subnet-id: subnet-0983be43
           security-group-id: sg-4cba0d08
@@ -74,6 +74,12 @@ jobs:
 
     timeout-minutes: 90
     steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
       - name: pip cache
         uses: actions/cache@v2
         with:
