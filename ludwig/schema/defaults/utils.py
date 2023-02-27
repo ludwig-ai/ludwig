@@ -4,7 +4,7 @@ from marshmallow import fields, ValidationError
 
 import ludwig.schema.utils as schema_utils
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.schema.features.utils import defaults_config_registry
+from ludwig.schema.features.utils import ecd_defaults_config_registry
 
 
 @DeveloperAPI
@@ -23,7 +23,7 @@ def DefaultsDataclassField(feature_type: str):
             if value is None:
                 return None
             if isinstance(value, dict):
-                defaults_class = defaults_config_registry[feature_type]
+                defaults_class = ecd_defaults_config_registry[feature_type]
                 try:
                     return defaults_class.Schema().load(value)
                 except (TypeError, ValidationError) as error:
@@ -32,7 +32,7 @@ def DefaultsDataclassField(feature_type: str):
 
         @staticmethod
         def _jsonschema_type_mapping():
-            defaults_cls = defaults_config_registry[feature_type]
+            defaults_cls = ecd_defaults_config_registry[feature_type]
             props = schema_utils.unload_jsonschema_from_marshmallow_class(defaults_cls)["properties"]
             return {
                 "type": "object",
@@ -42,7 +42,7 @@ def DefaultsDataclassField(feature_type: str):
             }
 
     try:
-        defaults_cls = defaults_config_registry[feature_type]
+        defaults_cls = ecd_defaults_config_registry[feature_type]
         dump_default = defaults_cls.Schema().dump({})
         load_default = lambda: defaults_cls.Schema().load({})
 
