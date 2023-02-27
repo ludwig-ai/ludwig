@@ -933,16 +933,18 @@ def FloatRangeTupleDataclassField(
                 items_schema["minimum"] = min
             if max is not None:
                 items_schema["maximum"] = max
+            one_of = [
+                {
+                    "type": "array",
+                    "items": [{**items_schema}] * n,
+                    "default": default,
+                    "description": description,
+                },
+            ]
+            if allow_none:
+                one_of.append({"type": "null", "title": "null_float_tuple_option", "description": "None"})
             return {
-                "oneOf": [
-                    {
-                        "type": "array",
-                        "items": [{**items_schema}] * n,
-                        "default": default,
-                        "description": description,
-                    },
-                    {"type": "null", "title": "null_float_tuple_option", "description": "None"},
-                ],
+                "oneOf": one_of,
                 "title": self.name,
                 "default": default,
                 "description": "Valid options for FloatRangeTupleDataclassField.",
