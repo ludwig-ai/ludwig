@@ -207,6 +207,22 @@ weights_initializer:
     The default choice (`xavier_uniform`) is a suitable starting point for
     most tasks.
   ui_display_name: Layer Weights Initializer
+embedding_initializer:
+  default_value_reasoning: According to https://arxiv.org/abs/1711.09160, choice
+    of embedding initialization is not important as long as the variance is
+    kept reasonably low.
+  description_implications:
+    According to https://arxiv.org/abs/1711.09160, choice
+    of embedding initialization is not important as long as the variance is
+    kept reasonably low.
+  example_value:
+    - kaiming
+  expected_impact: 1
+  literature_references:
+    - https://arxiv.org/abs/1711.09160
+  suggested_values: kaiming
+  suggested_values_reasoning: https://discuss.huggingface.co/t/state-of-the-art-technique-for-initializing-embedding-matrix/326
+  ui_display_name: Embedding Initialization
 embedding_size:
   default_value_reasoning: Not too big, not too small.
   description_implications: 'An embedding is a relatively low-dimensional space
@@ -290,6 +306,9 @@ vocab:
     - c
   internal_only: true
   ui_display_name: Not Displayed
+vocab_size:
+  internal_only: true
+  ui_display_name: Not displayed
 representation:
   default_value_reasoning: Trainable, randomly initialized embedding vectors
     often lead to more subtle representations of input entities than one-hot
