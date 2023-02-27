@@ -242,7 +242,7 @@ class DaskEngine(DataFrameEngine):
         ds = read_parquet(path, filesystem=PyFileSystem(FSSpecHandler(fs)))
         return self.from_ray_dataset(ds)
 
-    def to_ray_dataset(self, df):
+    def to_ray_dataset(self, df) -> Dataset:
         from ray.data import from_dask
 
         return from_dask(df)

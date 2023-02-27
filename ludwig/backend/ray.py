@@ -858,15 +858,12 @@ class RayBackend(RemoteTrainingMixin, Backend):
                 # Only set parallelism if it matches or exceeds the Ray default kwarg for parallelism
                 read_datasource_fn_kwargs["parallelism"] = max(RAY_DEFAULT_PARALLELISM, parallelism)
 
-            # The resulting column is named "value"
+            # The resulting column is named "value", which is a dict with two keys: "idx" and "data".
             ds = ray.data.read_datasource(BinaryIgnoreNoneTypeDatasource(), **read_datasource_fn_kwargs)
-            # ds = ds.add_column("idx", lambda df: df["value"].map(lambda row: int(row["idx"])))
-            # # Overwrite the "value" column with the actual data
-            # ds = ds.add_column("value", lambda df: df["value"].map(lambda row: row["data"]))
             df = self.df_engine.from_ray_dataset(ds)
-            df['idx'] = self.df_engine.map_objects(df['value'], lambda row: int(row['idx']))
-            df['value'] = self.df_engine.map_objects(df['value'],lambda row: row['data'])
-            df = df.rename(columns={'value': column.name})
+            df["idx"] = self.df_engine.map_objects(df["value"], lambda row: int(row["idx"]))
+            df["value"] = self.df_engine.map_objects(df["value"], lambda row: row["data"])
+            df = df.rename(columns={"value": column.name})
         else:
             # Assume the path has already been read in, so just convert directly to a dataset
             # Name the column "value" to match the behavior of the above
