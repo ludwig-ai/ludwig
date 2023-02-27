@@ -58,8 +58,8 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.data.dataframe.base import DataFrameEngine
-from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetShard
 from ludwig.data.dataframe.dask import tensor_extension_casting
+from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetShard
 from ludwig.models.base import BaseModel
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
