@@ -1,12 +1,11 @@
 from abc import ABCMeta, abstractmethod
-from typing import List, Tuple
 
 import pandas as pd
 
 from ludwig.api import LudwigModel
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BINARY, CATEGORY, TYPE
-from ludwig.explain.explanation import Explanation
+from ludwig.explain.explanation import Explanation, ExplanationsResult
 from ludwig.explain.util import prepare_data
 
 
@@ -18,7 +17,6 @@ class Explainer(metaclass=ABCMeta):
         inputs_df: pd.DataFrame,
         sample_df: pd.DataFrame,
         target: str,
-        use_global: bool = False,
     ):
         """Constructor for the explainer.
 
@@ -28,21 +26,17 @@ class Explainer(metaclass=ABCMeta):
         :param inputs_df: (pd.DataFrame) The input data to explain.
         :param sample_df: (pd.DataFrame) A sample of the ground truth data.
         :param target: (str) The name of the target to explain.
-        :param use_global: (bool) Return global explanation aggregated over all rows if True (default: False).
         """
         self.model = model
         self.inputs_df = inputs_df
         self.sample_df = sample_df
         self.target = target
-        self.use_global = use_global
         self.inputs_df, self.sample_df, self.feature_cols, self.target_feature_name = prepare_data(
             model, inputs_df, sample_df, target
         )
 
-        if self.use_global:
-            self.explanations = [Explanation(self.target_feature_name)]
-        else:
-            self.explanations = [Explanation(self.target_feature_name) for _ in self.inputs_df.index]
+        self.global_explanation = Explanation(self.target_feature_name)
+        self.row_explanations = [Explanation(self.target_feature_name) for _ in self.inputs_df.index]
 
         # Lookup from column name to output feature
         config = self.model.config
@@ -71,15 +65,10 @@ class Explainer(metaclass=ABCMeta):
         return 1
 
     @abstractmethod
-    def explain(self) -> Tuple[List[Explanation], List[float]]:
+    def explain(self) -> ExplanationsResult:
         """Explain the model's predictions.
 
         # Return
 
-        :return: (Tuple[List[Explanation], List[float]]) `(explanations, expected_values)`
-            `explanations`: (List[Explanation]) A list of explanations, one for each row in the input data. Each
-            explanation contains the feature attributions for each label in the target feature's vocab.
-
-            `expected_values`: (List[float]) of length [output feature cardinality] Expected value for each label in
-            the target feature's vocab.
+        :return: ExplanationsResult containing the explanations.
         """

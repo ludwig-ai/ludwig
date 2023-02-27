@@ -1,6 +1,6 @@
 from abc import ABC
 from dataclasses import field
-from typing import ClassVar, Dict, Optional, Tuple
+from typing import ClassVar, Dict, Optional, Tuple, Type
 
 import torch
 from marshmallow import fields, ValidationError
@@ -8,7 +8,7 @@ from marshmallow import fields, ValidationError
 import ludwig.schema.utils as schema_utils
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema.metadata import OPTIMIZER_METADATA
-from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json
+from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, ParameterMetadata
 from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils.registry import Registry
 
@@ -125,6 +125,7 @@ class LBFGSOptimizerConfig(BaseOptimizerConfig):
     line_search_fn: str = schema_utils.StringOptions(
         ["strong_wolfe"],
         default=None,
+        allow_none=True,
         description="Line search function to use.",
         parameter_metadata=OPTIMIZER_METADATA["line_search_fn"],
     )
@@ -421,7 +422,7 @@ def get_optimizer_conds():
 
 
 @DeveloperAPI
-def OptimizerDataclassField(default={"type": "adam"}, description="TODO"):
+def OptimizerDataclassField(default="adam", description="", parameter_metadata: ParameterMetadata = None):
     """Custom dataclass field that when used inside of a dataclass will allow any optimizer in
     `ludwig.modules.optimization_modules.optimizer_registry`.
 
@@ -432,27 +433,21 @@ def OptimizerDataclassField(default={"type": "adam"}, description="TODO"):
     :return: Initialized dataclass field that converts untyped dicts with params to optimizer dataclass instances.
     """
 
-    class OptimizerMarshmallowField(fields.Field):
+    class OptimizerSelection(schema_utils.TypeSelection):
         """Custom marshmallow field that deserializes a dict to a valid optimizer from
         `ludwig.modules.optimization_modules.optimizer_registry` and creates a corresponding `oneOf` JSON schema
         for external usage."""
 
-        def _deserialize(self, value, attr, data, **kwargs):
-            if value is None:
-                return None
-            if isinstance(value, dict):
-                opt_type = value.get("type")
-                opt_type = opt_type.lower() if opt_type else opt_type
-                if opt_type in optimizer_registry:
-                    opt = optimizer_registry[opt_type][1]
-                    try:
-                        return opt.Schema().load(value)
-                    except (TypeError, ValidationError) as e:
-                        raise ValidationError(f"Invalid params for optimizer: {value}, see `{opt}` definition") from e
-                raise ValidationError(
-                    f"Invalid optimizer type: '{opt_type}', expected one of: {list(optimizer_registry.keys())}."
-                )
-            raise ValidationError(f"Invalid optimizer param {value}, expected `None` or `dict`")
+        def __init__(self):
+            super().__init__(
+                registry=optimizer_registry,
+                default_value=default,
+                description=description,
+                parameter_metadata=parameter_metadata,
+            )
+
+        def get_schema_from_registry(self, key: str) -> Type[schema_utils.BaseMarshmallowConfig]:
+            return get_optimizer_cls(key)
 
         @staticmethod
         def _jsonschema_type_mapping():
@@ -463,7 +458,7 @@ def OptimizerDataclassField(default={"type": "adam"}, description="TODO"):
                     "type": {
                         "type": "string",
                         "enum": list(optimizer_registry.keys()),
-                        "default": default["type"],
+                        "default": default,
                         "description": "The type of optimizer to use during the learning process",
                     },
                 },
@@ -473,26 +468,7 @@ def OptimizerDataclassField(default={"type": "adam"}, description="TODO"):
                 "description": description,
             }
 
-    if not isinstance(default, dict) or "type" not in default or default["type"] not in optimizer_registry:
-        raise ValidationError(f"Invalid default: `{default}`")
-    try:
-        opt = optimizer_registry[default["type"].lower()][1]
-        load_default = lambda: opt.Schema().load(default)
-        dump_default = opt.Schema().dump(default)
-
-        return field(
-            metadata={
-                "marshmallow_field": OptimizerMarshmallowField(
-                    allow_none=False,
-                    dump_default=dump_default,
-                    load_default=load_default,
-                    metadata={"description": description},
-                )
-            },
-            default_factory=load_default,
-        )
-    except Exception as e:
-        raise ValidationError(f"Unsupported optimizer type: {default['type']}. See optimizer_registry. Details: {e}")
+    return OptimizerSelection().get_default_field()
 
 
 @DeveloperAPI
@@ -501,15 +477,25 @@ class GradientClippingConfig(schema_utils.BaseMarshmallowConfig):
     """Dataclass that holds gradient clipping parameters."""
 
     clipglobalnorm: Optional[float] = schema_utils.FloatRange(
-        default=0.5, allow_none=True, description="", parameter_metadata=OPTIMIZER_METADATA["gradient_clipping"]
+        default=0.5,
+        allow_none=True,
+        description="Maximum allowed norm of the gradients",
+        parameter_metadata=OPTIMIZER_METADATA["gradient_clipping"],
     )
 
+    # TODO(travis): is this redundant with `clipglobalnorm`?
     clipnorm: Optional[float] = schema_utils.FloatRange(
-        default=None, allow_none=True, description="", parameter_metadata=OPTIMIZER_METADATA["gradient_clipping"]
+        default=None,
+        allow_none=True,
+        description="Maximum allowed norm of the gradients",
+        parameter_metadata=OPTIMIZER_METADATA["gradient_clipping"],
     )
 
     clipvalue: Optional[float] = schema_utils.FloatRange(
-        default=None, allow_none=True, description="", parameter_metadata=OPTIMIZER_METADATA["gradient_clipping"]
+        default=None,
+        allow_none=True,
+        description="Maximum allowed value of the gradients",
+        parameter_metadata=OPTIMIZER_METADATA["gradient_clipping"],
     )
 
 

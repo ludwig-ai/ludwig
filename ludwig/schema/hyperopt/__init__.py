@@ -65,7 +65,7 @@ class HyperoptConfig(schema_utils.BaseMarshmallowConfig, ABC):
         )
     )
 
-    parameters: Dict = schema_utils.Dict()
+    parameters: Dict = schema_utils.Dict(allow_none=False)
 
 
 @DeveloperAPI

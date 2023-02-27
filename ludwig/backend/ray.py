@@ -44,12 +44,15 @@ if TYPE_CHECKING:
     from ludwig.api import LudwigModel
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.backend._ray210_compat import HorovodTrainerRay210
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.backend.datasource import BinaryIgnoreNoneTypeDatasource
 from ludwig.constants import BINARY, CATEGORY, CPU_RESOURCES_PER_TRIAL, EXECUTOR, MODEL_ECD, NAME, NUMBER, PREPROCESSING, PROC_COLUMN, TYPE
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetShard
+from ludwig.constants import CPU_RESOURCES_PER_TRIAL, EXECUTOR, MODEL_ECD, NAME, PROC_COLUMN, TYPE
+from ludwig.data.dataframe.base import DataFrameEngine
+from ludwig.data.dataframe.dask import tensor_extension_casting
+from ludwig.data.dataset.ray import _SCALAR_TYPES, RayDataset, RayDatasetManager, RayDatasetShard
 from ludwig.models.base import BaseModel
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
@@ -65,6 +68,14 @@ from ludwig.utils.torch_utils import get_torch_device, initialize_pytorch
 from ludwig.utils.types import DataFrame, Series
 
 _ray220 = version.parse(ray.__version__) >= version.parse("2.2.0")
+_ray230 = version.parse(ray.__version__) >= version.parse("2.3.0")
+
+
+if not _ray220:
+    from ludwig.backend._ray210_compat import HorovodTrainerRay210
+else:
+    HorovodTrainerRay210 = None
+
 
 logger = logging.getLogger(__name__)
 
@@ -328,11 +339,22 @@ class RayAirRunner:
         """Generates DatasetConfigs for each dataset passed into the trainer."""
         dataset_configs = {}
         for dataset_name, _ in datasets.items():
-            dataset_conf = DatasetConfig(
-                split=True,
-                use_stream_api=True,
-                stream_window_size=stream_window_size.get(dataset_name),
-            )
+            if _ray230:
+                # DatasetConfig.use_stream_api and DatasetConfig.stream_window_size have been removed as of Ray 2.3.
+                # We need to use DatasetConfig.max_object_store_memory_fraction instead -> default to 20% when windowing
+                # is enabled unless the end user specifies a different fraction.
+                # https://docs.ray.io/en/master/ray-air/check-ingest.html?highlight=max_object_store_memory_fraction#enabling-streaming-ingest # noqa
+                dataset_conf = DatasetConfig(
+                    split=True,
+                    max_object_store_memory_fraction=stream_window_size.get(dataset_name),
+                )
+            else:
+                dataset_conf = DatasetConfig(
+                    split=True,
+                    use_stream_api=True,
+                    stream_window_size=stream_window_size.get(dataset_name),
+                )
+
             if dataset_name == "train":
                 # Mark train dataset as always required
                 dataset_conf.required = True
@@ -359,7 +381,7 @@ class RayAirRunner:
             datasets=dataset,
             scaling_config=self.scaling_config,
             dataset_config=self._get_dataset_configs(dataset, stream_window_size, data_loader_kwargs),
-            run_config=RunConfig(callbacks=callbacks, verbose=1),
+            run_config=RunConfig(callbacks=callbacks, verbose=0),
         )
         return trainer.fit()
 
@@ -393,7 +415,6 @@ class RayTrainerV2(BaseTrainer):
         **kwargs,
     ):
         executable_kwargs = self.executable_kwargs
-
         kwargs = {
             "training_set_metadata": training_set.training_set_metadata,
             "features": training_set.features,
@@ -401,19 +422,13 @@ class RayTrainerV2(BaseTrainer):
         }
 
         dataset = {"train": training_set.ds}
-        stream_window_size = {
-            "train": training_set.get_window_size_bytes(self.data_loader_kwargs.get("window_size_bytes", None))
-        }
+        stream_window_size = {"train": training_set.window_size_bytes}
         if validation_set is not None:
             dataset["val"] = validation_set.ds
-            stream_window_size["val"] = validation_set.get_window_size_bytes(
-                self.data_loader_kwargs.get("window_size_bytes", None)
-            )
+            stream_window_size["val"] = validation_set.window_size_bytes
         if test_set is not None:
             dataset["test"] = test_set.ds
-            stream_window_size["test"] = test_set.get_window_size_bytes(
-                self.data_loader_kwargs.get("window_size_bytes", None)
-            )
+            stream_window_size["test"] = test_set.window_size_bytes
 
         with create_runner(**self.trainer_kwargs) as runner:
             trainer_results = runner.run(
@@ -591,16 +606,16 @@ class RayPredictor(BasePredictor):
 
         num_cpus, num_gpus = self.get_resources_per_worker()
 
-        predictions = dataset.ds.map_batches(
-            batch_predictor,
-            batch_size=self.batch_size,
-            compute="actors",
-            batch_format="pandas",
-            num_cpus=num_cpus,
-            num_gpus=num_gpus,
-        )
-
-        predictions = self.df_engine.from_ray_dataset(predictions)
+        with tensor_extension_casting(False):
+            predictions = dataset.ds.map_batches(
+                batch_predictor,
+                batch_size=self.batch_size,
+                compute="actors",
+                batch_format="pandas",
+                num_cpus=num_cpus,
+                num_gpus=num_gpus,
+            )
+            predictions = self.df_engine.from_ray_dataset(predictions)
 
         for of_feature in self.model.output_features.values():
             predictions = of_feature.unflatten(predictions)
@@ -624,9 +639,7 @@ class RayPredictor(BasePredictor):
         with create_runner(**self.trainer_kwargs) as runner:
             # Collect eval metrics by distributing work across nodes / gpus with Horovod
             datasets = {"eval": dataset.ds}
-            stream_window_size = {
-                "eval": dataset.get_window_size_bytes(self.data_loader_kwargs.get("window_size_bytes", None))
-            }
+            stream_window_size = {"eval": dataset.window_size_bytes}
             predictor_kwargs = {**self.predictor_kwargs, "collect_predictions": False}
             eval_results = runner.run(
                 lambda config: eval_fn(**config),
@@ -792,6 +805,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
             "executable_kwargs": executable_kwargs,
         }
         all_kwargs.update(kwargs)
+
         return trainer_cls(**all_kwargs)
 
     def create_predictor(self, model: BaseModel, **kwargs):
@@ -819,13 +833,6 @@ class RayBackend(RemoteTrainingMixin, Backend):
     @property
     def supports_multiprocessing(self):
         return False
-
-    def check_lazy_load_supported(self, feature):
-        if not feature[PREPROCESSING]["in_memory"]:
-            raise ValueError(
-                f"RayBackend does not support lazy loading of data files at train time. "
-                f"Set preprocessing config `in_memory: True` for feature {feature[NAME]}"
-            )
 
     def read_binary_files(
         self, column: Series, map_fn: Optional[Callable] = None, file_size: Optional[int] = None
@@ -861,12 +868,12 @@ class RayBackend(RemoteTrainingMixin, Backend):
                 # Only set parallelism if it matches or exceeds the Ray default kwarg for parallelism
                 read_datasource_fn_kwargs["parallelism"] = max(RAY_DEFAULT_PARALLELISM, parallelism)
 
-            # The resulting column is named "value"
+            # The resulting column is named "value", which is a dict with two keys: "idx" and "data".
             ds = ray.data.read_datasource(BinaryIgnoreNoneTypeDatasource(), **read_datasource_fn_kwargs)
-            ds = ds.add_column("idx", lambda df: df["value"].map(lambda row: int(row["idx"])))
-            # Overwrite the "value" column with the actual data
-            ds = ds.add_column("value", lambda df: df["value"].map(lambda row: row["data"]))
-            df = self.df_engine.from_ray_dataset(ds).rename(columns={"value": column.name})
+            df = self.df_engine.from_ray_dataset(ds)
+            df["idx"] = self.df_engine.map_objects(df["value"], lambda row: int(row["idx"]))
+            df["value"] = self.df_engine.map_objects(df["value"], lambda row: row["data"])
+            df = df.rename(columns={"value": column.name})
         else:
             # Assume the path has already been read in, so just convert directly to a dataset
             # Name the column "value" to match the behavior of the above

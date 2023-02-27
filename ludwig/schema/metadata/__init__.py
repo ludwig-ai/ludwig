@@ -27,6 +27,7 @@ def _load(fname: str) -> Dict[str, Any]:
         return _to_metadata(yaml.safe_load(f))
 
 
+COMMON_METADATA = _load("common.yaml")
 COMBINER_METADATA = _load("combiners.yaml")
 DECODER_METADATA = _load("decoders.yaml")
 ENCODER_METADATA = _load("encoders.yaml")

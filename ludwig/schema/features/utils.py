@@ -75,6 +75,7 @@ def get_input_feature_conds(model_type: str):
         feature_schema = schema_utils.unload_jsonschema_from_marshmallow_class(schema_cls)
         feature_props = feature_schema["properties"]
         schema_utils.remove_duplicate_fields(feature_props)
+
         feature_cond = schema_utils.create_cond({"type": feature_type}, feature_props)
         conds.append(feature_cond)
     return conds

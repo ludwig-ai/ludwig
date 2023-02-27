@@ -35,11 +35,14 @@ from ludwig.constants import (
     EXECUTOR,
     FORCE_SPLIT,
     HEIGHT,
+    HYPEROPT,
     IMAGE,
     INPUT_FEATURES,
     LOSS,
     MISSING_VALUE_STRATEGY,
     MODEL_ECD,
+    MODEL_GBM,
+    MODEL_TYPE,
     NAME,
     NUM_SAMPLES,
     NUMBER,
@@ -66,6 +69,7 @@ from ludwig.constants import (
 )
 from ludwig.features.feature_registries import get_base_type_registry, get_input_type_registry, get_output_type_registry
 from ludwig.globals import LUDWIG_VERSION
+from ludwig.schema.defaults.gbm import GBMDefaultsConfig
 from ludwig.schema.encoders.utils import get_encoder_cls
 from ludwig.types import (
     FeatureConfigDict,
@@ -639,7 +643,7 @@ def update_training(config: ModelConfigDict) -> ModelConfigDict:
 
 
 @register_config_transformation("0.6")
-def upgrade_missing_value_strategy(config: FeatureConfigDict) -> FeatureConfigDict:
+def upgrade_missing_value_strategy(config: ModelConfigDict) -> ModelConfigDict:
     for input_feature in config.get(INPUT_FEATURES, []):
         if _is_old_missing_value_strategy(input_feature):
             _update_old_missing_value_strategy(input_feature)
@@ -782,6 +786,35 @@ def _upgrade_legacy_image_encoders(feature: FeatureConfigDict) -> FeatureConfigD
         encoder[TYPE] = encoder_mapping[encoder_type]
 
     return feature
+
+
+@register_config_transformation("0.7")
+def upgrade_missing_hyperopt(config: ModelConfigDict) -> ModelConfigDict:
+    hyperopt = config.get(HYPEROPT)
+    if hyperopt == {}:
+        # This is a deprecated form of providing a missing hyperopt section, as it violates the schema definition
+        warnings.warn(
+            "Config section `hyperopt: {}` is deprecated, please set `hyperopt: null` to disable hyperopt.",
+            DeprecationWarning,
+        )
+        del config[HYPEROPT]
+    return config
+
+
+@register_config_transformation("0.7")
+def upgrade_defaults_config_for_gbm(config: ModelConfigDict) -> ModelConfigDict:
+    model_type = config.get(MODEL_TYPE, "")
+    if model_type != MODEL_GBM:
+        return config
+
+    defaults_ref = config.get(DEFAULTS, {})
+    defaults = copy.deepcopy(defaults_ref)
+    gbm_feature_types = GBMDefaultsConfig.Schema().fields.keys()
+    for feature_type in defaults_ref:
+        if feature_type not in gbm_feature_types:
+            del defaults[feature_type]
+    config[DEFAULTS] = defaults
+    return config
 
 
 def upgrade_metadata(metadata: TrainingSetMetadataDict) -> TrainingSetMetadataDict:

@@ -56,8 +56,10 @@ def test_performance(config_filename, tmpdir):
         "experiments": [{"dataset_name": dataset_name, "config_path": config_path}],
     }
     benchmarking_artifacts = benchmark(benchmarking_config)
+    experiment_artifact, err = benchmarking_artifacts[dataset_name]
+    if err is not None:
+        raise err
 
-    experiment_artifact = benchmarking_artifacts[dataset_name]
     expected_metrics: List[ExpectedMetric] = [
         ExpectedMetric.from_dict(expected_metric) for expected_metric in expected_metrics_dict["metrics"]
     ]

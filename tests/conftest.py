@@ -151,6 +151,12 @@ def ray_cluster_4cpu(request):
 
 
 @pytest.fixture(scope="module")
+def ray_cluster_5cpu(request):
+    with _ray_start(request, num_cpus=5):
+        yield
+
+
+@pytest.fixture(scope="module")
 def ray_cluster_7cpu(request):
     with _ray_start(request, num_cpus=7):
         yield
@@ -205,7 +211,6 @@ def _get_default_ray_kwargs():
 def _get_default_system_config():
     system_config = {
         "object_timeout_milliseconds": 200,
-        "num_heartbeats_timeout": 10,
         "object_store_full_delay_ms": 100,
     }
     return system_config

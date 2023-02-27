@@ -1,7 +1,7 @@
 import pytest
-from marshmallow import ValidationError
 
-from ludwig.config_validation.validation import validate_config
+from ludwig.config_validation.validation import check_schema
+from ludwig.error import ConfigValidationError
 from tests.integration_tests.utils import binary_feature, category_feature, number_feature, text_feature
 
 
@@ -14,7 +14,7 @@ def test_config_input_output_features():
         "output_features": [binary_feature(decoder={"type": "regressor"})],
     }
 
-    validate_config(config)
+    check_schema(config)
 
 
 def test_incorrect_input_features_config():
@@ -28,7 +28,7 @@ def test_incorrect_input_features_config():
     # TODO(ksbrar): Circle back after discussing whether additional properties should be allowed long-term.
     # # Not a preprocessing param for category feature
     # with pytest.raises(ValidationError):
-    #     validate_config(config)
+    #     check_schema(config)
 
     config = {
         "input_features": [
@@ -38,8 +38,8 @@ def test_incorrect_input_features_config():
     }
 
     # Incorrect type for padding_symbol preprocessing param
-    with pytest.raises(ValidationError):
-        validate_config(config)
+    with pytest.raises(ConfigValidationError):
+        check_schema(config)
 
     config = {
         "input_features": [
@@ -49,9 +49,9 @@ def test_incorrect_input_features_config():
     }
     del config["input_features"][0]["type"]
 
-    # Incorrect type for padding_symbol preprocessing param
-    with pytest.raises(ValidationError):
-        validate_config(config)
+    # No type
+    with pytest.raises(ConfigValidationError):
+        check_schema(config)
 
 
 def test_incorrect_output_features_config():
@@ -63,15 +63,15 @@ def test_incorrect_output_features_config():
     }
 
     # Invalid decoder for binary output feature
-    with pytest.raises(ValidationError):
-        validate_config(config)
+    with pytest.raises(ConfigValidationError):
+        check_schema(config)
 
 
 def test_too_few_features_config():
     ifeatures = [number_feature()]
     ofeatures = [binary_feature()]
 
-    validate_config(
+    check_schema(
         {
             "input_features": ifeatures,
             "output_features": ofeatures,
@@ -79,8 +79,8 @@ def test_too_few_features_config():
     )
 
     # Must have at least one input feature
-    with pytest.raises(ValidationError, match=r"Error: \[\] is too short"):
-        validate_config(
+    with pytest.raises(ConfigValidationError):
+        check_schema(
             {
                 "input_features": [],
                 "output_features": ofeatures,
@@ -88,8 +88,8 @@ def test_too_few_features_config():
         )
 
     # Must have at least one output feature
-    with pytest.raises(ValidationError, match=r"Error: \[\] is too short"):
-        validate_config(
+    with pytest.raises(ConfigValidationError):
+        check_schema(
             {
                 "input_features": ifeatures,
                 "output_features": [],
@@ -99,8 +99,8 @@ def test_too_few_features_config():
 
 def test_too_many_features_config():
     # GBMs Must have exactly one output feature
-    with pytest.raises(ValidationError, match=r"Error: .* is too long"):
-        validate_config(
+    with pytest.raises(ConfigValidationError):
+        check_schema(
             {
                 "input_features": [number_feature()],
                 "output_features": [binary_feature(), number_feature()],
@@ -109,7 +109,7 @@ def test_too_many_features_config():
         )
 
     # Multi-output is fine for ECD
-    validate_config(
+    check_schema(
         {
             "input_features": [number_feature()],
             "output_features": [binary_feature(), number_feature()],

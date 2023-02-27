@@ -92,11 +92,18 @@ class PandasDataset(Dataset):
         random_seed: int = default_random_seed,
         ignore_last: bool = False,
         distributed: DistributedStrategy = None,
+        augmentation_pipeline=None,
     ):
         sampler = DistributedSampler(
             len(self), shuffle=should_shuffle, random_seed=random_seed, distributed=distributed
         )
-        batcher = RandomAccessBatcher(self, sampler, batch_size=batch_size, ignore_last=ignore_last)
+        batcher = RandomAccessBatcher(
+            self,
+            sampler,
+            batch_size=batch_size,
+            ignore_last=ignore_last,
+            augmentation_pipeline=augmentation_pipeline,
+        )
         yield batcher
 
 

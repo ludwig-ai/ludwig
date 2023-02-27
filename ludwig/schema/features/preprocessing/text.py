@@ -1,5 +1,5 @@
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import DROP_ROW, MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING, TEXT
+from ludwig.constants import DROP_ROW, FILL_WITH_CONST, MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING, TEXT
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor
@@ -18,7 +18,7 @@ class TextPreprocessingConfig(BasePreprocessingConfig):
     pretrained_model_name_or_path: str = schema_utils.String(
         default=None,
         allow_none=True,
-        description="This can be either the name of a pretrained HuggingFace model or a path where it was downloaded",
+        description="This can be either the name of a pretrained HuggingFace model or a path where it was downloaded.",
         parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["pretrained_model_name_or_path"],
     )
 
@@ -34,7 +34,7 @@ class TextPreprocessingConfig(BasePreprocessingConfig):
         default=None,
         allow_none=True,
         description="Filepath string to a UTF-8 encoded file containing the sequence's vocabulary. On each line the "
-        "first string until \t or \n is considered a word.",
+        "first string until `\\t` or `\\n` is considered a word.",
         parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["vocab_file"],
     )
 
@@ -74,7 +74,7 @@ class TextPreprocessingConfig(BasePreprocessingConfig):
         ["left", "right"],
         default="right",
         allow_none=False,
-        description="the direction of the padding. right and left are available options.",
+        description="The direction of the padding.",
         parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["padding"],
     )
 
@@ -86,16 +86,18 @@ class TextPreprocessingConfig(BasePreprocessingConfig):
 
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
-        default="fill_with_const",
+        default=FILL_WITH_CONST,
         allow_none=False,
-        description="What strategy to follow when there's a missing value in a text column",
+        description="What strategy to follow when there's a missing value in a text column.",
         parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["missing_value_strategy"],
     )
 
     fill_value: str = schema_utils.String(
         default=strings_utils.UNKNOWN_SYMBOL,
         allow_none=False,
-        description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
+        description=(
+            "The value to replace missing values with in case the `missing_value_strategy` is `fill_with_const`."
+        ),
         parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["fill_value"],
     )
 
@@ -103,7 +105,7 @@ class TextPreprocessingConfig(BasePreprocessingConfig):
         default=strings_utils.UNKNOWN_SYMBOL,
         allow_none=False,
         description="The internally computed fill value to replace missing values with in case the "
-        "missing_value_strategy is fill_with_mode or fill_with_mean",
+        "`missing_value_strategy` is `fill_with_mode` or `fill_with_mean`.",
         parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["computed_fill_value"],
     )
 
@@ -116,7 +118,10 @@ class TextPreprocessingConfig(BasePreprocessingConfig):
 
     cache_encoder_embeddings: bool = schema_utils.Boolean(
         default=False,
-        description="Compute encoder embeddings in preprocessing, speeding up training time considerably.",
+        description=(
+            "For pretrained encoders, compute encoder embeddings in preprocessing, "
+            "speeding up training time considerably. Only supported when `encoder.trainable=false`."
+        ),
         parameter_metadata=PREPROCESSING_METADATA["cache_encoder_embeddings"],
     )
 
@@ -129,7 +134,7 @@ class TextOutputPreprocessingConfig(TextPreprocessingConfig):
         MISSING_VALUE_STRATEGY_OPTIONS,
         default=DROP_ROW,
         allow_none=False,
-        description="What strategy to follow when there's a missing value in a text output feature",
+        description="What strategy to follow when there's a missing value in a text output feature.",
         parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["missing_value_strategy"],
     )
 

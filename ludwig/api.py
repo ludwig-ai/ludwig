@@ -437,9 +437,9 @@ class LudwigModel:
             `(training_set, validation_set, test_set)`.
             `output_directory` filepath to where training results are stored.
         """
-        if HYPEROPT in self._user_config:
+        if self._user_config.get(HYPEROPT):
             print_boxed("WARNING")
-            logger.info(HYPEROPT_WARNING)
+            logger.warning(HYPEROPT_WARNING)
 
         # setup directories and file names
         if model_resume_path is not None:
@@ -1197,9 +1197,9 @@ class LudwigModel:
             `(training_set, validation_set, test_set)`, `output_directory`
             filepath string to where results are stored.
         """
-        if HYPEROPT in self._user_config:
+        if self._user_config.get(HYPEROPT):
             print_boxed("WARNING")
-            logger.info(HYPEROPT_WARNING)
+            logger.warning(HYPEROPT_WARNING)
 
         (train_stats, preprocessed_data, output_directory) = self.train(
             dataset=dataset,

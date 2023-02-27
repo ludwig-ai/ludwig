@@ -1,5 +1,5 @@
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import DROP_ROW, MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING, SEQUENCE
+from ludwig.constants import DROP_ROW, FILL_WITH_CONST, MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING, SEQUENCE
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor
@@ -63,7 +63,7 @@ class SequencePreprocessingConfig(BasePreprocessingConfig):
         ["left", "right"],
         default="right",
         allow_none=False,
-        description="the direction of the padding. right and left are available options.",
+        description="The direction of the padding.",
         parameter_metadata=FEATURE_METADATA[SEQUENCE][PREPROCESSING]["padding"],
     )
 
@@ -75,7 +75,7 @@ class SequencePreprocessingConfig(BasePreprocessingConfig):
 
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
-        default="fill_with_const",
+        default=FILL_WITH_CONST,
         allow_none=False,
         description="What strategy to follow when there's a missing value in a text column",
         parameter_metadata=FEATURE_METADATA[SEQUENCE][PREPROCESSING]["missing_value_strategy"],
