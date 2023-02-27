@@ -272,7 +272,6 @@ class DaskEngine(DataFrameEngine):
         """
         if _ray_230:
             return dataset.to_dask()
-        
 
         @dask.delayed
         def block_to_df(block: Block):
