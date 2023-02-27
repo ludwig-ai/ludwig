@@ -13,6 +13,7 @@ from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassFie
 from ludwig.schema.features.utils import (
     ecd_defaults_config_registry,
     ecd_input_config_registry,
+    gbm_defaults_config_registry,
     gbm_input_config_registry,
     input_mixin_registry,
     output_config_registry,
@@ -25,6 +26,7 @@ from ludwig.schema.utils import BaseMarshmallowConfig, ludwig_dataclass
 
 @DeveloperAPI
 @input_mixin_registry.register(CATEGORY)
+@gbm_defaults_config_registry.register(CATEGORY)
 @ludwig_dataclass
 class CategoryInputFeatureConfigMixin(BaseMarshmallowConfig):
     """CategoryInputFeatureConfigMixin is a dataclass that configures the parameters used in both the category
