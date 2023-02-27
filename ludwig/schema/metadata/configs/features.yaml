@@ -8,7 +8,7 @@ audio:
             ui_display_name: null
         fill_value:
             ui_display_name: Fill Value
-            expected_impact: 1
+            expected_impact: 2
         in_memory:
             ui_display_name: null
             expected_impact: 1
@@ -123,7 +123,7 @@ bag:
             ui_display_name: null
         fill_value:
             ui_display_name: Fill Value
-            expected_impact: 1
+            expected_impact: 2
         lowercase:
             ui_display_name: null
             expected_impact: 2
@@ -184,7 +184,7 @@ binary:
             expected_impact: 2
             ui_display_name: Fallback True Label
         fill_value:
-            expected_impact: 1
+            expected_impact: 2
             ui_display_name: Fill Value
         missing_value_strategy:
             default_value_reasoning:
@@ -217,7 +217,7 @@ category:
             internal_only: true
             ui_display_name: null
         fill_value:
-            expected_impact: 1
+            expected_impact: 2
             ui_display_name: Fill Value
         lowercase:
             ui_display_name: null
@@ -295,7 +295,7 @@ date:
             suggested_values_reasoning: Have Ludwig figure out the date format automatically.
             ui_display_name: Datetime format
         fill_value:
-            expected_impact: 1
+            expected_impact: 2
             ui_display_name: Fill Value
         missing_value_strategy:
             default_value_reasoning:
@@ -318,7 +318,7 @@ h3:
             internal_only: true
             ui_display_name: null
         fill_value:
-            expected_impact: 1
+            expected_impact: 2
             ui_display_name: Fill Value
         missing_value_strategy:
             default_value_reasoning:
@@ -406,7 +406,7 @@ image:
             internal_only: true
             ui_display_name: null
         fill_value:
-            expected_impact: 1
+            expected_impact: 2
             ui_display_name: Fill Value
         height:
             ui_display_name: null
@@ -484,7 +484,7 @@ number:
             internal_only: true
             ui_display_name: null
         fill_value:
-            expected_impact: 1
+            expected_impact: 2
             ui_display_name: Fill Value
         missing_value_strategy:
             default_value_reasoning:
@@ -571,7 +571,7 @@ sequence:
             internal_only: true
             ui_display_name: null
         fill_value:
-            expected_impact: 1
+            expected_impact: 2
             ui_display_name: Fill Value
         lowercase:
             ui_display_name: null
@@ -676,7 +676,7 @@ set:
             internal_only: true
             ui_display_name: null
         fill_value:
-            expected_impact: 1
+            expected_impact: 2
             ui_display_name: Fill Value
         lowercase:
             ui_display_name: null
@@ -742,7 +742,7 @@ text:
                 - missing_value_strategy, fill_value
             ui_display_name: DOCSTRING ONLY
         fill_value:
-            expected_impact: 1
+            expected_impact: 2
             ui_display_name: Fill Value
         lowercase:
             default_value_reasoning:
@@ -914,7 +914,7 @@ timeseries:
             internal_only: true
             ui_display_name: null
         fill_value:
-            expected_impact: 1
+            expected_impact: 2
             ui_display_name: Fill Value
         missing_value_strategy:
             default_value_reasoning:
@@ -949,7 +949,7 @@ vector:
             internal_only: true
             ui_display_name: null
         fill_value:
-            expected_impact: 1
+            expected_impact: 2
             ui_display_name: Fill Value
         missing_value_strategy:
             default_value_reasoning:
