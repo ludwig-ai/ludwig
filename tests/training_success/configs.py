@@ -1,3 +1,9 @@
+from explore_schema import (
+    combine_configs,
+    combine_configs_for_comparator_combiner,
+    combine_configs_for_sequence_combiner,
+)
+
 dataset_name_to_metric = {
     "bbcnews": "accuracy",
     "sst2": "accuracy",
@@ -365,12 +371,6 @@ ecd_config_section_to_config = {
     "tabtransformer": (TITANIC, "titanic"),
     "transformer": (TITANIC, "titanic"),
 }
-
-from explore_schema import (
-    combine_configs,
-    combine_configs_for_comparator_combiner,
-    combine_configs_for_sequence_combiner,
-)
 
 combiner_type_to_combine_config_fn = {
     "comparator": combine_configs_for_comparator_combiner,

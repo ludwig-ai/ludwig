@@ -262,7 +262,10 @@ def create_nested_dict(flat_dict: Dict[str, Union[float, str]]) -> Dict[str, Any
     return config
 
 
-def combine_configs(explored, config, dataset_name) -> List[Tuple[ModelConfigDict, str]]:
+def combine_configs(
+    explored: Deque[Tuple], config: ModelConfigDict, dataset_name: str
+) -> List[Tuple[ModelConfigDict, str]]:
+    """Merge base config with explored sections."""
     ret = []
     for item in explored:
         for default_config in generate_possible_configs(config_options=item[0]):
@@ -272,7 +275,13 @@ def combine_configs(explored, config, dataset_name) -> List[Tuple[ModelConfigDic
     return ret
 
 
-def combine_configs_for_comparator_combiner(explored, config, dataset_name) -> List[Tuple[ModelConfigDict, str]]:
+def combine_configs_for_comparator_combiner(
+    explored: Deque[Tuple], config: ModelConfigDict, dataset_name: str
+) -> List[Tuple[ModelConfigDict, str]]:
+    """Merge base config with explored sections.
+
+    Completes the entity_1 and entity_2 paramters of the comparator combiner.
+    """
     ret = []
     for item in explored:
         for default_config in generate_possible_configs(config_options=item[0]):
@@ -289,12 +298,19 @@ def combine_configs_for_comparator_combiner(explored, config, dataset_name) -> L
     return ret
 
 
-def combine_configs_for_sequence_combiner(explored, config, dataset_name) -> List[Tuple[ModelConfigDict, str]]:
+def combine_configs_for_sequence_combiner(
+    explored: Deque[Tuple], config: ModelConfigDict, dataset_name: str
+) -> List[Tuple[ModelConfigDict, str]]:
+    """Merge base config with explored sections.
+
+    Uses the right reduce_output strategy for the sequence and sequence_concat combiners.
+    """
     ret = []
     for item in explored:
         for default_config in generate_possible_configs(config_options=item[0]):
             default_config = create_nested_dict(default_config)
             merged_config = merge_dict(copy.deepcopy(config), default_config)
+            merged_config["preprocessing"] = {"sample_ratio": 0.05}
             for i in range(len(merged_config["input_features"])):
                 if merged_config["input_features"][i]["type"] in {SEQUENCE, TEXT, TIMESERIES}:
                     merged_config["input_features"][0]["encoder"] = {"type": "embed", "reduce_output": None}

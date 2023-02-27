@@ -23,7 +23,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         python-version: [3.9]
-        test-markers: ["number_feature", "category_feature", "binary_feature"]
+        test-markers: ["number_feature", "category_feature", "binary_feature", "combiner", "ecd_trainer"]
         include:
           - python-version: "3.9"
             pytorch-version: 1.13.0

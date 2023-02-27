@@ -1,8 +1,7 @@
-import copy
 import logging
 from collections import deque
 from pprint import pprint
-from typing import Dict, Tuple
+from typing import Tuple
 
 import pytest
 import yaml
@@ -12,16 +11,15 @@ from configs import (
     feature_type_to_config_for_decoder_loss,
     feature_type_to_config_for_encoder_preprocessing,
 )
-from explore_schema import combine_configs, create_nested_dict, explore_properties, generate_possible_configs
+from explore_schema import combine_configs, explore_properties
 
 from ludwig.api import LudwigModel
 from ludwig.config_validation.validation import get_schema
 from ludwig.datasets import get_dataset
 from ludwig.types import ModelConfigDict
-from ludwig.utils.misc_utils import merge_dict
 
 
-def defaults_config_generator(feature_type, only_include):
+def defaults_config_generator(feature_type, only_include) -> Tuple[ModelConfigDict, str]:
     assert isinstance(only_include, str)
     assert only_include in ["preprocessing", "encoder", "decoder", "loss"]
 
@@ -50,7 +48,7 @@ def defaults_config_generator(feature_type, only_include):
         yield config, dataset_name
 
 
-def ecd_trainer_config_generator():
+def ecd_trainer_config_generator() -> Tuple[ModelConfigDict, str]:
     schema = get_schema()
     properties = schema["properties"]
 
@@ -65,7 +63,7 @@ def ecd_trainer_config_generator():
         yield config, dataset_name
 
 
-def combiner_config_generator(combiner_type: str):
+def combiner_config_generator(combiner_type: str) -> Tuple[ModelConfigDict, str]:
     schema = get_schema()
     properties = schema["properties"]
 
@@ -164,18 +162,18 @@ def test_number_encoder_defaults(config, dataset_name):
     train_and_evaluate(config, dataset_name)
 
 
-# @pytest.mark.number_feature
-# @pytest.mark.combinatorial
-# @pytest.mark.parametrize("config,dataset_name", defaults_config_generator("number", "decoder"))
-# def test_number_decoder_defaults(config, dataset_name):
-#     train_and_evaluate(config, dataset_name)
+@pytest.mark.number_feature
+@pytest.mark.combinatorial
+@pytest.mark.parametrize("config,dataset_name", defaults_config_generator("number", "decoder"))
+def test_number_decoder_defaults(config, dataset_name):
+    train_and_evaluate(config, dataset_name)
 
 
-# @pytest.mark.number_feature
-# @pytest.mark.combinatorial
-# @pytest.mark.parametrize("config,dataset_name", defaults_config_generator("number", "loss"))
-# def test_number_encoder_loss(config, dataset_name):
-#     train_and_evaluate(config, dataset_name)
+@pytest.mark.number_feature
+@pytest.mark.combinatorial
+@pytest.mark.parametrize("config,dataset_name", defaults_config_generator("number", "loss"))
+def test_number_encoder_loss(config, dataset_name):
+    train_and_evaluate(config, dataset_name)
 
 
 @pytest.mark.number_feature
@@ -192,18 +190,18 @@ def test_category_encoder_defaults(config, dataset_name):
     train_and_evaluate(config, dataset_name)
 
 
-# @pytest.mark.category_feature
-# @pytest.mark.combinatorial
-# @pytest.mark.parametrize("config,dataset_name", defaults_config_generator("category", "decoder"))
-# def test_category_decoder_defaults(config, dataset_name):
-#     train_and_evaluate(config, dataset_name)
+@pytest.mark.category_feature
+@pytest.mark.combinatorial
+@pytest.mark.parametrize("config,dataset_name", defaults_config_generator("category", "decoder"))
+def test_category_decoder_defaults(config, dataset_name):
+    train_and_evaluate(config, dataset_name)
 
 
-# @pytest.mark.category_feature
-# @pytest.mark.combinatorial
-# @pytest.mark.parametrize("config,dataset_name", defaults_config_generator("category", "loss"))
-# def test_category_loss_defaults(config, dataset_name):
-#     train_and_evaluate(config, dataset_name)
+@pytest.mark.category_feature
+@pytest.mark.combinatorial
+@pytest.mark.parametrize("config,dataset_name", defaults_config_generator("category", "loss"))
+def test_category_loss_defaults(config, dataset_name):
+    train_and_evaluate(config, dataset_name)
 
 
 @pytest.mark.category_feature
@@ -220,18 +218,18 @@ def test_binary_encoder_defaults(config, dataset_name):
     train_and_evaluate(config, dataset_name)
 
 
-# @pytest.mark.binary_feature
-# @pytest.mark.combinatorial
-# @pytest.mark.parametrize("config,dataset_name", defaults_config_generator("binary", "decoder"))
-# def test_binary_decoder_defaults(config, dataset_name):
-#     train_and_evaluate(config, dataset_name)
+@pytest.mark.binary_feature
+@pytest.mark.combinatorial
+@pytest.mark.parametrize("config,dataset_name", defaults_config_generator("binary", "decoder"))
+def test_binary_decoder_defaults(config, dataset_name):
+    train_and_evaluate(config, dataset_name)
 
 
-# @pytest.mark.binary_feature
-# @pytest.mark.combinatorial
-# @pytest.mark.parametrize("config,dataset_name", defaults_config_generator("binary", "loss"))
-# def test_binary_loss_defaults(config, dataset_name):
-#     train_and_evaluate(config, dataset_name)
+@pytest.mark.binary_feature
+@pytest.mark.combinatorial
+@pytest.mark.parametrize("config,dataset_name", defaults_config_generator("binary", "loss"))
+def test_binary_loss_defaults(config, dataset_name):
+    train_and_evaluate(config, dataset_name)
 
 
 @pytest.mark.binary_feature
@@ -253,15 +251,3 @@ def test_binary_preprocessing_defaults(config, dataset_name):
 # @pytest.mark.parametrize("config,dataset_name", defaults_config_generator("text", "encoder"))
 # def test_text_encoder_defaults(config):
 #     train_and_evaluate(config, dataset_name)
-
-if __name__ == "__main__":
-    for combiner_type in ["comparator", "concat", "project_aggregate", "tabnet", "tabtransformer", "transformer"]:
-        ctr = 0
-        for config, dataset_name in combiner_config_generator(combiner_type):
-            ctr += 1
-            import yaml
-
-            print(yaml.dump(config))
-            print()
-        print(f"there are {ctr} combiners")
-        print("\n\n")
