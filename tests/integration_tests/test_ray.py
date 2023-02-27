@@ -962,6 +962,7 @@ def test_ray_preprocessing_placement_group(tmpdir, ray_cluster_2cpu):
         preds, _ = model.predict(dataset=dataset)
 
 
+@pytest.mark.skip(reason="This test needs a rewrite with Ray 2.3")
 @pytest.mark.distributed
 class TestDatasetWindowAutosizing:
     """Test dataset windowing with different dataset sizes and settings.
