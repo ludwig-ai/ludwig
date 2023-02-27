@@ -44,7 +44,6 @@ if TYPE_CHECKING:
     from ludwig.api import LudwigModel
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.backend._ray210_compat import HorovodTrainerRay210
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.backend.datasource import BinaryIgnoreNoneTypeDatasource
 from ludwig.constants import CPU_RESOURCES_PER_TRIAL, EXECUTOR, MODEL_ECD, NAME, PROC_COLUMN, TYPE
@@ -66,7 +65,14 @@ from ludwig.utils.torch_utils import get_torch_device, initialize_pytorch
 from ludwig.utils.types import DataFrame, Series
 
 _ray220 = version.parse(ray.__version__) >= version.parse("2.2.0")
-_ray_230 = version.parse(ray.__version__) >= version.parse("2.3.0")
+_ray230 = version.parse(ray.__version__) >= version.parse("2.3.0")
+
+
+if not _ray220:
+    from ludwig.backend._ray210_compat import HorovodTrainerRay210
+else:
+    HorovodTrainerRay210 = None
+
 
 logger = logging.getLogger(__name__)
 
@@ -329,7 +335,7 @@ class RayAirRunner:
         """Generates DatasetConfigs for each dataset passed into the trainer."""
         dataset_configs = {}
         for dataset_name, _ in datasets.items():
-            if _ray_230:
+            if _ray230:
                 # DatasetConfig.use_stream_api and DatasetConfig.stream_window_size have been removed as of Ray 2.3.
                 # We need to use DatasetConfig.max_object_store_memory_fraction instead -> default to 20% when windowing
                 # is enabled unless the end user specifies a different fraction.

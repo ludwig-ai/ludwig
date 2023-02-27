@@ -8,15 +8,15 @@ from ray.air.config import RunConfig
 from ray.air.result import Result
 from ray.train.base_trainer import TrainingFailedError
 from ray.train.horovod import HorovodTrainer
+from ray.tune.execution.trial_runner import _ResumeConfig
 from ray.tune.impl.tuner_internal import TunerInternal
 from ray.tune.trainable import Trainable
 from ray.tune.tune_config import TuneConfig
 from ray.tune.tuner import _SELF, _TUNER_INTERNAL, Tuner
+from ray.tune.utils.node import _force_on_current_node
 
 if TYPE_CHECKING:
     from ray.train.trainer import BaseTrainer
-    from ray.tune.execution.trial_runner import _ResumeConfig
-    from ray.tune.utils.node import _force_on_current_node
 
 
 class TunerRay210(Tuner):
