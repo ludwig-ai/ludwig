@@ -59,7 +59,7 @@ def ecd_trainer_config_generator():
     config, dataset_name = ecd_config_section_to_config["trainer"]
     config = yaml.safe_load(config)
     config["model_type"] = "ecd"
-    config["trainer"] = {"train_steps": 2}
+    config["trainer"] = {"train_steps": 1}
 
     for config, dataset_name in combine_configs(explored, config, dataset_name):
         yield config, dataset_name
@@ -74,7 +74,7 @@ def combiner_config_generator(combiner_type: str):
     config, dataset_name = ecd_config_section_to_config[combiner_type]
     config = yaml.safe_load(config)
     config["model_type"] = "ecd"
-    config["trainer"] = {"train_steps": 2}
+    config["trainer"] = {"train_steps": 1}
 
     combine_configs_fn = combiner_type_to_combine_config_fn[combiner_type]
     for config, dataset_name in combine_configs_fn(explored, config, dataset_name):

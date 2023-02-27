@@ -297,6 +297,6 @@ def combine_configs_for_sequence_combiner(explored, config, dataset_name) -> Lis
             merged_config = merge_dict(copy.deepcopy(config), default_config)
             for i in range(len(merged_config["input_features"])):
                 if merged_config["input_features"][i]["type"] in {SEQUENCE, TEXT, TIMESERIES}:
-                    merged_config["input_features"][0]["encoder"] = {"reduce_output": None}
+                    merged_config["input_features"][0]["encoder"] = {"type": "embed", "reduce_output": None}
             ret.append((merged_config, dataset_name))
     return ret
