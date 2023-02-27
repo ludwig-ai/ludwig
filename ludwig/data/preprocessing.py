@@ -2050,9 +2050,12 @@ def preprocess_for_prediction(
         if num_overrides > 0:
             logger.warning("Using in_memory = False is not supported " "with {} data format.".format(data_format))
 
-    preprocessing_params = merge_config_preprocessing_with_feature_specific_defaults(
-        config.get(PREPROCESSING, {}), config.get(DEFAULTS, {})
-    )
+    preprocessing_params = {}
+    config_defaults = config.get(DEFAULTS, {})
+    for feature_type in config_defaults:
+        preprocessing_params[feature_type] = config_defaults[feature_type].get(PREPROCESSING, {})
+    preprocessing_params[SPLIT] = config.get(PREPROCESSING, {}).get(SPLIT, {})
+
     preprocessing_params = merge_dict(default_prediction_preprocessing_parameters, preprocessing_params)
 
     # if training_set_metadata is a string, assume it's a path to load the json
