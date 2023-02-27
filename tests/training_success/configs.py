@@ -354,6 +354,31 @@ feature_type_to_config_for_decoder_loss = {
     "text": (FAKE_JOB_POSTINGS_MULTI_TO_TEXT, "fake_job_postings2"),
 }
 
-config_section_to_config = {
+ecd_config_section_to_config = {
     "trainer": (TITANIC, "titanic"),
+    "comparator": (TITANIC, "titanic"),
+    "concat": (TITANIC, "titanic"),
+    "project_aggregate": (TITANIC, "titanic"),
+    "sequence": (BBCNEWS_CONFIG, "bbcnews"),
+    "sequence_concat": (BBCNEWS_CONFIG, "bbcnews"),
+    "tabnet": (TITANIC, "titanic"),
+    "tabtransformer": (TITANIC, "titanic"),
+    "transformer": (TITANIC, "titanic"),
+}
+
+from explore_schema import (
+    combine_configs,
+    combine_configs_for_comparator_combiner,
+    combine_configs_for_sequence_combiner,
+)
+
+combiner_type_to_combine_config_fn = {
+    "comparator": combine_configs_for_comparator_combiner,
+    "concat": combine_configs,
+    "project_aggregate": combine_configs,
+    "sequence": combine_configs_for_sequence_combiner,
+    "sequence_concat": combine_configs_for_sequence_combiner,
+    "tabnet": combine_configs,
+    "tabtransformer": combine_configs,
+    "transformer": combine_configs,
 }
