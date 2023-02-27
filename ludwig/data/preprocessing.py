@@ -109,9 +109,9 @@ from ludwig.utils.data_utils import (
 )
 from ludwig.utils.dataframe_utils import is_dask_series_or_df
 from ludwig.utils.defaults import (
-    default_training_preprocessing_parameters,
     default_prediction_preprocessing_parameters,
     default_random_seed,
+    default_training_preprocessing_parameters,
 )
 from ludwig.utils.fs_utils import file_lock, path_exists
 from ludwig.utils.misc_utils import get_from_registry, merge_dict
@@ -1097,8 +1097,7 @@ def build_dataset(
     skip_save_processed_input=False,
     callbacks=None,
 ):
-    """
-    Builds a dataset from a dataframe and a list of features.
+    """Builds a dataset from a dataframe and a list of features.
 
     Args:
         dataset_df: Pandas or Dask dataframe
