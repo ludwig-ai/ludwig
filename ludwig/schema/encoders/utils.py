@@ -102,7 +102,6 @@ def EncoderDataclassField(model_type: str, feature_type: str, default: str, desc
         def get_schema_from_registry(self, key: str) -> Type[schema_utils.BaseMarshmallowConfig]:
             return encoder_registry[key]
 
-        @staticmethod
         def _jsonschema_type_mapping():
             return {
                 "type": "object",

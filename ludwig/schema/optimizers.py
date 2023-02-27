@@ -449,7 +449,6 @@ def OptimizerDataclassField(default="adam", description="", parameter_metadata: 
         def get_schema_from_registry(self, key: str) -> Type[schema_utils.BaseMarshmallowConfig]:
             return get_optimizer_cls(key)
 
-        @staticmethod
         def _jsonschema_type_mapping():
             # Note that this uses the same conditional pattern as combiners:
             return {
@@ -528,7 +527,6 @@ def GradientClippingDataclassField(description: str, default: Dict = {}):
                     )
             raise ValidationError("Field should be None or dict")
 
-        @staticmethod
         def _jsonschema_type_mapping():
             return {
                 "oneOf": [

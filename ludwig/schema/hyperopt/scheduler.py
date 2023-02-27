@@ -496,7 +496,6 @@ def SchedulerDataclassField(default={"type": "fifo"}, description="Hyperopt sche
                 )
             raise ValidationError("Field should be None or dict")
 
-        @staticmethod
         def _jsonschema_type_mapping():
             # Note that this uses the same conditional pattern as combiners:
             return {

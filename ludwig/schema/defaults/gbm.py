@@ -38,6 +38,5 @@ class GBMDefaultsField(schema_utils.DictMarshmallowField):
     def __init__(self):
         super().__init__(GBMDefaultsConfig)
 
-    @staticmethod
     def _jsonschema_type_mapping():
         return get_gbm_defaults_jsonschema()

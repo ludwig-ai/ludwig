@@ -94,7 +94,6 @@ def DecoderDataclassField(feature_type: str, default: str) -> Field:
         def get_schema_from_registry(self, key: str) -> Type[schema_utils.BaseMarshmallowConfig]:
             return get_decoder_cls(feature_type, key)
 
-        @staticmethod
         def _jsonschema_type_mapping():
             return {
                 "type": "object",

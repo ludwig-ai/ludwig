@@ -98,7 +98,6 @@ def AugmentationDataclassField(
                     )
             return augmentation_list
 
-        @staticmethod
         def _jsonschema_type_mapping():
             return get_augmentation_list_jsonschema(feature_type, default)
 

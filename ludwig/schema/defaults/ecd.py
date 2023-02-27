@@ -72,6 +72,5 @@ class ECDDefaultsField(schema_utils.DictMarshmallowField):
     def __init__(self):
         super().__init__(ECDDefaultsConfig)
 
-    @staticmethod
     def _jsonschema_type_mapping():
         return get_ecd_defaults_jsonschema()
