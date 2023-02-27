@@ -281,6 +281,12 @@ class RayDatasetShard(Dataset):
     def size(self):
         return len(self)
 
+    def to_df(self, features: Optional[Iterable[BaseFeature]] = None):
+        raise NotImplementedError()
+
+    def to_scalar_df(self, features: Optional[Iterable[BaseFeature]] = None) -> DataFrame:
+        raise NotImplementedError()
+
 
 @DeveloperAPI
 class RayDatasetBatcher(Batcher):
