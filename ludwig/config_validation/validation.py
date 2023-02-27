@@ -28,7 +28,7 @@ def get_ludwig_version_jsonschema():
     }
 
 
-def get_backend_jsonschema():
+def get_backend_jsonschema():  # TODO: Is this still necessary after setting backend = Dict()?
     # TODO(travis): implement full backend schema
     return {
         "type": "object",

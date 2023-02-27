@@ -3,7 +3,7 @@ import importlib
 import logging
 import os
 import shutil
-from typing import Any, Dict, Union
+from typing import Any, Dict, Tuple, Union
 
 import ludwig.datasets
 from ludwig.api import LudwigModel
@@ -110,7 +110,7 @@ def benchmark_one(experiment: Dict[str, Union[str, Dict[str, str]]]) -> None:
         delete_model_checkpoints(experiment["experiment_name"])
 
 
-def benchmark(benchmarking_config: Union[Dict[str, Any], str]) -> Dict[str, BenchmarkingResult]:
+def benchmark(benchmarking_config: Union[Dict[str, Any], str]) -> Dict[str, Tuple[BenchmarkingResult, Exception]]:
     """Launch benchmarking suite from a benchmarking config.
 
     Args:
@@ -125,14 +125,15 @@ def benchmark(benchmarking_config: Union[Dict[str, Any], str]) -> Dict[str, Benc
 
     experiment_artifacts = {}
     for experiment_idx, experiment in enumerate(benchmarking_config["experiments"]):
+        dataset_name = experiment["dataset_name"]
         try:
             benchmark_one(experiment)
-            dataset_name = experiment["dataset_name"]
-            experiment_artifacts[dataset_name] = build_benchmarking_result(benchmarking_config, experiment_idx)
-        except Exception:
+            experiment_artifacts[dataset_name] = (build_benchmarking_result(benchmarking_config, experiment_idx), None)
+        except Exception as e:
             logger.exception(
                 f"Experiment *{experiment['experiment_name']}* on dataset *{experiment['dataset_name']}* failed"
             )
+            experiment_artifacts[dataset_name] = (None, e)
         finally:
             if benchmarking_config["export"]["export_artifacts"]:
                 export_base_path = benchmarking_config["export"]["export_base_path"]
