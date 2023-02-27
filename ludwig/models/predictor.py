@@ -17,6 +17,7 @@ from ludwig.data.utils import convert_to_dict
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.globals import is_progressbar_disabled, PREDICTIONS_PARQUET_FILE_NAME, TEST_STATISTICS_FILE_NAME
 from ludwig.models.base import BaseModel
+from ludwig.models.gbm import GBM
 from ludwig.progress_bar import LudwigProgressBar
 from ludwig.utils.data_utils import save_csv, save_json
 from ludwig.utils.dataframe_utils import from_numpy_dataset
@@ -75,7 +76,8 @@ class Predictor(BasePredictor):
         self._distributed = distributed if distributed is not None else LocalStrategy()
         self.report_tqdm_to_ray = report_tqdm_to_ray
 
-        self.device = get_torch_device()
+        # TODO (jeffkinnison): revert to using the requested device for GBMs when device usage is fixed
+        self.device = get_torch_device() if not isinstance(model, GBM) else "cpu"
         self.model = model.to(self.device)
 
     def batch_predict(self, dataset: Dataset, dataset_name: str = None, collect_logits: bool = False):
