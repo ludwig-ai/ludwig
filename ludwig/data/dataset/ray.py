@@ -19,8 +19,7 @@ import math
 import queue
 import threading
 from functools import lru_cache
-from typing import Dict, Iterable, Iterator, Optional, Union
-from typing import Dict, Iterator, Literal, Optional, Union
+from typing import Dict, Iterable, Iterator, Literal, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -39,9 +38,8 @@ from ludwig.data.dataset.base import Dataset, DatasetManager
 from ludwig.distributed import DistributedStrategy
 from ludwig.features.base_feature import BaseFeature
 from ludwig.types import FeatureConfigDict, ModelConfigDict, TrainingSetMetadataDict
-from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP, DATA_TRAIN_PARQUET_FP
-from ludwig.utils.dataframe_utils import to_scalar_df
 from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP, DATA_TRAIN_PARQUET_FP, from_numpy_dataset, to_numpy_dataset
+from ludwig.utils.dataframe_utils import to_scalar_df
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.error_handling_utils import default_retry
 from ludwig.utils.fs_utils import get_fs_and_path
@@ -51,8 +49,6 @@ from ludwig.utils.types import DataFrame
 logger = logging.getLogger(__name__)
 
 _ray_230 = version.parse(ray.__version__) >= version.parse("2.3.0")
-
-_SCALAR_TYPES = {BINARY, CATEGORY, NUMBER}
 
 
 @DeveloperAPI

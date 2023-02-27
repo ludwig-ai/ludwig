@@ -4,11 +4,6 @@ import re
 import numpy as np
 import pytest
 
-try:
-    import ray as _ray
-except ImportError:
-    _ray = None
-
 from ludwig.api import LudwigModel
 from ludwig.constants import COLUMN, INPUT_FEATURES, MODEL_TYPE, NAME, OUTPUT_FEATURES, TRAINER
 from ludwig.error import ConfigValidationError
