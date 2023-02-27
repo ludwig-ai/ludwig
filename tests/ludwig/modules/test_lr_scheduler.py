@@ -3,7 +3,6 @@ from torch.optim import SGD
 
 from ludwig.features.number_feature import NumberInputFeature, NumberOutputFeature
 from ludwig.modules.lr_scheduler import LRScheduler
-from ludwig.schema.decoders.base import PassthroughDecoderConfig
 from ludwig.schema.encoders.base import DenseEncoderConfig
 from ludwig.schema.features.number_feature import NumberInputFeatureConfig, NumberOutputFeatureConfig
 from ludwig.schema.lr_scheduler import LRSchedulerConfig

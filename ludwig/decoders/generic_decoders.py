@@ -19,7 +19,7 @@ from functools import partial
 import torch
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import BINARY, CATEGORY, LOSS, NUMBER, SET, TYPE, VECTOR
+from ludwig.constants import BINARY, CATEGORY, LOSS, NUMBER, SEQUENCE, SET, TEXT, TYPE, VECTOR
 from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
 from ludwig.schema.decoders.base import ClassifierConfig, PassthroughDecoderConfig, ProjectorConfig, RegressorConfig
@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 @DeveloperAPI
 # TODO(Arnav): Re-register once we better understand why passthrough decoders exist (and how they are used):
 # Ludwig Issue: https://github.com/ludwig-ai/ludwig/issues/3150
-# @register_decoder("passthrough", [BINARY, CATEGORY, NUMBER, SET, VECTOR, SEQUENCE, TEXT])
+@register_decoder("passthrough", [SET, VECTOR, SEQUENCE, TEXT])
 class PassthroughDecoder(Decoder):
     def __init__(self, input_size: int = 1, num_classes: int = None, decoder_config=None, **kwargs):
         super().__init__()
