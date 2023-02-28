@@ -105,7 +105,10 @@ class CategoricalOneHotEncoderConfig(BaseEncoderConfig):
 
     vocab: List[str] = common_fields.VocabField()
 
-    def get_fixed_preprocessing_params(self) -> Dict[str, Any]:
-        return {
-            "cache_encoder_embeddings": True,
-        }
+    def get_fixed_preprocessing_params(self, model_type: str) -> Dict[str, Any]:
+        if model_type == MODEL_GBM:
+            return {
+                "cache_encoder_embeddings": True,
+            }
+
+        return {}
