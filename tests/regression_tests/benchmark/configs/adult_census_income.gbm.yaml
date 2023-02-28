@@ -53,5 +53,3 @@ trainer:
   eval_batch_size: 16384
   evaluate_training_set: false
 model_type: gbm
-backend:
-  type: local

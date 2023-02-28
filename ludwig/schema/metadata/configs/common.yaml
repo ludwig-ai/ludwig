@@ -1,0 +1,348 @@
+activation:
+  default_value_reasoning: The Rectified Linear Units (ReLU) function is the
+    standard activation function used for adding non-linearity. It is simple,
+    fast, and empirically works well (https://arxiv.org/abs/1803.08375).
+  description_implications: Changing the activation functions has an impact
+    on the computational load of the model and might require further hypterparameter
+    tuning
+  expected_impact: 2
+  suggested_values: relu
+  suggested_values_reasoning: ReLU will work well in the majority of the cases
+  ui_display_name: Activation
+bias_initializer:
+  default_value_reasoning: It is possible and common to initialize the biases
+    to be zero, since the asymmetry breaking is provided by the small random
+    numbers in the weights.
+  description_implications: It's rare to see any performance gains from choosing
+    a different bias initialization. Some practitioners like to use a small
+    constant value such as 0.01 for all biases to ensure that all ReLU units
+    are activated in the beginning and have some effect on the gradient. However,
+    it's still an open question as to whether this provides consistent improvement.
+  expected_impact: 1
+  literature_references:
+    - https://cs231n.github.io/neural-networks-2/
+  related_parameters:
+    - weights_initializer
+  suggested_values: zeros
+  suggested_values_reasoning: It is possible and common to initialize the biases
+    to be zero, since the asymmetry breaking is provided by the small random
+    numbers in the weights. For ReLU non-linearities, some people like to
+    use small constant value such as 0.01 for all biases because this ensures
+    that all ReLU units fire in the beginning and therefore obtain and propagate
+    some gradient. However, it is not clear if this provides a consistent
+    improvement (in fact some results seem to indicate that this performs
+    worse) and it is more common to simply use 0 bias initialization.
+  ui_display_name: Bias Initializer
+dropout:
+  default_value_reasoning: Dropout can cause training to become less stable.
+    Consider start with a dropout-free baseline, and add dropout gradually
+    in subsequent experiments.
+  description_implications: "Dropout is a computationally cheap regularization\
+    \ method where during training, some neurons are randomly ignored or \u201C\
+    dropped out\u201D. Increasing dropout has the effect of making the training\
+    \ process more noisy and lowering overall network capacity, but it can\
+    \ be an effective regularization method to reduce overfitting and improve\
+    \ generalization."
+  example_value:
+    - 0.2
+  expected_impact: 3
+  literature_references:
+    - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
+  suggested_values: 0.05 - 0.8
+  suggested_values_reasoning: Tuning dropout is really something to be done
+    when all of the big choices about architecture have been settled. Consider
+    starting with 0.5 and adjusting the dropout depending on observed model
+    performance.
+  ui_display_name: Dropout
+fc_layers:
+  default_value_reasoning: By default the stack is built by using num_fc_layers,
+    output_size, use_bias, weights_initializer, bias_initializer, norm, norm_params,
+    activation, dropout. When a list of dictionaries is provided, the stack
+    is built following the parameters of each dict for building each layer.
+  description_implications: The more layers that are specified the deeper and
+    higher capacity the model will be. This makes it possible to potentially
+    achieve better performance when a big anough amount of data is provided,
+    but also makes the model more computationally expensive and potentially
+    more prone to overfitting.
+  example_value:
+    - dropout: 0.1
+      output_size: 128
+    - norm: layer
+      output_size: 64
+  expected_impact: 1
+  related_parameters:
+    - output_size
+    - use_bias
+    - weights_initializer
+    - bias_initializer
+    - norm
+    - norm_params
+    - activation
+    - dropout
+  suggested_values_reasoning: It is easier to define a stack of fully connected
+    layers by just specifying num_fc_layers, output_size and the other individual
+    parameters. It will create a stack of layers with identical properties.
+    Use this parameter only if you need a fine grained level of control of
+    each individual layer in the stack.
+  ui_display_name: Fully Connected Layers
+flatten_inputs:
+  ui_display_name: null
+  expected_impact: 1
+norm:
+  default_value_reasoning: While batch normalization and layer normalization
+    usually lead to improvements, it can be useful to start with fewer bells
+    and whistles.
+  description_implications: Normalization helps stabilize the learning process
+    and can have a regularizing effect that can help with generalization.
+    It's often suggested that with normalization, you can use a higher learning
+    rate.
+  example_value:
+    - batch
+  expected_impact: 3
+  literature_references:
+    - https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/
+  related_parameters:
+    - norm_params
+  suggested_values_reasoning: Normalization tries to solve "internal covariate
+    shift" that comes from the changing distributions of the inputs to layers
+    deep in the network when weights are updated. For example, batch normalization
+    standardizes the inputs to a layer for each mini-batch. Try out different
+    normalizations to see if that helps with training stability
+  ui_display_name: Normalization Type
+norm_params:
+  ui_display_name: null
+  expected_impact: 1
+num_fc_layers:
+  default_value_reasoning:
+    The encoder already has learnable parameters.Sometimes
+    the default is 1 for modules where the FC stack is used for shape management,
+    or the only source of learnable parameters.
+  description_implications: Increasing num_fc_layers will increase the capacity
+    of the model. The model will be slower to train, and there's a higher
+    risk of overfitting.
+  example_value:
+    - 1
+  expected_impact: 3
+  other_information:
+    Not all modules that have fc_layers also have an accompanying
+    num_fc_layers parameter. Where both are present, fc_layers takes precedent
+    over num_fc_layers. Specifying num_fc_layers alone uses fully connected
+    layers that are configured by the defaults in FCStack.
+  related_parameters:
+    - fc_layers
+  suggested_values: 0-1
+  suggested_values_reasoning: The full model likely contains many learnable
+    parameters. Consider starting with very few, or without any additional
+    fully connected layers and add them if you observe evidence of limited
+    model capacity. Sometimes the default is 1 for modules where the FC stack
+    is used for shape management, or the only source of learnable parameters.
+  ui_display_name: Number of Fully Connected Layers
+output_size:
+  default_value_reasoning: A modest value, not too small, not too large.
+  description_implications: If there are fully connected layers in this module,
+    increasing the output size of each fully connected layer will increase
+    the capacity of the model. However, the model may be slower to train,
+    and there's a higher risk of overfitting. If it seems like the model could
+    use even more capacity, consider increasing the number of fully connected
+    layers, or explore other architectures.
+  expected_impact: 3
+  other_information: If num_fc_layers=0 and fc_layers=None, and there are no
+    fully connected layers defined on the module, then this parameter may
+    have no effect on the module's final output shape.
+  related_parameters:
+    - num_fc_layers, fc_layers
+  suggested_values: 16 - 1024
+  suggested_values_reasoning: Increasing the output size increases the capacity
+    of the model. If this seems to have a positive effect, then it could be
+    worth increasing the number of layers, or trying a different architecture
+    with a larger capacity.
+  ui_display_name: Output Size
+residual:
+  ui_display_name: null
+  expected_impact: 1
+use_bias:
+  default_value_reasoning: "Bias terms may improve model accuracy, and don't
+    have much impact in terms of memory or training speed. For most models
+    it is reasonable to use bias terms.
+
+
+    Batch Normalization, however, adds a trainable shift parameter which is
+    added to the activation. When Batch Normalization is used in a layer,
+    bias terms are redundant and may be removed."
+  description_implications: Bias terms may improve model accuracy, and don't
+    have much impact in terms of memory or training speed. For most models
+    it is reasonable to leave this parameter set to True.
+  example_value:
+    - true
+  expected_impact: 1
+  other_information: If fc_layers is not specified, or use_bias is not specified
+    for individual layers, the value of use_bias will be used as the default
+    for all layers.
+  related_parameters:
+    - bias_initializer, fc_layers
+  suggested_values: "TRUE"
+  ui_display_name: Use Bias
+weights_initializer:
+  default_value_reasoning: Taken from [this paper](http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf).
+  description_implications: The method you choose to initialize layer weights
+    during training can have a big impact on performance as well as the reproducibility
+    of your final model between runs. As an example, if you were to randomly
+    initialize weights you would risk non-reproducibility (and possibly general
+    training performance), but sticking with constant values for initialization
+    might significantly increase the time needed for model convergence. Generally,
+    choosing one of the probabilistic approaches strikes a balance between
+    the two extremes, and the literature kicked off by the landmark [*Xavier
+    et al.* paper](http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf)
+    provides a few good options. See this nice discussion from [Weights and
+    Biases](https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.)
+    for more information.
+  expected_impact: 1
+  literature_references:
+    - "Weights and Biases blog post: https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster."
+    - "Xavier et al. paper: http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf"
+  suggested_values: xavier_uniform
+  suggested_values_reasoning: Changing the weights initialization scheme is
+    something to consider if a model is having trouble with convergence, or
+    otherwise it is something to experiment with after other factors are considered.
+    The default choice (`xavier_uniform`) is a suitable starting point for
+    most tasks.
+  ui_display_name: Layer Weights Initializer
+embedding_initializer:
+  default_value_reasoning: According to https://arxiv.org/abs/1711.09160, choice
+    of embedding initialization is not important as long as the variance is
+    kept reasonably low.
+  description_implications:
+    According to https://arxiv.org/abs/1711.09160, choice
+    of embedding initialization is not important as long as the variance is
+    kept reasonably low.
+  example_value:
+    - kaiming
+  expected_impact: 1
+  literature_references:
+    - https://arxiv.org/abs/1711.09160
+  suggested_values: kaiming
+  suggested_values_reasoning: https://discuss.huggingface.co/t/state-of-the-art-technique-for-initializing-embedding-matrix/326
+  ui_display_name: Embedding Initialization
+embedding_size:
+  default_value_reasoning: Not too big, not too small.
+  description_implications: 'An embedding is a relatively low-dimensional space
+    that is used to translate high-dimensional vectors like words, which can
+    have a large vocbulary size. Ideally, after an embedding is trained, it
+    captures some of the semantics of the input by placing semantically similar
+    inputs close together in the embedding space.
+
+
+    In most cases, the embedding size is chosen empirically, by trial and
+    error. From https://www.amazon.com/dp/1098115783, "one rule of thumb is
+    to use the fourth root of the total number of unique categorical elements
+    while another is that the embedding dimension should be approximately
+    1.6 times the square root of the number of unique elements in the category,
+    and no less than 600."
+
+
+    Increasing the embedding size may cause the model to train more slowly,
+    but the higher dimensionality can also improve overall quality.'
+  expected_impact: 3
+  literature_references:
+    - https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture
+  suggested_values: 1.6 * sqrt(vocab_size)
+  suggested_values_reasoning:
+    Rule of thumb suggested by a deep learning textbook.
+    Try models with smaller or larger embedding sizes to observe relative
+    impact.
+  ui_display_name: Embedding Size
+embeddings_on_cpu:
+  default_value_reasoning: By default embeddings matrices are stored on GPU
+    memory if a GPU is used, as it allows for faster access.
+  description_implications: By default embeddings matrices are stored on GPU
+    memory if a GPU is used, as it allows for faster access. However, in some
+    cases when the vocabulary size is very large, the full embedding matrix
+    may be really big and unwieldy to have in GPU memory. This parameter forces
+    the placement of the embedding matrix in regular memory and the CPU is
+    used to access them. This may slow down training due to additional data
+    transfer between CPU and GPU memory, but can lead to healthier GPU memory
+    resource usage.
+  expected_impact: 1
+  suggested_values:
+    - false
+  suggested_values_reasoning:
+    If GPU memory is not a constraint, having embeddings
+    stored and accessed within the GPU is faster.
+  ui_display_name: Embeddings on CPU
+embeddings_trainable:
+  default_value_reasoning:
+    If trained from scratch, embedding vectors are typically
+    learned alongside the rest of the model.
+  description_implications:
+    Typically this value is only set to False if pre-trained
+    embeddings are uploaded. Even then, it is reasonable to leave it as True
+    in order to fine-tune the embeddings.
+  expected_impact: 1
+  related_parameters:
+    - embedding_size, representation, pretrained_embeddings
+  ui_display_name: (under Embeddings header) Trainable?
+pretrained_embeddings:
+  default_value_reasoning: Embeddings are commonly trained from scratch, or
+    incorporated as part of a pre-trained model package.
+  description_implications: If pretrained embeddings are specified, then the
+    model may have a head start in its representation of various input entities.
+  example_value:
+    - ~/Downloads/glove.6B.100d.txt
+  expected_impact: 0
+  related_parameters:
+    - embedding_size, embeddings_trainable
+  ui_display_name: Pretrained embeddings path
+max_sequence_length:
+  default_value_reasoning: Sets the maximum sequence length of the expected
+    inputs, so input/output shapes are computed accurately.
+  internal_only: true
+  ui_display_name: null
+vocab:
+  default_value_reasoning: Computed and passed along internally according to
+    preprocessing settings.
+  example_value:
+    - a
+    - b
+    - c
+  internal_only: true
+  ui_display_name: Not Displayed
+vocab_size:
+  internal_only: true
+  ui_display_name: Not displayed
+representation:
+  default_value_reasoning: Trainable, randomly initialized embedding vectors
+    often lead to more subtle representations of input entities than one-hot
+    vectors.
+  description_implications: If set to sparse, the representations for input
+    entities are fixed as one-hot vectors. This leads to less flexible representations
+    for input entities, but could lead to faster training since there are
+    less learnable parameters.
+  expected_impact: 1
+  other_information: ""
+  related_parameters:
+    - embedding_size, embeddings_trainable, pretrained_embeddings
+  ui_display_name: Representation approach
+reduce_output:
+  default_value_reasoning: Sums the tensors along the sequence dimension.
+  description_implications: "\"last\", \"sum\", \"mean\", and \"max\" are the\
+    \ fastest and most memory-efficient operations\u2013 they result in tensors\
+    \ that are the same-size as a single item in the input sequence. However,\
+    \ these are simple aggregation operations, therefore some information\
+    \ may be lost. \n\n\"concat\" concatenates each tensor together, creating\
+    \ a `(sequence length)*(tensor size)`-element tensor. \"concat\" preserves\
+    \ this information, but can be very memory-intensive and should only be\
+    \ applied if the sequence length and/or tensor size is small. \n\n\"attention\"\
+    \ takes a weighted sum of the items in the sequence, where the weights\
+    \ for each item in the sequence are determined by the model on-the-fly\
+    \ based on the features of the item itself. This is both slower and and\
+    \ more memory-intensive than the other operations; however, it can also\
+    \ provide a richer \"global\" representation of the sequence."
+  expected_impact: 1
+  related_parameters:
+    - max_sequence_length
+  suggested_values: '"attention". This and the default covers 95% of use cases.'
+  suggested_values_reasoning: If you would like better performance and are not
+    compute/memory-constrained, attention-based reduction can potentially
+    provide a richer global representation than the default, but note that attention
+    reduction does not work with `cache_encoder_embeddings=true`.
+  ui_display_name: Sequence Reducer
