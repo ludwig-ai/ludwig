@@ -10,6 +10,7 @@ from ludwig.modules.metric_registry import get_metric_registry
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.hyperopt.executor import ExecutorConfig, ExecutorDataclassField
 from ludwig.schema.hyperopt.search_algorithm import BaseSearchAlgorithmConfig, SearchAlgorithmDataclassField
+from ludwig.schema.metadata import HYPEROPT_METADATA
 
 
 @DeveloperAPI
@@ -17,55 +18,41 @@ from ludwig.schema.hyperopt.search_algorithm import BaseSearchAlgorithmConfig, S
 class HyperoptConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Basic hyperopt settings."""
 
-    output_feature: str = "combined"  # TODO: make more restrictive
+    output_feature: str = schema_utils.String(
+        default="combined",  # TODO: make more restrictive
+        description=HYPEROPT_METADATA["output_feature"].short_description,
+    )
 
     goal: str = schema_utils.StringOptions(
         options=["minimize", "maximize"],
         default="minimize",
         allow_none=False,
-        description=(
-            "Indicates if to minimize or maximize a metric or a loss of any of the output features on any of the "
-            "dataset splits. Available values are: minimize (default) or maximize."
-        ),
+        description=HYPEROPT_METADATA["goal"].short_description,
     )
 
     metric: str = schema_utils.StringOptions(
         options=get_metric_registry().keys(),
         default=LOSS,
         allow_none=False,
-        description=(
-            "The metric that we want to optimize for. The default one is loss, but depending on the type of the "
-            "feature defined in output_feature, different metrics and losses are available. Check the metrics section "
-            "of the specific output feature type to figure out what metrics are available to use."
-        ),
+        description=HYPEROPT_METADATA["metric"].short_description,
     )
 
     split: str = schema_utils.StringOptions(
         options=[TRAIN, VALIDATION, TEST],
         default=VALIDATION,
         allow_none=False,
-        description=(
-            "The split of data that we want to compute our metric on. By default it is the validation split, but "
-            "you have the flexibility to specify also train or test splits."
-        ),
+        description=HYPEROPT_METADATA["split"].short_description,
     )
 
     search_alg: BaseSearchAlgorithmConfig = SearchAlgorithmDataclassField(
-        description=(
-            "Specifies the algorithm to sample the defined parameters space. Candidate algorithms are those "
-            "found in Ray Tune's Search Algorithms."
-        )
+        description=HYPEROPT_METADATA["search_alg"].short_description
     )
 
-    executor: ExecutorConfig = ExecutorDataclassField(
-        description=(
-            "specifies how to execute the hyperparameter optimization. The execution could happen locally in a serial "
-            "manner or in parallel across multiple workers and with GPUs as well if available. The executor section "
-            "includes specification for work scheduling and the number of samples to generate."
-        )
-    )
+    executor: ExecutorConfig = ExecutorDataclassField(description=HYPEROPT_METADATA["executor"].short_description)
 
-    parameters: Dict = schema_utils.Dict(allow_none=False)
+    parameters: Dict = schema_utils.Dict(
+        allow_none=False, description=HYPEROPT_METADATA["parameters"].short_description
+    )
 
 
 @DeveloperAPI
