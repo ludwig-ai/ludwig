@@ -17,7 +17,7 @@ from tqdm import tqdm
 
 from ludwig.api import LudwigModel
 from ludwig.api_annotations import PublicAPI
-from ludwig.constants import CATEGORY, DATE, IMAGE, INPUT_FEATURES, NAME, PREPROCESSING, TEXT, UNKNOWN_SYMBOL
+from ludwig.constants import CATEGORY, DATE, IMAGE, INPUT_FEATURES, NAME, PREPROCESSING, SET, TEXT, UNKNOWN_SYMBOL
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.explain.explainer import Explainer
 from ludwig.explain.explanation import ExplanationsResult
@@ -80,7 +80,7 @@ class WrapperModule(torch.nn.Module):
             {
                 arg_name: InputIdentity(arg_name)
                 for arg_name in self.model.input_features.keys()
-                if self.model.input_features[arg_name].type() not in {TEXT, CATEGORY, DATE}
+                if self.model.input_features[arg_name].type() not in {TEXT, CATEGORY, DATE, SET}
             }
         )
 
@@ -91,7 +91,7 @@ class WrapperModule(torch.nn.Module):
             # Send the input through the identity layer so that we can use the output of the layer for attribution.
             # Except for text/category features where we use the embedding layer for attribution.
             feat_name: feat_input
-            if input_features[feat_name].type() in {TEXT, CATEGORY, DATE}
+            if input_features[feat_name].type() in {TEXT, CATEGORY, DATE, SET}
             else self.input_maps[feat_name](feat_input)
             for feat_name, feat_input in zip(input_features.keys(), args)
         }
@@ -367,7 +367,7 @@ def get_total_attribution(
 
     layers = []
     for feat_name, feat in input_features.items():
-        if feat.type() in {TEXT, CATEGORY, DATE}:
+        if feat.type() in {TEXT, CATEGORY, DATE, SET}:
             # Get embedding layer from encoder, which is the first child of the encoder.
             layers.append(feat.encoder_obj.get_embedding_layer())
         else:

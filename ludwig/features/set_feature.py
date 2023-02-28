@@ -210,7 +210,7 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
 
     def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor)
-        assert inputs.dtype in [torch.bool, torch.int64]
+        assert inputs.dtype in [torch.bool, torch.int64, torch.float32]
 
         encoder_output = self.encoder_obj(inputs)
 
