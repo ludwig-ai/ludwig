@@ -55,7 +55,7 @@ def test_sample_ratio(backend, tmpdir, ray_cluster_2cpu):
     }
 
     model = LudwigModel(config, backend=backend)
-    train_set, val_set, test_set, _ = model.preprocess(
+    train_set, val_set, test_set, training_set_metadata = model.preprocess(
         data_csv,
         skip_save_processed_input=True,
     )
@@ -67,14 +67,14 @@ def test_sample_ratio(backend, tmpdir, ray_cluster_2cpu):
     # Check that sample ratio is disabled when doing preprocessing for prediction
     dataset, _ = preprocess_for_prediction(
         model.config_obj.to_dict(),
-        dataset=test_set,
-        training_set_metadata=model.training_set_metadata,
+        dataset=data_csv,
+        training_set_metadata=training_set_metadata,
         split=FULL,
         include_outputs=True,
         backend=model.backend,
     )
-
-    assert len(dataset) == len(test_set)
+    assert "sample_ratio" in model.config_obj.preprocessing.to_dict()
+    assert len(dataset) == num_examples
 
 
 def test_strip_whitespace_category(csv_filename, tmpdir):
