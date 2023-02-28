@@ -32,7 +32,6 @@ from ray import ObjectRef
 from ray.air import session
 from ray.air.checkpoint import Checkpoint
 from ray.air.config import DatasetConfig, RunConfig, ScalingConfig
-from ray.train.horovod import HorovodTrainer
 from ray.train.torch import TorchCheckpoint
 from ray.util.dask import ray_dask_get
 from ray.util.placement_group import placement_group, remove_placement_group
@@ -106,6 +105,7 @@ def get_trainer_kwargs(**kwargs) -> TrainerConfigDict:
 
     defaults = dict(
         backend=backend,
+        strategy=strategy,
         num_workers=num_workers,
         use_gpu=use_gpu,
         resources_per_worker={
@@ -309,6 +309,7 @@ class RayAirRunner:
     def __init__(self, trainer_kwargs: Dict[str, Any]) -> None:
         trainer_kwargs = copy.copy(trainer_kwargs)
         self.backend_config = trainer_kwargs.pop("backend", None)
+        self.strategy = trainer_kwargs.pop("strategy", "horovod")
 
         if "max_retries" in trainer_kwargs:
             logger.warning("`max_retries` is no longer supported as a trainer argument in Ray backend. Ignoring it.")
@@ -369,7 +370,7 @@ class RayAirRunner:
         stream_window_size: Dict[str, Union[None, float]],
         callbacks: List[Any] = [],
     ) -> Tuple[Dict, TorchCheckpoint]:
-        trainer_cls = HorovodTrainerRay210 if not _ray220 else HorovodTrainer
+        trainer_cls = get_dist_strategy(self.strategy).get_trainer_cls()
         trainer = trainer_cls(
             train_loop_per_worker=train_loop_per_worker,
             train_loop_config=config,
