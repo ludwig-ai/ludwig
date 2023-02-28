@@ -218,7 +218,7 @@ class FeatureList(fields.List):
 
 
 class FeaturesTypeSelection(schema_utils.TypeSelection):
-    def __init__(self, *args, min_length: Optional[int] = 1, max_length: Optional[int] = None, **kwargs):
+    def __init__(self, *args, min_length: Optional[int] = 1, max_length: Optional[int] = 3, **kwargs):
         super().__init__(*args, **kwargs)
         self.min_length = min_length
         self.max_length = max_length
@@ -250,8 +250,10 @@ class ECDInputFeatureSelection(FeaturesTypeSelection):
     def __init__(self):
         super().__init__(registry=ecd_input_config_registry, description="Type of the input feature")
 
-    @staticmethod
-    def _jsonschema_type_mapping():
+    def _jsonschema_type_mapping(self):
+        schema = get_input_feature_jsonschema(MODEL_ECD)
+        print(schema.keys())
+        print(schema["type"])
         return get_input_feature_jsonschema(MODEL_ECD)
 
 
