@@ -112,3 +112,6 @@ class CategoricalOneHotEncoderConfig(BaseEncoderConfig):
             }
 
         return {}
+
+    def can_cache_embeddings(self) -> bool:
+        return True
