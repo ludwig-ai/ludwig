@@ -179,7 +179,7 @@ def SplitDataclassField(default: str) -> Field:
         def get_schema_from_registry(self, key: str) -> Type[schema_utils.BaseMarshmallowConfig]:
             return split_config_registry.data[key]
 
-        def _jsonschema_type_mapping():
+        def _jsonschema_type_mapping(self):
             return {
                 "type": "object",
                 "properties": {

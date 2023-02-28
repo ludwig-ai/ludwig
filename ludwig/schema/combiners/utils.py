@@ -108,5 +108,5 @@ class CombinerSelection(schema_utils.TypeSelection):
     def get_schema_from_registry(self, key: str) -> Type[schema_utils.BaseMarshmallowConfig]:
         return self.registry[key].get_schema_cls()
 
-    def _jsonschema_type_mapping():
+    def _jsonschema_type_mapping(self):
         return get_combiner_jsonschema()

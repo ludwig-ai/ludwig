@@ -85,5 +85,5 @@ class HyperoptField(schema_utils.DictMarshmallowField):
     def __init__(self):
         super().__init__(HyperoptConfig, default_missing=True)
 
-    def _jsonschema_type_mapping():
+    def _jsonschema_type_mapping(self):
         return get_hyperopt_jsonschema()
