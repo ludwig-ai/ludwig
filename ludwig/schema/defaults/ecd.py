@@ -52,25 +52,6 @@ class ECDDefaultsConfig(BaseDefaultsConfig):
 
 
 @DeveloperAPI
-def get_ecd_defaults_jsonschema():
-    """Returns a JSON schema structured to only require a `type` key and then conditionally apply a corresponding
-    combiner's field constraints."""
-    preproc_schema = schema_utils.unload_jsonschema_from_marshmallow_class(ECDDefaultsConfig)
-    props = preproc_schema["properties"]
-
-    return {
-        "type": "object",
-        "properties": props,
-        "additionalProperties": False,
-        "title": "global_defaults_options",
-        "description": "Set global defaults for input and output features",
-    }
-
-
-@DeveloperAPI
 class ECDDefaultsField(schema_utils.DictMarshmallowField):
     def __init__(self):
         super().__init__(ECDDefaultsConfig)
-
-    def _jsonschema_type_mapping():
-        return get_ecd_defaults_jsonschema()

@@ -40,24 +40,6 @@ class PreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-def get_preprocessing_jsonschema():
-    """Returns a JSON schema structured to only require a `type` key and then conditionally apply a corresponding
-    combiner's field constraints."""
-    preproc_schema = schema_utils.unload_jsonschema_from_marshmallow_class(PreprocessingConfig)
-    props = preproc_schema["properties"]
-    return {
-        "type": "object",
-        "properties": props,
-        "additionalProperties": True,
-        "title": "global_preprocessing_options",
-        "description": "Select the preprocessing type.",
-    }
-
-
-@DeveloperAPI
 class PreprocessingField(schema_utils.DictMarshmallowField):
     def __init__(self):
         super().__init__(PreprocessingConfig)
-
-    def _jsonschema_type_mapping():
-        return get_preprocessing_jsonschema()
