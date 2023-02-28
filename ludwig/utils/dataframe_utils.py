@@ -121,8 +121,7 @@ def to_scalar_df(df: pd.DataFrame) -> pd.DataFrame:
     """
     scalar_df = df
     column_ordering = []
-    for c in df.columns:
-        s = df[c]
+    for c, s in df.items():
         if s.dtype == "object":
             s_list = s.to_list()
             ncols = s_list[0].shape[0]

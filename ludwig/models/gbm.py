@@ -120,7 +120,7 @@ class GBM(BaseModel):
         if self.compiled_model is None:
             feature_vectors = []
             for a in inputs.values():
-                if len(a.shape) > 1:
+                if a.ndim > 1:
                     # Input feature is a vector of shape [batch_size, nfeatures]
                     # We need to expand this into `nfeatures` individual vectors of shape [batch_size]
                     nfeatures = a.shape[1]
