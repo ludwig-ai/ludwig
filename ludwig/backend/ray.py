@@ -67,12 +67,6 @@ _ray220 = version.parse(ray.__version__) >= version.parse("2.2.0")
 _ray230 = version.parse(ray.__version__) >= version.parse("2.3.0")
 
 
-if not _ray220:
-    from ludwig.backend._ray210_compat import HorovodTrainerRay210
-else:
-    HorovodTrainerRay210 = None
-
-
 logger = logging.getLogger(__name__)
 
 

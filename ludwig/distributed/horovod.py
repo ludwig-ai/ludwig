@@ -90,7 +90,12 @@ class HorovodStrategy(DistributedStrategy):
 
     @classmethod
     def get_trainer_cls(cls) -> Type[DataParallelTrainer]:
-        return HorovodTrainerRay210 if not _ray220 else HorovodTrainer
+        if not _ray220:
+            from ludwig.distributed._ray_210_compat import HorovodTrainerRay210
+
+            return HorovodTrainerRay210
+
+        return HorovodTrainer
 
     def shutdown(self):
         hvd.shutdown()
