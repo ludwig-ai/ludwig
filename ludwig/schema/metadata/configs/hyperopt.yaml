@@ -1,0 +1,41 @@
+goal:
+    short_description:
+        Indicates whether to minimize or maximize a metric or a loss of any of the output features of any of the
+        dataset splits. Available values are minimize (default) or maximize.
+output_feature:
+    short_description:
+        The name of the output feature to optimize.
+    long_description:
+        a str containing the name of the output feature that we want to optimize the metric or loss of.
+        Available values are combined (default) or the name of any output feature provided in the
+        configuration. combined is a special output feature that allows to optimize for the aggregated
+        loss and metrics of all output features.
+metric:
+    short_description:
+        The metric to optimize. By default, loss, but can be metric-dependent.
+    long_description:
+        The metric that we want to optimize. The default metric is loss, but depends on the type of the
+        feature defined in output_feature, different metrics and losses are available. Check the metrics section
+        of the specific output feature type to figure out what metrics are available to use.
+split:
+    short_description:
+        The split of data that we want to compute our metric on. By default it is the validation split, but
+        you have the flexibility to specify also train or test splits.
+parameters:
+    short_description:
+        The hyperparameters to optimize and their search spaces.
+    long_description:
+        This section consists of a set of hyperparameters to optimize. They are provided as keys (the names of
+        the parameters) and values associated with them (that define the search space). The values vary
+        depending on the type of the hyperparameter. Syntax for this section is based on
+search_alg:
+    short_description:
+        Specifies the algorithm to sample the defined parameters space. Candidate algorithms are those
+        found in Ray Tune's Search Algorithms.
+executor:
+    short_description:
+        The hyperopt backend to use and its additional configuration.
+    long_description:
+        Specifies how to execute the hyperparameter optimization. The execution could happen locally in a serial
+        manner or in parallel across multiple workers and with GPUs as well if available. The executor section
+        includes specification for work scheduling and the number of samples to generate.
