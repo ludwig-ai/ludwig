@@ -18,6 +18,7 @@ from tests.integration_tests.utils import (
     image_feature,
     LocalTestBackend,
     number_feature,
+    set_feature,
     text_feature,
     timeseries_feature,
     vector_feature,
@@ -137,7 +138,7 @@ def run_test_explainer_api(
                 # sequence_feature(encoder={"vocab_size": 3}),
                 # date_feature(),
                 # h3_feature(),
-                # set_feature(encoder={"vocab_size": 3}),
+                set_feature(encoder={"vocab_size": 3}),
                 # bag_feature(encoder={"vocab_size": 3}),
             ]
 
