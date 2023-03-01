@@ -1,12 +1,13 @@
 import contextlib
 import logging
 from packaging import version
-from typing import Any, Callable, List, Optional, Type
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type
 
 import horovod.torch as hvd
 import ray
 import torch
 from horovod.torch.optimizer import _DistributedOptimizer
+from ray.train.backend import BackendConfig
 from ray.train.data_parallel_trainer import DataParallelTrainer
 from ray.train.horovod import HorovodTrainer
 from torch import nn
@@ -89,13 +90,13 @@ class HorovodStrategy(DistributedStrategy):
         return HorovodConfig(nics=nics)
 
     @classmethod
-    def get_trainer_cls(cls) -> Type[DataParallelTrainer]:
+    def get_trainer_cls(cls, backend_config: BackendConfig) -> Tuple[Type[DataParallelTrainer], Dict[str, Any]]:
         if not _ray220:
             from ludwig.distributed._ray_210_compat import HorovodTrainerRay210
 
-            return HorovodTrainerRay210
+            return HorovodTrainerRay210, dict(horovod_config=backend_config)
 
-        return HorovodTrainer
+        return HorovodTrainer, dict(horovod_config=backend_config)
 
     def shutdown(self):
         hvd.shutdown()

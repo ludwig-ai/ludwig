@@ -1,8 +1,9 @@
 import contextlib
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Optional, Type
+from typing import Any, Callable, Dict, Optional, Tuple, Type
 
 import torch
+from ray.train.backend import BackendConfig
 from ray.train.data_parallel_trainer import DataParallelTrainer
 from torch import nn
 from torch.optim import Optimizer
@@ -90,7 +91,7 @@ class DistributedStrategy(ABC):
 
     @classmethod
     @abstractmethod
-    def get_trainer_cls(cls) -> Type[DataParallelTrainer]:
+    def get_trainer_cls(cls, backend_config: BackendConfig) -> Tuple[Type[DataParallelTrainer], Dict[str, Any]]:
         pass
 
     @abstractmethod

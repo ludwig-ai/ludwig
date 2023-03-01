@@ -363,15 +363,15 @@ class RayAirRunner:
         stream_window_size: Dict[str, Union[None, float]],
         callbacks: List[Any] = [],
     ) -> Tuple[Dict, TorchCheckpoint]:
-        trainer_cls = get_dist_strategy(self.strategy).get_trainer_cls()
+        trainer_cls, kwargs = get_dist_strategy(self.strategy).get_trainer_cls(self.backend_config)
         trainer = trainer_cls(
             train_loop_per_worker=train_loop_per_worker,
             train_loop_config=config,
-            horovod_config=self.backend_config,
             datasets=dataset,
             scaling_config=self.scaling_config,
             dataset_config=self._get_dataset_configs(dataset, stream_window_size, data_loader_kwargs),
             run_config=RunConfig(callbacks=callbacks, verbose=0),
+            **kwargs,
         )
         return trainer.fit()
 
