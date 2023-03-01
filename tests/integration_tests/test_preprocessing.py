@@ -11,8 +11,9 @@ from PIL import Image
 
 import ludwig
 from ludwig.api import LudwigModel
-from ludwig.constants import BATCH_SIZE, COLUMN, DECODER, NAME, PROC_COLUMN, TRAINER
+from ludwig.constants import BATCH_SIZE, COLUMN, DECODER, FULL, NAME, PROC_COLUMN, TRAINER
 from ludwig.data.concatenate_datasets import concatenate_df
+from ludwig.data.preprocessing import preprocess_for_prediction
 from tests.integration_tests.utils import (
     assert_preprocessed_dataset_shape_and_dtype_for_feature,
     audio_feature,
@@ -54,7 +55,7 @@ def test_sample_ratio(backend, tmpdir, ray_cluster_2cpu):
     }
 
     model = LudwigModel(config, backend=backend)
-    train_set, val_set, test_set, _ = model.preprocess(
+    train_set, val_set, test_set, training_set_metadata = model.preprocess(
         data_csv,
         skip_save_processed_input=True,
     )
@@ -62,6 +63,18 @@ def test_sample_ratio(backend, tmpdir, ray_cluster_2cpu):
     sample_size = num_examples * sample_ratio
     count = len(train_set) + len(val_set) + len(test_set)
     assert sample_size == count
+
+    # Check that sample ratio is disabled when doing preprocessing for prediction
+    dataset, _ = preprocess_for_prediction(
+        model.config_obj.to_dict(),
+        dataset=data_csv,
+        training_set_metadata=training_set_metadata,
+        split=FULL,
+        include_outputs=True,
+        backend=model.backend,
+    )
+    assert "sample_ratio" in model.config_obj.preprocessing.to_dict()
+    assert len(dataset) == num_examples
 
 
 def test_strip_whitespace_category(csv_filename, tmpdir):

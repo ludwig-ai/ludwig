@@ -32,12 +32,11 @@ from ray import ObjectRef
 from ray.air import session
 from ray.air.checkpoint import Checkpoint
 from ray.air.config import DatasetConfig, RunConfig, ScalingConfig
-from ray.train.horovod import HorovodTrainer
 from ray.train.torch import TorchCheckpoint
 from ray.util.dask import ray_dask_get
 from ray.util.placement_group import placement_group, remove_placement_group
 
-from ludwig.distributed import get_current_dist_strategy, get_dist_strategy
+from ludwig.distributed import get_current_dist_strategy, get_default_strategy_name, get_dist_strategy
 from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
 
 if TYPE_CHECKING:
@@ -74,14 +73,7 @@ from ludwig.utils.system_utils import Resources
 from ludwig.utils.torch_utils import get_torch_device, initialize_pytorch
 from ludwig.utils.types import DataFrame, Series
 
-_ray220 = version.parse(ray.__version__) >= version.parse("2.2.0")
 _ray230 = version.parse(ray.__version__) >= version.parse("2.3.0")
-
-
-if not _ray220:
-    from ludwig.backend._ray210_compat import HorovodTrainerRay210
-else:
-    HorovodTrainerRay210 = None
 
 
 logger = logging.getLogger(__name__)
@@ -109,7 +101,7 @@ def get_trainer_kwargs(**kwargs) -> TrainerConfigDict:
     else:
         num_workers = _num_nodes()
 
-    strategy = kwargs.pop("strategy", "horovod")
+    strategy = kwargs.pop("strategy", get_default_strategy_name())
     backend = get_dist_strategy(strategy).get_ray_trainer_backend(**kwargs)
 
     # Remove params used by strategy but not the trainer here
@@ -117,6 +109,7 @@ def get_trainer_kwargs(**kwargs) -> TrainerConfigDict:
 
     defaults = dict(
         backend=backend,
+        strategy=strategy,
         num_workers=num_workers,
         use_gpu=use_gpu,
         resources_per_worker={
@@ -320,6 +313,7 @@ class RayAirRunner:
     def __init__(self, trainer_kwargs: Dict[str, Any]) -> None:
         trainer_kwargs = copy.copy(trainer_kwargs)
         self.backend_config = trainer_kwargs.pop("backend", None)
+        self.strategy = trainer_kwargs.pop("strategy", get_default_strategy_name())
 
         if "max_retries" in trainer_kwargs:
             logger.warning("`max_retries` is no longer supported as a trainer argument in Ray backend. Ignoring it.")
@@ -380,15 +374,15 @@ class RayAirRunner:
         stream_window_size: Dict[str, Union[None, float]],
         callbacks: List[Any] = [],
     ) -> Tuple[Dict, TorchCheckpoint]:
-        trainer_cls = HorovodTrainerRay210 if not _ray220 else HorovodTrainer
+        trainer_cls, kwargs = get_dist_strategy(self.strategy).get_trainer_cls(self.backend_config)
         trainer = trainer_cls(
             train_loop_per_worker=train_loop_per_worker,
             train_loop_config=config,
-            horovod_config=self.backend_config,
             datasets=dataset,
             scaling_config=self.scaling_config,
             dataset_config=self._get_dataset_configs(dataset, stream_window_size, data_loader_kwargs),
             run_config=RunConfig(callbacks=callbacks, verbose=0),
+            **kwargs,
         )
         return trainer.fit()
 
