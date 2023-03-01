@@ -14,4 +14,4 @@ output_features:
     type: number
 fallback_mirrors:
   - name: predibase
-    download_paths: s3://datasets.us-west-2.predibase.com/ludwig_backup/house-prices-advanced-regression-techniques.zip
+    download_paths: s3://ludwig-tests/ludwig_backup/house-prices-advanced-regression-techniques.zip

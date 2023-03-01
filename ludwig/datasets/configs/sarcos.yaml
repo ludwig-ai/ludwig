@@ -22,5 +22,5 @@ output_features:
 fallback_mirrors:
   - name: predibase
     download_paths:
-      - s3://datasets.us-west-2.predibase.com/ludwig_backup/sarcos_inv.mat
-      - s3://datasets.us-west-2.predibase.com/ludwig_backup/sarcos_inv_test.mat
+      - s3://ludwig-tests/ludwig_backup/sarcos_inv.mat
+      - s3://ludwig-tests/ludwig_backup/sarcos_inv_test.mat
