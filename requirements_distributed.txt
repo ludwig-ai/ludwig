@@ -1,6 +1,6 @@
 # requirements for dask
 dask[dataframe]
-pyarrow==6.0.1 # https://github.com/ray-project/ray/issues/22310
+pyarrow
 
 # requirements for horovod
 horovod[pytorch]>=0.24.0,!=0.26.0
