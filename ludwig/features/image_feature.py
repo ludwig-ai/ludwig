@@ -943,6 +943,7 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
             torchvision_transform, transform_metadata = _get_torchvision_transform(torchvision_parameters)
         else:
             torchvision_transform = None
+            transform_metadata = None
 
         return _ImagePreprocessing(
             metadata, torchvision_transform=torchvision_transform, transform_metadata=transform_metadata
