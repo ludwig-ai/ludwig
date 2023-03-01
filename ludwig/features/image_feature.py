@@ -17,6 +17,7 @@ import logging
 import os
 import warnings
 from collections import Counter
+from dataclasses import dataclass
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
@@ -243,7 +244,16 @@ class ImageAugmentation(torch.nn.Module):
             return images.type(torch.float32).div(255.0)
 
 
-def _get_torchvision_transform(torchvision_parameters: TVModelVariant) -> torch.nn.Module:
+@dataclass
+class ImageTransformMetadata:
+    height: int
+    width: int
+    num_channels: int
+
+
+def _get_torchvision_transform(
+    torchvision_parameters: TVModelVariant,
+) -> Tuple[torch.nn.Module, ImageTransformMetadata]:
     """Returns a torchvision transform that is compatible with the model variant.
 
     Note that the raw torchvision transform is not returned. Instead, a Sequential module that includes
@@ -260,11 +270,11 @@ def _get_torchvision_transform(torchvision_parameters: TVModelVariant) -> torch.
         ResizeChannels(num_channels=3),
         torchvision_transform_raw,
     )
-    transform_metadata = {
-        "height": torchvision_transform_raw.crop_size[0],
-        "width": torchvision_transform_raw.crop_size[0],
-        "num_channels": len(torchvision_transform_raw.mean),
-    }
+    transform_metadata = ImageTransformMetadata(
+        height=torchvision_transform_raw.crop_size[0],
+        width=torchvision_transform_raw.crop_size[0],
+        num_channels=len(torchvision_transform_raw.mean),
+    )
     return (torchvision_transform, transform_metadata)
 
 
@@ -279,16 +289,16 @@ class _ImagePreprocessing(torch.nn.Module):
         self,
         metadata: TrainingSetMetadataDict,
         torchvision_transform: Optional[torch.nn.Module] = None,
-        transform_metadata: Optional[Dict[str, Any]] = None,
+        transform_metadata: Optional[ImageTransformMetadata] = None,
     ):
         super().__init__()
 
         self.resize_method = metadata["preprocessing"]["resize_method"]
         self.torchvision_transform = torchvision_transform
         if transform_metadata is not None:
-            self.height = transform_metadata["height"]
-            self.width = transform_metadata["width"]
-            self.num_channels = transform_metadata["num_channels"]
+            self.height = transform_metadata.height
+            self.width = transform_metadata.width
+            self.num_channels = transform_metadata.num_channels
         else:
             self.height = metadata["preprocessing"]["height"]
             self.width = metadata["preprocessing"]["width"]
@@ -773,9 +783,9 @@ class ImageFeatureMixin(BaseFeatureMixin):
             preprocessing_parameters["torchvision_model_variant"] = model_variant
 
             # get required setup parameters for in_memory = False processing
-            height = transform_metadata["height"]
-            width = transform_metadata["width"]
-            num_channels = transform_metadata["num_channels"]
+            height = transform_metadata.height
+            width = transform_metadata.width
+            num_channels = transform_metadata.num_channels
         else:
             # torchvision_parameters is None
             # perform Ludwig specified transformations
