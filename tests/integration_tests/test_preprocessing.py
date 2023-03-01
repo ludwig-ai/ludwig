@@ -566,7 +566,7 @@ def test_category_feature_vocab_size_1(feature_type, tmpdir) -> None:
 
 
 @pytest.mark.parametrize("use_pretrained", [False, True], ids=["false", "true"])
-def test_image_encoder_different_dimension_image(tmpdir, csv_filename, use_pretrained: bool):
+def test_vit_encoder_different_dimension_image(tmpdir, csv_filename, use_pretrained: bool):
     input_features = [
         image_feature(
             os.path.join(tmpdir, "generated_output"),
