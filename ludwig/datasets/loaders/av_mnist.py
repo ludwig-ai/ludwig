@@ -69,6 +69,11 @@ class AV_MNISTLoader(DatasetLoader):
             raise
         super().__init__(config, cache_dir)
 
+    def transform_files(self, file_paths: List[str]) -> List[str]:
+        transformed_image_files = self.transform_image_files(file_paths)
+        #self.transform_audio_files(file_paths)
+        return transformed_image_files
+
     def transform_image_files(self, file_paths: List[str]) -> List[str]:
         """
         Args:
