@@ -169,5 +169,9 @@ class LocalStrategy(DistributedStrategy):
     def get_ray_trainer_backend(cls, **kwargs) -> Optional[Any]:
         return None
 
+    @classmethod
+    def get_trainer_cls(cls, backend_config: BackendConfig) -> Tuple[Type[DataParallelTrainer], Dict[str, Any]]:
+        raise ValueError("Cannot construct a trainer from a local strategy.")
+
     def shutdown(self):
         pass
