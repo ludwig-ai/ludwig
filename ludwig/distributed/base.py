@@ -1,12 +1,14 @@
 import contextlib
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Tuple, Type
 
 import torch
-from ray.train.backend import BackendConfig
-from ray.train.data_parallel_trainer import DataParallelTrainer
 from torch import nn
 from torch.optim import Optimizer
+
+if TYPE_CHECKING:
+    from ray.train.backend import BackendConfig
+    from ray.train.data_parallel_trainer import DataParallelTrainer
 
 
 class DistributedStrategy(ABC):
@@ -91,7 +93,7 @@ class DistributedStrategy(ABC):
 
     @classmethod
     @abstractmethod
-    def get_trainer_cls(cls, backend_config: BackendConfig) -> Tuple[Type[DataParallelTrainer], Dict[str, Any]]:
+    def get_trainer_cls(cls, backend_config: "BackendConfig") -> Tuple[Type["DataParallelTrainer"], Dict[str, Any]]:
         pass
 
     @abstractmethod
@@ -170,7 +172,7 @@ class LocalStrategy(DistributedStrategy):
         return None
 
     @classmethod
-    def get_trainer_cls(cls, backend_config: BackendConfig) -> Tuple[Type[DataParallelTrainer], Dict[str, Any]]:
+    def get_trainer_cls(cls, backend_config: "BackendConfig") -> Tuple[Type["DataParallelTrainer"], Dict[str, Any]]:
         raise ValueError("Cannot construct a trainer from a local strategy.")
 
     def shutdown(self):
