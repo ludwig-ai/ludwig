@@ -1,12 +1,12 @@
 import contextlib
 import logging
-from packaging import version
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type
 
 import horovod.torch as hvd
 import ray
 import torch
 from horovod.torch.optimizer import _DistributedOptimizer
+from packaging import version
 from ray.train.backend import BackendConfig
 from ray.train.data_parallel_trainer import DataParallelTrainer
 from ray.train.horovod import HorovodTrainer
@@ -15,7 +15,6 @@ from torch.optim import Optimizer
 
 from ludwig.distributed.base import DistributedStrategy
 from ludwig.utils.horovod_utils import gather_all_tensors, is_distributed_available
-
 
 _ray220 = version.parse(ray.__version__) >= version.parse("2.2.0")
 
