@@ -804,7 +804,7 @@ class StackedCNNRNNConfig(SequenceEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("transformer", [SEQUENCE, TEXT, TIMESERIES])
+@register_encoder_config("transformer", [SEQUENCE, TEXT, TIMESERIES, SEQUENCE_COMBINER_HIDDEN_REPRESENTATION])
 @ludwig_dataclass
 class StackedTransformerConfig(SequenceEncoderConfig):
     @staticmethod
