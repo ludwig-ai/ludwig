@@ -565,13 +565,14 @@ def test_category_feature_vocab_size_1(feature_type, tmpdir) -> None:
         ludwig_model.train(dataset=training_data_csv_path)
 
 
-@pytest.mark.parametrize("use_pretrained", [False, True], ids=["false", "true"])
-def test_vit_encoder_different_dimension_image(tmpdir, csv_filename, use_pretrained: bool):
+@pytest.mark.parametrize("encoder", ["efficientnet"])
+# @pytest.mark.parametrize("use_pretrained", [False, True], ids=["false", "true"])
+def test_image_encoder_different_dimension_image(tmpdir, csv_filename, encoder: str):
     input_features = [
         image_feature(
             os.path.join(tmpdir, "generated_output"),
-            preprocessing={"in_memory": True, "height": 224, "width": 206, "num_channels": 3},
-            encoder={"type": "_vit_legacy", "use_pretrained": use_pretrained},
+            preprocessing={"in_memory": True, "height": 224, "width": 206, "num_channels": 1},
+            encoder={"type": encoder},
         )
     ]
     output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
