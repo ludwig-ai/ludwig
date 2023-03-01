@@ -246,6 +246,10 @@ class ImageAugmentation(torch.nn.Module):
 def _get_torchvision_transform(torchvision_parameters: TVModelVariant) -> torch.nn.Module:
     """Returns a torchvision transform that is compatible with the model variant.
 
+    Note that the raw torchvision transform is not returned. Instead, a Sequential module that includes
+    image resizing is returned. This is because the raw torchvision transform assumes that the input image has
+    three channels, which is not always the case with images input into Ludwig.
+
     Args:
         torchvision_parameters: The parameters for the torchvision model variant.
     Returns:
