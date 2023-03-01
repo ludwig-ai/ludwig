@@ -749,7 +749,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
         if torchvision_parameters:
             logger.warning(
-                f"Using the transforms specified for the torchvision model {model_type} {model_variant}"
+                f"Using the transforms specified for the torchvision model {model_type} {model_variant} "
                 f"This includes setting the number of channels is 3 and resizing the image to the needs of the model."
             )
 
