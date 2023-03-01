@@ -63,6 +63,10 @@ def reset_index_across_all_partitions(df):
     This differs from dd.reset_index, which computes an independent index for each partition.
     Source: https://stackoverflow.com/questions/61395351/how-to-reset-index-on-concatenated-dataframe-in-dask
     """
+
+    if len(df) == 0:
+        return df
+
     # Create temporary column of ones
     df = df.assign(**{TMP_COLUMN: 1})
 
