@@ -124,11 +124,14 @@ def to_scalar_df(df: pd.DataFrame) -> pd.DataFrame:
     for c, s in df.items():
         if s.dtype == "object":
             s_list = s.to_list()
-            ncols = s_list[0].shape[0]
-            split_cols = [f"{c}_{k}" for k in range(ncols)]
-            sdf = pd.DataFrame(s_list, columns=split_cols)
-            scalar_df = pd.concat([scalar_df, sdf], axis=1)
-            column_ordering += split_cols
+            try:
+                ncols = s_list[0].shape[0]
+                split_cols = [f"{c}_{k}" for k in range(ncols)]
+                sdf = pd.DataFrame(s_list, columns=split_cols)
+                scalar_df = pd.concat([scalar_df, sdf], axis=1)
+                column_ordering += split_cols
+            except AttributeError as e:
+                raise ValueError(f"Expected series of lists, but found {s_list[0]}") from e
         else:
             column_ordering.append(c)
     return scalar_df[column_ordering]
