@@ -12,3 +12,6 @@ description: |
 output_features:
   - name: y
     type: number
+fallback_mirrors:
+  - name: predibase
+    download_paths: s3://datasets.us-west-2.predibase.com/ludwig_backup/mercedes-benz-greener-manufacturing.zip
