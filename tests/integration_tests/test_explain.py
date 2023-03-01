@@ -126,7 +126,12 @@ def run_test_explainer_api(
     image_dest_folder = os.path.join(tmpdir, "generated_images")
 
     if input_features is None:
-        input_features = [binary_feature(), number_feature(), category_feature(encoder={"reduce_output": "sum"})]
+        input_features = [
+            binary_feature(),
+            number_feature(),
+            category_feature(encoder={"type": "onehot", "reduce_output": "sum"}),
+            category_feature(encoder={"type": "passthrough", "reduce_output": "sum"}),
+        ]
         if model_type == MODEL_ECD:
             input_features += [
                 text_feature(encoder={"vocab_size": 3}),
