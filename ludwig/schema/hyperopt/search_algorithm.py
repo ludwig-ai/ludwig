@@ -79,20 +79,6 @@ class BasicVariantSAConfig(BaseSearchAlgorithmConfig):
 
 
 @DeveloperAPI
-@register_search_algorithm("hyperopt")
-@ludwig_dataclass
-class HyperoptSAConfig(BaseSearchAlgorithmConfig):
-    pass
-
-
-@DeveloperAPI
-@register_search_algorithm("bohb")
-@ludwig_dataclass
-class BOHBSAConfig(BaseSearchAlgorithmConfig):
-    pass
-
-
-@DeveloperAPI
 @register_search_algorithm("ax")
 @ludwig_dataclass
 class AxSAConfig(BaseSearchAlgorithmConfig):
@@ -114,6 +100,13 @@ class BlendsearchSAConfig(BaseSearchAlgorithmConfig):
 
 
 @DeveloperAPI
+@register_search_algorithm("bohb")
+@ludwig_dataclass
+class BOHBSAConfig(BaseSearchAlgorithmConfig):
+    pass
+
+
+@DeveloperAPI
 @register_search_algorithm("cfo")
 @ludwig_dataclass
 class CFOSAConfig(BaseSearchAlgorithmConfig):
@@ -131,6 +124,13 @@ class DragonflySAConfig(BaseSearchAlgorithmConfig):
 @register_search_algorithm("hebo")
 @ludwig_dataclass
 class HEBOSAConfig(BaseSearchAlgorithmConfig):
+    pass
+
+
+@DeveloperAPI
+@register_search_algorithm("hyperopt")
+@ludwig_dataclass
+class HyperoptSAConfig(BaseSearchAlgorithmConfig):
     pass
 
 
