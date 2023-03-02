@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import gzip
 import logging
 import os
-import gzip
 from multiprocessing.pool import ThreadPool
 from typing import List, Optional
 
@@ -58,7 +58,7 @@ class AV_MNISTLoader(DatasetLoader):
             self.mnist_data = None
             self.labels = None
             self.data = None
-            #self.transform = transform
+            # self.transform = transform
         except ImportError:
             logger.error(
                 "torchvision is not installed. "
@@ -159,13 +159,17 @@ class AV_MNISTLoader(DatasetLoader):
             "test_labels": "t10k-labels-idx1-ubyte.gz",
         }
 
-        file_names = {'train_data': 'train-images-idx3-ubyte.gz', 'train_labels': 'train-labels-idx1-ubyte.gz',
-                      'test_data': 't10k-images-idx3-ubyte.gz', 'test_labels': 't10k-labels-idx1-ubyte.gz'}
+        file_names = {
+            "train_data": "train-images-idx3-ubyte.gz",
+            "train_labels": "train-labels-idx1-ubyte.gz",
+            "test_data": "t10k-images-idx3-ubyte.gz",
+            "test_labels": "t10k-labels-idx1-ubyte.gz",
+        }
 
         for key, file_name in file_names.items():
             file_path = os.path.join(raw_dataset_dir, file_name)
             print("file: %s" % key)
-            with gzip.open(file_path, 'rb') as f:
+            with gzip.open(file_path, "rb") as f:
                 # read the definition of idx1-ubyte and idx3-ubyte
                 f.seek(4)
                 num = f.read(4)
@@ -200,6 +204,7 @@ class AV_MNISTLoader(DatasetLoader):
 
     def write_output_dataset(self, labels: str, images: list, output_dir: str):
         """Create output directories where we write out the images.
+
         :args:
             labels (str) : the labels for the image
             data (np.array) : the binary array corresponding to the image
