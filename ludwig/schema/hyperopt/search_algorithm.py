@@ -4,9 +4,23 @@ from typing import Dict
 from marshmallow import fields, ValidationError
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.hyperopt.registry import search_algorithm_registry  # Double-check this implicit import.
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.utils import ludwig_dataclass
+from ludwig.utils.registry import Registry
+
+search_algorithm_registry = Registry()
+
+
+def register_search_algorithm(name: str):
+    def wrap(cls):
+        search_algorithm_registry[name] = cls
+        return cls
+
+    return wrap
+
+
+def get_search_algorithm_cls(name: str):
+    return search_algorithm_registry[name]
 
 
 @DeveloperAPI
@@ -54,3 +68,94 @@ def SearchAlgorithmDataclassField(description: str = "", default: Dict = {"type"
         },
         default_factory=load_default,
     )
+
+
+@DeveloperAPI
+@register_search_algorithm("random")
+@register_search_algorithm("variant_generator")
+@ludwig_dataclass
+class BasicVariantSAConfig(BaseSearchAlgorithmConfig):
+    pass
+
+
+@DeveloperAPI
+@register_search_algorithm("hyperopt")
+@ludwig_dataclass
+class HyperoptSAConfig(BaseSearchAlgorithmConfig):
+    pass
+
+
+@DeveloperAPI
+@register_search_algorithm("bohb")
+@ludwig_dataclass
+class BOHBSAConfig(BaseSearchAlgorithmConfig):
+    pass
+
+
+@DeveloperAPI
+@register_search_algorithm("ax")
+@ludwig_dataclass
+class AxSAConfig(BaseSearchAlgorithmConfig):
+    pass
+
+
+@DeveloperAPI
+@register_search_algorithm("bayesopt")
+@ludwig_dataclass
+class BayesOptSAConfig(BaseSearchAlgorithmConfig):
+    pass
+
+
+@DeveloperAPI
+@register_search_algorithm("blendsearch")
+@ludwig_dataclass
+class BlendsearchSAConfig(BaseSearchAlgorithmConfig):
+    pass
+
+
+@DeveloperAPI
+@register_search_algorithm("cfo")
+@ludwig_dataclass
+class CFOSAConfig(BaseSearchAlgorithmConfig):
+    pass
+
+
+@DeveloperAPI
+@register_search_algorithm("dragonfly")
+@ludwig_dataclass
+class DragonflySAConfig(BaseSearchAlgorithmConfig):
+    pass
+
+
+@DeveloperAPI
+@register_search_algorithm("hebo")
+@ludwig_dataclass
+class HEBOSAConfig(BaseSearchAlgorithmConfig):
+    pass
+
+
+@DeveloperAPI
+@register_search_algorithm("nevergrad")
+@ludwig_dataclass
+class NevergradSAConfig(BaseSearchAlgorithmConfig):
+    pass
+
+
+@DeveloperAPI
+@register_search_algorithm("optuna")
+@ludwig_dataclass
+class OptunaSAConfig(BaseSearchAlgorithmConfig):
+    pass
+
+
+@DeveloperAPI
+@register_search_algorithm("skopt")
+class SkoptSAConfig(BaseSearchAlgorithmConfig):
+    pass
+
+
+@DeveloperAPI
+@register_search_algorithm("zoopt")
+@ludwig_dataclass
+class ZooptSAConfig(BaseSearchAlgorithmConfig):
+    pass
