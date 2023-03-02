@@ -219,7 +219,12 @@ class FeatureList(fields.List):
 
 class FeaturesTypeSelection(schema_utils.TypeSelection):
     def __init__(
-        self, *args, min_length: Optional[int] = 1, max_length: Optional[int] = 3, supplementary_metadata=None, **kwargs
+        self,
+        *args,
+        min_length: Optional[int] = 1,
+        max_length: Optional[int] = None,
+        supplementary_metadata=None,
+        **kwargs,
     ):
         super().__init__(*args, **kwargs)
         self.min_length = min_length
