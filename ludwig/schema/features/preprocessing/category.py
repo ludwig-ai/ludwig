@@ -26,7 +26,9 @@ class CategoryPreprocessingConfig(BasePreprocessingConfig):
     fill_value: str = schema_utils.String(
         default=strings_utils.UNKNOWN_SYMBOL,
         allow_none=False,
-        description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
+        description=(
+            "The value to replace missing values with in case the `missing_value_strategy` is `fill_with_const`"
+        ),
         parameter_metadata=FEATURE_METADATA[CATEGORY][PREPROCESSING]["fill_value"],
     )
 

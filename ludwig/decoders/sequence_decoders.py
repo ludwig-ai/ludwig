@@ -19,7 +19,7 @@ import torch
 import torch.nn as nn
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import LOGITS, SEQUENCE, TEXT
+from ludwig.constants import LOGITS, PREDICTIONS, PROBABILITIES, SEQUENCE, TEXT
 from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
 from ludwig.decoders.sequence_decoder_utils import get_lstm_init_state, get_rnn_init_state
@@ -321,7 +321,7 @@ class SequenceGeneratorDecoder(Decoder):
         return {LOGITS: logits}
 
     def get_prediction_set(self):
-        return {LOGITS}
+        return {LOGITS, PREDICTIONS, PROBABILITIES}
 
     @staticmethod
     def get_schema_cls():

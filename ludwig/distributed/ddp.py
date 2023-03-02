@@ -1,10 +1,13 @@
 import contextlib
 import logging
 import socket
-from typing import Any, Callable, Optional, Tuple
+from typing import Any, Callable, Dict, Optional, Tuple, Type
 
 import torch
 import torch.distributed as dist
+from ray.train.backend import BackendConfig
+from ray.train.data_parallel_trainer import DataParallelTrainer
+from ray.train.torch import TorchTrainer
 from torch import nn
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.optim import Optimizer
@@ -83,6 +86,10 @@ class DDPStrategy(DistributedStrategy):
         from ray.train.torch import TorchConfig
 
         return TorchConfig()
+
+    @classmethod
+    def get_trainer_cls(cls, backend_config: BackendConfig) -> Tuple[Type[DataParallelTrainer], Dict[str, Any]]:
+        return TorchTrainer, dict(torch_config=backend_config)
 
     def shutdown(self):
         # TODO(travis): currently Ray handles this for us, but is subject to hangs if one of the workers raises an

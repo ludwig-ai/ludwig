@@ -200,7 +200,8 @@ def check_gbm_horovod_incompatibility(config: "ModelConfig") -> None:  # noqa: F
     """
     if config.backend is None:
         return
-    if config.model_type == MODEL_GBM and config.backend.type == "horovod":
+    # TODO (jeffkinnison): Revert to object access when https://github.com/ludwig-ai/ludwig/pull/3127 lands
+    if config.model_type == MODEL_GBM and config.backend.get("type") == "horovod":
         raise ConfigValidationError("Horovod backend does not support GBM models.")
 
 

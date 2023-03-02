@@ -7,6 +7,7 @@ import pytest
 ray = pytest.importorskip("ray")  # noqa
 
 from ray.train.horovod import HorovodConfig  # noqa
+from ray.train.torch import TorchConfig  # noqa
 
 from ludwig.backend import initialize_backend  # noqa
 from ludwig.backend.ray import get_trainer_kwargs  # noqa
@@ -26,6 +27,23 @@ pytestmark = pytest.mark.distributed
             2,
             dict(
                 backend=HorovodConfig(),
+                strategy="horovod",
+                num_workers=1,
+                use_gpu=True,
+                resources_per_worker={
+                    "CPU": 0,
+                    "GPU": 1,
+                },
+            ),
+        ),
+        # Test DDP
+        (
+            {"strategy": "ddp"},
+            {"CPU": 4, "GPU": 1},
+            2,
+            dict(
+                backend=TorchConfig(),
+                strategy="ddp",
                 num_workers=1,
                 use_gpu=True,
                 resources_per_worker={
@@ -41,6 +59,7 @@ pytestmark = pytest.mark.distributed
             2,
             dict(
                 backend=HorovodConfig(nics={""}),
+                strategy="horovod",
                 num_workers=2,
                 use_gpu=False,
                 resources_per_worker={
@@ -56,6 +75,7 @@ pytestmark = pytest.mark.distributed
             1,
             dict(
                 backend=HorovodConfig(),
+                strategy="horovod",
                 num_workers=2,
                 use_gpu=True,
                 resources_per_worker={
@@ -71,6 +91,7 @@ pytestmark = pytest.mark.distributed
             2,
             dict(
                 backend=HorovodConfig(),
+                strategy="horovod",
                 num_workers=2,
                 use_gpu=True,
                 resources_per_worker={
@@ -94,7 +115,8 @@ def test_get_trainer_kwargs(trainer_config, cluster_resources, num_nodes, expect
             expected_backend = expected_kwargs.pop("backend")
 
             assert type(actual_backend) == type(expected_backend)
-            assert actual_backend.nics == expected_backend.nics
+            if isinstance(actual_backend, HorovodConfig):
+                assert actual_backend.nics == expected_backend.nics
             assert actual_kwargs == expected_kwargs
 
 

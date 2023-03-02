@@ -102,11 +102,12 @@ def BiasInitializerField(
     default: str = "zeros", description: str = None, parameter_metadata: ParameterMetadata = None
 ) -> Field:
     initializers_str = ", ".join([f"`{i}`" for i in initializer_registry.keys()])
-    description = description or f"Initializer for the bias vector. Options: {initializers_str}. {INITIALIZER_SUFFIX}"
+    description = description or "Initializer for the bias vector."
+    full_description = f"{description} Options: {initializers_str}. {INITIALIZER_SUFFIX}"
     parameter_metadata = parameter_metadata or COMMON_METADATA["bias_initializer"]
     return schema_utils.InitializerOrDict(
         default=default,
-        description=description,
+        description=full_description,
         parameter_metadata=parameter_metadata,
     )
 
@@ -115,11 +116,28 @@ def WeightsInitializerField(
     default: str = "xavier_uniform", description: str = None, parameter_metadata: ParameterMetadata = None
 ) -> Field:
     initializers_str = ", ".join([f"`{i}`" for i in initializer_registry.keys()])
-    description = description or f"Initializer for the weight matrix. Options: {initializers_str}. {INITIALIZER_SUFFIX}"
+    description = description or "Initializer for the weight matrix."
+    full_description = f"{description} Options: {initializers_str}. {INITIALIZER_SUFFIX}"
     parameter_metadata = parameter_metadata or COMMON_METADATA["weights_initializer"]
     return schema_utils.InitializerOrDict(
         default=default,
-        description=description,
+        description=full_description,
+        parameter_metadata=parameter_metadata,
+    )
+
+
+def EmbeddingInitializerField(
+    default: Optional[str] = None, description: str = None, parameter_metadata: ParameterMetadata = None
+) -> Field:
+    initializers_str = ", ".join([f"`{i}`" for i in initializer_registry.keys()])
+    description = description or "Initializer for the embedding matrix."
+    full_description = f"{description} Options: {initializers_str}."
+    parameter_metadata = parameter_metadata or COMMON_METADATA["embedding_initializer"]
+    return schema_utils.StringOptions(
+        list(initializer_registry.keys()),
+        default=default,
+        allow_none=True,
+        description=full_description,
         parameter_metadata=parameter_metadata,
     )
 
@@ -216,6 +234,19 @@ def VocabField(
     parameter_metadata = parameter_metadata or COMMON_METADATA["vocab"]
     return schema_utils.List(
         default=default,
+        description=description,
+        parameter_metadata=parameter_metadata,
+    )
+
+
+def VocabSizeField(
+    default: Optional[list] = None, description: str = None, parameter_metadata: ParameterMetadata = None
+) -> Field:
+    description = description or "[internal] Size of the vocabulary from preprocessing."
+    parameter_metadata = parameter_metadata or COMMON_METADATA["vocab_size"]
+    return schema_utils.PositiveInteger(
+        default=default,
+        allow_none=True,
         description=description,
         parameter_metadata=parameter_metadata,
     )
