@@ -52,6 +52,30 @@ IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".tiff", ".bmp", ".gif")
 
 
 @DeveloperAPI
+class ResizeChannels(torch.nn.Module):
+    def __init__(self, num_channels: int):
+        super().__init__()
+        self.num_channels = num_channels
+
+    def forward(self, imgs: torch.Tensor):
+        original_imgs_shape = imgs.shape
+        if len(original_imgs_shape) == 3:  # if shape is (C, H, W), add batch dimension
+            imgs = imgs.unsqueeze(0)
+
+        channels = imgs.shape[1]
+        if channels > self.num_channels:
+            # take the first `self.num_channels` channels
+            imgs = imgs[:, : self.num_channels, :, :]
+        elif channels < self.num_channels:
+            # repeat and use the first `self.num_channels` channels
+            imgs = imgs.repeat(1, (self.num_channels // channels) + 1, 1, 1)[:, : self.num_channels, :, :]
+
+        if len(original_imgs_shape) == 3:  # if shape was (C, H, W), remove batch dimension
+            return imgs[0]
+        return imgs
+
+
+@DeveloperAPI
 def get_gray_default_image(num_channels: int, height: int, width: int) -> np.ndarray:
     return np.full((num_channels, height, width), 128, dtype=np.float32)
 
