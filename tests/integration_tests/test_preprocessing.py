@@ -593,6 +593,33 @@ def test_vit_encoder_different_dimension_image(tmpdir, csv_filename, use_pretrai
     model.train(dataset=data_csv)
 
 
+def test_image_encoder_torchvision_different_num_channels(tmpdir, csv_filename):
+    input_features = [
+        image_feature(
+            os.path.join(tmpdir, "generated_output"),
+            preprocessing={"in_memory": True, "height": 224, "width": 206, "num_channels": 1},
+            encoder={"type": "efficientnet"},
+        )
+    ]
+    output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
+
+    data_csv = generate_data(
+        input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=NUM_EXAMPLES
+    )
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "trainer": {"train_steps": 1},
+    }
+
+    model = LudwigModel(config)
+
+    # Failure happens post preprocessing but before training during the ECD model creation phase
+    # so make sure the model can be created properly and training can proceed
+    model.train(dataset=data_csv)
+
+
 @pytest.mark.parametrize(
     "df_engine",
     [
