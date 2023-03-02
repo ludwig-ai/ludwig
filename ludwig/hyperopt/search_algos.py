@@ -1,11 +1,29 @@
 import logging
 from abc import ABC
 from importlib import import_module
-from typing import Dict
 
-from ludwig.hyperopt.registry import register_search_algorithm
+from ludwig.schema.hyperopt.search_algorithm import get_search_algorithm_cls
+from ludwig.utils.registry import Registry
 
 logger = logging.getLogger(__name__)
+
+
+search_algorithm_registry = Registry()
+
+
+def register_search_algorithm(name: str):
+    def wrap(cls):
+        search_algorithm_registry[name] = cls
+        return cls
+
+    return wrap
+
+
+def instantiate_search_algorithm(search_alg: "BaseSearchAlgorithmConfig") -> "SearchAlgorithm":  # noqa: F821
+    search_alg_type = search_alg.type
+    config = get_search_algorithm_cls(search_alg_type)
+    cls = search_algorithm_registry[search_alg_type]
+    return cls(config)
 
 
 def _is_package_installed(package_name: str, search_algo_name: str) -> bool:
@@ -20,46 +38,46 @@ def _is_package_installed(package_name: str, search_algo_name: str) -> bool:
 
 
 class SearchAlgorithm(ABC):
-    def __init__(self, search_alg_dict: Dict) -> None:
-        self.search_alg_dict = search_alg_dict
+    def __init__(self, config: "BaseSearchAlgorithmConfig") -> None:  # noqa: F821
+        self.config = config
         self.random_seed_attribute_name = None
 
     def check_for_random_seed(self, ludwig_random_seed: int) -> None:
         if self.random_seed_attribute_name not in self.search_alg_dict:
-            self.search_alg_dict[self.random_seed_attribute_name] = ludwig_random_seed
+            self.config[self.random_seed_attribute_name] = ludwig_random_seed
 
 
 @register_search_algorithm("random")
 @register_search_algorithm("variant_generator")
 class BasicVariantSA(SearchAlgorithm):
-    def __init__(self, search_alg_dict: Dict) -> None:
-        super().__init__(search_alg_dict)
+    def __init__(self, config: "BaseSearchAlgorithmConfig") -> None:  # noqa: F821
+        super().__init__(config)
         self.random_seed_attribute_name = "random_state"
 
 
 @register_search_algorithm("hyperopt")
 class HyperoptSA(SearchAlgorithm):
-    def __init__(self, search_alg_dict: Dict) -> None:
+    def __init__(self, config: "BaseSearchAlgorithmConfig") -> None:  # noqa: F821
         _is_package_installed("hyperopt", "hyperopt")
-        super().__init__(search_alg_dict)
+        super().__init__(config)
         self.random_seed_attribute_name = "random_state_seed"
 
 
 @register_search_algorithm("bohb")
 class BOHBSA(SearchAlgorithm):
-    def __init__(self, search_alg_dict: Dict) -> None:
+    def __init__(self, config: "BaseSearchAlgorithmConfig") -> None:  # noqa: F821
         _is_package_installed("hpbandster", "bohb")
         _is_package_installed("ConfigSpace", "bohb")
-        super().__init__(search_alg_dict)
+        super().__init__(config)
         self.random_seed_attribute_name = "seed"
 
 
 @register_search_algorithm("ax")
 class AxSA(SearchAlgorithm):
-    def __init__(self, search_alg_dict: Dict) -> None:
+    def __init__(self, config: "BaseSearchAlgorithmConfig") -> None:  # noqa: F821
         _is_package_installed("sqlalchemy", "ax")
         _is_package_installed("ax", "ax")
-        super().__init__(search_alg_dict)
+        super().__init__(config)
 
     # override parent method, this search algorithm does not support
     # setting random seed
@@ -69,17 +87,17 @@ class AxSA(SearchAlgorithm):
 
 @register_search_algorithm("bayesopt")
 class BayesOptSA(SearchAlgorithm):
-    def __init__(self, search_alg_dict: Dict) -> None:
+    def __init__(self, config: "BaseSearchAlgorithmConfig") -> None:  # noqa: F821
         _is_package_installed("bayes_opt", "bayesopt")
-        super().__init__(search_alg_dict)
+        super().__init__(config)
         self.random_seed_attribute_name = "random_state"
 
 
 @register_search_algorithm("blendsearch")
 class BlendsearchSA(SearchAlgorithm):
-    def __init__(self, search_alg_dict: Dict) -> None:
+    def __init__(self, config: "BaseSearchAlgorithmConfig") -> None:  # noqa: F821
         _is_package_installed("flaml", "blendsearch")
-        super().__init__(search_alg_dict)
+        super().__init__(config)
 
     # override parent method, this search algorithm does not support
     # setting random seed
@@ -89,9 +107,9 @@ class BlendsearchSA(SearchAlgorithm):
 
 @register_search_algorithm("cfo")
 class CFOSA(SearchAlgorithm):
-    def __init__(self, search_alg_dict: Dict) -> None:
+    def __init__(self, config: "BaseSearchAlgorithmConfig") -> None:  # noqa: F821
         _is_package_installed("flaml", "cfo")
-        super().__init__(search_alg_dict)
+        super().__init__(config)
         self.random_seed_attribute_name = "seed"
 
     # override parent method, this search algorithm does not support
@@ -102,25 +120,25 @@ class CFOSA(SearchAlgorithm):
 
 @register_search_algorithm("dragonfly")
 class DragonflySA(SearchAlgorithm):
-    def __init__(self, search_alg_dict: Dict) -> None:
+    def __init__(self, config: "BaseSearchAlgorithmConfig") -> None:  # noqa: F821
         _is_package_installed("dragonfly", "dragonfly")
-        super().__init__(search_alg_dict)
+        super().__init__(config)
         self.random_seed_attribute_name = "random_state_seed"
 
 
 @register_search_algorithm("hebo")
 class HEBOSA(SearchAlgorithm):
-    def __init__(self, search_alg_dict: Dict) -> None:
+    def __init__(self, config: "BaseSearchAlgorithmConfig") -> None:  # noqa: F821
         _is_package_installed("hebo", "hebo")
-        super().__init__(search_alg_dict)
+        super().__init__(config)
         self.random_seed_attribute_name = "random_state_seed"
 
 
 @register_search_algorithm("skopt")
 class SkoptSA(SearchAlgorithm):
-    def __init__(self, search_alg_dict: Dict) -> None:
+    def __init__(self, config: "BaseSearchAlgorithmConfig") -> None:  # noqa: F821
         _is_package_installed("skopt", "skopt")
-        super().__init__(search_alg_dict)
+        super().__init__(config)
 
     # override parent method, this search algorithm does not support
     # setting random seed
@@ -130,9 +148,9 @@ class SkoptSA(SearchAlgorithm):
 
 @register_search_algorithm("nevergrad")
 class NevergradSA(SearchAlgorithm):
-    def __init__(self, search_alg_dict: Dict) -> None:
+    def __init__(self, config: "BaseSearchAlgorithmConfig") -> None:  # noqa: F821
         _is_package_installed("nevergrad", "nevergrad")
-        super().__init__(search_alg_dict)
+        super().__init__(config)
 
     # override parent method, this search algorithm does not support
     # setting random seed
@@ -142,17 +160,17 @@ class NevergradSA(SearchAlgorithm):
 
 @register_search_algorithm("optuna")
 class OptunaSA(SearchAlgorithm):
-    def __init__(self, search_alg_dict: Dict) -> None:
+    def __init__(self, config: "BaseSearchAlgorithmConfig") -> None:  # noqa: F821
         _is_package_installed("optuna", "optuna")
-        super().__init__(search_alg_dict)
+        super().__init__(config)
         self.random_seed_attribute_name = "seed"
 
 
 @register_search_algorithm("zoopt")
 class ZooptSA(SearchAlgorithm):
-    def __init__(self, search_alg_dict: Dict) -> None:
+    def __init__(self, config: "BaseSearchAlgorithmConfig") -> None:  # noqa: F821
         _is_package_installed("zoopt", "zoopt")
-        super().__init__(search_alg_dict)
+        super().__init__(config)
 
     # override parent method, this search algorithm does not support
     # setting random seed
