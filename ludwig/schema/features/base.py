@@ -250,8 +250,7 @@ class ECDInputFeatureSelection(FeaturesTypeSelection):
     def __init__(self):
         super().__init__(registry=ecd_input_config_registry, description="Type of the input feature")
 
-    @staticmethod
-    def _jsonschema_type_mapping():
+    def _jsonschema_type_mapping(self):
         return get_input_feature_jsonschema(MODEL_ECD)
 
 
@@ -259,8 +258,7 @@ class GBMInputFeatureSelection(FeaturesTypeSelection):
     def __init__(self):
         super().__init__(registry=gbm_input_config_registry, description="Type of the input feature")
 
-    @staticmethod
-    def _jsonschema_type_mapping():
+    def _jsonschema_type_mapping(self):
         return get_input_feature_jsonschema(MODEL_GBM)
 
 
@@ -268,8 +266,7 @@ class ECDOutputFeatureSelection(FeaturesTypeSelection):
     def __init__(self):
         super().__init__(registry=output_config_registry, description="Type of the output feature")
 
-    @staticmethod
-    def _jsonschema_type_mapping():
+    def _jsonschema_type_mapping(self):
         return get_output_feature_jsonschema(MODEL_ECD)
 
 
@@ -277,6 +274,5 @@ class GBMOutputFeatureSelection(FeaturesTypeSelection):
     def __init__(self):
         super().__init__(max_length=1, registry=output_config_registry, description="Type of the output feature")
 
-    @staticmethod
-    def _jsonschema_type_mapping():
+    def _jsonschema_type_mapping(self):
         return get_output_feature_jsonschema(MODEL_GBM)
