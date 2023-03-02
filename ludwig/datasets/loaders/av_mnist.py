@@ -14,6 +14,7 @@
 # ==============================================================================
 import logging
 import os
+import gzip
 from multiprocessing.pool import ThreadPool
 from typing import List, Optional
 
@@ -158,40 +159,40 @@ class AV_MNISTLoader(DatasetLoader):
             "test_labels": "t10k-labels-idx1-ubyte.gz",
         }
 
-        print("Raw dataset working directory: %s" % raw_dataset_dir)
+        file_names = {'train_data': 'train-images-idx3-ubyte.gz', 'train_labels': 'train-labels-idx1-ubyte.gz',
+                      'test_data': 't10k-images-idx3-ubyte.gz', 'test_labels': 't10k-labels-idx1-ubyte.gz'}
 
-        for key, file_name in self.config["file_names"].items():
+        for key, file_name in file_names.items():
             file_path = os.path.join(raw_dataset_dir, file_name)
             print("file: %s" % key)
-            f = open(file_path)
-            # read the definition of idx1-ubyte and idx3-ubyte
-            f.seek(4)
-            num_items = f.read(4)
-            num_items = int().from_bytes(num_items, "big")
-            print("size of %s : %d" % (key, num_items))
-            if "data" in key:
-                height = f.read(4)
-                height = int().from_bytes(height, "big")
-                width = f.read(4)
-                width = int().from_bytes(width, "big")
+            with gzip.open(file_path, 'rb') as f:
+                # read the definition of idx1-ubyte and idx3-ubyte
+                f.seek(4)
+                num = f.read(4)
+                num = int().from_bytes(num, "big")
+                print("size of %s : %d" % (key, num))
+                if "data" in key:
+                    height = f.read(4)
+                    height = int().from_bytes(height, "big")
+                    width = f.read(4)
+                    width = int().from_bytes(width, "big")
 
-                data = np.frombuffer(f.read(), np.uint8).reshape(num, height, width)
+                    data = np.frombuffer(f.read(), np.uint8).reshape(num, height, width)
 
-                # PCA projecting with 75% energy removing
-                n_comp = int(height * width)
-                pca = PCA(n_components=n_comp)
-                projected = pca.fit_transform(data.reshape(num, height * width))
-                n_comp = ((np.cumsum(pca.explained_variance_ratio_) > 0.25) != 0).argmax()
-                rec = np.matmul(projected[:, :n_comp], pca.components_[:n_comp])
-                saved_path = os.path.join(raw_dataset_dir, "images")
-                if not os.path.exists(saved_path):
-                    makedirs(saved_path)
-                saved_name = key + ".npy"
-                np.save(os.path.join(saved_path, saved_name), rec)
-            else:
-                data = np.frombuffer(f.read(), np.uint8)
-
-                saved_path = os.path.join(raw_dataset_dir, "labels")
+                    # PCA projecting with 75% energy removing
+                    n_comp = int(height * width)
+                    pca = PCA(n_components=n_comp)
+                    projected = pca.fit_transform(data.reshape(num, height * width))
+                    n_comp = ((np.cumsum(pca.explained_variance_ratio_) > 0.25) != 0).argmax()
+                    rec = np.matmul(projected[:, :n_comp], pca.components_[:n_comp])
+                    saved_path = os.path.join(raw_dataset_dir, "image")
+                    if not os.path.exists(saved_path):
+                        makedirs(saved_path)
+                    saved_name = key + ".npy"
+                    np.save(os.path.join(saved_path, saved_name), rec)
+                else:
+                    data = np.frombuffer(f.read(), np.uint8)
+                    saved_path = raw_dataset_dir
                 if not os.path.exists(saved_path):
                     makedirs(saved_path)
                 saved_name = key + ".npy"
