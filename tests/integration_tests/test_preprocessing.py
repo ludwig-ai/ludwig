@@ -11,8 +11,9 @@ from PIL import Image
 
 import ludwig
 from ludwig.api import LudwigModel
-from ludwig.constants import BATCH_SIZE, COLUMN, DECODER, NAME, PROC_COLUMN, TRAINER
+from ludwig.constants import BATCH_SIZE, COLUMN, DECODER, FULL, NAME, PROC_COLUMN, TRAINER
 from ludwig.data.concatenate_datasets import concatenate_df
+from ludwig.data.preprocessing import preprocess_for_prediction
 from tests.integration_tests.utils import (
     assert_preprocessed_dataset_shape_and_dtype_for_feature,
     audio_feature,
@@ -54,7 +55,7 @@ def test_sample_ratio(backend, tmpdir, ray_cluster_2cpu):
     }
 
     model = LudwigModel(config, backend=backend)
-    train_set, val_set, test_set, _ = model.preprocess(
+    train_set, val_set, test_set, training_set_metadata = model.preprocess(
         data_csv,
         skip_save_processed_input=True,
     )
@@ -62,6 +63,18 @@ def test_sample_ratio(backend, tmpdir, ray_cluster_2cpu):
     sample_size = num_examples * sample_ratio
     count = len(train_set) + len(val_set) + len(test_set)
     assert sample_size == count
+
+    # Check that sample ratio is disabled when doing preprocessing for prediction
+    dataset, _ = preprocess_for_prediction(
+        model.config_obj.to_dict(),
+        dataset=data_csv,
+        training_set_metadata=training_set_metadata,
+        split=FULL,
+        include_outputs=True,
+        backend=model.backend,
+    )
+    assert "sample_ratio" in model.config_obj.preprocessing.to_dict()
+    assert len(dataset) == num_examples
 
 
 def test_strip_whitespace_category(csv_filename, tmpdir):
@@ -559,6 +572,33 @@ def test_vit_encoder_different_dimension_image(tmpdir, csv_filename, use_pretrai
             os.path.join(tmpdir, "generated_output"),
             preprocessing={"in_memory": True, "height": 224, "width": 206, "num_channels": 3},
             encoder={"type": "_vit_legacy", "use_pretrained": use_pretrained},
+        )
+    ]
+    output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
+
+    data_csv = generate_data(
+        input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=NUM_EXAMPLES
+    )
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "trainer": {"train_steps": 1},
+    }
+
+    model = LudwigModel(config)
+
+    # Failure happens post preprocessing but before training during the ECD model creation phase
+    # so make sure the model can be created properly and training can proceed
+    model.train(dataset=data_csv)
+
+
+def test_image_encoder_torchvision_different_num_channels(tmpdir, csv_filename):
+    input_features = [
+        image_feature(
+            os.path.join(tmpdir, "generated_output"),
+            preprocessing={"in_memory": True, "height": 224, "width": 206, "num_channels": 1},
+            encoder={"type": "efficientnet"},
         )
     ]
     output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]

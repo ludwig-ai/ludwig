@@ -41,7 +41,7 @@ sacremoses
 xlwt            # excel
 xlrd            # excel
 openpyxl        # excel
-pyarrow==6.0.1  # parquet https://github.com/ray-project/ray/issues/22310
+pyarrow         # parquet
 lxml            # html
 
 whylogs>=1.1.9

@@ -17,6 +17,7 @@ import logging
 import os
 import warnings
 from collections import Counter
+from dataclasses import dataclass
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
@@ -47,6 +48,7 @@ from ludwig.constants import (
     WIDTH,
 )
 from ludwig.data.cache.types import wrap
+from ludwig.encoders.image.torchvision import TVModelVariant
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.schema.features.augmentation.base import BaseAugmentationConfig
 from ludwig.schema.features.augmentation.image import (
@@ -71,6 +73,7 @@ from ludwig.utils.image_utils import (
     read_image_from_bytes_obj,
     read_image_from_path,
     resize_image,
+    ResizeChannels,
     torchvision_model_registry,
 )
 from ludwig.utils.misc_utils import set_default_value
@@ -241,16 +244,65 @@ class ImageAugmentation(torch.nn.Module):
             return images.type(torch.float32).div(255.0)
 
 
+@dataclass
+class ImageTransformMetadata:
+    height: int
+    width: int
+    num_channels: int
+
+
+def _get_torchvision_transform(
+    torchvision_parameters: TVModelVariant,
+) -> Tuple[torch.nn.Module, ImageTransformMetadata]:
+    """Returns a torchvision transform that is compatible with the model variant.
+
+    Note that the raw torchvision transform is not returned. Instead, a Sequential module that includes
+    image resizing is returned. This is because the raw torchvision transform assumes that the input image has
+    three channels, which is not always the case with images input into Ludwig.
+
+    Args:
+        torchvision_parameters: The parameters for the torchvision model variant.
+    Returns:
+        (torchvision_transform, transform_metadata): A torchvision transform and the metadata for the transform.
+    """
+    torchvision_transform_raw = torchvision_parameters.model_weights.DEFAULT.transforms()
+    torchvision_transform = torch.nn.Sequential(
+        ResizeChannels(num_channels=3),
+        torchvision_transform_raw,
+    )
+    transform_metadata = ImageTransformMetadata(
+        height=torchvision_transform_raw.crop_size[0],
+        width=torchvision_transform_raw.crop_size[0],
+        num_channels=len(torchvision_transform_raw.mean),
+    )
+    return (torchvision_transform, transform_metadata)
+
+
+def _get_torchvision_parameters(model_type: str, model_variant: str) -> TVModelVariant:
+    return torchvision_model_registry.get(model_type).get(model_variant)
+
+
 class _ImagePreprocessing(torch.nn.Module):
     """Torchscript-enabled version of preprocessing done by ImageFeatureMixin.add_feature_data."""
 
-    def __init__(self, metadata: TrainingSetMetadataDict, tv_transforms: Optional[torch.nn.Module] = None):
+    def __init__(
+        self,
+        metadata: TrainingSetMetadataDict,
+        torchvision_transform: Optional[torch.nn.Module] = None,
+        transform_metadata: Optional[ImageTransformMetadata] = None,
+    ):
         super().__init__()
-        self.height = metadata["preprocessing"]["height"]
-        self.width = metadata["preprocessing"]["width"]
-        self.num_channels = metadata["preprocessing"]["num_channels"]
+
         self.resize_method = metadata["preprocessing"]["resize_method"]
-        self.tv_transforms = tv_transforms
+        self.torchvision_transform = torchvision_transform
+        if transform_metadata is not None:
+            self.height = transform_metadata.height
+            self.width = transform_metadata.width
+            self.num_channels = transform_metadata.num_channels
+        else:
+            self.height = metadata["preprocessing"]["height"]
+            self.width = metadata["preprocessing"]["width"]
+            self.num_channels = metadata["preprocessing"]["num_channels"]
 
     def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
         """Takes a list of images and adjusts the size and number of channels as specified in the metadata.
@@ -262,14 +314,14 @@ class _ImagePreprocessing(torch.nn.Module):
             if not torch.jit.isinstance(v, torch.Tensor):
                 raise ValueError(f"Unsupported input: {v}")
 
-        if self.tv_transforms is not None:
+        if self.torchvision_transform is not None:
             # perform pre-processing for torchvision pretrained model encoders
             if torch.jit.isinstance(v, List[torch.Tensor]):
-                imgs = [self.tv_transforms(img) for img in v]
+                imgs = [self.torchvision_transform(img) for img in v]
             else:
                 # convert batch of image tensors to a list and then run torchvision pretrained
                 # model transforms on each image
-                imgs = [self.tv_transforms(img) for img in torch.unbind(v)]
+                imgs = [self.torchvision_transform(img) for img in torch.unbind(v)]
 
             # collect the list of images into a batch
             imgs_stacked = torch.stack(imgs)
@@ -701,16 +753,23 @@ class ImageFeatureMixin(BaseFeatureMixin):
         model_type = feature_config[ENCODER].get("type", None)
         model_variant = feature_config[ENCODER].get("model_variant")
         if model_variant:
-            torchvision_parameters = torchvision_model_registry.get(model_type).get(model_variant)
+            torchvision_parameters = _get_torchvision_parameters(model_type, model_variant)
         else:
             torchvision_parameters = None
 
         if torchvision_parameters:
+            logger.warning(
+                f"Using the transforms specified for the torchvision model {model_type} {model_variant} "
+                f"This includes setting the number of channels is 3 and resizing the image to the needs of the model."
+            )
+
+            torchvision_transform, transform_metadata = _get_torchvision_transform(torchvision_parameters)
+
             # torchvision_parameters is not None
             # perform torchvision model transformations
             read_image_if_bytes_obj_and_resize = partial(
                 ImageFeatureMixin._read_image_with_pretrained_transform,
-                transform_fn=torchvision_parameters.model_weights.DEFAULT.transforms(),
+                transform_fn=torchvision_transform,
             )
             average_file_size = None
 
@@ -724,8 +783,9 @@ class ImageFeatureMixin(BaseFeatureMixin):
             preprocessing_parameters["torchvision_model_variant"] = model_variant
 
             # get required setup parameters for in_memory = False processing
-            width = height = read_image_if_bytes_obj_and_resize.keywords["transform_fn"].crop_size[0]
-            num_channels = len(read_image_if_bytes_obj_and_resize.keywords["transform_fn"].mean)
+            height = transform_metadata.height
+            width = transform_metadata.width
+            num_channels = transform_metadata.num_channels
         else:
             # torchvision_parameters is None
             # perform Ludwig specified transformations
@@ -885,16 +945,19 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
         model_type = metadata["preprocessing"].get("torchvision_model_type")
         model_variant = metadata["preprocessing"].get("torchvision_model_variant")
         if model_variant:
-            torchvision_parameters = torchvision_model_registry.get(model_type).get(model_variant)
+            torchvision_parameters = _get_torchvision_parameters(model_type, model_variant)
         else:
             torchvision_parameters = None
 
         if torchvision_parameters:
-            tv_transforms = torchvision_parameters.model_weights.DEFAULT.transforms()
+            torchvision_transform, transform_metadata = _get_torchvision_transform(torchvision_parameters)
         else:
-            tv_transforms = None
+            torchvision_transform = None
+            transform_metadata = None
 
-        return _ImagePreprocessing(metadata, tv_transforms=tv_transforms)
+        return _ImagePreprocessing(
+            metadata, torchvision_transform=torchvision_transform, transform_metadata=transform_metadata
+        )
 
     def get_augmentation_pipeline(self):
         return self.augmentation_pipeline

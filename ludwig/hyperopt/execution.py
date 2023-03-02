@@ -32,7 +32,6 @@ from ray.util.queue import Queue as RayQueue
 from ludwig.api import LudwigModel
 from ludwig.api_annotations import PublicAPI
 from ludwig.backend import initialize_backend, RAY
-from ludwig.backend._ray210_compat import TunerRay210
 from ludwig.backend.ray import initialize_ray
 from ludwig.callbacks import Callback
 from ludwig.constants import MAXIMIZE, TEST, TRAINER, TRAINING, TYPE, VALIDATION
@@ -53,6 +52,11 @@ from ludwig.utils.misc_utils import get_from_registry
 logger = logging.getLogger(__name__)
 
 _ray220 = version.parse(ray.__version__) >= version.parse("2.2.0")
+
+if not _ray220:
+    from ludwig.backend._ray210_compat import TunerRay210
+else:
+    TunerRay210 = None
 
 
 try:

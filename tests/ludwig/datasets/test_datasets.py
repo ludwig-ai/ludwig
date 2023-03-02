@@ -189,3 +189,12 @@ def test_preprocess_dataset_uri(tmpdir):
             assert test_df1.equals(test_df2)
 
     ludwig.datasets._get_dataset_configs.cache_clear()
+
+
+@pytest.mark.parametrize("dataset_name,shape", [("mercedes_benz_greener", (8418, 379)), ("ames_housing", (2919, 82))])
+def test_dataset_fallback_mirror(dataset_name, shape):
+    dataset_module = ludwig.datasets.get_dataset(dataset_name)
+    dataset = dataset_module.load(kaggle_key="dummy_key", kaggle_username="dummy_username")
+
+    assert isinstance(dataset, pd.DataFrame)
+    assert dataset.shape == shape
