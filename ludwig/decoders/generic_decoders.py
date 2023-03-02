@@ -29,7 +29,8 @@ logger = logging.getLogger(__name__)
 
 
 @DeveloperAPI
-@register_decoder("passthrough", [BINARY, NUMBER])
+# TODO(Arnav): Re-enable once we add DotProduct Combiner: https://github.com/ludwig-ai/ludwig/issues/3150
+# @register_decoder("passthrough", [BINARY, CATEGORY, NUMBER, SET, VECTOR, SEQUENCE, TEXT])
 class PassthroughDecoder(Decoder):
     def __init__(self, input_size: int = 1, num_classes: int = None, decoder_config=None, **kwargs):
         super().__init__()
