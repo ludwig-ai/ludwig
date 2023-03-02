@@ -75,87 +75,87 @@ def SearchAlgorithmDataclassField(description: str = "", default: Dict = {"type"
 @register_search_algorithm("variant_generator")
 @ludwig_dataclass
 class BasicVariantSAConfig(BaseSearchAlgorithmConfig):
-    pass
+    type: str = schema_utils.StringOptions(options=["random", "variant_generator"], default="random", allow_none=False)
 
 
 @DeveloperAPI
 @register_search_algorithm("ax")
 @ludwig_dataclass
 class AxSAConfig(BaseSearchAlgorithmConfig):
-    pass
+    type: str = schema_utils.ProtectedString("ax")
 
 
 @DeveloperAPI
 @register_search_algorithm("bayesopt")
 @ludwig_dataclass
 class BayesOptSAConfig(BaseSearchAlgorithmConfig):
-    pass
+    type: str = schema_utils.ProtectedString("bayesopt")
 
 
 @DeveloperAPI
 @register_search_algorithm("blendsearch")
 @ludwig_dataclass
 class BlendsearchSAConfig(BaseSearchAlgorithmConfig):
-    pass
+    type: str = schema_utils.ProtectedString("blendsearch")
 
 
 @DeveloperAPI
 @register_search_algorithm("bohb")
 @ludwig_dataclass
 class BOHBSAConfig(BaseSearchAlgorithmConfig):
-    pass
+    type: str = schema_utils.ProtectedString("bohb")
 
 
 @DeveloperAPI
 @register_search_algorithm("cfo")
 @ludwig_dataclass
 class CFOSAConfig(BaseSearchAlgorithmConfig):
-    pass
+    type: str = schema_utils.ProtectedString("cfo")
 
 
 @DeveloperAPI
 @register_search_algorithm("dragonfly")
 @ludwig_dataclass
 class DragonflySAConfig(BaseSearchAlgorithmConfig):
-    pass
+    type: str = schema_utils.ProtectedString("dragonfly")
 
 
 @DeveloperAPI
 @register_search_algorithm("hebo")
 @ludwig_dataclass
 class HEBOSAConfig(BaseSearchAlgorithmConfig):
-    pass
+    type: str = schema_utils.ProtectedString("hebo")
 
 
 @DeveloperAPI
 @register_search_algorithm("hyperopt")
 @ludwig_dataclass
 class HyperoptSAConfig(BaseSearchAlgorithmConfig):
-    pass
+    type: str = schema_utils.ProtectedString("hyperopt")
 
 
 @DeveloperAPI
 @register_search_algorithm("nevergrad")
 @ludwig_dataclass
 class NevergradSAConfig(BaseSearchAlgorithmConfig):
-    pass
+    type: str = schema_utils.ProtectedString("nevergrad")
 
 
 @DeveloperAPI
 @register_search_algorithm("optuna")
 @ludwig_dataclass
 class OptunaSAConfig(BaseSearchAlgorithmConfig):
-    pass
+    type: str = schema_utils.ProtectedString("optuna")
 
 
 @DeveloperAPI
 @register_search_algorithm("skopt")
 class SkoptSAConfig(BaseSearchAlgorithmConfig):
-    pass
+    type: str = schema_utils.ProtectedString("skopt")
 
 
 @DeveloperAPI
 @register_search_algorithm("zoopt")
 @ludwig_dataclass
 class ZooptSAConfig(BaseSearchAlgorithmConfig):
-    pass
+    type: str = schema_utils.ProtectedString("zoopt")
