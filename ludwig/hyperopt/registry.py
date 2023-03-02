@@ -1,24 +1,8 @@
-from typing import Dict
-
 from ludwig.constants import TYPE
-from ludwig.utils.registry import Registry
-
-search_algorithm_registry = Registry()
+from ludwig.schema.hyperopt.search_algorithm import get_search_algorithm_cls
 
 
-def register_search_algorithm(name: str):
-    def wrap(cls):
-        search_algorithm_registry[name] = cls
-        return cls
-
-    return wrap
-
-
-def get_search_algorithm_cls(name: str):
-    return search_algorithm_registry[name]
-
-
-def instantiate_search_algorithm(search_alg: Dict):
+def instantiate_search_algorithm(search_alg: "BaseSearchAlgorithmConfig") -> "SearchAlgorithm":  # noqa: F821
     search_alg_type = search_alg[TYPE]
     cls = get_search_algorithm_cls(search_alg_type)
     return cls(search_alg)
