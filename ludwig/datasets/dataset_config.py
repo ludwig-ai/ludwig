@@ -15,7 +15,21 @@
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Union
 
+from dataclasses_json import dataclass_json
 
+
+@dataclass_json
+@dataclass
+class DatasetFallbackMirror:
+    # Name of the mirror
+    name: str
+
+    # List of paths to download from. Must map 1:1 to DatasetConfig.download_urls or to the archive_filenames
+    # that we get from Kaggle.
+    download_paths: Union[str, List[str]]
+
+
+@dataclass_json
 @dataclass
 class DatasetConfig:
     """The configuration of a Ludwig dataset."""
@@ -28,6 +42,9 @@ class DatasetConfig:
 
     # The readable description of the dataset
     description: str = ""
+
+    # Fallback mirrors. Paths must be in local/remote filesystems.
+    fallback_mirrors: Optional[List[DatasetFallbackMirror]] = None
 
     # Optional. The (suggested) output features for this dataset. Helps users discover new datasets and filter for
     # relevance to a specific machine learning setting.

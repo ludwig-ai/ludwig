@@ -29,7 +29,7 @@ def _load_dataset_config(config_filename: str):
     """Loads a dataset config."""
     config_path = os.path.join(os.path.dirname(configs.__file__), config_filename)
     with open(config_path) as f:
-        return DatasetConfig(**yaml.safe_load(f))
+        return DatasetConfig.from_dict(yaml.safe_load(f))
 
 
 @lru_cache(maxsize=1)
