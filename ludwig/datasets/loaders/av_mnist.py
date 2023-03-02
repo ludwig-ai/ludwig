@@ -14,13 +14,13 @@
 # ==============================================================================
 import logging
 import os
-from sklearn.decomposition import PCA
 from multiprocessing.pool import ThreadPool
 from typing import List, Optional
 
 import numpy as np
 import pandas as pd
 import torch
+from sklearn.decomposition import PCA
 
 from ludwig.datasets.dataset_config import DatasetConfig
 from ludwig.datasets.loaders.dataset_loader import DatasetLoader
@@ -29,13 +29,11 @@ from ludwig.utils.fs_utils import makedirs
 logger = logging.getLogger(__name__)
 NUM_LABELS = 10
 
+
 class AV_MNISTLoader(DatasetLoader):
-    def __init__(self,
-                 config: DatasetConfig,
-                 cache_dir: Optional[str] = None,
-                 transform=None,
-                 modal_separate=None,
-                 modal=None):
+    def __init__(
+        self, config: DatasetConfig, cache_dir: Optional[str] = None, transform=None, modal_separate=None, modal=None
+    ):
         """
         Constructor for the sudio visual mnist dataset, at least one of modal or model_separate should be passed in
         Args:
@@ -53,13 +51,13 @@ class AV_MNISTLoader(DatasetLoader):
             self.width = 28
             self.modal_separate = modal_separate
             self.modal = modal
-            if self.modal_separate and self.modal in [None,'']:
-                raise ValueError('either modal or modal_separate need to sbe specified')
+            if self.modal_separate and self.modal in [None, ""]:
+                raise ValueError("either modal or modal_separate need to sbe specified")
             self.audio_data = None
             self.mnist_data = None
             self.labels = None
             self.data = None
-            self.transform = transform
+            #self.transform = transform
         except ImportError:
             logger.error(
                 "torchvision is not installed. "
@@ -71,7 +69,7 @@ class AV_MNISTLoader(DatasetLoader):
 
     def transform_files(self, file_paths: List[str]) -> List[str]:
         transformed_image_files = self.transform_image_files(file_paths)
-        #self.transform_audio_files(file_paths)
+        # self.transform_audio_files(file_paths)
         return transformed_image_files
 
     def transform_image_files(self, file_paths: List[str]) -> List[str]:
@@ -84,29 +82,28 @@ class AV_MNISTLoader(DatasetLoader):
         self.process_source_dataset(self.raw_dataset_dir)
         for dataset in ["training", "testing"]:
             if not self.modal_separate:
-                if dataset == 'training':
-                    self.mnist_data = np.load(os.path.join(self.raw_dataset_dir, 'image', 'train_data.npy'))
-                    self.labels = np.load(os.path.join(self.raw_dataset_dir, 'train_labels.npy'))
+                if dataset == "training":
+                    self.mnist_data = np.load(os.path.join(self.raw_dataset_dir, "image", "train_data.npy"))
+                    self.labels = np.load(os.path.join(self.raw_dataset_dir, "train_labels.npy"))
                 else:
-                    self.mnist_data = np.load(os.path.join(self.raw_dataset_dir, 'image', 'test_data.npy'))
-                    self.labels = np.load(os.path.join(self.raw_dataset_dir, 'test_labels.npy'))
+                    self.mnist_data = np.load(os.path.join(self.raw_dataset_dir, "image", "test_data.npy"))
+                    self.labels = np.load(os.path.join(self.raw_dataset_dir, "test_labels.npy"))
 
                 self.mnist_data = self.mnist_data.reshape(self.mnist_data.shape[0], 1, self.height, self.width)
                 self.write_output_dataset(self.labels, self.mnist_data, os.path.join(self.raw_dataset_dir, dataset))
             else:
                 if self.modal:
-                    if dataset == 'train':
-                        self.data = np.load(os.path.join(self.raw_dataset_dir, self.modal, 'train_data.npy'))
-                        self.labels = np.load(os.path.join(self.raw_dataset_dir, 'train_labels.npy'))
+                    if dataset == "train":
+                        self.data = np.load(os.path.join(self.raw_dataset_dir, self.modal, "train_data.npy"))
+                        self.labels = np.load(os.path.join(self.raw_dataset_dir, "train_labels.npy"))
                     else:
-                        self.data = np.load(os.path.join(self.raw_dataset_dir, self.modal, 'test_data.npy'))
-                        self.labels = np.load(os.path.join(self.raw_dataset_dir, 'test_labels.npy'))
-
+                        self.data = np.load(os.path.join(self.raw_dataset_dir, self.modal, "test_data.npy"))
+                        self.labels = np.load(os.path.join(self.raw_dataset_dir, "test_labels.npy"))
 
                     self.data = self.data.reshape(self.data.shape[0], 1, 28, 28)
                     self.write_output_dataset(self.labels, self.data, os.path.join(self.raw_dataset_dir, dataset))
                 else:
-                    raise ValueError('the value of modal should be given')
+                    raise ValueError("the value of modal should be given")
 
         return super().transform_files(file_paths)
 
@@ -120,27 +117,27 @@ class AV_MNISTLoader(DatasetLoader):
         self.process_source_dataset(self.raw_dataset_dir)
         for dataset in ["training", "testing"]:
             if not self.modal_separate:
-                if dataset == 'training':
-                    self.audio_data = np.load(os.path.join(self.raw_dataset_dir, 'audio', 'train_data.npy'))
-                    self.labels = np.load(os.path.join(self.raw_dataset_dir, 'train_labels.npy'))
+                if dataset == "training":
+                    self.audio_data = np.load(os.path.join(self.raw_dataset_dir, "audio", "train_data.npy"))
+                    self.labels = np.load(os.path.join(self.raw_dataset_dir, "train_labels.npy"))
                 else:
-                    self.audio_data = np.load(os.path.join(self.raw_dataset_dir, 'audio', 'test_data.npy'))
-                    self.labels = np.load(os.path.join(self.raw_dataset_dir, 'test_labels.npy'))
+                    self.audio_data = np.load(os.path.join(self.raw_dataset_dir, "audio", "test_data.npy"))
+                    self.labels = np.load(os.path.join(self.raw_dataset_dir, "test_labels.npy"))
 
                 self.audio_data = self.audio_data[:, np.newaxis, :, :]
                 self.write_output_dataset(self.labels, self.audio_data, os.path.join(self.raw_dataset_dir, dataset))
             else:
                 if self.modal:
-                    if dataset == 'train':
-                        self.data = np.load(os.path.join(self.raw_dataset_dir, self.modal, 'train_data.npy'))
-                        self.labels = np.load(os.path.join(self.raw_dataset_dir, 'train_labels.npy'))
+                    if dataset == "train":
+                        self.data = np.load(os.path.join(self.raw_dataset_dir, self.modal, "train_data.npy"))
+                        self.labels = np.load(os.path.join(self.raw_dataset_dir, "train_labels.npy"))
                     else:
-                        self.data = np.load(os.path.join(self.raw_dataset_dir, self.modal, 'test_data.npy'))
-                        self.labels = np.load(os.path.join(self.raw_dataset_dir, 'test_labels.npy'))
+                        self.data = np.load(os.path.join(self.raw_dataset_dir, self.modal, "test_data.npy"))
+                        self.labels = np.load(os.path.join(self.raw_dataset_dir, "test_labels.npy"))
                     self.data = self.data[:, np.newaxis, :, :]
                     self.write_output_dataset(self.labels, self.data, os.path.join(self.raw_dataset_dir, dataset))
                 else:
-                    raise ValueError('the value of modal should be given')
+                    raise ValueError("the value of modal should be given")
 
         return super().transform_files(file_paths)
 
@@ -154,24 +151,29 @@ class AV_MNISTLoader(DatasetLoader):
             raw_dataset_dir (str) : the directory where all the raw data lives
         :returns:
             None"""
-        file_names = {'train_data': 'train-images-idx3-ubyte.gz', 'train_labels': 'train-labels-idx1-ubyte.gz',
-                      'test_data': 't10k-images-idx3-ubyte.gz', 'test_labels': 't10k-labels-idx1-ubyte.gz'}
+        file_names = {
+            "train_data": "train-images-idx3-ubyte.gz",
+            "train_labels": "train-labels-idx1-ubyte.gz",
+            "test_data": "t10k-images-idx3-ubyte.gz",
+            "test_labels": "t10k-labels-idx1-ubyte.gz",
+        }
+
         print("Raw dataset working directory: %s" % raw_dataset_dir)
 
-        for key, file_name in self.config['file_names'].items():
+        for key, file_name in self.config["file_names"].items():
             file_path = os.path.join(raw_dataset_dir, file_name)
-            print('file: %s' % key)
-            f = open(file_path, "r")
+            print("file: %s" % key)
+            f = open(file_path)
             # read the definition of idx1-ubyte and idx3-ubyte
             f.seek(4)
             num_items = f.read(4)
-            num_items = int().from_bytes(num_items, 'big')
-            print('size of %s : %d' % (key, num_items))
-            if 'data' in key:
+            num_items = int().from_bytes(num_items, "big")
+            print("size of %s : %d" % (key, num_items))
+            if "data" in key:
                 height = f.read(4)
-                height = int().from_bytes(height, 'big')
+                height = int().from_bytes(height, "big")
                 width = f.read(4)
-                width = int().from_bytes(width, 'big')
+                width = int().from_bytes(width, "big")
 
                 data = np.frombuffer(f.read(), np.uint8).reshape(num, height, width)
 
@@ -181,12 +183,10 @@ class AV_MNISTLoader(DatasetLoader):
                 projected = pca.fit_transform(data.reshape(num, height * width))
                 n_comp = ((np.cumsum(pca.explained_variance_ratio_) > 0.25) != 0).argmax()
                 rec = np.matmul(projected[:, :n_comp], pca.components_[:n_comp])
-
-
                 saved_path = os.path.join(raw_dataset_dir, "images")
                 if not os.path.exists(saved_path):
                     makedirs(saved_path)
-                saved_name = key + '.npy'
+                saved_name = key + ".npy"
                 np.save(os.path.join(saved_path, saved_name), rec)
             else:
                 data = np.frombuffer(f.read(), np.uint8)
@@ -194,12 +194,11 @@ class AV_MNISTLoader(DatasetLoader):
                 saved_path = os.path.join(raw_dataset_dir, "labels")
                 if not os.path.exists(saved_path):
                     makedirs(saved_path)
-                saved_name = key + '.npy'
+                saved_name = key + ".npy"
                 np.save(os.path.join(saved_path, saved_name), data)
 
-    def write_output_dataset(self, labels:str, images:list, output_dir:str):
+    def write_output_dataset(self, labels: str, images: list, output_dir: str):
         """Create output directories where we write out the images.
-
         :args:
             labels (str) : the labels for the image
             data (np.array) : the binary array corresponding to the image

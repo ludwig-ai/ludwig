@@ -1,5 +1,5 @@
 version: 1.0
-name: avmnist
+name: av_mnist
 # the first two download urls are the training data and the rest are test data
 download_urls:
   - http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz
@@ -14,12 +14,6 @@ sha256:
 preserve_paths:
   - training
   - testing
-loader: av_mnist.AVMNISTLoader
-file_names:
-  train_data: train-images-idx3-ubyte.gz
-  train_labels: train-labels-idx1-ubyte.gz
-  test_data: t10k-images-idx3-ubyte.gz
-  test_labels: t10k-labels-idx1-ubyte.gz
-
+loader: av_mnist.AV_MNISTLoader
 description: |
   This file is used to process the original mnist and generate the part of the image of the audio-visual mnist dataset.

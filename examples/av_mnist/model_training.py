@@ -1,57 +1,35 @@
 #!/usr/bin/env python
 
-# # av_mnist simple model training example
+# # Simple Model Training Example
 #
-# This example trains a model utilizing a standard config
-
+# This example is the API example for this Ludwig command line example
+# (https://ludwig-ai.github.io/ludwig-docs/latest/examples/mnist/).
 import logging
 import shutil
 
-# Import required libraries
+import yaml
+
 from ludwig.api import LudwigModel
 from ludwig.datasets import av_mnist
-from ludwig.visualize import compare_performance
 
-# clean out old results
+# clean out prior results
 shutil.rmtree("./results", ignore_errors=True)
-shutil.rmtree("./visualizations", ignore_errors=True)
 
-# list models to train
-list_of_model_ids = ["standard_model"]
-list_of_eval_stats = []
+# set up Python dictionary to hold model training parameters
+with open("./config.yaml") as f:
+    config = yaml.safe_load(f.read())
 
-training_set, val_set, test_set = av_mnist.load()
+# Define Ludwig model object that drive model training
+model = LudwigModel(config, logging_level=logging.INFO)
 
-# Train models
-for model_id in list_of_model_ids:
-    print(">>>> training: ", model_id)
+# load and split MNIST dataset
+training_set, test_set, _ = av_mnist.load(split=True)
 
-    # Define Ludwig model object that drive model training
-    model = LudwigModel(config=model_id + "_config.yaml", logging_level=logging.WARN)
-
-    # initiate model training
-    train_stats, _, _ = model.train(
-        training_set=training_set,
-        validation_set=val_set,
-        test_set=test_set,
-        experiment_name="standard_model",
-        model_name=model_id,
-        skip_save_model=True,
-    )
-
-    # evaluate model on test_set
-    eval_stats, _, _ = model.evaluate(test_set)
-
-    # save eval stats for later use
-    list_of_eval_stats.append(eval_stats)
-
-    print(">>>>>>> completed: ", model_id, "\n")
-
-
-compare_performance(
-    list_of_eval_stats,
-    "Response",
-    model_names=list_of_model_ids,
-    output_directory="./visualizations",
-    file_format="png",
+# initiate model training
+(train_stats, _, output_directory) = model.train(  # training statistics  # location for training results saved to disk
+    training_set=training_set,
+    test_set=test_set,
+    experiment_name="simple_image_experiment",
+    model_name="single_model",
+    skip_save_processed_input=True,
 )
