@@ -2,6 +2,7 @@ import argparse
 from typing import List, Sequence, Type
 
 import pytest
+
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.contribs.aim import AimCallback
 from ludwig.contribs.comet import CometCallback
