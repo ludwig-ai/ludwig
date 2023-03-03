@@ -192,6 +192,7 @@ def _ray_start(request, **kwargs):
         yield res
     finally:
         ray.shutdown()
+        ray._private.utils.reset_ray_address()
 
 
 def _get_default_ray_kwargs():

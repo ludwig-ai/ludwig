@@ -32,6 +32,7 @@ def ray_start(num_cpus=2, num_gpus=None):
         yield res
     finally:
         ray.shutdown()
+        ray._private.utils.reset_ray_address()
 
 
 @spawn
