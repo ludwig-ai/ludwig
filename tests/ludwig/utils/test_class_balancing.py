@@ -42,7 +42,7 @@ def test_balance(method, balance):
     config["preprocessing"][method] = balance
     backend = LocalBackend()
 
-    test_df = balance_data(input_df, config["output_features"], config["preprocessing"], backend)
+    test_df = balance_data(input_df, config["output_features"], config["preprocessing"], backend, 42)
     target = config["output_features"][0][NAME]
     majority_class = test_df[target].value_counts()[test_df[target].value_counts().idxmax()]
     minority_class = test_df[target].value_counts()[test_df[target].value_counts().idxmin()]
