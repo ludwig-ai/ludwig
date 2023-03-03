@@ -115,6 +115,35 @@ class BasicVariantSAConfig(BaseSearchAlgorithmConfig):
 class AxSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("ax")
 
+    space: Optional[List[Dict]] = schema_utils.DictList(
+        description=(
+            r"Parameters in the experiment search space. Required elements in the dictionaries are: \“name\” (name of "
+            r"this parameter, string), \“type\” (type of the parameter: \“range\”, \“fixed\”, or \“choice\”, string), "
+            r"\“bounds\” for range parameters (list of two values, lower bound first), \“values\” for choice "
+            r"parameters (list of values), and \“value\” for fixed parameters (single value)."
+        )
+    )
+
+    metric: Optional[str] = schema_utils.String(
+        default=None,
+        allow_none=True,
+        description=(
+            "Name of the metric used as objective in this experiment. This metric must be present in raw_data "
+            "argument to log_data. This metric must also be present in the dict reported/returned by the Trainable. "
+            "If None but a mode was passed, the `ray.tune.result.DEFAULT_METRIC` will be used per default."
+        ),
+    )
+
+    mode: Optional[str] = None
+
+    points_to_evaluate: Optional[List[Dict]] = None
+
+    parameter_constraints: Optional[List] = None
+
+    outcome_constraints: Optional[List] = None
+
+    ax_client = None
+
 
 @DeveloperAPI
 @register_search_algorithm("bayesopt")
