@@ -3,7 +3,6 @@ from torch.optim import SGD
 
 from ludwig.features.number_feature import NumberInputFeature, NumberOutputFeature
 from ludwig.modules.lr_scheduler import LRScheduler
-from ludwig.schema.decoders.base import PassthroughDecoderConfig
 from ludwig.schema.encoders.base import DenseEncoderConfig
 from ludwig.schema.features.number_feature import NumberInputFeatureConfig, NumberOutputFeatureConfig
 from ludwig.schema.lr_scheduler import LRSchedulerConfig
@@ -68,9 +67,7 @@ def test_lr_scheduler_reduce_on_plateau():
     reduce_limit = 3
 
     module = NumberInputFeature(NumberInputFeatureConfig(name="num1", encoder=DenseEncoderConfig()))
-    output1 = NumberOutputFeature(
-        NumberOutputFeatureConfig(name="output1", input_size=10, decoder=PassthroughDecoderConfig()), output_features={}
-    )
+    output1 = NumberOutputFeature(NumberOutputFeatureConfig(name="output1", input_size=10), output_features={})
 
     optimizer = SGD(module.parameters(), lr=base_lr)
     config = LRSchedulerConfig(
@@ -129,9 +126,7 @@ def test_lr_scheduler_save_load():
     reduce_limit = 3
 
     module = NumberInputFeature(NumberInputFeatureConfig(name="num1", encoder=DenseEncoderConfig()))
-    output1 = NumberOutputFeature(
-        NumberOutputFeatureConfig(name="output1", input_size=10, decoder=PassthroughDecoderConfig()), output_features={}
-    )
+    output1 = NumberOutputFeature(NumberOutputFeatureConfig(name="output1", input_size=10), output_features={})
 
     optimizer = SGD(module.parameters(), lr=base_lr)
     config = LRSchedulerConfig(warmup_fraction=0.2, reduce_on_plateau=reduce_limit)

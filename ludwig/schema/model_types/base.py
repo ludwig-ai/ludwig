@@ -45,8 +45,8 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
     defaults: BaseDefaultsConfig
     hyperopt: Optional[HyperoptConfig] = None
 
-    backend: Dict[str, Any] = schema_utils.Dict()
-    ludwig_version: str = LUDWIG_VERSION
+    backend: Dict[str, Any] = schema_utils.Dict()  # TODO(jeffkinnison): Add backend schema
+    ludwig_version: str = schema_utils.ProtectedString(LUDWIG_VERSION)
 
     def __post_init__(self):
         set_validation_parameters(self)
