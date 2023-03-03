@@ -905,7 +905,8 @@ def train_with_backend(
                         k: {
                             metric_name: value
                             for metric_name, value in v.items()
-                            if metric_name not in {"loss", "root_mean_squared_percentage_error", "jaccard"}
+                            if metric_name
+                            not in {"loss", "root_mean_squared_percentage_error", "jaccard", "token_accuracy"}
                         }
                         for k, v in stats.items()
                     }

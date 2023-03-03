@@ -19,3 +19,8 @@ description: |
 output_features:
 - name: torque_1
   type: number
+fallback_mirrors:
+  - name: predibase
+    download_paths:
+      - s3://ludwig-tests/ludwig_backup/sarcos_inv.mat
+      - s3://ludwig-tests/ludwig_backup/sarcos_inv_test.mat
