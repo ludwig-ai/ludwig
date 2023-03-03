@@ -193,6 +193,72 @@ class BayesOptSAConfig(BaseSearchAlgorithmConfig):
 
     dependencies: List[str] = ["bayesian-optimization"]
 
+    space: Optional[Dict] = schema_utils.Dict(
+        description=(
+            "Continuous search space. Parameters will be sampled from this space which will be used to run trials"
+        )
+    )
+
+    metric: Optional[str] = schema_utils.String(
+        defualt=None,
+        allow_none=True,
+        description=(
+            "The training result objective value attribute. If None but a mode was passed, the anonymous metric "
+            "`_metric` will be used per default."
+        ),
+    )
+
+    mode: Optional[str] = schema_utils.StringOptions(
+        options=["min", "max"],
+        default=None,
+        allow_none=True,
+        description=(
+            "One of `{min, max}`. Determines whether objective is minimizing or maximizing the metric attribute."
+        ),
+    )
+
+    points_to_evaluate: Optional[List[Dict]] = schema_utils.DictList(
+        description=(
+            "Initial parameter suggestions to be run first. This is for when you already have some good parameters "
+            "you want to run first to help the algorithm make better suggestions for future parameters. Needs to be "
+            "a list of dicts containing the configurations."
+        )
+    )
+
+    utility_kwargs: Optional[Dict] = schema_utils.Dict(
+        description=(
+            "Parameters to define the utility function. The default value is a dictionary with three keys: "
+            "- kind: ucb (Upper Confidence Bound) - kappa: 2.576 - xi: 0.0"
+        )
+    )
+
+    random_state: int = schema_utils.Integer(default=42, description="Used to initialize BayesOpt.")
+
+    random_search_steps: int = schema_utils.Integer(
+        default=10,
+        description=(
+            "Number of initial random searches. This is necessary to avoid initial local overfitting of "
+            "the Bayesian process."
+        ),
+    )
+
+    verbose: int = schema_utils.IntegerOptions(
+        options=[0, 1, 2], default=0, description="The level of verbosity. `0` is least verbose, `2` is most verbose."
+    )
+
+    patience: int = schema_utils.NonNegativeInteger(
+        default=5, description="Number of epochs to wait for a change in the top models."
+    )
+
+    skip_duplicate: bool = schema_utils.Boolean(
+        default=True,
+        description=(
+            "If False, the optimizer will allow duplicate points to be registered. This behavior may be desired in "
+            "high noise situations where repeatedly probing the same point will give different answers. In other "
+            "situations, the acquisition may occasionaly generate a duplicate point."
+        ),
+    )
+
 
 @DeveloperAPI
 @register_search_algorithm("blendsearch")
