@@ -136,3 +136,5 @@ tags
 # examples
 examples/*/data/
 examples/*/visualizations/
+
+.vscode
