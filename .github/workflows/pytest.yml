@@ -219,7 +219,7 @@ jobs:
 
       - name: Test Getting Started
         run: |
-          sh ./examples/getting_started/command_line.sh
+          sh ./examples/getting_started/run.sh
         shell: bash
 
   # start-runner:
