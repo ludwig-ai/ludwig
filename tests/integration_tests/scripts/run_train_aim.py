@@ -1,7 +1,7 @@
 import argparse
 import os
-import shutil
 import sys
+import tempfile
 from unittest.mock import Mock
 
 # Comet must be imported before the libraries it wraps
@@ -23,9 +23,9 @@ def run(csv_filename):
     callback.on_train_start = Mock(side_effect=callback.on_train_start)
 
     # Image Inputs
-    image_dest_folder = os.path.join(os.getcwd(), "generated_images")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        image_dest_folder = os.path.join(tmpdir, "generated_images")
 
-    try:
         # Inputs & Outputs
         input_features = [image_feature(folder=image_dest_folder)]
         output_features = [category_feature(output_feature=True)]
@@ -33,9 +33,6 @@ def run(csv_filename):
 
         # Run experiment
         run_experiment(input_features, output_features, dataset=rel_path, callbacks=[callback])
-    finally:
-        # Delete the temporary data created
-        shutil.rmtree(image_dest_folder, ignore_errors=True)
 
     # Check that these methods were called at least once
     callback.on_train_init.assert_called()
