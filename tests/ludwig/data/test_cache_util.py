@@ -109,3 +109,27 @@ def test_proc_col_checksum_consistency_same_preprocessing_different_types():
     config = ModelConfig.from_dict(config)
 
     assert config.input_features[0].proc_column != config.input_features[1].proc_column
+
+
+@pytest.mark.distributed
+def test_checksum_determinism(ray_cluster_2cpu):
+    """Tests that checksums are deterministic across different processes (no unordered hash maps)."""
+    import ray
+
+    # Generate a lot of features so the probability of a reordering of feature sets is very high.
+    config = {
+        INPUT_FEATURES: [{"name": f"in{i}", "type": "number"} for i in range(100)],
+        OUTPUT_FEATURES: [{"name": "out1", "type": "binary"}],
+    }
+    config = ModelConfig.from_dict(config)
+
+    mock_dataset = mock.Mock()
+    mock_dataset.checksum = uuid.uuid4().hex
+
+    @ray.remote(max_calls=1)
+    def calculate_checksum_remote(dataset, config):
+        return calculate_checksum(dataset, config)
+
+    checksum1 = ray.get(calculate_checksum_remote.remote(mock_dataset, config.to_dict()))
+    checksum2 = ray.get(calculate_checksum_remote.remote(mock_dataset, config.to_dict()))
+    assert checksum1 == checksum2
