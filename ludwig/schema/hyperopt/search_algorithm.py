@@ -1,5 +1,5 @@
 from dataclasses import field
-from typing import Dict
+from typing import Dict, List, Optional
 
 from marshmallow import fields, ValidationError
 
@@ -76,6 +76,37 @@ def SearchAlgorithmDataclassField(description: str = "", default: Dict = {"type"
 @ludwig_dataclass
 class BasicVariantSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.StringOptions(options=["random", "variant_generator"], default="random", allow_none=False)
+
+    points_to_evaluate: Optional[List[Dict]] = schema_utils.DictList(
+        description=(
+            "Initial parameter suggestions to be run first. This is for when you already have some good parameters "
+            "you want to run first to help the algorithm make better suggestions for future parameters. Needs to be "
+            "a list of dicts containing the configurations."
+        )
+    )
+
+    max_concurrent: int = schema_utils.NonNegativeInteger(
+        default=0, description="Maximum number of concurrently running trials. If 0 (default), no maximum is enforced."
+    )
+
+    constant_grid_search: bool = schema_utils.Boolean(
+        default=False,
+        description=(
+            "If this is set to True, Ray Tune will first try to sample random values and keep them constant over grid "
+            "search parameters. If this is set to False (default), Ray Tune will sample new random parameters in each "
+            "grid search condition."
+        ),
+    )
+
+    random_state: int = schema_utils.Integer(
+        default=None,
+        allow_none=True,
+        description=(
+            "Seed or numpy random generator to use for reproducible results. If None (default), will use the global "
+            "numpy random generator (np.random). Please note that full reproducibility cannot be guaranteed in a "
+            "distributed environment."
+        ),
+    )
 
 
 @DeveloperAPI
