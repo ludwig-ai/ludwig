@@ -426,7 +426,7 @@ class HEBOSAConfig(BaseSearchAlgorithmConfig):
     dependencies: List[str] = ["hebo"]
 
     space: Optional[List[Dict]] = schema_utils.DictList(
-        description=("A dict mapping parameter names to Tune search spaces or a HEBO DesignSpace object.")
+        description="A dict mapping parameter names to Tune search spaces or a HEBO DesignSpace object."
     )
 
     metric: Optional[str] = schema_utils.String(
@@ -486,6 +486,67 @@ class HEBOSAConfig(BaseSearchAlgorithmConfig):
 @ludwig_dataclass
 class HyperoptSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("hyperopt")
+
+    dependencies: List[str] = ["hyperopt"]
+
+    space: Optional[List[Dict]] = schema_utils.DictList(
+        description=(
+            "HyperOpt configuration. Parameters will be sampled from this configuration and will be used to override "
+            "parameters generated in the variant generation process."
+        )
+    )
+
+    metric: Optional[str] = schema_utils.String(
+        default=None,
+        allow_none=True,
+        description=(
+            "The training result objective value attribute. If None but a mode was passed, the anonymous metric "
+            "`_metric` will be used per default."
+        ),
+    )
+
+    mode: Optional[str] = schema_utils.StringOptions(
+        options=["min", "max"],
+        default=None,
+        allow_none=True,
+        description=(
+            "One of `{min, max}`. Determines whether objective is minimizing or maximizing the metric attribute."
+        ),
+    )
+
+    points_to_evaluate: Optional[List[Dict]] = schema_utils.DictList(
+        description=(
+            "Initial parameter suggestions to be run first. This is for when you already have some good parameters "
+            "you want to run first to help the algorithm make better suggestions for future parameters. Needs to be "
+            "a list of dicts containing the configurations."
+        )
+    )
+
+    n_initial_points: int = schema_utils.PositiveInteger(
+        default=20,
+        description=(
+            "The number of random evaluations of the objective function before starting to approximate it with tree "
+            "parzen estimators. Defaults to 20."
+        ),
+    )
+
+    random_state_seed: Optional[int] = schema_utils.Integer(
+        default=None,
+        allow_none=True,
+        description=("Seed for reproducible results. Defaults to None."),
+    )
+
+    gamma: float = schema_utils.FloatRange(
+        min=0.0,
+        max=1.0,
+        default=0.25,
+        description=(
+            "The split to use in TPE. TPE models two splits of the evaluated hyperparameters: the top performing "
+            "`gamma` percent, and the remaining examples. For more details, see [Making a Science of Model Search: "
+            "Hyperparameter Optimization in Hundreds of Dimensions for Vision Architectures.]"
+            "(http://proceedings.mlr.press/v28/bergstra13.pdf)."
+        ),
+    )
 
 
 @DeveloperAPI
