@@ -1,12 +1,8 @@
-import logging
-
 import ludwig
 from ludwig.constants import DEFAULTS, INPUT_FEATURES, OUTPUT_FEATURES, PREPROCESSING, PROC_COLUMN, TYPE
 from ludwig.data.cache.types import CacheableDataset
 from ludwig.types import ModelConfigDict
 from ludwig.utils.data_utils import hash_dict
-
-logger = logging.getLogger(__name__)
 
 
 def calculate_checksum(original_dataset: CacheableDataset, config: ModelConfigDict):
@@ -28,9 +24,4 @@ def calculate_checksum(original_dataset: CacheableDataset, config: ModelConfigDi
         "feature_types": [feature[TYPE] for feature in features],
         "feature_preprocessing": [feature.get(PREPROCESSING, {}) for feature in features],
     }
-    import pprint
-
-    pprint.pprint(info)
-    checksum = hash_dict(info, max_length=None).decode("ascii")
-    logging.info(f"Checksum for dataset and model config: {checksum}")
-    return checksum
+    return hash_dict(info, max_length=None).decode("ascii")
