@@ -87,8 +87,8 @@ def test_sample_ratio(backend, tmpdir, ray_cluster_2cpu):
 def test_sample_ratio_deterministic(backend, tmpdir, ray_cluster_2cpu):
     """Ensures that the sampled dataset is the same when using a random seed.
 
-    model.preprocess returns a PandasPandasDataset object when using local backend,
-    and returns a RayDataset object when using the Ray backend.
+    model.preprocess returns a PandasPandasDataset object when using local backend, and returns a RayDataset object when
+    using the Ray backend.
     """
     num_examples = 100
     sample_ratio = 0.3
