@@ -106,6 +106,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
+          file: ./docker/${{ matrix.docker-image }}/Dockerfile
           load: true
           tags: ludwigai/${{ matrix.docker-image }}:test
 
