@@ -32,6 +32,10 @@ class BaseSearchAlgorithmConfig(schema_utils.BaseMarshmallowConfig):
         options=list(search_algorithm_registry.keys()), default="hyperopt", allow_none=False
     )
 
+    def dependencies_installed(self) -> bool:
+        """Some search algorithms require additional packages to be installed, check that they are available."""
+        return True
+
 
 @DeveloperAPI
 def SearchAlgorithmDataclassField(description: str = "", default: Dict = {"type": "variant_generator"}):
@@ -128,21 +132,37 @@ class AxSAConfig(BaseSearchAlgorithmConfig):
         default=None,
         allow_none=True,
         description=(
-            "Name of the metric used as objective in this experiment. This metric must be present in raw_data "
-            "argument to log_data. This metric must also be present in the dict reported/returned by the Trainable. "
-            "If None but a mode was passed, the `ray.tune.result.DEFAULT_METRIC` will be used per default."
+            "Name of the metric used as objective in this experiment. This metric must be present in `raw_data` "
+            "argument to `log_data`. This metric must also be present in the dict reported/returned by the Trainable. "
+            "If `None` but a mode was passed, the `ray.tune.result.DEFAULT_METRIC` will be used per default."
         ),
     )
 
-    mode: Optional[str] = None
+    mode: Optional[str] = schema_utils.StringOptions(
+        options=["min", "max", None],
+        default=None,
+        allow_none=True,
+        description=(
+            "One of `{min, max}`. Determines whether objective is minimizing or maximizing the metric attribute. "
+            r"Defaults to \“max\”."
+        ),
+    )
 
-    points_to_evaluate: Optional[List[Dict]] = None
+    points_to_evaluate: Optional[List[Dict]] = schema_utils.DictList(
+        description=(
+            "Initial parameter suggestions to be run first. This is for when you already have some good "
+            "parameters you want to run first to help the algorithm make better suggestions for future parameters. "
+            "Needs to be a list of dicts containing the configurations."
+        )
+    )
 
-    parameter_constraints: Optional[List] = None
+    parameter_constraints: Optional[List] = schema_utils.List(
+        description=r"Parameter constraints, such as \“x3 >= x4\” or \“x3 + x4 >= 2\”."
+    )
 
-    outcome_constraints: Optional[List] = None
-
-    ax_client = None
+    outcome_constraints: Optional[List] = schema_utils.List(
+        description=r"Outcome constraints of form \“metric_name >= bound\”, like \“m1 <= 3.\”"
+    )
 
 
 @DeveloperAPI
