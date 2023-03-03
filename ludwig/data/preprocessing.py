@@ -1759,6 +1759,11 @@ def preprocess_for_training(
                             "they will be overridden"
                         )
                         cache.delete()
+                else:
+                    logger.info(
+                        f"No cached dataset found at {cache.get_cached_obj_path('training')}. "
+                        "Preprocessing the dataset."
+                    )
 
         training_set_metadata[CHECKSUM] = cache.checksum
         data_format_processor = get_from_registry(data_format, data_format_preprocessor_registry)
