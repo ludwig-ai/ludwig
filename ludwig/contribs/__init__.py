@@ -15,11 +15,11 @@
 
 """All contrib classes must implement the `ludwig.callbacks.Callback` interface.
 
-If you don't want to handle the call, either provide an empty
-method with `pass`, or just don't implement the method.
+If you don't want to handle the call, either provide an empty method with `pass`, or just don't implement the method.
 """
 
 from abc import ABC, abstractmethod
+
 from ludwig.callbacks import Callback
 
 
