@@ -778,7 +778,7 @@ def test_balance_ray(method, balance, ray_cluster_2cpu):
 
     backend = create_ray_backend()
     input_df = backend.df_engine.from_pandas(input_df)
-    test_df = balance_data(input_df, config["output_features"], config["preprocessing"], backend)
+    test_df = balance_data(input_df, config["output_features"], config["preprocessing"], backend, 42)
 
     majority_class = test_df[target].value_counts().compute()[test_df[target].value_counts().compute().idxmax()]
     minority_class = test_df[target].value_counts().compute()[test_df[target].value_counts().compute().idxmin()]
