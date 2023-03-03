@@ -2,7 +2,7 @@ from dataclasses import Field
 from typing import Any, Dict, List, Optional
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import AUDIO, SEQUENCE, SEQUENCE_COMBINER_ENCODERS, TEXT, TIMESERIES
+from ludwig.constants import AUDIO, SEQUENCE, TEXT, TIMESERIES
 from ludwig.schema import common_fields
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
@@ -134,7 +134,7 @@ class SequenceEmbedConfig(SequenceEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("parallel_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES, SEQUENCE_COMBINER_ENCODERS])
+@register_encoder_config("parallel_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 @ludwig_dataclass
 class ParallelCNNConfig(SequenceEncoderConfig):
     @staticmethod
@@ -240,7 +240,7 @@ class ParallelCNNConfig(SequenceEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("stacked_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES, SEQUENCE_COMBINER_ENCODERS])
+@register_encoder_config("stacked_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 @ludwig_dataclass
 class StackedCNNConfig(SequenceEncoderConfig):
     @staticmethod
@@ -379,7 +379,7 @@ class StackedCNNConfig(SequenceEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("stacked_parallel_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES, SEQUENCE_COMBINER_ENCODERS])
+@register_encoder_config("stacked_parallel_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 @ludwig_dataclass
 class StackedParallelCNNConfig(SequenceEncoderConfig):
     @staticmethod
@@ -489,7 +489,7 @@ class StackedParallelCNNConfig(SequenceEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("rnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES, SEQUENCE_COMBINER_ENCODERS])
+@register_encoder_config("rnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 @ludwig_dataclass
 class StackedRNNConfig(SequenceEncoderConfig):
     @staticmethod
@@ -611,7 +611,7 @@ class StackedRNNConfig(SequenceEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("cnnrnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES, SEQUENCE_COMBINER_ENCODERS])
+@register_encoder_config("cnnrnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 @ludwig_dataclass
 class StackedCNNRNNConfig(SequenceEncoderConfig):
     @staticmethod
@@ -802,7 +802,7 @@ class StackedCNNRNNConfig(SequenceEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("transformer", [SEQUENCE, TEXT, TIMESERIES, SEQUENCE_COMBINER_ENCODERS])
+@register_encoder_config("transformer", [SEQUENCE, TEXT, TIMESERIES])
 @ludwig_dataclass
 class StackedTransformerConfig(SequenceEncoderConfig):
     @staticmethod
