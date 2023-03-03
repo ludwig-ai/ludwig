@@ -3,7 +3,6 @@ import logging
 import tempfile
 
 from ludwig.api import LudwigModel
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import INPUT_FEATURES, OUTPUT_FEATURES, TRAINER
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset_df
