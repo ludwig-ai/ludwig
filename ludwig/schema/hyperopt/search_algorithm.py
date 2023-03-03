@@ -1,4 +1,5 @@
 from dataclasses import field
+from importlib import import_module
 from typing import Dict, List, Optional
 
 from marshmallow import fields, ValidationError
@@ -9,11 +10,13 @@ from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils.registry import Registry
 
 search_algorithm_registry = Registry()
+sa_dependencies_registry = Registry()
 
 
 def register_search_algorithm(name: str):
     def wrap(cls):
         search_algorithm_registry[name] = cls
+        sa_dependencies_registry[name] = cls.dependencies
         return cls
 
     return wrap
@@ -32,9 +35,24 @@ class BaseSearchAlgorithmConfig(schema_utils.BaseMarshmallowConfig):
         options=list(search_algorithm_registry.keys()), default="hyperopt", allow_none=False
     )
 
+    dependencies: Optional[List[str]] = schema_utils.List(
+        list_type=str,
+        default=(lambda x: list())(),
+        description="List of the additional packages required for this search algorithm.",
+    )
+
     def dependencies_installed(self) -> bool:
         """Some search algorithms require additional packages to be installed, check that they are available."""
-        return True
+        for package_name in sa_dependencies_registry[self.type]:
+            try:
+                import_module(package_name)
+                return True
+            except ImportError:
+                raise ImportError(
+                    f"Search algorithm {self.type} requires package {package_name}, however package is "
+                    "not installed. Please refer to Ray Tune documentation for packages required for this "
+                    "search algorithm."
+                )
 
 
 @DeveloperAPI
@@ -119,6 +137,8 @@ class BasicVariantSAConfig(BaseSearchAlgorithmConfig):
 class AxSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("ax")
 
+    dependencies: List[str] = ["ax-platform", "sqlalchemy"]
+
     space: Optional[List[Dict]] = schema_utils.DictList(
         description=(
             r"Parameters in the experiment search space. Required elements in the dictionaries are: \“name\” (name of "
@@ -170,6 +190,8 @@ class AxSAConfig(BaseSearchAlgorithmConfig):
 @ludwig_dataclass
 class BayesOptSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("bayesopt")
+
+    dependencies: List[str] = ["bayesian-optimization"]
 
 
 @DeveloperAPI
