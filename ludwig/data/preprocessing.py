@@ -1147,7 +1147,7 @@ def build_dataset(
                 )
 
             logger.debug(f"sample {sample_ratio} of data")
-            dataset_df = dataset_df.sample(frac=sample_ratio)
+            dataset_df = dataset_df.sample(frac=sample_ratio, random_state=random_seed)
 
     # If persisting DataFrames in memory is enabled, we want to do this after
     # each batch of parallel ops in order to avoid redundant computation
