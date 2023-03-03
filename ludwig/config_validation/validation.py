@@ -20,24 +20,6 @@ from ludwig.schema.utils import unload_jsonschema_from_marshmallow_class
 VALIDATION_LOCK = Lock()
 
 
-def get_ludwig_version_jsonschema():
-    return {
-        "type": "string",
-        "title": "ludwig_version",
-        "description": "Current Ludwig model schema version.",
-    }
-
-
-def get_backend_jsonschema():  # TODO: Is this still necessary after setting backend = Dict()?
-    # TODO(travis): implement full backend schema
-    return {
-        "type": "object",
-        "title": "backend",
-        "description": "Backend configuration.",
-        "additionalProperties": True,
-    }
-
-
 @DeveloperAPI
 @lru_cache(maxsize=2)
 def get_schema(model_type: str = MODEL_ECD):
