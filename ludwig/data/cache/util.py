@@ -27,6 +27,9 @@ def calculate_checksum(original_dataset: CacheableDataset, config: ModelConfigDi
         "feature_types": [feature[TYPE] for feature in features],
         "feature_preprocessing": [feature.get(PREPROCESSING, {}) for feature in features],
     }
+    import pprint
+
+    pprint.pprint(info)
     checksum = hash_dict(info, max_length=None).decode("ascii")
     logging.info(f"Checksum for dataset and model config: {checksum}")
     return checksum
