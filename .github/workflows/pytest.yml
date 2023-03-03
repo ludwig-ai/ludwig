@@ -212,6 +212,11 @@ jobs:
           pip install '.'
         shell: bash
 
+      - name: Check Install
+        run: |
+          ludwig check_install
+        shell: bash
+
       - name: Test Getting Started
         run: |
           sh ./examples/getting_started/command_line.sh
