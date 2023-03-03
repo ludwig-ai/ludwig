@@ -130,6 +130,9 @@ def test_checksum_determinism(ray_cluster_2cpu):
     def calculate_checksum_remote(dataset, config):
         return calculate_checksum(dataset, config)
 
+    # Run each checksum calculation as a remote function so it gets its own Python interpreter, as
+    # the hash function in Python is deterministic within a process, but not between different processes.
+    # See: https://docs.python.org/3/reference/datamodel.html#object.__hash__
     checksum1 = ray.get(calculate_checksum_remote.remote(mock_dataset, config.to_dict()))
     checksum2 = ray.get(calculate_checksum_remote.remote(mock_dataset, config.to_dict()))
     assert checksum1 == checksum2
