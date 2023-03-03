@@ -555,6 +555,49 @@ class HyperoptSAConfig(BaseSearchAlgorithmConfig):
 class NevergradSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("nevergrad")
 
+    dependencies: List[str] = ["nevergrad"]
+
+    # TODO: Add a registry mapping string names to nevergrad optimizers
+    optimizer: Optional[str] = None
+
+    # TODO: Add schemas for nevergrad optimizer kwargs
+    optimizer_kwargs: Optional[Dict] = schema_utils.Dict(
+        description="Kwargs passed in when instantiating the optimizer."
+    )
+
+    space: Optional[List[Dict]] = schema_utils.DictList(
+        description=(
+            "Nevergrad parametrization to be passed to optimizer on instantiation, or list of parameter names if you "
+            "passed an optimizer object."
+        )
+    )
+
+    metric: Optional[str] = schema_utils.String(
+        default=None,
+        allow_none=True,
+        description=(
+            "The training result objective value attribute. If None but a mode was passed, the anonymous metric "
+            "`_metric` will be used per default."
+        ),
+    )
+
+    mode: Optional[str] = schema_utils.StringOptions(
+        options=["min", "max"],
+        default=None,
+        allow_none=True,
+        description=(
+            "One of `{min, max}`. Determines whether objective is minimizing or maximizing the metric attribute."
+        ),
+    )
+
+    points_to_evaluate: Optional[List[Dict]] = schema_utils.DictList(
+        description=(
+            "Initial parameter suggestions to be run first. This is for when you already have some good parameters "
+            "you want to run first to help the algorithm make better suggestions for future parameters. Needs to be "
+            "a list of dicts containing the configurations."
+        )
+    )
+
 
 @DeveloperAPI
 @register_search_algorithm("optuna")
