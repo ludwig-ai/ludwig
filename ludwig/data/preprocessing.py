@@ -1731,6 +1731,8 @@ def preprocess_for_training(
         cached = False
         cache = backend.cache.get_dataset_cache(config, dataset, training_set, test_set, validation_set)
 
+        logger.info(f"Cache Map: {cache.cache_map}")
+
         # Unwrap dataset into the form used for preprocessing
         dataset = dataset.unwrap() if dataset is not None else None
         training_set = training_set.unwrap() if training_set is not None else None
@@ -1760,6 +1762,8 @@ def preprocess_for_training(
                             "they will be overridden"
                         )
                         cache.delete()
+                else:
+                    logger.info("No cached dataset found, preprocessing the dataset.")
 
         training_set_metadata[CHECKSUM] = cache.checksum
         data_format_processor = get_from_registry(data_format, data_format_preprocessor_registry)
