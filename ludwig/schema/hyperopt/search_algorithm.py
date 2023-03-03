@@ -605,6 +605,66 @@ class NevergradSAConfig(BaseSearchAlgorithmConfig):
 class OptunaSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("optuna")
 
+    dependencies: List[str] = ["optuna"]
+
+    space: Optional[Dict] = schema_utils.Dict(
+        description=(
+            "Hyperparameter search space definition for Optuna's sampler. This can be either a dict with parameter "
+            "names as keys and optuna.distributions as values, or a Callable - in which case, it should be a "
+            "define-by-run function using optuna.trial to obtain the hyperparameter values. The function should "
+            "return either a dict of constant values with names as keys, or None. For more information, see "
+            "[the Optuna docs]"
+            "(https://optuna.readthedocs.io/en/stable/tutorial/10_key_features/002_configurations.html)."
+        )
+    )
+
+    metric: Optional[str] = schema_utils.String(
+        default=None,
+        allow_none=True,
+        description=(
+            "The training result objective value attribute. If None but a mode was passed, the anonymous metric "
+            "`_metric` will be used per default. Can be a list of metrics for multi-objective optimization."
+        ),
+    )
+
+    mode: Optional[str] = schema_utils.StringOptions(
+        options=["min", "max"],
+        default=None,
+        allow_none=True,
+        description=(
+            "One of `{min, max}`. Determines whether objective is minimizing or maximizing the metric attribute."
+            "Can be a list of modes for multi-objective optimization (corresponding to `metric`)"
+        ),
+    )
+
+    points_to_evaluate: Optional[List[Dict]] = schema_utils.DictList(
+        description=(
+            "Initial parameter suggestions to be run first. This is for when you already have some good parameters "
+            "you want to run first to help the algorithm make better suggestions for future parameters. Needs to be "
+            "a list of dicts containing the configurations."
+        )
+    )
+
+    # TODO: Add a registry of Optuna samplers schemas
+    sampler = None
+
+    seed: Optional[int] = schema_utils.Integer(
+        default=None,
+        allow_none=True,
+        description=(
+            "Seed to initialize sampler with. This parameter is only used when `sampler=None`. In all other cases, "
+            "the sampler you pass should be initialized with the seed already."
+        ),
+    )
+
+    evaluated_rewards: Optional[List] = schema_utils.List(
+        description=(
+            "If you have previously evaluated the parameters passed in as points_to_evaluate you can avoid re-running "
+            "those trials by passing in the reward attributes as a list so the optimiser can be told the results "
+            "without needing to re-compute the trial. Must be the same length as points_to_evaluate."
+        )
+    )
+
 
 @DeveloperAPI
 @register_search_algorithm("skopt")
