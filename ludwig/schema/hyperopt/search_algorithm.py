@@ -266,12 +266,66 @@ class BayesOptSAConfig(BaseSearchAlgorithmConfig):
 class BlendsearchSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("blendsearch")
 
+    dependencies: List[str] = ["flaml"]
+
 
 @DeveloperAPI
 @register_search_algorithm("bohb")
 @ludwig_dataclass
 class BOHBSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("bohb")
+
+    dependencies: List[str] = ["hpbandster", "ConfigSpace"]
+
+    space: Optional[Dict] = schema_utils.Dict(
+        description=(
+            "Continuous ConfigSpace search space. Parameters will be sampled from this space which will be used "
+            "to run trials."
+        )
+    )
+
+    bohb_config: Optional[Dict] = schema_utils.Dict(description="configuration for HpBandSter BOHB algorithm")
+
+    metric: Optional[str] = schema_utils.String(
+        description=(
+            "The training result objective value attribute. If None but a mode was passed, the anonymous metric "
+            "`_metric` will be used per default."
+        )
+    )
+
+    mode: Optional[str] = schema_utils.StringOptions(
+        options=["min", "max"],
+        default=None,
+        allow_none=True,
+        description=(
+            "One of `{min, max}`. Determines whether objective is minimizing or maximizing the metric attribute."
+        ),
+    )
+    points_to_evaluate: Optional[List[Dict]] = schema_utils.DictList(
+        description=(
+            "Initial parameter suggestions to be run first. This is for when you already have some good parameters "
+            "you want to run first to help the algorithm make better suggestions for future parameters. Needs to be "
+            "a list of dicts containing the configurations."
+        )
+    )
+
+    seed: Optional[int] = schema_utils.Integer(
+        default=None,
+        allow_none=True,
+        description=(
+            "Optional random seed to initialize the random number generator. Setting this should lead to identical "
+            "initial configurations at each run."
+        ),
+    )
+
+    max_concurrent: int = schema_utils.Integer(
+        default=0,
+        description=(
+            "Number of maximum concurrent trials. If this Searcher is used in a `ConcurrencyLimiter`, the "
+            "`max_concurrent` value passed to it will override the value passed here. Set to <= 0 for no limit on "
+            "concurrency."
+        ),
+    )
 
 
 @DeveloperAPI
@@ -280,12 +334,86 @@ class BOHBSAConfig(BaseSearchAlgorithmConfig):
 class CFOSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("cfo")
 
+    dependencies: List[str] = ["flaml", "cfo"]
+
 
 @DeveloperAPI
 @register_search_algorithm("dragonfly")
 @ludwig_dataclass
 class DragonflySAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("dragonfly")
+
+    dependencies: List[str] = ["dragonfly-opt"]
+
+    optimizer: Optional[str] = schema_utils.StringOptions(
+        options=["random", "bandit", "genetic"],
+        default=None,
+        allow_none=True,
+        description=(
+            "Optimizer provided from dragonfly. Choose an optimiser that extends `BlackboxOptimiser`. If this is a "
+            "string, `domain` must be set and `optimizer` must be one of [random, bandit, genetic]."
+        ),
+    )
+
+    domain: Optional[str] = schema_utils.StringOptions(
+        options=["cartesian", "euclidean"],
+        default=None,
+        allow_none=True,
+        description=(
+            "Optional domain. Should only be set if you don't pass an optimizer as the `optimizer` argument. Has to "
+            "be one of [cartesian, euclidean]."
+        ),
+    )
+
+    space: Optional[List[Dict]] = schema_utils.DictList(
+        description=(
+            "Search space. Should only be set if you don't pass an optimizer as the `optimizer` argument. Defines the "
+            "search space and requires a `domain` to be set. Can be automatically converted from the `param_space` "
+            "dict passed to `tune.Tuner()`."
+        )
+    )
+    metric: Optional[str] = schema_utils.String(
+        default=None,
+        allow_none=True,
+        description=(
+            "The training result objective value attribute. If None but a mode was passed, the anonymous metric "
+            "`_metric` will be used per default."
+        ),
+    )
+
+    mode: Optional[str] = schema_utils.StringOptions(
+        options=["min", "max"],
+        default=None,
+        allow_none=True,
+        description=(
+            "One of `{min, max}`. Determines whether objective is minimizing or maximizing the metric attribute."
+        ),
+    )
+
+    points_to_evaluate: Optional[List[Dict]] = schema_utils.DictList(
+        description=(
+            "Initial parameter suggestions to be run first. This is for when you already have some good parameters "
+            "you want to run first to help the algorithm make better suggestions for future parameters. Needs to be "
+            "a list of dicts containing the configurations."
+        )
+    )
+
+    evaluated_rewards: Optional[List] = schema_utils.List(
+        description=(
+            "If you have previously evaluated the parameters passed in as points_to_evaluate you can avoid re-running "
+            "those trials by passing in the reward attributes as a list so the optimiser can be told the results "
+            "without needing to re-compute the trial. Must be the same length as `points_to_evaluate`."
+        )
+    )
+
+    random_state_seed: Optional[int] = schema_utils.Integer(
+        default=None,
+        allow_none=True,
+        description=(
+            "Seed for reproducible results. Defaults to None. Please note that setting this to a value will change "
+            "global random state for `numpy` on initalization and loading from checkpoint."
+        ),
+    )
 
 
 @DeveloperAPI
