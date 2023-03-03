@@ -77,6 +77,63 @@ def test_sample_ratio(backend, tmpdir, ray_cluster_2cpu):
     assert len(dataset) == num_examples
 
 
+@pytest.mark.parametrize(
+    "backend",
+    [
+        pytest.param("local", id="local"),
+        pytest.param("ray", id="ray", marks=pytest.mark.distributed),
+    ],
+)
+def test_sample_ratio_deterministic(backend, tmpdir, ray_cluster_2cpu):
+    """Ensures that the sampled dataset is the same when using a random seed.
+
+    model.preprocess returns a PandasPandasDataset object when using local backend,
+    and returns a RayDataset object when using the Ray backend.
+    """
+    num_examples = 100
+    sample_ratio = 0.3
+
+    input_features = [binary_feature()]
+    output_features = [category_feature()]
+    data_csv = generate_data(
+        input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=num_examples
+    )
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "preprocessing": {"sample_ratio": sample_ratio},
+    }
+
+    model1 = LudwigModel(config, backend=backend)
+    train_set_1, val_set_1, test_set_1, _ = model1.preprocess(
+        data_csv,
+        skip_save_processed_input=True,
+    )
+
+    model2 = LudwigModel(config, backend=backend)
+    train_set_2, val_set_2, test_set_2, _ = model2.preprocess(
+        data_csv,
+        skip_save_processed_input=True,
+    )
+
+    sample_size = num_examples * sample_ratio
+
+    # Ensure sizes are the same
+    assert sample_size == len(train_set_1) + len(val_set_1) + len(test_set_1)
+    assert sample_size == len(train_set_2) + len(val_set_2) + len(test_set_2)
+
+    # Ensure actual rows are the same
+    if backend == "local":
+        assert train_set_1.to_df().equals(train_set_2.to_df())
+        assert val_set_1.to_df().equals(val_set_2.to_df())
+        assert test_set_1.to_df().equals(test_set_2.to_df())
+    else:
+        assert train_set_1.to_df().compute().equals(train_set_2.to_df().compute())
+        assert val_set_1.to_df().compute().equals(val_set_2.to_df().compute())
+        assert test_set_1.to_df().compute().equals(test_set_2.to_df().compute())
+
+
 def test_strip_whitespace_category(csv_filename, tmpdir):
     data_csv_path = os.path.join(tmpdir, csv_filename)
 
