@@ -71,6 +71,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+
       - name: Docker meta
         id: meta
         uses: crazy-max/ghaction-docker-meta@v2
@@ -87,16 +88,37 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
             type=sha
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
+
       - name: Login to DockerHub
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and export to Docker
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          load: true
+          tags: ludwigai/${{ matrix.docker-image }}:test
+
+      - name: Test CLI
+        if: matrix.docker-image == 'ludwig' || matrix.docker-image == 'ludwig-gpu'
+        run: |
+          docker run --rm ludwigai/${{ matrix.docker-image }}:test check_install
+
+      - name: Test Ray
+        if: matrix.docker-image == 'ludwig-ray' || matrix.docker-image == 'ludwig-ray-gpu'
+        run: |
+          docker run --rm ludwigai/${{ matrix.docker-image }}:test ludwig check_install
+
       - name: Build and push
         uses: docker/build-push-action@v2
         with:

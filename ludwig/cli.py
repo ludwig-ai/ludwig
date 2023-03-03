@@ -53,6 +53,7 @@ Available sub-commands:
    synthesize_dataset    Creates synthetic data for testing purposes
    init_config           Initialize a user config from a dataset and targets
    render_config         Renders the fully populated config with all defaults set
+   check_install         Runs a quick training run on synthetic data to verify installation status
 """,
         )
         parser.add_argument("command", help="Subcommand to run")
@@ -160,6 +161,11 @@ Available sub-commands:
         from ludwig.utils import defaults
 
         defaults.cli_render_config(sys.argv[2:])
+
+    def check_install(self):
+        from ludwig import check
+
+        check.cli(sys.argv[2:])
 
     def datasets(self):
         from ludwig import datasets
