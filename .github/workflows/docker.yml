@@ -63,10 +63,10 @@ jobs:
       fail-fast: false
       matrix:
         docker-image:
-          # - ludwig
+          - ludwig
           - ludwig-gpu
-          # - ludwig-ray
-          # - ludwig-ray-gpu
+          - ludwig-ray
+          - ludwig-ray-gpu
 
     steps:
       - name: Checkout
@@ -101,24 +101,6 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Build and export to Docker
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          file: ./docker/${{ matrix.docker-image }}/Dockerfile
-          load: true
-          tags: ludwigai/${{ matrix.docker-image }}:test
-
-      - name: Test CLI
-        if: matrix.docker-image == 'ludwig' || matrix.docker-image == 'ludwig-gpu'
-        run: |
-          docker run --rm ludwigai/${{ matrix.docker-image }}:test check_install
-
-      - name: Test Ray
-        if: matrix.docker-image == 'ludwig-ray' || matrix.docker-image == 'ludwig-ray-gpu'
-        run: |
-          docker run --rm ludwigai/${{ matrix.docker-image }}:test ludwig check_install
 
       - name: Build and push
         uses: docker/build-push-action@v2
