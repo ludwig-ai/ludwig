@@ -219,7 +219,8 @@ jobs:
 
       - name: Test Getting Started
         run: |
-          sh ./examples/getting_started/run.sh
+          echo $PWD
+          cd examples/getting_started && sh ./run.sh
         shell: bash
 
   # start-runner:
