@@ -184,7 +184,7 @@ jobs:
     name: Test Minimal Install
     runs-on: ubuntu-latest
     # if: always() && needs.pytest.result != 'failure'
-    needs: pytest
+    # needs: pytest
 
     timeout-minutes: 90
     steps:
