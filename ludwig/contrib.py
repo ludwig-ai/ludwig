@@ -15,16 +15,28 @@
 
 """Module for handling contributed support."""
 
-from .contribs import contrib_registry
+import argparse
+
+from ludwig.contribs import contrib_registry, ContribLoader
 
 
-def add_contrib_callback_args(parser):
-    for contrib_name, contrib_cls in contrib_registry.items():
+def create_load_action(contrib_loader: ContribLoader) -> argparse.Action:
+    class LoadContribAction(argparse.Action):
+        def __call__(self, parser, namespace, values, option_string):
+            items = getattr(namespace, self.dest) or []
+            items.append(contrib_loader.load())
+            setattr(namespace, self.dest, items)
+
+    return LoadContribAction
+
+
+def add_contrib_callback_args(parser: argparse.ArgumentParser):
+    for contrib_name, contrib_loader in contrib_registry.items():
         parser.add_argument(
             f"--{contrib_name}",
             dest="callbacks",
-            action="append_const",
-            const=contrib_cls(),
+            nargs=0,
+            action=create_load_action(contrib_loader),
         )
 
 
