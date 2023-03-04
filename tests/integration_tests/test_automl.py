@@ -8,7 +8,6 @@ import pandas as pd
 import pytest
 
 from ludwig.api import LudwigModel
-from ludwig.automl.automl import auto_train
 from ludwig.constants import COLUMN, ENCODER, INPUT_FEATURES, NAME, OUTPUT_FEATURES, PREPROCESSING, SPLIT, TYPE
 from ludwig.schema.model_types.base import ModelConfig
 from ludwig.types import FeatureConfigDict, ModelConfigDict
@@ -30,7 +29,12 @@ ray = pytest.importorskip("ray")
 import dask.dataframe as dd  # noqa
 from ray.tune.experiment.trial import Trial  # noqa
 
-from ludwig.automl import create_auto_config, create_auto_config_with_dataset_profile, train_with_config  # noqa
+from ludwig.automl import (  # noqa
+    auto_train,
+    create_auto_config,
+    create_auto_config_with_dataset_profile,
+    train_with_config,
+)
 from ludwig.hyperopt.execution import RayTuneExecutor  # noqa
 
 pytestmark = pytest.mark.distributed
