@@ -17,6 +17,7 @@ import logging
 from typing import Dict, List, Optional, Union
 
 import torch
+from torch import nn
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import CATEGORY
@@ -61,6 +62,9 @@ class CategoricalPassthroughEncoder(Encoder):
     @property
     def output_shape(self) -> torch.Size:
         return self.input_shape
+
+    def get_embedding_layer(self) -> nn.Module:
+        return self
 
 
 @DeveloperAPI
@@ -208,3 +212,6 @@ class CategoricalOneHotEncoder(Encoder):
     @property
     def output_shape(self) -> torch.Size:
         return torch.Size([self.vocab_size])
+
+    def get_embedding_layer(self) -> nn.Module:
+        return self

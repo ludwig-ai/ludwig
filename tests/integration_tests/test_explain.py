@@ -135,6 +135,7 @@ def run_test_explainer_api(
         ]
         if model_type == MODEL_ECD:
             input_features += [
+                category_feature(encoder={"type": "dense", "reduce_output": "sum"}),
                 text_feature(encoder={"vocab_size": 3}),
                 vector_feature(),
                 timeseries_feature(),
