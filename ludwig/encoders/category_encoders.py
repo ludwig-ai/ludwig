@@ -196,9 +196,9 @@ class CategoricalOneHotEncoder(Encoder):
     def forward(self, inputs, mask=None):
         """
         :param inputs: The inputs fed into the encoder.
-               Shape: [batch x 1]
+               Shape: [batch, 1] or [batch]
         """
-        t = inputs.squeeze(1).long()
+        t = inputs.reshape(-1).long()
         return torch.nn.functional.one_hot(t, num_classes=self.vocab_size)
 
     @staticmethod

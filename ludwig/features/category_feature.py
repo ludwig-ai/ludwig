@@ -230,12 +230,13 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
         )
         assert len(inputs.shape) == 1 or (len(inputs.shape) == 2 and inputs.shape[1] == 1)
 
-        if len(inputs.shape) == 1:
-            inputs = inputs.unsqueeze(dim=1)
-
+        inputs = inputs.reshape(-1, 1)
         if inputs.dtype == torch.int8 or inputs.dtype == torch.int16:
             inputs = inputs.type(torch.int)
         encoder_output = self.encoder_obj(inputs)
+
+        batch_size = inputs.shape[0]
+        inputs = inputs.reshape(batch_size, -1)
 
         return {"encoder_output": encoder_output}
 

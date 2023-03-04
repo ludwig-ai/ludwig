@@ -73,6 +73,7 @@ def test_torchscript(tmpdir, csv_filename, should_load_model, model_type):
         audio_dest_folder = os.path.join(tmpdir, "generated_audio")
         input_features.extend(
             [
+                category_feature(encoder={"type": "dense", "vocab_size": 3}),
                 sequence_feature(encoder={"vocab_size": 3}),
                 text_feature(encoder={"vocab_size": 3}),
                 vector_feature(),
