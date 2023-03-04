@@ -24,7 +24,7 @@ RAY_BACKEND = {
         "use_gpu": False,
         "num_workers": 2,
         "resources_per_worker": {
-            "CPU": 2,
+            "CPU": 1,
             "GPU": 0,
         },
     },
