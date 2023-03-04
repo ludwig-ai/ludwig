@@ -1,8 +1,8 @@
 import os
 import tempfile
 
-import pytest
 import numpy as np
+import pytest
 
 from ludwig.api import LudwigModel
 from ludwig.constants import MODEL_ECD, MODEL_GBM, PREPROCESSING, PROC_COLUMN, TRAINER
