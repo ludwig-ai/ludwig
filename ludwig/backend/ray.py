@@ -46,15 +46,11 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.backend.datasource import BinaryIgnoreNoneTypeDatasource
 from ludwig.constants import (
-    BINARY,
-    CATEGORY,
     CPU_RESOURCES_PER_TRIAL,
     EXECUTOR,
     MODEL_ECD,
     NAME,
-    NUMBER,
     PROC_COLUMN,
-    TYPE,
 )
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataframe.dask import tensor_extension_casting
@@ -81,7 +77,6 @@ logger = logging.getLogger(__name__)
 
 RAY_DEFAULT_PARALLELISM = 200
 FIFTEEN_MINS_IN_S = 15 * 60
-_SCALAR_TYPES = {BINARY, CATEGORY, NUMBER}
 
 
 def _num_nodes() -> int:
@@ -712,10 +707,11 @@ class RayPredictor(BasePredictor):
                 ordered_predictions = predictions[self.output_columns]
                 return ordered_predictions
 
+            # TODO(travis): consolidate with implementation in data/ray.py
             def _prepare_batch(self, batch: pd.DataFrame) -> Dict[str, np.ndarray]:
                 res = {}
                 for c in self.features.keys():
-                    if self.features[c][TYPE] not in _SCALAR_TYPES:
+                    if batch[c].values.dtype == "object":
                         # Ensure columns stacked instead of turned into np.array([np.array, ...], dtype=object) objects
                         res[c] = np.stack(batch[c].values)
                     else:
