@@ -840,3 +840,21 @@ def test_experiment_vector_feature_infer_size(csv_filename):
     del output_features[0][PREPROCESSING]
 
     run_experiment(input_features, output_features, dataset=rel_path)
+
+
+def test_forecasting_row_major(csv_filename):
+    input_features = [timeseries_feature()]
+    output_features = [timeseries_feature(decoder={"type": "projector"})]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    run_experiment(input_features, output_features, dataset=rel_path)
+
+
+def test_forecasting_column_major(csv_filename):
+    input_features = [timeseries_feature()]
+    output_features = [binary_feature()]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    run_experiment(input_features, output_features, dataset=rel_path)

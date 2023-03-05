@@ -2,7 +2,7 @@ from abc import ABC
 from typing import Dict, List, Tuple, Union
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import BINARY, CATEGORY, NUMBER, SEQUENCE, SET, TEXT, VECTOR
+from ludwig.constants import BINARY, CATEGORY, NUMBER, SEQUENCE, SET, TEXT, TIMESERIES, VECTOR
 from ludwig.schema import common_fields
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.utils import register_decoder_config
@@ -149,7 +149,7 @@ class RegressorConfig(BaseDecoderConfig):
 
 
 @DeveloperAPI
-@register_decoder_config("projector", [VECTOR])
+@register_decoder_config("projector", [VECTOR, TIMESERIES])
 @ludwig_dataclass
 class ProjectorConfig(BaseDecoderConfig):
     """ProjectorConfig is a dataclass that configures the parameters used for a projector decoder."""

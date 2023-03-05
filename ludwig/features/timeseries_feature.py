@@ -14,25 +14,28 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Dict, List, Union
+from typing import TYPE_CHECKING, Dict, List, Union
 
 import numpy as np
 import torch
-from ludwig.backend.base import Backend
 
-from ludwig.constants import COLUMN, HIDDEN, NAME, PROC_COLUMN, TIMESERIES
-from ludwig.features.base_feature import BaseFeatureMixin, OutputFeature
-from ludwig.features.sequence_feature import SequenceInputFeature, SequenceOutputFeature
+from ludwig.constants import COLUMN, HIDDEN, LOGITS, NAME, PREDICTIONS, PROC_COLUMN, TIMESERIES
+from ludwig.features.base_feature import BaseFeatureMixin, OutputFeature, PredictModule
+from ludwig.features.sequence_feature import SequenceInputFeature
+from ludwig.features.vector_feature import _VectorPostprocessing, _VectorPredict
 from ludwig.schema.features.timeseries_feature import TimeseriesInputFeatureConfig, TimeseriesOutputFeatureConfig
 from ludwig.types import FeatureMetadataDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils.tokenizers import get_tokenizer_from_registry, TORCHSCRIPT_COMPATIBLE_TOKENIZERS
 from ludwig.utils.types import Series, TorchscriptPreprocessingInput
 
+if TYPE_CHECKING:
+    from ludwig.backend.base import Backend
+
 logger = logging.getLogger(__name__)
 
 
 def create_time_delay_embedding(
-    series: Series, window_size: int, horizon: int, padding_value: int, backend: Backend
+    series: Series, window_size: int, horizon: int, padding_value: int, backend: "Backend"
 ) -> Series:
     """
     Time delay embedding from:
@@ -263,7 +266,7 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
         return _TimeseriesPreprocessing(metadata)
 
 
-class TimeseriesOutputFeature(TimeseriesFeatureMixin, SequenceOutputFeature):
+class TimeseriesOutputFeature(TimeseriesFeatureMixin, OutputFeature):
     def __init__(
         self,
         output_feature_config: Union[TimeseriesOutputFeatureConfig, Dict],
@@ -282,6 +285,18 @@ class TimeseriesOutputFeature(TimeseriesFeatureMixin, SequenceOutputFeature):
         hidden = inputs[HIDDEN]
         return self.decoder_obj(hidden)
 
+    def loss_kwargs(self):
+        return self.loss.to_dict()
+
+    def metric_kwargs(self):
+        return dict(num_outputs=self.output_shape[0])
+
+    def create_predict_module(self) -> PredictModule:
+        return _VectorPredict()
+
+    def get_prediction_set(self):
+        return {PREDICTIONS, LOGITS}
+
     @classmethod
     def get_output_dtype(cls):
         return torch.float32
@@ -296,12 +311,26 @@ class TimeseriesOutputFeature(TimeseriesFeatureMixin, SequenceOutputFeature):
 
     @staticmethod
     def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
-        feature_config.horizon = feature_metadata["max_sequence_length"]
+        feature_config.horizon = feature_metadata["max_timeseries_length"]
 
     @staticmethod
     def calculate_overall_stats(predictions, targets, train_set_metadata):
         # no overall stats, just return empty dictionary
         return {}
+
+    def postprocess_predictions(
+        self,
+        result,
+        metadata,
+    ):
+        predictions_col = f"{self.feature_name}_{PREDICTIONS}"
+        if predictions_col in result:
+            result[predictions_col] = result[predictions_col].map(lambda pred: pred.tolist())
+        return result
+
+    @staticmethod
+    def create_postproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
+        return _VectorPostprocessing()
 
     @staticmethod
     def get_schema_cls():

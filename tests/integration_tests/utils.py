@@ -406,8 +406,22 @@ def timeseries_feature(**kwargs):
     feature = {
         "name": f"{TIMESERIES}_{random_string()}",
         "type": TIMESERIES,
-        ENCODER: {"type": "parallel_cnn", "max_len": 7},
     }
+
+    output_feature = DECODER in kwargs
+    if output_feature:
+        feature.update(
+            {
+                DECODER: {"type": "projector"},
+            }
+        )
+    else:
+        feature.update(
+            {
+                ENCODER: {"type": "parallel_cnn", "max_len": 7},
+            }
+        )
+
     recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)

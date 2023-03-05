@@ -61,6 +61,7 @@ from ludwig.constants import (
     SET,
     SPECIFICITY,
     TEXT,
+    TIMESERIES,
     TOKEN_ACCURACY,
     VECTOR,
 )
@@ -195,7 +196,7 @@ class RMSPEMetric(MeanMetric):
         return rmspe_loss(target, preds)
 
 
-@register_metric(R2, [NUMBER, VECTOR], MAXIMIZE, PREDICTIONS)
+@register_metric(R2, [NUMBER, VECTOR, TIMESERIES], MAXIMIZE, PREDICTIONS)
 class R2Score(LudwigMetric):
     """Custom R-squared metric implementation that modifies torchmetrics R-squared implementation to return Nan
     when there is only sample. This is because R-squared is only defined for two or more samples.
@@ -389,7 +390,7 @@ class HitsAtKMetric(MulticlassAccuracy, LudwigMetric):
         return feature.num_classes > feature.top_k
 
 
-@register_metric(MEAN_ABSOLUTE_ERROR, [NUMBER, VECTOR], MINIMIZE, PREDICTIONS)
+@register_metric(MEAN_ABSOLUTE_ERROR, [NUMBER, VECTOR, TIMESERIES], MINIMIZE, PREDICTIONS)
 class MAEMetric(MeanAbsoluteError, LudwigMetric):
     def __init__(self, **kwargs):
         super().__init__(dist_sync_fn=_gather_all_tensors_fn())
@@ -398,7 +399,7 @@ class MAEMetric(MeanAbsoluteError, LudwigMetric):
         super().update(preds.detach(), target)
 
 
-@register_metric(MEAN_SQUARED_ERROR, [NUMBER, VECTOR], MINIMIZE, PREDICTIONS)
+@register_metric(MEAN_SQUARED_ERROR, [NUMBER, VECTOR, TIMESERIES], MINIMIZE, PREDICTIONS)
 class MSEMetric(MeanSquaredError, LudwigMetric):
     def __init__(self, **kwargs):
         super().__init__(dist_sync_fn=_gather_all_tensors_fn())
