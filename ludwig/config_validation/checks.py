@@ -371,3 +371,13 @@ def check_stacked_transformer_requirements(config: "ModelConfig") -> None:  # no
                 f"Input feature {input_feature.name} transformer encoder requires encoder.hidden_size to be divisible "
                 f"by encoder.num_heads. Found hidden_size {encoder.hidden_size} and num_heads {encoder.num_heads}."
             )
+
+
+@register_config_check
+def check_hyperopt_dependencies_installed(config):
+    """Check that the hyperopt search algorithm dependencies are installed."""
+    if config.hyperopt is not None and config.hyperopt.search_algorithm is not None:
+        try:
+            config.hyperopt.search_algorithm.dependencies_installed()
+        except ImportError as e:
+            raise ConfigValidationError(e.msg)
