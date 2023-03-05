@@ -730,3 +730,56 @@ class SkoptSAConfig(BaseSearchAlgorithmConfig):
 @ludwig_dataclass
 class ZooptSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("zoopt")
+
+    dependencies: List[str] = ["zoopt"]
+
+    algo: str = schema_utils.ProtectedString(
+        pstring="asracos",
+        description="To specify an algorithm in zoopt you want to use. Only support ASRacos currently.",
+    )
+
+    budget: Optional[int] = schema_utils.PositiveInteger(
+        default=None, allow_none=True, description="Number of samples."
+    )
+
+    dim_dict: Optional[Dict] = schema_utils.Dict(
+        description=(
+            "Dimension dictionary. For continuous dimensions: (continuous, search_range, precision); For discrete "
+            "dimensions: (discrete, search_range, has_order); For grid dimensions: (grid, grid_list). More details "
+            "can be found in zoopt package."
+        )
+    )
+
+    metric: Optional[str] = schema_utils.String(
+        default=None,
+        allow_none=True,
+        description=(
+            "The training result objective value attribute. If None but a mode was passed, the anonymous metric "
+            "`_metric` will be used per default."
+        ),
+    )
+
+    mode: Optional[str] = schema_utils.StringOptions(
+        options=["min", "max"],
+        default=None,
+        allow_none=True,
+        description=(
+            "One of `{min, max}`. Determines whether objective is minimizing or maximizing the metric attribute."
+        ),
+    )
+
+    points_to_evaluate: Optional[List[Dict]] = schema_utils.DictList(
+        description=(
+            "Initial parameter suggestions to be run first. This is for when you already have some good parameters "
+            "you want to run first to help the algorithm make better suggestions for future parameters. Needs to be "
+            "a list of dicts containing the configurations."
+        )
+    )
+
+    parallel_num: int = schema_utils.PositiveInteger(
+        default=1,
+        description=(
+            "How many workers to parallel. Note that initial phase may start less workers than this number. More "
+            "details can be found in zoopt package."
+        ),
+    )
