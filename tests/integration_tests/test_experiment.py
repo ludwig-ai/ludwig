@@ -865,6 +865,14 @@ def test_forecasting_column_major(csv_filename):
     # Generate test data in column-major format. This is just a dataframe of numbers with the same column name
     # as expected by the timeseries input feature
     column_major_feature = number_feature(name=input_feature[COLUMN])
-    rel_path = generate_data([column_major_feature], [], csv_filename)
+    csv_filename = generate_data([column_major_feature], [], csv_filename)
 
-    run_experiment(input_features, output_features, dataset=rel_path)
+    input_df = pd.read_csv(csv_filename)
+
+    model, eval_stats, train_stats, preprocessed_data, output_directory = run_experiment(
+        input_features, output_features, dataset=csv_filename
+    )
+    train_set, val_set, test_set, _ = preprocessed_data
+
+    print(input_df)
+    print(train_set.to_df())

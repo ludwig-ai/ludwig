@@ -532,7 +532,7 @@ def run_experiment(
         }
         args.update(kwargs)
 
-        experiment_cli(**args)
+        return experiment_cli(**args)
 
 
 def generate_output_features_with_dependencies(main_feature, dependencies):

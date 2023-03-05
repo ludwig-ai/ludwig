@@ -51,12 +51,15 @@ def create_time_delay_embedding(
     Returns:
         A column of timeseries window arrays in row-major format for training.
     """
-    n_lags = window_size - 1
-    n_lags_iter = list(range(n_lags, -horizon, -1))
-
-    X = [series.shift(i) for i in n_lags_iter]
-    df = backend.df_engine.df_lib.concat(X, axis=1)
-    df.columns = [f"__tmp_column_{j}" for j in n_lags_iter]
+    # Create the list of shifts we want to perform over the series.
+    # For backwards looking shifts, we want to include the current element, while for forward looking shifts we do not.
+    # Example:
+    #   window_size=3, horizon=0 --> shift_offsets=[2, 1, 0]
+    #   window_size=0, horizon=2 --> shift_offsets=[-1, -2]
+    shift_offsets = list(range(window_size - 1, -(horizon + 1), -1))
+    shifts = [series.shift(i) for i in shift_offsets]
+    df = backend.df_engine.df_lib.concat(shifts, axis=1)
+    df.columns = [f"__tmp_column_{j}" for j in shift_offsets]
     return df.apply(lambda x: np.nan_to_num(np.array(x.tolist()).astype(np.float32), nan=padding_value), axis=1)
 
 
