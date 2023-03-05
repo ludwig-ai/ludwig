@@ -49,6 +49,7 @@ from ludwig.constants import (
     MIN_DATASET_SPLIT_ROWS,
     MODEL_ECD,
     TEST,
+    TIMESERIES,
     TRAINING,
     VALIDATION,
 )
@@ -99,7 +100,7 @@ from ludwig.utils.misc_utils import (
 from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.torch_utils import DEVICE
 from ludwig.utils.trainer_utils import get_training_report
-from ludwig.utils.types import TorchDevice
+from ludwig.utils.types import DataFrame, TorchDevice
 
 logger = logging.getLogger(__name__)
 
@@ -1067,6 +1068,35 @@ class LudwigModel:
                 callback.on_evaluation_end()
 
             return eval_stats, postproc_predictions, output_directory
+
+    def forecast(
+        self,
+        dataset: DataFrame,
+        horizon: int = 1,
+    ) -> DataFrame:
+        # TODO(travis): WIP
+        # TODO(travis): there's a lot of redundancy in this approach, since we are preprocessing the same DataFrame
+        # multiple times with only a small number of features (the horizon) being appended each time.
+        # A much better approach would be to only preprocess a single row, but incorporating the row-level embedding
+        # over the window_size of rows precending it, then performing the model forward pass on only that row of
+        # data.
+        total_forecasted = 0
+        while total_forecasted < horizon:
+            preds, _ = self.predict(dataset, skip_save_predictions=True, skip_save_unprocessed_output=True)
+
+            next_series = {}
+            for feature in self.config_obj.output_features:
+                if feature.type == TIMESERIES:
+                    key = f"{feature.name}_predictions"
+                    next_series[feature.column] = pd.Series(preds[key].iloc[-1])
+
+            next_preds = pd.DataFrame(next_series)
+            dataset = pd.concat([dataset, next_preds], axis=0).reset_index(drop=True)
+            total_forecasted += len(next_preds)
+
+        horizon_df = dataset.tail(total_forecasted).head(horizon)
+        return_cols = [feature.column for feature in self.config_obj.output_features if feature.type == TIMESERIES]
+        return horizon_df[return_cols]
 
     def experiment(
         self,

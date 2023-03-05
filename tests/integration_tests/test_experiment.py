@@ -875,4 +875,7 @@ def test_forecasting_column_major(csv_filename):
     train_set, val_set, test_set, _ = preprocessed_data
 
     print(input_df)
-    print(train_set.to_df())
+    # print(train_set.to_df())
+
+    horizon_df = model.forecast(input_df, horizon=5)
+    print(horizon_df)
