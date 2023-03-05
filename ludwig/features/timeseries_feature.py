@@ -31,7 +31,9 @@ from ludwig.utils.types import Series, TorchscriptPreprocessingInput
 logger = logging.getLogger(__name__)
 
 
-def create_time_delay_embedding(series: Series, window_size: int, horizon: int, backend: Backend) -> Series:
+def create_time_delay_embedding(
+    series: Series, window_size: int, horizon: int, padding_value: int, backend: Backend
+) -> Series:
     """
     Time delay embedding from:
 
@@ -41,6 +43,7 @@ def create_time_delay_embedding(series: Series, window_size: int, horizon: int, 
         series: Column-major timeseries data.
         window_size: Size of the lookback sliding window for timeseries inputs.
         horizon: Size of the forward-looking horizon for timeseries outputs.
+        padding_value: Value to pad out the window when there is not enough data around the observation.
 
     Returns:
         A column of timeseries window arrays in row-major format for training.
@@ -49,9 +52,9 @@ def create_time_delay_embedding(series: Series, window_size: int, horizon: int, 
     n_lags_iter = list(range(n_lags, -horizon, -1))
 
     X = [series.shift(i) for i in n_lags_iter]
-    df = backend.df_engine.df_lib.concat(X, axis=1).dropna()
+    df = backend.df_engine.df_lib.concat(X, axis=1)
     df.columns = [f"__tmp_column_{j}" for j in n_lags_iter]
-    return df.apply(lambda x: np.array(x.tolist()).astype(np.float32), axis=1)
+    return df.apply(lambda x: np.nan_to_num(np.array(x.tolist()).astype(np.float32), nan=padding_value), axis=1)
 
 
 class _TimeseriesPreprocessing(torch.nn.Module):
@@ -180,12 +183,13 @@ class TimeseriesFeatureMixin(BaseFeatureMixin):
     @staticmethod
     def feature_data(column, metadata, preprocessing_parameters: PreprocessingConfigDict, backend):
         tokenizer = preprocessing_parameters["tokenizer"]
+        padding_value = preprocessing_parameters["padding_value"]
 
         window_size = preprocessing_parameters.get("window_size", 0)
         horizon = preprocessing_parameters.get("horizon", 0)
         if window_size > 0 or horizon > 0:
             # Column-major data. Convert the column into the row-major embedding
-            column = create_time_delay_embedding(column, window_size, horizon, backend)
+            column = create_time_delay_embedding(column, window_size, horizon, padding_value, backend)
 
             # Tokenization already performed when creating the embedding
             tokenizer = None
@@ -194,7 +198,7 @@ class TimeseriesFeatureMixin(BaseFeatureMixin):
             column,
             tokenizer,
             metadata["max_timeseries_length"],
-            preprocessing_parameters["padding_value"],
+            padding_value,
             preprocessing_parameters["padding"],
             backend,
         )
