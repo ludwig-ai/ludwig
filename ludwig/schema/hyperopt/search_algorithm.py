@@ -626,6 +626,8 @@ class OptunaSAConfig(BaseSearchAlgorithmConfig):
 
     dependencies: List[str] = ["optuna"]
 
+    _random_seed_attribute_name: Optional[str] = "seed"
+
     space: Optional[Dict] = schema_utils.Dict(
         description=(
             "Hyperparameter search space definition for Optuna's sampler. This can be either a dict with parameter "
