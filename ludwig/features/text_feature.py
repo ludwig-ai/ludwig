@@ -106,7 +106,6 @@ class TextFeatureMixin(BaseFeatureMixin):
             padding_symbol,
             unknown_symbol,
         ) = tf_meta
-
         # Use max_sequence_length if provided, otherwise use max length found in dataset.
         if preprocessing_parameters["max_sequence_length"] is not None:
             logger.info("Using max_sequence_length provided in preprocessing parameters")
