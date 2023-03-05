@@ -25,7 +25,7 @@ import yaml
 
 from ludwig.api import LudwigModel
 from ludwig.backend import LOCAL_BACKEND
-from ludwig.constants import BATCH_SIZE, ENCODER, H3, PREPROCESSING, TRAINER, TYPE
+from ludwig.constants import BATCH_SIZE, COLUMN, ENCODER, H3, NAME, PREPROCESSING, TRAINER, TYPE
 from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.encoders.registry import get_encoder_classes
@@ -852,9 +852,19 @@ def test_forecasting_row_major(csv_filename):
 
 
 def test_forecasting_column_major(csv_filename):
-    input_features = [timeseries_feature()]
-    output_features = [binary_feature()]
+    input_feature = timeseries_feature(preprocessing={"window_size": 3})
+    input_features = [input_feature]
 
-    # Generate test data
-    rel_path = generate_data(input_features, output_features, csv_filename)
+    # Ensure output feature has the same column and the input feature
+    output_feature = timeseries_feature(
+        name=input_feature[COLUMN], preprocessing={"horizon": 2}, decoder={"type": "projector"}
+    )
+    output_feature[NAME] = f"{input_feature[NAME]}_out"
+    output_features = [output_feature]
+
+    # Generate test data in column-major format. This is just a dataframe of numbers with the same column name
+    # as expected by the timeseries input feature
+    column_major_feature = number_feature(name=input_feature[COLUMN])
+    rel_path = generate_data([column_major_feature], [], csv_filename)
+
     run_experiment(input_features, output_features, dataset=rel_path)
