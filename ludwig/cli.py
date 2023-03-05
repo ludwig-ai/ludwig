@@ -36,6 +36,7 @@ Available sub-commands:
    train                 Trains a model
    predict               Predicts using a pretrained model
    evaluate              Evaluate a pretrained model's performance
+   forecast              Forecast the next n data points in a timeseries using a pretrained model
    experiment            Runs a full experiment training a model and evaluating it
    hyperopt              Perform hyperparameter optimization
    benchmark             Run and track experiments on a number of datasets and configs, and export experiment artifacts.
@@ -81,6 +82,11 @@ Available sub-commands:
         from ludwig import evaluate
 
         evaluate.cli(sys.argv[2:])
+
+    def forecast(self):
+        from ludwig import forecast
+
+        forecast.cli(sys.argv[2:])
 
     def experiment(self):
         from ludwig import experiment

@@ -53,11 +53,14 @@ from ludwig.constants import (
     TRAINING,
     VALIDATION,
 )
+from ludwig.data.cache.types import CacheableDataset
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.postprocessing import convert_predictions, postprocess
 from ludwig.data.preprocessing import load_metadata, preprocess_for_prediction, preprocess_for_training
+from ludwig.datasets import load_dataset_uris
 from ludwig.features.feature_registries import update_config_with_metadata, update_config_with_model
 from ludwig.globals import (
+    FORECAST_PREDICTIONS_PARQUET_FILE_NAME,
     LUDWIG_VERSION,
     MODEL_HYPERPARAMETERS_FILE_NAME,
     set_disable_progressbar,
@@ -1072,9 +1075,16 @@ class LudwigModel:
     def forecast(
         self,
         dataset: DataFrame,
+        data_format: Optional[str] = None,
         horizon: int = 1,
+        output_directory: Optional[str] = None,
     ) -> DataFrame:
         # TODO(travis): WIP
+        dataset, _, _, _ = load_dataset_uris(dataset, None, None, None, self.backend)
+        if isinstance(dataset, CacheableDataset):
+            dataset = dataset.unwrap()
+        dataset = load_dataset(dataset, data_format=data_format, df_lib=self.backend.df_engine.df_lib)
+
         # TODO(travis): there's a lot of redundancy in this approach, since we are preprocessing the same DataFrame
         # multiple times with only a small number of features (the horizon) being appended each time.
         # A much better approach would be to only preprocess a single row, but incorporating the row-level embedding
@@ -1096,7 +1106,16 @@ class LudwigModel:
 
         horizon_df = dataset.tail(total_forecasted).head(horizon)
         return_cols = [feature.column for feature in self.config_obj.output_features if feature.type == TIMESERIES]
-        return horizon_df[return_cols]
+        results_df = horizon_df[return_cols]
+
+        if output_directory is not None:
+            if self.backend.is_coordinator():
+                self.backend.df_engine.write_predictions(
+                    results_df, os.path.join(output_directory, FORECAST_PREDICTIONS_PARQUET_FILE_NAME)
+                )
+                logger.info(f"Saved to: {output_directory}")
+
+        return results_df
 
     def experiment(
         self,
