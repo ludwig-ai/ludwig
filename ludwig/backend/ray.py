@@ -930,9 +930,14 @@ class RayBackend(RemoteTrainingMixin, Backend):
 
     def batch_transform(self, df: DataFrame, batch_size: int, transform_fn: Callable) -> DataFrame:
         ds = self.df_engine.to_ray_dataset(df)
-        ds = ds.map_batches(
-            transform_fn, batch_size=batch_size, compute="actors", batch_format="pandas", **self._get_transform_kwargs()
-        )
+        with tensor_extension_casting(False):
+            ds = ds.map_batches(
+                transform_fn,
+                batch_size=batch_size,
+                compute="actors",
+                batch_format="pandas",
+                **self._get_transform_kwargs(),
+            )
         return self.df_engine.from_ray_dataset(ds)
 
     def _get_transform_kwargs(self) -> Dict[str, Any]:
