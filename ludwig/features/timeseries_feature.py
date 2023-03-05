@@ -14,15 +14,15 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import List
+from typing import Dict, List, Union
 
 import numpy as np
 import torch
 
-from ludwig.constants import COLUMN, NAME, PROC_COLUMN, TIMESERIES
-from ludwig.features.base_feature import BaseFeatureMixin
-from ludwig.features.sequence_feature import SequenceInputFeature
-from ludwig.schema.features.timeseries_feature import TimeseriesInputFeatureConfig
+from ludwig.constants import COLUMN, HIDDEN, NAME, PROC_COLUMN, TIMESERIES
+from ludwig.features.base_feature import BaseFeatureMixin, OutputFeature
+from ludwig.features.sequence_feature import SequenceInputFeature, SequenceOutputFeature
+from ludwig.schema.features.timeseries_feature import TimeseriesInputFeatureConfig, TimeseriesOutputFeatureConfig
 from ludwig.types import FeatureMetadataDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils.tokenizers import get_tokenizer_from_registry, TORCHSCRIPT_COMPATIBLE_TOKENIZERS
 from ludwig.utils.types import TorchscriptPreprocessingInput
@@ -216,261 +216,46 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
         return _TimeseriesPreprocessing(metadata)
 
 
-# this is still WIP
-# class TimeseriesOutputFeature(TimeseriesBaseFeature, SequenceOutputFeature):
-#     def __init__(self, feature):
-#         super().__init__(feature)
-#         self.decoder = 'generator'
-#
-#         self.loss = {
-#             'weight': 1,
-#             TYPE: 'softmax_cross_entropy',
-#             'class_weights': 1,
-#             'class_similarities_temperature': 0
-#         }
-#         self.num_classes = 0
-##
-#         self.decoder_obj = self.get_sequence_decoder(feature)
-#
-#     def _get_output_placeholder(self):
-#         return tf.placeholder(
-#             tf.float32,
-#             [None, self.max_sequence_length],
-#             name='{}_placeholder'.format(self.feature_name)
-#         )
-#
-#     def _get_metrics(self, targets, predictions):
-#         with tf.variable_scope('metrics_{}'.format(self.feature_name)):
-#             error_val = error(targets, predictions, self.feature_name)
-#             absolute_error_val = absolute_error(targets, predictions, self.feature_name)
-#             squared_error_val = squared_error(targets, predictions, self.feature_name)
-#             r2_val = r2(targets, predictions, self.feature_name)
-#         return error_val, squared_error_val, absolute_error_val, r2_val
-#
-#     def _get_loss(self, targets, predictions):
-#         with tf.variable_scope('loss_{}'.format(self.feature_name)):
-#             if self.loss[TYPE] == 'mean_squared_error':
-#                 train_loss = tf.losses.mean_squared_error(
-#                     labels=targets,
-#                     predictions=predictions,
-#                     reduction=Reduction.NONE
-#                 )
-#             elif self.loss[TYPE] == 'mean_absolute_error':
-#                 train_loss = tf.losses.absolute_difference(
-#                     labels=targets,
-#                     predictions=predictions,
-#                     reduction=Reduction.NONE
-#                 )
-#             else:
-#                 train_loss = None
-#                 train_mean_loss = None
-#                 raise ValueError(
-#                     'Unsupported loss type {}'.format(self.loss[TYPE])
-#                 )
-#             train_mean_loss = tf.reduce_mean(
-#                 train_loss,
-#                 name='train_mean_loss_{}'.format(self.feature_name)
-#             )
-#         return train_mean_loss, train_loss
-#
-#     def build_output(
-#             self,
-#             hidden,
-#             hidden_size,
-#             dropout=None,
-#             is_training=None,
-#             **kwargs
-#     ):
-#         output_tensors = {}
-#
-#         # ================ Placeholder ================
-#         targets = self._get_output_placeholder()
-#         output_tensors[self.feature_name] = targets
-#         logger.debug('  targets_placeholder: {0}'.format(targets))
-#
-#         # ================ Predictions ================
-#         (
-#             predictions_sequence,
-#             predictions_sequence_scores,
-#             predictions_sequence_length,
-#             last_predictions,
-#             targets_sequence_length,
-#             last_targets,
-#             eval_logits,
-#             train_logits,
-#             class_weights,
-#             class_biases
-#         ) = self.sequence_predictions(
-#             targets,
-#             self.decoder_obj,
-#             hidden,
-#             hidden_size,
-#             is_timeseries=True
-#         )
-#
-#         output_tensors[LAST_PREDICTIONS + '_' + self.feature_name] = last_predictions
-#         output_tensors[PREDICTIONS + '_' + self.feature_name] = predictions_sequence
-#         output_tensors[LENGTHS + '_' + self.feature_name] = predictions_sequence_length
-#
-#         # ================ metrics ================
-#         (
-#             error_val,
-#             squared_error_val,
-#             absolute_error_val,
-#             r2_val
-#         ) = self._get_metrics(
-#             targets,
-#             predictions_sequence
-#         )
-#
-#         output_tensors[ERROR + '_' + self.feature_name] = error_val
-#         output_tensors[SQUARED_ERROR + '_' + self.feature_name] = squared_error_val
-#         output_tensors[ABSOLUTE_ERROR + '_' + self.feature_name] = absolute_error_val
-#         output_tensors[R2 + '_' + self.feature_name] = r2_val
-#
-#         if 'sampled' not in self.loss[TYPE]:
-#             tf.summary.scalar(
-#                 'batch_train_mean_squared_error_{}'.format(self.feature_name),
-#                 tf.reduce_mean(squared_error)
-#             )
-#             tf.summary.scalar(
-#                 'batch_train_mean_absolute_error_{}'.format(self.feature_name),
-#                 tf.reduce_mean(absolute_error)
-#             )
-#             tf.summary.scalar(
-#                 'batch_train_mean_r2_{}'.format(self.feature_name),
-#                 tf.reduce_mean(r2)
-#             )
-#
-#         # ================ Loss ================
-#         train_mean_loss, eval_loss = self._get_loss(
-#             targets,
-#             predictions_sequence
-#         )
-#
-#         output_tensors[TRAIN_MEAN_LOSS + '_' + self.feature_name] = train_mean_loss
-#         output_tensors[EVAL_LOSS + '_' + self.feature_name] = eval_loss
-#
-#         tf.summary.scalar(
-#             'batch_train_mean_loss_{}'.format(self.feature_name),
-#             train_mean_loss,
-#         )
-#
-#         return train_mean_loss, eval_loss, output_tensors
-#
-#     default_validation_metric = LOSS
-#
-#     output_config = OrderedDict([
-#         (LOSS, {
-#             'output': EVAL_LOSS,
-#             'aggregation': SUM,
-#             'value': 0,
-#             TYPE: METRIC
-#         }),
-#         (MEAN_SQUARED_ERROR, {
-#             'output': SQUARED_ERROR,
-#             'aggregation': SUM,
-#             'value': 0,
-#             TYPE: METRIC
-#         }),
-#         (MEAN_ABSOLUTE_ERROR, {
-#             'output': ABSOLUTE_ERROR,
-#             'aggregation': SUM,
-#             'value': 0,
-#             TYPE: METRIC
-#         }),
-#         (R2, {
-#             'output': R2,
-#             'aggregation': SUM,
-#             'value': 0,
-#             TYPE: METRIC
-#         }),
-#         (ERROR, {
-#             'output': ERROR,
-#             'aggregation': SUM,
-#             'value': 0,
-#             TYPE: METRIC
-#         }),
-#         (PREDICTIONS, {
-#             'output': PREDICTIONS,
-#             'aggregation': APPEND,
-#             'value': [],
-#             TYPE: PREDICTION
-#         }),
-#         (LENGTHS, {
-#             'output': LENGTHS,
-#             'aggregation': APPEND,
-#             'value': [],
-#             TYPE: PREDICTION
-#         })
-#     ])
-#
-#     @classmethod
-#     def get_output_dtype(cls):
-#         return tf.float32
-#
-#     def get_output_shape(self):
-#         return self.max_sequence_length,
-#
-#
-#     @staticmethod
-#     def update_config_with_metadata(
-#             output_feature,
-#             feature_metadata,
-#             *args,
-#             **kwargs
-#     ):
-#         output_feature['max_sequence_length'] = feature_metadata[
-#             'max_timeseries_length'
-#         ]
-#
-#     @staticmethod
-#     def calculate_overall_stats(
-#             test_stats,
-#             output_feature,
-#             dataset,
-#             train_set_metadata
-#     ):
-#         pass
-#
-#
-#     def postprocess_predictions(
-#             self,
-#             result,
-#             metadata,
-#             output_directory,
-#             skip_save_unprocessed_output=False,
-#     ):
-#         pass
-#
-#     @staticmethod
-#     def populate_defaults(output_feature):
-#         set_default_value(
-#             output_feature,
-#             LOSS,
-#             {TYPE: 'mean_absolute_error', 'weight': 1}
-#         )
-#         set_default_value(output_feature[LOSS], TYPE, 'mean_absolute_error')
-#         set_default_value(output_feature[LOSS], 'weight', 1)
-#
-#         set_default_value(output_feature, 'decoder', 'generator')
-#
-#         if output_feature['decoder'] == 'generator':
-#             set_default_value(output_feature, 'cell_type', 'rnn')
-#             set_default_value(output_feature, 'state_size', 256)
-#             set_default_value(output_feature, 'embedding_size', 1)
-#             set_default_value(output_feature, 'attention_mechanism', None)
-#             if output_feature['attention_mechanism'] is not None:
-#                 set_default_value(output_feature, 'reduce_input', None)
-#             set_default_value(output_feature, 'decoder', 'generator')
-#             set_default_value(output_feature, 'decoder', 'generator')
-#             set_default_value(output_feature, 'decoder', 'generator')
-#             set_default_value(output_feature, 'decoder', 'generator')
-#
-#         if output_feature['decoder'] == 'tagger':
-#             if 'reduce_input' not in output_feature:
-#                 output_feature['reduce_input'] = None
-#
-#         set_default_value(output_feature, 'dependencies', [])
-#         set_default_value(output_feature, 'reduce_input', SUM)
-#         set_default_value(output_feature, 'reduce_dependencies', SUM)
+class TimeseriesOutputFeature(TimeseriesFeatureMixin, SequenceOutputFeature):
+    def __init__(
+        self,
+        output_feature_config: Union[TimeseriesOutputFeatureConfig, Dict],
+        output_features: Dict[str, OutputFeature],
+        **kwargs,
+    ):
+        self.horizon = output_feature_config.horizon
+        super().__init__(output_feature_config, output_features, **kwargs)
+        output_feature_config.decoder.output_size = self.horizon
+
+        self.decoder_obj = self.initialize_decoder(output_feature_config.decoder)
+        self._setup_loss()
+        self._setup_metrics()
+
+    def logits(self, inputs, **kwargs):  # hidden
+        hidden = inputs[HIDDEN]
+        return self.decoder_obj(hidden)
+
+    @classmethod
+    def get_output_dtype(cls):
+        return torch.float32
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([self.horizon])
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.input_size])
+
+    @staticmethod
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
+        feature_config.horizon = feature_metadata["max_sequence_length"]
+
+    @staticmethod
+    def calculate_overall_stats(predictions, targets, train_set_metadata):
+        # no overall stats, just return empty dictionary
+        return {}
+
+    @staticmethod
+    def get_schema_cls():
+        return TimeseriesOutputFeatureConfig
