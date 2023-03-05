@@ -41,6 +41,13 @@ class BaseSearchAlgorithmConfig(schema_utils.BaseMarshmallowConfig):
         description="List of the additional packages required for this search algorithm.",
     )
 
+    _random_seed_attribute_name: Optional[str] = None
+
+    def check_for_random_seed(self, ludwig_random_seed: int) -> None:
+        rs_attr_name = self._random_seed_attribute_name
+        if rs_attr_name is not None and self.__getattribute__(rs_attr_name) is None:
+            self.__setattr__(rs_attr_name, ludwig_random_seed)
+
     def dependencies_installed(self) -> bool:
         """Some search algorithms require additional packages to be installed, check that they are available."""
         for package_name in sa_dependencies_registry[self.type]:
@@ -98,6 +105,8 @@ def SearchAlgorithmDataclassField(description: str = "", default: Dict = {"type"
 @ludwig_dataclass
 class BasicVariantSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.StringOptions(options=["random", "variant_generator"], default="random", allow_none=False)
+
+    _random_seed_attribute_name: Optional[str] = "random_state"
 
     points_to_evaluate: Optional[List[Dict]] = schema_utils.DictList(
         description=(
@@ -193,6 +202,8 @@ class BayesOptSAConfig(BaseSearchAlgorithmConfig):
 
     dependencies: List[str] = ["bayesian-optimization"]
 
+    _random_seed_attribute_name: Optional[str] = "random_state"
+
     space: Optional[Dict] = schema_utils.Dict(
         description=(
             "Continuous search space. Parameters will be sampled from this space which will be used to run trials"
@@ -277,6 +288,8 @@ class BOHBSAConfig(BaseSearchAlgorithmConfig):
 
     dependencies: List[str] = ["hpbandster", "ConfigSpace"]
 
+    _random_seed_attribute_name: Optional[str] = "seed"
+
     space: Optional[Dict] = schema_utils.Dict(
         description=(
             "Continuous ConfigSpace search space. Parameters will be sampled from this space which will be used "
@@ -344,6 +357,8 @@ class DragonflySAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("dragonfly")
 
     dependencies: List[str] = ["dragonfly-opt"]
+
+    _random_seed_attribute_name: Optional[str] = "random_state_seed"
 
     optimizer: Optional[str] = schema_utils.StringOptions(
         options=["random", "bandit", "genetic"],
@@ -425,6 +440,8 @@ class HEBOSAConfig(BaseSearchAlgorithmConfig):
 
     dependencies: List[str] = ["hebo"]
 
+    _random_seed_attribute_name: Optional[str] = "random_state_seed"
+
     space: Optional[List[Dict]] = schema_utils.DictList(
         description="A dict mapping parameter names to Tune search spaces or a HEBO DesignSpace object."
     )
@@ -488,6 +505,8 @@ class HyperoptSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("hyperopt")
 
     dependencies: List[str] = ["hyperopt"]
+
+    _random_seed_attribute_name: Optional[str] = "random_state_seed"
 
     space: Optional[List[Dict]] = schema_utils.DictList(
         description=(
