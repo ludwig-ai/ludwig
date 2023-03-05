@@ -691,8 +691,7 @@ class ECDTrainerField(schema_utils.DictMarshmallowField):
     def __init__(self):
         super().__init__(ECDTrainerConfig)
 
-    @staticmethod
-    def _jsonschema_type_mapping():
+    def _jsonschema_type_mapping(self):
         return get_trainer_jsonschema(MODEL_ECD)
 
 
@@ -701,6 +700,5 @@ class GBMTrainerField(schema_utils.DictMarshmallowField):
     def __init__(self):
         super().__init__(GBMTrainerConfig)
 
-    @staticmethod
-    def _jsonschema_type_mapping():
+    def _jsonschema_type_mapping(self):
         return get_trainer_jsonschema(MODEL_GBM)
