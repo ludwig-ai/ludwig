@@ -30,8 +30,7 @@ def DefaultsDataclassField(feature_type: str):
                     raise ValidationError(f"Invalid params: {value}, see `{attr}` definition. Error: {error}")
             raise ValidationError(f"Invalid params: {value}")
 
-        @staticmethod
-        def _jsonschema_type_mapping():
+        def _jsonschema_type_mapping(self):
             defaults_cls = defaults_config_registry[feature_type]
             props = schema_utils.unload_jsonschema_from_marshmallow_class(defaults_cls)["properties"]
             return {
