@@ -87,7 +87,7 @@ class SequencePassthroughConfig(SequenceEncoderConfig):
         description=ENCODER_METADATA["SequencePassthrough"]["type"].long_description,
     )
 
-    max_sequence_length: int = common_fields.MaxSequenceLengthField(default=256)
+    max_sequence_length: int = common_fields.MaxSequenceLengthField()
 
     encoding_size: int = schema_utils.PositiveInteger(
         default=None,
