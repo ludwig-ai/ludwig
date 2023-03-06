@@ -1,0 +1,3 @@
+- Download and unpack hourly weather data from https://www.kaggle.com/selfishgene/historical-hourly-weather-data
+- `ludwig train --config config.yaml --dataset temperature.csv`
+- `ludwig forecast -n 10 --model_path results/experiment_run/model --dataset temperature.csv`

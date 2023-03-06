@@ -70,6 +70,10 @@ def cli(sys_argv):
         usage="%(prog)s [options]",
     )
 
+    parser.add_argument(
+        "-n", "--horizon", help="horizon, or number of steps in the future to forecast", type=int, default=1
+    )
+
     # ---------------
     # Data parameters
     # ---------------
