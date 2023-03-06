@@ -24,8 +24,8 @@ def test_load_hf_model(model: Type, name: str, tmpdir: os.PathLike):
     assert os.listdir(cache_dir)
 
 
-def test_load_pretrained_hf_model_with_fallback():
-    """Ensure that the HF models used in ludwig download correctly with S3 or fallback."""
+def test_load_pretrained_hf_model_with_hub_fallback():
+    """Ensure that the HF models used in ludwig download correctly with S3 or hub fallback."""
     # Don't set env var.
     _, used_fallback = load_pretrained_hf_model_with_fallback(AlbertModel, ALBERTEncoder.DEFAULT_MODEL_NAME)
     assert used_fallback
