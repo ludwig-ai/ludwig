@@ -938,7 +938,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
                 batch_format="pandas",
                 **self._get_transform_kwargs(),
             )
-        return self.df_engine.from_ray_dataset(ds)
+            return self.df_engine.from_ray_dataset(ds)
 
     def _get_transform_kwargs(self) -> Dict[str, Any]:
         trainer_kwargs = get_trainer_kwargs(**self._horovod_kwargs)
