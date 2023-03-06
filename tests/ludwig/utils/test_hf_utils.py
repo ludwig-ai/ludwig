@@ -24,13 +24,16 @@ def test_load_pretrained_hf_model_from_hub(model: Type, name: str, tmpdir: os.Pa
     assert os.listdir(cache_dir)
 
 
-def test_load_pretrained_hf_model_with_hub_fallback():
+def test_load_pretrained_hf_model_with_hub_fallback(tmpdir):
     """Ensure that the HF models used in ludwig download correctly with S3 or hub fallback."""
     # Don't set env var.
     _, used_fallback = load_pretrained_hf_model_with_hub_fallback(AlbertModel, ALBERTEncoder.DEFAULT_MODEL_NAME)
     assert used_fallback
 
-    # Set env var.
-    os.environ["LUDWIG_PRETRAINED_MODELS_DIR"] = "s3://predibase-public-us-west-2/ludwig_unit_tests"
+    # Download the model, load it from tmpdir, and set env var.
+    load_pretrained_hf_model_from_hub(AlbertModel, "albert-base-v2").save_pretrained(
+        os.path.join(tmpdir, "albert-base-v2")
+    )
+    os.environ["LUDWIG_PRETRAINED_MODELS_DIR"] = str(tmpdir)  # Needs to be an absolute path.
     _, used_fallback = load_pretrained_hf_model_with_hub_fallback(AlbertModel, ALBERTEncoder.DEFAULT_MODEL_NAME)
     assert not used_fallback
