@@ -1,6 +1,6 @@
 from dataclasses import field
 from importlib import import_module
-from typing import Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Type
 
 from marshmallow import fields, ValidationError
 
@@ -13,10 +13,10 @@ search_algorithm_registry = Registry()
 sa_dependencies_registry = Registry()
 
 
-def register_search_algorithm(name: str):
-    def wrap(cls):
+def register_search_algorithm(name: str, dependencies: Optional[List[str]] = None) -> Callable[[Type], Type]:
+    def wrap(cls: Type) -> Type:
         search_algorithm_registry[name] = cls
-        sa_dependencies_registry[name] = cls.dependencies
+        sa_dependencies_registry[name] = dependencies if dependencies is not None else []
         return cls
 
     return wrap
@@ -31,13 +31,11 @@ def get_search_algorithm_cls(name: str):
 class BaseSearchAlgorithmConfig(schema_utils.BaseMarshmallowConfig):
     """Basic search algorithm settings."""
 
-    type: str = schema_utils.StringOptions(
-        options=list(search_algorithm_registry.keys()), default="hyperopt", allow_none=False
-    )
+    type: str = schema_utils.String(default="hyperopt", description="The search algorithm to use.")
 
     dependencies: Optional[List[str]] = schema_utils.List(
         list_type=str,
-        default=(lambda x: list())(),
+        default=(lambda: list())(),
         description="List of the additional packages required for this search algorithm.",
     )
 
@@ -141,12 +139,10 @@ class BasicVariantSAConfig(BaseSearchAlgorithmConfig):
 
 
 @DeveloperAPI
-@register_search_algorithm("ax")
+@register_search_algorithm("ax", dependencies=["ax", "sqlalchemy"])
 @ludwig_dataclass
 class AxSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("ax")
-
-    dependencies: List[str] = ["ax-platform", "sqlalchemy"]
 
     space: Optional[List[Dict]] = schema_utils.DictList(
         description=(
@@ -195,12 +191,10 @@ class AxSAConfig(BaseSearchAlgorithmConfig):
 
 
 @DeveloperAPI
-@register_search_algorithm("bayesopt")
+@register_search_algorithm("bayesopt", dependencies=["bayesian-optimization"])
 @ludwig_dataclass
 class BayesOptSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("bayesopt")
-
-    dependencies: List[str] = ["bayesian-optimization"]
 
     _random_seed_attribute_name: Optional[str] = "random_state"
 
@@ -211,7 +205,7 @@ class BayesOptSAConfig(BaseSearchAlgorithmConfig):
     )
 
     metric: Optional[str] = schema_utils.String(
-        defualt=None,
+        default=None,
         allow_none=True,
         description=(
             "The training result objective value attribute. If None but a mode was passed, the anonymous metric "
@@ -272,21 +266,17 @@ class BayesOptSAConfig(BaseSearchAlgorithmConfig):
 
 
 @DeveloperAPI
-@register_search_algorithm("blendsearch")
+@register_search_algorithm("blendsearch", dependencies=["flaml", "blendsearch"])
 @ludwig_dataclass
 class BlendsearchSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("blendsearch")
 
-    dependencies: List[str] = ["flaml"]
-
 
 @DeveloperAPI
-@register_search_algorithm("bohb")
+@register_search_algorithm("bohb", dependencies=["hpbandster", "ConfigSpace"])
 @ludwig_dataclass
 class BOHBSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("bohb")
-
-    dependencies: List[str] = ["hpbandster", "ConfigSpace"]
 
     _random_seed_attribute_name: Optional[str] = "seed"
 
@@ -300,10 +290,12 @@ class BOHBSAConfig(BaseSearchAlgorithmConfig):
     bohb_config: Optional[Dict] = schema_utils.Dict(description="configuration for HpBandSter BOHB algorithm")
 
     metric: Optional[str] = schema_utils.String(
+        default=None,
+        allow_none=True,
         description=(
             "The training result objective value attribute. If None but a mode was passed, the anonymous metric "
             "`_metric` will be used per default."
-        )
+        ),
     )
 
     mode: Optional[str] = schema_utils.StringOptions(
@@ -347,16 +339,12 @@ class BOHBSAConfig(BaseSearchAlgorithmConfig):
 class CFOSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("cfo")
 
-    dependencies: List[str] = ["flaml", "cfo"]
-
 
 @DeveloperAPI
-@register_search_algorithm("dragonfly")
+@register_search_algorithm("dragonfly", dependencies=["dragonfly-opt"])
 @ludwig_dataclass
 class DragonflySAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("dragonfly")
-
-    dependencies: List[str] = ["dragonfly-opt"]
 
     _random_seed_attribute_name: Optional[str] = "random_state_seed"
 
@@ -433,12 +421,10 @@ class DragonflySAConfig(BaseSearchAlgorithmConfig):
 
 
 @DeveloperAPI
-@register_search_algorithm("hebo")
+@register_search_algorithm("hebo", dependencies=["hebo"])
 @ludwig_dataclass
 class HEBOSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("hebo")
-
-    dependencies: List[str] = ["hebo"]
 
     _random_seed_attribute_name: Optional[str] = "random_state_seed"
 
@@ -499,12 +485,10 @@ class HEBOSAConfig(BaseSearchAlgorithmConfig):
 
 
 @DeveloperAPI
-@register_search_algorithm("hyperopt")
+@register_search_algorithm("hyperopt", dependencies=["hyperopt"])
 @ludwig_dataclass
 class HyperoptSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("hyperopt")
-
-    dependencies: List[str] = ["hyperopt"]
 
     _random_seed_attribute_name: Optional[str] = "random_state_seed"
 
@@ -569,12 +553,10 @@ class HyperoptSAConfig(BaseSearchAlgorithmConfig):
 
 
 @DeveloperAPI
-@register_search_algorithm("nevergrad")
+@register_search_algorithm("nevergrad", dependencies=["nevergrad"])
 @ludwig_dataclass
 class NevergradSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("nevergrad")
-
-    dependencies: List[str] = ["nevergrad"]
 
     # TODO: Add a registry mapping string names to nevergrad optimizers
     optimizer: Optional[str] = None
@@ -619,12 +601,10 @@ class NevergradSAConfig(BaseSearchAlgorithmConfig):
 
 
 @DeveloperAPI
-@register_search_algorithm("optuna")
+@register_search_algorithm("optuna", dependencies=["optuna"])
 @ludwig_dataclass
 class OptunaSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("optuna")
-
-    dependencies: List[str] = ["optuna"]
 
     _random_seed_attribute_name: Optional[str] = "seed"
 
@@ -688,11 +668,9 @@ class OptunaSAConfig(BaseSearchAlgorithmConfig):
 
 
 @DeveloperAPI
-@register_search_algorithm("skopt")
+@register_search_algorithm("skopt", dependencies="skopt")
 class SkoptSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("skopt")
-
-    dependencies: List[str] = ["skopt"]
 
     optimizer = None
 
@@ -747,12 +725,10 @@ class SkoptSAConfig(BaseSearchAlgorithmConfig):
 
 
 @DeveloperAPI
-@register_search_algorithm("zoopt")
+@register_search_algorithm("zoopt", dependencies="zoopt")
 @ludwig_dataclass
 class ZooptSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("zoopt")
-
-    dependencies: List[str] = ["zoopt"]
 
     algo: str = schema_utils.ProtectedString(
         pstring="asracos",
