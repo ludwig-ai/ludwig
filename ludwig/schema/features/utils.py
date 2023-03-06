@@ -23,7 +23,7 @@ ecd_defaults_config_registry = Registry()
 As of Ludwig v0.7, GBM models only support certain feature types and those features may only contain preprocessing
 parameters (in comparison, ECD features can specify encoders and other parameters). This is why the two model types have
 separate defaults registries. See `BinaryInputFeatureConfigMixin` for an example of a schema pattern that is designed to
-be registered by this registry (whereas, conversely, `BinaryDefaultsConfig` for an example of one to be registered with
+be registered by this registry (whereas, conversely, `BinaryDefaultsConfig` is an example of one to be registered with
 the ECD defaults registry).
 """
 gbm_defaults_config_registry = Registry()
