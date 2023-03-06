@@ -1232,7 +1232,7 @@ def build_dataset(
         if column not in dataset_df:
             warnings.warn(
                 f"column: '{column}' is required by the dataset splitter with params: {split_params}, but '{column}' "
-                f"is not present in the `dataset_df` with columns: {dataset_df.columns}. This is acceptable in a "
+                f"is not present in the `dataset_df` with columns: {dataset_df.columns}. This is acceptable during "
                 "serving setting where dataset splitting is irrelevant. You may see this warning if, for example, the "
                 "model was trained with a configuration that used a stratified split on the target column, but for "
                 "live predictions, a value for the target column is not to be provided."
@@ -1683,6 +1683,11 @@ def load_metadata(metadata_file_path: str) -> TrainingSetMetadataDict:
     return training_set_metadata
 
 
+def drop_extra_cols(features, dfs):
+    retain_cols = list({feature[PROC_COLUMN]: True for feature in features}.keys())
+    return tuple(df[retain_cols] for df in dfs)
+
+
 def preprocess_for_training(
     config,
     dataset=None,
@@ -1943,7 +1948,9 @@ def _preprocess_file_for_training(
         raise ValueError("either data or data_train have to be not None")
 
     logger.debug("split train-val-test")
-    training_data, validation_data, test_data = split_dataset(data, preprocessing_params, backend, random_seed)
+    training_data, validation_data, test_data = drop_extra_cols(
+        features, split_dataset(data, preprocessing_params, backend, random_seed)
+    )
 
     if dataset and backend.is_coordinator() and not skip_save_processed_input:
         logger.debug("writing split file")
@@ -2009,7 +2016,9 @@ def _preprocess_df_for_training(
     )
 
     logger.debug("split train-val-test")
-    training_set, validation_set, test_set = split_dataset(data, preprocessing_params, backend, random_seed)
+    training_set, validation_set, test_set = drop_extra_cols(
+        features, split_dataset(data, preprocessing_params, backend, random_seed)
+    )
 
     logger.info("Building dataset: DONE")
     if preprocessing_params["oversample_minority"] or preprocessing_params["undersample_majority"]:
@@ -2133,7 +2142,9 @@ def preprocess_for_prediction(
 
         if split != FULL:
             logger.debug("split train-val-test")
-            training_set, validation_set, test_set = split_dataset(dataset, preprocessing_params, backend)
+            training_set, validation_set, test_set = drop_extra_cols(
+                features, split_dataset(dataset, preprocessing_params, backend)
+            )
 
     if split == TRAINING:
         dataset = training_set
