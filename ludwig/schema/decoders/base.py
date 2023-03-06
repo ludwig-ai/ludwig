@@ -114,12 +114,12 @@ class RegressorConfig(BaseDecoderConfig):
         parameter_metadata=DECODER_METADATA["Regressor"]["use_bias"],
     )
 
-    weights_initializer: str = schema_utils.InitializerOrDict(
+    weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
         description="Initializer for the weight matrix.",
         parameter_metadata=DECODER_METADATA["Regressor"]["weights_initializer"],
     )
 
-    bias_initializer: str = schema_utils.InitializerOrDict(
+    bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
         default="zeros",
         description="Initializer for the bias vector.",
         parameter_metadata=DECODER_METADATA["Regressor"]["bias_initializer"],
@@ -161,13 +161,13 @@ class ProjectorConfig(BaseDecoderConfig):
         parameter_metadata=DECODER_METADATA["Projector"]["use_bias"],
     )
 
-    weights_initializer: str = schema_utils.InitializerOrDict(
+    weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
         default="xavier_uniform",
         description="Initializer for the weight matrix.",
         parameter_metadata=DECODER_METADATA["Projector"]["weights_initializer"],
     )
 
-    bias_initializer: str = schema_utils.InitializerOrDict(
+    bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
         default="zeros",
         description="Initializer for the bias vector.",
         parameter_metadata=DECODER_METADATA["Projector"]["bias_initializer"],
@@ -223,13 +223,13 @@ class ClassifierConfig(BaseDecoderConfig):
         parameter_metadata=DECODER_METADATA["Classifier"]["use_bias"],
     )
 
-    weights_initializer: str = schema_utils.InitializerOrDict(
+    weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
         default="xavier_uniform",
         description="Initializer for the weight matrix.",
         parameter_metadata=DECODER_METADATA["Classifier"]["weights_initializer"],
     )
 
-    bias_initializer: str = schema_utils.InitializerOrDict(
+    bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
         default="zeros",
         description="Initializer for the bias vector.",
         parameter_metadata=DECODER_METADATA["Classifier"]["bias_initializer"],

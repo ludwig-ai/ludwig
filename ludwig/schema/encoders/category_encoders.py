@@ -6,7 +6,7 @@ from ludwig.schema import common_fields
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
-from ludwig.schema.metadata import ENCODER_METADATA
+from ludwig.schema.metadata import COMMON_METADATA, ENCODER_METADATA
 from ludwig.schema.utils import ludwig_dataclass
 
 
@@ -44,7 +44,11 @@ class CategoricalEmbedConfig(BaseEncoderConfig):
 
     vocab: List[str] = common_fields.VocabField()
 
-    embedding_initializer: str = common_fields.EmbeddingInitializerField()
+    embedding_initializer: str = schema_utils.InitializerOrDict(
+        default="uniform",
+        description="Initializer to use for the embedding matrix.",
+        parameter_metadata=COMMON_METADATA["embedding_initializer"],
+    )
 
     embedding_size: int = common_fields.EmbeddingSizeField(
         default=50,
@@ -80,7 +84,11 @@ class CategoricalSparseConfig(BaseEncoderConfig):
 
     vocab: List[str] = common_fields.VocabField()
 
-    embedding_initializer: str = common_fields.EmbeddingInitializerField()
+    embedding_initializer: str = schema_utils.InitializerOrDict(
+        default="uniform",
+        description="Initializer to use for the embedding matrix.",
+        parameter_metadata=COMMON_METADATA["embedding_initializer"],
+    )
 
     embeddings_on_cpu: bool = common_fields.EmbeddingsOnCPUField()
 

@@ -1,4 +1,4 @@
-from typing import List
+from typing import Dict, List, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import SET
@@ -54,13 +54,13 @@ class SetSparseEncoderConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["SetSparseEncoder"]["use_bias"],
     )
 
-    bias_initializer: str = schema_utils.InitializerOrDict(
+    bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
         default="zeros",
         description="Initializer to use for the bias vector.",
         parameter_metadata=ENCODER_METADATA["SetSparseEncoder"]["bias_initializer"],
     )
 
-    weights_initializer: str = schema_utils.InitializerOrDict(
+    weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
         description="Initializer to use for the weights matrix.",
         parameter_metadata=ENCODER_METADATA["SetSparseEncoder"]["weights_initializer"],
     )
