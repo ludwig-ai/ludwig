@@ -191,7 +191,7 @@ class ALBERTEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model_with_hub_fallback(
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
                 AlbertModel, pretrained_model_name_or_path, **pretrained_kwargs
             )
         else:
@@ -313,7 +313,7 @@ class MT5Encoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model_with_hub_fallback(
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
                 MT5EncoderModel, pretrained_model_name_or_path, **pretrained_kwargs
             )
         else:
@@ -405,7 +405,7 @@ class XLMRoBERTaEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model_with_hub_fallback(
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
                 XLMRobertaModel, pretrained_model_name_or_path, **pretrained_kwargs
             )
         else:
@@ -523,7 +523,7 @@ class BERTEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model_with_hub_fallback(
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
                 BertModel, pretrained_model_name_or_path, **pretrained_kwargs
             )
         else:
@@ -666,7 +666,7 @@ class XLMEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model_with_hub_fallback(
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
                 XLMModel, pretrained_model_name_or_path, **pretrained_kwargs
             )
         else:
@@ -769,7 +769,7 @@ class GPTEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model_with_hub_fallback(
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
                 OpenAIGPTModel, pretrained_model_name_or_path, **pretrained_kwargs
             )
         else:
@@ -873,7 +873,7 @@ class GPT2Encoder(HFTextEncoder):
 
         if use_pretrained:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model_with_hub_fallback(
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
                 GPT2Model, pretrained_model_name_or_path, **pretrained_kwargs
             )
         else:
@@ -959,7 +959,7 @@ class RoBERTaEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model_with_hub_fallback(
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
                 RobertaModel, pretrained_model_name_or_path, **pretrained_kwargs
             )
         else:
@@ -1088,7 +1088,7 @@ class TransformerXLEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model_with_hub_fallback(
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
                 TransfoXLModel, pretrained_model_name_or_path, **pretrained_kwargs
             )
         else:
@@ -1213,7 +1213,7 @@ class XLNetEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model_with_hub_fallback(
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
                 XLNetModel, pretrained_model_name_or_path, **pretrained_kwargs
             )
         else:
@@ -1315,7 +1315,7 @@ class DistilBERTEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model_with_hub_fallback(
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
                 DistilBertModel, pretrained_model_name_or_path, **pretrained_kwargs
             )
         else:
@@ -1421,7 +1421,7 @@ class CTRLEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model_with_hub_fallback(
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
                 CTRLModel, pretrained_model_name_or_path, **pretrained_kwargs
             )
             self.vocab_size = transformer.config.vocab_size
@@ -1530,7 +1530,7 @@ class CamemBERTEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model_with_hub_fallback(
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
                 CamembertModel, pretrained_model_name_or_path, **pretrained_kwargs
             )
         else:
@@ -1640,7 +1640,7 @@ class T5Encoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model_with_hub_fallback(
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
                 T5Model, pretrained_model_name_or_path, **pretrained_kwargs
             )
         else:
@@ -1773,7 +1773,7 @@ class FlauBERTEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model_with_hub_fallback(
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
                 FlaubertModel, pretrained_model_name_or_path, **pretrained_kwargs
             )
         else:
@@ -1886,7 +1886,7 @@ class ELECTRAEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model_with_hub_fallback(
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
                 ElectraModel, pretrained_model_name_or_path, **pretrained_kwargs
             )
         else:
@@ -1975,7 +1975,7 @@ class LongformerEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model_with_hub_fallback(
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
                 LongformerModel, pretrained_model_name_or_path, **pretrained_kwargs
             )
         else:
@@ -2055,7 +2055,7 @@ class AutoTransformerEncoder(HFTextEncoder):
         from transformers import AutoModel
 
         pretrained_kwargs = pretrained_kwargs or {}
-        transformer = load_pretrained_hf_model_with_hub_fallback(
+        transformer, _ = load_pretrained_hf_model_with_hub_fallback(
             AutoModel, pretrained_model_name_or_path, **pretrained_kwargs
         )
         self._maybe_resize_token_embeddings(transformer, vocab_size)
