@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 @default_retry()
-def _load_pretrained_hf_model(
+def load_pretrained_hf_model_from_hub(
     model_class: Type,
     pretrained_model_name_or_path: Optional[Union[str, PathLike]],
     **pretrained_kwargs,
@@ -106,4 +106,4 @@ def load_pretrained_hf_model_with_hub_fallback(
                 )
 
     # Fallback to HF hub.
-    return _load_pretrained_hf_model(model_class, pretrained_model_name_or_path, **pretrained_kwargs), True
+    return load_pretrained_hf_model_from_hub(model_class, pretrained_model_name_or_path, **pretrained_kwargs), True
