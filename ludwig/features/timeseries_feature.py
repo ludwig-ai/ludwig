@@ -51,6 +51,9 @@ def create_time_delay_embedding(
     Returns:
         A column of timeseries window arrays in row-major format for training.
     """
+    # Replace default fill value of "" with nan as we will be assuming numeric values here
+    series = series.replace("", np.nan)
+
     # Create the list of shifts we want to perform over the series.
     # For backwards looking shifts, we want to include the current element, while for forward looking shifts we do not.
     # Example:
@@ -163,16 +166,12 @@ class TimeseriesFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def build_matrix(timeseries, tokenizer_name, length_limit, padding_value, padding, backend):
-        if tokenizer_name:
-            tokenizer = get_tokenizer_from_registry(tokenizer_name)()
-            timeseries = backend.df_engine.map_objects(
-                timeseries, lambda ts: np.array(tokenizer(ts)).astype(np.float32)
-            )
+        tokenizer = get_tokenizer_from_registry(tokenizer_name)()
+        timeseries = backend.df_engine.map_objects(timeseries, lambda ts: np.array(tokenizer(ts)).astype(np.float32))
 
-            max_length = backend.df_engine.compute(timeseries.map(len).max())
-            if max_length < length_limit:
-                logger.debug(f"max length of {tokenizer_name}: {max_length} < limit: {length_limit}")
-
+        max_length = backend.df_engine.compute(timeseries.map(len).max())
+        if max_length < length_limit:
+            logger.debug(f"max length of {tokenizer_name}: {max_length} < limit: {length_limit}")
         max_length = length_limit
 
         def pad(vector):
@@ -188,21 +187,17 @@ class TimeseriesFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def feature_data(column, metadata, preprocessing_parameters: PreprocessingConfigDict, backend):
-        tokenizer = preprocessing_parameters["tokenizer"]
         padding_value = preprocessing_parameters["padding_value"]
 
         window_size = preprocessing_parameters.get("window_size", 0)
         horizon = preprocessing_parameters.get("horizon", 0)
         if window_size > 0 or horizon > 0:
             # Column-major data. Convert the column into the row-major embedding
-            column = create_time_delay_embedding(column, window_size, horizon, padding_value, backend)
-
-            # Tokenization already performed when creating the embedding
-            tokenizer = None
+            return create_time_delay_embedding(column, window_size, horizon, padding_value, backend)
 
         timeseries_data = TimeseriesFeatureMixin.build_matrix(
             column,
-            tokenizer,
+            preprocessing_parameters["tokenizer"],
             metadata["max_timeseries_length"],
             padding_value,
             preprocessing_parameters["padding"],
