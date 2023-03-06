@@ -52,8 +52,8 @@ class TimeseriesInputFeatureConfig(BaseInputFeatureConfig, TimeseriesInputFeatur
 @output_mixin_registry.register(TIMESERIES)
 @ludwig_dataclass
 class TimeseriesOutputFeatureConfigMixin(BaseMarshmallowConfig):
-    """TimeseriesOutputFeatureConfigMixin configures the parameters used in both the timeseries output
-    feature and the timeseries global defaults section of the Ludwig Config."""
+    """TimeseriesOutputFeatureConfigMixin configures the parameters used in both the timeseries output feature and
+    the timeseries global defaults section of the Ludwig Config."""
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
         feature_type=TIMESERIES,
