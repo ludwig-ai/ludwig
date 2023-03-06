@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 @default_retry()
 def _load_pretrained_hf_model(
-    modelClass: Type,
+    model_class: Type,
     pretrained_model_name_or_path: Optional[Union[str, PathLike]],
     **pretrained_kwargs,
 ) -> PreTrainedModel:
@@ -24,13 +24,13 @@ def _load_pretrained_hf_model(
 
     Downloads a model from the HuggingFace zoo with retry on failure.
     Args:
-        modelClass: Class of the model to download.
+        model_class: Class of the model to download.
         pretrained_model_name_or_path: Name of the model to download.
         pretrained_kwargs: Additional arguments to pass to the model constructor.
     Returns:
         The pretrained model object.
     """
-    return modelClass.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
+    return model_class.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
 
 
 @default_retry()
@@ -49,19 +49,19 @@ def load_pretrained_hf_tokenizer(
 
 
 def _load_pretrained_hf_model_from_dir(
-    modelClass: Type,
+    model_class: Type,
     pretrained_model_name_or_path: Optional[Union[str, PathLike]],
     **pretrained_kwargs,
 ):
     """Downloads a model to a local temporary directory, and Loads a pretrained HF model from a local directory."""
     with tempfile.TemporaryDirectory() as tmpdir:
         download(pretrained_model_name_or_path, tmpdir)
-        return modelClass.from_pretrained(tmpdir, **pretrained_kwargs)
+        return model_class.from_pretrained(tmpdir, **pretrained_kwargs)
 
 
 @DeveloperAPI
 def load_pretrained_hf_model_with_hub_fallback(
-    modelClass: Type,
+    model_class: Type,
     pretrained_model_name_or_path: Optional[Union[str, PathLike]],
     **pretrained_kwargs,
 ) -> Tuple[PreTrainedModel, bool]:
@@ -71,8 +71,8 @@ def load_pretrained_hf_model_with_hub_fallback(
     directory, falling back to downloading from the HF hub if the model is not found, downloading fails, or if model
     initialization fails.
 
-    If `LUDWIG_PRETRAINED_MODELS_DIR` is an s3 path (starts with `s3://`), we download weights to a local temporary
-    directory, and load the model from there.
+    `LUDWIG_PRETRAINED_MODELS_DIR` can be an s3 path. Weights are copied to a local temporary directory, and the model
+    is loaded from there.
 
     The expected structure of the `LUDWIG_PRETRAINED_MODELS_DIR` directory is:
         {LUDWIG_PRETRAINED_MODELS_DIR}/{pretrained_model_name_or_path}/pytorch_model.bin
@@ -80,8 +80,9 @@ def load_pretrained_hf_model_with_hub_fallback(
 
     For example, if `LUDWIG_PRETRAINED_MODELS_DIR` is set to `s3://my-bucket/pretrained-models`, and
     `pretrained_model_name_or_path` is set to `bert-base-uncased`, we expect to find the following files:
-        s3://my-bucket/pretrained-models/bert-base-uncased/pytorch_model.bin
-        s3://my-bucket/pretrained-models/bert-base-uncased/config.json
+        s3://my-bucket/bert-base-uncased/
+            - pytorch_model.bin
+            - config.json
 
     If the `LUDWIG_PRETRAINED_MODELS_DIR` environment variable is not set, we download the model from the HF hub.
     """
@@ -94,7 +95,10 @@ def load_pretrained_hf_model_with_hub_fallback(
                     f"Found existing pretrained model artifact {pretrained_model_name_or_path} in directory "
                     f"{pretrained_models_dir}. Downloading."
                 )
-                return _load_pretrained_hf_model_from_dir(modelClass, pretrained_model_path, **pretrained_kwargs), False
+                return (
+                    _load_pretrained_hf_model_from_dir(model_class, pretrained_model_path, **pretrained_kwargs),
+                    False,
+                )
             except Exception as e:
                 logger.warning(
                     f"Failed to download pretrained model from {pretrained_models_dir} with error {e}. "
@@ -102,4 +106,4 @@ def load_pretrained_hf_model_with_hub_fallback(
                 )
 
     # Fallback to HF hub.
-    return _load_pretrained_hf_model(modelClass, pretrained_model_name_or_path, **pretrained_kwargs), True
+    return _load_pretrained_hf_model(model_class, pretrained_model_name_or_path, **pretrained_kwargs), True
