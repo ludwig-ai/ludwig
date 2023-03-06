@@ -28,10 +28,11 @@ class SequencePreprocessingConfig(BasePreprocessingConfig):
     )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
-        default=256,
-        allow_none=False,
+        default=None,
+        allow_none=True,
         description="The maximum length (number of tokens) of the text. Texts that are longer than this value will be "
-        "truncated, while texts that are shorter will be padded.",
+        "truncated, while texts that are shorter will be padded. If None, max sequence length will be inferred from "
+        "the training dataset.",
         parameter_metadata=FEATURE_METADATA[SEQUENCE][PREPROCESSING]["max_sequence_length"],
     )
 
@@ -123,10 +124,11 @@ class SequenceOutputPreprocessingConfig(SequencePreprocessingConfig):
     )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
-        default=256,
-        allow_none=False,
+        default=None,
+        allow_none=True,
         description="The maximum length (number of tokens) of the text. Texts that are longer than this value will be "
-        "truncated, while texts that are shorter will be padded.",
+        "truncated, while texts that are shorter will be padded. If None, max sequence length will be inferred from "
+        "the training dataset.",
         parameter_metadata=FEATURE_METADATA[SEQUENCE][PREPROCESSING]["max_sequence_length"],
     )
 
