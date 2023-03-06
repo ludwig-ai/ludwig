@@ -41,13 +41,13 @@ class H3EmbedConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["H3Embed"]["use_bias"],
     )
 
-    bias_initializer: str = schema_utils.InitializerOptions(
+    bias_initializer: str = schema_utils.InitializerOrDict(
         default="zeros",
         description="Initializer to use for the bias vector.",
         parameter_metadata=ENCODER_METADATA["H3Embed"]["bias_initializer"],
     )
 
-    weights_initializer: str = schema_utils.InitializerOptions(
+    weights_initializer: str = schema_utils.InitializerOrDict(
         description="Initializer to use for the weights matrix.",
         parameter_metadata=ENCODER_METADATA["H3Embed"]["weights_initializer"],
     )
@@ -138,13 +138,13 @@ class H3WeightedSumConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["H3WeightedSum"]["use_bias"],
     )
 
-    bias_initializer: str = schema_utils.InitializerOptions(
+    bias_initializer: str = schema_utils.InitializerOrDict(
         default="zeros",
         description="Initializer to use for the bias vector.",
         parameter_metadata=ENCODER_METADATA["H3WeightedSum"]["bias_initializer"],
     )
 
-    weights_initializer: str = schema_utils.InitializerOptions(
+    weights_initializer: str = schema_utils.InitializerOrDict(
         description="Initializer to use for the weights matrix.",
         parameter_metadata=ENCODER_METADATA["H3WeightedSum"]["weights_initializer"],
     )
@@ -280,18 +280,18 @@ class H3RNNConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["H3RNN"]["unit_forget_bias"],
     )
 
-    bias_initializer: str = schema_utils.InitializerOptions(
+    bias_initializer: str = schema_utils.InitializerOrDict(
         default="zeros",
         description="Initializer to use for the bias vector.",
         parameter_metadata=ENCODER_METADATA["H3RNN"]["bias_initializer"],
     )
 
-    weights_initializer: str = schema_utils.InitializerOptions(
+    weights_initializer: str = schema_utils.InitializerOrDict(
         description="Initializer to use for the weights matrix.",
         parameter_metadata=ENCODER_METADATA["H3RNN"]["weights_initializer"],
     )
 
-    recurrent_initializer: str = schema_utils.InitializerOptions(
+    recurrent_initializer: str = schema_utils.InitializerOrDict(
         default="orthogonal",
         description="The initializer for recurrent matrix weights",
         parameter_metadata=ENCODER_METADATA["H3RNN"]["recurrent_initializer"],

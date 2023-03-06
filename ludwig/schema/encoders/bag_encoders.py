@@ -100,13 +100,13 @@ class BagEmbedWeightedConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["BagEmbedWeighted"]["use_bias"],
     )
 
-    bias_initializer: str = schema_utils.InitializerOptions(
+    bias_initializer: str = schema_utils.InitializerOrDict(
         default="zeros",
         description="Initializer to use for the bias vector.",
         parameter_metadata=ENCODER_METADATA["BagEmbedWeighted"]["bias_initializer"],
     )
 
-    weights_initializer: str = schema_utils.InitializerOptions(
+    weights_initializer: str = schema_utils.InitializerOrDict(
         description="Initializer to use for the weights matrix.",
         parameter_metadata=ENCODER_METADATA["BagEmbedWeighted"]["weights_initializer"],
     )

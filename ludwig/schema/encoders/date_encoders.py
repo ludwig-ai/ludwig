@@ -41,13 +41,13 @@ class DateEmbedConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["DateEmbed"]["use_bias"],
     )
 
-    bias_initializer: str = schema_utils.InitializerOptions(
+    bias_initializer: str = schema_utils.InitializerOrDict(
         default="zeros",
         description="Initializer to use for the bias vector.",
         parameter_metadata=ENCODER_METADATA["DateEmbed"]["bias_initializer"],
     )
 
-    weights_initializer: str = schema_utils.InitializerOptions(
+    weights_initializer: str = schema_utils.InitializerOrDict(
         description="Initializer to use for the weights matrix.",
         parameter_metadata=ENCODER_METADATA["DateEmbed"]["weights_initializer"],
     )
@@ -132,13 +132,13 @@ class DateWaveConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["DateWave"]["use_bias"],
     )
 
-    bias_initializer: str = schema_utils.InitializerOptions(
+    bias_initializer: str = schema_utils.InitializerOrDict(
         default="zeros",
         description="Initializer to use for the bias vector.",
         parameter_metadata=ENCODER_METADATA["DateWave"]["bias_initializer"],
     )
 
-    weights_initializer: str = schema_utils.InitializerOptions(
+    weights_initializer: str = schema_utils.InitializerOrDict(
         description="Initializer to use for the weights matrix.",
         parameter_metadata=ENCODER_METADATA["DateWave"]["weights_initializer"],
     )

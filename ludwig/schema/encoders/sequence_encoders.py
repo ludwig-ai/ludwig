@@ -559,7 +559,7 @@ class StackedRNNConfig(SequenceEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedRNN"]["unit_forget_bias"],
     )
 
-    recurrent_initializer: str = schema_utils.InitializerOptions(
+    recurrent_initializer: str = schema_utils.InitializerOrDict(
         default="orthogonal",
         description="The initializer for recurrent matrix weights",
         parameter_metadata=ENCODER_METADATA["StackedRNN"]["recurrent_initializer"],
@@ -750,7 +750,7 @@ class StackedCNNRNNConfig(SequenceEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["unit_forget_bias"],
     )
 
-    recurrent_initializer: str = schema_utils.InitializerOptions(
+    recurrent_initializer: str = schema_utils.InitializerOrDict(
         default="orthogonal",
         description="The initializer for recurrent matrix weights",
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["recurrent_initializer"],

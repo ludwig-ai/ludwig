@@ -54,13 +54,13 @@ class SetSparseEncoderConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["SetSparseEncoder"]["use_bias"],
     )
 
-    bias_initializer: str = schema_utils.InitializerOptions(
+    bias_initializer: str = schema_utils.InitializerOrDict(
         default="zeros",
         description="Initializer to use for the bias vector.",
         parameter_metadata=ENCODER_METADATA["SetSparseEncoder"]["bias_initializer"],
     )
 
-    weights_initializer: str = schema_utils.InitializerOptions(
+    weights_initializer: str = schema_utils.InitializerOrDict(
         description="Initializer to use for the weights matrix.",
         parameter_metadata=ENCODER_METADATA["SetSparseEncoder"]["weights_initializer"],
     )

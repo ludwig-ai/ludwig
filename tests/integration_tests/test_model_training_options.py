@@ -181,15 +181,11 @@ def test_resume_training(optimizer, tmp_path):
     # compare learning curves with and without resuming
     ts1 = load_json(os.path.join(output_dir1, "training_statistics.json"))
     ts2 = load_json(os.path.join(output_dir2, "training_statistics.json"))
-    print("ts1", ts1)
-    print("ts2", ts2)
     assert ts1[TRAINING]["combined"]["loss"] == ts2[TRAINING]["combined"]["loss"]
 
     # compare predictions with and without resuming
     y_pred1 = np.load(os.path.join(output_dir1, "y_predictions.npy"))
     y_pred2 = np.load(os.path.join(output_dir2, "y_predictions.npy"))
-    print("y_pred1", y_pred1)
-    print("y_pred2", y_pred2)
     assert np.all(np.isclose(y_pred1, y_pred2))
 
 
