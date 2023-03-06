@@ -394,6 +394,12 @@ def save_json(data_fp, data, sort_keys=True, indent=4):
 
 @DeveloperAPI
 def hash_dict(d: dict, max_length: Union[int, None] = 6) -> bytes:
+    """Function that maps a dictionary into a unique hash.
+
+    Known limitation: All values and keys of the dict must have an ordering. If not, there's no guarantee to obtain the
+    same hash. For instance, values that are sets will potentially lead to different hashed when run on different
+    machines or in different python sessions. Replacing them with  sorted lists is suggested.
+    """
     s = json.dumps(d, cls=NumpyEncoder, sort_keys=True, ensure_ascii=True)
     h = hashlib.md5(s.encode())
     d = h.digest()

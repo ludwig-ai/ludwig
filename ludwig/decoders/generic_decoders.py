@@ -19,7 +19,7 @@ from functools import partial
 import torch
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import BINARY, CATEGORY, LOSS, NUMBER, SEQUENCE, SET, TEXT, TYPE, VECTOR
+from ludwig.constants import BINARY, CATEGORY, LOSS, NUMBER, SET, TYPE, VECTOR
 from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
 from ludwig.schema.decoders.base import ClassifierConfig, PassthroughDecoderConfig, ProjectorConfig, RegressorConfig
@@ -29,7 +29,8 @@ logger = logging.getLogger(__name__)
 
 
 @DeveloperAPI
-@register_decoder("passthrough", [BINARY, CATEGORY, NUMBER, SET, VECTOR, SEQUENCE, TEXT])
+# TODO(Arnav): Re-enable once we add DotProduct Combiner: https://github.com/ludwig-ai/ludwig/issues/3150
+# @register_decoder("passthrough", [BINARY, CATEGORY, NUMBER, SET, VECTOR, SEQUENCE, TEXT])
 class PassthroughDecoder(Decoder):
     def __init__(self, input_size: int = 1, num_classes: int = None, decoder_config=None, **kwargs):
         super().__init__()

@@ -13,37 +13,76 @@
 # limitations under the License.
 # ==============================================================================
 
-"""All contrib classes must have the following methods:
+"""All contrib classes must implement the `ludwig.callbacks.Callback` interface.
 
-- import_call: Run on import.
-
-Contrib classes can have the following methods:
-
-- train: Run on train.
-
-- visualize: Run on visualize.
-
-- visualize_figure: Run when a figure is shown.
-
-- experiment: Run on experiment.
-
-- predict: Run on predict.
-
-If you don't want to handle the call, either provide an empty
-method with `pass`, or just don't implement the method.
+If you don't want to handle the call, either provide an empty method with `pass`, or just don't implement the method.
 """
 
-from .aim import AimCallback
+from abc import ABC, abstractmethod
 
-# Contributors, import your class here:
-from .comet import CometCallback
-from .mlflow import MlflowCallback
-from .wandb import WandbCallback
+from ludwig.callbacks import Callback
+
+
+class ContribLoader(ABC):
+    @abstractmethod
+    def load(self) -> Callback:
+        """Returns an instantiation of the callback instance, whose callback hooks will be invoked at runtime."""
+        pass
+
+    def preload(self):
+        """Will always be called when Ludwig CLI is invoked, preload gives the callback an opportunity to import or
+        create any shared resources.
+
+        Importing required 3rd-party libraries should be done here i.e. import wandb. preload is guaranteed to be called
+        before any other callback method, and will only be called once per process.
+        """
+        pass
+
+
+# Contributors, load your class here:
+
+
+class AimLoader(ContribLoader):
+    def load(self) -> Callback:
+        from ludwig.contribs.aim import AimCallback
+
+        return AimCallback()
+
+    def preload(self):
+        import aim  # noqa
+
+
+class CometLoader(ContribLoader):
+    def load(self) -> Callback:
+        from ludwig.contribs.comet import CometCallback
+
+        return CometCallback()
+
+    def preload(self):
+        import comet_ml  # noqa
+
+
+class WandbLoader(ContribLoader):
+    def load(self) -> Callback:
+        from ludwig.contribs.wandb import WandbCallback
+
+        return WandbCallback()
+
+    def preload(self):
+        import wandb  # noqa
+
+
+class MlflowLoader(ContribLoader):
+    def load(self) -> Callback:
+        from ludwig.contribs.mlflow import MlflowCallback
+
+        return MlflowCallback()
+
 
 contrib_registry = {
     # Contributors, add your class here:
-    "comet": CometCallback,
-    "wandb": WandbCallback,
-    "mlflow": MlflowCallback,
-    "aim": AimCallback,
+    "comet": CometLoader(),
+    "wandb": WandbLoader(),
+    "mlflow": MlflowLoader(),
+    "aim": AimLoader(),
 }

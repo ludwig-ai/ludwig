@@ -103,7 +103,3 @@ class AimCallback(Callback):
     def normalize_config(config):
         """Convert to json string and back again to remove numpy types."""
         return json.loads(json.dumps(config, cls=NumpyEncoder))
-
-    @staticmethod
-    def preload():
-        import aim  # noqa
