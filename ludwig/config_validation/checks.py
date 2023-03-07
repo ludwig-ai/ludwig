@@ -371,3 +371,38 @@ def check_stacked_transformer_requirements(config: "ModelConfig") -> None:  # no
                 f"Input feature {input_feature.name} transformer encoder requires encoder.hidden_size to be divisible "
                 f"by encoder.num_heads. Found hidden_size {encoder.hidden_size} and num_heads {encoder.num_heads}."
             )
+
+
+@register_config_check
+def check_tagger_decoder_requirements(config: "ModelConfig") -> None:  # noqa: F821
+    """Checks that the tagger decoder has at least one sequence, text or timeseries input feature
+    where the encoder's reduce_output will produce a b x s x h shaped output from the combiner,
+    or that there is a sequence-based combiner being used."""
+    # Check if there is a text output feature using a tagger decoder
+    text_output_feature_with_tagger_decoder = False
+    for output_feature in config.output_features:
+        if output_feature.type == TEXT and output_feature.decoder.type == "tagger":
+            text_output_feature_with_tagger_decoder = True
+
+    if not text_output_feature_with_tagger_decoder:
+        return
+
+    # Check if a sequence based combiner is being used
+    for combiner in config.combiner:
+        if combiner.type in {"sequence_concat", "sequence"}:
+            return
+
+    # Check if there is at least one sequence, text or timeseries input feature with encoder.reduce_output=None
+    one_feature_with_reduce_output_none = False
+    has_sequence_feature = False
+    for input_feature in config.input_features:
+        if input_feature.type in {SEQUENCE, TEXT, TIMESERIES}:
+            has_sequence_feature = True
+            if input_feature.encoder.reduce_output is None:
+                return  # valid config
+
+    if has_sequence_feature and not one_feature_with_reduce_output_none:
+        raise ConfigValidationError(
+            "Tagger decoder requires at least one text, sequence or timeseries input feature with "
+            "encoder.reduce_output=None."
+        )

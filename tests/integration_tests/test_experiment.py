@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import contextlib
 import logging
 import os
 import shutil
@@ -842,12 +843,13 @@ def test_experiment_vector_feature_infer_size(csv_filename):
     run_experiment(input_features, output_features, dataset=rel_path)
 
 
-def test_experiment_text_output_feature_with_tagger_decoder(csv_filename):
-    # input_features = [category_feature(vocab_size=10), binary_feature()]
-    input_features = [text_feature(encoder={"reduce_output": None})]
+@pytest.mark.parametrize("reduce_output", [("sum"), (None)], ids=["sum", "none"])
+def test_experiment_text_output_feature_with_tagger_decoder(csv_filename, reduce_output):
+    input_features = [text_feature(encoder={"type": "parallel_cnn", "reduce_output": reduce_output})]
     output_features = [text_feature(decoder={"type": "tagger"})]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
 
-    run_experiment(input_features, output_features, dataset=rel_path)
+    with pytest.raises(ValueError) if reduce_output == "sum" else contextlib.nullcontext():
+        run_experiment(input_features, output_features, dataset=rel_path)
