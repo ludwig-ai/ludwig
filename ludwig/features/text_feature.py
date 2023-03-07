@@ -106,17 +106,29 @@ class TextFeatureMixin(BaseFeatureMixin):
             padding_symbol,
             unknown_symbol,
         ) = tf_meta
-        # Use max_sequence_length if provided, otherwise use max length found in dataset.
-        if preprocessing_parameters["max_sequence_length"] is not None:
-            logger.info("Using max_sequence_length provided in preprocessing parameters")
-            max_sequence_length = preprocessing_parameters["max_sequence_length"]
-            max_sequence_length_99ptile = max_sequence_length
+
+        # Use sequence_length if provided, otherwise use max length found in dataset.
+        if preprocessing_parameters["sequence_length"] is not None:
+            logger.info(
+                f"Setting max length to sequence_length={preprocessing_parameters['sequence_length']} provided in "
+                f"preprocessing parameters"
+            )
+            max_sequence_length = preprocessing_parameters["sequence_length"]
+            max_sequence_length_99ptile = preprocessing_parameters["sequence_length"]
         else:
-            logger.info("Inferring max_sequence_length from dataset")
             max_sequence_length = max_len + 2  # For start and stop symbols.
             max_sequence_length_99ptile = max_len_99ptile + 2  # For start and stop symbols.
-        logger.info(f"Using max sequence length of {max_sequence_length} for feature '{column.name}'")
+            logger.info(f"Setting max length using dataset: {max_sequence_length} (including start and stop symbols)")
 
+            if preprocessing_parameters["max_sequence_length"] < max_sequence_length:
+                logger.info(
+                    f"Truncating max length with max_sequence_length={preprocessing_parameters['max_sequence_length']} "
+                    f"from preprocessing parameters"
+                )
+                max_sequence_length = preprocessing_parameters["max_sequence_length"]
+                max_sequence_length_99ptile = min(max_len_99ptile, max_sequence_length)
+
+        logger.info(f"max sequence length is {max_sequence_length} for feature '{column.name}'")
         return {
             "idx2str": idx2str,
             "str2idx": str2idx,
