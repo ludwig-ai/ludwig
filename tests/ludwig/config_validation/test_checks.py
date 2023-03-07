@@ -11,6 +11,7 @@ import contextlib
 from typing import Any, Dict, Optional
 
 import pytest
+from marshmallow import ValidationError
 
 from ludwig.error import ConfigValidationError
 from ludwig.schema.model_types.base import ModelConfig
@@ -133,5 +134,5 @@ def test_dense_binary_encoder_1_layer():
         "output_features": [{"name": "y", "type": "number"}],
         "trainer": {"train_steps": 1},
     }
-    with pytest.raises(ConfigValidationError):
+    with pytest.raises(ValidationError):
         ModelConfig.from_dict(config)
