@@ -1,5 +1,5 @@
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import MEAN_SQUARED_ERROR, MODEL_ECD, TIMESERIES, VECTOR
+from ludwig.constants import HUBER, MEAN_SQUARED_ERROR, MODEL_ECD, TIMESERIES, VECTOR
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -62,7 +62,7 @@ class TimeseriesOutputFeatureConfigMixin(BaseMarshmallowConfig):
 
     loss: BaseLossConfig = LossDataclassField(
         feature_type=TIMESERIES,
-        default=MEAN_SQUARED_ERROR,
+        default=HUBER,
     )
 
 

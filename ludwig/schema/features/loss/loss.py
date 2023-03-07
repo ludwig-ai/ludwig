@@ -5,6 +5,7 @@ from ludwig.constants import (
     BINARY,
     BINARY_WEIGHTED_CROSS_ENTROPY,
     CATEGORY,
+    HUBER,
     MEAN_ABSOLUTE_ERROR,
     MEAN_SQUARED_ERROR,
     NUMBER,
@@ -361,3 +362,28 @@ class SigmoidCrossEntropyLossConfig(BaseLossConfig):
     @classmethod
     def name(self) -> str:
         return "Sigmoid Cross Entropy"
+
+
+@DeveloperAPI
+@register_loss([NUMBER, TIMESERIES, VECTOR])
+@ludwig_dataclass
+class HuberLossConfig(BaseLossConfig):
+    type: str = schema_utils.ProtectedString(
+        HUBER,
+        description="Type of loss.",
+    )
+
+    delta: float = schema_utils.NonNegativeFloat(
+        default=1.0,
+        description="Threshold at which to change between delta-scaled L1 and L2 loss.",
+    )
+
+    weight: float = schema_utils.NonNegativeFloat(
+        default=1.0,
+        description="Weight of the loss.",
+        parameter_metadata=LOSS_METADATA["MSELoss"]["weight"],
+    )
+
+    @classmethod
+    def name(self) -> str:
+        return "Huber Loss"

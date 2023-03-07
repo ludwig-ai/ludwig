@@ -20,12 +20,14 @@ import torch
 from torch import nn, Tensor
 from torch.nn import L1Loss
 from torch.nn import MSELoss as _MSELoss
+from torch.nn import HuberLoss as _HuberLoss
 
 import ludwig.utils.loss_utils as utils
 from ludwig.constants import (
     BINARY,
     BINARY_WEIGHTED_CROSS_ENTROPY,
     CATEGORY,
+    HUBER,
     LOGITS,
     NUMBER,
     SEQUENCE,
@@ -39,6 +41,7 @@ from ludwig.constants import (
 )
 from ludwig.schema.features.loss.loss import (
     BWCEWLossConfig,
+    HuberLossConfig,
     MAELossConfig,
     MSELossConfig,
     RMSELossConfig,
@@ -255,3 +258,15 @@ class SigmoidCrossEntropyLoss(nn.Module, LogitsInputsMixin):
     @staticmethod
     def get_schema_cls():
         return SigmoidCrossEntropyLossConfig
+
+
+@register_loss(HUBER, [NUMBER, TIMESERIES, VECTOR])
+class HuberLoss(_HuberLoss, LogitsInputsMixin):
+    """Huber loss."""
+
+    def __init__(self, delta: float = 1.0, **kwargs):
+        super().__init__(delta=delta)
+
+    @staticmethod
+    def get_schema_cls():
+        return HuberLossConfig
