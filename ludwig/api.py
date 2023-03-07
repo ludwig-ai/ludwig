@@ -60,7 +60,6 @@ from ludwig.data.preprocessing import load_metadata, preprocess_for_prediction, 
 from ludwig.datasets import load_dataset_uris
 from ludwig.features.feature_registries import update_config_with_metadata, update_config_with_model
 from ludwig.globals import (
-    FORECAST_PREDICTIONS_PARQUET_FILE_NAME,
     LUDWIG_VERSION,
     MODEL_HYPERPARAMETERS_FILE_NAME,
     set_disable_progressbar,
@@ -1078,6 +1077,7 @@ class LudwigModel:
         data_format: Optional[str] = None,
         horizon: int = 1,
         output_directory: Optional[str] = None,
+        output_format: str = "parquet",
     ) -> DataFrame:
         # TODO(travis): WIP
         dataset, _, _, _ = load_dataset_uris(dataset, None, None, None, self.backend)
@@ -1125,10 +1125,16 @@ class LudwigModel:
 
         if output_directory is not None:
             if self.backend.is_coordinator():
-                self.backend.df_engine.write_predictions(
-                    results_df, os.path.join(output_directory, FORECAST_PREDICTIONS_PARQUET_FILE_NAME)
-                )
-                logger.info(f"Saved to: {output_directory}")
+                # TODO(travis): generalize this to support any pandas output format
+                if output_format == "parquet":
+                    output_path = os.path.join(output_directory, "forecast.parquet")
+                    results_df.to_parquet(output_path)
+                elif output_format == "csv":
+                    output_path = os.path.join(output_directory, "forecast.csv")
+                    results_df.to_csv(output_path)
+                else:
+                    raise ValueError(f"`output_format` {output_format} not supported. Must be one of [parquet, csv]")
+                logger.info(f"Saved to: {output_path}")
 
         return results_df
 

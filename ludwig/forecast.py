@@ -21,6 +21,7 @@ def forecast_cli(
     data_format: Optional[str] = None,
     horizon: int = 1,
     output_directory: Optional[str] = None,
+    output_format: str = "parquet",
     callbacks: List[Callback] = None,
     backend: Union[Backend, str] = None,
     logging_level: int = logging.INFO,
@@ -38,6 +39,7 @@ def forecast_cli(
     :param horizon: How many samples into the future to forecast.
     :param output_directory: (str, default: `'results'`) the directory that
         will contain the forecasted values.
+    :param output_format: (str) format of the output dataset.
     :param callbacks: (list, default: `None`) a list of
         `ludwig.callbacks.Callback` objects that provide hooks into the
         Ludwig pipeline.
@@ -60,6 +62,7 @@ def forecast_cli(
         data_format=data_format,
         horizon=horizon,
         output_directory=output_directory,
+        output_format=output_format,
     )
 
 
@@ -112,6 +115,17 @@ def cli(sys_argv):
     # -------------------------
     parser.add_argument(
         "-od", "--output_directory", type=str, default="results", help="directory that contains the results"
+    )
+
+    parser.add_argument(
+        "-of",
+        "--output_format",
+        help="format to write the output dataset",
+        default="parquet",
+        choices=[
+            "csv",
+            "parquet",
+        ],
     )
 
     parser.add_argument(
