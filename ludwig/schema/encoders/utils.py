@@ -96,7 +96,6 @@ def EncoderDataclassField(
     Returns: Initialized dataclass field that converts an untyped dict with params to an encoder config.
     """
     encoder_registry = get_encoder_classes(model_type, feature_type)
-    encoder_names = list(set(encoder_registry.keys()) - set(blocklist))
 
     class EncoderSelection(schema_utils.TypeSelection):
         def __init__(self):
@@ -111,7 +110,7 @@ def EncoderDataclassField(
                 "properties": {
                     "type": {
                         "type": "string",
-                        "enum": encoder_names,
+                        "enum": list(set(encoder_registry.keys()) - set(blocklist)),
                         "enumDescriptions": get_encoder_descriptions(model_type, feature_type),
                         "default": default,
                     },
