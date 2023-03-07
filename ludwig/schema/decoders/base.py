@@ -85,7 +85,7 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
 
 @DeveloperAPI
-@register_decoder_config("passthrough", [BINARY, CATEGORY, NUMBER, SET, VECTOR, SEQUENCE, TEXT])
+@register_decoder_config("passthrough", [BINARY, CATEGORY, SET, VECTOR, SEQUENCE, TEXT])
 @ludwig_dataclass
 class PassthroughDecoderConfig(BaseDecoderConfig):
     """PassthroughDecoderConfig is a dataclass that configures the parameters used for a passthrough decoder."""

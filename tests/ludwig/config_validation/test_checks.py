@@ -17,6 +17,23 @@ from ludwig.schema.model_types.base import ModelConfig
 from tests.integration_tests.utils import binary_feature, text_feature
 
 
+def test_passthrough_number_decoder():
+    config = {
+        "defaults": {"number": {"decoder": {"fc_norm": None, "fc_output_size": 10, "type": "passthrough"}}},
+        "input_features": [
+            {"name": "MSSubClass", "type": "category"},
+            {"name": "MSZoning", "type": "category"},
+            {"name": "Street", "type": "category"},
+            {"name": "Neighborhood", "type": "category"},
+        ],
+        "model_type": "ecd",
+        "output_features": [{"name": "SalePrice", "type": "number", "decoder": {"type": "passthrough"}}],
+        "trainer": {"train_steps": 1},
+    }
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+
 def test_sequence_combiner_with_embed_encoder():
     config = {
         "combiner": {
