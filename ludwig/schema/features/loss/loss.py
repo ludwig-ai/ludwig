@@ -373,8 +373,10 @@ class HuberLossConfig(BaseLossConfig):
         description="Type of loss.",
     )
 
-    delta: float = schema_utils.NonNegativeFloat(
+    delta: float = schema_utils.FloatRange(
         default=1.0,
+        min=0,
+        min_inclusive=False,
         description="Threshold at which to change between delta-scaled L1 and L2 loss.",
     )
 

@@ -1,4 +1,6 @@
-from typing import Optional
+import contextlib
+from typing import Optional, Type, Union
+from marshmallow import ValidationError
 
 import pytest
 import torch
@@ -90,3 +92,24 @@ def test_softmax_cross_entropy_loss(preds: torch.Tensor, target: torch.Tensor, o
 def test_sigmoid_cross_entropy_loss(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor):
     loss = loss_modules.SigmoidCrossEntropyLoss()
     assert torch.isclose(loss(preds, target), output)
+
+
+@pytest.mark.parametrize(
+    "delta,output",
+    [
+        (1.0, from_float(5.5000)),
+        (0.5, from_float(2.8750)),
+        (2.0, from_float(10.0)),
+        (0.0, ValidationError),
+    ],
+)
+@pytest.mark.parametrize("preds", [torch.arange(6).reshape(3, 2).float()])
+@pytest.mark.parametrize("target", [torch.arange(6, 12).reshape(3, 2).float()])
+def test_huber_loss(
+    preds: torch.Tensor, target: torch.Tensor, delta: float, output: Union[torch.Tensor, Type[Exception]]
+):
+    with pytest.raises(output) if not isinstance(output, torch.Tensor) else contextlib.nullcontext():
+        config = loss_modules.HuberLoss.get_schema_cls().from_dict({"delta": delta})
+        loss = loss_modules.HuberLoss(**config.to_dict())
+        value = loss(preds, target)
+        assert value == output
