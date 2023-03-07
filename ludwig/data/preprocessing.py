@@ -1685,7 +1685,7 @@ def load_metadata(metadata_file_path: str) -> TrainingSetMetadataDict:
 
 def drop_extra_cols(features, dfs):
     retain_cols = list({feature[PROC_COLUMN]: True for feature in features}.keys())
-    return tuple(df[retain_cols] for df in dfs)
+    return tuple(df[retain_cols] if df is not None else df for df in dfs)
 
 
 def preprocess_for_training(
