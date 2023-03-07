@@ -261,10 +261,10 @@ def check_comparator_combiner_requirements(config: "ModelConfig") -> None:  # no
     """Checks that all of the feature names for entity_1 and entity_2 are valid features."""
     if config.model_type != MODEL_ECD:
         return
-    if config.combiner != "comparator":
+    if config.combiner.type != "comparator":
         return
 
-    input_feature_names = {input_feature.name for input_feature in config.input_features}
+    input_feature_names = [input_feature.name for input_feature in config.input_features]
     for feature_name in config.combiner.entity_1:
         if feature_name not in input_feature_names:
             raise ConfigValidationError(
@@ -275,6 +275,9 @@ def check_comparator_combiner_requirements(config: "ModelConfig") -> None:  # no
             raise ConfigValidationError(
                 f"Feature {feature_name} in entity_2 for the comparator combiner is not a valid " "input feature name."
             )
+
+    if sorted(config.combiner.entity_1 + config.combiner.entity_2) != sorted(input_feature_names):
+        raise ConfigValidationError("Not all input features are present as entities in the comparator combiner.")
 
 
 @register_config_check

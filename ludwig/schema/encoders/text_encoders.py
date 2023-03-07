@@ -16,7 +16,7 @@ class HFEncoderConfig(SequenceEncoderConfig):
     pretrained_model_name_or_path: str
     reduce_output: str
 
-    def get_fixed_preprocessing_params(self) -> Dict[str, Any]:
+    def get_fixed_preprocessing_params(self, model_type: str) -> Dict[str, Any]:
         model_name = self.pretrained_model_name_or_path
         if model_name is None and self.use_pretrained:
             # no default model name, so model name is required by the subclass

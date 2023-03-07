@@ -23,7 +23,7 @@ class BaseEncoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
         parameter_metadata=ENCODER_METADATA["BaseEncoder"]["skip"],
     )
 
-    def get_fixed_preprocessing_params(self) -> Dict[str, Any]:
+    def get_fixed_preprocessing_params(self, model_type: str) -> Dict[str, Any]:
         return {}
 
     def is_pretrained(self) -> bool:

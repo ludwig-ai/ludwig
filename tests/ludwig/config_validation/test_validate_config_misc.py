@@ -259,8 +259,8 @@ def test_ecd_defaults_schema():
 def test_gbm_defaults_schema():
     schema = GBMDefaultsConfig()
     assert AUDIO not in schema.to_dict()
-    assert schema.category.encoder.dropout == 0.0
-    assert ENCODER in schema.category.to_dict()
+    assert schema.binary.preprocessing.missing_value_strategy == "fill_with_false"
+    assert PREPROCESSING in schema.binary.to_dict()
 
 
 def test_validate_defaults_schema():

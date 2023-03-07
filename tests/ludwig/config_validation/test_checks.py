@@ -17,6 +17,23 @@ from ludwig.schema.model_types.base import ModelConfig
 from tests.integration_tests.utils import binary_feature, text_feature
 
 
+def test_sequence_combiner_with_embed_encoder():
+    config = {
+        "combiner": {
+            "encoder": {"dropout": 0.1641014195584432, "embedding_size": 256, "type": "embed"},
+            "main_sequence_feature": None,
+            "type": "sequence",
+        },
+        "input_features": [{"encoder": {"reduce_output": None, "type": "embed"}, "name": "Text", "type": "text"}],
+        "model_type": "ecd",
+        "output_features": [{"name": "Category", "type": "category"}],
+        "preprocessing": {"sample_ratio": 0.05},
+        "trainer": {"train_steps": 1},
+    }
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+
 def test_balance_multiple_class_failure():
     config = {
         "input_features": [
@@ -29,6 +46,35 @@ def test_balance_multiple_class_failure():
             {"name": "Label2", "proc_column": "Label2", "type": "binary"},
         ],
         "preprocessing": {"oversample_minority": 0.2},
+    }
+
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+
+def test_all_features_present_in_comparator_entities():
+    config = {
+        "combiner": {
+            "dropout": 0.20198506770751617,
+            "entity_1": ["Age"],
+            "entity_2": ["Sex", "Pclass"],
+            "norm": "batch",
+            "num_fc_layers": 1,
+            "output_size": 256,
+            "type": "comparator",
+        },
+        "input_features": [
+            {"column": "Pclass", "name": "Pclass", "type": "category"},
+            {"column": "Sex", "name": "Sex", "type": "category"},
+            {"column": "Age", "name": "Age", "type": "number"},
+            {"column": "SibSp", "name": "SibSp", "type": "number"},
+            {"column": "Parch", "name": "Parch", "type": "number"},
+            {"column": "Fare", "name": "Fare", "type": "number"},
+            {"column": "Embarked", "name": "Embarked", "type": "category"},
+        ],
+        "model_type": "ecd",
+        "output_features": [{"column": "Survived", "name": "Survived", "type": "category"}],
+        "trainer": {"train_steps": 1},
     }
 
     with pytest.raises(ConfigValidationError):
