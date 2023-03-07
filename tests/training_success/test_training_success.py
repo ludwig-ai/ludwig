@@ -19,7 +19,13 @@ from ludwig.datasets import get_dataset
 from ludwig.types import ModelConfigDict
 
 
-def defaults_config_generator(feature_type, only_include) -> Tuple[ModelConfigDict, str]:
+def defaults_config_generator(feature_type: str, only_include: str) -> Tuple[ModelConfigDict, str]:
+    """Generate combinatorial configs for the defaults section of the Ludwig config.
+
+    Args:
+        feature_type: feature type to explore.
+        only_include: top-level parameter of the defaults sections that should be included.
+    """
     assert isinstance(only_include, str)
     assert only_include in {"preprocessing", "encoder", "decoder", "loss"}
 
@@ -33,7 +39,7 @@ def defaults_config_generator(feature_type, only_include) -> Tuple[ModelConfigDi
     if only_include in ["preprocessing", "encoder"]:
         config, dataset_name = feature_type_to_config_for_encoder_preprocessing[feature_type]
         config = yaml.safe_load(config)
-    else:
+    else:  # decoder and loss
         config, dataset_name = feature_type_to_config_for_decoder_loss[feature_type]
         config = yaml.safe_load(config)
 
@@ -49,6 +55,7 @@ def defaults_config_generator(feature_type, only_include) -> Tuple[ModelConfigDi
 
 
 def ecd_trainer_config_generator() -> Tuple[ModelConfigDict, str]:
+    """Generate combinatorial configs for the ECD trainer section of the Ludwig config."""
     schema = get_schema()
     properties = schema["properties"]
 
@@ -64,6 +71,11 @@ def ecd_trainer_config_generator() -> Tuple[ModelConfigDict, str]:
 
 
 def combiner_config_generator(combiner_type: str) -> Tuple[ModelConfigDict, str]:
+    """Generate combinatorial configs for the combiner section of the Ludwig config.
+
+    Args:
+        combiner_type: combiner type to explore.
+    """
     schema = get_schema()
     properties = schema["properties"]
 
@@ -80,7 +92,13 @@ def combiner_config_generator(combiner_type: str) -> Tuple[ModelConfigDict, str]
             yield config, dataset_name
 
 
-def train_and_evaluate(config, dataset_name):
+def train_and_evaluate(config: ModelConfigDict, dataset_name: str):
+    """Trains and evaluates a model with the given config.
+
+    Args:
+        config: valid Ludwig config.
+        dataset_name: Ludwig dataset name to train on.
+    """
     # adding print statements to be captured in pytest stdout and help debug tests.
     print("Dataset name:", dataset_name)
     print("Config used")

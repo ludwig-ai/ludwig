@@ -4,12 +4,17 @@ from collections import deque
 from typing import Any, Deque, Dict, List, Tuple, Union
 
 from ludwig.constants import SEQUENCE, TEXT, TIMESERIES
+from ludwig.schema.metadata.parameter_metadata import ExpectedImpact
 from ludwig.schema.model_types.base import ModelConfig
 from ludwig.types import ModelConfigDict
 from ludwig.utils.misc_utils import merge_dict
 
+ParameterBaseTypes = Union[str, float, int, bool, None]
 
-def explore_properties(properties: Dict[str, Any], parent_key: str, dq: Deque[Tuple], only_include=[]) -> Deque[Tuple]:
+
+def explore_properties(
+    properties: Dict[str, Any], parent_key: str, dq: Deque[Tuple], only_include=[]
+) -> Deque[Tuple[Dict, bool]]:
     """Recursively explores the `properties` part of any subsection of the schema.
 
     Params:
@@ -20,6 +25,19 @@ def explore_properties(properties: Dict[str, Any], parent_key: str, dq: Deque[Tu
             the rules set by the schema about this parameter. fully_explored is a boolean value indicating that
             all subsections of the properties dictionary have been explored.
         only_include: list of top level keys of the properties dictionary to skip.
+
+    Returns:
+        A deque of tuples.
+        Details:
+        - The second element of the tuple is whether we've explored this "config path"
+            fully. Parameters for a concat combiner are different from parameters for a TabNet combiner.
+            We refer to these as two config paths.
+        - The first element of the tuple contains a dictionary of config options, which maps from a ludwig
+            config parameter to a list of the values to be explored for that parameter. Here's an example:
+
+                trainer.batch_size: ["auto", 2, 43]
+                trainer.learning_rate: ["auto", 0.1, 0.00002, 0.32424]
+                ...
     """
     # processed_dq will contain complete config options with all the parameters in the properties dictionary
     # dq will contain configs options that are still being completed.
@@ -78,7 +96,19 @@ def explore_properties(properties: Dict[str, Any], parent_key: str, dq: Deque[Tu
     return processed_dq
 
 
-def explore_from_all_of(config_options: Dict[str, Any], item: Dict[str, Any], key_so_far: str):
+def merge_dq(config_options: Dict[str, Any], child_config_options_dq: Deque[Tuple]):
+    """Merge config_options with the child_config_options in the dq."""
+    dq = deque()
+    while child_config_options_dq:
+        child_config_options, visited = child_config_options_dq.popleft()
+        cfg = merge_dict(child_config_options, config_options)
+        dq.append((cfg, visited))
+    return dq
+
+
+def explore_from_all_of(
+    config_options: Dict[str, Any], item: Dict[str, Any], key_so_far: str
+) -> Deque[Tuple[Dict, bool]]:
     """Takes a child of `allOf` and calls `explore_properties` on it."""
     for key in item["if"]["properties"]:
         config_options[key_so_far + "." + key] = item["if"]["properties"][key]["const"]
@@ -87,7 +117,7 @@ def explore_from_all_of(config_options: Dict[str, Any], item: Dict[str, Any], ke
     return explore_properties(properties, parent_key=key_so_far, dq=raw_entry)
 
 
-def get_potential_values(item: Dict[str, Any]):
+def get_potential_values(item: Dict[str, Any]) -> List[Union[ParameterBaseTypes, List[ParameterBaseTypes]]]:
     """Returns a list of values to explore for a config parameter.
 
     Param:
@@ -95,11 +125,14 @@ def get_potential_values(item: Dict[str, Any]):
             parameter metadata, etc.
     """
     temp = []
+    # Case where we're using OneOf (e.g. to allow batch size 'auto' and integers)
     if isinstance(item["type"], list):
         for property_type in item["type"]:
             temp += handle_property_type(property_type, item)
     else:
         temp += handle_property_type(item["type"], item)
+
+    # Make sure values are unique. Not using set because some values are unhashable.
     unique_temp = []
     for temp_item in temp:
         if temp_item not in unique_temp:
@@ -107,15 +140,23 @@ def get_potential_values(item: Dict[str, Any]):
     return unique_temp
 
 
-def handle_property_type(property_type, item):
+def handle_property_type(
+    property_type: str, item: Dict[str, Any]
+) -> List[Union[ParameterBaseTypes, List[ParameterBaseTypes]]]:
+    """Return possible parameter values for a parameter type.
+
+    Args:
+        property_type: type of the parameter (e.g. array, number, etc.)
+        item: dictionary containing details on the parameter such as default, min and max values.
+    """
     # don't explore internal only parameters.
     if "parameter_metadata" in item and item["parameter_metadata"] and item["parameter_metadata"]["internal_only"]:
         return []
-    # don't explore parameters that have priority less than HIGH.
+    # don't explore parameters that have expected impact less than HIGH.
     if (
         "parameter_metadata" in item
         and item["parameter_metadata"]
-        and item["parameter_metadata"]["expected_impact"] < 3
+        and item["parameter_metadata"]["expected_impact"] < ExpectedImpact.HIGH
     ):
         return []
 
@@ -135,7 +176,13 @@ def handle_property_type(property_type, item):
         return []
 
 
-def explore_array(item):
+def explore_array(item: Dict[str, Any]) -> List[List[ParameterBaseTypes]]:
+    """Return possible parameter values for the `array` parameter type.
+
+    Args:
+        item: dictionary containing details on the parameter such as default, min and max values.
+    """
+
     candidates = []
     if "default" in item and item["default"]:
         candidates.append(item["default"])
@@ -147,8 +194,8 @@ def explore_array(item):
     if not isinstance(item["items"], list):
         return []
 
-    for it in item["items"]:
-        choices = handle_property_type(it["type"], it)
+    for item_of in item["items"]:
+        choices = handle_property_type(item_of["type"], item_of)
         maxlen = max(maxlen, len(choices))
         item_choices.append(choices)
 
@@ -161,8 +208,13 @@ def explore_array(item):
     return [list(tup) for tup in merged]
 
 
-def explore_number(item):
-    # add min and max rules
+def explore_number(item: Dict[str, Any]) -> List[ParameterBaseTypes]:
+    """Return possible parameter values for the `number` parameter type.
+
+    Args:
+        item: dictionary containing details on the parameter such as default, min and max values.
+    TODO(Wael): Improve logic.
+    """
     minimum, maximum = 0, 1
     if "default" not in item or item["default"] is None:
         candidates = []
@@ -178,8 +230,13 @@ def explore_number(item):
     return candidates + [random.random() * 0.99 * maximum]
 
 
-def explore_integer(item):
-    # add min and max rules
+def explore_integer(item: Dict[str, Any]) -> List[ParameterBaseTypes]:
+    """Return possible parameter values for the `integer` parameter type.
+
+    Args:
+        item: dictionary containing details on the parameter such as default, min and max values.
+    TODO(Wael): Improve logic.
+    """
     minimum, maximum = 0, 10
 
     if "default" not in item or item["default"] is None:
@@ -197,28 +254,26 @@ def explore_integer(item):
     return candidates + [random.randint(minimum, maximum)]
 
 
-def explore_string(item):
+def explore_string(item: Dict[str, Any]) -> List[ParameterBaseTypes]:
+    """Return possible parameter values for the `string` parameter type.
+
+    Args:
+        item: dictionary containing details on the parameter such as default, min and max values.
+    """
+
     if "enum" in item:
         return item["enum"]
     return [item["default"]]
 
 
-def explore_boolean():
+def explore_boolean() -> List[bool]:
+    """Return possible parameter values for the `boolean` parameter type (i.e. [True, False])"""
     return [True, False]
 
 
-def explore_null():
+def explore_null() -> List[None]:
+    """Return possible parameter values for the `null` parameter type (i.e. [None])"""
     return [None]
-
-
-def merge_dq(config_options: Dict[str, Any], child_config_options_dq: Deque[Tuple]):
-    """Merge config_options with the child_config_options in the dq."""
-    dq = deque()
-    while child_config_options_dq:
-        child_config_options, visited = child_config_options_dq.popleft()
-        cfg = merge_dict(child_config_options, config_options)
-        dq.append((cfg, visited))
-    return dq
 
 
 def generate_possible_configs(config_options: Dict[str, Any]):
@@ -226,6 +281,14 @@ def generate_possible_configs(config_options: Dict[str, Any]):
 
     This function does not take a cross product of all the options for all the config parameters. It selects parameter
     values independently from each other.
+
+    Args:
+        config_options: dictionary mapping from ludwig config parameter to all values to be explored.
+            Here's an example of what it could look like:
+
+                trainer.batch_size: ["auto", 2, 43]
+                trainer.learning_rate: ["auto", 0.1, 0.00002, 0.32424]
+                ...
     """
     num_configs = 1
     for key in config_options:
@@ -247,7 +310,16 @@ def create_nested_dict(flat_dict: Dict[str, Union[float, str]]) -> Dict[str, Any
     """Generate a nested dict out of a flat dict whose keys are delimited by a delimiter character.
 
     Params:
-        flat_dict: potential generated baseline config.
+        flat_dict: potential generated baseline config. Here's an example of what it could look like:
+
+            trainer.batch_size: 324
+            trainer.learning_rate: 0.0635
+
+        The expected output would be
+
+            trainer:
+                batch_size: 324
+                learning_rate: 0.0635
     """
 
     def to_nested_format(key: str, value: Union[str, int, float], delimiter: str = ".") -> Dict[str, Any]:
@@ -264,12 +336,17 @@ def create_nested_dict(flat_dict: Dict[str, Union[float, str]]) -> Dict[str, Any
 
 
 def combine_configs(
-    explored: Deque[Tuple], config: ModelConfigDict, dataset_name: str
+    explored: Deque[Tuple[Dict, bool]], config: ModelConfigDict, dataset_name: str
 ) -> List[Tuple[ModelConfigDict, str]]:
-    """Merge base config with explored sections."""
+    """Merge base config with explored sections.
+
+    Args:
+        explored: deque containing all the config options.
+        config: base Ludwig config to merge the explored configs with.
+    """
     ret = []
-    for item in explored:
-        for default_config in generate_possible_configs(config_options=item[0]):
+    for config_options, _ in explored:
+        for default_config in generate_possible_configs(config_options=config_options):
             default_config = create_nested_dict(default_config)
             merged_config = merge_dict(copy.deepcopy(config), default_config)
             try:
@@ -286,6 +363,10 @@ def combine_configs_for_comparator_combiner(
     """Merge base config with explored sections.
 
     Completes the entity_1 and entity_2 paramters of the comparator combiner.
+
+    Args:
+        explored: deque containing all the config options.
+        config: base Ludwig config to merge the explored configs with.
     """
     ret = []
     for item in explored:
@@ -313,6 +394,10 @@ def combine_configs_for_sequence_combiner(
     """Merge base config with explored sections.
 
     Uses the right reduce_output strategy for the sequence and sequence_concat combiners.
+
+    Args:
+        explored: deque containing all the config options.
+        config: base Ludwig config to merge the explored configs with.
     """
     ret = []
     for item in explored:
