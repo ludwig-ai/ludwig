@@ -39,6 +39,7 @@ from ludwig.constants import (
     BINARY_WEIGHTED_CROSS_ENTROPY,
     CATEGORY,
     HITS_AT_K,
+    HUBER,
     JACCARD,
     LOGITS,
     LOSS,
@@ -68,6 +69,7 @@ from ludwig.constants import (
 from ludwig.distributed import get_current_dist_strategy
 from ludwig.modules.loss_modules import (
     BWCEWLoss,
+    HuberLoss,
     SequenceSoftmaxCrossEntropyLoss,
     SigmoidCrossEntropyLoss,
     SoftmaxCrossEntropyLoss,
@@ -425,6 +427,20 @@ class JaccardMetric(MeanMetric):
         union = torch.sum(torch.logical_or(target, preds).type(torch.float32), dim=-1)
 
         return intersection / union  # shape [b]
+
+
+@register_metric(HUBER, [NUMBER, VECTOR, TIMESERIES], MINIMIZE, PREDICTIONS)
+class HuberMetric(LossMetric):
+    def __init__(
+        self,
+        delta: float = 1.0,
+        **kwargs,
+    ):
+        super().__init__()
+        self.loss_function = HuberLoss(delta=delta)
+
+    def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
+        return self.loss_function(preds, target)
 
 
 def get_metric_cls(metric_name: str) -> Type[LudwigMetric]:
