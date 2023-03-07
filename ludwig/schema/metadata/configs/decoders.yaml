@@ -439,7 +439,7 @@ SequenceTaggerDecoder:
             from being raised during model building.
 
             The tagger decoder also requires the `reduce_input` parameter of the output feature to be set to `None`.
-            If this is not set, Ludwig will automatically override the value to be set to None and log a warning.
+            If this is not set, Ludwig will automatically override the value by setting it to None and log a warning.
         expected_impact: 0
     attention_embedding_size:
         default_value_reasoning: Not too big, not too small.
