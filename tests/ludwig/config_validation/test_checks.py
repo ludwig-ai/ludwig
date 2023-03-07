@@ -27,7 +27,7 @@ def test_passthrough_number_decoder():
             {"name": "Neighborhood", "type": "category"},
         ],
         "model_type": "ecd",
-        "output_features": [{"name": "SalePrice", "type": "number"}],
+        "output_features": [{"name": "SalePrice", "type": "number", "decoder": {"type": "passthrough"}}],
         "trainer": {"train_steps": 1},
     }
     with pytest.raises(ConfigValidationError):
