@@ -51,13 +51,13 @@ class BaseSearchAlgorithmConfig(schema_utils.BaseMarshmallowConfig):
         for package_name in sa_dependencies_registry[self.type]:
             try:
                 import_module(package_name)
-                return True
             except ImportError:
                 raise ImportError(
                     f"Search algorithm {self.type} requires package {package_name}, however package is "
                     "not installed. Please refer to Ray Tune documentation for packages required for this "
                     "search algorithm."
                 )
+        return True
 
 
 @DeveloperAPI
