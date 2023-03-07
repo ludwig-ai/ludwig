@@ -1085,13 +1085,28 @@ class LudwigModel:
             dataset = dataset.unwrap()
         dataset = load_dataset(dataset, data_format=data_format, df_lib=self.backend.df_engine.df_lib)
 
+        window_sizes = [
+            feature.preprocessing.window_size
+            for feature in self.config_obj.input_features
+            if feature.type == TIMESERIES
+        ]
+        if not window_sizes:
+            raise ValueError("Forecasting requires at least one input feature of type `timeseries`.")
+
         # TODO(travis): there's a lot of redundancy in this approach, since we are preprocessing the same DataFrame
         # multiple times with only a small number of features (the horizon) being appended each time.
         # A much better approach would be to only preprocess a single row, but incorporating the row-level embedding
         # over the window_size of rows precending it, then performing the model forward pass on only that row of
         # data.
+        max_lookback_window_size = max(window_sizes)
         total_forecasted = 0
         while total_forecasted < horizon:
+            # We only need the last `window_size` worth of rows to forecast the next value
+            dataset = dataset.tail(max_lookback_window_size)
+
+            # Run through preprocessing and prediction to obtain row-wise next values
+            # TODO(travis): can optimize the preprocessing part here, since we only need to preprocess / predict
+            # the last row, not the last `window_size` rows.
             preds, _ = self.predict(dataset, skip_save_predictions=True, skip_save_unprocessed_output=True)
 
             next_series = {}
