@@ -17,6 +17,7 @@ import argparse
 import sys
 
 import ludwig.contrib
+from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.print_utils import get_logo
 
 
@@ -29,7 +30,7 @@ class CLI:
     def __init__(self):
         parser = argparse.ArgumentParser(
             description="ludwig cli runner",
-            usage=f"""\n{get_logo("ludwig cli", ludwig.__version__)}
+            usage=f"""\n{get_logo("ludwig cli", LUDWIG_VERSION)}
 ludwig <command> [<args>]
 
 Available sub-commands:
