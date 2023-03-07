@@ -26,6 +26,7 @@ from ludwig.constants import (
     LOGITS,
     NAME,
     PREDICTIONS,
+    PREPROCESSING,
     PROBABILITIES,
     PROBABILITY,
     PROC_COLUMN,
@@ -229,12 +230,13 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
         )
         assert len(inputs.shape) == 1 or (len(inputs.shape) == 2 and inputs.shape[1] == 1)
 
-        if len(inputs.shape) == 1:
-            inputs = inputs.unsqueeze(dim=1)
-
+        inputs = inputs.reshape(-1, 1)
         if inputs.dtype == torch.int8 or inputs.dtype == torch.int16:
             inputs = inputs.type(torch.int)
         encoder_output = self.encoder_obj(inputs)
+
+        batch_size = inputs.shape[0]
+        inputs = inputs.reshape(batch_size, -1)
 
         return {"encoder_output": encoder_output}
 
@@ -253,6 +255,7 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
     @staticmethod
     def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
         feature_config.encoder.vocab = feature_metadata["idx2str"]
+        feature_config.encoder.skip = feature_metadata[PREPROCESSING].get("cache_encoder_embeddings", False)
 
     @staticmethod
     def get_schema_cls():
