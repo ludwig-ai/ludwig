@@ -11,6 +11,7 @@ import contextlib
 from typing import Any, Dict, Optional
 
 import pytest
+from marshmallow import ValidationError
 
 from ludwig.error import ConfigValidationError
 from ludwig.schema.model_types.base import ModelConfig
@@ -179,4 +180,22 @@ def test_comparator_fc_layer_config(
         config["combiner"]["fc_layers"] = fc_layers
 
     with pytest.raises(ConfigValidationError) if not expect_success else contextlib.nullcontext():
+        ModelConfig.from_dict(config)
+
+
+def test_dense_binary_encoder_0_layer():
+    config = {
+        "defaults": {"binary": {"encoder": {"norm": "ghost", "num_layers": 0, "output_size": 128, "type": "dense"}}},
+        "input_features": [
+            {"name": "X0", "type": "category"},
+            {"name": "X1", "type": "category"},
+            {"name": "X10", "type": "binary"},
+            {"name": "X11", "type": "binary"},
+            {"name": "X14", "type": "binary", "encoder": {"num_layers": 0}},
+        ],
+        "model_type": "ecd",
+        "output_features": [{"name": "y", "type": "number"}],
+        "trainer": {"train_steps": 1},
+    }
+    with pytest.raises(ValidationError):
         ModelConfig.from_dict(config)

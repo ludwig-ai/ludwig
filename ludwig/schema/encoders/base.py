@@ -95,6 +95,6 @@ class DenseEncoderConfig(BaseEncoderConfig):
 
     norm_params: dict = common_fields.NormParamsField()
 
-    num_layers: int = common_fields.NumFCLayersField(default=1)
+    num_layers: int = common_fields.NumFCLayersField(default=1, non_zero=True)
 
     fc_layers: List[dict] = common_fields.FCLayersField()
