@@ -7,7 +7,7 @@ from ludwig.schema import common_fields
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
-from ludwig.schema.metadata import COMMON_METADATA, ENCODER_METADATA
+from ludwig.schema.metadata import ENCODER_METADATA
 from ludwig.schema.utils import ludwig_dataclass
 
 CONV_LAYERS_DESCRIPTION = """
@@ -120,11 +120,7 @@ class SequenceEmbedConfig(SequenceEncoderConfig):
 
     vocab: list = common_fields.VocabField()
 
-    weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="uniform",
-        description="Initializer to use for the weights matrix.",
-        parameter_metadata=COMMON_METADATA["weights_initializer"],
-    )
+    weights_initializer: Union[str, Dict] = common_fields.WeightsInitializerField(default="uniform")
 
     reduce_output: str = common_fields.ReduceOutputField()
 
@@ -168,17 +164,9 @@ class ParallelCNNConfig(SequenceEncoderConfig):
         parameter_metadata=ENCODER_METADATA["ParallelCNN"]["use_bias"],
     )
 
-    bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="zeros",
-        description="Initializer to use for the bias vector.",
-        parameter_metadata=COMMON_METADATA["bias_initializer"],
-    )
+    bias_initializer: Union[str, Dict] = common_fields.BiasInitializerField()
 
-    weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="xavier_uniform",
-        description="Initializer to use for the weights matrix.",
-        parameter_metadata=COMMON_METADATA["weights_initializer"],
-    )
+    weights_initializer: Union[str, Dict] = common_fields.WeightsInitializerField()
 
     should_embed: bool = schema_utils.Boolean(
         default=True,
@@ -336,17 +324,9 @@ class StackedCNNConfig(SequenceEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedCNN"]["use_bias"],
     )
 
-    bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="zeros",
-        description="Initializer to use for the bias vector.",
-        parameter_metadata=COMMON_METADATA["bias_initializer"],
-    )
+    bias_initializer: Union[str, Dict] = common_fields.BiasInitializerField()
 
-    weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="xavier_uniform",
-        description="Initializer to use for the weights matrix.",
-        parameter_metadata=COMMON_METADATA["weights_initializer"],
-    )
+    weights_initializer: Union[str, Dict] = common_fields.WeightsInitializerField()
 
     should_embed: bool = schema_utils.Boolean(
         default=True,
@@ -454,17 +434,9 @@ class StackedParallelCNNConfig(SequenceEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["use_bias"],
     )
 
-    bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="zeros",
-        description="Initializer to use for the bias vector.",
-        parameter_metadata=COMMON_METADATA["bias_initializer"],
-    )
+    bias_initializer: Union[str, Dict] = common_fields.BiasInitializerField()
 
-    weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="xavier_uniform",
-        description="Initializer to use for the weights matrix.",
-        parameter_metadata=COMMON_METADATA["weights_initializer"],
-    )
+    weights_initializer: Union[str, Dict] = common_fields.WeightsInitializerField()
 
     should_embed: bool = schema_utils.Boolean(
         default=True,
@@ -587,11 +559,7 @@ class StackedRNNConfig(SequenceEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedRNN"]["unit_forget_bias"],
     )
 
-    recurrent_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="orthogonal",
-        description="The initializer for recurrent matrix weights",
-        parameter_metadata=ENCODER_METADATA["StackedRNN"]["recurrent_initializer"],
-    )
+    recurrent_initializer: Union[str, Dict] = common_fields.WeightsInitializerField(default="orthogonal")
 
     use_bias: bool = schema_utils.Boolean(
         default=True,
@@ -599,17 +567,9 @@ class StackedRNNConfig(SequenceEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedRNN"]["use_bias"],
     )
 
-    bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="zeros",
-        description="Initializer to use for the bias vector.",
-        parameter_metadata=COMMON_METADATA["bias_initializer"],
-    )
+    bias_initializer: Union[str, Dict] = common_fields.BiasInitializerField()
 
-    weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="xavier_uniform",
-        description="Initializer to use for the weights matrix.",
-        parameter_metadata=COMMON_METADATA["weights_initializer"],
-    )
+    weights_initializer: Union[str, Dict] = common_fields.WeightsInitializerField()
 
     should_embed: bool = schema_utils.Boolean(
         default=True,
@@ -786,11 +746,7 @@ class StackedCNNRNNConfig(SequenceEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["unit_forget_bias"],
     )
 
-    recurrent_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="orthogonal",
-        description="The initializer for recurrent matrix weights",
-        parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["recurrent_initializer"],
-    )
+    recurrent_initializer: Union[str, Dict] = common_fields.WeightsInitializerField(default="orthogonal")
 
     use_bias: bool = schema_utils.Boolean(
         default=True,
@@ -798,17 +754,9 @@ class StackedCNNRNNConfig(SequenceEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["use_bias"],
     )
 
-    bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="zeros",
-        description="Initializer to use for the bias vector.",
-        parameter_metadata=COMMON_METADATA["bias_initializer"],
-    )
+    bias_initializer: Union[str, Dict] = common_fields.BiasInitializerField()
 
-    weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="xavier_uniform",
-        description="Initializer to use for the weights matrix.",
-        parameter_metadata=COMMON_METADATA["weights_initializer"],
-    )
+    weights_initializer: Union[str, Dict] = common_fields.WeightsInitializerField()
 
     should_embed: bool = schema_utils.Boolean(
         default=True,
@@ -899,17 +847,9 @@ class StackedTransformerConfig(SequenceEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedTransformer"]["use_bias"],
     )
 
-    bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="zeros",
-        description="Initializer to use for the bias vector.",
-        parameter_metadata=COMMON_METADATA["bias_initializer"],
-    )
+    bias_initializer: Union[str, Dict] = common_fields.BiasInitializerField()
 
-    weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="xavier_uniform",
-        description="Initializer to use for the weights matrix.",
-        parameter_metadata=COMMON_METADATA["weights_initializer"],
-    )
+    weights_initializer: Union[str, Dict] = common_fields.WeightsInitializerField()
 
     should_embed: bool = schema_utils.Boolean(
         default=True,

@@ -3732,9 +3732,6 @@ H3RNN:
             starting with 0.5 and adjusting the dropout depending on observed model
             performance.
         ui_display_name: Recurrent Dropout
-    recurrent_initializer:
-        ui_display_name: null
-        expected_impact: 1
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -6845,9 +6842,6 @@ StackedCNNRNN:
             starting with 0.5 and adjusting the dropout depending on observed model
             performance.
         ui_display_name: Recurrent Dropout
-    recurrent_initializer:
-        ui_display_name: null
-        expected_impact: 1
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -7706,9 +7700,6 @@ StackedRNN:
             starting with 0.5 and adjusting the dropout depending on observed model
             performance.
         ui_display_name: Recurrent Dropout
-    recurrent_initializer:
-        ui_display_name: null
-        expected_impact: 1
     reduce_output:
         ui_display_name: null
         expected_impact: 1

@@ -6,7 +6,7 @@ from ludwig.constants import BINARY, MODEL_ECD, MODEL_GBM, NUMBER, VECTOR
 from ludwig.schema import common_fields
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.utils import register_encoder_config
-from ludwig.schema.metadata import COMMON_METADATA, ENCODER_METADATA
+from ludwig.schema.metadata import ENCODER_METADATA
 from ludwig.schema.utils import ludwig_dataclass
 
 
@@ -87,17 +87,9 @@ class DenseEncoderConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["DenseEncoder"]["use_bias"],
     )
 
-    bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="zeros",
-        description="Initializer to use for the bias vector.",
-        parameter_metadata=COMMON_METADATA["bias_initializer"],
-    )
+    bias_initializer: Union[str, Dict] = common_fields.BiasInitializerField()
 
-    weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="xavier_uniform",
-        description="Initializer to use for the weights matrix.",
-        parameter_metadata=COMMON_METADATA["weights_initializer"],
-    )
+    weights_initializer: Union[str, Dict] = common_fields.WeightsInitializerField()
 
     norm: str = common_fields.NormField()
 

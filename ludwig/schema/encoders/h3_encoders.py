@@ -2,6 +2,7 @@ from typing import Dict, List, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import H3
+from ludwig.schema import common_fields
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
@@ -41,16 +42,9 @@ class H3EmbedConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["H3Embed"]["use_bias"],
     )
 
-    bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="zeros",
-        description="Initializer to use for the bias vector.",
-        parameter_metadata=ENCODER_METADATA["H3Embed"]["bias_initializer"],
-    )
+    bias_initializer: Union[str, Dict] = common_fields.BiasInitializerField()
 
-    weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        description="Initializer to use for the weights matrix.",
-        parameter_metadata=ENCODER_METADATA["H3Embed"]["weights_initializer"],
-    )
+    weights_initializer: Union[str, Dict] = common_fields.WeightsInitializerField()
 
     embedding_size: int = schema_utils.PositiveInteger(
         default=10,
@@ -138,16 +132,9 @@ class H3WeightedSumConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["H3WeightedSum"]["use_bias"],
     )
 
-    bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="zeros",
-        description="Initializer to use for the bias vector.",
-        parameter_metadata=ENCODER_METADATA["H3WeightedSum"]["bias_initializer"],
-    )
+    bias_initializer: Union[str, Dict] = common_fields.BiasInitializerField()
 
-    weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        description="Initializer to use for the weights matrix.",
-        parameter_metadata=ENCODER_METADATA["H3WeightedSum"]["weights_initializer"],
-    )
+    weights_initializer: Union[str, Dict] = common_fields.WeightsInitializerField()
 
     embedding_size: int = schema_utils.PositiveInteger(
         default=10,
@@ -280,22 +267,11 @@ class H3RNNConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["H3RNN"]["unit_forget_bias"],
     )
 
-    bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="zeros",
-        description="Initializer to use for the bias vector.",
-        parameter_metadata=ENCODER_METADATA["H3RNN"]["bias_initializer"],
-    )
+    bias_initializer: Union[str, Dict] = common_fields.BiasInitializerField()
 
-    weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        description="Initializer to use for the weights matrix.",
-        parameter_metadata=ENCODER_METADATA["H3RNN"]["weights_initializer"],
-    )
+    weights_initializer: Union[str, Dict] = common_fields.WeightsInitializerField()
 
-    recurrent_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="orthogonal",
-        description="The initializer for recurrent matrix weights",
-        parameter_metadata=ENCODER_METADATA["H3RNN"]["recurrent_initializer"],
-    )
+    recurrent_initializer: Union[str, Dict] = common_fields.WeightsInitializerField(default="orthogonal")
 
     reduce_output: str = schema_utils.ReductionOptions(
         default="last",

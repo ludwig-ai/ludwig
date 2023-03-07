@@ -2,6 +2,7 @@ from typing import Dict, List, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import DATE
+from ludwig.schema import common_fields
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
@@ -41,16 +42,9 @@ class DateEmbedConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["DateEmbed"]["use_bias"],
     )
 
-    bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="zeros",
-        description="Initializer to use for the bias vector.",
-        parameter_metadata=ENCODER_METADATA["DateEmbed"]["bias_initializer"],
-    )
+    bias_initializer: Union[str, Dict] = common_fields.BiasInitializerField()
 
-    weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        description="Initializer to use for the weights matrix.",
-        parameter_metadata=ENCODER_METADATA["DateEmbed"]["weights_initializer"],
-    )
+    weights_initializer: Union[str, Dict] = common_fields.WeightsInitializerField()
 
     embedding_size: int = schema_utils.PositiveInteger(
         default=10,
@@ -132,16 +126,9 @@ class DateWaveConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["DateWave"]["use_bias"],
     )
 
-    bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="zeros",
-        description="Initializer to use for the bias vector.",
-        parameter_metadata=ENCODER_METADATA["DateWave"]["bias_initializer"],
-    )
+    bias_initializer: Union[str, Dict] = common_fields.BiasInitializerField()
 
-    weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        description="Initializer to use for the weights matrix.",
-        parameter_metadata=ENCODER_METADATA["DateWave"]["weights_initializer"],
-    )
+    weights_initializer: Union[str, Dict] = common_fields.WeightsInitializerField()
 
     output_size: int = schema_utils.PositiveInteger(
         default=10,

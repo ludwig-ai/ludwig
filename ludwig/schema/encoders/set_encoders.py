@@ -2,6 +2,7 @@ from typing import Dict, List, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import SET
+from ludwig.schema import common_fields
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
@@ -54,16 +55,9 @@ class SetSparseEncoderConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["SetSparseEncoder"]["use_bias"],
     )
 
-    bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="zeros",
-        description="Initializer to use for the bias vector.",
-        parameter_metadata=ENCODER_METADATA["SetSparseEncoder"]["bias_initializer"],
-    )
+    bias_initializer: Union[str, Dict] = common_fields.BiasInitializerField()
 
-    weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        description="Initializer to use for the weights matrix.",
-        parameter_metadata=ENCODER_METADATA["SetSparseEncoder"]["weights_initializer"],
-    )
+    weights_initializer: Union[str, Dict] = common_fields.WeightsInitializerField()
 
     embedding_size: int = schema_utils.PositiveInteger(
         default=50,

@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Union
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import common_fields
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.metadata import COMBINER_METADATA, COMMON_METADATA
+from ludwig.schema.metadata import COMBINER_METADATA
 from ludwig.schema.utils import ludwig_dataclass
 
 
@@ -52,17 +52,9 @@ class CommonTransformerConfig:
         parameter_metadata=COMBINER_METADATA["TransformerCombiner"]["use_bias"],
     )
 
-    bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="zeros",
-        description="Initializer to use for the bias vector.",
-        parameter_metadata=COMBINER_METADATA["TransformerCombiner"]["bias_initializer"],
-    )
+    bias_initializer: Union[str, Dict] = common_fields.BiasInitializerField()
 
-    weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="xavier_uniform",
-        description="Initializer to use for the weights matrix.",
-        parameter_metadata=COMMON_METADATA["weights_initializer"],
-    )
+    weights_initializer: Union[str, Dict] = common_fields.WeightsInitializerField()
 
     # TODO(#1673): Add conditional logic for fields like this one:
     num_fc_layers: int = schema_utils.NonNegativeInteger(
