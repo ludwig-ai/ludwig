@@ -379,33 +379,31 @@ def check_stacked_transformer_requirements(config: "ModelConfig") -> None:  # no
 @register_config_check
 def check_tagger_decoder_requirements(config: "ModelConfig") -> None:  # noqa: F821
     """Checks that the tagger decoder has at least one sequence, text or timeseries input feature
-    where the encoder's reduce_output will produce a b x s x h shaped output from the combiner,
-    or that there is a sequence-based combiner being used."""
-    # Check if there is a text output feature using a tagger decoder
-    text_output_feature_with_tagger_decoder = False
+    where the encoder's reduce_output will produce a 3D shaped output from the combiner."""
+    # Check if there is a text or sequence output feature using a tagger decoder
+    output_feature_with_tagger_decoder = False
     for output_feature in config.output_features:
-        if output_feature.type == TEXT and output_feature.decoder.type == "tagger":
-            text_output_feature_with_tagger_decoder = True
+        if output_feature.type in {TEXT, SEQUENCE} and output_feature.decoder.type == "tagger":
+            output_feature_with_tagger_decoder = True
 
-    if not text_output_feature_with_tagger_decoder:
+    if not output_feature_with_tagger_decoder:
         return
 
-    # Check if a sequence based combiner is being used
-    for combiner in config.combiner:
-        if combiner.type in {"sequence_concat", "sequence"}:
-            return
-
-    # Check if there is at least one sequence, text or timeseries input feature with encoder.reduce_output=None
+    # Check that there is at least one sequence, text or timeseries input feature that doesn't reduce the
+    # output of the encoder.
     one_feature_with_reduce_output_none = False
     has_sequence_feature = False
     for input_feature in config.input_features:
         if input_feature.type in {SEQUENCE, TEXT, TIMESERIES}:
             has_sequence_feature = True
             if input_feature.encoder.reduce_output is None:
-                return  # valid config
+                return
 
-    if has_sequence_feature and not one_feature_with_reduce_output_none:
+    if not has_sequence_feature:
+        raise ConfigValidationError("Tagger decoder requires at least one text, sequence or timeseries input feature.")
+
+    if not one_feature_with_reduce_output_none:
         raise ConfigValidationError(
-            "Tagger decoder requires at least one text, sequence or timeseries input feature with "
-            "encoder.reduce_output=None."
+            "Tagger decoder requires at least one of the text, sequence or timeseries input feature encoders to have "
+            "`reduce_output` set to `None`."
         )
