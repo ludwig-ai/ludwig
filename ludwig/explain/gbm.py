@@ -1,3 +1,5 @@
+import numpy as np
+
 from ludwig.api_annotations import PublicAPI
 from ludwig.explain.explainer import Explainer
 from ludwig.explain.explanation import ExplanationsResult
@@ -27,7 +29,26 @@ class GBMExplainer(Explainer):
 
         # Get global feature importance from the model, use it for each row in the batch.
         # TODO(travis): support local feature importance
-        feat_imp = gbm.booster_.feature_importance(importance_type="gain")
+        raw_feat_imp = gbm.booster_.feature_importance(importance_type="gain")
+
+        # For vector input features, the feature importance is given per element of the vector.
+        # As such, to obtain the total importance for the feature, we need to sum over all the importance
+        # values for every element of the vector.
+        feat_imp = np.empty(len(base_model.input_features))
+        raw_idx = 0
+        for i, input_feature in enumerate(base_model.input_features.values()):
+            # Length of the feature vector is the output shape of the encoder
+            feature_length = input_feature.output_shape[0]
+            raw_idx_end = raw_idx + feature_length
+
+            # Reduce the importance values for every element in the vector down to the sum and
+            # insert it as the feature level importance value
+            feat_imp[i] = raw_feat_imp[raw_idx:raw_idx_end].sum()
+            raw_idx = raw_idx_end
+
+        # Logical check that at the end we reduced every element of the raw feature importance
+        # into the feature level importance
+        assert raw_idx == len(raw_feat_imp)
 
         # Scale the feature importance to sum to 1.
         feat_imp = feat_imp / feat_imp.sum() if feat_imp.sum() > 0 else feat_imp

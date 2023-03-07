@@ -40,8 +40,10 @@ default_feature_specific_preprocessing_parameters = {
     for name, preproc_sect in get_input_type_registry().items()
 }
 
-default_preprocessing_parameters = copy.deepcopy(default_feature_specific_preprocessing_parameters)
-default_preprocessing_parameters.update(PreprocessingConfig().to_dict())
+default_training_preprocessing_parameters = copy.deepcopy(default_feature_specific_preprocessing_parameters)
+default_training_preprocessing_parameters.update(PreprocessingConfig().to_dict())
+
+default_prediction_preprocessing_parameters = copy.deepcopy(default_feature_specific_preprocessing_parameters)
 
 
 @DeveloperAPI

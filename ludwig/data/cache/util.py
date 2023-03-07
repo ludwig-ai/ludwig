@@ -20,7 +20,9 @@ def calculate_checksum(original_dataset: CacheableDataset, config: ModelConfigDi
         "global_defaults": config.get(DEFAULTS, {}),
         # PROC_COLUMN contains both the feature name and the feature hash that is computed
         # based on each feature's preprocessing parameters and the feature's type.
-        "feature_proc_columns": {feature[PROC_COLUMN] for feature in features},
+        # creating a sorted list out of the dict because hash_dict requires all values
+        # of the dict to be ordered object to ensure the creation fo the same hash
+        "feature_proc_columns": sorted({feature[PROC_COLUMN] for feature in features}),
         "feature_types": [feature[TYPE] for feature in features],
         "feature_preprocessing": [feature.get(PREPROCESSING, {}) for feature in features],
     }

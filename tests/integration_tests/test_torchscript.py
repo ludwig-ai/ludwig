@@ -65,13 +65,15 @@ def test_torchscript(tmpdir, csv_filename, should_load_model, model_type):
     input_features = [
         binary_feature(),
         number_feature(),
-        category_feature(encoder={"vocab_size": 3}),
+        category_feature(encoder={"type": "passthrough", "vocab_size": 3}),
+        category_feature(encoder={"type": "onehot", "vocab_size": 3}),
     ]
     if model_type == "ecd":
         image_dest_folder = os.path.join(tmpdir, "generated_images")
         audio_dest_folder = os.path.join(tmpdir, "generated_audio")
         input_features.extend(
             [
+                category_feature(encoder={"type": "dense", "vocab_size": 3}),
                 sequence_feature(encoder={"vocab_size": 3}),
                 text_feature(encoder={"vocab_size": 3}),
                 vector_feature(),
@@ -356,7 +358,7 @@ def test_torchscript_e2e_audio(csv_filename, tmpdir):
     "kwargs",
     [
         {"encoder": {"type": "stacked_cnn"}},  # Ludwig custom encoder
-        {"encoder": {"type": "alexnet", "use_pretrained": False}},  # TorchVisio pretrained model encoder
+        {"encoder": {"type": "alexnet", "use_pretrained": False}},  # TorchVision pretrained model encoder
     ],
 )
 def test_torchscript_e2e_image(tmpdir, csv_filename, kwargs):

@@ -17,6 +17,23 @@ from ludwig.schema.model_types.base import ModelConfig
 from tests.integration_tests.utils import binary_feature, text_feature
 
 
+def test_sequence_combiner_with_embed_encoder():
+    config = {
+        "combiner": {
+            "encoder": {"dropout": 0.1641014195584432, "embedding_size": 256, "type": "embed"},
+            "main_sequence_feature": None,
+            "type": "sequence",
+        },
+        "input_features": [{"encoder": {"reduce_output": None, "type": "embed"}, "name": "Text", "type": "text"}],
+        "model_type": "ecd",
+        "output_features": [{"name": "Category", "type": "category"}],
+        "preprocessing": {"sample_ratio": 0.05},
+        "trainer": {"train_steps": 1},
+    }
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+
 def test_balance_multiple_class_failure():
     config = {
         "input_features": [

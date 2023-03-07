@@ -4,7 +4,7 @@ numpy>=1.15
 pandas>=0.25,!=1.1.5
 scipy>=0.18
 tabulate>=0.7
-scikit-learn<1.2.0
+scikit-learn
 tqdm
 torch>=1.13.0
 torchaudio
@@ -41,7 +41,7 @@ sacremoses
 xlwt            # excel
 xlrd            # excel
 openpyxl        # excel
-pyarrow==6.0.1  # parquet https://github.com/ray-project/ray/issues/22310
+pyarrow         # parquet
 lxml            # html
 
 whylogs>=1.1.9

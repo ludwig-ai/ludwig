@@ -192,6 +192,8 @@ def _ray_start(request, **kwargs):
         yield res
     finally:
         ray.shutdown()
+        # Delete the cluster address just in case.
+        ray._private.utils.reset_ray_address()
 
 
 def _get_default_ray_kwargs():
@@ -211,7 +213,6 @@ def _get_default_ray_kwargs():
 def _get_default_system_config():
     system_config = {
         "object_timeout_milliseconds": 200,
-        "num_heartbeats_timeout": 10,
         "object_store_full_delay_ms": 100,
     }
     return system_config

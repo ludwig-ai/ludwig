@@ -139,14 +139,14 @@ def run_augmentation_training(
         },
     }
 
-    model = LudwigModel(config, logging_level=logging.INFO)
-    model.experiment(
-        dataset=train_fp,
-        skip_save_processed_input=True,
-        skip_save_model=True,
-    )
-    return model
-
+    with tempfile.TemporaryDirectory() as tmpdir:
+        model = LudwigModel(config, logging_level=logging.INFO)
+        model.experiment(
+            dataset=train_fp,
+            skip_save_processed_input=True,
+            skip_save_model=True,
+            output_directory=os.path.join(tmpdir, "output"),
+        )
     return model
 
 

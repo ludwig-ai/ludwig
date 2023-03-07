@@ -19,7 +19,7 @@ import math
 import queue
 import threading
 from functools import lru_cache
-from typing import Dict, Iterator, Literal, Optional, Union
+from typing import Dict, Iterable, Iterator, Literal, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -32,12 +32,14 @@ from ray.data.dataset_pipeline import DatasetPipeline
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend.base import Backend
-from ludwig.constants import BINARY, CATEGORY, NAME, NUMBER, TYPE
+from ludwig.constants import NAME
 from ludwig.data.batcher.base import Batcher
 from ludwig.data.dataset.base import Dataset, DatasetManager
 from ludwig.distributed import DistributedStrategy
+from ludwig.features.base_feature import BaseFeature
 from ludwig.types import FeatureConfigDict, ModelConfigDict, TrainingSetMetadataDict
 from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP, DATA_TRAIN_PARQUET_FP, from_numpy_dataset, to_numpy_dataset
+from ludwig.utils.dataframe_utils import to_scalar_df
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.error_handling_utils import default_retry
 from ludwig.utils.fs_utils import get_fs_and_path
@@ -46,9 +48,7 @@ from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
 
-_ray113 = version.parse(ray.__version__) == version.parse("1.13.0")
-
-_SCALAR_TYPES = {BINARY, CATEGORY, NUMBER}
+_ray_230 = version.parse(ray.__version__) >= version.parse("2.3.0")
 
 
 @DeveloperAPI
@@ -105,6 +105,10 @@ class RayDataset(Dataset):
                     "In-memory dataset size is greater than 20%% of object store memory. "
                     "Enabling windowed shuffling of data to prevent chances of OOMs. "
                 )
+                if _ray_230:
+                    # In Ray nightly (>= 2.3), window size is specified as either -1 or a percentage
+                    # from 0 to 1. Default to always using 20% of object store memory.
+                    return 0.2
                 return int(cluster_memory_size // 5)
 
         # By default, set to -1 so that an infinite window size
@@ -148,15 +152,28 @@ class RayDataset(Dataset):
         https://docs.ray.io/en/releases-1.12.1/_modules/ray/data/dataset.html#Dataset.size_bytes."""
         return self.ds.size_bytes() if self.ds is not None else 0
 
-    def to_df(self):
-        return self.df_engine.from_ray_dataset(self.ds)
+    def to_df(self, features: Optional[Iterable[BaseFeature]] = None):
+        ds = self.filter_features(features)
+        return self.df_engine.from_ray_dataset(ds)
+
+    def to_scalar_df(self, features: Optional[Iterable[BaseFeature]] = None) -> DataFrame:
+        return self.df_engine.from_ray_dataset(self.to_scalar(features))
+
+    def filter_features(self, features: Optional[Iterable[BaseFeature]] = None):
+        if features is None:
+            return self.ds
+        feat_cols = [f.proc_column for f in features]
+        return self.ds.map_batches(lambda df: df[feat_cols], batch_size=None)
+
+    def to_scalar(self, features: Optional[Iterable[BaseFeature]] = None) -> DataFrame:
+        ds = self.filter_features(features)
+        return ds.map_batches(lambda df: to_scalar_df(df), batch_size=None)
 
     def repartition(self, num_blocks: int):
         """Repartition the dataset into the specified number of blocks.
 
         This operation occurs in place and overwrites `self.ds` with a
         new repartitioned dataset.
-
         Args:
             num_blocks: Number of blocks in the repartitioned data.
         """
@@ -213,15 +230,28 @@ class RayDatasetShard(Dataset):
         self.create_epoch_iter()
 
     def create_epoch_iter(self) -> None:
-        if isinstance(self.dataset_shard, DatasetPipeline):
-            # Dataset shard is a DatasetPipeline during training. The Ray Dataset is converted to a
-            # DatasetPipeline by the DatasetConfig in the Trainer and is available in the train_fn
-            self.epoch_iter = self.dataset_shard.iter_epochs()
+        if _ray_230:
+            # In Ray >= 2.3, session.get_dataset_shard() returns a DatasetIterator object.
+            if isinstance(self.dataset_shard, ray.data.DatasetIterator):
+                if hasattr(self.dataset_shard, "_base_dataset_pipeline"):
+                    # Dataset shard is a DatasetIterator that was created from a DatasetPipeline object.
+                    # Retrieve the base object that was used to create the DatasetIterator so that we can
+                    # create the iter_epochs() like in Ray <= 2.2.
+                    self.epoch_iter = self.dataset_shard._base_dataset_pipeline.iter_epochs()
+                    return
         else:
-            # Dataset shard is a Ray Dataset object during auto batch size tuning or learning rate tuning
-            # Convert Ray Dataset to a DatasetPipeline object before enabling epoch iteration
-            # In this scenario, there is no need to worry about windowing, shuffling etc.
-            self.epoch_iter = self.dataset_shard.repeat().iter_epochs()
+            # In Ray <= 2.2, session.get_dataset_shard() returns a DatasetPipeline object.
+            if isinstance(self.dataset_shard, DatasetPipeline):
+                # Dataset shard is a DatasetPipeline during training. The Ray Dataset is converted to a
+                # DatasetPipeline by the DatasetConfig in the Trainer and is available in the train_fn
+                self.epoch_iter = self.dataset_shard.iter_epochs()
+                return
+
+        # Here, dataset shard is a RayDataset object during auto batch size tuning or learning rate tuning
+        # since it does not come from within the RayTrainer's train_fn.
+        # Convert Ray Dataset to a DatasetPipeline object before enabling epoch iteration
+        # In this scenario, there is no need to worry about windowing, shuffling etc.
+        self.epoch_iter = self.dataset_shard.repeat().iter_epochs()
 
     @contextlib.contextmanager
     def initialize_batcher(
@@ -245,12 +275,17 @@ class RayDatasetShard(Dataset):
 
     @lru_cache(1)
     def __len__(self):
-        # TODO(travis): find way to avoid calling this, as it's expensive
         return next(self.epoch_iter).count()
 
     @property
     def size(self):
         return len(self)
+
+    def to_df(self, features: Optional[Iterable[BaseFeature]] = None):
+        raise NotImplementedError()
+
+    def to_scalar_df(self, features: Optional[Iterable[BaseFeature]] = None) -> DataFrame:
+        raise NotImplementedError()
 
 
 @DeveloperAPI
@@ -348,7 +383,7 @@ class RayDatasetBatcher(Batcher):
     def _prepare_batch(self, batch: pd.DataFrame) -> Dict[str, np.ndarray]:
         res = {}
         for c in self.columns:
-            if self.features[c][TYPE] not in _SCALAR_TYPES:
+            if batch[c].values.dtype == "object":
                 # Ensure columns stacked instead of turned into np.array([np.array, ...], dtype=object) objects
                 res[c] = np.stack(batch[c].values)
             else:

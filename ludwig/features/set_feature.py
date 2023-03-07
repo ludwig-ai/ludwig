@@ -176,7 +176,7 @@ class SetFeatureMixin(BaseFeatureMixin):
 
             set_vector = np.zeros((len(metadata["str2idx"]),))
             set_vector[feature_vector] = 1
-            return set_vector.astype(np.bool)
+            return set_vector.astype(np.bool_)
 
         return backend.df_engine.map_objects(column, to_dense)
 
@@ -210,7 +210,7 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
 
     def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor)
-        assert inputs.dtype in [torch.bool, torch.int64]
+        assert inputs.dtype in [torch.bool, torch.int64, torch.float32]
 
         encoder_output = self.encoder_obj(inputs)
 

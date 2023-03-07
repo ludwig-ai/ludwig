@@ -11,7 +11,7 @@ from ludwig.utils.torch_utils import initializer_registry
 
 
 class ImageEncoderConfig(BaseEncoderConfig):
-    def get_fixed_preprocessing_params(self) -> Dict[str, Any]:
+    def get_fixed_preprocessing_params(self, model_type: str) -> Dict[str, Any]:
         return {
             REQUIRES_EQUAL_DIMENSIONS: False,
             HEIGHT: None,
@@ -692,7 +692,7 @@ class ViTConfig(ImageEncoderConfig):
         parameter_metadata=ENCODER_METADATA["ViT"]["pretrained_model"],
     )
 
-    def get_fixed_preprocessing_params(self) -> Dict[str, Any]:
+    def get_fixed_preprocessing_params(self, model_type: str) -> Dict[str, Any]:
         """If the encoder is not in trainable mode, override the image width and height to be compatible with the
         pretrained encoder image dimension requirements."""
         if self.requires_equal_dimensions() and self.required_width() != self.required_height():

@@ -18,6 +18,7 @@ from tests.integration_tests.utils import (
     image_feature,
     LocalTestBackend,
     number_feature,
+    set_feature,
     text_feature,
     timeseries_feature,
     vector_feature,
@@ -126,9 +127,15 @@ def run_test_explainer_api(
     image_dest_folder = os.path.join(tmpdir, "generated_images")
 
     if input_features is None:
-        input_features = [binary_feature(), number_feature(), category_feature(encoder={"reduce_output": "sum"})]
+        input_features = [
+            binary_feature(),
+            number_feature(),
+            category_feature(encoder={"type": "onehot", "reduce_output": "sum"}),
+            category_feature(encoder={"type": "passthrough", "reduce_output": "sum"}),
+        ]
         if model_type == MODEL_ECD:
             input_features += [
+                category_feature(encoder={"type": "dense", "reduce_output": "sum"}),
                 text_feature(encoder={"vocab_size": 3}),
                 vector_feature(),
                 timeseries_feature(),
@@ -137,7 +144,7 @@ def run_test_explainer_api(
                 # sequence_feature(encoder={"vocab_size": 3}),
                 # date_feature(),
                 # h3_feature(),
-                # set_feature(encoder={"vocab_size": 3}),
+                set_feature(encoder={"vocab_size": 3}),
                 # bag_feature(encoder={"vocab_size": 3}),
             ]
 
