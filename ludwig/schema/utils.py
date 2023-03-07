@@ -228,6 +228,18 @@ def unload_jsonschema_from_marshmallow_class(mclass, additional_properties: bool
 
 
 @DeveloperAPI
+def InitializerOptions(default: str = "xavier_uniform", description="", parameter_metadata: ParameterMetadata = None):
+    """Utility wrapper that returns a `StringOptions` field with keys from `initializer_registry`."""
+    return StringOptions(
+        list(initializer_registry.keys()),
+        default=default,
+        allow_none=False,
+        description=description,
+        parameter_metadata=parameter_metadata,
+    )
+
+
+@DeveloperAPI
 def ActivationOptions(
     default: Union[str, None] = "relu", description=None, parameter_metadata: ParameterMetadata = None
 ):
