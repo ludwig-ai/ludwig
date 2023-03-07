@@ -48,6 +48,8 @@ def NumFCLayersField(
         " Increasing layers adds capacity to the model, enabling it to learn more complex feature interactions."
     )
     parameter_metadata = parameter_metadata or COMMON_METADATA["num_fc_layers"]
+
+    # When using a dense encoder, the number of fully connected layers must be strictly greater than 0.
     if non_zero:
         return schema_utils.PositiveInteger(
             default=default, allow_none=False, description=full_description, parameter_metadata=parameter_metadata
