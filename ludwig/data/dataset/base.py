@@ -16,9 +16,12 @@
 
 import contextlib
 from abc import ABC, abstractmethod
+from typing import Iterable, Optional
 
 from ludwig.distributed import DistributedStrategy
+from ludwig.features.base_feature import BaseFeature
 from ludwig.utils.defaults import default_random_seed
+from ludwig.utils.types import DataFrame
 
 
 class Dataset(ABC):
@@ -38,7 +41,12 @@ class Dataset(ABC):
     ):
         raise NotImplementedError()
 
-    def to_df(self):
+    @abstractmethod
+    def to_df(self, features: Optional[Iterable[BaseFeature]] = None) -> DataFrame:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def to_scalar_df(self, features: Optional[Iterable[BaseFeature]] = None) -> DataFrame:
         raise NotImplementedError()
 
     @property

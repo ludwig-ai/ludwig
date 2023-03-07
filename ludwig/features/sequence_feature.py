@@ -212,13 +212,22 @@ class SequenceFeatureMixin(BaseFeatureMixin):
             ngram_size=preprocessing_parameters["ngram_size"],
             processor=backend.df_engine,
         )
-        max_length = min(preprocessing_parameters["max_sequence_length"], max_length)
+
+        # Use max_sequence_length if provided, otherwise use max length found in dataset.
+        if preprocessing_parameters["max_sequence_length"] is not None:
+            logger.info("Using max_sequence_length provided in preprocessing parameters")
+            max_sequence_length = preprocessing_parameters["max_sequence_length"]
+        else:
+            logger.info("Inferring max_sequence_length from dataset")
+            max_sequence_length = max_length + 2  # For start and stop symbols.
+        logger.info(f"Using max sequence length of {max_sequence_length} for feature '{column.name}'")
+
         return {
             "idx2str": idx2str,
             "str2idx": str2idx,
             "str2freq": str2freq,
             "vocab_size": len(idx2str),
-            "max_sequence_length": max_length + 2,  # For start and end symbol.
+            "max_sequence_length": max_sequence_length,
         }
 
     @staticmethod

@@ -59,7 +59,7 @@ jobs:
         ports:
           - 9000:9000
 
-    timeout-minutes: 90
+    timeout-minutes: 120
     steps:
       - name: Setup ludwigai/ludwig-ray container for local testing with act.
         if: ${{ env.ACT }}
@@ -171,7 +171,7 @@ jobs:
 
       - name: Tests
         run: |
-          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=4500 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow or benchmark" --junitxml pytest.xml tests
+          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow or benchmark" --junitxml pytest.xml tests
 
       - name: Upload Unit Test Results
         if: ${{ always() && !env.ACT }}
@@ -179,6 +179,47 @@ jobs:
         with:
           name: Unit Test Results (Python ${{ matrix.python-version }} ${{ matrix.test-markers }})
           path: pytest.xml
+
+  test-minimal-install:
+    name: Test Minimal Install
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Setup Linux
+        if: runner.os == 'linux'
+        run: |
+          sudo apt-get install -y cmake libsndfile1
+
+      - name: Setup macOS
+        if: runner.os == 'macOS'
+        run: |
+          brew install libuv
+
+      - name: Install dependencies
+        run: |
+          python --version
+          pip --version
+          python -m pip install -U pip
+          pip install '.'
+          pip list
+        shell: bash
+
+      - name: Check Install
+        run: |
+          ludwig check_install
+        shell: bash
+
+      - name: Test Getting Started
+        run: |
+          cd examples/getting_started && sh ./run.sh
+        shell: bash
 
   # start-runner:
   #   name: Start self-hosted EC2 runner
