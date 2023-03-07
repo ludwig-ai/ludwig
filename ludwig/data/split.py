@@ -15,7 +15,7 @@
 
 import logging
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, List, Optional, Tuple
+from typing import List, Optional, Tuple, TYPE_CHECKING
 from zlib import crc32
 
 import numpy as np

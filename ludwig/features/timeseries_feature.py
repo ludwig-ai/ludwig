@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import TYPE_CHECKING, Dict, List, Union
+from typing import Dict, List, TYPE_CHECKING, Union
 
 import numpy as np
 import torch
@@ -37,8 +37,7 @@ logger = logging.getLogger(__name__)
 def create_time_delay_embedding(
     series: Series, window_size: int, horizon: int, padding_value: int, backend: "Backend"
 ) -> Series:
-    """
-    Time delay embedding from:
+    """Time delay embedding from:
 
     https://towardsdatascience.com/machine-learning-for-forecasting-transformations-and-feature-extraction-bbbea9de0ac2
 
