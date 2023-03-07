@@ -1,9 +1,9 @@
 import contextlib
 from typing import Optional, Type, Union
-from marshmallow import ValidationError
 
 import pytest
 import torch
+from marshmallow import ValidationError
 
 from ludwig.modules import loss_modules
 

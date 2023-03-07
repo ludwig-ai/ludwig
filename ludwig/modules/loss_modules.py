@@ -18,9 +18,9 @@ from typing import List, Optional, Union
 
 import torch
 from torch import nn, Tensor
+from torch.nn import HuberLoss as _HuberLoss
 from torch.nn import L1Loss
 from torch.nn import MSELoss as _MSELoss
-from torch.nn import HuberLoss as _HuberLoss
 
 import ludwig.utils.loss_utils as utils
 from ludwig.constants import (
