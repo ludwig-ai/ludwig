@@ -117,3 +117,21 @@ def test_comparator_fc_layer_config(
 
     with pytest.raises(ConfigValidationError) if not expect_success else contextlib.nullcontext():
         ModelConfig.from_dict(config)
+
+
+def test_dense_binary_encoder_1_layer():
+    config = {
+        "defaults": {"binary": {"encoder": {"norm": "ghost", "num_layers": 0, "output_size": 128, "type": "dense"}}},
+        "input_features": [
+            {"name": "X0", "type": "category"},
+            {"name": "X1", "type": "category"},
+            {"name": "X10", "type": "binary"},
+            {"name": "X11", "type": "binary"},
+            {"name": "X14", "type": "binary"},
+        ],
+        "model_type": "ecd",
+        "output_features": [{"name": "y", "type": "number"}],
+        "trainer": {"train_steps": 1},
+    }
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
