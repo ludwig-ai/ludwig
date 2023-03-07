@@ -3,6 +3,8 @@ input_features:
     type: timeseries
     preprocessing:
       window_size: 10
+    encoder:
+      type: dense
 output_features:
   - name: Seattle_next
     type: timeseries

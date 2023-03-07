@@ -244,7 +244,7 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([self.encoder_obj.config.max_sequence_length])
+        return self.encoder_obj.input_shape
 
     @property
     def input_dtype(self):
@@ -252,6 +252,7 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
 
     @staticmethod
     def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
+        feature_config.encoder.input_size = feature_metadata["max_timeseries_length"]
         feature_config.encoder.max_sequence_length = feature_metadata["max_timeseries_length"]
 
     @staticmethod

@@ -2,7 +2,7 @@ from abc import ABC
 from typing import Any, Dict, List, Union
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import BINARY, MODEL_ECD, MODEL_GBM, NUMBER, VECTOR
+from ludwig.constants import BINARY, MODEL_ECD, MODEL_GBM, NUMBER, TIMESERIES, VECTOR
 from ludwig.schema import common_fields
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.utils import register_encoder_config
@@ -50,7 +50,7 @@ class PassthroughEncoderConfig(BaseEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("dense", [BINARY, NUMBER, VECTOR])
+@register_encoder_config("dense", [BINARY, NUMBER, VECTOR, TIMESERIES])
 @ludwig_dataclass
 class DenseEncoderConfig(BaseEncoderConfig):
     """DenseEncoderConfig is a dataclass that configures the parameters used for a dense encoder."""
