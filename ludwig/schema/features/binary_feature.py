@@ -11,8 +11,9 @@ from ludwig.schema.features.loss.utils import LossDataclassField
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
 from ludwig.schema.features.utils import (
-    defaults_config_registry,
+    ecd_defaults_config_registry,
     ecd_input_config_registry,
+    gbm_defaults_config_registry,
     gbm_input_config_registry,
     input_mixin_registry,
     output_config_registry,
@@ -24,6 +25,7 @@ from ludwig.schema.utils import BaseMarshmallowConfig, ludwig_dataclass
 
 
 @DeveloperAPI
+@gbm_defaults_config_registry.register(BINARY)
 @input_mixin_registry.register(BINARY)
 @ludwig_dataclass
 class BinaryInputFeatureConfigMixin(BaseMarshmallowConfig):
@@ -132,7 +134,7 @@ class BinaryOutputFeatureConfig(BaseOutputFeatureConfig, BinaryOutputFeatureConf
 
 
 @DeveloperAPI
-@defaults_config_registry.register(BINARY)
+@ecd_defaults_config_registry.register(BINARY)
 @ludwig_dataclass
 class BinaryDefaultsConfig(BinaryInputFeatureConfigMixin, BinaryOutputFeatureConfigMixin):
     # NOTE(travis): defaults use ECD input feature as it contains all the encoders

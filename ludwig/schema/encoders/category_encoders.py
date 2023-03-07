@@ -1,4 +1,4 @@
-from typing import Dict, List, Union
+from typing import Any, Dict, List, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import CATEGORY, MODEL_ECD, MODEL_GBM
@@ -89,3 +89,29 @@ class CategoricalSparseConfig(BaseEncoderConfig):
     embeddings_trainable: bool = common_fields.EmbeddingsTrainableField(default=False)
 
     pretrained_embeddings: str = common_fields.PretrainedEmbeddingsField()
+
+
+@DeveloperAPI
+@register_encoder_config("onehot", CATEGORY, model_types=[MODEL_ECD, MODEL_GBM])
+@ludwig_dataclass
+class CategoricalOneHotEncoderConfig(BaseEncoderConfig):
+    """CategoricalOneHotEncoderConfig is a dataclass that configures the parameters used for a categorical onehot
+    encoder."""
+
+    type: str = schema_utils.ProtectedString(
+        "onehot",
+        description="Type of encoder.",
+    )
+
+    vocab: List[str] = common_fields.VocabField()
+
+    def get_fixed_preprocessing_params(self, model_type: str) -> Dict[str, Any]:
+        if model_type == MODEL_GBM:
+            return {
+                "cache_encoder_embeddings": True,
+            }
+
+        return {}
+
+    def can_cache_embeddings(self) -> bool:
+        return True
