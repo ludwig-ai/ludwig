@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Optional, Union
 
 from ludwig.api_annotations import DeveloperAPI
+from ludwig.schema import common_fields
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.metadata import COMBINER_METADATA
@@ -81,14 +82,10 @@ class ProjectAggregateCombinerConfig(BaseCombinerConfig):
         parameter_metadata=COMBINER_METADATA["ProjectAggregateCombiner"]["use_bias"],
     )
 
-    bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="zeros",
-        description="Initializer to use for the bias of the projection and for the fully connected layers.",
-        parameter_metadata=COMBINER_METADATA["ProjectAggregateCombiner"]["bias_initializer"],
+    weights_initializer: Union[str, Dict] = common_fields.WeightsInitializerField(
+        description="Initializer to use for the weights of the projection and for the fully connected layers."
     )
 
-    weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="xavier_uniform",
-        description="Initializer to use for the weights of the projection and for the fully connected layers.",
-        parameter_metadata=COMBINER_METADATA["ProjectAggregateCombiner"]["weights_initializer"],
+    bias_initializer: Union[str, Dict] = common_fields.BiasInitializerField(
+        description="Initializer to use for the bias of the projection and for the fully connected layers."
     )
