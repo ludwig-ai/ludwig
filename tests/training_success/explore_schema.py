@@ -288,10 +288,10 @@ def combine_configs_for_comparator_combiner(
             default_config = create_nested_dict(default_config)
             merged_config = merge_dict(copy.deepcopy(config), default_config)
 
-            # create two random lists of random lengths for entity1 and entity2
-            num_entities = random.randint(2, len(config["input_features"]))
-            entity_names = [feature["name"] for feature in random.sample(config["input_features"], num_entities)]
-            entity_1_size = random.randint(1, num_entities - 1)
+            # create two random lists for entity1 and entity2
+            entity_names = [feature["name"] for feature in config["input_features"]]
+            random.shuffle(entity_names)
+            entity_1_size = random.randint(1, len(entity_names) - 1)
             merged_config["combiner"]["entity_1"] = entity_names[:entity_1_size]
             merged_config["combiner"]["entity_2"] = entity_names[entity_1_size:]
             ret.append((merged_config, dataset_name))
