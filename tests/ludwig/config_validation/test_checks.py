@@ -120,7 +120,7 @@ def test_comparator_fc_layer_config(
         ModelConfig.from_dict(config)
 
 
-def test_dense_binary_encoder_1_layer():
+def test_dense_binary_encoder_0_layer():
     config = {
         "defaults": {"binary": {"encoder": {"norm": "ghost", "num_layers": 0, "output_size": 128, "type": "dense"}}},
         "input_features": [
@@ -128,7 +128,7 @@ def test_dense_binary_encoder_1_layer():
             {"name": "X1", "type": "category"},
             {"name": "X10", "type": "binary"},
             {"name": "X11", "type": "binary"},
-            {"name": "X14", "type": "binary"},
+            {"name": "X14", "type": "binary", "encoder": {"num_layers": 0}},
         ],
         "model_type": "ecd",
         "output_features": [{"name": "y", "type": "number"}],

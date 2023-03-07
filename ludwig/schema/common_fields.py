@@ -41,6 +41,8 @@ def ResidualField(
 def NumFCLayersField(
     default: int = 0, description: str = None, parameter_metadata: ParameterMetadata = None, non_zero=False
 ) -> Field:
+    assert (not non_zero) or (default > 0 and non_zero)
+
     description = description or "Number of stacked fully connected layers to apply."
     full_description = description + (
         " Increasing layers adds capacity to the model, enabling it to learn more complex feature interactions."
