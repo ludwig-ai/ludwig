@@ -35,6 +35,35 @@ def test_balance_multiple_class_failure():
         ModelConfig.from_dict(config)
 
 
+def test_all_features_present_in_comparator_entities():
+    config = {
+        "combiner": {
+            "dropout": 0.20198506770751617,
+            "entity_1": ["Age"],
+            "entity_2": ["Sex", "Pclass"],
+            "norm": "batch",
+            "num_fc_layers": 1,
+            "output_size": 256,
+            "type": "comparator",
+        },
+        "input_features": [
+            {"column": "Pclass", "name": "Pclass", "type": "category"},
+            {"column": "Sex", "name": "Sex", "type": "category"},
+            {"column": "Age", "name": "Age", "type": "number"},
+            {"column": "SibSp", "name": "SibSp", "type": "number"},
+            {"column": "Parch", "name": "Parch", "type": "number"},
+            {"column": "Fare", "name": "Fare", "type": "number"},
+            {"column": "Embarked", "name": "Embarked", "type": "category"},
+        ],
+        "model_type": "ecd",
+        "output_features": [{"column": "Survived", "name": "Survived", "type": "category"}],
+        "trainer": {"train_steps": 1},
+    }
+
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+
 def test_balance_non_binary_failure():
     config = {
         "input_features": [
