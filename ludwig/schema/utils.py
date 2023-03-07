@@ -1,4 +1,5 @@
 import copy
+import os
 import warnings
 from abc import ABC, abstractmethod
 from dataclasses import field, Field
@@ -158,7 +159,9 @@ class BaseMarshmallowConfig(ABC):
         filled in as necessary.
         """
 
-        unknown = INCLUDE  # TODO: Change to RAISE and update descriptions once we want to enforce strict schemas.
+        # TODO: Change to just RAISE and update descriptions once we want to enforce strict schemas.
+        unknown = os.environ.get("LUDWIG_SCHEMA_POLICY", "").lower() or INCLUDE
+
         "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter."
 
         ordered = True
