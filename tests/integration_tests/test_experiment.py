@@ -842,8 +842,9 @@ def test_experiment_vector_feature_infer_size(csv_filename):
     run_experiment(input_features, output_features, dataset=rel_path)
 
 
-def test_forecasting_row_major(csv_filename):
-    input_features = [timeseries_feature()]
+@pytest.mark.parametrize("encoder", ["parallel_cnn", "dense", "passthrough"])
+def test_forecasting_row_major(csv_filename, encoder):
+    input_features = [timeseries_feature(encoder={"type": encoder})]
     output_features = [timeseries_feature(decoder={"type": "projector"})]
 
     # Generate test data

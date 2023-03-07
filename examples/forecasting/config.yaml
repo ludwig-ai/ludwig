@@ -4,7 +4,7 @@ input_features:
     preprocessing:
       window_size: 10
     encoder:
-      type: dense
+      type: passthrough
 output_features:
   - name: Seattle_next
     type: timeseries

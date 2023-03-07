@@ -71,6 +71,7 @@ class SequencePassthroughEncoder(SequenceEncoder):
         """
         super().__init__()
         self.config = encoder_config
+        self.max_sequence_length = max_sequence_length
 
         logger.debug(f" {self.name}")
 
@@ -92,15 +93,27 @@ class SequencePassthroughEncoder(SequenceEncoder):
         :type mask: Tensor
         """
         input_sequence = input_sequence.type(torch.float32)
+        batch_size = input_sequence.shape[0]
         while len(input_sequence.shape) < 3:
             input_sequence = input_sequence.unsqueeze(-1)
         hidden = self.reduce_sequence(input_sequence)
+
+        # Output may have [batch_size, s, 1] shape, so ensure it is [batch_size, s]
+        hidden = hidden.reshape((batch_size, -1))
 
         return {"encoder_output": hidden}
 
     @staticmethod
     def get_schema_cls():
         return SequencePassthroughConfig
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.input_shape
 
 
 @DeveloperAPI
