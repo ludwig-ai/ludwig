@@ -93,13 +93,9 @@ class SequencePassthroughEncoder(SequenceEncoder):
         :type mask: Tensor
         """
         input_sequence = input_sequence.type(torch.float32)
-        batch_size = input_sequence.shape[0]
         while len(input_sequence.shape) < 3:
             input_sequence = input_sequence.unsqueeze(-1)
         hidden = self.reduce_sequence(input_sequence)
-
-        # Output may have [batch_size, s, 1] shape, so ensure it is [batch_size, s]
-        hidden = hidden.reshape((batch_size, -1))
 
         return {"encoder_output": hidden}
 
