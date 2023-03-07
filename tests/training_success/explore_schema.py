@@ -4,6 +4,7 @@ from collections import deque
 from typing import Any, Deque, Dict, List, Tuple, Union
 
 from ludwig.constants import SEQUENCE, TEXT, TIMESERIES
+from ludwig.schema.model_types.base import ModelConfig
 from ludwig.types import ModelConfigDict
 from ludwig.utils.misc_utils import merge_dict
 
@@ -271,7 +272,11 @@ def combine_configs(
         for default_config in generate_possible_configs(config_options=item[0]):
             default_config = create_nested_dict(default_config)
             merged_config = merge_dict(copy.deepcopy(config), default_config)
-            ret.append((merged_config, dataset_name))
+            try:
+                ModelConfig.from_dict(merged_config)
+                ret.append((merged_config, dataset_name))
+            except Exception:
+                pass
     return ret
 
 
@@ -294,7 +299,11 @@ def combine_configs_for_comparator_combiner(
             entity_1_size = random.randint(1, len(entity_names) - 1)
             merged_config["combiner"]["entity_1"] = entity_names[:entity_1_size]
             merged_config["combiner"]["entity_2"] = entity_names[entity_1_size:]
-            ret.append((merged_config, dataset_name))
+            try:
+                ModelConfig.from_dict(merged_config)
+                ret.append((merged_config, dataset_name))
+            except Exception:
+                pass
     return ret
 
 
@@ -314,5 +323,9 @@ def combine_configs_for_sequence_combiner(
             for i in range(len(merged_config["input_features"])):
                 if merged_config["input_features"][i]["type"] in {SEQUENCE, TEXT, TIMESERIES}:
                     merged_config["input_features"][0]["encoder"] = {"type": "embed", "reduce_output": None}
-            ret.append((merged_config, dataset_name))
+            try:
+                ModelConfig.from_dict(merged_config)
+                ret.append((merged_config, dataset_name))
+            except Exception:
+                pass
     return ret

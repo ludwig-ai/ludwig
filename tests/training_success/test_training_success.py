@@ -21,7 +21,7 @@ from ludwig.types import ModelConfigDict
 
 def defaults_config_generator(feature_type, only_include) -> Tuple[ModelConfigDict, str]:
     assert isinstance(only_include, str)
-    assert only_include in ["preprocessing", "encoder", "decoder", "loss"]
+    assert only_include in {"preprocessing", "encoder", "decoder", "loss"}
 
     schema = get_schema()
     properties = schema["properties"]["defaults"]["properties"][feature_type]["properties"]
