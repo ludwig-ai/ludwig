@@ -27,12 +27,20 @@ class SequencePreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[SEQUENCE][PREPROCESSING]["vocab_file"],
     )
 
-    max_sequence_length: int = schema_utils.PositiveInteger(
+    sequence_length: int = schema_utils.PositiveInteger(
         default=None,
         allow_none=True,
-        description="The maximum length (number of tokens) of the text. Texts that are longer than this value will be "
-        "truncated, while texts that are shorter will be padded. If None, max sequence length will be inferred from "
-        "the training dataset.",
+        description="The desired length (number of tokens) of the sequence. Sequences that are longer than this value "
+        "will be truncated and sequences shorter than this value will be padded. If None, sequence length will be "
+        "inferred from the training dataset.",
+    )
+
+    max_sequence_length: int = schema_utils.PositiveInteger(
+        default=256,
+        allow_none=True,
+        description="The maximum length (number of tokens) of the sequence. Sequences that are longer than this value "
+        "will be truncated. Useful as a stopgap measure if `sequence_length` is set to `None`. If `None`, max sequence "
+        "length will be inferred from the training dataset.",
         parameter_metadata=FEATURE_METADATA[SEQUENCE][PREPROCESSING]["max_sequence_length"],
     )
 
@@ -123,12 +131,20 @@ class SequenceOutputPreprocessingConfig(SequencePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[SEQUENCE][PREPROCESSING]["missing_value_strategy"],
     )
 
-    max_sequence_length: int = schema_utils.PositiveInteger(
+    sequence_length: int = schema_utils.PositiveInteger(
         default=None,
         allow_none=True,
-        description="The maximum length (number of tokens) of the text. Texts that are longer than this value will be "
-        "truncated, while texts that are shorter will be padded. If None, max sequence length will be inferred from "
-        "the training dataset.",
+        description="The desired length (number of tokens) of the sequence. Sequences that are longer than this value "
+        "will be truncated and sequences shorter than this value will be padded. If None, sequence length will be "
+        "inferred from the training dataset.",
+    )
+
+    max_sequence_length: int = schema_utils.PositiveInteger(
+        default=256,
+        allow_none=True,
+        description="The maximum length (number of tokens) of the sequence. Sequences that are longer than this value "
+        "will be truncated. Useful as a stopgap measure if `sequence_length` is set to `None`. If `None`, max sequence "
+        "length will be inferred from the training dataset.",
         parameter_metadata=FEATURE_METADATA[SEQUENCE][PREPROCESSING]["max_sequence_length"],
     )
 
