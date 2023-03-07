@@ -370,7 +370,11 @@ class SigmoidCrossEntropyLossConfig(BaseLossConfig):
 class HuberLossConfig(BaseLossConfig):
     type: str = schema_utils.ProtectedString(
         HUBER,
-        description="Type of loss.",
+        description=(
+            "Loss that combines advantages of both `mean_absolute_error` (MAE) and `mean_squared_error` (MSE). The "
+            "delta-scaled L1 region makes the loss less sensitive to outliers than MSE, while the L2 region provides "
+            "smoothness over MAE near 0. See [Huber loss](https://en.wikipedia.org/wiki/Huber_loss) for more details."
+        ),
     )
 
     delta: float = schema_utils.FloatRange(
