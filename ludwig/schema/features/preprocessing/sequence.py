@@ -145,7 +145,7 @@ class SequenceOutputPreprocessingConfig(SequencePreprocessingConfig):
         description="The maximum length (number of tokens) of the sequence. Sequences that are longer than this value "
         "will be truncated. Useful as a stopgap measure if `sequence_length` is set to `None`. If `None`, max sequence "
         "length will be inferred from the training dataset.",
-        parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["max_sequence_length"],
+        parameter_metadata=FEATURE_METADATA[SEQUENCE][PREPROCESSING]["max_sequence_length"],
     )
 
     tokenizer: str = schema_utils.String(
