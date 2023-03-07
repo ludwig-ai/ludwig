@@ -237,8 +237,8 @@ def set_hyperopt_defaults_(config: "ModelConfig"):
 
 
 def set_tagger_decoder_parameters(config: "ModelConfig") -> None:
-    """Overrides the reduce_input parameter for text and sequence output features when a tagger
-    decoder is used. This is done to ensure that the decoder correctly gets a 3D tensor as input.
+    """Overrides the reduce_input parameter for text and sequence output features when a tagger decoder is used.
+    This is done to ensure that the decoder correctly gets a 3D tensor as input.
 
     Returns:
         None -> modifies output_features

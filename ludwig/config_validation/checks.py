@@ -378,8 +378,8 @@ def check_stacked_transformer_requirements(config: "ModelConfig") -> None:  # no
 
 @register_config_check
 def check_tagger_decoder_requirements(config: "ModelConfig") -> None:  # noqa: F821
-    """Checks that the tagger decoder has at least one sequence, text or timeseries input feature
-    where the encoder's reduce_output will produce a 3D shaped output from the combiner."""
+    """Checks that the tagger decoder has at least one sequence, text or timeseries input feature where the
+    encoder's reduce_output will produce a 3D shaped output from the combiner."""
     # Check if there is a text or sequence output feature using a tagger decoder
     output_feature_with_tagger_decoder = False
     for output_feature in config.output_features:
