@@ -9,6 +9,9 @@ output_features:
     column: Seattle
     preprocessing:
       horizon: 2
+    decoder:
+      activation: tanh
+      multiplier: 100
 preprocessing:
   split:
     type: datetime

@@ -200,6 +200,19 @@ class ProjectorConfig(BaseDecoderConfig):
         parameter_metadata=DECODER_METADATA["Projector"]["activation"],
     )
 
+    multiplier: float = schema_utils.FloatRange(
+        default=1.0,
+        min=0,
+        min_inclusive=False,
+        description=(
+            "Multiplier to scale the activated outputs by. Useful when setting `activation` to something "
+            "that outputs a value between [-1, 1] like tanh to re-scale values back to order of magnitude of "
+            "the data you're trying to predict. A good rule of thumb in such cases is to pick a value like "
+            "`x * (max - min)` where x is a scalar in the range [1, 2]. For example, if you're trying to predict "
+            "something like temperature, it might make sense to pick a multiplier on the order of `100`."
+        ),
+    )
+
     clip: Union[List[int], Tuple[int]] = schema_utils.FloatRangeTupleDataclassField(
         n=2,
         default=None,

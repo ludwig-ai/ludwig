@@ -106,6 +106,7 @@ class Projector(Decoder):
         weights_initializer="xavier_uniform",
         bias_initializer="zeros",
         activation=None,
+        multiplier=1.0,
         clip=None,
         decoder_config=None,
         **kwargs,
@@ -125,6 +126,7 @@ class Projector(Decoder):
         )
 
         self.activation = get_activation(activation)
+        self.multiplier = multiplier
 
         if clip is not None:
             if isinstance(clip, (list, tuple)) and len(clip) == 2:
@@ -146,7 +148,7 @@ class Projector(Decoder):
         return self.dense.input_shape
 
     def forward(self, inputs, **kwargs):
-        values = self.activation(self.dense(inputs))
+        values = self.activation(self.dense(inputs)) * self.multiplier
         if self.clip:
             values = self.clip(values)
         return values
