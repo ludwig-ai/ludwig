@@ -136,16 +136,9 @@ class RegressorConfig(BaseDecoderConfig):
         parameter_metadata=DECODER_METADATA["Regressor"]["use_bias"],
     )
 
-    weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        description="Initializer for the weight matrix.",
-        parameter_metadata=DECODER_METADATA["Regressor"]["weights_initializer"],
-    )
+    weights_initializer: Union[str, Dict] = common_fields.WeightsInitializerField()
 
-    bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="zeros",
-        description="Initializer for the bias vector.",
-        parameter_metadata=DECODER_METADATA["Regressor"]["bias_initializer"],
-    )
+    bias_initializer: Union[str, Dict] = common_fields.BiasInitializerField()
 
 
 @DeveloperAPI
@@ -183,17 +176,9 @@ class ProjectorConfig(BaseDecoderConfig):
         parameter_metadata=DECODER_METADATA["Projector"]["use_bias"],
     )
 
-    weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="xavier_uniform",
-        description="Initializer for the weight matrix.",
-        parameter_metadata=DECODER_METADATA["Projector"]["weights_initializer"],
-    )
+    weights_initializer: Union[str, Dict] = common_fields.WeightsInitializerField()
 
-    bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="zeros",
-        description="Initializer for the bias vector.",
-        parameter_metadata=DECODER_METADATA["Projector"]["bias_initializer"],
-    )
+    bias_initializer: Union[str, Dict] = common_fields.BiasInitializerField()
 
     activation: str = schema_utils.ActivationOptions(
         default=None,
@@ -245,14 +230,6 @@ class ClassifierConfig(BaseDecoderConfig):
         parameter_metadata=DECODER_METADATA["Classifier"]["use_bias"],
     )
 
-    weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="xavier_uniform",
-        description="Initializer for the weight matrix.",
-        parameter_metadata=DECODER_METADATA["Classifier"]["weights_initializer"],
-    )
+    weights_initializer: Union[str, Dict] = common_fields.WeightsInitializerField()
 
-    bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="zeros",
-        description="Initializer for the bias vector.",
-        parameter_metadata=DECODER_METADATA["Classifier"]["bias_initializer"],
-    )
+    bias_initializer: Union[str, Dict] = common_fields.BiasInitializerField()
