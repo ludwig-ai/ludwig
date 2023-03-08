@@ -10,7 +10,6 @@ from ludwig.constants import (
     CATEGORY,
     COMBINER,
     DECODER,
-    ENCODER,
     IMAGE,
     IN_MEMORY,
     INPUT_FEATURES,
@@ -29,10 +28,8 @@ from ludwig.constants import (
     VECTOR,
 )
 from ludwig.decoders.registry import get_decoder_registry
-from ludwig.encoders.registry import get_encoder_registry
 from ludwig.error import ConfigValidationError
 from ludwig.schema.combiners.utils import get_combiner_registry
-from ludwig.schema.features.utils import input_config_registry
 from ludwig.schema.optimizers import optimizer_registry
 from ludwig.types import ModelConfigDict
 from ludwig.utils.metric_utils import get_feature_to_metric_names_map_from_feature_collection
@@ -84,28 +81,12 @@ class ConfigCheck(ABC):
 
 def check_basic_required_parameters(config: ModelConfigDict) -> None:
     """Checks basic required parameters like that all features have names and types, and all types are valid."""
-    model_type = config["model_type"]
-
     # Check input features.
     for input_feature in config[INPUT_FEATURES]:
         if NAME not in input_feature:
             raise ConfigValidationError("All input features must have a name.")
         if TYPE not in input_feature:
             raise ConfigValidationError(f"Input feature {input_feature[NAME]} must have a type.")
-        if input_feature[TYPE] not in input_config_registry(model_type):
-            raise ConfigValidationError(
-                f"Input feature {input_feature[NAME]} uses an invalid/unsupported type "
-                f"'{input_feature[TYPE]}'. Input feature types: {list(get_encoder_registry().keys())}."
-            )
-        if ENCODER in input_feature:
-            if (
-                TYPE in input_feature[ENCODER]
-                and input_feature[ENCODER][TYPE] not in get_encoder_registry()[input_feature[TYPE]]
-            ):
-                raise ConfigValidationError(
-                    f"Encoder type '{input_feature[ENCODER][TYPE]}' for input feature {input_feature[NAME]} must be "
-                    f"one of: {list(get_encoder_registry()[input_feature[TYPE]].keys())}."
-                )
 
     # Check output features.
     for output_feature in config[OUTPUT_FEATURES]:
