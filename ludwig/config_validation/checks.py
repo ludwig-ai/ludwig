@@ -374,20 +374,3 @@ def check_stacked_transformer_requirements(config: "ModelConfig") -> None:  # no
                 f"Input feature {input_feature.name} transformer encoder requires encoder.hidden_size to be divisible "
                 f"by encoder.num_heads. Found hidden_size {encoder.hidden_size} and num_heads {encoder.num_heads}."
             )
-
-
-@register_config_check
-def check_sequence_length(config: "ModelConfig") -> None:  # noqa: F821
-    """Checks that `sequence_length` is either None or less than `max_sequence_length`."""
-
-    types_with_sequence_length = [SEQUENCE, TEXT]
-    for input_feature in config.input_features:
-        if input_feature.type in types_with_sequence_length:
-            sequence_length = input_feature.preprocessing.sequence_length
-            max_sequence_length = input_feature.preprocessing.max_sequence_length
-            if sequence_length is not None and sequence_length > max_sequence_length:
-                raise ConfigValidationError(
-                    f"Input feature {input_feature.name} has sequence_length {sequence_length} which is greater than "
-                    f"`max_sequence_length` {max_sequence_length}. Consider setting "
-                    f"`max_sequence_length` to be greater than or equal to `sequence_length`."
-                )

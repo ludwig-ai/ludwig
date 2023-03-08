@@ -18,7 +18,9 @@ from ludwig.constants import (
     OUTPUT_FEATURES,
     PARAMETERS,
     PREPROCESSING,
+    SEQUENCE,
     SPACE,
+    TEXT,
     TYPE,
 )
 from ludwig.features.feature_utils import compute_feature_hash
@@ -232,6 +234,27 @@ def set_hyperopt_defaults_(config: "ModelConfig"):
                 config.trainer.epochs = max_t
         elif epochs is not None:
             scheduler.max_t = epochs  # run scheduler until trainer epochs limit hit
+
+
+def set_preprocessing_parameters(config: "ModelConfig") -> None:  # noqa: F821
+    """Reconcile conflicting preprocessing parameters in place."""
+    _set_max_sequence_length(config)
+
+
+def _set_max_sequence_length(config: "ModelConfig") -> None:  # noqa: F821
+    """Ensures that `max_sequence_length` is never less than `sequence_length`."""
+
+    types_with_sequence_length = [SEQUENCE, TEXT]
+    for input_feature in config.input_features:
+        if input_feature.type in types_with_sequence_length:
+            sequence_length = input_feature.preprocessing.sequence_length
+            max_sequence_length = input_feature.preprocessing.max_sequence_length
+            if sequence_length is not None and sequence_length > max_sequence_length:
+                warnings.warn(
+                    "if `sequence_length` is not None, `max_sequence_length` must be greater than or equal "
+                    "to `sequence_length`. Setting `max_sequence_length` to `sequence_length`."
+                )
+                input_feature.preprocessing.max_sequence_length = sequence_length
 
 
 @DeveloperAPI

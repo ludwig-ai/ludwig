@@ -19,6 +19,7 @@ from ludwig.schema.model_types.utils import (
     merge_with_defaults,
     set_derived_feature_columns_,
     set_hyperopt_defaults_,
+    set_preprocessing_parameters,
     set_validation_parameters,
 )
 from ludwig.schema.preprocessing import PreprocessingConfig
@@ -51,6 +52,9 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
     def __post_init__(self):
         set_validation_parameters(self)
         set_hyperopt_defaults_(self)
+
+        # Reconcile conflicting preprocessing parameters
+        set_preprocessing_parameters(self)
 
         # Derive proc_col for each feature from the feature's preprocessing parameters
         # after all preprocessing parameters have been set
