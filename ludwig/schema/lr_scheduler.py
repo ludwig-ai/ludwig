@@ -133,8 +133,7 @@ def LRSchedulerDataclassField(description: str, default: Dict = None):
                     )
             raise ValidationError("Field should be None or dict")
 
-        @staticmethod
-        def _jsonschema_type_mapping():
+        def _jsonschema_type_mapping(self):
             return {
                 **schema_utils.unload_jsonschema_from_marshmallow_class(LRSchedulerConfig),
                 "title": "learning_rate_scheduler_options",

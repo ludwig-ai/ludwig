@@ -1,5 +1,5 @@
 from dataclasses import Field
-from typing import Any, Dict, List, Optional, Type, TYPE_CHECKING, Union
+from typing import Any, Dict, List, Optional, Set, Type, TYPE_CHECKING, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import MODEL_ECD, TYPE
@@ -88,7 +88,9 @@ def get_encoder_conds(encoder_classes: Dict[str, Type["BaseEncoderConfig"]]) -> 
 
 
 @DeveloperAPI
-def EncoderDataclassField(model_type: str, feature_type: str, default: str, description: str = "") -> Field:
+def EncoderDataclassField(
+    model_type: str, feature_type: str, default: str, description: str = "", blocklist: Set[str] = {}
+) -> Field:
     """Custom dataclass field that when used inside a dataclass will allow the user to specify an encoder config.
 
     Returns: Initialized dataclass field that converts an untyped dict with params to an encoder config.
@@ -102,14 +104,13 @@ def EncoderDataclassField(model_type: str, feature_type: str, default: str, desc
         def get_schema_from_registry(self, key: str) -> Type[schema_utils.BaseMarshmallowConfig]:
             return encoder_registry[key]
 
-        @staticmethod
-        def _jsonschema_type_mapping():
+        def _jsonschema_type_mapping(self):
             return {
                 "type": "object",
                 "properties": {
                     "type": {
                         "type": "string",
-                        "enum": list(encoder_registry.keys()),
+                        "enum": list(set(encoder_registry.keys()) - set(blocklist)),
                         "enumDescriptions": get_encoder_descriptions(model_type, feature_type),
                         "default": default,
                     },

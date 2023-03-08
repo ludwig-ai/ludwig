@@ -11,7 +11,7 @@ from mlflow.tracking import MlflowClient
 
 from ludwig.api import LudwigModel
 from ludwig.constants import TRAINER
-from ludwig.contribs import MlflowCallback
+from ludwig.contribs.mlflow import MlflowCallback
 from ludwig.export import export_mlflow
 from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
 from tests.integration_tests.utils import category_feature, FakeRemoteBackend, generate_data, sequence_feature

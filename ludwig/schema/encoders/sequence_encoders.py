@@ -70,7 +70,7 @@ def PoolSizeField(default: Optional[int] = None) -> Field:
 class SequenceEncoderConfig(BaseEncoderConfig):
     """Base class for sequence encoders."""
 
-    def get_fixed_preprocessing_params(self) -> Dict[str, Any]:
+    def get_fixed_preprocessing_params(self, model_type: str) -> Dict[str, Any]:
         return {"cache_encoder_embeddings": False}
 
 
@@ -87,7 +87,7 @@ class SequencePassthroughConfig(SequenceEncoderConfig):
         description=ENCODER_METADATA["SequencePassthrough"]["type"].long_description,
     )
 
-    max_sequence_length: int = common_fields.MaxSequenceLengthField(default=256)
+    max_sequence_length: int = common_fields.MaxSequenceLengthField()
 
     encoding_size: int = schema_utils.PositiveInteger(
         default=None,

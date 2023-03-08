@@ -11,7 +11,7 @@ from ludwig.schema.features.loss.utils import LossDataclassField
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
 from ludwig.schema.features.utils import (
-    defaults_config_registry,
+    ecd_defaults_config_registry,
     ecd_input_config_registry,
     input_mixin_registry,
     output_config_registry,
@@ -115,7 +115,7 @@ class VectorOutputFeatureConfig(BaseOutputFeatureConfig, VectorOutputFeatureConf
 
 
 @DeveloperAPI
-@defaults_config_registry.register(VECTOR)
+@ecd_defaults_config_registry.register(VECTOR)
 @ludwig_dataclass
 class VectorDefaultsConfig(VectorInputFeatureConfigMixin, VectorOutputFeatureConfigMixin):
     pass
