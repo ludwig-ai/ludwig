@@ -2,10 +2,10 @@ from typing import Any, Dict, Optional
 
 import pytest
 
-from ludwig.constants import MODEL_ECD
+from ludwig.constants import MODEL_ECD, TEXT, TYPE
 from ludwig.schema.encoders.text_encoders import BERTConfig
+from ludwig.schema.encoders.utils import get_encoder_cls
 from ludwig.schema.features.preprocessing.text import TextPreprocessingConfig
-from ludwig.schema.model_types.utils import merge_fixed_preprocessing_params
 
 
 @pytest.mark.parametrize(
@@ -37,19 +37,23 @@ def test_set_fixed_preprocessing_params(pretrained_model_name_or_path: str):
 
 
 @pytest.mark.parametrize(
-    "encoder,expected",
+    "encoder_params,expected",
     [
         ({"type": "parallel_cnn"}, False),
-        ({"type": "bert", "trainable": False}, None),
+        ({"type": "bert", "trainable": False}, True),
         ({"type": "bert", "trainable": True}, False),
     ],
     ids=["parallel_cnn", "bert_fixed", "bert_trainable"],
 )
-def test_merge_fixed_preprocessing_params_cache_embeddings(encoder: Dict[str, Any], expected: Optional[bool]):
-    preprocessing = {
-        "tokenizer": "space",
-        "lowercase": True,
-    }
+def test_set_fixed_preprocessing_params_cache_embeddings(encoder_params: Dict[str, Any], expected: Optional[bool]):
+    preprocessing = TextPreprocessingConfig.from_dict(
+        {
+            "tokenizer": "space",
+            "lowercase": True,
+            "cache_encoder_embeddings": True,
+        }
+    )
 
-    merged_params = merge_fixed_preprocessing_params(MODEL_ECD, "text", preprocessing, encoder)
-    assert merged_params.get("cache_encoder_embeddings") == expected
+    encoder = get_encoder_cls(MODEL_ECD, TEXT, encoder_params[TYPE]).from_dict(encoder_params)
+    encoder.set_fixed_preprocessing_params(MODEL_ECD, preprocessing)
+    assert preprocessing.cache_encoder_embeddings == expected
