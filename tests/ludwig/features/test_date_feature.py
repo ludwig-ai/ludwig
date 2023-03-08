@@ -27,7 +27,7 @@ def test_date_input_feature(date_config: FeatureConfigDict):
     feature_def = deepcopy(date_config)
 
     # pickup any other missing parameters
-    defaults = DateInputFeatureConfig().to_dict()
+    defaults = DateInputFeatureConfig(name="foo", type="date").to_dict()
     set_def = merge_dict(defaults, feature_def)
 
     # ensure no exceptions raised during build

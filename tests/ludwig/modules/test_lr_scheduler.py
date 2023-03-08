@@ -16,7 +16,7 @@ def test_lr_scheduler_warmup_decay():
     base_lr = 1.0
     warmup_fraction = 0.1
 
-    module = NumberInputFeature(NumberInputFeatureConfig(name="num1", encoder=DenseEncoderConfig()))
+    module = NumberInputFeature(NumberInputFeatureConfig(name="num1", type="number", encoder=DenseEncoderConfig()))
 
     const_optimizer = SGD(module.parameters(), lr=base_lr)
     const_config = LRSchedulerConfig(warmup_evaluations=0)
@@ -66,8 +66,10 @@ def test_lr_scheduler_reduce_on_plateau():
     base_lr = 1.0
     reduce_limit = 3
 
-    module = NumberInputFeature(NumberInputFeatureConfig(name="num1", encoder=DenseEncoderConfig()))
-    output1 = NumberOutputFeature(NumberOutputFeatureConfig(name="output1", input_size=10), output_features={})
+    module = NumberInputFeature(NumberInputFeatureConfig(name="num1", type="number", encoder=DenseEncoderConfig()))
+    output1 = NumberOutputFeature(
+        NumberOutputFeatureConfig(name="output1", type="number", input_size=10), output_features={}
+    )
 
     optimizer = SGD(module.parameters(), lr=base_lr)
     config = LRSchedulerConfig(
@@ -125,8 +127,10 @@ def test_lr_scheduler_save_load():
     base_lr = 1.0
     reduce_limit = 3
 
-    module = NumberInputFeature(NumberInputFeatureConfig(name="num1", encoder=DenseEncoderConfig()))
-    output1 = NumberOutputFeature(NumberOutputFeatureConfig(name="output1", input_size=10), output_features={})
+    module = NumberInputFeature(NumberInputFeatureConfig(name="num1", type="number", encoder=DenseEncoderConfig()))
+    output1 = NumberOutputFeature(
+        NumberOutputFeatureConfig(name="output1", type="number", input_size=10), output_features={}
+    )
 
     optimizer = SGD(module.parameters(), lr=base_lr)
     config = LRSchedulerConfig(warmup_fraction=0.2, reduce_on_plateau=reduce_limit)
