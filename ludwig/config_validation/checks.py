@@ -374,10 +374,20 @@ def check_stacked_transformer_requirements(config: "ModelConfig") -> None:  # no
 
 
 @register_config_check
-def check_hyperopt_dependencies_installed(config: "ModelConfig") -> None:  # noqa: F821
+def check_hyperopt_search_algorithm_dependencies_installed(config: "ModelConfig") -> None:  # noqa: F821
     """Check that the hyperopt search algorithm dependencies are installed."""
-    if config.hyperopt is not None and config.hyperopt.search_alg is not None:
+    if config.hyperopt is not None:
         try:
             config.hyperopt.search_alg.dependencies_installed()
+        except ImportError as e:
+            raise ConfigValidationError(e.msg)
+
+
+@register_config_check
+def check_hyperopt_scheduler_dependencies_installed(config: "ModelConfig") -> None:  # noqa: F821
+    """Check that the hyperopt scheduler dependencies are installed."""
+    if config.hyperopt is not None:
+        try:
+            config.hyperopt.executor.scheduler.dependencies_installed()
         except ImportError as e:
             raise ConfigValidationError(e.msg)
