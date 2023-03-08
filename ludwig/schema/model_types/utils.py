@@ -93,7 +93,7 @@ def merge_fixed_preprocessing_params(
     encoder_type = encoder_params.get(TYPE, feature_cls().encoder.type)
     encoder_class = get_encoder_cls(model_type, feature_type, encoder_type)
     encoder = encoder_class.from_dict(encoder_params)
-    return merge_dict(preprocessing_params, encoder.get_fixed_preprocessing_params())
+    return merge_dict(preprocessing_params, encoder.get_fixed_preprocessing_params(model_type))
 
 
 def set_validation_parameters(config: "ModelConfig"):
