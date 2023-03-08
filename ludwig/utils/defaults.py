@@ -37,7 +37,7 @@ default_random_seed = 42
 # Still needed for preprocessing  TODO(Connor): Refactor ludwig/data/preprocessing to use schema
 # TODO(travis): remove this, make type a protected string for each subclass
 default_feature_specific_preprocessing_parameters = {
-    name: preproc_sect.get_schema_cls()(name="__tmp__").preprocessing.to_dict()
+    name: preproc_sect.get_schema_cls()(name="__tmp__", type=name).preprocessing.to_dict()
     for name, preproc_sect in get_input_type_registry().items()
 }
 
