@@ -123,9 +123,9 @@ class CustomNumberDecoder(Decoder):
         return CustomNumberDecoderConfig
 
 
-@register_loss("custom_loss", [NUMBER])
+@register_loss(CustomLossConfig)
 class CustomLoss(nn.Module, LogitsInputsMixin):
-    def __init__(self, **kwargs):
+    def __init__(self, config: CustomLossConfig):
         super().__init__()
 
     def forward(self, preds: Tensor, target: Tensor) -> Tensor:
@@ -138,9 +138,9 @@ class CustomLoss(nn.Module, LogitsInputsMixin):
 
 @register_metric("custom_loss", [NUMBER], MINIMIZE, LOGITS)
 class CustomLossMetric(LossMetric):
-    def __init__(self, **kwargs):
+    def __init__(self, config: CustomLossConfig, **kwargs):
         super().__init__()
-        self.loss_fn = CustomLoss()
+        self.loss_fn = CustomLoss(config)
 
     def get_current_value(self, preds: Tensor, target: Tensor):
         return self.loss_fn(preds, target)
