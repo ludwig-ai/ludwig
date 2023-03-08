@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional, Set
 from marshmallow import ValidationError
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.config_validation.checks import check_basic_required_parameters, get_config_check_registry
+from ludwig.config_validation.checks import get_config_check_registry
 from ludwig.config_validation.validation import check_schema
 from ludwig.constants import BACKEND, ENCODER, MODEL_ECD
 from ludwig.error import ConfigValidationError
@@ -72,7 +72,6 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
                 f"Invalid model type: '{model_type}', expected one of: {list(model_type_schema_registry.keys())}"
             )
 
-        check_basic_required_parameters(config)
         config = merge_with_defaults(config)
 
         # TODO(travis): handle this with helper function

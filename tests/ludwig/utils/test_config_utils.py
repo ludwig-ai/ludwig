@@ -11,7 +11,7 @@ from ludwig.schema.model_types.utils import merge_fixed_preprocessing_params
     [None, "bert-large-uncased"],
     ids=["default_model", "override_model"],
 )
-def test_merge_fixed_preprocessing_params(pretrained_model_name_or_path: str):
+def test_set_fixed_preprocessing_params(pretrained_model_name_or_path: str):
     expected_model_name = "bert-base-uncased"
 
     preprocessing = {
