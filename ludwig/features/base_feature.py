@@ -267,15 +267,14 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         return self.eval_loss_metric(predictions[prediction_key].detach(), targets)
 
     def _setup_loss(self):
-        loss_kwargs = self.loss_kwargs()
         self.train_loss_function = create_loss(self.loss)
-        self.eval_loss_metric = get_metric_cls(self.type(), self.loss.type)(**loss_kwargs)
+        self.eval_loss_metric = get_metric_cls(self.type(), self.loss.type)(config=self.loss)
 
     def _setup_metrics(self):
         self._metric_functions = {
             LOSS: self.eval_loss_metric,
             **{
-                name: cls(**self.loss_kwargs(), **self.metric_kwargs())
+                name: cls(config=self.loss, **self.metric_kwargs())
                 for name, cls in get_metric_classes(self.type()).items()
                 if cls.can_report(self)
             },
@@ -330,10 +329,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             tensors that may be necessary for computing predictions or evaluation metrics.
         """
         raise NotImplementedError("OutputFeature is missing logits() implementation.")
-
-    def loss_kwargs(self) -> Dict[str, Any]:
-        """Returns arguments that are used to instantiate an instance of the loss class."""
-        return {}
 
     def metric_kwargs(self) -> Dict[str, Any]:
         """Returns arguments that are used to instantiate an instance of each metric class."""
