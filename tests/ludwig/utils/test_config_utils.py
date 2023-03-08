@@ -3,6 +3,8 @@ from typing import Any, Dict, Optional
 import pytest
 
 from ludwig.constants import MODEL_ECD
+from ludwig.schema.encoders.text_encoders import BERTConfig
+from ludwig.schema.features.preprocessing.text import TextPreprocessingConfig
 from ludwig.schema.model_types.utils import merge_fixed_preprocessing_params
 
 
@@ -14,22 +16,24 @@ from ludwig.schema.model_types.utils import merge_fixed_preprocessing_params
 def test_set_fixed_preprocessing_params(pretrained_model_name_or_path: str):
     expected_model_name = "bert-base-uncased"
 
-    preprocessing = {
-        "tokenizer": "space",
-        "lowercase": True,
-    }
+    preprocessing = TextPreprocessingConfig.from_dict(
+        {
+            "tokenizer": "space",
+            "lowercase": True,
+        }
+    )
 
-    encoder = {"type": "bert"}
+    encoder_params = {}
     if pretrained_model_name_or_path is not None:
-        encoder["pretrained_model_name_or_path"] = pretrained_model_name_or_path
+        encoder_params["pretrained_model_name_or_path"] = pretrained_model_name_or_path
         expected_model_name = pretrained_model_name_or_path
 
-    merged_params = merge_fixed_preprocessing_params(MODEL_ECD, "text", preprocessing, encoder)
-    assert merged_params == {
-        "tokenizer": "hf_tokenizer",
-        "lowercase": True,
-        "pretrained_model_name_or_path": expected_model_name,
-    }
+    encoder = BERTConfig.from_dict(encoder_params)
+    encoder.set_fixed_preprocessing_params(MODEL_ECD, preprocessing)
+
+    assert preprocessing.tokenizer == "hf_tokenizer"
+    assert preprocessing.lowercase
+    assert preprocessing.pretrained_model_name_or_path == expected_model_name
 
 
 @pytest.mark.parametrize(
