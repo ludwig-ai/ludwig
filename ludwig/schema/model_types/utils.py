@@ -22,12 +22,10 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.features.feature_utils import compute_feature_hash
-from ludwig.schema.encoders.utils import get_encoder_cls
-from ludwig.schema.features.utils import input_config_registry, output_config_registry
+from ludwig.schema.features.utils import output_config_registry
 from ludwig.schema.hyperopt.scheduler import BaseHyperbandSchedulerConfig
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.types import HyperoptConfigDict, ModelConfigDict
-from ludwig.utils.misc_utils import merge_dict
 
 if TYPE_CHECKING:
     from ludwig.schema.model_types.base import ModelConfig
@@ -85,15 +83,10 @@ def _merge_dict_with_types(dct: Dict[str, Any], merge_dct: Dict[str, Any], exclu
 
 
 @DeveloperAPI
-def merge_fixed_preprocessing_params(
-    model_type: str, feature_type: str, preprocessing_params: Dict[str, Any], encoder_params: Dict[str, Any]
-) -> Dict[str, Any]:
+def merge_fixed_preprocessing_params(config: "ModelConfig"):
     """Update preprocessing parameters if encoders require fixed preprocessing parameters."""
-    feature_cls = input_config_registry(model_type)[feature_type]
-    encoder_type = encoder_params.get(TYPE, feature_cls().encoder.type)
-    encoder_class = get_encoder_cls(model_type, feature_type, encoder_type)
-    encoder = encoder_class.from_dict(encoder_params)
-    return merge_dict(preprocessing_params, encoder.get_fixed_preprocessing_params(model_type))
+    for feature in config.input_features:
+        feature.encoder.set_fixed_preprocessing_params(config.model_type, feature.preprocessing)
 
 
 def set_validation_parameters(config: "ModelConfig"):

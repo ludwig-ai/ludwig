@@ -34,12 +34,14 @@ class NumberInputFeatureConfigMixin(BaseMarshmallowConfig):
     """NumberInputFeatureConfigMixin is a dataclass that configures the parameters used in both the number input
     feature and the number global defaults section of the Ludwig Config."""
 
+    type: str = schema_utils.ProtectedString(NUMBER)
+
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=NUMBER)
 
 
 @DeveloperAPI
 @ludwig_dataclass
-class NumberInputFeatureConfig(BaseInputFeatureConfig, NumberInputFeatureConfigMixin):
+class NumberInputFeatureConfig(NumberInputFeatureConfigMixin, BaseInputFeatureConfig):
     """NumberInputFeatureConfig is a dataclass that configures the parameters used for a number input feature."""
 
     encoder: BaseEncoderConfig = None
@@ -74,6 +76,8 @@ class NumberOutputFeatureConfigMixin(BaseMarshmallowConfig):
     """NumberOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the number output
     feature and the number global defaults section of the Ludwig Config."""
 
+    type: str = schema_utils.ProtectedString(NUMBER)
+
     decoder: BaseDecoderConfig = DecoderDataclassField(
         feature_type=NUMBER,
         default="regressor",
@@ -88,7 +92,7 @@ class NumberOutputFeatureConfigMixin(BaseMarshmallowConfig):
 @DeveloperAPI
 @output_config_registry.register(NUMBER)
 @ludwig_dataclass
-class NumberOutputFeatureConfig(BaseOutputFeatureConfig, NumberOutputFeatureConfigMixin):
+class NumberOutputFeatureConfig(NumberOutputFeatureConfigMixin, BaseOutputFeatureConfig):
     """NumberOutputFeatureConfig is a dataclass that configures the parameters used for a category output
     feature."""
 

@@ -23,6 +23,7 @@ from ludwig.constants import (
     TIMESERIES,
     VECTOR,
 )
+from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.utils import (
     ecd_input_config_registry,
@@ -43,6 +44,14 @@ _info_console = Console(stderr=True, style="bold green")
 @ludwig_dataclass
 class BaseFeatureConfig(schema_utils.BaseMarshmallowConfig):
     """Base class for feature configs."""
+
+    def __post_init__(self):
+        # TODO(travis): this should be done through marshmallow dataclass' `required` field param,
+        # but requires a refactor`
+        if self.name is None:
+            raise ConfigValidationError("All features must have a name.")
+        if self.type is None:
+            raise ConfigValidationError(f"Feature {self.name} must have a type.")
 
     active: bool = True
 

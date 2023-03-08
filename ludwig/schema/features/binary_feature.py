@@ -32,12 +32,14 @@ class BinaryInputFeatureConfigMixin(BaseMarshmallowConfig):
     """BinaryInputFeatureConfigMixin is a dataclass that configures the parameters used in both the binary input
     feature and the binary global defaults section of the Ludwig Config."""
 
+    type: str = schema_utils.ProtectedString(BINARY)
+
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=BINARY)
 
 
 @DeveloperAPI
 @ludwig_dataclass
-class BinaryInputFeatureConfig(BaseInputFeatureConfig, BinaryInputFeatureConfigMixin):
+class BinaryInputFeatureConfig(BinaryInputFeatureConfigMixin, BaseInputFeatureConfig):
     """BinaryInputFeatureConfig is a dataclass that configures the parameters used for a binary input feature."""
 
     encoder: BaseEncoderConfig = None
@@ -72,6 +74,8 @@ class BinaryOutputFeatureConfigMixin(BaseMarshmallowConfig):
     """BinaryOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the binary output
     feature and the binary global defaults section of the Ludwig Config."""
 
+    type: str = schema_utils.ProtectedString(BINARY)
+
     decoder: BaseDecoderConfig = DecoderDataclassField(
         feature_type=BINARY,
         default="regressor",
@@ -86,7 +90,7 @@ class BinaryOutputFeatureConfigMixin(BaseMarshmallowConfig):
 @DeveloperAPI
 @output_config_registry.register(BINARY)
 @ludwig_dataclass
-class BinaryOutputFeatureConfig(BaseOutputFeatureConfig, BinaryOutputFeatureConfigMixin):
+class BinaryOutputFeatureConfig(BinaryOutputFeatureConfigMixin, BaseOutputFeatureConfig):
     """BinaryOutputFeatureConfig is a dataclass that configures the parameters used for a binary output feature."""
 
     calibration: bool = schema_utils.Boolean(
