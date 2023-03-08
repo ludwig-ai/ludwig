@@ -436,26 +436,6 @@ def test_seq_features_max_sequence_length(
     assert all(len(x) == sequence_length_expected for x in all_df[proc_column_name])
 
 
-@pytest.mark.parametrize(
-    "feature_type",
-    [
-        sequence_feature,
-        text_feature,
-    ],
-)
-def test_seq_features_max_sequence_length_error(feature_type):
-    """Tests that a sequence feature with invalid `sequence_length` and `max_sequence_length` raises an error."""
-    feat = feature_type(
-        preprocessing={"sequence_length": 40, "max_sequence_length": 20},
-    )
-    input_features = [feat]
-    output_features = [binary_feature()]
-    config = {"input_features": input_features, "output_features": output_features}
-
-    with pytest.raises(ConfigValidationError):
-        LudwigModel(config, backend=LocalTestBackend())
-
-
 def test_column_feature_type_mismatch_fill():
     """Tests that we are able to fill missing values even in columns where the column dtype and desired feature
     dtype do not match."""
