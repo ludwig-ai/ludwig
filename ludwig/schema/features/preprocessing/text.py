@@ -153,6 +153,7 @@ class TextOutputPreprocessingConfig(TextPreprocessingConfig):
         description="The desired length (number of tokens) of the sequence. Sequences that are longer than this value "
         "will be truncated and sequences shorter than this value will be padded. If None, sequence length will be "
         "inferred from the training dataset.",
+        parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["sequence_length"],
     )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
