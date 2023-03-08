@@ -110,161 +110,138 @@ def train_and_evaluate(config: ModelConfigDict, dataset_name: str):
     model.evaluate(dataset=dataset)
 
 
-@pytest.mark.combiner
 @pytest.mark.combinatorial
 @pytest.mark.parametrize("config,dataset_name", combiner_config_generator("sequence_concat"))
 def test_ecd_sequence_concat_combiner(config, dataset_name):
     train_and_evaluate(config, dataset_name)
 
 
-@pytest.mark.combiner
 @pytest.mark.combinatorial
 @pytest.mark.parametrize("config,dataset_name", combiner_config_generator("sequence"))
 def test_ecd_sequence_combiner(config, dataset_name):
     train_and_evaluate(config, dataset_name)
 
 
-@pytest.mark.combiner
 @pytest.mark.combinatorial
 @pytest.mark.parametrize("config,dataset_name", combiner_config_generator("comparator"))
 def test_ecd_comparator_combiner(config, dataset_name):
     train_and_evaluate(config, dataset_name)
 
 
-@pytest.mark.combiner
 @pytest.mark.combinatorial
 @pytest.mark.parametrize("config,dataset_name", combiner_config_generator("concat"))
 def test_ecd_concat_combiner(config, dataset_name):
     train_and_evaluate(config, dataset_name)
 
 
-@pytest.mark.combiner
 @pytest.mark.combinatorial
 @pytest.mark.parametrize("config,dataset_name", combiner_config_generator("project_aggregate"))
 def test_ecd_project_aggregate_combiner(config, dataset_name):
     train_and_evaluate(config, dataset_name)
 
 
-@pytest.mark.combiner
 @pytest.mark.combinatorial
 @pytest.mark.parametrize("config,dataset_name", combiner_config_generator("tabnet"))
 def test_ecd_tabnet_combiner(config, dataset_name):
     train_and_evaluate(config, dataset_name)
 
 
-@pytest.mark.combiner
 @pytest.mark.combinatorial
 @pytest.mark.parametrize("config,dataset_name", combiner_config_generator("tabtransformer"))
 def test_ecd_tabtransformer_combiner(config, dataset_name):
     train_and_evaluate(config, dataset_name)
 
 
-@pytest.mark.combiner
 @pytest.mark.combinatorial
 @pytest.mark.parametrize("config,dataset_name", combiner_config_generator("transformer"))
 def test_ecd_transformer_combiner(config, dataset_name):
     train_and_evaluate(config, dataset_name)
 
 
-@pytest.mark.ecd_trainer
 @pytest.mark.combinatorial
 @pytest.mark.parametrize("config,dataset_name", ecd_trainer_config_generator())
 def test_ecd_trainer(config, dataset_name):
     train_and_evaluate(config, dataset_name)
 
 
-@pytest.mark.number_feature
 @pytest.mark.combinatorial
 @pytest.mark.parametrize("config,dataset_name", defaults_config_generator("number", "encoder"))
 def test_number_encoder_defaults(config, dataset_name):
     train_and_evaluate(config, dataset_name)
 
 
-@pytest.mark.number_feature
 @pytest.mark.combinatorial
 @pytest.mark.parametrize("config,dataset_name", defaults_config_generator("number", "decoder"))
 def test_number_decoder_defaults(config, dataset_name):
     train_and_evaluate(config, dataset_name)
 
 
-@pytest.mark.number_feature
 @pytest.mark.combinatorial
 @pytest.mark.parametrize("config,dataset_name", defaults_config_generator("number", "loss"))
 def test_number_encoder_loss(config, dataset_name):
     train_and_evaluate(config, dataset_name)
 
 
-@pytest.mark.number_feature
 @pytest.mark.combinatorial
 @pytest.mark.parametrize("config,dataset_name", defaults_config_generator("number", "preprocessing"))
 def test_number_preprocessing_defaults(config, dataset_name):
     train_and_evaluate(config, dataset_name)
 
 
-@pytest.mark.category_feature
 @pytest.mark.combinatorial
 @pytest.mark.parametrize("config,dataset_name", defaults_config_generator("category", "encoder"))
 def test_category_encoder_defaults(config, dataset_name):
     train_and_evaluate(config, dataset_name)
 
 
-@pytest.mark.category_feature
 @pytest.mark.combinatorial
 @pytest.mark.parametrize("config,dataset_name", defaults_config_generator("category", "decoder"))
 def test_category_decoder_defaults(config, dataset_name):
     train_and_evaluate(config, dataset_name)
 
 
-@pytest.mark.category_feature
 @pytest.mark.combinatorial
 @pytest.mark.parametrize("config,dataset_name", defaults_config_generator("category", "loss"))
 def test_category_loss_defaults(config, dataset_name):
     train_and_evaluate(config, dataset_name)
 
 
-@pytest.mark.category_feature
 @pytest.mark.combinatorial
 @pytest.mark.parametrize("config,dataset_name", defaults_config_generator("category", "preprocessing"))
 def test_category_preprocessing_defaults(config, dataset_name):
     train_and_evaluate(config, dataset_name)
 
 
-@pytest.mark.binary_feature
 @pytest.mark.combinatorial
 @pytest.mark.parametrize("config,dataset_name", defaults_config_generator("binary", "encoder"))
 def test_binary_encoder_defaults(config, dataset_name):
     train_and_evaluate(config, dataset_name)
 
 
-@pytest.mark.binary_feature
 @pytest.mark.combinatorial
 @pytest.mark.parametrize("config,dataset_name", defaults_config_generator("binary", "decoder"))
 def test_binary_decoder_defaults(config, dataset_name):
     train_and_evaluate(config, dataset_name)
 
 
-@pytest.mark.binary_feature
 @pytest.mark.combinatorial
 @pytest.mark.parametrize("config,dataset_name", defaults_config_generator("binary", "loss"))
 def test_binary_loss_defaults(config, dataset_name):
     train_and_evaluate(config, dataset_name)
 
 
-@pytest.mark.binary_feature
 @pytest.mark.combinatorial
 @pytest.mark.parametrize("config,dataset_name", defaults_config_generator("binary", "preprocessing"))
 def test_binary_preprocessing_defaults(config, dataset_name):
     train_and_evaluate(config, dataset_name)
 
 
-# @pytest.mark.text_feature
 # @pytest.mark.combinatorial
 # @pytest.mark.parametrize("config,dataset_name", defaults_config_generator("text", "preprocessing"))
 # def test_text_preprocessing_defaults(config, dataset_name):
 #     train_and_evaluate(config, dataset_name)
 
 
-# @pytest.mark.text_feature
 # @pytest.mark.combinatorial
 # @pytest.mark.parametrize("config,dataset_name", defaults_config_generator("text", "encoder"))
 # def test_text_encoder_defaults(config):
