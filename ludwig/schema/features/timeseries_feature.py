@@ -32,7 +32,7 @@ class TimeseriesInputFeatureConfigMixin(BaseMarshmallowConfig):
 @DeveloperAPI
 @ecd_input_config_registry.register(TIMESERIES)
 @ludwig_dataclass
-class TimeseriesInputFeatureConfig(BaseInputFeatureConfig, TimeseriesInputFeatureConfigMixin):
+class TimeseriesInputFeatureConfig(TimeseriesInputFeatureConfigMixin, BaseInputFeatureConfig):
     """TimeseriesInputFeatureConfig is a dataclass that configures the parameters used for a timeseries input
     feature."""
 

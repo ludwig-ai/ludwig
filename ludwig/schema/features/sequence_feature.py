@@ -43,7 +43,7 @@ class SequenceInputFeatureConfigMixin(BaseMarshmallowConfig):
 @DeveloperAPI
 @ecd_input_config_registry.register(SEQUENCE)
 @ludwig_dataclass
-class SequenceInputFeatureConfig(BaseInputFeatureConfig, SequenceInputFeatureConfigMixin):
+class SequenceInputFeatureConfig(SequenceInputFeatureConfigMixin, BaseInputFeatureConfig):
     """SequenceInputFeatureConfig is a dataclass that configures the parameters used for a sequence input
     feature."""
 
@@ -73,7 +73,7 @@ class SequenceOutputFeatureConfigMixin(BaseMarshmallowConfig):
 @DeveloperAPI
 @output_config_registry.register(SEQUENCE)
 @ludwig_dataclass
-class SequenceOutputFeatureConfig(BaseOutputFeatureConfig, SequenceOutputFeatureConfigMixin):
+class SequenceOutputFeatureConfig(SequenceOutputFeatureConfigMixin, BaseOutputFeatureConfig):
     """SequenceOutputFeatureConfig is a dataclass that configures the parameters used for a sequence output
     feature."""
 

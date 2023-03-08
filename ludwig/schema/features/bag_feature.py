@@ -32,7 +32,7 @@ class BagInputFeatureConfigMixin(BaseMarshmallowConfig):
 @DeveloperAPI
 @ecd_input_config_registry.register(BAG)
 @ludwig_dataclass
-class BagInputFeatureConfig(BaseInputFeatureConfig, BagInputFeatureConfigMixin):
+class BagInputFeatureConfig(BagInputFeatureConfigMixin, BaseInputFeatureConfig):
     """BagInputFeatureConfig is a dataclass that configures the parameters used for a bag input feature."""
 
     pass

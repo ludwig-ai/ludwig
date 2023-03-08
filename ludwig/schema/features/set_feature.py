@@ -43,7 +43,7 @@ class SetInputFeatureConfigMixin(BaseMarshmallowConfig):
 @DeveloperAPI
 @ecd_input_config_registry.register(SET)
 @ludwig_dataclass
-class SetInputFeatureConfig(BaseInputFeatureConfig, SetInputFeatureConfigMixin):
+class SetInputFeatureConfig(SetInputFeatureConfigMixin, BaseInputFeatureConfig):
     """SetInputFeatureConfig is a dataclass that configures the parameters used for a set input feature."""
 
     pass
@@ -72,7 +72,7 @@ class SetOutputFeatureConfigMixin(BaseMarshmallowConfig):
 @DeveloperAPI
 @output_config_registry.register(SET)
 @ludwig_dataclass
-class SetOutputFeatureConfig(BaseOutputFeatureConfig, SetOutputFeatureConfigMixin):
+class SetOutputFeatureConfig(SetOutputFeatureConfigMixin, BaseOutputFeatureConfig):
     """SetOutputFeatureConfig is a dataclass that configures the parameters used for a set output feature."""
 
     default_validation_metric: str = schema_utils.StringOptions(

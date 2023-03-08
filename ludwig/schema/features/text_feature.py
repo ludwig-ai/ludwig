@@ -43,7 +43,7 @@ class TextInputFeatureConfigMixin(BaseMarshmallowConfig):
 @DeveloperAPI
 @ecd_input_config_registry.register(TEXT)
 @ludwig_dataclass
-class TextInputFeatureConfig(BaseInputFeatureConfig, TextInputFeatureConfigMixin):
+class TextInputFeatureConfig(TextInputFeatureConfigMixin, BaseInputFeatureConfig):
     """TextInputFeatureConfig is a dataclass that configures the parameters used for a text input feature."""
 
     pass
@@ -72,7 +72,7 @@ class TextOutputFeatureConfigMixin(BaseMarshmallowConfig):
 @DeveloperAPI
 @output_config_registry.register(TEXT)
 @ludwig_dataclass
-class TextOutputFeatureConfig(BaseOutputFeatureConfig, TextOutputFeatureConfigMixin):
+class TextOutputFeatureConfig(TextOutputFeatureConfigMixin, BaseOutputFeatureConfig):
     """TextOutputFeatureConfig is a dataclass that configures the parameters used for a text output feature."""
 
     class_similarities: list = schema_utils.List(

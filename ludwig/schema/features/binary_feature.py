@@ -39,7 +39,7 @@ class BinaryInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @ludwig_dataclass
-class BinaryInputFeatureConfig(BaseInputFeatureConfig, BinaryInputFeatureConfigMixin):
+class BinaryInputFeatureConfig(BinaryInputFeatureConfigMixin, BaseInputFeatureConfig):
     """BinaryInputFeatureConfig is a dataclass that configures the parameters used for a binary input feature."""
 
     encoder: BaseEncoderConfig = None
@@ -90,7 +90,7 @@ class BinaryOutputFeatureConfigMixin(BaseMarshmallowConfig):
 @DeveloperAPI
 @output_config_registry.register(BINARY)
 @ludwig_dataclass
-class BinaryOutputFeatureConfig(BaseOutputFeatureConfig, BinaryOutputFeatureConfigMixin):
+class BinaryOutputFeatureConfig(BinaryOutputFeatureConfigMixin, BaseOutputFeatureConfig):
     """BinaryOutputFeatureConfig is a dataclass that configures the parameters used for a binary output feature."""
 
     calibration: bool = schema_utils.Boolean(

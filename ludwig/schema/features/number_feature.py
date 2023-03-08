@@ -41,7 +41,7 @@ class NumberInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @ludwig_dataclass
-class NumberInputFeatureConfig(BaseInputFeatureConfig, NumberInputFeatureConfigMixin):
+class NumberInputFeatureConfig(NumberInputFeatureConfigMixin, BaseInputFeatureConfig):
     """NumberInputFeatureConfig is a dataclass that configures the parameters used for a number input feature."""
 
     encoder: BaseEncoderConfig = None
@@ -92,7 +92,7 @@ class NumberOutputFeatureConfigMixin(BaseMarshmallowConfig):
 @DeveloperAPI
 @output_config_registry.register(NUMBER)
 @ludwig_dataclass
-class NumberOutputFeatureConfig(BaseOutputFeatureConfig, NumberOutputFeatureConfigMixin):
+class NumberOutputFeatureConfig(NumberOutputFeatureConfigMixin, BaseOutputFeatureConfig):
     """NumberOutputFeatureConfig is a dataclass that configures the parameters used for a category output
     feature."""
 

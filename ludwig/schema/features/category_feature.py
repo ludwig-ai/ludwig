@@ -39,7 +39,7 @@ class CategoryInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @ludwig_dataclass
-class CategoryInputFeatureConfig(BaseInputFeatureConfig, CategoryInputFeatureConfigMixin):
+class CategoryInputFeatureConfig(CategoryInputFeatureConfigMixin, BaseInputFeatureConfig):
     """CategoryInputFeatureConfig is a dataclass that configures the parameters used for a category input
     feature."""
 
@@ -91,7 +91,7 @@ class CategoryOutputFeatureConfigMixin(BaseMarshmallowConfig):
 @DeveloperAPI
 @output_config_registry.register(CATEGORY)
 @ludwig_dataclass
-class CategoryOutputFeatureConfig(BaseOutputFeatureConfig, CategoryOutputFeatureConfigMixin):
+class CategoryOutputFeatureConfig(CategoryOutputFeatureConfigMixin, BaseOutputFeatureConfig):
     """CategoryOutputFeatureConfig is a dataclass that configures the parameters used for a category output
     feature."""
 

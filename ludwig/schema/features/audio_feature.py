@@ -32,7 +32,7 @@ class AudioInputFeatureConfigMixin(BaseMarshmallowConfig):
 @DeveloperAPI
 @ecd_input_config_registry.register(AUDIO)
 @ludwig_dataclass
-class AudioInputFeatureConfig(BaseInputFeatureConfig, AudioInputFeatureConfigMixin):
+class AudioInputFeatureConfig(AudioInputFeatureConfigMixin, BaseInputFeatureConfig):
     """AudioInputFeatureConfig is a dataclass that configures the parameters used for an audio input feature."""
 
     pass

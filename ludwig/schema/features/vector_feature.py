@@ -43,7 +43,7 @@ class VectorInputFeatureConfigMixin(BaseMarshmallowConfig):
 @DeveloperAPI
 @ecd_input_config_registry.register(VECTOR)
 @ludwig_dataclass
-class VectorInputFeatureConfig(BaseInputFeatureConfig, VectorInputFeatureConfigMixin):
+class VectorInputFeatureConfig(VectorInputFeatureConfigMixin, BaseInputFeatureConfig):
     """VectorInputFeatureConfig is a dataclass that configures the parameters used for a vector input feature."""
 
     pass
@@ -72,7 +72,7 @@ class VectorOutputFeatureConfigMixin(BaseMarshmallowConfig):
 @DeveloperAPI
 @output_config_registry.register(VECTOR)
 @ludwig_dataclass
-class VectorOutputFeatureConfig(BaseOutputFeatureConfig, VectorOutputFeatureConfigMixin):
+class VectorOutputFeatureConfig(VectorOutputFeatureConfigMixin, BaseOutputFeatureConfig):
     """VectorOutputFeatureConfig is a dataclass that configures the parameters used for a vector output feature."""
 
     dependencies: list = schema_utils.List(

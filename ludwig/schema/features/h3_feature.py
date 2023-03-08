@@ -32,7 +32,7 @@ class H3InputFeatureConfigMixin(BaseMarshmallowConfig):
 @DeveloperAPI
 @ecd_input_config_registry.register(H3)
 @ludwig_dataclass
-class H3InputFeatureConfig(BaseInputFeatureConfig, H3InputFeatureConfigMixin):
+class H3InputFeatureConfig(H3InputFeatureConfigMixin, BaseInputFeatureConfig):
     """H3InputFeatureConfig is a dataclass that configures the parameters used for an h3 input feature."""
 
     pass

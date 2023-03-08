@@ -32,7 +32,7 @@ class DateInputFeatureConfigMixin(BaseMarshmallowConfig):
 @DeveloperAPI
 @ecd_input_config_registry.register(DATE)
 @ludwig_dataclass
-class DateInputFeatureConfig(BaseInputFeatureConfig, DateInputFeatureConfigMixin):
+class DateInputFeatureConfig(DateInputFeatureConfigMixin, BaseInputFeatureConfig):
     """DateInputFeature is a dataclass that configures the parameters used for a date input feature."""
 
     pass
