@@ -1,4 +1,5 @@
 import copy
+import os
 import warnings
 from abc import ABC, abstractmethod
 from dataclasses import field, Field
@@ -144,6 +145,10 @@ class ListSerializable(ABC):
 ConfigT = TypeVar("ConfigT", bound="BaseMarshmallowConfig")
 
 
+# TODO: Change to RAISE and update descriptions once we want to enforce strict schemas.
+LUDWIG_SCHEMA_UNKNOWN_POLICY = os.environ.get("LUDWIG_SCHEMA_UNKNOWN_POLICY", INCLUDE).lower()
+
+
 @DeveloperAPI
 class BaseMarshmallowConfig(ABC):
     """Base marshmallow class for common attributes and metadata."""
@@ -158,8 +163,8 @@ class BaseMarshmallowConfig(ABC):
         filled in as necessary.
         """
 
-        unknown = INCLUDE  # TODO: Change to RAISE and update descriptions once we want to enforce strict schemas.
-        "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter."
+        unknown = LUDWIG_SCHEMA_UNKNOWN_POLICY
+        "Flag that sets marshmallow `load` calls to handle unknown properties passed as a parameter."
 
         ordered = True
         "Flag that maintains the order of defined parameters in the schema"
