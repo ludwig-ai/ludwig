@@ -380,6 +380,7 @@ def combine_configs_for_comparator_combiner(
             entity_1_size = random.randint(1, len(entity_names) - 1)
             merged_config["combiner"]["entity_1"] = entity_names[:entity_1_size]
             merged_config["combiner"]["entity_2"] = entity_names[entity_1_size:]
+            merged_config["preprocessing"] = {"sample_ratio": 0.05}
             try:
                 ModelConfig.from_dict(merged_config)
                 ret.append((merged_config, dataset_name))
@@ -404,7 +405,7 @@ def combine_configs_for_sequence_combiner(
         for default_config in generate_possible_configs(config_options=item[0]):
             default_config = create_nested_dict(default_config)
             merged_config = merge_dict(copy.deepcopy(config), default_config)
-            merged_config["preprocessing"] = {"sample_ratio": 0.05}
+            merged_config["preprocessing"] = {"sample_ratio": 0.01}
             for i in range(len(merged_config["input_features"])):
                 if merged_config["input_features"][i]["type"] in {SEQUENCE, TEXT, TIMESERIES}:
                     merged_config["input_features"][0]["encoder"] = {"type": "embed", "reduce_output": None}

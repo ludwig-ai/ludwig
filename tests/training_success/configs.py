@@ -43,6 +43,8 @@ output_features:
 input_features:
   - name: Text
     type: text
+    preprocessing:
+      max_sequence_length: 8
 """
 
 PRODUCT_SENTIMENT_MACHINE_HACK_NO_TEXT = """
