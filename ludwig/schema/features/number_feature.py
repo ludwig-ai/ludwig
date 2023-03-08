@@ -34,6 +34,8 @@ class NumberInputFeatureConfigMixin(BaseMarshmallowConfig):
     """NumberInputFeatureConfigMixin is a dataclass that configures the parameters used in both the number input
     feature and the number global defaults section of the Ludwig Config."""
 
+    type: str = schema_utils.ProtectedString(NUMBER)
+
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=NUMBER)
 
 
@@ -73,6 +75,8 @@ class GBMNumberInputFeatureConfig(NumberInputFeatureConfig):
 class NumberOutputFeatureConfigMixin(BaseMarshmallowConfig):
     """NumberOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the number output
     feature and the number global defaults section of the Ludwig Config."""
+
+    type: str = schema_utils.ProtectedString(NUMBER)
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
         feature_type=NUMBER,

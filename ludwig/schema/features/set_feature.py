@@ -29,6 +29,8 @@ class SetInputFeatureConfigMixin(BaseMarshmallowConfig):
     """SetInputFeatureConfigMixin is a dataclass that configures the parameters used in both the set input feature
     and the set global defaults section of the Ludwig Config."""
 
+    type: str = schema_utils.ProtectedString(SET)
+
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=SET)
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
@@ -53,6 +55,8 @@ class SetInputFeatureConfig(BaseInputFeatureConfig, SetInputFeatureConfigMixin):
 class SetOutputFeatureConfigMixin(BaseMarshmallowConfig):
     """SetOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the set output
     feature and the set global defaults section of the Ludwig Config."""
+
+    type: str = schema_utils.ProtectedString(SET)
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
         feature_type=SET,

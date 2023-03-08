@@ -43,7 +43,7 @@ def test_category_input_feature(
     category_def[ENCODER][TYPE] = encoder
 
     # pickup any other missing parameters
-    defaults = ECDCategoryInputFeatureConfig(name="foo", type="category").to_dict()
+    defaults = ECDCategoryInputFeatureConfig(name="foo").to_dict()
     category_def = merge_dict(defaults, category_def)
 
     # ensure no exceptions raised during build

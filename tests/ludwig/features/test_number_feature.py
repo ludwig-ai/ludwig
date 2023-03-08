@@ -27,7 +27,7 @@ def test_number_input_feature(
     number_def = deepcopy(number_config)
 
     # pickup any other missing parameters
-    defaults = ECDNumberInputFeatureConfig(name="foo", type="number").to_dict()
+    defaults = ECDNumberInputFeatureConfig(name="foo").to_dict()
     set_def = merge_dict(defaults, number_def)
 
     # ensure no exceptions raised during build

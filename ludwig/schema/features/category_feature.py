@@ -32,6 +32,8 @@ class CategoryInputFeatureConfigMixin(BaseMarshmallowConfig):
     """CategoryInputFeatureConfigMixin is a dataclass that configures the parameters used in both the category
     input feature and the category global defaults section of the Ludwig Config."""
 
+    type: str = schema_utils.ProtectedString(CATEGORY)
+
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=CATEGORY)
 
 
@@ -72,6 +74,8 @@ class GBMCategoryInputFeatureConfig(CategoryInputFeatureConfig):
 class CategoryOutputFeatureConfigMixin(BaseMarshmallowConfig):
     """CategoryOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the category
     output feature and the category global defaults section of the Ludwig Config."""
+
+    type: str = schema_utils.ProtectedString(CATEGORY)
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
         feature_type=CATEGORY,

@@ -1,5 +1,6 @@
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import MODEL_ECD, TIMESERIES
+from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.features.base import BaseInputFeatureConfig
@@ -16,6 +17,8 @@ from ludwig.schema.utils import BaseMarshmallowConfig, ludwig_dataclass
 class TimeseriesInputFeatureConfigMixin(BaseMarshmallowConfig):
     """TimeseriesInputFeatureConfigMixin is a dataclass that configures the parameters used in both the timeseries
     input feature and the timeseries global defaults section of the Ludwig Config."""
+
+    type: str = schema_utils.ProtectedString(TIMESERIES)
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=TIMESERIES)
 

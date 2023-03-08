@@ -29,6 +29,8 @@ class TextInputFeatureConfigMixin(BaseMarshmallowConfig):
     """TextInputFeatureConfigMixin is a dataclass that configures the parameters used in both the text input
     feature and the text global defaults section of the Ludwig Config."""
 
+    type: str = schema_utils.ProtectedString(TEXT)
+
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=TEXT)
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
@@ -53,6 +55,8 @@ class TextInputFeatureConfig(BaseInputFeatureConfig, TextInputFeatureConfigMixin
 class TextOutputFeatureConfigMixin(BaseMarshmallowConfig):
     """TextOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the text output
     feature and the text global defaults section of the Ludwig Config."""
+
+    type: str = schema_utils.ProtectedString(TEXT)
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
         feature_type=TEXT,

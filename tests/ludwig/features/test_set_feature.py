@@ -48,7 +48,7 @@ def test_set_input_feature(set_config: Dict) -> None:
     set_def = deepcopy(set_config)
 
     # pickup any other missing parameters
-    defaults = SetInputFeatureConfig(name="foo", type="set").to_dict()
+    defaults = SetInputFeatureConfig(name="foo").to_dict()
     set_def = merge_dict(defaults, set_def)
 
     # ensure no exceptions raised during build

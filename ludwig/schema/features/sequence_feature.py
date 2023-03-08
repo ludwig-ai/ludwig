@@ -29,6 +29,8 @@ class SequenceInputFeatureConfigMixin(BaseMarshmallowConfig):
     """SequenceInputFeatureConfigMixin is a dataclass that configures the parameters used in both the sequence
     input feature and the sequence global defaults section of the Ludwig Config."""
 
+    type: str = schema_utils.ProtectedString(SEQUENCE)
+
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=SEQUENCE)
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
@@ -54,6 +56,8 @@ class SequenceInputFeatureConfig(BaseInputFeatureConfig, SequenceInputFeatureCon
 class SequenceOutputFeatureConfigMixin(BaseMarshmallowConfig):
     """SequenceOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the sequence
     output feature and the sequence global defaults section of the Ludwig Config."""
+
+    type: str = schema_utils.ProtectedString(SEQUENCE)
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
         feature_type=SEQUENCE,

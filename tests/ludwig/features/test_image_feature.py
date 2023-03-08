@@ -77,7 +77,7 @@ def test_image_input_feature(image_config: Dict, encoder: str, height: int, widt
     image_def[ENCODER]["num_channels"] = num_channels
 
     # pickup any other missing parameters
-    defaults = ImageInputFeatureConfig(name="foo", type="image").to_dict()
+    defaults = ImageInputFeatureConfig(name="foo").to_dict()
     set_def = merge_dict(defaults, image_def)
 
     # ensure no exceptions raised during build
