@@ -137,7 +137,7 @@ def test_explainer_text_tied_weights(explainer_class, model_type, tmpdir):
             "type": "auto_transformer",
             "pretrained_model_name_or_path": "hf-internal-testing/tiny-bert-for-token-classification",
         },
-        preprocessing={"max_sequence_length": 15},
+        preprocessing={"sequence_length": 15},
     )
     text_feature_2 = text_feature(
         tied=text_feature_1["name"],
@@ -146,7 +146,7 @@ def test_explainer_text_tied_weights(explainer_class, model_type, tmpdir):
             "type": "auto_transformer",
             "pretrained_model_name_or_path": "hf-internal-testing/tiny-bert-for-token-classification",
         },
-        preprocessing={"max_sequence_length": 15},
+        preprocessing={"sequence_length": 15},
     )
     input_features = [text_feature_1, text_feature_2]
     run_test_explainer_api(explainer_class, model_type, [binary_feature()], {}, tmpdir, input_features=input_features)
