@@ -8,7 +8,6 @@ import torchtext
 from ludwig.constants import LAST_HIDDEN, LOGITS, SEQUENCE, TEXT, TYPE
 from ludwig.features.sequence_feature import _SequencePreprocessing, SequenceInputFeature, SequenceOutputFeature
 from ludwig.features.text_feature import TextInputFeature, TextOutputFeature
-from ludwig.schema.utils import load_config_with_kwargs
 from ludwig.utils.torch_utils import get_torch_device
 from tests.integration_tests.utils import ENCODERS, sequence_feature
 
