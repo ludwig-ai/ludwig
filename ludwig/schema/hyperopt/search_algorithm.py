@@ -74,7 +74,7 @@ def SearchAlgorithmDataclassField(description: str = "", default: Dict = {"type"
         def _jsonschema_type_mapping(self):
             return {
                 **schema_utils.unload_jsonschema_from_marshmallow_class(BaseSearchAlgorithmConfig),
-                "title": "scheduler",
+                "title": "search_alg",
                 "description": description,
             }
 
