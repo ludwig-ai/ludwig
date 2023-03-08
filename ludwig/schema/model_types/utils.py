@@ -18,7 +18,9 @@ from ludwig.constants import (
     OUTPUT_FEATURES,
     PARAMETERS,
     PREPROCESSING,
+    SEQUENCE,
     SPACE,
+    TEXT,
     TYPE,
 )
 from ludwig.features.feature_utils import compute_feature_hash
@@ -225,6 +227,23 @@ def set_hyperopt_defaults_(config: "ModelConfig"):
                 config.trainer.epochs = max_t
         elif epochs is not None:
             scheduler.max_t = epochs  # run scheduler until trainer epochs limit hit
+
+
+def set_tagger_decoder_parameters(config: "ModelConfig") -> None:
+    """Overrides the reduce_input parameter for text and sequence output features when a tagger decoder is used.
+    This is done to ensure that the decoder correctly gets a 3D tensor as input.
+
+    Returns:
+        None -> modifies output_features
+    """
+    for output_feature in config.output_features:
+        if output_feature.type in {TEXT, SEQUENCE} and output_feature.decoder.type == "tagger":
+            if output_feature.reduce_input is not None:
+                warnings.warn(
+                    "reduce_input must be set to `None` when using a tagger decoder for your output feature. "
+                    f"Setting reduce_input to `None` for `{output_feature.name}`."
+                )
+                output_feature.reduce_input = None
 
 
 @DeveloperAPI

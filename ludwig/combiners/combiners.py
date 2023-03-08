@@ -695,7 +695,6 @@ class TabTransformerCombiner(Combiner):
 
         # ================ Project & Concat embeddables ================
         if len(embeddable_encoder_outputs) > 0:
-
             # ============== Flatten =================
             embeddable_encoder_outputs = [torch.reshape(eo, [batch_size, -1]) for eo in embeddable_encoder_outputs]
 
