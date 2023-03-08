@@ -1,29 +1,13 @@
 from dataclasses import field
 from importlib import import_module
-from typing import Callable, Dict, List, Optional, Type
+from typing import Dict, List, Optional
 
 from marshmallow import fields, ValidationError
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.hyperopt.utils import get_search_algorithm_dependencies, register_search_algorithm
 from ludwig.schema.utils import ludwig_dataclass
-from ludwig.utils.registry import Registry
-
-search_algorithm_registry = Registry()
-sa_dependencies_registry = Registry()
-
-
-def register_search_algorithm(name: str, dependencies: Optional[List[str]] = None) -> Callable[[Type], Type]:
-    def wrap(cls: Type) -> Type:
-        search_algorithm_registry[name] = cls
-        sa_dependencies_registry[name] = dependencies if dependencies is not None else []
-        return cls
-
-    return wrap
-
-
-def get_search_algorithm_cls(name: str):
-    return search_algorithm_registry[name]
 
 
 @DeveloperAPI
@@ -48,7 +32,7 @@ class BaseSearchAlgorithmConfig(schema_utils.BaseMarshmallowConfig):
 
     def dependencies_installed(self) -> bool:
         """Some search algorithms require additional packages to be installed, check that they are available."""
-        for package_name in sa_dependencies_registry[self.type]:
+        for package_name in get_search_algorithm_dependencies(self.type):
             try:
                 import_module(package_name)
             except ImportError:

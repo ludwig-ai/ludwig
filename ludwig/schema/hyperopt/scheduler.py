@@ -1,14 +1,18 @@
 from abc import ABC
 from dataclasses import field
 from importlib import import_module
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import Callable, Dict, Optional, Tuple, Union
 
 from marshmallow import fields, ValidationError
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.hyperopt.utils import (
+    get_scheduler_dependencies,
+    register_scheduler_config,
+    scheduler_config_registry,
+)
 from ludwig.schema.utils import ludwig_dataclass
-from ludwig.utils.registry import Registry
 
 # ----------------------------------------------------------------------------------------------------------------------
 # To prevent direct dependency on ray import, the following static key stores are duplicated:
@@ -28,19 +32,6 @@ DEFAULT_RESULT_KEYS = (TRAINING_ITERATION, TIME_TOTAL_S, TIMESTEPS_TOTAL, MEAN_A
 # from ray.tune.result import DEFAULT_METRIC
 RAY_TUNE_DESULT_DEFAULT_METRIC = "_metric"
 # ----------------------------------------------------------------------------------------------------------------------
-
-scheduler_config_registry = Registry()
-scheduler_dependencies_registry = Registry()
-
-
-@DeveloperAPI
-def register_scheduler_config(name: str, dependencies: Optional[List[str]] = None):
-    def wrap(scheduler_config: BaseSchedulerConfig):
-        scheduler_config_registry[name] = scheduler_config
-        scheduler_dependencies_registry[name] = dependencies if dependencies is not None else []
-        return scheduler_config
-
-    return wrap
 
 
 # Field aliases to cut down on code reuse:
@@ -112,7 +103,7 @@ class BaseSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     def dependencies_installed(self):
         """Some search algorithms require additional packages to be installed, check that they are available."""
-        for package_name in scheduler_dependencies_registry[self.type]:
+        for package_name in get_scheduler_dependencies(self.type):
             try:
                 import_module(package_name)
             except ImportError:

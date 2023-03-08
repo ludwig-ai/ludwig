@@ -1,19 +1,9 @@
-from typing import Callable, List, Optional, Type, Union
+from typing import List, Optional, Type, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.hyperopt.utils import register_parameter_config
 from ludwig.schema.utils import ludwig_dataclass
-from ludwig.utils.registry import Registry
-
-parameter_type_registry = Registry()
-
-
-def register_parameter_type(name: str) -> Callable[[Type["BaseParameterConfig"]], Type["BaseParameterConfig"]]:
-    def wrap(cls: Type["BaseParameterConfig"]) -> Type["BaseParameterConfig"]:
-        parameter_type_registry[name] = cls
-        return cls
-
-    return wrap
 
 
 def quantization_number_field(dtype: Union[Type[float], Type[int]] = float, default=None):
@@ -40,7 +30,7 @@ class BaseParameterConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-@register_parameter_type("choice")
+@register_parameter_config("choice")
 @ludwig_dataclass
 class CategoricalParameterConfig(BaseParameterConfig):
     """Config for a randomly sampled categorical search space."""
@@ -56,7 +46,7 @@ class CategoricalParameterConfig(BaseParameterConfig):
 
 
 @DeveloperAPI
-@register_parameter_type("grid_search")
+@register_parameter_config("grid_search")
 @ludwig_dataclass
 class GridSearchParameterConfig(BaseParameterConfig):
     """Config for a grid search space."""
@@ -72,7 +62,7 @@ class GridSearchParameterConfig(BaseParameterConfig):
 
 
 @DeveloperAPI
-@register_parameter_type("uniform")
+@register_parameter_config("uniform")
 @ludwig_dataclass
 class UniformParameterConfig(BaseParameterConfig):
     """Config for a real-valued uniform search space."""
@@ -85,7 +75,7 @@ class UniformParameterConfig(BaseParameterConfig):
 
 
 @DeveloperAPI
-@register_parameter_type("quniform")
+@register_parameter_config("quniform")
 @ludwig_dataclass
 class QUniformParameterConfig(UniformParameterConfig):
     """Config for a real-valued uniform search space with quantization."""
@@ -96,7 +86,7 @@ class QUniformParameterConfig(UniformParameterConfig):
 
 
 @DeveloperAPI
-@register_parameter_type("loguniform")
+@register_parameter_config("loguniform")
 @ludwig_dataclass
 class LogUniformParameterConfig(UniformParameterConfig):
     """Config for a log-scaled real-valued uniform numeric search space."""
@@ -107,7 +97,7 @@ class LogUniformParameterConfig(UniformParameterConfig):
 
 
 @DeveloperAPI
-@register_parameter_type("qloguniform")
+@register_parameter_config("qloguniform")
 @ludwig_dataclass
 class QLogUniformParameterConfig(UniformParameterConfig):
     """Config for a log-scaled real-valued uniform search space with quantization."""
@@ -120,7 +110,7 @@ class QLogUniformParameterConfig(UniformParameterConfig):
 
 
 @DeveloperAPI
-@register_parameter_type("randn")
+@register_parameter_config("randn")
 @ludwig_dataclass
 class RandnParameterConfig(BaseParameterConfig):
     """Config for a Gaussian search space."""
@@ -129,7 +119,7 @@ class RandnParameterConfig(BaseParameterConfig):
 
 
 @DeveloperAPI
-@register_parameter_type("qrandn")
+@register_parameter_config("qrandn")
 @ludwig_dataclass
 class QRandnParameterConfig(BaseParameterConfig):
     """Config for a Gaussian search space with quantization."""
@@ -140,7 +130,7 @@ class QRandnParameterConfig(BaseParameterConfig):
 
 
 @DeveloperAPI
-@register_parameter_type("randint")
+@register_parameter_config("randint")
 @ludwig_dataclass
 class RandintParameterConfig(BaseParameterConfig):
     """Config for an integer-valued uniform search space."""
@@ -153,7 +143,7 @@ class RandintParameterConfig(BaseParameterConfig):
 
 
 @DeveloperAPI
-@register_parameter_type("qrandint")
+@register_parameter_config("qrandint")
 @ludwig_dataclass
 class QRandintParameterConfig(RandintParameterConfig):
     """Config for an integer-valued uniform search space with quantization."""
@@ -164,7 +154,7 @@ class QRandintParameterConfig(RandintParameterConfig):
 
 
 @DeveloperAPI
-@register_parameter_type("lograndint")
+@register_parameter_config("lograndint")
 @ludwig_dataclass
 class LogRandintParameterConfig(RandintParameterConfig):
     """Config for an log-scaled integer-valued search space."""
@@ -175,7 +165,7 @@ class LogRandintParameterConfig(RandintParameterConfig):
 
 
 @DeveloperAPI
-@register_parameter_type("qlograndint")
+@register_parameter_config("qlograndint")
 @ludwig_dataclass
 class QLogRandintParameterConfig(RandintParameterConfig):
     """Config for an log-scaled integer-valued search space with quantization."""
