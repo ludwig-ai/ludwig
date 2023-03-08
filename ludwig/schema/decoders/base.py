@@ -2,7 +2,7 @@ from abc import ABC
 from typing import Dict, List, Tuple, Union
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import BINARY, CATEGORY, NUMBER, SEQUENCE, SET, TEXT, VECTOR
+from ludwig.constants import BINARY, CATEGORY, NUMBER, SET, VECTOR
 from ludwig.schema import common_fields
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.utils import register_decoder_config
@@ -85,7 +85,8 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
 
 @DeveloperAPI
-@register_decoder_config("passthrough", [BINARY, CATEGORY, SET, VECTOR, SEQUENCE, TEXT])
+# todo: enable when we add dot product combiner.
+# @register_decoder_config("passthrough", [BINARY, CATEGORY, NUMBER, SET, VECTOR, SEQUENCE, TEXT])
 @ludwig_dataclass
 class PassthroughDecoderConfig(BaseDecoderConfig):
     """PassthroughDecoderConfig is a dataclass that configures the parameters used for a passthrough decoder."""
