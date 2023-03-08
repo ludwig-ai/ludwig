@@ -71,6 +71,7 @@ def test_progress_tracker_empty():
         CategoryOutputFeatureConfig,
         {
             "name": "category_feature",
+            "type": "category",
             "decoder": {
                 "type": "classifier",
             },
@@ -111,6 +112,7 @@ def test_progress_tracker():
         CategoryOutputFeatureConfig,
         {
             "name": "category_feature",
+            "type": "category",
             "decoder": {
                 "type": "classifier",
             },

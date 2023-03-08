@@ -34,7 +34,9 @@ def mock_load_encoder_from_hf_hub(monkeypatch):
 
     With this mock, only encoder configs are downloaded, not the encoder weights.
     """
-    monkeypatch.setattr(text_encoders, "load_pretrained_hf_model", _load_pretrained_hf_model_no_weights)
+    monkeypatch.setattr(
+        text_encoders, "load_pretrained_hf_model_with_hub_fallback", _load_pretrained_hf_model_no_weights
+    )
 
 
 def get_mismatched_config_params(ludwig_results_dir, ludwig_model):
