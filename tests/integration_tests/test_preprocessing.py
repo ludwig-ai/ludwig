@@ -389,10 +389,13 @@ def test_number_feature_wrong_dtype(csv_filename, tmpdir):
         # Case 2: infer from the dataset, max_sequence_length is smaller than the largest sequence length.
         # Expected: max_sequence_length is used, and the sequence length is max_sequence_length.
         (10, None, 8, 8),
-        # Case 3: set sequence_length explicitly and it is larger than the dataset.
+        # Case 3: infer from the dataset, max_sequence_length is not set.
+        # Expected: max_sequence_length is ignored, and the sequence length is dataset+2 (include start/stop tokens).
+        (10, None, None, 12),
+        # Case 4: set sequence_length explicitly and it is larger than the dataset.
         # Expected: sequence_length is used, and the sequence length is sequence_length.
         (10, 15, 20, 15),
-        # Case 4: set sequence_length explicitly and it is smaller than the dataset.
+        # Case 5: set sequence_length explicitly and it is smaller than the dataset.
         # Expected: sequence_length is used, and the sequence length is sequence_length.
         (10, 8, 20, 8),
     ],

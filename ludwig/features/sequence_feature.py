@@ -224,7 +224,11 @@ class SequenceFeatureMixin(BaseFeatureMixin):
             max_sequence_length = max_length + 2  # For start and stop symbols.
             logger.info(f"Setting max length using dataset: {max_sequence_length} (including start and stop symbols)")
 
-            if preprocessing_parameters["max_sequence_length"] < max_sequence_length:
+            # If max_sequence_length is None, then use the max length found in the dataset.
+            if (
+                preprocessing_parameters["max_sequence_length"] is not None
+                and preprocessing_parameters["max_sequence_length"] < max_sequence_length
+            ):
                 logger.info(
                     f"Truncating max length with max_sequence_length={preprocessing_parameters['max_sequence_length']} "
                     f"from preprocessing parameters"
