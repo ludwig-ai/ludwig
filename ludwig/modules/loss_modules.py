@@ -24,8 +24,8 @@ from torch.nn import MSELoss as _MSELoss
 import ludwig.utils.loss_utils as utils
 from ludwig.constants import LOGITS
 from ludwig.schema.features.loss.loss import (
-    BWCEWLossConfig,
     BaseLossConfig,
+    BWCEWLossConfig,
     MAELossConfig,
     MSELossConfig,
     RMSELossConfig,
