@@ -2,6 +2,7 @@ import copy
 import warnings
 from abc import ABC, abstractmethod
 from dataclasses import field, Field
+from numbers import Real
 from typing import Any
 from typing import Dict as TDict
 from typing import List as TList
@@ -564,6 +565,31 @@ def IntegerRange(
             "marshmallow_field": fields.Integer(
                 strict=True,
                 validate=val,
+                allow_none=allow_none,
+                load_default=default,
+                dump_default=default,
+                metadata={
+                    "description": description,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
+                },
+            )
+        },
+        default=default,
+    )
+
+
+@DeveloperAPI
+def Float(default: Union[None, float], allow_none=False, description="", parameter_metadata: ParameterMetadata = None):
+    """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs."""
+    if default is not None:
+        try:
+            assert isinstance(default, Real)
+        except Exception:
+            raise ValidationError(f"Invalid default: `{default}`")
+    return field(
+        metadata={
+            "marshmallow_field": fields.Float(
+                strict=True,
                 allow_none=allow_none,
                 load_default=default,
                 dump_default=default,
