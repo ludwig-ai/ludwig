@@ -1,6 +1,7 @@
 from abc import ABC
 from dataclasses import field
-from typing import Callable, Dict, Optional, Tuple, Union
+from importlib import import_module
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 from marshmallow import fields, ValidationError
 
@@ -29,12 +30,14 @@ RAY_TUNE_DESULT_DEFAULT_METRIC = "_metric"
 # ----------------------------------------------------------------------------------------------------------------------
 
 scheduler_config_registry = Registry()
+scheduler_dependencies_registry = Registry()
 
 
 @DeveloperAPI
-def register_scheduler_config(name: str):
+def register_scheduler_config(name: str, dependencies: Optional[List[str]] = None):
     def wrap(scheduler_config: BaseSchedulerConfig):
         scheduler_config_registry[name] = scheduler_config
+        scheduler_dependencies_registry[name] = dependencies if dependencies is not None else []
         return scheduler_config
 
     return wrap
@@ -107,6 +110,19 @@ class BaseSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
         ),
     )
 
+    def dependencies_installed(self):
+        """Some search algorithms require additional packages to be installed, check that they are available."""
+        for package_name in scheduler_dependencies_registry[self.type]:
+            try:
+                import_module(package_name)
+            except ImportError:
+                raise ImportError(
+                    f"Scheduler {self.type} requires package {package_name}, however package is "
+                    "not installed. Please refer to Ray Tune documentation for packages required for this "
+                    "scheduler."
+                )
+        return True
+
 
 @DeveloperAPI
 @ludwig_dataclass
@@ -117,6 +133,7 @@ class BaseHyperbandSchedulerConfig(BaseSchedulerConfig):
 @DeveloperAPI
 @register_scheduler_config("async_hyperband")
 @register_scheduler_config("asynchyperband")
+@register_scheduler_config("asha")
 @ludwig_dataclass
 class AsyncHyperbandSchedulerConfig(BaseHyperbandSchedulerConfig):
     """Asynchronous hyperband (ASHA) scheduler settings."""
@@ -128,12 +145,23 @@ class AsyncHyperbandSchedulerConfig(BaseHyperbandSchedulerConfig):
     grace_period: int = schema_utils.PositiveInteger(
         default=1,
         description=(
-            "Only stop trials at least this old in time. The units are the same as the attribute named by time_attr."
+            "Only stop trials at least this old in time. The units are the same as the attribute named by `time_attr`."
         ),
     )
 
     reduction_factor: int = schema_utils.NonNegativeFloat(
         default=4, description=("Used to set halving rate and amount. This is simply a unit-less scalar.")
+    )
+
+    brackets: int = schema_utils.PositiveInteger(
+        default=1,
+        description=(
+            "Number of brackets. Each bracket has a different halving rate, specified by the reduction factor."
+        ),
+    )
+
+    stop_last_trials: bool = schema_utils.Boolean(
+        default=True, description="Whether to terminate the trials after reaching `max_t`."
     )
 
 
@@ -171,7 +199,7 @@ class MedianStoppingRuleSchedulerConfig(BaseSchedulerConfig):
         default=60.0,
         description=(
             "Only stop trials at least this old in time. The mean will only be computed from this time onwards. The "
-            "units are the same as the attribute named by time_attr."
+            "units are the same as the attribute named by `time_attr`."
         ),
     )
 
@@ -182,9 +210,9 @@ class MedianStoppingRuleSchedulerConfig(BaseSchedulerConfig):
     min_time_slice: int = schema_utils.NonNegativeInteger(
         default=0,
         description=(
-            "Each trial runs at least this long before yielding (assuming it isn’t stopped). Note: trials ONLY yield if"
-            " there are not enough samples to evaluate performance for the current result AND there are other trials "
-            "waiting to run. The units are the same as the attribute named by time_attr."
+            "Each trial runs at least this long before yielding (assuming it isn't stopped). Note: trials ONLY yield "
+            "if there are not enough samples to evaluate performance for the current result AND there are other "
+            "trials waiting to run. The units are the same as the attribute named by `time_attr`."
         ),
     )
 
@@ -210,8 +238,8 @@ class PopulationBasedTrainingSchedulerConfig(BaseSchedulerConfig):
     perturbation_interval: float = schema_utils.NonNegativeFloat(
         default=60.0,
         description=(
-            "Models will be considered for perturbation at this interval of time_attr. Note that perturbation incurs "
-            "checkpoint overhead, so you shouldn’t set this to be too frequent."
+            "Models will be considered for perturbation at this interval of `time_attr`. Note that perturbation incurs "
+            "checkpoint overhead, so you shouldn't set this to be too frequent."
         ),
     )
 
@@ -228,13 +256,13 @@ class PopulationBasedTrainingSchedulerConfig(BaseSchedulerConfig):
         default=None,
         description=(
             "Hyperparams to mutate. The format is as follows: for each key, either a list, function, or a tune search "
-            "space object (tune.loguniform, tune.uniform, etc.) can be provided. A list specifies an allowed set of "
+            "space object (`tune.loguniform`, tune.uniform, etc.) can be provided. A list specifies an allowed set of "
             "categorical values. A function or tune search space object specifies the distribution of a continuous "
-            "parameter. You must use tune.choice, tune.uniform, tune.loguniform, etc.. Arbitrary tune.sample_from "
-            "objects are not supported. A key can also hold a dict for nested hyperparameters. You must specify at "
-            "least one of hyperparam_mutations or custom_explore_fn. Tune will sample the search space provided by "
-            "hyperparam_mutations for the initial hyperparameter values if the corresponding hyperparameters are not "
-            "present in a trial’s initial config."
+            "parameter. You must use `tune.choice`, `tune.uniform`, `tune.loguniform`, etc.. Arbitrary "
+            "`tune.sample_from` objects are not supported. A key can also hold a dict for nested hyperparameters. You "
+            "must specify at least one of `hyperparam_mutations` or `custom_explore_fn`. Tune will sample the search "
+            "space provided by `hyperparam_mutations` for the initial hyperparameter values if the corresponding "
+            "hyperparameters are not present in a trial's initial config."
         ),
     )
 
@@ -244,18 +272,18 @@ class PopulationBasedTrainingSchedulerConfig(BaseSchedulerConfig):
         min=0,
         max=0.5,
         description=(
-            "Parameters are transferred from the top quantile_fraction fraction of trials to the bottom "
-            "quantile_fraction fraction. Needs to be between 0 and 0.5. Setting it to 0 essentially implies doing no "
-            "exploitation at all."
+            "Parameters are transferred from the top `quantile_fraction` fraction of trials to the bottom "
+            "`quantile_fraction` fraction. Needs to be between 0 and 0.5. Setting it to 0 essentially implies doing "
+            "no exploitation at all."
         ),
     )
 
     resample_probability: float = schema_utils.NonNegativeFloat(
         default=0.25,
         description=(
-            "The probability of resampling from the original distribution when applying hyperparam_mutations. If not "
-            "resampled, the value will be perturbed by a factor chosen from perturbation_factors if continuous, or "
-            "changed to an adjacent value if discrete."
+            "The probability of resampling from the original distribution when applying `hyperparam_mutations`. If "
+            "not resampled, the value will be perturbed by a factor chosen from `perturbation_factors` if continuous, "
+            "or changed to an adjacent value if discrete."
         ),
     )
 
@@ -271,16 +299,16 @@ class PopulationBasedTrainingSchedulerConfig(BaseSchedulerConfig):
         default=None,
         allow_none=True,
         description=(
-            "You can also specify a custom exploration function. This function is invoked as f(config) after built-in "
-            "perturbations from hyperparam_mutations are applied, and should return config updated as needed. You must "
-            "specify at least one of hyperparam_mutations or custom_explore_fn."
+            "You can also specify a custom exploration function. This function is invoked as `f(config)` after "
+            "built-in perturbations from `hyperparam_mutations` are applied, and should return config updated as "
+            "needed. You must specify at least one of `hyperparam_mutations` or `custom_explore_fn`."
         ),
     )
 
     log_config: bool = schema_utils.Boolean(
         default=True,
         description=(
-            "Whether to log the ray config of each model to local_dir at each exploit. Allows config schedule to be "
+            "Whether to log the ray config of each model to `local_dir` at each exploit. Allows config schedule to be "
             "reconstructed."
         ),
     )
@@ -288,8 +316,8 @@ class PopulationBasedTrainingSchedulerConfig(BaseSchedulerConfig):
     require_attrs: bool = schema_utils.Boolean(
         default=True,
         description=(
-            "Whether to require time_attr and metric to appear in result for every iteration. If True, error will be "
-            "raised if these values are not present in trial result."
+            "Whether to require `time_attr` and metric to appear in result for every iteration. If True, error will "
+            "be raised if these values are not present in trial result."
         ),
     )
 
@@ -297,9 +325,9 @@ class PopulationBasedTrainingSchedulerConfig(BaseSchedulerConfig):
         default=False,
         description=(
             "If False, will use asynchronous implementation of PBT. Trial perturbations occur every "
-            "perturbation_interval for each trial independently. If True, will use synchronous implementation of PBT. "
-            "Perturbations will occur only after all trials are synced at the same time_attr every "
-            "perturbation_interval. Defaults to False. See Appendix A.1 here https://arxiv.org/pdf/1711.09846.pdf."
+            "`perturbation_interval` for each trial independently. If True, will use synchronous implementation of "
+            "PBT. Perturbations will occur only after all trials are synced at the same `time_attr` every "
+            "`perturbation_interval`. Defaults to False. See Appendix A.1 here https://arxiv.org/pdf/1711.09846.pdf."
         ),
     )
 
@@ -317,14 +345,14 @@ class PopulationBasedTrainingReplaySchedulerConfig(BaseSchedulerConfig):
         default=None,
         allow_none=True,
         description=(
-            "The PBT policy file. Usually this is stored in ~/ray_results/experiment_name/pbt_policy_xxx.txt where xxx "
-            "is the trial ID."
+            "The PBT policy file. Usually this is stored in `~/ray_results/experiment_name/pbt_policy_xxx.txt` where "
+            "`xxx` is the trial ID."
         ),
     )
 
 
 @DeveloperAPI
-@register_scheduler_config("pb2")
+@register_scheduler_config("pb2", dependencies=["sklearn", "GPy"])
 @ludwig_dataclass
 class PopulationBasedBanditsSchedulerConfig(BaseSchedulerConfig):
     """Population Based Bandits (PB2) scheduler settings."""
@@ -336,8 +364,8 @@ class PopulationBasedBanditsSchedulerConfig(BaseSchedulerConfig):
     perturbation_interval: float = schema_utils.NonNegativeFloat(
         default=60.0,
         description=(
-            "Models will be considered for perturbation at this interval of time_attr. Note that perturbation incurs "
-            "checkpoint overhead, so you shouldn’t set this to be too frequent."
+            "Models will be considered for perturbation at this interval of `time_attr`. Note that perturbation "
+            "incurs checkpoint overhead, so you shouldn't set this to be too frequent."
         ),
     )
 
@@ -345,7 +373,7 @@ class PopulationBasedBanditsSchedulerConfig(BaseSchedulerConfig):
         default=None,
         description=(
             "Hyperparameters to mutate. The format is as follows: for each key, enter a list of the form [min, max] "
-            "representing the minimum and maximum possible hyperparam values."
+            "representing the minimum and maximum possible hyperparameter values."
         ),
     )
 
@@ -355,16 +383,16 @@ class PopulationBasedBanditsSchedulerConfig(BaseSchedulerConfig):
         min=0,
         max=0.5,
         description=(
-            "Parameters are transferred from the top quantile_fraction fraction of trials to the bottom "
-            "quantile_fraction fraction. Needs to be between 0 and 0.5. Setting it to 0 essentially implies doing no "
-            "exploitation at all."
+            "Parameters are transferred from the top `quantile_fraction` fraction of trials to the bottom "
+            "`quantile_fraction` fraction. Needs to be between 0 and 0.5. Setting it to 0 essentially implies doing "
+            "no exploitation at all."
         ),
     )
 
     log_config: bool = schema_utils.Boolean(
         default=True,
         description=(
-            "Whether to log the ray config of each model to local_dir at each exploit. Allows config schedule to be "
+            "Whether to log the ray config of each model to `local_dir` at each exploit. Allows config schedule to be "
             "reconstructed."
         ),
     )
@@ -372,8 +400,8 @@ class PopulationBasedBanditsSchedulerConfig(BaseSchedulerConfig):
     require_attrs: bool = schema_utils.Boolean(
         default=True,
         description=(
-            "Whether to require time_attr and metric to appear in result for every iteration. If True, error will be "
-            "raised if these values are not present in trial result."
+            "Whether to require `time_attr` and metric to appear in result for every iteration. If True, error will "
+            "be raised if these values are not present in trial result."
         ),
     )
 
@@ -381,9 +409,9 @@ class PopulationBasedBanditsSchedulerConfig(BaseSchedulerConfig):
         default=False,
         description=(
             "If False, will use asynchronous implementation of PBT. Trial perturbations occur every "
-            "perturbation_interval for each trial independently. If True, will use synchronous implementation of PBT. "
-            "Perturbations will occur only after all trials are synced at the same time_attr every "
-            "perturbation_interval. Defaults to False. See Appendix A.1 here https://arxiv.org/pdf/1711.09846.pdf."
+            "`perturbation_interval` for each trial independently. If True, will use synchronous implementation of "
+            "PBT. Perturbations will occur only after all trials are synced at the same `time_attr` every "
+            "`perturbation_interval`. Defaults to False. See Appendix A.1 here https://arxiv.org/pdf/1711.09846.pdf."
         ),
     )
 
@@ -403,7 +431,7 @@ class BOHBSchedulerConfig(BaseHyperbandSchedulerConfig):
     )
 
     stop_last_trials: bool = schema_utils.Boolean(
-        default=True, description=("Whether to terminate the trials after reaching max_t. Defaults to True.")
+        default=True, description=("Whether to terminate the trials after reaching `max_t`. Defaults to True.")
     )
 
 
@@ -437,12 +465,12 @@ class ResourceChangingSchedulerConfig(BaseSchedulerConfig):
         allow_none=True,
         description=(
             "The callable used to change live trial resource requiements during tuning. This callable will be called on"
-            " each trial as it finishes one step of training. The callable must take four arguments: TrialRunner, "
-            "current Trial, current result dict and the ResourceChangingScheduler calling it. The callable must return "
-            "a PlacementGroupFactory, Resources, dict or None (signifying no need for an update). If "
-            "resources_allocation_function is None, no resource requirements will be changed at any time. By default, "
-            "DistributeResources will be used, distributing available CPUs and GPUs over all running trials in a robust"
-            " way, without any prioritization."
+            " each trial as it finishes one step of training. The callable must take four arguments: `TrialRunner`, "
+            "current `Trial`, current result `dict` and the `ResourceChangingScheduler` calling it. The callable must "
+            "return a `PlacementGroupFactory`, `Resources`, `dict` or None (signifying no need for an update). If "
+            "`resources_allocation_function` is None, no resource requirements will be changed at any time. By "
+            " default, `DistributeResources` will be used, distributing available CPUs and GPUs over all running "
+            "trials in a robust way, without any prioritization."
         ),
     )
 
