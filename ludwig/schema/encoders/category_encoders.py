@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, List
+from typing import List, TYPE_CHECKING
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import CATEGORY, MODEL_ECD, MODEL_GBM
