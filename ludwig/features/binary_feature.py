@@ -273,13 +273,6 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         hidden = inputs[HIDDEN]
         return self.decoder_obj(hidden)
 
-    def loss_kwargs(self):
-        return dict(
-            positive_class_weight=self.loss.positive_class_weight,
-            robust_lambda=self.loss.robust_lambda,
-            confidence_penalty=self.loss.confidence_penalty,
-        )
-
     def create_calibration_module(self, feature: BinaryOutputFeatureConfig) -> torch.nn.Module:
         """Creates the appropriate calibration module based on the feature config.
 
