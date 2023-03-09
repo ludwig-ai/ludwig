@@ -94,9 +94,6 @@ def get_combiner_conds() -> List[Dict[str, Any]]:
 
 class CombinerSelection(schema_utils.TypeSelection):
     def __init__(self):
-        # For registration of all combiners
-        import ludwig.combiners.combiners  # noqa
-
         super().__init__(registry=combiner_registry, default_value=DEFAULT_VALUE, description=DESCRIPTION)
 
     def get_schema_from_registry(self, key: str) -> Type[schema_utils.BaseMarshmallowConfig]:
