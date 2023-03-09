@@ -22,6 +22,8 @@ VALIDATION_LOCK = Lock()
 @DeveloperAPI
 @lru_cache(maxsize=2)
 def get_schema(model_type: str = MODEL_ECD):
+    # Force populate combiner registry:
+    import ludwig.combiners.combiners  # noqa: F401
     from ludwig.schema.model_types.base import model_type_schema_registry
 
     cls = model_type_schema_registry[model_type]
