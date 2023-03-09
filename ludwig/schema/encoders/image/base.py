@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import IMAGE
