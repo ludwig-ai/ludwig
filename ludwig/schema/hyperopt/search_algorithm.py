@@ -6,7 +6,11 @@ from marshmallow import fields, ValidationError
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.hyperopt.utils import get_search_algorithm_dependencies, register_search_algorithm
+from ludwig.schema.hyperopt.utils import (
+    get_search_algorithm_dependencies,
+    get_search_algorithm_random_state_field,
+    register_search_algorithm,
+)
 from ludwig.schema.utils import ludwig_dataclass
 
 
@@ -17,18 +21,16 @@ class BaseSearchAlgorithmConfig(schema_utils.BaseMarshmallowConfig):
 
     type: str = schema_utils.String(default="hyperopt", description="The search algorithm to use.")
 
-    dependencies: Optional[List[str]] = schema_utils.List(
-        list_type=str,
-        default=(lambda: list())(),
-        description="List of the additional packages required for this search algorithm.",
-    )
+    def set_random_state(self, ludwig_random_state: int) -> None:
+        """Overwrite the config random state.
 
-    _random_seed_attribute_name: Optional[str] = None
-
-    def check_for_random_seed(self, ludwig_random_seed: int) -> None:
-        rs_attr_name = self._random_seed_attribute_name
-        if rs_attr_name is not None and self.__getattribute__(rs_attr_name) is None:
-            self.__setattr__(rs_attr_name, ludwig_random_seed)
+        Search algorithms refer to random state by different names, however we want to overwrite unset random states
+        with the Ludwig random state. This method uses a registry of random state field names to provide a single
+        interface across all search algorithms.
+        """
+        rs_field = get_search_algorithm_random_state_field(self.type)
+        if rs_field is not None and self.__getattribute__(rs_field) is None:
+            self.__setattr__(rs_field, ludwig_random_state)
 
     def dependencies_installed(self) -> bool:
         """Some search algorithms require additional packages to be installed, check that they are available."""
@@ -82,13 +84,11 @@ def SearchAlgorithmDataclassField(description: str = "", default: Dict = {"type"
 
 
 @DeveloperAPI
-@register_search_algorithm("random")
+@register_search_algorithm("random", random_state_field="random_state")
 @register_search_algorithm("variant_generator")
 @ludwig_dataclass
 class BasicVariantSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.StringOptions(options=["random", "variant_generator"], default="random", allow_none=False)
-
-    _random_seed_attribute_name: Optional[str] = "random_state"
 
     points_to_evaluate: Optional[List[Dict]] = schema_utils.DictList(
         description=(
@@ -175,12 +175,10 @@ class AxSAConfig(BaseSearchAlgorithmConfig):
 
 
 @DeveloperAPI
-@register_search_algorithm("bayesopt", dependencies=["bayesian-optimization"])
+@register_search_algorithm("bayesopt", random_state_field="random_state", dependencies=["bayesian-optimization"])
 @ludwig_dataclass
 class BayesOptSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("bayesopt")
-
-    _random_seed_attribute_name: Optional[str] = "random_state"
 
     space: Optional[Dict] = schema_utils.Dict(
         description=(
@@ -221,7 +219,7 @@ class BayesOptSAConfig(BaseSearchAlgorithmConfig):
         )
     )
 
-    random_state: int = schema_utils.Integer(default=42, description="Used to initialize BayesOpt.")
+    random_state: int = schema_utils.Integer(default=None, allow_none=True, description="Used to initialize BayesOpt.")
 
     random_search_steps: int = schema_utils.Integer(
         default=10,
@@ -257,12 +255,10 @@ class BlendsearchSAConfig(BaseSearchAlgorithmConfig):
 
 
 @DeveloperAPI
-@register_search_algorithm("bohb", dependencies=["hpbandster", "ConfigSpace"])
+@register_search_algorithm("bohb", random_state_field="seed", dependencies=["hpbandster", "ConfigSpace"])
 @ludwig_dataclass
 class BOHBSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("bohb")
-
-    _random_seed_attribute_name: Optional[str] = "seed"
 
     space: Optional[Dict] = schema_utils.Dict(
         description=(
@@ -290,6 +286,7 @@ class BOHBSAConfig(BaseSearchAlgorithmConfig):
             "One of `{min, max}`. Determines whether objective is minimizing or maximizing the metric attribute."
         ),
     )
+
     points_to_evaluate: Optional[List[Dict]] = schema_utils.DictList(
         description=(
             "Initial parameter suggestions to be run first. This is for when you already have some good parameters "
@@ -325,12 +322,10 @@ class CFOSAConfig(BaseSearchAlgorithmConfig):
 
 
 @DeveloperAPI
-@register_search_algorithm("dragonfly", dependencies=["dragonfly-opt"])
+@register_search_algorithm("dragonfly", random_state_field="random_state_seed", dependencies=["dragonfly-opt"])
 @ludwig_dataclass
 class DragonflySAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("dragonfly")
-
-    _random_seed_attribute_name: Optional[str] = "random_state_seed"
 
     optimizer: Optional[str] = schema_utils.StringOptions(
         options=["random", "bandit", "genetic"],
@@ -405,12 +400,10 @@ class DragonflySAConfig(BaseSearchAlgorithmConfig):
 
 
 @DeveloperAPI
-@register_search_algorithm("hebo", dependencies=["hebo"])
+@register_search_algorithm("hebo", random_state_field="random_state_seed", dependencies=["hebo"])
 @ludwig_dataclass
 class HEBOSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("hebo")
-
-    _random_seed_attribute_name: Optional[str] = "random_state_seed"
 
     space: Optional[List[Dict]] = schema_utils.DictList(
         description="A dict mapping parameter names to Tune search spaces or a HEBO DesignSpace object."
@@ -469,12 +462,10 @@ class HEBOSAConfig(BaseSearchAlgorithmConfig):
 
 
 @DeveloperAPI
-@register_search_algorithm("hyperopt", dependencies=["hyperopt"])
+@register_search_algorithm("hyperopt", random_state_field="random_state_seed", dependencies=["hyperopt"])
 @ludwig_dataclass
 class HyperoptSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("hyperopt")
-
-    _random_seed_attribute_name: Optional[str] = "random_state_seed"
 
     space: Optional[List[Dict]] = schema_utils.DictList(
         description=(
@@ -543,7 +534,7 @@ class NevergradSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("nevergrad")
 
     # TODO: Add a registry mapping string names to nevergrad optimizers
-    optimizer: Optional[str] = None
+    # optimizer: Optional[str] = None
 
     # TODO: Add schemas for nevergrad optimizer kwargs
     optimizer_kwargs: Optional[Dict] = schema_utils.Dict(
@@ -585,12 +576,10 @@ class NevergradSAConfig(BaseSearchAlgorithmConfig):
 
 
 @DeveloperAPI
-@register_search_algorithm("optuna", dependencies=["optuna"])
+@register_search_algorithm("optuna", random_state_field="seed", dependencies=["optuna"])
 @ludwig_dataclass
 class OptunaSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("optuna")
-
-    _random_seed_attribute_name: Optional[str] = "seed"
 
     space: Optional[Dict] = schema_utils.Dict(
         description=(
@@ -631,7 +620,7 @@ class OptunaSAConfig(BaseSearchAlgorithmConfig):
     )
 
     # TODO: Add a registry of Optuna samplers schemas
-    sampler = None
+    # sampler = None
 
     seed: Optional[int] = schema_utils.Integer(
         default=None,

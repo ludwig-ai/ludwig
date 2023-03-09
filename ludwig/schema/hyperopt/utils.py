@@ -8,6 +8,7 @@ scheduler_config_registry = Registry()
 scheduler_dependencies_registry = Registry()
 search_algorithm_registry = Registry()
 sa_dependencies_registry = Registry()
+sa_random_state_field_registry = Registry()
 
 
 @DeveloperAPI
@@ -76,6 +77,19 @@ def get_search_algorithm_dependencies(name: str) -> List[str]:
 
 
 @DeveloperAPI
+def get_search_algorithm_random_state_field(name: str):
+    """Get the field name of the random state for a registered hyperopt search algorithm.
+
+    Args:
+        name: the name of a search algorithm config class registered in `ludwig.schema.hyperopt.search_algorithm`
+
+    Returns:
+        The name of the random state field in the config
+    """
+    return sa_random_state_field_registry[name]
+
+
+@DeveloperAPI
 def register_parameter_config(name: str) -> Callable:
     """Register a parameter config class by name.
 
@@ -130,11 +144,14 @@ def register_scheduler_config(name: str, dependencies: Optional[List[str]] = Non
 
 
 @DeveloperAPI
-def register_search_algorithm(name: str, dependencies: Optional[List[str]] = None) -> Callable:
+def register_search_algorithm(
+    name: str, random_state_field: Optional[str] = None, dependencies: Optional[List[str]] = None
+) -> Callable:
     """Register a search algorithm config class by name.
 
     Args:
         name: the name to register the search algorithm class under, does not need to correspond to the value of `type`
+        random_state_field: the name of the random state in this search algorithm
         dependencies: the list of module names that the search algorithm requires
 
     Returns:
@@ -144,6 +161,7 @@ def register_search_algorithm(name: str, dependencies: Optional[List[str]] = Non
     def wrap(cls: Type["BaseSearchAlgorithmConfig"]) -> Type["BaseSearchAlgorithmConfig"]:  # noqa: F821
         search_algorithm_registry[name] = cls
         sa_dependencies_registry[name] = dependencies if dependencies is not None else []
+        sa_random_state_field_registry[name] = random_state_field
         return cls
 
     return wrap
