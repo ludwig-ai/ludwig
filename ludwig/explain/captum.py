@@ -369,10 +369,13 @@ def get_total_attribution(
     for feat_name, feat in input_features.items():
         if feat.type() in {TEXT, CATEGORY, DATE, SET}:
             # Get embedding layer from encoder, which is the first child of the encoder.
-            layers.append(feat.encoder_obj.get_embedding_layer())
+            new_layer = feat.encoder_obj.get_embedding_layer()
         else:
             # Get the wrapped input layer.
-            layers.append(explanation_model.input_maps[feat_name])
+            new_layer = explanation_model.input_maps[feat_name]
+
+        if all(new_layer != layer for layer in layers):
+            layers.append(new_layer)
 
     explainer = LayerIntegratedGradients(explanation_model, layers)
 
