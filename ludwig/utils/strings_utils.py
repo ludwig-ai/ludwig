@@ -443,3 +443,34 @@ def build_sequence_matrix(
 
     padded = processor.map_objects(unit_vectors, pad)
     return padded
+
+
+# write a function to compute tf-idf from a list of lists of tokens
+def fit_tfidf(tokens_list):
+    # create a dictionary of tokens to indices
+    token_to_index = {}
+    for tokens in tokens_list:
+        for token in tokens:
+            if token not in token_to_index:
+                token_to_index[token] = len(token_to_index)
+    # create a list of lists of token indices
+    indices_list = []
+    for tokens in tokens_list:
+        indices_list.append([token_to_index[token] for token in tokens])
+    # create a list of lists of token counts
+    counts_list = []
+    for indices in indices_list:
+        counts = np.zeros(len(token_to_index))
+        for index in indices:
+            counts[index] += 1
+        counts_list.append(counts)
+    # compute tf-idf
+    tfidf_list = []
+    for counts in counts_list:
+        tfidf = np.zeros(len(token_to_index))
+        for index, count in enumerate(counts):
+            tf = count / np.sum(counts)
+            idf = np.log(len(tokens_list) / (1 + np.sum([index in indices for indices in indices_list])))
+            tfidf[index] = tf * idf
+        tfidf_list.append(tfidf)
+    return tfidf_list
