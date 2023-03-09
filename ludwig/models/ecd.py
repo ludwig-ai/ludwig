@@ -6,11 +6,11 @@ import numpy as np
 import torch
 import torchmetrics
 
-from ludwig.combiners.combiners import get_combiner_class
+from ludwig.combiners.combiners import create_combiner
 from ludwig.constants import MODEL_ECD
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
-from ludwig.schema.model_config import ModelConfig
+from ludwig.schema.model_types.ecd import ECDModelConfig
 from ludwig.utils import output_feature_utils
 from ludwig.utils.augmentation_utils import AugmentationPipelines
 from ludwig.utils.data_utils import clear_data_cache
@@ -28,7 +28,7 @@ class ECD(BaseModel):
 
     def __init__(
         self,
-        config_obj: ModelConfig,
+        config_obj: ECDModelConfig,
         random_seed=None,
         **_kwargs,
     ):
@@ -47,8 +47,7 @@ class ECD(BaseModel):
 
         # ================ Combiner ================
         logger.debug(f"Combiner {self.config_obj.combiner.type}")
-        combiner_class = get_combiner_class(self.config_obj.combiner.type)
-        self.combiner = combiner_class(input_features=self.input_features, config=self.config_obj.combiner)
+        self.combiner = create_combiner(self.config_obj.combiner, input_features=self.input_features)
 
         # ================ Outputs ================
         self.output_features.update(
