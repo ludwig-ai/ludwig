@@ -1,18 +1,20 @@
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import IMAGE
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
-from ludwig.schema.features.preprocessing.image import ImagePreprocessingConfig
 from ludwig.schema.metadata import ENCODER_METADATA
 from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils.torch_utils import initializer_registry
 
+if TYPE_CHECKING:
+    from ludwig.schema.features.preprocessing.image import ImagePreprocessingConfig
+
 
 class ImageEncoderConfig(BaseEncoderConfig):
-    def set_fixed_preprocessing_params(self, model_type: str, preprocessing: ImagePreprocessingConfig):
+    def set_fixed_preprocessing_params(self, model_type: str, preprocessing: "ImagePreprocessingConfig"):
         preprocessing.requires_equal_dimensions = False
         preprocessing.height = None
         preprocessing.width = None
@@ -691,7 +693,7 @@ class ViTConfig(ImageEncoderConfig):
         parameter_metadata=ENCODER_METADATA["ViT"]["pretrained_model"],
     )
 
-    def set_fixed_preprocessing_params(self, model_type: str, preprocessing: ImagePreprocessingConfig):
+    def set_fixed_preprocessing_params(self, model_type: str, preprocessing: "ImagePreprocessingConfig"):
         """If the encoder is not in trainable mode, override the image width and height to be compatible with the
         pretrained encoder image dimension requirements."""
         if self.requires_equal_dimensions() and self.required_width() != self.required_height():

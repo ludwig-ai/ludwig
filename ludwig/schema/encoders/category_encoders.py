@@ -1,4 +1,4 @@
-from typing import List
+from typing import TYPE_CHECKING, List
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import CATEGORY, MODEL_ECD, MODEL_GBM
@@ -6,9 +6,11 @@ from ludwig.schema import common_fields
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
-from ludwig.schema.features.preprocessing.category import CategoryPreprocessingConfig
 from ludwig.schema.metadata import ENCODER_METADATA
 from ludwig.schema.utils import ludwig_dataclass
+
+if TYPE_CHECKING:
+    from ludwig.schema.features.preprocessing.category import CategoryPreprocessingConfig
 
 
 @DeveloperAPI
@@ -106,7 +108,7 @@ class CategoricalOneHotEncoderConfig(BaseEncoderConfig):
 
     vocab: List[str] = common_fields.VocabField()
 
-    def set_fixed_preprocessing_params(self, model_type: str, preprocessing: CategoryPreprocessingConfig):
+    def set_fixed_preprocessing_params(self, model_type: str, preprocessing: "CategoryPreprocessingConfig"):
         if model_type == MODEL_GBM:
             preprocessing.cache_encoder_embeddings = True
 
