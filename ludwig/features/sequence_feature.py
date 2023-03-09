@@ -212,6 +212,7 @@ class SequenceFeatureMixin(BaseFeatureMixin):
             ngram_size=preprocessing_parameters["ngram_size"],
             processor=backend.df_engine,
         )
+        logger.info(f"Max length of dataset: {max_length} (without start and stop symbols)")
 
         # Use sequence_length if provided, otherwise use max length found in dataset.
         if preprocessing_parameters["sequence_length"] is not None:

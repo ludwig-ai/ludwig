@@ -506,6 +506,47 @@ def test_experiment_tied_weights(csv_filename):
         run_experiment(input_features, output_features, dataset=rel_path)
 
 
+def test_experiment_tied_weights_sequence_combiner(csv_filename):
+    """Tests that tied weights work with sequence combiners if `sequence_length` is provided.
+
+    Addresses https://github.com/ludwig-ai/ludwig/issues/3220
+    """
+    input_features = [
+        text_feature(
+            name="feature1",
+            encoder={
+                "max_len": 7,
+                "type": "auto_transformer",
+                "pretrained_model_name_or_path": "hf-internal-testing/tiny-bert-for-token-classification",
+                "reduce_output": None,
+            },
+            preprocessing={"sequence_length": 50},
+        ),
+        text_feature(
+            name="feature2",
+            encoder={
+                "max_len": 3,
+                "type": "auto_transformer",
+                "pretrained_model_name_or_path": "hf-internal-testing/tiny-bert-for-token-classification",
+                "reduce_output": None,
+            },
+            preprocessing={"sequence_length": 50},
+            tied="feature1",
+        ),
+    ]
+    output_features = [category_feature(decoder={"reduce_input": "sum", "vocab_size": 2})]
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "sequence"},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+    }
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    run_experiment(config=config, dataset=rel_path)
+
+
 @pytest.mark.parametrize("enc_cell_type", ["lstm", "rnn", "gru"])
 @pytest.mark.parametrize("attention", [False, True])
 def test_sequence_tagger(enc_cell_type, attention, csv_filename):
