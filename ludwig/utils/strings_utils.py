@@ -445,32 +445,22 @@ def build_sequence_matrix(
     return padded
 
 
-# write a function to compute tf-idf from a list of lists of tokens
-def fit_tfidf(tokens_list):
+# write a function to compute tf-idf from a pndas series of lists of tokens using map and apply, not iteration
+def fit_tfidf_map(tokens_list):
     # create a dictionary of tokens to indices
-    token_to_index = {}
-    for tokens in tokens_list:
-        for token in tokens:
-            if token not in token_to_index:
-                token_to_index[token] = len(token_to_index)
+    token_to_index = tokens_list.apply(pd.Series).stack().value_counts().index.to_list()
+    token_to_index = {token: index for index, token in enumerate(token_to_index)}
     # create a list of lists of token indices
-    indices_list = []
-    for tokens in tokens_list:
-        indices_list.append([token_to_index[token] for token in tokens])
+    indices_list = tokens_list.apply(lambda tokens: [token_to_index[token] for token in tokens])
     # create a list of lists of token counts
-    counts_list = []
-    for indices in indices_list:
-        counts = np.zeros(len(token_to_index))
-        for index in indices:
-            counts[index] += 1
-        counts_list.append(counts)
+    counts_list = indices_list.apply(lambda indices: np.bincount(indices, minlength=len(token_to_index)))
     # compute tf-idf
-    tfidf_list = []
-    for counts in counts_list:
-        tfidf = np.zeros(len(token_to_index))
-        for index, count in enumerate(counts):
-            tf = count / np.sum(counts)
-            idf = np.log(len(tokens_list) / (1 + np.sum([index in indices for indices in indices_list])))
-            tfidf[index] = tf * idf
-        tfidf_list.append(tfidf)
+    tfidf_list = counts_list.apply(
+        lambda counts: counts
+        / np.sum(counts)
+        * np.log(len(tokens_list) / (1 + (indices_list.apply(lambda indices: index in indices)).sum()))
+    )
     return tfidf_list
+
+
+from sklearn.feature_extraction.text import HashingVectorizer
