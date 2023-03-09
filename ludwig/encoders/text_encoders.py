@@ -16,6 +16,7 @@
 import logging
 from typing import Any, Callable, Dict, List, Optional, Type, Union
 
+import numpy as np
 import torch
 from torch import nn
 
@@ -2112,3 +2113,44 @@ class AutoTransformerEncoder(HFTextEncoder):
     @property
     def input_dtype(self):
         return torch.int32
+
+
+@DeveloperAPI
+@register_encoder("tf_idf", [TEXT])
+class TfIdfEncoder(Encoder):
+    def __init__(
+        self,
+        encoder_config=None,
+        str2freq=None,
+        str2idx=None,
+        vocab_size: int = None,
+        **kwargs,
+    ):
+        super().__init__()
+        self.config = encoder_config
+
+        logger.debug(f" {self.name}")
+
+        # Convert mapping of token -> frequence to a dense array
+        freq = np.zeros(vocab_size)
+        for k, v in str2freq.items():
+            freq[str2idx[k]] = v
+
+        # load the word embeddings into the static embedding
+        self.embedding = nn.Embedding(vocab_size, 1)
+        self.embedding.weight.data.copy_(torch.stack([torch.Tensor(f) for f in freq]))
+        self.embedding.weight.requires_grad = False
+
+        self.vocab_size = vocab_size
+
+    def forward(self, t: torch.Tensor, mask=None):
+        token_ids, counts = t.unique(return_counts=True)
+        sparse_tensor = torch.sparse_coo_tensor(token_ids, counts, size=(t.shape[0], self.vocab_size))
+        tf = sparse_tensor.to_dense()
+        idf = self.embedding(t.long()).squeeze(-1)
+        hidden = tf / idf
+        return {"encoder_output": hidden}
+
+    @staticmethod
+    def get_schema_cls():
+        return TfIdfConfig
