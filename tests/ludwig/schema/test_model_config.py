@@ -570,8 +570,8 @@ def test_defaults_mixins():
 
     config_obj = ModelConfig.from_dict(config)
 
-    assert config_obj.defaults.audio.to_dict().keys() == {ENCODER, PREPROCESSING}
-    assert config_obj.defaults.category.to_dict().keys() == {ENCODER, PREPROCESSING, DECODER, LOSS}
+    assert config_obj.defaults.audio.to_dict().keys() == {TYPE, ENCODER, PREPROCESSING}
+    assert config_obj.defaults.category.to_dict().keys() == {TYPE, ENCODER, PREPROCESSING, DECODER, LOSS}
 
 
 def test_initializer_recursion():

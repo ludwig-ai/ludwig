@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import contextlib
 import logging
 import os
 import shutil
@@ -29,6 +30,7 @@ from ludwig.constants import BATCH_SIZE, ENCODER, H3, PREPROCESSING, TRAINER, TY
 from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.encoders.registry import get_encoder_classes
+from ludwig.error import ConfigValidationError
 from ludwig.experiment import experiment_cli
 from ludwig.predict import predict_cli
 from ludwig.utils.data_utils import read_csv
@@ -881,3 +883,41 @@ def test_experiment_vector_feature_infer_size(csv_filename):
     del output_features[0][PREPROCESSING]
 
     run_experiment(input_features, output_features, dataset=rel_path)
+
+
+@pytest.mark.parametrize("reduce_output", [("sum"), (None)], ids=["sum", "none"])
+def test_experiment_text_output_feature_with_tagger_decoder(csv_filename, reduce_output):
+    """Test that the tagger decoder works with text output features when reduce_output is set to None."""
+    input_features = [text_feature(encoder={"type": "parallel_cnn", "reduce_output": reduce_output})]
+    output_features = [text_feature(output_feature=True, decoder={"type": "tagger"})]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+
+    with pytest.raises(ConfigValidationError) if reduce_output == "sum" else contextlib.nullcontext():
+        run_experiment(input_features, output_features, dataset=rel_path)
+
+
+@pytest.mark.parametrize("reduce_output", [("sum"), (None)], ids=["sum", "none"])
+def test_experiment_sequence_output_feature_with_tagger_decoder(csv_filename, reduce_output):
+    """Test that the tagger decoder works with sequence output features when reduce_output is set to None."""
+    input_features = [text_feature(encoder={"type": "parallel_cnn", "reduce_output": reduce_output})]
+    output_features = [sequence_feature(output_feature=True, decoder={"type": "tagger"})]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+
+    with pytest.raises(ConfigValidationError) if reduce_output == "sum" else contextlib.nullcontext():
+        run_experiment(input_features, output_features, dataset=rel_path)
+
+
+def test_experiment_category_input_feature_with_tagger_decoder(csv_filename):
+    """Test that the tagger decoder doesn't work with category input features."""
+    input_features = [category_feature()]
+    output_features = [sequence_feature(output_feature=True, decoder={"type": "tagger"})]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+
+    with pytest.raises(ConfigValidationError):
+        run_experiment(input_features, output_features, dataset=rel_path)
