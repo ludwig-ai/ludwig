@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Optional, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BFILL, IMAGE, IMAGENET1K, MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING
@@ -37,7 +37,7 @@ class ImagePreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[IMAGE][PREPROCESSING]["computed_fill_value"],
     )
 
-    height: int = schema_utils.PositiveInteger(
+    height: Optional[int] = schema_utils.PositiveInteger(
         default=None,
         allow_none=True,
         description="The image height in pixels. If this parameter is set, images will be resized to the specified "
@@ -46,7 +46,7 @@ class ImagePreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[IMAGE][PREPROCESSING]["height"],
     )
 
-    width: int = schema_utils.PositiveInteger(
+    width: Optional[int] = schema_utils.PositiveInteger(
         default=None,
         allow_none=True,
         description="The image width in pixels. If this parameter is set, images will be resized to the specified "

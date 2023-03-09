@@ -11,8 +11,9 @@ from ludwig.schema.features.loss.utils import LossDataclassField
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
 from ludwig.schema.features.utils import (
-    defaults_config_registry,
+    ecd_defaults_config_registry,
     ecd_input_config_registry,
+    gbm_defaults_config_registry,
     gbm_input_config_registry,
     input_mixin_registry,
     output_config_registry,
@@ -25,17 +26,20 @@ from ludwig.schema.utils import BaseMarshmallowConfig, ludwig_dataclass
 
 @DeveloperAPI
 @input_mixin_registry.register(CATEGORY)
+@gbm_defaults_config_registry.register(CATEGORY)
 @ludwig_dataclass
 class CategoryInputFeatureConfigMixin(BaseMarshmallowConfig):
     """CategoryInputFeatureConfigMixin is a dataclass that configures the parameters used in both the category
     input feature and the category global defaults section of the Ludwig Config."""
+
+    type: str = schema_utils.ProtectedString(CATEGORY)
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=CATEGORY)
 
 
 @DeveloperAPI
 @ludwig_dataclass
-class CategoryInputFeatureConfig(BaseInputFeatureConfig, CategoryInputFeatureConfigMixin):
+class CategoryInputFeatureConfig(CategoryInputFeatureConfigMixin, BaseInputFeatureConfig):
     """CategoryInputFeatureConfig is a dataclass that configures the parameters used for a category input
     feature."""
 
@@ -71,6 +75,8 @@ class CategoryOutputFeatureConfigMixin(BaseMarshmallowConfig):
     """CategoryOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the category
     output feature and the category global defaults section of the Ludwig Config."""
 
+    type: str = schema_utils.ProtectedString(CATEGORY)
+
     decoder: BaseDecoderConfig = DecoderDataclassField(
         feature_type=CATEGORY,
         default="classifier",
@@ -85,7 +91,7 @@ class CategoryOutputFeatureConfigMixin(BaseMarshmallowConfig):
 @DeveloperAPI
 @output_config_registry.register(CATEGORY)
 @ludwig_dataclass
-class CategoryOutputFeatureConfig(BaseOutputFeatureConfig, CategoryOutputFeatureConfigMixin):
+class CategoryOutputFeatureConfig(CategoryOutputFeatureConfigMixin, BaseOutputFeatureConfig):
     """CategoryOutputFeatureConfig is a dataclass that configures the parameters used for a category output
     feature."""
 
@@ -133,7 +139,7 @@ class CategoryOutputFeatureConfig(BaseOutputFeatureConfig, CategoryOutputFeature
 
 
 @DeveloperAPI
-@defaults_config_registry.register(CATEGORY)
+@ecd_defaults_config_registry.register(CATEGORY)
 @ludwig_dataclass
 class CategoryDefaultsConfig(CategoryInputFeatureConfigMixin, CategoryOutputFeatureConfigMixin):
     encoder: BaseEncoderConfig = EncoderDataclassField(

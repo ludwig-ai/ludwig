@@ -1,11 +1,12 @@
 from abc import ABC
-from typing import Any, Dict, List, Union
+from typing import List, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BINARY, MODEL_ECD, MODEL_GBM, NUMBER, VECTOR
 from ludwig.schema import common_fields
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.utils import register_encoder_config
+from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.metadata import ENCODER_METADATA
 from ludwig.schema.utils import ludwig_dataclass
 
@@ -23,8 +24,8 @@ class BaseEncoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
         parameter_metadata=ENCODER_METADATA["BaseEncoder"]["skip"],
     )
 
-    def get_fixed_preprocessing_params(self) -> Dict[str, Any]:
-        return {}
+    def set_fixed_preprocessing_params(self, model_type: str, preprocessing: BasePreprocessingConfig):
+        pass
 
     def is_pretrained(self) -> bool:
         return False
@@ -95,6 +96,6 @@ class DenseEncoderConfig(BaseEncoderConfig):
 
     norm_params: dict = common_fields.NormParamsField()
 
-    num_layers: int = common_fields.NumFCLayersField(default=1)
+    num_layers: int = common_fields.NumFCLayersField(default=1, non_zero=True)
 
     fc_layers: List[dict] = common_fields.FCLayersField()

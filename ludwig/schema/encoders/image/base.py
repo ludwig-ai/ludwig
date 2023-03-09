@@ -1,22 +1,21 @@
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import HEIGHT, IMAGE, REQUIRES_EQUAL_DIMENSIONS, WIDTH
+from ludwig.constants import IMAGE
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
+from ludwig.schema.features.preprocessing.image import ImagePreprocessingConfig
 from ludwig.schema.metadata import ENCODER_METADATA
 from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils.torch_utils import initializer_registry
 
 
 class ImageEncoderConfig(BaseEncoderConfig):
-    def get_fixed_preprocessing_params(self) -> Dict[str, Any]:
-        return {
-            REQUIRES_EQUAL_DIMENSIONS: False,
-            HEIGHT: None,
-            WIDTH: None,
-        }
+    def set_fixed_preprocessing_params(self, model_type: str, preprocessing: ImagePreprocessingConfig):
+        preprocessing.requires_equal_dimensions = False
+        preprocessing.height = None
+        preprocessing.width = None
 
 
 @DeveloperAPI
@@ -692,18 +691,16 @@ class ViTConfig(ImageEncoderConfig):
         parameter_metadata=ENCODER_METADATA["ViT"]["pretrained_model"],
     )
 
-    def get_fixed_preprocessing_params(self) -> Dict[str, Any]:
+    def set_fixed_preprocessing_params(self, model_type: str, preprocessing: ImagePreprocessingConfig):
         """If the encoder is not in trainable mode, override the image width and height to be compatible with the
         pretrained encoder image dimension requirements."""
         if self.requires_equal_dimensions() and self.required_width() != self.required_height():
-            raise ValueError("Invalid definition. required_width and required_height are not equal")
+            raise ValueError("Invalid definition. `required_width` and `required_height` are not equal")
 
-        preprocessing_parameters = {REQUIRES_EQUAL_DIMENSIONS: self.requires_equal_dimensions()}
+        preprocessing.requires_equal_dimensions = self.requires_equal_dimensions()
         if not self.trainable or self.use_pretrained:
-            preprocessing_parameters[HEIGHT] = self.required_height()
-            preprocessing_parameters[WIDTH] = self.required_width()
-            return preprocessing_parameters
-        return preprocessing_parameters
+            preprocessing.height = self.required_height()
+            preprocessing.width = self.required_width()
 
     @classmethod
     def requires_equal_dimensions(cls) -> bool:

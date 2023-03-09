@@ -13,7 +13,20 @@ input_mixin_registry = Registry()
 output_config_registry = Registry()
 output_mixin_registry = Registry()
 
-defaults_config_registry = Registry()
+"""
+As of Ludwig v0.7, ECD models support the full range of feature parameters available in Ludwig, so any feature schema
+can be registered into it. See `BinaryDefaultsConfig` for an example.
+"""
+ecd_defaults_config_registry = Registry()
+
+"""
+As of Ludwig v0.7, GBM models only support certain feature types and those features may only contain preprocessing
+parameters (in comparison, ECD features can specify encoders and other parameters). This is why the two model types have
+separate defaults registries. See `BinaryInputFeatureConfigMixin` for an example of a schema pattern that is designed to
+be registered by this registry (whereas, conversely, `BinaryDefaultsConfig` is an example of one to be registered with
+the ECD defaults registry).
+"""
+gbm_defaults_config_registry = Registry()
 
 
 def input_config_registry(model_type: str) -> Registry:
@@ -51,7 +64,6 @@ def get_input_feature_jsonschema(model_type: str):
             },
             "column": {"type": "string", "title": "column", "description": "Name of the column."},
         },
-        "uniqueItemProperties": ["name"],
         "additionalProperties": True,
         "allOf": get_input_feature_conds(model_type),
         "required": ["name", "type"],

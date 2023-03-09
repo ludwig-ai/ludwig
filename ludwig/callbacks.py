@@ -365,13 +365,3 @@ class Callback(ABC):
         :returns: Tuple[Callable, Dict] The train_fn and tune_config, which will be passed to ray tune.
         """
         return train_fn, tune_config
-
-    @staticmethod
-    def preload():
-        """Will always be called when Ludwig CLI is invoked, preload gives the callback an opportunity to import or
-        create any shared resources.
-
-        Importing required 3rd-party libraries should be done here i.e. import wandb. preload is guaranteed to be called
-        before any other callback method, and will only be called once per process.
-        """
-        pass

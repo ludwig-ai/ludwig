@@ -1147,7 +1147,7 @@ def build_dataset(
                 )
 
             logger.debug(f"sample {sample_ratio} of data")
-            dataset_df = dataset_df.sample(frac=sample_ratio)
+            dataset_df = dataset_df.sample(frac=sample_ratio, random_state=random_seed)
 
     # If persisting DataFrames in memory is enabled, we want to do this after
     # each batch of parallel ops in order to avoid redundant computation
@@ -1490,7 +1490,13 @@ def build_data(
     return proc_cols
 
 
-def balance_data(dataset_df: DataFrame, output_features: List[Dict], preprocessing_parameters: Dict, backend: Backend):
+def balance_data(
+    dataset_df: DataFrame,
+    output_features: List[Dict],
+    preprocessing_parameters: Dict,
+    backend: Backend,
+    random_seed: int,
+):
     """The purpose of this function is to balance the training dataset using either over-sampling or under-
     sampling.
 
@@ -1499,6 +1505,7 @@ def balance_data(dataset_df: DataFrame, output_features: List[Dict], preprocessi
         output_features: List of feature configs.
         preprocessing_parameters: Dictionary of the global preprocessing parameters.
         backend: Backend for data processing.
+        random_seed: Integer to seed the random sampling to ensure determinism.
 
     Returns: An over-sampled or under-sampled training dataset.
     """
@@ -1515,10 +1522,10 @@ def balance_data(dataset_df: DataFrame, output_features: List[Dict], preprocessi
 
     if preprocessing_parameters["oversample_minority"]:
         sample_fraction = (len(majority_df) * preprocessing_parameters["oversample_minority"]) / len(minority_df)
-        minority_df = minority_df.sample(frac=sample_fraction, replace=True)
+        minority_df = minority_df.sample(frac=sample_fraction, replace=True, random_state=random_seed)
     elif preprocessing_parameters["undersample_majority"]:
         sample_fraction = int(len(minority_df) / preprocessing_parameters["undersample_majority"]) / len(majority_df)
-        majority_df = majority_df.sample(frac=sample_fraction, replace=False)
+        majority_df = majority_df.sample(frac=sample_fraction, replace=False, random_state=random_seed)
 
     balanced_df = backend.df_engine.concat([minority_df, majority_df])
 
@@ -1759,6 +1766,11 @@ def preprocess_for_training(
                             "they will be overridden"
                         )
                         cache.delete()
+                else:
+                    logger.info(
+                        f"No cached dataset found at {cache.get_cached_obj_path('training')}. "
+                        "Preprocessing the dataset."
+                    )
 
         training_set_metadata[CHECKSUM] = cache.checksum
         data_format_processor = get_from_registry(data_format, data_format_preprocessor_registry)
@@ -1947,7 +1959,9 @@ def _preprocess_file_for_training(
 
     logger.info("Building dataset: DONE")
     if preprocessing_params["oversample_minority"] or preprocessing_params["undersample_majority"]:
-        training_data = balance_data(training_data, config["output_features"], preprocessing_params, backend)
+        training_data = balance_data(
+            training_data, config["output_features"], preprocessing_params, backend, random_seed
+        )
 
     return training_data, test_data, validation_data, training_set_metadata
 
@@ -1999,7 +2013,7 @@ def _preprocess_df_for_training(
 
     logger.info("Building dataset: DONE")
     if preprocessing_params["oversample_minority"] or preprocessing_params["undersample_majority"]:
-        training_set = balance_data(training_set, config["output_features"], preprocessing_params, backend)
+        training_set = balance_data(training_set, config["output_features"], preprocessing_params, backend, random_seed)
 
     return training_set, test_set, validation_set, training_set_metadata
 

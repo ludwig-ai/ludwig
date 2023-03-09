@@ -27,8 +27,14 @@ from tests.integration_tests.utils import (
 ray = pytest.importorskip("ray")
 
 import dask.dataframe as dd  # noqa
+from ray.tune.experiment.trial import Trial  # noqa
 
-from ludwig.automl import create_auto_config, create_auto_config_with_dataset_profile, train_with_config  # noqa
+from ludwig.automl import (  # noqa
+    auto_train,
+    create_auto_config,
+    create_auto_config_with_dataset_profile,
+    train_with_config,
+)
 from ludwig.hyperopt.execution import RayTuneExecutor  # noqa
 
 pytestmark = pytest.mark.distributed
@@ -297,6 +303,21 @@ def test_autoconfig_preprocessing_text_image(tmpdir):
 @pytest.mark.parametrize("time_budget", [200, 1], ids=["high", "low"])
 def test_train_with_config(time_budget, test_data_tabular_large, ray_cluster_2cpu, tmpdir):
     _run_train_with_config(time_budget, test_data_tabular_large, tmpdir)
+
+
+@pytest.mark.distributed
+def test_auto_train(test_data_tabular_large, ray_cluster_2cpu, tmpdir):
+    _, ofeatures, dataset_csv = test_data_tabular_large
+    results = auto_train(
+        dataset=dataset_csv,
+        target=ofeatures[0][NAME],
+        time_limit_s=120,
+        user_config={"hyperopt": {"executor": {"num_samples": 2}}},
+    )
+
+    analysis = results.experiment_analysis
+    for trial in analysis.trials:
+        assert trial.status != Trial.ERROR, f"Error in trial {trial}"
 
 
 @pytest.mark.parametrize("fs_protocol,bucket", [private_param(("s3", "ludwig-tests"))], ids=["s3"])

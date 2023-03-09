@@ -176,7 +176,7 @@ class SetFeatureMixin(BaseFeatureMixin):
 
             set_vector = np.zeros((len(metadata["str2idx"]),))
             set_vector[feature_vector] = 1
-            return set_vector.astype(np.bool)
+            return set_vector.astype(np.bool_)
 
         return backend.df_engine.map_objects(column, to_dense)
 
@@ -257,9 +257,6 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
     def logits(self, inputs, **kwargs):  # hidden
         hidden = inputs[HIDDEN]
         return self.decoder_obj(hidden)
-
-    def loss_kwargs(self):
-        return self.loss.to_dict()
 
     def metric_kwargs(self) -> Dict[str, Any]:
         return {"threshold": self.threshold}

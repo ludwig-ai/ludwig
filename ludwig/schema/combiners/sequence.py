@@ -10,6 +10,12 @@ from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.metadata import COMBINER_METADATA
 from ludwig.schema.utils import ludwig_dataclass
 
+"""
+SEQUENCE encoders that always return 2D [batch_size, hidden_size] tensors, regardless of how they are parameterized.
+These should never be used with modules that expect 3D tensors, such as the SequenceCombiner.
+"""
+_2D_SEQUENCE_ENCODERS = {"embed"}
+
 
 @DeveloperAPI
 @ludwig_dataclass
@@ -36,7 +42,9 @@ class SequenceCombinerConfig(BaseCombinerConfig):
         MODEL_ECD,
         feature_type=SEQUENCE,
         default="parallel_cnn",
-        description="Encoder to apply to `main_sequence_feature`.",
+        description="Encoder to apply to `main_sequence_feature`. The encoder must produce"
+        " a tensor of size [batch_size, sequence_length, hidden_size]",
+        blocklist=_2D_SEQUENCE_ENCODERS,
     )
 
     reduce_output: Optional[str] = schema_utils.ReductionOptions(

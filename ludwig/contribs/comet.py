@@ -138,7 +138,3 @@ class CometCallback(Callback):
         # put the commet flag back in:
         arg_str = " ".join(list(args[:2]) + ["--comet"] + list(args[2:]))
         return f"ludwig {cmd} {arg_str}"
-
-    @staticmethod
-    def preload():
-        import comet_ml  # noqa

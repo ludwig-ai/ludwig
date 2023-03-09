@@ -11,8 +11,9 @@ from ludwig.schema.features.loss.utils import LossDataclassField
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
 from ludwig.schema.features.utils import (
-    defaults_config_registry,
+    ecd_defaults_config_registry,
     ecd_input_config_registry,
+    gbm_defaults_config_registry,
     gbm_input_config_registry,
     input_mixin_registry,
     output_config_registry,
@@ -24,18 +25,21 @@ from ludwig.schema.utils import BaseMarshmallowConfig, ludwig_dataclass
 
 
 @DeveloperAPI
+@gbm_defaults_config_registry.register(BINARY)
 @input_mixin_registry.register(BINARY)
 @ludwig_dataclass
 class BinaryInputFeatureConfigMixin(BaseMarshmallowConfig):
     """BinaryInputFeatureConfigMixin is a dataclass that configures the parameters used in both the binary input
     feature and the binary global defaults section of the Ludwig Config."""
 
+    type: str = schema_utils.ProtectedString(BINARY)
+
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=BINARY)
 
 
 @DeveloperAPI
 @ludwig_dataclass
-class BinaryInputFeatureConfig(BaseInputFeatureConfig, BinaryInputFeatureConfigMixin):
+class BinaryInputFeatureConfig(BinaryInputFeatureConfigMixin, BaseInputFeatureConfig):
     """BinaryInputFeatureConfig is a dataclass that configures the parameters used for a binary input feature."""
 
     encoder: BaseEncoderConfig = None
@@ -70,6 +74,8 @@ class BinaryOutputFeatureConfigMixin(BaseMarshmallowConfig):
     """BinaryOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the binary output
     feature and the binary global defaults section of the Ludwig Config."""
 
+    type: str = schema_utils.ProtectedString(BINARY)
+
     decoder: BaseDecoderConfig = DecoderDataclassField(
         feature_type=BINARY,
         default="regressor",
@@ -84,7 +90,7 @@ class BinaryOutputFeatureConfigMixin(BaseMarshmallowConfig):
 @DeveloperAPI
 @output_config_registry.register(BINARY)
 @ludwig_dataclass
-class BinaryOutputFeatureConfig(BaseOutputFeatureConfig, BinaryOutputFeatureConfigMixin):
+class BinaryOutputFeatureConfig(BinaryOutputFeatureConfigMixin, BaseOutputFeatureConfig):
     """BinaryOutputFeatureConfig is a dataclass that configures the parameters used for a binary output feature."""
 
     calibration: bool = schema_utils.Boolean(
@@ -132,7 +138,7 @@ class BinaryOutputFeatureConfig(BaseOutputFeatureConfig, BinaryOutputFeatureConf
 
 
 @DeveloperAPI
-@defaults_config_registry.register(BINARY)
+@ecd_defaults_config_registry.register(BINARY)
 @ludwig_dataclass
 class BinaryDefaultsConfig(BinaryInputFeatureConfigMixin, BinaryOutputFeatureConfigMixin):
     # NOTE(travis): defaults use ECD input feature as it contains all the encoders

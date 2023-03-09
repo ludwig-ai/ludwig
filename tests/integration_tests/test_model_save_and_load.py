@@ -11,6 +11,7 @@ from ludwig.api import LudwigModel
 from ludwig.constants import BATCH_SIZE, ENCODER, LOSS, NAME, PREPROCESSING, TRAINER, TRAINING, TYPE
 from ludwig.data.split import get_splitter
 from ludwig.modules.loss_modules import MSELoss
+from ludwig.schema.features.loss.loss import MSELossConfig
 from ludwig.utils.data_utils import read_csv
 from tests.integration_tests.utils import (
     audio_feature,
@@ -36,8 +37,8 @@ def test_model_save_reload_api(tmpdir, csv_filename, tmp_path):
     random.seed(1)
     np.random.seed(1)
 
-    image_dest_folder = os.path.join(os.getcwd(), "generated_images")
-    audio_dest_folder = os.path.join(os.getcwd(), "generated_audio")
+    image_dest_folder = os.path.join(tmpdir, "generated_images")
+    audio_dest_folder = os.path.join(tmpdir, "generated_audio")
 
     input_features = [
         binary_feature(),
@@ -258,7 +259,7 @@ def test_model_weights_match_training(tmpdir, csv_filename):
     predictions = model.predict(df)
 
     # compute loss on predictions from training data
-    loss_function = MSELoss()
+    loss_function = MSELoss(MSELossConfig())
     loss = loss_function(
         torch.tensor(predictions[0][output_feature_name + "_predictions"].values),  # predictions
         torch.tensor(df[output_feature_name].values),  # target
@@ -280,7 +281,7 @@ def test_model_save_reload_tv_model(torch_encoder, variant, tmpdir, csv_filename
     random.seed(1)
     np.random.seed(1)
 
-    image_dest_folder = os.path.join(os.getcwd(), "generated_images")
+    image_dest_folder = os.path.join(tmpdir, "generated_images")
 
     input_features = [
         image_feature(image_dest_folder),

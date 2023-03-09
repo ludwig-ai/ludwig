@@ -1255,3 +1255,6 @@ class DictMarshmallowField(fields.Field):
             metadata={"marshmallow_field": self},
             default_factory=default_factory,
         )
+
+    def _jsonschema_type_mapping(self):
+        return unload_jsonschema_from_marshmallow_class(self.cls)
