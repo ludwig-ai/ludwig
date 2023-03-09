@@ -111,7 +111,7 @@ class BWCEWLoss(nn.Module, LogitsInputsMixin):
         if config.positive_class_weight:
             self.loss_fn = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([config.positive_class_weight]))
         else:
-            self.loss_fn = nn.BCEWithLogitsLoss(pos_weight=config.positive_class_weights)
+            self.loss_fn = nn.BCEWithLogitsLoss(pos_weight=config.positive_class_weight)
         self.robust_lambda = config.robust_lambda
         self.confidence_penalty = config.confidence_penalty
 
