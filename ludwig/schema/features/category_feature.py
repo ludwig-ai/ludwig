@@ -129,7 +129,7 @@ class CategoryOutputFeatureConfig(CategoryOutputFeatureConfigMixin, BaseOutputFe
         parameter_metadata=FEATURE_METADATA[CATEGORY]["reduce_input"],
     )
 
-    top_k: int = schema_utils.NonNegativeInteger(
+    top_k: int = schema_utils.PositiveInteger(
         default=3,
         description="Determines the parameter k, the number of categories to consider when computing the top_k "
         "measure. It computes accuracy but considering as a match if the true category appears in the "
