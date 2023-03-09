@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Type
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import TYPE
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.metadata import COMBINER_METADATA
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, ParameterMetadata
 from ludwig.utils.registry import Registry
@@ -10,12 +11,12 @@ from ludwig.utils.registry import Registry
 DEFAULT_VALUE = "concat"
 DESCRIPTION = "Select the combiner type."
 
-combiner_registry = Registry()
+combiner_registry = Registry[Type[BaseCombinerConfig]]()
 
 
 @DeveloperAPI
 def register_combiner(name: str):
-    def wrap(cls):
+    def wrap(cls: Type[BaseCombinerConfig]):
         combiner_registry[name] = cls
         return cls
 
@@ -89,7 +90,7 @@ def get_combiner_conds() -> List[Dict[str, Any]]:
     conds = []
     for combiner_type in combiner_types:
         combiner_cls = combiner_registry[combiner_type]
-        schema_cls = combiner_cls.get_schema_cls()
+        schema_cls = combiner_cls
         combiner_schema = schema_utils.unload_jsonschema_from_marshmallow_class(schema_cls)
         combiner_props = combiner_schema["properties"]
         schema_utils.remove_duplicate_fields(combiner_props)
@@ -106,7 +107,7 @@ class CombinerSelection(schema_utils.TypeSelection):
         super().__init__(registry=combiner_registry, default_value=DEFAULT_VALUE, description=DESCRIPTION)
 
     def get_schema_from_registry(self, key: str) -> Type[schema_utils.BaseMarshmallowConfig]:
-        return self.registry[key].get_schema_cls()
+        return self.registry[key]
 
     def _jsonschema_type_mapping(self):
         return get_combiner_jsonschema()
