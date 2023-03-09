@@ -740,9 +740,8 @@ class RayTuneExecutor:
         metric = "metric_score"
         use_gpu = bool(self._gpu_resources_per_trial_non_none)
 
-        self.search_algorithm.set_random_state(random_seed)
         if self.search_algorithm is not None:
-            self.search_algorithm.check_for_random_seed(random_seed)
+            self.search_algorithm.set_random_state(random_seed)
             sa_kwargs = self.search_algorithm.to_dict()
             del sa_kwargs[TYPE]
             sa_kwargs["mode"] = mode
