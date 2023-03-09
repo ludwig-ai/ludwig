@@ -72,14 +72,7 @@ def get_combiner_descriptions():
     Returns:
         dict: A dictionary of combiner descriptions.
     """
-    output = {}
-    combiners = {cls.__name__: registered_name for registered_name, cls in combiner_registry.items()}
-
-    for k, v in COMBINER_METADATA.items():
-        if k in combiners.keys():
-            output[combiners[k]] = convert_metadata_to_json(v[TYPE])
-
-    return output
+    return {k: convert_metadata_to_json(v[TYPE]) for k, v in COMBINER_METADATA.items() if k in combiner_registry}
 
 
 @DeveloperAPI

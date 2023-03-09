@@ -23,13 +23,9 @@ class ComparatorCombinerConfig(BaseCombinerConfig):
                 "Set `num_fc_layers > 0` or `fc_layers`."
             )
 
-    @staticmethod
-    def module_name():
-        return "ComparatorCombiner"
-
     type: str = schema_utils.ProtectedString(
         "comparator",
-        description=COMBINER_METADATA["ComparatorCombiner"]["type"].long_description,
+        description=COMBINER_METADATA["comparator"]["type"].long_description,
     )
 
     entity_1: List[str] = schema_utils.List(
@@ -38,7 +34,7 @@ class ComparatorCombinerConfig(BaseCombinerConfig):
             "The list of input feature names `[feature_1, feature_2, ...]` constituting the first entity to compare. "
             "*Required*."
         ),
-        parameter_metadata=COMBINER_METADATA["ComparatorCombiner"]["entity_1"],
+        parameter_metadata=COMBINER_METADATA["comparator"]["entity_1"],
     )
 
     entity_2: List[str] = schema_utils.List(
@@ -47,7 +43,7 @@ class ComparatorCombinerConfig(BaseCombinerConfig):
             "The list of input feature names `[feature_1, feature_2, ...]` constituting the second entity to compare. "
             "*Required*."
         ),
-        parameter_metadata=COMBINER_METADATA["ComparatorCombiner"]["entity_2"],
+        parameter_metadata=COMBINER_METADATA["comparator"]["entity_2"],
     )
 
     dropout: float = common_fields.DropoutField()
@@ -57,7 +53,7 @@ class ComparatorCombinerConfig(BaseCombinerConfig):
     use_bias: bool = schema_utils.Boolean(
         default=True,
         description="Whether the layer uses a bias vector.",
-        parameter_metadata=COMBINER_METADATA["ComparatorCombiner"]["use_bias"],
+        parameter_metadata=COMBINER_METADATA["comparator"]["use_bias"],
     )
 
     bias_initializer: Union[str, Dict] = common_fields.BiasInitializerField()
@@ -69,7 +65,7 @@ class ComparatorCombinerConfig(BaseCombinerConfig):
     output_size: int = schema_utils.PositiveInteger(
         default=256,
         description="Output size of a fully connected layer.",
-        parameter_metadata=COMBINER_METADATA["ComparatorCombiner"]["output_size"],
+        parameter_metadata=COMBINER_METADATA["comparator"]["output_size"],
     )
 
     norm: Optional[str] = common_fields.NormField()

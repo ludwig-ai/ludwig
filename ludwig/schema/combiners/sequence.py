@@ -24,20 +24,16 @@ _2D_SEQUENCE_ENCODERS = {"embed"}
 class SequenceCombinerConfig(BaseCombinerConfig):
     """Parameters for sequence combiner."""
 
-    @staticmethod
-    def module_name():
-        return "SequenceCombiner"
-
     type: str = schema_utils.ProtectedString(
         "sequence",
-        description=COMBINER_METADATA["SequenceCombiner"]["type"].long_description,
+        description=COMBINER_METADATA["sequence"]["type"].long_description,
     )
 
     main_sequence_feature: Optional[str] = schema_utils.String(
         default=None,
         allow_none=True,
         description=MAIN_SEQUENCE_FEATURE_DESCRIPTION,
-        parameter_metadata=COMBINER_METADATA["SequenceCombiner"]["main_sequence_feature"],
+        parameter_metadata=COMBINER_METADATA["sequence"]["main_sequence_feature"],
     )
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
@@ -52,5 +48,5 @@ class SequenceCombinerConfig(BaseCombinerConfig):
     reduce_output: Optional[str] = schema_utils.ReductionOptions(
         default=None,
         description="Strategy to use to aggregate the embeddings of the items of the set.",
-        parameter_metadata=COMBINER_METADATA["SequenceCombiner"]["reduce_output"],
+        parameter_metadata=COMBINER_METADATA["sequence"]["reduce_output"],
     )
