@@ -110,7 +110,9 @@ class BaseInputFeatureConfig(BaseFeatureConfig):
         default=None,
         allow_none=True,
         description="Name of input feature to tie the weights of the encoder with.  It needs to be the name of a "
-        "feature of the same type and with the same encoder parameters.",
+        "feature of the same type and with the same encoder parameters. If text or sequence features are tied, "
+        "consider setting the `sequence_length` parameter in `preprocessing` to ensure that the tied features have "
+        "equal sized outputs. This is necessary when using the `sequence` combiner.",
     )
 
     def has_augmentation(self) -> bool:
