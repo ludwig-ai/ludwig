@@ -6,8 +6,8 @@ import torch
 
 from ludwig.api import LudwigModel
 from ludwig.constants import NAME
-from ludwig.explain.util import replace_layer_with_copy, get_absolute_module_key_from_submodule
-from tests.integration_tests.utils import generate_data, text_feature, binary_feature, LocalTestBackend
+from ludwig.explain.util import get_absolute_module_key_from_submodule, replace_layer_with_copy
+from tests.integration_tests.utils import binary_feature, generate_data, LocalTestBackend, text_feature
 
 
 def test_get_absolute_module_key_from_submodule():
