@@ -49,13 +49,8 @@ def test_get_absolute_module_key_from_submodule():
 
 
 def test_replace_layer_with_copy(tmpdir):
-    text_feature_1 = text_feature(
-        preprocessing={"sequence_length": 15},
-    )
-    text_feature_2 = text_feature(
-        tied=text_feature_1["name"],
-        preprocessing={"sequence_length": 15},
-    )
+    text_feature_1 = text_feature()
+    text_feature_2 = text_feature(tied=text_feature_1["name"])
     input_features = [text_feature_1, text_feature_2]
     output_features = [binary_feature()]
 
