@@ -619,7 +619,7 @@ def test_hyperopt_with_time_budget(csv_filename, tmpdir, ray_cluster_7cpu):
             "executor": {
                 "type": "ray",
                 # Ensure there is enough time for some trials to start and also for some to terminate
-                # to reproduce the exact issue of missing .tune_metadata files
+                # to reproduce the exact issue of missing .tune_metadata files.
                 "time_budget_s": 90,
                 "cpu_resources_per_trial": 1,
                 "num_samples": 20,
