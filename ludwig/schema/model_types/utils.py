@@ -229,6 +229,27 @@ def set_hyperopt_defaults_(config: "ModelConfig"):
             scheduler.max_t = epochs  # run scheduler until trainer epochs limit hit
 
 
+def set_preprocessing_parameters(config: "ModelConfig") -> None:  # noqa: F821
+    """Reconcile conflicting preprocessing parameters in place."""
+    _set_max_sequence_length(config)
+
+
+def _set_max_sequence_length(config: "ModelConfig") -> None:  # noqa: F821
+    """Ensures that `max_sequence_length` is never less than `sequence_length`."""
+
+    types_with_sequence_length = [SEQUENCE, TEXT]
+    for input_feature in config.input_features:
+        if input_feature.type in types_with_sequence_length:
+            sequence_length = input_feature.preprocessing.sequence_length
+            max_sequence_length = input_feature.preprocessing.max_sequence_length
+            if sequence_length is not None and sequence_length > max_sequence_length:
+                warnings.warn(
+                    "if `sequence_length` is not None, `max_sequence_length` must be greater than or equal "
+                    "to `sequence_length`. Setting `max_sequence_length` to `sequence_length`."
+                )
+                input_feature.preprocessing.max_sequence_length = sequence_length
+
+
 def set_tagger_decoder_parameters(config: "ModelConfig") -> None:
     """Overrides the reduce_input parameter for text and sequence output features when a tagger decoder is used.
     This is done to ensure that the decoder correctly gets a 3D tensor as input.
