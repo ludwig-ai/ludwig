@@ -5,6 +5,7 @@ import glob
 import json
 import logging
 import os
+import re
 import shutil
 import tempfile
 import threading
@@ -356,9 +357,15 @@ class RayTuneExecutor:
 
         return kubernetes_syncer.get_node_address_by_ip
 
-    # For specified [stopped] trial, remove checkpoint marker on any partial checkpoints
     @staticmethod
     def _remove_partial_checkpoints(trial_path: str):
+        """ For specified [stopped] trial, remove checkpoint marker on any partial checkpoints. 
+        
+        These may have been created by trial that was terminated early by RayTune because the time budget was exceeded.
+        """
+        # `trial_dir` returned by RayTune may have a leading slash, but get_best_checkpoint
+        # requires a path without a leading slash since it does a direct key lookup with analysis.trial_dataframes.
+        trial_path = trial_path.rstrip("/") if isinstance(trial_path, str) else trial_path
         marker_paths = glob.glob(os.path.join(glob.escape(trial_path), "checkpoint_*/.is_checkpoint"))
         for marker_path in marker_paths:
             chkpt_dir = os.path.dirname(marker_path)
@@ -370,6 +377,28 @@ class RayTuneExecutor:
             if len(metadata_file) < 1:
                 # Remove checkpoint marker on incomplete directory
                 os.remove(marker_path)
+
+    # def _remove_incomplete_checkpoint_dirs(self, trial_path: str) -> None:
+    #     # `trial_dir` returned by RayTune may have a leading slash, but get_best_checkpoint
+    #     # requires a path without a leading slash since it does a direct key lookup with analysis.trial_dataframes.
+    #     trial_path = trial_path.rstrip("/") if isinstance(trial_path, str) else trial_path
+
+    #     # Get all checkpoint directories
+    #     checkpoint_filter = re.compile(r"checkpoint_\d+")  # checkpoint_1, checkpoint_2, etc.
+    #     checkpoint_dirs = glob.glob(os.path.join(glob.escape(trial_path), "checkpoint_*"))
+    #     checkpoint_dirs = [filename for filename in os.listdir(trial_path) if checkpoint_filter.match(filename)]
+
+    #     # Remove checkpoint directories that do not have .tune_metadata file since they are incomplete
+    #     # and may have been created by trial that was terminated early by RayTune because the time budget was exceeded.
+    #     for checkpoint_dir in checkpoint_dirs:
+    #         checkpoint_dir_path = os.path.join(trial_path, checkpoint_dir)
+    #         metadata_file = glob.glob(os.path.join(glob.escape(checkpoint_dir_path), "*.tune_metadata"))
+    #         # glob.glob: filenames starting with a dot are special cases
+    #         # that are not matched by '*' and '?' patterns.
+    #         metadata_file += glob.glob(os.path.join(glob.escape(checkpoint_dir_path), ".tune_metadata"))
+    #         metadata_file = list(set(metadata_file))
+
+        
 
     @staticmethod
     @contextlib.contextmanager
@@ -919,6 +948,7 @@ class RayTuneExecutor:
                     # Evaluate the best model on the eval_split, which is validation_set
                     if validation_set is not None and validation_set.size > 0:
                         trial_path = trial["trial_dir"]
+                        self._remove_partial_checkpoints(trial_path)
                         with self._get_best_model_path(
                             trial_path, analysis, backend.storage.artifacts.credentials
                         ) as best_model_path:
