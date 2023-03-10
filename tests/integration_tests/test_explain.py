@@ -126,6 +126,8 @@ def test_explainer_text_hf(explainer_class, model_type, cache_encoder_embeddings
     [
         pytest.param(IntegratedGradientsExplainer, MODEL_ECD, id="ecd_local"),
         pytest.param(RayIntegratedGradientsExplainer, MODEL_ECD, id="ecd_ray", marks=pytest.mark.distributed),
+        # TODO(travis): once we support GBM text features
+        # pytest.param((GBMExplainer, MODEL_GBM), id="gbm_local"),
     ],
 )
 def test_explainer_text_tied_weights(explainer_class, model_type, tmpdir):

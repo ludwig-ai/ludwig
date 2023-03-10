@@ -136,10 +136,6 @@ class BaseFeature:
 class InputFeature(BaseFeature, LudwigModule, ABC):
     """Parent class for all input features."""
 
-    def __init__(self, config):
-        super().__init__(config)
-        self.encoder_obj = None
-
     def create_sample_input(self, batch_size: int = 2):
         # Used by get_model_inputs(), which is used for tracing-based torchscript generation.
         return torch.rand([batch_size, *self.input_shape]).to(self.input_dtype)
