@@ -146,7 +146,7 @@ class RayTuneExecutor:
         metric: str,
         goal: str,
         split: str,
-        search_alg: "BaseSearchAlgorithmConfig",  # noqa: F821
+        search_alg: Dict,
         trial_driver_resources: Optional[Dict] = None,
         cpu_resources_per_trial: int = None,
         gpu_resources_per_trial: int = None,
@@ -748,6 +748,7 @@ class RayTuneExecutor:
             sa_kwargs["metric"] = metric
             search_alg = tune.create_searcher(self.search_algorithm.type, **sa_kwargs)
         else:
+            logging.info("No hyperopt search algorithm specified, defaulting to `variant_generator`")
             search_alg = None
 
         if self.max_concurrent_trials:
