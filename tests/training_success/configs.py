@@ -98,9 +98,6 @@ input_features:
   - name: Sex
     type: category
     column: Sex
-  - name: SibSp
-    type: number
-    column: SibSp
   - name: Parch
     type: number
     column: Parch

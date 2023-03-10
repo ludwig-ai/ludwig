@@ -17,6 +17,7 @@ from ludwig.api import LudwigModel
 from ludwig.config_validation.validation import get_schema
 from ludwig.datasets import get_dataset
 from ludwig.types import ModelConfigDict
+from ludwig.utils.defaults import default_random_seed
 
 
 def defaults_config_generator(feature_type: str, only_include: str) -> Tuple[ModelConfigDict, str]:
@@ -104,7 +105,7 @@ def train_and_evaluate(config: ModelConfigDict, dataset_name: str):
     print("Config used")
     pprint(config)
     dataset_module = get_dataset(dataset_name)
-    dataset = dataset_module.load().head(50)
+    dataset = dataset_module.load().sample(50, random_state=default_random_seed)
     model = LudwigModel(config=config, callbacks=None, logging_level=logging.ERROR)
     model.train(dataset=dataset)
     model.evaluate(dataset=dataset)
