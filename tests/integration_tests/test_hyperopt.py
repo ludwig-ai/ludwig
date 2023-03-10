@@ -635,4 +635,4 @@ def test_hyperopt_with_time_budget(csv_filename, tmpdir, ray_cluster_7cpu):
     }
 
     experiment_name = f"test_hyperopt_{uuid.uuid4().hex}"
-    hyperopt_results = hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name=experiment_name)
+    hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name=experiment_name)
