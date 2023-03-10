@@ -381,27 +381,33 @@ def get_total_attribution(
             if len(layers) > 0 and any(new_layer == layer for layer in layers):
                 # Get the original encoder object and a mapping from param names to the params themselves.
                 orig_encoder_obj = feat.encoder_obj
-                orig_encoder_obj_state_dict = feat.encoder_obj.state_dict()
+                orig_encoder_obj_state_dict = orig_encoder_obj.state_dict()
 
                 # Deep copy the original encoder object and set the copy as this feature's encoder object.
                 copy_encoder_obj = deepcopy(orig_encoder_obj)
                 feat.encoder_obj = copy_encoder_obj
 
+                keys_to_keep_copy = []
+                for orig_key, orig_param in orig_encoder_obj.named_parameters():
+                    for _, new_layer_param in new_layer.named_parameters():
+                        # Get the absolute module key for each param in the target layer.
+                        # The module keys in the target layer are relative to the target layer, so if we leave it
+                        # as is, we may get duplicates for common layers i.e. "LayerNorm.weight" and "LayerNorm.bias".
+                        # We find the params from the target layer in the original encoder by comparing the data
+                        # pointers, since the data returned by named_parameters is by reference.
+                        # More reading on checking if tensors point to the same place in storage:
+                        # https://discuss.pytorch.org/t/any-way-to-check-if-two-tensors-have-the-same-base/44310/2
+                        if new_layer_param.data_ptr() == orig_param.data_ptr():
+                            keys_to_keep_copy.append(orig_key)
+                            break
+
                 # Get the tensors to keep from the copied encoder object. These are the tensors in the target layer.
                 for key, param in copy_encoder_obj.named_parameters():
-                    keep = False
-                    for keep_key, keep_param in new_layer.named_parameters():
-                        # If the param is in the target layer, keep the copy. Otherwise, replace it with the original.
-                        # Assumes that the target layer is a child of the original module, and that modules with
-                        # the same weights are functionally the same.
-                        if torch.equal(param.data, keep_param.data) and key.endswith(keep_key):
-                            print("ASDFASDF keeping param: " + key)
-                            keep = True
-                            break
-                    if not keep:
+                    if key in keys_to_keep_copy:
+                        print("ASDFASDF keeping param: " + key)
+                    else:
                         param.data = orig_encoder_obj_state_dict[key].data
-                        print("ASDFASDF replacing param: " + key + " keep_key: " + keep_key)
-                        print("\tkeep_param data: ", keep_param.data)
+                        print("ASDFASDF replacing param: " + key)
                         print("\tparam data: ", param.data)
 
                 # Get the new copy of the embedding layer.
