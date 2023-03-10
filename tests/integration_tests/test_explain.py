@@ -125,27 +125,15 @@ def test_explainer_text_hf(explainer_class, model_type, cache_encoder_embeddings
     "explainer_class,model_type",
     [
         pytest.param(IntegratedGradientsExplainer, MODEL_ECD, id="ecd_local"),
-        # pytest.param(RayIntegratedGradientsExplainer, MODEL_ECD, id="ecd_ray", marks=pytest.mark.distributed),
-        # TODO(travis): once we support GBM text features
-        # pytest.param((GBMExplainer, MODEL_GBM), id="gbm_local"),
+        pytest.param(RayIntegratedGradientsExplainer, MODEL_ECD, id="ecd_ray", marks=pytest.mark.distributed),
     ],
 )
 def test_explainer_text_tied_weights(explainer_class, model_type, tmpdir):
     text_feature_1 = text_feature(
-        encoder={
-            "max_len": 10,
-            "type": "auto_transformer",
-            "pretrained_model_name_or_path": "hf-internal-testing/tiny-bert-for-token-classification",
-        },
         preprocessing={"sequence_length": 15},
     )
     text_feature_2 = text_feature(
         tied=text_feature_1["name"],
-        encoder={
-            "max_len": 15,
-            "type": "auto_transformer",
-            "pretrained_model_name_or_path": "hf-internal-testing/tiny-bert-for-token-classification",
-        },
         preprocessing={"sequence_length": 15},
     )
     input_features = [text_feature_1, text_feature_2]

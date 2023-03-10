@@ -2,7 +2,6 @@ import copy
 import gc
 import logging
 from collections import defaultdict
-from copy import deepcopy
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
@@ -22,7 +21,7 @@ from ludwig.constants import CATEGORY, DATE, IMAGE, INPUT_FEATURES, NAME, PREPRO
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.explain.explainer import Explainer
 from ludwig.explain.explanation import ExplanationsResult
-from ludwig.explain.util import get_pred_col
+from ludwig.explain.util import get_pred_col, replace_layer_with_copy
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.models.ecd import ECD
 from ludwig.utils.torch_utils import DEVICE
@@ -366,61 +365,25 @@ def get_total_attribution(
     model.model.zero_grad()
     explanation_model = WrapperModule(model.model, target_feature_name)
 
-    from pprint import pprint as pp
-
     layers = []
     for feat_name, feat in input_features.items():
         if feat.type() in {TEXT, CATEGORY, DATE, SET}:
-            pp("ASDFASDF feat_name: " + feat_name)
             # Get embedding layer from encoder, which is the first child of the encoder.
-            new_layer = feat.encoder_obj.get_embedding_layer()
-            pp("ASDFASDF the name and address of each item in encoder_obj state_dict: ")
-            pp({k: v.data_ptr() for k, v in feat.encoder_obj.state_dict().items()})
+            target_layer = feat.encoder_obj.get_embedding_layer()
 
             # If the current layer matches any layer in the list, make a deep copy of the layer.
-            if len(layers) > 0 and any(new_layer == layer for layer in layers):
-                # Get the original encoder object and a mapping from param names to the params themselves.
-                orig_encoder_obj = feat.encoder_obj
-                orig_encoder_obj_state_dict = orig_encoder_obj.state_dict()
-
-                # Deep copy the original encoder object and set the copy as this feature's encoder object.
-                copy_encoder_obj = deepcopy(orig_encoder_obj)
-                feat.encoder_obj = copy_encoder_obj
-
-                keys_to_keep_copy = []
-                for orig_key, orig_param in orig_encoder_obj.named_parameters():
-                    for _, new_layer_param in new_layer.named_parameters():
-                        # Get the absolute module key for each param in the target layer.
-                        # The module keys in the target layer are relative to the target layer, so if we leave it
-                        # as is, we may get duplicates for common layers i.e. "LayerNorm.weight" and "LayerNorm.bias".
-                        # We find the params from the target layer in the original encoder by comparing the data
-                        # pointers, since the data returned by named_parameters is by reference.
-                        # More reading on checking if tensors point to the same place in storage:
-                        # https://discuss.pytorch.org/t/any-way-to-check-if-two-tensors-have-the-same-base/44310/2
-                        if new_layer_param.data_ptr() == orig_param.data_ptr():
-                            keys_to_keep_copy.append(orig_key)
-                            break
-
-                # Get the tensors to keep from the copied encoder object. These are the tensors in the target layer.
-                for key, param in copy_encoder_obj.named_parameters():
-                    if key in keys_to_keep_copy:
-                        print("ASDFASDF keeping param: " + key)
-                    else:
-                        param.data = orig_encoder_obj_state_dict[key].data
-                        print("ASDFASDF replacing param: " + key)
-                        print("\tparam data: ", param.data)
-
-                # Get the new copy of the embedding layer.
-                new_layer = feat.encoder_obj.get_embedding_layer()  # get the new copy
-            pp("ASDFASDF the name and address of each item in encoder_obj state_dict AFTER DEEP COPY: ")
-            pp({k: v.data_ptr() for k, v in feat.encoder_obj.state_dict().items()})
-            breakpoint()
+            if len(layers) > 0 and any(target_layer == layer for layer in layers):
+                # Replace the layer with a deep copy of the layer to ensure that the attributions unique for each input
+                # feature that uses a shared layer.
+                # Recommended here: https://github.com/pytorch/captum/issues/794#issuecomment-1093021638
+                replace_layer_with_copy(feat, target_layer)
+                target_layer = feat.encoder_obj.get_embedding_layer()  # get the new copy
         else:
             # Get the wrapped input layer.
-            new_layer = explanation_model.input_maps[feat_name]
+            target_layer = explanation_model.input_maps[feat_name]
 
-        layers.append(new_layer)
-    print("ASDFASDF address of each layer in layers: ", [id(layer) for layer in layers])
+        layers.append(target_layer)
+
     explainer = LayerIntegratedGradients(explanation_model, layers)
 
     feature_inputs_splits = [ipt.split(run_config.batch_size) for ipt in feature_inputs]
