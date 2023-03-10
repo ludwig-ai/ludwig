@@ -1,4 +1,4 @@
-from typing import List, Optional, Type, Union
+from typing import List, Type, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
@@ -24,15 +24,9 @@ def log_base_field(default=10):
 
 
 @DeveloperAPI
-@ludwig_dataclass
-class BaseParameterConfig(schema_utils.BaseMarshmallowConfig):
-    space: Optional[str] = None
-
-
-@DeveloperAPI
 @register_parameter_config("choice")
 @ludwig_dataclass
-class CategoricalParameterConfig(BaseParameterConfig):
+class ChoiceParameterConfig(schema_utils.BaseMarshmallowConfig):
     """Config for a randomly sampled categorical search space."""
 
     space: str = schema_utils.ProtectedString("choice")
@@ -48,7 +42,7 @@ class CategoricalParameterConfig(BaseParameterConfig):
 @DeveloperAPI
 @register_parameter_config("grid_search")
 @ludwig_dataclass
-class GridSearchParameterConfig(BaseParameterConfig):
+class GridSearchParameterConfig(schema_utils.BaseMarshmallowConfig):
     """Config for a grid search space."""
 
     space: str = schema_utils.ProtectedString("grid_search")
@@ -64,7 +58,7 @@ class GridSearchParameterConfig(BaseParameterConfig):
 @DeveloperAPI
 @register_parameter_config("uniform")
 @ludwig_dataclass
-class UniformParameterConfig(BaseParameterConfig):
+class UniformParameterConfig(schema_utils.BaseMarshmallowConfig):
     """Config for a real-valued uniform search space."""
 
     space: str = schema_utils.ProtectedString("uniform")
@@ -112,16 +106,20 @@ class QLogUniformParameterConfig(UniformParameterConfig):
 @DeveloperAPI
 @register_parameter_config("randn")
 @ludwig_dataclass
-class RandnParameterConfig(BaseParameterConfig):
+class RandnParameterConfig(schema_utils.BaseMarshmallowConfig):
     """Config for a Gaussian search space."""
 
     space: str = schema_utils.ProtectedString("randn")
+
+    mean: float = schema_utils.Float(default=0.0, description="Mean of the  normal distribution.")
+
+    sd: float = schema_utils.Float(default=1.0, description="Standard deviation of the normal distribution.")
 
 
 @DeveloperAPI
 @register_parameter_config("qrandn")
 @ludwig_dataclass
-class QRandnParameterConfig(BaseParameterConfig):
+class QRandnParameterConfig(RandnParameterConfig):
     """Config for a Gaussian search space with quantization."""
 
     space: str = schema_utils.ProtectedString("qrandn")
@@ -132,7 +130,7 @@ class QRandnParameterConfig(BaseParameterConfig):
 @DeveloperAPI
 @register_parameter_config("randint")
 @ludwig_dataclass
-class RandintParameterConfig(BaseParameterConfig):
+class RandintParameterConfig(schema_utils.BaseMarshmallowConfig):
     """Config for an integer-valued uniform search space."""
 
     space: str = schema_utils.ProtectedString("randint")
