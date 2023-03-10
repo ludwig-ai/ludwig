@@ -596,3 +596,44 @@ def test_hyperopt_without_config_defaults(csv_filename, tmpdir, ray_cluster_7cpu
     experiment_name = f"test_hyperopt_{uuid.uuid4().hex}"
     hyperopt_results = hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name=experiment_name)
     assert hyperopt_results.experiment_analysis.results_df.shape[0] == 10
+
+
+def test_hyperopt_with_time_budget(csv_filename, tmpdir, ray_cluster_7cpu):
+    """ Tests that incomplete checkpoints created by RayTune when time budget is hit doesn't throw errors because
+    of missing .tune_metadata files in the checkpoint directories
+    """
+    input_features = [text_feature()]
+    output_features = [category_feature(output_feature=True)]
+
+    rel_path = generate_data(input_features, output_features, csv_filename)
+
+    config = {
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        COMBINER: {TYPE: "concat"},
+        HYPEROPT: {
+            "goal": "minimize",
+            "metric": "loss",
+            "output_feature": output_features[0]["name"],
+            "search_alg": {TYPE: "variant_generator"},
+            "executor": {
+                "type": "ray",
+                # Ensure there is enough time for some trials to start and also for some to terminate
+                # to reproduce the exact issue of missing .tune_metadata files
+                "time_budget_s": 90,
+                "cpu_resources_per_trial": 1,
+                "num_samples": 20,
+                "scheduler": {TYPE: "fifo"},
+            },
+            "parameters": {
+                "trainer.learning_rate": {
+                    "lower": 0.0001,
+                    "upper": 0.01,
+                    "space": "loguniform",
+                }
+            },
+        },
+    }
+
+    experiment_name = f"test_hyperopt_{uuid.uuid4().hex}"
+    hyperopt_results = hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name=experiment_name)
