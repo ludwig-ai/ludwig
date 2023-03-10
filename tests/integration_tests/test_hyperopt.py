@@ -599,9 +599,8 @@ def test_hyperopt_without_config_defaults(csv_filename, tmpdir, ray_cluster_7cpu
 
 
 def test_hyperopt_with_time_budget(csv_filename, tmpdir, ray_cluster_7cpu):
-    """ Tests that incomplete checkpoints created by RayTune when time budget is hit doesn't throw errors because
-    of missing .tune_metadata files in the checkpoint directories
-    """
+    """Tests that incomplete checkpoints created by RayTune when time budget is hit doesn't throw errors because of
+    missing .tune_metadata files in the checkpoint directories."""
     input_features = [text_feature()]
     output_features = [category_feature(output_feature=True)]
 
