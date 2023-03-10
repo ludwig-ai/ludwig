@@ -11,7 +11,7 @@ import yaml
 
 from ludwig.api_annotations import DeveloperAPI, PublicAPI
 from ludwig.backend.base import Backend
-from ludwig.constants import TYPE, NUMBER, CATEGORY, BINARY, TEXT, IMAGE, AUDIO
+from ludwig.constants import AUDIO, BINARY, CATEGORY, IMAGE, NUMBER, TEXT, TYPE
 from ludwig.data.cache.types import CacheableDataframe
 from ludwig.datasets import configs
 from ludwig.datasets.dataset_config import DatasetConfig
@@ -136,7 +136,9 @@ def list_datasets() -> List[str]:
 
 
 @PublicAPI
-def get_datasets_output_features(dataset: str = None, include_competitions: bool = True, include_data_modalities: bool = False) -> dict:
+def get_datasets_output_features(
+    dataset: str = None, include_competitions: bool = True, include_data_modalities: bool = False
+) -> dict:
     """Returns a dictionary with the output features for each dataset. Optionally, you can pass a dataset name
     which will then cause the function to return a dictionary with the output features for that dataset.
 
@@ -157,7 +159,7 @@ def get_datasets_output_features(dataset: str = None, include_competitions: bool
         ordered_configs[name] = {"name": config.name, "output_features": config.output_features}
 
         if include_data_modalities:
-            column_types = set([column[TYPE] for column in config.columns])
+            column_types = {column[TYPE] for column in config.columns}
 
             data_modalities = set()
             if NUMBER in column_types or CATEGORY in column_types or BINARY in column_types:

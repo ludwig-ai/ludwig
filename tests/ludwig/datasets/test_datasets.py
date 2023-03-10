@@ -108,11 +108,12 @@ def test_multifile_join_dataset(tmpdir, f_type):
     ludwig.datasets._get_dataset_configs.cache_clear()
 
 
-@pytest.mark.parametrize("include_competitions,include_data_modalities", [(True, True), (True, False), (False, True), (False, False)])
+@pytest.mark.parametrize(
+    "include_competitions,include_data_modalities", [(True, True), (True, False), (False, True), (False, False)]
+)
 def test_get_datasets_info(include_competitions, include_data_modalities):
     dataset_output_features = ludwig.datasets.get_datasets_output_features(
-        include_competitions=include_competitions,
-        include_data_modalities=include_data_modalities
+        include_competitions=include_competitions, include_data_modalities=include_data_modalities
     )
 
     assert len(dataset_output_features) > 1
