@@ -18,25 +18,25 @@ description: |
   https://archive.ics.uci.edu/ml/datasets/Poker+Hand
 columns:
   - name: S1
-    type: category
+    type: number
   - name: C1
-    type: category
+    type: number
   - name: S2
-    type: category
+    type: number
   - name: C2
-    type: category
+    type: number
   - name: S3
-    type: category
+    type: number
   - name: C3
-    type: category
+    type: number
   - name: S4
-    type: category
+    type: number
   - name: C4
-    type: category
+    type: number
   - name: S5
-    type: category
+    type: number
   - name: C5
-    type: category
+    type: number
   - name: hand
     type: category
 output_features:
