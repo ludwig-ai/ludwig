@@ -131,13 +131,8 @@ def test_explainer_text_hf(explainer_class, model_type, cache_encoder_embeddings
     ],
 )
 def test_explainer_text_tied_weights(explainer_class, model_type, tmpdir):
-    text_feature_1 = text_feature(
-        preprocessing={"sequence_length": 15},
-    )
-    text_feature_2 = text_feature(
-        tied=text_feature_1["name"],
-        preprocessing={"sequence_length": 15},
-    )
+    text_feature_1 = text_feature()
+    text_feature_2 = text_feature(tied=text_feature_1["name"])
     input_features = [text_feature_1, text_feature_2]
     run_test_explainer_api(explainer_class, model_type, [binary_feature()], {}, tmpdir, input_features=input_features)
 
