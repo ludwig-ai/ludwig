@@ -2,6 +2,7 @@ import copy
 import gc
 import logging
 from collections import defaultdict
+from copy import deepcopy
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
@@ -365,18 +366,55 @@ def get_total_attribution(
     model.model.zero_grad()
     explanation_model = WrapperModule(model.model, target_feature_name)
 
+    from pprint import pprint as pp
+
     layers = []
     for feat_name, feat in input_features.items():
         if feat.type() in {TEXT, CATEGORY, DATE, SET}:
+            pp("ASDFASDF feat_name: " + feat_name)
             # Get embedding layer from encoder, which is the first child of the encoder.
             new_layer = feat.encoder_obj.get_embedding_layer()
+            pp("ASDFASDF the name and address of each item in encoder_obj state_dict: ")
+            pp({k: v.data_ptr() for k, v in feat.encoder_obj.state_dict().items()})
+
+            # If the current layer matches any layer in the list, make a deep copy of the layer.
+            if len(layers) > 0 and any(new_layer == layer for layer in layers):
+                # Get the original encoder object and a mapping from param names to the params themselves.
+                orig_encoder_obj = feat.encoder_obj
+                orig_encoder_obj_state_dict = feat.encoder_obj.state_dict()
+
+                # Deep copy the original encoder object and set the copy as this feature's encoder object.
+                copy_encoder_obj = deepcopy(orig_encoder_obj)
+                feat.encoder_obj = copy_encoder_obj
+
+                # Get the tensors to keep from the copied encoder object. These are the tensors in the target layer.
+                for key, param in copy_encoder_obj.named_parameters():
+                    keep = False
+                    for keep_key, keep_param in new_layer.named_parameters():
+                        # If the param is in the target layer, keep the copy. Otherwise, replace it with the original.
+                        # Assumes that the target layer is a child of the original module, and that modules with
+                        # the same weights are functionally the same.
+                        if torch.equal(param.data, keep_param.data) and key.endswith(keep_key):
+                            print("ASDFASDF keeping param: " + key)
+                            keep = True
+                            break
+                    if not keep:
+                        param.data = orig_encoder_obj_state_dict[key].data
+                        print("ASDFASDF replacing param: " + key + " keep_key: " + keep_key)
+                        print("\tkeep_param data: ", keep_param.data)
+                        print("\tparam data: ", param.data)
+
+                # Get the new copy of the embedding layer.
+                new_layer = feat.encoder_obj.get_embedding_layer()  # get the new copy
+            pp("ASDFASDF the name and address of each item in encoder_obj state_dict AFTER DEEP COPY: ")
+            pp({k: v.data_ptr() for k, v in feat.encoder_obj.state_dict().items()})
+            breakpoint()
         else:
             # Get the wrapped input layer.
             new_layer = explanation_model.input_maps[feat_name]
 
-        if all(new_layer != layer for layer in layers):
-            layers.append(new_layer)
-
+        layers.append(new_layer)
+    print("ASDFASDF address of each layer in layers: ", [id(layer) for layer in layers])
     explainer = LayerIntegratedGradients(explanation_model, layers)
 
     feature_inputs_splits = [ipt.split(run_config.batch_size) for ipt in feature_inputs]
