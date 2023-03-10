@@ -377,27 +377,6 @@ class RayTuneExecutor:
             if len(metadata_file) < 1:
                 # Remove checkpoint marker on incomplete directory
                 os.remove(marker_path)
-
-    # def _remove_incomplete_checkpoint_dirs(self, trial_path: str) -> None:
-    #     # `trial_dir` returned by RayTune may have a leading slash, but get_best_checkpoint
-    #     # requires a path without a leading slash since it does a direct key lookup with analysis.trial_dataframes.
-    #     trial_path = trial_path.rstrip("/") if isinstance(trial_path, str) else trial_path
-
-    #     # Get all checkpoint directories
-    #     checkpoint_filter = re.compile(r"checkpoint_\d+")  # checkpoint_1, checkpoint_2, etc.
-    #     checkpoint_dirs = glob.glob(os.path.join(glob.escape(trial_path), "checkpoint_*"))
-    #     checkpoint_dirs = [filename for filename in os.listdir(trial_path) if checkpoint_filter.match(filename)]
-
-    #     # Remove checkpoint directories that do not have .tune_metadata file since they are incomplete
-    #     # and may have been created by trial that was terminated early by RayTune because the time budget was exceeded.
-    #     for checkpoint_dir in checkpoint_dirs:
-    #         checkpoint_dir_path = os.path.join(trial_path, checkpoint_dir)
-    #         metadata_file = glob.glob(os.path.join(glob.escape(checkpoint_dir_path), "*.tune_metadata"))
-    #         # glob.glob: filenames starting with a dot are special cases
-    #         # that are not matched by '*' and '?' patterns.
-    #         metadata_file += glob.glob(os.path.join(glob.escape(checkpoint_dir_path), ".tune_metadata"))
-    #         metadata_file = list(set(metadata_file))
-
         
 
     @staticmethod
