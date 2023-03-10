@@ -6,6 +6,27 @@ sha256:
 description: |
   Physicochemical Properties of Protein Tertiary Structure Data Set.
   https://archive.ics.uci.edu/ml/datasets/Physicochemical+Properties+of+Protein+Tertiary+Structure
+columns:
+  - name: RMSD
+    type: number
+  - name: F1
+    type: number
+  - name: F2
+    type: number
+  - name: F3
+    type: number
+  - name: F4
+    type: number
+  - name: F5
+    type: number
+  - name: F6
+    type: number
+  - name: F7
+    type: number
+  - name: F8
+    type: number
+  - name: F9
+    type: number
 output_features:
   - name: RMSD
     type: number

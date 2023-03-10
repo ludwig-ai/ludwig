@@ -8,6 +8,81 @@ dataset_filenames: temperature.csv
 description: |
   Hourly temperature dataset from Kaggle
     https://www.kaggle.com/selfishgene/historical-hourly-weather-data
+columns:
+  - name: datetime
+    type: date
+  - name: Vancouver
+    type: number
+  - name: Portland
+    type: number
+  - name: San Francisco
+    type: number
+  - name: Seattle
+    type: number
+  - name: Los Angeles
+    type: number
+  - name: San Diego
+    type: number
+  - name: Las Vegas
+    type: number
+  - name: Phoenix
+    type: number
+  - name: Albuquerque
+    type: number
+  - name: Denver
+    type: number
+  - name: San Antonio
+    type: number
+  - name: Dallas
+    type: number
+  - name: Houston
+    type: number
+  - name: Kansas City
+    type: number
+  - name: Minneapolis
+    type: number
+  - name: Saint Louis
+    type: number
+  - name: Chicago
+    type: number
+  - name: Nashville
+    type: number
+  - name: Indianapolis
+    type: number
+  - name: Atlanta
+    type: number
+  - name: Detroit
+    type: number
+  - name: Jacksonville
+    type: number
+  - name: Charlotte
+    type: number
+  - name: Miami
+    type: number
+  - name: Pittsburgh
+    type: number
+  - name: Toronto
+    type: number
+  - name: Philadelphia
+    type: number
+  - name: New York
+    type: number
+  - name: Montreal
+    type: number
+  - name: Boston
+    type: number
+  - name: Beersheba
+    type: number
+  - name: Tel Aviv District
+    type: number
+  - name: Eilat
+    type: number
+  - name: Haifa
+    type: number
+  - name: Nahariyya
+    type: number
+  - name: Jerusalem
+    type: number
 output_features:
   - name: San Francisco
     type: number

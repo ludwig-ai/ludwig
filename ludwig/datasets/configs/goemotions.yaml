@@ -11,14 +11,17 @@ sha256:
   train.tsv: 1c254a142be5c00e80d819b9ae1bbd36d94b2eeb8f4b1271846508d57e57d9c5
   dev.tsv: 575489c079c9de1097062a01738f998590d6b7ead66dd1c9fd1d2ba01fd8bc62
   test.tsv: 0587b2dd8b27b97352adbfc3fb083d46005c8946657fdc2b1ca8b1cc7f1f8be4
-columns:
-  - text
-  - emotion_ids
-  - comment_id
 loader: goemotions.GoEmotionsLoader
 description: |
   GoEmotions: A Dataset for Fine-Grained Emotion Classification.
   https://ai.googleblog.com/2021/10/goemotions-dataset-for-fine-grained.html
+columns:
+  - name: text
+    type: text
+  - name: emotion_ids
+    type: category
+  - name: comment_id
+    type: category
 output_features:
   - name: emotion_ids
     type: category

@@ -12,6 +12,21 @@ description: |
   The training data and test data comprise of 19802 samples and of 6601 samples each from the
   Analytics India Annual Salary Study.
   https://machinehack.com/hackathons/predict_the_data_scientists_salary_in_india_hackathon/overview
+columns:
+  - name: experience
+    type: category
+  - name: job_description
+    type: text
+  - name: job_desig
+    type: category
+  - name: job_type
+    type: category
+  - name: key_skills
+    type: set
+  - name: location
+    type: category
+  - name: salary
+    type: category
 output_features:
   - name: salary
     type: category
