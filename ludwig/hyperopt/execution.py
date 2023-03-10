@@ -363,8 +363,7 @@ class RayTuneExecutor:
         These may have been created for a trial that was terminated early by RayTune because the time budget was
         exceeded.
         """
-        # `trial_dir` returned by RayTune may have a leading slash, but get_best_checkpoint
-        # requires a path without a leading slash since it does a direct key lookup with analysis.trial_dataframes.
+        # `trial_dir` returned by RayTune may have a leading slash, so we need to remove it.
         trial_path = trial_path.rstrip("/") if isinstance(trial_path, str) else trial_path
         marker_paths = glob.glob(os.path.join(glob.escape(trial_path), "checkpoint_*/.is_checkpoint"))
         for marker_path in marker_paths:
