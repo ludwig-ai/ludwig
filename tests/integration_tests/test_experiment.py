@@ -518,21 +518,17 @@ def test_experiment_tied_weights_sequence_combiner(csv_filename):
             name="feature1",
             encoder={
                 "max_len": 5,
-                "type": "auto_transformer",
-                "pretrained_model_name_or_path": "hf-internal-testing/tiny-bert-for-token-classification",
                 "reduce_output": None,
             },
-            preprocessing={"sequence_length": 20},
+            preprocessing={"sequence_length": 10},
         ),
         text_feature(
             name="feature2",
             encoder={
                 "max_len": 3,
-                "type": "auto_transformer",
-                "pretrained_model_name_or_path": "hf-internal-testing/tiny-bert-for-token-classification",
                 "reduce_output": None,
             },
-            preprocessing={"sequence_length": 20},
+            preprocessing={"sequence_length": 10},
             tied="feature1",
         ),
     ]
