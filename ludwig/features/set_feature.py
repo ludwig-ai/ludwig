@@ -258,9 +258,6 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         hidden = inputs[HIDDEN]
         return self.decoder_obj(hidden)
 
-    def loss_kwargs(self):
-        return self.loss.to_dict()
-
     def metric_kwargs(self) -> Dict[str, Any]:
         return {"threshold": self.threshold}
 
