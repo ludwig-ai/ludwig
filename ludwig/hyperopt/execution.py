@@ -5,7 +5,6 @@ import glob
 import json
 import logging
 import os
-import re
 import shutil
 import tempfile
 import threading
