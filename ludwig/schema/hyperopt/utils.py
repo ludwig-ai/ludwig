@@ -1,4 +1,4 @@
-from typing import Callable, List, Optional, Type
+from typing import Callable, List, Optional, Tuple, Type
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.utils.registry import Registry
@@ -116,12 +116,13 @@ def register_parameter_config(name: str) -> Callable:
 
 
 @DeveloperAPI
-def register_scheduler_config(name: str, dependencies: Optional[List[str]] = None):
+def register_scheduler_config(name: str, dependencies: Optional[List[Tuple[str]]] = None):
     """Register a scheduler config class by name.
 
     Args:
         name: the name to scheduler the parameter class under, does not need to correspond to the value of `type`
-        dependencies: the list of module names that the scheduler requires
+        dependencies: the list of scheduler dependency package name/install name pairs, e.g.
+                      `("sklearn", "scikit-learn")`
 
     Returns:
         Wrapper function to decorate a `BaseSchedulerConfig` subclass
@@ -143,16 +144,18 @@ def register_scheduler_config(name: str, dependencies: Optional[List[str]] = Non
     return wrap
 
 
+# TODO: create a search alg metadata class to register in place of individual metadata args
 @DeveloperAPI
 def register_search_algorithm(
-    name: str, random_state_field: Optional[str] = None, dependencies: Optional[List[str]] = None
+    name: str, random_state_field: Optional[str] = None, dependencies: Optional[List[Tuple[str, str]]] = None
 ) -> Callable:
     """Register a search algorithm config class by name.
 
     Args:
         name: the name to register the search algorithm class under, does not need to correspond to the value of `type`
         random_state_field: the name of the random state in this search algorithm
-        dependencies: the list of module names that the search algorithm requires
+        dependencies: the list of search algorithm dependency package name/install name pairs, e.g.
+                      `("sklearn", "scikit-learn")`
 
     Returns:
         Wrapper function to decorate a

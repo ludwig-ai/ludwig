@@ -34,15 +34,23 @@ class BaseSearchAlgorithmConfig(schema_utils.BaseMarshmallowConfig):
 
     def dependencies_installed(self) -> bool:
         """Some search algorithms require additional packages to be installed, check that they are available."""
-        for package_name in get_search_algorithm_dependencies(self.type):
+        missing_packages = []
+        missing_installs = []
+        for package_name, install_name in get_search_algorithm_dependencies(self.type):
             try:
                 import_module(package_name)
             except ImportError:
-                raise ImportError(
-                    f"Search algorithm {self.type} requires package {package_name}, however package is "
-                    "not installed. Please refer to Ray Tune documentation for packages required for this "
-                    "search algorithm."
-                )
+                missing_packages.append(package_name)
+                missing_installs.append(install_name)
+
+        if missing_packages:
+            missing_packages = ", ".join(missing_packages)
+            missing_installs = " ".join(missing_installs)
+            raise ImportError(
+                f"Some packages needed to use hyperopt search algorithm {self.type} are not installed: "
+                f"{missing_packages}. To add these dependencies, run `pip install {missing_installs}`. For more "
+                "details, please refer to Ray Tune documentation for this search algorithm."
+            )
         return True
 
 
@@ -123,7 +131,7 @@ class BasicVariantSAConfig(BaseSearchAlgorithmConfig):
 
 
 @DeveloperAPI
-@register_search_algorithm("ax", dependencies=["ax", "sqlalchemy"])
+@register_search_algorithm("ax", dependencies=[("ax", "ax-platform"), ("sqlalchemy", "sqlalchemy")])
 @ludwig_dataclass
 class AxSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("ax")
@@ -175,7 +183,9 @@ class AxSAConfig(BaseSearchAlgorithmConfig):
 
 
 @DeveloperAPI
-@register_search_algorithm("bayesopt", random_state_field="random_state", dependencies=["bayesian-optimization"])
+@register_search_algorithm(
+    "bayesopt", random_state_field="random_state", dependencies=[("bayes_opt", "bayesian-optimization")]
+)
 @ludwig_dataclass
 class BayesOptSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("bayesopt")
@@ -248,14 +258,16 @@ class BayesOptSAConfig(BaseSearchAlgorithmConfig):
 
 
 @DeveloperAPI
-@register_search_algorithm("blendsearch", dependencies=["flaml", "blendsearch"])
+@register_search_algorithm("blendsearch", dependencies=[("flaml", "flaml[blendsearch]")])
 @ludwig_dataclass
 class BlendsearchSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("blendsearch")
 
 
 @DeveloperAPI
-@register_search_algorithm("bohb", random_state_field="seed", dependencies=["hpbandster", "ConfigSpace"])
+@register_search_algorithm(
+    "bohb", random_state_field="seed", dependencies=[("hpbandster", "hpbandster"), ("ConfigSpace", "ConfigSpace")]
+)
 @ludwig_dataclass
 class BOHBSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("bohb")
@@ -315,14 +327,16 @@ class BOHBSAConfig(BaseSearchAlgorithmConfig):
 
 
 @DeveloperAPI
-@register_search_algorithm("cfo")
+@register_search_algorithm("cfo", dependencies=[("flaml", "flaml")])
 @ludwig_dataclass
 class CFOSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("cfo")
 
 
 @DeveloperAPI
-@register_search_algorithm("dragonfly", random_state_field="random_state_seed", dependencies=["dragonfly-opt"])
+@register_search_algorithm(
+    "dragonfly", random_state_field="random_state_seed", dependencies=[("dragonfly", "dragonfly-opt")]
+)
 @ludwig_dataclass
 class DragonflySAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("dragonfly")
@@ -400,7 +414,7 @@ class DragonflySAConfig(BaseSearchAlgorithmConfig):
 
 
 @DeveloperAPI
-@register_search_algorithm("hebo", random_state_field="random_state_seed", dependencies=["hebo"])
+@register_search_algorithm("hebo", random_state_field="random_state_seed", dependencies=[("hebo", "HEBO")])
 @ludwig_dataclass
 class HEBOSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("hebo")
@@ -462,7 +476,7 @@ class HEBOSAConfig(BaseSearchAlgorithmConfig):
 
 
 @DeveloperAPI
-@register_search_algorithm("hyperopt", random_state_field="random_state_seed", dependencies=["hyperopt"])
+@register_search_algorithm("hyperopt", random_state_field="random_state_seed", dependencies=[("hyperopt", "hyperopt")])
 @ludwig_dataclass
 class HyperoptSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("hyperopt")
@@ -528,7 +542,7 @@ class HyperoptSAConfig(BaseSearchAlgorithmConfig):
 
 
 @DeveloperAPI
-@register_search_algorithm("nevergrad", dependencies=["nevergrad"])
+@register_search_algorithm("nevergrad", dependencies=[("nevergrad", "nevergrad")])
 @ludwig_dataclass
 class NevergradSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("nevergrad")
@@ -576,7 +590,7 @@ class NevergradSAConfig(BaseSearchAlgorithmConfig):
 
 
 @DeveloperAPI
-@register_search_algorithm("optuna", random_state_field="seed", dependencies=["optuna"])
+@register_search_algorithm("optuna", random_state_field="seed", dependencies=[("optuna", "optuna")])
 @ludwig_dataclass
 class OptunaSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("optuna")
@@ -641,7 +655,7 @@ class OptunaSAConfig(BaseSearchAlgorithmConfig):
 
 
 @DeveloperAPI
-@register_search_algorithm("skopt", dependencies="skopt")
+@register_search_algorithm("skopt", dependencies=[("skopt", "scikit-optimize")])
 class SkoptSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("skopt")
 
@@ -698,7 +712,7 @@ class SkoptSAConfig(BaseSearchAlgorithmConfig):
 
 
 @DeveloperAPI
-@register_search_algorithm("zoopt", dependencies="zoopt")
+@register_search_algorithm("zoopt", dependencies=[("zoopt", "zoopt")])
 @ludwig_dataclass
 class ZooptSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.ProtectedString("zoopt")

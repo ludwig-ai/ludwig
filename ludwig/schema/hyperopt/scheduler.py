@@ -103,15 +103,23 @@ class BaseSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     def dependencies_installed(self):
         """Some search algorithms require additional packages to be installed, check that they are available."""
-        for package_name in get_scheduler_dependencies(self.type):
+        missing_packages = []
+        missing_installs = []
+        for package_name, install_name in get_scheduler_dependencies(self.type):
             try:
                 import_module(package_name)
             except ImportError:
-                raise ImportError(
-                    f"Scheduler {self.type} requires package {package_name}, however package is "
-                    "not installed. Please refer to Ray Tune documentation for packages required for this "
-                    "scheduler."
-                )
+                missing_packages.append(package_name)
+                missing_installs.append(install_name)
+
+        if missing_packages:
+            missing_packages = ", ".join(missing_packages)
+            missing_installs = " ".join(missing_installs)
+            raise ImportError(
+                f"Some packages needed to use hyperopt scheduler {self.type} are not installed: "
+                f"{missing_packages}. To add these dependencies, run `pip install {missing_installs}`. For more "
+                "details, please refer to Ray Tune documentation for this scheduler."
+            )
         return True
 
 
@@ -343,7 +351,7 @@ class PopulationBasedTrainingReplaySchedulerConfig(BaseSchedulerConfig):
 
 
 @DeveloperAPI
-@register_scheduler_config("pb2", dependencies=["sklearn", "GPy"])
+@register_scheduler_config("pb2", dependencies=[("sklearn", "scikit-learn"), ("GPy", "GPy")])
 @ludwig_dataclass
 class PopulationBasedBanditsSchedulerConfig(BaseSchedulerConfig):
     """Population Based Bandits (PB2) scheduler settings."""
