@@ -85,7 +85,7 @@ def SearchAlgorithmDataclassField(description: str = "", default: Dict = {"type"
 
 @DeveloperAPI
 @register_search_algorithm("random", random_state_field="random_state")
-@register_search_algorithm("variant_generator")
+@register_search_algorithm("variant_generator", random_state_field="random_state")
 @ludwig_dataclass
 class BasicVariantSAConfig(BaseSearchAlgorithmConfig):
     type: str = schema_utils.StringOptions(options=["random", "variant_generator"], default="random", allow_none=False)
