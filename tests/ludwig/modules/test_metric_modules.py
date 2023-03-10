@@ -2,6 +2,11 @@ import pytest
 import torch
 
 from ludwig.modules import metric_modules
+from ludwig.schema.features.loss.loss import (
+    BWCEWLossConfig,
+    SigmoidCrossEntropyLossConfig,
+    SoftmaxCrossEntropyLossConfig,
+)
 
 
 @pytest.mark.parametrize("preds", [torch.arange(6).reshape(3, 2).float()])
@@ -63,7 +68,7 @@ def test_r2_score_single_sample():
 @pytest.mark.parametrize("target", [torch.arange(6, 12).reshape(3, 2).float()])
 @pytest.mark.parametrize("output", [torch.tensor(-21.4655).float()])
 def test_bwcewl_metric(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor):
-    metric = metric_modules.BWCEWLMetric()
+    metric = metric_modules.BWCEWLMetric(BWCEWLossConfig())
     metric.update(preds, target)
     assert torch.isclose(output, metric.compute(), rtol=0.0001)
 
@@ -72,7 +77,7 @@ def test_bwcewl_metric(preds: torch.Tensor, target: torch.Tensor, output: torch.
 @pytest.mark.parametrize("target", [torch.tensor([1, 1, 0])])
 @pytest.mark.parametrize("output", [torch.tensor(0.5763)])
 def test_softmax_cross_entropy_metric(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor):
-    metric = metric_modules.SoftmaxCrossEntropyMetric()
+    metric = metric_modules.SoftmaxCrossEntropyMetric(SoftmaxCrossEntropyLossConfig())
     metric.update(preds, target)
     assert torch.isclose(output, metric.compute(), rtol=0.0001)
 
@@ -81,7 +86,7 @@ def test_softmax_cross_entropy_metric(preds: torch.Tensor, target: torch.Tensor,
 @pytest.mark.parametrize("target", [torch.arange(6, 12).reshape(3, 2).float()])
 @pytest.mark.parametrize("output", [torch.tensor(-21.4655).float()])
 def test_sigmoid_cross_entropy_metric(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor):
-    metric = metric_modules.SigmoidCrossEntropyMetric()
+    metric = metric_modules.SigmoidCrossEntropyMetric(SigmoidCrossEntropyLossConfig())
     metric.update(preds, target)
     assert torch.isclose(output, metric.compute(), rtol=0.0001)
 

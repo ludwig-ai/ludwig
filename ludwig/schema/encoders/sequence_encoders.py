@@ -1,5 +1,5 @@
 from dataclasses import Field
-from typing import Any, Dict, List, Optional
+from typing import List, Optional, TYPE_CHECKING
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import AUDIO, SEQUENCE, TEXT, TIMESERIES
@@ -9,6 +9,9 @@ from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.metadata import ENCODER_METADATA
 from ludwig.schema.utils import ludwig_dataclass
+
+if TYPE_CHECKING:
+    from ludwig.schema.features.preprocessing.sequence import SequencePreprocessingConfig
 
 CONV_LAYERS_DESCRIPTION = """
 A list of dictionaries containing the parameters of all the convolutional layers.
@@ -70,8 +73,8 @@ def PoolSizeField(default: Optional[int] = None) -> Field:
 class SequenceEncoderConfig(BaseEncoderConfig):
     """Base class for sequence encoders."""
 
-    def get_fixed_preprocessing_params(self, model_type: str) -> Dict[str, Any]:
-        return {"cache_encoder_embeddings": False}
+    def set_fixed_preprocessing_params(self, model_type: str, preprocessing: "SequencePreprocessingConfig"):
+        preprocessing.cache_encoder_embeddings = False
 
 
 @DeveloperAPI

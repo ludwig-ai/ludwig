@@ -17,6 +17,7 @@ from ludwig.modules.loss_modules import LogitsInputsMixin, register_loss
 from ludwig.modules.metric_modules import LossMetric, register_metric
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
+from ludwig.schema.combiners.utils import register_combiner as register_combiner_schema
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import register_decoder_config
 from ludwig.schema.encoders.base import BaseEncoderConfig
@@ -30,13 +31,6 @@ from tests.integration_tests.utils import (
     number_feature,
     sequence_feature,
 )
-
-
-@dataclass
-class CustomTestCombinerConfig(BaseCombinerConfig):
-    type: str = "custom_combiner"
-
-    foo: bool = schema_utils.Boolean(default=False, description="")
 
 
 @register_encoder_config("custom_number_encoder", NUMBER)
@@ -61,7 +55,15 @@ class CustomLossConfig(BaseLossConfig):
     type: str = "custom_loss"
 
 
-@register_combiner(name="custom_test")
+@register_combiner_schema("custom_combiner")
+@dataclass
+class CustomTestCombinerConfig(BaseCombinerConfig):
+    type: str = "custom_combiner"
+
+    foo: bool = schema_utils.Boolean(default=False, description="")
+
+
+@register_combiner(CustomTestCombinerConfig)
 class CustomTestCombiner(Combiner):
     def __init__(self, input_features: Dict = None, config: CustomTestCombinerConfig = None, **kwargs):
         super().__init__(input_features)
@@ -77,10 +79,6 @@ class CustomTestCombiner(Combiner):
         return_data = {"combiner_output": hidden}
 
         return return_data
-
-    @staticmethod
-    def get_schema_cls():
-        return CustomTestCombinerConfig
 
 
 @register_encoder("custom_number_encoder", NUMBER)
@@ -123,9 +121,9 @@ class CustomNumberDecoder(Decoder):
         return CustomNumberDecoderConfig
 
 
-@register_loss("custom_loss", [NUMBER])
+@register_loss(CustomLossConfig)
 class CustomLoss(nn.Module, LogitsInputsMixin):
-    def __init__(self, **kwargs):
+    def __init__(self, config: CustomLossConfig):
         super().__init__()
 
     def forward(self, preds: Tensor, target: Tensor) -> Tensor:
@@ -138,16 +136,16 @@ class CustomLoss(nn.Module, LogitsInputsMixin):
 
 @register_metric("custom_loss", [NUMBER], MINIMIZE, LOGITS)
 class CustomLossMetric(LossMetric):
-    def __init__(self, **kwargs):
+    def __init__(self, config: CustomLossConfig, **kwargs):
         super().__init__()
-        self.loss_fn = CustomLoss()
+        self.loss_fn = CustomLoss(config)
 
     def get_current_value(self, preds: Tensor, target: Tensor):
         return self.loss_fn(preds, target)
 
 
 def test_custom_combiner():
-    _run_test(combiner={"type": "custom_test", "foo": True})
+    _run_test(combiner={"type": "custom_combiner", "foo": True})
 
 
 def test_custom_encoder_decoder():

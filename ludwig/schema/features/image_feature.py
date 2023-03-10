@@ -2,6 +2,7 @@ from typing import List
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import IMAGE, MODEL_ECD
+from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.features.augmentation.base import BaseAugmentationConfig
@@ -27,6 +28,8 @@ AUGMENTATION_DEFAULT_OPERATIONS = [
 class ImageInputFeatureConfigMixin(BaseMarshmallowConfig):
     """ImageInputFeatureConfigMixin is a dataclass that configures the parameters used in both the image input
     feature and the image global defaults section of the Ludwig Config."""
+
+    type: str = schema_utils.ProtectedString(IMAGE)
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=IMAGE)
 
