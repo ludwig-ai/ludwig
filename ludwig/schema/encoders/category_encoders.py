@@ -6,6 +6,7 @@ from ludwig.schema import common_fields
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
+from ludwig.schema.features.preprocessing.category import CategoryPreprocessingConfig
 from ludwig.schema.metadata import ENCODER_METADATA
 from ludwig.schema.utils import ludwig_dataclass
 
@@ -89,3 +90,25 @@ class CategoricalSparseConfig(BaseEncoderConfig):
     embeddings_trainable: bool = common_fields.EmbeddingsTrainableField(default=False)
 
     pretrained_embeddings: str = common_fields.PretrainedEmbeddingsField()
+
+
+@DeveloperAPI
+@register_encoder_config("onehot", CATEGORY, model_types=[MODEL_ECD, MODEL_GBM])
+@ludwig_dataclass
+class CategoricalOneHotEncoderConfig(BaseEncoderConfig):
+    """CategoricalOneHotEncoderConfig is a dataclass that configures the parameters used for a categorical onehot
+    encoder."""
+
+    type: str = schema_utils.ProtectedString(
+        "onehot",
+        description="Type of encoder.",
+    )
+
+    vocab: List[str] = common_fields.VocabField()
+
+    def set_fixed_preprocessing_params(self, model_type: str, preprocessing: CategoryPreprocessingConfig):
+        if model_type == MODEL_GBM:
+            preprocessing.cache_encoder_embeddings = True
+
+    def can_cache_embeddings(self) -> bool:
+        return True

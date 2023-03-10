@@ -38,12 +38,22 @@ def ResidualField(
     )
 
 
-def NumFCLayersField(default: int = 0, description: str = None, parameter_metadata: ParameterMetadata = None) -> Field:
+def NumFCLayersField(
+    default: int = 0, description: str = None, parameter_metadata: ParameterMetadata = None, non_zero=False
+) -> Field:
+    assert (not non_zero) or (default > 0 and non_zero)
+
     description = description or "Number of stacked fully connected layers to apply."
     full_description = description + (
         " Increasing layers adds capacity to the model, enabling it to learn more complex feature interactions."
     )
     parameter_metadata = parameter_metadata or COMMON_METADATA["num_fc_layers"]
+
+    # When using a dense encoder, the number of fully connected layers must be strictly greater than 0.
+    if non_zero:
+        return schema_utils.PositiveInteger(
+            default=default, allow_none=False, description=full_description, parameter_metadata=parameter_metadata
+        )
     return schema_utils.NonNegativeInteger(
         default=default,
         allow_none=False,

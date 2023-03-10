@@ -1,10 +1,11 @@
-from typing import Any, Callable, Dict, List, Union
+from typing import Callable, List, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import TEXT
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.sequence_encoders import SequenceEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
+from ludwig.schema.features.preprocessing.text import TextPreprocessingConfig
 from ludwig.schema.metadata import ENCODER_METADATA
 from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
 from ludwig.schema.utils import ludwig_dataclass
@@ -16,7 +17,7 @@ class HFEncoderConfig(SequenceEncoderConfig):
     pretrained_model_name_or_path: str
     reduce_output: str
 
-    def get_fixed_preprocessing_params(self) -> Dict[str, Any]:
+    def set_fixed_preprocessing_params(self, model_type: str, preprocessing: TextPreprocessingConfig):
         model_name = self.pretrained_model_name_or_path
         if model_name is None and self.use_pretrained:
             # no default model name, so model name is required by the subclass
@@ -24,15 +25,10 @@ class HFEncoderConfig(SequenceEncoderConfig):
                 f"Missing required parameter for `{self.type}` encoder: `pretrained_model_name_or_path` when "
                 "`use_pretrained` is True."
             )
-        params = {
-            "tokenizer": "hf_tokenizer",
-            "pretrained_model_name_or_path": model_name,
-        }
-
+        preprocessing.tokenizer = "hf_tokenizer"
+        preprocessing.pretrained_model_name_or_path = model_name
         if not self.can_cache_embeddings():
-            params["cache_encoder_embeddings"] = False
-
-        return params
+            preprocessing.cache_encoder_embeddings = False
 
     def is_pretrained(self) -> bool:
         return self.use_pretrained

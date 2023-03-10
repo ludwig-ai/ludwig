@@ -1752,6 +1752,7 @@ class StackedCNNRNN(SequenceEncoder):
 
 
 @DeveloperAPI
+@register_sequence_encoder("transformer")
 @register_encoder("transformer", [SEQUENCE, TEXT, TIMESERIES])
 class StackedTransformer(SequenceEncoder):
     def __init__(
@@ -1933,7 +1934,7 @@ class StackedTransformer(SequenceEncoder):
                 self.should_project = True
         else:
             logger.debug("  project_to_embed_size")
-            self.project_to_hidden_size = nn.Linear(1, hidden_size)
+            self.project_to_hidden_size = nn.Linear(embedding_size, hidden_size)
             self.should_project = True
 
         logger.debug("  TransformerStack")

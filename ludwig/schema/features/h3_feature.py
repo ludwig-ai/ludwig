@@ -1,5 +1,6 @@
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import H3, MODEL_ECD
+from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.features.base import BaseInputFeatureConfig
@@ -17,6 +18,8 @@ class H3InputFeatureConfigMixin(BaseMarshmallowConfig):
     """H3InputFeatureConfigMixin is a dataclass that configures the parameters used in both the h3 input feature
     and the h3 global defaults section of the Ludwig Config."""
 
+    type: str = schema_utils.ProtectedString(H3)
+
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=H3)
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
@@ -29,7 +32,7 @@ class H3InputFeatureConfigMixin(BaseMarshmallowConfig):
 @DeveloperAPI
 @ecd_input_config_registry.register(H3)
 @ludwig_dataclass
-class H3InputFeatureConfig(BaseInputFeatureConfig, H3InputFeatureConfigMixin):
+class H3InputFeatureConfig(H3InputFeatureConfigMixin, BaseInputFeatureConfig):
     """H3InputFeatureConfig is a dataclass that configures the parameters used for an h3 input feature."""
 
     pass
