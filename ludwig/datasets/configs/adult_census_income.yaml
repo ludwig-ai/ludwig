@@ -8,26 +8,41 @@ test_filenames: adult.test
 sha256:
     adult.data: 5b00264637dbfec36bdeaab5676b0b309ff9eb788d63554ca0a249491c86603d
     adult.test: a2a9044bc167a35b2361efbabec64e89d69ce82d9790d2980119aac5fd7e9c05
-columns:
-  - age
-  - workclass
-  - fnlwgt
-  - education
-  - education-num
-  - marital-status
-  - occupation
-  - relationship
-  - race
-  - sex
-  - capital-gain
-  - capital-loss
-  - hours-per-week
-  - native-country
-  - income
 loader: adult_census_income.AdultCensusIncomeLoader
 description: |
   Predict whether income exceeds $50K/yr based on census data
   https://archive.ics.uci.edu/ml/datasets/adult
+columns:
+  - name: age
+    type: number
+  - name: workclass
+    type: category
+  - name: fnlwgt
+    type: category
+  - name: education
+    type: category
+  - name: education-num
+    type: category
+  - name: marital-status
+    type: category
+  - name: occupation
+    type: category
+  - name: relationship
+    type: category
+  - name: race
+    type: category
+  - name: sex
+    type: category
+  - name: capital-gain
+    type: number
+  - name: capital-loss
+    type: number
+  - name: hours-per-week
+    type: number
+  - name: native-country
+    type: category
+  - name: income
+    type: category
 output_features:
     - name: income
       type: binary

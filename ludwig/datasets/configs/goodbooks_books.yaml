@@ -13,6 +13,53 @@ description: |
     book metadata (author, year, etc.)
     tags/shelves/genres
   https://github.com/zygmuntz/goodbooks-10k
+columns:
+  - name: book_id
+    type: category
+  - name: goodreads_book_id
+    type: category
+  - name: best_book_id
+    type: category
+  - name: work_id
+    type: category
+  - name: books_count
+    type: number
+  - name: isbn
+    type: category
+  - name: isbn13
+    type: category
+  - name: authors
+    type: category
+  - name: original_publication_year
+    type: category
+  - name: original_title
+    type: category
+  - name: title
+    type: category
+  - name: language_code
+    type: category
+  - name: average_rating
+    type: number
+  - name: ratings_count
+    type: number
+  - name: work_ratings_count
+    type: number
+  - name: work_text_reviews_count
+    type: number
+  - name: ratings_1
+    type: number
+  - name: ratings_2
+    type: number
+  - name: ratings_3
+    type: number
+  - name: ratings_4
+    type: number
+  - name: ratings_5
+    type: number
+  - name: image_url
+    type: image
+  - name: small_image_url
+    type: image
 output_features:
   - name: average_rating
     type: number

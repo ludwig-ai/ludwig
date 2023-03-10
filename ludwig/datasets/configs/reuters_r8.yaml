@@ -9,6 +9,13 @@ validation_filenames: r8/r8-dev-stemmed.csv
 test_filenames: r8/r8-test-stemmed.csv
 description: |
   Reuters R8 subset of Reuters 21578 dataset from Kaggle.
+columns:
+    - name: text
+      type: text
+    - name: edge
+      type: text
+    - name: intent
+      type: category
 output_features:
     - name: intent
       type: category

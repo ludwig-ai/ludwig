@@ -8,18 +8,6 @@ test_filenames: poker-hand-testing.data
 sha256:
   poker-hand-testing.data: 3cd75958e19dd321ed5ca3f7f154c0f6aad544aab9f37731ac545b5f66b232c7
   poker-hand-training-true.data: 37becdf87d5f8cbf2b91d6471e965a25b86cb4a6d878c0f94a4025969fca464f
-columns:
-  - S1
-  - C1
-  - S2
-  - C2
-  - S3
-  - C3
-  - S4
-  - C4
-  - S5
-  - C5
-  - hand
 description: |
   Each record is an example of a hand consisting of five playing cards
   drawn from a standard deck of 52. Each card is described using two
@@ -28,6 +16,29 @@ description: |
   order of cards is important, which is why there are 480 possible
   Royal Flush hands as compared to 4.
   https://archive.ics.uci.edu/ml/datasets/Poker+Hand
+columns:
+  - name: S1
+    type: category
+  - name: C1
+    type: category
+  - name: S2
+    type: category
+  - name: C2
+    type: category
+  - name: S3
+    type: category
+  - name: C3
+    type: category
+  - name: S4
+    type: category
+  - name: C4
+    type: category
+  - name: S5
+    type: category
+  - name: C5
+    type: category
+  - name: hand
+    type: category
 output_features:
   - name: hand
     type: category
