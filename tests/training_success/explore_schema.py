@@ -405,6 +405,7 @@ def combine_configs_for_sequence_combiner(
         for default_config in generate_possible_configs(config_options=item[0]):
             default_config = create_nested_dict(default_config)
             merged_config = merge_dict(copy.deepcopy(config), default_config)
+            merged_config["preprocessing"] = {"sample_ratio": 0.5}
             for i in range(len(merged_config["input_features"])):
                 if merged_config["input_features"][i]["type"] in {SEQUENCE, TEXT, TIMESERIES}:
                     merged_config["input_features"][0]["encoder"] = {"type": "embed", "reduce_output": None}

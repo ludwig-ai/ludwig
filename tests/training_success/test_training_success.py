@@ -105,7 +105,7 @@ def train_and_evaluate(config: ModelConfigDict, dataset_name: str):
     print("Config used")
     pprint(config)
     dataset_module = get_dataset(dataset_name)
-    dataset = dataset_module.load().sample(50, random_state=default_random_seed)
+    dataset = dataset_module.load().sample(100, random_state=default_random_seed)
     model = LudwigModel(config=config, callbacks=None, logging_level=logging.ERROR)
     model.train(dataset=dataset)
     model.evaluate(dataset=dataset)
