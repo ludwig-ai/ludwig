@@ -358,9 +358,10 @@ class RayTuneExecutor:
 
     @staticmethod
     def _remove_partial_checkpoints(trial_path: str):
-        """ For specified [stopped] trial, remove checkpoint marker on any partial checkpoints. 
-        
-        These may have been created by trial that was terminated early by RayTune because the time budget was exceeded.
+        """For specified [stopped] trial, remove checkpoint marker on any partial checkpoints.
+
+        These may have been created for a trial that was terminated early by RayTune because the time budget was
+        exceeded.
         """
         # `trial_dir` returned by RayTune may have a leading slash, but get_best_checkpoint
         # requires a path without a leading slash since it does a direct key lookup with analysis.trial_dataframes.
@@ -376,7 +377,6 @@ class RayTuneExecutor:
             if len(metadata_file) < 1:
                 # Remove checkpoint marker on incomplete directory
                 os.remove(marker_path)
-        
 
     @staticmethod
     @contextlib.contextmanager
@@ -926,7 +926,7 @@ class RayTuneExecutor:
                     # Evaluate the best model on the eval_split, which is validation_set
                     if validation_set is not None and validation_set.size > 0:
                         trial_path = trial["trial_dir"]
-                        # Remove partial checkpoints that may have been created by RayTune 
+                        # Remove partial checkpoints that may have been created by RayTune
                         # when time budget is reached (if one was set)
                         self._remove_partial_checkpoints(trial_path)
                         with self._get_best_model_path(
