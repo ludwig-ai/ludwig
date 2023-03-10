@@ -14,6 +14,54 @@ from ludwig.schema.hyperopt.utils import (
 from ludwig.schema.utils import ludwig_dataclass
 
 
+def metric_field(description: Optional[str] = None) -> fields.Field:
+    return schema_utils.String(
+        default=None,
+        allow_none=True,
+        description=description
+        or (
+            "Name of the metric used as objective in this experiment. This metric must be present in `raw_data` "
+            "argument to `log_data`. This metric must also be present in the dict reported/returned by the Trainable. "
+            "If `None` but a mode was passed, the `ray.tune.result.DEFAULT_METRIC` will be used per default."
+        ),
+    )
+
+
+def mode_field(description: Optional[str] = None) -> fields.Field:
+    return schema_utils.StringOptions(
+        options=["min", "max", None],
+        default=None,
+        allow_none=True,
+        description=description
+        or (
+            "One of `{min, max}`. Determines whether objective is minimizing or maximizing the metric attribute. "
+            r"Defaults to \“max\”."
+        ),
+    )
+
+
+def points_to_evaluate_field(description: Optional[str] = None) -> fields.Field:
+    return schema_utils.DictList(
+        description=description
+        or (
+            "Initial parameter suggestions to be run first. This is for when you already have some good parameters "
+            "you want to run first to help the algorithm make better suggestions for future parameters. Needs to be "
+            "a list of dicts containing the configurations."
+        ),
+    )
+
+
+def evaluated_rewards_field(description: Optional[str] = None) -> fields.Field:
+    return schema_utils.List(
+        description=description
+        or (
+            "If you have previously evaluated the parameters passed in as points_to_evaluate you can avoid re-running "
+            "those trials by passing in the reward attributes as a list so the optimiser can be told the results "
+            "without needing to re-compute the trial. Must be the same length as `points_to_evaluate`."
+        )
+    )
+
+
 @DeveloperAPI
 @ludwig_dataclass
 class BaseSearchAlgorithmConfig(schema_utils.BaseMarshmallowConfig):
@@ -145,33 +193,11 @@ class AxSAConfig(BaseSearchAlgorithmConfig):
         )
     )
 
-    metric: Optional[str] = schema_utils.String(
-        default=None,
-        allow_none=True,
-        description=(
-            "Name of the metric used as objective in this experiment. This metric must be present in `raw_data` "
-            "argument to `log_data`. This metric must also be present in the dict reported/returned by the Trainable. "
-            "If `None` but a mode was passed, the `ray.tune.result.DEFAULT_METRIC` will be used per default."
-        ),
-    )
+    metric: Optional[str] = metric_field()
 
-    mode: Optional[str] = schema_utils.StringOptions(
-        options=["min", "max", None],
-        default=None,
-        allow_none=True,
-        description=(
-            "One of `{min, max}`. Determines whether objective is minimizing or maximizing the metric attribute. "
-            r"Defaults to \“max\”."
-        ),
-    )
+    mode: Optional[str] = mode_field()
 
-    points_to_evaluate: Optional[List[Dict]] = schema_utils.DictList(
-        description=(
-            "Initial parameter suggestions to be run first. This is for when you already have some good "
-            "parameters you want to run first to help the algorithm make better suggestions for future parameters. "
-            "Needs to be a list of dicts containing the configurations."
-        )
-    )
+    points_to_evaluate: Optional[List[Dict]] = points_to_evaluate_field()
 
     parameter_constraints: Optional[List] = schema_utils.List(
         description=r"Parameter constraints, such as \“x3 >= x4\” or \“x3 + x4 >= 2\”."
@@ -196,31 +222,11 @@ class BayesOptSAConfig(BaseSearchAlgorithmConfig):
         )
     )
 
-    metric: Optional[str] = schema_utils.String(
-        default=None,
-        allow_none=True,
-        description=(
-            "The training result objective value attribute. If None but a mode was passed, the anonymous metric "
-            "`_metric` will be used per default."
-        ),
-    )
+    metric: Optional[str] = metric_field()
 
-    mode: Optional[str] = schema_utils.StringOptions(
-        options=["min", "max"],
-        default=None,
-        allow_none=True,
-        description=(
-            "One of `{min, max}`. Determines whether objective is minimizing or maximizing the metric attribute."
-        ),
-    )
+    mode: Optional[str] = mode_field()
 
-    points_to_evaluate: Optional[List[Dict]] = schema_utils.DictList(
-        description=(
-            "Initial parameter suggestions to be run first. This is for when you already have some good parameters "
-            "you want to run first to help the algorithm make better suggestions for future parameters. Needs to be "
-            "a list of dicts containing the configurations."
-        )
-    )
+    points_to_evaluate: Optional[List[Dict]] = points_to_evaluate_field()
 
     utility_kwargs: Optional[Dict] = schema_utils.Dict(
         description=(
@@ -281,31 +287,11 @@ class BOHBSAConfig(BaseSearchAlgorithmConfig):
 
     bohb_config: Optional[Dict] = schema_utils.Dict(description="configuration for HpBandSter BOHB algorithm")
 
-    metric: Optional[str] = schema_utils.String(
-        default=None,
-        allow_none=True,
-        description=(
-            "The training result objective value attribute. If None but a mode was passed, the anonymous metric "
-            "`_metric` will be used per default."
-        ),
-    )
+    metric: Optional[str] = metric_field()
 
-    mode: Optional[str] = schema_utils.StringOptions(
-        options=["min", "max"],
-        default=None,
-        allow_none=True,
-        description=(
-            "One of `{min, max}`. Determines whether objective is minimizing or maximizing the metric attribute."
-        ),
-    )
+    mode: Optional[str] = mode_field()
 
-    points_to_evaluate: Optional[List[Dict]] = schema_utils.DictList(
-        description=(
-            "Initial parameter suggestions to be run first. This is for when you already have some good parameters "
-            "you want to run first to help the algorithm make better suggestions for future parameters. Needs to be "
-            "a list of dicts containing the configurations."
-        )
-    )
+    points_to_evaluate: Optional[List[Dict]] = points_to_evaluate_field()
 
     seed: Optional[int] = schema_utils.Integer(
         default=None,
@@ -369,39 +355,13 @@ class DragonflySAConfig(BaseSearchAlgorithmConfig):
         )
     )
 
-    metric: Optional[str] = schema_utils.String(
-        default=None,
-        allow_none=True,
-        description=(
-            "The training result objective value attribute. If None but a mode was passed, the anonymous metric "
-            "`_metric` will be used per default."
-        ),
-    )
+    metric: Optional[str] = metric_field()
 
-    mode: Optional[str] = schema_utils.StringOptions(
-        options=["min", "max"],
-        default=None,
-        allow_none=True,
-        description=(
-            "One of `{min, max}`. Determines whether objective is minimizing or maximizing the metric attribute."
-        ),
-    )
+    mode: Optional[str] = mode_field()
 
-    points_to_evaluate: Optional[List[Dict]] = schema_utils.DictList(
-        description=(
-            "Initial parameter suggestions to be run first. This is for when you already have some good parameters "
-            "you want to run first to help the algorithm make better suggestions for future parameters. Needs to be "
-            "a list of dicts containing the configurations."
-        )
-    )
+    points_to_evaluate: Optional[List[Dict]] = points_to_evaluate_field()
 
-    evaluated_rewards: Optional[List] = schema_utils.List(
-        description=(
-            "If you have previously evaluated the parameters passed in as points_to_evaluate you can avoid re-running "
-            "those trials by passing in the reward attributes as a list so the optimiser can be told the results "
-            "without needing to re-compute the trial. Must be the same length as `points_to_evaluate`."
-        )
-    )
+    evaluated_rewards: Optional[List] = evaluated_rewards_field()
 
     random_state_seed: Optional[int] = schema_utils.Integer(
         default=None,
@@ -423,39 +383,13 @@ class HEBOSAConfig(BaseSearchAlgorithmConfig):
         description="A dict mapping parameter names to Tune search spaces or a HEBO DesignSpace object."
     )
 
-    metric: Optional[str] = schema_utils.String(
-        default=None,
-        allow_none=True,
-        description=(
-            "The training result objective value attribute. If None but a mode was passed, the anonymous metric "
-            "`_metric` will be used per default."
-        ),
-    )
+    metric: Optional[str] = metric_field()
 
-    mode: Optional[str] = schema_utils.StringOptions(
-        options=["min", "max"],
-        default=None,
-        allow_none=True,
-        description=(
-            "One of `{min, max}`. Determines whether objective is minimizing or maximizing the metric attribute."
-        ),
-    )
+    mode: Optional[str] = mode_field()
 
-    points_to_evaluate: Optional[List[Dict]] = schema_utils.DictList(
-        description=(
-            "Initial parameter suggestions to be run first. This is for when you already have some good parameters "
-            "you want to run first to help the algorithm make better suggestions for future parameters. Needs to be "
-            "a list of dicts containing the configurations."
-        )
-    )
+    points_to_evaluate: Optional[List[Dict]] = points_to_evaluate_field()
 
-    evaluated_rewards: Optional[List] = schema_utils.List(
-        description=(
-            "If you have previously evaluated the parameters passed in as points_to_evaluate you can avoid re-running "
-            "those trials by passing in the reward attributes as a list so the optimiser can be told the results "
-            "without needing to re-compute the trial. Must be the same length as `points_to_evaluate`."
-        )
-    )
+    evaluated_rewards: Optional[List] = evaluated_rewards_field()
 
     random_state_seed: Optional[int] = schema_utils.Integer(
         default=None,
@@ -488,31 +422,11 @@ class HyperoptSAConfig(BaseSearchAlgorithmConfig):
         )
     )
 
-    metric: Optional[str] = schema_utils.String(
-        default=None,
-        allow_none=True,
-        description=(
-            "The training result objective value attribute. If None but a mode was passed, the anonymous metric "
-            "`_metric` will be used per default."
-        ),
-    )
+    metric: Optional[str] = metric_field()
 
-    mode: Optional[str] = schema_utils.StringOptions(
-        options=["min", "max"],
-        default=None,
-        allow_none=True,
-        description=(
-            "One of `{min, max}`. Determines whether objective is minimizing or maximizing the metric attribute."
-        ),
-    )
+    mode: Optional[str] = mode_field()
 
-    points_to_evaluate: Optional[List[Dict]] = schema_utils.DictList(
-        description=(
-            "Initial parameter suggestions to be run first. This is for when you already have some good parameters "
-            "you want to run first to help the algorithm make better suggestions for future parameters. Needs to be "
-            "a list of dicts containing the configurations."
-        )
-    )
+    points_to_evaluate: Optional[List[Dict]] = points_to_evaluate_field()
 
     n_initial_points: int = schema_utils.PositiveInteger(
         default=20,
@@ -562,31 +476,11 @@ class NevergradSAConfig(BaseSearchAlgorithmConfig):
         )
     )
 
-    metric: Optional[str] = schema_utils.String(
-        default=None,
-        allow_none=True,
-        description=(
-            "The training result objective value attribute. If None but a mode was passed, the anonymous metric "
-            "`_metric` will be used per default."
-        ),
-    )
+    metric: Optional[str] = metric_field()
 
-    mode: Optional[str] = schema_utils.StringOptions(
-        options=["min", "max"],
-        default=None,
-        allow_none=True,
-        description=(
-            "One of `{min, max}`. Determines whether objective is minimizing or maximizing the metric attribute."
-        ),
-    )
+    mode: Optional[str] = mode_field()
 
-    points_to_evaluate: Optional[List[Dict]] = schema_utils.DictList(
-        description=(
-            "Initial parameter suggestions to be run first. This is for when you already have some good parameters "
-            "you want to run first to help the algorithm make better suggestions for future parameters. Needs to be "
-            "a list of dicts containing the configurations."
-        )
-    )
+    points_to_evaluate: Optional[List[Dict]] = points_to_evaluate_field()
 
 
 @DeveloperAPI
@@ -606,32 +500,21 @@ class OptunaSAConfig(BaseSearchAlgorithmConfig):
         )
     )
 
-    metric: Optional[str] = schema_utils.String(
-        default=None,
-        allow_none=True,
+    metric: Optional[str] = metric_field(
         description=(
             "The training result objective value attribute. If None but a mode was passed, the anonymous metric "
             "`_metric` will be used per default. Can be a list of metrics for multi-objective optimization."
         ),
     )
 
-    mode: Optional[str] = schema_utils.StringOptions(
-        options=["min", "max"],
-        default=None,
-        allow_none=True,
+    mode: Optional[str] = mode_field(
         description=(
             "One of `{min, max}`. Determines whether objective is minimizing or maximizing the metric attribute."
             "Can be a list of modes for multi-objective optimization (corresponding to `metric`)"
         ),
     )
 
-    points_to_evaluate: Optional[List[Dict]] = schema_utils.DictList(
-        description=(
-            "Initial parameter suggestions to be run first. This is for when you already have some good parameters "
-            "you want to run first to help the algorithm make better suggestions for future parameters. Needs to be "
-            "a list of dicts containing the configurations."
-        )
-    )
+    points_to_evaluate: Optional[List[Dict]] = points_to_evaluate_field()
 
     # TODO: Add a registry of Optuna samplers schemas
     # sampler = None
@@ -645,13 +528,7 @@ class OptunaSAConfig(BaseSearchAlgorithmConfig):
         ),
     )
 
-    evaluated_rewards: Optional[List] = schema_utils.List(
-        description=(
-            "If you have previously evaluated the parameters passed in as points_to_evaluate you can avoid re-running "
-            "those trials by passing in the reward attributes as a list so the optimiser can be told the results "
-            "without needing to re-compute the trial. Must be the same length as points_to_evaluate."
-        )
-    )
+    evaluated_rewards: Optional[List] = evaluated_rewards_field()
 
 
 @DeveloperAPI
@@ -669,33 +546,13 @@ class SkoptSAConfig(BaseSearchAlgorithmConfig):
         )
     )
 
-    metric: Optional[str] = schema_utils.String(
-        default=None,
-        allow_none=True,
-        description=(
-            "The training result objective value attribute. If None but a mode was passed, the anonymous metric "
-            "`_metric` will be used per default."
-        ),
-    )
+    metric: Optional[str] = metric_field()
 
-    mode: Optional[str] = schema_utils.StringOptions(
-        options=["min", "max"],
-        default=None,
-        allow_none=True,
-        description=(
-            "One of `{min, max}`. Determines whether objective is minimizing or maximizing the metric attribute."
-        ),
-    )
+    mode: Optional[str] = mode_field()
 
-    points_to_evaluate: Optional[List[Dict]] = schema_utils.DictList(
-        description=(
-            "Initial parameter suggestions to be run first. This is for when you already have some good parameters "
-            "you want to run first to help the algorithm make better suggestions for future parameters. Needs to be "
-            "a list of dicts containing the configurations."
-        )
-    )
+    points_to_evaluate: Optional[List[Dict]] = points_to_evaluate_field()
 
-    evaluated_rewards: Optional[List] = schema_utils.List(
+    evaluated_rewards: Optional[List] = evaluated_rewards_field(
         description=(
             "If you have previously evaluated the parameters passed in as points_to_evaluate you can avoid "
             "re-running those trials by passing in the reward attributes as a list so the optimiser can be told the "
@@ -734,31 +591,11 @@ class ZooptSAConfig(BaseSearchAlgorithmConfig):
         )
     )
 
-    metric: Optional[str] = schema_utils.String(
-        default=None,
-        allow_none=True,
-        description=(
-            "The training result objective value attribute. If None but a mode was passed, the anonymous metric "
-            "`_metric` will be used per default."
-        ),
-    )
+    metric: Optional[str] = metric_field()
 
-    mode: Optional[str] = schema_utils.StringOptions(
-        options=["min", "max"],
-        default=None,
-        allow_none=True,
-        description=(
-            "One of `{min, max}`. Determines whether objective is minimizing or maximizing the metric attribute."
-        ),
-    )
+    mode: Optional[str] = mode_field()
 
-    points_to_evaluate: Optional[List[Dict]] = schema_utils.DictList(
-        description=(
-            "Initial parameter suggestions to be run first. This is for when you already have some good parameters "
-            "you want to run first to help the algorithm make better suggestions for future parameters. Needs to be "
-            "a list of dicts containing the configurations."
-        )
-    )
+    points_to_evaluate: Optional[List[Dict]] = points_to_evaluate_field()
 
     parallel_num: int = schema_utils.PositiveInteger(
         default=1,
