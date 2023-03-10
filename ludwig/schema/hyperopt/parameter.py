@@ -1,12 +1,14 @@
 from typing import List, Type, Union
 
+from marshmallow.fields import Field
+
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.hyperopt.utils import register_parameter_config
 from ludwig.schema.utils import ludwig_dataclass
 
 
-def quantization_number_field(dtype: Union[Type[float], Type[int]] = float, default=None):
+def quantization_number_field(dtype: Union[Type[float], Type[int]] = float, default=None) -> Field:
     description = (
         "Quantization number. Output values will be rounded to the nearest increment of `q` in range."
         "Quantization makes the upper bound inclusive."
@@ -19,7 +21,7 @@ def quantization_number_field(dtype: Union[Type[float], Type[int]] = float, defa
     return field
 
 
-def log_base_field(default=10):
+def log_base_field(default: float = 10) -> Field:
     return schema_utils.Float(default=default, description="Logarithmic base.")
 
 
