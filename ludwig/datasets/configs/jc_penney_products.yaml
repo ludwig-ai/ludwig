@@ -12,6 +12,19 @@ description: |
   JCPenney products
   20,000 product listings from JCPenney
   https://www.kaggle.com/PromptCloudHQ/all-jc-penny-products
+columns:
+  - name: name_title
+    type: category
+  - name: description
+    type: text
+  - name: sale_price
+    type: number
+  - name: average_product_rating
+    type: number
+  - name: brand
+    type: category
+  - name: total_number_reviews
+    type: number
 output_features:
 - name: sale_price
   type: number

@@ -8,6 +8,11 @@ description: |
 
   This is a subset of Reuters-21578 using only 6 categories, from this CMU course:
   http://boston.lti.cs.cmu.edu/classes/95-865-K/HW/HW2/
+columns:
+    - name: text
+      type: text
+    - name: class
+      type: category
 output_features:
   - name: class
     type: category

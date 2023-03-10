@@ -17,6 +17,469 @@ loader: kdd_loader.KDDAppetencyLoader
 description: |
   The KDD Cup 2009 Appetency dataset.
   https://www.kdd.org/kdd-cup/view/kdd-cup-2009/Data
+columns:
+  - name: Var1
+    type: number
+  - name: Var2
+    type: number
+  - name: Var3
+    type: number
+  - name: Var4
+    type: number
+  - name: Var5
+    type: number
+  - name: Var6
+    type: number
+  - name: Var7
+    type: number
+  - name: Var8
+    type: number
+  - name: Var9
+    type: number
+  - name: Var10
+    type: number
+  - name: Var11
+    type: number
+  - name: Var12
+    type: number
+  - name: Var13
+    type: number
+  - name: Var14
+    type: number
+  - name: Var15
+    type: number
+  - name: Var16
+    type: number
+  - name: Var17
+    type: number
+  - name: Var18
+    type: number
+  - name: Var19
+    type: number
+  - name: Var20
+    type: number
+  - name: Var21
+    type: number
+  - name: Var22
+    type: number
+  - name: Var23
+    type: number
+  - name: Var24
+    type: number
+  - name: Var25
+    type: number
+  - name: Var26
+    type: number
+  - name: Var27
+    type: number
+  - name: Var28
+    type: number
+  - name: Var29
+    type: number
+  - name: Var30
+    type: number
+  - name: Var31
+    type: number
+  - name: Var32
+    type: number
+  - name: Var33
+    type: number
+  - name: Var34
+    type: number
+  - name: Var35
+    type: number
+  - name: Var36
+    type: number
+  - name: Var37
+    type: number
+  - name: Var38
+    type: number
+  - name: Var39
+    type: number
+  - name: Var40
+    type: number
+  - name: Var41
+    type: number
+  - name: Var42
+    type: number
+  - name: Var43
+    type: number
+  - name: Var44
+    type: number
+  - name: Var45
+    type: number
+  - name: Var46
+    type: number
+  - name: Var47
+    type: number
+  - name: Var48
+    type: number
+  - name: Var49
+    type: number
+  - name: Var50
+    type: number
+  - name: Var51
+    type: number
+  - name: Var52
+    type: number
+  - name: Var53
+    type: number
+  - name: Var54
+    type: number
+  - name: Var55
+    type: number
+  - name: Var56
+    type: number
+  - name: Var57
+    type: number
+  - name: Var58
+    type: number
+  - name: Var59
+    type: number
+  - name: Var60
+    type: number
+  - name: Var61
+    type: number
+  - name: Var62
+    type: number
+  - name: Var63
+    type: number
+  - name: Var64
+    type: number
+  - name: Var65
+    type: number
+  - name: Var66
+    type: number
+  - name: Var67
+    type: number
+  - name: Var68
+    type: number
+  - name: Var69
+    type: number
+  - name: Var70
+    type: number
+  - name: Var71
+    type: number
+  - name: Var72
+    type: number
+  - name: Var73
+    type: number
+  - name: Var74
+    type: number
+  - name: Var75
+    type: number
+  - name: Var76
+    type: number
+  - name: Var77
+    type: number
+  - name: Var78
+    type: number
+  - name: Var79
+    type: number
+  - name: Var80
+    type: number
+  - name: Var81
+    type: number
+  - name: Var82
+    type: number
+  - name: Var83
+    type: number
+  - name: Var84
+    type: number
+  - name: Var85
+    type: number
+  - name: Var86
+    type: number
+  - name: Var87
+    type: number
+  - name: Var88
+    type: number
+  - name: Var89
+    type: number
+  - name: Var90
+    type: number
+  - name: Var91
+    type: number
+  - name: Var92
+    type: number
+  - name: Var93
+    type: number
+  - name: Var94
+    type: number
+  - name: Var95
+    type: number
+  - name: Var96
+    type: number
+  - name: Var97
+    type: number
+  - name: Var98
+    type: number
+  - name: Var99
+    type: number
+  - name: Var100
+    type: number
+  - name: Var101
+    type: number
+  - name: Var102
+    type: number
+  - name: Var103
+    type: number
+  - name: Var104
+    type: number
+  - name: Var105
+    type: number
+  - name: Var106
+    type: number
+  - name: Var107
+    type: number
+  - name: Var108
+    type: number
+  - name: Var109
+    type: number
+  - name: Var110
+    type: number
+  - name: Var111
+    type: number
+  - name: Var112
+    type: number
+  - name: Var113
+    type: number
+  - name: Var114
+    type: number
+  - name: Var115
+    type: number
+  - name: Var116
+    type: number
+  - name: Var117
+    type: number
+  - name: Var118
+    type: number
+  - name: Var119
+    type: number
+  - name: Var120
+    type: number
+  - name: Var121
+    type: number
+  - name: Var122
+    type: number
+  - name: Var123
+    type: number
+  - name: Var124
+    type: number
+  - name: Var125
+    type: number
+  - name: Var126
+    type: number
+  - name: Var127
+    type: number
+  - name: Var128
+    type: number
+  - name: Var129
+    type: number
+  - name: Var130
+    type: number
+  - name: Var131
+    type: number
+  - name: Var132
+    type: number
+  - name: Var133
+    type: number
+  - name: Var134
+    type: number
+  - name: Var135
+    type: number
+  - name: Var136
+    type: number
+  - name: Var137
+    type: number
+  - name: Var138
+    type: number
+  - name: Var139
+    type: number
+  - name: Var140
+    type: number
+  - name: Var141
+    type: number
+  - name: Var142
+    type: number
+  - name: Var143
+    type: number
+  - name: Var144
+    type: number
+  - name: Var145
+    type: number
+  - name: Var146
+    type: number
+  - name: Var147
+    type: number
+  - name: Var148
+    type: number
+  - name: Var149
+    type: number
+  - name: Var150
+    type: number
+  - name: Var151
+    type: number
+  - name: Var152
+    type: number
+  - name: Var153
+    type: number
+  - name: Var154
+    type: number
+  - name: Var155
+    type: number
+  - name: Var156
+    type: number
+  - name: Var157
+    type: number
+  - name: Var158
+    type: number
+  - name: Var159
+    type: number
+  - name: Var160
+    type: number
+  - name: Var161
+    type: number
+  - name: Var162
+    type: number
+  - name: Var163
+    type: number
+  - name: Var164
+    type: number
+  - name: Var165
+    type: number
+  - name: Var166
+    type: number
+  - name: Var167
+    type: number
+  - name: Var168
+    type: number
+  - name: Var169
+    type: number
+  - name: Var170
+    type: number
+  - name: Var171
+    type: number
+  - name: Var172
+    type: number
+  - name: Var173
+    type: number
+  - name: Var174
+    type: number
+  - name: Var175
+    type: number
+  - name: Var176
+    type: number
+  - name: Var177
+    type: number
+  - name: Var178
+    type: number
+  - name: Var179
+    type: number
+  - name: Var180
+    type: number
+  - name: Var181
+    type: number
+  - name: Var182
+    type: number
+  - name: Var183
+    type: number
+  - name: Var184
+    type: number
+  - name: Var185
+    type: number
+  - name: Var186
+    type: number
+  - name: Var187
+    type: number
+  - name: Var188
+    type: number
+  - name: Var189
+    type: number
+  - name: Var190
+    type: number
+  - name: Var191
+    type: category
+  - name: Var192
+    type: category
+  - name: Var193
+    type: category
+  - name: Var194
+    type: category
+  - name: Var195
+    type: category
+  - name: Var196
+    type: category
+  - name: Var197
+    type: category
+  - name: Var198
+    type: category
+  - name: Var199
+    type: category
+  - name: Var200
+    type: category
+  - name: Var201
+    type: category
+  - name: Var202
+    type: category
+  - name: Var203
+    type: category
+  - name: Var204
+    type: category
+  - name: Var205
+    type: category
+  - name: Var206
+    type: category
+  - name: Var207
+    type: category
+  - name: Var208
+    type: category
+  - name: Var209
+    type: number
+  - name: Var210
+    type: category
+  - name: Var211
+    type: category
+  - name: Var212
+    type: category
+  - name: Var213
+    type: category
+  - name: Var214
+    type: category
+  - name: Var215
+    type: category
+  - name: Var216
+    type: category
+  - name: Var217
+    type: category
+  - name: Var218
+    type: category
+  - name: Var219
+    type: category
+  - name: Var220
+    type: category
+  - name: Var221
+    type: category
+  - name: Var222
+    type: category
+  - name: Var223
+    type: category
+  - name: Var224
+    type: category
+  - name: Var225
+    type: category
+  - name: Var226
+    type: category
+  - name: Var227
+    type: category
+  - name: Var228
+    type: category
+  - name: Var229
+    type: category
+  - name: Var230
+    type: number
+  - name: target
+    type: binary
 output_features:
   - name: target
     type: binary

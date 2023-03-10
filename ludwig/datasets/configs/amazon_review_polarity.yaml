@@ -5,10 +5,6 @@ train_filenames: amazon_review_polarity_csv/train.csv
 test_filenames: amazon_review_polarity_csv/test.csv
 sha256:
   amazon_review_polarity_csv.tgz: d2a3ee7a214497a5d1b8eaed7c8d7ba2737de00ada3b0ec46243983efa100361
-columns:
-  - label
-  - review_title
-  - review_text
 description: |
   The Amazon Reviews Polarity dataset
     Details:
@@ -19,6 +15,13 @@ description: |
     Dataset source:
         Character-level Convolutional Networks for Text Classification
         Xiang Zhang et al., 2015
+columns:
+  - name: label
+    type: binary
+  - name: review_title
+    type: text
+  - name: review_text
+    type: text
 output_features:
   - name: label
     type: binary

@@ -16,6 +16,11 @@ description: |
 
   In this dataset, the 3 labels negative, neutral, positive have the following cutoffs:
   [0, 0.4], (0.4, 0.6], (0.6, 1.0]
+columns:
+  - name: sentence
+    type: text
+  - name: label
+    type: category
 output_features:
     - name: label
       type: category
