@@ -161,20 +161,17 @@ def test_tfidf_encoder(vocab_size: int):
     sequence_length = 32
     vocab = [str(i) for i in range(1, vocab_size + 1)]
     str2idf = {s: 1 for s in vocab}
-    sequence_encoder = text_encoders.TfIdfEncoder(
+    text_encoder = text_encoders.TfIdfEncoder(
         max_sequence_length=sequence_length,
         str2idf=str2idf,
         vocab=vocab,
         vocab_size=vocab_size,
     ).to(DEVICE)
+
+    assert len(text_encoder.output_shape) == 1
+    assert text_encoder.output_shape[0] == vocab_size
+    assert len(list(text_encoder.parameters())) == 0
+
     inputs = torch.randint(2, (batch_size, sequence_length)).to(DEVICE)
-    outputs = sequence_encoder(inputs)
-    assert outputs["encoder_output"].shape[1:] == sequence_encoder.output_shape
-
-    # check for parameter updating
-    target = torch.randn(outputs["encoder_output"].shape)
-    fpc, tpc, upc, not_updated = check_module_parameters_updated(sequence_encoder, (inputs,), target)
-
-    assert (
-        upc == tpc
-    ), f"Not all parameters updated.  Parameters not updated: {not_updated}.\nModule: {sequence_encoder}"
+    outputs = text_encoder(inputs)
+    assert outputs["encoder_output"].shape[1:] == text_encoder.output_shape
