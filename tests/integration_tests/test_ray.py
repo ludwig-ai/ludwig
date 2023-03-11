@@ -394,9 +394,10 @@ def test_ray_outputs(dataset_type, trainer_strategy, ray_cluster_2cpu):
         binary_feature(),
     ]
     binary_feature_config = binary_feature()
+    category_feature_config = category_feature(output_feature=True)
     output_features = [
         number_feature(),
-        category_feature(output_feature=True),
+        category_feature_config,
         binary_feature_config,
         # TODO: feature type not yet supported
         # text_feature(decoder={"vocab_size": 3}),  # Error having to do with a missing key (#2586)
@@ -411,7 +412,10 @@ def test_ray_outputs(dataset_type, trainer_strategy, ray_cluster_2cpu):
         dataset_type=dataset_type,
         predict=True,
         skip_save_predictions=False,
-        required_metrics={binary_feature_config["name"]: {"roc_auc"}},  # ensures that the metric is not omitted.
+        required_metrics={
+            binary_feature_config[NAME]: {"roc_auc"},
+            category_feature_config[NAME]: {"roc_auc"},
+        },  # ensures that these metrics are not omitted.
         backend_kwargs={
             TRAINER: {"strategy": trainer_strategy},
         },
@@ -449,7 +453,7 @@ def test_ray_set_and_vector_outputs(dataset_type, ray_cluster_2cpu):
         dataset_type=dataset_type,
         predict=True,
         skip_save_predictions=False,
-        required_metrics={set_feature_config["name"]: {"jaccard"}},  # ensures that the metric is not omitted.
+        required_metrics={set_feature_config[NAME]: {"jaccard"}},  # ensures that the metric is not omitted.
     )
 
 
