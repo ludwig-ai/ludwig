@@ -41,6 +41,7 @@ from ludwig.schema.encoders.text_encoders import (
     MT5Config,
     RoBERTaConfig,
     T5Config,
+    TfIdfEncoderConfig,
     TransformerXLConfig,
     XLMConfig,
     XLMRoBERTaConfig,
@@ -2120,37 +2121,51 @@ class AutoTransformerEncoder(HFTextEncoder):
 class TfIdfEncoder(Encoder):
     def __init__(
         self,
+        max_sequence_length: int,
         encoder_config=None,
         str2freq=None,
-        str2idx=None,
+        vocab=None,
         vocab_size: int = None,
         **kwargs,
     ):
         super().__init__()
         self.config = encoder_config
+        self.max_sequence_length = max_sequence_length
+        self.vocab_size = vocab_size
 
         logger.debug(f" {self.name}")
 
         # Convert mapping of token -> frequence to a dense array
         freq = np.zeros(vocab_size)
-        for k, v in str2freq.items():
-            freq[str2idx[k]] = v
+        for i, s in enumerate(vocab):
+            freq[i] = str2freq[s]
 
         # load the word embeddings into the static embedding
         self.embedding = nn.Embedding(vocab_size, 1)
-        self.embedding.weight.data.copy_(torch.stack([torch.Tensor(f) for f in freq]))
+        self.embedding.weight.data.copy_(torch.stack([torch.Tensor([f]) for f in freq]))
         self.embedding.weight.requires_grad = False
 
-        self.vocab_size = vocab_size
-
     def forward(self, t: torch.Tensor, mask=None):
-        token_ids, counts = t.unique(return_counts=True)
-        sparse_tensor = torch.sparse_coo_tensor(token_ids, counts, size=(t.shape[0], self.vocab_size))
-        tf = sparse_tensor.to_dense()
+        print(t, t.shape)
+        tf = torch.stack([t_i.bincount(minlength=self.vocab_size) for t_i in torch.unbind(t.long())])
         idf = self.embedding(t.long()).squeeze(-1)
+        print(tf)
+        print(idf)
         hidden = tf / idf
+        print(hidden)
         return {"encoder_output": hidden}
 
     @staticmethod
     def get_schema_cls():
-        return TfIdfConfig
+        return TfIdfEncoderConfig
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([self.vocab_size])
+
+    def get_embedding_layer(self) -> nn.Module:
+        return self

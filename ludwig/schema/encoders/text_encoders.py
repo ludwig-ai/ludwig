@@ -1,13 +1,13 @@
-from typing import Callable, List, Union
+from typing import Callable, Dict, List, Union
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import TEXT
+from ludwig.constants import MODEL_ECD, MODEL_GBM, TEXT
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.sequence_encoders import SequenceEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.features.preprocessing.text import TextPreprocessingConfig
 from ludwig.schema.metadata import ENCODER_METADATA
-from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
+from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY, ParameterMetadata
 from ludwig.schema.utils import ludwig_dataclass
 
 
@@ -3015,3 +3015,25 @@ class AutoTransformerConfig(HFEncoderConfig):
         description="Additional kwargs to pass to the pretrained model.",
         parameter_metadata=ENCODER_METADATA["AutoTransformer"]["pretrained_kwargs"],
     )
+
+
+@DeveloperAPI
+@register_encoder_config("tf_idf", TEXT, model_types=[MODEL_ECD, MODEL_GBM])
+@ludwig_dataclass
+class TfIdfEncoderConfig(SequenceEncoderConfig):
+    type: str = schema_utils.ProtectedString("tf_idf")
+
+    max_sequence_length: int = schema_utils.Integer(default=None, allow_none=True, parameter_metadata=INTERNAL_ONLY)
+
+    str2freq: Dict[str, int] = schema_utils.Dict(parameter_metadata=INTERNAL_ONLY)
+
+    vocab: list = schema_utils.List(default=None, parameter_metadata=INTERNAL_ONLY)
+
+    vocab_size: int = schema_utils.Integer(default=None, allow_none=True, parameter_metadata=INTERNAL_ONLY)
+
+    def set_fixed_preprocessing_params(self, model_type: str, preprocessing: "TextPreprocessingConfig"):
+        if model_type == MODEL_GBM:
+            preprocessing.cache_encoder_embeddings = True
+
+    def can_cache_embeddings(self) -> bool:
+        return True

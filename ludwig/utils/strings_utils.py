@@ -304,6 +304,12 @@ def create_vocabulary(
     processed_counts = processed_lines.explode().value_counts(sort=False)
     processed_counts = processor.compute(processed_counts)
     unit_counts = Counter(dict(processed_counts))
+
+    # The document frequency used for TF-IDF. Similar to unit_counts, but de-duped by document.
+    document_counts = processed_lines.map(lambda x: set(x)).explode().value_counts(sort=False)
+    document_counts = processor.compute(document_counts)
+    doc_unit_counts = Counter(dict(document_counts))
+
     line_length_max = processor.compute(processed_lines.map(len).max())
     line_length_99ptile = processor.compute(processed_lines.map(len).quantile(0.99))
 
@@ -322,6 +328,9 @@ def create_vocabulary(
 
     str2idx = {unit: i for i, unit in enumerate(vocab)}
     str2freq = {unit: unit_counts.get(unit) if unit in unit_counts else 0 for unit in vocab}
+    str2idf = {
+        unit: np.log(len(vocab) / (1 + doc_unit_counts.get(unit))) if unit in doc_unit_counts else 0 for unit in vocab
+    }
 
     pad_idx = None
     if padding_symbol in str2idx.keys():
