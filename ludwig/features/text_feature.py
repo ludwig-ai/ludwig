@@ -42,7 +42,13 @@ from ludwig.features.sequence_feature import (
 from ludwig.schema.features.text_feature import TextInputFeatureConfig, TextOutputFeatureConfig
 from ludwig.types import FeatureMetadataDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils.math_utils import softmax
-from ludwig.utils.strings_utils import build_sequence_matrix, create_vocabulary, SpecialSymbol, UNKNOWN_SYMBOL
+from ludwig.utils.strings_utils import (
+    Vocabulary,
+    build_sequence_matrix,
+    create_vocabulary,
+    SpecialSymbol,
+    UNKNOWN_SYMBOL,
+)
 from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
@@ -58,17 +64,8 @@ class TextFeatureMixin(BaseFeatureMixin):
         return column.astype(str)
 
     @staticmethod
-    def feature_meta(column, preprocessing_parameters: PreprocessingConfigDict, backend):
-        (
-            idx2str,
-            str2idx,
-            str2freq,
-            max_len,
-            max_len_99ptile,
-            pad_idx,
-            padding_symbol,
-            unknown_symbol,
-        ) = create_vocabulary(
+    def feature_meta(column, preprocessing_parameters: PreprocessingConfigDict, backend) -> Vocabulary:
+        return create_vocabulary(
             column,
             tokenizer_type=preprocessing_parameters["tokenizer"],
             num_most_frequent=preprocessing_parameters["most_common"],
@@ -80,32 +77,13 @@ class TextFeatureMixin(BaseFeatureMixin):
             ngram_size=preprocessing_parameters["ngram_size"],
             processor=backend.df_engine,
         )
-        return (
-            idx2str,
-            str2idx,
-            str2freq,
-            max_len,
-            max_len_99ptile,
-            pad_idx,
-            padding_symbol,
-            unknown_symbol,
-        )
 
     @staticmethod
     def get_feature_meta(
         column, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
     ) -> FeatureMetadataDict:
-        tf_meta = TextFeatureMixin.feature_meta(column, preprocessing_parameters, backend)
-        (
-            idx2str,
-            str2idx,
-            str2freq,
-            max_len,
-            max_len_99ptile,
-            pad_idx,
-            padding_symbol,
-            unknown_symbol,
-        ) = tf_meta
+        vocabulary = TextFeatureMixin.feature_meta(column, preprocessing_parameters, backend)
+
         # Use max_sequence_length if provided, otherwise use max length found in dataset.
         if preprocessing_parameters["max_sequence_length"] is not None:
             logger.info("Using max_sequence_length provided in preprocessing parameters")
@@ -113,20 +91,20 @@ class TextFeatureMixin(BaseFeatureMixin):
             max_sequence_length_99ptile = max_sequence_length
         else:
             logger.info("Inferring max_sequence_length from dataset")
-            max_sequence_length = max_len + 2  # For start and stop symbols.
-            max_sequence_length_99ptile = max_len_99ptile + 2  # For start and stop symbols.
+            max_sequence_length = vocabulary.line_length_max + 2  # For start and stop symbols.
+            max_sequence_length_99ptile = vocabulary.line_length_99ptile + 2  # For start and stop symbols.
         logger.info(f"Using max sequence length of {max_sequence_length} for feature '{column.name}'")
 
         return {
-            "idx2str": idx2str,
-            "str2idx": str2idx,
-            "str2freq": str2freq,
-            "vocab_size": len(idx2str),
+            "idx2str": vocabulary.vocab,
+            "str2idx": vocabulary.str2idx,
+            "str2freq": vocabulary.str2freq,
+            "vocab_size": len(vocabulary.vocab),
             "max_sequence_length": max_sequence_length,
             "max_sequence_length_99ptile": max_sequence_length_99ptile,
-            "pad_idx": pad_idx,
-            "padding_symbol": padding_symbol,
-            "unknown_symbol": unknown_symbol,
+            "pad_idx": vocabulary.pad_idx,
+            "padding_symbol": vocabulary.padding_symbol,
+            "unknown_symbol": vocabulary.unknown_symbol,
         }
 
     @staticmethod

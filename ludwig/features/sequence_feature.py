@@ -201,7 +201,7 @@ class SequenceFeatureMixin(BaseFeatureMixin):
     def get_feature_meta(
         column, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
     ) -> FeatureMetadataDict:
-        idx2str, str2idx, str2freq, max_length, _, _, _, _ = create_vocabulary(
+        vocabulary = create_vocabulary(
             column,
             preprocessing_parameters["tokenizer"],
             lowercase=preprocessing_parameters["lowercase"],
@@ -219,14 +219,14 @@ class SequenceFeatureMixin(BaseFeatureMixin):
             max_sequence_length = preprocessing_parameters["max_sequence_length"]
         else:
             logger.info("Inferring max_sequence_length from dataset")
-            max_sequence_length = max_length + 2  # For start and stop symbols.
+            max_sequence_length = vocabulary.line_length_max + 2  # For start and stop symbols.
         logger.info(f"Using max sequence length of {max_sequence_length} for feature '{column.name}'")
 
         return {
-            "idx2str": idx2str,
-            "str2idx": str2idx,
-            "str2freq": str2freq,
-            "vocab_size": len(idx2str),
+            "idx2str": vocabulary.vocab,
+            "str2idx": vocabulary.str2idx,
+            "str2freq": vocabulary.str2freq,
+            "vocab_size": len(vocabulary.vocab),
             "max_sequence_length": max_sequence_length,
         }
 

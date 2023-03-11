@@ -13,12 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+from dataclasses import dataclass
 import logging
 import re
 import unicodedata
 from collections import Counter
 from enum import Enum
-from typing import List, Optional, Set, Union
+from typing import Dict, List, Optional, Set, Union
 
 import numpy as np
 
@@ -191,6 +192,36 @@ def add_or_move_symbol(vocab_list: List[str], vocab_set: Set[str], symbol: str, 
     vocab_list.insert(index, symbol)
 
 
+@dataclass
+class Vocabulary:
+    vocab: List[str]
+    """List of strings representing the computed vocabulary."""
+
+    str2idx: Dict[str, int]
+    """Map of symbol to index."""
+
+    str2freq: Dict[str, int]
+    """Map of symbol to frequency."""
+
+    str2idf: Optional[Dict[str, int]]
+    """Map of symbol to inverse document frequency."""
+
+    line_length_max: int
+    """Maximum sequence length."""
+
+    line_length_99ptile: float
+    """99th percentile of maximum sequence length."""
+
+    pad_idx: int
+    """Index to padding symbol."""
+
+    padding_symbol: str
+    """Actual padding symbol."""
+
+    unknown_symbol: str
+    """Actual unknown symbol."""
+
+
 def create_vocabulary(
     data: Series,
     tokenizer_type: str = "space",
@@ -205,7 +236,7 @@ def create_vocabulary(
     pretrained_model_name_or_path: str = None,
     ngram_size: Optional[int] = None,
     processor: DataFrameEngine = PANDAS,
-):
+) -> Vocabulary:
     """Computes a vocabulary over the provided data frame.
 
     This function is used when the data consists of multiple tokens within one example. E.g., words in a text feature,
@@ -236,15 +267,7 @@ def create_vocabulary(
         processor: Which processor to use to process data.
 
     Returns:
-        Tuple of:
-            vocab: List of strings representing the computed vocabulary.
-            str2idx: Map of symbol to index.
-            str2freq: Map of symbol to frequency.
-            line_length_max: (int) maximum sequence length.
-            line_length_99ptile: (float) 99th percentile of maximum sequence length.
-            pad_idx: Index to padding symbol.
-            padding_symbol: Actual padding symbol.
-            unknown_symbol: Actual unknown symbol.
+        Vocabulary object containing metadata about the vocab.
 
     TODO(Justin): Clean up pad_idx, padding_symbol, unknown_symbol return, as no one seems to be using it.
     """
@@ -336,7 +359,17 @@ def create_vocabulary(
     if padding_symbol in str2idx.keys():
         pad_idx = str2idx[padding_symbol]
 
-    return vocab, str2idx, str2freq, line_length_max, line_length_99ptile, pad_idx, padding_symbol, unknown_symbol
+    return Vocabulary(
+        vocab=vocab,
+        str2idx=str2idx,
+        str2freq=str2freq,
+        str2idf=str2idf,
+        line_length_max=line_length_max,
+        line_length_99ptile=line_length_99ptile,
+        pad_idx=pad_idx,
+        padding_symbol=padding_symbol,
+        unknown_symbol=unknown_symbol,
+    )
 
 
 def create_vocabulary_single_token(

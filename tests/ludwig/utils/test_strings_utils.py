@@ -65,7 +65,7 @@ def test_create_vocabulary_chars():
     column = data[0]
     preprocessing_parameters = TextPreprocessingConfig().to_dict()
 
-    vocabulary_output = strings_utils.create_vocabulary(
+    vocabulary = strings_utils.create_vocabulary(
         column,
         tokenizer_type="characters",
         num_most_frequent=preprocessing_parameters["most_common"],
@@ -74,12 +74,13 @@ def test_create_vocabulary_chars():
         padding_symbol=preprocessing_parameters["padding_symbol"],
         pretrained_model_name_or_path=preprocessing_parameters["pretrained_model_name_or_path"],
     )
+    vocab = vocabulary.vocab
 
-    assert len(vocabulary_output[0]) == 24
-    assert vocabulary_output[0][strings_utils.SpecialSymbol.START.value] == strings_utils.START_SYMBOL
-    assert vocabulary_output[0][strings_utils.SpecialSymbol.STOP.value] == strings_utils.STOP_SYMBOL
-    assert vocabulary_output[0][strings_utils.SpecialSymbol.PADDING.value] == strings_utils.PADDING_SYMBOL
-    assert vocabulary_output[0][strings_utils.SpecialSymbol.UNKNOWN.value] == strings_utils.UNKNOWN_SYMBOL
+    assert len(vocab) == 24
+    assert vocab[strings_utils.SpecialSymbol.START.value] == strings_utils.START_SYMBOL
+    assert vocab[strings_utils.SpecialSymbol.STOP.value] == strings_utils.STOP_SYMBOL
+    assert vocab[strings_utils.SpecialSymbol.PADDING.value] == strings_utils.PADDING_SYMBOL
+    assert vocab[strings_utils.SpecialSymbol.UNKNOWN.value] == strings_utils.UNKNOWN_SYMBOL
 
 
 def test_create_vocabulary_word():
@@ -87,7 +88,7 @@ def test_create_vocabulary_word():
     column = data[0]
     preprocessing_parameters = TextPreprocessingConfig().to_dict()
 
-    vocabulary_output = strings_utils.create_vocabulary(
+    vocabulary = strings_utils.create_vocabulary(
         column,
         tokenizer_type=preprocessing_parameters["tokenizer"],
         num_most_frequent=preprocessing_parameters["most_common"],
@@ -97,12 +98,13 @@ def test_create_vocabulary_word():
         padding_symbol=preprocessing_parameters["padding_symbol"],
         pretrained_model_name_or_path=preprocessing_parameters["pretrained_model_name_or_path"],
     )
+    vocab = vocabulary.vocab
 
-    assert len(vocabulary_output[0]) == 19
-    assert vocabulary_output[0][strings_utils.SpecialSymbol.UNKNOWN.value] == strings_utils.UNKNOWN_SYMBOL
-    assert vocabulary_output[0][strings_utils.SpecialSymbol.STOP.value] == strings_utils.STOP_SYMBOL
-    assert vocabulary_output[0][strings_utils.SpecialSymbol.PADDING.value] == strings_utils.PADDING_SYMBOL
-    assert vocabulary_output[0][strings_utils.SpecialSymbol.UNKNOWN.value] == strings_utils.UNKNOWN_SYMBOL
+    assert len(vocab) == 19
+    assert vocab[strings_utils.SpecialSymbol.UNKNOWN.value] == strings_utils.UNKNOWN_SYMBOL
+    assert vocab[strings_utils.SpecialSymbol.STOP.value] == strings_utils.STOP_SYMBOL
+    assert vocab[strings_utils.SpecialSymbol.PADDING.value] == strings_utils.PADDING_SYMBOL
+    assert vocab[strings_utils.SpecialSymbol.UNKNOWN.value] == strings_utils.UNKNOWN_SYMBOL
 
 
 def test_create_vocabulary_no_special_symbols():
@@ -110,7 +112,7 @@ def test_create_vocabulary_no_special_symbols():
     column = data[0]
     preprocessing_parameters = TextPreprocessingConfig().to_dict()
 
-    vocabulary_output = strings_utils.create_vocabulary(
+    vocabulary = strings_utils.create_vocabulary(
         column,
         tokenizer_type=preprocessing_parameters["tokenizer"],
         num_most_frequent=preprocessing_parameters["most_common"],
@@ -121,9 +123,10 @@ def test_create_vocabulary_no_special_symbols():
         pretrained_model_name_or_path=preprocessing_parameters["pretrained_model_name_or_path"],
         add_special_symbols=False,
     )
+    vocab = vocabulary.vocab
 
-    assert len(vocabulary_output[0]) == 16
-    assert vocabulary_output[0][strings_utils.SpecialSymbol.UNKNOWN.value] == strings_utils.UNKNOWN_SYMBOL
+    assert len(vocab) == 16
+    assert vocab[strings_utils.SpecialSymbol.UNKNOWN.value] == strings_utils.UNKNOWN_SYMBOL
 
 
 def test_create_vocabulary_from_hf():
@@ -131,7 +134,7 @@ def test_create_vocabulary_from_hf():
     column = data[0]
     preprocessing_parameters = TextPreprocessingConfig().to_dict()
 
-    vocabulary_output = strings_utils.create_vocabulary(
+    vocabulary = strings_utils.create_vocabulary(
         column,
         tokenizer_type="hf_tokenizer",
         num_most_frequent=preprocessing_parameters["most_common"],
@@ -140,8 +143,9 @@ def test_create_vocabulary_from_hf():
         padding_symbol=preprocessing_parameters["padding_symbol"],
         pretrained_model_name_or_path="albert-base-v2",
     )
+    vocab = vocabulary.vocab
 
-    assert len(vocabulary_output[0]) == 30000
+    assert len(vocab) == 30000
 
 
 def test_create_vocabulary_single_token():
