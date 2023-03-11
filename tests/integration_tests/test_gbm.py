@@ -8,7 +8,7 @@ from ludwig.api import LudwigModel
 from ludwig.constants import COLUMN, INPUT_FEATURES, MODEL_TYPE, NAME, OUTPUT_FEATURES, TRAINER
 from ludwig.error import ConfigValidationError
 from tests.integration_tests import synthetic_test_data
-from tests.integration_tests.utils import binary_feature
+from tests.integration_tests.utils import binary_feature, text_feature
 from tests.integration_tests.utils import category_feature as _category_feature
 from tests.integration_tests.utils import generate_data, number_feature
 
@@ -380,6 +380,32 @@ def test_gbm_category_one_hot_encoding(tmpdir, backend, ray_cluster_4cpu):
     input_features = [
         binary_feature(),
         category_feature(encoder={"type": "onehot"}),
+        number_feature(),
+    ]
+    output_feature = binary_feature()
+    output_features = [output_feature]
+
+    preds, _ = _train_and_predict_gbm(input_features, output_features, tmpdir, backend)
+
+    prob_col = preds[output_feature["name"] + "_probabilities"]
+    if backend["type"] == "ray":
+        prob_col = prob_col.compute()
+    assert len(prob_col.iloc[0]) == 2
+    assert prob_col.apply(sum).mean() == pytest.approx(1.0)
+
+
+@pytest.mark.parametrize(
+    "backend",
+    [
+        pytest.param(LOCAL_BACKEND, id="local"),
+        pytest.param(RAY_BACKEND, id="ray", marks=pytest.mark.distributed),
+    ],
+)
+def test_gbm_text_tfidf(tmpdir, backend, ray_cluster_4cpu):
+    """Test that the GBM model can train and predict with non-number inputs."""
+    input_features = [
+        binary_feature(),
+        text_feature(encoder={"type": "tf_idf"}),
         number_feature(),
     ]
     output_feature = binary_feature()
