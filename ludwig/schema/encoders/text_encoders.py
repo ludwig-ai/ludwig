@@ -3025,7 +3025,7 @@ class TfIdfEncoderConfig(SequenceEncoderConfig):
 
     max_sequence_length: int = schema_utils.Integer(default=None, allow_none=True, parameter_metadata=INTERNAL_ONLY)
 
-    str2freq: Dict[str, int] = schema_utils.Dict(parameter_metadata=INTERNAL_ONLY)
+    str2idf: Dict[str, int] = schema_utils.Dict(parameter_metadata=INTERNAL_ONLY)
 
     vocab: list = schema_utils.List(default=None, parameter_metadata=INTERNAL_ONLY)
 
@@ -3034,6 +3034,7 @@ class TfIdfEncoderConfig(SequenceEncoderConfig):
     def set_fixed_preprocessing_params(self, model_type: str, preprocessing: "TextPreprocessingConfig"):
         if model_type == MODEL_GBM:
             preprocessing.cache_encoder_embeddings = True
+        preprocessing.compute_idf = True
 
     def can_cache_embeddings(self) -> bool:
         return True

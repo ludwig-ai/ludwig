@@ -75,6 +75,7 @@ class TextFeatureMixin(BaseFeatureMixin):
             padding_symbol=preprocessing_parameters["padding_symbol"],
             pretrained_model_name_or_path=preprocessing_parameters["pretrained_model_name_or_path"],
             ngram_size=preprocessing_parameters["ngram_size"],
+            compute_idf=preprocessing_parameters["compute_idf"],
             processor=backend.df_engine,
         )
 
@@ -99,6 +100,7 @@ class TextFeatureMixin(BaseFeatureMixin):
             "idx2str": vocabulary.vocab,
             "str2idx": vocabulary.str2idx,
             "str2freq": vocabulary.str2freq,
+            "str2idf": vocabulary.str2idf,
             "vocab_size": len(vocabulary.vocab),
             "max_sequence_length": max_sequence_length,
             "max_sequence_length_99ptile": max_sequence_length_99ptile,
@@ -205,6 +207,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         feature_config.encoder.pad_idx = feature_metadata["pad_idx"]
         feature_config.encoder.num_tokens = len(feature_metadata["idx2str"])
         feature_config.encoder.str2freq = feature_metadata["str2freq"]
+        feature_config.encoder.str2idf = feature_metadata["str2idf"]
         feature_config.encoder.skip = feature_metadata[PREPROCESSING].get("cache_encoder_embeddings", False)
 
     @staticmethod

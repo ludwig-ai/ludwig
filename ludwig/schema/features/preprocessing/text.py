@@ -4,6 +4,7 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor
 from ludwig.schema.metadata import FEATURE_METADATA, PREPROCESSING_METADATA
+from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils import strings_utils
 from ludwig.utils.tokenizers import tokenizer_registry
@@ -124,6 +125,11 @@ class TextPreprocessingConfig(BasePreprocessingConfig):
             "speeding up training time considerably. Only supported when `encoder.trainable=false`."
         ),
         parameter_metadata=PREPROCESSING_METADATA["cache_encoder_embeddings"],
+    )
+
+    compute_idf: bool = schema_utils.Boolean(
+        default=False,
+        parameter_metadata=INTERNAL_ONLY,
     )
 
 

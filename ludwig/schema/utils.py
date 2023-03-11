@@ -420,7 +420,7 @@ def IntegerOptions(
 
 
 @DeveloperAPI
-def Boolean(default: bool, description: str, parameter_metadata: ParameterMetadata = None):
+def Boolean(default: bool, description: str = "", parameter_metadata: ParameterMetadata = None):
     if default is not None:
         try:
             assert isinstance(default, bool)

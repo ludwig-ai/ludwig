@@ -2123,7 +2123,7 @@ class TfIdfEncoder(Encoder):
         self,
         max_sequence_length: int,
         encoder_config=None,
-        str2freq=None,
+        str2idf=None,
         vocab=None,
         vocab_size: int = None,
         **kwargs,
@@ -2135,25 +2135,23 @@ class TfIdfEncoder(Encoder):
 
         logger.debug(f" {self.name}")
 
-        # Convert mapping of token -> frequence to a dense array
-        freq = np.zeros(vocab_size)
+        # Convert mapping of token -> frequency to a dense array
+        idf = np.zeros(vocab_size)
         for i, s in enumerate(vocab):
-            freq[i] = str2freq[s]
-
-        # load the word embeddings into the static embedding
-        self.embedding = nn.Embedding(vocab_size, 1)
-        self.embedding.weight.data.copy_(torch.stack([torch.Tensor([f]) for f in freq]))
-        self.embedding.weight.requires_grad = False
+            idf[i] = str2idf[s]
+        self.idf = torch.from_numpy(idf).float().unsqueeze(0)
 
     def forward(self, t: torch.Tensor, mask=None):
-        print(t, t.shape)
+        # Compute the term frequency within each row
         tf = torch.stack([t_i.bincount(minlength=self.vocab_size) for t_i in torch.unbind(t.long())])
-        idf = self.embedding(t.long()).squeeze(-1)
-        print(tf)
-        print(idf)
-        hidden = tf / idf
-        print(hidden)
-        return {"encoder_output": hidden}
+
+        # Normalize the term frequency by the number of tokens in each row
+        tf = tf / tf.sum(dim=1).unsqueeze(-1)
+
+        # Multiply the term frequency by the inverse document frequency
+        tfidf = tf * self.idf
+
+        return {"encoder_output": tfidf}
 
     @staticmethod
     def get_schema_cls():
