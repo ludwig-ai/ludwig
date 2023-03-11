@@ -11,6 +11,7 @@ import yaml
 
 from ludwig.api_annotations import DeveloperAPI, PublicAPI
 from ludwig.backend.base import Backend
+from ludwig.constants import AUDIO, BINARY, CATEGORY, IMAGE, NUMBER, TEXT, TYPE
 from ludwig.data.cache.types import CacheableDataframe
 from ludwig.datasets import configs
 from ludwig.datasets.dataset_config import DatasetConfig
@@ -135,12 +136,15 @@ def list_datasets() -> List[str]:
 
 
 @PublicAPI
-def get_datasets_output_features(dataset: str = None, include_competitions: bool = True) -> dict:
+def get_datasets_output_features(
+    dataset: str = None, include_competitions: bool = True, include_data_modalities: bool = False
+) -> dict:
     """Returns a dictionary with the output features for each dataset. Optionally, you can pass a dataset name
     which will then cause the function to return a dictionary with the output features for that dataset.
 
     :param dataset: (str) name of the dataset
     :param include_competitions: (bool) whether to include the output features from kaggle competition datasets
+    :param include_data_modalities: (bool) whether to include the data modalities associated with the prediction task
     :return: (dict) dictionary with the output features for each dataset or a dictionary with the output features for
                     the specified dataset
     """
@@ -153,6 +157,21 @@ def get_datasets_output_features(dataset: str = None, include_competitions: bool
             continue
 
         ordered_configs[name] = {"name": config.name, "output_features": config.output_features}
+
+        if include_data_modalities:
+            column_types = {column[TYPE] for column in config.columns}
+
+            data_modalities = set()
+            if NUMBER in column_types or CATEGORY in column_types or BINARY in column_types:
+                data_modalities.add("Tabular")
+            if TEXT in column_types:
+                data_modalities.add("Text")
+            if IMAGE in column_types:
+                data_modalities.add("Image")
+            if AUDIO in column_types:
+                data_modalities.add("Audio")
+
+            ordered_configs[name]["data_modalities"] = data_modalities
 
     if dataset:
         return ordered_configs[dataset]

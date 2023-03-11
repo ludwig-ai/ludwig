@@ -22,7 +22,7 @@ dataclasses-json
 jsonschema>=4.5.0,<4.7
 marshmallow
 marshmallow-jsonschema
-marshmallow-dataclass==8.5.5
+marshmallow-dataclass==8.5.4
 tensorboard
 torchmetrics>=0.11
 torchinfo

@@ -4,36 +4,59 @@ download_urls: http://archive.ics.uci.edu/ml/machine-learning-databases/mushroom
 sha256:
   agaricus-lepiota.data: e65d082030501a3ebcbcd7c9f7c71aa9d28fdfff463bf4cf4716a3fe13ac360e
 train_filenames: agaricus-lepiota.data
-columns:
-  - class
-  - cap-shape
-  - cap-surface
-  - cap-color
-  - bruises?
-  - odor
-  - gill-attachment
-  - gill-spacing
-  - gill-size
-  - gill-color
-  - stalk-shape
-  - stalk-root
-  - stalk-surface-above-ring
-  - stalk-surface-below-ring
-  - stalk-color-above-ring
-  - stalk-color-below-ring
-  - veil-type
-  - veil-color
-  - ring-number
-  - ring-type
-  - spore-print-color
-  - population
-  - habitat
 description: |
   This data set includes descriptions of hypothetical samples corresponding
   to 23 species of gilled mushrooms in the Agaricus and Lepiota Family (pp. 500-525).
   Each species is identified as definitely edible, definitely poisonous,
   or of unknown edibility and not recommended. This latter class was combined with
   the poisonous one.
+columns:
+  - name: class
+    type: category
+  - name: cap-shape
+    type: category
+  - name: cap-surface
+    type: category
+  - name: cap-color
+    type: category
+  - name: bruises?
+    type: category
+  - name: odor
+    type: category
+  - name: gill-attachment
+    type: category
+  - name: gill-spacing
+    type: category
+  - name: gill-size
+    type: category
+  - name: gill-color
+    type: category
+  - name: stalk-shape
+    type: category
+  - name: stalk-root
+    type: category
+  - name: stalk-surface-above-ring
+    type: category
+  - name: stalk-surface-below-ring
+    type: category
+  - name: stalk-color-above-ring
+    type: category
+  - name: stalk-color-below-ring
+    type: category
+  - name: veil-type
+    type: category
+  - name: veil-color
+    type: category
+  - name: ring-number
+    type: category
+  - name: ring-type
+    type: category
+  - name: spore-print-color
+    type: category
+  - name: population
+    type: category
+  - name: habitat
+    type: category
 output_features:
   - name: class
     type: category

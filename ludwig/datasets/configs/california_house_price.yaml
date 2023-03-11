@@ -14,6 +14,87 @@ description: |
   of houses sold in California in 2020, with houses in the test dataset sold after
   the ones in the training dataset.
   https://www.kaggle.com/c/california-house-prices
+columns:
+  - name: Address
+    type: category
+  - name: Sold Price
+    type: number
+  - name: Summary
+    type: text
+  - name: Type
+    type: category
+  - name: Year built
+    type: number
+  - name: Heating
+    type: category
+  - name: Cooling
+    type: category
+  - name: Parking
+    type: category
+  - name: Lot
+    type: number
+  - name: Bedrooms
+    type: number
+  - name: Bathrooms
+    type: number
+  - name: Full bathrooms
+    type: number
+  - name: Total interior livable area
+    type: number
+  - name: Total spaces
+    type: number
+  - name: Garage spaces
+    type: number
+  - name: Region
+    type: category
+  - name: Elementary School
+    type: category
+  - name: Elementary School Score
+    type: number
+  - name: Elementary School Distance
+    type: number
+  - name: Middle School
+    type: category
+  - name: Middle School Score
+    type: number
+  - name: Middle School Distance
+    type: number
+  - name: High School
+    type: category
+  - name: High School Score
+    type: number
+  - name: High School Distance
+    type: number
+  - name: Flooring
+    type: set
+  - name: Heating features
+    type: set
+  - name: Cooling features
+    type: set
+  - name: Appliances included
+    type: set
+  - name: Laundry features
+    type: set
+  - name: Parking features
+    type: set
+  - name: Tax assessed value
+    type: number
+  - name: Annual tax amount
+    type: number
+  - name: Listed On
+    type: date
+  - name: Listed Price
+    type: number
+  - name: Last Sold On
+    type: date
+  - name: Last Sold Price
+    type: number
+  - name: City
+    type: category
+  - name: Zip
+    type: category
+  - name: State
+    type: category
 output_features:
   - name: Sold Price
     type: number
