@@ -1425,7 +1425,9 @@ class LudwigModel:
 
             return PreprocessedDataset(proc_training_set, proc_validation_set, proc_test_set, training_set_metadata)
         except Exception as e:
-            raise RuntimeError(f"Caught exception during model preprocessing: {str(e)}") from e
+            raise RuntimeError(
+                f"Caught exception during model preprocessing: {str(e)}.\nFull traceback: {traceback.format_exc()}"
+            ) from e
         finally:
             for callback in self.callbacks:
                 callback.on_preprocess_end(proc_training_set, proc_validation_set, proc_test_set, training_set_metadata)

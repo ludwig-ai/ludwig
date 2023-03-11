@@ -24,10 +24,12 @@ from torchmetrics import MeanMetric as _MeanMetric
 from torchmetrics import MeanSquaredError, Metric
 from torchmetrics.classification import (
     BinaryAccuracy,
+    BinaryAUROC,
     BinaryPrecision,
     BinaryRecall,
     BinarySpecificity,
     MulticlassAccuracy,
+    MulticlassAUROC,
 )
 from torchmetrics.functional.regression.r2 import _r2_score_compute, _r2_score_update
 from torchmetrics.metric import jit_distributed_available
@@ -142,7 +144,8 @@ class RecallMetric(BinaryRecall, LudwigMetric):
 
 
 @register_metric(ROC_AUC, [BINARY], MAXIMIZE, PROBABILITIES)
-class BinaryAUROCMetric(AUROC, LudwigMetric):
+class BinaryAUROCMetric(BinaryAUROC, LudwigMetric):
+    # class BinaryAUROCMetric(AUROC, LudwigMetric):
     """Area under the receiver operating curve."""
 
     def __init__(self, **kwargs):
@@ -153,7 +156,7 @@ class BinaryAUROCMetric(AUROC, LudwigMetric):
 
 
 @register_metric(ROC_AUC, [CATEGORY], MAXIMIZE, PROBABILITIES)
-class CategoryAUROCMetric(AUROC, LudwigMetric):
+class CategoryAUROCMetric(MulticlassAUROC, LudwigMetric):
     """Area under the receiver operating curve."""
 
     def __init__(self, num_classes: int, **kwargs):
