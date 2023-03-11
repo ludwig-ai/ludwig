@@ -43,11 +43,11 @@ from ludwig.schema.features.text_feature import TextInputFeatureConfig, TextOutp
 from ludwig.types import FeatureMetadataDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.strings_utils import (
-    Vocabulary,
     build_sequence_matrix,
     create_vocabulary,
     SpecialSymbol,
     UNKNOWN_SYMBOL,
+    Vocabulary,
 )
 from ludwig.utils.types import DataFrame
 
