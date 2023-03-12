@@ -36,6 +36,7 @@ from ludwig.predict import predict_cli
 from ludwig.utils.data_utils import read_csv
 from ludwig.utils.defaults import default_random_seed
 from tests.integration_tests.utils import (
+    TEXT_ENCODERS,
     audio_feature,
     bag_feature,
     binary_feature,
@@ -63,8 +64,8 @@ logger.setLevel(logging.INFO)
 logging.getLogger("ludwig").setLevel(logging.INFO)
 
 
-@pytest.mark.parametrize("encoder", ENCODERS)
-def test_experiment_text_feature_non_HF(encoder, csv_filename):
+@pytest.mark.parametrize("encoder", TEXT_ENCODERS)
+def test_experiment_text_feature_non_pretrained(encoder, csv_filename):
     input_features = [
         text_feature(encoder={"vocab_size": 30, "min_len": 1, "type": encoder}, preprocessing={"tokenizer": "space"})
     ]

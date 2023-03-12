@@ -46,7 +46,7 @@ class TextInputFeatureConfig(TextInputFeatureConfigMixin, BaseInputFeatureConfig
 @DeveloperAPI
 @ecd_input_config_registry.register(TEXT)
 @ludwig_dataclass
-class ECDCategoryInputFeatureConfig(TextInputFeatureConfig):
+class ECDTextInputFeatureConfig(TextInputFeatureConfig):
     encoder: BaseEncoderConfig = EncoderDataclassField(
         MODEL_ECD,
         feature_type=TEXT,
@@ -57,7 +57,7 @@ class ECDCategoryInputFeatureConfig(TextInputFeatureConfig):
 @DeveloperAPI
 @gbm_input_config_registry.register(TEXT)
 @ludwig_dataclass
-class GBMCategoryInputFeatureConfig(TextInputFeatureConfig):
+class GBMTextInputFeatureConfig(TextInputFeatureConfig):
     encoder: BaseEncoderConfig = EncoderDataclassField(
         MODEL_GBM,
         feature_type=TEXT,
