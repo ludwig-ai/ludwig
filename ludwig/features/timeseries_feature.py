@@ -127,7 +127,9 @@ class TimeseriesFeatureMixin(BaseFeatureMixin):
     def build_matrix(timeseries, tokenizer_name, length_limit, padding_value, padding, backend):
         tokenizer = get_tokenizer_from_registry(tokenizer_name)()
 
-        ts_vectors = backend.df_engine.map_objects(timeseries, lambda ts: np.array(tokenizer(ts)).astype(np.float32))
+        ts_vectors = backend.df_engine.map_objects(
+            timeseries, lambda ts: np.nan_to_num(np.array(tokenizer(ts)).astype(np.float32), nan=padding_value)
+        )
 
         max_length = backend.df_engine.compute(ts_vectors.map(len).max())
         if max_length < length_limit:
