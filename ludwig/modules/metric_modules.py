@@ -19,9 +19,9 @@ from typing import Any, Callable, Generator, Optional, Type
 
 import torch
 from torch import Tensor, tensor
-from torchmetrics import AUROC, CharErrorRate, MeanAbsoluteError
+from torchmetrics import AUROC, CharErrorRate, MeanAbsoluteError, MeanAbsolutePercentageError
 from torchmetrics import MeanMetric as _MeanMetric
-from torchmetrics import MeanAbsolutePercentageError, MeanSquaredError, Metric
+from torchmetrics import MeanSquaredError, Metric
 from torchmetrics.classification import (
     BinaryAccuracy,
     BinaryPrecision,
