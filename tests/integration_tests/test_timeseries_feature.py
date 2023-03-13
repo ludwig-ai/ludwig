@@ -1,10 +1,14 @@
+import numpy as np
+import pandas as pd
 import pytest
 import torch
+from ludwig.api import LudwigModel
+from ludwig.constants import COLUMN, INPUT_FEATURES, OUTPUT_FEATURES
 
 from ludwig.features.timeseries_feature import TimeseriesInputFeature
 from ludwig.schema.features.timeseries_feature import TimeseriesInputFeatureConfig
 from ludwig.schema.utils import load_config_with_kwargs
-from tests.integration_tests.utils import timeseries_feature
+from tests.integration_tests.utils import number_feature, timeseries_feature
 
 BATCH_SIZE = 2
 SEQ_SIZE = 10
@@ -44,3 +48,40 @@ def test_timeseries_feature(enc_encoder):
         assert encoder_output["encoder_output"].shape == (BATCH_SIZE, SEQ_SIZE, 1)
     else:
         assert encoder_output["encoder_output"].shape == (BATCH_SIZE, DEFAULT_OUTPUT_SIZE)
+
+
+def test_timeseries_preprocessing_with_nan():
+    config = {
+        "input_features": [timeseries_feature(preprocessing={"padding_value": 42})],
+        "output_features": [number_feature()],
+    }
+
+    # generate synthetic data
+    data = {
+        config[INPUT_FEATURES][0][COLUMN]: [
+            "1.53 2.3 NaN 6.4 3 ",
+            "1.53 2.3 2 ",
+            "1.53 NaN 3 2 ",
+        ],
+        config[OUTPUT_FEATURES][0][COLUMN]: [1.0, 2.0, 3.0],
+    }
+    df = pd.DataFrame(data)
+
+    model = LudwigModel(config)
+    ds = model.preprocess(df)
+    out_df = ds.training_set.to_df()
+
+    assert len(out_df.columns) == len(df.columns)
+
+    expected_df = pd.DataFrame(
+        [
+            [np.array([1.53, 2.3, 42.0, 6.4, 3.0]), 1.0],
+            [np.array([1.53, 2.3, 2.0, 42.0, 42.0]), 2.0],
+            [np.array([1.53, 42.0, 3.0, 2.0, 42.0]), 3.0],
+        ],
+        columns=out_df.columns.to_list(),
+    )
+
+    for row1, row2 in zip(out_df.values, expected_df.values):
+        assert np.allclose(row1[0], row2[0])
+        assert row1[1] == row2[1]

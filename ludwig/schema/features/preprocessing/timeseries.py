@@ -30,7 +30,7 @@ class TimeseriesPreprocessingConfig(BasePreprocessingConfig):
     padding_value: float = schema_utils.NonNegativeFloat(
         default=0.0,
         allow_none=False,
-        description="Float value that is used for padding.",
+        description="Float value that is used for padding and replacing missing values within a row.",
         parameter_metadata=FEATURE_METADATA[TIMESERIES][PREPROCESSING]["padding_value"],
     )
 
@@ -46,14 +46,20 @@ class TimeseriesPreprocessingConfig(BasePreprocessingConfig):
         MISSING_VALUE_STRATEGY_OPTIONS,
         default=FILL_WITH_CONST,
         allow_none=False,
-        description="What strategy to follow when there's a missing value in a text column",
+        description=(
+            "What strategy to follow when there's a missing value in a column. Currently applies only to a row missing "
+            "in its entirety, not invididual elements within the row. For now, `NaN` values within a row are filled "
+            "using the `padding_value`."
+        ),
         parameter_metadata=FEATURE_METADATA[TIMESERIES][PREPROCESSING]["missing_value_strategy"],
     )
 
     fill_value: str = schema_utils.String(
         default="",
         allow_none=False,
-        description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
+        description=(
+            "The value to replace missing values with in case the `missing_value_strategy` is `fill_with_const`"
+        ),
         parameter_metadata=FEATURE_METADATA[TIMESERIES][PREPROCESSING]["fill_value"],
     )
 
