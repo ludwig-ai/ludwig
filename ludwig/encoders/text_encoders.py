@@ -31,6 +31,7 @@ from ludwig.schema.encoders.text_encoders import (
     BERTConfig,
     CamemBERTConfig,
     CTRLConfig,
+    DebertaV2Config,
     DistilBERTConfig,
     ELECTRAConfig,
     FlauBERTConfig,
@@ -915,6 +916,96 @@ class GPT2Encoder(HFTextEncoder):
     def output_shape(self) -> torch.Size:
         if self.reduce_output is None:
             return torch.Size([self.max_sequence_length, self.transformer.module.config.hidden_size])
+        return torch.Size([self.transformer.module.config.hidden_size])
+
+    @property
+    def input_dtype(self):
+        return torch.int32
+
+
+@DeveloperAPI
+@register_encoder("deberta", TEXT)
+class DeBERTaEncoder(HFTextEncoder):
+    DEFAULT_MODEL_NAME = "sileod/deberta-v3-base-tasksource-nli"
+
+    def __init__(
+        self,
+        max_sequence_length,
+        use_pretrained: bool = True,
+        pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
+        saved_weights_in_checkpoint: bool = False,
+        reduce_output: str = "cls_pooled",
+        trainable: bool = False,
+        vocab_size: int = None,
+        pad_token_id: int = 1,
+        bos_token_id: int = 0,
+        eos_token_id: int = 2,
+        max_position_embeddings: int = 514,
+        type_vocab_size: int = 1,
+        pretrained_kwargs: Dict = None,
+        encoder_config=None,
+        **kwargs,
+    ):
+        super().__init__()
+
+        from transformers.models.deberta_v2.modeling_deberta_v2 import DebertaV2Config, DebertaV2Model
+
+        hf_config_params = dict(
+            pad_token_id=pad_token_id,
+            bos_token_id=bos_token_id,
+            eos_token_id=eos_token_id,
+            max_position_embeddings=max_position_embeddings,
+            type_vocab_size=type_vocab_size,
+        )
+
+        if use_pretrained and not saved_weights_in_checkpoint:
+            pretrained_kwargs = pretrained_kwargs or {}
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+                DebertaV2Model, pretrained_model_name_or_path, **pretrained_kwargs
+            )
+        else:
+            transformer = self._init_transformer_from_scratch(
+                DebertaV2Model, DebertaV2Config, hf_config_params, vocab_size
+            )
+
+        if encoder_config is not None:
+            self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
+        else:
+            self.config = None
+
+        self.transformer = FreezeModule(transformer, frozen=not trainable)
+        self.max_sequence_length = max_sequence_length
+        self.reduce_output = reduce_output
+        if not self.reduce_output == "cls_pooled":
+            self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
+        if mask is not None:
+            mask = mask.to(torch.int32)
+        transformer_outputs = self.transformer.module(
+            input_ids=inputs,
+            attention_mask=mask,
+            token_type_ids=torch.zeros_like(inputs),
+        )
+        if self.reduce_output == "cls_pooled":
+            hidden = transformer_outputs[1]
+        else:
+            hidden = transformer_outputs[0][:, 1:-1, :]  # bos + [sent] + sep
+            hidden = self.reduce_sequence(hidden, self.reduce_output)
+        return {"encoder_output": hidden}
+
+    @staticmethod
+    def get_schema_cls():
+        return DebertaV2Config
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.reduce_output is None:
+            return torch.Size([self.max_sequence_length - 2, self.transformer.module.config.hidden_size])
         return torch.Size([self.transformer.module.config.hidden_size])
 
     @property
