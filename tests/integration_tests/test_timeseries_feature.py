@@ -2,9 +2,9 @@ import numpy as np
 import pandas as pd
 import pytest
 import torch
+
 from ludwig.api import LudwigModel
 from ludwig.constants import COLUMN, INPUT_FEATURES, OUTPUT_FEATURES
-
 from ludwig.features.timeseries_feature import TimeseriesInputFeature
 from ludwig.schema.features.timeseries_feature import TimeseriesInputFeatureConfig
 from ludwig.schema.utils import load_config_with_kwargs
