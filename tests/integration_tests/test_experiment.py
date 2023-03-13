@@ -36,7 +36,6 @@ from ludwig.predict import predict_cli
 from ludwig.utils.data_utils import read_csv
 from ludwig.utils.defaults import default_random_seed
 from tests.integration_tests.utils import (
-    TEXT_ENCODERS,
     audio_feature,
     bag_feature,
     binary_feature,
@@ -54,6 +53,7 @@ from tests.integration_tests.utils import (
     run_experiment,
     sequence_feature,
     set_feature,
+    TEXT_ENCODERS,
     text_feature,
     timeseries_feature,
     vector_feature,
