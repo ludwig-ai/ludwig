@@ -8,6 +8,7 @@ from marshmallow import ValidationError
 from ludwig.modules import loss_modules
 from ludwig.schema.features.loss.loss import (
     BWCEWLossConfig,
+    HuberLossConfig,
     MAELossConfig,
     MAPELossConfig,
     MSELossConfig,
@@ -131,7 +132,6 @@ def test_huber_loss(
     preds: torch.Tensor, target: torch.Tensor, delta: float, output: Union[torch.Tensor, Type[Exception]]
 ):
     with pytest.raises(output) if not isinstance(output, torch.Tensor) else contextlib.nullcontext():
-        config = loss_modules.HuberLoss.get_schema_cls().from_dict({"delta": delta})
-        loss = loss_modules.HuberLoss(**config.to_dict())
+        loss = loss_modules.HuberLoss(HuberLossConfig.from_dict({"delta": delta}))
         value = loss(preds, target)
         assert value == output
