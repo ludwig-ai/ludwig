@@ -25,7 +25,7 @@ def _load_pretrained_hf_model_no_weights(
     from transformers import AutoConfig, AutoModel
 
     config = AutoConfig.from_pretrained(pretrained_model_name_or_path)
-    return AutoModel.from_config(config)
+    return AutoModel.from_config(config), False
 
 
 @pytest.fixture

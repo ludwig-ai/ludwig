@@ -52,7 +52,7 @@ def _load_pretrained_hf_model_from_dir(
     model_class: Type,
     pretrained_model_name_or_path: Optional[Union[str, PathLike]],
     **pretrained_kwargs,
-):
+) -> PreTrainedModel:
     """Downloads a model to a local temporary directory, and Loads a pretrained HF model from a local directory."""
     with tempfile.TemporaryDirectory() as tmpdir:
         download(pretrained_model_name_or_path, tmpdir)
