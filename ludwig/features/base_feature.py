@@ -13,7 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-import traceback
 from abc import ABC, abstractmethod, abstractstaticmethod
 from typing import Any, Dict, Optional
 
@@ -352,11 +351,8 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         for metric_name, metric_fn in self._metric_functions.items():
             try:
                 metric_vals[metric_name] = get_scalar_from_ludwig_metric(metric_fn)
-            except Exception as e:
-                logger.error(
-                    f"Caught exception computing metric: {metric_name}. Exception: {e}.\n"
-                    f"Full traceback: {traceback.format_exc()}"
-                )
+            except Exception:
+                logger.exception(f"Caught exception computing metric: {metric_name}.")
         return metric_vals
 
     def reset_metrics(self):
