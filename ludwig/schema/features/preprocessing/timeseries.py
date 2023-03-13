@@ -58,7 +58,7 @@ class TimeseriesPreprocessingConfig(BasePreprocessingConfig):
         default="",
         allow_none=False,
         description=(
-            "The value to replace missing values with in case the `missing_value_strategy` is `fill_with_const`"
+            "The value to replace missing values with in case the `missing_value_strategy` is `fill_with_const`."
         ),
         parameter_metadata=FEATURE_METADATA[TIMESERIES][PREPROCESSING]["fill_value"],
     )
@@ -66,7 +66,9 @@ class TimeseriesPreprocessingConfig(BasePreprocessingConfig):
     computed_fill_value: str = schema_utils.String(
         default="",
         allow_none=False,
-        description="The internally computed fill value to replace missing values with in case the "
-        "missing_value_strategy is fill_with_mode or fill_with_mean",
+        description=(
+            "The internally computed fill value to replace missing values with in case the "
+            "`missing_value_strategy` is `fill_with_mode` or `fill_with_mean`."
+        ),
         parameter_metadata=FEATURE_METADATA[TIMESERIES][PREPROCESSING]["computed_fill_value"],
     )
