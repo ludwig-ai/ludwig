@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, Callable, Dict, List, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import MODEL_ECD, MODEL_GBM, TEXT
+from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.sequence_encoders import SequenceEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
@@ -2962,6 +2963,12 @@ class LongformerConfig(HFEncoderConfig):
 class AutoTransformerConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an AutoTransformer encoder."""
 
+    def __post_init__(self):
+        if self.pretrained_model_name_or_path is None:
+            raise ConfigValidationError(
+                "`pretained_model_name_or_path` must be specified for encoder: `auto_transformer`."
+            )
+
     @staticmethod
     def module_name():
         return "AutoTransformer"
@@ -2972,7 +2979,8 @@ class AutoTransformerConfig(HFEncoderConfig):
     )
 
     pretrained_model_name_or_path: str = schema_utils.String(
-        default="bert-base-uncased",
+        default=None,
+        allow_none=True,
         description="Name or path of the pretrained model.",
         parameter_metadata=ENCODER_METADATA["AutoTransformer"]["pretrained_model_name_or_path"],
     )
