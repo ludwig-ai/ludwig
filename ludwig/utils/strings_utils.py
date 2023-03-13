@@ -13,11 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from dataclasses import dataclass
 import logging
 import re
 import unicodedata
 from collections import Counter
+from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Optional, Set, Union
 

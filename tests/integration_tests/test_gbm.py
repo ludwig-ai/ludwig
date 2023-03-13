@@ -8,9 +8,9 @@ from ludwig.api import LudwigModel
 from ludwig.constants import COLUMN, INPUT_FEATURES, MODEL_TYPE, NAME, OUTPUT_FEATURES, TRAINER
 from ludwig.error import ConfigValidationError
 from tests.integration_tests import synthetic_test_data
-from tests.integration_tests.utils import binary_feature, text_feature
+from tests.integration_tests.utils import binary_feature
 from tests.integration_tests.utils import category_feature as _category_feature
-from tests.integration_tests.utils import generate_data, number_feature
+from tests.integration_tests.utils import generate_data, number_feature, text_feature
 
 BOOSTING_TYPES = ["gbdt", "goss", "dart"]
 TREE_LEARNERS = ["serial", "feature", "data", "voting"]
