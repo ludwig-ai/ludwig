@@ -9,6 +9,7 @@ from ludwig.modules import loss_modules
 from ludwig.schema.features.loss.loss import (
     BWCEWLossConfig,
     MAELossConfig,
+    MAPELossConfig,
     MSELossConfig,
     RMSELossConfig,
     RMSPELossConfig,
@@ -34,6 +35,14 @@ def test_mse_loss(preds: torch.Tensor, target: torch.Tensor, output: torch.Tenso
 @pytest.mark.parametrize("output", [torch.tensor(6).float()])
 def test_mae_loss(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor):
     loss = loss_modules.MAELoss(MAELossConfig())
+    assert loss(preds, target) == output
+
+
+@pytest.mark.parametrize("preds", [torch.arange(6).reshape(3, 2).float()])
+@pytest.mark.parametrize("target", [torch.arange(6, 12).reshape(3, 2).float()])
+@pytest.mark.parametrize("output", [torch.tensor(0.7365440726280212)])
+def test_mape_loss(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor):
+    loss = loss_modules.MAPELoss(MAPELossConfig())
     assert loss(preds, target) == output
 
 
