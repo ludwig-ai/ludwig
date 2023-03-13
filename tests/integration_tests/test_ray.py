@@ -440,9 +440,6 @@ def test_ray_set_and_vector_outputs(dataset_type, ray_cluster_2cpu):
     output_features = [
         vector_feature(),
         set_feature_config,
-        # TODO: feature type not yet supported
-        # text_feature(decoder={"vocab_size": 3}),  # Error having to do with a missing key (#2586)
-        # sequence_feature(decoder={"vocab_size": 3}),  # Error having to do with a missing key (#2586)
     ]
     # NOTE: This test runs without NaNs because having multiple output features with DROP_ROWS strategy leads to
     # flakiness in the test having to do with uneven allocation of samples between Ray workers.
