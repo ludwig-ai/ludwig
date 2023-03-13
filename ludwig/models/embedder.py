@@ -33,8 +33,8 @@ class Embedder(LudwigModule):
             # the only thing GBM vs ECD changes is the default encoder, but luckily at this point the encoder types
             # have been fully materialized. However, this could change in the future as ECD and GBM feature configs
             # diverge, so we should find a way to remove this. The best solution is to the change the input params from
-            # FeatureConfigDict types to BaseInputFeatureConfig types, which will require a refacto of preprocessing to
-            # us the schema, not the dict types.
+            # FeatureConfigDict types to BaseInputFeatureConfig types, which will require a refactor of preprocessing to
+            # use the schema, not the dict types.
             feature_obj = get_input_feature_cls(feature[TYPE]).from_dict(feature)
             feature_cls.update_config_with_metadata(feature_obj, metadata[feature[NAME]])
 
