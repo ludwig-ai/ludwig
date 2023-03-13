@@ -6,6 +6,11 @@ sha256:
 description: |
     Yosemite temperatures dataset.
     As found in https://github.com/ourownstory/neural_prophet
+columns:
+    - name: ds
+      type: date
+    - name: y
+      type: number
 output_features:
   - name: y
     type: number

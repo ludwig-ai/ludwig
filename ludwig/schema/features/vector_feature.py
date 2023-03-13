@@ -29,6 +29,8 @@ class VectorInputFeatureConfigMixin(BaseMarshmallowConfig):
     """VectorInputFeatureConfigMixin is a dataclass that configures the parameters used in both the vector input
     feature and the vector global defaults section of the Ludwig Config."""
 
+    type: str = schema_utils.ProtectedString(VECTOR)
+
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=VECTOR)
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
@@ -41,7 +43,7 @@ class VectorInputFeatureConfigMixin(BaseMarshmallowConfig):
 @DeveloperAPI
 @ecd_input_config_registry.register(VECTOR)
 @ludwig_dataclass
-class VectorInputFeatureConfig(BaseInputFeatureConfig, VectorInputFeatureConfigMixin):
+class VectorInputFeatureConfig(VectorInputFeatureConfigMixin, BaseInputFeatureConfig):
     """VectorInputFeatureConfig is a dataclass that configures the parameters used for a vector input feature."""
 
     pass
@@ -53,6 +55,8 @@ class VectorInputFeatureConfig(BaseInputFeatureConfig, VectorInputFeatureConfigM
 class VectorOutputFeatureConfigMixin(BaseMarshmallowConfig):
     """VectorOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the vector output
     feature and the vector global defaults section of the Ludwig Config."""
+
+    type: str = schema_utils.ProtectedString(VECTOR)
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
         feature_type=VECTOR,
@@ -68,7 +72,7 @@ class VectorOutputFeatureConfigMixin(BaseMarshmallowConfig):
 @DeveloperAPI
 @output_config_registry.register(VECTOR)
 @ludwig_dataclass
-class VectorOutputFeatureConfig(BaseOutputFeatureConfig, VectorOutputFeatureConfigMixin):
+class VectorOutputFeatureConfig(VectorOutputFeatureConfigMixin, BaseOutputFeatureConfig):
     """VectorOutputFeatureConfig is a dataclass that configures the parameters used for a vector output feature."""
 
     dependencies: list = schema_utils.List(

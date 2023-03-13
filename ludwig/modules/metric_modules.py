@@ -75,6 +75,12 @@ from ludwig.modules.loss_modules import (
     SoftmaxCrossEntropyLoss,
 )
 from ludwig.modules.metric_registry import get_metric_objective, get_metric_registry, register_metric
+from ludwig.schema.features.loss.loss import (
+    BWCEWLossConfig,
+    SequenceSoftmaxCrossEntropyLossConfig,
+    SigmoidCrossEntropyLossConfig,
+    SoftmaxCrossEntropyLossConfig,
+)
 from ludwig.utils.loss_utils import rmspe_loss
 from ludwig.utils.metric_utils import masked_correct_predictions
 from ludwig.utils.torch_utils import sequence_length_2D
@@ -277,20 +283,9 @@ class LossMetric(MeanMetric, ABC):
 class BWCEWLMetric(LossMetric):
     """Binary Weighted Cross Entropy Weighted Logits Score Metric."""
 
-    def __init__(
-        self,
-        positive_class_weight: Optional[Tensor] = None,
-        robust_lambda: int = 0,
-        confidence_penalty: int = 0,
-        **kwargs,
-    ):
+    def __init__(self, config: BWCEWLossConfig, **kwargs):
         super().__init__()
-
-        self.loss_function = BWCEWLoss(
-            positive_class_weight=positive_class_weight,
-            robust_lambda=robust_lambda,
-            confidence_penalty=confidence_penalty,
-        )
+        self.loss_function = BWCEWLoss(config)
 
     def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
         return self.loss_function(preds, target)
@@ -298,9 +293,9 @@ class BWCEWLMetric(LossMetric):
 
 @register_metric("softmax_cross_entropy", [CATEGORY], MINIMIZE, LOGITS)
 class SoftmaxCrossEntropyMetric(LossMetric):
-    def __init__(self, **kwargs):
+    def __init__(self, config: SoftmaxCrossEntropyLossConfig, **kwargs):
         super().__init__()
-        self.softmax_cross_entropy_function = SoftmaxCrossEntropyLoss(**kwargs)
+        self.softmax_cross_entropy_function = SoftmaxCrossEntropyLoss(config)
 
     def get_current_value(self, preds: Tensor, target: Tensor):
         return self.softmax_cross_entropy_function(preds, target)
@@ -308,9 +303,9 @@ class SoftmaxCrossEntropyMetric(LossMetric):
 
 @register_metric("sequence_softmax_cross_entropy", [SEQUENCE, TEXT], MINIMIZE, LOGITS)
 class SequenceSoftmaxCrossEntropyMetric(LossMetric):
-    def __init__(self, **kwargs):
+    def __init__(self, config: SequenceSoftmaxCrossEntropyLossConfig, **kwargs):
         super().__init__()
-        self.sequence_softmax_cross_entropy_function = SequenceSoftmaxCrossEntropyLoss(**kwargs)
+        self.sequence_softmax_cross_entropy_function = SequenceSoftmaxCrossEntropyLoss(config)
 
     def get_current_value(self, preds: Tensor, target: Tensor):
         return self.sequence_softmax_cross_entropy_function(preds, target)
@@ -318,9 +313,9 @@ class SequenceSoftmaxCrossEntropyMetric(LossMetric):
 
 @register_metric("sigmoid_cross_entropy", [SET], MINIMIZE, LOGITS)
 class SigmoidCrossEntropyMetric(LossMetric):
-    def __init__(self, **kwargs):
+    def __init__(self, config: SigmoidCrossEntropyLossConfig, **kwargs):
         super().__init__()
-        self.sigmoid_cross_entropy_function = SigmoidCrossEntropyLoss(**kwargs)
+        self.sigmoid_cross_entropy_function = SigmoidCrossEntropyLoss(config)
 
     def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
         return self.sigmoid_cross_entropy_function(preds, target)

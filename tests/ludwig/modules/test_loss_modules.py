@@ -6,6 +6,15 @@ import torch
 from marshmallow import ValidationError
 
 from ludwig.modules import loss_modules
+from ludwig.schema.features.loss.loss import (
+    BWCEWLossConfig,
+    MAELossConfig,
+    MSELossConfig,
+    RMSELossConfig,
+    RMSPELossConfig,
+    SigmoidCrossEntropyLossConfig,
+    SoftmaxCrossEntropyLossConfig,
+)
 
 
 def from_float(v: float) -> torch.Tensor:
@@ -16,7 +25,7 @@ def from_float(v: float) -> torch.Tensor:
 @pytest.mark.parametrize("target", [torch.arange(6, 12).reshape(3, 2).float()])
 @pytest.mark.parametrize("output", [torch.tensor(36).float()])
 def test_mse_loss(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor):
-    loss = loss_modules.MSELoss()
+    loss = loss_modules.MSELoss(MSELossConfig())
     assert loss(preds, target) == output
 
 
@@ -24,7 +33,7 @@ def test_mse_loss(preds: torch.Tensor, target: torch.Tensor, output: torch.Tenso
 @pytest.mark.parametrize("target", [torch.arange(6, 12).reshape(3, 2).float()])
 @pytest.mark.parametrize("output", [torch.tensor(6).float()])
 def test_mae_loss(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor):
-    loss = loss_modules.MAELoss()
+    loss = loss_modules.MAELoss(MAELossConfig())
     assert loss(preds, target) == output
 
 
@@ -32,7 +41,7 @@ def test_mae_loss(preds: torch.Tensor, target: torch.Tensor, output: torch.Tenso
 @pytest.mark.parametrize("target", [torch.arange(6, 12).reshape(3, 2).float()])
 @pytest.mark.parametrize("output", [torch.tensor(6).float()])
 def test_rmse_loss(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor):
-    loss = loss_modules.RMSELoss()
+    loss = loss_modules.RMSELoss(RMSELossConfig())
     assert loss(preds, target) == output
 
 
@@ -40,7 +49,7 @@ def test_rmse_loss(preds: torch.Tensor, target: torch.Tensor, output: torch.Tens
 @pytest.mark.parametrize("target", [torch.arange(6, 12).reshape(3, 2).float()])
 @pytest.mark.parametrize("output", [torch.tensor(0.7527).float()])
 def test_rmspe_loss(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor):
-    loss = loss_modules.RMSPELoss()
+    loss = loss_modules.RMSPELoss(RMSPELossConfig())
     assert torch.isclose(loss(preds, target), output, rtol=0.0001)
 
 
@@ -48,7 +57,7 @@ def test_rmspe_loss(preds: torch.Tensor, target: torch.Tensor, output: torch.Ten
 @pytest.mark.parametrize("target", [torch.tensor([[0.0, 0.2]]).float()])
 @pytest.mark.parametrize("output", [torch.tensor(707.1068).float()])
 def test_rmspe_loss_zero_targets(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor):
-    loss = loss_modules.RMSPELoss()
+    loss = loss_modules.RMSPELoss(RMSPELossConfig())
     assert torch.isclose(loss(preds, target), output, rtol=0.0001)
 
 
@@ -73,7 +82,11 @@ def test_bwcew_loss(
     output: torch.Tensor,
 ):
     loss = loss_modules.BWCEWLoss(
-        positive_class_weight=positive_class_weight, robust_lambda=robust_lambda, confidence_penalty=confidence_penalty
+        BWCEWLossConfig(
+            positive_class_weight=positive_class_weight,
+            robust_lambda=robust_lambda,
+            confidence_penalty=confidence_penalty,
+        )
     )
     assert torch.isclose(loss(preds, target), output)
 
@@ -82,7 +95,7 @@ def test_bwcew_loss(
 @pytest.mark.parametrize("target", [torch.tensor([1, 1, 0])])
 @pytest.mark.parametrize("output", [torch.tensor(0.5763)])
 def test_softmax_cross_entropy_loss(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor):
-    loss = loss_modules.SoftmaxCrossEntropyLoss()
+    loss = loss_modules.SoftmaxCrossEntropyLoss(SoftmaxCrossEntropyLossConfig())
     assert torch.isclose(loss(preds, target), output, rtol=0.0001)
 
 
@@ -90,7 +103,7 @@ def test_softmax_cross_entropy_loss(preds: torch.Tensor, target: torch.Tensor, o
 @pytest.mark.parametrize("target", [torch.arange(6, 12).reshape(3, 2).float()])
 @pytest.mark.parametrize("output", [torch.tensor(-21.4655).float()])
 def test_sigmoid_cross_entropy_loss(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor):
-    loss = loss_modules.SigmoidCrossEntropyLoss()
+    loss = loss_modules.SigmoidCrossEntropyLoss(SigmoidCrossEntropyLossConfig())
     assert torch.isclose(loss(preds, target), output)
 
 

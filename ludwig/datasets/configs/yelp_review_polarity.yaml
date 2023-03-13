@@ -5,9 +5,6 @@ sha256:
   yelp_review_polarity_csv.tgz: 528f22e286cad085948acbc3bea7e58188416546b0e364d0ae4ca0ce666abe35
 train_filenames: yelp_review_polarity_csv/train.csv
 test_filenames: yelp_review_polarity_csv/test.csv
-columns:
-  - label
-  - text
 description: |
   The Yelp Polarity dataset
   Details:
@@ -17,6 +14,11 @@ description: |
   Dataset source:
       Character-level Convolutional Networks for Text Classification
       Xiang Zhang et al., 2015
+columns:
+  - name: label
+    type: binary
+  - name: text
+    type: text
 output_features:
   - name: label
     type: binary

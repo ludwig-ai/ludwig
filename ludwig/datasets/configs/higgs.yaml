@@ -3,36 +3,6 @@ name: higgs
 download_urls: https://archive.ics.uci.edu/ml/machine-learning-databases/00280/HIGGS.csv.gz
 sha256:
   HIGGS.csv.gz: ea302c18164d4e3d916a1e2e83a9a8d07069fa6ebc7771e4c0540d54e593b698
-columns:
-  - label
-  - lepton_pT
-  - lepton_eta
-  - lepton_phi
-  - missing_energy_magnitude
-  - missing_energy_phi
-  - jet_1_pt
-  - jet_1_eta
-  - jet_1_phi
-  - jet_1_b-tag
-  - jet_2_pt
-  - jet_2_eta
-  - jet_2_phi
-  - jet_2_b-tag
-  - jet_3_pt
-  - jet_3_eta
-  - jet_3_phi
-  - jet_3_b-tag
-  - jet_4_pt
-  - jet_4_eta
-  - jet_4_phi
-  - jet_4_b-tag
-  - m_jj
-  - m_jjj
-  - m_lv
-  - m_jlv
-  - m_bb
-  - m_wbb
-  - m_wwbb
 column_types:
   label: int32
 loader: higgs.HiggsLoader
@@ -43,6 +13,65 @@ description: |
   which produces Higgs bosons and a background process which does not.
 
   https://archive.ics.uci.edu/ml/datasets/HIGGS
+columns:
+  - name: label
+    type: binary
+  - name: lepton_pT
+    type: number
+  - name: lepton_eta
+    type: number
+  - name: lepton_phi
+    type: number
+  - name: missing_energy_magnitude
+    type: number
+  - name: missing_energy_phi
+    type: number
+  - name: jet_1_pt
+    type: number
+  - name: jet_1_eta
+    type: number
+  - name: jet_1_phi
+    type: number
+  - name: jet_1_b-tag
+    type: number
+  - name: jet_2_pt
+    type: number
+  - name: jet_2_eta
+    type: number
+  - name: jet_2_phi
+    type: number
+  - name: jet_2_b-tag
+    type: number
+  - name: jet_3_pt
+    type: number
+  - name: jet_3_eta
+    type: number
+  - name: jet_3_phi
+    type: number
+  - name: jet_3_b-tag
+    type: number
+  - name: jet_4_pt
+    type: number
+  - name: jet_4_eta
+    type: number
+  - name: jet_4_phi
+    type: number
+  - name: jet_4_b-tag
+    type: number
+  - name: m_jj
+    type: number
+  - name: m_jjj
+    type: number
+  - name: m_lv
+    type: number
+  - name: m_jlv
+    type: number
+  - name: m_bb
+    type: number
+  - name: m_wbb
+    type: number
+  - name: m_wwbb
+    type: number
 output_features:
   - name: label
     type: binary

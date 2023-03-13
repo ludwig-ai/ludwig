@@ -1,7 +1,6 @@
-ComparatorCombiner:
+comparator:
     type:
-        short_description:
-            Used for recommendation problems, features associated with distinct entities, output depends on entity-level comparison.
+        short_description: Used for recommendation problems, features associated with distinct entities, output depends on entity-level comparison.
         long_description:
             The comparator combiner compares the hidden representation of two entities defined by lists of
             features. It assumes all outputs from encoders are tensors of size `b x h` where `b` is the batch
@@ -250,10 +249,9 @@ ComparatorCombiner:
             The default choice (`xavier_uniform`) is a suitable starting point for
             most tasks.
         ui_display_name: Layer Weights Initializer
-ConcatCombiner:
+concat:
     type:
-        short_description:
-            Concatenates outputs of all encoders and passes concatenated representation through stack of fully connected layers.
+        short_description: Concatenates outputs of all encoders and passes concatenated representation through stack of fully connected layers.
         long_description:
             The concat combiner assumes all outputs from encoders are tensors of size `b x h` where `b` is
             the batch size and `h` is the hidden dimension, which can differ for each input. It
@@ -498,10 +496,9 @@ ConcatCombiner:
             The default choice (`xavier_uniform`) is a suitable starting point for
             most tasks.
         ui_display_name: Layer Weights Initializer
-ProjectAggregateCombiner:
+project_aggregate:
     type:
-        short_description:
-            Projects the encoder outputs to a common size then takes the average.
+        short_description: Projects the encoder outputs to a common size then takes the average.
         long_description:
             The project aggregate combiner projects the input vectors to a common size
             and then aggregates them by taking the average across all the vectors.
@@ -740,10 +737,9 @@ ProjectAggregateCombiner:
             The default choice (`xavier_uniform`) is a suitable starting point for
             most tasks.
         ui_display_name: Layer Weights Initializer
-SequenceCombiner:
+sequence:
     type:
-        short_description:
-            Stacks a sequence concat combiner with a sequence encoder.
+        short_description: Stacks a sequence concat combiner with a sequence encoder.
         long_description:
             The sequence combiner stacks a sequence concat combiner with a sequence encoder. All the
             considerations about input tensor ranks described for the sequence concat combiner apply also in
@@ -761,10 +757,9 @@ SequenceCombiner:
     reduce_output:
         ui_display_name: null
         expected_impact: 1
-SequenceConcatCombiner:
+sequence_concat:
     type:
-        short_description:
-            Concatenates the outputs of multiple sequence features.
+        short_description: Concatenates the outputs of multiple sequence features.
         long_description:
             The sequence_concat combiner assumes at least one output from the encoders is a tensor of size
             `b x s x h` where `b` is the batch size, `s` is the length of the sequence and `h` is the hidden
@@ -790,10 +785,9 @@ SequenceConcatCombiner:
     reduce_output:
         ui_display_name: null
         expected_impact: 1
-TabNetCombiner:
+tabnet:
     type:
-        short_description:
-            Tabnet is specifically tailored for high performance on tabular data.
+        short_description: Tabnet is specifically tailored for high performance on tabular data.
         long_description:
             The tabnet combiner implements the TabNet model, which uses attention and sparsity to achieve
             high performance on tabular data. It assumes all outputs from encoders are tensors of size b x h
@@ -933,10 +927,9 @@ TabNetCombiner:
     sparsity:
         ui_display_name: null
         expected_impact: 1
-TabTransformerCombiner:
+tabtransformer:
     type:
-        short_description:
-            Projects and concatenates features, then passes them through a transformer.
+        short_description: Projects and concatenates features, then passes them through a transformer.
         long_description:
             The tabtransformer combiner combines input features in the following sequence of operations.
             Except for binary and number features, the combiner projects features to an embedding size.
@@ -1311,10 +1304,9 @@ TabTransformerCombiner:
             The default choice (`xavier_uniform`) is a suitable starting point for
             most tasks.
         ui_display_name: Layer Weights Initializer
-TransformerCombiner:
+transformer:
     type:
-        short_description:
-            The transformer combiner combines input features using a stack of Transformer blocks.
+        short_description: The transformer combiner combines input features using a stack of Transformer blocks.
         long_description:
             The transformer combiner combines input features using a stack of Transformer blocks (from
             Attention Is All You Need). It assumes all outputs from encoders are tensors of size `b x h`

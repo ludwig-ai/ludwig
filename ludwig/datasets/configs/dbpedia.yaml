@@ -5,10 +5,6 @@ train_filenames: dbpedia_csv/train.csv
 test_filenames: dbpedia_csv/test.csv
 sha256:
   dbpedia_csv.tgz: 42db5221ddedddb673a4cabcc5f3a7d869714c878bcfe4ba94b29d14aa38e417
-columns:
-  - label
-  - title
-  - content
 description: |
   The DBPedia Ontology dataset.
 
@@ -18,6 +14,13 @@ description: |
   Dataset source:
       Character-level Convolutional Networks for Text Classification
       Xiang Zhang et al., 2015
+columns:
+  - name: label
+    type: category
+  - name: title
+    type: category
+  - name: content
+    type: text
 output_features:
   - name: label
     type: category

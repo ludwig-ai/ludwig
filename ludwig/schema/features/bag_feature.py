@@ -1,5 +1,6 @@
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BAG, MODEL_ECD
+from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.features.base import BaseInputFeatureConfig
@@ -17,6 +18,8 @@ class BagInputFeatureConfigMixin(BaseMarshmallowConfig):
     """BagInputFeatureConfigMixin is a dataclass that configures the parameters used in both the bag input feature
     and the bag global defaults section of the Ludwig Config."""
 
+    type: str = schema_utils.ProtectedString(BAG)
+
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=BAG)
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
@@ -29,7 +32,7 @@ class BagInputFeatureConfigMixin(BaseMarshmallowConfig):
 @DeveloperAPI
 @ecd_input_config_registry.register(BAG)
 @ludwig_dataclass
-class BagInputFeatureConfig(BaseInputFeatureConfig, BagInputFeatureConfigMixin):
+class BagInputFeatureConfig(BagInputFeatureConfigMixin, BaseInputFeatureConfig):
     """BagInputFeatureConfig is a dataclass that configures the parameters used for a bag input feature."""
 
     pass

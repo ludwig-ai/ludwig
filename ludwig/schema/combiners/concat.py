@@ -4,22 +4,20 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import common_fields
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
+from ludwig.schema.combiners.utils import register_combiner
 from ludwig.schema.metadata import COMBINER_METADATA
 from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
+@register_combiner("concat")
 @ludwig_dataclass
 class ConcatCombinerConfig(BaseCombinerConfig):
     """Parameters for concat combiner."""
 
-    @staticmethod
-    def module_name():
-        return "ConcatCombiner"
-
     type: str = schema_utils.ProtectedString(
         "concat",
-        description=COMBINER_METADATA["ConcatCombiner"]["type"].long_description,
+        description=COMBINER_METADATA["concat"]["type"].long_description,
     )
 
     dropout: float = common_fields.DropoutField()
@@ -29,7 +27,7 @@ class ConcatCombinerConfig(BaseCombinerConfig):
     flatten_inputs: bool = schema_utils.Boolean(
         default=False,
         description="Whether to flatten input tensors to a vector.",
-        parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["flatten_inputs"],
+        parameter_metadata=COMBINER_METADATA["concat"]["flatten_inputs"],
     )
 
     residual: bool = common_fields.ResidualField()
@@ -37,7 +35,7 @@ class ConcatCombinerConfig(BaseCombinerConfig):
     use_bias: bool = schema_utils.Boolean(
         default=True,
         description="Whether the layer uses a bias vector.",
-        parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["use_bias"],
+        parameter_metadata=COMBINER_METADATA["concat"]["use_bias"],
     )
 
     bias_initializer: Union[str, Dict] = common_fields.BiasInitializerField()
@@ -49,7 +47,7 @@ class ConcatCombinerConfig(BaseCombinerConfig):
     output_size: int = schema_utils.PositiveInteger(
         default=256,
         description="Output size of a fully connected layer.",
-        parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["output_size"],
+        parameter_metadata=COMBINER_METADATA["concat"]["output_size"],
     )
 
     norm: Optional[str] = common_fields.NormField()
