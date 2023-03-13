@@ -67,7 +67,6 @@ def get_scalar_from_ludwig_metric(metric: Metric) -> float:
     Returns:
         float: scalar value of the metric
     """
-    print("ASDFASDF before computing metric: ", metric)
     return metric.compute().detach().cpu().numpy().item()
 
 

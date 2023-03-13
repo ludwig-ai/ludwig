@@ -54,12 +54,8 @@ def gather_all_tensors(result: torch.Tensor, group: Optional[Any] = None) -> Lis
     :return: list with size equal to the process group where gathered_result[i]
              corresponds to result tensor from process i
     """
-    print("ASDFASDF inside gather_all_tensors")
     if group is not None:
         raise ValueError("Horovod does not support allgather using a subcommunicator at this time. " "Unset `group`.")
-
-    print("\tgroup is None")
-    print("\tresult passed in:", result)
 
     if _HVD is None or not _HVD.is_initialized():
         return [result]
@@ -67,38 +63,27 @@ def gather_all_tensors(result: torch.Tensor, group: Optional[Any] = None) -> Lis
     if len(result.shape) == 0:
         # Convert scalars to single dimension tensors
         result = result.reshape(1)
-        print("\tresult after reshape:", result)
 
     is_bool = False
     if result.dtype == torch.bool:
         # need to convert to int due to Horovod limitation
         result = result.int()
         is_bool = True
-        print("\tresult after int:", result)
 
     # Add extra dimension to the tensors to be gathered
     result = result.unsqueeze(0)
 
-    print("\tresult after unsqueeze:", result)
-
     # sync and gather all
     gathered_result = _HVD.allgather(result)
-
-    print("\tgathered_result:", gathered_result)
-
     # This is to match the output of the torchmetrics gather_all_tensors function
     # and ensures that the return value is usable by torchmetrics.compute downstream.
     # Ensures that the output is a list of tensors.
     gathered_result = list(gathered_result)
 
-    print("\tgathered_result after squeeze:", gathered_result)
-
     if is_bool:
         # convert back if needed
         gathered_result = [t.bool() for t in gathered_result]
-        print("\tgathered_result after bool:", gathered_result)
 
-    print("\tgathered_result final:", gathered_result)
     return gathered_result
 
 

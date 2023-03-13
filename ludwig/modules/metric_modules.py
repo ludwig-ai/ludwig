@@ -145,7 +145,6 @@ class RecallMetric(BinaryRecall, LudwigMetric):
 
 @register_metric(ROC_AUC, [BINARY], MAXIMIZE, PROBABILITIES)
 class BinaryAUROCMetric(BinaryAUROC, LudwigMetric):
-    # class BinaryAUROCMetric(AUROC, LudwigMetric):
     """Area under the receiver operating curve."""
 
     def __init__(self, **kwargs):
