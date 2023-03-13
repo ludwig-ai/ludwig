@@ -7,7 +7,7 @@ from ludwig.schema.encoders.sequence_encoders import SequenceEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.features.preprocessing.text import TextPreprocessingConfig
 from ludwig.schema.metadata import ENCODER_METADATA
-from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
+from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY, ParameterMetadata
 from ludwig.schema.utils import ludwig_dataclass
 
 
@@ -709,6 +709,48 @@ class BERTConfig(HFEncoderConfig):
         default=None,
         description="Additional kwargs to pass to the pretrained model.",
         parameter_metadata=ENCODER_METADATA["BERT"]["pretrained_kwargs"],
+    )
+
+
+@DeveloperAPI
+@register_encoder_config("deberta", TEXT)
+@ludwig_dataclass
+class DebertaV2Config(HFEncoderConfig):
+    """This dataclass configures the schema used for a DeBERTa-v2 encoder."""
+
+    @staticmethod
+    def module_name():
+        return "DeBERTa"
+
+    type: str = schema_utils.ProtectedString(
+        "deberta",
+        description=ENCODER_METADATA["DeBERTa"]["type"].long_description,
+    )
+
+    use_pretrained: bool = schema_utils.Boolean(
+        default=True,
+        description="Whether to use the pretrained weights for the model. If false, the model will train from "
+        "scratch which is very computationally expensive.",
+        parameter_metadata=ENCODER_METADATA["HFEncoder"]["use_pretrained"],
+    )
+
+    pretrained_model_name_or_path: str = schema_utils.String(
+        default="bert-base-uncased",
+        description="Name or path of the pretrained model.",
+        parameter_metadata=ENCODER_METADATA["DeBERTa"]["pretrained_model_name_or_path"],
+    )
+
+    trainable: bool = schema_utils.Boolean(
+        default=False,
+        description="Whether to finetune the model on your dataset.",
+        parameter_metadata=ENCODER_METADATA["HFEncoder"]["trainable"],
+    )
+
+    max_sequence_length: int = schema_utils.PositiveInteger(
+        default=None,
+        allow_none=True,
+        description="",
+        parameter_metadata=INTERNAL_ONLY,
     )
 
 
