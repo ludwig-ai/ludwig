@@ -22,6 +22,8 @@ from torch.nn import HuberLoss as _HuberLoss
 from torch.nn import L1Loss
 from torch.nn import MSELoss as _MSELoss
 
+from torchmetrics.functional import mean_absolute_percentage_error
+
 import ludwig.utils.loss_utils as utils
 from ludwig.constants import LOGITS
 from ludwig.schema.features.loss.loss import (
@@ -29,6 +31,7 @@ from ludwig.schema.features.loss.loss import (
     BWCEWLossConfig,
     HuberLossConfig,
     MAELossConfig,
+    MAPELossConfig,
     MSELossConfig,
     RMSELossConfig,
     RMSPELossConfig,
@@ -78,6 +81,17 @@ class MAELoss(L1Loss, LogitsInputsMixin):
 
     def __init__(self, config: MAELossConfig):
         super().__init__()
+
+
+@register_loss(MAPELossConfig)
+class MAPELoss(nn.Module, LogitsInputsMixin):
+    """Mean absolute error."""
+
+    def __init__(self, config: MAPELossConfig):
+        super().__init__()
+
+    def forward(self, preds: Tensor, target: Tensor) -> Tensor:
+        return mean_absolute_percentage_error(preds, target)
 
 
 @register_loss(RMSELossConfig)
@@ -202,5 +216,5 @@ class SigmoidCrossEntropyLoss(nn.Module, LogitsInputsMixin):
 class HuberLoss(_HuberLoss, LogitsInputsMixin):
     """Huber loss."""
 
-    def __init__(self, delta: float = 1.0, **kwargs):
-        super().__init__(delta=delta)
+    def __init__(self, config: HuberLossConfig):
+        super().__init__(delta=config.delta)

@@ -7,6 +7,7 @@ from ludwig.constants import (
     CATEGORY,
     HUBER,
     MEAN_ABSOLUTE_ERROR,
+    MEAN_ABSOLUTE_PERCENTAGE_ERROR,
     MEAN_SQUARED_ERROR,
     NUMBER,
     ROOT_MEAN_SQUARED_ERROR,
@@ -146,6 +147,26 @@ class MAELossConfig(BaseLossConfig):
     @classmethod
     def name(self) -> str:
         return "Mean Absolute Error (MAE)"
+
+
+@DeveloperAPI
+@register_loss([NUMBER, TIMESERIES, VECTOR])
+@ludwig_dataclass
+class MAPELossConfig(BaseLossConfig):
+    type: str = schema_utils.ProtectedString(
+        MEAN_ABSOLUTE_PERCENTAGE_ERROR,
+        description="Type of loss.",
+    )
+
+    weight: float = schema_utils.NonNegativeFloat(
+        default=1.0,
+        description="Weight of the loss.",
+        parameter_metadata=LOSS_METADATA["MAELoss"]["weight"],
+    )
+
+    @classmethod
+    def name(self) -> str:
+        return "Mean Absolute Percentage Error (MAPE)"
 
 
 @DeveloperAPI

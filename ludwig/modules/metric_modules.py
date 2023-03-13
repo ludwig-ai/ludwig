@@ -21,7 +21,7 @@ import torch
 from torch import Tensor, tensor
 from torchmetrics import AUROC, CharErrorRate, MeanAbsoluteError
 from torchmetrics import MeanMetric as _MeanMetric
-from torchmetrics import MeanSquaredError, Metric
+from torchmetrics import MeanAbsolutePercentageError, MeanSquaredError, Metric
 from torchmetrics.classification import (
     BinaryAccuracy,
     BinaryPrecision,
@@ -45,6 +45,7 @@ from ludwig.constants import (
     LOSS,
     MAXIMIZE,
     MEAN_ABSOLUTE_ERROR,
+    MEAN_ABSOLUTE_PERCENTAGE_ERROR,
     MEAN_SQUARED_ERROR,
     MINIMIZE,
     NUMBER,
@@ -77,6 +78,7 @@ from ludwig.modules.loss_modules import (
 from ludwig.modules.metric_registry import get_metric_objective, get_metric_registry, register_metric
 from ludwig.schema.features.loss.loss import (
     BWCEWLossConfig,
+    HuberLossConfig,
     SequenceSoftmaxCrossEntropyLossConfig,
     SigmoidCrossEntropyLossConfig,
     SoftmaxCrossEntropyLossConfig,
@@ -405,6 +407,15 @@ class MSEMetric(MeanSquaredError, LudwigMetric):
         super().update(preds, target)
 
 
+@register_metric(MEAN_ABSOLUTE_PERCENTAGE_ERROR, [NUMBER, VECTOR, TIMESERIES], MINIMIZE, PREDICTIONS)
+class MAPEMetric(MeanAbsolutePercentageError, LudwigMetric):
+    def __init__(self, **kwargs):
+        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
+
+    def update(self, preds: Tensor, target: Tensor) -> None:
+        super().update(preds, target)
+
+
 @register_metric(JACCARD, [SET], MAXIMIZE, PROBABILITIES)
 class JaccardMetric(MeanMetric):
     def __init__(self, threshold: float = 0.5, **kwargs):
@@ -428,11 +439,11 @@ class JaccardMetric(MeanMetric):
 class HuberMetric(LossMetric):
     def __init__(
         self,
-        delta: float = 1.0,
+        config: HuberLossConfig,
         **kwargs,
     ):
         super().__init__()
-        self.loss_function = HuberLoss(delta=delta)
+        self.loss_function = HuberLoss(config=config)
 
     def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
         return self.loss_function(preds, target)
