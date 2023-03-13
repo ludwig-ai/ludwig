@@ -12,8 +12,12 @@ from ludwig.encoders import text_encoders
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.schema.model_config import ModelConfig
 from ludwig.utils.data_utils import load_json
+from ludwig.utils.torch_utils import get_torch_device
 from tests.integration_tests.parameter_update_utils import check_module_parameters_updated
 from tests.integration_tests.utils import category_feature, generate_data, HF_ENCODERS, LocalTestBackend, text_feature
+
+DEVICE = get_torch_device()
+RANDOM_SEED = 1919
 
 
 def _load_pretrained_hf_model_no_weights(
@@ -146,3 +150,28 @@ def test_distilbert_param_updates(trainable: bool):
 def test_encoder_names_constant_synced_with_schema(encoder_name):
     """Ensures that each value in the HF_ENCODERS constant is represented by an equivalent schema object."""
     schema_encoders_utils.get_encoder_cls(MODEL_ECD, TEXT, encoder_name)
+
+
+@pytest.mark.parametrize("vocab_size", [20])
+def test_tfidf_encoder(vocab_size: int):
+    # make repeatable
+    torch.manual_seed(RANDOM_SEED)
+
+    batch_size = 10
+    sequence_length = 32
+    vocab = [str(i) for i in range(1, vocab_size + 1)]
+    str2idf = {s: 1 for s in vocab}
+    text_encoder = text_encoders.TfIdfEncoder(
+        max_sequence_length=sequence_length,
+        str2idf=str2idf,
+        vocab=vocab,
+        vocab_size=vocab_size,
+    ).to(DEVICE)
+
+    assert len(text_encoder.output_shape) == 1
+    assert text_encoder.output_shape[0] == vocab_size
+    assert len(list(text_encoder.parameters())) == 0
+
+    inputs = torch.randint(2, (batch_size, sequence_length)).to(DEVICE)
+    outputs = text_encoder(inputs)
+    assert outputs["encoder_output"].shape[1:] == text_encoder.output_shape

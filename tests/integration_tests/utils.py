@@ -75,6 +75,7 @@ logger = logging.getLogger(__name__)
 # Used in sequence-related unit tests (encoders, features) as well as end-to-end integration tests.
 # Missing: passthrough encoder.
 ENCODERS = ["embed", "rnn", "parallel_cnn", "cnnrnn", "stacked_parallel_cnn", "stacked_cnn", "transformer"]
+TEXT_ENCODERS = ENCODERS + ["tf_idf"]
 
 HF_ENCODERS_SHORT = ["distilbert"]
 

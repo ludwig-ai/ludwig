@@ -201,7 +201,7 @@ class SequenceFeatureMixin(BaseFeatureMixin):
     def get_feature_meta(
         column, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
     ) -> FeatureMetadataDict:
-        idx2str, str2idx, str2freq, max_length, _, _, _, _ = create_vocabulary(
+        vocabulary = create_vocabulary(
             column,
             preprocessing_parameters["tokenizer"],
             lowercase=preprocessing_parameters["lowercase"],
@@ -212,7 +212,9 @@ class SequenceFeatureMixin(BaseFeatureMixin):
             ngram_size=preprocessing_parameters["ngram_size"],
             processor=backend.df_engine,
         )
-        logger.info(f"Max length of feature '{column.name}': {max_length} (without start and stop symbols)")
+        logger.info(
+            f"Max length of feature '{column.name}': {vocabulary.line_length_max} (without start and stop symbols)"
+        )
 
         # Use sequence_length if provided, otherwise use max length found in dataset.
         if preprocessing_parameters["sequence_length"] is not None:
@@ -222,7 +224,7 @@ class SequenceFeatureMixin(BaseFeatureMixin):
             )
             max_sequence_length = preprocessing_parameters["sequence_length"]
         else:
-            max_sequence_length = max_length + 2  # For start and stop symbols.
+            max_sequence_length = vocabulary.line_length_max + 2  # For start and stop symbols.
             logger.info(f"Setting max length using dataset: {max_sequence_length} (including start and stop symbols)")
 
             # If max_sequence_length is None, then use the max length found in the dataset.
@@ -238,10 +240,10 @@ class SequenceFeatureMixin(BaseFeatureMixin):
 
         logger.info(f"max sequence length is {max_sequence_length} for feature '{column.name}'")
         return {
-            "idx2str": idx2str,
-            "str2idx": str2idx,
-            "str2freq": str2freq,
-            "vocab_size": len(idx2str),
+            "idx2str": vocabulary.vocab,
+            "str2idx": vocabulary.str2idx,
+            "str2freq": vocabulary.str2freq,
+            "vocab_size": len(vocabulary.vocab),
             "max_sequence_length": max_sequence_length,
         }
 
