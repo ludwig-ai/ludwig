@@ -7,7 +7,7 @@ tabulate>=0.7
 scikit-learn
 tqdm
 torch>=1.13.0
-torchaudio
+torchaudio<2.0.0  # Remove when torchaudio==2.0.0 is released.
 torchtext
 torchvision
 transformers>=4.10.1,<4.22
