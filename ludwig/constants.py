@@ -279,3 +279,5 @@ JITTER = (0, 1)
 IMAGENET1K = "imagenet1k"
 
 AUGMENTATION = "augmentation"
+
+LUDWIG_SCHEMA_VALIDATION_POLICY = "ludwig_schema_validation_policy"

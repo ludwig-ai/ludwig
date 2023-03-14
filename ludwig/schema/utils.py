@@ -10,13 +10,13 @@ from typing import Optional, Set, Tuple, Type, TypeVar, Union
 
 import marshmallow_dataclass
 import yaml
-from marshmallow import fields, INCLUDE, pre_load, RAISE, schema, validate, ValidationError
+from marshmallow import EXCLUDE, fields, pre_load, schema, validate, ValidationError
 from marshmallow.utils import missing
 from marshmallow_dataclass import dataclass as m_dataclass
 from marshmallow_jsonschema import JSONSchema as js
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import ACTIVE, COLUMN, NAME, PROC_COLUMN, TYPE
+from ludwig.constants import ACTIVE, COLUMN, LUDWIG_SCHEMA_VALIDATION_POLICY, NAME, PROC_COLUMN, TYPE
 from ludwig.modules.reduction_modules import reduce_mode_registry
 from ludwig.schema.metadata import COMMON_METADATA
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, ParameterMetadata
@@ -146,7 +146,7 @@ ConfigT = TypeVar("ConfigT", bound="BaseMarshmallowConfig")
 
 
 # TODO: Change to RAISE and update descriptions once we want to enforce strict schemas.
-LUDWIG_SCHEMA_UNKNOWN_POLICY = os.environ.get("LUDWIG_SCHEMA_UNKNOWN_POLICY", INCLUDE).lower()
+LUDWIG_SCHEMA_VALIDATION_POLICY_VAR = os.environ.get(LUDWIG_SCHEMA_VALIDATION_POLICY, EXCLUDE).lower()
 
 
 @DeveloperAPI
@@ -163,7 +163,7 @@ class BaseMarshmallowConfig(ABC):
         filled in as necessary.
         """
 
-        unknown = LUDWIG_SCHEMA_UNKNOWN_POLICY
+        unknown = LUDWIG_SCHEMA_VALIDATION_POLICY_VAR
         "Flag that sets marshmallow `load` calls to handle unknown properties passed as a parameter."
 
         ordered = True
@@ -177,21 +177,21 @@ class BaseMarshmallowConfig(ABC):
         return convert_submodules(self.__dict__)
 
     @pre_load
-    def log_deprecation_warnings(self, data, **kwargs):
-        leftover = copy.deepcopy(data)
+    def log_deprecation_warnings_for_any_invalid_parameters(self, data, **kwargs):
+        """Logs a warning for any unknown or invalid parameters passed to a schema.
+
+        Will be removed in Ludwig v0.8, when all such parameters will explicitly raise an error.
+        """
+        copy_data = copy.deepcopy(data)
         for key in data.keys():
             if key not in self.fields:
-                # Do not filter parameters if user policy is to raise errors for all unknown parameters:
-                if LUDWIG_SCHEMA_UNKNOWN_POLICY != RAISE:
-                    del leftover[key]
-                # `type` is not declared on most schemas and is instead added dynamically:
                 if key != "type":
                     warnings.warn(
                         f'"{key}" is not a valid parameter for the "{self.__class__.__name__}" schema, will be flagged '
                         "as an error in v0.8",
                         DeprecationWarning,
                     )
-        return leftover
+        return copy_data
 
     @classmethod
     def from_dict(cls: Type[ConfigT], d: TDict[str, Any]) -> ConfigT:
