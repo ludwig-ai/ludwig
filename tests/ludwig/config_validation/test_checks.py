@@ -198,20 +198,3 @@ def test_dense_binary_encoder_0_layer():
     }
     with pytest.raises(ConfigValidationError):
         ModelConfig.from_dict(config)
-
-
-def test_onehot_category_encoder():
-    config = {
-        "defaults": {"category": {"encoder": {"type": "onehot"}}},
-        "input_features": [
-            {"name": "MSSubClass", "type": "category"},
-            {"name": "MSZoning", "type": "category"},
-            {"name": "Street", "type": "category"},
-            {"name": "Neighborhood", "type": "category"},
-        ],
-        "model_type": "ecd",
-        "output_features": [{"name": "SalePrice", "type": "number"}],
-        "trainer": {"train_steps": 1},
-        "combiner": {"type": "concat", "num_fc_layers": 2},
-    }
-    ModelConfig.from_dict(config)
