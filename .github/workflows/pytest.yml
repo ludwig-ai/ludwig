@@ -27,12 +27,12 @@ jobs:
         include:
           - python-version: "3.8"
             pytorch-version: 1.13.0
-            torchaudio-version: 0.13.1  # Remove when torchaudio==2.0.0 issue is resolved
+            torchaudio-version: 0.13.0  # Remove when torchaudio==2.0.0 issue is resolved
             torchscript-version: 1.10.2
             ray-version: 2.0.0
           - python-version: "3.9"
             pytorch-version: 1.13.0
-            torchaudio-version: 0.13.1  # Remove when torchaudio==2.0.0 issue is resolved
+            torchaudio-version: 0.13.0  # Remove when torchaudio==2.0.0 issue is resolved
             torchscript-version: 1.10.2
             ray-version: 2.2.0
           - python-version: "3.10"
