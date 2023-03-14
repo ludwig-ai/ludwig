@@ -10,7 +10,7 @@ from typing import Optional, Set, Tuple, Type, TypeVar, Union
 
 import marshmallow_dataclass
 import yaml
-from marshmallow import fields, INCLUDE, pre_load, schema, validate, ValidationError
+from marshmallow import fields, INCLUDE, pre_load, RAISE, schema, validate, ValidationError
 from marshmallow.utils import missing
 from marshmallow_dataclass import dataclass as m_dataclass
 from marshmallow_jsonschema import JSONSchema as js
@@ -181,9 +181,11 @@ class BaseMarshmallowConfig(ABC):
         leftover = copy.deepcopy(data)
         for key in data.keys():
             if key not in self.fields:
-                del leftover[key]
+                # Do not filter parameters if user policy is to raise errors for all unknown parameters:
+                if LUDWIG_SCHEMA_UNKNOWN_POLICY != RAISE:
+                    del leftover[key]
                 # `type` is not declared on most schemas and is instead added dynamically:
-                if key != "type" and key != "feature_type":
+                if key != "type":
                     warnings.warn(
                         f'"{key}" is not a valid parameter for the "{self.__class__.__name__}" schema, will be flagged '
                         "as an error in v0.8",
