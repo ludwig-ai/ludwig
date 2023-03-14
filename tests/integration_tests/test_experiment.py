@@ -53,6 +53,7 @@ from tests.integration_tests.utils import (
     run_experiment,
     sequence_feature,
     set_feature,
+    TEXT_ENCODERS,
     text_feature,
     timeseries_feature,
     vector_feature,
@@ -63,8 +64,8 @@ logger.setLevel(logging.INFO)
 logging.getLogger("ludwig").setLevel(logging.INFO)
 
 
-@pytest.mark.parametrize("encoder", ENCODERS)
-def test_experiment_text_feature_non_HF(encoder, csv_filename):
+@pytest.mark.parametrize("encoder", TEXT_ENCODERS)
+def test_experiment_text_feature_non_pretrained(encoder, csv_filename):
     input_features = [
         text_feature(encoder={"vocab_size": 30, "min_len": 1, "type": encoder}, preprocessing={"tokenizer": "space"})
     ]

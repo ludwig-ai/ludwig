@@ -166,9 +166,12 @@ class TimeseriesFeatureMixin(BaseFeatureMixin):
     @staticmethod
     def build_matrix(timeseries, tokenizer_name, length_limit, padding_value, padding, backend):
         tokenizer = get_tokenizer_from_registry(tokenizer_name)()
-        timeseries = backend.df_engine.map_objects(timeseries, lambda ts: np.array(tokenizer(ts)).astype(np.float32))
 
-        max_length = backend.df_engine.compute(timeseries.map(len).max())
+        ts_vectors = backend.df_engine.map_objects(
+            timeseries, lambda ts: np.nan_to_num(np.array(tokenizer(ts)).astype(np.float32), nan=padding_value)
+        )
+
+        max_length = backend.df_engine.compute(ts_vectors.map(len).max())
         if max_length < length_limit:
             logger.debug(f"max length of {tokenizer_name}: {max_length} < limit: {length_limit}")
         max_length = length_limit
@@ -182,7 +185,7 @@ class TimeseriesFeatureMixin(BaseFeatureMixin):
                 padded[max_length - limit :] = vector[:limit]
             return padded
 
-        return backend.df_engine.map_objects(timeseries, pad)
+        return backend.df_engine.map_objects(ts_vectors, pad)
 
     @staticmethod
     def feature_data(column, metadata, preprocessing_parameters: PreprocessingConfigDict, backend):
