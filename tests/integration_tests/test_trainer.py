@@ -300,7 +300,7 @@ def test_mixed_precision(tmpdir):
 
 
 @pytest.mark.skipif(
-    parse_version(torch.__version__) >= parse_version("2.0"), reason="Model compilation requires PyTorch >= 2.0"
+    parse_version(torch.__version__) < parse_version("2.0"), reason="Model compilation requires PyTorch >= 2.0"
 )
 def test_compile(tmpdir):
     input_features = [text_feature()]

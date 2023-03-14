@@ -80,7 +80,7 @@ class WrapperModule(torch.nn.Module):
             {
                 arg_name: InputIdentity(arg_name)
                 for arg_name in self.model.input_features.keys()
-                if self.model.input_features[arg_name].type() not in {TEXT, CATEGORY, DATE, SET}
+                if self.model.input_features.get(arg_name).type() not in {TEXT, CATEGORY, DATE, SET}
             }
         )
 
@@ -102,7 +102,7 @@ class WrapperModule(torch.nn.Module):
         # and predictions as well, so derive them.
         predictions = {}
         for of_name in self.model.output_features:
-            predictions[of_name] = self.model.output_features[of_name].predictions(outputs, of_name)
+            predictions[of_name] = self.model.output_features.get(of_name).predictions(outputs, of_name)
 
         return get_pred_col(predictions, self.target)
 
