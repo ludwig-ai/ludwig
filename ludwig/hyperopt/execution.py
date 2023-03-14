@@ -356,9 +356,15 @@ class RayTuneExecutor:
 
         return kubernetes_syncer.get_node_address_by_ip
 
-    # For specified [stopped] trial, remove checkpoint marker on any partial checkpoints
     @staticmethod
     def _remove_partial_checkpoints(trial_path: str):
+        """For specified [stopped] trial, remove checkpoint marker on any partial checkpoints.
+
+        These may have been created for a trial that was terminated early by RayTune because the time budget was
+        exceeded.
+        """
+        # `trial_dir` returned by RayTune may have a leading slash, so we need to remove it.
+        trial_path = trial_path.rstrip("/") if isinstance(trial_path, str) else trial_path
         marker_paths = glob.glob(os.path.join(glob.escape(trial_path), "checkpoint_*/.is_checkpoint"))
         for marker_path in marker_paths:
             chkpt_dir = os.path.dirname(marker_path)
@@ -919,6 +925,9 @@ class RayTuneExecutor:
                     # Evaluate the best model on the eval_split, which is validation_set
                     if validation_set is not None and validation_set.size > 0:
                         trial_path = trial["trial_dir"]
+                        # Remove partial checkpoints that may have been created by RayTune
+                        # when time budget is reached (if one was set)
+                        self._remove_partial_checkpoints(trial_path)
                         with self._get_best_model_path(
                             trial_path, analysis, backend.storage.artifacts.credentials
                         ) as best_model_path:

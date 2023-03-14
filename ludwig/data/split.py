@@ -15,7 +15,7 @@
 
 import logging
 from abc import ABC, abstractmethod
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, TYPE_CHECKING
 from zlib import crc32
 
 import numpy as np
@@ -37,6 +37,9 @@ from ludwig.utils.data_utils import hash_dict, split_dataset_ttv
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.registry import Registry
 from ludwig.utils.types import DataFrame
+
+if TYPE_CHECKING:
+    from ludwig.schema.model_config import ModelConfig
 
 split_registry = Registry()
 logger = logging.getLogger(__name__)
@@ -223,14 +226,15 @@ class StratifySplitter(Splitter):
         return df_train, df_val, df_test
 
     def validate(self, config: "ModelConfig"):  # noqa: F821
-        feature_config = config.get_feature_config(self.column)
-        if not feature_config:
-            raise ConfigValidationError(
-                f"Stratify column {self.column} is not among the features: {config.get_feature_names()}."
+        features = [f for f in config.input_features] + [f for f in config.output_features]
+        feature_cols = {f.column for f in features}
+        if self.column not in feature_cols:
+            logging.info(
+                f"Stratify column {self.column} is not among the features. "
+                f"Cannot establish if it is a binary or category feature."
             )
-
-        if feature_config.type not in {BINARY, CATEGORY}:
-            raise ConfigValidationError(f"Feature for stratify column {self.column} must be binary or category.")
+        elif [f for f in features if f.column == self.column][0].type not in {BINARY, CATEGORY}:
+            raise ConfigValidationError(f"Feature for stratify column {self.column} must be binary or category")
 
     def has_split(self, split_index: int) -> bool:
         return self.probabilities[split_index] > 0
@@ -284,13 +288,15 @@ class DatetimeSplitter(Splitter):
         return tuple(backend.df_engine.split(df, self.probabilities))
 
     def validate(self, config: "ModelConfig"):  # noqa: F821
-        feature_config = config.get_feature_config(self.column)
-        if not feature_config:
-            raise ConfigValidationError(
-                f"Datetime split column {self.column} is not among the features: {config.get_feature_names()}."
+        features = [f for f in config.input_features] + [f for f in config.output_features]
+        feature_cols = {f.column for f in features}
+        if self.column not in feature_cols:
+            logging.info(
+                f"Datetime split column {self.column} is not among the features. "
+                f"Cannot establish if it is a valid datetime."
             )
-        if feature_config.type != DATE:
-            raise ValueError(f"Feature for datetime split column {self.column} must be a datetime")
+        elif [f for f in features if f.column == self.column][0].type not in {DATE}:
+            raise ConfigValidationError(f"Feature for datetime split column {self.column} must be a datetime")
 
     def has_split(self, split_index: int) -> bool:
         return self.probabilities[split_index] > 0
