@@ -25,6 +25,7 @@ from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.schema.encoders.sequence_encoders import SequenceEncoderConfig
+from ludwig.schema.encoders.text.hf_model_params import DebertaModelParams
 from ludwig.schema.encoders.text_encoders import (
     ALBERTConfig,
     AutoTransformerConfig,
@@ -937,27 +938,16 @@ class DeBERTaEncoder(HFTextEncoder):
         reduce_output: str = "cls_pooled",
         trainable: bool = False,
         vocab_size: int = None,
-        pad_token_id: int = 1,
-        bos_token_id: int = 0,
-        eos_token_id: int = 2,
-        max_position_embeddings: int = 514,
-        type_vocab_size: int = 1,
+        model_params: DebertaModelParams = None,
         pretrained_kwargs: Dict = None,
         encoder_config=None,
         **kwargs,
     ):
         super().__init__()
 
-        from transformers.models.deberta_v2.modeling_deberta_v2 import DebertaV2Config, DebertaV2Model
+        from transformers import DebertaV2Config, DebertaV2Model
 
-        hf_config_params = dict(
-            pad_token_id=pad_token_id,
-            bos_token_id=bos_token_id,
-            eos_token_id=eos_token_id,
-            max_position_embeddings=max_position_embeddings,
-            type_vocab_size=type_vocab_size,
-        )
-
+        hf_config_params = model_params.to_dict()
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
             transformer, _ = load_pretrained_hf_model_with_hub_fallback(

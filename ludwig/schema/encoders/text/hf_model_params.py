@@ -2,6 +2,7 @@ from typing import List, Type
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
@@ -20,6 +21,7 @@ class ModelParamsField(schema_utils.DictMarshmallowField):
         }
 
 
+@ludwig_dataclass
 class DebertaModelParams(schema_utils.BaseMarshmallowConfig):
     # Model architecture params for training from scratch
     # TODO(travis): conditionally disable setting these when `use_pretrained=True`.
