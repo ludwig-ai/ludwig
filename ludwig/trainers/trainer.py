@@ -174,6 +174,7 @@ class Trainer(BaseTrainer):
         self.model = model
         self.model = self.model.to(self.device)
 
+        compiled_model = self.model
         if config.compile:
             compiled_model = torch.compile(self.model)
             logger.info("Training with dynamo compiled model")
