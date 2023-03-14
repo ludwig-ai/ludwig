@@ -959,7 +959,10 @@ class DeBERTaEncoder(HFTextEncoder):
             )
 
         if encoder_config is not None:
-            self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
+            encoder_config.model_params = DebertaModelParams.from_dict(
+                {k: v for k, v in transformer.config.to_dict().items() if k in hf_config_params}
+            )
+            self.config = encoder_config
         else:
             self.config = None
 
