@@ -861,6 +861,8 @@ class RayBackend(RemoteTrainingMixin, Backend):
             # The resulting column is named "value", which is a dict with two keys: "idx" and "data".
             ds = ray.data.read_datasource(BinaryIgnoreNoneTypeDatasource(), **read_datasource_fn_kwargs)
             df = self.df_engine.from_ray_dataset(ds)
+            # Persist the dataframe to prevent re-reading binary files on each subsequent map_objects call
+            df = self.df_engine.persist(df)
             df["idx"] = self.df_engine.map_objects(df["value"], lambda row: int(row["idx"]))
             df["value"] = self.df_engine.map_objects(df["value"], lambda row: row["data"])
             df = df.rename(columns={"value": column.name})
