@@ -239,6 +239,15 @@ def test_mse_metric(preds: torch.Tensor, target: torch.Tensor, output: torch.Ten
     assert output == metric.compute()
 
 
+@pytest.mark.parametrize("preds", [torch.arange(6).reshape(3, 2).float()])
+@pytest.mark.parametrize("target", [torch.arange(6, 12).reshape(3, 2).float()])
+@pytest.mark.parametrize("output", [torch.tensor(0.7365440726280212)])
+def test_mape_metric(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor):
+    metric = metric_modules.MAPEMetric()
+    metric.update(preds, target)
+    assert output.item() == metric.compute().item()
+
+
 @pytest.mark.parametrize("preds", [torch.tensor([[0, 1], [1, 1]])])
 @pytest.mark.parametrize("target", [torch.tensor([[1, 0], [1, 1]])])
 @pytest.mark.parametrize("output", [torch.tensor(0.5)])

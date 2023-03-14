@@ -2,7 +2,7 @@ from abc import ABC
 from typing import Dict, List, Tuple, Union
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import BINARY, CATEGORY, NUMBER, SET, VECTOR
+from ludwig.constants import BINARY, CATEGORY, NUMBER, SET, TIMESERIES, VECTOR
 from ludwig.schema import common_fields
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.utils import register_decoder_config
@@ -148,7 +148,7 @@ class RegressorConfig(BaseDecoderConfig):
 
 
 @DeveloperAPI
-@register_decoder_config("projector", [VECTOR])
+@register_decoder_config("projector", [VECTOR, TIMESERIES])
 @ludwig_dataclass
 class ProjectorConfig(BaseDecoderConfig):
     """ProjectorConfig is a dataclass that configures the parameters used for a projector decoder."""
@@ -197,6 +197,19 @@ class ProjectorConfig(BaseDecoderConfig):
         default=None,
         description=" Indicates the activation function applied to the output.",
         parameter_metadata=DECODER_METADATA["Projector"]["activation"],
+    )
+
+    multiplier: float = schema_utils.FloatRange(
+        default=1.0,
+        min=0,
+        min_inclusive=False,
+        description=(
+            "Multiplier to scale the activated outputs by. Useful when setting `activation` to something "
+            "that outputs a value between [-1, 1] like tanh to re-scale values back to order of magnitude of "
+            "the data you're trying to predict. A good rule of thumb in such cases is to pick a value like "
+            "`x * (max - min)` where x is a scalar in the range [1, 2]. For example, if you're trying to predict "
+            "something like temperature, it might make sense to pick a multiplier on the order of `100`."
+        ),
     )
 
     clip: Union[List[int], Tuple[int]] = schema_utils.FloatRangeTupleDataclassField(

@@ -5,7 +5,9 @@ from ludwig.constants import (
     BINARY,
     BINARY_WEIGHTED_CROSS_ENTROPY,
     CATEGORY,
+    HUBER,
     MEAN_ABSOLUTE_ERROR,
+    MEAN_ABSOLUTE_PERCENTAGE_ERROR,
     MEAN_SQUARED_ERROR,
     NUMBER,
     ROOT_MEAN_SQUARED_ERROR,
@@ -145,6 +147,26 @@ class MAELossConfig(BaseLossConfig):
     @classmethod
     def name(self) -> str:
         return "Mean Absolute Error (MAE)"
+
+
+@DeveloperAPI
+@register_loss([NUMBER, TIMESERIES, VECTOR])
+@ludwig_dataclass
+class MAPELossConfig(BaseLossConfig):
+    type: str = schema_utils.ProtectedString(
+        MEAN_ABSOLUTE_PERCENTAGE_ERROR,
+        description="Type of loss.",
+    )
+
+    weight: float = schema_utils.NonNegativeFloat(
+        default=1.0,
+        description="Weight of the loss.",
+        parameter_metadata=LOSS_METADATA["MAELoss"]["weight"],
+    )
+
+    @classmethod
+    def name(self) -> str:
+        return "Mean Absolute Percentage Error (MAPE)"
 
 
 @DeveloperAPI
@@ -361,3 +383,34 @@ class SigmoidCrossEntropyLossConfig(BaseLossConfig):
     @classmethod
     def name(self) -> str:
         return "Sigmoid Cross Entropy"
+
+
+@DeveloperAPI
+@register_loss([NUMBER, TIMESERIES, VECTOR])
+@ludwig_dataclass
+class HuberLossConfig(BaseLossConfig):
+    type: str = schema_utils.ProtectedString(
+        HUBER,
+        description=(
+            "Loss that combines advantages of both `mean_absolute_error` (MAE) and `mean_squared_error` (MSE). The "
+            "delta-scaled L1 region makes the loss less sensitive to outliers than MSE, while the L2 region provides "
+            "smoothness over MAE near 0. See [Huber loss](https://en.wikipedia.org/wiki/Huber_loss) for more details."
+        ),
+    )
+
+    delta: float = schema_utils.FloatRange(
+        default=1.0,
+        min=0,
+        min_inclusive=False,
+        description="Threshold at which to change between delta-scaled L1 and L2 loss.",
+    )
+
+    weight: float = schema_utils.NonNegativeFloat(
+        default=1.0,
+        description="Weight of the loss.",
+        parameter_metadata=LOSS_METADATA["MSELoss"]["weight"],
+    )
+
+    @classmethod
+    def name(self) -> str:
+        return "Huber Loss"
