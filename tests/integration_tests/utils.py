@@ -75,6 +75,7 @@ logger = logging.getLogger(__name__)
 # Used in sequence-related unit tests (encoders, features) as well as end-to-end integration tests.
 # Missing: passthrough encoder.
 ENCODERS = ["embed", "rnn", "parallel_cnn", "cnnrnn", "stacked_parallel_cnn", "stacked_cnn", "transformer"]
+TEXT_ENCODERS = ENCODERS + ["tf_idf"]
 
 HF_ENCODERS_SHORT = ["distilbert"]
 
@@ -406,8 +407,22 @@ def timeseries_feature(**kwargs):
     feature = {
         "name": f"{TIMESERIES}_{random_string()}",
         "type": TIMESERIES,
-        ENCODER: {"type": "parallel_cnn", "max_len": 7},
     }
+
+    output_feature = DECODER in kwargs
+    if output_feature:
+        feature.update(
+            {
+                DECODER: {"type": "projector"},
+            }
+        )
+    else:
+        feature.update(
+            {
+                ENCODER: {"type": "parallel_cnn", "max_len": 7},
+            }
+        )
+
     recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
@@ -518,7 +533,7 @@ def run_experiment(
         }
         args.update(kwargs)
 
-        experiment_cli(**args)
+        return experiment_cli(**args)
 
 
 def generate_output_features_with_dependencies(main_feature, dependencies):
@@ -905,7 +920,8 @@ def train_with_backend(
                         k: {
                             metric_name: value
                             for metric_name, value in v.items()
-                            if metric_name not in {"loss", "root_mean_squared_percentage_error", "jaccard"}
+                            if metric_name
+                            not in {"loss", "root_mean_squared_percentage_error", "jaccard", "token_accuracy"}
                         }
                         for k, v in stats.items()
                     }

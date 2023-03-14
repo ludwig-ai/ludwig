@@ -11,7 +11,7 @@ import pandas as pd
 import psutil
 import torch
 
-from ludwig.constants import COMBINED, LAST_HIDDEN, LOGITS
+from ludwig.constants import COMBINED, LAST_HIDDEN, LOGITS, MODEL_GBM
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.utils import convert_to_dict
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
@@ -75,7 +75,8 @@ class Predictor(BasePredictor):
         self._distributed = distributed if distributed is not None else LocalStrategy()
         self.report_tqdm_to_ray = report_tqdm_to_ray
 
-        self.device = get_torch_device()
+        # TODO (jeffkinnison): revert to using the requested device for GBMs when device usage is fixed
+        self.device = get_torch_device() if not model.type() == MODEL_GBM else "cpu"
         self.model = model.to(self.device)
 
     def batch_predict(self, dataset: Dataset, dataset_name: str = None, collect_logits: bool = False):
@@ -84,7 +85,6 @@ class Predictor(BasePredictor):
 
         with torch.no_grad():
             with dataset.initialize_batcher(self._batch_size, should_shuffle=False) as batcher:
-
                 progress_bar_config = {
                     "desc": "Prediction" if dataset_name is None else f"Prediction {dataset_name: <5.5}",
                     "total": batcher.steps_per_epoch,

@@ -9,8 +9,7 @@ from ludwig.utils.data_utils import load_yaml
 
 SKIPPED_CONFIG_ISSUES = {
     "mercedes_benz_greener.ecd.yaml": "https://github.com/ludwig-ai/ludwig/issues/2978",
-    "sarcos.ecd.yaml": "https://github.com/ludwig-ai/ludwig/issues/3019",
-    "sarcos.gbm.yaml": "https://github.com/ludwig-ai/ludwig/issues/3019",
+    "sarcos.ecd.yaml": "Takes more than 300s",
 }
 
 
@@ -56,8 +55,10 @@ def test_performance(config_filename, tmpdir):
         "experiments": [{"dataset_name": dataset_name, "config_path": config_path}],
     }
     benchmarking_artifacts = benchmark(benchmarking_config)
+    experiment_artifact, err = benchmarking_artifacts[dataset_name]
+    if err is not None:
+        raise err
 
-    experiment_artifact = benchmarking_artifacts[dataset_name]
     expected_metrics: List[ExpectedMetric] = [
         ExpectedMetric.from_dict(expected_metric) for expected_metric in expected_metrics_dict["metrics"]
     ]

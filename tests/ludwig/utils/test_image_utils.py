@@ -17,7 +17,15 @@ from typing import Callable
 import pytest
 import torch
 
-from ludwig.utils.image_utils import crop, crop_or_pad, grayscale, num_channels_in_image, pad, resize_image
+from ludwig.utils.image_utils import (
+    crop,
+    crop_or_pad,
+    grayscale,
+    num_channels_in_image,
+    pad,
+    resize_image,
+    ResizeChannels,
+)
 
 
 @pytest.mark.parametrize("pad_fn", [pad, torch.jit.script(pad)])
@@ -223,3 +231,19 @@ def test_num_channels_in_image():
     with pytest.raises(ValueError):
         num_channels_in_image(torch.rand(5))
         num_channels_in_image(None)
+
+
+@pytest.mark.parametrize("image_shape", [(1, 10, 10), (3, 10, 10), (5, 10, 10)])
+@pytest.mark.parametrize("num_channels_expected", [1, 2, 3, 4])
+def test_ResizeChannels_module(image_shape, num_channels_expected):
+    image = torch.randint(0, 1, image_shape)
+    fn = ResizeChannels(num_channels_expected)
+    assert fn(image).shape == tuple([num_channels_expected] + list(image_shape[1:]))
+
+
+@pytest.mark.parametrize("image_shape", [(2, 1, 10, 10), (2, 3, 10, 10), (2, 5, 10, 10)])
+@pytest.mark.parametrize("num_channels_expected", [1, 2, 3, 4])
+def test_ResizeChannels_module_with_batch_dim(image_shape, num_channels_expected):
+    image = torch.randint(0, 1, image_shape)
+    fn = ResizeChannels(num_channels_expected)
+    assert fn(image).shape == tuple([image_shape[0], num_channels_expected] + list(image_shape[2:]))

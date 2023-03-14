@@ -1,11 +1,12 @@
 import json
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, List, Union
+from typing import Any, Dict, List, Union
 
 from dataclasses_json import dataclass_json
 
 from ludwig.api_annotations import DeveloperAPI
+from ludwig.utils.misc_utils import memoized_method
 
 
 @DeveloperAPI
@@ -75,15 +76,21 @@ class ParameterMetadata:
     # Whether the parameter is used strictly internally.
     internal_only: bool = False
 
+    @memoized_method(maxsize=1)
+    def to_json_dict(self) -> Dict[str, Any]:
+        return json.loads(self.to_json())
+
 
 @DeveloperAPI
-def convert_metadata_to_json(pm: ParameterMetadata):
+def convert_metadata_to_json(pm: ParameterMetadata) -> Dict[str, Any]:
     """Converts a ParameterMetadata dict to a normal JSON dict.
 
     NOTE: Without the json.loads call, to_json() returns
     a string repr that is improperly parsed.
     """
-    return json.loads(pm.to_json())
+    if not pm:
+        return None
+    return pm.to_json_dict()
 
 
 # This is a quick way to flag schema parameters as internal only via the `parameter_metadata` argument

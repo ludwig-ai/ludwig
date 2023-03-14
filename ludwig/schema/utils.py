@@ -2,6 +2,7 @@ import copy
 import warnings
 from abc import ABC, abstractmethod
 from dataclasses import field, Field
+from functools import lru_cache
 from typing import Any
 from typing import Dict as TDict
 from typing import List as TList
@@ -19,7 +20,6 @@ from ludwig.constants import ACTIVE, COLUMN, NAME, PROC_COLUMN, TYPE
 from ludwig.modules.reduction_modules import reduce_mode_registry
 from ludwig.schema.metadata import COMMON_METADATA
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, ParameterMetadata
-from ludwig.utils.misc_utils import memoized_method
 from ludwig.utils.registry import Registry
 from ludwig.utils.torch_utils import activations, initializer_registry
 
@@ -192,13 +192,13 @@ class BaseMarshmallowConfig(ABC):
         return schema.load(d)
 
     @classmethod
-    @memoized_method(maxsize=1)
+    @lru_cache(maxsize=None)
     def get_valid_field_names(cls) -> Set[str]:
         schema = cls.get_class_schema()()
         return set(schema.fields.keys())
 
     @classmethod
-    @memoized_method(maxsize=1)
+    @lru_cache(maxsize=None)
     def get_class_schema(cls):
         return marshmallow_dataclass.class_schema(cls)
 
@@ -420,7 +420,7 @@ def IntegerOptions(
 
 
 @DeveloperAPI
-def Boolean(default: bool, description: str, parameter_metadata: ParameterMetadata = None):
+def Boolean(default: bool, description: str = "", parameter_metadata: ParameterMetadata = None):
     if default is not None:
         try:
             assert isinstance(default, bool)
@@ -933,16 +933,18 @@ def FloatRangeTupleDataclassField(
                 items_schema["minimum"] = min
             if max is not None:
                 items_schema["maximum"] = max
+            one_of = [
+                {
+                    "type": "array",
+                    "items": [{**items_schema}] * n,
+                    "default": default,
+                    "description": description,
+                },
+            ]
+            if allow_none:
+                one_of.append({"type": "null", "title": "null_float_tuple_option", "description": "None"})
             return {
-                "oneOf": [
-                    {
-                        "type": "array",
-                        "items": [{**items_schema}] * n,
-                        "default": default,
-                        "description": description,
-                    },
-                    {"type": "null", "title": "null_float_tuple_option", "description": "None"},
-                ],
+                "oneOf": one_of,
                 "title": self.name,
                 "default": default,
                 "description": "Valid options for FloatRangeTupleDataclassField.",
@@ -1108,9 +1110,14 @@ def OneOfOptionsField(
     return field(
         metadata={
             "marshmallow_field": OneOfOptionsCombinatorialField(
-                allow_none=allow_none, load_default=default, dump_default=default, metadata={"description": description}
+                allow_none=allow_none,
+                load_default=default,
+                dump_default=default,
+                metadata={
+                    "description": description,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
+                },
             ),
-            "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
         },
         **default_kwarg,
     )
@@ -1118,7 +1125,12 @@ def OneOfOptionsField(
 
 class TypeSelection(fields.Field):
     def __init__(
-        self, registry: Registry, default_value: Optional[str] = None, key: str = "type", description: str = ""
+        self,
+        registry: Registry,
+        default_value: Optional[str] = None,
+        key: str = "type",
+        description: str = "",
+        parameter_metadata: ParameterMetadata = None,
     ):
         self.registry = registry
         self.default_value = default_value
@@ -1138,7 +1150,7 @@ class TypeSelection(fields.Field):
             allow_none=False,
             dump_default=dump_default,
             load_default=load_default,
-            metadata={"description": description},
+            metadata={"description": description, "parameter_metadata": convert_metadata_to_json(parameter_metadata)},
         )
 
     def _deserialize(self, value, attr, data, **kwargs):
@@ -1217,3 +1229,6 @@ class DictMarshmallowField(fields.Field):
             metadata={"marshmallow_field": self},
             default_factory=default_factory,
         )
+
+    def _jsonschema_type_mapping(self):
+        return unload_jsonschema_from_marshmallow_class(self.cls)

@@ -16,7 +16,7 @@
 import logging
 from abc import ABC
 from functools import lru_cache
-from typing import Dict
+from typing import Dict, Type
 
 import torch
 from torch.nn import Linear, ModuleList
@@ -30,6 +30,7 @@ from ludwig.modules.embedding_modules import Embed
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.modules.tabnet_modules import TabNet
+from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.combiners.comparator import ComparatorCombinerConfig
 from ludwig.schema.combiners.concat import ConcatCombinerConfig
 from ludwig.schema.combiners.project_aggregate import ProjectAggregateCombinerConfig
@@ -38,21 +39,12 @@ from ludwig.schema.combiners.sequence_concat import SequenceConcatCombinerConfig
 from ludwig.schema.combiners.tab_transformer import TabTransformerCombinerConfig
 from ludwig.schema.combiners.tabnet import TabNetCombinerConfig
 from ludwig.schema.combiners.transformer import TransformerCombinerConfig
-from ludwig.schema.combiners.utils import combiner_registry, register_combiner
 from ludwig.utils.misc_utils import get_from_registry
+from ludwig.utils.registry import Registry
 from ludwig.utils.torch_utils import LudwigModule, sequence_length_3D
 from ludwig.utils.torch_utils import sequence_mask as torch_sequence_mask
 
 logger = logging.getLogger(__name__)
-
-
-def get_combiner_class(combiner_type: str):
-    """Returns the corresponding combiner class from `ludwig.combiners.combiners.combiner_registry`.
-
-    :param combiner_type: identifier that should correspond to a registered combiner
-    :type combiner_type: str
-    """
-    return get_from_registry(combiner_type, combiner_registry)
 
 
 @DeveloperAPI
@@ -96,7 +88,22 @@ class Combiner(LudwigModule, ABC):
         return output_tensor["combiner_output"].size()[1:]
 
 
-@register_combiner(name="concat")
+combiner_impl_registry = Registry[Type[Combiner]]()
+
+
+def register_combiner(config_cls: Type[BaseCombinerConfig]):
+    def wrap(cls: Type[Combiner]):
+        combiner_impl_registry[config_cls] = cls
+        return cls
+
+    return wrap
+
+
+def create_combiner(config: BaseCombinerConfig, **kwargs) -> Combiner:
+    return combiner_impl_registry[type(config)](config=config, **kwargs)
+
+
+@register_combiner(ConcatCombinerConfig)
 class ConcatCombiner(Combiner):
     def __init__(self, input_features: Dict[str, "InputFeature"] = None, config: ConcatCombinerConfig = None, **kwargs):
         super().__init__(input_features)
@@ -163,12 +170,8 @@ class ConcatCombiner(Combiner):
 
         return return_data
 
-    @staticmethod
-    def get_schema_cls():
-        return ConcatCombinerConfig
 
-
-@register_combiner(name="sequence_concat")
+@register_combiner(SequenceConcatCombinerConfig)
 class SequenceConcatCombiner(Combiner):
     def __init__(
         self, input_features: Dict[str, "InputFeature"], config: SequenceConcatCombinerConfig = None, **kwargs
@@ -306,12 +309,8 @@ class SequenceConcatCombiner(Combiner):
 
         return return_data
 
-    @staticmethod
-    def get_schema_cls():
-        return SequenceConcatCombinerConfig
 
-
-@register_combiner(name="sequence")
+@register_combiner(SequenceCombinerConfig)
 class SequenceCombiner(Combiner):
     def __init__(self, input_features: Dict[str, "InputFeature"], config: SequenceCombinerConfig = None, **kwargs):
         super().__init__(input_features)
@@ -371,12 +370,8 @@ class SequenceCombiner(Combiner):
 
         return return_data
 
-    @staticmethod
-    def get_schema_cls():
-        return SequenceCombinerConfig
 
-
-@register_combiner(name="tabnet")
+@register_combiner(TabNetCombinerConfig)
 class TabNetCombiner(Combiner):
     def __init__(
         self, input_features: Dict[str, "InputFeature"], config: TabNetCombinerConfig = None, **kwargs
@@ -447,16 +442,12 @@ class TabNetCombiner(Combiner):
 
         return return_data
 
-    @staticmethod
-    def get_schema_cls():
-        return TabNetCombinerConfig
-
     @property
     def output_shape(self) -> torch.Size:
         return self.tabnet.output_shape
 
 
-@register_combiner(name="transformer")
+@register_combiner(TransformerCombinerConfig)
 class TransformerCombiner(Combiner):
     def __init__(
         self, input_features: Dict[str, "InputFeature"] = None, config: TransformerCombinerConfig = None, **kwargs
@@ -551,12 +542,8 @@ class TransformerCombiner(Combiner):
 
         return return_data
 
-    @staticmethod
-    def get_schema_cls():
-        return TransformerCombinerConfig
 
-
-@register_combiner(name="tabtransformer")
+@register_combiner(TabTransformerCombinerConfig)
 class TabTransformerCombiner(Combiner):
     def __init__(
         self, input_features: Dict[str, "InputFeature"] = None, config: TabTransformerCombinerConfig = None, **kwargs
@@ -695,7 +682,6 @@ class TabTransformerCombiner(Combiner):
 
         # ================ Project & Concat embeddables ================
         if len(embeddable_encoder_outputs) > 0:
-
             # ============== Flatten =================
             embeddable_encoder_outputs = [torch.reshape(eo, [batch_size, -1]) for eo in embeddable_encoder_outputs]
 
@@ -753,12 +739,8 @@ class TabTransformerCombiner(Combiner):
 
         return return_data
 
-    @staticmethod
-    def get_schema_cls():
-        return TabTransformerCombinerConfig
 
-
-@register_combiner(name="comparator")
+@register_combiner(ComparatorCombinerConfig)
 class ComparatorCombiner(Combiner):
     def __init__(
         self,
@@ -900,12 +882,8 @@ class ComparatorCombiner(Combiner):
 
         return {"combiner_output": hidden}
 
-    @staticmethod
-    def get_schema_cls():
-        return ComparatorCombinerConfig
 
-
-@register_combiner(name="project_aggregate")
+@register_combiner(ProjectAggregateCombinerConfig)
 class ProjectAggregateCombiner(Combiner):
     def __init__(
         self, input_features: Dict[str, "InputFeature"] = None, config: ProjectAggregateCombinerConfig = None, **kwargs
@@ -988,7 +966,3 @@ class ProjectAggregateCombiner(Combiner):
                     return_data[key] = value
 
         return return_data
-
-    @staticmethod
-    def get_schema_cls():
-        return ProjectAggregateCombinerConfig

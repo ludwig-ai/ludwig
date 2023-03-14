@@ -5,9 +5,9 @@ from typing import Any, Dict, Optional, Set
 from marshmallow import ValidationError
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.config_validation.checks import check_basic_required_parameters, get_config_check_registry
+from ludwig.config_validation.checks import get_config_check_registry
 from ludwig.config_validation.validation import check_schema
-from ludwig.constants import BACKEND, ENCODER, INPUT_FEATURES, MODEL_ECD, PREPROCESSING, TYPE
+from ludwig.constants import BACKEND, ENCODER, MODEL_ECD
 from ludwig.error import ConfigValidationError
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.schema import utils as schema_utils
@@ -19,6 +19,8 @@ from ludwig.schema.model_types.utils import (
     merge_with_defaults,
     set_derived_feature_columns_,
     set_hyperopt_defaults_,
+    set_preprocessing_parameters,
+    set_tagger_decoder_parameters,
     set_validation_parameters,
 )
 from ludwig.schema.preprocessing import PreprocessingConfig
@@ -45,12 +47,17 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
     defaults: BaseDefaultsConfig
     hyperopt: Optional[HyperoptConfig] = None
 
-    backend: Dict[str, Any] = schema_utils.Dict()
-    ludwig_version: str = LUDWIG_VERSION
+    backend: Dict[str, Any] = schema_utils.Dict()  # TODO(jeffkinnison): Add backend schema
+    ludwig_version: str = schema_utils.ProtectedString(LUDWIG_VERSION)
 
     def __post_init__(self):
+        merge_fixed_preprocessing_params(self)
         set_validation_parameters(self)
         set_hyperopt_defaults_(self)
+        set_tagger_decoder_parameters(self)
+
+        # Reconcile conflicting preprocessing parameters
+        set_preprocessing_parameters(self)
 
         # Derive proc_col for each feature from the feature's preprocessing parameters
         # after all preprocessing parameters have been set
@@ -71,23 +78,7 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
                 f"Invalid model type: '{model_type}', expected one of: {list(model_type_schema_registry.keys())}"
             )
 
-        check_basic_required_parameters(config)
         config = merge_with_defaults(config)
-
-        # TODO(travis): move this into helper function
-        # Update preprocessing parameters if encoders require fixed preprocessing parameters
-        for feature_config in config.get(INPUT_FEATURES, []):
-            if TYPE not in feature_config:
-                continue
-
-            preprocessing_parameters = feature_config.get(PREPROCESSING, {})
-            preprocessing_parameters = merge_fixed_preprocessing_params(
-                model_type, feature_config[TYPE], preprocessing_parameters, feature_config.get(ENCODER, {})
-            )
-            preprocessing_parameters = _merge_encoder_cache_params(
-                preprocessing_parameters, feature_config.get(ENCODER, {})
-            )
-            feature_config[PREPROCESSING] = preprocessing_parameters
 
         # TODO(travis): handle this with helper function
         backend = config.get(BACKEND)

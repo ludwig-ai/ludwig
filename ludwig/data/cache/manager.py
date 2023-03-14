@@ -47,7 +47,7 @@ class DatasetCache:
         return valid, cached_training_set_metadata, cached_training_set, cached_test_set, cached_validation_set
 
     def put(self, training_set, test_set, validation_set, training_set_metadata):
-        logger.info("Writing preprocessed training set cache")
+        logger.info(f"Writing preprocessed training set cache to {self.cache_map[TRAINING]}")
         training_set = self.dataset_manager.save(
             self.cache_map[TRAINING],
             training_set,
@@ -56,18 +56,8 @@ class DatasetCache:
             TRAINING,
         )
 
-        if test_set is not None:
-            logger.info("Writing preprocessed test set cache")
-            test_set = self.dataset_manager.save(
-                self.cache_map[TEST],
-                test_set,
-                self.config,
-                training_set_metadata,
-                TEST,
-            )
-
         if validation_set is not None:
-            logger.info("Writing preprocessed validation set cache")
+            logger.info(f"Writing preprocessed validation set cache to {self.cache_map[VALIDATION]}")
             validation_set = self.dataset_manager.save(
                 self.cache_map[VALIDATION],
                 validation_set,
@@ -76,7 +66,17 @@ class DatasetCache:
                 VALIDATION,
             )
 
-        logger.info("Writing train set metadata")
+        if test_set is not None:
+            logger.info(f"Writing preprocessed test set cache to {self.cache_map[TEST]}")
+            test_set = self.dataset_manager.save(
+                self.cache_map[TEST],
+                test_set,
+                self.config,
+                training_set_metadata,
+                TEST,
+            )
+
+        logger.info(f"Writing train set metadata to {self.cache_map[META]}")
         data_utils.save_json(self.cache_map[META], training_set_metadata)
 
         return training_set, test_set, validation_set, training_set_metadata

@@ -196,9 +196,6 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
         hidden = inputs[HIDDEN]
         return self.decoder_obj(hidden)
 
-    def loss_kwargs(self):
-        return self.loss.to_dict()
-
     def metric_kwargs(self):
         return dict(num_outputs=self.output_shape[0])
 

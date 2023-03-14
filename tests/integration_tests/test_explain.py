@@ -18,6 +18,7 @@ from tests.integration_tests.utils import (
     image_feature,
     LocalTestBackend,
     number_feature,
+    set_feature,
     text_feature,
     timeseries_feature,
     vector_feature,
@@ -54,7 +55,6 @@ def test_abstract_explainer_instantiation():
         Explainer(None, inputs_df=None, sample_df=None, target=None)
 
 
-@pytest.mark.parametrize("use_global", [True, False])
 @pytest.mark.parametrize(
     "explainer_class, model_type",
     [
@@ -74,8 +74,8 @@ def test_abstract_explainer_instantiation():
         pytest.param({"preprocessing": {"split": {"type": "fixed", "column": "split"}}}, id="fixed_split"),
     ],
 )
-def test_explainer_api(explainer_class, model_type, output_feature, additional_config, use_global, tmpdir):
-    run_test_explainer_api(explainer_class, model_type, [output_feature], additional_config, use_global, tmpdir)
+def test_explainer_api(explainer_class, model_type, output_feature, additional_config, tmpdir):
+    run_test_explainer_api(explainer_class, model_type, [output_feature], additional_config, tmpdir)
 
 
 @pytest.mark.distributed
@@ -84,8 +84,7 @@ def test_explainer_api(explainer_class, model_type, output_feature, additional_c
     [binary_feature(), number_feature(), category_feature(decoder={"vocab_size": 3})],
     ids=["binary", "number", "category"],
 )
-@pytest.mark.parametrize("use_global", [True, False])
-def test_explainer_api_ray(use_global, output_feature, tmpdir, ray_cluster_2cpu):
+def test_explainer_api_ray(output_feature, tmpdir, ray_cluster_2cpu):
     from ludwig.explain.captum_ray import RayIntegratedGradientsExplainer
 
     run_test_explainer_api(
@@ -93,7 +92,6 @@ def test_explainer_api_ray(use_global, output_feature, tmpdir, ray_cluster_2cpu)
         "ecd",
         [output_feature],
         {},
-        use_global,
         tmpdir,
         resources_per_task={"num_cpus": 1},
         num_workers=1,
@@ -120,20 +118,40 @@ def test_explainer_text_hf(explainer_class, model_type, cache_encoder_embeddings
             preprocessing={"cache_encoder_embeddings": cache_encoder_embeddings},
         )
     ]
-    run_test_explainer_api(
-        explainer_class, model_type, [binary_feature()], {}, False, tmpdir, input_features=input_features
-    )
+    run_test_explainer_api(explainer_class, model_type, [binary_feature()], {}, tmpdir, input_features=input_features)
+
+
+@pytest.mark.parametrize(
+    "explainer_class,model_type",
+    [
+        pytest.param(IntegratedGradientsExplainer, MODEL_ECD, id="ecd_local"),
+        pytest.param(RayIntegratedGradientsExplainer, MODEL_ECD, id="ecd_ray", marks=pytest.mark.distributed),
+        # TODO(travis): once we support GBM text features
+        # pytest.param((GBMExplainer, MODEL_GBM), id="gbm_local"),
+    ],
+)
+def test_explainer_text_tied_weights(explainer_class, model_type, tmpdir):
+    text_feature_1 = text_feature()
+    text_feature_2 = text_feature(tied=text_feature_1["name"])
+    input_features = [text_feature_1, text_feature_2]
+    run_test_explainer_api(explainer_class, model_type, [binary_feature()], {}, tmpdir, input_features=input_features)
 
 
 def run_test_explainer_api(
-    explainer_class, model_type, output_features, additional_config, use_global, tmpdir, input_features=None, **kwargs
+    explainer_class, model_type, output_features, additional_config, tmpdir, input_features=None, **kwargs
 ):
     image_dest_folder = os.path.join(tmpdir, "generated_images")
 
     if input_features is None:
-        input_features = [binary_feature(), number_feature(), category_feature(encoder={"reduce_output": "sum"})]
+        input_features = [
+            binary_feature(),
+            number_feature(),
+            category_feature(encoder={"type": "onehot", "reduce_output": "sum"}),
+            category_feature(encoder={"type": "passthrough", "reduce_output": "sum"}),
+        ]
         if model_type == MODEL_ECD:
             input_features += [
+                category_feature(encoder={"type": "dense", "reduce_output": "sum"}),
                 text_feature(encoder={"vocab_size": 3}),
                 vector_feature(),
                 timeseries_feature(),
@@ -142,7 +160,7 @@ def run_test_explainer_api(
                 # sequence_feature(encoder={"vocab_size": 3}),
                 # date_feature(),
                 # h3_feature(),
-                # set_feature(encoder={"vocab_size": 3}),
+                set_feature(encoder={"vocab_size": 3}),
                 # bag_feature(encoder={"vocab_size": 3}),
             ]
 
@@ -167,9 +185,7 @@ def run_test_explainer_api(
     model.train(df)
 
     # Explain model
-    explainer = explainer_class(
-        model, inputs_df=df, sample_df=df, target=output_features[0]["name"], use_global=use_global, **kwargs
-    )
+    explainer = explainer_class(model, inputs_df=df, sample_df=df, target=output_features[0]["name"], **kwargs)
 
     is_binary = output_features[0].get("type") == BINARY
     is_category = output_features[0].get("type") == CATEGORY
@@ -184,12 +200,13 @@ def run_test_explainer_api(
     assert explainer.is_category_target == is_category
     assert explainer.vocab_size == vocab_size
 
-    explanations, expected_values = explainer.explain()
+    explanations_result = explainer.explain()
 
-    # Verify shapes. One explanation per row, or 1 averaged explanation if `use_global=True`
-    expected_explanations = len(df) if not use_global else 1
-    assert len(explanations) == expected_explanations
-    for e in explanations:
+    # Verify shapes.
+    assert explanations_result.global_explanation.to_array().shape == (vocab_size, len(input_features))
+
+    assert len(explanations_result.row_explanations) == len(df)
+    for e in explanations_result.row_explanations:
         assert e.to_array().shape == (vocab_size, len(input_features))
 
-    assert len(expected_values) == vocab_size
+    assert len(explanations_result.expected_values) == vocab_size

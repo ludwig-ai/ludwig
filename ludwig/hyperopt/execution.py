@@ -32,7 +32,6 @@ from ray.util.queue import Queue as RayQueue
 from ludwig.api import LudwigModel
 from ludwig.api_annotations import PublicAPI
 from ludwig.backend import initialize_backend, RAY
-from ludwig.backend._ray210_compat import TunerRay210
 from ludwig.backend.ray import initialize_ray
 from ludwig.callbacks import Callback
 from ludwig.constants import MAXIMIZE, TEST, TRAINER, TRAINING, TYPE, VALIDATION
@@ -53,6 +52,11 @@ from ludwig.utils.misc_utils import get_from_registry
 logger = logging.getLogger(__name__)
 
 _ray220 = version.parse(ray.__version__) >= version.parse("2.2.0")
+
+if not _ray220:
+    from ludwig.backend._ray210_compat import TunerRay210
+else:
+    TunerRay210 = None
 
 
 try:
@@ -352,9 +356,15 @@ class RayTuneExecutor:
 
         return kubernetes_syncer.get_node_address_by_ip
 
-    # For specified [stopped] trial, remove checkpoint marker on any partial checkpoints
     @staticmethod
     def _remove_partial_checkpoints(trial_path: str):
+        """For specified [stopped] trial, remove checkpoint marker on any partial checkpoints.
+
+        These may have been created for a trial that was terminated early by RayTune because the time budget was
+        exceeded.
+        """
+        # `trial_dir` returned by RayTune may have a leading slash, so we need to remove it.
+        trial_path = trial_path.rstrip("/") if isinstance(trial_path, str) else trial_path
         marker_paths = glob.glob(os.path.join(glob.escape(trial_path), "checkpoint_*/.is_checkpoint"))
         for marker_path in marker_paths:
             chkpt_dir = os.path.dirname(marker_path)
@@ -522,7 +532,7 @@ class RayTuneExecutor:
                     # When using the Ray backend and resuming from a previous checkpoint, we must sync
                     # the checkpoint files from the trial driver to the trainer worker.
                     resume_ckpt = Checkpoint.from_directory(checkpoint_dir)
-                    self.resume_ckpt_ref = resume_ckpt.to_object_ref()
+                    self.resume_ckpt_ref = ray.put(resume_ckpt)
 
             def on_trainer_train_setup(self, trainer, save_path, is_coordinator):
                 # Check local rank before manipulating files, as otherwise there will be a race condition
@@ -531,7 +541,9 @@ class RayTuneExecutor:
                     # The resume checkpoint is not None, so we are resuming from a previous state, and the
                     # node of the trainer worker is not the same as the trial driver, otherwise the files would
                     # not need to be synced as they would share the same local filesystem.
-                    trainer_ckpt = Checkpoint(obj_ref=self.resume_ckpt_ref)
+
+                    # Load the checkpoint directly from the reference in the object store.
+                    trainer_ckpt = ray.get(self.resume_ckpt_ref)
                     with trainer_ckpt.as_directory() as ckpt_path:
                         # Attempt an atomic move from the ckpt_path to the save_path
                         # This may first require removing the existing save_path
@@ -567,7 +579,7 @@ class RayTuneExecutor:
             def on_trainer_train_teardown(self, trainer, progress_tracker, save_path, is_coordinator):
                 if is_coordinator and progress_tracker.steps > self.last_steps:
                     # Note: Calling tune.report in both on_eval_end() and here can cause multiprocessing issues
-                    # for some ray samplers if not steps have happened since the last eval.
+                    # for some ray samplers if no steps have happened since the last eval.
                     self._checkpoint_progress(trainer, progress_tracker, save_path)
                     if not is_using_ray_backend:
                         report(progress_tracker)
@@ -769,6 +781,8 @@ class RayTuneExecutor:
                 search_alg = ConcurrencyLimiter(search_alg, max_concurrent=self.max_concurrent_trials)
 
         def run_experiment_trial(config, local_hyperopt_dict, checkpoint_dir=None):
+            # Checkpoint dir exists when trials are temporarily paused and resumed, for e.g.,
+            # when using the HB_BOHB scheduler.
             return self._run_experiment(
                 config,
                 checkpoint_dir,
@@ -779,6 +793,8 @@ class RayTuneExecutor:
 
         tune_config = {}
         for callback in callbacks or []:
+            # Note: tune_config will contain the MLFlow keys from the last callback
+            # in the list of callbacks that implements prepare_ray_tune.
             run_experiment_trial, tune_config = callback.prepare_ray_tune(
                 run_experiment_trial,
                 tune_config,
@@ -909,6 +925,9 @@ class RayTuneExecutor:
                     # Evaluate the best model on the eval_split, which is validation_set
                     if validation_set is not None and validation_set.size > 0:
                         trial_path = trial["trial_dir"]
+                        # Remove partial checkpoints that may have been created by RayTune
+                        # when time budget is reached (if one was set)
+                        self._remove_partial_checkpoints(trial_path)
                         with self._get_best_model_path(
                             trial_path, analysis, backend.storage.artifacts.credentials
                         ) as best_model_path:

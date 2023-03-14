@@ -7,6 +7,11 @@ description: |
   The Reddit Irony dataset.
   Source Paper: Humans Require Context to Infer Ironic Intent (so Computers Probably do, too)
   Byron C Wallace, Do Kook Choe, Laura Kertz, and Eugene Charniak
+columns:
+  - name: comment_text
+    type: text
+  - name: label
+    type: binary
 output_features:
   - name: label
     type: binary

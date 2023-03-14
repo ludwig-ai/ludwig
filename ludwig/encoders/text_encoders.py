@@ -16,6 +16,7 @@
 import logging
 from typing import Any, Callable, Dict, List, Optional, Type, Union
 
+import numpy as np
 import torch
 from torch import nn
 
@@ -40,12 +41,13 @@ from ludwig.schema.encoders.text_encoders import (
     MT5Config,
     RoBERTaConfig,
     T5Config,
+    TfIdfEncoderConfig,
     TransformerXLConfig,
     XLMConfig,
     XLMRoBERTaConfig,
     XLNetConfig,
 )
-from ludwig.utils.hf_utils import load_pretrained_hf_model
+from ludwig.utils.hf_utils import load_pretrained_hf_model_with_hub_fallback
 from ludwig.utils.torch_utils import FreezeModule
 
 logger = logging.getLogger(__name__)
@@ -191,7 +193,9 @@ class ALBERTEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model(AlbertModel, pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+                AlbertModel, pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             transformer = self._init_transformer_from_scratch(AlbertModel, AlbertConfig, hf_config_params, vocab_size)
 
@@ -311,7 +315,9 @@ class MT5Encoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model(MT5EncoderModel, pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+                MT5EncoderModel, pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             transformer = self._init_transformer_from_scratch(MT5EncoderModel, MT5Config, hf_config_params, vocab_size)
 
@@ -401,7 +407,9 @@ class XLMRoBERTaEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model(XLMRobertaModel, pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+                XLMRobertaModel, pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             transformer = self._init_transformer_from_scratch(
                 XLMRobertaModel, XLMRobertaConfig, hf_config_params, vocab_size
@@ -517,7 +525,9 @@ class BERTEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model(BertModel, pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+                BertModel, pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             transformer = self._init_transformer_from_scratch(BertModel, BertConfig, hf_config_params, vocab_size)
 
@@ -658,7 +668,9 @@ class XLMEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model(XLMModel, pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+                XLMModel, pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             transformer = self._init_transformer_from_scratch(XLMModel, XLMConfig, hf_config_params, vocab_size)
 
@@ -759,7 +771,9 @@ class GPTEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model(OpenAIGPTModel, pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+                OpenAIGPTModel, pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             transformer = self._init_transformer_from_scratch(
                 OpenAIGPTModel, OpenAIGPTConfig, hf_config_params, vocab_size
@@ -861,7 +875,9 @@ class GPT2Encoder(HFTextEncoder):
 
         if use_pretrained:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model(GPT2Model, pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+                GPT2Model, pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             transformer = self._init_transformer_from_scratch(GPT2Model, GPT2Config, hf_config_params, vocab_size)
 
@@ -945,7 +961,9 @@ class RoBERTaEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model(RobertaModel, pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+                RobertaModel, pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             transformer = self._init_transformer_from_scratch(RobertaModel, RobertaConfig, hf_config_params, vocab_size)
 
@@ -1072,7 +1090,9 @@ class TransformerXLEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model(TransfoXLModel, pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+                TransfoXLModel, pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             config = TransfoXLConfig(**hf_config_params)
             transformer = TransfoXLModel(config)
@@ -1195,7 +1215,9 @@ class XLNetEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model(XLNetModel, pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+                XLNetModel, pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             transformer = self._init_transformer_from_scratch(XLNetModel, XLNetConfig, hf_config_params, vocab_size)
 
@@ -1295,7 +1317,9 @@ class DistilBERTEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model(DistilBertModel, pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+                DistilBertModel, pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             transformer = self._init_transformer_from_scratch(
                 DistilBertModel, DistilBertConfig, hf_config_params, vocab_size
@@ -1399,7 +1423,9 @@ class CTRLEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model(CTRLModel, pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+                CTRLModel, pretrained_model_name_or_path, **pretrained_kwargs
+            )
             self.vocab_size = transformer.config.vocab_size
         else:
             transformer = self._init_transformer_from_scratch(CTRLModel, CTRLConfig, hf_config_params, vocab_size)
@@ -1506,7 +1532,9 @@ class CamemBERTEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model(CamembertModel, pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+                CamembertModel, pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             transformer = self._init_transformer_from_scratch(
                 CamembertModel, CamembertConfig, hf_config_params, vocab_size
@@ -1614,7 +1642,9 @@ class T5Encoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model(T5Model, pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+                T5Model, pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             transformer = self._init_transformer_from_scratch(T5Model, T5Config, hf_config_params, vocab_size)
 
@@ -1745,7 +1775,9 @@ class FlauBERTEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model(FlaubertModel, pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+                FlaubertModel, pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             transformer = self._init_transformer_from_scratch(
                 FlaubertModel, FlaubertConfig, hf_config_params, vocab_size
@@ -1856,7 +1888,9 @@ class ELECTRAEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model(ElectraModel, pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+                ElectraModel, pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             transformer = self._init_transformer_from_scratch(ElectraModel, ElectraConfig, hf_config_params, vocab_size)
 
@@ -1943,7 +1977,9 @@ class LongformerEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model(LongformerModel, pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+                LongformerModel, pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             transformer = self._init_transformer_from_scratch(
                 LongformerModel, LongformerConfig, hf_config_params, vocab_size
@@ -2021,7 +2057,9 @@ class AutoTransformerEncoder(HFTextEncoder):
         from transformers import AutoModel
 
         pretrained_kwargs = pretrained_kwargs or {}
-        transformer = load_pretrained_hf_model(AutoModel, pretrained_model_name_or_path, **pretrained_kwargs)
+        transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+            AutoModel, pretrained_model_name_or_path, **pretrained_kwargs
+        )
         self._maybe_resize_token_embeddings(transformer, vocab_size)
 
         self.config = self._init_config(transformer, [], encoder_config)
@@ -2076,3 +2114,56 @@ class AutoTransformerEncoder(HFTextEncoder):
     @property
     def input_dtype(self):
         return torch.int32
+
+
+@DeveloperAPI
+@register_encoder("tf_idf", [TEXT])
+class TfIdfEncoder(Encoder):
+    def __init__(
+        self,
+        max_sequence_length: int,
+        encoder_config=None,
+        str2idf=None,
+        vocab=None,
+        vocab_size: int = None,
+        **kwargs,
+    ):
+        super().__init__()
+        self.config = encoder_config
+        self.max_sequence_length = max_sequence_length
+        self.vocab_size = vocab_size
+
+        logger.debug(f" {self.name}")
+
+        # Convert mapping of token -> frequency to a dense array
+        idf = np.zeros(vocab_size)
+        for i, s in enumerate(vocab):
+            idf[i] = str2idf[s]
+        self.idf = torch.from_numpy(idf).float().unsqueeze(0)
+
+    def forward(self, t: torch.Tensor, mask=None):
+        # Compute the term frequency within each row
+        tf = torch.stack([t_i.bincount(minlength=self.vocab_size) for t_i in torch.unbind(t.long())])
+
+        # Normalize the term frequency by the number of tokens in each row
+        tf = tf / tf.sum(dim=1).unsqueeze(-1)
+
+        # Multiply the term frequency by the inverse document frequency
+        tfidf = tf * self.idf
+
+        return {"encoder_output": tfidf}
+
+    @staticmethod
+    def get_schema_cls():
+        return TfIdfEncoderConfig
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([self.vocab_size])
+
+    def get_embedding_layer(self) -> nn.Module:
+        return self

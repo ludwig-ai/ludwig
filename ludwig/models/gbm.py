@@ -118,8 +118,19 @@ class GBM(BaseModel):
         # the Hummingbird compiled model. Notably, when compiling the model to torchscript, compiling with Hummingbird
         # first should preserve the torch predictions code path.
         if self.compiled_model is None:
+            feature_vectors = []
+            for a in inputs.values():
+                if a.ndim > 1:
+                    # Input feature is a vector of shape [batch_size, nfeatures]
+                    # We need to expand this into `nfeatures` individual vectors of shape [batch_size]
+                    nfeatures = a.shape[1]
+                    vectors = [v.squeeze() for v in np.hsplit(a, nfeatures)]
+                    feature_vectors += vectors
+                else:
+                    feature_vectors.append(a)
+
             # The LGBM sklearn interface works with array-likes, so we place the inputs into a 2D numpy array.
-            in_array = np.stack(list(inputs.values()), axis=0).T
+            in_array = np.stack(feature_vectors, axis=0).T
 
             # Predict on the input batch and convert the predictions to torch tensors so that they are compatible with
             # the existing metrics modules.
@@ -129,11 +140,17 @@ class GBM(BaseModel):
             logits = reshape_logits(output_feature, logits)
         else:
             # Convert inputs to tensors of type float as expected by hummingbird GEMMTreeImpl.
-            for input_feature_name, input_values in inputs.items():
-                if not isinstance(input_values, torch.Tensor):
-                    inputs[input_feature_name] = torch.from_numpy(input_values).float()
+            for input_feature_name, t in inputs.items():
+                if not isinstance(t, torch.Tensor):
+                    inputs[input_feature_name] = torch.from_numpy(t).float()
                 else:
-                    inputs[input_feature_name] = input_values.view(-1, 1).float()
+                    # For scalar features, expect tensor of [batch_size, 1] for input, so reshape if only
+                    # given [batch_size]. Additionally, because TorchScript tracing will not retain this conditional,
+                    # we need to make sure we perform this reshaping for every scalar feature, even if it's already
+                    # shaped correctly at the time of tracing, to allow for input in either shape at inference time.
+                    if len(t.shape) == 1 or (len(t.shape) == 2 and t.shape[1] == 1):
+                        t = t.view(-1, 1)
+                    inputs[input_feature_name] = t.float()
 
             # TODO(travis): include encoder and decoder steps during inference
             # encoder_outputs = {}
@@ -145,14 +162,9 @@ class GBM(BaseModel):
             # concatenate inputs
             inputs = torch.cat(list(inputs.values()), dim=1)
 
-            assert (
-                type(inputs) is torch.Tensor
-                and inputs.dtype == torch.float32
-                and inputs.ndim == 2
-                and inputs.shape[1] == len(self.input_features)
-            ), (
-                f"Expected inputs to be a 2D tensor of shape (batch_size, {len(self.input_features)}) of type float32, "
-                f"but got {inputs.shape} of type {inputs.dtype}"
+            assert isinstance(inputs, torch.Tensor) and inputs.dtype == torch.float32 and inputs.ndim == 2, (
+                f"Expected inputs to be a 2D tensor of shape (batch_size, n) of type float32, "
+                f"but got shape {inputs.shape} and type {inputs.dtype}"
             )
             # Predict using PyTorch module, so it is included when converting to TorchScript.
             preds = self.compiled_model(inputs)

@@ -46,3 +46,15 @@ def get_current_dist_strategy(allow_local=True) -> Type[DistributedStrategy]:
 
 def get_dist_strategy(name: str) -> Type[DistributedStrategy]:
     return STRATEGIES[name]()
+
+
+def get_default_strategy_name() -> str:
+    try:
+        # Use horovod by default for now if it's available
+        load_horovod()
+        return "horovod"
+    except ImportError:
+        pass
+
+    # Fallback to DDP if not
+    return "ddp"

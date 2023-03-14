@@ -11,7 +11,7 @@ from ludwig.schema.features.loss.utils import LossDataclassField
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
 from ludwig.schema.features.utils import (
-    defaults_config_registry,
+    ecd_defaults_config_registry,
     ecd_input_config_registry,
     input_mixin_registry,
     output_config_registry,
@@ -29,6 +29,8 @@ class SequenceInputFeatureConfigMixin(BaseMarshmallowConfig):
     """SequenceInputFeatureConfigMixin is a dataclass that configures the parameters used in both the sequence
     input feature and the sequence global defaults section of the Ludwig Config."""
 
+    type: str = schema_utils.ProtectedString(SEQUENCE)
+
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=SEQUENCE)
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
@@ -41,7 +43,7 @@ class SequenceInputFeatureConfigMixin(BaseMarshmallowConfig):
 @DeveloperAPI
 @ecd_input_config_registry.register(SEQUENCE)
 @ludwig_dataclass
-class SequenceInputFeatureConfig(BaseInputFeatureConfig, SequenceInputFeatureConfigMixin):
+class SequenceInputFeatureConfig(SequenceInputFeatureConfigMixin, BaseInputFeatureConfig):
     """SequenceInputFeatureConfig is a dataclass that configures the parameters used for a sequence input
     feature."""
 
@@ -54,6 +56,8 @@ class SequenceInputFeatureConfig(BaseInputFeatureConfig, SequenceInputFeatureCon
 class SequenceOutputFeatureConfigMixin(BaseMarshmallowConfig):
     """SequenceOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the sequence
     output feature and the sequence global defaults section of the Ludwig Config."""
+
+    type: str = schema_utils.ProtectedString(SEQUENCE)
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
         feature_type=SEQUENCE,
@@ -69,7 +73,7 @@ class SequenceOutputFeatureConfigMixin(BaseMarshmallowConfig):
 @DeveloperAPI
 @output_config_registry.register(SEQUENCE)
 @ludwig_dataclass
-class SequenceOutputFeatureConfig(BaseOutputFeatureConfig, SequenceOutputFeatureConfigMixin):
+class SequenceOutputFeatureConfig(SequenceOutputFeatureConfigMixin, BaseOutputFeatureConfig):
     """SequenceOutputFeatureConfig is a dataclass that configures the parameters used for a sequence output
     feature."""
 
@@ -103,7 +107,7 @@ class SequenceOutputFeatureConfig(BaseOutputFeatureConfig, SequenceOutputFeature
 
 
 @DeveloperAPI
-@defaults_config_registry.register(SEQUENCE)
+@ecd_defaults_config_registry.register(SEQUENCE)
 @ludwig_dataclass
 class SequenceDefaultsConfig(SequenceInputFeatureConfigMixin, SequenceOutputFeatureConfigMixin):
     pass
