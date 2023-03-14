@@ -29,7 +29,8 @@ from ludwig.utils.data_utils import (
     get_abs_path,
     hash_dict,
     NumpyEncoder,
-    use_credentials, sanitize_data_for_json,
+    sanitize_data_for_json,
+    use_credentials,
 )
 
 try:
