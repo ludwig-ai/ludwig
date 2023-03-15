@@ -291,6 +291,7 @@ def check_stacked_transformer_requirements(config: "ModelConfig") -> None:  # no
             )
 
 
+@register_config_check
 def check_hyperopt_search_algorithm_dependencies_installed(config: "ModelConfig") -> None:  # noqa: F821
     """Check that the hyperopt search algorithm dependencies are installed."""
     if config.hyperopt is not None:
@@ -338,3 +339,27 @@ def check_tagger_decoder_requirements(config: "ModelConfig") -> None:  # noqa: F
             "Tagger decoder requires at least one of the text, sequence or timeseries input feature encoders to have "
             "`reduce_output` set to `None`."
         )
+
+
+@register_config_check
+def check_hyperopt_parameter_dicts(config: "ModelConfig") -> None:  # noqa: F821
+    """Checks for hyperopt parameter dicts against their config objects."""
+    from ludwig.schema.hyperopt.utils import get_parameter_cls, parameter_config_registry
+
+    if config.hyperopt is not None:
+        if not config.hyperopt.parameters:
+            raise ConfigValidationError(
+                "The config contains a `hyperopt` block, but no parameter search spaces were included."
+            )
+
+        # TODO: check that `parameter` references a valid config field
+        for parameter, space in config.hyperopt.parameters.items():
+            try:
+                space_cls = get_parameter_cls(space["space"])
+                space_cls(**space)
+            except KeyError:
+                space_types = ", ".join(parameter_config_registry.keys())
+                raise ConfigValidationError(
+                    f"Invalid hyperopt parameter space requested for `hyperopt.parameters.{parameter}`. Valid spaces "
+                    f"are {space_types}."
+                )
