@@ -28,16 +28,22 @@ jobs:
           - python-version: "3.8"
             pytorch-version: 1.13.0
             torchaudio-version: 0.13.0  # Unpin when https://github.com/ludwig-ai/ludwig/issues/3245 is resolved on the PyTorch side.
+            torchvision-version: 0.14.0 # Unpin when https://github.com/ludwig-ai/ludwig/issues/3247 is resolved on the PyTorch side.
+            torchtext-version: 0.14.0   # Unpin when https://github.com/ludwig-ai/ludwig/issues/3247 is resolved on the PyTorch side.
             torchscript-version: 1.10.2
             ray-version: 2.0.0
           - python-version: "3.9"
             pytorch-version: 1.13.0
             torchaudio-version: 0.13.0  # Unpin when https://github.com/ludwig-ai/ludwig/issues/3245 is resolved on the PyTorch side.
+            torchvision-version: 0.14.0 # Unpin when https://github.com/ludwig-ai/ludwig/issues/3247 is resolved on the PyTorch side.
+            torchtext-version: 0.14.0   # Unpin when https://github.com/ludwig-ai/ludwig/issues/3247 is resolved on the PyTorch side.
             torchscript-version: 1.10.2
             ray-version: 2.2.0
           - python-version: "3.10"
             pytorch-version: nightly
             torchaudio-version: ""      # Unpin when https://github.com/ludwig-ai/ludwig/issues/3245 is resolved on the PyTorch side.
+            torchvision-version: ""     # Unpin when https://github.com/ludwig-ai/ludwig/issues/3247 is resolved on the PyTorch side.
+            torchtext-version: ""       # Unpin when https://github.com/ludwig-ai/ludwig/issues/3247 is resolved on the PyTorch side.
             torchscript-version: 1.10.2
             ray-version: 2.3.0 # nightly
     env:
