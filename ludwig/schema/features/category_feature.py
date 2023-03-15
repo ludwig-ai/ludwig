@@ -26,7 +26,6 @@ from ludwig.schema.utils import BaseMarshmallowConfig, ludwig_dataclass
 
 @DeveloperAPI
 @input_mixin_registry.register(CATEGORY)
-@gbm_defaults_config_registry.register(CATEGORY)
 @ludwig_dataclass
 class CategoryInputFeatureConfigMixin(BaseMarshmallowConfig):
     """CategoryInputFeatureConfigMixin is a dataclass that configures the parameters used in both the category
@@ -61,6 +60,17 @@ class ECDCategoryInputFeatureConfig(CategoryInputFeatureConfig):
 @gbm_input_config_registry.register(CATEGORY)
 @ludwig_dataclass
 class GBMCategoryInputFeatureConfig(CategoryInputFeatureConfig):
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_GBM,
+        feature_type=CATEGORY,
+        default="passthrough",
+    )
+
+
+@DeveloperAPI
+@gbm_defaults_config_registry.register(CATEGORY)
+@ludwig_dataclass
+class GBMCategoryDefaultsConfig(CategoryInputFeatureConfigMixin):
     encoder: BaseEncoderConfig = EncoderDataclassField(
         MODEL_GBM,
         feature_type=CATEGORY,

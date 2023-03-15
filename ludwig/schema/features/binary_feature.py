@@ -25,7 +25,6 @@ from ludwig.schema.utils import BaseMarshmallowConfig, ludwig_dataclass
 
 
 @DeveloperAPI
-@gbm_defaults_config_registry.register(BINARY)
 @input_mixin_registry.register(BINARY)
 @ludwig_dataclass
 class BinaryInputFeatureConfigMixin(BaseMarshmallowConfig):
@@ -60,6 +59,17 @@ class ECDBinaryInputFeatureConfig(BinaryInputFeatureConfig):
 @gbm_input_config_registry.register(BINARY)
 @ludwig_dataclass
 class GBMBinaryInputFeatureConfig(BinaryInputFeatureConfig):
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_GBM,
+        feature_type=BINARY,
+        default="passthrough",
+    )
+
+
+@DeveloperAPI
+@gbm_defaults_config_registry.register(BINARY)
+@ludwig_dataclass
+class GBMBinaryDefaultsConfig(BinaryInputFeatureConfigMixin):
     encoder: BaseEncoderConfig = EncoderDataclassField(
         MODEL_GBM,
         feature_type=BINARY,

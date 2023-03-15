@@ -570,8 +570,10 @@ def test_defaults_mixins():
 
     config_obj = ModelConfig.from_dict(config)
 
-    assert config_obj.defaults.audio.to_dict().keys() == {TYPE, ENCODER, PREPROCESSING}
-    assert config_obj.defaults.category.to_dict().keys() == {TYPE, ENCODER, PREPROCESSING, DECODER, LOSS}
+    print(config_obj.defaults)
+
+    assert config_obj.defaults.audio.to_dict().keys() == {ENCODER, PREPROCESSING}
+    assert config_obj.defaults.category.to_dict().keys() == {ENCODER, PREPROCESSING, DECODER, LOSS}
 
 
 def test_initializer_recursion():
@@ -722,3 +724,48 @@ def test_preprocessing_max_sequence_length(sequence_length, max_sequence_length,
     config_obj = ModelConfig.from_dict(config)
     assert config_obj.input_features[0].preprocessing.max_sequence_length == max_sequence_length_expected
     assert config_obj.input_features[1].preprocessing.max_sequence_length == max_sequence_length_expected
+
+
+def test_gbm_encoders():
+    config = {
+        "input_features": [
+            {"name": "feature_1", "type": "category"},
+            {"name": "Sex", "type": "category"},
+        ],
+        "output_features": [
+            {"name": "Survived", "type": "category"},
+        ],
+        "defaults": {
+            "binary": {
+                "encoder": {
+                    "type": "passthrough",
+                },
+                "preprocessing": {
+                    "missing_value_strategy": "fill_with_false",
+                },
+            },
+            "category": {
+                "encoder": {
+                    "type": "onehot",
+                },
+                "preprocessing": {
+                    "missing_value_strategy": "fill_with_const",
+                    "most_common": 10000,
+                },
+            },
+            "number": {
+                "encoder": {
+                    "type": "passthrough",
+                },
+                "preprocessing": {
+                    "missing_value_strategy": "fill_with_const",
+                },
+            },
+        },
+        "model_type": "gbm",
+    }
+
+    config_obj = ModelConfig.from_dict(config).to_dict()
+
+    for feature_type in config_obj.get("defaults"):
+        assert "encoder" in config_obj["defaults"][feature_type]

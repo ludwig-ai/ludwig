@@ -13,6 +13,7 @@ from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassFie
 from ludwig.schema.features.utils import (
     ecd_defaults_config_registry,
     ecd_input_config_registry,
+    gbm_defaults_config_registry,
     gbm_input_config_registry,
     input_mixin_registry,
     output_config_registry,
@@ -58,6 +59,17 @@ class ECDTextInputFeatureConfig(TextInputFeatureConfig):
 @gbm_input_config_registry.register(TEXT)
 @ludwig_dataclass
 class GBMTextInputFeatureConfig(TextInputFeatureConfig):
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_GBM,
+        feature_type=TEXT,
+        default="tf_idf",
+    )
+
+
+@DeveloperAPI
+@gbm_defaults_config_registry.register(TEXT)
+@ludwig_dataclass
+class GBMTextDefaultsConfig(TextInputFeatureConfigMixin):
     encoder: BaseEncoderConfig = EncoderDataclassField(
         MODEL_GBM,
         feature_type=TEXT,

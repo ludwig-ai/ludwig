@@ -28,7 +28,6 @@ from ludwig.schema.utils import BaseMarshmallowConfig, ludwig_dataclass
 
 @DeveloperAPI
 @input_mixin_registry.register(NUMBER)
-@gbm_defaults_config_registry.register(NUMBER)
 @ludwig_dataclass
 class NumberInputFeatureConfigMixin(BaseMarshmallowConfig):
     """NumberInputFeatureConfigMixin is a dataclass that configures the parameters used in both the number input
@@ -62,6 +61,17 @@ class ECDNumberInputFeatureConfig(NumberInputFeatureConfig):
 @gbm_input_config_registry.register(NUMBER)
 @ludwig_dataclass
 class GBMNumberInputFeatureConfig(NumberInputFeatureConfig):
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_GBM,
+        feature_type=NUMBER,
+        default="passthrough",
+    )
+
+
+@DeveloperAPI
+@gbm_defaults_config_registry.register(NUMBER)
+@ludwig_dataclass
+class GBMNumberDefaultsConfig(NumberInputFeatureConfigMixin):
     encoder: BaseEncoderConfig = EncoderDataclassField(
         MODEL_GBM,
         feature_type=NUMBER,
