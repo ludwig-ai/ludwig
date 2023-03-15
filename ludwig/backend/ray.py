@@ -921,6 +921,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
             with self.storage.cache.use_credentials():
                 df = (
                     # Requires initialization from a mapping of col_name -> list of items in the series
+                    # Failed image reads return None automatically, so there's no post processing required.
                     DataFrame.from_pydict({column.name: fnames})
                     .with_column(column.name, col(column.name).url.download(max_worker_threads=read_parallelism))
                     .collect()
