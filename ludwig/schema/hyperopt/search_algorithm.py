@@ -14,32 +14,6 @@ from ludwig.schema.hyperopt.utils import (
 from ludwig.schema.utils import ludwig_dataclass
 
 
-def metric_field(description: Optional[str] = None) -> fields.Field:
-    return schema_utils.String(
-        default=None,
-        allow_none=True,
-        description=description
-        or (
-            "Name of the metric used as objective in this experiment. This metric must be present in `raw_data` "
-            "argument to `log_data`. This metric must also be present in the dict reported/returned by the Trainable. "
-            "If `None` but a mode was passed, the `ray.tune.result.DEFAULT_METRIC` will be used per default."
-        ),
-    )
-
-
-def mode_field(description: Optional[str] = None) -> fields.Field:
-    return schema_utils.StringOptions(
-        options=["min", "max", None],
-        default=None,
-        allow_none=True,
-        description=description
-        or (
-            "One of `{min, max}`. Determines whether objective is minimizing or maximizing the metric attribute. "
-            r"Defaults to \“max\”."
-        ),
-    )
-
-
 def points_to_evaluate_field(description: Optional[str] = None) -> fields.Field:
     return schema_utils.DictList(
         description=description
@@ -193,10 +167,6 @@ class AxSAConfig(BaseSearchAlgorithmConfig):
         )
     )
 
-    metric: Optional[str] = metric_field()
-
-    mode: Optional[str] = mode_field()
-
     points_to_evaluate: Optional[List[Dict]] = points_to_evaluate_field()
 
     parameter_constraints: Optional[List] = schema_utils.List(
@@ -221,10 +191,6 @@ class BayesOptSAConfig(BaseSearchAlgorithmConfig):
             "Continuous search space. Parameters will be sampled from this space which will be used to run trials"
         )
     )
-
-    metric: Optional[str] = metric_field()
-
-    mode: Optional[str] = mode_field()
 
     points_to_evaluate: Optional[List[Dict]] = points_to_evaluate_field()
 
@@ -286,10 +252,6 @@ class BOHBSAConfig(BaseSearchAlgorithmConfig):
     )
 
     bohb_config: Optional[Dict] = schema_utils.Dict(description="configuration for HpBandSter BOHB algorithm")
-
-    metric: Optional[str] = metric_field()
-
-    mode: Optional[str] = mode_field()
 
     points_to_evaluate: Optional[List[Dict]] = points_to_evaluate_field()
 
@@ -355,10 +317,6 @@ class DragonflySAConfig(BaseSearchAlgorithmConfig):
         )
     )
 
-    metric: Optional[str] = metric_field()
-
-    mode: Optional[str] = mode_field()
-
     points_to_evaluate: Optional[List[Dict]] = points_to_evaluate_field()
 
     evaluated_rewards: Optional[List] = evaluated_rewards_field()
@@ -382,10 +340,6 @@ class HEBOSAConfig(BaseSearchAlgorithmConfig):
     space: Optional[List[Dict]] = schema_utils.DictList(
         description="A dict mapping parameter names to Tune search spaces or a HEBO DesignSpace object."
     )
-
-    metric: Optional[str] = metric_field()
-
-    mode: Optional[str] = mode_field()
 
     points_to_evaluate: Optional[List[Dict]] = points_to_evaluate_field()
 
@@ -421,10 +375,6 @@ class HyperoptSAConfig(BaseSearchAlgorithmConfig):
             "parameters generated in the variant generation process."
         )
     )
-
-    metric: Optional[str] = metric_field()
-
-    mode: Optional[str] = mode_field()
 
     points_to_evaluate: Optional[List[Dict]] = points_to_evaluate_field()
 
@@ -476,10 +426,6 @@ class NevergradSAConfig(BaseSearchAlgorithmConfig):
         )
     )
 
-    metric: Optional[str] = metric_field()
-
-    mode: Optional[str] = mode_field()
-
     points_to_evaluate: Optional[List[Dict]] = points_to_evaluate_field()
 
 
@@ -498,20 +444,6 @@ class OptunaSAConfig(BaseSearchAlgorithmConfig):
             "[the Optuna docs]"
             "(https://optuna.readthedocs.io/en/stable/tutorial/10_key_features/002_configurations.html)."
         )
-    )
-
-    metric: Optional[str] = metric_field(
-        description=(
-            "The training result objective value attribute. If None but a mode was passed, the anonymous metric "
-            "`_metric` will be used per default. Can be a list of metrics for multi-objective optimization."
-        ),
-    )
-
-    mode: Optional[str] = mode_field(
-        description=(
-            "One of `{min, max}`. Determines whether objective is minimizing or maximizing the metric attribute."
-            "Can be a list of modes for multi-objective optimization (corresponding to `metric`)"
-        ),
     )
 
     points_to_evaluate: Optional[List[Dict]] = points_to_evaluate_field()
@@ -545,10 +477,6 @@ class SkoptSAConfig(BaseSearchAlgorithmConfig):
             "be a list of parameter names instead."
         )
     )
-
-    metric: Optional[str] = metric_field()
-
-    mode: Optional[str] = mode_field()
 
     points_to_evaluate: Optional[List[Dict]] = points_to_evaluate_field()
 
@@ -590,10 +518,6 @@ class ZooptSAConfig(BaseSearchAlgorithmConfig):
             "can be found in zoopt package."
         )
     )
-
-    metric: Optional[str] = metric_field()
-
-    mode: Optional[str] = mode_field()
 
     points_to_evaluate: Optional[List[Dict]] = points_to_evaluate_field()
 
