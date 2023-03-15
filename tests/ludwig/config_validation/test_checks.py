@@ -8,7 +8,7 @@ ModelConfig.from_dict(config)
 """
 
 import contextlib
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import pytest
 
@@ -198,3 +198,33 @@ def test_dense_binary_encoder_0_layer():
     }
     with pytest.raises(ConfigValidationError):
         ModelConfig.from_dict(config)
+
+
+@pytest.mark.parametrize(
+    "entity_1,entity_2,expected",
+    [
+        (["a1"], ["b1"], True),
+        (["a1", "a2"], ["b1"], True),
+        (["a1", "b1"], ["b1"], False),
+    ],
+)
+def test_comparator_combiner(entity_1: List[str], entity_2: List[str], expected: bool):
+    config = {
+        "input_features": [
+            {"name": "a1", "type": "category"},
+            {"name": "b1", "type": "category"},
+        ],
+        "output_features": [
+            {"name": "out1", "type": "binary"},
+        ],
+        "combiner": {
+            "type": "comparator",
+            "entity_1": entity_1,
+            "entity_2": entity_2,
+        },
+    }
+
+    with pytest.raises(ConfigValidationError) if not expected else contextlib.nullcontext():
+        config_obj = ModelConfig.from_dict(config)
+        assert config_obj.combiner.entity_1 == ["a1"]
+        assert config_obj.combiner.entity_2 == ["b1"]
