@@ -28,16 +28,16 @@ class ExpectedImpact(int, Enum):
 class ComputeTier(int, Enum):
     """The compute tier defines the type of compute resources that a model typically needs to get good throughput."""
 
-    CPU = 1
+    CPU = 0
     """Model can train effectively on CPU hardware."""
 
-    GPU_LOW = 2
+    GPU_LOW = 1
     """Model can train effectively on commodity GPU hardware, or inference optimized SKUs like NVIDIA T4."""
 
-    GPU_MEDIUM = 3
+    GPU_MEDIUM = 2
     """Model can train effectively on training-optimized GPU hardware like V100, A10G, or A5000."""
 
-    GPU_HIGH = 4
+    GPU_HIGH = 3
     """Model requires high-end GPUs like A100 or H100 to achieve good throughput."""
 
 
