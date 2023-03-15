@@ -2,9 +2,9 @@ import os
 from typing import Type
 
 import pytest
-from transformers import AlbertModel, BertTokenizer
+from transformers import AlbertModel, BertModel, BertTokenizer
 
-from ludwig.encoders.text_encoders import ALBERTEncoder
+from ludwig.encoders.text_encoders import ALBERTEncoder, BERTEncoder
 from ludwig.utils.hf_utils import load_pretrained_hf_model_from_hub, load_pretrained_hf_model_with_hub_fallback
 
 
@@ -38,4 +38,9 @@ def test_load_pretrained_hf_model_with_hub_fallback(tmpdir):
     _, used_fallback = load_pretrained_hf_model_with_hub_fallback(AlbertModel, ALBERTEncoder.DEFAULT_MODEL_NAME)
     assert not used_fallback
 
+    # Fallback is used for a model that doesn't exist in models directory.
+    _, used_fallback = load_pretrained_hf_model_with_hub_fallback(BertModel, BERTEncoder.DEFAULT_MODEL_NAME)
+    assert used_fallback
+
+    # Clean up.
     del os.environ["LUDWIG_PRETRAINED_MODELS_DIR"]
