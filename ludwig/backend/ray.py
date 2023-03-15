@@ -27,7 +27,6 @@ import ray
 import torch
 import tqdm
 from packaging import version
-from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray import ObjectRef
 from ray.air import session
 from ray.air.checkpoint import Checkpoint
@@ -44,7 +43,6 @@ if TYPE_CHECKING:
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend.base import Backend, RemoteTrainingMixin
-from ludwig.backend.datasource import BinaryIgnoreNoneTypeDatasource
 from ludwig.constants import CPU_RESOURCES_PER_TRIAL, EXECUTOR, MODEL_ECD, NAME, PROC_COLUMN
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataframe.dask import tensor_extension_casting
@@ -56,8 +54,6 @@ from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.trainers.registry import ray_trainers_registry, register_ray_trainer
 from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer
 from ludwig.types import HyperoptConfigDict, ModelConfigDict, TrainerConfigDict, TrainingSetMetadataDict
-from ludwig.utils.dataframe_utils import set_index_name
-from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.system_utils import Resources
 from ludwig.utils.torch_utils import get_torch_device, initialize_pytorch
@@ -828,45 +824,36 @@ class RayBackend(RemoteTrainingMixin, Backend):
     def read_binary_files(
         self, column: Series, map_fn: Optional[Callable] = None, file_size: Optional[int] = None
     ) -> Series:
-        column = column.fillna(np.nan).replace([np.nan], [None])  # normalize NaNs to None
+        # normalize NaNs to None
+        column = column.fillna(np.nan).replace([np.nan], [None])
 
-        # Assume that the list of filenames is small enough to fit in memory. Should be true unless there
-        # are literally billions of filenames.
-        # TODO(travis): determine if there is a performance penalty to passing in individual files instead of
-        #  a directory. If so, we can do some preprocessing to determine if it makes sense to read the full directory
-        #  then filter out files as a postprocessing step (depending on the ratio of included to excluded files in
-        #  the directory). Based on a preliminary look at how Ray handles directory expansion to files, it looks like
-        #  there should not be any difference between providing a directory versus a list of files.
         pd_column = self.df_engine.compute(column)
         fnames = pd_column.values.tolist()
-        idxs = pd_column.index.tolist()
 
         # Sample a filename to extract the filesystem info
         sample_fname = fnames[0]
         if isinstance(sample_fname, str):
-            fs, _ = get_fs_and_path(sample_fname)
+            import daft
+            from daft import col, DataFrame
 
-            read_datasource_fn_kwargs = {
-                "path_and_idxs": list(zip(fnames, idxs)),
-                "filesystem": PyFileSystem(FSSpecHandler(fs)),
-            }
-            if self.df_engine.partitioned and file_size is not None:
-                # Heuristic to determine parallelism: if the average file size is known (in bytes), then we can
-                # extrapolate to determine the total file size. We aim to have ~50MB partitions (5e7 bytes), so we
-                # set parallelism to be the total size / 50MB.
-                total_size = file_size * len(fnames)
-                parallelism = int(total_size / 5e7)
-                # Only set parallelism if it matches or exceeds the Ray default kwarg for parallelism
-                read_datasource_fn_kwargs["parallelism"] = max(RAY_DEFAULT_PARALLELISM, parallelism)
+            # Set the runner for executing Daft dataframes to a Ray cluster
+            daft.context.set_runner_ray(address=ray.util.get_node_ip_address())
 
-            # The resulting column is named "value", which is a dict with two keys: "idx" and "data".
-            ds = ray.data.read_datasource(BinaryIgnoreNoneTypeDatasource(), **read_datasource_fn_kwargs)
-            df = self.df_engine.from_ray_dataset(ds)
-            # Persist the dataframe to prevent re-reading binary files on each subsequent map_objects call
+            # Requires initialization from a mapping of col_name -> list of items in the series
+            read_parallelism = self._get_binary_read_parallelism(len(fnames), file_size)
+            df = (
+                DataFrame.from_pydict({column.name: fnames})
+                .with_column(column.name, col(column.name).url.download(max_worker_threads=read_parallelism))
+                .collect()
+            )
+
+            # As of getdaft 0.0.23, there is no support for conversion to Dask
+            # directly so convert to Ray and then convert to Dask
+            df = df.to_ray_dataset()
+            df = self.df_engine.from_ray_dataset(df)
+
+            # Persist the dataframe
             df = self.df_engine.persist(df)
-            df["idx"] = self.df_engine.map_objects(df["value"], lambda row: int(row["idx"]))
-            df["value"] = self.df_engine.map_objects(df["value"], lambda row: row["data"])
-            df = df.rename(columns={"value": column.name})
         else:
             # Assume the path has already been read in, so just convert directly to a dataset
             # Name the column "value" to match the behavior of the above
@@ -876,11 +863,6 @@ class RayBackend(RemoteTrainingMixin, Backend):
         if map_fn is not None:
             df[column.name] = self.df_engine.map_objects(df[column.name], map_fn)
 
-        if "idx" in df.columns:
-            df = df.set_index("idx", drop=True)
-            df = self.df_engine.map_partitions(
-                df, lambda pd_df: set_index_name(pd_df, column.index.name), meta={column.name: "object"}
-            )
         return df[column.name]
 
     @property
@@ -948,6 +930,20 @@ class RayBackend(RemoteTrainingMixin, Backend):
         num_gpus = resources_per_worker.get("GPU", 0)
         num_cpus = resources_per_worker.get("CPU", (1 if num_gpus == 0 else 0))
         return dict(num_cpus=num_cpus, num_gpus=num_gpus)
+
+    def _get_binary_read_parallelism(self, num_files: int, file_size: Optional[int] = None) -> int:
+        """Determine the maximum number of workers to use when reading binary files using file_size."""
+        if self.df_engine.partitioned and file_size is not None:
+            # Heuristic to determine parallelism: if the average file size is known (in bytes), then we can
+            # extrapolate to determine the total file size. We aim to have ~50MB partitions (5e7 bytes), so we
+            # set parallelism to be the total size / 50MB.
+            total_size = file_size * num_files
+            parallelism = int(total_size / 5e7)
+            # Only set parallelism if it matches or exceeds the Daft default for parallelism
+            return max(8, parallelism)
+
+        # Daft uses a default of 8 worker threads for downloading URLs
+        return 8
 
 
 @ray.remote(max_calls=1)

@@ -11,3 +11,4 @@ GPUtil
 tblib
 awscli
 modin[ray]
+getdaft[ray]
