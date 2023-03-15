@@ -342,8 +342,8 @@ class DragonflySAConfig(BaseSearchAlgorithmConfig):
         default=None,
         allow_none=True,
         description=(
-            "Optional domain. Should only be set if you don't pass an optimizer as the `optimizer` argument. Has to "
-            "be one of [cartesian, euclidean]."
+            "Optional domain. Should only be set if you don't pass an optimizer as the `optimizer` argument. If set, "
+            "has to be one of `[cartesian, euclidean]`."
         ),
     )
 
@@ -580,7 +580,7 @@ class ZooptSAConfig(BaseSearchAlgorithmConfig):
     )
 
     budget: Optional[int] = schema_utils.PositiveInteger(
-        default=None, allow_none=True, description="Number of samples."
+        default=None, allow_none=True, description="Optional. Number of samples."
     )
 
     dim_dict: Optional[Dict] = schema_utils.Dict(
