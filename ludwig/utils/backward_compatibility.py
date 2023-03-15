@@ -811,8 +811,15 @@ def upgrade_defaults_config_for_gbm(config: ModelConfigDict) -> ModelConfigDict:
     defaults = copy.deepcopy(defaults_ref)
     gbm_feature_types = GBMDefaultsConfig.Schema().fields.keys()
     for feature_type in defaults_ref:
+        # GBM only supports binary, number, category and text features
         if feature_type not in gbm_feature_types:
             del defaults[feature_type]
+            continue
+
+        # Remove encoder, decoder and loss from defaults since they only apply to ECD
+        defaults[feature_type].pop("encoder", None)
+        defaults[feature_type].pop("decoder", None)
+        defaults[feature_type].pop("loss", None)
     config[DEFAULTS] = defaults
     return config
 
