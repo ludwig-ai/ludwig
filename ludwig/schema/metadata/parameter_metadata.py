@@ -26,7 +26,8 @@ class ExpectedImpact(int, Enum):
 
 @DeveloperAPI
 class ComputeTier(int, Enum):
-    """The compute tier defines the type of compute resources that a model typically needs to get good throughput."""
+    """The compute tier defines the type of compute resources that a model typically needs to get good
+    throughput."""
 
     CPU = 0
     """Model can train effectively on CPU hardware."""
@@ -73,13 +74,14 @@ class ParameterMetadata:
 
     suggested_values: Any = None
     """What values would a machine learning expert suggest users try to help improve their model?
-    
+
     Should cover 95% (2-sigma) worth of use-cases.
     """
 
     suggested_values_reasoning: Union[str, None] = None
-    """The reasoning behind the suggested values, as well as model performance indicators or other intuition that could
-    help inform a user to make an educated decision about what values to experiment with for this parameter."""
+    """The reasoning behind the suggested values, as well as model performance indicators or other intuition that
+    could help inform a user to make an educated decision about what values to experiment with for this
+    parameter."""
 
     commonly_used: bool = False
     """True if this parameter could be frequently used, would have a high impact, and/or would be interesting for a
@@ -95,7 +97,8 @@ class ParameterMetadata:
     """True if this parameter is used strictly internally and should not be exposed to users."""
 
     compute_tier: ComputeTier = ComputeTier.CPU
-    """The compute tier defines the type of compute resources that a model typically needs to get good throughput."""
+    """The compute tier defines the type of compute resources that a model typically needs to get good
+    throughput."""
 
     @memoized_method(maxsize=1)
     def to_json_dict(self) -> Dict[str, Any]:
