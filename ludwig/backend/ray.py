@@ -918,12 +918,13 @@ class RayBackend(RemoteTrainingMixin, Backend):
             # Get the maximum number of worker threads that can be used to parallelize reads
             read_parallelism = self._get_binary_read_parallelism(len(fnames), file_size)
 
-            df = (
-                # Requires initialization from a mapping of col_name -> list of items in the series
-                DataFrame.from_pydict({column.name: fnames})
-                .with_column(column.name, col(column.name).url.download(max_worker_threads=read_parallelism))
-                .collect()
-            )
+            with self.storage.cache.use_credentials():
+                df = (
+                    # Requires initialization from a mapping of col_name -> list of items in the series
+                    DataFrame.from_pydict({column.name: fnames})
+                    .with_column(column.name, col(column.name).url.download(max_worker_threads=read_parallelism))
+                    .collect()
+                )
 
             # As of getdaft 0.0.23, there is no support for conversion to Dask
             # directly so convert to Ray and then convert to Dask
@@ -1013,10 +1014,10 @@ class RayBackend(RemoteTrainingMixin, Backend):
         """Determine the maximum number of workers to use when reading binary files using file_size."""
         if self.df_engine.partitioned and file_size is not None:
             # Heuristic to determine parallelism: if the average file size is known (in bytes), then we can
-            # extrapolate to determine the total file size. We aim to have ~50MB partitions (5e7 bytes), so we
-            # set parallelism to be the total size / 50MB.
+            # extrapolate to determine the total file size. We aim to have ~100MB (10e7 bytes) per worker, so we
+            # set parallelism to be the total size / 100MB.
             total_size = file_size * num_files
-            parallelism = int(total_size / 5e7)
+            parallelism = int(total_size / 10e7)
             # Only set parallelism if it matches or exceeds the Daft default for parallelism
             return max(8, parallelism)
 
