@@ -3,7 +3,7 @@ from typing import Callable, List, Optional, Tuple, Type
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.utils.registry import Registry
 
-parameter_type_registry = Registry()
+parameter_config_registry = Registry()
 scheduler_config_registry = Registry()
 scheduler_dependencies_registry = Registry()
 search_algorithm_registry = Registry()
@@ -21,7 +21,7 @@ def get_parameter_cls(name: str) -> Type["BaseParameterConfig"]:  # noqa: F821
     Returns:
         A parameter config class from `ludwig.schema.hyperopt.parameter`
     """
-    return parameter_type_registry.get[name]
+    return parameter_config_registry.get[name]
 
 
 @DeveloperAPI
@@ -109,7 +109,7 @@ def register_parameter_config(name: str) -> Callable:
         Returns:
             `cls` unaltered
         """
-        parameter_type_registry[name] = cls
+        parameter_config_registry[name] = cls
         return cls
 
     return wrap
