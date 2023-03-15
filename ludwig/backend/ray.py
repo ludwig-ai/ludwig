@@ -915,9 +915,11 @@ class RayBackend(RemoteTrainingMixin, Backend):
             # Set the runner for executing Daft dataframes to a Ray cluster
             daft.context.set_runner_ray(address=ray.util.get_node_ip_address())
 
-            # Requires initialization from a mapping of col_name -> list of items in the series
+            # Get the maximum number of worker threads that can be used to parallelize reads
             read_parallelism = self._get_binary_read_parallelism(len(fnames), file_size)
+
             df = (
+                # Requires initialization from a mapping of col_name -> list of items in the series
                 DataFrame.from_pydict({column.name: fnames})
                 .with_column(column.name, col(column.name).url.download(max_worker_threads=read_parallelism))
                 .collect()
