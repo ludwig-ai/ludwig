@@ -204,7 +204,7 @@ def test_dense_binary_encoder_0_layer():
     "entity_1,entity_2,expected",
     [
         (["a1"], ["b1", "b2"], True),
-        (["a1", "a2"], ["b1", "b2"], True),
+        (["a1", "a2"], ["b1", "b2", "b3"], True),
         ([], ["b1", "b2"], False),
         ([], ["a1", "b1", "b2"], False),
         (["a1", "b1", "b2"], [], False),
