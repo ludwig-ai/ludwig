@@ -203,16 +203,20 @@ def test_dense_binary_encoder_0_layer():
 @pytest.mark.parametrize(
     "entity_1,entity_2,expected",
     [
-        (["a1"], ["b1"], True),
-        (["a1", "a2"], ["b1"], True),
-        (["a1", "b1"], ["b1"], False),
+        (["a1"], ["b1", "b2"], True),
+        (["a1", "a2"], ["b1", "b2"], True),
+        ([], ["b1", "b2"], False),
+        ([], ["a1", "b1", "b2"], False),
+        (["a1", "b1"], ["b1", "b2"], False),
+        (["a1"], ["b1"], False),
     ],
 )
-def test_comparator_combiner(entity_1: List[str], entity_2: List[str], expected: bool):
+def test_comparator_combiner_entities(entity_1: List[str], entity_2: List[str], expected: bool):
     config = {
         "input_features": [
             {"name": "a1", "type": "category"},
             {"name": "b1", "type": "category"},
+            {"name": "b2", "type": "category"},
         ],
         "output_features": [
             {"name": "out1", "type": "binary"},
@@ -227,4 +231,4 @@ def test_comparator_combiner(entity_1: List[str], entity_2: List[str], expected:
     with pytest.raises(ConfigValidationError) if not expected else contextlib.nullcontext():
         config_obj = ModelConfig.from_dict(config)
         assert config_obj.combiner.entity_1 == ["a1"]
-        assert config_obj.combiner.entity_2 == ["b1"]
+        assert config_obj.combiner.entity_2 == ["b1", "b2"]
