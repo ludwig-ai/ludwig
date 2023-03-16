@@ -91,7 +91,7 @@ class WrapperModule(torch.nn.Module):
             # Send the input through the identity layer so that we can use the output of the layer for attribution.
             # Except for text/category features where we use the embedding layer for attribution.
             feat_name: feat_input
-            if input_features[feat_name].type() in {TEXT, CATEGORY, DATE, SET}
+            if input_features.get(feat_name).type() in {TEXT, CATEGORY, DATE, SET}
             else self.input_maps[feat_name](feat_input)
             for feat_name, feat_input in zip(input_features.keys(), args)
         }

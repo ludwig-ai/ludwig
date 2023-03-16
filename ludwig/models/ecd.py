@@ -143,7 +143,7 @@ class ECD(BaseModel):
 
     def unskip(self):
         for k in self.input_features.keys():
-            self.input_features.set(k, self.input_featuresget(k).unskip())
+            self.input_features.set(k, self.input_features.get(k).unskip())
 
     def save(self, save_path):
         """Saves the model to the given path."""
