@@ -29,8 +29,6 @@ class TimeseriesInputFeatureConfigMixin(BaseMarshmallowConfig):
     """TimeseriesInputFeatureConfigMixin is a dataclass that configures the parameters used in both the timeseries
     input feature and the timeseries global defaults section of the Ludwig Config."""
 
-    type: str = schema_utils.ProtectedString(TIMESERIES)
-
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=TIMESERIES)
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
@@ -47,7 +45,7 @@ class TimeseriesInputFeatureConfig(TimeseriesInputFeatureConfigMixin, BaseInputF
     """TimeseriesInputFeatureConfig is a dataclass that configures the parameters used for a timeseries input
     feature."""
 
-    pass
+    type: str = schema_utils.ProtectedString(TIMESERIES)
 
 
 @DeveloperAPI
@@ -73,6 +71,8 @@ class TimeseriesOutputFeatureConfigMixin(BaseMarshmallowConfig):
 @ludwig_dataclass
 class TimeseriesOutputFeatureConfig(BaseOutputFeatureConfig, TimeseriesOutputFeatureConfigMixin):
     """TimeseriesOutputFeatureConfig configures the parameters used for a timeseries output feature."""
+
+    type: str = schema_utils.ProtectedString(TIMESERIES)
 
     dependencies: list = schema_utils.List(
         default=[],

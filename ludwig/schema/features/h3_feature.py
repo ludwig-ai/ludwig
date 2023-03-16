@@ -18,8 +18,6 @@ class H3InputFeatureConfigMixin(BaseMarshmallowConfig):
     """H3InputFeatureConfigMixin is a dataclass that configures the parameters used in both the h3 input feature
     and the h3 global defaults section of the Ludwig Config."""
 
-    type: str = schema_utils.ProtectedString(H3)
-
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=H3)
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
@@ -35,4 +33,4 @@ class H3InputFeatureConfigMixin(BaseMarshmallowConfig):
 class H3InputFeatureConfig(H3InputFeatureConfigMixin, BaseInputFeatureConfig):
     """H3InputFeatureConfig is a dataclass that configures the parameters used for an h3 input feature."""
 
-    pass
+    type: str = schema_utils.ProtectedString(H3)

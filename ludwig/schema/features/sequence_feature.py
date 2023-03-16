@@ -29,8 +29,6 @@ class SequenceInputFeatureConfigMixin(BaseMarshmallowConfig):
     """SequenceInputFeatureConfigMixin is a dataclass that configures the parameters used in both the sequence
     input feature and the sequence global defaults section of the Ludwig Config."""
 
-    type: str = schema_utils.ProtectedString(SEQUENCE)
-
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=SEQUENCE)
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
@@ -47,7 +45,7 @@ class SequenceInputFeatureConfig(SequenceInputFeatureConfigMixin, BaseInputFeatu
     """SequenceInputFeatureConfig is a dataclass that configures the parameters used for a sequence input
     feature."""
 
-    pass
+    type: str = schema_utils.ProtectedString(SEQUENCE)
 
 
 @DeveloperAPI
@@ -56,8 +54,6 @@ class SequenceInputFeatureConfig(SequenceInputFeatureConfigMixin, BaseInputFeatu
 class SequenceOutputFeatureConfigMixin(BaseMarshmallowConfig):
     """SequenceOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the sequence
     output feature and the sequence global defaults section of the Ludwig Config."""
-
-    type: str = schema_utils.ProtectedString(SEQUENCE)
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
         feature_type=SEQUENCE,
@@ -76,6 +72,8 @@ class SequenceOutputFeatureConfigMixin(BaseMarshmallowConfig):
 class SequenceOutputFeatureConfig(SequenceOutputFeatureConfigMixin, BaseOutputFeatureConfig):
     """SequenceOutputFeatureConfig is a dataclass that configures the parameters used for a sequence output
     feature."""
+
+    type: str = schema_utils.ProtectedString(SEQUENCE)
 
     default_validation_metric: str = schema_utils.StringOptions(
         [LOSS],
