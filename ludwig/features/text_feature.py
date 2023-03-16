@@ -106,15 +106,41 @@ class TextFeatureMixin(BaseFeatureMixin):
             padding_symbol,
             unknown_symbol,
         ) = tf_meta
-        max_len = min(preprocessing_parameters["max_sequence_length"], max_len)
-        max_len_99ptile = min(max_len, max_len_99ptile)
+        logger.info(f"Max length of feature '{column.name}': {max_len} (without start and stop symbols)")
+
+        # Use sequence_length if provided, otherwise use max length found in dataset.
+        if preprocessing_parameters["sequence_length"] is not None:
+            logger.info(
+                f"Setting max length to sequence_length={preprocessing_parameters['sequence_length']} provided in "
+                f"preprocessing parameters"
+            )
+            max_sequence_length = preprocessing_parameters["sequence_length"]
+            max_sequence_length_99ptile = preprocessing_parameters["sequence_length"]
+        else:
+            max_sequence_length = max_len + 2  # For start and stop symbols.
+            max_sequence_length_99ptile = max_len_99ptile + 2  # For start and stop symbols.
+            logger.info(f"Setting max length using dataset: {max_sequence_length} (including start and stop symbols)")
+
+            # If max_sequence_length is None, then use the max length found in the dataset.
+            if (
+                preprocessing_parameters["max_sequence_length"] is not None
+                and preprocessing_parameters["max_sequence_length"] < max_sequence_length
+            ):
+                logger.info(
+                    f"Truncating max length with max_sequence_length={preprocessing_parameters['max_sequence_length']} "
+                    f"from preprocessing parameters"
+                )
+                max_sequence_length = preprocessing_parameters["max_sequence_length"]
+                max_sequence_length_99ptile = min(max_len_99ptile, max_sequence_length)
+
+        logger.info(f"max sequence length is {max_sequence_length} for feature '{column.name}'")
         return {
             "idx2str": idx2str,
             "str2idx": str2idx,
             "str2freq": str2freq,
             "vocab_size": len(idx2str),
-            "max_sequence_length": max_len + 2,  # For start and stop symbols.
-            "max_sequence_length_99ptile": max_len_99ptile + 2,  # For start and stop symbols.
+            "max_sequence_length": max_sequence_length,
+            "max_sequence_length_99ptile": max_sequence_length_99ptile,
             "pad_idx": pad_idx,
             "padding_symbol": padding_symbol,
             "unknown_symbol": unknown_symbol,

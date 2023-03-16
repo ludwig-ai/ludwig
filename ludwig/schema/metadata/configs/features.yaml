@@ -576,6 +576,23 @@ sequence:
         lowercase:
             ui_display_name: null
             expected_impact: 2
+        sequence_length:
+            default_value_reasoning:
+                The default value is `None`. Which means that the sequence length will be inferred from the dataset,
+                which may save you compute resources on datasets with short sequence samples.
+            description_implications:
+                A larger sequence length keeps more information
+                from the data, but also makes it more computationally expensive (more
+                memory and longer training time). A smaller sequence length keeps
+                less information from the data, but also makes it less computationally
+                expensive (less memory and shorter training time).
+            expected_impact: 3
+            related_parameters:
+                - max_sequence_length
+            suggested_values:
+                If tying the weights of multiple sequence encoders together,
+                this parameter may need to be set to ensure that all sequence features have the same sequence length.
+            ui_display_name: Sequence Length
         max_sequence_length:
             default_value_reasoning:
                 The default value is 256. Every sequence will
@@ -763,6 +780,23 @@ text:
                 words and lowercased words differently, then set this to False. Otherwise,
                 it is preferable to bucket the words and make the model case-insensitive.
             ui_display_name: Convert to lowercase
+        sequence_length:
+            default_value_reasoning:
+                The default value is `None`. Which means that the sequence length will be inferred from the dataset,
+                which may save you compute resources on datasets with short text samples.
+            description_implications:
+                A larger sequence length keeps more information
+                from the data, but also makes it more computationally expensive (more
+                memory and longer training time). A smaller sequence length keeps
+                less information from the data, but also makes it less computationally
+                expensive (less memory and shorter training time).
+            expected_impact: 3
+            related_parameters:
+                - max_sequence_length
+            suggested_values:
+                If tying the weights of multiple text encoders together,
+                this parameter may need to be set to ensure that all text features have the same sequence length.
+            ui_display_name: Sequence Length
         max_sequence_length:
             default_value_reasoning:
                 The default value is 256. Every sequence will

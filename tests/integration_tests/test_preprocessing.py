@@ -11,6 +11,7 @@ from PIL import Image
 
 import ludwig
 from ludwig.api import LudwigModel
+from ludwig.callbacks import Callback
 from ludwig.constants import BATCH_SIZE, COLUMN, DECODER, FULL, NAME, PROC_COLUMN, TRAINER
 from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.data.preprocessing import preprocess_for_prediction
@@ -24,6 +25,7 @@ from tests.integration_tests.utils import (
     LocalTestBackend,
     number_feature,
     sequence_feature,
+    text_feature,
 )
 
 NUM_EXAMPLES = 20
@@ -375,6 +377,62 @@ def test_number_feature_wrong_dtype(csv_filename, tmpdir):
     # check that train_ds had invalid values replaced with the missing value
     assert len(concatenated_df) == len(df)
     assert np.all(concatenated_df[num_feat[PROC_COLUMN]] == 0.0)
+
+
+@pytest.mark.parametrize(
+    "max_len, sequence_length, max_sequence_length, sequence_length_expected",
+    [
+        # Case 1: infer from the dataset, max_sequence_length is larger than the largest sequence length.
+        # Expected: max_sequence_length is ignored, and the sequence length is dataset+2 (include start/stop tokens).
+        (10, None, 15, 12),
+        # Case 2: infer from the dataset, max_sequence_length is smaller than the largest sequence length.
+        # Expected: max_sequence_length is used, and the sequence length is max_sequence_length.
+        (10, None, 8, 8),
+        # Case 3: infer from the dataset, max_sequence_length is not set.
+        # Expected: max_sequence_length is ignored, and the sequence length is dataset+2 (include start/stop tokens).
+        (10, None, None, 12),
+        # Case 4: set sequence_length explicitly and it is larger than the dataset.
+        # Expected: sequence_length is used, and the sequence length is sequence_length.
+        (10, 15, 20, 15),
+        # Case 5: set sequence_length explicitly and it is smaller than the dataset.
+        # Expected: sequence_length is used, and the sequence length is sequence_length.
+        (10, 8, 20, 8),
+    ],
+)
+@pytest.mark.parametrize(
+    "feature_type",
+    [
+        sequence_feature,
+        text_feature,
+    ],
+)
+def test_seq_features_max_sequence_length(
+    csv_filename, tmpdir, feature_type, max_len, sequence_length, max_sequence_length, sequence_length_expected
+):
+    """Tests that a sequence feature has the correct max_sequence_length in metadata and prepocessed data."""
+    feat = feature_type(
+        encoder={"max_len": max_len},
+        preprocessing={"sequence_length": sequence_length, "max_sequence_length": max_sequence_length},
+    )
+    input_features = [feat]
+    output_features = [binary_feature()]
+    config = {"input_features": input_features, "output_features": output_features}
+
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+    df = pd.read_csv(training_data_csv_path)
+
+    class CheckTrainingSetMetadataCallback(Callback):
+        def on_preprocess_end(self, proc_training_set, proc_validation_set, proc_test_set, training_set_metadata):
+            assert training_set_metadata[feat[NAME]]["max_sequence_length"] == sequence_length_expected
+
+    backend = LocalTestBackend()
+    ludwig_model = LudwigModel(config, backend=backend, callbacks=[CheckTrainingSetMetadataCallback()])
+    train_ds, val_ds, test_ds, _ = ludwig_model.preprocess(dataset=df)
+
+    all_df = concatenate_df(train_ds.to_df(), val_ds.to_df(), test_ds.to_df(), backend)
+    proc_column_name = feat[PROC_COLUMN]
+    assert all(len(x) == sequence_length_expected for x in all_df[proc_column_name])
 
 
 def test_column_feature_type_mismatch_fill():
