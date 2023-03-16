@@ -23,6 +23,16 @@ class ComparatorCombinerConfig(BaseCombinerConfig):
                 "Set `num_fc_layers > 0` or `fc_layers`."
             )
 
+        if not self.entity_1:
+            raise ConfigValidationError(
+                "`combiner.entity_1` is required and must contain as least one input feature name."
+            )
+
+        if not self.entity_2:
+            raise ConfigValidationError(
+                "`combiner.entity_2` is required and must contain as least one input feature name."
+            )
+
     type: str = schema_utils.ProtectedString(
         "comparator",
         description=COMBINER_METADATA["comparator"]["type"].long_description,

@@ -15,6 +15,7 @@ from ludwig.schema.defaults.base import BaseDefaultsConfig
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig, FeatureCollection
 from ludwig.schema.hyperopt import HyperoptConfig
 from ludwig.schema.model_types.utils import (
+    filter_combiner_entities_,
     merge_fixed_preprocessing_params,
     merge_with_defaults,
     set_derived_feature_columns_,
@@ -55,6 +56,7 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
         set_validation_parameters(self)
         set_hyperopt_defaults_(self)
         set_tagger_decoder_parameters(self)
+        filter_combiner_entities_(self)
 
         # Reconcile conflicting preprocessing parameters
         set_preprocessing_parameters(self)

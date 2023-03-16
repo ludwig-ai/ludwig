@@ -18,8 +18,6 @@ class BagInputFeatureConfigMixin(BaseMarshmallowConfig):
     """BagInputFeatureConfigMixin is a dataclass that configures the parameters used in both the bag input feature
     and the bag global defaults section of the Ludwig Config."""
 
-    type: str = schema_utils.ProtectedString(BAG)
-
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=BAG)
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
@@ -35,4 +33,4 @@ class BagInputFeatureConfigMixin(BaseMarshmallowConfig):
 class BagInputFeatureConfig(BagInputFeatureConfigMixin, BaseInputFeatureConfig):
     """BagInputFeatureConfig is a dataclass that configures the parameters used for a bag input feature."""
 
-    pass
+    type: str = schema_utils.ProtectedString(BAG)
