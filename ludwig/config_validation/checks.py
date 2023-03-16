@@ -304,19 +304,22 @@ def check_tagger_decoder_requirements(config: "ModelConfig") -> None:  # noqa: F
     if not output_feature_with_tagger_decoder:
         return
 
-    # Check that there is at least one sequence, text or timeseries input feature that doesn't reduce the
-    # output of the encoder.
+    # Check that there is at least one sequence, text, or timeseries input feature.
     has_sequence_feature = False
     for input_feature in config.input_features:
         if input_feature.type in {SEQUENCE, TEXT, TIMESERIES}:
             has_sequence_feature = True
-            if input_feature.encoder.reduce_output is None:
-                return
-
     if not has_sequence_feature:
         raise ConfigValidationError("Tagger decoder requires at least one text, sequence or timeseries input feature.")
-    else:
-        raise ConfigValidationError(
-            "Tagger decoder requires at least one of the text, sequence or timeseries input feature encoders to have "
-            "`reduce_output` set to `None`."
-        )
+
+    # Check that there is at least one sequence, text or timeseries input feature that doesn't reduce the
+    # output of the encoder.
+    for input_feature in config.input_features:
+        if input_feature.type in {SEQUENCE, TEXT, TIMESERIES}:
+            if input_feature.encoder.type != "embed" and input_feature.encoder.reduce_output is None:
+                return
+
+    raise ConfigValidationError(
+        "Tagger decoder requires at least one of the text, sequence, or timeseries input feature encoders to have a "
+        "non-embed encoder with `reduce_output` set to `None`."
+    )

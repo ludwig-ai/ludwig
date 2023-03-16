@@ -11,6 +11,7 @@ import contextlib
 from typing import Any, Dict, List, Optional
 
 import pytest
+import yaml
 
 from ludwig.error import ConfigValidationError
 from ludwig.schema.model_types.base import ModelConfig
@@ -233,3 +234,40 @@ def test_comparator_combiner_entities(entity_1: List[str], entity_2: List[str], 
         config_obj = ModelConfig.from_dict(config)
         assert config_obj.combiner.entity_1 == ["a1"]
         assert config_obj.combiner.entity_2 == ["b1", "b2"]
+
+
+def test_tagger_checks():
+    config = yaml.safe_load(
+        """
+input_features:
+  - name: description
+    type: text
+    encoder:
+      type: embed
+      reduce_output: null
+    column: description
+  - name: required_experience
+    type: category
+    column: required_experience
+  - name: required_education
+    type: category
+    column: required_education
+output_features:
+  - name: title
+    type: text
+    column: title
+defaults:
+  text:
+    decoder:
+      type: tagger
+      cell_type: lstm
+      fc_dropout: 0.84429975709243
+      num_layers: 4
+      num_fc_layers: 2
+      fc_output_size: 128
+      max_sequence_length: 5
+    """
+    )
+
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
