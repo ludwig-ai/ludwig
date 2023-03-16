@@ -74,8 +74,11 @@ def gather_all_tensors(result: torch.Tensor, group: Optional[Any] = None) -> Lis
     result = result.unsqueeze(0)
 
     # sync and gather all
-    gathered = _HVD.allgather(result)
-    gathered_result = list(gathered.split(1, dim=0))
+    gathered_result = _HVD.allgather(result)
+    # This is to match the output of the torchmetrics gather_all_tensors function
+    # and ensures that the return value is usable by torchmetrics.compute downstream.
+    # Ensures that the output is a list of tensors.
+    gathered_result = list(gathered_result)
 
     if is_bool:
         # convert back if needed

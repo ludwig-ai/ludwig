@@ -50,6 +50,7 @@ ALBERT:
             The `albert` encoder loads a pretrained [ALBERT](https://arxiv.org/abs/1909.11942) (default `albert-base-v2`) model
             using the Hugging Face transformers package. Albert is similar to BERT, with significantly lower memory usage and
             somewhat faster training time:.
+        compute_tier: 2
     attention_probs_dropout_prob:
         default_value_reasoning:
             Dropout can cause training to become less stable.
@@ -356,6 +357,7 @@ AutoTransformer:
             [AutoModels documentation](https://huggingface.co/docs/transformers/model_doc/auto) for more details.
         literature_references:
             - https://huggingface.co/docs/transformers/model_doc/auto
+        compute_tier: 2
     max_sequence_length:
         default_value_reasoning:
             Sets the maximum sequence length of the expected
@@ -397,6 +399,7 @@ BERT:
             Toronto Book Corpus and Wikipedia.
         literature_references:
             - https://arxiv.org/abs/1810.04805
+        compute_tier: 2
     attention_probs_dropout_prob:
         default_value_reasoning: Huggingface default.
         description_implications:
@@ -1005,6 +1008,7 @@ CTRL:
             govern style, content, and task-specific behavior.
         literature_references:
             - https://arxiv.org/abs/1909.05858
+        compute_tier: 2
     attn_pdrop:
         ui_display_name: null
     dff:
@@ -1116,6 +1120,7 @@ CamemBERT:
             large French language web-crawled text corpus.
         literature_references:
             - https://arxiv.org/abs/1911.03894
+        compute_tier: 2
     attention_probs_dropout_prob:
         default_value_reasoning: Huggingface default.
         description_implications:
@@ -2351,6 +2356,7 @@ DistilBERT:
             Transformer model trained by distilling BERT base. It has 40% less parameters than
             bert-base-uncased, runs 60% faster while preserving over 95% of BERT’s performances as measured
             on the GLUE language understanding benchmark.
+        compute_tier: 2
     activation:
         default_value_reasoning:
             This is the default activation function used in the
@@ -2580,6 +2586,7 @@ ELECTRA:
             identify which tokens were replaced by the generator in the sequence.
         literature_references:
             - https://openreview.net/pdf?id=r1xMH1BtvB
+        compute_tier: 2
     attention_probs_dropout_prob:
         default_value_reasoning: Huggingface default.
         description_implications:
@@ -2826,6 +2833,7 @@ FlauBERT:
             pre-trained on a large French language corpus.
         literature_references:
             - https://arxiv.org/abs/1912.05372
+        compute_tier: 2
     asm:
         ui_display_name: null
         expected_impact: 1
@@ -3030,6 +3038,7 @@ GPT2:
             modeling on a very large corpus of ~40 GB of text data.
         literature_references:
             - https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf
+        compute_tier: 3
     activation_function:
         ui_display_name: null
     attn_pdrop:
@@ -3128,6 +3137,7 @@ GPT:
             GPT is a causal (unidirectional) transformer pre-trained using language modeling on a large corpus with long range dependencies, the Toronto Book Corpus.
         literature_references:
             - https://s3-us-west-2.amazonaws.com/openai-assets/research-covers/language-unsupervised/language_understanding_paper.pdf
+        compute_tier: 2
     afn:
         ui_display_name: null
     attn_pdrop:
@@ -4115,6 +4125,7 @@ Longformer:
             for longer text, as it supports sequences up to 4096 tokens long.
         literature_references:
             - https://arxiv.org/pdf/2004.05150.pdf
+        compute_tier: 2
     attention_window:
         ui_display_name: null
     max_sequence_length:
@@ -4215,6 +4226,7 @@ MLPMixer:
             MLP-Mixer divides the image into equal-sized patches, applying fully connected layers to each
             patch to compute per-patch representations (tokens) and combining the representations with
             fully-connected mixer layers.
+        compute_tier: 1
     avg_pool:
         ui_display_name: null
     channel_dim:
@@ -4304,6 +4316,7 @@ MT5:
         long_description:
             The `mt5` encoder loads a pretrained [MT5](https://arxiv.org/abs/2010.11934) (default `google/mt5-base`) model using the
             Hugging Face transformers package. MT5 is a multilingual variant of T5 trained on a dataset of 101 languages.
+        compute_tier: 2
     d_ff:
         default_value_reasoning: Default value matches the pre-trained encoder.
         description_implications:
@@ -4488,6 +4501,7 @@ ParallelCNN:
             This single vector concatenating the outputs of the parallel convolutional layers is then passed
             through a stack of fully connected layers and returned as a b x h tensor where h is the output
             size of the last fully connected layer.
+        compute_tier: 1
     activation:
         default_value_reasoning:
             The Rectified Linear Units (ReLU) function is the
@@ -4880,6 +4894,7 @@ ResNet:
             ResNet - short for residual network is part of a family of extremely deep architectures showing
             compelling accuracy and nice convergence behaviors for computer vision applications. It is a type
             of CNN architecture designed to support hundreds or thousands of convolutional layers.
+        compute_tier: 2
     activation:
         default_value_reasoning:
             The Rectified Linear Units (ReLU) function is the
@@ -5179,6 +5194,7 @@ RoBERTa:
             rates.
         literature_references:
             - https://arxiv.org/abs/1907.11692
+        compute_tier: 2
     bos_token_id:
         default_value_reasoning: Default value used in pre-trained HF encoder.
         ui_display_name: Beginning-of-Sentence Token Id
@@ -5766,6 +5782,7 @@ Stacked2DCNN:
         long_description:
             Stack of 2D convolutional layers with optional normalization, dropout, and down-sampling
             pooling layers, followed by an optional stack of fully connected layers.
+        compute_tier: 1
     conv_activation:
         expected_impact: 1
         ui_display_name: Convolutional Activation
@@ -6085,6 +6102,7 @@ StackedCNN:
             flatten operation. This single flatten vector is then passed through a stack of fully connected
             layers and returned as a b x h tensor where h is the output size of the last fully connected
             layer.
+        compute_tier: 1
     activation:
         default_value_reasoning:
             The Rectified Linear Units (ReLU) function is the
@@ -6478,6 +6496,7 @@ StackedCNNRNN:
             embedding through a stack of convolutional layers (by default 2), that is followed by a stack of
             recurrent layers (by default 1), followed by a reduce operation that by default only returns the
             last output, but can perform other reduce functions.
+        compute_tier: 1
     activation:
         ui_display_name: null
         expected_impact: 2
@@ -7043,6 +7062,7 @@ StackedParallelCNN:
             final pool and by a flatten operation. This single flattened vector is then passed through a
             stack of fully connected layers and returned as a b x h tensor where h is the output size of the
             last fully connected layer.
+        compute_tier: 1
     activation:
         default_value_reasoning:
             The Rectified Linear Units (ReLU) function is the
@@ -7408,6 +7428,7 @@ StackedRNN:
             size and s is the length of the sequence) into a sequence of embeddings, then it passes the
             embedding through a stack of recurrent layers (by default 1 layer), followed by a reduce
             operation that by default only returns the last output, but can perform other reduce functions.
+        compute_tier: 1
     activation:
         ui_display_name: null
         expected_impact: 2
@@ -7866,6 +7887,7 @@ StackedTransformer:
             layers at the end.
         literature_references:
             - https://arxiv.org/abs/1706.03762
+        compute_tier: 2
     bias_initializer:
         default_value_reasoning:
             It is possible and common to initialize the biases
@@ -8301,6 +8323,7 @@ T5:
             The `t5` encoder loads a pretrained [T5](https://arxiv.org/pdf/1910.10683.pdf) (default `t5-small`) model using the
             Hugging Face transformers package. T5 (Text-to-Text Transfer Transformer) is pre-trained on a huge text dataset crawled
             from the web and shows good transfer performance on multiple tasks.
+        compute_tier: 2
     d_ff:
         default_value_reasoning: Default value matches the pre-trained encoder.
         description_implications:
@@ -8444,6 +8467,7 @@ TransformerXL:
             transformer with relative positioning (sinusoïdal) embeddings which can reuse previously
             computed hidden-states to attend to longer context (memory). This model also uses adaptive
             softmax inputs and outputs (tied).
+        compute_tier: 2
     adaptive:
         default_value_reasoning: Huggingface default.
         description_implications:
@@ -8754,6 +8778,7 @@ ViT:
             ViT, short for Vision Transformer, divides the image into equal-sized patches, uses a linear
             transformation to encode each flattened patch, then applies a deep transformer architecture to
             the sequence of encoded patches.
+        compute_tier: 2
     attention_probs_dropout_prob:
         default_value_reasoning: Taken from literature (https://arxiv.org/abs/2010.11929).
         description_implications:
@@ -8986,6 +9011,7 @@ XLM:
         long_description:
             The `xlm` encoder loads a pretrained [XLM](https://arxiv.org/abs/1901.07291) (default `xlm-mlm-en-2048`) model using the
             Hugging Face transformers package. Pre-trained by cross-language modeling.
+        compute_tier: 2
     asm:
         ui_display_name: null
     attention_dropout:
@@ -9174,6 +9200,7 @@ XLMRoBERTa:
             model similar to BERT, trained on 100 languages. XLM-RoBERTa is based on Facebook’s RoBERTa model
             released in 2019. It is a large multi-lingual language model, trained on 2.5TB of filtered
             CommonCrawl data.
+        compute_tier: 2
     add_pooling_layer:
         ui_display_name: null
     bos_token_id:
@@ -9276,6 +9303,7 @@ XLNet:
             an autoregressive method to learn bidirectional contexts by maximizing the expected likelihood
             over all permutations of the input sequence factorization order. XLNet outperforms BERT on a
             variety of benchmarks.
+        compute_tier: 2
     attn_type:
         ui_display_name: null
     bi_data:

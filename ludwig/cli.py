@@ -17,6 +17,7 @@ import argparse
 import sys
 
 import ludwig.contrib
+from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.print_utils import get_logo
 
 
@@ -29,13 +30,14 @@ class CLI:
     def __init__(self):
         parser = argparse.ArgumentParser(
             description="ludwig cli runner",
-            usage=f"""\n{get_logo("ludwig cli", ludwig.__version__)}
+            usage=f"""\n{get_logo("ludwig cli", LUDWIG_VERSION)}
 ludwig <command> [<args>]
 
 Available sub-commands:
    train                 Trains a model
    predict               Predicts using a pretrained model
    evaluate              Evaluate a pretrained model's performance
+   forecast              Forecast the next n data points in a timeseries using a pretrained model
    experiment            Runs a full experiment training a model and evaluating it
    hyperopt              Perform hyperparameter optimization
    benchmark             Run and track experiments on a number of datasets and configs, and export experiment artifacts.
@@ -81,6 +83,11 @@ Available sub-commands:
         from ludwig import evaluate
 
         evaluate.cli(sys.argv[2:])
+
+    def forecast(self):
+        from ludwig import forecast
+
+        forecast.cli(sys.argv[2:])
 
     def experiment(self):
         from ludwig import experiment

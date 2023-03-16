@@ -15,6 +15,7 @@ from ludwig.constants import (
     GRID_SEARCH,
     INPUT_FEATURES,
     LOSS,
+    MODEL_ECD,
     OUTPUT_FEATURES,
     PARAMETERS,
     PREPROCESSING,
@@ -169,6 +170,31 @@ def set_derived_feature_columns_(config_obj: "ModelConfig"):
             feature.column = feature.name
         if feature.proc_column is None:
             feature.proc_column = compute_feature_hash(feature.to_dict())
+
+
+def filter_combiner_entities_(config: "ModelConfig"):
+    if config.model_type != MODEL_ECD or config.combiner.type != "comparator":
+        return
+
+    input_feature_names = {input_feature.name for input_feature in config.input_features}
+
+    entity_1_excluded = {fname for fname in config.combiner.entity_1 if fname not in input_feature_names}
+    if entity_1_excluded:
+        logger.warning(
+            f"Excluding `entity_1` features {entity_1_excluded} from the comparator combiner because they are not "
+            f"present in the `input_features`."
+        )
+
+    config.combiner.entity_1 = [fname for fname in config.combiner.entity_1 if fname not in entity_1_excluded]
+
+    entity_2_excluded = {fname for fname in config.combiner.entity_2 if fname not in input_feature_names}
+    if entity_2_excluded:
+        logger.warning(
+            f"Excluding `entity_2` features {entity_2_excluded} from the comparator combiner because they are not "
+            f"present in the `input_features`."
+        )
+
+    config.combiner.entity_2 = [fname for fname in config.combiner.entity_2 if fname not in entity_2_excluded]
 
 
 def set_hyperopt_defaults_(config: "ModelConfig"):
