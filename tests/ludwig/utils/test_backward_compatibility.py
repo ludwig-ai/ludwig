@@ -851,7 +851,7 @@ def test_defaults_gbm_config():
             },
             "category": {
                 "decoder": {"type": "classifier", "num_fc_layers": 0},
-                "encoder": {"type": "dense"},
+                "encoder": {"type": "onehot"},
                 "loss": {"confidence_penalty": 0},
                 "preprocessing": {
                     "missing_value_strategy": "fill_with_const",
@@ -881,6 +881,5 @@ def test_defaults_gbm_config():
 
     # Ensure defaults only have relevant keys
     for feature_type in config_obj["defaults"]:
-        assert "encoder" not in config_obj["defaults"][feature_type]
         assert "decoder" not in config_obj["defaults"][feature_type]
         assert "loss" not in config_obj["defaults"][feature_type]

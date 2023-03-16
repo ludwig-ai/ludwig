@@ -816,8 +816,7 @@ def upgrade_defaults_config_for_gbm(config: ModelConfigDict) -> ModelConfigDict:
             del defaults[feature_type]
             continue
 
-        # Remove encoder, decoder and loss from defaults since they only apply to ECD
-        defaults[feature_type].pop("encoder", None)
+        # Remove decoder and loss from defaults since they only apply to ECD
         defaults[feature_type].pop("decoder", None)
         defaults[feature_type].pop("loss", None)
     config[DEFAULTS] = defaults
