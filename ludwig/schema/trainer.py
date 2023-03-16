@@ -78,7 +78,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
     def __post_init__(self):
         if self.compile and not _torch_200:
             raise ConfigValidationError(
-                "ECD model training requires PyTorch 2.0.0 or higher. Please upgrade PyTorch and try again."
+                "Trainer param `compile: true` requires PyTorch 2.0.0 or higher. Please upgrade PyTorch and try again."
             )
 
     learning_rate: Union[float, str] = schema_utils.OneOfOptionsField(
