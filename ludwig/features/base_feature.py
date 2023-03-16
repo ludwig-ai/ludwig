@@ -351,8 +351,8 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         for metric_name, metric_fn in self._metric_functions.items():
             try:
                 metric_vals[metric_name] = get_scalar_from_ludwig_metric(metric_fn)
-            except Exception as e:
-                logger.error(f"Caught exception computing metric: {metric_name}. Exception: {e}")
+            except Exception:
+                logger.exception(f"Caught exception computing metric: {metric_name}.")
         return metric_vals
 
     def reset_metrics(self):

@@ -2966,7 +2966,7 @@ class AutoTransformerConfig(HFEncoderConfig):
     def __post_init__(self):
         if self.pretrained_model_name_or_path is None:
             raise ConfigValidationError(
-                "`pretained_model_name_or_path` must be specified for encoder: `auto_transformer`."
+                "`pretrained_model_name_or_path` must be specified for encoder: `auto_transformer`."
             )
 
     @staticmethod
