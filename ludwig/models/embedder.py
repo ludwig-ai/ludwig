@@ -56,7 +56,7 @@ class Embedder(LudwigModule):
     def forward(self, inputs: Dict[str, torch.Tensor]):
         encoder_outputs = {}
         for input_feature_name, input_values in inputs.items():
-            encoder = self.input_features[input_feature_name]
+            encoder = self.input_features.get(input_feature_name)
             encoder_output = encoder(input_values)
             encoder_outputs[input_feature_name] = encoder_output["encoder_output"]
         return encoder_outputs
