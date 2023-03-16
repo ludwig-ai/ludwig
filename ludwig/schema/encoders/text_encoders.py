@@ -1064,8 +1064,8 @@ class GPTConfig(HFEncoderConfig):
     )
 
     afn: str = schema_utils.StringOptions(
-        ["gelu", "relu", "silu", "gelu_new"],
-        default="gelu_new",
+        ["gelu", "relu", "silu"],  # gelu_new results in a KeyError.
+        default="gelu",
         description="The non-linear activation function (function or string) in the encoder and pooler.",
         parameter_metadata=ENCODER_METADATA["GPT"]["afn"],
     )
