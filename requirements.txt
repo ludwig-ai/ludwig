@@ -7,9 +7,9 @@ tabulate>=0.7
 scikit-learn
 tqdm
 torch>=1.13.0
-torchaudio
-torchtext
-torchvision
+torchaudio<2.0.0  # Unpin when https://github.com/ludwig-ai/ludwig/issues/3245 is resolved on the PyTorch side.
+torchtext<0.15.0
+torchvision<0.15.0
 transformers>=4.10.1,<4.22
 spacy>=2.3
 PyYAML>=3.12
@@ -22,7 +22,7 @@ dataclasses-json
 jsonschema>=4.5.0,<4.7
 marshmallow
 marshmallow-jsonschema
-marshmallow-dataclass==8.5.5
+marshmallow-dataclass==8.5.4
 tensorboard
 torchmetrics>=0.11
 torchinfo

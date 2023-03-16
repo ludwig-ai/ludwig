@@ -201,7 +201,7 @@ class SequenceFeatureMixin(BaseFeatureMixin):
     def get_feature_meta(
         column, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
     ) -> FeatureMetadataDict:
-        idx2str, str2idx, str2freq, max_length, _, _, _, _ = create_vocabulary(
+        vocabulary = create_vocabulary(
             column,
             preprocessing_parameters["tokenizer"],
             lowercase=preprocessing_parameters["lowercase"],
@@ -212,21 +212,38 @@ class SequenceFeatureMixin(BaseFeatureMixin):
             ngram_size=preprocessing_parameters["ngram_size"],
             processor=backend.df_engine,
         )
+        logger.info(
+            f"Max length of feature '{column.name}': {vocabulary.line_length_max} (without start and stop symbols)"
+        )
 
-        # Use max_sequence_length if provided, otherwise use max length found in dataset.
-        if preprocessing_parameters["max_sequence_length"] is not None:
-            logger.info("Using max_sequence_length provided in preprocessing parameters")
-            max_sequence_length = preprocessing_parameters["max_sequence_length"]
+        # Use sequence_length if provided, otherwise use max length found in dataset.
+        if preprocessing_parameters["sequence_length"] is not None:
+            logger.info(
+                f"Setting max length to sequence_length={preprocessing_parameters['sequence_length']} provided in "
+                f"preprocessing parameters"
+            )
+            max_sequence_length = preprocessing_parameters["sequence_length"]
         else:
-            logger.info("Inferring max_sequence_length from dataset")
-            max_sequence_length = max_length + 2  # For start and stop symbols.
-        logger.info(f"Using max sequence length of {max_sequence_length} for feature '{column.name}'")
+            max_sequence_length = vocabulary.line_length_max + 2  # For start and stop symbols.
+            logger.info(f"Setting max length using dataset: {max_sequence_length} (including start and stop symbols)")
 
+            # If max_sequence_length is None, then use the max length found in the dataset.
+            if (
+                preprocessing_parameters["max_sequence_length"] is not None
+                and preprocessing_parameters["max_sequence_length"] < max_sequence_length
+            ):
+                logger.info(
+                    f"Truncating max length with max_sequence_length={preprocessing_parameters['max_sequence_length']} "
+                    f"from preprocessing parameters"
+                )
+                max_sequence_length = preprocessing_parameters["max_sequence_length"]
+
+        logger.info(f"max sequence length is {max_sequence_length} for feature '{column.name}'")
         return {
-            "idx2str": idx2str,
-            "str2idx": str2idx,
-            "str2freq": str2freq,
-            "vocab_size": len(idx2str),
+            "idx2str": vocabulary.vocab,
+            "str2idx": vocabulary.str2idx,
+            "str2freq": vocabulary.str2freq,
+            "vocab_size": len(vocabulary.vocab),
             "max_sequence_length": max_sequence_length,
         }
 

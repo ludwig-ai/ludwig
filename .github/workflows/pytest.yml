@@ -27,18 +27,28 @@ jobs:
         include:
           - python-version: "3.8"
             pytorch-version: 1.13.0
+            torchaudio-version: 0.13.0  # Unpin when https://github.com/ludwig-ai/ludwig/issues/3245 is resolved on the PyTorch side.
+            torchvision-version: 0.14.0 # Unpin when https://github.com/ludwig-ai/ludwig/issues/3247 is resolved on the PyTorch side.
+            torchtext-version: 0.14.0   # Unpin when https://github.com/ludwig-ai/ludwig/issues/3247 is resolved on the PyTorch side.
             torchscript-version: 1.10.2
             ray-version: 2.0.0
           - python-version: "3.9"
             pytorch-version: 1.13.0
+            torchaudio-version: 0.13.0  # Unpin when https://github.com/ludwig-ai/ludwig/issues/3245 is resolved on the PyTorch side.
+            torchvision-version: 0.14.0 # Unpin when https://github.com/ludwig-ai/ludwig/issues/3247 is resolved on the PyTorch side.
+            torchtext-version: 0.14.0   # Unpin when https://github.com/ludwig-ai/ludwig/issues/3247 is resolved on the PyTorch side.
             torchscript-version: 1.10.2
             ray-version: 2.2.0
           - python-version: "3.10"
             pytorch-version: nightly
+            torchaudio-version: ""      # Unpin when https://github.com/ludwig-ai/ludwig/issues/3245 is resolved on the PyTorch side.
+            torchvision-version: ""     # Unpin when https://github.com/ludwig-ai/ludwig/issues/3247 is resolved on the PyTorch side.
+            torchtext-version: ""       # Unpin when https://github.com/ludwig-ai/ludwig/issues/3247 is resolved on the PyTorch side.
             torchscript-version: 1.10.2
             ray-version: 2.3.0 # nightly
     env:
       PYTORCH: ${{ matrix.pytorch-version }}
+      TORCHAUDIO: ${{ matrix.torchaudio-version }}
       MARKERS: ${{ matrix.test-markers }}
       NEUROPOD_BASE_DIR: "/usr/local/lib/neuropod"
       NEUROPOD_VERISON: "0.3.0-rc6"
@@ -117,7 +127,7 @@ jobs:
             pip install --pre torch==2.0.0.dev20230213+cpu torchtext torchvision torchaudio --extra-index-url $extra_index_url
           else
             extra_index_url=https://download.pytorch.org/whl/cpu
-            pip install torch==$PYTORCH torchtext torchvision torchaudio --extra-index-url $extra_index_url
+            pip install torch==$PYTORCH torchtext torchvision torchaudio==$TORCHAUDIO --extra-index-url $extra_index_url
           fi
           pip install protobuf==3.20.1 # https://github.com/databrickslabs/dbx/issues/257
 

@@ -13,6 +13,15 @@ description: |
   to accurately classify various products into 4 different classes of sentiments
   based on the raw text review provided by the user.
   https://www.machinehack.com/hackathons/product_sentiment_classification_weekend_hackathon_19/overview
+columns:
+  - name: Text_ID
+    type: category
+  - name: Product_Description
+    type: text
+  - name: Product_Type
+    type: category
+  - name: Sentiment
+    type: category
 output_features:
 - name: Sentiment
   type: category

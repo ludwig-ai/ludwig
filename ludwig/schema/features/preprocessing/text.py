@@ -4,6 +4,7 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor
 from ludwig.schema.metadata import FEATURE_METADATA, PREPROCESSING_METADATA
+from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils import strings_utils
 from ludwig.utils.tokenizers import tokenizer_registry
@@ -38,12 +39,20 @@ class TextPreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["vocab_file"],
     )
 
-    max_sequence_length: int = schema_utils.PositiveInteger(
+    sequence_length: int = schema_utils.PositiveInteger(
         default=None,
         allow_none=True,
-        description="The maximum length (number of tokens) of the text. Texts that are longer than this value will be "
-        "truncated, while texts that are shorter will be padded. If None, max sequence length will be inferred from "
-        "the training dataset.",
+        description="The desired length (number of tokens) of the sequence. Sequences that are longer than this value "
+        "will be truncated and sequences shorter than this value will be padded. If None, sequence length will be "
+        "inferred from the training dataset.",
+    )
+
+    max_sequence_length: int = schema_utils.PositiveInteger(
+        default=256,
+        allow_none=True,
+        description="The maximum length (number of tokens) of the sequence. Sequences that are longer than this value "
+        "will be truncated. Useful as a stopgap measure if `sequence_length` is set to `None`. If `None`, max sequence "
+        "length will be inferred from the training dataset.",
         parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["max_sequence_length"],
     )
 
@@ -126,6 +135,11 @@ class TextPreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=PREPROCESSING_METADATA["cache_encoder_embeddings"],
     )
 
+    compute_idf: bool = schema_utils.Boolean(
+        default=False,
+        parameter_metadata=INTERNAL_ONLY,
+    )
+
 
 @DeveloperAPI
 @register_preprocessor("text_output")
@@ -139,12 +153,21 @@ class TextOutputPreprocessingConfig(TextPreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["missing_value_strategy"],
     )
 
-    max_sequence_length: int = schema_utils.PositiveInteger(
+    sequence_length: int = schema_utils.PositiveInteger(
         default=None,
         allow_none=True,
-        description="The maximum length (number of tokens) of the text. Texts that are longer than this value will be "
-        "truncated, while texts that are shorter will be padded. If None, max sequence length will be inferred from "
-        "the training dataset.",
+        description="The desired length (number of tokens) of the sequence. Sequences that are longer than this value "
+        "will be truncated and sequences shorter than this value will be padded. If None, sequence length will be "
+        "inferred from the training dataset.",
+        parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["sequence_length"],
+    )
+
+    max_sequence_length: int = schema_utils.PositiveInteger(
+        default=256,
+        allow_none=True,
+        description="The maximum length (number of tokens) of the sequence. Sequences that are longer than this value "
+        "will be truncated. Useful as a stopgap measure if `sequence_length` is set to `None`. If `None`, max sequence "
+        "length will be inferred from the training dataset.",
         parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["max_sequence_length"],
     )
 

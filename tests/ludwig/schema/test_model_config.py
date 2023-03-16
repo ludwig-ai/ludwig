@@ -682,3 +682,43 @@ def test_augmentation_pipeline(augmentation, expected):
     # Test the serializing and reloading yields the same results
     config_obj2 = ModelConfig.from_dict(config_dict)
     assert config_obj2.input_features[0].augmentation == config_obj.input_features[0].augmentation
+
+
+@pytest.mark.parametrize(
+    "sequence_length, max_sequence_length, max_sequence_length_expected",
+    [
+        (None, 100, 100),
+        (50, 100, 100),
+        (100, 50, 100),
+    ],
+)
+def test_preprocessing_max_sequence_length(sequence_length, max_sequence_length, max_sequence_length_expected):
+    config = {
+        "input_features": [
+            {
+                "name": "text1",
+                "type": "text",
+                "preprocessing": {
+                    "sequence_length": sequence_length,
+                    "max_sequence_length": max_sequence_length,
+                },
+            },
+            {
+                "name": "sequence1",
+                "type": "sequence",
+                "preprocessing": {
+                    "sequence_length": sequence_length,
+                    "max_sequence_length": max_sequence_length,
+                },
+            },
+        ],
+        "output_features": [
+            {
+                "name": "number1",
+                "type": "number",
+            },
+        ],
+    }
+    config_obj = ModelConfig.from_dict(config)
+    assert config_obj.input_features[0].preprocessing.max_sequence_length == max_sequence_length_expected
+    assert config_obj.input_features[1].preprocessing.max_sequence_length == max_sequence_length_expected

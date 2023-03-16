@@ -21,7 +21,7 @@ from ludwig.constants import CATEGORY, DATE, IMAGE, INPUT_FEATURES, NAME, PREPRO
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.explain.explainer import Explainer
 from ludwig.explain.explanation import ExplanationsResult
-from ludwig.explain.util import get_pred_col
+from ludwig.explain.util import get_pred_col, replace_layer_with_copy
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.models.ecd import ECD
 from ludwig.utils.torch_utils import DEVICE
@@ -369,10 +369,20 @@ def get_total_attribution(
     for feat_name, feat in input_features.items():
         if feat.type() in {TEXT, CATEGORY, DATE, SET}:
             # Get embedding layer from encoder, which is the first child of the encoder.
-            layers.append(feat.encoder_obj.get_embedding_layer())
+            target_layer = feat.encoder_obj.get_embedding_layer()
+
+            # If the current layer matches any layer in the list, make a deep copy of the layer.
+            if len(layers) > 0 and any(target_layer == layer for layer in layers):
+                # Replace the layer with a deep copy of the layer to ensure that the attributions unique for each input
+                # feature that uses a shared layer.
+                # Recommended here: https://github.com/pytorch/captum/issues/794#issuecomment-1093021638
+                replace_layer_with_copy(feat, target_layer)
+                target_layer = feat.encoder_obj.get_embedding_layer()  # get the new copy
         else:
             # Get the wrapped input layer.
-            layers.append(explanation_model.input_maps[feat_name])
+            target_layer = explanation_model.input_maps[feat_name]
+
+        layers.append(target_layer)
 
     explainer = LayerIntegratedGradients(explanation_model, layers)
 

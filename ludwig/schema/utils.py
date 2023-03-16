@@ -2,6 +2,7 @@ import copy
 import warnings
 from abc import ABC, abstractmethod
 from dataclasses import field, Field
+from functools import lru_cache
 from typing import Any
 from typing import Dict as TDict
 from typing import List as TList
@@ -19,7 +20,6 @@ from ludwig.constants import ACTIVE, COLUMN, NAME, PROC_COLUMN, TYPE
 from ludwig.modules.reduction_modules import reduce_mode_registry
 from ludwig.schema.metadata import COMMON_METADATA
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, ParameterMetadata
-from ludwig.utils.misc_utils import memoized_method
 from ludwig.utils.registry import Registry
 from ludwig.utils.torch_utils import activations, initializer_registry
 
@@ -192,13 +192,13 @@ class BaseMarshmallowConfig(ABC):
         return schema.load(d)
 
     @classmethod
-    @memoized_method(maxsize=1)
+    @lru_cache(maxsize=None)
     def get_valid_field_names(cls) -> Set[str]:
         schema = cls.get_class_schema()()
         return set(schema.fields.keys())
 
     @classmethod
-    @memoized_method(maxsize=1)
+    @lru_cache(maxsize=None)
     def get_class_schema(cls):
         return marshmallow_dataclass.class_schema(cls)
 
@@ -420,7 +420,7 @@ def IntegerOptions(
 
 
 @DeveloperAPI
-def Boolean(default: bool, description: str, parameter_metadata: ParameterMetadata = None):
+def Boolean(default: bool, description: str = "", parameter_metadata: ParameterMetadata = None):
     if default is not None:
         try:
             assert isinstance(default, bool)

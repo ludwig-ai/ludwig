@@ -12,6 +12,215 @@ description: |
   Melbourne Airbnb Open Data
   Detailed and summarized data of Airbnb activity in Melbourne, VIC, Australia
   https://www.kaggle.com/tylerx/melbourne-airbnb-open-data
+columns:
+  - name: id
+    type: number
+  - name: listing_url
+    type: category
+  - name: scrape_id
+    type: number
+  - name: last_scraped
+    type: date
+  - name: text
+    type: category
+  - name: summary
+    type: text
+  - name: space
+    type: text
+  - name: description
+    type: text
+  - name: neighborhood_overview
+    type: text
+  - name: notes
+    type: text
+  - name: transit
+    type: text
+  - name: access
+    type: text
+  - name: interaction
+    type: text
+  - name: house_rules
+    type: text
+  - name: picture_url
+    type: category
+  - name: host_id
+    type: category
+  - name: host_url
+    type: category
+  - name: host_name
+    type: category
+  - name: host_since
+    type: date
+  - name: host_location
+    type: category
+  - name: host_about
+    type: text
+  - name: host_response_time
+    type: category
+  - name: host_response_rate
+    type: category
+  - name: host_is_superhost
+    type: binary
+  - name: host_thumbnail_url
+    type: category
+  - name: host_picture_url
+    type: category
+  - name: host_neighborhood
+    type: category
+  - name: host_verifications
+    type: set
+  - name: host_has_profile_pic
+    type: binary
+  - name: host_identity_verified
+    type: binary
+  - name: street
+    type: category
+  - name: neighborhood
+    type: category
+  - name: city
+    type: category
+  - name: suburb
+    type: category
+  - name: state
+    type: category
+  - name: zipcode
+    type: category
+  - name: smart_location
+    type: category
+  - name: country_code
+    type: category
+  - name: country
+    type: category
+  - name: latitude
+    type: number
+  - name: longitude
+    type: number
+  - name: is_location_exact
+    type: binary
+  - name: property_type
+    type: category
+  - name: room_type
+    type: category
+  - name: accommodates
+    type: number
+  - name: bathrooms
+    type: number
+  - name: bedrooms
+    type: number
+  - name: beds
+    type: number
+  - name: bed_type
+    type: category
+  - name: amenities
+    type: set
+  - name: price
+    type: number
+  - name: weekly_price
+    type: number
+  - name: monthly_price
+    type: number
+  - name: security_deposit
+    type: number
+  - name: cleaning_fee
+    type: number
+  - name: guests_included
+    type: number
+  - name: extra_people
+    type: number
+  - name: minimum_nights
+    type: number
+  - name: maximum_nights
+    type: number
+  - name: calendar_updated
+    type: category
+  - name: has_availability
+    type: binary
+  - name: availability_30
+    type: number
+  - name: availability_60
+    type: number
+  - name: availability_90
+    type: number
+  - name: availability_365
+    type: number
+  - name: calendar_last_scraped
+    type: date
+  - name: number_of_reviews
+    type: number
+  - name: first_review
+    type: date
+  - name: last_review
+    type: date
+  - name: review_scores_rating
+    type: number
+  - name: review_scores_accuracy
+    type: number
+  - name: review_scores_cleanliness
+    type: number
+  - name: review_scores_checkin
+    type: number
+  - name: review_scores_communication
+    type: number
+  - name: review_scores_location
+    type: number
+  - name: review_scores_value
+    type: number
+  - name: requires_license
+    type: binary
+  - name: license
+    type: category
+  - name: instant_bookable
+    type: binary
+  - name: cancellation_policy
+    type: category
+  - name: require_guest_profile_picture
+    type: binary
+  - name: require_guest_phone_verification
+    type: binary
+  - name: calculated_host_listings_count
+    type: number
+  - name: reviews_per_month
+    type: number
+  - name: price_label
+    type: number
+  - name: host_verifications_jumio
+    type: binary
+  - name: host_verifications_government_id
+    type: binary
+  - name: host_verifications_kba
+    type: binary
+  - name: host_verifications_zhima_selfie
+    type: binary
+  - name: host_verifications_facebook
+    type: binary
+  - name: host_verifications_work_email
+    type: binary
+  - name: host_verifications_google
+    type: binary
+  - name: host_verifications_sesame
+    type: binary
+  - name: host_verifications_manual_online
+    type: binary
+  - name: host_verifications_manual_offline
+    type: binary
+  - name: host_verifications_offline_government_id
+    type: binary
+  - name: host_verifications_selfie
+    type: binary
+  - name: host_verifications_reviews
+    type: binary
+  - name: host_verifications_identity_manual
+    type: binary
+  - name: host_verifications_sesame_offline
+    type: binary
+  - name: host_verifications_weibo
+    type: binary
+  - name: host_verifications_email
+    type: binary
+  - name: host_verifications_sent_id
+    type: binary
+  - name: host_verifications_phone
+    type: binary
 output_features:
   - name: price_label
     type: category

@@ -10,6 +10,49 @@ description: |
   that provided home phone and Internet services to customers. Each row represents a
   customer, each column contains customer’s attributes described on the column Metadata.
   https://www.kaggle.com/datasets/blastchar/telco-customer-churn
+columns:
+  - name: customerID
+    type: category
+  - name: gender
+    type: binary
+  - name: SeniorCitizen
+    type: binary
+  - name: Partner
+    type: binary
+  - name: Dependents
+    type: binary
+  - name: tenure
+    type: number
+  - name: PhoneService
+    type: binary
+  - name: MultipleLines
+    type: category
+  - name: InternetService
+    type: category
+  - name: OnlineSecurity
+    type: category
+  - name: OnlineBackup
+    type: category
+  - name: DeviceProtection
+    type: category
+  - name: TechSupport
+    type: category
+  - name: StreamingTV
+    type: category
+  - name: StreamingMovies
+    type: category
+  - name: Contract
+    type: category
+  - name: PaperlessBilling
+    type: binary
+  - name: PaymentMethod
+    type: category
+  - name: MonthlyCharges
+    type: number
+  - name: TotalCharges
+    type: number
+  - name: Churn
+    type: binary
 output_features:
     - name: Churn
       type: binary

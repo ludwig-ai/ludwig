@@ -12,6 +12,19 @@ description: |
   Wine Reviews
   130k wine reviews with variety, location, winery, price, and description
   https://www.kaggle.com/datasets/zynicide/wine-reviews
+columns:
+  - name: country
+    type: category
+  - name: description
+    type: text
+  - name: points
+    type: number
+  - name: price
+    type: number
+  - name: province
+    type: category
+  - name: variety
+    type: category
 output_features:
   - name: points
     type: number

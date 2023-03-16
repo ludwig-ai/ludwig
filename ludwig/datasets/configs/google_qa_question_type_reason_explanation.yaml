@@ -16,6 +16,89 @@ description: |
   Note: this is the same dataset as `google_quest_qa`. It is duplicated here to have a one-to-one mapping
   with the benchmarking datasets in https://arxiv.org/pdf/2111.02705.pdf
   In this paper, the column `question_type_reason_explanation` is used as the output feature.
+columns:
+  - name: qa_id
+    type: category
+  - name: question_title
+    type: text
+  - name: question_body
+    type: text
+  - name: question_user_name
+    type: category
+  - name: question_user_page
+    type: category
+  - name: answer
+    type: text
+  - name: answer_user_name
+    type: category
+  - name: answer_user_page
+    type: category
+  - name: url
+    type: category
+  - name: category
+    type: category
+  - name: host
+    type: category
+  - name: question_asker_intent_understanding
+    type: number
+  - name: question_body_critical
+    type: number
+  - name: question_conversational
+    type: number
+  - name: question_expect_short_answer
+    type: number
+  - name: question_fact_seeking
+    type: number
+  - name: question_has_commonly_accepted_answer
+    type: number
+  - name: question_interestingness_others
+    type: number
+  - name: question_interestingness_self
+    type: number
+  - name: question_multi_intent
+    type: number
+  - name: question_not_really_a_question
+    type: number
+  - name: question_opinion_seeking
+    type: number
+  - name: question_type_choice
+    type: number
+  - name: question_type_compare
+    type: number
+  - name: question_type_consequence
+    type: number
+  - name: question_type_definition
+    type: number
+  - name: question_type_entity
+    type: number
+  - name: question_type_instructions
+    type: number
+  - name: question_type_procedure
+    type: number
+  - name: question_type_reason_explanation
+    type: number
+  - name: question_type_spelling
+    type: number
+  - name: question_well_written
+    type: number
+  - name: answer_helpful
+    type: number
+  - name: answer_level_of_information
+    type: number
+  - name: answer_plausible
+    type: number
+  - name: answer_relevance
+    type: number
+  - name: answer_satisfaction
+    type: number
+  - name: answer_type_instructions
+    type: number
+  - name: answer_type_procedure
+    type: number
+  - name: answer_type_reason_explanation
+    type: number
+  - name: answer_well_written
+    type: number
 output_features:
   - name: question_type_reason_explanation
     type: number
