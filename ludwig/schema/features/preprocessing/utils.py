@@ -60,8 +60,8 @@ def PreprocessingDataclassField(feature_type: str):
 
     try:
         preprocessor = preprocessing_registry[feature_type]
-        load_default = lambda: preprocessor.Schema().load({"feature_type": feature_type})
-        dump_default = preprocessor.Schema().dump({"feature_type": feature_type})
+        load_default = lambda: preprocessor.Schema().load({})
+        dump_default = preprocessor.Schema().dump({})
 
         return field(
             metadata={
