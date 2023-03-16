@@ -386,26 +386,19 @@ def test_ray_read_binary_files(tmpdir, df_engine, ray_cluster_2cpu):
     assert proc_col.equals(proc_col_expected)
 
 
-@pytest.mark.skip(reason="Occasional metadata mismatch error: https://github.com/ludwig-ai/ludwig/issues/2889")
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
+@pytest.mark.parametrize("trainer_strategy", ["horovod", "ddp"])
 @pytest.mark.distributed
-def test_ray_outputs(dataset_type, ray_cluster_2cpu):
+def test_ray_outputs(dataset_type, trainer_strategy, ray_cluster_2cpu):
     input_features = [
         binary_feature(),
     ]
-    # The synthetic set feature generator inserts between 0 and `vocab_size` entities per entry. 0 entities creates a
-    # null (NaN) entry. The default behavior for such entries in output features is to DROP_ROWS. This leads to poorly
-    # handled non-determinism when comparing the metrics between the local and Ray backends. We work around this by
-    # setting the `missing_value_strategy` to `fill_with_const` and setting the `fill_value` to the empty string.
-    set_feature_config = set_feature(
-        decoder={"vocab_size": 3},
-        preprocessing={"missing_value_strategy": "fill_with_const", "fill_value": ""},
-    )
+    binary_feature_config = binary_feature()
+    category_feature_config = category_feature(output_feature=True)
     output_features = [
-        binary_feature(),
         number_feature(),
-        vector_feature(),
-        set_feature_config,
+        category_feature_config,
+        binary_feature_config,
         # TODO: feature type not yet supported
         # text_feature(decoder={"vocab_size": 3}),  # Error having to do with a missing key (#2586)
         # sequence_feature(decoder={"vocab_size": 3}),  # Error having to do with a missing key (#2586)
@@ -419,7 +412,45 @@ def test_ray_outputs(dataset_type, ray_cluster_2cpu):
         dataset_type=dataset_type,
         predict=True,
         skip_save_predictions=False,
-        required_metrics={set_feature_config["name"]: {"jaccard"}},  # ensures that the metric is not omitted.
+        required_metrics={
+            binary_feature_config[NAME]: {"roc_auc"},
+            category_feature_config[NAME]: {"roc_auc"},
+        },  # ensures that these metrics are not omitted.
+        backend_kwargs={
+            TRAINER: {"strategy": trainer_strategy},
+        },
+    )
+
+
+@pytest.mark.skip(reason="Occasional metadata mismatch error: https://github.com/ludwig-ai/ludwig/issues/2889")
+@pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
+@pytest.mark.distributed
+def test_ray_set_and_vector_outputs(dataset_type, ray_cluster_2cpu):
+    input_features = [
+        binary_feature(),
+    ]
+    # The synthetic set feature generator inserts between 0 and `vocab_size` entities per entry. 0 entities creates a
+    # null (NaN) entry. The default behavior for such entries in output features is to DROP_ROWS. This leads to poorly
+    # handled non-determinism when comparing the metrics between the local and Ray backends. We work around this by
+    # setting the `missing_value_strategy` to `fill_with_const` and setting the `fill_value` to the empty string.
+    set_feature_config = set_feature(
+        decoder={"vocab_size": 3},
+        preprocessing={"missing_value_strategy": "fill_with_const", "fill_value": ""},
+    )
+    output_features = [
+        vector_feature(),
+        set_feature_config,
+    ]
+    # NOTE: This test runs without NaNs because having multiple output features with DROP_ROWS strategy leads to
+    # flakiness in the test having to do with uneven allocation of samples between Ray workers.
+    run_test_with_features(
+        input_features,
+        output_features,
+        df_engine="dask",
+        dataset_type=dataset_type,
+        predict=True,
+        skip_save_predictions=False,
+        required_metrics={set_feature_config[NAME]: {"jaccard"}},  # ensures that the metric is not omitted.
     )
 
 

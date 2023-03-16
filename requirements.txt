@@ -7,7 +7,7 @@ tabulate>=0.7
 scikit-learn
 tqdm
 torch>=1.13.0
-torchaudio<2.0.0  # Unpin when https://github.com/ludwig-ai/ludwig/issues/3245 is resolved on the PyTorch side.
+torchaudio
 torchtext
 torchvision
 transformers>=4.10.1,<4.22
