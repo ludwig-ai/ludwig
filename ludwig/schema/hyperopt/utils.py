@@ -6,7 +6,7 @@ from ludwig.utils.registry import Registry
 parameter_config_registry = Registry()
 scheduler_config_registry = Registry()
 scheduler_dependencies_registry = Registry()
-search_algorithm_registry = Registry()
+search_algorithm_config_registry = Registry()
 sa_dependencies_registry = Registry()
 sa_random_state_field_registry = Registry()
 
@@ -34,7 +34,7 @@ def get_scheduler_cls(name: str) -> Type["BaseSchedulerConfig"]:  # noqa: F821
     Returns:
         A scheduler config class from `ludwig.schema.hyperopt.scheduler`
     """
-    return search_algorithm_registry[name]
+    return search_algorithm_config_registry[name]
 
 
 @DeveloperAPI
@@ -60,7 +60,7 @@ def get_search_algorithm_cls(name: str) -> Type["BaseSearchAlgorithmConfig"]:  #
     Returns:
         A scheduler config class from `ludwig.schema.hyperopt.search_algorithm`
     """
-    return search_algorithm_registry[name]
+    return search_algorithm_config_registry[name]
 
 
 @DeveloperAPI
@@ -146,7 +146,7 @@ def register_scheduler_config(name: str, dependencies: Optional[List[Tuple[str]]
 
 # TODO: create a search alg metadata class to register in place of individual metadata args
 @DeveloperAPI
-def register_search_algorithm(
+def register_search_algorithm_config(
     name: str, random_state_field: Optional[str] = None, dependencies: Optional[List[Tuple[str, str]]] = None
 ) -> Callable:
     """Register a search algorithm config class by name.
@@ -162,7 +162,7 @@ def register_search_algorithm(
     """
 
     def wrap(cls: Type["BaseSearchAlgorithmConfig"]) -> Type["BaseSearchAlgorithmConfig"]:  # noqa: F821
-        search_algorithm_registry[name] = cls
+        search_algorithm_config_registry[name] = cls
         sa_dependencies_registry[name] = dependencies if dependencies is not None else []
         sa_random_state_field_registry[name] = random_state_field
         return cls
