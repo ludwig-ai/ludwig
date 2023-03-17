@@ -917,7 +917,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
                 daft.context.set_runner_ray(address=ray.util.get_node_ip_address())
             except RuntimeError:
                 # We hit runtime errors if we try to set the runner multiple times in the same process
-                # when there are multiple audio/image features, as well as in our Ludwig test suite 
+                # when there are multiple audio/image features, as well as in our Ludwig test suite
                 # when we re-use the same backend instance/same test fixture multiple times.
                 logger.debug("Daft runner already set, skipping since we can only set this once.")
 
