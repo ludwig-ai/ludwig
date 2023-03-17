@@ -913,7 +913,13 @@ class RayBackend(RemoteTrainingMixin, Backend):
             from daft import col, DataFrame
 
             # Set the runner for executing Daft dataframes to a Ray cluster
-            daft.context.set_runner_ray(address=ray.util.get_node_ip_address())
+            try:
+                daft.context.set_runner_ray(address=ray.util.get_node_ip_address())
+            except RuntimeError:
+                # We hit runtime errors if we try to set the runner multiple times in the same process
+                # when there are multiple audio/image features, as well as in our Ludwig test suite 
+                # when we re-use the same backend instance/same test fixture multiple times.
+                logger.debug("Daft runner already set, skipping since we can only set this once.")
 
             # Get the maximum number of worker threads that can be used to parallelize reads
             read_parallelism = self._get_binary_read_parallelism(len(fnames), file_size)
@@ -931,6 +937,9 @@ class RayBackend(RemoteTrainingMixin, Backend):
             # directly so convert to Ray and then convert to Dask
             df = df.to_ray_dataset()
             df = self.df_engine.from_ray_dataset(df)
+
+            # Restore number of partitions of the original column
+            df = df.repartition(npartitions=column.npartitions)
 
             # Persist the dataframe
             df = self.df_engine.persist(df)
