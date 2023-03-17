@@ -942,12 +942,12 @@ class DeBERTaEncoder(HFTextEncoder):
         vocab_size: int = None,
         model_params: DebertaModelParams = None,
         pretrained_kwargs: Dict = None,
-        encoder_config=None,
+        encoder_config: Optional[DebertaV2Config] = None,
         **kwargs,
     ):
         super().__init__()
 
-        from transformers import DebertaV2Config, DebertaV2Model
+        from transformers import DebertaV2Config as _DebertaV2Config, DebertaV2Model
 
         hf_config_params = model_params.to_dict()
         if use_pretrained and not saved_weights_in_checkpoint:
@@ -957,15 +957,15 @@ class DeBERTaEncoder(HFTextEncoder):
             )
         else:
             transformer = self._init_transformer_from_scratch(
-                DebertaV2Model, DebertaV2Config, hf_config_params, vocab_size
+                DebertaV2Model, _DebertaV2Config, hf_config_params, vocab_size
             )
 
         if encoder_config is not None:
-            encoder_config.vocab_size = transformer.config.vocab_size
-            encoder_config.model_params = DebertaModelParams.from_dict(
+            model_params = DebertaModelParams.from_dict(
                 {k: v for k, v in transformer.config.to_dict().items() if k in hf_config_params}
             )
-            self.config = encoder_config
+            override_kwargs = {"vocab_size": transformer.config.vocab_size, "model_params": model_params}
+            self.config = DebertaV2Config(**{**encoder_config.to_dict(), **override_kwargs})
         else:
             self.config = None
 
