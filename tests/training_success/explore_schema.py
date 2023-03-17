@@ -149,16 +149,16 @@ def handle_property_type(
         property_type: type of the parameter (e.g. array, number, etc.)
         item: dictionary containing details on the parameter such as default, min and max values.
     """
-    # don't explore internal only parameters.
-    if "parameter_metadata" in item and item["parameter_metadata"] and item["parameter_metadata"]["internal_only"]:
+    parameter_metadata = item.get("parameter_metadata", None)
+    if not parameter_metadata:
         return []
+
+    # don't explore internal only parameters.
+    if parameter_metadata.get("internal_only", True):
+        return []
+
     # don't explore parameters that have expected impact less than HIGH.
-    if (
-        "parameter_metadata" not in item
-        or not item["parameter_metadata"]
-        or "expected_impact" not in item["parameter_metadata"]
-        or item["parameter_metadata"]["expected_impact"] < ExpectedImpact.HIGH
-    ):
+    if parameter_metadata.get("expected_impact", ExpectedImpact.LOW) < ExpectedImpact.HIGH:
         return []
 
     if property_type == "number":
