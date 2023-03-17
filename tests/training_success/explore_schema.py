@@ -154,9 +154,10 @@ def handle_property_type(
         return []
     # don't explore parameters that have expected impact less than HIGH.
     if (
-        "parameter_metadata" in item
-        and item["parameter_metadata"]
-        and item["parameter_metadata"]["expected_impact"] < ExpectedImpact.HIGH
+        "parameter_metadata" not in item
+        or not item["parameter_metadata"]
+        or "expected_impact" not in item["parameter_metadata"]
+        or item["parameter_metadata"]["expected_impact"] < ExpectedImpact.HIGH
     ):
         return []
 
@@ -380,7 +381,7 @@ def combine_configs_for_comparator_combiner(
             entity_1_size = random.randint(1, len(entity_names) - 1)
             merged_config["combiner"]["entity_1"] = entity_names[:entity_1_size]
             merged_config["combiner"]["entity_2"] = entity_names[entity_1_size:]
-            merged_config["preprocessing"] = {"sample_ratio": 0.05}
+            # merged_config["preprocessing"] = {"sample_ratio": 0.05}
             try:
                 ModelConfig.from_dict(merged_config)
                 ret.append((merged_config, dataset_name))
