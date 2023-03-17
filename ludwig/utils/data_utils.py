@@ -190,11 +190,19 @@ def read_xsv(data_fp, df_lib=PANDAS_DF, separator=",", header=0, nrows=None, ski
     if nrows is not None:
         kwargs["nrows"] = nrows
 
+    # Create an iterator that will immediately be used to read the first chunk:
+    if 'get_preview' in kwargs:
+        kwargs['chunksize'] = kwargs['get_preview']
+
     try:
         df = df_lib.read_csv(data_fp, **kwargs)
     except ParserError:
         logger.warning("Failed to parse the CSV with pandas default way," " trying \\ as escape character.")
         df = df_lib.read_csv(data_fp, escapechar="\\", **kwargs)
+
+    if 'get_preview' in kwargs:
+        for chunk in df:
+            return chunk
 
     return df
 
@@ -205,22 +213,31 @@ read_tsv = functools.partial(read_xsv, separator="\t")
 
 @DeveloperAPI
 @spread
-def read_json(data_fp, df_lib, normalize=False):
+def read_json(data_fp, df_lib, normalize=False, **kwargs):
     if normalize:
         return df_lib.json_normalize(load_json(data_fp))
     else:
+        if 'get_preview' in kwargs:
+            it = df_lib.read_json(data_fp, chunksize=kwargs['get_preview'])
+            for chunk in it:
+                return chunk
+
         return df_lib.read_json(data_fp)
 
 
 @DeveloperAPI
 @spread
-def read_jsonl(data_fp, df_lib):
+def read_jsonl(data_fp, df_lib, **kwargs):
+    if 'get_preview' in kwargs:
+        it = df_lib.read_json(data_fp, lines=True, chunksize=kwargs['get_preview'])
+        for chunk in it:
+            return chunk
     return df_lib.read_json(data_fp, lines=True)
 
 
 @DeveloperAPI
 @spread
-def read_excel(data_fp, df_lib):
+def read_excel(data_fp, df_lib, **kwargs):
     fp_split = os.path.splitext(data_fp)
     if fp_split[1] == ".xls":
         excel_engine = "xlrd"
@@ -230,13 +247,26 @@ def read_excel(data_fp, df_lib):
     # https://github.com/dask/dask/issues/9055
     if is_dask_lib(df_lib):
         logger.warning("Falling back to pd.read_excel() since dask backend does not support it")
+        if 'get_preview' in kwargs:
+            it = pd.read_excel(data_fp, engine=excel_engine, chunksize=kwargs['get_preview'])
+            for chunk in it:
+                return dd.from_pandas(chunk, npartitions=1)
         return dd.from_pandas(pd.read_excel(data_fp, engine=excel_engine), npartitions=1)
+    
+    if 'get_preview' in kwargs:
+        it = df_lib.read_excel(data_fp, engine=excel_engine, chunksize=kwargs['get_preview'])
+        for chunk in it:
+            return chunk
     return df_lib.read_excel(data_fp, engine=excel_engine)
 
 
 @DeveloperAPI
 @spread
-def read_parquet(data_fp, df_lib):
+def read_parquet(data_fp, df_lib, **kwargs):
+    if 'get_preview' in kwargs:
+        it = df_lib.read_parquet(data_fp, chunksize=kwargs['get_preview'])
+        for chunk in it:
+            return chunk
     return df_lib.read_parquet(data_fp)
 
 
