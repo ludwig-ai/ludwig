@@ -21,7 +21,7 @@ def get_parameter_cls(name: str) -> Type["BaseParameterConfig"]:  # noqa: F821
     Returns:
         A parameter config class from `ludwig.schema.hyperopt.parameter`
     """
-    return parameter_config_registry.get[name]
+    return parameter_config_registry[name]
 
 
 @DeveloperAPI
