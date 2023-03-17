@@ -1,8 +1,12 @@
 from abc import ABC
 from typing import Optional, Union
 
+import torch
+from packaging.version import parse as parse_version
+
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import DEFAULT_BATCH_SIZE, LOSS, MAX_POSSIBLE_BATCH_SIZE, MODEL_ECD, MODEL_GBM, TRAINING
+from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.lr_scheduler import LRSchedulerConfig, LRSchedulerDataclassField
 from ludwig.schema.metadata import TRAINER_METADATA
@@ -14,6 +18,9 @@ from ludwig.schema.optimizers import (
 )
 from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils.registry import Registry
+
+_torch_200 = parse_version(torch.__version__) >= parse_version("2.0")
+
 
 trainer_schema_registry = Registry()
 
@@ -67,6 +74,12 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 @ludwig_dataclass
 class ECDTrainerConfig(BaseTrainerConfig):
     """Dataclass that configures most of the hyperparameters used for ECD model training."""
+
+    def __post_init__(self):
+        if self.compile and not _torch_200:
+            raise ConfigValidationError(
+                "Trainer param `compile: true` requires PyTorch 2.0.0 or higher. Please upgrade PyTorch and try again."
+            )
 
     learning_rate: Union[float, str] = schema_utils.OneOfOptionsField(
         default=0.001,
@@ -298,6 +311,12 @@ class ECDTrainerConfig(BaseTrainerConfig):
         default=False,
         description="Enable automatic mixed-precision (AMP) during training.",
         parameter_metadata=TRAINER_METADATA[MODEL_ECD]["use_mixed_precision"],
+    )
+
+    compile: bool = schema_utils.Boolean(
+        default=False,
+        description="Whether to compile the model before training.",
+        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["compile"],
     )
 
 

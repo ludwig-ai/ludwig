@@ -30,7 +30,7 @@ jobs:
             torchscript-version: 1.10.2
             ray-version: 2.0.0
           - python-version: "3.9"
-            pytorch-version: 1.13.0
+            pytorch-version: 2.0.0
             torchscript-version: 1.10.2
             ray-version: 2.2.0
           - python-version: "3.10"
@@ -169,9 +169,17 @@ jobs:
           horovodrun --check-build
         shell: bash
 
-      - name: Tests
+      - name: Unit Tests
         run: |
-          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow or benchmark" --junitxml pytest.xml tests
+          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow or benchmark" --junitxml pytest.xml tests/ludwig
+
+      - name: Integration Tests
+        run: |
+          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow or benchmark" --junitxml pytest.xml tests/integration_tests
+
+      - name: Regression Tests
+        run: |
+          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow or benchmark" --junitxml pytest.xml tests/regression_tests
 
       - name: Upload Unit Test Results
         if: ${{ always() && !env.ACT }}

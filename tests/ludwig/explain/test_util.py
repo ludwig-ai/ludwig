@@ -67,7 +67,7 @@ def test_replace_layer_with_copy(tmpdir):
     model = LudwigModel(config, logging_level=logging.WARNING, backend=LocalTestBackend())
     model.train(df)
 
-    input_feature_module = model.model.input_features[text_feature_2[NAME]]
+    input_feature_module = model.model.input_features.get(text_feature_2[NAME])
     target_layer = input_feature_module.encoder_obj.get_embedding_layer()
 
     data_ptrs_before = {}
