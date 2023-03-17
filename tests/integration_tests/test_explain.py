@@ -144,7 +144,8 @@ def run_test_explainer_api(
 
     if input_features is None:
         input_features = [
-            binary_feature(),
+            # Try a non-canonical name.
+            {"name": "binary.1", "type": "binary"},
             number_feature(),
             category_feature(encoder={"type": "onehot", "reduce_output": "sum"}),
             category_feature(encoder={"type": "passthrough", "reduce_output": "sum"}),
