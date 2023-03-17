@@ -11,15 +11,15 @@ def test_ludwig_feature_dict():
     to_module = torch.nn.Module()
     type_module = torch.nn.Module()
 
-    feature_dict["to"] = to_module
-    feature_dict["type"] = type_module
+    feature_dict.set("to", to_module)
+    feature_dict.set("type", type_module)
 
     assert iter(feature_dict) is not None
     assert next(feature_dict) is not None
     assert len(feature_dict) == 2
     assert feature_dict.keys() == ["to", "type"]
     assert feature_dict.items() == [("to", to_module), ("type", type_module)]
-    assert feature_dict["to"] == to_module
+    assert feature_dict.get("to"), to_module
 
     feature_dict.update({"to_empty": torch.nn.Module()})
 
@@ -32,11 +32,11 @@ def test_ludwig_feature_dict_with_periods():
 
     to_module = torch.nn.Module()
 
-    feature_dict["to."] = to_module
+    feature_dict.set("to.", to_module)
 
     assert feature_dict.keys() == ["to."]
     assert feature_dict.items() == [("to.", to_module)]
-    assert feature_dict["to."] == to_module
+    assert feature_dict.get("to.") == to_module
 
 
 @pytest.mark.parametrize("sequence_type", [list, tuple, np.array])

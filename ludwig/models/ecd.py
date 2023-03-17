@@ -76,7 +76,7 @@ class ECD(BaseModel):
 
         encoder_outputs = {}
         for input_feature_name, input_values in inputs.items():
-            encoder = self.input_features[input_feature_name]
+            encoder = self.input_features.get(input_feature_name)
             encoder_output = encoder(input_values)
             encoder_outputs[input_feature_name] = encoder_output
 
@@ -143,7 +143,7 @@ class ECD(BaseModel):
 
     def unskip(self):
         for k in self.input_features.keys():
-            self.input_features[k] = self.input_features[k].unskip()
+            self.input_features.set(k, self.input_features.get(k).unskip())
 
     def save(self, save_path):
         """Saves the model to the given path."""
@@ -177,8 +177,8 @@ class ECD(BaseModel):
             # if augmentation was specified for this input feature, add AugmentationPipeline to dictionary
             if input_feature.has_augmentation():
                 # use input feature proc_column as key because that is what is used in the Batcher
-                augmentation_pipelines[input_feature.proc_column] = self.input_features[
+                augmentation_pipelines[input_feature.proc_column] = self.input_features.get(
                     input_feature.name
-                ].get_augmentation_pipeline()
+                ).get_augmentation_pipeline()
 
         return AugmentationPipelines(augmentation_pipelines)
