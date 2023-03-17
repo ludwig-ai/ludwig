@@ -1,7 +1,7 @@
 import pytest
 
-from ludwig.schema.hyperopt.search_algorithm import BaseSearchAlgorithmConfig
-from ludwig.schema.hyperopt.utils import register_search_algorithm_config, search_algorithm_config_registry
+from ludwig.schema.hyperopt.scheduler import BaseSchedulerConfig
+from ludwig.schema.hyperopt.utils import register_scheduler_config, scheduler_config_registry
 from ludwig.schema.utils import ludwig_dataclass, ProtectedString
 
 
@@ -17,20 +17,20 @@ from ludwig.schema.utils import ludwig_dataclass, ProtectedString
 def dependency_check_config(request):
     key, deps, raises_exception = request.param
 
-    @register_search_algorithm_config(key, dependencies=deps)
+    @register_scheduler_config(key, dependencies=deps)
     @ludwig_dataclass
-    class DependencyCheckConfig(BaseSearchAlgorithmConfig):
+    class DependencyCheckConfig(BaseSchedulerConfig):
         type: str = ProtectedString(key)
 
     yield DependencyCheckConfig(), raises_exception
-    del search_algorithm_config_registry[key]
+    del scheduler_config_registry[key]
 
 
 def test_dependency_check(dependency_check_config):
-    """Test that the hyperopt search alg dependency check properly identifies missing dependencies.
+    """Test that the hyperopt scheduler dependency check properly identifies missing dependencies.
 
-    Most search algorithms supported by Ray Tune have additional dependencies that may not be installed. The schema
-    records these dependencies and can be used to verify they are installed at run time.
+    Some schedulers supported by Ray Tune have additional dependencies that may not be installed. The schema records
+    these dependencies and can be used to verify they are installed at run time.
     """
     config, raises_exception = dependency_check_config
     if raises_exception:
