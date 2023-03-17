@@ -106,7 +106,7 @@ class GBM(BaseModel):
         # Invoke output features.
         output_logits = {}
         output_feature_name = self.output_features.keys()[0]
-        output_feature = self.output_features[output_feature_name]
+        output_feature = self.output_features.get(output_feature_name)
 
         # If `inputs` is a tuple, it should contain `(inputs, targets)`.
         if isinstance(inputs, tuple):
@@ -138,7 +138,7 @@ class GBM(BaseModel):
             # TODO(travis): include encoder and decoder steps during inference
             # encoder_outputs = {}
             # for input_feature_name, input_values in inputs.items():
-            #     encoder = self.input_features[input_feature_name]
+            #     encoder = self.input_features.get(input_feature_name)
             #     encoder_output = encoder(input_values)
             #     encoder_outputs[input_feature_name] = encoder_output
 

@@ -72,7 +72,7 @@ class Combiner(LudwigModule, ABC):
     def concatenated_shape(self) -> torch.Size:
         # compute the size of the last dimension for the incoming encoder outputs
         # this is required to setup the fully connected layer
-        shapes = [torch.prod(torch.Tensor([*self.input_features[k].output_shape])) for k in self.input_features]
+        shapes = [torch.prod(torch.Tensor([*self.input_features.get(k).output_shape])) for k in self.input_features]
         return torch.Size([torch.sum(torch.Tensor(shapes)).type(torch.int32)])
 
     @property
@@ -80,7 +80,7 @@ class Combiner(LudwigModule, ABC):
         # input to combiner is a dictionary of the input features encoder
         # outputs, this property returns dictionary of output shapes for each
         # input feature's encoder output shapes.
-        return {k: self.input_features[k].output_shape for k in self.input_features}
+        return {k: self.input_features.get(k).output_shape for k in self.input_features}
 
     @property
     @lru_cache(maxsize=1)
@@ -89,7 +89,7 @@ class Combiner(LudwigModule, ABC):
         for k in self.input_features:
             pseudo_input[k] = {
                 "encoder_output": torch.rand(
-                    2, *self.input_features[k].output_shape, dtype=self.input_dtype, device=self.device
+                    2, *self.input_features.get(k).output_shape, dtype=self.input_dtype, device=self.device
                 )
             }
         output_tensor = self.forward(pseudo_input)
@@ -197,13 +197,15 @@ class SequenceConcatCombiner(Combiner):
         seq_size = None
         for k in self.input_features:
             # dim-2 output_shape implies a sequence [seq_size, hidden]
-            if len(self.input_features[k].output_shape) == 2:
-                seq_size = self.input_features[k].output_shape[0]
+            if len(self.input_features.get(k).output_shape) == 2:
+                seq_size = self.input_features.get(k).output_shape[0]
                 break
 
         # collect the size of the last dimension for all input feature
         # encoder outputs
-        shapes = [self.input_features[k].output_shape[-1] for k in self.input_features]  # output shape not input shape
+        shapes = [
+            self.input_features.get(k).output_shape[-1] for k in self.input_features
+        ]  # output shape not input shape
         return torch.Size([seq_size, sum(shapes)])
 
     def forward(self, inputs: Dict) -> Dict:  # encoder outputs
@@ -348,13 +350,15 @@ class SequenceCombiner(Combiner):
         seq_size = None
         for k in self.input_features:
             # dim-2 output_shape implies a sequence [seq_size, hidden]
-            if len(self.input_features[k].output_shape) == 2:
-                seq_size = self.input_features[k].output_shape[0]
+            if len(self.input_features.get(k).output_shape) == 2:
+                seq_size = self.input_features.get(k).output_shape[0]
                 break
 
         # collect the size of the last dimension for all input feature
         # encoder outputs
-        shapes = [self.input_features[k].output_shape[-1] for k in self.input_features]  # output shape not input shape
+        shapes = [
+            self.input_features.get(k).output_shape[-1] for k in self.input_features
+        ]  # output shape not input shape
         return torch.Size([seq_size, sum(shapes)])
 
     def forward(self, inputs: Dict) -> Dict:  # encoder outputs
@@ -410,7 +414,7 @@ class TabNetCombiner(Combiner):
     def concatenated_shape(self) -> torch.Size:
         # compute the size of the last dimension for the incoming encoder outputs
         # this is required to setup
-        shapes = [torch.prod(torch.Tensor([*self.input_features[k].output_shape])) for k in self.input_features]
+        shapes = [torch.prod(torch.Tensor([*self.input_features.get(k).output_shape])) for k in self.input_features]
         return torch.Size([torch.sum(torch.Tensor(shapes)).type(torch.int32)])
 
     def forward(
@@ -822,7 +826,7 @@ class ComparatorCombiner(Combiner):
         )
 
     def get_entity_shape(self, entity: list) -> torch.Size:
-        sizes = [torch.prod(torch.Tensor([*self.input_features[k].output_shape])) for k in entity]
+        sizes = [torch.prod(torch.Tensor([*self.input_features.get(k).output_shape])) for k in entity]
         return torch.Size([torch.sum(torch.Tensor(sizes)).type(torch.int32)])
 
     @property

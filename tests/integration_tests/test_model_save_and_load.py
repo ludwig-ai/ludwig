@@ -112,8 +112,8 @@ def test_model_save_reload_api(tmpdir, csv_filename, tmp_path):
 
         # Compare model weights
         for if_name in ludwig_model1.model.input_features:
-            if1 = ludwig_model1.model.input_features[if_name]
-            if2 = ludwig_model2.model.input_features[if_name]
+            if1 = ludwig_model1.model.input_features.get(if_name)
+            if2 = ludwig_model2.model.input_features.get(if_name)
             for if1_w, if2_w in zip(if1.encoder_obj.parameters(), if2.encoder_obj.parameters()):
                 assert torch.allclose(if1_w, if2_w)
 
@@ -123,8 +123,8 @@ def test_model_save_reload_api(tmpdir, csv_filename, tmp_path):
             assert torch.allclose(c1_w, c2_w)
 
         for of_name in ludwig_model1.model.output_features:
-            of1 = ludwig_model1.model.output_features[of_name]
-            of2 = ludwig_model2.model.output_features[of_name]
+            of1 = ludwig_model1.model.output_features.get(of_name)
+            of2 = ludwig_model2.model.output_features.get(of_name)
             for of1_w, of2_w in zip(of1.decoder_obj.parameters(), of2.decoder_obj.parameters()):
                 assert torch.allclose(of1_w, of2_w)
 
@@ -194,8 +194,8 @@ def test_gbm_model_save_reload_api(tmpdir, csv_filename, tmp_path):
 
         # Compare model weights
         for if_name in ludwig_model1.model.input_features:
-            if1 = ludwig_model1.model.input_features[if_name]
-            if2 = ludwig_model2.model.input_features[if_name]
+            if1 = ludwig_model1.model.input_features.get(if_name)
+            if2 = ludwig_model2.model.input_features.get(if_name)
             for if1_w, if2_w in zip(if1.encoder_obj.parameters(), if2.encoder_obj.parameters()):
                 assert torch.allclose(if1_w, if2_w)
 
@@ -212,8 +212,8 @@ def test_gbm_model_save_reload_api(tmpdir, csv_filename, tmp_path):
             assert torch.allclose(t1_w, t2_w)
 
         for of_name in ludwig_model1.model.output_features:
-            of1 = ludwig_model1.model.output_features[of_name]
-            of2 = ludwig_model2.model.output_features[of_name]
+            of1 = ludwig_model1.model.output_features.get(of_name)
+            of2 = ludwig_model2.model.output_features.get(of_name)
             for of1_w, of2_w in zip(of1.decoder_obj.parameters(), of2.decoder_obj.parameters()):
                 assert torch.allclose(of1_w, of2_w)
 
@@ -340,8 +340,8 @@ def test_model_save_reload_tv_model(torch_encoder, variant, tmpdir, csv_filename
 
         # Compare model weights
         for if_name in ludwig_model1.model.input_features:
-            if1 = ludwig_model1.model.input_features[if_name]
-            if2 = ludwig_model2.model.input_features[if_name]
+            if1 = ludwig_model1.model.input_features.get(if_name)
+            if2 = ludwig_model2.model.input_features.get(if_name)
             for if1_w, if2_w in zip(if1.encoder_obj.parameters(), if2.encoder_obj.parameters()):
                 assert torch.allclose(if1_w, if2_w)
 
@@ -351,8 +351,8 @@ def test_model_save_reload_tv_model(torch_encoder, variant, tmpdir, csv_filename
             assert torch.allclose(c1_w, c2_w)
 
         for of_name in ludwig_model1.model.output_features:
-            of1 = ludwig_model1.model.output_features[of_name]
-            of2 = ludwig_model2.model.output_features[of_name]
+            of1 = ludwig_model1.model.output_features.get(of_name)
+            of2 = ludwig_model2.model.output_features.get(of_name)
             for of1_w, of2_w in zip(of1.decoder_obj.parameters(), of2.decoder_obj.parameters()):
                 assert torch.allclose(of1_w, of2_w)
 
@@ -432,8 +432,8 @@ def test_model_save_reload_hf_model(tmpdir, csv_filename, tmp_path):
 
         # Compare model weights
         for if_name in ludwig_model1.model.input_features:
-            if1 = ludwig_model1.model.input_features[if_name]
-            if2 = ludwig_model2.model.input_features[if_name]
+            if1 = ludwig_model1.model.input_features.get(if_name)
+            if2 = ludwig_model2.model.input_features.get(if_name)
             for if1_w, if2_w in zip(if1.encoder_obj.parameters(), if2.encoder_obj.parameters()):
                 assert torch.allclose(if1_w, if2_w)
 
@@ -443,8 +443,8 @@ def test_model_save_reload_hf_model(tmpdir, csv_filename, tmp_path):
             assert torch.allclose(c1_w, c2_w)
 
         for of_name in ludwig_model1.model.output_features:
-            of1 = ludwig_model1.model.output_features[of_name]
-            of2 = ludwig_model2.model.output_features[of_name]
+            of1 = ludwig_model1.model.output_features.get(of_name)
+            of2 = ludwig_model2.model.output_features.get(of_name)
             for of1_w, of2_w in zip(of1.decoder_obj.parameters(), of2.decoder_obj.parameters()):
                 assert torch.allclose(of1_w, of2_w)
 
