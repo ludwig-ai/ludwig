@@ -961,6 +961,7 @@ class DeBERTaEncoder(HFTextEncoder):
             )
 
         if encoder_config is not None:
+            encoder_config.vocab_size = transformer.config.vocab_size
             encoder_config.model_params = DebertaModelParams.from_dict(
                 {k: v for k, v in transformer.config.to_dict().items() if k in hf_config_params}
             )
