@@ -134,7 +134,7 @@ def test_sequence_decoders(
 
             combiner_outputs["encoder_output_state"] = encoder_output_state
 
-        decoder = model.model.output_features[output_feature_name].decoder_obj
+        decoder = model.model.output_features.get(output_feature_name).decoder_obj
         decoder_out = decoder(combiner_outputs)
 
         # gather expected components of the shape

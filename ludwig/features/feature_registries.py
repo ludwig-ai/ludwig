@@ -121,5 +121,5 @@ def update_config_with_model(config_obj: "ModelConfig", model: "BaseModel"):
     their final config after class initialization.
     """
     for input_feature in config_obj.input_features:
-        model_input_feature = model.input_features[input_feature.name]
+        model_input_feature = model.input_features.get(input_feature.name)
         model_input_feature.update_config_after_module_init(input_feature)
