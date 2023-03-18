@@ -1,10 +1,10 @@
 import os
 from typing import List
 
-import yaml
 import pytest
+import yaml
 
-from ludwig.config_validation.synthetic_validation import validate_config_with_synthetic_data, get_abrupt_config
+from ludwig.config_validation.synthetic_validation import get_abrupt_config, validate_config_with_synthetic_data
 from ludwig.utils.data_utils import load_yaml
 
 BENCHMARK_DIRECTORY = "ludwig/benchmarking/configs"

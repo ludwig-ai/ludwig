@@ -1,15 +1,14 @@
+import logging
 import tempfile
 import time
-import logging
 
-from tests.integration_tests.utils import generate_data_as_dataframe
-from ludwig.constants import INPUT_FEATURES, OUTPUT_FEATURES, IMAGE
+from ludwig.api import LudwigModel
+from ludwig.api_annotations import DeveloperAPI
+from ludwig.constants import IMAGE, INPUT_FEATURES, OUTPUT_FEATURES, TEXT, TYPE
+from ludwig.error import ConfigValidationError
 from ludwig.schema.model_types.base import ModelConfig
 from ludwig.types import ModelConfigDict
-from ludwig.api import LudwigModel
-from ludwig.error import ConfigValidationError
-from ludwig.constants import TEXT, TYPE
-from ludwig.api_annotations import DeveloperAPI
+from tests.integration_tests.utils import generate_data_as_dataframe
 
 logger = logging.getLogger(__name__)
 
@@ -17,8 +16,7 @@ logger = logging.getLogger(__name__)
 def get_abrupt_config(config: ModelConfigDict):
     """Returns a config with a shortened trainer and a sample ratio of 1.0.
 
-    Uses an embed encoder as a proxy for text encoders.
-    Uses a stacked_cnn as a proxy for image encoders.
+    Uses an embed encoder as a proxy for text encoders. Uses a stacked_cnn as a proxy for image encoders.
     """
     abrupt_model_config = ModelConfig.from_dict(config)
 
