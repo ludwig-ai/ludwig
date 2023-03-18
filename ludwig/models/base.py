@@ -174,7 +174,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         """Returns the model's predictions given the raw model outputs."""
         predictions = {}
         for of_name in self.output_features:
-            predictions[of_name] = self.output_features[of_name].predictions(outputs, of_name)
+            predictions[of_name] = self.output_features.get(of_name).predictions(outputs, of_name)
         return predictions
 
     def evaluation_step(self, inputs, targets):

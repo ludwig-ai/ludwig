@@ -166,10 +166,10 @@ class LudwigFeatureDict(torch.nn.Module):
         self.module_dict = torch.nn.ModuleDict()
         self.internal_key_to_original_name_map = {}
 
-    def __getitem__(self, key) -> torch.nn.Module:
+    def get(self, key) -> torch.nn.Module:
         return self.module_dict[get_module_dict_key_from_name(key)]
 
-    def __setitem__(self, key: str, module: torch.nn.Module) -> None:
+    def set(self, key: str, module: torch.nn.Module) -> None:
         module_dict_key_name = get_module_dict_key_from_name(key)
         self.internal_key_to_original_name_map[module_dict_key_name] = key
         self.module_dict[module_dict_key_name] = module
@@ -199,4 +199,4 @@ class LudwigFeatureDict(torch.nn.Module):
 
     def update(self, modules: Dict[str, torch.nn.Module]) -> None:
         for feature_name, module in modules.items():
-            self.__setitem__(feature_name, module)
+            self.set(feature_name, module)
