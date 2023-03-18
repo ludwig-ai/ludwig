@@ -210,3 +210,12 @@ def run_test_explainer_api(
         assert e.to_array().shape == (vocab_size, len(input_features))
 
     assert len(explanations_result.expected_values) == vocab_size
+
+
+@pytest.mark.parametrize(
+    "output_feature",
+    [set_feature(decoder={"vocab_size": 3}), vector_feature()],
+    ids=["set", "vector"],
+)
+def test_explainer_api_nonscalar_outputs(output_feature, tmpdir):
+    run_test_explainer_api(IntegratedGradientsExplainer, MODEL_ECD, [output_feature], {}, tmpdir)
