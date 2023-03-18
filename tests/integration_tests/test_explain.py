@@ -219,3 +219,11 @@ def run_test_explainer_api(
 )
 def test_explainer_api_nonscalar_outputs(output_feature, tmpdir):
     run_test_explainer_api(IntegratedGradientsExplainer, MODEL_ECD, [output_feature], {}, tmpdir)
+
+
+def test_explainer_api_text_outputs(tmpdir):
+    input_features = [text_feature(encoder={"type": "parallel_cnn", "reduce_output": None})]
+    output_features = [text_feature(output_feature=True, decoder={"type": "tagger"})]
+    run_test_explainer_api(
+        IntegratedGradientsExplainer, MODEL_ECD, output_features, {}, tmpdir, input_features=input_features
+    )

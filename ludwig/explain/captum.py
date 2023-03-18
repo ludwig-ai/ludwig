@@ -120,8 +120,12 @@ class WrapperModule(torch.nn.Module):
 
         # If the target feature is a non-scalar type (vector, set, etc.), sum it to get a scalar value.
         # https://github.com/pytorch/captum/issues/377
-        if len(pred_t.shape) > 1 and self.model.output_features.get(self.target).type not in {CATEGORY, NUMBER, BINARY}:
-            pred_t = torch.sum(pred_t, dim=1)
+        if len(pred_t.shape) > 1 and self.model.output_features.get(self.target).type() not in {
+            CATEGORY,
+            NUMBER,
+            BINARY,
+        }:
+            pred_t = torch.sum(pred_t.reshape(pred_t.shape[0], -1), dim=1)
 
         return pred_t
 
