@@ -158,7 +158,7 @@ def register_search_algorithm_config(
                       `("sklearn", "scikit-learn")`
 
     Returns:
-        Wrapper function to decorate a
+        Wrapper function to decorate a `BaseSearchAlgorithmConfig` subclass
     """
 
     def wrap(cls: Type["BaseSearchAlgorithmConfig"]) -> Type["BaseSearchAlgorithmConfig"]:  # noqa: F821
