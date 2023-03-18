@@ -18,8 +18,6 @@ class DateInputFeatureConfigMixin(BaseMarshmallowConfig):
     """DateInputFeatureConfigMixin is a dataclass that configures the parameters used in both the date input
     feature and the date global defaults section of the Ludwig Config."""
 
-    type: str = schema_utils.ProtectedString(DATE)
-
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=DATE)
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
@@ -35,4 +33,4 @@ class DateInputFeatureConfigMixin(BaseMarshmallowConfig):
 class DateInputFeatureConfig(DateInputFeatureConfigMixin, BaseInputFeatureConfig):
     """DateInputFeature is a dataclass that configures the parameters used for a date input feature."""
 
-    pass
+    type: str = schema_utils.ProtectedString(DATE)
