@@ -14,6 +14,7 @@ import yaml
 import pytest
 
 from ludwig.error import ConfigValidationError
+from ludwig.constants import COMBINER, TYPE
 from ludwig.schema.model_types.base import ModelConfig
 from tests.integration_tests.utils import binary_feature, text_feature
 
@@ -262,3 +263,6 @@ model_type: ecd
 
     with pytest.raises(ConfigValidationError):
         ModelConfig.from_dict(config)
+
+    config[COMBINER][TYPE] = "sequence_concat"
+    ModelConfig.from_dict(config)
