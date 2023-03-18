@@ -51,7 +51,7 @@ def get_mismatched_config_params(ludwig_results_dir, ludwig_model):
     for input_feature_config in saved_config_obj.input_features.to_list():
         feature_name = input_feature_config[NAME]
         encoder_config_from_file = input_feature_config[ENCODER]
-        encoder_config_from_model = ludwig_model.model.input_features[feature_name].encoder_obj.config.to_dict()
+        encoder_config_from_model = ludwig_model.model.input_features.get(feature_name).encoder_obj.config.to_dict()
         for k, v in encoder_config_from_model.items():
             # Skip saved_weights_in_checkpoint because this value is not yet set when the global config
             # is modified with the final encoder config.
