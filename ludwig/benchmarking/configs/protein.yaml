@@ -20,8 +20,6 @@ input_features:
     type: number
   - name: F9
     type: number
-  - name: F1
-    type: number
 combiner:
   type: tabnet
   size: 128  # N_a

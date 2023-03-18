@@ -77,7 +77,11 @@ def check_feature_names_unique(config: "ModelConfig") -> None:  # noqa: F821
     output_feature_names = {output_feature.name for output_feature in output_features}
 
     if len(input_feature_names) + len(output_feature_names) != len(input_features) + len(output_features):
-        raise ConfigValidationError("Feature names must be unique.")
+        seen = set()
+        duplicate_feature_names = [
+            feature.name for feature in input_features if feature.name in seen or seen.add(feature.name)
+        ]
+        raise ConfigValidationError(f"Feature names must be unique. Found duplicates: {duplicate_feature_names}")
 
 
 @register_config_check

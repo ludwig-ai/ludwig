@@ -4,7 +4,8 @@ output_features:
 input_features:
   - name: text
     type: text
-    encoder: bert
+    encoder:
+      type: bert
 preprocessing:
   text:
     max_sequence_length: 128
