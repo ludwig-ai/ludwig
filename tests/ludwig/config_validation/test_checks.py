@@ -9,12 +9,12 @@ ModelConfig.from_dict(config)
 
 import contextlib
 from typing import Any, Dict, List, Optional
-import yaml
 
 import pytest
+import yaml
 
-from ludwig.error import ConfigValidationError
 from ludwig.constants import COMBINER, TYPE
+from ludwig.error import ConfigValidationError
 from ludwig.schema.model_types.base import ModelConfig
 from tests.integration_tests.utils import binary_feature, text_feature
 
