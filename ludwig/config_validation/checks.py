@@ -320,3 +320,27 @@ def check_tagger_decoder_requirements(config: "ModelConfig") -> None:  # noqa: F
             "Tagger decoder requires at least one of the text, sequence or timeseries input feature encoders to have "
             "`reduce_output` set to `None`."
         )
+
+
+@register_config_check
+def check_concat_combiner_requirements(config: "ModelConfig") -> None:  # noqa: F821
+    """Checks that if the concat combiner receives a mixture of sequence and non-sequence features, that all sequence
+    features are configured with reduce_output to be 2D tensors."""
+    if config.combiner.type != "concat":
+        return
+
+    has_unreduced_sequence_feature = False
+    has_non_sequence_feature = False
+    for input_feature in config.input_features:
+        if input_feature.type in {SEQUENCE, TEXT, TIMESERIES} and input_feature.encoder.reduce_output is None:
+            has_unreduced_sequence_feature = True
+        else:
+            has_non_sequence_feature = True
+
+    if has_unreduced_sequence_feature and has_non_sequence_feature:
+        raise ConfigValidationError(
+            "The concat combiner cannot receive a mix of unreduced sequence features and non-sequence features. "
+            "Options: 1) Set reduce_output in sequence encoder to a value other than None, 2) Choose a different "
+            "combiner like `sequence_concat` which can handle, 3) Remove all non-sequence features, or 4) Remove all "
+            "sequence features."
+        )

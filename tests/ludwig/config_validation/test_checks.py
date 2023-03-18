@@ -9,6 +9,7 @@ ModelConfig.from_dict(config)
 
 import contextlib
 from typing import Any, Dict, List, Optional
+import yaml
 
 import pytest
 
@@ -233,3 +234,31 @@ def test_comparator_combiner_entities(entity_1: List[str], entity_2: List[str], 
         config_obj = ModelConfig.from_dict(config)
         assert config_obj.combiner.entity_1 == ["a1"]
         assert config_obj.combiner.entity_2 == ["b1", "b2"]
+
+
+def test_check_concat_combiner_requirements():
+    config = yaml.safe_load(
+        """
+input_features:
+  - name: description
+    type: text
+    encoder:
+      type: embed
+      reduce_output: null
+    column: description
+  - name: required_experience
+    type: category
+    column: required_experience
+output_features:
+  - name: title
+    type: category
+combiner:
+    type: concat
+trainer:
+  train_steps: 2
+model_type: ecd
+"""
+    )
+
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
