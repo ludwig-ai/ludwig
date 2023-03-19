@@ -2060,6 +2060,7 @@ class Llama(HFTextEncoder):
         hidden_act="silu",
         initializer_range=0.02,
         rms_norm_eps=1e-6,
+        tie_word_embeddings=False,
         pretrained_kwargs: Dict = None,
         encoder_config=None,
         **kwargs,
@@ -2077,6 +2078,7 @@ class Llama(HFTextEncoder):
             hidden_act=hidden_act,
             initializer_range=initializer_range,
             rms_norm_eps=rms_norm_eps,
+            tie_word_embeddings=tie_word_embeddings,
             **kwargs,
         )
 
