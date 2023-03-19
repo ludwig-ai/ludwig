@@ -3,6 +3,72 @@ BaseEncoder:
         internal_only: true
         other_information: Internal Only
         ui_display_name: Not Displayed
+HFEncoder:
+    trainable:
+        default_value_reasoning: By default, model components are trainable.
+        description_implications:
+            The tradeoff when using `trainable` is between speed
+            and flexibility. If False, less weights are subject to change and the
+            model will therefore train faster. However, the representations output
+            by this component are fixed for each input.
+        expected_impact: 3
+        literature_references:
+            - http://d2l.ai/chapter_computer-vision/fine-tuning.html"
+        related_parameters:
+            - use_pretrained, pretrained_model, saved_weights_in_checkpoint
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            Freezing the weights (i.e. `trainable = False`)
+            is only worth trying if you are loading in pretrained weights. In that
+            case, check to see if your model is overfitting. If so, freezing the weights
+            (and therefore reducing model complexity) may be beneficial.
+        ui_display_name: Trainable
+    use_pretrained:
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
+    reduce_output:
+        default_value_reasoning: Sums the tensors along the sequence dimension.
+        description_implications:
+            "\"last\", \"sum\", \"mean\", and \"max\" are the\
+            \ fastest and most memory-efficient operations\u2013 they result in tensors\
+            \ that are the same-size as a single item in the input sequence. However,\
+            \ these are simple aggregation operations, therefore some information\
+            \ may be lost. \n\n\"concat\" concatenates each tensor together, creating\
+            \ a `(sequence length)*(tensor size)`-element tensor. \"concat\" preserves\
+            \ this information, but can be very memory-intensive and should only be\
+            \ applied if the sequence length and/or tensor size is small. \n\n\"attention\"\
+            \ takes a weighted sum of the items in the sequence, where the weights\
+            \ for each item in the sequence are determined by the model on-the-fly\
+            \ based on the features of the item itself. This is both slower and and\
+            \ more memory-intensive than the other operations; however, it can also\
+            \ provide a richer \"global\" representation of the sequence."
+        expected_impact: 1
+        related_parameters:
+            - max_sequence_length
+        suggested_values: '"attention". This and the default covers 95% of use cases.'
+        suggested_values_reasoning:
+            If you would like better performance and are not
+            compute/memory-constrained, attention-based reduction can potentially
+            provide a richer global representation than the default.
+        ui_display_name: Sequence Reducer
 ALBERT:
     type:
         short_description: Similar to BERT with lower memory footprint and faster training.

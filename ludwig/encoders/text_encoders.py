@@ -18,6 +18,7 @@ from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 import numpy as np
 import torch
+from peft import PeftModel
 from torch import nn
 
 from ludwig.api_annotations import DeveloperAPI
@@ -37,6 +38,7 @@ from ludwig.schema.encoders.text_encoders import (
     FlauBERTConfig,
     GPT2Config,
     GPTConfig,
+    LlamaConfig,
     LongformerConfig,
     MT5Config,
     RoBERTaConfig,
@@ -2023,6 +2025,114 @@ class LongformerEncoder(HFTextEncoder):
     def output_shape(self) -> torch.Size:
         if self.reduce_output is None:
             # Subtract 2 to remove CLS and PAD tokens added by Longformer (== Roberta) tokenizer.
+            return torch.Size(
+                [
+                    self.max_sequence_length - 2,
+                    self.transformer.module.config.hidden_size,
+                ]
+            )
+        return torch.Size([self.transformer.module.config.hidden_size])
+
+    @property
+    def input_dtype(self):
+        return torch.int32
+
+
+@DeveloperAPI
+@register_encoder("llama", TEXT)
+class Llama(HFTextEncoder):
+    DEFAULT_MODEL_NAME = "decapoda-research/llama-7b-hf"
+
+    def __init__(
+        self,
+        max_sequence_length: int,
+        use_pretrained: bool = True,
+        trainable: bool = False,
+        pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
+        peft_model_name_or_path: Optional[str] = None,
+        saved_weights_in_checkpoint: bool = False,
+        reduce_output: Optional[str] = "cls_pooled",
+        vocab_size=32000,
+        hidden_size=4096,
+        intermediate_size=11008,
+        num_hidden_layers=32,
+        num_attention_heads=32,
+        hidden_act="silu",
+        initializer_range=0.02,
+        rms_norm_eps=1e-6,
+        pretrained_kwargs: Dict = None,
+        encoder_config=None,
+        **kwargs,
+    ):
+        super().__init__()
+
+        from transformers import LlamaConfig, LlamaModel
+
+        hf_config_params = dict(
+            vocab_size=vocab_size,
+            hidden_size=hidden_size,
+            intermediate_size=intermediate_size,
+            num_hidden_layers=num_hidden_layers,
+            num_attention_heads=num_attention_heads,
+            hidden_act=hidden_act,
+            initializer_range=initializer_range,
+            rms_norm_eps=rms_norm_eps,
+            **kwargs,
+        )
+
+        if use_pretrained and not saved_weights_in_checkpoint:
+            pretrained_kwargs = pretrained_kwargs or dict(
+                load_in_8bit=True,
+                torch_dtype=torch.float16,
+                device_map="auto",
+            )
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+                LlamaModel, pretrained_model_name_or_path, **pretrained_kwargs
+            )
+
+            if peft_model_name_or_path is not None:
+                transformer = PeftModel.from_pretrained(transformer, peft_model_name_or_path, torch_dtype=torch.float16)
+        else:
+            transformer = self._init_transformer_from_scratch(LlamaModel, LlamaConfig, hf_config_params, vocab_size)
+
+        if encoder_config is not None:
+            self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
+        else:
+            self.config = None
+
+        self.reduce_output = reduce_output
+        if not self.reduce_output == "cls_pooled":
+            self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+        self.transformer = FreezeModule(transformer, frozen=not trainable)
+        self.max_sequence_length = max_sequence_length
+
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None):
+        if mask is not None:
+            mask = mask.to(torch.int32)
+        transformer_outputs = self.transformer.module(
+            input_ids=inputs,
+            attention_mask=mask,
+            token_type_ids=torch.zeros_like(inputs),
+        )
+        if self.reduce_output == "cls_pooled":
+            hidden = transformer_outputs[1]
+        else:
+            hidden = transformer_outputs[0][:, 1:-1, :]  # bos + [sent] + sep
+            hidden = self.reduce_sequence(hidden, self.reduce_output)
+        return {"encoder_output": hidden}
+
+    @staticmethod
+    def get_schema_cls():
+        return LlamaConfig
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.reduce_output is None:
+            # Subtract 2 to remove CLS and PAD tokens added by tokenizer.
             return torch.Size(
                 [
                     self.max_sequence_length - 2,
