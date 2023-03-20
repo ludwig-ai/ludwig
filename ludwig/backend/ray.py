@@ -54,6 +54,7 @@ from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.trainers.registry import ray_trainers_registry, register_ray_trainer
 from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer
 from ludwig.types import HyperoptConfigDict, ModelConfigDict, TrainerConfigDict, TrainingSetMetadataDict
+from ludwig.utils.dataframe_utils import set_index_name
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.system_utils import Resources
 from ludwig.utils.torch_utils import get_torch_device, initialize_pytorch
@@ -854,15 +855,17 @@ class RayBackend(RemoteTrainingMixin, Backend):
                     # Failed image reads return None automatically, so there's no post processing required.
                     DataFrame.from_pydict({column.name: fnames})
                     .with_column(column.name, col(column.name).url.download(max_worker_threads=read_parallelism))
-                    .collect()
                 )
 
             # As of getdaft 0.0.23, there is no support for conversion to Dask
             # directly so convert to Ray and then convert to Dask
+            # This also forces materialization of the dataset, so we can skip calls to .collect()
+            # Daft -> Ray is a zero-copy op, so this has very minimal cost.
             df = df.to_ray_dataset()
             df = self.df_engine.from_ray_dataset(df)
 
-            # Restore number of partitions of the original column
+            # Restore number of partitions of the original column since we lose this during the conversion
+            # from Dask -> Daft -> Ray -> Dask
             df = df.repartition(npartitions=column.npartitions)
 
             # Persist the dataframe
@@ -875,6 +878,12 @@ class RayBackend(RemoteTrainingMixin, Backend):
 
         if map_fn is not None:
             df[column.name] = self.df_engine.map_objects(df[column.name], map_fn)
+
+        if "idx" in df.columns:
+            df = df.set_index("idx", drop=True)
+            df = self.df_engine.map_partitions(
+                df, lambda pd_df: set_index_name(pd_df, column.index.name), meta={column.name: "object"}
+            )
 
         return df[column.name]
 
