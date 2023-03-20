@@ -130,6 +130,9 @@ def is_number(s: Union[str, int, float]):
 
 def is_datetime(s: Union[str, int, float]):
     """Returns whether specified value is datetime."""
+    if is_number(s):
+        return False
+
     try:
         parse_datetime(s)
         return True
