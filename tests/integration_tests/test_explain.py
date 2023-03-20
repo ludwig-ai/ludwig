@@ -151,6 +151,8 @@ def run_test_explainer_api(
             category_feature(encoder={"type": "passthrough", "reduce_output": "sum"}),
         ]
         if model_type == MODEL_ECD:
+            # TODO(travis): need unit tests to test the get_embedding_layer() of every encoder to ensure it is
+            #  compatible with the explainer
             input_features += [
                 category_feature(encoder={"type": "dense", "reduce_output": "sum"}),
                 text_feature(encoder={"vocab_size": 3}),

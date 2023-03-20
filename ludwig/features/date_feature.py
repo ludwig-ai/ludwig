@@ -120,7 +120,7 @@ class DateInputFeature(DateFeatureMixin, InputFeature):
 
     def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor), type(inputs)
-        assert inputs.dtype in [torch.int16, torch.int32, torch.int64], inputs.dtype
+        assert inputs.dtype in [torch.int16, torch.int32, torch.int64, torch.float32], inputs.dtype
         inputs_encoded = self.encoder_obj(inputs)
         return inputs_encoded
 

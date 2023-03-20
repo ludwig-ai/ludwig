@@ -20,6 +20,7 @@ from ludwig.api_annotations import PublicAPI
 from ludwig.constants import (
     BINARY,
     CATEGORY,
+    DATE,
     IMAGE,
     INPUT_FEATURES,
     NAME,
@@ -39,9 +40,9 @@ from ludwig.utils.torch_utils import DEVICE
 
 logger = logging.getLogger(__name__)
 
-# These types as passed through an embedding layer that breaks integrated gradients if handled naively. As such,
-# we need to take care to encode them before handing them to the explainer.
-EMBEDDED_TYPES = {TEXT, CATEGORY, SET}
+# These types as provided as integer values and passed through an embedding layer that breaks integrated gradients.
+# As such, we need to take care to encode them before handing them to the explainer.
+EMBEDDED_TYPES = {TEXT, CATEGORY, SET, DATE}
 
 
 @dataclass
@@ -321,8 +322,6 @@ def get_input_tensors(
                 t = t.to(torch.float32)
             tensors.append(Variable(t, requires_grad=True))
 
-    for t in tensors:
-        print(t.dtype, t.shape)
     return tensors
 
 
