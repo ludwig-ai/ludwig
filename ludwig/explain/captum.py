@@ -9,7 +9,6 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 import torch
-import torch.nn as nn
 from captum.attr import LayerIntegratedGradients, TokenReferenceBase
 from captum.attr._utils.input_layer_wrapper import InputIdentity
 from torch.autograd import Variable
@@ -88,7 +87,8 @@ class WrapperModule(torch.nn.Module):
         super().__init__()
         self.model = model
         self.target = target
-        self.input_maps = nn.ModuleDict(
+        self.input_maps = LudwigFeatureDict()
+        self.input_maps.update(
             {
                 arg_name: InputIdentity(arg_name)
                 for arg_name in self.model.input_features.keys()
@@ -104,7 +104,7 @@ class WrapperModule(torch.nn.Module):
             # Except for text/category features where we use the embedding layer for attribution.
             feat_name: feat_input
             if input_features.get(feat_name).type() in {TEXT, CATEGORY, DATE, SET}
-            else self.input_maps[feat_name](feat_input)
+            else self.input_maps.get(feat_name)(feat_input)
             for feat_name, feat_input in zip(input_features.keys(), args)
         }
 
@@ -403,7 +403,7 @@ def get_total_attribution(
                 target_layer = feat.encoder_obj.get_embedding_layer()  # get the new copy
         else:
             # Get the wrapped input layer.
-            target_layer = explanation_model.input_maps[feat_name]
+            target_layer = explanation_model.input_maps.get(feat_name)
 
         layers.append(target_layer)
 
