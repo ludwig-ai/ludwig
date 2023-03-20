@@ -14,6 +14,7 @@ from ludwig.explain.gbm import GBMExplainer
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
+    date_feature,
     generate_data,
     image_feature,
     LocalTestBackend,
@@ -158,7 +159,7 @@ def run_test_explainer_api(
                 image_feature(folder=image_dest_folder),
                 # audio_feature(os.path.join(tmpdir, "generated_audio")), # NOTE: works but takes a long time
                 # sequence_feature(encoder={"vocab_size": 3}),
-                # date_feature(),
+                date_feature(),
                 # h3_feature(),
                 set_feature(encoder={"vocab_size": 3}),
                 # bag_feature(encoder={"vocab_size": 3}),
