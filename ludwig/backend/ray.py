@@ -1023,6 +1023,9 @@ class RayBackend(RemoteTrainingMixin, Backend):
                             max_worker_threads=read_parallelism
                         ),
                     )
+                    DataFrame.from_pydict({column.name: fnames}).with_column(
+                        column.name, col(column.name).url.download(max_worker_threads=read_parallelism)
+                    )
                 )
 
             # As of getdaft 0.0.23, there is no support for conversion to Dask
