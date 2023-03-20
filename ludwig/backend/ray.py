@@ -853,8 +853,9 @@ class RayBackend(RemoteTrainingMixin, Backend):
                 df = (
                     # Requires initialization from a mapping of col_name -> list of items in the series
                     # Failed image reads return None automatically, so there's no post processing required.
-                    DataFrame.from_pydict({column.name: fnames})
-                    .with_column(column.name, col(column.name).url.download(max_worker_threads=read_parallelism))
+                    DataFrame.from_pydict({column.name: fnames}).with_column(
+                        column.name, col(column.name).url.download(max_worker_threads=read_parallelism)
+                    )
                 )
 
             # As of getdaft 0.0.23, there is no support for conversion to Dask
