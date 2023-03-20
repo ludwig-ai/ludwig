@@ -321,7 +321,8 @@ def get_input_tensors(
                 t = t.to(torch.float32)
             tensors.append(Variable(t, requires_grad=True))
 
-    print(data_to_predict)
+    for t in tensors:
+        print(t.dtype, t.shape)
     return tensors
 
 
