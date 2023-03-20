@@ -164,6 +164,8 @@ def test_infer_parquet_types(tmpdir):
               type: date
             - name: category
               type: category
+            - name: date
+              type: date
         output_features:
             - name: bool
               type: binary
