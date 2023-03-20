@@ -326,6 +326,8 @@ def check_tagger_decoder_requirements(config: "ModelConfig") -> None:  # noqa: F
 def check_concat_combiner_requirements(config: "ModelConfig") -> None:  # noqa: F821
     """Checks that if the concat combiner receives a mixture of sequence and non-sequence features, that all
     sequence features are configured with reduce_output to be 2D tensors."""
+    if config.model_type != MODEL_ECD:
+        return
     if config.combiner.type != "concat":
         return
 
