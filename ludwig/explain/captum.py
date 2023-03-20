@@ -16,7 +16,19 @@ from tqdm import tqdm
 
 from ludwig.api import LudwigModel
 from ludwig.api_annotations import PublicAPI
-from ludwig.constants import CATEGORY, DATE, IMAGE, INPUT_FEATURES, NAME, PREPROCESSING, SET, TEXT, UNKNOWN_SYMBOL
+from ludwig.constants import (
+    BINARY,
+    CATEGORY,
+    DATE,
+    IMAGE,
+    INPUT_FEATURES,
+    NAME,
+    NUMBER,
+    PREPROCESSING,
+    SET,
+    TEXT,
+    UNKNOWN_SYMBOL,
+)
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.explain.explainer import Explainer
 from ludwig.explain.explanation import ExplanationsResult
@@ -104,7 +116,18 @@ class WrapperModule(torch.nn.Module):
         for of_name in self.model.output_features:
             predictions[of_name] = self.model.output_features.get(of_name).predictions(outputs, of_name)
 
-        return get_pred_col(predictions, self.target)
+        pred_t = get_pred_col(predictions, self.target)
+
+        # If the target feature is a non-scalar type (vector, set, etc.), sum it to get a scalar value.
+        # https://github.com/pytorch/captum/issues/377
+        if len(pred_t.shape) > 1 and self.model.output_features.get(self.target).type() not in {
+            CATEGORY,
+            NUMBER,
+            BINARY,
+        }:
+            pred_t = torch.sum(pred_t.reshape(pred_t.shape[0], -1), dim=1)
+
+        return pred_t
 
 
 @PublicAPI(stability="experimental")
