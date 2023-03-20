@@ -796,6 +796,7 @@ tabnet:
             final b x h' tensor where h' is the user-specified output size.
         literature_references:
             - https://arxiv.org/abs/1908.07442
+        compute_tier: 1
     bn_epsilon:
         default_value_reasoning:
             Default value found in popular ML packages like Keras
@@ -947,6 +948,7 @@ tabtransformer:
             is the number of input features and `h` is the hidden / embedding size if no reduction is applied.
         literature_references:
             - https://arxiv.org/abs/2012.06678
+        compute_tier: 2
     bias_initializer:
         default_value_reasoning:
             It is possible and common to initialize the biases
@@ -1320,6 +1322,7 @@ transformer:
             no reduction is applied.
         literature_references:
             - https://arxiv.org/abs/1706.03762
+        compute_tier: 2
     bias_initializer:
         default_value_reasoning:
             It is possible and common to initialize the biases

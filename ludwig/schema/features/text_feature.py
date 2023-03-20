@@ -13,6 +13,7 @@ from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassFie
 from ludwig.schema.features.utils import (
     ecd_defaults_config_registry,
     ecd_input_config_registry,
+    gbm_defaults_config_registry,
     gbm_input_config_registry,
     input_mixin_registry,
     output_config_registry,
@@ -30,8 +31,6 @@ class TextInputFeatureConfigMixin(BaseMarshmallowConfig):
     """TextInputFeatureConfigMixin is a dataclass that configures the parameters used in both the text input
     feature and the text global defaults section of the Ludwig Config."""
 
-    type: str = schema_utils.ProtectedString(TEXT)
-
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=TEXT)
 
 
@@ -39,6 +38,8 @@ class TextInputFeatureConfigMixin(BaseMarshmallowConfig):
 @ludwig_dataclass
 class TextInputFeatureConfig(TextInputFeatureConfigMixin, BaseInputFeatureConfig):
     """TextInputFeatureConfig is a dataclass that configures the parameters used for a text input feature."""
+
+    type: str = schema_utils.ProtectedString(TEXT)
 
     encoder: BaseEncoderConfig = None
 
@@ -66,13 +67,22 @@ class GBMTextInputFeatureConfig(TextInputFeatureConfig):
 
 
 @DeveloperAPI
+@gbm_defaults_config_registry.register(TEXT)
+@ludwig_dataclass
+class GBMTextDefaultsConfig(TextInputFeatureConfigMixin):
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_GBM,
+        feature_type=TEXT,
+        default="tf_idf",
+    )
+
+
+@DeveloperAPI
 @output_mixin_registry.register(TEXT)
 @ludwig_dataclass
 class TextOutputFeatureConfigMixin(BaseMarshmallowConfig):
     """TextOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the text output
     feature and the text global defaults section of the Ludwig Config."""
-
-    type: str = schema_utils.ProtectedString(TEXT)
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
         feature_type=TEXT,
@@ -90,6 +100,8 @@ class TextOutputFeatureConfigMixin(BaseMarshmallowConfig):
 @ludwig_dataclass
 class TextOutputFeatureConfig(TextOutputFeatureConfigMixin, BaseOutputFeatureConfig):
     """TextOutputFeatureConfig is a dataclass that configures the parameters used for a text output feature."""
+
+    type: str = schema_utils.ProtectedString(TEXT)
 
     class_similarities: list = schema_utils.List(
         list,

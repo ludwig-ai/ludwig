@@ -79,8 +79,12 @@ def test_trainable_torchvision_layers(setup_data, trainable):
     # compare Ludwig image encoder parameter against original native torchvision weights
     # if trainable is True, parameters should differ, otherwise all parameters should be unchanged
     if trainable:
-        for p1, p2 in zip(model.model.input_features["image"].encoder_obj.model.parameters(), tv_model.parameters()):
+        for p1, p2 in zip(
+            model.model.input_features.get("image").encoder_obj.model.parameters(), tv_model.parameters()
+        ):
             assert not torch.all(p1 == p2)
     else:
-        for p1, p2 in zip(model.model.input_features["image"].encoder_obj.model.parameters(), tv_model.parameters()):
+        for p1, p2 in zip(
+            model.model.input_features.get("image").encoder_obj.model.parameters(), tv_model.parameters()
+        ):
             assert torch.all(p1 == p2)

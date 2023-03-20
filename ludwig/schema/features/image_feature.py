@@ -29,8 +29,6 @@ class ImageInputFeatureConfigMixin(BaseMarshmallowConfig):
     """ImageInputFeatureConfigMixin is a dataclass that configures the parameters used in both the image input
     feature and the image global defaults section of the Ludwig Config."""
 
-    type: str = schema_utils.ProtectedString(IMAGE)
-
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=IMAGE)
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
@@ -57,4 +55,4 @@ class ImageInputFeatureConfigMixin(BaseMarshmallowConfig):
 class ImageInputFeatureConfig(ImageInputFeatureConfigMixin, BaseInputFeatureConfig):
     """ImageInputFeatureConfig is a dataclass that configures the parameters used for an image input feature."""
 
-    pass
+    type: str = schema_utils.ProtectedString(IMAGE)
