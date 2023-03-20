@@ -315,15 +315,22 @@ def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
         nonnull_values = source.get_nonnull_values(field)
         image_values = source.get_image_values(field)
         audio_values = source.get_audio_values(field)
-        avg_words = None
+
         if dtype == "object":
             # Check if it is a nullboolean field. We do this since if you read a csv with
             # pandas that has a column of booleans and some missing values, the column is
             # interpreted as object dtype instead of bool
             if is_field_boolean(source, field):
                 dtype = "bool"
+
+        avg_words = None
         if source.is_string_type(dtype):
-            avg_words = source.get_avg_num_tokens(field)
+            try:
+                avg_words = source.get_avg_num_tokens(field)
+            except AttributeError:
+                # Series is not actually a string type despite being an object, e.g., Decimal, Datetime, etc.
+                avg_words = None
+
         fields.append(
             FieldInfo(
                 name=field,

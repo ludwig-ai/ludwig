@@ -22,6 +22,7 @@ from enum import Enum
 from typing import Dict, List, Optional, Set, Union
 
 import numpy as np
+from dateutil.parser import parse as parse_datetime
 
 from ludwig.constants import PADDING_SYMBOL, START_SYMBOL, STOP_SYMBOL, UNKNOWN_SYMBOL
 from ludwig.data.dataframe.base import DataFrameEngine
@@ -125,6 +126,23 @@ def is_number(s: Union[str, int, float]):
         return True
     except ValueError:
         return False
+
+
+def is_datetime(s: Union[str, int, float]):
+    """Returns whether specified value is datetime."""
+    try:
+        parse_datetime(s)
+        return True
+    except Exception:
+        return False
+
+
+def are_all_datetimes(values: List[Union[str, int, float]]):
+    """Returns whether all values are datetimes."""
+    for value in values:
+        if not is_datetime(value):
+            return False
+    return True
 
 
 def are_all_numbers(values: List[Union[str, int, float]]):
