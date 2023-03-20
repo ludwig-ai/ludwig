@@ -279,7 +279,8 @@ def test_single_occurrence_stratified_split(df_engine, atol, ray_cluster_2cpu):
         pytest.param(DaskEngine(_use_ray=False), id="dask", marks=pytest.mark.distributed),
     ],
 )
-def test_datetime_split(df_engine, ray_cluster_2cpu):
+@pytest.mark.parametrize("format", ["str", "datetime"])
+def test_datetime_split(format, df_engine, ray_cluster_2cpu):
     nrows = 100
     npartitions = 10
 
@@ -291,7 +292,8 @@ def test_datetime_split(df_engine, ray_cluster_2cpu):
         delta = end - start
         int_delta = (delta.days * 24 * 60 * 60) + delta.seconds
         random_second = randrange(int_delta)
-        return str(start + timedelta(seconds=random_second))
+        t = start + timedelta(seconds=random_second)
+        return str(t) if format == "str" else t
 
     df["date_col"] = df["C"].map(random_date)
 
