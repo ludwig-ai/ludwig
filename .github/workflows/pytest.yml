@@ -48,6 +48,7 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.LUDWIG_TESTS_AWS_SECRET_ACCESS_KEY }}
       KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
       KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+      BUILDKITE_ANALYTICS_TOKEN: ${{ secrets.BUILDKITE_ANALYTICS_TOKEN }}
 
     name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, ${{ matrix.test-markers }}, ${{ matrix.os }}, ray ${{ matrix.ray-version }}
     services:
@@ -170,14 +171,20 @@ jobs:
         shell: bash
 
       - name: Unit Tests
+        env:
+          BUILDKITE_ANALYTICS_TOKEN: ${{ env.BUILDKITE_ANALYTICS_TOKEN }}
         run: |
           RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow or benchmark" --junitxml pytest.xml tests/ludwig
 
       - name: Integration Tests
+        env:
+          BUILDKITE_ANALYTICS_TOKEN: ${{ env.BUILDKITE_ANALYTICS_TOKEN }}
         run: |
           RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow or benchmark" --junitxml pytest.xml tests/integration_tests
 
       - name: Regression Tests
+        env:
+          BUILDKITE_ANALYTICS_TOKEN: ${{ env.BUILDKITE_ANALYTICS_TOKEN }}
         run: |
           RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow or benchmark" --junitxml pytest.xml tests/regression_tests
 

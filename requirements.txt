@@ -44,4 +44,7 @@ openpyxl        # excel
 pyarrow         # parquet
 lxml            # html
 
+# Monitoring Ludwig's test suite
+buildkite-test-collector
+
 whylogs>=1.1.9
