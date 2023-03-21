@@ -79,13 +79,13 @@ def test_create_vocabulary_chars():
     )
     vocab = vocabulary.vocab
 
-# most-common-percentage
-#    assert len(vocabulary_output[0]) == 23
-#    assert vocabulary_output[0][strings_utils.SpecialSymbol.START.value] == strings_utils.START_SYMBOL
-#    assert vocabulary_output[0][strings_utils.SpecialSymbol.STOP.value] == strings_utils.STOP_SYMBOL
-#    assert vocabulary_output[0][strings_utils.SpecialSymbol.PADDING.value] == strings_utils.PADDING_SYMBOL
-#    assert vocabulary_output[0][strings_utils.SpecialSymbol.UNKNOWN.value] == strings_utils.UNKNOWN_SYMBOL
-#
+    # most-common-percentage
+    #    assert len(vocabulary_output[0]) == 23
+    #    assert vocabulary_output[0][strings_utils.SpecialSymbol.START.value] == strings_utils.START_SYMBOL
+    #    assert vocabulary_output[0][strings_utils.SpecialSymbol.STOP.value] == strings_utils.STOP_SYMBOL
+    #    assert vocabulary_output[0][strings_utils.SpecialSymbol.PADDING.value] == strings_utils.PADDING_SYMBOL
+    #    assert vocabulary_output[0][strings_utils.SpecialSymbol.UNKNOWN.value] == strings_utils.UNKNOWN_SYMBOL
+    #
     assert len(vocab) == 24
     assert vocab[strings_utils.SpecialSymbol.START.value] == strings_utils.START_SYMBOL
     assert vocab[strings_utils.SpecialSymbol.STOP.value] == strings_utils.STOP_SYMBOL
@@ -140,10 +140,10 @@ def test_create_vocabulary_no_special_symbols(most_common_percentile, most_commo
     )
     vocab = vocabulary.vocab
 
-# most-common-percentage
-#    assert len(vocabulary_output[0]) == expected_vocab_size
-#    assert vocabulary_output[0][strings_utils.SpecialSymbol.UNKNOWN.value] == strings_utils.UNKNOWN_SYMBOL
-#
+    # most-common-percentage
+    #    assert len(vocabulary_output[0]) == expected_vocab_size
+    #    assert vocabulary_output[0][strings_utils.SpecialSymbol.UNKNOWN.value] == strings_utils.UNKNOWN_SYMBOL
+    #
     assert len(vocab) == 16
     assert vocab[strings_utils.SpecialSymbol.UNKNOWN.value] == strings_utils.UNKNOWN_SYMBOL
 
