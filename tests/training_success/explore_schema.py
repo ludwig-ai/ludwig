@@ -3,7 +3,10 @@ import random
 from collections import deque
 from typing import Any, Deque, Dict, List, Tuple, Union
 
+import pandas as pd
+
 from ludwig.constants import SEQUENCE, TEXT, TIMESERIES
+from ludwig.data.dataset_synthesizer import build_synthetic_dataset_df
 from ludwig.schema.metadata.parameter_metadata import ExpectedImpact
 from ludwig.schema.model_types.base import ModelConfig
 from ludwig.types import ModelConfigDict
@@ -337,14 +340,15 @@ def create_nested_dict(flat_dict: Dict[str, Union[float, str]]) -> Dict[str, Any
 
 
 def combine_configs(
-    explored: Deque[Tuple[Dict, bool]], config: ModelConfigDict, dataset_name: str
-) -> List[Tuple[ModelConfigDict, str]]:
+    explored: Deque[Tuple[Dict, bool]], config: ModelConfigDict
+) -> List[Tuple[ModelConfigDict, pd.DataFrame]]:
     """Merge base config with explored sections.
 
     Args:
         explored: deque containing all the config options.
         config: base Ludwig config to merge the explored configs with.
     """
+    dataset = build_synthetic_dataset_df(10, config)
     ret = []
     for config_options, _ in explored:
         for default_config in generate_possible_configs(config_options=config_options):
@@ -352,15 +356,15 @@ def combine_configs(
             merged_config = merge_dict(copy.deepcopy(config), default_config)
             try:
                 ModelConfig.from_dict(merged_config)
-                ret.append((merged_config, dataset_name))
+                ret.append((merged_config, dataset))
             except Exception:
                 pass
     return ret
 
 
 def combine_configs_for_comparator_combiner(
-    explored: Deque[Tuple], config: ModelConfigDict, dataset_name: str
-) -> List[Tuple[ModelConfigDict, str]]:
+    explored: Deque[Tuple], config: ModelConfigDict
+) -> List[Tuple[ModelConfigDict, pd.DataFrame]]:
     """Merge base config with explored sections.
 
     Completes the entity_1 and entity_2 paramters of the comparator combiner.
@@ -369,6 +373,7 @@ def combine_configs_for_comparator_combiner(
         explored: deque containing all the config options.
         config: base Ludwig config to merge the explored configs with.
     """
+    dataset = build_synthetic_dataset_df(10, config)
     ret = []
     for item in explored:
         for default_config in generate_possible_configs(config_options=item[0]):
@@ -381,18 +386,17 @@ def combine_configs_for_comparator_combiner(
             entity_1_size = random.randint(1, len(entity_names) - 1)
             merged_config["combiner"]["entity_1"] = entity_names[:entity_1_size]
             merged_config["combiner"]["entity_2"] = entity_names[entity_1_size:]
-            # merged_config["preprocessing"] = {"sample_ratio": 0.05}
             try:
                 ModelConfig.from_dict(merged_config)
-                ret.append((merged_config, dataset_name))
+                ret.append((merged_config, dataset))
             except Exception:
                 pass
     return ret
 
 
 def combine_configs_for_sequence_combiner(
-    explored: Deque[Tuple], config: ModelConfigDict, dataset_name: str
-) -> List[Tuple[ModelConfigDict, str]]:
+    explored: Deque[Tuple], config: ModelConfigDict
+) -> List[Tuple[ModelConfigDict, pd.DataFrame]]:
     """Merge base config with explored sections.
 
     Uses the right reduce_output strategy for the sequence and sequence_concat combiners.
@@ -401,18 +405,18 @@ def combine_configs_for_sequence_combiner(
         explored: deque containing all the config options.
         config: base Ludwig config to merge the explored configs with.
     """
+    dataset = build_synthetic_dataset_df(10, config)
     ret = []
     for item in explored:
         for default_config in generate_possible_configs(config_options=item[0]):
             default_config = create_nested_dict(default_config)
             merged_config = merge_dict(copy.deepcopy(config), default_config)
-            merged_config["preprocessing"] = {"sample_ratio": 0.5}
             for i in range(len(merged_config["input_features"])):
                 if merged_config["input_features"][i]["type"] in {SEQUENCE, TEXT, TIMESERIES}:
                     merged_config["input_features"][0]["encoder"] = {"type": "embed", "reduce_output": None}
             try:
                 ModelConfig.from_dict(merged_config)
-                ret.append((merged_config, dataset_name))
+                ret.append((merged_config, dataset))
             except Exception:
                 pass
     return ret

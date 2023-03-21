@@ -4,133 +4,132 @@ from explore_schema import (
     combine_configs_for_sequence_combiner,
 )
 
-AMES_HOUSING_CONFIG = """
-output_features:
-  - name: SalePrice
-    type: number
+TABULAR_TO_TEXT = """
 input_features:
-  - name: MSSubClass
+  - name: category_1
     type: category
-  - name: MSZoning
+  - name: number_1
+    type: number
+  - name: binary_1
+    type: binary
+output_features:
+  - name: text_output_1
+    type: text
+"""
+
+TABULAR = """
+input_features:
+  - name: category_1
     type: category
-  - name: Street
-    type: category
-  - name: Neighborhood
+  - name: number_1
+    type: number
+  - name: binary_1
+    type: binary
+output_features:
+  - name: category_output_1
     type: category
 """
 
-MERCEDES_BENZ_GREENER_CONFIG = """
-output_features:
-  - name: y
-    type: number
+TEXT_INPUT = """
 input_features:
-  - name: X0
-    type: category
-  - name: X1
-    type: category
-  - name: X10
-    type: binary
-  - name: X11
-    type: binary
-  - name: X14
-    type: binary
-"""
-
-BBCNEWS_CONFIG = """
-output_features:
-  - name: Category
-    type: category
-input_features:
-  - name: Text
+  - name: text_1
     type: text
     preprocessing:
       max_sequence_length: 8
+output_features:
+  - name: category_output_1
+    type: category
 """
 
-PRODUCT_SENTIMENT_MACHINE_HACK_NO_TEXT = """
+NUMBER_INPUT = """
 input_features:
-  - name: Product_Type
-    type: category
-    column: Product_Type
+  - name: number_1
+    type: number
 output_features:
-  - name: Sentiment
+  - name: category_output_1
     type: category
-    column: Sentiment
 """
 
-ADULT_CENSUS_INCOME = """
+CATEGORY_INPUT = """
 input_features:
-  - name: age
-    type: number
-  - name: workclass
-    type: category
-  - name: fnlwgt
-    type: number
-  - name: education
+  - name: category_1
     type: category
 output_features:
-  - name: income
+  - name: category_output_1
+    type: category
+"""
+
+BINARY_INPUT = """
+input_features:
+  - name: binary_1
+    type: binary
+output_features:
+  - name: category_output_1
+    type: category
+"""
+
+TEXT_OUTPUT = """
+input_features:
+  - name: text_1
+    type: text
+    preprocessing:
+      max_sequence_length: 8
+output_features:
+  - name: text_output_1
+    type: text
+"""
+
+NUMBER_OUTPUT = """
+input_features:
+  - name: number_1
+    type: number
+output_features:
+  - name: number_output_1
+    type: number
+"""
+
+CATEGORY_OUTPUT = """
+input_features:
+  - name: category_1
+    type: category
+output_features:
+  - name: category_output_1
+    type: category
+"""
+
+BINARY_OUTPUT = """
+input_features:
+  - name: binary_1
+    type: binary
+output_features:
+  - name: binary_output_1
     type: binary
 """
 
-FAKE_JOB_POSTINGS_MULTI_TO_TEXT = """
-input_features:
-  - name: description
-    type: text
-    column: description
-  - name: required_experience
-    type: category
-    column: required_experience
-  - name: required_education
-    type: category
-    column: required_education
-output_features:
-  - name: title
-    type: text
-    column: title
-"""
-
-TITANIC = """
-input_features:
-  - name: Pclass
-    type: category
-    column: Pclass
-  - name: Sex
-    type: category
-    column: Sex
-  - name: Parch
-    type: number
-    column: Parch
-output_features:
-  - name: Survived
-    type: category
-    column: Survived
-"""
-
 feature_type_to_config_for_encoder_preprocessing = {
-    "number": (AMES_HOUSING_CONFIG, "ames_housing"),
-    "category": (AMES_HOUSING_CONFIG, "ames_housing"),
-    "binary": (MERCEDES_BENZ_GREENER_CONFIG, "mercedes_benz_greener"),
-    "text": (BBCNEWS_CONFIG, "bbcnews"),
+    "number": NUMBER_INPUT,
+    "category": CATEGORY_INPUT,
+    "binary": BINARY_INPUT,
+    "text": TEXT_INPUT,
 }
 
 feature_type_to_config_for_decoder_loss = {
-    "number": (AMES_HOUSING_CONFIG, "ames_housing"),
-    "category": (PRODUCT_SENTIMENT_MACHINE_HACK_NO_TEXT, "product_sentiment_machine_hack"),
-    "binary": (ADULT_CENSUS_INCOME, "adult_census_income"),
-    "text": (FAKE_JOB_POSTINGS_MULTI_TO_TEXT, "fake_job_postings2"),
+    "number": NUMBER_OUTPUT,
+    "category": CATEGORY_OUTPUT,
+    "binary": BINARY_OUTPUT,
+    "text": TEXT_OUTPUT,
 }
 
 ecd_config_section_to_config = {
-    "trainer": (TITANIC, "titanic"),
-    "comparator": (TITANIC, "titanic"),
-    "concat": (TITANIC, "titanic"),
-    "project_aggregate": (TITANIC, "titanic"),
-    "sequence": (BBCNEWS_CONFIG, "bbcnews"),
-    "sequence_concat": (BBCNEWS_CONFIG, "bbcnews"),
-    "tabnet": (TITANIC, "titanic"),
-    "tabtransformer": (TITANIC, "titanic"),
-    "transformer": (TITANIC, "titanic"),
+    "trainer": TABULAR,
+    "comparator": TABULAR,
+    "concat": TABULAR,
+    "project_aggregate": TABULAR,
+    "sequence": TEXT_INPUT,
+    "sequence_concat": TEXT_INPUT,
+    "tabnet": TABULAR,
+    "tabtransformer": TABULAR,
+    "transformer": TABULAR,
 }
 
 combiner_type_to_combine_config_fn = {
