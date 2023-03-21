@@ -334,7 +334,11 @@ def check_concat_combiner_requirements(config: "ModelConfig") -> None:  # noqa: 
     has_unreduced_sequence_feature = False
     has_non_sequence_feature = False
     for input_feature in config.input_features:
-        if input_feature.type in {SEQUENCE, TEXT, TIMESERIES} and input_feature.encoder.reduce_output is None:
+        if (
+            input_feature.type in {SEQUENCE, TEXT, TIMESERIES}
+            and hasattr(input_feature.encoder, "reduce_output")
+            and input_feature.encoder.reduce_output is None
+        ):
             has_unreduced_sequence_feature = True
         else:
             has_non_sequence_feature = True
