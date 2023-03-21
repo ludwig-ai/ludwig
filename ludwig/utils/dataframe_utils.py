@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -98,3 +98,40 @@ def from_numpy_dataset(dataset) -> pd.DataFrame:
 def set_index_name(pd_df: pd.DataFrame, name: str) -> pd.DataFrame:
     pd_df.index.name = name
     return pd_df
+
+
+@DeveloperAPI
+def to_batches(df: pd.DataFrame, batch_size: int) -> List[pd.DataFrame]:
+    return [df[i : i + batch_size].copy() for i in range(0, df.shape[0], batch_size)]
+
+
+@DeveloperAPI
+def from_batches(batches: List[pd.DataFrame]) -> pd.DataFrame:
+    return pd.concat(batches)
+
+
+@DeveloperAPI
+def to_scalar_df(df: pd.DataFrame) -> pd.DataFrame:
+    """Converts all columns in a pd.DataFrame to be scalar types.
+
+    For object columns of lists, each element of the list is expanded into its own column named {column}_{index}. We
+    assume all object columns are lists of the same length (i.e., tensor format output from preprocessing). It's also
+    important that the relative order of the columns is preserved, to maintain consistency with other conversions like
+    the one for Hummingbird.
+    """
+    scalar_df = df
+    column_ordering = []
+    for c, s in df.items():
+        if s.dtype == "object":
+            s_list = s.to_list()
+            try:
+                ncols = s_list[0].shape[0]
+                split_cols = [f"{c}_{k}" for k in range(ncols)]
+                sdf = pd.DataFrame(s_list, columns=split_cols)
+                scalar_df = pd.concat([scalar_df, sdf], axis=1)
+                column_ordering += split_cols
+            except AttributeError as e:
+                raise ValueError(f"Expected series of lists, but found {s_list[0]}") from e
+        else:
+            column_ordering.append(c)
+    return scalar_df[column_ordering]

@@ -49,13 +49,16 @@ from ludwig.constants import (
     MIN_DATASET_SPLIT_ROWS,
     MODEL_ECD,
     TEST,
+    TIMESERIES,
     TRAINING,
     VALIDATION,
 )
+from ludwig.data.cache.types import CacheableDataset
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.postprocessing import convert_predictions, postprocess
 from ludwig.data.preprocessing import load_metadata, preprocess_for_prediction, preprocess_for_training
-from ludwig.features.feature_registries import update_config_with_metadata
+from ludwig.datasets import load_dataset_uris
+from ludwig.features.feature_registries import update_config_with_metadata, update_config_with_model
 from ludwig.globals import (
     LUDWIG_VERSION,
     MODEL_HYPERPARAMETERS_FILE_NAME,
@@ -75,6 +78,7 @@ from ludwig.models.registry import model_type_registry
 from ludwig.schema.model_config import ModelConfig
 from ludwig.types import ModelConfigDict, TrainingSetMetadataDict
 from ludwig.utils import metric_utils
+from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
 from ludwig.utils.config_utils import get_preprocessing_params
 from ludwig.utils.data_utils import (
     figure_data_format,
@@ -98,7 +102,7 @@ from ludwig.utils.misc_utils import (
 from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.torch_utils import DEVICE
 from ludwig.utils.trainer_utils import get_training_report
-from ludwig.utils.types import TorchDevice
+from ludwig.utils.types import DataFrame, TorchDevice
 
 logger = logging.getLogger(__name__)
 
@@ -301,7 +305,7 @@ class LudwigModel:
             config_dict = copy.deepcopy(config)
             self.config_fp = None
 
-        self._user_config = config_dict
+        self._user_config = upgrade_config_dict_to_latest_version(config_dict)
 
         # Initialize the config object
         self.config_obj = ModelConfig.from_dict(self._user_config)
@@ -436,9 +440,9 @@ class LudwigModel:
             `(training_set, validation_set, test_set)`.
             `output_directory` filepath to where training results are stored.
         """
-        if HYPEROPT in self._user_config:
+        if self._user_config.get(HYPEROPT):
             print_boxed("WARNING")
-            logger.info(HYPEROPT_WARNING)
+            logger.warning(HYPEROPT_WARNING)
 
         # setup directories and file names
         if model_resume_path is not None:
@@ -525,7 +529,7 @@ class LudwigModel:
 
                         print_boxed("LUDWIG CONFIG")
                         logger.info("User-specified config (with upgrades):\n")
-                        logger.info(pformat(self.config_obj.get_user_config(), indent=4))
+                        logger.info(pformat(self._user_config, indent=4))
                         logger.info(
                             "\nFull config saved to:\n"
                             f"{output_directory}/{experiment_name}/model/model_hyperparameters.json"
@@ -585,6 +589,8 @@ class LudwigModel:
                 update_config_with_metadata(self.config_obj, training_set_metadata)
                 logger.info("Warnings and other logs:")
                 self.model = LudwigModel.create_model(self.config_obj, random_seed=random_seed)
+                # update config with properties determined during model instantiation
+                update_config_with_model(self.config_obj, self.model)
                 set_saved_weights_in_checkpoint_flag(self.config_obj)
 
             # auto tune learning rate
@@ -776,6 +782,8 @@ class LudwigModel:
         if not self.model:
             update_config_with_metadata(self.config_obj, training_set_metadata)
             self.model = LudwigModel.create_model(self.config_obj, random_seed=random_seed)
+            # update config with properties determined during model instantiation
+            update_config_with_model(self.config_obj, self.model)
             set_saved_weights_in_checkpoint_flag(self.config_obj)
 
         if not self._online_trainer:
@@ -1063,6 +1071,73 @@ class LudwigModel:
 
             return eval_stats, postproc_predictions, output_directory
 
+    def forecast(
+        self,
+        dataset: DataFrame,
+        data_format: Optional[str] = None,
+        horizon: int = 1,
+        output_directory: Optional[str] = None,
+        output_format: str = "parquet",
+    ) -> DataFrame:
+        # TODO(travis): WIP
+        dataset, _, _, _ = load_dataset_uris(dataset, None, None, None, self.backend)
+        if isinstance(dataset, CacheableDataset):
+            dataset = dataset.unwrap()
+        dataset = load_dataset(dataset, data_format=data_format, df_lib=self.backend.df_engine.df_lib)
+
+        window_sizes = [
+            feature.preprocessing.window_size
+            for feature in self.config_obj.input_features
+            if feature.type == TIMESERIES
+        ]
+        if not window_sizes:
+            raise ValueError("Forecasting requires at least one input feature of type `timeseries`.")
+
+        # TODO(travis): there's a lot of redundancy in this approach, since we are preprocessing the same DataFrame
+        # multiple times with only a small number of features (the horizon) being appended each time.
+        # A much better approach would be to only preprocess a single row, but incorporating the row-level embedding
+        # over the window_size of rows precending it, then performing the model forward pass on only that row of
+        # data.
+        max_lookback_window_size = max(window_sizes)
+        total_forecasted = 0
+        while total_forecasted < horizon:
+            # We only need the last `window_size` worth of rows to forecast the next value
+            dataset = dataset.tail(max_lookback_window_size)
+
+            # Run through preprocessing and prediction to obtain row-wise next values
+            # TODO(travis): can optimize the preprocessing part here, since we only need to preprocess / predict
+            # the last row, not the last `window_size` rows.
+            preds, _ = self.predict(dataset, skip_save_predictions=True, skip_save_unprocessed_output=True)
+
+            next_series = {}
+            for feature in self.config_obj.output_features:
+                if feature.type == TIMESERIES:
+                    key = f"{feature.name}_predictions"
+                    next_series[feature.column] = pd.Series(preds[key].iloc[-1])
+
+            next_preds = pd.DataFrame(next_series)
+            dataset = pd.concat([dataset, next_preds], axis=0).reset_index(drop=True)
+            total_forecasted += len(next_preds)
+
+        horizon_df = dataset.tail(total_forecasted).head(horizon)
+        return_cols = [feature.column for feature in self.config_obj.output_features if feature.type == TIMESERIES]
+        results_df = horizon_df[return_cols]
+
+        if output_directory is not None:
+            if self.backend.is_coordinator():
+                # TODO(travis): generalize this to support any pandas output format
+                if output_format == "parquet":
+                    output_path = os.path.join(output_directory, "forecast.parquet")
+                    results_df.to_parquet(output_path)
+                elif output_format == "csv":
+                    output_path = os.path.join(output_directory, "forecast.csv")
+                    results_df.to_csv(output_path)
+                else:
+                    raise ValueError(f"`output_format` {output_format} not supported. Must be one of [parquet, csv]")
+                logger.info(f"Saved to: {output_path}")
+
+        return results_df
+
     def experiment(
         self,
         dataset: Union[str, dict, pd.DataFrame] = None,
@@ -1192,9 +1267,9 @@ class LudwigModel:
             `(training_set, validation_set, test_set)`, `output_directory`
             filepath string to where results are stored.
         """
-        if HYPEROPT in self._user_config:
+        if self._user_config.get(HYPEROPT):
             print_boxed("WARNING")
-            logger.info(HYPEROPT_WARNING)
+            logger.warning(HYPEROPT_WARNING)
 
         (train_stats, preprocessed_data, output_directory) = self.train(
             dataset=dataset,
@@ -1420,7 +1495,7 @@ class LudwigModel:
 
             return PreprocessedDataset(proc_training_set, proc_validation_set, proc_test_set, training_set_metadata)
         except Exception as e:
-            raise RuntimeError(f"Caught exception during model preprocessing: {e}")
+            raise RuntimeError(f"Caught exception during model preprocessing: {str(e)}") from e
         finally:
             for callback in self.callbacks:
                 callback.on_preprocess_end(proc_training_set, proc_validation_set, proc_test_set, training_set_metadata)

@@ -65,13 +65,15 @@ def test_torchscript(tmpdir, csv_filename, should_load_model, model_type):
     input_features = [
         binary_feature(),
         number_feature(),
-        category_feature(encoder={"vocab_size": 3}),
+        category_feature(encoder={"type": "passthrough", "vocab_size": 3}),
+        category_feature(encoder={"type": "onehot", "vocab_size": 3}),
     ]
     if model_type == "ecd":
         image_dest_folder = os.path.join(tmpdir, "generated_images")
         audio_dest_folder = os.path.join(tmpdir, "generated_audio")
         input_features.extend(
             [
+                category_feature(encoder={"type": "dense", "vocab_size": 3}),
                 sequence_feature(encoder={"vocab_size": 3}),
                 text_feature(encoder={"vocab_size": 3}),
                 vector_feature(),
@@ -220,15 +222,17 @@ def test_torchscript(tmpdir, csv_filename, should_load_model, model_type):
 def test_torchscript_e2e_tabular(csv_filename, tmpdir):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     # Configure features to be tested:
-    bin_str_feature = binary_feature()
+    bin_str_feature_input_feature = binary_feature()
+    bin_str_feature_output_feature = binary_feature(output_feature=True)
     transformed_number_features = [
         number_feature(preprocessing={"normalization": numeric_transformer})
         for numeric_transformer in numeric_transformation_registry.keys()
     ]
     input_features = [
-        bin_str_feature,
+        bin_str_feature_input_feature,
         binary_feature(),
         *transformed_number_features,
+        number_feature(preprocessing={"outlier_strategy": "fill_with_mean"}),
         category_feature(encoder={"vocab_size": 3}),
         bag_feature(encoder={"vocab_size": 3}),
         set_feature(encoder={"vocab_size": 3}),
@@ -238,8 +242,8 @@ def test_torchscript_e2e_tabular(csv_filename, tmpdir):
         # h3_feature(),
     ]
     output_features = [
-        bin_str_feature,
-        binary_feature(),
+        bin_str_feature_output_feature,
+        binary_feature(output_feature=True),
         number_feature(),
         category_feature(decoder={"vocab_size": 3}),
         set_feature(decoder={"vocab_size": 3}),
@@ -260,7 +264,12 @@ def test_torchscript_e2e_tabular(csv_filename, tmpdir):
     # Convert bool values to strings, e.g., {'Yes', 'No'}
     df = pd.read_csv(training_data_csv_path)
     false_value, true_value = "No", "Yes"
-    df[bin_str_feature[NAME]] = df[bin_str_feature[NAME]].map(lambda x: true_value if x else false_value)
+    df[bin_str_feature_input_feature[NAME]] = df[bin_str_feature_input_feature[NAME]].map(
+        lambda x: true_value if x else false_value
+    )
+    df[bin_str_feature_output_feature[NAME]] = df[bin_str_feature_output_feature[NAME]].map(
+        lambda x: true_value if x else false_value
+    )
     df.to_csv(training_data_csv_path)
 
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
@@ -349,7 +358,7 @@ def test_torchscript_e2e_audio(csv_filename, tmpdir):
     "kwargs",
     [
         {"encoder": {"type": "stacked_cnn"}},  # Ludwig custom encoder
-        {"encoder": {"type": "alexnet", "use_pretrained": False}},  # TorchVisio pretrained model encoder
+        {"encoder": {"type": "alexnet", "use_pretrained": False}},  # TorchVision pretrained model encoder
     ],
 )
 def test_torchscript_e2e_image(tmpdir, csv_filename, kwargs):

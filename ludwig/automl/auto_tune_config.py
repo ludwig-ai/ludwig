@@ -223,13 +223,13 @@ def memory_tune_config(config, dataset, model_category, row_count, backend):
         # compute memory utilization
         current_param_values = get_new_params(current_param_values, modified_hyperparam_search_space, params_to_modify)
         temp_config = sub_new_params(raw_config, current_param_values)
-        config_obj.update_with_dict(temp_config)
+        config_obj = ModelConfig.from_dict(temp_config)
         mem_use = compute_memory_usage(config_obj, training_set_metadata, model_category)
         if mem_use > max_memory and model_category == TEXT and not tried_reduce_seq_len:
             tried_reduce_seq_len = True
             if reduce_text_feature_max_length(config, training_set_metadata):
                 reduce_text_feature_max_length(temp_config, training_set_metadata)
-                config_obj.update_with_dict(temp_config)
+                config_obj = ModelConfig.from_dict(temp_config)
                 mem_use = compute_memory_usage(config_obj, training_set_metadata, model_category)
         logger.info(f"Checking model estimated mem use {mem_use} against memory size {max_memory}")
         if mem_use <= max_memory:

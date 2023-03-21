@@ -6,7 +6,6 @@ import threading
 from ludwig.api_annotations import DeveloperAPI, PublicAPI
 from ludwig.callbacks import Callback
 from ludwig.constants import TRAINER
-from ludwig.data.dataset.base import Dataset
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, TRAIN_SET_METADATA_FILE_NAME
 from ludwig.types import TrainingSetMetadataDict
 from ludwig.utils.data_utils import chunk_dict, flatten_dict, save_json, to_json_dict
@@ -69,9 +68,9 @@ class MlflowCallback(Callback):
 
     def on_preprocess_end(
         self,
-        training_set: Dataset,
-        validation_set: Dataset,
-        test_set: Dataset,
+        training_set: "Dataset",  # noqa
+        validation_set: "Dataset",  # noqa
+        test_set: "Dataset",  # noqa
         training_set_metadata: TrainingSetMetadataDict,
     ):
         self.training_set_metadata = training_set_metadata

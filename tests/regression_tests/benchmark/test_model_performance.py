@@ -7,6 +7,11 @@ from expected_metric import ExpectedMetric
 from ludwig.benchmarking.benchmark import benchmark
 from ludwig.utils.data_utils import load_yaml
 
+SKIPPED_CONFIG_ISSUES = {
+    "mercedes_benz_greener.ecd.yaml": "https://github.com/ludwig-ai/ludwig/issues/2978",
+    "sarcos.ecd.yaml": "Takes more than 300s",
+}
+
 
 def get_test_config_filenames() -> List[str]:
     """Return list of the config filenames used for benchmarking."""
@@ -22,6 +27,10 @@ def get_dataset_from_config_path(config_path: str) -> str:
 @pytest.mark.benchmark
 @pytest.mark.parametrize("config_filename", get_test_config_filenames())
 def test_performance(config_filename, tmpdir):
+    if config_filename in SKIPPED_CONFIG_ISSUES:
+        pytest.skip(reason=SKIPPED_CONFIG_ISSUES[config_filename])
+        return
+
     benchmark_directory = "/".join(__file__.split("/")[:-1])
     config_path = os.path.join(benchmark_directory, "configs", config_filename)
     expected_test_statistics_fp = os.path.join(benchmark_directory, "expected_metrics", config_filename)
@@ -46,8 +55,10 @@ def test_performance(config_filename, tmpdir):
         "experiments": [{"dataset_name": dataset_name, "config_path": config_path}],
     }
     benchmarking_artifacts = benchmark(benchmarking_config)
+    experiment_artifact, err = benchmarking_artifacts[dataset_name]
+    if err is not None:
+        raise err
 
-    experiment_artifact = benchmarking_artifacts[dataset_name]
     expected_metrics: List[ExpectedMetric] = [
         ExpectedMetric.from_dict(expected_metric) for expected_metric in expected_metrics_dict["metrics"]
     ]

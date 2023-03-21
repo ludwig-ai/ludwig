@@ -25,6 +25,7 @@ from ludwig.constants import (
     LENGTHS,
     NAME,
     PREDICTIONS,
+    PREPROCESSING,
     PROBABILITIES,
     PROBABILITY,
     PROC_COLUMN,
@@ -41,7 +42,13 @@ from ludwig.features.sequence_feature import (
 from ludwig.schema.features.text_feature import TextInputFeatureConfig, TextOutputFeatureConfig
 from ludwig.types import FeatureMetadataDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils.math_utils import softmax
-from ludwig.utils.strings_utils import build_sequence_matrix, create_vocabulary, SpecialSymbol, UNKNOWN_SYMBOL
+from ludwig.utils.strings_utils import (
+    build_sequence_matrix,
+    create_vocabulary,
+    SpecialSymbol,
+    UNKNOWN_SYMBOL,
+    Vocabulary,
+)
 from ludwig.utils.types import DataFrame, Series
 
 logger = logging.getLogger(__name__)
@@ -57,18 +64,9 @@ class TextFeatureMixin(BaseFeatureMixin):
         return column.astype(str)
 
     @staticmethod
-    def feature_meta(column: Series, preprocessing_parameters: PreprocessingConfigDict, backend):
-        (
-            idx2str,
-            str2idx,
-            str2freq,
-            max_len,
-            max_len_99ptile,
-            pad_idx,
-            padding_symbol,
-            unknown_symbol,
-        ) = create_vocabulary(
-            data=column,
+    def feature_meta(column: Series, preprocessing_parameters: PreprocessingConfigDict, backend) -> Vocabulary:
+        return create_vocabulary(
+            column,
             tokenizer_type=preprocessing_parameters["tokenizer"],
             most_common_percentile=preprocessing_parameters["most_common_percentile"],
             most_common=preprocessing_parameters["most_common"],
@@ -78,46 +76,56 @@ class TextFeatureMixin(BaseFeatureMixin):
             padding_symbol=preprocessing_parameters["padding_symbol"],
             pretrained_model_name_or_path=preprocessing_parameters["pretrained_model_name_or_path"],
             ngram_size=preprocessing_parameters["ngram_size"],
+            compute_idf=preprocessing_parameters["compute_idf"],
             processor=backend.df_engine,
-        )
-        return (
-            idx2str,
-            str2idx,
-            str2freq,
-            max_len,
-            max_len_99ptile,
-            pad_idx,
-            padding_symbol,
-            unknown_symbol,
         )
 
     @staticmethod
     def get_feature_meta(
         column, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
     ) -> FeatureMetadataDict:
-        tf_meta = TextFeatureMixin.feature_meta(column, preprocessing_parameters, backend)
-        (
-            idx2str,
-            str2idx,
-            str2freq,
-            max_len,
-            max_len_99ptile,
-            pad_idx,
-            padding_symbol,
-            unknown_symbol,
-        ) = tf_meta
-        max_len = min(preprocessing_parameters["max_sequence_length"], max_len)
-        max_len_99ptile = min(max_len, max_len_99ptile)
+        vocabulary = TextFeatureMixin.feature_meta(column, preprocessing_parameters, backend)
+        logger.info(
+            f"Max length of feature '{column.name}': {vocabulary.line_length_max} (without start and stop symbols)"
+        )
+
+        # Use sequence_length if provided, otherwise use max length found in dataset.
+        if preprocessing_parameters["sequence_length"] is not None:
+            logger.info(
+                f"Setting max length to sequence_length={preprocessing_parameters['sequence_length']} provided in "
+                f"preprocessing parameters"
+            )
+            max_sequence_length = preprocessing_parameters["sequence_length"]
+            max_sequence_length_99ptile = preprocessing_parameters["sequence_length"]
+        else:
+            max_sequence_length = vocabulary.line_length_max + 2  # For start and stop symbols.
+            max_sequence_length_99ptile = vocabulary.line_length_99ptile + 2  # For start and stop symbols.
+            logger.info(f"Setting max length using dataset: {max_sequence_length} (including start and stop symbols)")
+
+            # If max_sequence_length is None, then use the max length found in the dataset.
+            if (
+                preprocessing_parameters["max_sequence_length"] is not None
+                and preprocessing_parameters["max_sequence_length"] < max_sequence_length
+            ):
+                logger.info(
+                    f"Truncating max length with max_sequence_length={preprocessing_parameters['max_sequence_length']} "
+                    f"from preprocessing parameters"
+                )
+                max_sequence_length = preprocessing_parameters["max_sequence_length"]
+                max_sequence_length_99ptile = min(vocabulary.line_length_99ptile, max_sequence_length)
+
+        logger.info(f"max sequence length is {max_sequence_length} for feature '{column.name}'")
         return {
-            "idx2str": idx2str,
-            "str2idx": str2idx,
-            "str2freq": str2freq,
-            "vocab_size": len(idx2str),
-            "max_sequence_length": max_len + 2,  # For start and stop symbols.
-            "max_sequence_length_99ptile": max_len_99ptile + 2,  # For start and stop symbols.
-            "pad_idx": pad_idx,
-            "padding_symbol": padding_symbol,
-            "unknown_symbol": unknown_symbol,
+            "idx2str": vocabulary.vocab,
+            "str2idx": vocabulary.str2idx,
+            "str2freq": vocabulary.str2freq,
+            "str2idf": vocabulary.str2idf,
+            "vocab_size": len(vocabulary.vocab),
+            "max_sequence_length": max_sequence_length,
+            "max_sequence_length_99ptile": max_sequence_length_99ptile,
+            "pad_idx": vocabulary.pad_idx,
+            "padding_symbol": vocabulary.padding_symbol,
+            "unknown_symbol": vocabulary.unknown_symbol,
         }
 
     @staticmethod
@@ -207,6 +215,9 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
     def input_shape(self):
         return torch.Size([self.encoder_obj.config.max_sequence_length])
 
+    def update_config_after_module_init(self, feature_config):
+        feature_config.encoder = self.encoder_obj.config
+
     @staticmethod
     def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
         feature_config.encoder.vocab = feature_metadata["idx2str"]
@@ -214,6 +225,9 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         feature_config.encoder.max_sequence_length = feature_metadata["max_sequence_length"]
         feature_config.encoder.pad_idx = feature_metadata["pad_idx"]
         feature_config.encoder.num_tokens = len(feature_metadata["idx2str"])
+        feature_config.encoder.str2freq = feature_metadata["str2freq"]
+        feature_config.encoder.str2idf = feature_metadata["str2idf"]
+        feature_config.encoder.skip = feature_metadata[PREPROCESSING].get("cache_encoder_embeddings", False)
 
     @staticmethod
     def get_schema_cls():
@@ -231,7 +245,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
 class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     def __init__(
         self,
-        output_feature_config: Union[TextInputFeatureConfig, Dict],
+        output_feature_config: Union[TextOutputFeatureConfig, Dict],
         output_features: Dict[str, OutputFeature],
         **kwargs,
     ):

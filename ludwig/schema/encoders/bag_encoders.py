@@ -1,18 +1,17 @@
 from typing import List
 
-from marshmallow_dataclass import dataclass
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BAG
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.metadata import ENCODER_METADATA
+from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
 @register_encoder_config("embed", BAG)
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class BagEmbedWeightedConfig(BaseEncoderConfig):
     @staticmethod
     def module_name():
@@ -84,6 +83,7 @@ class BagEmbedWeightedConfig(BaseEncoderConfig):
 
     pretrained_embeddings: str = schema_utils.String(
         default=None,
+        allow_none=True,
         description="By default dense embeddings are initialized randomly, but this parameter allows to specify a "
         "path to a file containing embeddings in the GloVe format. When the file containing the "
         "embeddings is loaded, only the embeddings with labels present in the vocabulary are kept, "
@@ -121,6 +121,7 @@ class BagEmbedWeightedConfig(BaseEncoderConfig):
     norm: str = schema_utils.StringOptions(
         ["batch", "layer"],
         default=None,
+        allow_none=True,
         description="The default norm that will be used for each layer.",
         parameter_metadata=ENCODER_METADATA["BagEmbedWeighted"]["norm"],
     )

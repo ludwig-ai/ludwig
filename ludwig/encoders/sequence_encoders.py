@@ -43,9 +43,13 @@ from ludwig.schema.encoders.sequence_encoders import (
 logger = logging.getLogger(__name__)
 
 
+class SequenceEncoder(Encoder):
+    pass
+
+
 @DeveloperAPI
 @register_encoder("passthrough", [SEQUENCE, TEXT, TIMESERIES])
-class SequencePassthroughEncoder(Encoder):
+class SequencePassthroughEncoder(SequenceEncoder):
     def __init__(
         self,
         reduce_output: str = None,
@@ -67,6 +71,7 @@ class SequencePassthroughEncoder(Encoder):
         """
         super().__init__()
         self.config = encoder_config
+        self.max_sequence_length = max_sequence_length
 
         logger.debug(f" {self.name}")
 
@@ -98,10 +103,18 @@ class SequencePassthroughEncoder(Encoder):
     def get_schema_cls():
         return SequencePassthroughConfig
 
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.input_shape
+
 
 @DeveloperAPI
 @register_encoder("embed", [SEQUENCE, TEXT])
-class SequenceEmbedEncoder(Encoder):
+class SequenceEmbedEncoder(SequenceEncoder):
     def __init__(
         self,
         vocab,
@@ -240,7 +253,7 @@ class SequenceEmbedEncoder(Encoder):
 @DeveloperAPI
 @register_sequence_encoder("parallel_cnn")
 @register_encoder("parallel_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
-class ParallelCNN(Encoder):
+class ParallelCNN(SequenceEncoder):
     def __init__(
         self,
         should_embed=True,
@@ -541,7 +554,7 @@ class ParallelCNN(Encoder):
 @DeveloperAPI
 @register_sequence_encoder("stacked_cnn")
 @register_encoder("stacked_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
-class StackedCNN(Encoder):
+class StackedCNN(SequenceEncoder):
     def __init__(
         self,
         should_embed=True,
@@ -879,7 +892,7 @@ class StackedCNN(Encoder):
 @DeveloperAPI
 @register_sequence_encoder("stacked_parallel_cnn")
 @register_encoder("stacked_parallel_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
-class StackedParallelCNN(Encoder):
+class StackedParallelCNN(SequenceEncoder):
     def __init__(
         self,
         should_embed=True,
@@ -1192,7 +1205,7 @@ class StackedParallelCNN(Encoder):
 @DeveloperAPI
 @register_sequence_encoder("rnn")
 @register_encoder("rnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
-class StackedRNN(Encoder):
+class StackedRNN(SequenceEncoder):
     def __init__(
         self,
         should_embed=True,
@@ -1307,12 +1320,9 @@ class StackedRNN(Encoder):
         :param num_rec_layers: the number of stacked recurrent layers.
         :type num_rec_layers: Integer
         :param cell_type: the type of recurrent cell to use.
-               Available values are: `rnn`, `lstm`, `lstm_block`, `lstm`,
-               `ln`, `lstm_cudnn`, `gru`, `gru_block`, `gru_cudnn`.
+               Available values are: `rnn`, `lstm`, `gru`.
                For reference about the differences between the cells please
-               refer to PyTorch's documentation. We suggest to use the
-               `block` variants on CPU and the `cudnn` variants on GPU
-               because of their increased speed.
+               refer to PyTorch's documentation.
         :type cell_type: str
         :param state_size: the size of the state of the rnn.
         :type state_size: Integer
@@ -1466,7 +1476,7 @@ class StackedRNN(Encoder):
 @DeveloperAPI
 @register_sequence_encoder("cnnrnn")
 @register_encoder("cnnrnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
-class StackedCNNRNN(Encoder):
+class StackedCNNRNN(SequenceEncoder):
     def __init__(
         self,
         should_embed=True,
@@ -1560,12 +1570,9 @@ class StackedCNNRNN(Encoder):
         :param num_layers: the number of stacked recurrent layers.
         :type num_layers: Integer
         :param cell_type: the type of recurrent cell to use.
-               Available values are: `rnn`, `lstm`, `lstm_block`, `lstm`,
-               `ln`, `lstm_cudnn`, `gru`, `gru_block`, `gru_cudnn`.
+               Available values are: `rnn`, `lstm`, `gru`.
                For reference about the differences between the cells please
-               refer to PyTorch's documentation. We suggest to use the
-               `block` variants on CPU and the `cudnn` variants on GPU
-               because of their increased speed.
+               refer to PyTorch's documentation.
         :type cell_type: str
         :param state_size: the size of the state of the rnn.
         :type state_size: Integer
@@ -1754,8 +1761,9 @@ class StackedCNNRNN(Encoder):
 
 
 @DeveloperAPI
+@register_sequence_encoder("transformer")
 @register_encoder("transformer", [SEQUENCE, TEXT, TIMESERIES])
-class StackedTransformer(Encoder):
+class StackedTransformer(SequenceEncoder):
     def __init__(
         self,
         max_sequence_length,
@@ -1935,7 +1943,7 @@ class StackedTransformer(Encoder):
                 self.should_project = True
         else:
             logger.debug("  project_to_embed_size")
-            self.project_to_hidden_size = nn.Linear(1, hidden_size)
+            self.project_to_hidden_size = nn.Linear(embedding_size, hidden_size)
             self.should_project = True
 
         logger.debug("  TransformerStack")

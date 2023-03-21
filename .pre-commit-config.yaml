@@ -4,6 +4,8 @@
 #   pre-commit run
 # Update this file:
 #   pre-commit autoupdate
+# Run a specific hook:
+#   pre-commit run <hook id>
 
 ci:
   autofix_prs: true
@@ -39,7 +41,7 @@ repos:
       - id: docformatter
         args: [--in-place, --wrap-summaries=115, --wrap-descriptions=120]
   - repo: https://github.com/PyCQA/isort
-    rev: 5.11.4
+    rev: 5.12.0
     hooks:
       - id: isort
         name: Format imports

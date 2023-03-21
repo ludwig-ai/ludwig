@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import copy
+import logging
 import warnings
 from typing import Any, Callable, Dict, List, Union
 
@@ -34,10 +35,14 @@ from ludwig.constants import (
     EXECUTOR,
     FORCE_SPLIT,
     HEIGHT,
+    HYPEROPT,
     IMAGE,
     INPUT_FEATURES,
     LOSS,
     MISSING_VALUE_STRATEGY,
+    MODEL_ECD,
+    MODEL_GBM,
+    MODEL_TYPE,
     NAME,
     NUM_SAMPLES,
     NUMBER,
@@ -62,8 +67,9 @@ from ludwig.constants import (
     USE_BIAS,
     WIDTH,
 )
-from ludwig.features.feature_registries import get_base_type_registry
+from ludwig.features.feature_registries import get_base_type_registry, get_input_type_registry, get_output_type_registry
 from ludwig.globals import LUDWIG_VERSION
+from ludwig.schema.defaults.gbm import GBMDefaultsConfig
 from ludwig.schema.encoders.utils import get_encoder_cls
 from ludwig.types import (
     FeatureConfigDict,
@@ -74,7 +80,7 @@ from ludwig.types import (
     TrainingSetMetadataDict,
 )
 from ludwig.utils.metric_utils import TrainerMetric
-from ludwig.utils.misc_utils import merge_dict
+from ludwig.utils.misc_utils import get_from_registry, merge_dict
 from ludwig.utils.version_transformation import VersionTransformation, VersionTransformationRegistry
 
 config_transformation_registry = VersionTransformationRegistry()
@@ -362,42 +368,24 @@ def _upgrade_encoder_decoder_params(feature: FeatureConfigDict, input_feature: b
         feature (Dict): Feature to nest encoder/decoder params for.
         input_feature (Bool): Whether this feature is an input feature or not.
     """
-    input_feature_keys = [
-        # Encoder-external parameters.
-        "name",
-        "type",
-        "encoder",
-        "tied",
-        # Internal-only parameters.
-        "column",
-        "proc_column",
-        "preprocessing",
-        "vector_size",
-        "active",
-    ]
+    if TYPE not in feature:
+        return feature
 
-    output_feature_keys = [
-        # Decoder-external parameters.
-        "name",
-        "type",
-        "calibration",
-        "decoder",
-        # Internal-only parameters.
-        "preprocessing",
-        "loss",
-        "column",
-        "proc_column",
-        "num_classes",
-        "reduce_input",
-        "dependencies",
-        "reduce_dependencies",
-        "top_k",
-        "vector_size",
-        "active",
-        "default_validation_metric",
-        "input_size",
-    ]
+    try:
+        if input_feature:
+            module_type = ENCODER
+            feature_cls = get_from_registry(feature[TYPE], get_input_type_registry())
+        else:
+            module_type = DECODER
+            feature_cls = get_from_registry(feature[TYPE], get_output_type_registry())
+    except ValueError:
+        logging.exception("Failed to obtain encoder / decoder from registry")
+        return feature
 
+    feature_schema_cls = feature_cls.get_schema_cls()
+    feature_keys = feature_schema_cls.get_valid_field_names()
+
+    # These keys have been renamed from the form below to `fc_<key>` in the new config
     fc_layer_keys = [
         "fc_layers",
         "output_size",
@@ -410,17 +398,9 @@ def _upgrade_encoder_decoder_params(feature: FeatureConfigDict, input_feature: b
         "dropout",
     ]
 
-    warn = False
-    if input_feature:
-        module_type = ENCODER
-    else:
-        module_type = DECODER
-
     module = feature.get(module_type, {})
 
-    # List of keys to keep in the output feature.
-    feature_keys = input_feature_keys if module_type == ENCODER else output_feature_keys
-
+    warn = False
     if isinstance(module, str):
         module = {TYPE: module}
         feature[module_type] = module
@@ -663,7 +643,7 @@ def update_training(config: ModelConfigDict) -> ModelConfigDict:
 
 
 @register_config_transformation("0.6")
-def upgrade_missing_value_strategy(config: FeatureConfigDict) -> FeatureConfigDict:
+def upgrade_missing_value_strategy(config: ModelConfigDict) -> ModelConfigDict:
     for input_feature in config.get(INPUT_FEATURES, []):
         if _is_old_missing_value_strategy(input_feature):
             _update_old_missing_value_strategy(input_feature)
@@ -744,6 +724,8 @@ def learning_rate_scheduler(trainer: TrainerConfigDict) -> TrainerConfigDict:
                 if old_key == "decay" and isinstance(value, bool):
                     # Decay has changed from a bool to an optional enum
                     lr_scheduler[new_key] = "exponential" if value else None
+                elif old_key == "reduce_learning_rate_on_plateau":
+                    lr_scheduler[new_key] = int(value)
                 else:
                     lr_scheduler[new_key] = value
             del trainer[old_key]
@@ -769,10 +751,11 @@ def _upgrade_legacy_image_encoders(feature: FeatureConfigDict) -> FeatureConfigD
     if encoder_type not in encoder_mapping:
         return feature
 
-    new_encoder_cls = get_encoder_cls(feature[TYPE], encoder_type)
+    # For this version of Ludwig, only ECD supported these encoders.
+    new_encoder_cls = get_encoder_cls(MODEL_ECD, feature[TYPE], encoder_type)
     new_encoder_fields = new_encoder_cls.get_valid_field_names()
 
-    legacy_encoder_cls = get_encoder_cls(feature[TYPE], encoder_mapping[encoder_type])
+    legacy_encoder_cls = get_encoder_cls(MODEL_ECD, feature[TYPE], encoder_mapping[encoder_type])
     legacy_encoder_fields = legacy_encoder_cls.get_valid_field_names()
 
     user_fields = set(encoder.keys())
@@ -803,6 +786,41 @@ def _upgrade_legacy_image_encoders(feature: FeatureConfigDict) -> FeatureConfigD
         encoder[TYPE] = encoder_mapping[encoder_type]
 
     return feature
+
+
+@register_config_transformation("0.7")
+def upgrade_missing_hyperopt(config: ModelConfigDict) -> ModelConfigDict:
+    hyperopt = config.get(HYPEROPT)
+    if hyperopt == {}:
+        # This is a deprecated form of providing a missing hyperopt section, as it violates the schema definition
+        warnings.warn(
+            "Config section `hyperopt: {}` is deprecated, please set `hyperopt: null` to disable hyperopt.",
+            DeprecationWarning,
+        )
+        del config[HYPEROPT]
+    return config
+
+
+@register_config_transformation("0.7")
+def upgrade_defaults_config_for_gbm(config: ModelConfigDict) -> ModelConfigDict:
+    model_type = config.get(MODEL_TYPE, "")
+    if model_type != MODEL_GBM:
+        return config
+
+    defaults_ref = config.get(DEFAULTS, {})
+    defaults = copy.deepcopy(defaults_ref)
+    gbm_feature_types = GBMDefaultsConfig.Schema().fields.keys()
+    for feature_type in defaults_ref:
+        # GBM only supports binary, number, category and text features
+        if feature_type not in gbm_feature_types:
+            del defaults[feature_type]
+            continue
+
+        # Remove decoder and loss from defaults since they only apply to ECD
+        defaults[feature_type].pop("decoder", None)
+        defaults[feature_type].pop("loss", None)
+    config[DEFAULTS] = defaults
+    return config
 
 
 def upgrade_metadata(metadata: TrainingSetMetadataDict) -> TrainingSetMetadataDict:

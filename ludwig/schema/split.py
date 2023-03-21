@@ -1,12 +1,11 @@
-from dataclasses import field
-
-from marshmallow import fields, ValidationError
-from marshmallow_dataclass import dataclass
+from dataclasses import Field
+from typing import Type
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import SPLIT, TYPE
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata import PREPROCESSING_METADATA
+from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils.registry import Registry
 
 split_config_registry = Registry()
@@ -19,7 +18,7 @@ def get_split_cls(name: str):
 
 
 @DeveloperAPI
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class BaseSplitConfig(schema_utils.BaseMarshmallowConfig):
     """This Dataclass is a base schema for the nested split config under preprocessing."""
 
@@ -29,7 +28,7 @@ class BaseSplitConfig(schema_utils.BaseMarshmallowConfig):
 
 @DeveloperAPI
 @split_config_registry.register("random")
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class RandomSplitConfig(BaseSplitConfig):
     """This Dataclass generates a schema for the random splitting config."""
 
@@ -48,7 +47,7 @@ class RandomSplitConfig(BaseSplitConfig):
 
 @DeveloperAPI
 @split_config_registry.register("fixed")
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class FixedSplitConfig(BaseSplitConfig):
     """This Dataclass generates a schema for the fixed splitting config."""
 
@@ -59,13 +58,14 @@ class FixedSplitConfig(BaseSplitConfig):
 
     column: str = schema_utils.String(
         default=SPLIT,
+        allow_none=False,
         description="The column name to use for fixed splitting.",
     )
 
 
 @DeveloperAPI
 @split_config_registry.register("stratify")
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class StratifySplitConfig(BaseSplitConfig):
     """This Dataclass generates a schema for the fixed splitting config."""
 
@@ -75,6 +75,8 @@ class StratifySplitConfig(BaseSplitConfig):
     )
 
     column: str = schema_utils.String(
+        default=None,
+        allow_none=True,
         description="The column name to base the stratified splitting on.",
     )
 
@@ -88,7 +90,7 @@ class StratifySplitConfig(BaseSplitConfig):
 
 @DeveloperAPI
 @split_config_registry.register("datetime")
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class DateTimeSplitConfig(BaseSplitConfig):
     """This Dataclass generates a schema for the fixed splitting config."""
 
@@ -98,6 +100,8 @@ class DateTimeSplitConfig(BaseSplitConfig):
     )
 
     column: str = schema_utils.String(
+        default=None,
+        allow_none=True,
         description="The column name to perform datetime splitting on.",
     )
 
@@ -111,7 +115,7 @@ class DateTimeSplitConfig(BaseSplitConfig):
 
 @DeveloperAPI
 @split_config_registry.register("hash")
-@dataclass(order=True)
+@ludwig_dataclass
 class HashSplitConfig(BaseSplitConfig):
     """This Dataclass generates a schema for the hash splitting config.
 
@@ -130,6 +134,8 @@ class HashSplitConfig(BaseSplitConfig):
     )
 
     column: str = schema_utils.String(
+        default=None,
+        allow_none=True,
         description="The column name to perform hash splitting on.",
     )
 
@@ -159,36 +165,21 @@ def get_split_conds():
 
 
 @DeveloperAPI
-def SplitDataclassField(default: str):
+def SplitDataclassField(default: str) -> Field:
     """Custom dataclass field that when used inside a dataclass will allow the user to specify a nested split
     config.
 
     Returns: Initialized dataclass field that converts an untyped dict with params to a split config.
     """
 
-    class SplitMarshmallowField(fields.Field):
-        """Custom marshmallow field that deserializes a dict for a valid split config from the split_registry and
-        creates a corresponding JSON schema for external usage."""
+    class SplitSelection(schema_utils.TypeSelection):
+        def __init__(self):
+            super().__init__(registry=split_config_registry.data, default_value=default)
 
-        def _deserialize(self, value, attr, data, **kwargs):
-            if value is None:
-                return None
-            if isinstance(value, dict):
-                if TYPE in value and value[TYPE] in split_config_registry.data:
-                    split_class = split_config_registry.data[value[TYPE]]
-                    try:
-                        return split_class.get_schema_cls().Schema().load(value)
-                    except (TypeError, ValidationError) as error:
-                        raise ValidationError(
-                            f"Invalid split params: {value}, see `{split_class}` definition. Error: {error}"
-                        )
-                raise ValidationError(
-                    f"Invalid params for splitter: {value}, expected dict with at least a valid `type` attribute."
-                )
-            raise ValidationError("Field should be None or dict")
+        def get_schema_from_registry(self, key: str) -> Type[schema_utils.BaseMarshmallowConfig]:
+            return split_config_registry.data[key]
 
-        @staticmethod
-        def _jsonschema_type_mapping():
+        def _jsonschema_type_mapping(self):
             return {
                 "type": "object",
                 "properties": {
@@ -203,20 +194,4 @@ def SplitDataclassField(default: str):
                 "allOf": get_split_conds(),
             }
 
-    try:
-        splitter = split_config_registry.data[default]
-        load_default = splitter.Schema().load({"type": default})
-        dump_default = splitter.Schema().dump({"type": default})
-
-        return field(
-            metadata={
-                "marshmallow_field": SplitMarshmallowField(
-                    allow_none=False,
-                    dump_default=dump_default,
-                    load_default=load_default,
-                )
-            },
-            default_factory=lambda: load_default,
-        )
-    except Exception as e:
-        raise ValidationError(f"Unsupported splitter type: {default}. See split_registry. " f"Details: {e}")
+    return SplitSelection().get_default_field()

@@ -14,32 +14,23 @@
 # ==============================================================================
 
 
-from typing import List, Optional, Union
+from typing import Type
 
 import torch
 from torch import nn, Tensor
+from torch.nn import HuberLoss as _HuberLoss
 from torch.nn import L1Loss
 from torch.nn import MSELoss as _MSELoss
+from torchmetrics.functional import mean_absolute_percentage_error
 
 import ludwig.utils.loss_utils as utils
-from ludwig.constants import (
-    BINARY,
-    BINARY_WEIGHTED_CROSS_ENTROPY,
-    CATEGORY,
-    LOGITS,
-    NUMBER,
-    SEQUENCE,
-    SEQUENCE_SOFTMAX_CROSS_ENTROPY,
-    SET,
-    SIGMOID_CROSS_ENTROPY,
-    SOFTMAX_CROSS_ENTROPY,
-    TEXT,
-    TIMESERIES,
-    VECTOR,
-)
+from ludwig.constants import LOGITS
 from ludwig.schema.features.loss.loss import (
+    BaseLossConfig,
     BWCEWLossConfig,
+    HuberLossConfig,
     MAELossConfig,
+    MAPELossConfig,
     MSELossConfig,
     RMSELossConfig,
     RMSPELossConfig,
@@ -53,29 +44,19 @@ from ludwig.utils.registry import Registry
 # used for Laplace smoothing for candidate samplers
 EPSILON = 1.0e-10
 
-loss_registry = Registry()
+loss_impl_registry = Registry[Type[nn.Module]]()
 
 
-def register_loss(name: str, features: Union[str, List[str]]):
-    if isinstance(features, str):
-        features = [features]
-
-    def wrap(cls):
-        for feature in features:
-            feature_registry = loss_registry.get(feature, {})
-            feature_registry[name] = cls
-            loss_registry[feature] = feature_registry
+def register_loss(config_cls: Type[BaseLossConfig]):
+    def wrap(cls: Type[nn.Module]):
+        loss_impl_registry[config_cls] = cls
         return cls
 
     return wrap
 
 
-def get_loss_cls(feature: str, name: str):
-    return loss_registry[feature][name]
-
-
-def get_loss_classes(feature: str):
-    return loss_registry[feature]
+def create_loss(config: BaseLossConfig) -> nn.Module:
+    return loss_impl_registry[type(config)](config)
 
 
 class LogitsInputsMixin:
@@ -85,80 +66,69 @@ class LogitsInputsMixin:
         return LOGITS
 
 
-@register_loss("mean_squared_error", [NUMBER, TIMESERIES, VECTOR])
+@register_loss(MSELossConfig)
 class MSELoss(_MSELoss, LogitsInputsMixin):
     """Mean squared error."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, config: MSELossConfig):
         super().__init__()
 
-    @staticmethod
-    def get_schema_cls():
-        return MSELossConfig
 
-
-@register_loss("mean_absolute_error", [NUMBER, TIMESERIES, VECTOR])
+@register_loss(MAELossConfig)
 class MAELoss(L1Loss, LogitsInputsMixin):
     """Mean absolute error."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, config: MAELossConfig):
         super().__init__()
 
-    @staticmethod
-    def get_schema_cls():
-        return MAELossConfig
+
+@register_loss(MAPELossConfig)
+class MAPELoss(nn.Module, LogitsInputsMixin):
+    """Mean absolute error."""
+
+    def __init__(self, config: MAPELossConfig):
+        super().__init__()
+
+    def forward(self, preds: Tensor, target: Tensor) -> Tensor:
+        return mean_absolute_percentage_error(preds, target)
 
 
-@register_loss("root_mean_squared_error", [NUMBER])
+@register_loss(RMSELossConfig)
 class RMSELoss(nn.Module, LogitsInputsMixin):
     """Root mean square error."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, config: RMSELossConfig):
         super().__init__()
-        self.mse = nn.MSELoss(**kwargs)
+        self.mse = nn.MSELoss()
 
     def forward(self, preds: Tensor, target: Tensor) -> Tensor:
         return torch.sqrt(self.mse(preds, target))
 
-    @staticmethod
-    def get_schema_cls():
-        return RMSELossConfig
 
-
-@register_loss("root_mean_squared_percentage_error", [NUMBER])
+@register_loss(RMSPELossConfig)
 class RMSPELoss(nn.Module, LogitsInputsMixin):
     """Root mean square percentage error."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, config: RMSPELossConfig):
         super().__init__()
 
     def forward(self, preds: Tensor, target: Tensor) -> Tensor:
         loss = utils.rmspe_loss(target, preds)
         return loss
 
-    @staticmethod
-    def get_schema_cls():
-        return RMSPELossConfig
 
-
-@register_loss(BINARY_WEIGHTED_CROSS_ENTROPY, [BINARY])
+@register_loss(BWCEWLossConfig)
 class BWCEWLoss(nn.Module, LogitsInputsMixin):
     """Binary weighted cross entropy loss."""
 
-    def __init__(
-        self,
-        positive_class_weight: Optional[Union[Tensor, int]] = None,
-        robust_lambda: int = 0,
-        confidence_penalty: int = 0,
-        **kwargs,
-    ):
+    def __init__(self, config: BWCEWLossConfig):
         super().__init__()
-        if positive_class_weight:
-            self.loss_fn = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([positive_class_weight]), **kwargs)
+        if config.positive_class_weight:
+            self.loss_fn = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([config.positive_class_weight]))
         else:
-            self.loss_fn = nn.BCEWithLogitsLoss(pos_weight=positive_class_weight, **kwargs)
-        self.robust_lambda = robust_lambda
-        self.confidence_penalty = confidence_penalty
+            self.loss_fn = nn.BCEWithLogitsLoss(pos_weight=config.positive_class_weight)
+        self.robust_lambda = config.robust_lambda
+        self.confidence_penalty = config.confidence_penalty
 
     def forward(self, preds: torch.Tensor, target: torch.Tensor):
         train_loss = self.loss_fn(preds, target.float())
@@ -176,21 +146,17 @@ class BWCEWLoss(nn.Module, LogitsInputsMixin):
 
         return train_mean_loss
 
-    @staticmethod
-    def get_schema_cls():
-        return BWCEWLossConfig
 
-
-@register_loss(SOFTMAX_CROSS_ENTROPY, [CATEGORY, VECTOR])
+@register_loss(SoftmaxCrossEntropyLossConfig)
 class SoftmaxCrossEntropyLoss(nn.Module, LogitsInputsMixin):
-    def __init__(self, class_weights: Optional[Union[Tensor, List]] = None, **kwargs):
+    def __init__(self, config: SoftmaxCrossEntropyLossConfig):
         """
         Params:
             class_weights: List or 1D tensor of length equal to number of classes.
         """
         super().__init__()
-        if class_weights:
-            self.loss_fn = nn.CrossEntropyLoss(weight=torch.Tensor(class_weights))
+        if config.class_weights:
+            self.loss_fn = nn.CrossEntropyLoss(weight=torch.Tensor(config.class_weights))
         else:
             self.loss_fn = nn.CrossEntropyLoss()
 
@@ -204,14 +170,10 @@ class SoftmaxCrossEntropyLoss(nn.Module, LogitsInputsMixin):
         target = target.long()
         return self.loss_fn(preds, target)
 
-    @staticmethod
-    def get_schema_cls():
-        return SoftmaxCrossEntropyLossConfig
 
-
-@register_loss(SEQUENCE_SOFTMAX_CROSS_ENTROPY, [SEQUENCE, TEXT])
+@register_loss(SequenceSoftmaxCrossEntropyLossConfig)
 class SequenceSoftmaxCrossEntropyLoss(nn.Module, LogitsInputsMixin):
-    def __init__(self, **kwargs):
+    def __init__(self, config: SequenceSoftmaxCrossEntropyLossConfig):
         """
         Params:
             class_weights: List or 1D tensor of length equal to number of classes.
@@ -228,30 +190,30 @@ class SequenceSoftmaxCrossEntropyLoss(nn.Module, LogitsInputsMixin):
         target = target.long()
         return self.loss_fn(preds[1:].view(-1, preds.size(-1)), target[1:].view(-1))
 
-    @staticmethod
-    def get_schema_cls():
-        return SequenceSoftmaxCrossEntropyLossConfig
 
-
-@register_loss(SIGMOID_CROSS_ENTROPY, [SET])
+@register_loss(SigmoidCrossEntropyLossConfig)
 class SigmoidCrossEntropyLoss(nn.Module, LogitsInputsMixin):
-    def __init__(self, class_weights: Optional[Union[Tensor, List]] = None, **kwargs):
+    def __init__(self, config: SigmoidCrossEntropyLossConfig):
         """
         Params:
             class_weights: List or 1D tensor of length equal to number of classes.
         """
         super().__init__()
-        if class_weights:
-            self.loss_fn = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor(class_weights))
+        if config.class_weights:
+            self.loss_fn = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor(config.class_weights))
         else:
             self.loss_fn = nn.BCEWithLogitsLoss()
 
     def forward(self, preds: Tensor, target: Tensor) -> Tensor:
         if preds.ndim != 2:
-            raise RuntimeError("SigmoidCrossEntropyLoss currently supported for 2D tensors.")
+            raise RuntimeError("SigmoidCrossEntropyLoss currently only supported for 2D tensors.")
 
         return self.loss_fn(preds.type(torch.float32), target.type(torch.float32))
 
-    @staticmethod
-    def get_schema_cls():
-        return SigmoidCrossEntropyLossConfig
+
+@register_loss(HuberLossConfig)
+class HuberLoss(_HuberLoss, LogitsInputsMixin):
+    """Huber loss."""
+
+    def __init__(self, config: HuberLossConfig):
+        super().__init__(delta=config.delta)

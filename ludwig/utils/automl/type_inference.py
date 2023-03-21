@@ -27,7 +27,7 @@ def infer_type(field: FieldInfo, missing_value_percent: float, row_count: int) -
     # Return
     :return: (str) feature type
     """
-    if field.dtype == DATE:
+    if field.dtype == DATE or field.dtype.startswith("datetime"):
         return DATE
 
     num_distinct_values = field.num_distinct_values
@@ -46,6 +46,9 @@ def infer_type(field: FieldInfo, missing_value_percent: float, row_count: int) -
 
     if field.audio_values >= 3:
         return AUDIO
+
+    if strings_utils.are_all_datetimes(distinct_values):
+        return DATE
 
     # Use CATEGORY if:
     # - The number of distinct values is significantly less than the total number of examples.

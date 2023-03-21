@@ -67,12 +67,15 @@ MEAN_SQUARED_ERROR = "mean_squared_error"
 ROOT_MEAN_SQUARED_ERROR = "root_mean_squared_error"
 ROOT_MEAN_SQUARED_PERCENTAGE_ERROR = "root_mean_squared_percentage_error"
 MEAN_ABSOLUTE_ERROR = "mean_absolute_error"
+MEAN_ABSOLUTE_PERCENTAGE_ERROR = "mean_absolute_percentage_error"
+HUBER = "huber"
 R2 = "r2"
 EDIT_DISTANCE = "edit_distance"
 PERPLEXITY = "perplexity"
 JACCARD = "jaccard"
 PRECISION = "precision"
 RECALL = "recall"
+SPECIFICITY = "specificity"
 PREDICTIONS = "predictions"
 TOP_K = "top_k"
 TOP_K_PREDICTIONS = "top_k_predictions"
@@ -100,7 +103,6 @@ MISSING_VALUE_STRATEGY = "missing_value_strategy"
 MISSING_VALUE_STRATEGY_OPTIONS = [
     FILL_WITH_CONST,
     FILL_WITH_MODE,
-    FILL_WITH_MEAN,
     BFILL,
     FFILL,
     DROP_ROW,
@@ -117,7 +119,6 @@ PADDING_SYMBOL = "<PAD>"
 UNKNOWN_SYMBOL = "<UNK>"
 
 TRAINER = "trainer"
-LIGHTGBM_TRAINER = "lightgbm_trainer"
 OPTIMIZER = "optimizer"
 METRIC = "metric"
 PREDICTION = "prediction"
@@ -172,6 +173,7 @@ TYPE = "type"
 ACTIVE = "active"
 
 RAY = "ray"
+IN_MEMORY = "in_memory"
 
 PROC_COLUMN = "proc_column"
 
@@ -187,9 +189,12 @@ EPOCHS = "epochs"
 BATCH_SIZE = "batch_size"
 EVAL_BATCH_SIZE = "eval_batch_size"
 DEFAULT_BATCH_SIZE = "auto"
-MAX_POSSIBLE_BATCH_SIZE = (
-    1099511627776  # 2^40. Used for `max_batch_size` config param. Not a hard constraint for `batch_size` config param.
-)
+# 2^40. Used for `max_batch_size` config param. Not a hard constraint for `batch_size` config param.
+MAX_POSSIBLE_BATCH_SIZE = 1099511627776
+# min batch size. Used as a floor for batch size tuning. Not a hard constraint for `batch_size` config params.
+MIN_POSSIBLE_BATCH_SIZE = 2
+# max batch size for dataset is 20% of dataset size
+MAX_BATCH_SIZE_DATASET_FRACTION = 0.2
 LEARNING_RATE = "learning_rate"
 INPUT_SIZE = "input_size"
 USE_BIAS = "use_bias"
@@ -275,3 +280,7 @@ JITTER = (0, 1)
 
 # image support constants
 IMAGENET1K = "imagenet1k"
+
+AUGMENTATION = "augmentation"
+
+LUDWIG_SCHEMA_VALIDATION_POLICY = "LUDWIG_SCHEMA_VALIDATION_POLICY"

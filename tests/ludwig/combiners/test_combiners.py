@@ -9,6 +9,7 @@ import torch
 from ludwig.combiners.combiners import (
     ComparatorCombiner,
     ConcatCombiner,
+    ProjectAggregateCombiner,
     SequenceCombiner,
     SequenceConcatCombiner,
     TabNetCombiner,
@@ -19,6 +20,7 @@ from ludwig.constants import CATEGORY, TYPE
 from ludwig.encoders.registry import get_sequence_encoder_registry
 from ludwig.schema.combiners.comparator import ComparatorCombinerConfig
 from ludwig.schema.combiners.concat import ConcatCombinerConfig
+from ludwig.schema.combiners.project_aggregate import ProjectAggregateCombinerConfig
 from ludwig.schema.combiners.sequence import SequenceCombinerConfig
 from ludwig.schema.combiners.sequence_concat import SequenceConcatCombinerConfig
 from ludwig.schema.combiners.tab_transformer import TabTransformerCombinerConfig
@@ -184,11 +186,16 @@ def encoder_comparator_outputs():
 
 
 # test for simple concatenation combiner
+@pytest.mark.parametrize("norm", [None, "batch", "layer", "ghost"])
 @pytest.mark.parametrize("number_inputs", [None, 1])
 @pytest.mark.parametrize("flatten_inputs", [True, False])
 @pytest.mark.parametrize("fc_layer", [None, [{"output_size": OUTPUT_SIZE}, {"output_size": OUTPUT_SIZE}]])
 def test_concat_combiner(
-    encoder_outputs: Tuple, fc_layer: Optional[List[Dict]], flatten_inputs: bool, number_inputs: Optional[int]
+    encoder_outputs: Tuple,
+    fc_layer: Optional[List[Dict]],
+    flatten_inputs: bool,
+    number_inputs: Optional[int],
+    norm: str,
 ) -> None:
     # make repeatable
     set_random_seed(RANDOM_SEED)
@@ -213,7 +220,8 @@ def test_concat_combiner(
 
     # setup combiner to test with pseudo input features
     combiner = ConcatCombiner(
-        input_features_dict, config=load_config(ConcatCombinerConfig, fc_layers=fc_layer, flatten_inputs=flatten_inputs)
+        input_features_dict,
+        config=load_config(ConcatCombinerConfig, fc_layers=fc_layer, flatten_inputs=flatten_inputs, norm=norm),
     ).to(DEVICE)
 
     # confirm correctness of input_shape property
@@ -433,6 +441,50 @@ def test_transformer_combiner(encoder_outputs: tuple, transformer_output_size: i
     combiner = TransformerCombiner(input_features=input_feature_dict, config=load_config(TransformerCombinerConfig)).to(
         DEVICE
     )
+
+    # confirm correctness of input_shape property
+    assert isinstance(combiner.input_shape, dict)
+    for k in encoder_outputs_dict:
+        assert k in combiner.input_shape
+        assert encoder_outputs_dict[k]["encoder_output"].shape[1:] == combiner.input_shape[k]
+
+    # calculate expected hidden size for concatenated tensors
+    hidden_size = 0
+    for k in encoder_outputs_dict:
+        hidden_size += np.prod(encoder_outputs_dict[k]["encoder_output"].shape[1:])
+
+    # confirm correctness of effective_input_shape
+    assert combiner.concatenated_shape[-1] == hidden_size
+
+    # concatenate encoder outputs
+    combiner_output = combiner(encoder_outputs_dict)
+
+    # check for correctness of combiner output
+    check_combiner_output(combiner, combiner_output, BATCH_SIZE)
+
+    # check for parameter updating
+    target = torch.randn(combiner_output["combiner_output"].shape)
+    fpc, tpc, upc, not_updated = check_module_parameters_updated(combiner, (encoder_outputs_dict,), target)
+    assert tpc == upc, f"Failed to update parameters. Parameters not updated: {not_updated}"
+
+
+@pytest.mark.parametrize("projection_size", [8, 16])
+@pytest.mark.parametrize("output_size", [8, 16])
+def test_project_aggregate_combiner(encoder_outputs: tuple, projection_size: int, output_size: int) -> None:
+    # make repeatable
+    set_random_seed(RANDOM_SEED)
+
+    encoder_outputs_dict, input_feature_dict = encoder_outputs
+
+    # setup combiner to test
+    combiner = ProjectAggregateCombiner(
+        input_features=input_feature_dict,
+        config=load_config(
+            ProjectAggregateCombinerConfig,
+            projection_size=projection_size,
+            output_size=output_size,
+        ),
+    ).to(DEVICE)
 
     # confirm correctness of input_shape property
     assert isinstance(combiner.input_shape, dict)

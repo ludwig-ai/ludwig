@@ -153,21 +153,20 @@ class SetFeatureMixin(BaseFeatureMixin):
     def get_feature_meta(
         column, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
     ) -> FeatureMetadataDict:
-        idx2str, str2idx, str2freq, max_size, _, _, _, _ = create_vocabulary(
-            data=column,
-            tokenizer_type=preprocessing_parameters["tokenizer"],
-            most_common_percentile=preprocessing_parameters["most_common_percentile"],
-            most_common=preprocessing_parameters["most_common"],
+        vocabulary = create_vocabulary(
+            column,
+            preprocessing_parameters["tokenizer"],
+            num_most_frequent=preprocessing_parameters["most_common"],
             lowercase=preprocessing_parameters["lowercase"],
             add_special_symbols=False,
             processor=backend.df_engine,
         )
         return {
-            "idx2str": idx2str,
-            "str2idx": str2idx,
-            "str2freq": str2freq,
-            "vocab_size": len(str2idx),
-            "max_set_size": max_size,
+            "idx2str": vocabulary.vocab,
+            "str2idx": vocabulary.str2idx,
+            "str2freq": vocabulary.str2freq,
+            "vocab_size": len(vocabulary.str2idx),
+            "max_set_size": vocabulary.line_length_max,
         }
 
     @staticmethod
@@ -177,7 +176,7 @@ class SetFeatureMixin(BaseFeatureMixin):
 
             set_vector = np.zeros((len(metadata["str2idx"]),))
             set_vector[feature_vector] = 1
-            return set_vector.astype(np.bool)
+            return set_vector.astype(np.bool_)
 
         return backend.df_engine.map_objects(column, to_dense)
 
@@ -211,7 +210,7 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
 
     def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor)
-        assert inputs.dtype in [torch.bool, torch.int64]
+        assert inputs.dtype in [torch.bool, torch.int64, torch.float32]
 
         encoder_output = self.encoder_obj(inputs)
 
@@ -258,9 +257,6 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
     def logits(self, inputs, **kwargs):  # hidden
         hidden = inputs[HIDDEN]
         return self.decoder_obj(hidden)
-
-    def loss_kwargs(self):
-        return self.loss.to_dict()
 
     def metric_kwargs(self) -> Dict[str, Any]:
         return {"threshold": self.threshold}

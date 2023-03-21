@@ -1,15 +1,24 @@
+import os
+from decimal import Decimal
+
 import numpy as np
 import pandas as pd
 import pytest
-
-from ludwig.config_validation.validation import validate_upgraded_config
+import yaml
 
 ray = pytest.importorskip("ray")  # noqa
 
-from ludwig.automl.base_config import get_dataset_info, get_reference_configs, is_field_boolean  # noqa
+from ludwig.automl.base_config import (  # noqa
+    get_dataset_info,
+    get_dataset_info_from_source,
+    get_field_metadata,
+    get_reference_configs,
+    is_field_boolean,
+)
 from ludwig.data.dataframe.dask import DaskEngine  # noqa
 from ludwig.data.dataframe.pandas import PandasEngine  # noqa
-from ludwig.utils.automl.data_source import wrap_data_source  # noqa
+from ludwig.schema.model_types.base import ModelConfig  # noqa
+from ludwig.utils.automl.data_source import DataframeSource, wrap_data_source  # noqa
 
 pytestmark = pytest.mark.distributed
 
@@ -104,4 +113,72 @@ def test_reference_configs():
         config = dataset["config"]
 
         # Ensure config is valid with the latest Ludwig schema
-        validate_upgraded_config(config)
+        ModelConfig.from_dict(config)
+
+
+def repeat(df, n):
+    """Repeat a dataframe n times."""
+    return pd.concat([df] * n, ignore_index=True)
+
+
+def test_infer_parquet_types(tmpdir):
+    """Test type inference works properly for a parquet file with unconventional types types."""
+    # Create a temporary directory to store the parquet file
+    tmpdir = str(tmpdir)
+
+    # Create a dataframe with all the types
+    df = pd.DataFrame(
+        {
+            "int": [1, 2, 3],
+            "float": [1.1, 2.2, 3.3],
+            "string": ["a", "b", "c"],
+            "datetime": pd.date_range("20130101", periods=3),
+            "category": pd.Series(["a", "b", "c"], dtype="category"),
+            "bool": [True, False, True],
+        }
+    )
+    df = repeat(df, 10)
+    df["float"] = df["float"].apply(Decimal)
+    df["date"] = df["datetime"].apply(str)
+
+    # Write the dataframe to parquet and read it back
+    dataset_path = os.path.join(tmpdir, "dataset.parquet")
+    df.to_parquet(dataset_path)
+    df = pd.read_parquet(dataset_path)
+
+    # Test type inference
+    ds = DataframeSource(df)
+    ds_info = get_dataset_info_from_source(ds)
+    metas = get_field_metadata(ds_info.fields, ds_info.row_count, targets=["bool"])
+
+    config = yaml.safe_load(
+        """
+        input_features:
+            - name: int
+              type: category
+            - name: float
+              type: number
+            - name: string
+              type: category
+            - name: datetime
+              type: date
+            - name: category
+              type: category
+            - name: date
+              type: date
+        output_features:
+            - name: bool
+              type: binary
+        combiner:
+            type: concat
+            output_size: 14
+        trainer:
+            epochs: 2
+            batch_size: 8
+        """
+    )
+
+    meta_dict = {meta.config.name: meta for meta in metas}
+    for feature in config["input_features"] + config["output_features"]:
+        meta = meta_dict[feature["name"]]
+        assert feature["type"] == meta.config.type, f"{feature['name']}: {feature['type']} != {meta.config.type}"

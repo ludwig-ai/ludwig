@@ -28,6 +28,7 @@ from torchvision.models._api import WeightsEnum
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import CROP_OR_PAD, INTERPOLATE
+from ludwig.encoders.base import Encoder
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.fs_utils import get_bytes_obj_from_path
 from ludwig.utils.registry import Registry
@@ -51,13 +52,37 @@ IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".tiff", ".bmp", ".gif")
 
 
 @DeveloperAPI
+class ResizeChannels(torch.nn.Module):
+    def __init__(self, num_channels: int):
+        super().__init__()
+        self.num_channels = num_channels
+
+    def forward(self, imgs: torch.Tensor):
+        original_imgs_shape = imgs.shape
+        if len(original_imgs_shape) == 3:  # if shape is (C, H, W), add batch dimension
+            imgs = imgs.unsqueeze(0)
+
+        channels = imgs.shape[1]
+        if channels > self.num_channels:
+            # take the first `self.num_channels` channels
+            imgs = imgs[:, : self.num_channels, :, :]
+        elif channels < self.num_channels:
+            # repeat and use the first `self.num_channels` channels
+            imgs = imgs.repeat(1, (self.num_channels // channels) + 1, 1, 1)[:, : self.num_channels, :, :]
+
+        if len(original_imgs_shape) == 3:  # if shape was (C, H, W), remove batch dimension
+            return imgs[0]
+        return imgs
+
+
+@DeveloperAPI
 def get_gray_default_image(num_channels: int, height: int, width: int) -> np.ndarray:
-    return np.full((num_channels, height, width), 128, dtype=np.uint8)
+    return np.full((num_channels, height, width), 128, dtype=np.float32)
 
 
 @DeveloperAPI
 def get_average_image(image_lst: List[np.ndarray]) -> np.array:
-    return np.mean([x for x in image_lst if x is not None], axis=(0))
+    return np.mean([x for x in image_lst if x is not None], axis=(0), dtype=np.float32)
 
 
 @DeveloperAPI
@@ -89,6 +114,14 @@ def is_image_score(src_path, img_entry, column: str):
     elif isinstance(img_entry, str) and img_entry.lower().endswith(IMAGE_EXTENSIONS):
         return 0.5
     return 0
+
+
+@DeveloperAPI
+def is_torchvision_encoder(encoder_obj: Encoder) -> bool:
+    # TODO(travis): do this through an interface rather than conditional logic
+    from ludwig.encoders.image.torchvision import TVBaseEncoder
+
+    return isinstance(encoder_obj, TVBaseEncoder)
 
 
 @DeveloperAPI

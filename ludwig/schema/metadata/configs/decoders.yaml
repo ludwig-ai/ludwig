@@ -64,8 +64,8 @@ Classifier:
         ui_display_name: Not Displayed
     num_classes:
         other_information: Internal Only
+        internal_only: true
         ui_display_name: Not Displayed
-        expected_impact: 3
     use_bias:
         default_value_reasoning:
             "Bias terms may improve model accuracy, and don't
@@ -429,10 +429,17 @@ SequenceTaggerDecoder:
             The tagger decoder is a (potentially empty) stack of fully connected layers,
             followed by a projection into a tensor of size `b x s x c`, where `b` is the batch size,
             `s` is the length of the sequence and `c` is the number of classes, followed by a
-            softmax_cross_entropy. This decoder requires its input to be shaped as `b x s x h`, where `h` is
+            `softmax_cross_entropy`.
+
+            This decoder requires its input to be shaped as `b x s x h`, where `h` is
             a hidden dimension, which is the output of a sequence, text or time series input feature without
-            reduced outputs or the output of a sequence-based combiner. If a `b x h` input is provided
-            instead, an error will be raised during model building.
+            reduced outputs or the output of a sequence-based combiner. This can be done by ensuring that
+            at least one of the sequence, text or time series input feature's encoders has `reduce_output` set to
+            `None`. This will prevent a `b x h` input from being provided to this decoder and an error
+            from being raised during model building.
+
+            The tagger decoder also requires the `reduce_input` parameter of the output feature to be set to `None`.
+            If this is not set, Ludwig will automatically override the value by setting it to None and log a warning.
         expected_impact: 0
     attention_embedding_size:
         default_value_reasoning: Not too big, not too small.

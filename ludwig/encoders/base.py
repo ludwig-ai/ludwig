@@ -15,7 +15,8 @@
 # ==============================================================================
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict
+
+from torch import nn
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.utils.torch_utils import LudwigModule
@@ -27,15 +28,10 @@ class Encoder(LudwigModule, ABC):
     def forward(self, inputs, training=None, mask=None):
         raise NotImplementedError
 
+    def get_embedding_layer(self) -> nn.Module:
+        """Returns layer that embeds inputs, used for computing explanations."""
+        return next(self.children())
+
     @property
     def name(self):
         return self.__class__.__name__
-
-    @classmethod
-    def get_fixed_preprocessing_params(cls, encoder_params: Dict[str, Any]) -> Dict[str, Any]:
-        """Returns a dict of fixed preprocessing parameters for the encoder if required."""
-        return {}
-
-    @classmethod
-    def is_pretrained(cls, encoder_params: Dict[str, Any]) -> bool:
-        return False

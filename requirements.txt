@@ -4,7 +4,7 @@ numpy>=1.15
 pandas>=0.25,!=1.1.5
 scipy>=0.18
 tabulate>=0.7
-scikit-learn<1.2.0
+scikit-learn
 tqdm
 torch>=1.13.0
 torchaudio
@@ -22,9 +22,9 @@ dataclasses-json
 jsonschema>=4.5.0,<4.7
 marshmallow
 marshmallow-jsonschema
-marshmallow-dataclass==8.5.5
+marshmallow-dataclass==8.5.4
 tensorboard
-torchmetrics<0.9
+torchmetrics>=0.11
 torchinfo
 filelock
 psutil==5.9.4
@@ -34,7 +34,6 @@ gpustat
 rich~=12.4.4
 packaging
 retry
-
 # required for TransfoXLTokenizer when using transformer_xl
 sacremoses
 
@@ -42,7 +41,7 @@ sacremoses
 xlwt            # excel
 xlrd            # excel
 openpyxl        # excel
-pyarrow==6.0.1  # parquet https://github.com/ray-project/ray/issues/22310
+pyarrow         # parquet
 lxml            # html
 
 whylogs>=1.1.9

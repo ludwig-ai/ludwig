@@ -42,6 +42,7 @@ from ludwig.constants import (
     HYPEROPT,
     IMAGE,
     INPUT_FEATURES,
+    NAME,
     NUMBER,
     OUTPUT_FEATURES,
     TABULAR,
@@ -50,6 +51,8 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.contrib import add_contrib_callback_args
+from ludwig.data.cache.types import CacheableDataset
+from ludwig.datasets import load_dataset_uris
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.hyperopt.run import hyperopt
 from ludwig.profiling import dataset_profile_pb2
@@ -264,6 +267,10 @@ def create_auto_config(
     backend = initialize_backend(backend)
 
     if not isinstance(dataset, DatasetInfo):
+        # preload ludwig datasets
+        dataset, _, _, _ = load_dataset_uris(dataset, None, None, None, backend)
+        if isinstance(dataset, CacheableDataset):
+            dataset = dataset.unwrap()
         dataset = load_dataset(dataset, df_lib=backend.df_engine.df_lib)
 
     dataset_info = get_dataset_info(dataset) if not isinstance(dataset, DatasetInfo) else dataset
@@ -479,6 +486,7 @@ def init_config(
     target: Union[str, List[str]],
     time_limit_s: Union[int, float],
     tune_for_memory: bool = False,
+    suggested: bool = False,
     hyperopt: bool = False,
     output: str = None,
     random_seed: int = default_random_seed,
@@ -496,6 +504,16 @@ def init_config(
 
     if HYPEROPT in config and not hyperopt:
         del config[HYPEROPT]
+
+    if not suggested:
+        # Only use inputs and outputs
+        minimal_config = {
+            INPUT_FEATURES: [{"name": f[NAME], "type": f[TYPE]} for f in config[INPUT_FEATURES]],
+            OUTPUT_FEATURES: [{"name": f[NAME], "type": f[TYPE]} for f in config[OUTPUT_FEATURES]],
+        }
+        if hyperopt:
+            minimal_config[HYPEROPT] = config[HYPEROPT]
+        config = minimal_config
 
     if output is None:
         print(yaml.safe_dump(config, None, sort_keys=False))
@@ -528,6 +546,13 @@ def cli_init_config(sys_argv):
         "--time_limit_s",
         type=int,
         help="time limit to train the model in seconds when using hyperopt",
+        required=False,
+    )
+    parser.add_argument(
+        "--suggested",
+        type=bool,
+        help="use suggested config from automl, otherwise only use inferred types and return a minimal config",
+        default=False,
         required=False,
     )
     parser.add_argument(

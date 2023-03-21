@@ -70,7 +70,7 @@ def setup_model_scaffolding(raw_df, input_features, output_features):
     # setup model scaffolding to for testing
     model = LudwigModel(config)
     training_set, _, _, training_set_metadata = preprocess_for_training(
-        config, training_set=raw_df, skip_save_processed_input=True
+        model.config, training_set=raw_df, skip_save_processed_input=True
     )
     model.training_set_metadata = training_set_metadata
     update_config_with_metadata(model.config_obj, training_set_metadata)
@@ -134,7 +134,7 @@ def test_sequence_decoders(
 
             combiner_outputs["encoder_output_state"] = encoder_output_state
 
-        decoder = model.model.output_features[output_feature_name].decoder_obj
+        decoder = model.model.output_features.get(output_feature_name).decoder_obj
         decoder_out = decoder(combiner_outputs)
 
         # gather expected components of the shape

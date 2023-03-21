@@ -43,20 +43,19 @@ class BagFeatureMixin(BaseFeatureMixin):
     def get_feature_meta(
         column, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
     ) -> FeatureMetadataDict:
-        idx2str, str2idx, str2freq, max_size, _, _, _, _ = create_vocabulary(
-            data=column,
-            tokenizer_type=preprocessing_parameters["tokenizer"],
-            most_common=preprocessing_parameters["most_common"],
-            most_common_percentile=preprocessing_parameters["most_common_percentile"],
+        vocabulary = create_vocabulary(
+            column,
+            preprocessing_parameters["tokenizer"],
+            num_most_frequent=preprocessing_parameters["most_common"],
             lowercase=preprocessing_parameters["lowercase"],
             processor=backend.df_engine,
         )
         return {
-            "idx2str": idx2str,
-            "str2idx": str2idx,
-            "str2freq": str2freq,
-            "vocab_size": len(str2idx),
-            "max_set_size": max_size,
+            "idx2str": vocabulary.vocab,
+            "str2idx": vocabulary.str2idx,
+            "str2freq": vocabulary.str2freq,
+            "vocab_size": len(vocabulary.str2idx),
+            "max_set_size": vocabulary.line_length_max,
         }
 
     @staticmethod

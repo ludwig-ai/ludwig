@@ -18,10 +18,12 @@ import math
 import re
 import unicodedata
 from collections import Counter
+from dataclasses import dataclass
 from enum import Enum
-from typing import List, Optional, Set, Union
+from typing import Dict, List, Optional, Set, Union
 
 import numpy as np
+from dateutil.parser import parse as parse_datetime
 
 from ludwig.constants import PADDING_SYMBOL, START_SYMBOL, STOP_SYMBOL, UNKNOWN_SYMBOL
 from ludwig.data.dataframe.base import DataFrameEngine
@@ -35,7 +37,7 @@ PANDAS_TRUE_STRS = {"true"}
 PANDAS_FALSE_STRS = {"false"}
 
 BOOL_TRUE_STRS = {"yes", "y", "true", "t", "1", "1.0"}
-BOOL_FALSE_STRS = {"no", "n", "false", "f", "0", "0.0"}
+BOOL_FALSE_STRS = {"no", "n", "false", "f", "0", "0.0", "-1", "-1.0"}
 
 logger = logging.getLogger(__name__)
 
@@ -127,6 +129,26 @@ def is_number(s: Union[str, int, float]):
         return False
 
 
+def is_datetime(s: Union[str, int, float]):
+    """Returns whether specified value is datetime."""
+    if is_number(s):
+        return False
+
+    try:
+        parse_datetime(s)
+        return True
+    except Exception:
+        return False
+
+
+def are_all_datetimes(values: List[Union[str, int, float]]):
+    """Returns whether all values are datetimes."""
+    for value in values:
+        if not is_datetime(value):
+            return False
+    return True
+
+
 def are_all_numbers(values: List[Union[str, int, float]]):
     """Returns whether all values are numbers."""
     for value in values:
@@ -192,6 +214,36 @@ def add_or_move_symbol(vocab_list: List[str], vocab_set: Set[str], symbol: str, 
     vocab_list.insert(index, symbol)
 
 
+@dataclass
+class Vocabulary:
+    vocab: List[str]
+    """List of strings representing the computed vocabulary."""
+
+    str2idx: Dict[str, int]
+    """Map of symbol to index."""
+
+    str2freq: Dict[str, int]
+    """Map of symbol to frequency."""
+
+    str2idf: Optional[Dict[str, int]]
+    """Map of symbol to inverse document frequency."""
+
+    line_length_max: int
+    """Maximum sequence length."""
+
+    line_length_99ptile: float
+    """99th percentile of maximum sequence length."""
+
+    pad_idx: int
+    """Index to padding symbol."""
+
+    padding_symbol: str
+    """Actual padding symbol."""
+
+    unknown_symbol: str
+    """Actual unknown symbol."""
+
+
 def create_vocabulary(
     data: Series,
     most_common_percentile: float,
@@ -206,8 +258,9 @@ def create_vocabulary(
     stop_symbol: str = STOP_SYMBOL,
     pretrained_model_name_or_path: str = None,
     ngram_size: Optional[int] = None,
+    compute_idf: bool = False,
     processor: DataFrameEngine = PANDAS,
-):
+) -> Vocabulary:
     """Computes a vocabulary over the provided data frame.
 
     This function is used when the data consists of multiple tokens within one example. E.g., words in a text feature,
@@ -236,18 +289,11 @@ def create_vocabulary(
         stop_symbol: String representation for the STOP symbol.
         pretrained_model_name_or_path: Name/path to huggingface model.
         ngram_size: Size of the n-gram when using `ngram` tokenizer.
+        compute_idf: If True, computes the inverse document frequency for each token.
         processor: Which processor to use to process data.
 
     Returns:
-        Tuple of:
-            vocab: List of strings representing the computed vocabulary.
-            str2idx: Map of symbol to index.
-            str2freq: Map of symbol to frequency.
-            line_length_max: (int) maximum sequence length.
-            line_length_99ptile: (float) 99th percentile of maximum sequence length.
-            pad_idx: Index to padding symbol.
-            padding_symbol: Actual padding symbol.
-            unknown_symbol: Actual unknown symbol.
+        Vocabulary object containing metadata about the vocab.
 
     TODO(Justin): Clean up pad_idx, padding_symbol, unknown_symbol return, as no one seems to be using it.
     """
@@ -265,6 +311,11 @@ def create_vocabulary(
             vocab = tokenizer.get_vocab()
             vocab = list(vocab.keys())
         except NotImplementedError:
+            logger.warning(
+                "HuggingFace tokenizer does not have a get_vocab() method. "
+                + "Using tokenizer.tokenizer.vocab_size and tokenizer.tokenizer._convert_id_to_token "
+                + "to build the vocabulary."
+            )
             vocab = []
             for idx in range(tokenizer.tokenizer.vocab_size):
                 vocab.append(tokenizer.tokenizer._convert_id_to_token(idx))
@@ -274,11 +325,21 @@ def create_vocabulary(
         unk_token = tokenizer.get_unk_token()
 
         if unk_token is None:
+            logger.warning(
+                "No unknown token found in HuggingFace tokenizer. Adding one. "
+                + "NOTE: This will change the vocabulary size and may affect model "
+                + "performance, particularly if the model weights are frozen."
+            )
             vocab = [unknown_symbol] + vocab
         else:
             unknown_symbol = unk_token
 
         if pad_token is None and add_special_symbols:
+            logger.warning(
+                "No padding token found in HuggingFace tokenizer. Adding one. "
+                + "NOTE: This will change the vocabulary size and may affect model "
+                + "performance, particularly if the model weights are frozen."
+            )
             vocab = [padding_symbol] + vocab
         else:
             padding_symbol = pad_token
@@ -292,6 +353,14 @@ def create_vocabulary(
     processed_counts = processed_lines.explode().value_counts(sort=False)
     processed_counts = processor.compute(processed_counts)
     unit_counts = Counter(dict(processed_counts))
+
+    doc_unit_counts = None
+    if compute_idf:
+        # The document frequency used for TF-IDF. Similar to unit_counts, but de-duped by document.
+        document_counts = processed_lines.map(lambda x: set(x)).explode().value_counts(sort=False)
+        document_counts = processor.compute(document_counts)
+        doc_unit_counts = Counter(dict(document_counts))
+
     line_length_max = processor.compute(processed_lines.map(len).max())
     line_length_99ptile = processor.compute(processed_lines.map(len).quantile(0.99))
 
@@ -299,7 +368,7 @@ def create_vocabulary(
         most_common = math.ceil(len(unit_counts) * most_common_percentile)
 
     if vocab is None:
-        vocab = [unit for unit, count in unit_counts.most_common(most_common)]
+        vocab = [unit for unit, _ in unit_counts.most_common(most_common)]
 
     vocab_set = set(vocab)
 
@@ -313,12 +382,27 @@ def create_vocabulary(
 
     str2idx = {unit: i for i, unit in enumerate(vocab)}
     str2freq = {unit: unit_counts.get(unit) if unit in unit_counts else 0 for unit in vocab}
+    str2idf = (
+        {unit: np.log(len(vocab) / (1 + doc_unit_counts.get(unit))) if unit in doc_unit_counts else 0 for unit in vocab}
+        if compute_idf
+        else None
+    )
 
     pad_idx = None
     if padding_symbol in str2idx.keys():
         pad_idx = str2idx[padding_symbol]
 
-    return vocab, str2idx, str2freq, line_length_max, line_length_99ptile, pad_idx, padding_symbol, unknown_symbol
+    return Vocabulary(
+        vocab=vocab,
+        str2idx=str2idx,
+        str2freq=str2freq,
+        str2idf=str2idf,
+        line_length_max=line_length_max,
+        line_length_99ptile=line_length_99ptile,
+        pad_idx=pad_idx,
+        padding_symbol=padding_symbol,
+        unknown_symbol=unknown_symbol,
+    )
 
 
 def create_vocabulary_single_token(

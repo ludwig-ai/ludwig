@@ -17,8 +17,9 @@ from copy import deepcopy
 from typing import Dict, List, Optional
 
 import torch
-from torch.nn import BatchNorm1d, BatchNorm2d, Dropout, LayerNorm, Linear, ModuleList
+from torch.nn import Dropout, Linear, ModuleList
 
+from ludwig.modules.normalization_modules import create_norm_layer
 from ludwig.utils.torch_utils import activations, initializer_registry, LudwigModule
 
 logger = logging.getLogger(__name__)
@@ -61,7 +62,6 @@ class FCLayer(LudwigModule):
         self.output_size = output_size
 
         fc = Linear(in_features=input_size, out_features=output_size, bias=use_bias)
-
         self.layers.append(fc)
 
         weights_initializer = initializer_registry[weights_initializer]
@@ -71,20 +71,9 @@ class FCLayer(LudwigModule):
             bias_initializer = initializer_registry[bias_initializer]
             bias_initializer(fc.bias)
 
-        if norm and norm_params is None:
-            norm_params = {}
-        if norm == "batch":
-            # might need if statement for 1d vs 2d? like images
-            if input_rank == 2:
-                self.layers.append(BatchNorm1d(output_size, **norm_params))
-            elif input_rank == 3:
-                self.layers.append(BatchNorm2d(output_size, **norm_params))
-            else:
-                ValueError(
-                    f"input_rank parameter expected to be either 2 or 3, " f"however valued found to be {input_rank}."
-                )
-        elif norm == "layer":
-            self.layers.append(LayerNorm(output_size, **norm_params))
+        if norm is not None:
+            norm_params = norm_params or {}
+            self.layers.append(create_norm_layer(norm, input_rank, output_size, **norm_params))
 
         # Dict for activation objects in pytorch?
         self.layers.append(activations[activation]())
@@ -94,7 +83,6 @@ class FCLayer(LudwigModule):
 
     def forward(self, inputs, mask=None):
         hidden = inputs
-
         for layer in self.layers:
             hidden = layer(hidden)
 
@@ -138,6 +126,15 @@ class FCStack(LudwigModule):
     ):
         super().__init__()
         self.input_size = first_layer_input_size
+
+        self.norm_layer = None
+        if default_norm is not None:
+            norm_params = default_norm_params or {}
+            self.norm_layer = create_norm_layer(default_norm, default_input_rank, self.input_size, **norm_params)
+
+        self.dropout = None
+        if default_dropout > 0:
+            self.dropout = torch.nn.Dropout(default_dropout)
 
         if layers is None:
             self.layers = []
@@ -192,6 +189,13 @@ class FCStack(LudwigModule):
 
     def forward(self, inputs, mask=None):
         hidden = inputs
+
+        if self.norm_layer is not None:
+            hidden = self.norm_layer(hidden)
+
+        if self.dropout is not None:
+            hidden = self.dropout(hidden)
+
         prev_fc_layer_size = self.input_size
         for layer in self.stack:
             out = layer(hidden)

@@ -23,9 +23,11 @@ from ludwig.constants import PREPROCESSING, TRAINING
 from ludwig.data.batcher.random_access import RandomAccessBatcher
 from ludwig.data.dataset.base import Dataset, DatasetManager
 from ludwig.data.sampler import DistributedSampler
+from ludwig.distributed import DistributedStrategy
 from ludwig.features.base_feature import BaseFeature
 from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP, save_hdf5
-from ludwig.utils.dataframe_utils import from_numpy_dataset, to_numpy_dataset
+from ludwig.utils.dataframe_utils import from_numpy_dataset, to_numpy_dataset, to_scalar_df
+from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import download_h5
 from ludwig.utils.misc_utils import get_proc_features
 
@@ -42,6 +44,9 @@ class PandasDataset(Dataset):
         if features:
             return from_numpy_dataset({feature.feature_name: self.dataset[feature.proc_column] for feature in features})
         return from_numpy_dataset(self.dataset)
+
+    def to_scalar_df(self, features: Optional[Iterable[BaseFeature]] = None) -> DataFrame:
+        return to_scalar_df(self.to_df(features))
 
     def get(self, proc_column, idx=None):
         if idx is None:
@@ -80,9 +85,25 @@ class PandasDataset(Dataset):
         return df.memory_usage(deep=True).sum() if df is not None else 0
 
     @contextlib.contextmanager
-    def initialize_batcher(self, batch_size=128, should_shuffle=True, seed=0, ignore_last=False, distributed=None):
-        sampler = DistributedSampler(len(self), shuffle=should_shuffle, seed=seed, distributed=distributed)
-        batcher = RandomAccessBatcher(self, sampler, batch_size=batch_size, ignore_last=ignore_last)
+    def initialize_batcher(
+        self,
+        batch_size: int = 128,
+        should_shuffle: bool = True,
+        random_seed: int = default_random_seed,
+        ignore_last: bool = False,
+        distributed: DistributedStrategy = None,
+        augmentation_pipeline=None,
+    ):
+        sampler = DistributedSampler(
+            len(self), shuffle=should_shuffle, random_seed=random_seed, distributed=distributed
+        )
+        batcher = RandomAccessBatcher(
+            self,
+            sampler,
+            batch_size=batch_size,
+            ignore_last=ignore_last,
+            augmentation_pipeline=augmentation_pipeline,
+        )
         yield batcher
 
 

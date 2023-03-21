@@ -193,12 +193,14 @@ class BinaryFeatureMixin(BaseFeatureMixin):
                 column = backend.df_engine.map_objects(column, strings_utils.str2bool)
 
         proc_df[feature_config[PROC_COLUMN]] = column.astype(np.bool_)
+
         return proc_df
 
 
 class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
     def __init__(self, input_feature_config: BinaryInputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, **kwargs)
+        input_feature_config.encoder.input_size = self.input_shape[-1]
 
         if encoder_obj:
             self.encoder_obj = encoder_obj
@@ -212,8 +214,15 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
 
         if len(inputs.shape) == 1:
             inputs = inputs[:, None]
+
+        # Inputs to the binary encoder could be of dtype torch.bool. Linear layer
+        # weights are of dtype torch.float32. The inputs and the weights need to
+        # be of the same dtype.
+        if inputs.dtype == torch.bool:
+            inputs = inputs.type(torch.float32)
+
         encoder_outputs = self.encoder_obj(inputs)
-        return {"encoder_output": encoder_outputs}
+        return encoder_outputs
 
     @property
     def input_dtype(self):
@@ -263,13 +272,6 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     def logits(self, inputs, **kwargs):
         hidden = inputs[HIDDEN]
         return self.decoder_obj(hidden)
-
-    def loss_kwargs(self):
-        return dict(
-            positive_class_weight=self.loss.positive_class_weight,
-            robust_lambda=self.loss.robust_lambda,
-            confidence_penalty=self.loss.confidence_penalty,
-        )
 
     def create_calibration_module(self, feature: BinaryOutputFeatureConfig) -> torch.nn.Module:
         """Creates the appropriate calibration module based on the feature config.
@@ -384,3 +386,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     @staticmethod
     def create_postproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
         return _BinaryPostprocessing(metadata)
+
+    def metric_kwargs(self) -> dict:
+        """Returns arguments that are used to instantiate an instance of each metric class."""
+        return {"task": "binary"}

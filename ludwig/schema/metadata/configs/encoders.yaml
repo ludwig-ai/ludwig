@@ -1,11 +1,16 @@
+BaseEncoder:
+    skip:
+        internal_only: true
+        other_information: Internal Only
+        ui_display_name: Not Displayed
 ALBERT:
     type:
-        short_description:
-            Similar to BERT with lower memory footprint and faster training.
+        short_description: Similar to BERT with lower memory footprint and faster training.
         long_description:
-            The albert encoder loads a pretrained ALBERT (default albert-base-v2) model using the Hugging
-            Face transformers package. Albert is similar to BERT, with significantly lower memory usage and
-            somewhat faster training time.
+            The `albert` encoder loads a pretrained [ALBERT](https://arxiv.org/abs/1909.11942) (default `albert-base-v2`) model
+            using the Hugging Face transformers package. Albert is similar to BERT, with significantly lower memory usage and
+            somewhat faster training time:.
+        compute_tier: 2
     attention_probs_dropout_prob:
         default_value_reasoning:
             Dropout can cause training to become less stable.
@@ -79,7 +84,7 @@ ALBERT:
 
             Increasing the embedding size may cause the model to train more slowly,
             but the higher dimensionality can also improve overall quality.'
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture
         suggested_values: 1.6 * sqrt(vocab_size)
@@ -175,15 +180,9 @@ ALBERT:
     max_position_embeddings:
         default_value_reasoning: Taken from huggingface.
         description_implications:
-            "An embedding is a relatively low-dimensional space
-            that is used to translate high-dimensional vectors like words or positions,
-            which can have a large vocbulary size. Ideally, after an embedding is
-            trained, it captures some of the semantics of the input by placing semantically
-            similar inputs close together in the embedding space.
-
-
-            Increasing the embedding size may cause the model to train more slowly,
-            but the higher dimensionality can also improve overall quality."
+            The size of the position embeddings table. This typically coincides with the
+            maximum sequence length this model might ever be used with. Typically set this
+            to something large just in case (e.g. 512, 1024, 2048).
         expected_impact: 1
         suggested_values: 512
         suggested_values_reasoning:
@@ -232,7 +231,7 @@ ALBERT:
             \nModels pretrained on highly-related source tasks are more likely to\
             \ be successful on the target task. Consider searching the HuggingFace\
             \ model repository for models trained on similar tasks."
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://arxiv.org/abs/1909.11942
         related_parameters:
@@ -276,8 +275,25 @@ ALBERT:
         ui_display_name: null
         expected_impact: 1
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -286,7 +302,6 @@ ALBERT:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -294,15 +309,15 @@ ALBERT:
         ui_display_name: Not displayed
 AutoTransformer:
     type:
-        short_description:
-            Automatically retrieves the architecture from the provided model name/path.
+        short_description: Automatically retrieves the architecture from the provided model name/path.
         long_description:
-            The auto_transformer encoder automatically instantiates the model architecture for the specified
-            pretrained_model_name_or_path. Unlike the other HF encoders available, auto_transformer does not
-            provide a default value for pretrained_model_name_or_path, this is its only mandatory parameter.
-            See the Hugging Face AutoModels documentation for more details.
+            The `auto_transformer` encoder automatically instantiates the model architecture for the specified
+            `pretrained_model_name_or_path`. Unlike the other HF encoders, `auto_transformer` does not provide a default value for
+            `pretrained_model_name_or_path`, this is its only mandatory parameter. See the Hugging Face
+            [AutoModels documentation](https://huggingface.co/docs/transformers/model_doc/auto) for more details.
         literature_references:
             - https://huggingface.co/docs/transformers/model_doc/auto
+        compute_tier: 2
     max_sequence_length:
         default_value_reasoning:
             Sets the maximum sequence length of the expected
@@ -329,7 +344,6 @@ AutoTransformer:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -337,8 +351,7 @@ AutoTransformer:
         ui_display_name: Not displayed
 BERT:
     type:
-        short_description:
-            Bidirectional transformer great for language modeling.
+        short_description: Bidirectional transformer great for language modeling.
         long_description:
             The bert encoder loads a pretrained BERT (default bert-base-uncased) model using the Hugging
             Face transformers package. BERT is a bidirectional transformer pretrained using a combination of
@@ -346,6 +359,7 @@ BERT:
             Toronto Book Corpus and Wikipedia.
         literature_references:
             - https://arxiv.org/abs/1810.04805
+        compute_tier: 2
     attention_probs_dropout_prob:
         default_value_reasoning: Huggingface default.
         description_implications:
@@ -357,7 +371,7 @@ BERT:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -380,7 +394,7 @@ BERT:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -402,7 +416,7 @@ BERT:
             the feed-forward layers of the transformer.
         example_value:
             - relu
-        expected_impact: 2
+        expected_impact: 1
         literature_references:
             - "[Huggingface docs for BERT config](https://huggingface.co/docs/transformers/model_doc/bert#transformers.BertConfig.hidden_act)\n\
               \r\n[Relevant StackOverflow discussion](https://ai.stackexchange.com/questions/30341/why-does-a-transformer-not-use-an-activation-function-following-the-multi-head-a)"
@@ -420,7 +434,7 @@ BERT:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -438,7 +452,7 @@ BERT:
             Increasing the hidden size makes the model larger
             and slower to train, increases the model's capacity to capture more complexity.
             It also increases the chance of overfitting.
-        expected_impact: 2
+        expected_impact: 1
         suggested_values: 10 - 2048
         suggested_values_reasoning:
             Increasing the hidden size makes sense if the
@@ -452,7 +466,7 @@ BERT:
             lead to the outputs of these matrices to vanish or explode
         example_value:
             - 0.02
-        expected_impact: 3
+        expected_impact: 1
         other_information: Must be greater than 0
         related_parameters:
             - weights_initializer
@@ -470,15 +484,9 @@ BERT:
     max_position_embeddings:
         default_value_reasoning: Taken from huggingface.
         description_implications:
-            "An embedding is a relatively low-dimensional space
-            that is used to translate high-dimensional vectors like words or positions,
-            which can have a large vocbulary size. Ideally, after an embedding is
-            trained, it captures some of the semantics of the input by placing semantically
-            similar inputs close together in the embedding space.
-
-
-            Increasing the embedding size may cause the model to train more slowly,
-            but the higher dimensionality can also improve overall quality."
+            The size of the position embeddings table. This typically coincides with the
+            maximum sequence length this model might ever be used with. Typically set this
+            to something large just in case (e.g. 512, 1024, 2048).
         expected_impact: 2
         suggested_values: 512
         suggested_values_reasoning:
@@ -509,7 +517,7 @@ BERT:
         expected_impact: 1
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -537,8 +545,25 @@ BERT:
         ui_display_name: null
         expected_impact: 1
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -547,7 +572,6 @@ BERT:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -555,8 +579,7 @@ BERT:
         ui_display_name: Not displayed
 BagEmbedWeighted:
     type:
-        short_description:
-            Transforms feature to vector, maps to sparse or dense embeddings, then aggregates.
+        short_description: Transforms feature to vector, maps to sparse or dense embeddings, then aggregates.
         long_description:
             The embed weighted encoder first transforms the element frequency vector to sparse integer
             lists, which are then mapped to either dense or sparse embeddings (one-hot encodings). Lastly,
@@ -905,7 +928,6 @@ BagEmbedWeighted:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     weights_initializer:
@@ -939,15 +961,14 @@ BagEmbedWeighted:
         ui_display_name: Layer Weights Initializer
 CTRL:
     type:
-        short_description:
-            Language model trained to condition on control codes that govern style, content and task-specific behavior.
+        short_description: Language model trained to condition on control codes that govern style, content and task-specific behavior.
         long_description:
-            The ctrl encoder loads a pretrained CTRL (default ctrl) model using the Hugging Face
-            transformers package. CTRL is a causal (unidirectional) transformer pre-trained using language
-            modeling on a very large corpus of ~140 GB of text data with the first token reserved as a
-            control code (such as Links, Books, Wikipedia etc.).
+            The `ctrl` encoder loads a pretrained [CTRL](https://arxiv.org/abs/1909.05858) (default `ctrl`) model using the Hugging
+            Face transformers package. CTRL is a conditional transformer language model trained to condition on control codes that
+            govern style, content, and task-specific behavior.
         literature_references:
             - https://arxiv.org/abs/1909.05858
+        compute_tier: 2
     attn_pdrop:
         ui_display_name: null
     dff:
@@ -960,7 +981,7 @@ CTRL:
             lead to the outputs of these matrices to vanish or explode
         example_value:
             - 0.02
-        expected_impact: 3
+        expected_impact: 1
         other_information: Must be greater than 0
         related_parameters:
             - weights_initializer
@@ -991,7 +1012,7 @@ CTRL:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -1018,8 +1039,25 @@ CTRL:
         expected_impact: 3
         ui_display_name: null
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -1028,7 +1066,6 @@ CTRL:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -1036,13 +1073,14 @@ CTRL:
         ui_display_name: Not displayed
 CamemBERT:
     type:
-        short_description:
-            Language model trained on large French text corpus.
+        short_description: Language model trained on large French text corpus.
         long_description:
-            The camembert encoder loads a pretrained CamemBERT (default camembert-base) model using
-            the Hugging Face transformers package. CamemBERT is pre-trained on 138GB of French text.
+            The `camembert` encoder loads a pretrained [CamemBERT](https://arxiv.org/abs/1911.03894)
+            (default `jplu/tf-camembert-base`) model using the Hugging Face transformers package. CamemBERT is pre-trained on a
+            large French language web-crawled text corpus.
         literature_references:
             - https://arxiv.org/abs/1911.03894
+        compute_tier: 2
     attention_probs_dropout_prob:
         default_value_reasoning: Huggingface default.
         description_implications:
@@ -1054,7 +1092,7 @@ CamemBERT:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -1077,7 +1115,7 @@ CamemBERT:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -1098,7 +1136,7 @@ CamemBERT:
             the feed-forward layers of the transformer.
         example_value:
             - relu
-        expected_impact: 2
+        expected_impact: 1
         literature_references:
             - "[Relevant StackOverflow discussion](https://ai.stackexchange.com/questions/30341/why-does-a-transformer-not-use-an-activation-function-following-the-multi-head-a)"
         suggested_values: gelu
@@ -1115,7 +1153,7 @@ CamemBERT:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -1133,7 +1171,7 @@ CamemBERT:
             Increasing the hidden size makes the model larger
             and slower to train, increases the model's capacity to capture more complexity.
             It also increases the chance of overfitting.
-        expected_impact: 2
+        expected_impact: 1
         suggested_values: 10 - 2048
         suggested_values_reasoning:
             Increasing the hidden size makes sense if the
@@ -1147,7 +1185,7 @@ CamemBERT:
             lead to the outputs of these matrices to vanish or explode
         example_value:
             - 0.02
-        expected_impact: 3
+        expected_impact: 1
         other_information: Must be greater than 0
         related_parameters:
             - weights_initializer
@@ -1163,15 +1201,9 @@ CamemBERT:
     max_position_embeddings:
         default_value_reasoning: Taken from huggingface.
         description_implications:
-            "An embedding is a relatively low-dimensional space
-            that is used to translate high-dimensional vectors like words or positions,
-            which can have a large vocbulary size. Ideally, after an embedding is
-            trained, it captures some of the semantics of the input by placing semantically
-            similar inputs close together in the embedding space.
-
-
-            Increasing the embedding size may cause the model to train more slowly,
-            but the higher dimensionality can also improve overall quality."
+            The size of the position embeddings table. This typically coincides with the
+            maximum sequence length this model might ever be used with. Typically set this
+            to something large just in case (e.g. 512, 1024, 2048).
         expected_impact: 2
         suggested_values: 512
         suggested_values_reasoning:
@@ -1197,7 +1229,7 @@ CamemBERT:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -1224,8 +1256,25 @@ CamemBERT:
     type_vocab_size:
         ui_display_name: null
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -1234,7 +1283,6 @@ CamemBERT:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -1242,8 +1290,7 @@ CamemBERT:
         ui_display_name: Not displayed
 CategoricalEmbed:
     type:
-        short_description:
-            Maps the categorical feature to a dense embedding.
+        short_description: Maps the categorical feature to a dense embedding.
         long_description:
             The dense encoder maps to a dense embedding and is returned as outputs of size `b x h`,
             where `b` is the batch size and `h` is the dimensionality of the embeddings.
@@ -1355,8 +1402,7 @@ CategoricalEmbed:
         ui_display_name: Not Displayed
 CategoricalSparse:
     type:
-        short_description:
-            Maps the categorical feature to a sparse embedding.
+        short_description: Maps the categorical feature to a sparse embedding.
         long_description:
             The sparse encoder maps to a sparse embedding (one-hot encodings) and is returned as outputs of
             size `b x h`, where `b` is the batch size and `h` is the dimensionality of the embeddings.
@@ -1464,13 +1510,11 @@ CategoricalSparse:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
 DateEmbed:
     type:
-        short_description:
-            Embeds the date elements passes them through fully connected layers.
+        short_description: Embeds the date elements passes them through fully connected layers.
         long_description:
             The Embed encoder passes the year through a fully connected layer of one neuron and embeds all
             other elements for the date, concatenates them and passes the concatenated representation
@@ -1783,8 +1827,7 @@ DateEmbed:
         ui_display_name: Layer Weights Initializer
 DateWave:
     type:
-        short_description:
-            Embeds the date elements by taking the cosine of their value before passing through fully connected layers.
+        short_description: Embeds the date elements by taking the cosine of their value before passing through fully connected layers.
         long_description:
             The Wave encoder passes the year through a fully connected layer of one neuron and represents
             all other elements for the date by taking the cosine of their value with a different period (12
@@ -2049,8 +2092,7 @@ DateWave:
         ui_display_name: Layer Weights Initializer
 DenseEncoder:
     type:
-        short_description:
-            Passes the raw numerical values through fully connected layers.
+        short_description: Passes the raw numerical values through fully connected layers.
         long_description:
             The dense encoder passes the raw numerical values through fully connected layers. In this case
             the inputs of size `b` are transformed to size `b x h`.
@@ -2267,14 +2309,14 @@ DenseEncoder:
         ui_display_name: Layer Weights Initializer
 DistilBERT:
     type:
-        short_description:
-            A distilled version of BERT base that is 40% smaller and 60% faster with 95% of performance preserved.
+        short_description: A distilled version of BERT base that is 40% smaller and 60% faster with 95% of performance preserved.
         long_description:
-            The distilbert encoder loads a pretrained DistilBERT (default distilbert-base-uncased) model
-            using the Hugging Face transformers package. DistilBERT is a small, fast, cheap and light
+            The `distilbert` encoder loads a pretrained [DistilBERT](https://medium.com/huggingface/distilbert-8cf3380435b5)
+            (default `distilbert-base-uncased`) model using the Hugging Face transformers package. DistilBERT is a small, fast, cheap and light
             Transformer model trained by distilling BERT base. It has 40% less parameters than
             bert-base-uncased, runs 60% faster while preserving over 95% of BERT’s performances as measured
             on the GLUE language understanding benchmark.
+        compute_tier: 2
     activation:
         default_value_reasoning:
             This is the default activation function used in the
@@ -2299,7 +2341,7 @@ DistilBERT:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -2324,7 +2366,7 @@ DistilBERT:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -2348,7 +2390,7 @@ DistilBERT:
             lead to the outputs of these matrices to vanish or explode
         example_value:
             - 0.02
-        expected_impact: 3
+        expected_impact: 1
         other_information: Must be greater than 0
         related_parameters:
             - weights_initializer
@@ -2360,15 +2402,9 @@ DistilBERT:
     max_position_embeddings:
         default_value_reasoning: Taken from huggingface.
         description_implications:
-            "An embedding is a relatively low-dimensional space
-            that is used to translate high-dimensional vectors like words or positions,
-            which can have a large vocbulary size. Ideally, after an embedding is
-            trained, it captures some of the semantics of the input by placing semantically
-            similar inputs close together in the embedding space.
-
-
-            Increasing the embedding size may cause the model to train more slowly,
-            but the higher dimensionality can also improve overall quality."
+            The size of the position embeddings table. This typically coincides with the
+            maximum sequence length this model might ever be used with. Typically set this
+            to something large just in case (e.g. 512, 1024, 2048).
         expected_impact: 2
         suggested_values: 512
         suggested_values_reasoning:
@@ -2390,7 +2426,7 @@ DistilBERT:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     qa_dropout:
         default_value_reasoning: Huggingface default.
         description_implications:
@@ -2402,7 +2438,7 @@ DistilBERT:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -2445,7 +2481,7 @@ DistilBERT:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -2467,8 +2503,25 @@ DistilBERT:
         expected_impact: 3
         ui_display_name: null
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -2477,7 +2530,6 @@ DistilBERT:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -2485,16 +2537,16 @@ DistilBERT:
         ui_display_name: Not displayed
 ELECTRA:
     type:
-        short_description:
-                Transformer encoder that can be used to encode a sequence of tokens with little compute
+        short_description: Transformer encoder that can be used to encode a sequence of tokens with little compute
         long_description:
-              The electra encoder loads a pretrained ELECTRA model using the Hugging Face transformers package.
-              ELECTRA is a new pretraining approach which trains two transformer models the generator and the
-              discriminator. The generator’s role is to replace tokens in a sequence, and is therefore trained
-              as a masked language model. The discriminator, which is the model we’re interested in, tries to
-              identify which tokens were replaced by the generator in the sequence.
+            The `electra`` encoder loads a pretrained [ELECTRA](https://openreview.net/pdf?id=r1xMH1BtvB) model using the Hugging Face transformers package.
+            ELECTRA is a new pretraining approach which trains two transformer models the generator and the
+            discriminator. The generator’s role is to replace tokens in a sequence, and is therefore trained
+            as a masked language model. The discriminator, which is the model we’re interested in, tries to
+            identify which tokens were replaced by the generator in the sequence.
         literature_references:
             - https://openreview.net/pdf?id=r1xMH1BtvB
+        compute_tier: 2
     attention_probs_dropout_prob:
         default_value_reasoning: Huggingface default.
         description_implications:
@@ -2506,7 +2558,7 @@ ELECTRA:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -2529,7 +2581,7 @@ ELECTRA:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -2561,7 +2613,7 @@ ELECTRA:
 
             Increasing the embedding size may cause the model to train more slowly,
             but the higher dimensionality can also improve overall quality.'
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture
         suggested_values: 1.6 * sqrt(vocab_size)
@@ -2577,7 +2629,7 @@ ELECTRA:
             the feed-forward layers of the transformer.
         example_value:
             - relu
-        expected_impact: 2
+        expected_impact: 1
         literature_references:
             - "[Huggingface docs for ELECTRA config](https://huggingface.co/docs/transformers/model_doc/electra#transformers.ElectraConfig.hidden_act)
 
@@ -2597,7 +2649,7 @@ ELECTRA:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -2617,7 +2669,7 @@ ELECTRA:
             Increasing the hidden size makes the model larger
             and slower to train, increases the model's capacity to capture more complexity.
             It also increases the chance of overfitting.
-        expected_impact: 2
+        expected_impact: 1
         suggested_values: 10 - 2048
         suggested_values_reasoning:
             Increasing the hidden size makes sense if the
@@ -2631,7 +2683,7 @@ ELECTRA:
             lead to the outputs of these matrices to vanish or explode
         example_value:
             - 0.02
-        expected_impact: 3
+        expected_impact: 1
         other_information: Must be greater than 0
         related_parameters:
             - weights_initializer
@@ -2647,15 +2699,9 @@ ELECTRA:
     max_position_embeddings:
         default_value_reasoning: Taken from huggingface.
         description_implications:
-            "An embedding is a relatively low-dimensional space
-            that is used to translate high-dimensional vectors like words or positions,
-            which can have a large vocbulary size. Ideally, after an embedding is
-            trained, it captures some of the semantics of the input by placing semantically
-            similar inputs close together in the embedding space.
-
-
-            Increasing the embedding size may cause the model to train more slowly,
-            but the higher dimensionality can also improve overall quality."
+            The size of the position embeddings table. This typically coincides with the
+            maximum sequence length this model might ever be used with. Typically set this
+            to something large just in case (e.g. 512, 1024, 2048).
         expected_impact: 2
         suggested_values: 512
         suggested_values_reasoning:
@@ -2679,7 +2725,7 @@ ELECTRA:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -2706,8 +2752,25 @@ ELECTRA:
     type_vocab_size:
         ui_display_name: null
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -2716,7 +2779,6 @@ ELECTRA:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -2724,14 +2786,14 @@ ELECTRA:
         ui_display_name: Not displayed
 FlauBERT:
     type:
-        short_description:
-            Language model with BERT related architecture trained on large French text corpus.
+        short_description: Language model with BERT related architecture trained on large French text corpus.
         long_description:
-            The flaubert encoder loads a pretrained FlauBERT (default jplu/tf-flaubert-base-uncased) model
+            The `flaubert`` encoder loads a pretrained [FlauBERT](https://arxiv.org/abs/1912.05372) (default `jplu/tf-flaubert-base-uncased``) model
             using the Hugging Face transformers package. FlauBERT has an architecture similar to BERT and is
             pre-trained on a large French language corpus.
         literature_references:
             - https://arxiv.org/abs/1912.05372
+        compute_tier: 2
     asm:
         ui_display_name: null
         expected_impact: 1
@@ -2775,7 +2837,7 @@ FlauBERT:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -2824,15 +2886,9 @@ FlauBERT:
     max_position_embeddings:
         default_value_reasoning: Taken from huggingface.
         description_implications:
-            "An embedding is a relatively low-dimensional space
-            that is used to translate high-dimensional vectors like words or positions,
-            which can have a large vocbulary size. Ideally, after an embedding is
-            trained, it captures some of the semantics of the input by placing semantically
-            similar inputs close together in the embedding space.
-
-
-            Increasing the embedding size may cause the model to train more slowly,
-            but the higher dimensionality can also improve overall quality."
+            The size of the position embeddings table. This typically coincides with the
+            maximum sequence length this model might ever be used with. Typically set this
+            to something large just in case (e.g. 512, 1024, 2048).
         expected_impact: 1
         suggested_values: 512
         suggested_values_reasoning:
@@ -2846,14 +2902,14 @@ FlauBERT:
             inputs, so input/output shapes are computed accurately.
         internal_only: true
         ui_display_name: null
-    n_head:
+    n_heads:
         ui_display_name: null
         expected_impact: 1
     n_langs:
         default_value_reasoning: Default value used in pre-trained HF encoder.
         expected_impact: 1
         ui_display_name: Number of Languages
-    n_layer:
+    n_layers:
         ui_display_name: null
         expected_impact: 1
     pad_index:
@@ -2867,7 +2923,7 @@ FlauBERT:
         expected_impact: 1
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -2901,8 +2957,25 @@ FlauBERT:
         ui_display_name: null
         expected_impact: 1
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -2911,7 +2984,6 @@ FlauBERT:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -2919,14 +2991,14 @@ FlauBERT:
         ui_display_name: Not displayed
 GPT2:
     type:
-        short_description:
-            GPT-2 is a pre-trained language model used for NLP tasks like generation, summarization, and translation.
-        long_description:
-            The gpt2 encoder loads a pretrained GPT-2 (default gpt2) model using the Hugging Face
-            transformers package. GPT-2 is a causal (unidirectional) transformer pretrained using language
+        short_description: GPT-2 is a pre-trained language model used for NLP tasks like generation, summarization, and translation.
+        long_description: The `gpt2` encoder loads a pretrained
+            [GPT-2](https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf)
+            (default `gpt2`) model using the Hugging Face transformers package. GPT-2 is a causal (unidirectional) transformer pretrained using language
             modeling on a very large corpus of ~40 GB of text data.
         literature_references:
             - https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf
+        compute_tier: 3
     activation_function:
         ui_display_name: null
     attn_pdrop:
@@ -2939,7 +3011,7 @@ GPT2:
             lead to the outputs of these matrices to vanish or explode
         example_value:
             - 0.02
-        expected_impact: 3
+        expected_impact: 1
         other_information: Must be greater than 0
         related_parameters:
             - weights_initializer
@@ -2972,7 +3044,7 @@ GPT2:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -2984,8 +3056,25 @@ GPT2:
         expected_impact: 3
         ui_display_name: null
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -2994,7 +3083,6 @@ GPT2:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -3002,14 +3090,14 @@ GPT2:
         ui_display_name: Not displayed
 GPT:
     type:
-        short_description:
-            GPT is a pre-trained language model used for NLP tasks like generation, summarization, and translation.
-        long_description:
-            The gpt encoder loads a pretrained GPT (default openai-gpt) model using the Hugging Face "
-            "transformers package. GPT is a causal (unidirectional) transformer pre-trained using language "
-            "modeling on a large corpus with long range dependencies, the Toronto Book Corpus.
+        short_description: GPT is a pre-trained language model used for NLP tasks like generation, summarization, and translation.
+        long_description: The `gpt` encoder loads a pretrained
+            [GPT](https://s3-us-west-2.amazonaws.com/openai-assets/research-covers/language-unsupervised/language_understanding_paper.pdf)
+            (default `openai-gpt`) model using the Hugging Face transformers package.
+            GPT is a causal (unidirectional) transformer pre-trained using language modeling on a large corpus with long range dependencies, the Toronto Book Corpus.
         literature_references:
             - https://s3-us-west-2.amazonaws.com/openai-assets/research-covers/language-unsupervised/language_understanding_paper.pdf
+        compute_tier: 2
     afn:
         ui_display_name: null
     attn_pdrop:
@@ -3022,7 +3110,7 @@ GPT:
             lead to the outputs of these matrices to vanish or explode
         example_value:
             - 0.02
-        expected_impact: 3
+        expected_impact: 1
         other_information: Must be greater than 0
         related_parameters:
             - weights_initializer
@@ -3053,7 +3141,7 @@ GPT:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -3080,8 +3168,25 @@ GPT:
         expected_impact: 3
         ui_display_name: null
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -3097,8 +3202,7 @@ GPT:
         ui_display_name: Not displayed
 H3Embed:
     type:
-        short_description:
-            Encodes each H3 component with embeddings then takes a sum and passes them through fully connected layers.
+        short_description: Encodes each H3 component with embeddings then takes a sum and passes them through fully connected layers.
         long_description:
             The Embed encoder encodes each component of the H3 representation (mode, edge, resolution,
             base cell and children cells) with embeddings. Children cells with value 0 will be masked out.
@@ -3414,8 +3518,7 @@ H3Embed:
         ui_display_name: Layer Weights Initializer
 H3RNN:
     type:
-        short_description:
-            Encodes each H3 component with embeddings then passes them through an RNN encoder.
+        short_description: Encodes each H3 component with embeddings then passes them through an RNN encoder.
         long_description:
             The RNN encoder encodes each component of the H3 representation (mode, edge, resolution,
             base cell and children cells) with embeddings. Children cells with value 0 will be masked out.
@@ -3681,8 +3784,7 @@ H3RNN:
         ui_display_name: Layer Weights Initializer
 H3WeightedSum:
     type:
-        short_description:
-            Encodes each H3 component with embeddings then takes a weighted sum.
+        short_description: Encodes each H3 component with embeddings then takes a weighted sum.
         long_description:
             The Weighted Sum encoder encodes each component of the H3 representation (mode, edge,
             resolution, base cell and children cells) with embeddings. Children cells with value 0 will be
@@ -3976,14 +4078,14 @@ H3WeightedSum:
         ui_display_name: Layer Weights Initializer
 Longformer:
     type:
-        short_description:
-            Transformer optimized for longer text inputs.
+        short_description: Transformer optimized for longer text inputs.
         long_description:
-            The longformer encoder loads a pretrained Longformer (default allenai/longformer-base-4096)
-            model using the Hugging Face transformers package. Longformer is a good choice for longer text,
-            as it supports sequences up to 4096 tokens long.
+            The `longformer` encoder loads a pretrained [Longformer](https://arxiv.org/pdf/2004.05150.pdf)
+            (default `allenai/longformer-base-4096`) model using the Hugging Face transformers package. Longformer is a good choice
+            for longer text, as it supports sequences up to 4096 tokens long.
         literature_references:
             - https://arxiv.org/pdf/2004.05150.pdf
+        compute_tier: 2
     attention_window:
         ui_display_name: null
     max_sequence_length:
@@ -3994,11 +4096,31 @@ Longformer:
         ui_display_name: null
     num_tokens:
         ui_display_name: null
+    max_position_embeddings:
+        default_value_reasoning: Taken from huggingface.
+        description_implications:
+            "An embedding is a relatively low-dimensional space
+            that is used to translate high-dimensional vectors like words or positions,
+            which can have a large vocbulary size. Ideally, after an embedding is
+            trained, it captures some of the semantics of the input by placing semantically
+            similar inputs close together in the embedding space.
+
+            Increasing the embedding size may cause the model to train more slowly,
+            but the higher dimensionality can also improve overall quality."
+        expected_impact: 2
+        suggested_values: 512
+        suggested_values_reasoning:
+            Out of the box value based on published literature.
+            Try models with smaller or larger embedding sizes to observe relative
+            impact.
+        ui_display_name: Max Position Embeddings
+    type_vocab_size:
+        ui_display_name: null
     pretrained_kwargs:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -4025,8 +4147,25 @@ Longformer:
         expected_impact: 3
         ui_display_name: null
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -4035,7 +4174,6 @@ Longformer:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -4043,12 +4181,12 @@ Longformer:
         ui_display_name: Not displayed
 MLPMixer:
     type:
-        short_description:
-            Image encoder which applies fully connected layers to different patches of the image.
+        short_description: Image encoder which applies fully connected layers to different patches of the image.
         long_description:
             MLP-Mixer divides the image into equal-sized patches, applying fully connected layers to each
             patch to compute per-patch representations (tokens) and combining the representations with
             fully-connected mixer layers.
+        compute_tier: 1
     avg_pool:
         ui_display_name: null
     channel_dim:
@@ -4134,11 +4272,11 @@ MLPMixer:
         ui_display_name: null
 MT5:
     type:
-        short_description:
-            MT5 is a multilingual variant of T5 useful for multilingual NLP use cases.
+        short_description: MT5 is a multilingual variant of T5 useful for multilingual NLP use cases.
         long_description:
-            The mt5 encoder loads a pretrained MT5 (default google/mt5-base) model using the Hugging Face
-            transformers package. MT5 is a multilingual variant of T5 trained on a dataset of 101 languages.
+            The `mt5` encoder loads a pretrained [MT5](https://arxiv.org/abs/2010.11934) (default `google/mt5-base`) model using the
+            Hugging Face transformers package. MT5 is a multilingual variant of T5 trained on a dataset of 101 languages.
+        compute_tier: 2
     d_ff:
         default_value_reasoning: Default value matches the pre-trained encoder.
         description_implications:
@@ -4222,7 +4360,7 @@ MT5:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -4280,8 +4418,25 @@ MT5:
     use_cache:
         ui_display_name: null
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -4290,7 +4445,6 @@ MT5:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -4298,8 +4452,7 @@ MT5:
         ui_display_name: Not displayed
 ParallelCNN:
     type:
-        short_description:
-            Default option for processing sequence, audio, and text data types.
+        short_description: Default option for processing sequence, audio, and text data types.
         long_description:
             The Parallel CNN works by first mapping the input integer sequence b x s (where b is the batch
             size and s is the length of the sequence) into a sequence of embeddings, then it passes the
@@ -4308,6 +4461,7 @@ ParallelCNN:
             This single vector concatenating the outputs of the parallel convolutional layers is then passed
             through a stack of fully connected layers and returned as a b x h tensor where h is the output
             size of the last fully connected layer.
+        compute_tier: 1
     activation:
         default_value_reasoning:
             The Rectified Linear Units (ReLU) function is the
@@ -4349,22 +4503,6 @@ ParallelCNN:
             improvement (in fact some results seem to indicate that this performs
             worse) and it is more common to simply use 0 bias initialization.
         ui_display_name: Bias Initializer
-    conv_layers:
-        description_implications:
-            The more layers that are specified the deeper and
-            higher capacity the model will be. This makes it possible to potentially
-            achieve better performance when a large amount of data is provided, but
-            also makes the model more computationally expensive and potentially more
-            prone to overfitting.
-        example_value:
-            - dropout: 0.1
-              output_size: 128
-            - norm: layer
-              output_size: 64
-        expected_impact: 1
-        related_parameters:
-            - num_conv_layers
-        ui_display_name: Convolutional Layers
     dropout:
         default_value_reasoning:
             Dropout can cause training to become less stable.
@@ -4537,17 +4675,6 @@ ParallelCNN:
         suggested_values: Depends on the type of `norm` set.
         suggested_values_reasoning: "NO"
         ui_display_name: Normalization Parameters
-    num_conv_layers:
-        description_implications:
-            The more layers that are specified the deeper and
-            higher capacity the model will be. This makes it possible to potentially
-            achieve better performance when a large amount of data is provided, but
-            also makes the model more computationally expensive and potentially more
-            prone to overfitting.
-        expected_impact: 3
-        related_parameters:
-            - conv_layers
-        ui_display_name: Number of Convolutional Layers
     num_fc_layers:
         default_value_reasoning:
             The encoder already has learnable parameters.Sometimes
@@ -4575,8 +4702,6 @@ ParallelCNN:
             model capacity. Sometimes the default is 1 for modules where the FC stack
             is used for shape management, or the only source of learnable parameters.
         ui_display_name: Number of Fully Connected Layers
-    num_filters:
-        ui_display_name: null
     output_size:
         default_value_reasoning: A modest value, not too small, not too large.
         description_implications:
@@ -4652,7 +4777,6 @@ ParallelCNN:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     weights_initializer:
@@ -4686,8 +4810,7 @@ ParallelCNN:
         ui_display_name: Layer Weights Initializer
 PassthroughEncoder:
     type:
-        short_description:
-            Passes the raw input through to the combiner.
+        short_description: Passes the raw input through to the combiner.
         long_description:
             The passthrough encoder simply returns the raw numerical values coming from the input
             placeholders as outputs. Inputs are of size `b` while outputs are of size `b x 1` where `b` is
@@ -4700,8 +4823,7 @@ PassthroughEncoder:
         ui_display_name: Not Displayed
 BinaryPassthroughEncoder:
     type:
-        short_description:
-            Passes the raw input through to the combiner.
+        short_description: Passes the raw input through to the combiner.
         long_description:
             The passthrough encoder simply returns the raw numerical values coming from the input
             placeholders as outputs. Inputs are of size `b` while outputs are of size `b x 1` where `b` is
@@ -4714,8 +4836,7 @@ BinaryPassthroughEncoder:
         ui_display_name: Not Displayed
 CategoricalPassthroughEncoder:
     type:
-        short_description:
-            Passes the raw input through to the combiner.
+        short_description: Passes the raw input through to the combiner.
         long_description:
             The passthrough encoder simply returns the raw numerical values coming from the input
             placeholders as outputs. Inputs are of size `b` while outputs are of size `b x 1` where `b` is
@@ -4728,12 +4849,12 @@ CategoricalPassthroughEncoder:
         ui_display_name: Not Displayed
 ResNet:
     type:
-        short_description:
-            Residual network achieving very high performance on computer vision tasks.
+        short_description: Residual network achieving very high performance on computer vision tasks.
         long_description:
             ResNet - short for residual network is part of a family of extremely deep architectures showing
             compelling accuracy and nice convergence behaviors for computer vision applications. It is a type
             of CNN architecture designed to support hundreds or thousands of convolutional layers.
+        compute_tier: 2
     activation:
         default_value_reasoning:
             The Rectified Linear Units (ReLU) function is the
@@ -4996,15 +5117,16 @@ ResNet:
         ui_display_name: null
 RoBERTa:
     type:
-        short_description:
-            BERT based model that has higher accuracy and is easier parallelize due to larger mini-batches.
+        short_description: BERT based model that has higher accuracy and is easier parallelize due to larger mini-batches.
         long_description:
-            The roberta encoder loads a pretrained RoBERTa (default roberta-base) model using the Hugging
-            Face transformers package. RoBERTa builds on BERT and modifies key hyperparameters, removing the
+            The `roberta` encoder loads a pretrained [RoBERTa](https://arxiv.org/abs/1907.11692) (default `roberta-base`) model
+            using the Hugging Face transformers package. Replication of BERT pretraining which may match or exceed the performance
+            of BERT. RoBERTa builds on BERT and modifies key hyperparameters, removing the
             next-sentence pretraining objective and training with much larger mini-batches and learning
             rates.
         literature_references:
             - https://arxiv.org/abs/1907.11692
+        compute_tier: 2
     bos_token_id:
         default_value_reasoning: Default value used in pre-trained HF encoder.
         ui_display_name: Beginning-of-Sentence Token Id
@@ -5026,7 +5148,7 @@ RoBERTa:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -5051,8 +5173,25 @@ RoBERTa:
         expected_impact: 3
         ui_display_name: null
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -5061,7 +5200,6 @@ RoBERTa:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -5069,8 +5207,7 @@ RoBERTa:
         ui_display_name: Not displayed
 SequenceEmbed:
     type:
-        short_description:
-            Maps each element of the sequence to an embedding.
+        short_description: Maps each element of the sequence to an embedding.
         long_description:
             The embed encoder simply maps each integer in the sequence to an embedding, creating a `b x s x h`
             tensor where `b` is the batch size, `s` is the length of the sequence and `h` is the embedding
@@ -5175,7 +5312,6 @@ SequenceEmbed:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     weights_initializer:
@@ -5209,8 +5345,7 @@ SequenceEmbed:
         ui_display_name: Layer Weights Initializer
 SequencePassthrough:
     type:
-        short_description:
-            Transforms sequence values to a floats then reduces to obtain a vector for each element.
+        short_description: Transforms sequence values to a floats then reduces to obtain a vector for each element.
         long_description:
             The passthrough encoder simply transforms each input value into a float value and adds a
             dimension to the input tensor, creating a b x s x 1 tensor where b is the batch size and s is
@@ -5241,8 +5376,7 @@ SequencePassthrough:
         expected_impact: 1
 SetSparseEncoder:
     type:
-        short_description:
-            Maps raw values to sparse integer lists, then maps to dense/sparse embeddings, then reduces to final vector.
+        short_description: Maps raw values to sparse integer lists, then maps to dense/sparse embeddings, then reduces to final vector.
         long_description:
             The Embed encoder takes the raw binary values coming from the input placeholders and transforms
             them to sparse integer lists, then they are mapped to either dense or sparse embeddings (one-hot
@@ -5543,7 +5677,6 @@ SetSparseEncoder:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     weights_initializer:
@@ -5577,11 +5710,11 @@ SetSparseEncoder:
         ui_display_name: Layer Weights Initializer
 Stacked2DCNN:
     type:
-        short_description:
-            Stack of 2D convolutional layers followed by an optional stack of fully connected layers.
+        short_description: Stack of 2D convolutional layers followed by an optional stack of fully connected layers.
         long_description:
             Stack of 2D convolutional layers with optional normalization, dropout, and down-sampling
             pooling layers, followed by an optional stack of fully connected layers.
+        compute_tier: 1
     conv_activation:
         expected_impact: 1
         ui_display_name: Convolutional Activation
@@ -5616,22 +5749,6 @@ Stacked2DCNN:
             starting with 0.5 and adjusting the dropout depending on observed model
             performance.
         ui_display_name: Convolutional Dropout
-    conv_layers:
-        description_implications:
-            The more layers that are specified the deeper and
-            higher capacity the model will be. This makes it possible to potentially
-            achieve better performance when a large amount of data is provided, but
-            also makes the model more computationally expensive and potentially more
-            prone to overfitting.
-        example_value:
-            - dropout: 0.1
-              output_size: 128
-            - norm: layer
-              output_size: 64
-        expected_impact: 1
-        related_parameters:
-            - num_conv_layers
-        ui_display_name: Convolutional Layers
     conv_norm:
         expected_impact: 2
         ui_display_name: Convolutional Normalization
@@ -5801,17 +5918,6 @@ Stacked2DCNN:
             Computed internally, automatically, based on image
             data preprocessing.
         ui_display_name: NOT DISPLAYED
-    num_conv_layers:
-        description_implications:
-            The more layers that are specified the deeper and
-            higher capacity the model will be. This makes it possible to potentially
-            achieve better performance when a large amount of data is provided, but
-            also makes the model more computationally expensive and potentially more
-            prone to overfitting.
-        expected_impact: 3
-        related_parameters:
-            - conv_layers
-        ui_display_name: Number of Convolutional Layers
     num_fc_layers:
         default_value_reasoning:
             The encoder already has learnable parameters.Sometimes
@@ -5899,27 +6005,6 @@ Stacked2DCNN:
     pool_dilation:
         expected_impact: 1
         ui_display_name: Pool Dilation
-    pool_function:
-        default_value_reasoning:
-            "Within a given sliding window (e.g. a \"patch\"\
-            \ of a 3-channel image), the maximum value for each channel is kept. All\
-            \ other values in the patch are discarded. Repeat this step for every\
-            \ patch and you have a more compact representation of the image. \n\n\
-            Intuitively, each patch encodes the features from a particular part of\
-            \ an image, and it is more informative to look at the most prominent features\
-            \ of an image than the average of all of them."
-        description_implications:
-            Both average and max pooling can achieve strong
-            performance.
-        expected_impact: 1
-        literature_references:
-            - "https://pytorch.org/docs/stable/generated/torch.nn.MaxPool2d.html
-
-
-              https://machinelearningmastery.com/pooling-layers-for-convolutional-neural-networks/"
-        suggested_values: Default
-        suggested_values_reasoning: "No"
-        ui_display_name: Pooling function
     pool_kernel_size:
         expected_impact: 1
         ui_display_name: Pool Kernel Size
@@ -5940,8 +6025,7 @@ Stacked2DCNN:
         ui_display_name: NOT DISPLAYED
 StackedCNN:
     type:
-        short_description:
-            Maps inputs to embeddings then passes them through a stack of 1d convolutional layers.
+        short_description: Maps inputs to embeddings then passes them through a stack of 1d convolutional layers.
         long_description:
             The Stacked CNN works by first mapping the input integer sequence b x s (where b is the batch
             size and s is the length of the sequence) into a sequence of embeddings, then it passes the
@@ -5950,6 +6034,7 @@ StackedCNN:
             flatten operation. This single flatten vector is then passed through a stack of fully connected
             layers and returned as a b x h tensor where h is the output size of the last fully connected
             layer.
+        compute_tier: 1
     activation:
         default_value_reasoning:
             The Rectified Linear Units (ReLU) function is the
@@ -5991,22 +6076,6 @@ StackedCNN:
             improvement (in fact some results seem to indicate that this performs
             worse) and it is more common to simply use 0 bias initialization.
         ui_display_name: Bias Initializer
-    conv_layers:
-        description_implications:
-            The more layers that are specified the deeper and
-            higher capacity the model will be. This makes it possible to potentially
-            achieve better performance when a large amount of data is provided, but
-            also makes the model more computationally expensive and potentially more
-            prone to overfitting.
-        example_value:
-            - dropout: 0.1
-              output_size: 128
-            - norm: layer
-              output_size: 64
-        expected_impact: 1
-        related_parameters:
-            - num_conv_layers
-        ui_display_name: Convolutional Layers
     dilation_rate:
         default_value_reasoning:
             The standard discrete convolution is the same as
@@ -6136,9 +6205,6 @@ StackedCNN:
             Use this parameter only if you need a fine grained level of control of
             each individual layer in the stack.
         ui_display_name: Fully Connected Layers
-    filter_size:
-        ui_display_name: null
-        expected_impact: 2
     max_sequence_length:
         default_value_reasoning:
             Sets the maximum sequence length of the expected
@@ -6198,17 +6264,6 @@ StackedCNN:
         suggested_values: Depends on the type of `norm` set.
         suggested_values_reasoning: "NO"
         ui_display_name: Normalization Parameters
-    num_conv_layers:
-        description_implications:
-            The more layers that are specified the deeper and
-            higher capacity the model will be. This makes it possible to potentially
-            achieve better performance when a large amount of data is provided, but
-            also makes the model more computationally expensive and potentially more
-            prone to overfitting.
-        expected_impact: 3
-        related_parameters:
-            - conv_layers
-        ui_display_name: Number of Convolutional Layers
     num_fc_layers:
         default_value_reasoning:
             The encoder already has learnable parameters.Sometimes
@@ -6333,7 +6388,6 @@ StackedCNN:
             - a
             - b
             - c
-        expected_impact: 1
         internal_only: true
         ui_display_name: Not Displayed
     weights_initializer:
@@ -6367,14 +6421,14 @@ StackedCNN:
         ui_display_name: Layer Weights Initializer
 StackedCNNRNN:
     type:
-        short_description:
-            Maps inputs to embeddings, passes them through convolutional layer stack, then recurrent layer stack.
+        short_description: Maps inputs to embeddings, passes them through convolutional layer stack, then recurrent layer stack.
         long_description:
             The cnnrnn encoder works by first mapping the input integer sequence b x s (where b is the batch
             size and s is the length of the sequence) into a sequence of embeddings, then it passes the
             embedding through a stack of convolutional layers (by default 2), that is followed by a stack of
             recurrent layers (by default 1), followed by a reduce operation that by default only returns the
             last output, but can perform other reduce functions.
+        compute_tier: 1
     activation:
         ui_display_name: null
         expected_impact: 2
@@ -6446,22 +6500,6 @@ StackedCNNRNN:
             starting with 0.5 and adjusting the dropout depending on observed model
             performance.
         ui_display_name: Convolutional Dropout
-    conv_layers:
-        description_implications:
-            The more layers that are specified the deeper and
-            higher capacity the model will be. This makes it possible to potentially
-            achieve better performance when a large amount of data is provided, but
-            also makes the model more computationally expensive and potentially more
-            prone to overfitting.
-        example_value:
-            - dropout: 0.1
-              output_size: 128
-            - norm: layer
-              output_size: 64
-        expected_impact: 1
-        related_parameters:
-            - num_conv_layers
-        ui_display_name: Convolutional Layers
     dilation_rate:
         default_value_reasoning:
             The standard discrete convolution is the same as
@@ -6714,17 +6752,6 @@ StackedCNNRNN:
         suggested_values: Depends on the type of `norm` set.
         suggested_values_reasoning: "NO"
         ui_display_name: Normalization Parameters
-    num_conv_layers:
-        description_implications:
-            The more layers that are specified the deeper and
-            higher capacity the model will be. This makes it possible to potentially
-            achieve better performance when a large amount of data is provided, but
-            also makes the model more computationally expensive and potentially more
-            prone to overfitting.
-        expected_impact: 3
-        related_parameters:
-            - conv_layers
-        ui_display_name: Number of Convolutional Layers
     num_fc_layers:
         default_value_reasoning:
             The encoder already has learnable parameters.Sometimes
@@ -6924,7 +6951,6 @@ StackedCNNRNN:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     weights_initializer:
@@ -6958,8 +6984,7 @@ StackedCNNRNN:
         ui_display_name: Layer Weights Initializer
 StackedParallelCNN:
     type:
-        short_description:
-            Combination of Parallel CNN and Stacked CNN encoders utilizing a stack of parallel convolutional layers.
+        short_description: Combination of Parallel CNN and Stacked CNN encoders utilizing a stack of parallel convolutional layers.
         long_description:
             The stacked parallel cnn encoder is a combination of the Parallel CNN and the Stacked CNN
             encoders where each layer of the stack is composed of parallel convolutional layers. It works by
@@ -6969,6 +6994,7 @@ StackedParallelCNN:
             final pool and by a flatten operation. This single flattened vector is then passed through a
             stack of fully connected layers and returned as a b x h tensor where h is the output size of the
             last fully connected layer.
+        compute_tier: 1
     activation:
         default_value_reasoning:
             The Rectified Linear Units (ReLU) function is the
@@ -7247,9 +7273,6 @@ StackedParallelCNN:
     pool_function:
         ui_display_name: null
         expected_impact: 1
-    pool_size:
-        ui_display_name: null
-        expected_impact: 1
     pretrained_embeddings:
         ui_display_name: null
         expected_impact: 0
@@ -7298,7 +7321,6 @@ StackedParallelCNN:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     weights_initializer:
@@ -7332,13 +7354,13 @@ StackedParallelCNN:
         ui_display_name: Layer Weights Initializer
 StackedRNN:
     type:
-        short_description:
-            Utilizes a stack of recurrent layers followed by a reduce operation.
+        short_description: Utilizes a stack of recurrent layers followed by a reduce operation.
         long_description:
             The rnn encoder works by first mapping the input integer sequence b x s (where b is the batch
             size and s is the length of the sequence) into a sequence of embeddings, then it passes the
             embedding through a stack of recurrent layers (by default 1 layer), followed by a reduce
             operation that by default only returns the last output, but can perform other reduce functions.
+        compute_tier: 1
     activation:
         ui_display_name: null
         expected_impact: 2
@@ -7757,7 +7779,6 @@ StackedRNN:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     weights_initializer:
@@ -7791,14 +7812,14 @@ StackedRNN:
         ui_display_name: Layer Weights Initializer
 StackedTransformer:
     type:
-        short_description:
-            Stack of transformer blocks with optional stack of fully connected layers.
+        short_description: Stack of transformer blocks with optional stack of fully connected layers.
         long_description:
             The transformer encoder implements a stack of transformer blocks, replicating the architecture
             introduced in the Attention is all you need paper, and adds am optional stack of fully connected
             layers at the end.
         literature_references:
             - https://arxiv.org/abs/1706.03762
+        compute_tier: 2
     bias_initializer:
         default_value_reasoning:
             It is possible and common to initialize the biases
@@ -8196,7 +8217,6 @@ StackedTransformer:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     weights_initializer:
@@ -8230,12 +8250,12 @@ StackedTransformer:
         ui_display_name: Layer Weights Initializer
 T5:
     type:
-        short_description:
-            Text-to-text approach transformer with good transfer performance on multiple tasks.
+        short_description: Text-to-text approach transformer with good transfer performance on multiple tasks.
         long_description:
-            The T5 encoder loads a pretrained T5 (default t5-small) model using the Hugging Face transformers
-            package. T5 (Text-to-Text Transfer Transformer) is pre-trained on a huge text dataset crawled
+            The `t5` encoder loads a pretrained [T5](https://arxiv.org/pdf/1910.10683.pdf) (default `t5-small`) model using the
+            Hugging Face transformers package. T5 (Text-to-Text Transfer Transformer) is pre-trained on a huge text dataset crawled
             from the web and shows good transfer performance on multiple tasks.
+        compute_tier: 2
     d_ff:
         default_value_reasoning: Default value matches the pre-trained encoder.
         description_implications:
@@ -8258,7 +8278,7 @@ T5:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         suggested_values: 0.05 - 0.8
@@ -8297,7 +8317,7 @@ T5:
             from the pre-trained model."
         example_value:
             - 6
-        expected_impact: 3
+        expected_impact: 2
         related_parameters:
             - pretrained_model_or_path
         suggested_values: 1 - 12
@@ -8310,7 +8330,7 @@ T5:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -8337,8 +8357,25 @@ T5:
         expected_impact: 3
         ui_display_name: null
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -8347,7 +8384,6 @@ T5:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -8355,14 +8391,15 @@ T5:
         ui_display_name: Not displayed
 TransformerXL:
     type:
-        short_description:
-            Transformer architecture that introduces the notion of recurrence to the deep self-attention network.
+        short_description: Transformer architecture that introduces the notion of recurrence to the deep self-attention network.
         long_description:
-            The transformer_xl encoder loads a pretrained Transformer-XL (default transfo-xl-wt103) model
-            using the Hugging Face transformers package. Transformer-XL is a causal (uni-directional)
+            The `transformer_xl` encoder loads a pretrained [Transformer-XL](https://arxiv.org/abs/1901.02860)
+            (default `transfo-xl-wt103`) model using the Hugging Face transformers package. Adds novel positional encoding scheme
+            which improves understanding and generation of long-form text up to thousands of tokens. Transformer-XL is a causal (uni-directional)
             transformer with relative positioning (sinusoïdal) embeddings which can reuse previously
             computed hidden-states to attend to longer context (memory). This model also uses adaptive
             softmax inputs and outputs (tied).
+        compute_tier: 2
     adaptive:
         default_value_reasoning: Huggingface default.
         description_implications:
@@ -8402,7 +8439,7 @@ TransformerXL:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         suggested_values: 0.05 - 0.8
@@ -8441,7 +8478,7 @@ TransformerXL:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     proj_init_std:
         ui_display_name: null
     proj_share_all_but_first:
@@ -8476,8 +8513,25 @@ TransformerXL:
     untie_r:
         ui_display_name: null
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -8486,7 +8540,6 @@ TransformerXL:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -8548,7 +8601,7 @@ TVBaseEncoder:
             Pretrained models have typically already learned
             features that are difficult to learn from scratch. They are particularly
             beneficial when training on small amounts of data.
-        expected_impact: 2
+        expected_impact: 3
         literature_references:
             - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
         related_parameters:
@@ -8559,7 +8612,7 @@ TVBaseEncoder:
             If you have a large amount of data and/or you
             have data that differs from the typical distribution, then it might be
             worth training the model from scratch.
-        ui_display_name: Use pretrained model
+        ui_display_name: Use Pretrained
 TVConvNeXtEncoder:
     model_variant:
         ui_display_name: Model Variant
@@ -8652,12 +8705,12 @@ TVWideResNetEncoder:
         ui_display_name: Type
 ViT:
     type:
-        short_description:
-            ViT encoder divides images into patches, performs a linear transformation, and then applies a transformer.
+        short_description: ViT encoder divides images into patches, performs a linear transformation, and then applies a transformer.
         long_description:
             ViT, short for Vision Transformer, divides the image into equal-sized patches, uses a linear
             transformation to encode each flattened patch, then applies a deep transformer architecture to
             the sequence of encoded patches.
+        compute_tier: 2
     attention_probs_dropout_prob:
         default_value_reasoning: Taken from literature (https://arxiv.org/abs/2010.11929).
         description_implications:
@@ -8749,7 +8802,7 @@ ViT:
             lead to the outputs of these matrices to vanish or explode
         example_value:
             - 0.02
-        expected_impact: 3
+        expected_impact: 1
         other_information: Must be greater than 0
         related_parameters:
             - weights_initializer
@@ -8869,7 +8922,7 @@ ViT:
             Pretrained models have typically already learned
             features that are difficult to learn from scratch. They are particularly
             beneficial when training on small amounts of data.
-        expected_impact: 2
+        expected_impact: 3
         literature_references:
             - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
         related_parameters:
@@ -8880,17 +8933,17 @@ ViT:
             If you have a large amount of data and/or you
             have data that differs from the typical distribution, then it might be
             worth training the model from scratch.
-        ui_display_name: Use pretrained model
+        ui_display_name: Use Pretrained
     width:
         internal_only: true
         ui_display_name: null
 XLM:
     type:
-        short_description:
-            XLM is pre-trained by cross-language modeling.
+        short_description: XLM is pre-trained by cross-language modeling.
         long_description:
-            The xlm encoder loads a pretrained XLM (default xlm-mlm-en-2048) model using the Hugging Face
-            transformers package. XLM is pre-trained by cross-language modeling.
+            The `xlm` encoder loads a pretrained [XLM](https://arxiv.org/abs/1901.07291) (default `xlm-mlm-en-2048`) model using the
+            Hugging Face transformers package. Pre-trained by cross-language modeling.
+        compute_tier: 2
     asm:
         ui_display_name: null
     attention_dropout:
@@ -8904,7 +8957,7 @@ XLM:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -8934,7 +8987,7 @@ XLM:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -8973,15 +9026,9 @@ XLM:
     max_position_embeddings:
         default_value_reasoning: Taken from huggingface.
         description_implications:
-            "An embedding is a relatively low-dimensional space
-            that is used to translate high-dimensional vectors like words or positions,
-            which can have a large vocbulary size. Ideally, after an embedding is
-            trained, it captures some of the semantics of the input by placing semantically
-            similar inputs close together in the embedding space.
-
-
-            Increasing the embedding size may cause the model to train more slowly,
-            but the higher dimensionality can also improve overall quality."
+            The size of the position embeddings table. This typically coincides with the
+            maximum sequence length this model might ever be used with. Typically set this
+            to something large just in case (e.g. 512, 1024, 2048).
         expected_impact: 2
         suggested_values: 512
         suggested_values_reasoning:
@@ -9011,7 +9058,7 @@ XLM:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -9044,8 +9091,25 @@ XLM:
     use_lang_emb:
         ui_display_name: null
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -9054,7 +9118,6 @@ XLM:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -9062,13 +9125,14 @@ XLM:
         ui_display_name: Not displayed
 XLMRoBERTa:
     type:
-        short_description:
-            XLM-RoBERTa a large multi-lingual language model trained on 2.5TB of filtered CommonCrawl data.
+        short_description: XLM-RoBERTa a large multi-lingual language model trained on 2.5TB of filtered CommonCrawl data.
         long_description:
-            The xlmroberta encoder loads a pretrained XLM-RoBERTa (default jplu/tf-xlm-reoberta-base) model
-            using the Hugging Face transformers package. XLM-RoBERTa is based on Facebook’s RoBERTa model
+            The `xlmroberta` encoder loads a pretrained [XLM-RoBERTa](https://arxiv.org/abs/1911.02116)
+            (default `jplu/tf-xlm-reoberta-base`) model using the Hugging Face transformers package. XLM-RoBERTa is a multi-language
+            model similar to BERT, trained on 100 languages. XLM-RoBERTa is based on Facebook’s RoBERTa model
             released in 2019. It is a large multi-lingual language model, trained on 2.5TB of filtered
             CommonCrawl data.
+        compute_tier: 2
     add_pooling_layer:
         ui_display_name: null
     bos_token_id:
@@ -9077,6 +9141,19 @@ XLMRoBERTa:
     eos_token_id:
         default_value_reasoning: Default value used in pre-trained HF encoder.
         ui_display_name: End-of-Sentence Token Id
+    max_position_embeddings:
+        default_value_reasoning: Taken from huggingface.
+        description_implications:
+            The size of the position embeddings table. This typically coincides with the
+            maximum sequence length this model might ever be used with. Typically set this
+            to something large just in case (e.g. 512, 1024, 2048).
+        expected_impact: 1
+        suggested_values: 512
+        suggested_values_reasoning:
+            Out of the box value based on published literature.
+            Try models with smaller or larger embedding sizes to observe relative
+            impact.
+        ui_display_name: Max Position Embeddings
     max_sequence_length:
         default_value_reasoning:
             Sets the maximum sequence length of the expected
@@ -9089,7 +9166,7 @@ XLMRoBERTa:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -9113,9 +9190,29 @@ XLMRoBERTa:
     trainable:
         expected_impact: 3
         ui_display_name: null
-    use_pretrained:
+    type_vocab_size:
         ui_display_name: null
-        expected_impact: 2
+        expected_impact: 1
+    use_pretrained:
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -9124,7 +9221,6 @@ XLMRoBERTa:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
@@ -9132,14 +9228,14 @@ XLMRoBERTa:
         ui_display_name: Not displayed
 XLNet:
     type:
-        short_description:
-            XLNet is a transformer that outperforms BERT on a variety of benchmarks.
+        short_description: XLNet is a transformer that outperforms BERT on a variety of benchmarks.
         long_description:
-            The xlnet encoder loads a pretrained XLNet (default xlnet-base-cased) model using the Hugging
-            Face transformers package. XLnet is an extension of the Transformer-XL model pre-trained using
+            The `xlnet` encoder loads a pretrained [XLNet](https://arxiv.org/abs/1906.08237) (default `xlnet-base-cased`) model
+            using the Hugging Face transformers package. XLnet is an extension of the Transformer-XL model pre-trained using
             an autoregressive method to learn bidirectional contexts by maximizing the expected likelihood
             over all permutations of the input sequence factorization order. XLNet outperforms BERT on a
             variety of benchmarks.
+        compute_tier: 2
     attn_type:
         ui_display_name: null
     bi_data:
@@ -9164,7 +9260,7 @@ XLNet:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 2
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -9190,7 +9286,7 @@ XLNet:
             lead to the outputs of these matrices to vanish or explode
         example_value:
             - 0.02
-        expected_impact: 3
+        expected_impact: 1
         other_information: Must be greater than 0
         related_parameters:
             - weights_initializer
@@ -9219,7 +9315,7 @@ XLNet:
         ui_display_name: null
     pretrained_model_name_or_path:
         ui_display_name: null
-        expected_impact: 3
+        expected_impact: 2
     reduce_output:
         ui_display_name: null
         expected_impact: 1
@@ -9261,7 +9357,7 @@ XLNet:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         related_parameters:
@@ -9287,8 +9383,25 @@ XLNet:
     use_mems_train:
         ui_display_name: null
     use_pretrained:
-        ui_display_name: null
-        expected_impact: 2
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
@@ -9297,9 +9410,60 @@ XLNet:
             - a
             - b
             - c
-        expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
     vocab_size:
         internal_only: true
         ui_display_name: Not displayed
+conv_params:
+    num_conv_layers:
+        description_implications:
+            The more layers that are specified the deeper and
+            higher capacity the model will be. This makes it possible to potentially
+            achieve better performance when a large amount of data is provided, but
+            also makes the model more computationally expensive and potentially more
+            prone to overfitting.
+        expected_impact: 3
+        related_parameters:
+            - conv_layers
+        ui_display_name: Number of Convolutional Layers
+    conv_layers:
+        description_implications:
+            The more layers that are specified the deeper and
+            higher capacity the model will be. This makes it possible to potentially
+            achieve better performance when a large amount of data is provided, but
+            also makes the model more computationally expensive and potentially more
+            prone to overfitting.
+        expected_impact: 1
+        related_parameters:
+            - num_conv_layers
+        ui_display_name: Convolutional Layers
+    pool_function:
+        default_value_reasoning:
+            "Within a given sliding window (e.g. a \"patch\"\
+            \ of a 3-channel image), the maximum value for each channel is kept. All\
+            \ other values in the patch are discarded. Repeat this step for every\
+            \ patch and you have a more compact representation of the image. \n\n\
+            Intuitively, each patch encodes the features from a particular part of\
+            \ an image, and it is more informative to look at the most prominent features\
+            \ of an image than the average of all of them."
+        description_implications:
+            Both average and max pooling can achieve strong
+            performance.
+        expected_impact: 1
+        literature_references:
+            - "https://pytorch.org/docs/stable/generated/torch.nn.MaxPool2d.html
+
+
+              https://machinelearningmastery.com/pooling-layers-for-convolutional-neural-networks/"
+        suggested_values: Default
+        suggested_values_reasoning: "No"
+        ui_display_name: Pooling function
+    pool_size:
+        ui_display_name: null
+        expected_impact: 1
+    num_filters:
+        ui_display_name: null
+    filter_size:
+        ui_display_name: null
+        expected_impact: 2

@@ -259,7 +259,7 @@ def append_metrics(
 
         # collect metric names based on output features metrics to
         # ensure consistent order of reporting metrics
-        metric_names = model.output_features[output_feature].metric_names
+        metric_names = model.output_features.get(output_feature).metric_names
 
         for metric in metric_names:
             if metric in results[output_feature]:

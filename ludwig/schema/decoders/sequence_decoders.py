@@ -1,16 +1,16 @@
-from marshmallow_dataclass import dataclass
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import SEQUENCE, TEXT
+from ludwig.schema import common_fields
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import register_decoder_config
 from ludwig.schema.metadata import DECODER_METADATA
+from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
 @register_decoder_config("generator", [SEQUENCE, TEXT])
-@dataclass(repr=False)
+@ludwig_dataclass
 class SequenceGeneratorDecoderConfig(BaseDecoderConfig):
     @staticmethod
     def module_name():
@@ -21,17 +21,9 @@ class SequenceGeneratorDecoderConfig(BaseDecoderConfig):
         description=DECODER_METADATA["SequenceGeneratorDecoder"]["type"].long_description,
     )
 
-    vocab_size: int = schema_utils.PositiveInteger(
-        default=None,
-        description="Size of the vocabulary.",
-        parameter_metadata=DECODER_METADATA["SequenceGeneratorDecoder"]["vocab_size"],
-    )
+    vocab_size: int = common_fields.VocabSizeField()
 
-    max_sequence_length: int = schema_utils.PositiveInteger(
-        default=None,
-        description="Maximum length of the sequences.",
-        parameter_metadata=DECODER_METADATA["SequenceGeneratorDecoder"]["max_sequence_length"],
-    )
+    max_sequence_length: int = common_fields.MaxSequenceLengthField()
 
     cell_type: str = schema_utils.StringOptions(
         ["rnn", "lstm", "gru"],
@@ -63,7 +55,7 @@ class SequenceGeneratorDecoderConfig(BaseDecoderConfig):
 
 @DeveloperAPI
 @register_decoder_config("tagger", [SEQUENCE, TEXT])
-@dataclass(repr=False)
+@ludwig_dataclass
 class SequenceTaggerDecoderConfig(BaseDecoderConfig):
     @classmethod
     def module_name(cls):
@@ -80,17 +72,9 @@ class SequenceTaggerDecoderConfig(BaseDecoderConfig):
         parameter_metadata=DECODER_METADATA["SequenceTaggerDecoder"]["input_size"],
     )
 
-    vocab_size: int = schema_utils.PositiveInteger(
-        default=None,
-        description="Size of the vocabulary.",
-        parameter_metadata=DECODER_METADATA["SequenceTaggerDecoder"]["vocab_size"],
-    )
+    vocab_size: int = common_fields.VocabSizeField()
 
-    max_sequence_length: int = schema_utils.PositiveInteger(
-        default=None,
-        description="Maximum length of the sequences.",
-        parameter_metadata=DECODER_METADATA["SequenceTaggerDecoder"]["max_sequence_length"],
-    )
+    max_sequence_length: int = common_fields.MaxSequenceLengthField()
 
     use_attention: bool = schema_utils.Boolean(
         default=False,

@@ -2,15 +2,15 @@ from dataclasses import field
 from typing import Dict
 
 from marshmallow import fields, ValidationError
-from marshmallow_dataclass import dataclass
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.hyperopt.registry import search_algorithm_registry  # Double-check this implicit import.
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
-@dataclass
+@ludwig_dataclass
 class BaseSearchAlgorithmConfig(schema_utils.BaseMarshmallowConfig):
     """Basic search algorithm settings."""
 
@@ -40,7 +40,7 @@ def SearchAlgorithmDataclassField(description: str = "", default: Dict = {"type"
     if not isinstance(default, dict):
         raise ValidationError(f"Invalid default: `{default}`")
 
-    load_default = BaseSearchAlgorithmConfig.Schema().load(default)
+    load_default = lambda: BaseSearchAlgorithmConfig.Schema().load(default)
     dump_default = BaseSearchAlgorithmConfig.Schema().dump(default)
 
     return field(
@@ -52,5 +52,5 @@ def SearchAlgorithmDataclassField(description: str = "", default: Dict = {"type"
                 metadata={"description": description, "parameter_metadata": None},
             )
         },
-        default_factory=lambda: load_default,
+        default_factory=load_default,
     )

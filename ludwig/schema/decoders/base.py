@@ -1,36 +1,32 @@
 from abc import ABC
-from typing import Any, Dict, List, Tuple, Union
-
-from marshmallow_dataclass import dataclass
+from typing import Dict, List, Tuple, Union
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import BINARY, CATEGORY, NUMBER, SEQUENCE, SET, TEXT, VECTOR
+from ludwig.constants import BINARY, CATEGORY, NUMBER, SET, TIMESERIES, VECTOR
+from ludwig.schema import common_fields
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.utils import register_decoder_config
 from ludwig.schema.metadata import DECODER_METADATA
+from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
-@dataclass(repr=False)
+@ludwig_dataclass
 class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Base class for decoders."""
 
     type: str = schema_utils.StringOptions(
         ["regressor", "classifier", "projector", "generator", "tagger"],
+        default=None,
+        allow_none=True,
         description="The type of decoder to use.",
         parameter_metadata=DECODER_METADATA["BaseDecoder"]["type"],
     )
 
-    fc_layers: List[Dict[str, Any]] = schema_utils.DictList(
-        default=None,
-        description="List of dictionaries containing the parameters for each fully connected layer.",
-        parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_layers"],
-    )
+    fc_layers: List[dict] = common_fields.FCLayersField()
 
-    num_fc_layers: int = schema_utils.NonNegativeInteger(
-        default=0,
-        description="Number of fully-connected layers if fc_layers not specified.",
-        parameter_metadata=DECODER_METADATA["BaseDecoder"]["num_fc_layers"],
+    num_fc_layers: int = common_fields.NumFCLayersField(
+        description="Number of fully-connected layers if `fc_layers` not specified."
     )
 
     fc_output_size: int = schema_utils.PositiveInteger(
@@ -47,6 +43,7 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     fc_weights_initializer: Union[str, Dict] = schema_utils.OneOfOptionsField(
         default="xavier_uniform",
+        allow_none=True,
         description="The weights initializer to use for the layers in the fc_stack",
         field_options=[
             schema_utils.InitializerOptions(
@@ -63,6 +60,7 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     fc_bias_initializer: Union[str, Dict] = schema_utils.OneOfOptionsField(
         default="zeros",
+        allow_none=True,
         description="The bias initializer to use for the layers in the fc_stack",
         field_options=[
             schema_utils.InitializerOptions(
@@ -77,35 +75,17 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
         parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_bias_initializer"],
     )
 
-    fc_norm: str = schema_utils.StringOptions(
-        ["batch", "layer"],
-        description="The normalization to use for the layers in the fc_stack",
-        parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_norm"],
-    )
+    fc_norm: str = common_fields.NormField()
 
-    fc_norm_params: dict = schema_utils.Dict(
-        description="The additional parameters for the normalization in the fc_stack",
-        parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_norm_params"],
-    )
+    fc_norm_params: dict = common_fields.NormParamsField()
 
-    fc_activation: str = schema_utils.ActivationOptions(
-        default="relu",
-        description="The activation to use for the layers in the fc_stack",
-        parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_activation"],
-    )
+    fc_activation: str = schema_utils.ActivationOptions(default="relu")
 
-    fc_dropout: float = schema_utils.FloatRange(
-        default=0.0,
-        min=0,
-        max=1,
-        description="The dropout rate to use for the layers in the fc_stack",
-        parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_dropout"],
-    )
+    fc_dropout: float = common_fields.DropoutField()
 
 
 @DeveloperAPI
-@register_decoder_config("passthrough", [BINARY, CATEGORY, NUMBER, SET, VECTOR, SEQUENCE, TEXT])
-@dataclass(repr=False)
+@ludwig_dataclass
 class PassthroughDecoderConfig(BaseDecoderConfig):
     """PassthroughDecoderConfig is a dataclass that configures the parameters used for a passthrough decoder."""
 
@@ -129,7 +109,7 @@ class PassthroughDecoderConfig(BaseDecoderConfig):
 
 @DeveloperAPI
 @register_decoder_config("regressor", [BINARY, NUMBER])
-@dataclass(repr=False)
+@ludwig_dataclass
 class RegressorConfig(BaseDecoderConfig):
     """RegressorConfig is a dataclass that configures the parameters used for a regressor decoder."""
 
@@ -144,6 +124,7 @@ class RegressorConfig(BaseDecoderConfig):
 
     input_size: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Size of the input to the decoder.",
         parameter_metadata=DECODER_METADATA["Regressor"]["input_size"],
     )
@@ -167,8 +148,8 @@ class RegressorConfig(BaseDecoderConfig):
 
 
 @DeveloperAPI
-@register_decoder_config("projector", [VECTOR])
-@dataclass(repr=False)
+@register_decoder_config("projector", [VECTOR, TIMESERIES])
+@ludwig_dataclass
 class ProjectorConfig(BaseDecoderConfig):
     """ProjectorConfig is a dataclass that configures the parameters used for a projector decoder."""
 
@@ -183,12 +164,14 @@ class ProjectorConfig(BaseDecoderConfig):
 
     input_size: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Size of the input to the decoder.",
         parameter_metadata=DECODER_METADATA["Projector"]["input_size"],
     )
 
     output_size: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Size of the output of the decoder.",
         parameter_metadata=DECODER_METADATA["Projector"]["output_size"],
     )
@@ -216,6 +199,19 @@ class ProjectorConfig(BaseDecoderConfig):
         parameter_metadata=DECODER_METADATA["Projector"]["activation"],
     )
 
+    multiplier: float = schema_utils.FloatRange(
+        default=1.0,
+        min=0,
+        min_inclusive=False,
+        description=(
+            "Multiplier to scale the activated outputs by. Useful when setting `activation` to something "
+            "that outputs a value between [-1, 1] like tanh to re-scale values back to order of magnitude of "
+            "the data you're trying to predict. A good rule of thumb in such cases is to pick a value like "
+            "`x * (max - min)` where x is a scalar in the range [1, 2]. For example, if you're trying to predict "
+            "something like temperature, it might make sense to pick a multiplier on the order of `100`."
+        ),
+    )
+
     clip: Union[List[int], Tuple[int]] = schema_utils.FloatRangeTupleDataclassField(
         n=2,
         default=None,
@@ -229,7 +225,7 @@ class ProjectorConfig(BaseDecoderConfig):
 
 @DeveloperAPI
 @register_decoder_config("classifier", [CATEGORY, SET])
-@dataclass(repr=False)
+@ludwig_dataclass
 class ClassifierConfig(BaseDecoderConfig):
     @classmethod
     def module_name(cls):
@@ -242,12 +238,14 @@ class ClassifierConfig(BaseDecoderConfig):
 
     input_size: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Size of the input to the decoder.",
         parameter_metadata=DECODER_METADATA["Classifier"]["input_size"],
     )
 
     num_classes: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Number of classes to predict.",
         parameter_metadata=DECODER_METADATA["Classifier"]["num_classes"],
     )

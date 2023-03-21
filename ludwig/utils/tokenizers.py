@@ -22,7 +22,7 @@ import torch
 
 from ludwig.constants import PADDING_SYMBOL, UNKNOWN_SYMBOL
 from ludwig.utils.data_utils import load_json
-from ludwig.utils.hf_utils import load_pretrained_hf_model
+from ludwig.utils.hf_utils import load_pretrained_hf_tokenizer
 from ludwig.utils.nlp_utils import load_nlp_pipeline, process_text
 
 logger = logging.getLogger(__name__)
@@ -789,12 +789,8 @@ class MultiLemmatizeRemoveStopwordsTokenizer(BaseTokenizer):
 class HFTokenizer(BaseTokenizer):
     def __init__(self, pretrained_model_name_or_path, **kwargs):
         super().__init__()
-        from transformers import AutoTokenizer
-
-        self.tokenizer = load_pretrained_hf_model(
-            AutoTokenizer,
-            pretrained_model_name_or_path,
-        )
+        self.pretrained_model_name_or_path = pretrained_model_name_or_path
+        self.tokenizer = load_pretrained_hf_tokenizer(self.pretrained_model_name_or_path)
 
     def __call__(self, text):
         return self.tokenizer.encode(text, truncation=True)
@@ -803,6 +799,11 @@ class HFTokenizer(BaseTokenizer):
         return self.tokenizer.get_vocab()
 
     def get_pad_token(self) -> str:
+        # HACK(geoffrey): gpt2 has no pad token. Recommendation is to use eos token instead.
+        # https://github.com/huggingface/transformers/issues/2630#issuecomment-1290809338
+        # https://github.com/huggingface/transformers/issues/2648#issuecomment-616177044
+        if self.pretrained_model_name_or_path == "gpt2":
+            self.tokenizer.pad_token = self.tokenizer.eos_token
         return self.tokenizer.pad_token
 
     def get_unk_token(self) -> str:
@@ -949,7 +950,6 @@ try:
             def __init__(self, pretrained_model_name_or_path: str, vocab_file: str):
                 super().__init__()
                 self.str2idx, self.idx2str = self._init_vocab(vocab_file)
-                # TODO(geoffrey): If we move to torchtext>=0.13.0, we can use return_tokens kwarg to get tokens directly
                 self.tokenizer = self._init_tokenizer(pretrained_model_name_or_path, vocab_file)
 
             def _init_vocab(self, vocab_file: str) -> Dict[str, str]:
@@ -1177,12 +1177,12 @@ def get_hf_tokenizer(pretrained_model_name_or_path, **kwargs):
     Returns:
         A torchscript-able HF tokenizer if it is available. Else, returns vanilla HF tokenizer.
     """
-    from transformers import AutoTokenizer, BertTokenizer
+    from transformers import BertTokenizer
 
     hf_name = pretrained_model_name_or_path
     # use_fast=False to leverage python class inheritance
     # cannot tokenize HF tokenizers directly because HF lacks strict typing and List[str] cannot be traced
-    hf_tokenizer = load_pretrained_hf_model(AutoTokenizer, hf_name, use_fast=False)
+    hf_tokenizer = load_pretrained_hf_tokenizer(hf_name, use_fast=False)
 
     torchtext_tokenizer = None
     if "bert" in TORCHSCRIPT_COMPATIBLE_TOKENIZERS and isinstance(hf_tokenizer, BertTokenizer):
@@ -1225,10 +1225,23 @@ def get_hf_tokenizer(pretrained_model_name_or_path, **kwargs):
 
 
 def _get_bert_config(hf_name):
-    from transformers.utils.hub import cached_path
+    """Gets configs from BERT tokenizers in HuggingFace.
+
+    `vocab_file` is required for BERT tokenizers. `tokenizer_config.json` are optional keyword arguments used to
+    initialize the tokenizer object. If no `tokenizer_config.json` is found, then we instantiate the tokenizer with
+    default arguments.
+    """
+    from transformers.utils.hub import cached_path, EntryNotFoundError
 
     vocab_file = cached_path(f"https://huggingface.co/{hf_name}/resolve/main/vocab.txt")
-    tokenizer_config = load_json(cached_path(f"https://huggingface.co/{hf_name}/resolve/main/tokenizer_config.json"))
+
+    try:
+        tokenizer_config = load_json(
+            cached_path(f"https://huggingface.co/{hf_name}/resolve/main/tokenizer_config.json")
+        )
+    except EntryNotFoundError:
+        tokenizer_config = {}
+
     return {"vocab_file": vocab_file, **tokenizer_config}
 
 

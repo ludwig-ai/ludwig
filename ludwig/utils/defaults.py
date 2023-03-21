@@ -20,7 +20,6 @@ import logging
 import yaml
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.config_validation.validation import validate_config
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.features.feature_registries import get_input_type_registry
 from ludwig.globals import LUDWIG_VERSION
@@ -36,20 +35,22 @@ logger = logging.getLogger(__name__)
 default_random_seed = 42
 
 # Still needed for preprocessing  TODO(Connor): Refactor ludwig/data/preprocessing to use schema
+# TODO(travis): remove this, make type a protected string for each subclass
 default_feature_specific_preprocessing_parameters = {
-    name: preproc_sect.get_schema_cls()().preprocessing.to_dict()
+    name: preproc_sect.get_schema_cls()(name="__tmp__", type=name).preprocessing.to_dict()
     for name, preproc_sect in get_input_type_registry().items()
 }
 
-default_preprocessing_parameters = copy.deepcopy(default_feature_specific_preprocessing_parameters)
-default_preprocessing_parameters.update(PreprocessingConfig().to_dict())
+default_training_preprocessing_parameters = copy.deepcopy(default_feature_specific_preprocessing_parameters)
+default_training_preprocessing_parameters.update(PreprocessingConfig().to_dict())
+
+default_prediction_preprocessing_parameters = copy.deepcopy(default_feature_specific_preprocessing_parameters)
 
 
 @DeveloperAPI
 def render_config(config=None, output=None, **kwargs):
     upgraded_config = upgrade_config_dict_to_latest_version(config)
     output_config = ModelConfig.from_dict(upgraded_config).to_dict()
-    validate_config(output_config)
 
     if output is None:
         print(yaml.safe_dump(output_config, None, sort_keys=False))

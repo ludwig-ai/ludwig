@@ -5,10 +5,6 @@ train_filenames: amazon_review_full_csv/train.csv
 test_filenames: amazon_review_full_csv/test.csv
 sha256:
   amazon_review_full_csv.tgz: 4af62eeee139d0142e0747340b68646d23483d9475c33ea0641ee9175b423443
-columns:
-  - label
-  - review_title
-  - review_text
 description: |
   The Amazon Reviews dataset
   Details:
@@ -19,6 +15,13 @@ description: |
   Dataset source:
     Character-level Convolutional Networks for Text Classification
     Xiang Zhang et al., 2015
+columns:
+  - name: label
+    type: category
+  - name: review_title
+    type: text
+  - name: review_text
+    type: text
 output_features:
   - name: label
     type: category

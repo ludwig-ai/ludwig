@@ -218,4 +218,5 @@ def get_targets(
     else:
         targets = lgb_train.get_data(actor_rank, 1)["label"].to_numpy()
     targets = targets.copy() if is_regression else targets.copy().astype(int)
-    return {output_feature.feature_name: torch.from_numpy(targets).to(device)}
+    # TODO (jeffkinnison): revert to use the requested device once torch device usage is standardized
+    return {output_feature.feature_name: torch.from_numpy(targets).cpu()}

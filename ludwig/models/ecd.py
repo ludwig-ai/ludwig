@@ -6,12 +6,13 @@ import numpy as np
 import torch
 import torchmetrics
 
-from ludwig.combiners.combiners import get_combiner_class
+from ludwig.combiners.combiners import create_combiner
 from ludwig.constants import MODEL_ECD
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
-from ludwig.schema.model_config import ModelConfig
+from ludwig.schema.model_types.ecd import ECDModelConfig
 from ludwig.utils import output_feature_utils
+from ludwig.utils.augmentation_utils import AugmentationPipelines
 from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.fs_utils import open_file
 from ludwig.utils.state_dict_backward_compatibility import update_state_dict
@@ -27,7 +28,7 @@ class ECD(BaseModel):
 
     def __init__(
         self,
-        config_obj: ModelConfig,
+        config_obj: ECDModelConfig,
         random_seed=None,
         **_kwargs,
     ):
@@ -46,8 +47,7 @@ class ECD(BaseModel):
 
         # ================ Combiner ================
         logger.debug(f"Combiner {self.config_obj.combiner.type}")
-        combiner_class = get_combiner_class(self.config_obj.combiner.type)
-        self.combiner = combiner_class(input_features=self.input_features, config=self.config_obj.combiner)
+        self.combiner = create_combiner(self.config_obj.combiner, input_features=self.input_features)
 
         # ================ Outputs ================
         self.output_features.update(
@@ -76,7 +76,7 @@ class ECD(BaseModel):
 
         encoder_outputs = {}
         for input_feature_name, input_values in inputs.items():
-            encoder = self.input_features[input_feature_name]
+            encoder = self.input_features.get(input_feature_name)
             encoder_output = encoder(input_values)
             encoder_outputs[input_feature_name] = encoder_output
 
@@ -141,6 +141,10 @@ class ECD(BaseModel):
         combiner_outputs = self.combine(encoder_outputs)
         return self.decode(combiner_outputs, targets, mask)
 
+    def unskip(self):
+        for k in self.input_features.keys():
+            self.input_features.set(k, self.input_features.get(k).unskip())
+
     def save(self, save_path):
         """Saves the model to the given path."""
         weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
@@ -162,3 +166,19 @@ class ECD(BaseModel):
             self.config_obj.output_features.to_list(),
             self._random_seed,
         )
+
+    def get_augmentation_pipelines(self) -> AugmentationPipelines:
+        """Returns the augmentation pipeline for this model."""
+        # dictionary to hold any augmentation pipeline
+        augmentation_pipelines = {}
+
+        # loop through all input features and add their augmentation pipeline to the dictionary
+        for input_feature in self.config_obj.input_features:
+            # if augmentation was specified for this input feature, add AugmentationPipeline to dictionary
+            if input_feature.has_augmentation():
+                # use input feature proc_column as key because that is what is used in the Batcher
+                augmentation_pipelines[input_feature.proc_column] = self.input_features.get(
+                    input_feature.name
+                ).get_augmentation_pipeline()
+
+        return AugmentationPipelines(augmentation_pipelines)

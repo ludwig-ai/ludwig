@@ -51,7 +51,7 @@ class BinaryIgnoreNoneTypeDatasource(BinaryDatasource):
     def prepare_read(
         self,
         parallelism: int,
-        paths: Union[str, List[str], Tuple[str, int], List[Tuple[str, int]]],
+        path_and_idxs: Union[str, List[str], Tuple[str, int], List[Tuple[str, int]]],
         filesystem: Optional["pyarrow.fs.FileSystem"] = None,
         schema: Optional[Union[type, "pyarrow.lib.Schema"]] = None,
         open_stream_args: Optional[Dict[str, Any]] = None,
@@ -67,7 +67,7 @@ class BinaryIgnoreNoneTypeDatasource(BinaryDatasource):
         Useful for tracking the order of files in the dataset.
         """
         reader = self.create_reader(
-            paths=paths,
+            paths=path_and_idxs,
             filesystem=filesystem,
             schema=schema,
             open_stream_args=open_stream_args,
@@ -132,7 +132,7 @@ class _BinaryIgnoreNoneTypeDatasourceReader:
     def __init__(
         self,
         delegate: Datasource,
-        paths: Union[str, List[str], Tuple[str, int], List[Tuple[str, int]]],
+        path_and_idxs: Union[str, List[str], Tuple[str, int], List[Tuple[str, int]]],
         filesystem: Optional["pyarrow.fs.FileSystem"] = None,
         schema: Optional[Union[type, "pyarrow.lib.Schema"]] = None,
         open_stream_args: Optional[Dict[str, Any]] = None,
@@ -151,8 +151,8 @@ class _BinaryIgnoreNoneTypeDatasourceReader:
         self._block_udf = _block_udf
         self._reader_args = reader_args
 
-        has_idx = isinstance(paths[0], tuple)  # include idx if paths is a list of Tuple[str, int]
-        raw_paths_and_idxs = paths if has_idx else [(path, None) for path in paths]
+        has_idx = isinstance(path_and_idxs[0], tuple)  # include idx if paths is a list of Tuple[str, int]
+        raw_paths_and_idxs = path_and_idxs if has_idx else [(path, None) for path in path_and_idxs]
 
         self._paths = []
         self._file_sizes = []

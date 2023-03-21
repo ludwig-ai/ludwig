@@ -1,19 +1,86 @@
-from typing import List
-
-from marshmallow_dataclass import dataclass
+from dataclasses import Field
+from typing import List, Optional, TYPE_CHECKING
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import AUDIO, SEQUENCE, TEXT, TIMESERIES
+from ludwig.schema import common_fields
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.metadata import ENCODER_METADATA
+from ludwig.schema.utils import ludwig_dataclass
+
+if TYPE_CHECKING:
+    from ludwig.schema.features.preprocessing.sequence import SequencePreprocessingConfig
+
+CONV_LAYERS_DESCRIPTION = """
+A list of dictionaries containing the parameters of all the convolutional layers.
+The length of the list determines the number of stacked convolutional layers and the content of each dictionary
+determines the parameters for a specific layer. The available parameters for each layer are: `activation`, `dropout`,
+`norm`, `norm_params`, `num_filters`, `filter_size`, `strides`, `padding`, `dilation_rate`, `use_bias`, `pool_function`,
+`pool_padding`, `pool_size`, `pool_strides`, `bias_initializer`, `weights_initializer`. If any of those values is
+missing from the dictionary, the default one specified as a parameter of the encoder will be used instead. If both
+`conv_layers` and `num_conv_layers` are `null`, a default list will be assigned to `conv_layers` with the value
+`[{filter_size: 7, pool_size: 3}, {filter_size: 7, pool_size: 3}, {filter_size: 3, pool_size: null},
+{filter_size: 3, pool_size: null}, {filter_size: 3, pool_size: null}, {filter_size: 3, pool_size: 3}]`.
+"""
+
+NUM_CONV_LAYERS_DESCRIPTION = "The number of stacked convolutional layers when `conv_layers` is `null`."
+
+
+def NumFiltersField(default: int = 256) -> Field:
+    return schema_utils.PositiveInteger(
+        default=default,
+        description="Number of filters, and by consequence number of output channels of the 1d convolution.",
+        parameter_metadata=ENCODER_METADATA["conv_params"]["num_filters"],
+    )
+
+
+def FilterSizeField(default: int = 3) -> Field:
+    return schema_utils.PositiveInteger(
+        default=default,
+        description="Size of the 1d convolutional filter. It indicates how wide the 1d convolutional filter is.",
+        parameter_metadata=ENCODER_METADATA["conv_params"]["filter_size"],
+    )
+
+
+def PoolFunctionField(default: str = "max") -> Field:
+    return schema_utils.ReductionOptions(
+        default=default,
+        description=(
+            "Pooling function to use. `max` will select the maximum value. Any of `average`, `avg`, or "
+            "`mean` will compute the mean value"
+        ),
+        parameter_metadata=ENCODER_METADATA["conv_params"]["pool_function"],
+    )
+
+
+def PoolSizeField(default: Optional[int] = None) -> Field:
+    return schema_utils.PositiveInteger(
+        default=None,
+        allow_none=True,
+        description=(
+            "The default pool_size that will be used for each layer. If a pool_size is not already specified "
+            "in conv_layers this is the default pool_size that will be used for each layer. It indicates the size of "
+            "the max pooling that will be performed along the `s` sequence dimension after the convolution operation."
+        ),
+        parameter_metadata=ENCODER_METADATA["conv_params"]["pool_size"],
+    )
 
 
 @DeveloperAPI
-@register_encoder_config("passthrough", [SEQUENCE, TEXT, TIMESERIES])
-@dataclass(repr=False)
-class SequencePassthroughConfig(BaseEncoderConfig):
+@ludwig_dataclass
+class SequenceEncoderConfig(BaseEncoderConfig):
+    """Base class for sequence encoders."""
+
+    def set_fixed_preprocessing_params(self, model_type: str, preprocessing: "SequencePreprocessingConfig"):
+        preprocessing.cache_encoder_embeddings = False
+
+
+@DeveloperAPI
+@register_encoder_config("passthrough", [TIMESERIES])
+@ludwig_dataclass
+class SequencePassthroughConfig(SequenceEncoderConfig):
     @staticmethod
     def module_name():
         return "SequencePassthrough"
@@ -23,30 +90,22 @@ class SequencePassthroughConfig(BaseEncoderConfig):
         description=ENCODER_METADATA["SequencePassthrough"]["type"].long_description,
     )
 
-    max_sequence_length: int = schema_utils.PositiveInteger(
-        default=256,
-        description="The maximum length of a sequence.",
-        parameter_metadata=ENCODER_METADATA["SequencePassthrough"]["max_sequence_length"],
-    )
+    max_sequence_length: int = common_fields.MaxSequenceLengthField()
 
     encoding_size: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="The size of the encoding vector, or None if sequence elements are scalars.",
         parameter_metadata=ENCODER_METADATA["SequencePassthrough"]["encoding_size"],
     )
 
-    reduce_output: str = schema_utils.ReductionOptions(
-        default=None,
-        description="How to reduce the output tensor along the `s` sequence length dimension if the rank of the "
-        "tensor is greater than 2.",
-        parameter_metadata=ENCODER_METADATA["SequencePassthrough"]["reduce_output"],
-    )
+    reduce_output: str = common_fields.ReduceOutputField(default=None)
 
 
 @DeveloperAPI
 @register_encoder_config("embed", [SEQUENCE, TEXT])
-@dataclass(repr=False)
-class SequenceEmbedConfig(BaseEncoderConfig):
+@ludwig_dataclass
+class SequenceEmbedConfig(SequenceEncoderConfig):
     @staticmethod
     def module_name():
         return "SequenceEmbed"
@@ -56,76 +115,31 @@ class SequenceEmbedConfig(BaseEncoderConfig):
         description=ENCODER_METADATA["SequenceEmbed"]["type"].long_description,
     )
 
-    dropout: float = schema_utils.FloatRange(
-        default=0.0,
-        min=0,
-        max=1,
-        description="Dropout probability for the embedding.",
-        parameter_metadata=ENCODER_METADATA["SequenceEmbed"]["dropout"],
-    )
+    dropout: float = common_fields.DropoutField(description="Dropout rate applied to the embedding.")
 
-    max_sequence_length: int = schema_utils.PositiveInteger(
-        default=None,
-        description="The maximum length of a sequence.",
-        parameter_metadata=ENCODER_METADATA["SequenceEmbed"]["max_sequence_length"],
-    )
+    max_sequence_length: int = common_fields.MaxSequenceLengthField()
 
-    representation: str = schema_utils.StringOptions(
-        ["dense", "sparse"],
-        default="dense",
-        description="Representation of the embedding.",
-        parameter_metadata=ENCODER_METADATA["SequenceEmbed"]["representation"],
-    )
+    representation: str = common_fields.RepresentationField()
 
-    vocab: list = schema_utils.List(
-        default=None,
-        description="Vocabulary for the encoder",
-        parameter_metadata=ENCODER_METADATA["SequenceEmbed"]["vocab"],
-    )
+    vocab: list = common_fields.VocabField()
 
-    weights_initializer: str = schema_utils.InitializerOptions(
-        default="uniform",
-        description="Initializer to use for the weights matrix.",
-        parameter_metadata=ENCODER_METADATA["SequenceEmbed"]["weights_initializer"],
-    )
+    weights_initializer: str = common_fields.WeightsInitializerField(default="uniform")
 
-    reduce_output: str = schema_utils.ReductionOptions(
-        default="sum",
-        description="How to reduce the output tensor along the `s` sequence length dimension if the rank of the "
-        "tensor is greater than 2.",
-        parameter_metadata=ENCODER_METADATA["SequenceEmbed"]["reduce_output"],
-    )
+    reduce_output: str = common_fields.ReduceOutputField()
 
-    embedding_size: int = schema_utils.PositiveInteger(
-        default=256,
-        description="Size of the embedding.",
-        parameter_metadata=ENCODER_METADATA["SequenceEmbed"]["embedding_size"],
-    )
+    embedding_size: int = common_fields.EmbeddingSizeField()
 
-    embeddings_on_cpu: bool = schema_utils.Boolean(
-        default=False,
-        description="Whether to force the placement of the embedding matrix in regular memory and have the CPU "
-        "resolve them.",
-        parameter_metadata=ENCODER_METADATA["SequenceEmbed"]["embeddings_on_cpu"],
-    )
+    embeddings_on_cpu: bool = common_fields.EmbeddingsOnCPUField()
 
-    embeddings_trainable: bool = schema_utils.Boolean(
-        default=True,
-        description="Whether the embedding is trainable.",
-        parameter_metadata=ENCODER_METADATA["SequenceEmbed"]["embeddings_trainable"],
-    )
+    embeddings_trainable: bool = common_fields.EmbeddingsTrainableField()
 
-    pretrained_embeddings: str = schema_utils.String(
-        default=None,
-        description="Path to a file containing pretrained embeddings.",
-        parameter_metadata=ENCODER_METADATA["SequenceEmbed"]["pretrained_embeddings"],
-    )
+    pretrained_embeddings: str = common_fields.PretrainedEmbeddingsField()
 
 
 @DeveloperAPI
 @register_encoder_config("parallel_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
-@dataclass(repr=False)
-class ParallelCNNConfig(BaseEncoderConfig):
+@ludwig_dataclass
+class ParallelCNNConfig(SequenceEncoderConfig):
     @staticmethod
     def module_name():
         return "ParallelCNN"
@@ -135,73 +149,17 @@ class ParallelCNNConfig(BaseEncoderConfig):
         description=ENCODER_METADATA["ParallelCNN"]["type"].long_description,
     )
 
-    dropout: float = schema_utils.FloatRange(
-        default=0.0,
-        min=0,
-        max=1,
-        description="Dropout probability for the embedding.",
-        parameter_metadata=ENCODER_METADATA["ParallelCNN"]["dropout"],
-    )
+    dropout: float = common_fields.DropoutField(description="Dropout rate applied to the embedding.")
 
     activation: str = schema_utils.ActivationOptions(
-        description="The default activation function that will be used for each layer.",
-        parameter_metadata=ENCODER_METADATA["ParallelCNN"]["activation"],
+        description="The default activation function that will be used for each layer."
     )
 
-    max_sequence_length: int = schema_utils.PositiveInteger(
-        default=None,
-        description="The maximum length of all sequences",
-        parameter_metadata=ENCODER_METADATA["ParallelCNN"]["max_sequence_length"],
-    )
+    max_sequence_length: int = common_fields.MaxSequenceLengthField()
 
-    representation: str = schema_utils.StringOptions(
-        ["dense", "sparse"],
-        default="dense",
-        description="Representation of the embedding.",
-        parameter_metadata=ENCODER_METADATA["ParallelCNN"]["representation"],
-    )
+    representation: str = common_fields.RepresentationField()
 
-    vocab: list = schema_utils.List(
-        default=None,
-        description="Vocabulary for the encoder",
-        parameter_metadata=ENCODER_METADATA["ParallelCNN"]["vocab"],
-    )
-
-    num_conv_layers: int = schema_utils.PositiveInteger(
-        default=None,
-        description="Number of parallel convolutional layers to use.",
-        parameter_metadata=ENCODER_METADATA["ParallelCNN"]["num_conv_layers"],
-    )
-
-    conv_layers: List[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for conv_layers
-        default=None,
-        description="List of dictionaries containing the parameters for each convolutional layer.",
-        parameter_metadata=ENCODER_METADATA["ParallelCNN"]["conv_layers"],
-    )
-
-    num_filters: int = schema_utils.PositiveInteger(
-        default=256,
-        description="Number of filters, and by consequence number of output channels of the 1d convolution.",
-        parameter_metadata=ENCODER_METADATA["ParallelCNN"]["num_filters"],
-    )
-
-    filter_size: int = schema_utils.PositiveInteger(
-        default=3,
-        description="Size of the 1d convolutional filter.",
-        parameter_metadata=ENCODER_METADATA["ParallelCNN"]["filter_size"],
-    )
-
-    pool_function: str = schema_utils.ReductionOptions(
-        default="max",
-        description="Pooling function to use.",
-        parameter_metadata=ENCODER_METADATA["ParallelCNN"]["pool_function"],
-    )
-
-    pool_size: int = schema_utils.PositiveInteger(
-        default=None,
-        description="The default pool_size that will be used for each layer.",
-        parameter_metadata=ENCODER_METADATA["ParallelCNN"]["pool_size"],
-    )
+    vocab: list = common_fields.VocabField()
 
     use_bias: bool = schema_utils.Boolean(
         default=True,
@@ -209,16 +167,9 @@ class ParallelCNNConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["ParallelCNN"]["use_bias"],
     )
 
-    bias_initializer: str = schema_utils.InitializerOptions(
-        default="zeros",
-        description="Initializer to use for the bias vector.",
-        parameter_metadata=ENCODER_METADATA["ParallelCNN"]["bias_initializer"],
-    )
+    bias_initializer: str = common_fields.BiasInitializerField()
 
-    weights_initializer: str = schema_utils.InitializerOptions(
-        description="Initializer to use for the weights matrix.",
-        parameter_metadata=ENCODER_METADATA["ParallelCNN"]["weights_initializer"],
-    )
+    weights_initializer: str = common_fields.WeightsInitializerField()
 
     should_embed: bool = schema_utils.Boolean(
         default=True,
@@ -226,37 +177,36 @@ class ParallelCNNConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["ParallelCNN"]["should_embed"],
     )
 
-    embedding_size: int = schema_utils.PositiveInteger(
-        default=256,
-        description="Size of the embedding.",
-        parameter_metadata=ENCODER_METADATA["ParallelCNN"]["embedding_size"],
-    )
+    embedding_size: int = common_fields.EmbeddingSizeField()
 
-    embeddings_on_cpu: bool = schema_utils.Boolean(
-        default=False,
-        description="Whether to force the placement of the embedding matrix in regular memory and have the CPU "
-        "resolve them.",
-        parameter_metadata=ENCODER_METADATA["ParallelCNN"]["embeddings_on_cpu"],
-    )
+    embeddings_on_cpu: bool = common_fields.EmbeddingsOnCPUField()
 
-    embeddings_trainable: bool = schema_utils.Boolean(
-        default=True,
-        description="Whether the embedding is trainable.",
-        parameter_metadata=ENCODER_METADATA["ParallelCNN"]["embeddings_trainable"],
-    )
+    embeddings_trainable: bool = common_fields.EmbeddingsTrainableField()
 
-    pretrained_embeddings: str = schema_utils.String(
+    pretrained_embeddings: str = common_fields.PretrainedEmbeddingsField()
+
+    reduce_output: str = common_fields.ReduceOutputField()
+
+    num_conv_layers: int = schema_utils.PositiveInteger(
         default=None,
-        description="Path to a file containing pretrained embeddings.",
-        parameter_metadata=ENCODER_METADATA["ParallelCNN"]["pretrained_embeddings"],
+        allow_none=True,
+        description=NUM_CONV_LAYERS_DESCRIPTION,
+        parameter_metadata=ENCODER_METADATA["conv_params"]["num_conv_layers"],
     )
 
-    reduce_output: str = schema_utils.ReductionOptions(
-        default="sum",
-        description="How to reduce the output tensor along the `s` sequence length dimension if the rank of the "
-        "tensor is greater than 2.",
-        parameter_metadata=ENCODER_METADATA["ParallelCNN"]["reduce_output"],
+    conv_layers: List[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for conv_layers
+        default=None,
+        description=CONV_LAYERS_DESCRIPTION,
+        parameter_metadata=ENCODER_METADATA["conv_params"]["conv_layers"],
     )
+
+    num_filters: int = NumFiltersField()
+
+    filter_size: int = FilterSizeField()
+
+    pool_function: str = PoolFunctionField()
+
+    pool_size: int = PoolSizeField()
 
     output_size: int = schema_utils.PositiveInteger(
         default=256,
@@ -267,6 +217,7 @@ class ParallelCNNConfig(BaseEncoderConfig):
     norm: str = schema_utils.StringOptions(
         ["batch", "layer"],
         default=None,
+        allow_none=True,
         description="The default norm that will be used for each layer.",
         parameter_metadata=ENCODER_METADATA["ParallelCNN"]["norm"],
     )
@@ -279,6 +230,7 @@ class ParallelCNNConfig(BaseEncoderConfig):
 
     num_fc_layers: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Number of parallel fully connected layers to use.",
         parameter_metadata=ENCODER_METADATA["ParallelCNN"]["num_fc_layers"],
     )
@@ -292,8 +244,8 @@ class ParallelCNNConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("stacked_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
-@dataclass(repr=False)
-class StackedCNNConfig(BaseEncoderConfig):
+@ludwig_dataclass
+class StackedCNNConfig(SequenceEncoderConfig):
     @staticmethod
     def module_name():
         return "StackedCNN"
@@ -303,61 +255,38 @@ class StackedCNNConfig(BaseEncoderConfig):
         description=ENCODER_METADATA["StackedCNN"]["type"].long_description,
     )
 
-    dropout: float = schema_utils.FloatRange(
-        default=0.0,
-        min=0,
-        max=1,
-        description="Dropout probability for the embedding.",
-        parameter_metadata=ENCODER_METADATA["StackedCNN"]["dropout"],
-    )
+    dropout: float = common_fields.DropoutField(description="Dropout rate applied to the embedding.")
 
     activation: str = schema_utils.ActivationOptions(
-        description="The default activation function that will be used for each layer.",
-        parameter_metadata=ENCODER_METADATA["StackedCNN"]["activation"],
+        description="The default activation function that will be used for each layer."
     )
 
-    max_sequence_length: int = schema_utils.PositiveInteger(
-        default=None,
-        description="The maximum length of all sequences",
-        parameter_metadata=ENCODER_METADATA["StackedCNN"]["max_sequence_length"],
-    )
+    max_sequence_length: int = common_fields.MaxSequenceLengthField()
 
-    representation: str = schema_utils.StringOptions(
-        ["dense", "sparse"],
-        default="dense",
-        description="Representation of the embedding.",
-        parameter_metadata=ENCODER_METADATA["StackedCNN"]["representation"],
-    )
+    representation: str = common_fields.RepresentationField()
 
-    vocab: list = schema_utils.List(
-        default=None,
-        description="Vocabulary for the encoder",
-        parameter_metadata=ENCODER_METADATA["StackedCNN"]["vocab"],
-    )
+    vocab: list = common_fields.VocabField()
 
     num_conv_layers: int = schema_utils.PositiveInteger(
         default=None,
-        description="Number of parallel convolutional layers to use.",
-        parameter_metadata=ENCODER_METADATA["StackedCNN"]["num_conv_layers"],
+        allow_none=True,
+        description=NUM_CONV_LAYERS_DESCRIPTION,
+        parameter_metadata=ENCODER_METADATA["conv_params"]["num_conv_layers"],
     )
 
     conv_layers: List[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for conv_layers
         default=None,
-        description="List of dictionaries containing the parameters for each convolutional layer.",
-        parameter_metadata=ENCODER_METADATA["StackedCNN"]["conv_layers"],
+        description=CONV_LAYERS_DESCRIPTION,
+        parameter_metadata=ENCODER_METADATA["conv_params"]["conv_layers"],
     )
 
-    num_filters: int = schema_utils.PositiveInteger(
-        default=256,
-        description="Number of filters, and by consequence number of output channels of the 1d convolution.",
-        parameter_metadata=ENCODER_METADATA["StackedCNN"]["num_filters"],
-    )
+    num_filters: int = NumFiltersField()
 
-    filter_size: int = schema_utils.PositiveInteger(
-        default=3,
-        description="Size of the 1d convolutional filter.",
-        parameter_metadata=ENCODER_METADATA["StackedCNN"]["filter_size"],
-    )
+    filter_size: int = FilterSizeField()
+
+    pool_function: str = PoolFunctionField()
+
+    pool_size: int = PoolSizeField()
 
     strides: int = schema_utils.PositiveInteger(
         default=1,
@@ -378,20 +307,9 @@ class StackedCNNConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedCNN"]["dilation_rate"],
     )
 
-    pool_function: str = schema_utils.ReductionOptions(
-        default="max",
-        description="Pooling function to use.",
-        parameter_metadata=ENCODER_METADATA["StackedCNN"]["pool_function"],
-    )
-
-    pool_size: int = schema_utils.PositiveInteger(
-        default=None,
-        description="The default pool_size that will be used for each layer.",
-        parameter_metadata=ENCODER_METADATA["StackedCNN"]["pool_size"],
-    )
-
     pool_strides: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Factor to scale down.",
         parameter_metadata=ENCODER_METADATA["StackedCNN"]["pool_strides"],
     )
@@ -409,16 +327,9 @@ class StackedCNNConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedCNN"]["use_bias"],
     )
 
-    bias_initializer: str = schema_utils.InitializerOptions(
-        default="zeros",
-        description="Initializer to use for the bias vector.",
-        parameter_metadata=ENCODER_METADATA["StackedCNN"]["bias_initializer"],
-    )
+    bias_initializer: str = common_fields.BiasInitializerField()
 
-    weights_initializer: str = schema_utils.InitializerOptions(
-        description="Initializer to use for the weights matrix.",
-        parameter_metadata=ENCODER_METADATA["StackedCNN"]["weights_initializer"],
-    )
+    weights_initializer: str = common_fields.WeightsInitializerField()
 
     should_embed: bool = schema_utils.Boolean(
         default=True,
@@ -426,37 +337,15 @@ class StackedCNNConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedCNN"]["should_embed"],
     )
 
-    embedding_size: int = schema_utils.PositiveInteger(
-        default=256,
-        description="Size of the embedding.",
-        parameter_metadata=ENCODER_METADATA["StackedCNN"]["embedding_size"],
-    )
+    embedding_size: int = common_fields.EmbeddingSizeField()
 
-    embeddings_on_cpu: bool = schema_utils.Boolean(
-        default=False,
-        description="Whether to force the placement of the embedding matrix in regular memory and have the CPU "
-        "resolve them.",
-        parameter_metadata=ENCODER_METADATA["StackedCNN"]["embeddings_on_cpu"],
-    )
+    embeddings_on_cpu: bool = common_fields.EmbeddingsOnCPUField()
 
-    embeddings_trainable: bool = schema_utils.Boolean(
-        default=True,
-        description="Whether the embedding is trainable.",
-        parameter_metadata=ENCODER_METADATA["StackedCNN"]["embeddings_trainable"],
-    )
+    embeddings_trainable: bool = common_fields.EmbeddingsTrainableField()
 
-    pretrained_embeddings: str = schema_utils.String(
-        default=None,
-        description="Path to a file containing pretrained embeddings.",
-        parameter_metadata=ENCODER_METADATA["StackedCNN"]["pretrained_embeddings"],
-    )
+    pretrained_embeddings: str = common_fields.PretrainedEmbeddingsField()
 
-    reduce_output: str = schema_utils.ReductionOptions(
-        default="sum",
-        description="How to reduce the output tensor along the `s` sequence length dimension if the rank of the "
-        "tensor is greater than 2.",
-        parameter_metadata=ENCODER_METADATA["StackedCNN"]["reduce_output"],
-    )
+    reduce_output: str = common_fields.ReduceOutputField()
 
     output_size: int = schema_utils.PositiveInteger(
         default=256,
@@ -467,6 +356,7 @@ class StackedCNNConfig(BaseEncoderConfig):
     norm: str = schema_utils.StringOptions(
         ["batch", "layer"],
         default=None,
+        allow_none=True,
         description="The default norm that will be used for each layer.",
         parameter_metadata=ENCODER_METADATA["StackedCNN"]["norm"],
     )
@@ -479,6 +369,7 @@ class StackedCNNConfig(BaseEncoderConfig):
 
     num_fc_layers: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Number of parallel fully connected layers to use.",
         parameter_metadata=ENCODER_METADATA["StackedCNN"]["num_fc_layers"],
     )
@@ -492,8 +383,8 @@ class StackedCNNConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("stacked_parallel_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
-@dataclass(repr=False)
-class StackedParallelCNNConfig(BaseEncoderConfig):
+@ludwig_dataclass
+class StackedParallelCNNConfig(SequenceEncoderConfig):
     @staticmethod
     def module_name():
         return "StackedParallelCNN"
@@ -503,41 +394,21 @@ class StackedParallelCNNConfig(BaseEncoderConfig):
         description=ENCODER_METADATA["StackedParallelCNN"]["type"].long_description,
     )
 
-    dropout: float = schema_utils.FloatRange(
-        default=0.0,
-        min=0,
-        max=1,
-        description="Dropout probability for the embedding.",
-        parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["dropout"],
-    )
+    dropout: float = common_fields.DropoutField(description="Dropout rate applied to the embedding.")
 
     activation: str = schema_utils.ActivationOptions(
-        description="The default activation function that will be used for each layer.",
-        parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["activation"],
+        description="The default activation function that will be used for each layer."
     )
 
-    max_sequence_length: int = schema_utils.PositiveInteger(
-        default=None,
-        description="The maximum length of all sequences",
-        parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["max_sequence_length"],
-    )
+    max_sequence_length: int = common_fields.MaxSequenceLengthField()
 
-    representation: str = schema_utils.StringOptions(
-        ["dense", "sparse"],
-        default="dense",
-        description="The representation of the embeddings. 'Dense' means the embeddings are initialized randomly. "
-        "'Sparse' means they are initialized to be one-hot encodings.",
-        parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["representation"],
-    )
+    representation: str = common_fields.RepresentationField()
 
-    vocab: list = schema_utils.List(
-        default=None,
-        description="Vocabulary of the input feature to encode",
-        parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["vocab"],
-    )
+    vocab: list = common_fields.VocabField()
 
     num_stacked_layers: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="If stacked_layers is null, this is the number of elements in the stack of parallel convolutional "
         "layers. ",
         parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["num_stacked_layers"],
@@ -552,29 +423,13 @@ class StackedParallelCNNConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["stacked_layers"],
     )
 
-    num_filters: int = schema_utils.PositiveInteger(
-        default=256,
-        description="Number of filters, and by consequence number of output channels of the 1d convolution.",
-        parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["num_filters"],
-    )
+    num_filters: int = NumFiltersField()
 
-    filter_size: int = schema_utils.PositiveInteger(
-        default=3,
-        description="Size of the 1d convolutional filter.",
-        parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["filter_size"],
-    )
+    filter_size: int = FilterSizeField()
 
-    pool_function: str = schema_utils.ReductionOptions(
-        default="max",
-        description="Pooling function to use.",
-        parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["pool_function"],
-    )
+    pool_function: str = PoolFunctionField()
 
-    pool_size: int = schema_utils.PositiveInteger(
-        default=None,
-        description="The default pool_size that will be used for each layer.",
-        parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["pool_size"],
-    )
+    pool_size: int = PoolSizeField()
 
     use_bias: bool = schema_utils.Boolean(
         default=True,
@@ -582,16 +437,9 @@ class StackedParallelCNNConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["use_bias"],
     )
 
-    bias_initializer: str = schema_utils.InitializerOptions(
-        default="zeros",
-        description="Initializer to use for the bias vector.",
-        parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["bias_initializer"],
-    )
+    bias_initializer: str = common_fields.BiasInitializerField()
 
-    weights_initializer: str = schema_utils.InitializerOptions(
-        description="Initializer to use for the weights matrix.",
-        parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["weights_initializer"],
-    )
+    weights_initializer: str = common_fields.WeightsInitializerField()
 
     should_embed: bool = schema_utils.Boolean(
         default=True,
@@ -599,50 +447,15 @@ class StackedParallelCNNConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["should_embed"],
     )
 
-    embedding_size: int = schema_utils.PositiveInteger(
-        default=256,
-        description="The maximum embedding size. The actual size will be `min(vocabulary_size, embedding_size)` for "
-        "`dense` representations and exactly `vocabulary_size` for the `sparse` encoding, "
-        "where `vocabulary_size` is the number of different strings appearing in the training set in the "
-        "column the feature is named after (plus 1 for `<UNK>`).",
-        parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["embedding_size"],
-    )
+    embedding_size: int = common_fields.EmbeddingSizeField()
 
-    embeddings_on_cpu: bool = schema_utils.Boolean(
-        default=False,
-        description="by default embedding matrices are stored on GPU memory if a GPU is used, as it allows for faster "
-        "access, but in some cases the embedding matrix may be too large. This parameter forces the "
-        "placement of the embedding matrix in regular memory and the CPU is used for embedding lookup, "
-        "slightly slowing down the process as a result of data transfer between CPU and GPU memory.",
-        parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["embeddings_on_cpu"],
-    )
+    embeddings_on_cpu: bool = common_fields.EmbeddingsOnCPUField()
 
-    embeddings_trainable: bool = schema_utils.Boolean(
-        default=True,
-        description="If true embeddings are trained during the training process, if false embeddings are fixed. It "
-        "may be useful when loading pretrained embeddings for avoiding finetuning them. This parameter "
-        "has effect only when representation is dense as sparse one-hot encodings are not trainable. ",
-        parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["embeddings_trainable"],
-    )
+    embeddings_trainable: bool = common_fields.EmbeddingsTrainableField()
 
-    pretrained_embeddings: str = schema_utils.String(
-        default=None,
-        description="By default dense embeddings are initialized randomly, but this parameter allows to specify a "
-        "path to a file containing embeddings in the GloVe format. When the file containing the "
-        "embeddings is loaded, only the embeddings with labels present in the vocabulary are kept, "
-        "the others are discarded. If the vocabulary contains strings that have no match in the "
-        "embeddings file, their embeddings are initialized with the average of all other embedding plus "
-        "some random noise to make them different from each other. This parameter has effect only if "
-        "representation is dense.",
-        parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["pretrained_embeddings"],
-    )
+    pretrained_embeddings: str = common_fields.PretrainedEmbeddingsField()
 
-    reduce_output: str = schema_utils.ReductionOptions(
-        default="sum",
-        description="How to reduce the output tensor along the `s` sequence length dimension if the rank of the "
-        "tensor is greater than 2.",
-        parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["reduce_output"],
-    )
+    reduce_output: str = common_fields.ReduceOutputField()
 
     output_size: int = schema_utils.PositiveInteger(
         default=256,
@@ -653,6 +466,7 @@ class StackedParallelCNNConfig(BaseEncoderConfig):
     norm: str = schema_utils.StringOptions(
         ["batch", "layer"],
         default=None,
+        allow_none=True,
         description="The default norm that will be used for each layer.",
         parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["norm"],
     )
@@ -665,6 +479,7 @@ class StackedParallelCNNConfig(BaseEncoderConfig):
 
     num_fc_layers: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Number of parallel fully connected layers to use.",
         parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["num_fc_layers"],
     )
@@ -678,8 +493,8 @@ class StackedParallelCNNConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("rnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
-@dataclass(repr=False)
-class StackedRNNConfig(BaseEncoderConfig):
+@ludwig_dataclass
+class StackedRNNConfig(SequenceEncoderConfig):
     @staticmethod
     def module_name():
         return "StackedRNN"
@@ -689,13 +504,7 @@ class StackedRNNConfig(BaseEncoderConfig):
         description=ENCODER_METADATA["StackedRNN"]["type"].long_description,
     )
 
-    dropout: float = schema_utils.FloatRange(
-        default=0.0,
-        min=0,
-        max=1,
-        description="The dropout rate",
-        parameter_metadata=ENCODER_METADATA["StackedRNN"]["dropout"],
-    )
+    dropout: float = common_fields.DropoutField(description="Dropout rate.")
 
     recurrent_dropout: float = schema_utils.FloatRange(
         default=0.0,
@@ -705,11 +514,7 @@ class StackedRNNConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedRNN"]["recurrent_dropout"],
     )
 
-    activation: str = schema_utils.ActivationOptions(
-        default="tanh",
-        description="The activation function to use",
-        parameter_metadata=ENCODER_METADATA["StackedRNN"]["activation"],
-    )
+    activation: str = schema_utils.ActivationOptions(default="tanh", description="The default activation function.")
 
     recurrent_activation: str = schema_utils.ActivationOptions(
         default="sigmoid",
@@ -717,34 +522,19 @@ class StackedRNNConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedRNN"]["recurrent_activation"],
     )
 
-    max_sequence_length: int = schema_utils.PositiveInteger(
-        default=None,
-        description="The maximum length of all sequences",
-        parameter_metadata=ENCODER_METADATA["StackedRNN"]["max_sequence_length"],
-    )
+    max_sequence_length: int = common_fields.MaxSequenceLengthField()
 
-    representation: str = schema_utils.StringOptions(
-        ["dense", "sparse"],
-        default="dense",
-        description="The representation of the embeddings. 'Dense' means the embeddings are initialized randomly. "
-        "'Sparse' means they are initialized to be one-hot encodings.",
-        parameter_metadata=ENCODER_METADATA["StackedRNN"]["representation"],
-    )
+    representation: str = common_fields.RepresentationField()
+
+    vocab: list = common_fields.VocabField()
 
     cell_type: str = schema_utils.StringOptions(
-        ["rnn", "lstm", "lstm_block", "ln", "lstm_cudnn", "gru", "gru_block", "gru_cudnn"],
+        ["rnn", "lstm", "gru"],
         default="rnn",
-        description="The type of recurrent cell to use. Available values are: `rnn`, `lstm`, `lstm_block`, `lstm`, "
-        "`ln`, `lstm_cudnn`, `gru`, `gru_block`, `gru_cudnn`. For reference about the differences between "
-        "the cells please refer to PyTorch's documentation. We suggest to use the `block` variants on "
-        "CPU and the `cudnn` variants on GPU because of their increased speed. ",
+        description="The type of recurrent cell to use. Available values are: `rnn`, `lstm`, `gru`. For reference "
+        "about the differences between the cells please refer to "
+        "[torch.nn Recurrent Layers](https://pytorch.org/docs/stable/nn.html#recurrent-layers).",
         parameter_metadata=ENCODER_METADATA["StackedRNN"]["cell_type"],
-    )
-
-    vocab: list = schema_utils.List(
-        default=None,
-        description="Vocabulary of the input feature to encode",
-        parameter_metadata=ENCODER_METADATA["StackedRNN"]["vocab"],
     )
 
     num_layers: int = schema_utils.PositiveInteger(
@@ -784,16 +574,9 @@ class StackedRNNConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedRNN"]["use_bias"],
     )
 
-    bias_initializer: str = schema_utils.InitializerOptions(
-        default="zeros",
-        description="Initializer to use for the bias vector.",
-        parameter_metadata=ENCODER_METADATA["StackedRNN"]["bias_initializer"],
-    )
+    bias_initializer: str = common_fields.BiasInitializerField()
 
-    weights_initializer: str = schema_utils.InitializerOptions(
-        description="Initializer to use for the weights matrix.",
-        parameter_metadata=ENCODER_METADATA["StackedRNN"]["weights_initializer"],
-    )
+    weights_initializer: str = common_fields.WeightsInitializerField()
 
     should_embed: bool = schema_utils.Boolean(
         default=True,
@@ -801,50 +584,15 @@ class StackedRNNConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedRNN"]["should_embed"],
     )
 
-    embedding_size: int = schema_utils.PositiveInteger(
-        default=256,
-        description="The maximum embedding size. The actual size will be `min(vocabulary_size, embedding_size)` for "
-        "`dense` representations and exactly `vocabulary_size` for the `sparse` encoding, "
-        "where `vocabulary_size` is the number of different strings appearing in the training set in the "
-        "column the feature is named after (plus 1 for `<UNK>`).",
-        parameter_metadata=ENCODER_METADATA["StackedRNN"]["embedding_size"],
-    )
+    embedding_size: int = common_fields.EmbeddingSizeField()
 
-    embeddings_on_cpu: bool = schema_utils.Boolean(
-        default=False,
-        description="by default embedding matrices are stored on GPU memory if a GPU is used, as it allows for faster "
-        "access, but in some cases the embedding matrix may be too large. This parameter forces the "
-        "placement of the embedding matrix in regular memory and the CPU is used for embedding lookup, "
-        "slightly slowing down the process as a result of data transfer between CPU and GPU memory.",
-        parameter_metadata=ENCODER_METADATA["StackedRNN"]["embeddings_on_cpu"],
-    )
+    embeddings_on_cpu: bool = common_fields.EmbeddingsOnCPUField()
 
-    embeddings_trainable: bool = schema_utils.Boolean(
-        default=True,
-        description="If true embeddings are trained during the training process, if false embeddings are fixed. It "
-        "may be useful when loading pretrained embeddings for avoiding finetuning them. This parameter "
-        "has effect only when representation is dense as sparse one-hot encodings are not trainable. ",
-        parameter_metadata=ENCODER_METADATA["StackedRNN"]["embeddings_trainable"],
-    )
+    embeddings_trainable: bool = common_fields.EmbeddingsTrainableField()
 
-    pretrained_embeddings: str = schema_utils.String(
-        default=None,
-        description="By default dense embeddings are initialized randomly, but this parameter allows to specify a "
-        "path to a file containing embeddings in the GloVe format. When the file containing the "
-        "embeddings is loaded, only the embeddings with labels present in the vocabulary are kept, "
-        "the others are discarded. If the vocabulary contains strings that have no match in the "
-        "embeddings file, their embeddings are initialized with the average of all other embedding plus "
-        "some random noise to make them different from each other. This parameter has effect only if "
-        "representation is dense.",
-        parameter_metadata=ENCODER_METADATA["StackedRNN"]["pretrained_embeddings"],
-    )
+    pretrained_embeddings: str = common_fields.PretrainedEmbeddingsField()
 
-    reduce_output: str = schema_utils.ReductionOptions(
-        default="last",
-        description="How to reduce the output tensor along the `s` sequence length dimension if the rank of the "
-        "tensor is greater than 2.",
-        parameter_metadata=ENCODER_METADATA["StackedRNN"]["reduce_output"],
-    )
+    reduce_output: str = common_fields.ReduceOutputField(default="last")
 
     output_size: int = schema_utils.PositiveInteger(
         default=256,
@@ -852,49 +600,23 @@ class StackedRNNConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedRNN"]["output_size"],
     )
 
-    norm: str = schema_utils.StringOptions(
-        ["batch", "layer"],
-        default=None,
-        description="The default norm that will be used for each layer.",
-        parameter_metadata=ENCODER_METADATA["StackedRNN"]["norm"],
-    )
+    norm: str = common_fields.NormField(description="The default norm that will be used for each layer.")
 
-    norm_params: dict = schema_utils.Dict(
-        default=None,
-        description="Parameters used if norm is either `batch` or `layer`.",
-        parameter_metadata=ENCODER_METADATA["StackedRNN"]["norm_params"],
-    )
+    norm_params: dict = common_fields.NormParamsField()
 
-    num_fc_layers: int = schema_utils.NonNegativeInteger(
-        default=0,
-        description="Number of parallel fully connected layers to use.",
-        parameter_metadata=ENCODER_METADATA["StackedRNN"]["num_fc_layers"],
-    )
+    num_fc_layers: int = common_fields.NumFCLayersField(description="Number of parallel fully connected layers to use.")
 
-    fc_activation: str = schema_utils.ActivationOptions(
-        description="The default activation function that will be used for each fully connected layer.",
-        parameter_metadata=ENCODER_METADATA["StackedRNN"]["fc_activation"],
-    )
+    fc_activation: str = schema_utils.ActivationOptions()
 
-    fc_dropout: float = schema_utils.FloatRange(
-        default=0.0,
-        min=0,
-        max=1,
-        description="The dropout rate for fully connected layers",
-        parameter_metadata=ENCODER_METADATA["StackedRNN"]["fc_dropout"],
-    )
+    fc_dropout: float = common_fields.DropoutField()
 
-    fc_layers: List[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for fc_layers
-        default=None,
-        description="List of dictionaries containing the parameters for each fully connected layer.",
-        parameter_metadata=ENCODER_METADATA["StackedRNN"]["fc_layers"],
-    )
+    fc_layers: List[dict] = common_fields.FCLayersField()
 
 
 @DeveloperAPI
 @register_encoder_config("cnnrnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
-@dataclass(repr=False)
-class StackedCNNRNNConfig(BaseEncoderConfig):
+@ludwig_dataclass
+class StackedCNNRNNConfig(SequenceEncoderConfig):
     @staticmethod
     def module_name():
         return "StackedCNNRNN"
@@ -904,13 +626,7 @@ class StackedCNNRNNConfig(BaseEncoderConfig):
         description=ENCODER_METADATA["StackedCNNRNN"]["type"].long_description,
     )
 
-    dropout: float = schema_utils.FloatRange(
-        default=0.0,
-        min=0,
-        max=1,
-        description="The dropout rate",
-        parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["dropout"],
-    )
+    dropout: float = common_fields.DropoutField(description="Dropout rate.")
 
     recurrent_dropout: float = schema_utils.FloatRange(
         default=0.0,
@@ -929,9 +645,7 @@ class StackedCNNRNNConfig(BaseEncoderConfig):
     )
 
     activation: str = schema_utils.ActivationOptions(
-        default="tanh",
-        description="The activation function to use",
-        parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["activation"],
+        default="tanh", description="The default activation function to use."
     )
 
     recurrent_activation: str = schema_utils.ActivationOptions(
@@ -945,47 +659,41 @@ class StackedCNNRNNConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["conv_activation"],
     )
 
-    max_sequence_length: int = schema_utils.PositiveInteger(
-        default=None,
-        description="The maximum length of all sequences",
-        parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["max_sequence_length"],
-    )
+    max_sequence_length: int = common_fields.MaxSequenceLengthField()
 
-    representation: str = schema_utils.StringOptions(
-        ["dense", "sparse"],
-        default="dense",
-        description="The representation of the embeddings. 'Dense' means the embeddings are initialized randomly. "
-        "'Sparse' means they are initialized to be one-hot encodings.",
-        parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["representation"],
-    )
+    representation: str = common_fields.RepresentationField()
+
+    vocab: list = common_fields.VocabField()
 
     cell_type: str = schema_utils.StringOptions(
-        ["rnn", "lstm", "lstm_block", "ln", "lstm_cudnn", "gru", "gru_block", "gru_cudnn"],
+        ["rnn", "lstm", "gru"],
         default="rnn",
-        description="The type of recurrent cell to use. Available values are: `rnn`, `lstm`, `lstm_block`, `lstm`, "
-        "`ln`, `lstm_cudnn`, `gru`, `gru_block`, `gru_cudnn`. For reference about the differences between "
-        "the cells please refer to PyTorch's documentation. We suggest to use the `block` variants on "
-        "CPU and the `cudnn` variants on GPU because of their increased speed. ",
+        description="The type of recurrent cell to use. Available values are: `rnn`, `lstm`, `gru`. For reference "
+        "about the differences between the cells please refer to "
+        "[torch.nn Recurrent Layers](https://pytorch.org/docs/stable/nn.html#recurrent-layers).",
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["cell_type"],
     )
 
-    vocab: list = schema_utils.List(
+    num_conv_layers: int = schema_utils.PositiveInteger(
         default=None,
-        description="Vocabulary of the input feature to encode",
-        parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["vocab"],
+        allow_none=True,
+        description=NUM_CONV_LAYERS_DESCRIPTION,
+        parameter_metadata=ENCODER_METADATA["conv_params"]["num_conv_layers"],
     )
 
-    num_filters: int = schema_utils.PositiveInteger(
-        default=256,
-        description="Number of filters, and by consequence number of output channels of the 1d convolution.",
-        parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["num_filters"],
+    conv_layers: List[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for conv_layers
+        default=None,
+        description=CONV_LAYERS_DESCRIPTION,
+        parameter_metadata=ENCODER_METADATA["conv_params"]["conv_layers"],
     )
 
-    filter_size: int = schema_utils.PositiveInteger(
-        default=5,
-        description="Size of the 1d convolutional filter.",
-        parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["filter_size"],
-    )
+    num_filters: int = NumFiltersField()
+
+    filter_size: int = FilterSizeField(default=5)
+
+    pool_function: str = PoolFunctionField()
+
+    pool_size: int = PoolSizeField(default=2)
 
     strides: int = schema_utils.PositiveInteger(
         default=1,
@@ -1006,20 +714,9 @@ class StackedCNNRNNConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["dilation_rate"],
     )
 
-    pool_function: str = schema_utils.ReductionOptions(
-        default="max",
-        description="Pooling function to use.",
-        parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["pool_function"],
-    )
-
-    pool_size: int = schema_utils.PositiveInteger(
-        default=2,
-        description="The default pool_size that will be used for each layer.",
-        parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["pool_size"],
-    )
-
     pool_strides: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Factor to scale down.",
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["pool_strides"],
     )
@@ -1062,34 +759,15 @@ class StackedCNNRNNConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["recurrent_initializer"],
     )
 
-    num_conv_layers: int = schema_utils.PositiveInteger(
-        default=None,
-        description="Number of parallel convolutional layers to use.",
-        parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["num_conv_layers"],
-    )
-
-    conv_layers: List[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for conv_layers
-        default=None,
-        description="List of dictionaries containing the parameters for each convolutional layer.",
-        parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["conv_layers"],
-    )
-
     use_bias: bool = schema_utils.Boolean(
         default=True,
         description="Whether to use a bias vector.",
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["use_bias"],
     )
 
-    bias_initializer: str = schema_utils.InitializerOptions(
-        default="zeros",
-        description="Initializer to use for the bias vector.",
-        parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["bias_initializer"],
-    )
+    bias_initializer: str = common_fields.BiasInitializerField()
 
-    weights_initializer: str = schema_utils.InitializerOptions(
-        description="Initializer to use for the weights matrix.",
-        parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["weights_initializer"],
-    )
+    weights_initializer: str = common_fields.WeightsInitializerField()
 
     should_embed: bool = schema_utils.Boolean(
         default=True,
@@ -1097,50 +775,15 @@ class StackedCNNRNNConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["should_embed"],
     )
 
-    embedding_size: int = schema_utils.PositiveInteger(
-        default=256,
-        description="The maximum embedding size. The actual size will be `min(vocabulary_size, embedding_size)` for "
-        "`dense` representations and exactly `vocabulary_size` for the `sparse` encoding, "
-        "where `vocabulary_size` is the number of different strings appearing in the training set in the "
-        "column the feature is named after (plus 1 for `<UNK>`).",
-        parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["embedding_size"],
-    )
+    embedding_size: int = common_fields.EmbeddingSizeField()
 
-    embeddings_on_cpu: bool = schema_utils.Boolean(
-        default=False,
-        description="By default embedding matrices are stored on GPU memory if a GPU is used, as it allows for faster "
-        "access, but in some cases the embedding matrix may be too large. This parameter forces the "
-        "placement of the embedding matrix in regular memory and the CPU is used for embedding lookup, "
-        "slightly slowing down the process as a result of data transfer between CPU and GPU memory.",
-        parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["embeddings_on_cpu"],
-    )
+    embeddings_on_cpu: bool = common_fields.EmbeddingsOnCPUField()
 
-    embeddings_trainable: bool = schema_utils.Boolean(
-        default=True,
-        description="If true embeddings are trained during the training process, if false embeddings are fixed. It "
-        "may be useful when loading pretrained embeddings for avoiding finetuning them. This parameter "
-        "has effect only when representation is dense as sparse one-hot encodings are not trainable. ",
-        parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["embeddings_trainable"],
-    )
+    embeddings_trainable: bool = common_fields.EmbeddingsTrainableField()
 
-    pretrained_embeddings: str = schema_utils.String(
-        default=None,
-        description="By default dense embeddings are initialized randomly, but this parameter allows to specify a "
-        "path to a file containing embeddings in the GloVe format. When the file containing the "
-        "embeddings is loaded, only the embeddings with labels present in the vocabulary are kept, "
-        "the others are discarded. If the vocabulary contains strings that have no match in the "
-        "embeddings file, their embeddings are initialized with the average of all other embedding plus "
-        "some random noise to make them different from each other. This parameter has effect only if "
-        "representation is dense.",
-        parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["pretrained_embeddings"],
-    )
+    pretrained_embeddings: str = common_fields.PretrainedEmbeddingsField()
 
-    reduce_output: str = schema_utils.ReductionOptions(
-        default="last",
-        description="How to reduce the output tensor along the `s` sequence length dimension if the rank of the "
-        "tensor is greater than 2.",
-        parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["reduce_output"],
-    )
+    reduce_output: str = common_fields.ReduceOutputField(default="last")
 
     output_size: int = schema_utils.PositiveInteger(
         default=256,
@@ -1148,49 +791,23 @@ class StackedCNNRNNConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["output_size"],
     )
 
-    norm: str = schema_utils.StringOptions(
-        ["batch", "layer"],
-        default=None,
-        description="The default norm that will be used for each layer.",
-        parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["norm"],
-    )
+    norm: str = common_fields.NormField(description="The default norm that will be used for each layer.")
 
-    norm_params: dict = schema_utils.Dict(
-        default=None,
-        description="Parameters used if norm is either `batch` or `layer`.",
-        parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["norm_params"],
-    )
+    norm_params: dict = common_fields.NormParamsField()
 
-    num_fc_layers: int = schema_utils.NonNegativeInteger(
-        default=0,
-        description="Number of parallel fully connected layers to use.",
-        parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["num_fc_layers"],
-    )
+    num_fc_layers: int = common_fields.NumFCLayersField(description="Number of parallel fully connected layers to use.")
 
-    fc_activation: str = schema_utils.ActivationOptions(
-        description="The default activation function that will be used for each fully connected layer.",
-        parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["fc_activation"],
-    )
+    fc_activation: str = schema_utils.ActivationOptions()
 
-    fc_dropout: float = schema_utils.FloatRange(
-        default=0.0,
-        min=0,
-        max=1,
-        description="The dropout rate for fully connected layers",
-        parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["fc_dropout"],
-    )
+    fc_dropout: float = common_fields.DropoutField()
 
-    fc_layers: List[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for fc_layers
-        default=None,
-        description="List of dictionaries containing the parameters for each fully connected layer.",
-        parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["fc_layers"],
-    )
+    fc_layers: List[dict] = common_fields.FCLayersField()
 
 
 @DeveloperAPI
 @register_encoder_config("transformer", [SEQUENCE, TEXT, TIMESERIES])
-@dataclass(repr=False)
-class StackedTransformerConfig(BaseEncoderConfig):
+@ludwig_dataclass
+class StackedTransformerConfig(SequenceEncoderConfig):
     @staticmethod
     def module_name():
         return "StackedTransformer"
@@ -1200,33 +817,13 @@ class StackedTransformerConfig(BaseEncoderConfig):
         description=ENCODER_METADATA["StackedTransformer"]["type"].long_description,
     )
 
-    dropout: float = schema_utils.FloatRange(
-        default=0.1,
-        min=0,
-        max=1,
-        description="The dropout rate for the transformer block",
-        parameter_metadata=ENCODER_METADATA["StackedTransformer"]["dropout"],
-    )
+    dropout: float = common_fields.DropoutField(default=0.1, description="The dropout rate for the transformer block.")
 
-    max_sequence_length: int = schema_utils.PositiveInteger(
-        default=None,
-        description="Max length of all sequences",
-        parameter_metadata=ENCODER_METADATA["StackedTransformer"]["max_sequence_length"],
-    )
+    max_sequence_length: int = common_fields.MaxSequenceLengthField()
 
-    representation: str = schema_utils.StringOptions(
-        ["dense", "sparse"],
-        default="dense",
-        description="The representation of the embeddings. 'Dense' means the embeddings are initialized randomly. "
-        "'Sparse' means they are initialized to be one-hot encodings.",
-        parameter_metadata=ENCODER_METADATA["StackedTransformer"]["representation"],
-    )
+    representation: str = common_fields.RepresentationField()
 
-    vocab: list = schema_utils.List(
-        default=None,
-        description="Vocabulary of the input feature to encode",
-        parameter_metadata=ENCODER_METADATA["StackedTransformer"]["vocab"],
-    )
+    vocab: list = common_fields.VocabField()
 
     num_layers: int = schema_utils.PositiveInteger(
         default=1,
@@ -1261,16 +858,9 @@ class StackedTransformerConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedTransformer"]["use_bias"],
     )
 
-    bias_initializer: str = schema_utils.InitializerOptions(
-        default="zeros",
-        description="Initializer to use for the bias vector.",
-        parameter_metadata=ENCODER_METADATA["StackedTransformer"]["bias_initializer"],
-    )
+    bias_initializer: str = common_fields.BiasInitializerField()
 
-    weights_initializer: str = schema_utils.InitializerOptions(
-        description="Initializer to use for the weights matrix.",
-        parameter_metadata=ENCODER_METADATA["StackedTransformer"]["weights_initializer"],
-    )
+    weights_initializer: str = common_fields.WeightsInitializerField()
 
     should_embed: bool = schema_utils.Boolean(
         default=True,
@@ -1278,37 +868,15 @@ class StackedTransformerConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedTransformer"]["should_embed"],
     )
 
-    embedding_size: int = schema_utils.PositiveInteger(
-        default=256,
-        description="Size of the embedding.",
-        parameter_metadata=ENCODER_METADATA["StackedTransformer"]["embedding_size"],
-    )
+    embedding_size: int = common_fields.EmbeddingSizeField()
 
-    embeddings_on_cpu: bool = schema_utils.Boolean(
-        default=False,
-        description="Whether to force the placement of the embedding matrix in regular memory and have the CPU "
-        "resolve them.",
-        parameter_metadata=ENCODER_METADATA["StackedTransformer"]["embeddings_on_cpu"],
-    )
+    embeddings_on_cpu: bool = common_fields.EmbeddingsOnCPUField()
 
-    embeddings_trainable: bool = schema_utils.Boolean(
-        default=True,
-        description="Whether the embedding is trainable.",
-        parameter_metadata=ENCODER_METADATA["StackedTransformer"]["embeddings_trainable"],
-    )
+    embeddings_trainable: bool = common_fields.EmbeddingsTrainableField()
 
-    pretrained_embeddings: str = schema_utils.String(
-        default=None,
-        description="Path to a file containing pretrained embeddings.",
-        parameter_metadata=ENCODER_METADATA["StackedTransformer"]["pretrained_embeddings"],
-    )
+    pretrained_embeddings: str = common_fields.PretrainedEmbeddingsField()
 
-    reduce_output: str = schema_utils.ReductionOptions(
-        default="last",
-        description="How to reduce the output tensor along the `s` sequence length dimension if the rank of the "
-        "tensor is greater than 2.",
-        parameter_metadata=ENCODER_METADATA["StackedTransformer"]["reduce_output"],
-    )
+    reduce_output: str = common_fields.ReduceOutputField(default="last")
 
     output_size: int = schema_utils.PositiveInteger(
         default=256,
@@ -1316,40 +884,14 @@ class StackedTransformerConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedTransformer"]["output_size"],
     )
 
-    norm: str = schema_utils.StringOptions(
-        ["batch", "layer"],
-        default=None,
-        description="The default norm that will be used for each layer.",
-        parameter_metadata=ENCODER_METADATA["StackedTransformer"]["norm"],
-    )
+    norm: str = common_fields.NormField(description="The default norm that will be used for each layer.")
 
-    norm_params: dict = schema_utils.Dict(
-        default=None,
-        description="Parameters used if norm is either `batch` or `layer`.",
-        parameter_metadata=ENCODER_METADATA["StackedTransformer"]["norm_params"],
-    )
+    norm_params: dict = common_fields.NormParamsField()
 
-    num_fc_layers: int = schema_utils.NonNegativeInteger(
-        default=0,
-        description="Number of parallel fully connected layers to use.",
-        parameter_metadata=ENCODER_METADATA["StackedTransformer"]["num_fc_layers"],
-    )
+    num_fc_layers: int = common_fields.NumFCLayersField(description="Number of parallel fully connected layers to use.")
 
-    fc_activation: str = schema_utils.ActivationOptions(
-        description="The default activation function that will be used for each fully connected layer.",
-        parameter_metadata=ENCODER_METADATA["StackedTransformer"]["fc_activation"],
-    )
+    fc_activation: str = schema_utils.ActivationOptions()
 
-    fc_dropout: float = schema_utils.FloatRange(
-        default=0.0,
-        min=0,
-        max=1,
-        description="The dropout rate for fully connected layers",
-        parameter_metadata=ENCODER_METADATA["StackedTransformer"]["fc_dropout"],
-    )
+    fc_dropout: float = common_fields.DropoutField()
 
-    fc_layers: List[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for fc_layers
-        default=None,
-        description="List of dictionaries containing the parameters for each fully connected layer.",
-        parameter_metadata=ENCODER_METADATA["StackedTransformer"]["fc_layers"],
-    )
+    fc_layers: List[dict] = common_fields.FCLayersField()

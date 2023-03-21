@@ -16,6 +16,12 @@
 
 import contextlib
 from abc import ABC, abstractmethod
+from typing import Iterable, Optional
+
+from ludwig.distributed import DistributedStrategy
+from ludwig.features.base_feature import BaseFeature
+from ludwig.utils.defaults import default_random_seed
+from ludwig.utils.types import DataFrame
 
 
 class Dataset(ABC):
@@ -25,10 +31,22 @@ class Dataset(ABC):
 
     @contextlib.contextmanager
     @abstractmethod
-    def initialize_batcher(self, batch_size=128, should_shuffle=True, seed=0, ignore_last=False, distributed=None):
+    def initialize_batcher(
+        self,
+        batch_size: int = 128,
+        should_shuffle: bool = True,
+        random_seed: int = default_random_seed,
+        ignore_last: bool = False,
+        distributed: DistributedStrategy = None,
+    ):
         raise NotImplementedError()
 
-    def to_df(self):
+    @abstractmethod
+    def to_df(self, features: Optional[Iterable[BaseFeature]] = None) -> DataFrame:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def to_scalar_df(self, features: Optional[Iterable[BaseFeature]] = None) -> DataFrame:
         raise NotImplementedError()
 
     @property

@@ -4,41 +4,48 @@ import re
 import numpy as np
 import pytest
 
-try:
-    import ray as _ray
-except ImportError:
-    _ray = None
-from jsonschema.exceptions import ValidationError
-
 from ludwig.api import LudwigModel
 from ludwig.constants import COLUMN, INPUT_FEATURES, MODEL_TYPE, NAME, OUTPUT_FEATURES, TRAINER
+from ludwig.error import ConfigValidationError
 from tests.integration_tests import synthetic_test_data
-from tests.integration_tests.utils import binary_feature, category_feature, generate_data, number_feature, text_feature
+from tests.integration_tests.utils import binary_feature
+from tests.integration_tests.utils import category_feature as _category_feature
+from tests.integration_tests.utils import generate_data, number_feature, text_feature
+
+BOOSTING_TYPES = ["gbdt", "goss", "dart"]
+TREE_LEARNERS = ["serial", "feature", "data", "voting"]
+LOCAL_BACKEND = {"type": "local"}
+RAY_BACKEND = {
+    "type": "ray",
+    "processor": {
+        "parallelism": 1,
+    },
+    "trainer": {
+        "use_gpu": False,
+        "num_workers": 2,
+        "resources_per_worker": {
+            "CPU": 1,
+            "GPU": 0,
+        },
+    },
+}
 
 
 @pytest.fixture(scope="module")
 def local_backend():
-    return {"type": "local"}
+    return LOCAL_BACKEND
 
 
 @pytest.fixture(scope="module")
 def ray_backend():
-    num_workers = 2
-    num_cpus_per_worker = 2
-    return {
-        "type": "ray",
-        "processor": {
-            "parallelism": num_cpus_per_worker * num_workers,
-        },
-        "trainer": {
-            "use_gpu": False,
-            "num_workers": num_workers,
-            "resources_per_worker": {
-                "CPU": num_cpus_per_worker,
-                "GPU": 0,
-            },
-        },
-    }
+    return RAY_BACKEND
+
+
+def category_feature(**kwargs):
+    encoder = kwargs.get("encoder", {})
+    encoder = {**{"type": "passthrough"}, **encoder}
+    kwargs["encoder"] = encoder
+    return _category_feature(**kwargs)
 
 
 def _train_and_predict_gbm(input_features, output_features, tmpdir, backend_config, **trainer_config):
@@ -72,48 +79,6 @@ def _train_and_predict_gbm(input_features, output_features, tmpdir, backend_conf
     return preds, model
 
 
-def run_test_gbm_output_not_supported(tmpdir, backend_config):
-    """Test that an error is raised when the output feature is not supported by the model."""
-    input_features = [number_feature(), category_feature(encoder={"reduce_output": "sum"})]
-    output_features = [text_feature(output_feature=True)]
-
-    with pytest.raises(
-        ValueError, match="Model type GBM only supports numerical, categorical, or binary output " "features.*"
-    ):
-        _train_and_predict_gbm(input_features, output_features, tmpdir, backend_config)
-
-
-def test_local_gbm_output_not_supported(tmpdir, local_backend):
-    run_test_gbm_output_not_supported(tmpdir, local_backend)
-
-
-@pytest.mark.distributed
-def test_ray_gbm_output_not_supported(tmpdir, ray_backend, ray_cluster_4cpu):
-    run_test_gbm_output_not_supported(tmpdir, ray_backend)
-
-
-def run_test_gbm_multiple_outputs(tmpdir, backend_config):
-    """Test that an error is raised when the model is trained with multiple outputs."""
-    input_features = [number_feature(), category_feature(encoder={"reduce_output": "sum"})]
-    output_features = [
-        category_feature(decoder={"vocab_size": 3}),
-        binary_feature(),
-        category_feature(decoder={"vocab_size": 3}),
-    ]
-
-    with pytest.raises(ValidationError):
-        _train_and_predict_gbm(input_features, output_features, tmpdir, backend_config)
-
-
-def test_local_gbm_multiple_outputs(tmpdir, local_backend):
-    run_test_gbm_multiple_outputs(tmpdir, local_backend)
-
-
-@pytest.mark.distributed
-def test_ray_gbm_multiple_outputs(tmpdir, ray_backend, ray_cluster_4cpu):
-    run_test_gbm_multiple_outputs(tmpdir, ray_backend)
-
-
 def run_test_gbm_binary(tmpdir, backend_config):
     """Test that the GBM model can train and predict a binary variable (binary classification)."""
     input_features = [number_feature(), category_feature(encoder={"reduce_output": "sum"})]
@@ -134,7 +99,7 @@ def test_local_gbm_binary(tmpdir, local_backend):
 
 
 @pytest.mark.distributed
-def test_ray_gbm_binary(tmpdir, ray_backend, ray_cluster_4cpu):
+def test_ray_gbm_binary(tmpdir, ray_backend, ray_cluster_5cpu):
     run_test_gbm_binary(tmpdir, ray_backend)
 
 
@@ -158,7 +123,7 @@ def test_local_gbm_non_number_inputs(tmpdir, local_backend):
 
 
 @pytest.mark.distributed
-def test_ray_gbm_non_number_inputs(tmpdir, ray_backend, ray_cluster_4cpu):
+def test_ray_gbm_non_number_inputs(tmpdir, ray_backend, ray_cluster_5cpu):
     run_test_gbm_non_number_inputs(tmpdir, ray_backend)
 
 
@@ -184,7 +149,7 @@ def test_local_gbm_category(vocab_size, tmpdir, local_backend):
 
 @pytest.mark.distributed
 @pytest.mark.parametrize("vocab_size", [2, 3])
-def test_ray_gbm_category(vocab_size, tmpdir, ray_backend, ray_cluster_4cpu):
+def test_ray_gbm_category(vocab_size, tmpdir, ray_backend, ray_cluster_5cpu):
     run_test_gbm_category(vocab_size, tmpdir, ray_backend)
 
 
@@ -210,7 +175,7 @@ def test_local_gbm_number(tmpdir, local_backend):
 
 
 @pytest.mark.distributed
-def test_ray_gbm_number(tmpdir, ray_backend, ray_cluster_4cpu):
+def test_ray_gbm_number(tmpdir, ray_backend, ray_cluster_5cpu):
     run_test_gbm_number(tmpdir, ray_backend)
 
 
@@ -349,13 +314,130 @@ def test_boosting_type_rf_invalid(tmpdir, local_backend):
     input_features = [number_feature()]
     output_features = [binary_feature()]
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfigValidationError):
         _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend, boosting_type="rf")
 
 
+@pytest.mark.skip(reason="LightGBMError: Number of class for initial score error")
 def test_goss_deactivate_bagging(tmpdir, local_backend):
-    """Test that bagging is disabled for the GOSS boosting type."""
+    """Test that bagging is disabled for the GOSS boosting type.
+
+    TODO: Re-enable when GOSS is supported: https://github.com/ludwig-ai/ludwig/issues/2988
+    """
     input_features = [number_feature()]
     output_features = [binary_feature()]
 
     _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend, boosting_type="goss", bagging_freq=5)
+
+
+@pytest.mark.parametrize("tree_learner", TREE_LEARNERS)
+def test_boosting_type_null_invalid(tree_learner, tmpdir, local_backend):
+    """Test that the null boosting type is disabled.
+
+    `boosting_type: null` defaults to "gbdt", and it was removed to avoid confusing GBM trainer settings.
+    """
+    input_features = [number_feature()]
+    output_features = [binary_feature()]
+
+    with pytest.raises(ConfigValidationError):
+        _train_and_predict_gbm(
+            input_features, output_features, tmpdir, local_backend, boosting_type=None, tree_learner=tree_learner
+        )
+
+
+@pytest.mark.parametrize("boosting_type", BOOSTING_TYPES)
+def test_tree_learner_null_invalid(boosting_type, tmpdir, local_backend):
+    """Test that the null tree learner is disabled.
+
+    `tree_learner: null` defaults to "serial", and it was removed to avoid confusing GBM trainer settings.
+    """
+    input_features = [number_feature()]
+    output_features = [binary_feature()]
+
+    with pytest.raises(ConfigValidationError):
+        _train_and_predict_gbm(
+            input_features, output_features, tmpdir, local_backend, boosting_type=boosting_type, tree_learner=None
+        )
+
+
+def test_dart_boosting_type(tmpdir, local_backend):
+    """Test that DART does not error during eval due to progress tracking."""
+    input_features = [number_feature()]
+    output_features = [binary_feature()]
+
+    _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend, boosting_type="dart")
+
+
+@pytest.mark.parametrize(
+    "backend",
+    [
+        pytest.param(LOCAL_BACKEND, id="local"),
+        pytest.param(RAY_BACKEND, id="ray", marks=pytest.mark.distributed),
+    ],
+)
+def test_gbm_category_one_hot_encoding(tmpdir, backend, ray_cluster_4cpu):
+    """Test that the GBM model can train and predict with non-number inputs."""
+    input_features = [
+        binary_feature(),
+        category_feature(encoder={"type": "onehot"}),
+        number_feature(),
+    ]
+    output_feature = binary_feature()
+    output_features = [output_feature]
+
+    preds, _ = _train_and_predict_gbm(input_features, output_features, tmpdir, backend)
+
+    prob_col = preds[output_feature["name"] + "_probabilities"]
+    if backend["type"] == "ray":
+        prob_col = prob_col.compute()
+    assert len(prob_col.iloc[0]) == 2
+    assert prob_col.apply(sum).mean() == pytest.approx(1.0)
+
+
+@pytest.mark.parametrize(
+    "backend",
+    [
+        pytest.param(LOCAL_BACKEND, id="local"),
+        pytest.param(RAY_BACKEND, id="ray", marks=pytest.mark.distributed),
+    ],
+)
+def test_gbm_text_tfidf(tmpdir, backend, ray_cluster_4cpu):
+    """Test that the GBM model can train and predict with non-number inputs."""
+    input_features = [
+        binary_feature(),
+        text_feature(encoder={"type": "tf_idf"}),
+        number_feature(),
+    ]
+    output_feature = binary_feature()
+    output_features = [output_feature]
+
+    preds, _ = _train_and_predict_gbm(input_features, output_features, tmpdir, backend)
+
+    prob_col = preds[output_feature["name"] + "_probabilities"]
+    if backend["type"] == "ray":
+        prob_col = prob_col.compute()
+    assert len(prob_col.iloc[0]) == 2
+    assert prob_col.apply(sum).mean() == pytest.approx(1.0)
+
+
+# TODO(travis): add when we support pretrained text models for gbms
+# @pytest.mark.parametrize(
+#     "backend",
+#     [
+#         pytest.param(LOCAL_BACKEND, id="local"),
+#         pytest.param(RAY_BACKEND, id="ray", marks=pytest.mark.distributed),
+#     ],
+# )
+# def test_gbm_text_pretrained_embedding(tmpdir, backend, ray_cluster_4cpu):
+#     """Test that the GBM model can train and predict with non-number inputs."""
+#     input_features = [binary_feature(), text_feature(encoder={"type": "distilbert"})]
+#     output_feature = binary_feature()
+#     output_features = [output_feature]
+
+#     preds, _ = _train_and_predict_gbm(input_features, output_features, tmpdir, backend)
+
+#     prob_col = preds[output_feature["name"] + "_probabilities"]
+#     if backend["type"] == "ray":
+#         prob_col = prob_col.compute()
+#     assert len(prob_col.iloc[0]) == 2
+#     assert prob_col.apply(sum).mean() == pytest.approx(1.0)

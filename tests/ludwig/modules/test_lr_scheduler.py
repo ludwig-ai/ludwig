@@ -1,8 +1,8 @@
+import numpy as np
 from torch.optim import SGD
 
 from ludwig.features.number_feature import NumberInputFeature, NumberOutputFeature
 from ludwig.modules.lr_scheduler import LRScheduler
-from ludwig.schema.decoders.base import PassthroughDecoderConfig
 from ludwig.schema.encoders.base import DenseEncoderConfig
 from ludwig.schema.features.number_feature import NumberInputFeatureConfig, NumberOutputFeatureConfig
 from ludwig.schema.lr_scheduler import LRSchedulerConfig
@@ -67,12 +67,16 @@ def test_lr_scheduler_reduce_on_plateau():
     reduce_limit = 3
 
     module = NumberInputFeature(NumberInputFeatureConfig(name="num1", encoder=DenseEncoderConfig()))
-    output1 = NumberOutputFeature(
-        NumberOutputFeatureConfig(name="output1", input_size=10, decoder=PassthroughDecoderConfig()), output_features={}
-    )
+    output1 = NumberOutputFeature(NumberOutputFeatureConfig(name="output1", input_size=10), output_features={})
 
     optimizer = SGD(module.parameters(), lr=base_lr)
-    config = LRSchedulerConfig(warmup_evaluations=0, reduce_on_plateau=reduce_limit)
+    config = LRSchedulerConfig(
+        warmup_evaluations=0,
+        decay=None,
+        reduce_on_plateau=reduce_limit,
+        reduce_on_plateau_patience=10,
+        reduce_on_plateau_rate=0.1,
+    )
     scheduler = LRScheduler(config=config, optimizer=optimizer)
 
     progress_tracker = get_new_progress_tracker(
@@ -89,6 +93,11 @@ def test_lr_scheduler_reduce_on_plateau():
     steps_to_plateau = 5
     loss = 10.0
     for epoch in range(total_eval_steps):
+        for i in range(100):
+            # Simulate batch-wise steps. If we make a mistake, then this will reset
+            # the learning rate.
+            scheduler.step()
+
         steps_to_plateau -= 1
         if steps_to_plateau > 0:
             loss -= 0.1
@@ -106,6 +115,9 @@ def test_lr_scheduler_reduce_on_plateau():
 
     assert num_reductions == reduce_limit
 
+    # 3 reductions that multiply by 0.1 each time
+    assert np.isclose(lr, 0.001)
+
 
 def test_lr_scheduler_save_load():
     steps_per_checkpoint = 10
@@ -114,9 +126,7 @@ def test_lr_scheduler_save_load():
     reduce_limit = 3
 
     module = NumberInputFeature(NumberInputFeatureConfig(name="num1", encoder=DenseEncoderConfig()))
-    output1 = NumberOutputFeature(
-        NumberOutputFeatureConfig(name="output1", input_size=10, decoder=PassthroughDecoderConfig()), output_features={}
-    )
+    output1 = NumberOutputFeature(NumberOutputFeatureConfig(name="output1", input_size=10), output_features={})
 
     optimizer = SGD(module.parameters(), lr=base_lr)
     config = LRSchedulerConfig(warmup_fraction=0.2, reduce_on_plateau=reduce_limit)
@@ -139,7 +149,6 @@ def test_lr_scheduler_save_load():
 
     optimizer_state = optimizer.state_dict()
     scheduler_state = scheduler.state_dict()
-    print(scheduler_state)
 
     optimizer2 = SGD(module.parameters(), lr=base_lr)
     scheduler2 = LRScheduler(config=config, optimizer=optimizer2)
