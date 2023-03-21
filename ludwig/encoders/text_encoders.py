@@ -50,7 +50,7 @@ from ludwig.schema.encoders.text_encoders import (
     XLNetConfig,
 )
 from ludwig.utils.hf_utils import load_pretrained_hf_model_with_hub_fallback
-from ludwig.utils.torch_utils import FreezeModule
+from ludwig.utils.torch_utils import FreezeModule, get_torch_device
 
 logger = logging.getLogger(__name__)
 
@@ -2083,11 +2083,18 @@ class Llama(HFTextEncoder):
         )
 
         if use_pretrained and not saved_weights_in_checkpoint:
-            pretrained_kwargs = pretrained_kwargs or dict(
-                load_in_8bit=True,
-                torch_dtype=torch.float16,
-                device_map="auto",
-            )
+            device = get_torch_device()
+            if device == "cuda":
+                pretrained_kwargs = pretrained_kwargs or dict(
+                    load_in_8bit=True,
+                    torch_dtype=torch.float16,
+                    device_map="auto",
+                )
+            elif device == "mps":
+                pretrained_kwargs = pretrained_kwargs or dict(device_map={"": device}, torch_dtype=torch.float16)
+            else:
+                pretrained_kwargs = pretrained_kwargs or dict(device_map={"": device}, low_cpu_mem_usage=True)
+
             transformer, _ = load_pretrained_hf_model_with_hub_fallback(
                 LlamaModel, pretrained_model_name_or_path, **pretrained_kwargs
             )
