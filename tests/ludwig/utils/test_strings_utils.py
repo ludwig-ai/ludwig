@@ -79,14 +79,7 @@ def test_create_vocabulary_chars():
     )
     vocab = vocabulary.vocab
 
-    # most-common-percentage
-    #    assert len(vocabulary_output[0]) == 23
-    #    assert vocabulary_output[0][strings_utils.SpecialSymbol.START.value] == strings_utils.START_SYMBOL
-    #    assert vocabulary_output[0][strings_utils.SpecialSymbol.STOP.value] == strings_utils.STOP_SYMBOL
-    #    assert vocabulary_output[0][strings_utils.SpecialSymbol.PADDING.value] == strings_utils.PADDING_SYMBOL
-    #    assert vocabulary_output[0][strings_utils.SpecialSymbol.UNKNOWN.value] == strings_utils.UNKNOWN_SYMBOL
-    #
-    assert len(vocab) == 24
+    assert len(vocab) == 21
     assert vocab[strings_utils.SpecialSymbol.START.value] == strings_utils.START_SYMBOL
     assert vocab[strings_utils.SpecialSymbol.STOP.value] == strings_utils.STOP_SYMBOL
     assert vocab[strings_utils.SpecialSymbol.PADDING.value] == strings_utils.PADDING_SYMBOL
@@ -118,7 +111,7 @@ def test_create_vocabulary_word():
     assert vocab[strings_utils.SpecialSymbol.UNKNOWN.value] == strings_utils.UNKNOWN_SYMBOL
 
 
-@pytest.mark.parametrize("most_common_percentile,most_common,expected_vocab_size", [(0.5, None, 9), (0.9, 10, 11)])
+@pytest.mark.parametrize("most_common_percentile,most_common,expected_vocab_size", [(0.5, None, 7), (0.9, 10, 11)])
 def test_create_vocabulary_no_special_symbols(most_common_percentile, most_common, expected_vocab_size):
     data = pd.DataFrame(["Hello, I'm a single sentence!", "And another sentence", "And the very very last one"])
     column = data[0]
@@ -140,11 +133,7 @@ def test_create_vocabulary_no_special_symbols(most_common_percentile, most_commo
     )
     vocab = vocabulary.vocab
 
-    # most-common-percentage
-    #    assert len(vocabulary_output[0]) == expected_vocab_size
-    #    assert vocabulary_output[0][strings_utils.SpecialSymbol.UNKNOWN.value] == strings_utils.UNKNOWN_SYMBOL
-    #
-    assert len(vocab) == 16
+    assert len(vocab) == expected_vocab_size
     assert vocab[strings_utils.SpecialSymbol.UNKNOWN.value] == strings_utils.UNKNOWN_SYMBOL
 
 
@@ -224,7 +213,8 @@ def test_create_vocabulary_idf(compute_idf: bool):
     vocabulary = strings_utils.create_vocabulary(
         column,
         tokenizer_type=preprocessing_parameters["tokenizer"],
-        num_most_frequent=preprocessing_parameters["most_common"],
+        most_common_percentile=preprocessing_parameters["most_common_percentile"],
+        most_common=preprocessing_parameters["most_common"],
         lowercase=preprocessing_parameters["lowercase"],
         vocab_file=preprocessing_parameters["vocab_file"],
         unknown_symbol=preprocessing_parameters["unknown_symbol"],

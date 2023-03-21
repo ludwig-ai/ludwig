@@ -104,5 +104,5 @@ class SetOutputPreprocessingConfig(SetPreprocessingConfig):
         allow_none=True,
         description="The maximum number of most common tokens to be considered. If the data contains more than this "
         "amount, the most infrequent tokens will be treated as unknown.",
-        parameter_metadata=FEATURE_METADATA[SET][PREPROCESSING]["most_common"],
+        parameter_metadata=FEATURE_METADATA[SHARED][PREPROCESSING]["most_common"],
     )

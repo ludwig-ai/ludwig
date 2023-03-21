@@ -201,7 +201,7 @@ class TextOutputPreprocessingConfig(TextPreprocessingConfig):
         allow_none=False,
         description="The maximum number of most common tokens in the vocabulary. If the data contains more than this "
         "amount, the most infrequent symbols will be treated as unknown.",
-        parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["most_common"],
+        parameter_metadata=FEATURE_METADATA[SHARED][PREPROCESSING]["most_common"],
     )
 
     ngram_size: int = schema_utils.PositiveInteger(

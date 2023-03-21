@@ -365,9 +365,23 @@ def create_vocabulary(
     line_length_99ptile = processor.compute(processed_lines.map(len).quantile(0.99))
 
     if not most_common:
-        most_common = math.ceil(len(unit_counts) * most_common_percentile)
+        # We truncate the vocab based on the total count of tokens. If most_common_percentile is 0.95
+        # and the total number of tokens is 100,000 then the total number of token we end up with after
+        # the truncation is 95,000 or more. We look at the least frequent tokens and remove those that
+        # will keep the total number of tokens greater or equal to 95,000.
+        token_counts = processed_counts.sum()
+        min_num_tokens_to_keep = math.ceil(token_counts * most_common_percentile)
+        most_common = len(unit_counts)
+        for token, frequency in reversed(unit_counts.most_common()):
+            token_counts -= frequency
+            if token_counts < min_num_tokens_to_keep:
+                break
+            most_common -= 1
 
     if vocab is None:
+        logger.info(
+            f"Truncating the vocab to {most_common} tokens. " f"The original vocab size was {len(unit_counts)}."
+        )
         vocab = [unit for unit, _ in unit_counts.most_common(most_common)]
 
     vocab_set = set(vocab)
