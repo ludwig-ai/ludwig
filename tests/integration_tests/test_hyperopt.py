@@ -37,9 +37,12 @@ from ludwig.constants import (
     NAME,
     OUTPUT_FEATURES,
     RAY,
+    TEST,
     TEXT,
     TRAINER,
+    TRAINING,
     TYPE,
+    VALIDATION,
 )
 from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.hyperopt.results import HyperoptResults
@@ -143,6 +146,7 @@ def test_hyperopt_search_alg(
     ray_cluster_7cpu,
     validate_output_feature=False,
     validation_metric=None,
+    split="validation",
 ):
     config, rel_path = _setup_ludwig_config(csv_filename, model_type)
 
@@ -204,6 +208,18 @@ def test_hyperopt_executor_with_metric(model_type, csv_filename, tmpdir, ray_clu
         ray_cluster_7cpu,
         validate_output_feature=True,
         validation_metric=ACCURACY,
+    )
+
+
+@pytest.mark.parametrize("split", [TRAINING, VALIDATION, TEST])
+def test_hyperopt_with_split(split, csv_filename, tmpdir, ray_cluster_7cpu):
+    test_hyperopt_search_alg(
+        search_alg="variant_generator",
+        model_type=MODEL_ECD,
+        csv_filename=csv_filename,
+        tmpdir=tmpdir,
+        ray_cluster_7cpu=ray_cluster_7cpu,
+        split=split,
     )
 
 
