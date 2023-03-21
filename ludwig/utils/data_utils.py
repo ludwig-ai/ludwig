@@ -159,6 +159,14 @@ def spread(fn):
     return wrapped_fn
 
 
+def inner_read(fp, read_fn, **kwargs):
+    if "get_preview" in kwargs:
+        chunksize = kwargs["get_preview"]
+        del kwargs["get_preview"]
+        return next(read_fn(fp, chunksize=chunksize, **kwargs))
+    return read_fn(fp, **kwargs)
+
+
 @DeveloperAPI
 @spread
 def read_xsv(data_fp, df_lib=PANDAS_DF, separator=",", header=0, nrows=None, skiprows=None, dtype=object, **kwargs):
@@ -193,7 +201,7 @@ def read_xsv(data_fp, df_lib=PANDAS_DF, separator=",", header=0, nrows=None, ski
     # If fetching a preview, create an iterator that will immediately be used to read the first chunk:
     if "get_preview" in kwargs:
         kwargs["chunksize"] = kwargs["get_preview"]
-        kwargs["nrows"] = None
+        del kwargs["get_preview"]
 
     try:
         df = df_lib.read_csv(data_fp, **kwargs)
@@ -201,7 +209,9 @@ def read_xsv(data_fp, df_lib=PANDAS_DF, separator=",", header=0, nrows=None, ski
         logger.warning("Failed to parse the CSV with pandas default way," " trying \\ as escape character.")
         df = df_lib.read_csv(data_fp, escapechar="\\", **kwargs)
 
-    if "get_preview" in kwargs:
+    from collections.abc import Iterator
+
+    if isinstance(df, Iterator):
         return next(df)
 
     return df
@@ -217,18 +227,13 @@ def read_json(data_fp, df_lib, normalize=False, **kwargs):
     if normalize:
         return df_lib.json_normalize(load_json(data_fp))
     else:
-        if "get_preview" in kwargs:
-            return next(df_lib.read_json(data_fp, chunksize=kwargs["get_preview"]))
-
-        return df_lib.read_json(data_fp)
+        return inner_read(data_fp, df_lib.read_json, **kwargs)
 
 
 @DeveloperAPI
 @spread
 def read_jsonl(data_fp, df_lib, **kwargs):
-    if "get_preview" in kwargs:
-        return next(df_lib.read_json(data_fp, lines=True, chunksize=kwargs["get_preview"]))
-    return df_lib.read_json(data_fp, lines=True)
+    return inner_read(data_fp, df_lib.read_json, lines=True, **kwargs)
 
 
 @DeveloperAPI
@@ -243,23 +248,15 @@ def read_excel(data_fp, df_lib, **kwargs):
     # https://github.com/dask/dask/issues/9055
     if is_dask_lib(df_lib):
         logger.warning("Falling back to pd.read_excel() since dask backend does not support it")
-        if "get_preview" in kwargs:
-            return dd.from_pandas(
-                next(pd.read_excel(data_fp, engine=excel_engine, chunksize=kwargs["get_preview"])), npartitions=1
-            )
-        return dd.from_pandas(pd.read_excel(data_fp, engine=excel_engine), npartitions=1)
+        return dd.from_pandas(inner_read(data_fp, pd.read_excel, engine=excel_engine, **kwargs), npartitions=1)
 
-    if "get_preview" in kwargs:
-        return next(df_lib.read_excel(data_fp, engine=excel_engine, chunksize=kwargs["get_preview"]))
-    return df_lib.read_excel(data_fp, engine=excel_engine)
+    return inner_read(data_fp, df_lib.read_excel, engine=excel_engine, **kwargs)
 
 
 @DeveloperAPI
 @spread
 def read_parquet(data_fp, df_lib, **kwargs):
-    if "get_preview" in kwargs:
-        return next(df_lib.read_parquet(data_fp, chunksize=kwargs["get_preview"]))
-    return df_lib.read_parquet(data_fp)
+    return inner_read(data_fp, df_lib.read_parquet, **kwargs)
 
 
 @DeveloperAPI
@@ -268,27 +265,15 @@ def read_pickle(data_fp, df_lib, **kwargs):
     # https://github.com/dask/dask/issues/9055
     if is_dask_lib(df_lib):
         logger.warning("Falling back to pd.read_pickle() since dask backend does not support it")
-        if "get_preview" in kwargs:
-            return dd.from_pandas(next(pd.read_pickle(data_fp, chunksize=kwargs["get_preview"])), npartitions=1)
-        return dd.from_pandas(pd.read_pickle(data_fp), npartitions=1)
+        return dd.from_pandas(inner_read(data_fp, pd.read_pickle, **kwargs), npartitions=1)
 
-    if "get_preview" in kwargs:
-        return next(df_lib.read_pickle(data_fp, chunksize=kwargs["get_preview"]))
-    return df_lib.read_pickle(data_fp)
+    return inner_read(data_fp, df_lib.read_pickle, **kwargs)
 
 
 @DeveloperAPI
 @spread
 def read_fwf(data_fp, df_lib, **kwargs):
-    if "get_preview" in kwargs:
-        return next(df_lib.read_fwf(data_fp, chunksize=kwargs["get_preview"]))
-    return df_lib.read_fwf(data_fp)
-
-
-def inner_read(fp, read_fn, **kwargs):
-    if "get_preview" in kwargs:
-        return next(read_fn(fp, chunksize=kwargs["get_preview"], **kwargs))
-    return read_fn(fp, **kwargs)
+    return inner_read(data_fp, df_lib.read_fwf, **kwargs)
 
 
 @DeveloperAPI
@@ -303,7 +288,7 @@ def read_feather(data_fp, df_lib, **kwargs):
 
 @DeveloperAPI
 @spread
-def read_html(data_fp, df_lib):
+def read_html(data_fp, df_lib, **kwargs):
     # https://github.com/dask/dask/issues/9055
     if is_dask_lib(df_lib):
         logger.warning("Falling back to pd.read_html() since dask backend does not support it")
@@ -313,8 +298,8 @@ def read_html(data_fp, df_lib):
 
 @DeveloperAPI
 @spread
-def read_orc(data_fp, df_lib):
-    return df_lib.read_orc(data_fp)
+def read_orc(data_fp, df_lib, **kwargs):
+    return inner_read(data_fp, df_lib.read_orc, **kwargs)
 
 
 @DeveloperAPI
