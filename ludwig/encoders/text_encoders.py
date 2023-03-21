@@ -2092,8 +2092,8 @@ class Llama(HFTextEncoder):
                 LlamaModel, pretrained_model_name_or_path, **pretrained_kwargs
             )
 
-            if peft_model_name_or_path is not None:
-                transformer = PeftModel.from_pretrained(transformer, peft_model_name_or_path, torch_dtype=torch.float16)
+            # if peft_model_name_or_path is not None:
+            #     transformer = PeftModel.from_pretrained(transformer, peft_model_name_or_path, torch_dtype=torch.float16)
         else:
             transformer = self._init_transformer_from_scratch(LlamaModel, LlamaConfig, hf_config_params, vocab_size)
 
@@ -2114,12 +2114,12 @@ class Llama(HFTextEncoder):
         transformer_outputs = self.transformer.module(
             input_ids=inputs,
             attention_mask=mask,
-            token_type_ids=torch.zeros_like(inputs),
+            return_dict=True,
         )
         if self.reduce_output == "cls_pooled":
-            hidden = transformer_outputs[1]
+            hidden = transformer_outputs.last_hidden_state
         else:
-            hidden = transformer_outputs[0][:, 1:-1, :]  # bos + [sent] + sep
+            hidden = transformer_outputs.last_hidden_state[:, 1:-1, :]  # bos + [sent] + sep
             hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
 

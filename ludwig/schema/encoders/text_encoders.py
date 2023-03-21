@@ -39,7 +39,7 @@ class HFEncoderConfig(SequenceEncoderConfig):
     def can_cache_embeddings(self) -> bool:
         """Returns true if the encoder's output embeddings will not change during training."""
         return not self.trainable and self.reduce_output != "attention"
-    
+
     def get_tokenizer_type(self) -> str:
         return "hf_tokenizer"
 
@@ -2989,7 +2989,7 @@ class LlamaConfig(HFEncoderConfig):
     )
 
     reduce_output: str = schema_utils.String(
-        default="cls_pooled",
+        default="sum",
         description="The method used to reduce a sequence of tensors down to a single tensor.",
         parameter_metadata=ENCODER_METADATA["HFEncoder"]["reduce_output"],
     )

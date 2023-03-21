@@ -328,11 +328,13 @@ def create_vocabulary(
         vocab = load_vocabulary(vocab_file)
 
     def process_line(line):
+        print("!!! line", line)
+        print("!!! prompt_template", prompt_template)
         if prompt_template is not None:
             line = prompt_template.format(input=line)
         return tokenizer(line.lower() if lowercase else line)
 
-    processed_lines = data.map(process_line)
+    processed_lines = processor.map_objects(data, process_line)
     processed_counts = processed_lines.explode().value_counts(sort=False)
     processed_counts = processor.compute(processed_counts)
     unit_counts = Counter(dict(processed_counts))

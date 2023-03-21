@@ -47,6 +47,7 @@ def load_pretrained_hf_tokenizer(
     """
     from transformers import LlamaTokenizer
 
+    # https://github.com/huggingface/transformers/pull/22232
     return LlamaTokenizer.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
 
 
