@@ -345,8 +345,9 @@ def check_concat_combiner_requirements(config: "ModelConfig") -> None:  # noqa: 
 
     if has_unreduced_sequence_feature and has_non_sequence_feature:
         raise ConfigValidationError(
-            "The concat combiner cannot receive a mix of unreduced sequence features and non-sequence features. "
-            "Options: 1) Set reduce_output in sequence encoder to a value other than None, 2) Choose a different "
-            "combiner like `sequence_concat` which can handle, 3) Remove all non-sequence features, or 4) Remove all "
-            "sequence features."
+            "The concat combiner cannot receive a mix of unreduced sequence features (3D) and non-sequence features "
+            "(2D). Options: 1) Set reduce_output in sequence feature encoders to a value other than None to ensure 2D "
+            "encoder outputs, 2) Choose a different combiner like `sequence_concat` which can handle a mix of 2D and "
+            "3D encoder output shapes, or 3) Remove features to ensure that output shapes from all encoders are the "
+            "same dimension (all 2D or all 3D)."
         )
