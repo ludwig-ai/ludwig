@@ -187,6 +187,7 @@ def train_fn(
             test_shard = RayDatasetShard(test_shard, features, training_set_metadata)
 
         model = ray.get(model_ref)
+        model.reload()
         device = get_torch_device()
         model = model.to(device)
 

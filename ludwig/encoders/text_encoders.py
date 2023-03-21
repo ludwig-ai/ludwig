@@ -2083,24 +2083,9 @@ class Llama(HFTextEncoder):
         )
 
         if use_pretrained and not saved_weights_in_checkpoint:
-            device = get_torch_device()
-            if device == "cuda":
-                pretrained_kwargs = pretrained_kwargs or dict(
-                    load_in_8bit=True,
-                    torch_dtype=torch.float16,
-                    device_map="auto",
-                )
-            elif device == "mps":
-                pretrained_kwargs = pretrained_kwargs or dict(device_map={"": device}, torch_dtype=torch.float16)
-            else:
-                pretrained_kwargs = pretrained_kwargs or dict(device_map={"": device}, low_cpu_mem_usage=True)
-
-            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
-                LlamaModel, pretrained_model_name_or_path, **pretrained_kwargs
-            )
-
-            # if peft_model_name_or_path is not None:
-            #     transformer = PeftModel.from_pretrained(transformer, peft_model_name_or_path, torch_dtype=torch.float16)
+            self.pretrained_kwargs = pretrained_kwargs
+            self.pretrained_model_name_or_path = pretrained_model_name_or_path
+            transformer = self._load_pretrained_transformer()
         else:
             transformer = self._init_transformer_from_scratch(LlamaModel, LlamaConfig, hf_config_params, vocab_size)
 
@@ -2129,6 +2114,35 @@ class Llama(HFTextEncoder):
             hidden = transformer_outputs.last_hidden_state[:, 1:-1, :]  # bos + [sent] + sep
             hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
+
+    def _load_pretrained_transformer(self):
+        from transformers import LlamaModel
+
+        device = get_torch_device()
+        if device == "cuda":
+            default_pretrained_kwargs = dict(
+                load_in_8bit=True,
+                torch_dtype=torch.float16,
+                device_map="auto",
+            )
+        elif device == "mps":
+            default_pretrained_kwargs = dict(device_map={"": device}, torch_dtype=torch.float16)
+        else:
+            default_pretrained_kwargs = dict(device_map={"": device}, low_cpu_mem_usage=True)
+
+        pretrained_kwargs = self.pretrained_kwargs or default_pretrained_kwargs
+        transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+            LlamaModel, self.pretrained_model_name_or_path, **pretrained_kwargs
+        )
+
+        # if peft_model_name_or_path is not None:
+        #     transformer = PeftModel.from_pretrained(transformer, peft_model_name_or_path, torch_dtype=torch.float16)
+        return transformer
+
+    def reload(self):
+        transformer = self._load_pretrained_transformer()
+        self.transformer.module = transformer
+        super().reload()
 
     @staticmethod
     def get_schema_cls():
