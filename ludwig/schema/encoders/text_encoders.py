@@ -28,7 +28,7 @@ class HFEncoderConfig(SequenceEncoderConfig):
                 f"Missing required parameter for `{self.type}` encoder: `pretrained_model_name_or_path` when "
                 "`use_pretrained` is True."
             )
-        preprocessing.tokenizer = "hf_tokenizer"
+        preprocessing.tokenizer = self.get_tokenizer_type()
         preprocessing.pretrained_model_name_or_path = model_name
         if not self.can_cache_embeddings():
             preprocessing.cache_encoder_embeddings = False
@@ -39,6 +39,9 @@ class HFEncoderConfig(SequenceEncoderConfig):
     def can_cache_embeddings(self) -> bool:
         """Returns true if the encoder's output embeddings will not change during training."""
         return not self.trainable and self.reduce_output != "attention"
+    
+    def get_tokenizer_type(self) -> str:
+        return "hf_tokenizer"
 
 
 @DeveloperAPI

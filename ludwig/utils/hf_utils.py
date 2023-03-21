@@ -45,7 +45,9 @@ def load_pretrained_hf_tokenizer(
     Returns:
         The pretrained tokenizer object.
     """
-    return AutoTokenizer.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
+    from transformers import LlamaTokenizer
+
+    return LlamaTokenizer.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
 
 
 def _load_pretrained_hf_model_from_dir(
