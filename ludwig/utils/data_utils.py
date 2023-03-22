@@ -772,6 +772,8 @@ class NumpyEncoder(json.JSONEncoder):
             return float(obj)
         elif isinstance(obj, np.ndarray):
             return obj.tolist()
+        elif isinstance(obj, np.bool_):
+            return bool(obj)
         elif dataclasses.is_dataclass(obj):
             return dataclasses.asdict(obj)
         else:
