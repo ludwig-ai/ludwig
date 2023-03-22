@@ -7,15 +7,16 @@ import numpy as np
 import torch
 import torchmetrics
 from hummingbird.ml import convert
-from hummingbird.ml.operator_converters import constants as hb_constants
 
-from ludwig.constants import BINARY, CATEGORY, LOGITS, MODEL_GBM, NAME, NUMBER
+from ludwig.constants import BINARY, LOGITS, MODEL_GBM, NUMBER
 from ludwig.features.base_feature import OutputFeature
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
-from ludwig.schema.model_config import ModelConfig, OutputFeaturesContainer
+from ludwig.schema.features.base import BaseOutputFeatureConfig, FeatureCollection
+from ludwig.schema.model_config import ModelConfig
 from ludwig.utils import output_feature_utils
 from ludwig.utils.fs_utils import path_exists
+from ludwig.utils.gbm_utils import reshape_logits
 from ludwig.utils.torch_utils import get_torch_device
 from ludwig.utils.types import TorchDevice
 
@@ -58,21 +59,19 @@ class GBM(BaseModel):
 
     @classmethod
     def build_outputs(
-        cls, output_feature_configs: OutputFeaturesContainer, input_size: int
+        cls, output_feature_configs: FeatureCollection[BaseOutputFeatureConfig], input_size: int
     ) -> Dict[str, OutputFeature]:
         """Builds and returns output feature."""
         # TODO: only single task currently
-        if len(output_feature_configs.to_dict()) > 1:
+        if len(output_feature_configs) > 1:
             raise ValueError("Only single task currently supported")
 
-        output_feature_def = output_feature_configs.to_list()[0]
-        output_features = {}
+        output_feature_config = output_feature_configs[0]
+        output_feature_config.input_size = input_size
 
-        setattr(getattr(output_feature_configs, output_feature_def[NAME]), "input_size", input_size)
-        output_feature = cls.build_single_output(
-            getattr(output_feature_configs, output_feature_def[NAME]), output_features
-        )
-        output_features[output_feature_def[NAME]] = output_feature
+        output_features = {}
+        output_feature = cls.build_single_output(output_feature_config, output_features)
+        output_features[output_feature_config.name] = output_feature
 
         return output_features
 
@@ -82,14 +81,17 @@ class GBM(BaseModel):
         if self.lgbm_model is None:
             raise ValueError("Model has not been trained yet.")
 
-        # explicitly use sigmoid for classification, so we can invert to logits at inference time
-        extra_config = (
-            {hb_constants.POST_TRANSFORM: hb_constants.SIGMOID}
-            if isinstance(self.lgbm_model, lgb.LGBMClassifier)
-            else {}
-        )
         try:
-            self.compiled_model = convert(self.lgbm_model, "torch", extra_config=extra_config)
+            self.compiled_model = convert(
+                self.lgbm_model,
+                "torch",
+                extra_config={
+                    # explicitly disable post-transform, so we get logits at inference time
+                    "post_transform": None,
+                    # return pytorch module only
+                    "container": False,
+                },
+            )
             yield
         finally:
             self.compiled_model = None
@@ -104,95 +106,79 @@ class GBM(BaseModel):
         # Invoke output features.
         output_logits = {}
         output_feature_name = self.output_features.keys()[0]
-        output_feature = self.output_features[output_feature_name]
+        output_feature = self.output_features.get(output_feature_name)
+
+        # If `inputs` is a tuple, it should contain `(inputs, targets)`.
+        if isinstance(inputs, tuple):
+            inputs, _ = inputs
+
+        assert list(inputs.keys()) == self.input_features.keys()
 
         # If the model has not been compiled, predict using the LightGBM sklearn iterface. Otherwise, use torch with
         # the Hummingbird compiled model. Notably, when compiling the model to torchscript, compiling with Hummingbird
         # first should preserve the torch predictions code path.
         if self.compiled_model is None:
-            # If `inputs` is a tuple, it should contain `(inputs, targets)``. When using the LGBM sklearn interface,
-            # `targets` is not needed, so it is discarded here.
-            if isinstance(inputs, tuple):
-                inputs, _ = inputs
-
-            assert list(inputs.keys()) == self.input_features.keys()
+            feature_vectors = []
+            for a in inputs.values():
+                if a.ndim > 1:
+                    # Input feature is a vector of shape [batch_size, nfeatures]
+                    # We need to expand this into `nfeatures` individual vectors of shape [batch_size]
+                    nfeatures = a.shape[1]
+                    vectors = [v.squeeze() for v in np.hsplit(a, nfeatures)]
+                    feature_vectors += vectors
+                else:
+                    feature_vectors.append(a)
 
             # The LGBM sklearn interface works with array-likes, so we place the inputs into a 2D numpy array.
-            in_array = np.stack(list(inputs.values()), axis=0).T
+            in_array = np.stack(feature_vectors, axis=0).T
 
             # Predict on the input batch and convert the predictions to torch tensors so that they are compatible with
             # the existing metrics modules.
             # Input: 2D eval_batch_size x n_features array
             # Output: 1D eval_batch_size array if regression, else 2D eval_batch_size x n_classes array
             logits = torch.from_numpy(self.lgbm_model.predict(in_array, raw_score=True))
-
-            if output_feature.type() == CATEGORY and logits.ndim == 1:
-                # add logits for the negative class (LightGBM classifier only returns logits for the positive class)
-                logits = logits.view(-1, 1)
-                logits = torch.cat([-logits, logits], dim=1)
-
+            logits = reshape_logits(output_feature, logits)
         else:
-            if isinstance(inputs, tuple):
-                inputs, targets = inputs
-                # Convert targets to tensors.
-                for target_feature_name, target_value in targets.items():
-                    if not isinstance(target_value, torch.Tensor):
-                        targets[target_feature_name] = torch.from_numpy(target_value)
-                    else:
-                        targets[target_feature_name] = target_value
-            else:
-                targets = None
-
-            assert list(inputs.keys()) == self.input_features.keys()
-
             # Convert inputs to tensors of type float as expected by hummingbird GEMMTreeImpl.
-            for input_feature_name, input_values in inputs.items():
-                if not isinstance(input_values, torch.Tensor):
-                    inputs[input_feature_name] = torch.from_numpy(input_values).float()
+            for input_feature_name, t in inputs.items():
+                if not isinstance(t, torch.Tensor):
+                    inputs[input_feature_name] = torch.from_numpy(t).float()
                 else:
-                    inputs[input_feature_name] = input_values.view(-1, 1).float()
+                    # For scalar features, expect tensor of [batch_size, 1] for input, so reshape if only
+                    # given [batch_size]. Additionally, because TorchScript tracing will not retain this conditional,
+                    # we need to make sure we perform this reshaping for every scalar feature, even if it's already
+                    # shaped correctly at the time of tracing, to allow for input in either shape at inference time.
+                    if len(t.shape) == 1 or (len(t.shape) == 2 and t.shape[1] == 1):
+                        t = t.view(-1, 1)
+                    inputs[input_feature_name] = t.float()
 
             # TODO(travis): include encoder and decoder steps during inference
             # encoder_outputs = {}
             # for input_feature_name, input_values in inputs.items():
-            #     encoder = self.input_features[input_feature_name]
+            #     encoder = self.input_features.get(input_feature_name)
             #     encoder_output = encoder(input_values)
             #     encoder_outputs[input_feature_name] = encoder_output
 
             # concatenate inputs
             inputs = torch.cat(list(inputs.values()), dim=1)
 
-            assert (
-                type(inputs) is torch.Tensor
-                and inputs.dtype == torch.float32
-                and inputs.ndim == 2
-                and inputs.shape[1] == len(self.input_features)
-            ), (
-                f"Expected inputs to be a 2D tensor of shape (batch_size, {len(self.input_features)}) of type float32, "
-                f"but got {inputs.shape} of type {inputs.dtype}"
+            assert isinstance(inputs, torch.Tensor) and inputs.dtype == torch.float32 and inputs.ndim == 2, (
+                f"Expected inputs to be a 2D tensor of shape (batch_size, n) of type float32, "
+                f"but got shape {inputs.shape} and type {inputs.dtype}"
             )
             # Predict using PyTorch module, so it is included when converting to TorchScript.
-            preds = self.compiled_model.model(inputs)
+            preds = self.compiled_model(inputs)
 
             if output_feature.type() == NUMBER:
                 # regression
                 logits = preds.view(-1)
             else:
                 # classification
-                _, probs = preds
+                _, logits = preds
+                logits = reshape_logits(output_feature, logits)
 
                 if output_feature.type() == BINARY:
-                    # keep positive class only for binary feature
-                    probs = probs[:, 1]  # shape (batch_size,)
-                elif output_feature.num_classes > 2:
-                    probs = probs.view(-1, 2, output_feature.num_classes)  # shape (batch_size, 2, num_classes)
-                    probs = probs.transpose(2, 1)  # shape (batch_size, num_classes, 2)
-
-                    # sigmoid probabilities for belonging to each class
-                    probs = probs[:, :, 1]  # shape (batch_size, num_classes)
-
-                # invert probabilities to get back logits and use Ludwig's output feature prediction functionality
-                logits = torch.logit(probs)
+                    logits = logits.view(-1)
 
         output_feature_utils.set_output_feature_tensor(output_logits, output_feature_name, LOGITS, logits)
 
@@ -221,7 +207,7 @@ class GBM(BaseModel):
             # Disable gradient calculation for hummingbird Parameter nodes.
             device = torch.device(get_torch_device())
             self.compiled_model.to(device)
-            self.compiled_model.model.requires_grad_(False)
+            self.compiled_model.requires_grad_(False)
             trace = super().to_torchscript(device)
         return trace
 

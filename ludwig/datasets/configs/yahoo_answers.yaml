@@ -5,11 +5,6 @@ sha256:
   yahoo_answers_csv.tgz: 2d4277855faf8b35259009425fa8f7fe1888b5644b47165508942d000f4c96ae
 train_filenames: yahoo_answers_csv/train.csv
 test_filenames: yahoo_answers_csv/test.csv
-columns:
-  - label
-  - question_title
-  - question
-  - best_answer
 description: |
   The Yahoo Answers dataset
   Details:
@@ -21,6 +16,15 @@ description: |
       Character-level Convolutional Networks for Text Classification
       Xiang Zhang et al., 2015
         https://arxiv.org/abs/1509.01626
+columns:
+  - name: label
+    type: category
+  - name: question_title
+    type: text
+  - name: question
+    type: text
+  - name: best_answer
+    type: text
 output_features:
   - name: label
     type: category

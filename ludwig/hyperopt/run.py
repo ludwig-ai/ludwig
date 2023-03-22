@@ -21,7 +21,6 @@ from ludwig.constants import (
     MAX_CONCURRENT_TRIALS,
     METRIC,
     NAME,
-    NUM_SAMPLES,
     OUTPUT_FEATURES,
     PARAMETERS,
     PREPROCESSING,
@@ -231,7 +230,7 @@ def hyperopt(
     update_hyperopt_params_with_defaults(hyperopt_config)
 
     # Check if all features are grid type parameters and log UserWarning if needed
-    log_warning_if_all_grid_type_parameters(hyperopt_config[PARAMETERS], hyperopt_config[EXECUTOR].get(NUM_SAMPLES))
+    log_warning_if_all_grid_type_parameters(hyperopt_config)
 
     # Infer max concurrent trials
     if hyperopt_config[EXECUTOR].get(MAX_CONCURRENT_TRIALS) == AUTO:

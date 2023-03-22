@@ -9,7 +9,7 @@ import pytest
 
 from ludwig.api import LudwigModel
 from ludwig.constants import COLUMN, ENCODER, INPUT_FEATURES, NAME, OUTPUT_FEATURES, PREPROCESSING, SPLIT, TYPE
-from ludwig.schema import validate_upgraded_config
+from ludwig.schema.model_types.base import ModelConfig
 from ludwig.types import FeatureConfigDict, ModelConfigDict
 from ludwig.utils.misc_utils import merge_dict
 from tests.integration_tests.utils import (
@@ -27,8 +27,14 @@ from tests.integration_tests.utils import (
 ray = pytest.importorskip("ray")
 
 import dask.dataframe as dd  # noqa
+from ray.tune.experiment.trial import Trial  # noqa
 
-from ludwig.automl import create_auto_config, create_auto_config_with_dataset_profile, train_with_config  # noqa
+from ludwig.automl import (  # noqa
+    auto_train,
+    create_auto_config,
+    create_auto_config_with_dataset_profile,
+    train_with_config,
+)
 from ludwig.hyperopt.execution import RayTuneExecutor  # noqa
 
 pytestmark = pytest.mark.distributed
@@ -58,6 +64,19 @@ def merge_dict_with_features(a: ModelConfigDict, b: ModelConfigDict) -> ModelCon
         del b[OUTPUT_FEATURES]
 
     return merge_dict(a, b)
+
+
+def check_types(
+    config: ModelConfigDict, input_features: List[FeatureConfigDict], output_features: List[FeatureConfigDict]
+):
+    actual_features = config.get(INPUT_FEATURES, []) + config.get(OUTPUT_FEATURES, [])
+    expected_features = {f[NAME]: f for f in input_features + output_features}
+    assert len(actual_features) == len(expected_features)
+    for actual_feature in actual_features:
+        expected_feature = expected_features[actual_feature[NAME]]
+        assert (
+            actual_feature[TYPE] == expected_feature[TYPE]
+        ), f"{actual_feature[NAME]}: actual type {actual_feature[TYPE]} != {expected_feature[TYPE]}"
 
 
 @pytest.fixture(scope="module")
@@ -130,7 +149,7 @@ def test_data_multimodal():
         ]
         output_features = [binary_feature()]
         dataset_csv = generate_data(
-            input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=10
+            input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=20
         )
         yield input_features, output_features, dataset_csv
 
@@ -183,10 +202,11 @@ def test_create_auto_config(test_data, expectations, ray_cluster_2cpu, request):
     config = create_auto_config(df, targets, time_limit_s=600, backend="ray")
 
     # Ensure our configs are using the latest Ludwig schema
-    validate_upgraded_config(config)
+    ModelConfig.from_dict(config)
 
     assert to_name_set(config[INPUT_FEATURES]) == to_name_set(input_features)
     assert to_name_set(config[OUTPUT_FEATURES]) == to_name_set(output_features)
+    check_types(config, input_features, output_features)
 
     expected = merge_dict_with_features(config, expectations)
     assert config == expected
@@ -200,7 +220,7 @@ def test_create_auto_config_with_dataset_profile(test_data_tabular_large, ray_cl
     config = create_auto_config_with_dataset_profile(dataset=df, target=targets[0], backend="ray")
 
     # Ensure our configs are using the latest Ludwig schema
-    validate_upgraded_config(config)
+    ModelConfig.from_dict(config)
 
     assert to_name_set(config[INPUT_FEATURES]) == to_name_set(input_features)
     assert to_name_set(config[OUTPUT_FEATURES]) == to_name_set([output_features[0]])
@@ -230,7 +250,7 @@ def test_autoconfig_preprocessing_balanced():
     config = create_auto_config(dataset=df, target="category", time_limit_s=1)
 
     # Ensure our configs are using the latest Ludwig schema
-    validate_upgraded_config(config)
+    ModelConfig.from_dict(config)
 
     assert PREPROCESSING not in config
 
@@ -242,7 +262,7 @@ def test_autoconfig_preprocessing_imbalanced():
     config = create_auto_config(dataset=df, target="category", time_limit_s=1)
 
     # Ensure our configs are using the latest Ludwig schema
-    validate_upgraded_config(config)
+    ModelConfig.from_dict(config)
 
     assert PREPROCESSING in config
     assert SPLIT in config[PREPROCESSING]
@@ -264,7 +284,7 @@ def test_autoconfig_preprocessing_text_image(tmpdir):
     config = create_auto_config(dataset=df, target=target, time_limit_s=1)
 
     # Ensure our configs are using the latest Ludwig schema
-    validate_upgraded_config(config)
+    ModelConfig.from_dict(config)
 
     # Check no features shuffled around
     assert len(input_features) == 2
@@ -283,6 +303,21 @@ def test_autoconfig_preprocessing_text_image(tmpdir):
 @pytest.mark.parametrize("time_budget", [200, 1], ids=["high", "low"])
 def test_train_with_config(time_budget, test_data_tabular_large, ray_cluster_2cpu, tmpdir):
     _run_train_with_config(time_budget, test_data_tabular_large, tmpdir)
+
+
+@pytest.mark.distributed
+def test_auto_train(test_data_tabular_large, ray_cluster_2cpu, tmpdir):
+    _, ofeatures, dataset_csv = test_data_tabular_large
+    results = auto_train(
+        dataset=dataset_csv,
+        target=ofeatures[0][NAME],
+        time_limit_s=120,
+        user_config={"hyperopt": {"executor": {"num_samples": 2}}},
+    )
+
+    analysis = results.experiment_analysis
+    for trial in analysis.trials:
+        assert trial.status != Trial.ERROR, f"Error in trial {trial}"
 
 
 @pytest.mark.parametrize("fs_protocol,bucket", [private_param(("s3", "ludwig-tests"))], ids=["s3"])
@@ -343,7 +378,14 @@ def _run_train_with_config(time_budget, test_data, tmpdir, **kwargs):
 
         outdir = os.path.join(tmpdir, "output")
         results = train_with_config(dataset_csv, config, output_directory=outdir, **kwargs)
-        best_model = results.best_model
+        try:
+            best_model = results.best_model
+        except ValueError:
+            # ValueError is raised when best_model can't be found. This typically
+            # happens when the time_budget is low and the trial is stopped early,
+            # resulting in no evaluations happening (and no scores being reported back to RayTune).
+            # So RayTune has no way of determining what the best model is.
+            best_model = None
 
         if time_budget > 1:
             assert isinstance(best_model, LudwigModel)
@@ -351,4 +393,4 @@ def _run_train_with_config(time_budget, test_data, tmpdir, **kwargs):
             assert mock_fn.call_count == 0
         else:
             assert best_model is None
-            assert mock_fn.call_count > 0
+            assert mock_fn.call_count == 0

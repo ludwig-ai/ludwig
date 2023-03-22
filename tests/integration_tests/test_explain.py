@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 
 from ludwig.api import LudwigModel
-from ludwig.constants import BINARY, CATEGORY, MODEL_ECD, MODEL_GBM
+from ludwig.constants import BATCH_SIZE, BINARY, CATEGORY, MODEL_ECD, MODEL_GBM
 from ludwig.explain.captum import IntegratedGradientsExplainer
 from ludwig.explain.explainer import Explainer
 from ludwig.explain.explanation import Explanation
@@ -14,13 +14,21 @@ from ludwig.explain.gbm import GBMExplainer
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
+    date_feature,
     generate_data,
+    image_feature,
     LocalTestBackend,
     number_feature,
+    set_feature,
     text_feature,
     timeseries_feature,
     vector_feature,
 )
+
+try:
+    from ludwig.explain.captum_ray import RayIntegratedGradientsExplainer
+except ImportError:
+    RayIntegratedGradientsExplainer = None
 
 
 def test_explanation_dataclass():
@@ -48,7 +56,6 @@ def test_abstract_explainer_instantiation():
         Explainer(None, inputs_df=None, sample_df=None, target=None)
 
 
-@pytest.mark.parametrize("use_global", [True, False])
 @pytest.mark.parametrize(
     "explainer_class, model_type",
     [
@@ -68,8 +75,8 @@ def test_abstract_explainer_instantiation():
         pytest.param({"preprocessing": {"split": {"type": "fixed", "column": "split"}}}, id="fixed_split"),
     ],
 )
-def test_explainer_api(explainer_class, model_type, output_feature, additional_config, use_global, tmpdir):
-    run_test_explainer_api(explainer_class, model_type, [output_feature], additional_config, use_global, tmpdir)
+def test_explainer_api(explainer_class, model_type, output_feature, additional_config, tmpdir):
+    run_test_explainer_api(explainer_class, model_type, [output_feature], additional_config, tmpdir)
 
 
 @pytest.mark.distributed
@@ -78,8 +85,7 @@ def test_explainer_api(explainer_class, model_type, output_feature, additional_c
     [binary_feature(), number_feature(), category_feature(decoder={"vocab_size": 3})],
     ids=["binary", "number", "category"],
 )
-@pytest.mark.parametrize("use_global", [True, False])
-def test_explainer_api_ray(use_global, output_feature, tmpdir, ray_cluster_2cpu):
+def test_explainer_api_ray(output_feature, tmpdir, ray_cluster_2cpu):
     from ludwig.explain.captum_ray import RayIntegratedGradientsExplainer
 
     run_test_explainer_api(
@@ -87,29 +93,81 @@ def test_explainer_api_ray(use_global, output_feature, tmpdir, ray_cluster_2cpu)
         "ecd",
         [output_feature],
         {},
-        use_global,
         tmpdir,
         resources_per_task={"num_cpus": 1},
         num_workers=1,
     )
 
 
+@pytest.mark.parametrize("cache_encoder_embeddings", [True, False])
+@pytest.mark.parametrize(
+    "explainer_class,model_type",
+    [
+        pytest.param(IntegratedGradientsExplainer, MODEL_ECD, id="ecd_local"),
+        pytest.param(RayIntegratedGradientsExplainer, MODEL_ECD, id="ecd_ray", marks=pytest.mark.distributed),
+        # TODO(travis): once we support GBM text features
+        # pytest.param((GBMExplainer, MODEL_GBM), id="gbm_local"),
+    ],
+)
+def test_explainer_text_hf(explainer_class, model_type, cache_encoder_embeddings, tmpdir, ray_cluster_2cpu):
+    input_features = [
+        text_feature(
+            encoder={
+                "type": "auto_transformer",
+                "pretrained_model_name_or_path": "hf-internal-testing/tiny-bert-for-token-classification",
+            },
+            preprocessing={"cache_encoder_embeddings": cache_encoder_embeddings},
+        )
+    ]
+    run_test_explainer_api(explainer_class, model_type, [binary_feature()], {}, tmpdir, input_features=input_features)
+
+
+@pytest.mark.parametrize(
+    "explainer_class,model_type",
+    [
+        pytest.param(IntegratedGradientsExplainer, MODEL_ECD, id="ecd_local"),
+        pytest.param(RayIntegratedGradientsExplainer, MODEL_ECD, id="ecd_ray", marks=pytest.mark.distributed),
+        # TODO(travis): once we support GBM text features
+        # pytest.param((GBMExplainer, MODEL_GBM), id="gbm_local"),
+    ],
+)
+def test_explainer_text_tied_weights(explainer_class, model_type, tmpdir):
+    text_feature_1 = text_feature()
+    text_feature_2 = text_feature(tied=text_feature_1["name"])
+    input_features = [text_feature_1, text_feature_2]
+    run_test_explainer_api(explainer_class, model_type, [binary_feature()], {}, tmpdir, input_features=input_features)
+
+
 def run_test_explainer_api(
-    explainer_class, model_type, output_features, additional_config, use_global, tmpdir, **kwargs
+    explainer_class, model_type, output_features, additional_config, tmpdir, input_features=None, **kwargs
 ):
-    input_features = [binary_feature(), number_feature(), category_feature(encoder={"reduce_output": "sum"})]
-    if model_type == MODEL_ECD:
-        input_features += [
-            text_feature(encoder={"vocab_size": 3}),
-            vector_feature(),
-            timeseries_feature(),
-            # audio_feature(os.path.join(tmpdir, "generated_audio")), # NOTE: works but takes a long time
-            # sequence_feature(encoder={"vocab_size": 3}),
-            # date_feature(),
-            # h3_feature(),
-            # set_feature(encoder={"vocab_size": 3}),
-            # bag_feature(encoder={"vocab_size": 3}),
+    image_dest_folder = os.path.join(tmpdir, "generated_images")
+
+    if input_features is None:
+        input_features = [
+            # Include a non-canonical name that's not a valid key for a vanilla pytorch ModuleDict:
+            # https://github.com/pytorch/pytorch/issues/71203
+            {"name": "binary.1", "type": "binary"},
+            number_feature(),
+            category_feature(encoder={"type": "onehot", "reduce_output": "sum"}),
+            category_feature(encoder={"type": "passthrough", "reduce_output": "sum"}),
         ]
+        if model_type == MODEL_ECD:
+            # TODO(travis): need unit tests to test the get_embedding_layer() of every encoder to ensure it is
+            #  compatible with the explainer
+            input_features += [
+                category_feature(encoder={"type": "dense", "reduce_output": "sum"}),
+                text_feature(encoder={"vocab_size": 3}),
+                vector_feature(),
+                timeseries_feature(),
+                image_feature(folder=image_dest_folder),
+                # audio_feature(os.path.join(tmpdir, "generated_audio")), # NOTE: works but takes a long time
+                # sequence_feature(encoder={"vocab_size": 3}),
+                date_feature(),
+                # h3_feature(),
+                set_feature(encoder={"vocab_size": 3}),
+                # bag_feature(encoder={"vocab_size": 3}),
+            ]
 
     # Generate data
     csv_filename = os.path.join(tmpdir, "training.csv")
@@ -121,16 +179,18 @@ def run_test_explainer_api(
     # Train model
     config = {"input_features": input_features, "output_features": output_features, "model_type": model_type}
     if model_type == MODEL_ECD:
-        config["trainer"] = {"epochs": 2}
+        config["trainer"] = {"epochs": 2, BATCH_SIZE: 128}
+    else:
+        # Disable feature filtering to avoid having no features due to small test dataset,
+        # see https://stackoverflow.com/a/66405983/5222402
+        config["trainer"] = {"feature_pre_filter": False}
     config.update(additional_config)
 
     model = LudwigModel(config, logging_level=logging.WARNING, backend=LocalTestBackend())
     model.train(df)
 
     # Explain model
-    explainer = explainer_class(
-        model, inputs_df=df, sample_df=df, target=output_features[0]["name"], use_global=use_global, **kwargs
-    )
+    explainer = explainer_class(model, inputs_df=df, sample_df=df, target=output_features[0]["name"], **kwargs)
 
     is_binary = output_features[0].get("type") == BINARY
     is_category = output_features[0].get("type") == CATEGORY
@@ -145,12 +205,30 @@ def run_test_explainer_api(
     assert explainer.is_category_target == is_category
     assert explainer.vocab_size == vocab_size
 
-    explanations, expected_values = explainer.explain()
+    explanations_result = explainer.explain()
 
-    # Verify shapes. One explanation per row, or 1 averaged explanation if `use_global=True`
-    expected_explanations = len(df) if not use_global else 1
-    assert len(explanations) == expected_explanations
-    for e in explanations:
+    # Verify shapes.
+    assert explanations_result.global_explanation.to_array().shape == (vocab_size, len(input_features))
+
+    assert len(explanations_result.row_explanations) == len(df)
+    for e in explanations_result.row_explanations:
         assert e.to_array().shape == (vocab_size, len(input_features))
 
-    assert len(expected_values) == vocab_size
+    assert len(explanations_result.expected_values) == vocab_size
+
+
+@pytest.mark.parametrize(
+    "output_feature",
+    [set_feature(decoder={"vocab_size": 3}), vector_feature()],
+    ids=["set", "vector"],
+)
+def test_explainer_api_nonscalar_outputs(output_feature, tmpdir):
+    run_test_explainer_api(IntegratedGradientsExplainer, MODEL_ECD, [output_feature], {}, tmpdir)
+
+
+def test_explainer_api_text_outputs(tmpdir):
+    input_features = [text_feature(encoder={"type": "parallel_cnn", "reduce_output": None})]
+    output_features = [text_feature(output_feature=True, decoder={"type": "tagger"})]
+    run_test_explainer_api(
+        IntegratedGradientsExplainer, MODEL_ECD, output_features, {}, tmpdir, input_features=input_features
+    )

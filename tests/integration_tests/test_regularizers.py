@@ -65,12 +65,17 @@ def test_regularizers(
             "input_features": input_features,
             "output_features": output_features,
             "combiner": {"type": "concat", "output_size": 14},
-            TRAINER: {"epochs": 2, "regularization_type": regularization_type, "regularization_lambda": 0.1},
+            TRAINER: {
+                "epochs": 2,
+                "regularization_type": regularization_type,
+                "regularization_lambda": 0.1,
+                "batch_size": BATCH_SIZE,  # fix the batch size to ensure deterministic results
+            },
         }
 
         backend = LocalTestBackend()
         model = LudwigModel(config, backend=backend)
-        processed_data_df, _, _, _ = preprocess_for_training(config, data_df, backend=backend)
+        processed_data_df, _, _, _ = preprocess_for_training(model.config, data_df, backend=backend)
         with processed_data_df.initialize_batcher(batch_size=BATCH_SIZE) as batcher:
             batch = batcher.next_batch()
 

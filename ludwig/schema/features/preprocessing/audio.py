@@ -1,16 +1,15 @@
-from marshmallow_dataclass import dataclass
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import AUDIO, BFILL, MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor
 from ludwig.schema.metadata import FEATURE_METADATA
+from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
 @register_preprocessor(AUDIO)
-@dataclass(repr=False)
+@ludwig_dataclass
 class AudioPreprocessingConfig(BasePreprocessingConfig):
     audio_file_length_limit_in_s: int = schema_utils.NonNegativeFloat(
         default=7.5,
@@ -90,6 +89,7 @@ class AudioPreprocessingConfig(BasePreprocessingConfig):
 
     num_fft_points: float = schema_utils.NonNegativeFloat(
         default=None,
+        allow_none=True,
         description="Defines the number of fft points used for the short time Fourier transformation",
         parameter_metadata=FEATURE_METADATA[AUDIO][PREPROCESSING]["num_fft_points"],
     )

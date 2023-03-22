@@ -7,10 +7,11 @@ import numpy as np
 import pandas as pd
 import pytest
 import torch
+from packaging.version import parse as parse_version
 
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
-from ludwig.constants import TRAINER
+from ludwig.constants import BATCH_SIZE, MAX_BATCH_SIZE_DATASET_FRACTION, TRAINER
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
@@ -67,6 +68,7 @@ def test_tune_learning_rate(tmpdir):
         "output_features": [binary_feature()],
         TRAINER: {
             "train_steps": 1,
+            BATCH_SIZE: 128,
             "learning_rate": "auto",
         },
     }
@@ -93,8 +95,9 @@ def test_tune_batch_size_and_lr(tmpdir, eval_batch_size, is_cpu):
         vector_feature(),
     ]
 
+    num_samples = 30
     csv_filename = os.path.join(tmpdir, "training.csv")
-    data_csv = generate_data(input_features, output_features, csv_filename)
+    data_csv = generate_data(input_features, output_features, csv_filename, num_examples=num_samples)
     val_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "validation.csv"))
     test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "test.csv"))
 
@@ -132,8 +135,8 @@ def test_tune_batch_size_and_lr(tmpdir, eval_batch_size, is_cpu):
         assert model.config_obj.trainer.batch_size != "auto"
         assert model.config_obj.trainer.batch_size > 1
 
-        # 16 is the largest possible batch size for this dataset
-        assert model.config_obj.trainer.batch_size == 16
+        # 4 is the largest possible batch size for this dataset (20% of dataset size)
+        assert model.config_obj.trainer.batch_size <= MAX_BATCH_SIZE_DATASET_FRACTION * num_samples
 
         assert model.config_obj.trainer.eval_batch_size != "auto"
         assert model.config_obj.trainer.eval_batch_size > 1
@@ -174,6 +177,7 @@ def test_scale_lr(learning_rate_scaling, expected_lr, tmpdir, ray_cluster_2cpu):
         "combiner": {"type": "concat", "output_size": 14},
         TRAINER: {
             "epochs": 2,
+            BATCH_SIZE: 128,
             "learning_rate": base_lr,
             "learning_rate_scaling": learning_rate_scaling,
         },
@@ -197,6 +201,7 @@ def test_changing_parameters_on_plateau(tmpdir):
         "combiner": {"type": "concat", "output_size": 14},
         TRAINER: {
             "epochs": 2,
+            BATCH_SIZE: 128,
             "learning_rate": 1.0,
             "reduce_learning_rate_on_plateau": 1,
             "increase_batch_size_on_plateau": 1,
@@ -214,18 +219,21 @@ def test_lightgbm_dataset_partition(ray_cluster_2cpu):
         "input_features": [{"name": "in_column", "type": "binary"}],
         "output_features": [{"name": "out_column", "type": "binary"}],
         "model_type": "gbm",
+        # Disable feature filtering to avoid having no features due to small test dataset,
+        # see https://stackoverflow.com/a/66405983/5222402
+        TRAINER: {"feature_pre_filter": False},
     }
     backend_config = {**RAY_BACKEND_CONFIG}
     backend_config["preprocessor_kwargs"] = {"num_cpu": 1}
     model = LudwigModel(config, backend=backend_config)
-    lgbm_model = GBM(ModelConfig(config))
+    lgbm_model = GBM(ModelConfig.from_dict(config))
     trainer = LightGBMRayTrainer(GBMTrainerConfig(), lgbm_model)
 
     def create_dataset(model: LudwigModel, size: int) -> RayDataset:
         df = pd.DataFrame(
             {
-                "in_column_mZFLky": np.random.randint(0, 1, size=(size,), dtype=np.uint8),
-                "out_column_mZFLky": np.random.randint(0, 1, size=(size,), dtype=np.uint8),
+                "in_column_lm_J5T": np.random.randint(0, 1, size=(size,), dtype=np.uint8),
+                "out_column_2Xl8CP": np.random.randint(0, 1, size=(size,), dtype=np.uint8),
             }
         )
         df = dask.dataframe.from_pandas(df, npartitions=1)
@@ -275,6 +283,37 @@ def test_mixed_precision(tmpdir):
     trainer = {
         "epochs": 2,
         "use_mixed_precision": True,
+    }
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "output_size": 14},
+        TRAINER: trainer,
+    }
+
+    # Just test that training completes without error.
+    # TODO(travis): We may want to expand upon this in the future to include some checks on model
+    # convergence like gradient magnitudes, etc. Should also add distributed tests.
+    model = LudwigModel(config, backend=LocalTestBackend(), logging_level=logging.INFO)
+    model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv, output_directory=tmpdir)
+
+
+@pytest.mark.skipif(
+    parse_version(torch.__version__) < parse_version("2.0"), reason="Model compilation requires PyTorch >= 2.0"
+)
+def test_compile(tmpdir):
+    input_features = [text_feature()]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
+
+    csv_filename = os.path.join(tmpdir, "training.csv")
+    data_csv = generate_data(input_features, output_features, csv_filename)
+    val_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "validation.csv"))
+    test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "test.csv"))
+
+    trainer = {
+        "epochs": 2,
+        "compile": True,
     }
 
     config = {

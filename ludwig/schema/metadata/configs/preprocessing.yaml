@@ -140,3 +140,9 @@ undersample_majority:
         loss of data which can adversely affect your model so use with caution.
     suggested_values: Depends on imbalance ratio and dataset size
     ui_display_name: Undersample Majority
+cache_encoder_embeddings:
+    default_value_reasoning:
+        Caching encoder embeddings means preprocessed data is not reusable across other model architectures, so
+        it's not always the case that you would always want to enable it when possible.
+    expected_impact: 1
+    ui_display_name: Cache Encoder Embeddings

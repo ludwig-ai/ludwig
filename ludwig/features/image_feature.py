@@ -17,11 +17,13 @@ import logging
 import os
 import warnings
 from collections import Counter
+from dataclasses import dataclass
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
+from torchvision.transforms import functional as F
 from torchvision.transforms.functional import normalize
 
 from ludwig.constants import (
@@ -46,37 +48,261 @@ from ludwig.constants import (
     WIDTH,
 )
 from ludwig.data.cache.types import wrap
+from ludwig.encoders.image.torchvision import TVModelVariant
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
+from ludwig.schema.features.augmentation.base import BaseAugmentationConfig
+from ludwig.schema.features.augmentation.image import (
+    RandomBlurConfig,
+    RandomBrightnessConfig,
+    RandomContrastConfig,
+    RandomHorizontalFlipConfig,
+    RandomRotateConfig,
+    RandomVerticalFlipConfig,
+)
 from ludwig.schema.features.image_feature import ImageInputFeatureConfig
 from ludwig.types import FeatureMetadataDict, PreprocessingConfigDict, TrainingSetMetadataDict
+from ludwig.utils.augmentation_utils import get_augmentation_op, register_augmentation_op
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.dataframe_utils import is_dask_series_or_df
 from ludwig.utils.fs_utils import has_remote_protocol, upload_h5
 from ludwig.utils.image_utils import (
     get_gray_default_image,
     grayscale,
+    is_torchvision_encoder,
     num_channels_in_image,
     read_image_from_bytes_obj,
     read_image_from_path,
     resize_image,
+    ResizeChannels,
     torchvision_model_registry,
 )
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.types import Series, TorchscriptPreprocessingInput
 
+# constants used for Ludwig image preprocessing
+IMAGENET1K_MEAN = [0.485, 0.456, 0.406]
+IMAGENET1K_STD = [0.229, 0.224, 0.225]
+
+
 logger = logging.getLogger(__name__)
+
+
+###
+# Image specific augmentation operations
+###
+@register_augmentation_op(name="random_vertical_flip", features=IMAGE)
+class RandomVFlip(torch.nn.Module):
+    def __init__(
+        self,
+        config: RandomVerticalFlipConfig,
+    ):
+        super().__init__()
+
+    def forward(self, imgs):
+        if torch.rand(1) < 0.5:
+            imgs = F.vflip(imgs)
+
+        return imgs
+
+
+@register_augmentation_op(name="random_horizontal_flip", features=IMAGE)
+class RandomHFlip(torch.nn.Module):
+    def __init__(
+        self,
+        config: RandomHorizontalFlipConfig,
+    ):
+        super().__init__()
+
+    def forward(self, imgs):
+        if torch.rand(1) < 0.5:
+            imgs = F.hflip(imgs)
+
+        return imgs
+
+
+@register_augmentation_op(name="random_rotate", features=IMAGE)
+class RandomRotate(torch.nn.Module):
+    def __init__(self, config: RandomRotateConfig):
+        super().__init__()
+        self.degree = config.degree
+
+    def forward(self, imgs):
+        if torch.rand(1) < 0.5:
+            # map angle to interval (-degree, +degree)
+            angle = (torch.rand(1) * 2 * self.degree - self.degree).item()
+            return F.rotate(imgs, angle)
+        else:
+            return imgs
+
+
+@register_augmentation_op(name="random_contrast", features=IMAGE)
+class RandomContrast(torch.nn.Module):
+    def __init__(self, config: RandomContrastConfig):
+        super().__init__()
+        self.min_contrast = config.min
+        self.contrast_adjustment_range = config.max - config.min
+
+    def forward(self, imgs):
+        if torch.rand(1) < 0.5:
+            # random contrast adjustment
+            adjust_factor = (torch.rand(1) * self.contrast_adjustment_range + self.min_contrast).item()
+            return F.adjust_contrast(imgs, adjust_factor)
+        else:
+            return imgs
+
+
+@register_augmentation_op(name="random_brightness", features=IMAGE)
+class RandomBrightness(torch.nn.Module):
+    def __init__(self, config: RandomBrightnessConfig):
+        super().__init__()
+        self.min_brightness = config.min
+        self.brightness_adjustment_range = config.max - config.min
+
+    def forward(self, imgs):
+        if torch.rand(1) < 0.5:
+            # random contrast adjustment
+            adjust_factor = (torch.rand(1) * self.brightness_adjustment_range + self.min_brightness).item()
+            return F.adjust_brightness(imgs, adjust_factor)
+        else:
+            return imgs
+
+
+@register_augmentation_op(name="random_blur", features=IMAGE)
+class RandomBlur(torch.nn.Module):
+    def __init__(self, config: RandomBlurConfig):
+        super().__init__()
+        self.kernel_size = [config.kernel_size, config.kernel_size]
+
+    def forward(self, imgs):
+        if torch.rand(1) < 0.5:
+            imgs = F.gaussian_blur(imgs, self.kernel_size)
+
+        return imgs
+
+
+class ImageAugmentation(torch.nn.Module):
+    def __init__(
+        self,
+        augmentation_list: List[BaseAugmentationConfig],
+        normalize_mean: Optional[List[float]] = None,
+        normalize_std: Optional[List[float]] = None,
+    ):
+        super().__init__()
+
+        # TODO: change to debug level before merging
+        logger.info(f"Creating Augmentation pipline: {augmentation_list}")
+
+        self.normalize_mean = normalize_mean
+        self.normalize_std = normalize_std
+
+        if self.training:
+            self.augmentation_steps = torch.nn.Sequential()
+            for aug_config in augmentation_list:
+                try:
+                    aug_op = get_augmentation_op(IMAGE, aug_config.type)
+                    self.augmentation_steps.append(aug_op(aug_config))
+                except KeyError:
+                    raise ValueError(f"Invalid augmentation operation specification: {aug_config}")
+        else:
+            # TODO: should this raise an exception if not in training mode?
+            self.augmentation_steps = None
+
+    def forward(self, imgs):
+        if self.augmentation_steps:
+            # convert from float to uint8 values - this is required for the augmentation
+            imgs = self._convert_back_to_uint8(imgs)
+
+            logger.debug(f"Executing augmentation pipeline steps:\n{self.augmentation_steps}")
+            imgs = self.augmentation_steps(imgs)
+
+            # convert back to float32 values and renormalize if needed
+            imgs = self._renormalize_image(imgs)
+
+        return imgs
+
+    # function to partially undo the TorchVision ImageClassification transformation.
+    #  back out the normalization step and convert from float32 to uint8 dtype
+    #  to make the tensor displayable as an image
+    #  crop size remains the same
+    def _convert_back_to_uint8(self, images):
+        if self.normalize_mean:
+            mean = torch.as_tensor(self.normalize_mean, dtype=torch.float32).view(-1, 1, 1)
+            std = torch.as_tensor(self.normalize_std, dtype=torch.float32).view(-1, 1, 1)
+            return images.mul(std).add(mean).mul(255.0).type(torch.uint8)
+        else:
+            return images.mul(255.0).type(torch.uint8)
+
+    # function to redo part of the TorchVision ImageClassification transformation.
+    #  convert uint8 to float32
+    #  apply the imagenet1k normalization
+    def _renormalize_image(self, images):
+        if self.normalize_mean:
+            mean = torch.as_tensor(self.normalize_mean, dtype=torch.float32).view(-1, 1, 1)
+            std = torch.as_tensor(self.normalize_std, dtype=torch.float32).view(-1, 1, 1)
+            return images.type(torch.float32).div(255.0).sub(mean).div(std)
+        else:
+            return images.type(torch.float32).div(255.0)
+
+
+@dataclass
+class ImageTransformMetadata:
+    height: int
+    width: int
+    num_channels: int
+
+
+def _get_torchvision_transform(
+    torchvision_parameters: TVModelVariant,
+) -> Tuple[torch.nn.Module, ImageTransformMetadata]:
+    """Returns a torchvision transform that is compatible with the model variant.
+
+    Note that the raw torchvision transform is not returned. Instead, a Sequential module that includes
+    image resizing is returned. This is because the raw torchvision transform assumes that the input image has
+    three channels, which is not always the case with images input into Ludwig.
+
+    Args:
+        torchvision_parameters: The parameters for the torchvision model variant.
+    Returns:
+        (torchvision_transform, transform_metadata): A torchvision transform and the metadata for the transform.
+    """
+    torchvision_transform_raw = torchvision_parameters.model_weights.DEFAULT.transforms()
+    torchvision_transform = torch.nn.Sequential(
+        ResizeChannels(num_channels=3),
+        torchvision_transform_raw,
+    )
+    transform_metadata = ImageTransformMetadata(
+        height=torchvision_transform_raw.crop_size[0],
+        width=torchvision_transform_raw.crop_size[0],
+        num_channels=len(torchvision_transform_raw.mean),
+    )
+    return (torchvision_transform, transform_metadata)
+
+
+def _get_torchvision_parameters(model_type: str, model_variant: str) -> TVModelVariant:
+    return torchvision_model_registry.get(model_type).get(model_variant)
 
 
 class _ImagePreprocessing(torch.nn.Module):
     """Torchscript-enabled version of preprocessing done by ImageFeatureMixin.add_feature_data."""
 
-    def __init__(self, metadata: TrainingSetMetadataDict, tv_transforms: Optional[torch.nn.Module] = None):
+    def __init__(
+        self,
+        metadata: TrainingSetMetadataDict,
+        torchvision_transform: Optional[torch.nn.Module] = None,
+        transform_metadata: Optional[ImageTransformMetadata] = None,
+    ):
         super().__init__()
-        self.height = metadata["preprocessing"]["height"]
-        self.width = metadata["preprocessing"]["width"]
-        self.num_channels = metadata["preprocessing"]["num_channels"]
+
         self.resize_method = metadata["preprocessing"]["resize_method"]
-        self.tv_transforms = tv_transforms
+        self.torchvision_transform = torchvision_transform
+        if transform_metadata is not None:
+            self.height = transform_metadata.height
+            self.width = transform_metadata.width
+            self.num_channels = transform_metadata.num_channels
+        else:
+            self.height = metadata["preprocessing"]["height"]
+            self.width = metadata["preprocessing"]["width"]
+            self.num_channels = metadata["preprocessing"]["num_channels"]
 
     def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
         """Takes a list of images and adjusts the size and number of channels as specified in the metadata.
@@ -88,14 +314,14 @@ class _ImagePreprocessing(torch.nn.Module):
             if not torch.jit.isinstance(v, torch.Tensor):
                 raise ValueError(f"Unsupported input: {v}")
 
-        if self.tv_transforms is not None:
+        if self.torchvision_transform is not None:
             # perform pre-processing for torchvision pretrained model encoders
             if torch.jit.isinstance(v, List[torch.Tensor]):
-                imgs = [self.tv_transforms(img) for img in v]
+                imgs = [self.torchvision_transform(img) for img in v]
             else:
                 # convert batch of image tensors to a list and then run torchvision pretrained
                 # model transforms on each image
-                imgs = [self.tv_transforms(img) for img in torch.unbind(v)]
+                imgs = [self.torchvision_transform(img) for img in torch.unbind(v)]
 
             # collect the list of images into a batch
             imgs_stacked = torch.stack(imgs)
@@ -181,6 +407,8 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
         if isinstance(img_entry, bytes):
             img = read_image_from_bytes_obj(img_entry, num_channels)
+        elif isinstance(img_entry, str):
+            img = read_image_from_path(img_entry, num_channels)
         elif isinstance(img_entry, np.ndarray):
             img = torch.from_numpy(np.array(img_entry, copy=True)).permute(2, 0, 1)
         else:
@@ -243,7 +471,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
         img = img.type(torch.float32) / 255
 
         if standardize_image == IMAGENET1K:
-            img = normalize(img, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+            img = normalize(img, mean=IMAGENET1K_MEAN, std=IMAGENET1K_STD)
 
         return img.numpy()
 
@@ -255,6 +483,8 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
         if isinstance(img_entry, bytes):
             img = read_image_from_bytes_obj(img_entry)
+        elif isinstance(img_entry, str):
+            img = read_image_from_path(img_entry)
         elif isinstance(img_entry, np.ndarray):
             img = torch.from_numpy(img_entry).permute(2, 0, 1)
         else:
@@ -523,16 +753,23 @@ class ImageFeatureMixin(BaseFeatureMixin):
         model_type = feature_config[ENCODER].get("type", None)
         model_variant = feature_config[ENCODER].get("model_variant")
         if model_variant:
-            torchvision_parameters = torchvision_model_registry.get(model_type).get(model_variant)
+            torchvision_parameters = _get_torchvision_parameters(model_type, model_variant)
         else:
             torchvision_parameters = None
 
         if torchvision_parameters:
+            logger.warning(
+                f"Using the transforms specified for the torchvision model {model_type} {model_variant} "
+                f"This includes setting the number of channels is 3 and resizing the image to the needs of the model."
+            )
+
+            torchvision_transform, transform_metadata = _get_torchvision_transform(torchvision_parameters)
+
             # torchvision_parameters is not None
             # perform torchvision model transformations
             read_image_if_bytes_obj_and_resize = partial(
                 ImageFeatureMixin._read_image_with_pretrained_transform,
-                transform_fn=torchvision_parameters.model_weights.DEFAULT.transforms(),
+                transform_fn=torchvision_transform,
             )
             average_file_size = None
 
@@ -544,6 +781,11 @@ class ImageFeatureMixin(BaseFeatureMixin):
             # add torchvision model id to preprocessing section for torchscript
             preprocessing_parameters["torchvision_model_type"] = model_type
             preprocessing_parameters["torchvision_model_variant"] = model_variant
+
+            # get required setup parameters for in_memory = False processing
+            height = transform_metadata.height
+            width = transform_metadata.width
+            num_channels = transform_metadata.num_channels
         else:
             # torchvision_parameters is None
             # perform Ludwig specified transformations
@@ -574,13 +816,9 @@ class ImageFeatureMixin(BaseFeatureMixin):
                 standardize_image=standardize_image,
             )
 
-            # TODO: alternatively use get_average_image() for unreachable images
-            default_image = get_gray_default_image(num_channels, height, width)
-            metadata[name]["reshape"] = (num_channels, height, width)
-
-        # check to see if the active backend can support lazy loading of
-        # image features from the hdf5 cache.
-        backend.check_lazy_load_supported(feature_config)
+        # TODO: alternatively use get_average_image() for unreachable images
+        default_image = get_gray_default_image(num_channels, height, width)
+        metadata[name]["reshape"] = (num_channels, height, width)
 
         in_memory = feature_config[PREPROCESSING]["in_memory"]
         if in_memory or skip_save_processed_input:
@@ -613,6 +851,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
                     if isinstance(res, np.ndarray):
                         image_dataset[i, :height, :width, :] = res
                     else:
+                        logger.warning(f"Failed to read image {img_entry} while preprocessing feature `{name}`. ")
                         image_dataset[i, :height, :width, :] = default_image
                         num_failed_image_reads += 1
                 h5_file.flush()
@@ -637,9 +876,32 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
         else:
             self.encoder_obj = self.initialize_encoder(input_feature_config.encoder)
 
+        # set up for augmentation if it is enabled
+        if input_feature_config.augmentation:
+            # assume no image normalize is required
+            normalize_mean = normalize_std = None
+
+            # determine if specified encoder is a torchvision model
+            if is_torchvision_encoder(self.encoder_obj):
+                # encoder is a torchvision model
+                normalize_mean = self.encoder_obj.normalize_mean
+                normalize_std = self.encoder_obj.normalize_std
+            else:
+                # encoder is a Ludwig encoder, determine if standardize_image is set to IMAGENET1K
+                if input_feature_config.preprocessing.standardize_image == IMAGENET1K:
+                    normalize_mean = IMAGENET1K_MEAN
+                    normalize_std = IMAGENET1K_STD
+
+            # create augmentation pipeline object
+            self.augmentation_pipeline = ImageAugmentation(
+                input_feature_config.augmentation,
+                normalize_mean,
+                normalize_std,
+            )
+
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
-        assert isinstance(inputs, torch.Tensor)
-        assert inputs.dtype in [torch.float32]
+        assert isinstance(inputs, torch.Tensor), f"inputs to image feature must be a torch tensor, got {type(inputs)}"
+        assert inputs.dtype in [torch.float32], f"inputs to image feature must be a float32 tensor, got {inputs.dtype}"
 
         inputs_encoded = self.encoder_obj(inputs)
 
@@ -657,6 +919,17 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
     def output_shape(self) -> torch.Size:
         return self.encoder_obj.output_shape
 
+    def update_config_after_module_init(self, feature_config):
+        if is_torchvision_encoder(self.encoder_obj):
+            # update feature preprocessing parameters to reflect used in torchvision pretrained model
+            # Note: image height and width is determined by the encoder crop_size attribute.  Source of this
+            # attribute is from the torchvision.transforms._presets.ImageClassification class.  This class stores
+            # crop_size as a single element list.  the single element in this list is used to set both the height
+            # and width of an image.
+            feature_config.preprocessing.height = self.encoder_obj.crop_size[0]
+            feature_config.preprocessing.width = self.encoder_obj.crop_size[0]
+            feature_config.preprocessing.num_channels = self.encoder_obj.num_channels
+
     @staticmethod
     def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
         for key in ["height", "width", "num_channels", "standardize_image"]:
@@ -672,13 +945,19 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
         model_type = metadata["preprocessing"].get("torchvision_model_type")
         model_variant = metadata["preprocessing"].get("torchvision_model_variant")
         if model_variant:
-            torchvision_parameters = torchvision_model_registry.get(model_type).get(model_variant)
+            torchvision_parameters = _get_torchvision_parameters(model_type, model_variant)
         else:
             torchvision_parameters = None
 
         if torchvision_parameters:
-            tv_transforms = torchvision_parameters.model_weights.DEFAULT.transforms()
+            torchvision_transform, transform_metadata = _get_torchvision_transform(torchvision_parameters)
         else:
-            tv_transforms = None
+            torchvision_transform = None
+            transform_metadata = None
 
-        return _ImagePreprocessing(metadata, tv_transforms=tv_transforms)
+        return _ImagePreprocessing(
+            metadata, torchvision_transform=torchvision_transform, transform_metadata=transform_metadata
+        )
+
+    def get_augmentation_pipeline(self):
+        return self.augmentation_pipeline

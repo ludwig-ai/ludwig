@@ -107,5 +107,3 @@ trainer:
   num_boost_round: 382
   num_leaves: 434
 model_type: gbm
-backend:
-  type: local

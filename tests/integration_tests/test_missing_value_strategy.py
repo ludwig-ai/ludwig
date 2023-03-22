@@ -20,7 +20,7 @@ import pandas as pd
 import pytest
 
 from ludwig.api import LudwigModel
-from ludwig.constants import DROP_ROW, FILL_WITH_MEAN, PREPROCESSING, TRAINER
+from ludwig.constants import BATCH_SIZE, COLUMN, DROP_ROW, FILL_WITH_MEAN, PREPROCESSING, PROC_COLUMN, TRAINER
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
@@ -83,7 +83,11 @@ def test_missing_values_fill_with_mean(backend, csv_filename, tmpdir, ray_cluste
     output_features = [binary_feature()]
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
 
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+    }
 
     # run preprocessing
     ludwig_model = LudwigModel(config, backend=backend)
@@ -109,7 +113,11 @@ def test_missing_values_drop_rows(csv_filename, tmpdir):
         vector_feature(**kwargs),
     ]
     backend = LocalTestBackend()
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+    }
 
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
     df = read_csv_with_nan(training_data_csv_path, nan_percent=0.1)
@@ -117,3 +125,75 @@ def test_missing_values_drop_rows(csv_filename, tmpdir):
     # run preprocessing
     ludwig_model = LudwigModel(config, backend=backend)
     ludwig_model.preprocess(dataset=df)
+
+
+@pytest.mark.parametrize(
+    "backend",
+    [
+        pytest.param("local", id="local"),
+        pytest.param("ray", id="ray", marks=pytest.mark.distributed),
+    ],
+)
+@pytest.mark.parametrize("outlier_threshold", [1.0, 3.0])
+@pytest.mark.parametrize("outlier_strategy", [None, "fill_with_mean", "fill_with_const"])
+def test_outlier_strategy(outlier_strategy, outlier_threshold, backend, tmpdir, ray_cluster_2cpu):
+    fill_value = 42
+    kwargs = {
+        PREPROCESSING: {
+            "outlier_strategy": outlier_strategy,
+            "outlier_threshold": outlier_threshold,
+            "fill_value": fill_value,
+        }
+    }
+    input_features = [
+        number_feature(**kwargs),
+    ]
+    output_features = [binary_feature()]
+
+    # Values that will be 1 and 3 std deviations from the mean, respectively
+    sigma1, sigma1_idx = -150, 4
+    sigma3, sigma3_idx = 300, 11
+
+    num_col = np.array([77, 24, 29, 29, sigma1, 71, 46, 95, 20, 52, 85, sigma3, 74, 10, 98, 53, 110, 94, 62, 13])
+    expected_fill_value = num_col.mean() if outlier_strategy == "fill_with_mean" else fill_value
+
+    input_col = input_features[0][COLUMN]
+    output_col = output_features[0][COLUMN]
+
+    bin_col = np.array([1, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0], dtype=np.bool_)
+    dataset_df = pd.DataFrame(
+        data={
+            input_col: num_col,
+            output_col: bin_col,
+        }
+    )
+
+    dataset_fp = os.path.join(tmpdir, "dataset.csv")
+    dataset_df.to_csv(dataset_fp)
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+    }
+
+    # Run preprocessing
+    ludwig_model = LudwigModel(config, backend=backend)
+    proc_dataset = ludwig_model.preprocess(training_set=dataset_fp)
+
+    # Check preprocessed output
+    proc_df = ludwig_model.backend.df_engine.compute(proc_dataset.training_set.to_df())
+    proc_col = input_features[0][PROC_COLUMN]
+
+    assert len(proc_df) == len(dataset_df)
+
+    # Check that values over 1 std are replaced
+    if outlier_strategy is not None and outlier_threshold <= 1.0:
+        assert np.isclose(proc_df[proc_col][sigma1_idx], expected_fill_value)
+    else:
+        assert np.isclose(proc_df[proc_col][sigma1_idx], dataset_df[input_col][sigma1_idx])
+
+    # Check that values over 3 std are replaced
+    if outlier_strategy is not None and outlier_threshold <= 3.0:
+        assert np.isclose(proc_df[proc_col][sigma3_idx], expected_fill_value)
+    else:
+        assert np.isclose(proc_df[proc_col][sigma3_idx], dataset_df[input_col][sigma3_idx])

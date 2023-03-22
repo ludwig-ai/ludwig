@@ -15,7 +15,7 @@
 
 import logging
 from abc import ABC, abstractmethod
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, TYPE_CHECKING
 from zlib import crc32
 
 import numpy as np
@@ -23,7 +23,8 @@ from sklearn.model_selection import train_test_split
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend.base import Backend
-from ludwig.constants import BINARY, CATEGORY, COLUMN, DATE, MIN_DATASET_SPLIT_ROWS, SPLIT, TYPE
+from ludwig.constants import BINARY, CATEGORY, DATE, MIN_DATASET_SPLIT_ROWS, SPLIT
+from ludwig.error import ConfigValidationError
 from ludwig.schema.split import (
     DateTimeSplitConfig,
     FixedSplitConfig,
@@ -33,11 +34,14 @@ from ludwig.schema.split import (
 )
 from ludwig.types import ModelConfigDict, PreprocessingConfigDict
 from ludwig.utils.data_utils import hash_dict, split_dataset_ttv
+from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.registry import Registry
 from ludwig.utils.types import DataFrame
 
+if TYPE_CHECKING:
+    from ludwig.schema.model_config import ModelConfig
+
 split_registry = Registry()
-default_random_seed = 42
 logger = logging.getLogger(__name__)
 
 TMP_SPLIT_COL = "__SPLIT__"
@@ -47,7 +51,7 @@ DEFAULT_PROBABILITIES = (0.7, 0.1, 0.2)
 class Splitter(ABC):
     @abstractmethod
     def split(
-        self, df: DataFrame, backend: Backend, random_seed: float = default_random_seed
+        self, df: DataFrame, backend: Backend, random_seed: int = default_random_seed
     ) -> Tuple[DataFrame, DataFrame, DataFrame]:
         pass
 
@@ -221,16 +225,16 @@ class StratifySplitter(Splitter):
 
         return df_train, df_val, df_test
 
-    def validate(self, config: ModelConfigDict):
-        features = config["input_features"] + config["output_features"]
-        feature_names = {f[COLUMN] for f in features}
-        if self.column not in feature_names:
-            logger.info(
+    def validate(self, config: "ModelConfig"):  # noqa: F821
+        features = [f for f in config.input_features] + [f for f in config.output_features]
+        feature_cols = {f.column for f in features}
+        if self.column not in feature_cols:
+            logging.info(
                 f"Stratify column {self.column} is not among the features. "
-                f"Cannot establish if it is a binary or category"
+                f"Cannot establish if it is a binary or category feature."
             )
-        elif [f for f in features if f[COLUMN] == self.column][0][TYPE] not in {BINARY, CATEGORY}:
-            raise ValueError(f"Feature for stratify column {self.column} must be binary or category")
+        elif [f for f in features if f.column == self.column][0].type not in {BINARY, CATEGORY}:
+            raise ConfigValidationError(f"Feature for stratify column {self.column} must be binary or category")
 
     def has_split(self, split_index: int) -> bool:
         return self.probabilities[split_index] > 0
@@ -265,8 +269,15 @@ class DatetimeSplitter(Splitter):
         # In case the split column was preprocessed by Ludwig into a list, convert it back to a
         # datetime string for the sort and split
         def list_to_date_str(x):
-            if not isinstance(x, list) and len(x) != 9:
-                return x
+            if not isinstance(x, list):
+                if not isinstance(x, str):
+                    # Convert timestamps, etc. to strings and return so it can direct cast to epoch time
+                    return str(x)
+
+                if len(x) != 9:
+                    # Strings not in the expected format, so assume it's a formatted datetime and return
+                    return x
+
             return f"{x[0]}-{x[1]}-{x[2]} {x[5]}:{x[6]}:{x[7]}"
 
         df[TMP_SPLIT_COL] = backend.df_engine.map_objects(df[self.column], list_to_date_str)
@@ -283,16 +294,16 @@ class DatetimeSplitter(Splitter):
         # For Dask, split by partition, as splitting by row is very inefficient.
         return tuple(backend.df_engine.split(df, self.probabilities))
 
-    def validate(self, config: ModelConfigDict):
-        features = config["input_features"] + config["output_features"]
-        feature_names = {f[COLUMN] for f in features}
-        if self.column not in feature_names:
-            logger.info(
+    def validate(self, config: "ModelConfig"):  # noqa: F821
+        features = [f for f in config.input_features] + [f for f in config.output_features]
+        feature_cols = {f.column for f in features}
+        if self.column not in feature_cols:
+            logging.info(
                 f"Datetime split column {self.column} is not among the features. "
                 f"Cannot establish if it is a valid datetime."
             )
-        elif [f for f in features if f[COLUMN] == self.column][0][TYPE] not in {DATE}:
-            raise ValueError(f"Feature for datetime split column {self.column} must be a datetime")
+        elif [f for f in features if f.column == self.column][0].type not in {DATE}:
+            raise ConfigValidationError(f"Feature for datetime split column {self.column} must be a datetime")
 
     def has_split(self, split_index: int) -> bool:
         return self.probabilities[split_index] > 0

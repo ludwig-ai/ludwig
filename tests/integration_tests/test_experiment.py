@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import contextlib
 import logging
 import os
 import shutil
@@ -25,10 +26,11 @@ import yaml
 
 from ludwig.api import LudwigModel
 from ludwig.backend import LOCAL_BACKEND
-from ludwig.constants import ENCODER, H3, PREPROCESSING, TRAINER, TYPE
+from ludwig.constants import BATCH_SIZE, COLUMN, ENCODER, H3, NAME, PREPROCESSING, TRAINER, TYPE
 from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.encoders.registry import get_encoder_classes
+from ludwig.error import ConfigValidationError
 from ludwig.experiment import experiment_cli
 from ludwig.predict import predict_cli
 from ludwig.utils.data_utils import read_csv
@@ -45,15 +47,13 @@ from tests.integration_tests.utils import (
     generate_output_features_with_dependencies,
     generate_output_features_with_dependencies_complex,
     h3_feature,
-    HF_ENCODERS,
-    HF_ENCODERS_SHORT,
     image_feature,
     LocalTestBackend,
     number_feature,
     run_experiment,
     sequence_feature,
     set_feature,
-    slow,
+    TEXT_ENCODERS,
     text_feature,
     timeseries_feature,
     vector_feature,
@@ -64,8 +64,8 @@ logger.setLevel(logging.INFO)
 logging.getLogger("ludwig").setLevel(logging.INFO)
 
 
-@pytest.mark.parametrize("encoder", ENCODERS)
-def test_experiment_text_feature_non_HF(encoder, csv_filename):
+@pytest.mark.parametrize("encoder", TEXT_ENCODERS)
+def test_experiment_text_feature_non_pretrained(encoder, csv_filename):
     input_features = [
         text_feature(encoder={"vocab_size": 30, "min_len": 1, "type": encoder}, preprocessing={"tokenizer": "space"})
     ]
@@ -85,17 +85,6 @@ def run_experiment_with_encoder(encoder, csv_filename):
     run_experiment(input_features, output_features, dataset=rel_path)
 
 
-@pytest.mark.parametrize("encoder", HF_ENCODERS_SHORT)
-def test_experiment_text_feature_HF(encoder, csv_filename):
-    run_experiment_with_encoder(encoder, csv_filename)
-
-
-@slow
-@pytest.mark.parametrize("encoder", HF_ENCODERS)
-def test_experiment_text_feature_HF_full(encoder, csv_filename):
-    run_experiment_with_encoder(encoder, csv_filename)
-
-
 @pytest.mark.parametrize("encoder", ENCODERS)
 def test_experiment_seq_seq_generator(csv_filename, encoder):
     input_features = [text_feature(encoder={"type": encoder, "reduce_output": None})]
@@ -108,7 +97,7 @@ def test_experiment_seq_seq_generator(csv_filename, encoder):
 @pytest.mark.parametrize("encoder", ["embed", "rnn", "parallel_cnn", "stacked_parallel_cnn", "transformer"])
 def test_experiment_seq_seq_tagger(csv_filename, encoder):
     input_features = [text_feature(encoder={"type": encoder, "reduce_output": None})]
-    output_features = [text_feature(decoder={"type": "tagger"})]
+    output_features = [text_feature(decoder={"type": "tagger"}, reduce_input=None)]
     rel_path = generate_data(input_features, output_features, csv_filename)
 
     run_experiment(input_features, output_features, dataset=rel_path)
@@ -117,7 +106,7 @@ def test_experiment_seq_seq_tagger(csv_filename, encoder):
 @pytest.mark.parametrize("encoder", ["cnnrnn", "stacked_cnn"])
 def test_experiment_seq_seq_tagger_fails_for_non_length_preserving_encoders(csv_filename, encoder):
     input_features = [text_feature(encoder={"type": encoder, "reduce_output": None})]
-    output_features = [text_feature(decoder={"type": "tagger"})]
+    output_features = [text_feature(decoder={"type": "tagger"}, reduce_input=None)]
     rel_path = generate_data(input_features, output_features, csv_filename)
 
     with pytest.raises(ValueError):
@@ -127,14 +116,14 @@ def test_experiment_seq_seq_tagger_fails_for_non_length_preserving_encoders(csv_
 def test_experiment_seq_seq_model_def_file(csv_filename, yaml_filename):
     # seq-to-seq test to use config file instead of dictionary
     input_features = [text_feature(encoder={"reduce_output": None, "type": "embed"})]
-    output_features = [text_feature(decoder={"reduce_input": None, "vocab_size": 3, "type": "tagger"})]
+    output_features = [text_feature(decoder={"vocab_size": 3, "type": "tagger"}, reduce_input=None)]
 
     # Save the config to a yaml file
     config = {
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
     }
     with open(yaml_filename, "w") as yaml_out:
         yaml.safe_dump(config, yaml_out)
@@ -146,7 +135,7 @@ def test_experiment_seq_seq_model_def_file(csv_filename, yaml_filename):
 def test_experiment_seq_seq_train_test_valid(tmpdir):
     # seq-to-seq test to use train, test, validation files
     input_features = [text_feature(encoder={"reduce_output": None, "type": "rnn"})]
-    output_features = [text_feature(decoder={"reduce_input": None, "vocab_size": 3, "type": "tagger"})]
+    output_features = [text_feature(decoder={"vocab_size": 3, "type": "tagger"}, reduce_input=None)]
 
     train_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "train.csv"))
     test_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "test.csv"), 20)
@@ -224,7 +213,7 @@ def test_experiment_multilabel_with_class_weights(csv_filename):
         # Generator decoder and reduce_input = None
         [
             category_feature(decoder={"vocab_size": 2, "reduce_input": "sum"}),
-            sequence_feature(decoder={"max_len": 5, "reduce_input": None, "type": "generator"}),
+            sequence_feature(decoder={"max_len": 5, "type": "generator"}, reduce_input=None),
             number_feature(normalization="minmax"),
         ],
         # output features with dependencies single dependency
@@ -379,7 +368,7 @@ def test_experiment_image_dataset(train_format, train_in_memory, test_format, te
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
         "preprocessing": {},
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
     }
 
     # create temporary name for train and test data sets
@@ -391,11 +380,17 @@ def test_experiment_image_dataset(train_format, train_in_memory, test_format, te
     config["input_features"][0]["preprocessing"]["in_memory"] = train_in_memory
     training_set_metadata = None
 
+    # define Ludwig model
     backend = LocalTestBackend()
+    model = LudwigModel(
+        config=config,
+        backend=backend,
+    )
+
     if train_format == "hdf5":
         # hdf5 format
         train_set, _, _, training_set_metadata = preprocess_for_training(
-            config,
+            model.config,
             dataset=train_data,
             backend=backend,
         )
@@ -403,11 +398,6 @@ def test_experiment_image_dataset(train_format, train_in_memory, test_format, te
     else:
         train_dataset_to_use = create_data_set_to_use(train_format, train_data)
 
-    # define Ludwig model
-    model = LudwigModel(
-        config=config,
-        backend=backend,
-    )
     model.train(dataset=train_dataset_to_use, training_set_metadata=training_set_metadata)
 
     model.config_obj.input_features.to_list()[0]["preprocessing"]["in_memory"] = test_in_memory
@@ -464,7 +454,7 @@ def test_experiment_dataset_formats(data_format, csv_filename):
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
         "preprocessing": {},
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
     }
 
     # setup training data format to test
@@ -472,15 +462,16 @@ def test_experiment_dataset_formats(data_format, csv_filename):
 
     training_set_metadata = None
 
+    # define Ludwig model
+    model = LudwigModel(config=config)
+
     if data_format == "hdf5":
         # hdf5 format
-        training_set, _, _, training_set_metadata = preprocess_for_training(config, dataset=raw_data)
+        training_set, _, _, training_set_metadata = preprocess_for_training(model.config, dataset=raw_data)
         dataset_to_use = training_set.data_hdf5_fp
     else:
         dataset_to_use = create_data_set_to_use(data_format, raw_data)
 
-    # define Ludwig model
-    model = LudwigModel(config=config)
     model.train(dataset=dataset_to_use, training_set_metadata=training_set_metadata, random_seed=default_random_seed)
 
     # # run functions with the specified data format
@@ -518,6 +509,43 @@ def test_experiment_tied_weights(csv_filename):
         run_experiment(input_features, output_features, dataset=rel_path)
 
 
+def test_experiment_tied_weights_sequence_combiner(csv_filename):
+    """Tests that tied weights work with sequence combiners if `sequence_length` is provided.
+
+    Addresses https://github.com/ludwig-ai/ludwig/issues/3220
+    """
+    input_features = [
+        text_feature(
+            name="feature1",
+            encoder={
+                "max_len": 5,
+                "reduce_output": None,
+            },
+            preprocessing={"sequence_length": 10},
+        ),
+        text_feature(
+            name="feature2",
+            encoder={
+                "max_len": 3,
+                "reduce_output": None,
+            },
+            preprocessing={"sequence_length": 10},
+            tied="feature1",
+        ),
+    ]
+    output_features = [category_feature(decoder={"reduce_input": "sum", "vocab_size": 2})]
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "sequence"},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+    }
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    run_experiment(config=config, dataset=rel_path)
+
+
 @pytest.mark.parametrize("enc_cell_type", ["lstm", "rnn", "gru"])
 @pytest.mark.parametrize("attention", [False, True])
 def test_sequence_tagger(enc_cell_type, attention, csv_filename):
@@ -526,7 +554,7 @@ def test_sequence_tagger(enc_cell_type, attention, csv_filename):
         sequence_feature(encoder={"max_len": 10, "type": "rnn", "cell_type": enc_cell_type, "reduce_output": None})
     ]
     output_features = [
-        sequence_feature(decoder={"max_len": 10, "type": "tagger", "reduce_input": None, "attention": attention})
+        sequence_feature(decoder={"max_len": 10, "type": "tagger", "attention": attention}, reduce_input=None)
     ]
 
     # Generate test data
@@ -539,7 +567,12 @@ def test_sequence_tagger(enc_cell_type, attention, csv_filename):
 def test_sequence_tagger_text(csv_filename):
     # Define input and output features
     input_features = [text_feature(encoder={"max_len": 10, "type": "rnn", "reduce_output": None})]
-    output_features = [sequence_feature(decoder={"max_len": 10, "reduce_input": None, "type": "tagger"})]
+    output_features = [
+        sequence_feature(
+            decoder={"max_len": 10, "type": "tagger"},
+            reduce_input=None,
+        )
+    ]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
@@ -574,7 +607,7 @@ def test_experiment_sequence_combiner_with_reduction_fails(csv_filename):
             category_feature(encoder={"vocab_size": 5}),
         ],
         "output_features": [category_feature(decoder={"reduce_input": "sum", "vocab_size": 5})],
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
         "combiner": {
             "type": "sequence",
             "encoder": {"type": "rnn"},
@@ -588,7 +621,7 @@ def test_experiment_sequence_combiner_with_reduction_fails(csv_filename):
 
     # Encoding sequence features with 'embed' should fail with SequenceConcatCombiner, since at least one sequence
     # feature should be rank 3.
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         run_experiment(config=config, dataset=rel_path)
 
 
@@ -619,7 +652,7 @@ def test_experiment_sequence_combiner(sequence_encoder, csv_filename):
             category_feature(vocab_size=5),
         ],
         "output_features": [category_feature(decoder={"reduce_input": "sum", "vocab_size": 5})],
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
         "combiner": {
             "type": "sequence",
             "encoder": {"type": "rnn"},
@@ -646,7 +679,7 @@ def test_experiment_model_resume(tmpdir):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
     }
 
     _, _, _, _, output_dir = experiment_cli(config, dataset=rel_path, output_directory=tmpdir)
@@ -671,7 +704,7 @@ def test_experiment_model_resume_distributed(tmpdir, dist_strategy, ray_cluster_
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 8},
-        TRAINER: {"epochs": 1},
+        TRAINER: {"epochs": 1, BATCH_SIZE: 128},
         "backend": {"type": "ray", "trainer": {"strategy": dist_strategy, "num_workers": 2}},
     }
 
@@ -702,7 +735,7 @@ def test_experiment_model_resume_missing_file(tmpdir, missing_file):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
     }
 
     _, _, _, _, output_dir = experiment_cli(config, dataset=rel_path, output_directory=tmpdir)
@@ -847,3 +880,88 @@ def test_experiment_vector_feature_infer_size(csv_filename):
     del output_features[0][PREPROCESSING]
 
     run_experiment(input_features, output_features, dataset=rel_path)
+
+
+@pytest.mark.parametrize("encoder", ["parallel_cnn", "dense", "passthrough"])
+def test_forecasting_row_major(csv_filename, encoder):
+    input_features = [timeseries_feature(encoder={"type": encoder})]
+    output_features = [timeseries_feature(decoder={"type": "projector"})]
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "output_size": 14, "flatten_inputs": True},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+    }
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    run_experiment(input_features, output_features, config=config, dataset=rel_path)
+
+
+def test_forecasting_column_major(csv_filename):
+    input_feature = timeseries_feature(preprocessing={"window_size": 3})
+    input_features = [input_feature]
+
+    # Ensure output feature has the same column and the input feature
+    output_feature = timeseries_feature(
+        name=input_feature[COLUMN], preprocessing={"horizon": 2}, decoder={"type": "projector"}
+    )
+    output_feature[NAME] = f"{input_feature[NAME]}_out"
+    output_features = [output_feature]
+
+    # Generate test data in column-major format. This is just a dataframe of numbers with the same column name
+    # as expected by the timeseries input feature
+    column_major_feature = number_feature(name=input_feature[COLUMN])
+    csv_filename = generate_data([column_major_feature], [], csv_filename)
+
+    input_df = pd.read_csv(csv_filename)
+
+    model, eval_stats, train_stats, preprocessed_data, output_directory = run_experiment(
+        input_features, output_features, dataset=csv_filename
+    )
+    train_set, val_set, test_set, _ = preprocessed_data
+
+    print(input_df)
+    # print(train_set.to_df())
+
+    horizon_df = model.forecast(input_df, horizon=5)
+    print(horizon_df)
+
+
+@pytest.mark.parametrize("reduce_output", [("sum"), (None)], ids=["sum", "none"])
+def test_experiment_text_output_feature_with_tagger_decoder(csv_filename, reduce_output):
+    """Test that the tagger decoder works with text output features when reduce_output is set to None."""
+    input_features = [text_feature(encoder={"type": "parallel_cnn", "reduce_output": reduce_output})]
+    output_features = [text_feature(output_feature=True, decoder={"type": "tagger"})]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+
+    with pytest.raises(ConfigValidationError) if reduce_output == "sum" else contextlib.nullcontext():
+        run_experiment(input_features, output_features, dataset=rel_path)
+
+
+@pytest.mark.parametrize("reduce_output", [("sum"), (None)], ids=["sum", "none"])
+def test_experiment_sequence_output_feature_with_tagger_decoder(csv_filename, reduce_output):
+    """Test that the tagger decoder works with sequence output features when reduce_output is set to None."""
+    input_features = [text_feature(encoder={"type": "parallel_cnn", "reduce_output": reduce_output})]
+    output_features = [sequence_feature(output_feature=True, decoder={"type": "tagger"})]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+
+    with pytest.raises(ConfigValidationError) if reduce_output == "sum" else contextlib.nullcontext():
+        run_experiment(input_features, output_features, dataset=rel_path)
+
+
+def test_experiment_category_input_feature_with_tagger_decoder(csv_filename):
+    """Test that the tagger decoder doesn't work with category input features."""
+    input_features = [category_feature()]
+    output_features = [sequence_feature(output_feature=True, decoder={"type": "tagger"})]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+
+    with pytest.raises(ConfigValidationError):
+        run_experiment(input_features, output_features, dataset=rel_path)

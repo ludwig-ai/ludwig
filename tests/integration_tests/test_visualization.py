@@ -27,7 +27,7 @@ import subprocess
 import numpy as np
 import pytest
 
-from ludwig.constants import ENCODER, TRAINER, TYPE
+from ludwig.constants import BATCH_SIZE, ENCODER, TRAINER, TYPE
 from ludwig.experiment import experiment_cli
 from ludwig.globals import DESCRIPTION_FILE_NAME, PREDICTIONS_PARQUET_FILE_NAME, TEST_STATISTICS_FILE_NAME
 from ludwig.utils.data_utils import get_split_path
@@ -55,7 +55,7 @@ def run_experiment_with_visualization(input_features, output_features, dataset):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
     }
 
     args = {
@@ -1202,6 +1202,107 @@ def test_visualization_binary_threshold_vs_metric_output_saved(csv_filename, bin
 
         assert 0 == result.returncode
         assert 4 == len(figure_cnt)
+
+
+@pytest.mark.parametrize("binary_output_type", [True, False])
+def test_visualization_precision_recall_curves_output_saved(csv_filename, binary_output_type):
+    """Ensure pdf and png figures for precision recall curves from the experiments can be saved."""
+    input_features = [category_feature(encoder={"vocab_size": 10})]
+    if binary_output_type:
+        output_features = [binary_feature()]
+    else:
+        output_features = [category_feature(decoder={"vocab_size": 3}, reduce_input="sum")]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename, num_examples=1000)
+    exp_dir_name = run_experiment_with_visualization(input_features, output_features, dataset=rel_path)
+    vis_output_pattern_pdf = os.path.join(exp_dir_name, "*.pdf")
+    vis_output_pattern_png = os.path.join(exp_dir_name, "*.png")
+    output_feature_name = get_output_feature_name(exp_dir_name)
+    probability = os.path.join(exp_dir_name, PREDICTIONS_PARQUET_FILE_NAME)
+    experiment_source_data_name = csv_filename.split(".")[0]
+    ground_truth = experiment_source_data_name + ".csv"
+    split_file = experiment_source_data_name + ".split.parquet"
+    test_cmd_pdf = [
+        "python",
+        "-m",
+        "ludwig.visualize",
+        "--visualization",
+        "precision_recall_curves",
+        "--positive_label",
+        "1",
+        "--ground_truth",
+        ground_truth,
+        "--output_feature_name",
+        output_feature_name,
+        "--split_file",
+        split_file,
+        "--ground_truth_metadata",
+        exp_dir_name + "/model/training_set_metadata.json",
+        "--probabilities",
+        probability,
+        probability,
+        "--model_names",
+        "Model1",
+        "Model2",
+        "-od",
+        exp_dir_name,
+    ]
+    test_cmd_png = test_cmd_pdf.copy() + ["-ff", "png"]
+
+    commands = [test_cmd_pdf, test_cmd_png]
+    vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
+
+    for command, viz_pattern in zip(commands, vis_patterns):
+        result = subprocess.run(command)
+        figure_cnt = glob.glob(viz_pattern)
+
+        assert 0 == result.returncode
+        assert 1 == len(figure_cnt)
+
+
+def test_visualization_precision_recall_curves_from_test_statistics_output_saved(csv_filename):
+    """Ensure pdf and png figures from the experiments can be saved.
+
+    :param csv_filename: csv fixture from tests.conftest.csv_filename
+    :return: None
+    """
+    input_features = [binary_feature(), bag_feature()]
+    output_features = [binary_feature()]
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename, num_examples=1000)
+
+    exp_dir_name = run_experiment_with_visualization(input_features, output_features, dataset=rel_path)
+    vis_output_pattern_pdf = os.path.join(exp_dir_name, "*.pdf")
+    vis_output_pattern_png = os.path.join(exp_dir_name, "*.png")
+    output_feature_name = get_output_feature_name(exp_dir_name)
+    test_stats = os.path.join(exp_dir_name, TEST_STATISTICS_FILE_NAME)
+    test_cmd_pdf = [
+        "python",
+        "-m",
+        "ludwig.visualize",
+        "--visualization",
+        "precision_recall_curves_from_test_statistics",
+        "--output_feature_name",
+        output_feature_name,
+        "--test_statistics",
+        test_stats,
+        "--model_names",
+        "Model1",
+        "-od",
+        exp_dir_name,
+    ]
+    test_cmd_png = test_cmd_pdf.copy() + ["-ff", "png"]
+
+    commands = [test_cmd_pdf, test_cmd_png]
+    vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
+
+    for command, viz_pattern in zip(commands, vis_patterns):
+        result = subprocess.run(command)
+        figure_cnt = glob.glob(viz_pattern)
+
+        assert 0 == result.returncode
+        assert 1 == len(figure_cnt)
 
 
 @pytest.mark.parametrize("binary_output_type", [True, False])

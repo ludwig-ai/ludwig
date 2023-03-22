@@ -4,9 +4,8 @@ import pytest
 from marshmallow.exceptions import ValidationError as MarshmallowValidationError
 from marshmallow_dataclass import dataclass
 
-from ludwig.schema import get_validator
+from ludwig.config_validation.validation import get_validator, validate
 from ludwig.schema import utils as schema_utils
-from ludwig.schema import validate
 
 
 def get_marshmallow_from_dataclass_field(dfield):
@@ -115,7 +114,7 @@ def test_FloatRangeTupleDataclassField():
     # Test default schema creation:
     @dataclass
     class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
-        foo: Tuple[float, float] = schema_utils.FloatRangeTupleDataclassField()
+        foo: Tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(allow_none=True)
 
     # Test empty load:
     assert CustomTestSchema.Schema().load({}).foo == (0.9, 0.999)

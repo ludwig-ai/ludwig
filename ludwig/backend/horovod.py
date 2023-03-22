@@ -15,19 +15,19 @@
 # ==============================================================================
 
 import time
-from typing import Union
+from typing import Type, Union
 
 import psutil
 import torch
 
 from ludwig.backend.base import Backend, LocalPreprocessingMixin
-from ludwig.constants import MODEL_GBM, MODEL_TYPE
 from ludwig.data.dataset.pandas import PandasDatasetManager
 from ludwig.distributed.horovod import HorovodStrategy
 from ludwig.models.base import BaseModel
 from ludwig.models.predictor import Predictor
 from ludwig.trainers.trainer import Trainer
 from ludwig.types import HyperoptConfigDict
+from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
 from ludwig.utils.system_utils import Resources
 from ludwig.utils.torch_utils import initialize_pytorch
 
@@ -48,8 +48,6 @@ class HorovodBackend(LocalPreprocessingMixin, Backend):
         )
 
     def create_trainer(self, **kwargs) -> "BaseTrainer":  # noqa: F821
-        if kwargs.get(MODEL_TYPE, "") == MODEL_GBM:
-            raise ValueError("Horovod backend does not support GBM models.")
         return Trainer(distributed=self._distributed, **kwargs)
 
     def create_predictor(self, model: BaseModel, **kwargs):
@@ -92,3 +90,7 @@ class HorovodBackend(LocalPreprocessingMixin, Backend):
     def max_concurrent_trials(self, hyperopt_config: HyperoptConfigDict) -> Union[int, None]:
         # Return None since there is no Ray component
         return None
+
+    def tune_batch_size(self, evaluator_cls: Type[BatchSizeEvaluator], dataset_len: int) -> int:
+        evaluator = evaluator_cls()
+        return evaluator.select_best_batch_size(dataset_len)

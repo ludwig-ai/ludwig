@@ -15,11 +15,15 @@
 # ==============================================================================
 
 from collections import UserDict
+from typing import Generic, TypeVar
 
 DEFAULT_KEYS = ["None", "none", "null", None]
 
 
-class Registry(UserDict):
+T = TypeVar("T")
+
+
+class Registry(UserDict, Generic[T]):
     """Registry is like a normal dict, but with an optional parent dict.
 
     Items are considered to exist in the registry if they are added to either the registry itself, or its parent.
@@ -36,15 +40,15 @@ class Registry(UserDict):
         self.parent = parent
         super().__init__(init_data)
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> T:
         if self.parent and key not in self.data:
             return self.parent.__getitem__(key)
         return self.data.__getitem__(key)
 
-    def __contains__(self, key):
+    def __contains__(self, key: str):
         return key in self.data or key in self.parent
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.data) + len(self.parent)
 
     def __iter__(self):

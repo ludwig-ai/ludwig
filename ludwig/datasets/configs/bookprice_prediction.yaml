@@ -13,6 +13,25 @@ description: |
   In this challenge, participants are required to use the dataset to build a
   Machine Learning model to predict the price of books based on a given set of features.
   https://machinehack.com/hackathons/predict_the_price_of_books/overview
+columns:
+  - name: Title
+    type: category
+  - name: Author
+    type: category
+  - name: Edition
+    type: category
+  - name: Reviews
+    type: number
+  - name: Ratings
+    type: number
+  - name: Synopsis
+    type: text
+  - name: Genre
+    type: category
+  - name: BookCategory
+    type: category
+  - name: Price
+    type: number
 output_features:
   - name: Price
     type: number

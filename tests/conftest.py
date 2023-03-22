@@ -21,7 +21,17 @@ from unittest import mock
 
 import pytest
 
-from ludwig.constants import COMBINER, EPOCHS, HYPEROPT, INPUT_FEATURES, NAME, OUTPUT_FEATURES, TRAINER, TYPE
+from ludwig.constants import (
+    BATCH_SIZE,
+    COMBINER,
+    EPOCHS,
+    HYPEROPT,
+    INPUT_FEATURES,
+    NAME,
+    OUTPUT_FEATURES,
+    TRAINER,
+    TYPE,
+)
 from ludwig.hyperopt.run import hyperopt
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
 
@@ -141,6 +151,12 @@ def ray_cluster_4cpu(request):
 
 
 @pytest.fixture(scope="module")
+def ray_cluster_5cpu(request):
+    with _ray_start(request, num_cpus=5):
+        yield
+
+
+@pytest.fixture(scope="module")
 def ray_cluster_7cpu(request):
     with _ray_start(request, num_cpus=7):
         yield
@@ -176,6 +192,8 @@ def _ray_start(request, **kwargs):
         yield res
     finally:
         ray.shutdown()
+        # Delete the cluster address just in case.
+        ray._private.utils.reset_ray_address()
 
 
 def _get_default_ray_kwargs():
@@ -195,7 +213,6 @@ def _get_default_ray_kwargs():
 def _get_default_system_config():
     system_config = {
         "object_timeout_milliseconds": 200,
-        "num_heartbeats_timeout": 10,
         "object_store_full_delay_ms": 100,
     }
     return system_config
@@ -214,6 +231,6 @@ def _get_sample_config():
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
         COMBINER: {TYPE: "concat", "num_fc_layers": 2},
-        TRAINER: {EPOCHS: 2, "learning_rate": 0.001},
+        TRAINER: {EPOCHS: 2, "learning_rate": 0.001, BATCH_SIZE: 128},
     }
     return config, rel_path

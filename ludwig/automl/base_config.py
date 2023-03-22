@@ -315,15 +315,22 @@ def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
         nonnull_values = source.get_nonnull_values(field)
         image_values = source.get_image_values(field)
         audio_values = source.get_audio_values(field)
-        avg_words = None
+
         if dtype == "object":
             # Check if it is a nullboolean field. We do this since if you read a csv with
             # pandas that has a column of booleans and some missing values, the column is
             # interpreted as object dtype instead of bool
             if is_field_boolean(source, field):
                 dtype = "bool"
+
+        avg_words = None
         if source.is_string_type(dtype):
-            avg_words = source.get_avg_num_tokens(field)
+            try:
+                avg_words = source.get_avg_num_tokens(field)
+            except AttributeError:
+                # Series is not actually a string type despite being an object, e.g., Decimal, Datetime, etc.
+                avg_words = None
+
         fields.append(
             FieldInfo(
                 name=field,
@@ -408,6 +415,7 @@ def get_field_metadata(fields: List[FieldInfo], row_count: int, targets: Set[str
     """
 
     metadata = []
+    column_count = len(fields)
     for idx, field in enumerate(fields):
         missing_value_percent = 1 - float(field.nonnull_values) / row_count
         dtype = infer_type(field, missing_value_percent, row_count)
@@ -419,7 +427,7 @@ def get_field_metadata(fields: List[FieldInfo], row_count: int, targets: Set[str
                     column=field.name,
                     type=dtype,
                 ),
-                excluded=should_exclude(idx, field, dtype, row_count, targets),
+                excluded=should_exclude(idx, field, dtype, column_count, row_count, targets),
                 mode=infer_mode(field, targets),
                 missing_values=missing_value_percent,
                 imbalance_ratio=field.distinct_values_balance,

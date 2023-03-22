@@ -9,10 +9,14 @@ import pandas as pd
 import pytest
 from PIL import Image
 
+import ludwig
 from ludwig.api import LudwigModel
-from ludwig.constants import COLUMN, DECODER, NAME, PROC_COLUMN, TRAINER
+from ludwig.callbacks import Callback
+from ludwig.constants import BATCH_SIZE, COLUMN, DECODER, FULL, NAME, PROC_COLUMN, TRAINER
 from ludwig.data.concatenate_datasets import concatenate_df
+from ludwig.data.preprocessing import preprocess_for_prediction
 from tests.integration_tests.utils import (
+    assert_preprocessed_dataset_shape_and_dtype_for_feature,
     audio_feature,
     binary_feature,
     category_feature,
@@ -21,6 +25,7 @@ from tests.integration_tests.utils import (
     LocalTestBackend,
     number_feature,
     sequence_feature,
+    text_feature,
 )
 
 NUM_EXAMPLES = 20
@@ -37,7 +42,7 @@ def test_sample_ratio(backend, tmpdir, ray_cluster_2cpu):
     num_examples = 100
     sample_ratio = 0.25
 
-    input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
+    input_features = [sequence_feature(encoder={"reduce_output": "sum"}), audio_feature(folder=tmpdir)]
     output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
     data_csv = generate_data(
         input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=num_examples
@@ -52,7 +57,7 @@ def test_sample_ratio(backend, tmpdir, ray_cluster_2cpu):
     }
 
     model = LudwigModel(config, backend=backend)
-    train_set, val_set, test_set, _ = model.preprocess(
+    train_set, val_set, test_set, training_set_metadata = model.preprocess(
         data_csv,
         skip_save_processed_input=True,
     )
@@ -60,6 +65,75 @@ def test_sample_ratio(backend, tmpdir, ray_cluster_2cpu):
     sample_size = num_examples * sample_ratio
     count = len(train_set) + len(val_set) + len(test_set)
     assert sample_size == count
+
+    # Check that sample ratio is disabled when doing preprocessing for prediction
+    dataset, _ = preprocess_for_prediction(
+        model.config_obj.to_dict(),
+        dataset=data_csv,
+        training_set_metadata=training_set_metadata,
+        split=FULL,
+        include_outputs=True,
+        backend=model.backend,
+    )
+    assert "sample_ratio" in model.config_obj.preprocessing.to_dict()
+    assert len(dataset) == num_examples
+
+
+@pytest.mark.parametrize(
+    "backend",
+    [
+        pytest.param("local", id="local"),
+        pytest.param("ray", id="ray", marks=pytest.mark.distributed),
+    ],
+)
+def test_sample_ratio_deterministic(backend, tmpdir, ray_cluster_2cpu):
+    """Ensures that the sampled dataset is the same when using a random seed.
+
+    model.preprocess returns a PandasPandasDataset object when using local backend, and returns a RayDataset object when
+    using the Ray backend.
+    """
+    num_examples = 100
+    sample_ratio = 0.3
+
+    input_features = [binary_feature()]
+    output_features = [category_feature()]
+    data_csv = generate_data(
+        input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=num_examples
+    )
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "preprocessing": {"sample_ratio": sample_ratio},
+    }
+
+    model1 = LudwigModel(config, backend=backend)
+    train_set_1, val_set_1, test_set_1, _ = model1.preprocess(
+        data_csv,
+        skip_save_processed_input=True,
+    )
+
+    model2 = LudwigModel(config, backend=backend)
+    train_set_2, val_set_2, test_set_2, _ = model2.preprocess(
+        data_csv,
+        skip_save_processed_input=True,
+    )
+
+    sample_size = num_examples * sample_ratio
+
+    # Ensure sizes are the same
+    assert sample_size == len(train_set_1) + len(val_set_1) + len(test_set_1)
+    assert sample_size == len(train_set_2) + len(val_set_2) + len(test_set_2)
+
+    # Ensure actual rows are the same
+    if backend == "local":
+        assert train_set_1.to_df().equals(train_set_2.to_df())
+        assert val_set_1.to_df().equals(val_set_2.to_df())
+        assert test_set_1.to_df().equals(test_set_2.to_df())
+    else:
+        assert train_set_1.to_df().compute().equals(train_set_2.to_df().compute())
+        assert val_set_1.to_df().compute().equals(val_set_2.to_df().compute())
+        assert test_set_1.to_df().compute().equals(test_set_2.to_df().compute())
 
 
 def test_strip_whitespace_category(csv_filename, tmpdir):
@@ -211,7 +285,7 @@ def test_read_image_from_numpy_array(tmpdir, csv_filename):
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
     }
 
     data_csv = generate_data(
@@ -235,6 +309,42 @@ def test_read_image_from_numpy_array(tmpdir, csv_filename):
     model.preprocess(
         df_with_images_as_numpy_arrays,
         skip_save_processed_input=False,
+    )
+
+
+def test_read_image_failure_default_image(monkeypatch, tmpdir, csv_filename):
+    """Tests that the default image used when an image cannot be read has the correct properties."""
+
+    def mock_read_binary_files(self, column, map_fn, file_size):
+        """Mock read_binary_files to return None (failed image read) to test error handling."""
+        return column.map(lambda x: None)
+
+    monkeypatch.setattr(ludwig.backend.base.LocalPreprocessingMixin, "read_binary_files", mock_read_binary_files)
+
+    image_feature_config = image_feature(os.path.join(tmpdir, "generated_output"))
+    input_features = [image_feature_config]
+    output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+    }
+
+    data_csv = generate_data(
+        input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=NUM_EXAMPLES, nan_percent=0.2
+    )
+
+    model = LudwigModel(config)
+    preprocessed_dataset = model.preprocess(data_csv)
+    training_set_metadata = preprocessed_dataset.training_set_metadata
+
+    preprocessing = training_set_metadata[input_features[0][NAME]]["preprocessing"]
+    expected_shape = (preprocessing["num_channels"], preprocessing["height"], preprocessing["width"])
+    expected_dtype = np.float32
+
+    assert_preprocessed_dataset_shape_and_dtype_for_feature(
+        image_feature_config[NAME], preprocessed_dataset, model.config_obj, expected_dtype, expected_shape
     )
 
 
@@ -267,6 +377,62 @@ def test_number_feature_wrong_dtype(csv_filename, tmpdir):
     # check that train_ds had invalid values replaced with the missing value
     assert len(concatenated_df) == len(df)
     assert np.all(concatenated_df[num_feat[PROC_COLUMN]] == 0.0)
+
+
+@pytest.mark.parametrize(
+    "max_len, sequence_length, max_sequence_length, sequence_length_expected",
+    [
+        # Case 1: infer from the dataset, max_sequence_length is larger than the largest sequence length.
+        # Expected: max_sequence_length is ignored, and the sequence length is dataset+2 (include start/stop tokens).
+        (10, None, 15, 12),
+        # Case 2: infer from the dataset, max_sequence_length is smaller than the largest sequence length.
+        # Expected: max_sequence_length is used, and the sequence length is max_sequence_length.
+        (10, None, 8, 8),
+        # Case 3: infer from the dataset, max_sequence_length is not set.
+        # Expected: max_sequence_length is ignored, and the sequence length is dataset+2 (include start/stop tokens).
+        (10, None, None, 12),
+        # Case 4: set sequence_length explicitly and it is larger than the dataset.
+        # Expected: sequence_length is used, and the sequence length is sequence_length.
+        (10, 15, 20, 15),
+        # Case 5: set sequence_length explicitly and it is smaller than the dataset.
+        # Expected: sequence_length is used, and the sequence length is sequence_length.
+        (10, 8, 20, 8),
+    ],
+)
+@pytest.mark.parametrize(
+    "feature_type",
+    [
+        sequence_feature,
+        text_feature,
+    ],
+)
+def test_seq_features_max_sequence_length(
+    csv_filename, tmpdir, feature_type, max_len, sequence_length, max_sequence_length, sequence_length_expected
+):
+    """Tests that a sequence feature has the correct max_sequence_length in metadata and prepocessed data."""
+    feat = feature_type(
+        encoder={"max_len": max_len},
+        preprocessing={"sequence_length": sequence_length, "max_sequence_length": max_sequence_length},
+    )
+    input_features = [feat]
+    output_features = [binary_feature()]
+    config = {"input_features": input_features, "output_features": output_features}
+
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+    df = pd.read_csv(training_data_csv_path)
+
+    class CheckTrainingSetMetadataCallback(Callback):
+        def on_preprocess_end(self, proc_training_set, proc_validation_set, proc_test_set, training_set_metadata):
+            assert training_set_metadata[feat[NAME]]["max_sequence_length"] == sequence_length_expected
+
+    backend = LocalTestBackend()
+    ludwig_model = LudwigModel(config, backend=backend, callbacks=[CheckTrainingSetMetadataCallback()])
+    train_ds, val_ds, test_ds, _ = ludwig_model.preprocess(dataset=df)
+
+    all_df = concatenate_df(train_ds.to_df(), val_ds.to_df(), test_ds.to_df(), backend)
+    proc_column_name = feat[PROC_COLUMN]
+    assert all(len(x) == sequence_length_expected for x in all_df[proc_column_name])
 
 
 def test_column_feature_type_mismatch_fill():
@@ -438,7 +604,11 @@ def test_non_conventional_bool_with_fallback(binary_as_input, expected_preproces
     else:
         input_features = [number_feature()]
         output_features = [bin_feature]
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+    }
 
     data_csv_path = os.path.join(tmpdir, "data.csv")
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
@@ -471,7 +641,11 @@ def test_non_conventional_bool_without_fallback_logs_warning(binary_as_input, ca
     else:
         input_features = [number_feature()]
         output_features = [bin_feature]
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+    }
 
     data_csv_path = os.path.join(tmpdir, "data.csv")
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
@@ -532,3 +706,61 @@ def test_vit_encoder_different_dimension_image(tmpdir, csv_filename, use_pretrai
     # Failure happens post preprocessing but before training during the ECD model creation phase
     # so make sure the model can be created properly and training can proceed
     model.train(dataset=data_csv)
+
+
+def test_image_encoder_torchvision_different_num_channels(tmpdir, csv_filename):
+    input_features = [
+        image_feature(
+            os.path.join(tmpdir, "generated_output"),
+            preprocessing={"in_memory": True, "height": 224, "width": 206, "num_channels": 1},
+            encoder={"type": "efficientnet"},
+        )
+    ]
+    output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
+
+    data_csv = generate_data(
+        input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=NUM_EXAMPLES
+    )
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "trainer": {"train_steps": 1},
+    }
+
+    model = LudwigModel(config)
+
+    # Failure happens post preprocessing but before training during the ECD model creation phase
+    # so make sure the model can be created properly and training can proceed
+    model.train(dataset=data_csv)
+
+
+@pytest.mark.parametrize(
+    "df_engine",
+    [
+        pytest.param("pandas", id="pandas"),
+        pytest.param("dask", id="dask", marks=pytest.mark.distributed),
+    ],
+)
+def test_fill_with_mode_different_df_engine(tmpdir, csv_filename, df_engine, ray_cluster_2cpu):
+    config = {
+        "input_features": [category_feature(preprocessing={"missing_value_strategy": "fill_with_mode"})],
+        "output_features": [binary_feature()],
+    }
+
+    training_data_csv_path = generate_data(
+        config["input_features"], config["output_features"], os.path.join(tmpdir, csv_filename)
+    )
+
+    df = pd.read_csv(training_data_csv_path)
+
+    if df_engine == "dask":
+        import dask.dataframe as dd
+
+        df = dd.from_pandas(df, npartitions=1)
+
+        # Only support Dask on Ray backend
+        config["backend"] = {"type": "ray"}
+
+    ludwig_model = LudwigModel(config)
+    ludwig_model.preprocess(dataset=df)

@@ -1,6 +1,4 @@
-from typing import Union
-
-from marshmallow_dataclass import dataclass
+from typing import Optional, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BFILL, IMAGE, IMAGENET1K, MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING
@@ -8,11 +6,12 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor
 from ludwig.schema.metadata import FEATURE_METADATA
+from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
 @register_preprocessor(IMAGE)
-@dataclass(repr=False)
+@ludwig_dataclass
 class ImagePreprocessingConfig(BasePreprocessingConfig):
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
@@ -38,7 +37,7 @@ class ImagePreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[IMAGE][PREPROCESSING]["computed_fill_value"],
     )
 
-    height: int = schema_utils.PositiveInteger(
+    height: Optional[int] = schema_utils.PositiveInteger(
         default=None,
         allow_none=True,
         description="The image height in pixels. If this parameter is set, images will be resized to the specified "
@@ -47,7 +46,7 @@ class ImagePreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[IMAGE][PREPROCESSING]["height"],
     )
 
-    width: int = schema_utils.PositiveInteger(
+    width: Optional[int] = schema_utils.PositiveInteger(
         default=None,
         allow_none=True,
         description="The image width in pixels. If this parameter is set, images will be resized to the specified "
@@ -133,4 +132,10 @@ class ImagePreprocessingConfig(BasePreprocessingConfig):
         allow_none=False,
         description="Specifies the number of processes to run for preprocessing images.",
         parameter_metadata=FEATURE_METADATA[IMAGE][PREPROCESSING]["num_processes"],
+    )
+
+    requires_equal_dimensions: bool = schema_utils.Boolean(
+        default=False,
+        description="If true, then width and height must be equal.",
+        parameter_metadata=FEATURE_METADATA[IMAGE][PREPROCESSING]["requires_equal_dimensions"],
     )

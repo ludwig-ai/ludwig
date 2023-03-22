@@ -25,7 +25,7 @@ import torchtext
 
 from ludwig.api import LudwigModel
 from ludwig.backend import RAY
-from ludwig.constants import COMBINER, LOGITS, NAME, PREDICTIONS, PROBABILITIES, TRAINER
+from ludwig.constants import BATCH_SIZE, COMBINER, LOGITS, NAME, PREDICTIONS, PROBABILITIES, TRAINER
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.features.number_feature import numeric_transformation_registry
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
@@ -65,13 +65,15 @@ def test_torchscript(tmpdir, csv_filename, should_load_model, model_type):
     input_features = [
         binary_feature(),
         number_feature(),
-        category_feature(encoder={"vocab_size": 3}),
+        category_feature(encoder={"type": "passthrough", "vocab_size": 3}),
+        category_feature(encoder={"type": "onehot", "vocab_size": 3}),
     ]
     if model_type == "ecd":
         image_dest_folder = os.path.join(tmpdir, "generated_images")
         audio_dest_folder = os.path.join(tmpdir, "generated_audio")
         input_features.extend(
             [
+                category_feature(encoder={"type": "dense", "vocab_size": 3}),
                 sequence_feature(encoder={"vocab_size": 3}),
                 text_feature(encoder={"vocab_size": 3}),
                 vector_feature(),
@@ -118,7 +120,9 @@ def test_torchscript(tmpdir, csv_filename, should_load_model, model_type):
     if model_type == "ecd":
         config[TRAINER] = {"epochs": 2}
     else:
-        config[TRAINER] = {"num_boost_round": 2}
+        # Disable feature filtering to avoid having no features due to small test dataset,
+        # see https://stackoverflow.com/a/66405983/5222402
+        config[TRAINER] = {"num_boost_round": 2, "feature_pre_filter": False}
     ludwig_model = LudwigModel(config, backend=backend)
     ludwig_model.train(
         dataset=data_csv_path,
@@ -218,15 +222,17 @@ def test_torchscript(tmpdir, csv_filename, should_load_model, model_type):
 def test_torchscript_e2e_tabular(csv_filename, tmpdir):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     # Configure features to be tested:
-    bin_str_feature = binary_feature()
+    bin_str_feature_input_feature = binary_feature()
+    bin_str_feature_output_feature = binary_feature(output_feature=True)
     transformed_number_features = [
         number_feature(preprocessing={"normalization": numeric_transformer})
         for numeric_transformer in numeric_transformation_registry.keys()
     ]
     input_features = [
-        bin_str_feature,
+        bin_str_feature_input_feature,
         binary_feature(),
         *transformed_number_features,
+        number_feature(preprocessing={"outlier_strategy": "fill_with_mean"}),
         category_feature(encoder={"vocab_size": 3}),
         bag_feature(encoder={"vocab_size": 3}),
         set_feature(encoder={"vocab_size": 3}),
@@ -236,8 +242,8 @@ def test_torchscript_e2e_tabular(csv_filename, tmpdir):
         # h3_feature(),
     ]
     output_features = [
-        bin_str_feature,
-        binary_feature(),
+        bin_str_feature_output_feature,
+        binary_feature(output_feature=True),
         number_feature(),
         category_feature(decoder={"vocab_size": 3}),
         set_feature(decoder={"vocab_size": 3}),
@@ -246,7 +252,11 @@ def test_torchscript_e2e_tabular(csv_filename, tmpdir):
         text_feature(decoder={"vocab_size": 3}),
     ]
     backend = LocalTestBackend()
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+    }
 
     # Generate training data
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
@@ -254,7 +264,12 @@ def test_torchscript_e2e_tabular(csv_filename, tmpdir):
     # Convert bool values to strings, e.g., {'Yes', 'No'}
     df = pd.read_csv(training_data_csv_path)
     false_value, true_value = "No", "Yes"
-    df[bin_str_feature[NAME]] = df[bin_str_feature[NAME]].map(lambda x: true_value if x else false_value)
+    df[bin_str_feature_input_feature[NAME]] = df[bin_str_feature_input_feature[NAME]].map(
+        lambda x: true_value if x else false_value
+    )
+    df[bin_str_feature_output_feature[NAME]] = df[bin_str_feature_output_feature[NAME]].map(
+        lambda x: true_value if x else false_value
+    )
     df.to_csv(training_data_csv_path)
 
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
@@ -270,7 +285,11 @@ def test_torchscript_e2e_binary_only(csv_filename, tmpdir):
         binary_feature(),
     ]
     backend = LocalTestBackend()
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+    }
 
     # Generate training data
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
@@ -302,7 +321,7 @@ def test_torchscript_e2e_tabnet_combiner(csv_filename, tmpdir):
             "num_total_blocks": 2,
             "num_shared_blocks": 2,
         },
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
     }
 
     # Generate training data
@@ -322,7 +341,11 @@ def test_torchscript_e2e_audio(csv_filename, tmpdir):
         binary_feature(),
     ]
     backend = LocalTestBackend()
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+    }
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
 
     # NOTE: audio preprocessing mismatches by very small margins ~O(1e-6) but causes flakiness in e2e test.
@@ -335,7 +358,7 @@ def test_torchscript_e2e_audio(csv_filename, tmpdir):
     "kwargs",
     [
         {"encoder": {"type": "stacked_cnn"}},  # Ludwig custom encoder
-        {"encoder": {"type": "alexnet", "use_pretrained": False}},  # TorchVisio pretrained model encoder
+        {"encoder": {"type": "alexnet", "use_pretrained": False}},  # TorchVision pretrained model encoder
     ],
 )
 def test_torchscript_e2e_image(tmpdir, csv_filename, kwargs):
@@ -348,7 +371,11 @@ def test_torchscript_e2e_image(tmpdir, csv_filename, kwargs):
         binary_feature(),
     ]
     backend = LocalTestBackend()
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+    }
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
 
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
@@ -364,7 +391,11 @@ def test_torchscript_e2e_text(tmpdir, csv_filename):
         text_feature(decoder={"vocab_size": 3}),
     ]
     backend = LocalTestBackend()
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+    }
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
 
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
@@ -381,7 +412,11 @@ def test_torchscript_e2e_text_hf_tokenizer(tmpdir, csv_filename):
         text_feature(decoder={"vocab_size": 3}),
     ]
     backend = LocalTestBackend()
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+    }
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
 
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
@@ -398,7 +433,11 @@ def test_torchscript_e2e_text_hf_tokenizer_truncated_sequence(tmpdir, csv_filena
         text_feature(decoder={"vocab_size": 3}),
     ]
     backend = LocalTestBackend()
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+    }
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
 
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
@@ -413,7 +452,11 @@ def test_torchscript_e2e_sequence(tmpdir, csv_filename):
         sequence_feature(decoder={"vocab_size": 3}),
     ]
     backend = LocalTestBackend()
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+    }
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
 
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
@@ -428,7 +471,11 @@ def test_torchscript_e2e_timeseries(tmpdir, csv_filename):
         binary_feature(),
     ]
     backend = LocalTestBackend()
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+    }
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
 
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
@@ -443,7 +490,11 @@ def test_torchscript_e2e_h3(tmpdir, csv_filename):
         binary_feature(),
     ]
     backend = LocalTestBackend()
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+    }
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
 
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
@@ -458,7 +509,11 @@ def test_torchscript_e2e_date(tmpdir, csv_filename):
         binary_feature(),
     ]
     backend = LocalTestBackend()
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+    }
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
 
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
@@ -475,7 +530,11 @@ def test_torchscript_preproc_vector_alternative_type(tmpdir, csv_filename, vecto
         binary_feature(),
     ]
     backend = LocalTestBackend()
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+    }
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
 
     # Initialize Ludwig model
@@ -535,7 +594,11 @@ def test_torchscript_preproc_timeseries_alternative_type(tmpdir, csv_filename, p
         binary_feature(),
     ]
     backend = LocalTestBackend()
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+    }
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path, nan_percent=0.2)
 
     # Initialize Ludwig model
@@ -600,7 +663,11 @@ def test_torchscript_preproc_with_nans(tmpdir, csv_filename, feature):
         binary_feature(),
     ]
     backend = LocalTestBackend()
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+    }
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path, nan_percent=0.2)
 
     # Initialize Ludwig model
@@ -666,7 +733,11 @@ def test_torchscript_preproc_gpu(tmpdir, csv_filename, feature_fn):
         binary_feature(),
     ]
 
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+    }
     backend = RAY
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
     _, script_module = initialize_torchscript_module(
@@ -719,7 +790,11 @@ def test_torchscript_postproc_gpu(tmpdir, csv_filename, feature_fn):
         feature_fn(**feature_kwargs),
     ]
 
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+    }
     backend = RAY
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
     _, script_module = initialize_torchscript_module(

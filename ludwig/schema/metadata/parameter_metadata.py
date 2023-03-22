@@ -1,11 +1,12 @@
 import json
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, List, Union
+from typing import Any, Dict, List, Union
 
 from dataclasses_json import dataclass_json
 
 from ludwig.api_annotations import DeveloperAPI
+from ludwig.utils.misc_utils import memoized_method
 
 
 @DeveloperAPI
@@ -24,66 +25,96 @@ class ExpectedImpact(int, Enum):
 
 
 @DeveloperAPI
+class ComputeTier(int, Enum):
+    """The compute tier defines the type of compute resources that a model typically needs to get good
+    throughput."""
+
+    CPU = 0
+    """Model can train effectively on CPU hardware."""
+
+    GPU_LOW = 1
+    """Model can train effectively on commodity GPU hardware, or inference optimized SKUs like NVIDIA T4."""
+
+    GPU_MEDIUM = 2
+    """Model can train effectively on training-optimized GPU hardware like V100, A10G, or A5000."""
+
+    GPU_HIGH = 3
+    """Model requires high-end GPUs like A100 or H100 to achieve good throughput."""
+
+
+@DeveloperAPI
 @dataclass_json()
 @dataclass
 class ParameterMetadata:
     """Contains descriptive information that pertains to a Ludwig configuration parameter."""
 
-    # Quick description generally for UI display
     short_description: str = ""
+    """Quick description generally for UI display."""
 
-    # In depth description generally for documentation purposes.
     long_description: str = ""
+    """In depth description generally for documentation purposes."""
 
-    # How this parameter can be displayed in a human-readable form.
     ui_display_name: Union[str, None] = ""
+    """How this parameter can be displayed in a human-readable form."""
 
-    # Why the default value for this parameter is the default.
     default_value_reasoning: Union[str, None] = None
+    """The reasoning behind the default value for this parameter."""
 
-    # Examples of other values that can be used for this parameter.
     example_value: Union[List[Any], None] = None
+    """Examples of other values that can be used for this parameter."""
 
-    # List of related parameters that this parameter interacts with or depends on.
     related_parameters: Union[List[str], None] = None
+    """List of related parameters that this parameter interacts with or depends on."""
 
-    # Other information that is relevant for this parameter.
     other_information: Union[str, None] = None
+    """Other information that is relevant for this parameter."""
 
-    # If we change/increase/decrease this parameter, what's the intuition for how model performance would change, i.e.:
-    # learning curves, model speed, memory usage, etc.
     description_implications: Union[str, None] = None
+    """The intuition for how model performance would change if this parameter is changed."""
 
-    # What values would a machine learning expert suggest users try to help improve their model? Ideally, covers 95%
-    # (~2 sigma) of use cases.
     suggested_values: Any = None
+    """What values would a machine learning expert suggest users try to help improve their model?
 
-    # The reasoning behind the suggested values, as well as model performance indicators or other intuition that could
-    # help inform a user to make an educated decision about what values to experiment with for this parameter.
+    Should cover 95% (2-sigma) worth of use-cases.
+    """
+
     suggested_values_reasoning: Union[str, None] = None
+    """The reasoning behind the suggested values, as well as model performance indicators or other intuition that
+    could help inform a user to make an educated decision about what values to experiment with for this
+    parameter."""
 
-    # True if this parameter could be frequently used, would have a high impact, and/or would be interesting for a
-    # machine learning practitioner.
     commonly_used: bool = False
+    """True if this parameter could be frequently used, would have a high impact, and/or would be interesting for a
+    machine learning practitioner."""
 
-    # The expected impact of determining a "good" value for this parameter.
     expected_impact: ExpectedImpact = ExpectedImpact.UNKNOWN
+    """The expected impact of determining a "good" value for this parameter."""
 
-    # List of links, papers, and blog posts to learn more.
     literature_references: Union[List[str], None] = None
+    """List of links, papers, and blog posts to learn more."""
 
-    # Whether the parameter is used strictly internally.
     internal_only: bool = False
+    """True if this parameter is used strictly internally and should not be exposed to users."""
+
+    compute_tier: ComputeTier = ComputeTier.CPU
+    """The compute tier defines the type of compute resources that a model typically needs to get good
+    throughput."""
+
+    @memoized_method(maxsize=1)
+    def to_json_dict(self) -> Dict[str, Any]:
+        return json.loads(self.to_json())
 
 
 @DeveloperAPI
-def convert_metadata_to_json(pm: ParameterMetadata):
+def convert_metadata_to_json(pm: ParameterMetadata) -> Dict[str, Any]:
     """Converts a ParameterMetadata dict to a normal JSON dict.
 
     NOTE: Without the json.loads call, to_json() returns
     a string repr that is improperly parsed.
     """
-    return json.loads(pm.to_json())
+    if not pm:
+        return None
+    return pm.to_json_dict()
 
 
 # This is a quick way to flag schema parameters as internal only via the `parameter_metadata` argument

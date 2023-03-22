@@ -2,6 +2,7 @@ import logging
 from typing import Dict, Tuple
 
 from ludwig.constants import (
+    BATCH_SIZE,
     CATEGORY,
     COMBINER,
     DECODER,
@@ -41,7 +42,7 @@ def _prepare_data(csv_filename: str) -> Tuple[Dict, str]:
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
         COMBINER: {TYPE: "concat", "num_fc_layers": 2},
-        TRAINER: {EPOCHS: 1, "learning_rate": 0.001},
+        TRAINER: {EPOCHS: 1, "learning_rate": 0.001, BATCH_SIZE: 128},
         DEFAULTS: {
             CATEGORY: {
                 PREPROCESSING: {"missing_value_strategy": FILL_WITH_CONST, "fill_value": "<CUSTOM_TOK>"},
@@ -66,7 +67,7 @@ def test_run_experiment_with_global_default_parameters(csv_filename):
     run_experiment(config=config, dataset=dataset)
 
 
-def test_global_defaults_with_encoder_dependencies(csv_filename):
+def test_global_defaults_with_encoder_dependencies():
     input_features = [text_feature(name="title", reduce_output="sum")]
     output_features = [category_feature(name="article", embedding_size=3, output_feature=True)]
     del input_features[0][ENCODER]

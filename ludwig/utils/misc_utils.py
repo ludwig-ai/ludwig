@@ -21,15 +21,19 @@ import subprocess
 import weakref
 from collections import OrderedDict
 from collections.abc import Mapping
+from typing import TYPE_CHECKING
 
 import numpy
 import torch
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import NAME, PROC_COLUMN
+from ludwig.constants import PROC_COLUMN
 from ludwig.globals import DESCRIPTION_FILE_NAME
 from ludwig.utils import fs_utils
 from ludwig.utils.fs_utils import find_non_existing_dir_by_adding_suffix
+
+if TYPE_CHECKING:
+    from ludwig.schema.model_types.base import ModelConfig
 
 
 @DeveloperAPI
@@ -86,7 +90,7 @@ def get_from_registry(key, registry):
     if key in registry:
         return registry[key]
     else:
-        raise ValueError(f"Key {key} not supported, available options: {registry.keys()}")
+        raise ValueError(f"Key '{key}' not in registry, available options: {registry.keys()}")
 
 
 @DeveloperAPI
@@ -153,15 +157,14 @@ def get_proc_features_from_lists(*args):
 
 
 @DeveloperAPI
-def set_saved_weights_in_checkpoint_flag(config_obj):
+def set_saved_weights_in_checkpoint_flag(config_obj: "ModelConfig"):
     """Adds a flag to all input feature encoder configs indicating that the weights are saved in the checkpoint.
 
     Next time the model is loaded we will restore pre-trained encoder weights from ludwig model (and not load from cache
     or model hub).
     """
-    for input_feature in config_obj.input_features.to_list():
-        input_feature_name = input_feature[NAME]
-        encoder_obj = config_obj.input_features.get(input_feature_name).encoder
+    for input_feature in config_obj.input_features:
+        encoder_obj = input_feature.encoder
         encoder_obj.saved_weights_in_checkpoint = True
 
 

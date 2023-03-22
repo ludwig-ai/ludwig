@@ -19,7 +19,7 @@ from typing import Dict, List, Optional, Tuple, Union
 import numpy as np
 import torch
 
-from ludwig.constants import NAME, PREPROCESSING, SEQUENCE, TEXT, TIMESERIES
+from ludwig.constants import NAME, PREPROCESSING, SEQUENCE, TEXT, TIMESERIES, TYPE
 from ludwig.utils.data_utils import hash_dict
 from ludwig.utils.strings_utils import get_tokenizer_from_registry, UNKNOWN_SYMBOL
 
@@ -100,23 +100,19 @@ def sanitize(name):
 
 
 def compute_feature_hash(feature: dict) -> str:
-    """
-    This function computes a hash for each feature based on the preprocessing dictionary associated with each feature.
-    The input is always the feature dict, however sometimes, this is called from BaseFeature which dumps the feature
-    dict from a ConfigObject and the preprocessing key corresponds to a nested Preprocessing config. This is why it
-    includes the if/else statement.
+    """This function computes a hash for each feature based on the preprocessing dictionary associated with each
+    feature, as well as the feature's type.
+
     Args:
         feature: Feature dictionary
 
     Returns: Feature hash name
-
     """
-    preproc = feature.get(PREPROCESSING, {})
-    if isinstance(preproc, dict):
-        preproc_hash = hash_dict(preproc)
-    else:
-        preproc_hash = hash_dict(preproc.to_dict())
-    return sanitize(feature[NAME]) + "_" + preproc_hash.decode("ascii")
+    feature_data = dict(
+        preprocessing=feature.get(PREPROCESSING, {}),
+        type=feature[TYPE],
+    )
+    return sanitize(feature[NAME]) + "_" + hash_dict(feature_data).decode("ascii")
 
 
 def get_input_size_with_dependencies(
@@ -170,10 +166,10 @@ class LudwigFeatureDict(torch.nn.Module):
         self.module_dict = torch.nn.ModuleDict()
         self.internal_key_to_original_name_map = {}
 
-    def __getitem__(self, key) -> torch.nn.Module:
+    def get(self, key) -> torch.nn.Module:
         return self.module_dict[get_module_dict_key_from_name(key)]
 
-    def __setitem__(self, key: str, module: torch.nn.Module) -> None:
+    def set(self, key: str, module: torch.nn.Module) -> None:
         module_dict_key_name = get_module_dict_key_from_name(key)
         self.internal_key_to_original_name_map[module_dict_key_name] = key
         self.module_dict[module_dict_key_name] = module
@@ -203,4 +199,4 @@ class LudwigFeatureDict(torch.nn.Module):
 
     def update(self, modules: Dict[str, torch.nn.Module]) -> None:
         for feature_name, module in modules.items():
-            self.__setitem__(feature_name, module)
+            self.set(feature_name, module)

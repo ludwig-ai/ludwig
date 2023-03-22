@@ -12,6 +12,97 @@ description: |
   A dataset labeled for identity mentions and optimizing a metric designed to measure unintended bias.
   Disclaimer: The dataset for this competition contains text that may be considered profane, vulgar, or offensive.
   https://www.kaggle.com/c/jigsaw-unintended-bias-in-toxicity-classification
+columns:
+  - name: id
+    type: category
+  - name: target
+    type: binary
+  - name: comment_text
+    type: text
+  - name: severe_toxicity
+    type: number
+  - name: obscene
+    type: number
+  - name: identity_attack
+    type: number
+  - name: insult
+    type: number
+  - name: threat
+    type: number
+  - name: asian
+    type: number
+  - name: atheist
+    type: number
+  - name: bisexual
+    type: number
+  - name: black
+    type: number
+  - name: buddhist
+    type: number
+  - name: christian
+    type: number
+  - name: female
+    type: number
+  - name: heterosexual
+    type: number
+  - name: hindu
+    type: number
+  - name: homosexual_gay_or_lesbian
+    type: number
+  - name: intellectual_or_learning_disability
+    type: number
+  - name: jewish
+    type: number
+  - name: latino
+    type: number
+  - name: male
+    type: number
+  - name: muslim
+    type: number
+  - name: other_disability
+    type: number
+  - name: other_gender
+    type: number
+  - name: other_race_or_ethnicity
+    type: number
+  - name: other_religion
+    type: number
+  - name: other_sexual_orientation
+    type: number
+  - name: physical_disability
+    type: number
+  - name: psychiatric_or_mental_illness
+    type: number
+  - name: transgender
+    type: number
+  - name: white
+    type: number
+  - name: created_date
+    type: date
+  - name: publication_id
+    type: category
+  - name: parent_id
+    type: category
+  - name: article_id
+    type: category
+  - name: rating
+    type: category
+  - name: funny
+    type: number
+  - name: wow
+    type: number
+  - name: sad
+    type: number
+  - name: likes
+    type: number
+  - name: disagree
+    type: number
+  - name: sexual_explicit
+    type: number
+  - name: identity_annotator_count
+    type: number
+  - name: toxicity_annotator_count
+    type: number
 output_features:
 - name: target
   type: binary

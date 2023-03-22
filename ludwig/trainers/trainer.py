@@ -15,13 +15,11 @@
 # ==============================================================================
 """This module contains the class and auxiliary methods of a model."""
 import contextlib
-import gc
 import logging
 import math
 import os
 import os.path
 import signal
-import statistics
 import sys
 import threading
 import time
@@ -45,7 +43,7 @@ from ludwig.models.ecd import ECD
 from ludwig.models.predictor import Predictor
 from ludwig.modules.lr_scheduler import LRScheduler
 from ludwig.modules.metric_modules import get_improved_fn, get_initial_validation_value
-from ludwig.modules.metric_registry import get_metric_registry
+from ludwig.modules.metric_registry import get_metric_objective
 from ludwig.modules.optimization_modules import create_clipper, create_optimizer
 from ludwig.progress_bar import LudwigProgressBar
 from ludwig.schema.trainer import ECDTrainerConfig
@@ -53,6 +51,7 @@ from ludwig.trainers.base import BaseTrainer
 from ludwig.trainers.registry import register_trainer
 from ludwig.types import ModelConfigDict
 from ludwig.utils import time_utils
+from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
 from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.defaults import default_random_seed
@@ -69,6 +68,8 @@ from ludwig.utils.trainer_utils import (
     get_total_steps,
     ProgressTracker,
 )
+
+MAX_CPU_BATCH_SIZE = 128
 
 logger = logging.getLogger(__name__)
 
@@ -173,11 +174,16 @@ class Trainer(BaseTrainer):
         self.model = model
         self.model = self.model.to(self.device)
 
+        compiled_model = self.model
+        if config.compile:
+            compiled_model = torch.compile(self.model)
+            logger.info("Training with dynamo compiled model")
+
         # Some frameworks like DDP will wrap the model in a new interface that loses the methods from ECD. To
         # workaround this, we maintain a separate attribute for the wrapped model, which will be used for training
         # steps, while other operations happen on the original ECD model. Parameters are shared between the two models
         # so it is safe to train with the wrapped model and save the best model from the ECD model.
-        self.dist_model = self.distributed.wrap_model(self.model)
+        self.dist_model = self.distributed.wrap_model(compiled_model)
 
         # ================ Optimizer tuning ================
         optimizer_config = config.optimizer
@@ -205,14 +211,6 @@ class Trainer(BaseTrainer):
         # the original sigint to restore at the end of training
         # and before set_steps_to_1_or_quit returns
         self.original_sigint_handler = None
-
-        # TODO(Justin): Move to config validation when that's ready.
-        if config.checkpoints_per_epoch != 0 and config.steps_per_checkpoint != 0:
-            raise ValueError(
-                "It is invalid to specify both trainer.checkpoints_per_epoch AND "
-                "trainer.steps_per_checkpoint. Please specify one or the other, or specify neither to checkpoint/eval "
-                "the model every epoch."
-            )
 
     def train_step(
         self, inputs: Dict[str, torch.Tensor], targets: Dict[str, torch.Tensor]
@@ -311,7 +309,7 @@ class Trainer(BaseTrainer):
         if self.gradient_clipping_config.clipglobalnorm:
             torch.nn.utils.clip_grad_norm_(variables, self.gradient_clipping_config.clipglobalnorm)
         if self.gradient_clipping_config.clipnorm:
-            torch.nn.utils.clip_grad_norm_(variables, self.gradient_clipping_config.clipglobalnorm)
+            torch.nn.utils.clip_grad_norm_(variables, self.gradient_clipping_config.clipnorm)
         if self.gradient_clipping_config.clipvalue:
             torch.nn.utils.clip_grad_value_(variables, self.gradient_clipping_config.clipvalue)
 
@@ -350,6 +348,7 @@ class Trainer(BaseTrainer):
             train_summary_writer.add_scalar("combined/step_learning_rate", learning_rate, global_step=step)
 
         train_summary_writer.flush()
+
 
     def train_for_tuning(
         self,
@@ -393,22 +392,6 @@ class Trainer(BaseTrainer):
     ) -> int:
         logger.info("Tuning batch size...")
 
-        def _is_valid_batch_size(batch_size):
-            # make sure that batch size is valid (e.g. less than size of ds)
-            is_smaller_than_training_set = batch_size < len(training_set)
-            is_under_max_batch_size = batch_size <= self.max_batch_size
-            is_valid = is_smaller_than_training_set and is_under_max_batch_size
-            if not is_valid:
-                logger.info(
-                    f"Batch size {batch_size} is invalid, must be smaller than training set size "
-                    f"{len(training_set)} and less than or equal to max batch size {self.max_batch_size}"
-                )
-            return is_valid
-
-        # TODO (ASN) : Circle back on how we want to set default placeholder value
-        # Currently, since self.batch_size is originally set to auto, we provide a
-        # placeholder starting value
-        batch_size = 2
         skip_save_model = self.skip_save_model
         skip_save_progress = self.skip_save_progress
         skip_save_log = self.skip_save_log
@@ -452,14 +435,45 @@ class Trainer(BaseTrainer):
                         # Not a CUDA error
                         raise
                     break
+# =======
+#        # When training on CPU, larger batch sizes offer limited benefits due to lack of effective
+#        # parallelization within a batch. As such, to increase chances of stable training, we cap the maximum
+#        # batch size at MAX_CPU_BATCH_SIZE
+#        max_batch_size = (
+#            self.max_batch_size if torch.cuda.is_available() else min(self.max_batch_size, MAX_CPU_BATCH_SIZE)
+#        )
+#
+#        self.dist_model.train()  # Sets model training mode.
+#
+#        evaluator = self._create_batch_size_evaluator()
+#        try:
+#            return evaluator.select_best_batch_size(len(training_set), max_batch_size, max_trials)
+# >>>>>>> master
         finally:
             # Restore original parameters to defaults
             self.skip_save_model = skip_save_model
             self.skip_save_progress = skip_save_progress
             self.skip_save_log = skip_save_log
 
-        logger.info(f"Selected batch_size={best_batch_size}")
-        return best_batch_size
+    def _create_batch_size_evaluator(self) -> BatchSizeEvaluator:
+        trainer = self
+
+        class _TrainerBatchSizeEvaluator(BatchSizeEvaluator):
+            def reset(self):
+                trainer.model.reset_metrics()
+
+            def step(self, batch_size: int):
+                inputs = {
+                    input_feature_name: input_feature.create_sample_input(batch_size=batch_size).to(trainer.device)
+                    for input_feature_name, input_feature in trainer.model.input_features.items()
+                }
+                targets = {
+                    output_feature_name: output_feature.create_sample_output(batch_size=batch_size).to(trainer.device)
+                    for output_feature_name, output_feature in trainer.model.output_features.items()
+                }
+                trainer.train_step(inputs, targets)
+
+        return _TrainerBatchSizeEvaluator()
 
     def run_evaluation(
         self,
@@ -615,31 +629,6 @@ class Trainer(BaseTrainer):
 
         metrics_names = get_metric_names(output_features)
 
-        # check if validation_field is valid
-        valid_validation_field = False
-        if self.validation_field == "combined":
-            valid_validation_field = True
-            if self.validation_metric is not LOSS and len(output_features) == 1:
-                only_of = next(iter(output_features))
-                if self.validation_metric in metrics_names[only_of]:
-                    self._validation_field = only_of
-                    logger.warning(
-                        "Replacing 'combined' validation field "
-                        "with '{}' as the specified validation "
-                        "metric {} is invalid for 'combined' "
-                        "but is valid for '{}'.".format(only_of, self.validation_metric, only_of)
-                    )
-        else:
-            for output_feature in output_features:
-                if self.validation_field == output_feature:
-                    valid_validation_field = True
-
-        if not valid_validation_field:
-            raise ValueError(
-                "The specified validation_field {} is not valid."
-                "Available ones are: {}".format(self.validation_field, list(output_features.keys()) + ["combined"])
-            )
-
         # ====== Setup file names =======
         model_hyperparameters_path = None
         tensorboard_log_dir = None
@@ -703,9 +692,10 @@ class Trainer(BaseTrainer):
             with training_set.initialize_batcher(
                 batch_size=self.batch_size,
                 should_shuffle=self.should_shuffle,
-                seed=self.random_seed,
+                random_seed=self.random_seed,
                 distributed=self.distributed,
                 ignore_last=True,
+                augmentation_pipeline=self.model.get_augmentation_pipelines(),
             ) as batcher:
                 # ================ Training Loop ================
                 self.total_steps = get_total_steps(self.epochs, batcher.steps_per_epoch, self.train_steps)
@@ -893,6 +883,10 @@ class Trainer(BaseTrainer):
                     f"{psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
                 )
 
+            # Executing `on_batch_end` calls before `run_evaluation` enables more accurate
+            # batch duration measurements when using timer callbacks.
+            self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path))
+
             if progress_tracker.steps % final_steps_per_checkpoint == 0:
                 # Checkpoint the model.
                 if self.is_coordinator() and not self.skip_save_progress:
@@ -917,8 +911,6 @@ class Trainer(BaseTrainer):
                 )
                 if should_break:
                     return should_break
-
-            self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path))
 
         return False
 
@@ -1042,7 +1034,7 @@ class Trainer(BaseTrainer):
                 absolute_eval_metric_value_change = round(
                     abs(previous_best_eval_metric_value - progress_tracker.best_eval_metric_value), 3
                 )
-                if get_metric_registry()[validation_metric].get_objective() == MINIMIZE:
+                if get_metric_objective(validation_metric) == MINIMIZE:
                     logger.info(
                         f"'{validation_output_feature_name}' '{validation_metric}' decreased by "
                         f"{absolute_eval_metric_value_change}."

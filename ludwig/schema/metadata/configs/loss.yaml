@@ -1,0 +1,54 @@
+MSELoss:
+  weight:
+    expected_impact: 2
+MAELoss:
+  weight:
+    expected_impact: 2
+RMSELoss:
+  weight:
+    expected_impact: 2
+RMSPELoss:
+  weight:
+    expected_impact: 2
+BWCEWLoss:
+  positive_class_weight:
+    expected_impact: 3
+  robust_lambda:
+    expected_impact: 2
+  confidence_penalty:
+    expected_impact: 2
+  weight:
+    expected_impact: 2
+SoftmaxCrossEntropyLoss:
+  class_weights:
+    expected_impact: 3
+  robust_lambda:
+    expected_impact: 2
+  confidence_penalty:
+    expected_impact: 2
+  class_similarities:
+    expected_impact: 2
+  class_similarities_temperature:
+    expected_impact: 2
+  weight:
+    expected_impact: 2
+SequenceSoftmaxCrossEntropyLoss:
+  class_weights:
+    expected_impact: 3
+  robust_lambda:
+    expected_impact: 2
+  confidence_penalty:
+    expected_impact: 2
+  class_similarities:
+    expected_impact: 2
+  class_similarities_temperature:
+    expected_impact: 2
+  weight:
+    expected_impact: 2
+  unique:
+    expected_impact: 2
+SigmoidCrossEntropyLoss:
+  class_weights:
+    expected_impact: 3
+  weight:
+    expected_impact: 2

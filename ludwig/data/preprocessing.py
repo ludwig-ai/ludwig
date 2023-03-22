@@ -27,7 +27,6 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend import Backend, LOCAL_BACKEND
 from ludwig.constants import (
     BFILL,
-    BINARY,
     CHECKSUM,
     COLUMN,
     DEFAULTS,
@@ -39,7 +38,9 @@ from ludwig.constants import (
     FILL_WITH_MEAN,
     FILL_WITH_MODE,
     FULL,
+    META,
     MIN_DATASET_SPLIT_ROWS,
+    MODEL_ECD,
     NAME,
     NUMBER,
     PREPROCESSING,
@@ -51,20 +52,19 @@ from ludwig.constants import (
     TYPE,
     VALIDATION,
 )
+from ludwig.data.cache.manager import DatasetCache
 from ludwig.data.cache.types import wrap
 from ludwig.data.concatenate_datasets import concatenate_df, concatenate_files, concatenate_splits
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.split import get_splitter, split_dataset
 from ludwig.data.utils import set_fixed_split
+from ludwig.datasets import load_dataset_uris
 from ludwig.features.feature_registries import get_base_type_registry
-from ludwig.features.feature_utils import compute_feature_hash
+from ludwig.models.embedder import create_embed_batch_size_evaluator, create_embed_transform_fn
+from ludwig.schema.encoders.utils import get_encoder_cls
 from ludwig.types import FeatureConfigDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils import data_utils, strings_utils
 from ludwig.utils.backward_compatibility import upgrade_metadata
-from ludwig.utils.config_utils import (
-    merge_config_preprocessing_with_feature_specific_defaults,
-    merge_fixed_preprocessing_params,
-)
 from ludwig.utils.data_utils import (
     CACHEABLE_FORMATS,
     CSV_FORMATS,
@@ -106,7 +106,12 @@ from ludwig.utils.data_utils import (
     STATA_FORMATS,
     TSV_FORMATS,
 )
-from ludwig.utils.defaults import default_preprocessing_parameters, default_random_seed
+from ludwig.utils.dataframe_utils import is_dask_series_or_df
+from ludwig.utils.defaults import (
+    default_prediction_preprocessing_parameters,
+    default_random_seed,
+    default_training_preprocessing_parameters,
+)
 from ludwig.utils.fs_utils import file_lock, path_exists
 from ludwig.utils.misc_utils import get_from_registry, merge_dict
 from ludwig.utils.types import DataFrame, Series
@@ -128,7 +133,7 @@ class DataFormatPreprocessor(ABC):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
         callbacks=None,
@@ -150,7 +155,7 @@ class DataFormatPreprocessor(ABC):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
     ):
@@ -168,7 +173,7 @@ class DictPreprocessor(DataFormatPreprocessor):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
         callbacks=None,
@@ -206,10 +211,10 @@ class DictPreprocessor(DataFormatPreprocessor):
             pd.DataFrame(dataset),
             features,
             preprocessing_params,
+            mode="prediction",
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            mode="prediction",
         )
         return dataset, training_set_metadata, None
 
@@ -225,7 +230,7 @@ class DataFramePreprocessor(DataFormatPreprocessor):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
         callbacks=None,
@@ -260,10 +265,10 @@ class DataFramePreprocessor(DataFormatPreprocessor):
             dataset,
             features,
             preprocessing_params,
+            mode="prediction",
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            mode="prediction",
         )
         return dataset, training_set_metadata, None
 
@@ -279,7 +284,7 @@ class CSVPreprocessor(DataFormatPreprocessor):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
         callbacks=None,
@@ -308,10 +313,10 @@ class CSVPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
+            mode="prediction",
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            mode="prediction",
         )
         return dataset, training_set_metadata, None
 
@@ -327,7 +332,7 @@ class TSVPreprocessor(DataFormatPreprocessor):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
         callbacks=None,
@@ -356,10 +361,10 @@ class TSVPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
+            mode="prediction",
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            mode="prediction",
         )
         return dataset, training_set_metadata, None
 
@@ -375,7 +380,7 @@ class JSONPreprocessor(DataFormatPreprocessor):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
         callbacks=None,
@@ -404,10 +409,10 @@ class JSONPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
+            mode="prediction",
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            mode="prediction",
         )
         return dataset, training_set_metadata, None
 
@@ -423,7 +428,7 @@ class JSONLPreprocessor(DataFormatPreprocessor):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
         callbacks=None,
@@ -452,10 +457,10 @@ class JSONLPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
+            mode="prediction",
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            mode="prediction",
         )
         return dataset, training_set_metadata, None
 
@@ -471,7 +476,7 @@ class ExcelPreprocessor(DataFormatPreprocessor):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
         callbacks=None,
@@ -500,10 +505,10 @@ class ExcelPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
+            mode="prediction",
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            mode="prediction",
         )
         return dataset, training_set_metadata, None
 
@@ -519,7 +524,7 @@ class ParquetPreprocessor(DataFormatPreprocessor):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
         callbacks=None,
@@ -548,10 +553,10 @@ class ParquetPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
+            mode="prediction",
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            mode="prediction",
         )
         return dataset, training_set_metadata, None
 
@@ -564,7 +569,7 @@ class ParquetPreprocessor(DataFormatPreprocessor):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
     ):
@@ -596,7 +601,7 @@ class PicklePreprocessor(DataFormatPreprocessor):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
         callbacks=None,
@@ -625,10 +630,10 @@ class PicklePreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
+            mode="prediction",
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            mode="prediction",
         )
         return dataset, training_set_metadata, None
 
@@ -644,7 +649,7 @@ class FatherPreprocessor(DataFormatPreprocessor):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
         callbacks=None,
@@ -673,10 +678,10 @@ class FatherPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
+            mode="prediction",
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            mode="prediction",
         )
         return dataset, training_set_metadata, None
 
@@ -692,7 +697,7 @@ class FWFPreprocessor(DataFormatPreprocessor):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
         callbacks=None,
@@ -721,10 +726,10 @@ class FWFPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
+            mode="prediction",
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            mode="prediction",
         )
         return dataset, training_set_metadata, None
 
@@ -740,7 +745,7 @@ class HTMLPreprocessor(DataFormatPreprocessor):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
         callbacks=None,
@@ -769,10 +774,10 @@ class HTMLPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
+            mode="prediction",
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            mode="prediction",
         )
         return dataset, training_set_metadata, None
 
@@ -788,7 +793,7 @@ class ORCPreprocessor(DataFormatPreprocessor):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
         callbacks=None,
@@ -817,10 +822,10 @@ class ORCPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
+            mode="prediction",
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            mode="prediction",
         )
         return dataset, training_set_metadata, None
 
@@ -836,7 +841,7 @@ class SASPreprocessor(DataFormatPreprocessor):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
         callbacks=None,
@@ -865,10 +870,10 @@ class SASPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
+            mode="prediction",
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            mode="prediction",
         )
         return dataset, training_set_metadata, None
 
@@ -884,7 +889,7 @@ class SPSSPreprocessor(DataFormatPreprocessor):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
         callbacks=None,
@@ -913,10 +918,10 @@ class SPSSPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
+            mode="prediction",
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            mode="prediction",
         )
         return dataset, training_set_metadata, None
 
@@ -932,7 +937,7 @@ class StataPreprocessor(DataFormatPreprocessor):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
         callbacks=None,
@@ -961,10 +966,10 @@ class StataPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
+            mode="prediction",
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            mode="prediction",
         )
         return dataset, training_set_metadata, None
 
@@ -980,7 +985,7 @@ class HDF5Preprocessor(DataFormatPreprocessor):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
         callbacks=None,
@@ -1013,7 +1018,7 @@ class HDF5Preprocessor(DataFormatPreprocessor):
         test_set=None,
         training_set_metadata=None,
         skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
+        preprocessing_params=default_training_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
     ):
@@ -1084,13 +1089,30 @@ def build_dataset(
     dataset_df,
     features,
     global_preprocessing_parameters,
+    mode,
     metadata=None,
     backend=LOCAL_BACKEND,
     random_seed=default_random_seed,
     skip_save_processed_input=False,
     callbacks=None,
-    mode=None,
 ):
+    """Builds a dataset from a dataframe and a list of features.
+
+    Args:
+        dataset_df: Pandas or Dask dataframe
+        features: List of features
+        global_preprocessing_parameters: Global preprocessing parameters
+        mode: One of ['training', 'prediction']
+        metadata: Training set metadata if available
+        backend: Backend
+        random_seed: Random seed
+        skip_save_processed_input: Whether to skip saving the processed input
+        callbacks: List of callbacks
+
+    Returns:
+        A tuple of (dataset, metadata)
+    """
+
     df_engine = backend.df_engine
 
     if df_engine.partitioned:
@@ -1115,23 +1137,34 @@ def build_dataset(
 
     dataset_df = df_engine.parallelize(dataset_df)
 
-    sample_ratio = global_preprocessing_parameters["sample_ratio"]
-    if sample_ratio < 1.0:
-        logger.debug(f"sample {sample_ratio} of data")
-        dataset_df = dataset_df.sample(frac=sample_ratio)
+    if mode == "training":
+        sample_ratio = global_preprocessing_parameters["sample_ratio"]
+        if sample_ratio < 1.0:
+            if not df_engine.partitioned and len(dataset_df) * sample_ratio < 1:
+                raise ValueError(
+                    f"sample_ratio {sample_ratio} is too small for dataset of length {len(dataset_df)}. "
+                    f"Please increase sample_ratio or use a larger dataset."
+                )
+
+            logger.debug(f"sample {sample_ratio} of data")
+            dataset_df = dataset_df.sample(frac=sample_ratio, random_state=random_seed)
 
     # If persisting DataFrames in memory is enabled, we want to do this after
     # each batch of parallel ops in order to avoid redundant computation
     dataset_df = df_engine.persist(dataset_df)
 
+    if mode == "training":
+        default_preprocessing_parameters = default_training_preprocessing_parameters
+    elif mode == "prediction":
+        default_preprocessing_parameters = default_prediction_preprocessing_parameters
+    else:
+        raise ValueError(f"Invalid mode {mode}")
     global_preprocessing_parameters = merge_dict(default_preprocessing_parameters, global_preprocessing_parameters)
 
     # Get all the unique preprocessing features to compute
     feature_configs = []
     feature_hashes = set()
     for feature in features:
-        if PROC_COLUMN not in feature:
-            feature[PROC_COLUMN] = compute_feature_hash(feature)
         if feature[PROC_COLUMN] not in feature_hashes:
             feature_configs.append(feature)
             feature_hashes.add(feature[PROC_COLUMN])
@@ -1199,7 +1232,7 @@ def build_dataset(
         if column not in dataset_df:
             warnings.warn(
                 f"column: '{column}' is required by the dataset splitter with params: {split_params}, but '{column}' "
-                f"is not present in the `dataset_df` with columns: {dataset_df.columns}. This is acceptable in a "
+                f"is not present in the `dataset_df` with columns: {dataset_df.columns}. This is acceptable during "
                 "serving setting where dataset splitting is irrelevant. You may see this warning if, for example, the "
                 "model was trained with a configuration that used a stratified split on the target column, but for "
                 "live predictions, a value for the target column is not to be provided."
@@ -1224,7 +1257,15 @@ def build_dataset(
     # At this point, there should be no missing values left in the dataframe, unless
     # the DROP_ROW preprocessing option was selected, in which case we need to drop those
     # rows.
+    len_dataset_before_drop_rows = len(dataset)
     dataset = dataset.dropna()
+    len_dataset_after_drop_rows = len(dataset)
+
+    if len_dataset_before_drop_rows != len_dataset_after_drop_rows:
+        logger.warning(
+            f"Dropped a total of {len_dataset_before_drop_rows - len_dataset_after_drop_rows} rows out of "
+            f"{len_dataset_before_drop_rows} due to missing values"
+        )
 
     # NaNs introduced by outer join change dtype of dataset cols (upcast to float64), so we need to cast them back.
     col_name_to_dtype = {}
@@ -1241,7 +1282,66 @@ def build_dataset(
     # Remove partitions that are empty after removing NaNs
     dataset = backend.df_engine.remove_empty_partitions(dataset)
 
+    # Embed features with fixed encoders
+    dataset = embed_fixed_features(dataset, feature_configs, metadata, backend)
+
     return dataset, metadata
+
+
+def embed_fixed_features(
+    dataset: DataFrame, feature_configs: List[FeatureConfigDict], metadata: TrainingSetMetadataDict, backend: Backend
+) -> DataFrame:
+    """Transforms every input feature with cacheable encoder embeddings into its encoded form and updates
+    metadata."""
+    # Encode features in bulk at the end
+    features_to_encode = get_features_with_cacheable_fixed_embeddings(feature_configs, metadata)
+    if not features_to_encode:
+        return dataset
+
+    for feature in features_to_encode:
+        # Temporarily set to False to ensure proper encoding
+        metadata[feature[NAME]][PREPROCESSING]["cache_encoder_embeddings"] = False
+
+    batch_size = backend.tune_batch_size(create_embed_batch_size_evaluator(features_to_encode, metadata), len(dataset))
+    transform_fn = create_embed_transform_fn(features_to_encode, metadata)
+    results = backend.batch_transform(dataset, batch_size, transform_fn)
+
+    for feature in features_to_encode:
+        # Set metadata so we know to skip encoding the feature
+        metadata[feature[NAME]][PREPROCESSING]["cache_encoder_embeddings"] = True
+
+    return results
+
+
+def get_features_with_cacheable_fixed_embeddings(
+    feature_configs: List[FeatureConfigDict], metadata: TrainingSetMetadataDict
+) -> List[FeatureConfigDict]:
+    """Returns list of features with `cache_encoder_embeddings=True` set in the preprocessing config."""
+    features_to_encode = []
+    for feature_config in feature_configs:
+        # deal with encoders that have fixed preprocessing
+        if ENCODER in feature_config:
+            encoder_params = feature_config[ENCODER]
+            if TYPE in encoder_params:
+                preprocessing = metadata[feature_config[NAME]][PREPROCESSING]
+                if preprocessing.get("cache_encoder_embeddings"):
+                    # TODO(travis): passing in MODEL_ECD is a hack here that can be removed once we move to using
+                    # the config object everywhere in preprocessing. Then we won't need to do the lookup on the
+                    # encoder schema at all. This hack works for now because all encoders are supported by ECD, so
+                    # there is no chance of a GBM model using an encoder not supported by ECD, but this could change
+                    # in the future.
+                    encoder_class = get_encoder_cls(MODEL_ECD, feature_config[TYPE], encoder_params[TYPE])
+                    encoder = encoder_class.from_dict(encoder_params)
+                    if not encoder.can_cache_embeddings():
+                        raise ValueError(
+                            f"Set `cache_encoder_embeddings=True` for feature {feature_config[NAME]} with "
+                            f"encoder {encoder_params[TYPE]}, but encoder embeddings are not static."
+                        )
+
+                    # Convert to Ray Datasets, map batches to encode, then convert back to Dask
+                    features_to_encode.append(feature_config)
+
+    return features_to_encode
 
 
 def cast_columns(dataset_cols, features, backend) -> None:
@@ -1288,17 +1388,27 @@ def build_preprocessing_parameters(
             feature_name_to_preprocessing_parameters[feature_name] = metadata[feature_name][PREPROCESSING]
             continue
 
-        preprocessing_parameters = merge_preprocessing(feature_config, global_preprocessing_parameters)
-
-        # Update preprocessing parameters if encoders require fixed preprocessing parameters
-        preprocessing_parameters = merge_fixed_preprocessing_params(
-            feature_config[TYPE], preprocessing_parameters, feature_config.get(ENCODER, {})
+        preprocessing_parameters = feature_config[PREPROCESSING]
+        missing_value_strategy = preprocessing_parameters["missing_value_strategy"]
+        fill_value = precompute_fill_value(
+            dataset_cols, feature_config, missing_value_strategy, preprocessing_parameters, backend
         )
-
-        fill_value = precompute_fill_value(dataset_cols, feature_config, preprocessing_parameters, backend)
-
         if fill_value is not None:
             preprocessing_parameters.update({"computed_fill_value": fill_value})
+
+        # Handle outlier replacement
+        outlier_strategy = preprocessing_parameters.get("outlier_strategy")
+        if outlier_strategy is not None:
+            if outlier_strategy != missing_value_strategy:
+                outlier_fill_value = precompute_fill_value(
+                    dataset_cols, feature_config, outlier_strategy, preprocessing_parameters, backend
+                )
+            else:
+                # Use fill value from missing_value_strategy to avoid redundant computation
+                outlier_fill_value = fill_value
+
+            if outlier_fill_value is not None:
+                preprocessing_parameters.update({"computed_outlier_fill_value": outlier_fill_value})
 
         feature_name_to_preprocessing_parameters[feature_name] = preprocessing_parameters
 
@@ -1362,6 +1472,11 @@ def build_data(
         # Need to run this again here as cast_columns may have introduced new missing values
         handle_missing_values(input_cols, feature_config, preprocessing_parameters, backend)
 
+        # For features that support it, we perform outlier removal here using metadata computed on the full dataset
+        handle_outliers(
+            input_cols, feature_config, preprocessing_parameters, training_set_metadata[feature_config[NAME]], backend
+        )
+
         get_from_registry(feature_config[TYPE], get_base_type_registry()).add_feature_data(
             feature_config,
             input_cols,
@@ -1375,7 +1490,13 @@ def build_data(
     return proc_cols
 
 
-def balance_data(dataset_df: DataFrame, output_features: List[Dict], preprocessing_parameters: Dict, backend: Backend):
+def balance_data(
+    dataset_df: DataFrame,
+    output_features: List[Dict],
+    preprocessing_parameters: Dict,
+    backend: Backend,
+    random_seed: int,
+):
     """The purpose of this function is to balance the training dataset using either over-sampling or under-
     sampling.
 
@@ -1384,15 +1505,10 @@ def balance_data(dataset_df: DataFrame, output_features: List[Dict], preprocessi
         output_features: List of feature configs.
         preprocessing_parameters: Dictionary of the global preprocessing parameters.
         backend: Backend for data processing.
+        random_seed: Integer to seed the random sampling to ensure determinism.
 
     Returns: An over-sampled or under-sampled training dataset.
     """
-
-    if len(output_features) != 1:
-        raise ValueError("Class balancing is only available for datasets with a single output feature")
-    if output_features[0][TYPE] != BINARY:
-        raise ValueError("Class balancing is only supported for binary output types")
-
     target = output_features[0][PROC_COLUMN]
 
     if backend.df_engine.partitioned:
@@ -1404,35 +1520,36 @@ def balance_data(dataset_df: DataFrame, output_features: List[Dict], preprocessi
     majority_df = dataset_df[dataset_df[target] == majority_class]
     minority_df = dataset_df[dataset_df[target] == minority_class]
 
-    if preprocessing_parameters["oversample_minority"] and preprocessing_parameters["undersample_majority"]:
-        raise ValueError(
-            "Cannot balance data if both oversampling an undersampling are specified in the config. "
-            "Must specify only one method"
-        )
-
     if preprocessing_parameters["oversample_minority"]:
         sample_fraction = (len(majority_df) * preprocessing_parameters["oversample_minority"]) / len(minority_df)
-        minority_df = minority_df.sample(frac=sample_fraction, replace=True)
+        minority_df = minority_df.sample(frac=sample_fraction, replace=True, random_state=random_seed)
     elif preprocessing_parameters["undersample_majority"]:
         sample_fraction = int(len(minority_df) / preprocessing_parameters["undersample_majority"]) / len(majority_df)
-        majority_df = majority_df.sample(frac=sample_fraction, replace=False)
+        majority_df = majority_df.sample(frac=sample_fraction, replace=False, random_state=random_seed)
 
     balanced_df = backend.df_engine.concat([minority_df, majority_df])
 
     return balanced_df
 
 
-def precompute_fill_value(dataset_cols, feature, preprocessing_parameters: PreprocessingConfigDict, backend):
+def precompute_fill_value(
+    dataset_cols, feature, missing_value_strategy: str, preprocessing_parameters: PreprocessingConfigDict, backend
+):
     """Precomputes the fill value for a feature.
 
     NOTE: this is called before NaNs are removed from the dataset. Modifications here must handle NaNs gracefully.
     NOTE: this is called before columns are cast. Modifications here must handle dtype conversion gracefully.
     """
-    missing_value_strategy = preprocessing_parameters["missing_value_strategy"]
     if missing_value_strategy == FILL_WITH_CONST:
         return preprocessing_parameters["fill_value"]
     elif missing_value_strategy == FILL_WITH_MODE:
-        return dataset_cols[feature[COLUMN]].value_counts().index[0]
+        # Requires separate handling if Dask since Dask has lazy evaluation
+        # Otherwise, dask returns a Dask index structure instead of a value to use as a fill value
+        return (
+            dataset_cols[feature[COLUMN]].value_counts().index.compute()[0]
+            if is_dask_series_or_df(dataset_cols[feature[COLUMN]], backend)
+            else dataset_cols[feature[COLUMN]].value_counts().index[0]
+        )
     elif missing_value_strategy == FILL_WITH_MEAN:
         if feature[TYPE] != NUMBER:
             raise ValueError(
@@ -1473,10 +1590,31 @@ def precompute_fill_value(dataset_cols, feature, preprocessing_parameters: Prepr
 @DeveloperAPI
 def handle_missing_values(dataset_cols, feature, preprocessing_parameters: PreprocessingConfigDict, backend):
     missing_value_strategy = preprocessing_parameters["missing_value_strategy"]
-
-    # Check for the precomputed fill value in the metadata
     computed_fill_value = preprocessing_parameters.get("computed_fill_value")
+    _handle_missing_values(dataset_cols, feature, missing_value_strategy, computed_fill_value, backend)
 
+
+@DeveloperAPI
+def handle_outliers(dataset_cols, feature, preprocessing_parameters: PreprocessingConfigDict, metadata, backend):
+    outlier_strategy = preprocessing_parameters.get("outlier_strategy")
+    if outlier_strategy is None:
+        return
+
+    outlier_threshold = preprocessing_parameters["outlier_threshold"]
+    computed_fill_value = preprocessing_parameters.get("computed_outlier_fill_value")
+
+    # Identify all outliers and set them to NA so they can be removed
+    series = dataset_cols[feature[COLUMN]]
+    dataset_cols[feature[COLUMN]] = series.mask(
+        series.sub(metadata["mean"]).div(metadata["std"]).abs().gt(outlier_threshold)
+    )
+
+    _handle_missing_values(dataset_cols, feature, outlier_strategy, computed_fill_value, backend)
+
+
+def _handle_missing_values(
+    dataset_cols, feature, missing_value_strategy: str, computed_fill_value: Optional[float], backend
+):
     if (
         missing_value_strategy in {FILL_WITH_CONST, FILL_WITH_MODE, FILL_WITH_MEAN, FILL_WITH_FALSE}
         and computed_fill_value is not None
@@ -1501,7 +1639,16 @@ def handle_missing_values(dataset_cols, feature, preprocessing_parameters: Prepr
         # Here we only drop from this series, but after preprocessing we'll do a second
         # round of dropping NA values from the entire output dataframe, which will
         # result in the removal of the rows.
+        len_before_dropped_rows = len(dataset_cols[feature[COLUMN]])
         dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].dropna()
+        len_after_dropped_rows = len(dataset_cols[feature[COLUMN]])
+
+        if len_before_dropped_rows != len_after_dropped_rows:
+            logger.warning(
+                f"DROP_ROW missing value strategy applied. Dropped {len_before_dropped_rows - len_after_dropped_rows} "
+                f"samples out of {len_before_dropped_rows} from column {feature[COLUMN]}. The rows containing these "
+                f"samples will ultimately be dropped from the dataset."
+            )
     else:
         raise ValueError(f"Invalid missing value strategy {missing_value_strategy}")
 
@@ -1536,6 +1683,11 @@ def load_metadata(metadata_file_path: str) -> TrainingSetMetadataDict:
     return training_set_metadata
 
 
+def drop_extra_cols(features, dfs):
+    retain_cols = list({feature[PROC_COLUMN]: True for feature in features}.keys())
+    return tuple(df[retain_cols] if df is not None else df for df in dfs)
+
+
 def preprocess_for_training(
     config,
     dataset=None,
@@ -1545,7 +1697,7 @@ def preprocess_for_training(
     training_set_metadata=None,
     data_format=None,
     skip_save_processed_input=False,
-    preprocessing_params=default_preprocessing_parameters,
+    preprocessing_params=default_training_preprocessing_parameters,
     backend=LOCAL_BACKEND,
     random_seed=default_random_seed,
     callbacks=None,
@@ -1555,6 +1707,11 @@ def preprocess_for_training(
     # sanity check to make sure some data source is provided
     if dataset is None and training_set is None:
         raise ValueError("No training data is provided!")
+
+    # preload ludwig datasets
+    dataset, training_set, validation_set, test_set = load_dataset_uris(
+        dataset, training_set, validation_set, test_set, backend
+    )
 
     # determine data format if not provided or auto
     if not data_format or data_format == "auto":
@@ -1593,14 +1750,14 @@ def preprocess_for_training(
 
         if data_format in CACHEABLE_FORMATS:
             with backend.storage.cache.use_credentials():
+                # cache.get() returns valid indicating if the checksum for the current config
+                # is equal to that from the cached training set metadata, as well as the paths to the
+                # cached training set metadata, training set, validation_set, test set
                 cache_results = cache.get()
                 if cache_results is not None:
                     valid, *cache_values = cache_results
                     if valid:
-                        logger.info(
-                            "Found cached dataset and meta.json with the same filename "
-                            "of the dataset, using them instead"
-                        )
+                        logger.info(_get_cache_hit_message(cache))
                         training_set_metadata, training_set, test_set, validation_set = cache_values
                         config["data_hdf5_fp"] = training_set
                         data_format = backend.cache.data_format
@@ -1609,11 +1766,16 @@ def preprocess_for_training(
                     else:
                         logger.info(
                             "Found cached dataset and meta.json with the same filename "
-                            "of the dataset, but checksum don't match, "
+                            "of the dataset, but checksums don't match, "
                             "if saving of processed input is not skipped "
                             "they will be overridden"
                         )
                         cache.delete()
+                else:
+                    logger.info(
+                        f"No cached dataset found at {cache.get_cached_obj_path('training')}. "
+                        "Preprocessing the dataset."
+                    )
 
         training_set_metadata[CHECKSUM] = cache.checksum
         data_format_processor = get_from_registry(data_format, data_format_preprocessor_registry)
@@ -1718,7 +1880,7 @@ def _preprocess_file_for_training(
     training_set_metadata=None,
     read_fn=read_csv,
     skip_save_processed_input=False,
-    preprocessing_params=default_preprocessing_parameters,
+    preprocessing_params=default_training_preprocessing_parameters,
     backend=LOCAL_BACKEND,
     random_seed=default_random_seed,
     callbacks=None,
@@ -1750,12 +1912,12 @@ def _preprocess_file_for_training(
             dataset_df,
             features,
             preprocessing_params,
+            mode="training",
             metadata=training_set_metadata,
             backend=backend,
             random_seed=random_seed,
             skip_save_processed_input=skip_save_processed_input,
             callbacks=callbacks,
-            mode="training",
         )
 
     elif training_set:
@@ -1775,18 +1937,20 @@ def _preprocess_file_for_training(
             concatenated_df,
             features,
             preprocessing_params,
+            mode="training",
             metadata=training_set_metadata,
             backend=backend,
             random_seed=random_seed,
             callbacks=callbacks,
-            mode="training",
         )
 
     else:
         raise ValueError("either data or data_train have to be not None")
 
     logger.debug("split train-val-test")
-    training_data, validation_data, test_data = split_dataset(data, preprocessing_params, backend, random_seed)
+    training_data, validation_data, test_data = drop_extra_cols(
+        features, split_dataset(data, preprocessing_params, backend, random_seed)
+    )
 
     if dataset and backend.is_coordinator() and not skip_save_processed_input:
         logger.debug("writing split file")
@@ -1802,7 +1966,9 @@ def _preprocess_file_for_training(
 
     logger.info("Building dataset: DONE")
     if preprocessing_params["oversample_minority"] or preprocessing_params["undersample_majority"]:
-        training_data = balance_data(training_data, config["output_features"], preprocessing_params, backend)
+        training_data = balance_data(
+            training_data, config["output_features"], preprocessing_params, backend, random_seed
+        )
 
     return training_data, test_data, validation_data, training_set_metadata
 
@@ -1815,7 +1981,7 @@ def _preprocess_df_for_training(
     validation_set=None,
     test_set=None,
     training_set_metadata=None,
-    preprocessing_params=default_preprocessing_parameters,
+    preprocessing_params=default_training_preprocessing_parameters,
     backend=LOCAL_BACKEND,
     random_seed=default_random_seed,
     callbacks=None,
@@ -1842,19 +2008,21 @@ def _preprocess_df_for_training(
         dataset,
         features,
         preprocessing_params,
+        mode="training",
         metadata=training_set_metadata,
         random_seed=random_seed,
         backend=backend,
         callbacks=callbacks,
-        mode="training",
     )
 
     logger.debug("split train-val-test")
-    training_set, validation_set, test_set = split_dataset(data, preprocessing_params, backend, random_seed)
+    training_set, validation_set, test_set = drop_extra_cols(
+        features, split_dataset(data, preprocessing_params, backend, random_seed)
+    )
 
     logger.info("Building dataset: DONE")
     if preprocessing_params["oversample_minority"] or preprocessing_params["undersample_majority"]:
-        training_set = balance_data(training_set, config["output_features"], preprocessing_params, backend)
+        training_set = balance_data(training_set, config["output_features"], preprocessing_params, backend, random_seed)
 
     return training_set, test_set, validation_set, training_set_metadata
 
@@ -1891,6 +2059,9 @@ def preprocess_for_prediction(
     if isinstance(dataset, Dataset):
         return dataset, training_set_metadata
 
+    # preload ludwig datasets
+    dataset, _, _, _ = load_dataset_uris(dataset, None, None, None, backend)
+
     # determine data format if not provided or auto
     if not data_format or data_format == "auto":
         data_format = figure_data_format(dataset)
@@ -1901,10 +2072,13 @@ def preprocess_for_prediction(
         if num_overrides > 0:
             logger.warning("Using in_memory = False is not supported " "with {} data format.".format(data_format))
 
-    preprocessing_params = merge_config_preprocessing_with_feature_specific_defaults(
-        config.get(PREPROCESSING, {}), config.get(DEFAULTS, {})
-    )
-    preprocessing_params = merge_dict(default_preprocessing_parameters, preprocessing_params)
+    preprocessing_params = {}
+    config_defaults = config.get(DEFAULTS, {})
+    for feature_type in config_defaults:
+        preprocessing_params[feature_type] = config_defaults[feature_type].get(PREPROCESSING, {})
+    preprocessing_params[SPLIT] = config.get(PREPROCESSING, {}).get(SPLIT, {})
+
+    preprocessing_params = merge_dict(default_prediction_preprocessing_parameters, preprocessing_params)
 
     # if training_set_metadata is a string, assume it's a path to load the json
     if training_set_metadata and isinstance(training_set_metadata, str):
@@ -1936,10 +2110,7 @@ def preprocess_for_prediction(
             if cache_results is not None:
                 valid, *cache_values = cache_results
                 if valid:
-                    logger.info(
-                        "Found cached dataset and meta.json with the same filename "
-                        "of the input file, using them instead"
-                    )
+                    logger.info(_get_cache_hit_message(cache))
                     training_set_metadata, training_set, test_set, validation_set = cache_values
                     config["data_hdf5_fp"] = training_set
                     data_format = backend.cache.data_format
@@ -1971,7 +2142,9 @@ def preprocess_for_prediction(
 
         if split != FULL:
             logger.debug("split train-val-test")
-            training_set, validation_set, test_set = split_dataset(dataset, preprocessing_params, backend)
+            training_set, validation_set, test_set = drop_extra_cols(
+                features, split_dataset(dataset, preprocessing_params, backend)
+            )
 
     if split == TRAINING:
         dataset = training_set
@@ -1993,3 +2166,14 @@ def preprocess_for_prediction(
         )
 
     return dataset, training_set_metadata
+
+
+def _get_cache_hit_message(cache: DatasetCache) -> str:
+    return (
+        "Found cached dataset and meta.json with the same filename of the dataset.\n"
+        "Using cached values instead of preprocessing the dataset again.\n"
+        f"- Cached training set metadata path: {cache.get_cached_obj_path(META)}\n"
+        f"- Cached training set path: {cache.get_cached_obj_path(TRAINING)}\n"
+        f"- Cached validation set path: {cache.get_cached_obj_path(VALIDATION)}\n"
+        f"- Cached test set path: {cache.get_cached_obj_path(TEST)}"
+    )

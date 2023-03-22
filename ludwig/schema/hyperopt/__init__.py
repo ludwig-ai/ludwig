@@ -65,7 +65,7 @@ class HyperoptConfig(schema_utils.BaseMarshmallowConfig, ABC):
         )
     )
 
-    parameters: Dict = schema_utils.Dict()
+    parameters: Dict = schema_utils.Dict(allow_none=False)
 
 
 @DeveloperAPI
@@ -73,8 +73,17 @@ def get_hyperopt_jsonschema():
     props = schema_utils.unload_jsonschema_from_marshmallow_class(HyperoptConfig)["properties"]
 
     return {
-        "type": "object",
+        "type": ["object", "null"],
         "properties": props,
         "title": "hyperopt_options",
         "description": "Settings for hyperopt",
     }
+
+
+@DeveloperAPI
+class HyperoptField(schema_utils.DictMarshmallowField):
+    def __init__(self):
+        super().__init__(HyperoptConfig, default_missing=True)
+
+    def _jsonschema_type_mapping(self):
+        return get_hyperopt_jsonschema()

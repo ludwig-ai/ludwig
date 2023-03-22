@@ -1,25 +1,25 @@
-from marshmallow_dataclass import dataclass
-
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import DROP_ROW, MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING, TEXT
+from ludwig.constants import DROP_ROW, FILL_WITH_CONST, MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING, TEXT
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor
-from ludwig.schema.metadata import FEATURE_METADATA
+from ludwig.schema.metadata import FEATURE_METADATA, PREPROCESSING_METADATA
+from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
+from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils import strings_utils
 from ludwig.utils.tokenizers import tokenizer_registry
 
 
 @DeveloperAPI
 @register_preprocessor(TEXT)
-@dataclass(repr=False)
+@ludwig_dataclass
 class TextPreprocessingConfig(BasePreprocessingConfig):
     """TextPreprocessingConfig is a dataclass that configures the parameters used for a text input feature."""
 
     pretrained_model_name_or_path: str = schema_utils.String(
         default=None,
         allow_none=True,
-        description="This can be either the name of a pretrained HuggingFace model or a path where it was downloaded",
+        description="This can be either the name of a pretrained HuggingFace model or a path where it was downloaded.",
         parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["pretrained_model_name_or_path"],
     )
 
@@ -35,15 +35,24 @@ class TextPreprocessingConfig(BasePreprocessingConfig):
         default=None,
         allow_none=True,
         description="Filepath string to a UTF-8 encoded file containing the sequence's vocabulary. On each line the "
-        "first string until \t or \n is considered a word.",
+        "first string until `\\t` or `\\n` is considered a word.",
         parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["vocab_file"],
+    )
+
+    sequence_length: int = schema_utils.PositiveInteger(
+        default=None,
+        allow_none=True,
+        description="The desired length (number of tokens) of the sequence. Sequences that are longer than this value "
+        "will be truncated and sequences shorter than this value will be padded. If None, sequence length will be "
+        "inferred from the training dataset.",
     )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=256,
-        allow_none=False,
-        description="The maximum length (number of tokens) of the text. Texts that are longer than this value will be "
-        "truncated, while texts that are shorter will be padded.",
+        allow_none=True,
+        description="The maximum length (number of tokens) of the sequence. Sequences that are longer than this value "
+        "will be truncated. Useful as a stopgap measure if `sequence_length` is set to `None`. If `None`, max sequence "
+        "length will be inferred from the training dataset.",
         parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["max_sequence_length"],
     )
 
@@ -75,7 +84,7 @@ class TextPreprocessingConfig(BasePreprocessingConfig):
         ["left", "right"],
         default="right",
         allow_none=False,
-        description="the direction of the padding. right and left are available options.",
+        description="The direction of the padding.",
         parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["padding"],
     )
 
@@ -87,16 +96,18 @@ class TextPreprocessingConfig(BasePreprocessingConfig):
 
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
-        default="fill_with_const",
+        default=FILL_WITH_CONST,
         allow_none=False,
-        description="What strategy to follow when there's a missing value in a text column",
+        description="What strategy to follow when there's a missing value in a text column.",
         parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["missing_value_strategy"],
     )
 
     fill_value: str = schema_utils.String(
         default=strings_utils.UNKNOWN_SYMBOL,
         allow_none=False,
-        description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
+        description=(
+            "The value to replace missing values with in case the `missing_value_strategy` is `fill_with_const`."
+        ),
         parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["fill_value"],
     )
 
@@ -104,7 +115,7 @@ class TextPreprocessingConfig(BasePreprocessingConfig):
         default=strings_utils.UNKNOWN_SYMBOL,
         allow_none=False,
         description="The internally computed fill value to replace missing values with in case the "
-        "missing_value_strategy is fill_with_mode or fill_with_mean",
+        "`missing_value_strategy` is `fill_with_mode` or `fill_with_mean`.",
         parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["computed_fill_value"],
     )
 
@@ -115,15 +126,76 @@ class TextPreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["ngram_size"],
     )
 
+    cache_encoder_embeddings: bool = schema_utils.Boolean(
+        default=False,
+        description=(
+            "For pretrained encoders, compute encoder embeddings in preprocessing, "
+            "speeding up training time considerably. Only supported when `encoder.trainable=false`."
+        ),
+        parameter_metadata=PREPROCESSING_METADATA["cache_encoder_embeddings"],
+    )
+
+    compute_idf: bool = schema_utils.Boolean(
+        default=False,
+        parameter_metadata=INTERNAL_ONLY,
+    )
+
 
 @DeveloperAPI
 @register_preprocessor("text_output")
-@dataclass(repr=False)
+@ludwig_dataclass
 class TextOutputPreprocessingConfig(TextPreprocessingConfig):
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
         default=DROP_ROW,
         allow_none=False,
-        description="What strategy to follow when there's a missing value in a text output feature",
+        description="What strategy to follow when there's a missing value in a text output feature.",
         parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["missing_value_strategy"],
+    )
+
+    sequence_length: int = schema_utils.PositiveInteger(
+        default=None,
+        allow_none=True,
+        description="The desired length (number of tokens) of the sequence. Sequences that are longer than this value "
+        "will be truncated and sequences shorter than this value will be padded. If None, sequence length will be "
+        "inferred from the training dataset.",
+        parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["sequence_length"],
+    )
+
+    max_sequence_length: int = schema_utils.PositiveInteger(
+        default=256,
+        allow_none=True,
+        description="The maximum length (number of tokens) of the sequence. Sequences that are longer than this value "
+        "will be truncated. Useful as a stopgap measure if `sequence_length` is set to `None`. If `None`, max sequence "
+        "length will be inferred from the training dataset.",
+        parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["max_sequence_length"],
+    )
+
+    tokenizer: str = schema_utils.StringOptions(
+        tokenizer_registry.keys(),
+        default="space_punct",
+        allow_none=False,
+        description="Defines how to map from the raw string content of the dataset column to a sequence of elements.",
+        parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["tokenizer"],
+    )
+
+    lowercase: bool = schema_utils.Boolean(
+        default=True,
+        description="If true, converts the string to lowercase before tokenizing.",
+        parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["lowercase"],
+    )
+
+    most_common: int = schema_utils.PositiveInteger(
+        default=20000,
+        allow_none=False,
+        description="The maximum number of most common tokens in the vocabulary. If the data contains more than this "
+        "amount, the most infrequent symbols will be treated as unknown.",
+        parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["most_common"],
+    )
+
+    ngram_size: int = schema_utils.PositiveInteger(
+        default=2,
+        allow_none=False,
+        description="The size of the ngram when using the `ngram` tokenizer (e.g, 2 = bigram, 3 = trigram, etc.).",
+        parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["ngram_size"],
     )

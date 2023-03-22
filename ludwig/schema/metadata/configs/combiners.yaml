@@ -1,7 +1,6 @@
-ComparatorCombiner:
+comparator:
     type:
-        short_description:
-            Used for recommendation problems, features associated with distinct entities, output depends on entity-level comparison.
+        short_description: Used for recommendation problems, features associated with distinct entities, output depends on entity-level comparison.
         long_description:
             The comparator combiner compares the hidden representation of two entities defined by lists of
             features. It assumes all outputs from encoders are tensors of size `b x h` where `b` is the batch
@@ -20,7 +19,7 @@ ComparatorCombiner:
             Changing the activation functions has an impact
             on the computational load of the model and might require further hypterparameter
             tuning
-        expected_impact: 1
+        expected_impact: 2
         suggested_values:
             The default value will work well in the majority of the
             cases
@@ -80,10 +79,12 @@ ComparatorCombiner:
         literature_references:
             - https://ludwig.ai/0.6/configuration/combiner/#comparator-combiner
         ui_display_name: Entity 1
+        expected_impact: 3
     entity_2:
         literature_references:
             - https://ludwig.ai/0.6/configuration/combiner/#comparator-combiner
         ui_display_name: Entity 2
+        expected_impact: 3
     fc_layers:
         default_value_reasoning:
             By default the stack is built by using num_fc_layers,
@@ -145,6 +146,7 @@ ComparatorCombiner:
         ui_display_name: Normalization Type
     norm_params:
         ui_display_name: null
+        expected_impact: 1
     num_fc_layers:
         default_value_reasoning:
             The encoder already has learnable parameters.Sometimes
@@ -156,7 +158,7 @@ ComparatorCombiner:
             risk of overfitting.
         example_value:
             - 1
-        expected_impact: 1
+        expected_impact: 3
         other_information:
             Not all modules that have fc_layers also have an accompanying
             num_fc_layers parameter. Where both are present, fc_layers takes precedent
@@ -181,7 +183,7 @@ ComparatorCombiner:
             and there's a higher risk of overfitting. If it seems like the model could
             use even more capacity, consider increasing the number of fully connected
             layers, or explore other architectures.
-        expected_impact: 2
+        expected_impact: 3
         other_information:
             If num_fc_layers=0 and fc_layers=None, and there are no
             fully connected layers defined on the module, then this parameter may
@@ -235,7 +237,7 @@ ComparatorCombiner:
             provides a few good options. See this nice discussion from [Weights and
             Biases](https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.)
             for more information.
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - "Weights and Biases blog post: https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster."
             - "Xavier et al. paper: http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf"
@@ -247,10 +249,9 @@ ComparatorCombiner:
             The default choice (`xavier_uniform`) is a suitable starting point for
             most tasks.
         ui_display_name: Layer Weights Initializer
-ConcatCombiner:
+concat:
     type:
-        short_description:
-            Concatenates outputs of all encoders and passes concatenated representation through stack of fully connected layers.
+        short_description: Concatenates outputs of all encoders and passes concatenated representation through stack of fully connected layers.
         long_description:
             The concat combiner assumes all outputs from encoders are tensors of size `b x h` where `b` is
             the batch size and `h` is the hidden dimension, which can differ for each input. It
@@ -269,7 +270,7 @@ ConcatCombiner:
             Changing the activation functions has an impact
             on the computational load of the model and might require further hypterparameter
             tuning
-        expected_impact: 1
+        expected_impact: 2
         suggested_values:
             The default value will work well in the majority of the
             cases
@@ -361,6 +362,7 @@ ConcatCombiner:
         ui_display_name: Fully Connected Layers
     flatten_inputs:
         ui_display_name: null
+        expected_impact: 1
     norm:
         default_value_reasoning:
             While batch normalization and layer normalization
@@ -388,6 +390,7 @@ ConcatCombiner:
         ui_display_name: Normalization Type
     norm_params:
         ui_display_name: null
+        expected_impact: 1
     num_fc_layers:
         default_value_reasoning:
             The encoder already has learnable parameters.Sometimes
@@ -399,7 +402,7 @@ ConcatCombiner:
             risk of overfitting.
         example_value:
             - 1
-        expected_impact: 1
+        expected_impact: 3
         other_information:
             Not all modules that have fc_layers also have an accompanying
             num_fc_layers parameter. Where both are present, fc_layers takes precedent
@@ -424,7 +427,7 @@ ConcatCombiner:
             and there's a higher risk of overfitting. If it seems like the model could
             use even more capacity, consider increasing the number of fully connected
             layers, or explore other architectures.
-        expected_impact: 2
+        expected_impact: 3
         other_information:
             If num_fc_layers=0 and fc_layers=None, and there are no
             fully connected layers defined on the module, then this parameter may
@@ -440,6 +443,7 @@ ConcatCombiner:
         ui_display_name: Output Size
     residual:
         ui_display_name: null
+        expected_impact: 1
     use_bias:
         default_value_reasoning:
             "Bias terms may improve model accuracy, and don't
@@ -480,7 +484,7 @@ ConcatCombiner:
             provides a few good options. See this nice discussion from [Weights and
             Biases](https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.)
             for more information.
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - "Weights and Biases blog post: https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster."
             - "Xavier et al. paper: http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf"
@@ -492,10 +496,9 @@ ConcatCombiner:
             The default choice (`xavier_uniform`) is a suitable starting point for
             most tasks.
         ui_display_name: Layer Weights Initializer
-ProjectAggregateCombiner:
+project_aggregate:
     type:
-        short_description:
-            Projects the encoder outputs to a common size then takes the average.
+        short_description: Projects the encoder outputs to a common size then takes the average.
         long_description:
             The project aggregate combiner projects the input vectors to a common size
             and then aggregates them by taking the average across all the vectors.
@@ -508,7 +511,7 @@ ProjectAggregateCombiner:
             Changing the activation functions has an impact
             on the computational load of the model and might require further hypterparameter
             tuning
-        expected_impact: 1
+        expected_impact: 2
         suggested_values:
             The default value will work well in the majority of the
             cases
@@ -625,6 +628,7 @@ ProjectAggregateCombiner:
         ui_display_name: Normalization Type
     norm_params:
         ui_display_name: null
+        expected_impact: 1
     num_fc_layers:
         default_value_reasoning:
             The encoder already has learnable parameters.Sometimes
@@ -636,7 +640,7 @@ ProjectAggregateCombiner:
             risk of overfitting.
         example_value:
             - 1
-        expected_impact: 1
+        expected_impact: 3
         other_information:
             Not all modules that have fc_layers also have an accompanying
             num_fc_layers parameter. Where both are present, fc_layers takes precedent
@@ -661,7 +665,7 @@ ProjectAggregateCombiner:
             and there's a higher risk of overfitting. If it seems like the model could
             use even more capacity, consider increasing the number of fully connected
             layers, or explore other architectures.
-        expected_impact: 2
+        expected_impact: 3
         other_information:
             If num_fc_layers=0 and fc_layers=None, and there are no
             fully connected layers defined on the module, then this parameter may
@@ -677,8 +681,10 @@ ProjectAggregateCombiner:
         ui_display_name: Output Size
     projection_size:
         ui_display_name: null
+        expected_impact: 1
     residual:
         ui_display_name: null
+        expected_impact: 1
     use_bias:
         default_value_reasoning:
             "Bias terms may improve model accuracy, and don't
@@ -719,7 +725,7 @@ ProjectAggregateCombiner:
             provides a few good options. See this nice discussion from [Weights and
             Biases](https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.)
             for more information.
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - "Weights and Biases blog post: https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster."
             - "Xavier et al. paper: http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf"
@@ -731,10 +737,9 @@ ProjectAggregateCombiner:
             The default choice (`xavier_uniform`) is a suitable starting point for
             most tasks.
         ui_display_name: Layer Weights Initializer
-SequenceCombiner:
+sequence:
     type:
-        short_description:
-            Stacks a sequence concat combiner with a sequence encoder.
+        short_description: Stacks a sequence concat combiner with a sequence encoder.
         long_description:
             The sequence combiner stacks a sequence concat combiner with a sequence encoder. All the
             considerations about input tensor ranks described for the sequence concat combiner apply also in
@@ -745,14 +750,16 @@ SequenceCombiner:
             the outputs for the sequence encoders also apply to the sequence combiner.
     encoder:
         ui_display_name: null
+        expected_impact: 3
     main_sequence_feature:
         ui_display_name: null
+        expected_impact: 3
     reduce_output:
         ui_display_name: null
-SequenceConcatCombiner:
+        expected_impact: 1
+sequence_concat:
     type:
-        short_description:
-            Concatenates the outputs of multiple sequence features.
+        short_description: Concatenates the outputs of multiple sequence features.
         long_description:
             The sequence_concat combiner assumes at least one output from the encoders is a tensor of size
             `b x s x h` where `b` is the batch size, `s` is the length of the sequence and `h` is the hidden
@@ -774,12 +781,13 @@ SequenceConcatCombiner:
             the concatenation of the h dimensions of all input features.
     main_sequence_feature:
         ui_display_name: null
+        expected_impact: 3
     reduce_output:
         ui_display_name: null
-TabNetCombiner:
+        expected_impact: 1
+tabnet:
     type:
-        short_description:
-            Tabnet is specifically tailored for high performance on tabular data.
+        short_description: Tabnet is specifically tailored for high performance on tabular data.
         long_description:
             The tabnet combiner implements the TabNet model, which uses attention and sparsity to achieve
             high performance on tabular data. It assumes all outputs from encoders are tensors of size b x h
@@ -788,6 +796,7 @@ TabNetCombiner:
             final b x h' tensor where h' is the user-specified output size.
         literature_references:
             - https://arxiv.org/abs/1908.07442
+        compute_tier: 1
     bn_epsilon:
         default_value_reasoning:
             Default value found in popular ML packages like Keras
@@ -831,6 +840,7 @@ TabNetCombiner:
             where x_hat is the estimated statistic and x_t is the new observed value."
         suggested_values: 0.01-0.2
         ui_display_name: Batch Norm Momentum
+        expected_impact: 1
     bn_virtual_bs:
         default_value_reasoning: Paper default.
         description_implications:
@@ -846,7 +856,7 @@ TabNetCombiner:
             of data, so the authors use it only in the generator network. A higher
             virtual batch size could improve normalization, but it also causes training
             to run slower since each batch will be sampled multiple times.
-        expected_impact: 2
+        expected_impact: 1
         literature_references:
             - https://paperswithcode.com/method/virtual-batch-normalization
         ui_display_name: "Ghost Normalization: Virtual batch size"
@@ -873,14 +883,19 @@ TabNetCombiner:
         ui_display_name: Dropout
     entmax_alpha:
         ui_display_name: null
+        expected_impact: 1
     entmax_mode:
         ui_display_name: null
+        expected_impact: 1
     num_shared_blocks:
         ui_display_name: null
+        expected_impact: 1
     num_steps:
         ui_display_name: null
+        expected_impact: 1
     num_total_blocks:
         ui_display_name: null
+        expected_impact: 1
     output_size:
         default_value_reasoning: A modest value, not too small, not too large.
         description_implications:
@@ -890,7 +905,7 @@ TabNetCombiner:
             and there's a higher risk of overfitting. If it seems like the model could
             use even more capacity, consider increasing the number of fully connected
             layers, or explore other architectures.
-        expected_impact: 2
+        expected_impact: 3
         other_information:
             If num_fc_layers=0 and fc_layers=None, and there are no
             fully connected layers defined on the module, then this parameter may
@@ -906,14 +921,16 @@ TabNetCombiner:
         ui_display_name: Output Size
     relaxation_factor:
         ui_display_name: null
+        expected_impact: 1
     size:
         ui_display_name: null
+        expected_impact: 3
     sparsity:
         ui_display_name: null
-TabTransformerCombiner:
+        expected_impact: 1
+tabtransformer:
     type:
-        short_description:
-            Projects and concatenates features, then passes them through a transformer.
+        short_description: Projects and concatenates features, then passes them through a transformer.
         long_description:
             The tabtransformer combiner combines input features in the following sequence of operations.
             Except for binary and number features, the combiner projects features to an embedding size.
@@ -931,6 +948,7 @@ TabTransformerCombiner:
             is the number of input features and `h` is the hidden / embedding size if no reduction is applied.
         literature_references:
             - https://arxiv.org/abs/2012.06678
+        compute_tier: 2
     bias_initializer:
         default_value_reasoning:
             It is possible and common to initialize the biases
@@ -1005,6 +1023,7 @@ TabTransformerCombiner:
         related_parameters:
             - hidden_size
         ui_display_name: Embed Input Feature Name
+        expected_impact: 3
     fc_activation:
         default_value_reasoning:
             The Rectified Linear Units (ReLU) function is the
@@ -1040,7 +1059,7 @@ TabTransformerCombiner:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         suggested_values: 0.05 - 0.8
@@ -1077,6 +1096,7 @@ TabTransformerCombiner:
         ui_display_name: Fully Connected Layers
     fc_residual:
         ui_display_name: null
+        expected_impact: 1
     hidden_size:
         default_value_reasoning: Not too big, not too small.
         description_implications:
@@ -1118,6 +1138,7 @@ TabTransformerCombiner:
         ui_display_name: Normalization Type
     norm_params:
         ui_display_name: null
+        expected_impact: 1
     num_fc_layers:
         default_value_reasoning:
             The encoder already has learnable parameters.Sometimes
@@ -1129,7 +1150,7 @@ TabTransformerCombiner:
             risk of overfitting.
         example_value:
             - 1
-        expected_impact: 1
+        expected_impact: 3
         other_information:
             Not all modules that have fc_layers also have an accompanying
             num_fc_layers parameter. Where both are present, fc_layers takes precedent
@@ -1193,7 +1214,7 @@ TabTransformerCombiner:
             and there's a higher risk of overfitting. If it seems like the model could
             use even more capacity, consider increasing the number of fully connected
             layers, or explore other architectures.
-        expected_impact: 2
+        expected_impact: 3
         other_information:
             If num_fc_layers=0 and fc_layers=None, and there are no
             fully connected layers defined on the module, then this parameter may
@@ -1209,6 +1230,7 @@ TabTransformerCombiner:
         ui_display_name: Output Size
     reduce_output:
         ui_display_name: null
+        expected_impact: 1
     transformer_output_size:
         default_value_reasoning: A modest value, not too small, not too large.
         description_implications:
@@ -1272,7 +1294,7 @@ TabTransformerCombiner:
             provides a few good options. See this nice discussion from [Weights and
             Biases](https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.)
             for more information.
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - "Weights and Biases blog post: https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster."
             - "Xavier et al. paper: http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf"
@@ -1284,10 +1306,9 @@ TabTransformerCombiner:
             The default choice (`xavier_uniform`) is a suitable starting point for
             most tasks.
         ui_display_name: Layer Weights Initializer
-TransformerCombiner:
+transformer:
     type:
-        short_description:
-            The transformer combiner combines input features using a stack of Transformer blocks.
+        short_description: The transformer combiner combines input features using a stack of Transformer blocks.
         long_description:
             The transformer combiner combines input features using a stack of Transformer blocks (from
             Attention Is All You Need). It assumes all outputs from encoders are tensors of size `b x h`
@@ -1301,6 +1322,7 @@ TransformerCombiner:
             no reduction is applied.
         literature_references:
             - https://arxiv.org/abs/1706.03762
+        compute_tier: 2
     bias_initializer:
         default_value_reasoning:
             It is possible and common to initialize the biases
@@ -1384,7 +1406,7 @@ TransformerCombiner:
             \ generalization."
         example_value:
             - 0.2
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
         suggested_values: 0.05 - 0.8
@@ -1462,6 +1484,7 @@ TransformerCombiner:
         ui_display_name: Normalization Type
     norm_params:
         ui_display_name: null
+        expected_impact: 1
     num_fc_layers:
         default_value_reasoning:
             The encoder already has learnable parameters.Sometimes
@@ -1473,7 +1496,7 @@ TransformerCombiner:
             risk of overfitting.
         example_value:
             - 1
-        expected_impact: 1
+        expected_impact: 3
         other_information:
             Not all modules that have fc_layers also have an accompanying
             num_fc_layers parameter. Where both are present, fc_layers takes precedent
@@ -1491,6 +1514,7 @@ TransformerCombiner:
         ui_display_name: Number of Fully Connected Layers
     num_heads:
         ui_display_name: null
+        expected_impact: 1
     num_layers:
         default_value_reasoning:
             The ideal number of layers depends on the data. For
@@ -1521,7 +1545,7 @@ TransformerCombiner:
             and there's a higher risk of overfitting. If it seems like the model could
             use even more capacity, consider increasing the number of fully connected
             layers, or explore other architectures.
-        expected_impact: 2
+        expected_impact: 3
         other_information:
             If num_fc_layers=0 and fc_layers=None, and there are no
             fully connected layers defined on the module, then this parameter may
@@ -1537,6 +1561,7 @@ TransformerCombiner:
         ui_display_name: Output Size
     reduce_output:
         ui_display_name: null
+        expected_impact: 1
     transformer_output_size:
         default_value_reasoning: A modest value, not too small, not too large.
         description_implications:
@@ -1600,7 +1625,7 @@ TransformerCombiner:
             provides a few good options. See this nice discussion from [Weights and
             Biases](https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.)
             for more information.
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - "Weights and Biases blog post: https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster."
             - "Xavier et al. paper: http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf"

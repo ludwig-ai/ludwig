@@ -22,7 +22,7 @@ import pytest
 
 from ludwig import visualize
 from ludwig.api import LudwigModel, TrainingStats
-from ludwig.constants import ENCODER, NAME, PREDICTIONS, PROBABILITIES, PROBABILITY, TRAINER, TYPE
+from ludwig.constants import BATCH_SIZE, ENCODER, NAME, PREDICTIONS, PROBABILITIES, PROBABILITY, TRAINER, TYPE
 from ludwig.data.split import get_splitter
 from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.utils.data_utils import read_csv
@@ -50,7 +50,7 @@ def run_api_experiment(input_features, output_features):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
     }
 
     model = LudwigModel(config)
@@ -108,7 +108,7 @@ class Experiment:
             "input_features": self.input_features,
             "output_features": self.output_features,
             "combiner": {"type": "concat", "output_size": 14},
-            TRAINER: {"epochs": 2},
+            TRAINER: {"epochs": 2, BATCH_SIZE: 128},
         }
         return LudwigModel(config, logging_level=logging.WARN)
 
@@ -654,6 +654,68 @@ def test_binary_threshold_vs_metric_vis_api(experiment_to_use):
                 positive_label,
                 model_names=["Model1", "Model2"],
                 output_directory=tmpvizdir,
+                file_format=viz_output,
+            )
+            figure_cnt = glob.glob(vis_output_pattern_pdf)
+            assert 1 == len(figure_cnt)
+
+
+def test_precision_recall_curves_vis_api(experiment_to_use):
+    """Ensure pdf and png figures can be saved via visualization API call.
+
+    :param experiment_to_use: Object containing trained model and results to
+        test visualization
+    :return: None
+    """
+    experiment = experiment_to_use
+    probabilities = experiment.probabilities
+    viz_outputs = ("pdf", "png")
+    positive_label = 1
+    with TemporaryDirectory() as tmpvizdir:
+        for viz_output in viz_outputs:
+            vis_output_pattern_pdf = tmpvizdir + f"/*.{viz_output}"
+            visualize.precision_recall_curves(
+                [probabilities, probabilities],
+                experiment.ground_truth,
+                experiment.ground_truth_metadata,
+                experiment.output_feature_name,
+                positive_label,
+                model_names=["Model1", "Model2"],
+                output_directory=tmpvizdir,
+                file_format=viz_output,
+            )
+            figure_cnt = glob.glob(vis_output_pattern_pdf)
+            assert 1 == len(figure_cnt)
+
+
+def test_precision_recall_curves_from_test_statistics_vis_api(csv_filename):
+    """Ensure pdf and png figures can be saved via visualization API call.
+
+    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :return: None
+    """
+    input_features = [binary_feature(), bag_feature()]
+    output_features = [binary_feature()]
+
+    with TemporaryDirectory() as tmpvizdir:
+        # Generate test data
+        data_csv = generate_data(
+            input_features, output_features, os.path.join(tmpvizdir, csv_filename), num_examples=1000
+        )
+        output_feature_name = output_features[0]["name"]
+
+        model = run_api_experiment(input_features, output_features)
+        data_df = read_csv(data_csv)
+        _, _, output_dir = model.train(dataset=data_df, output_directory=os.path.join(tmpvizdir, "results"))
+        test_stats, _, _ = model.evaluate(dataset=data_df, collect_overall_stats=True, output_directory=output_dir)
+        viz_outputs = ("pdf", "png")
+        for viz_output in viz_outputs:
+            vis_output_pattern_pdf = os.path.join(output_dir, f"*.{viz_output}")
+            visualize.precision_recall_curves_from_test_statistics(
+                [test_stats, test_stats],
+                output_feature_name,
+                model_names=["Model1", "Model2"],
+                output_directory=output_dir,
                 file_format=viz_output,
             )
             figure_cnt = glob.glob(vis_output_pattern_pdf)
