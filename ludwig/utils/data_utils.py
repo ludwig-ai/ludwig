@@ -209,9 +209,7 @@ def read_xsv(data_fp, df_lib=PANDAS_DF, separator=",", header=0, nrows=None, ski
         logger.warning("Failed to parse the CSV with pandas default way," " trying \\ as escape character.")
         df = df_lib.read_csv(data_fp, escapechar="\\", **kwargs)
 
-    from collections.abc import Iterator
-
-    if isinstance(df, Iterator):
+    if isinstance(df, collections.abc.Iterator):
         return next(df)
 
     return df
