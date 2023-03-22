@@ -347,13 +347,17 @@ def check_hyperopt_parameter_dicts(config: "ModelConfig") -> None:  # noqa: F821
     from ludwig.schema.hyperopt.utils import get_parameter_cls, parameter_config_registry
 
     if config.hyperopt is not None:
-        if not config.hyperopt.parameters:
-            raise ConfigValidationError(
-                "The config contains a `hyperopt` block, but no parameter search spaces were included."
-            )
-
-        # TODO: check that `parameter` references a valid config field
         for parameter, space in config.hyperopt.parameters.items():
+            current = config
+            for p in parameter.split("."):
+                try:
+                    current = current.__getattribute__(p)
+                except AttributeError:
+                    raise ConfigValidationError(
+                        f"The supplied hyperopt parameter {parameter} is not a valid config field. Check the Ludwig "
+                        "docs for the list of valid parameters."
+                    )
+
             try:
                 space_cls = get_parameter_cls(space["space"])
                 space_cls(**space)
