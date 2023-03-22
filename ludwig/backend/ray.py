@@ -24,6 +24,7 @@ import dask
 import numpy as np
 import pandas as pd
 import ray
+import ray.air as ra
 import ray.train as rt
 import torch
 import tqdm
@@ -244,7 +245,8 @@ def tune_batch_size_fn(
     **kwargs,
 ) -> int:
     # Pin GPU before loading the model to prevent memory leaking onto other devices
-    initialize_pytorch(local_rank=rt.local_rank(), local_size=_local_size())
+    local_rank = ra.session.get_local_rank() if _ray230 else rt.local_rank()
+    initialize_pytorch(local_rank=local_rank, local_size=_local_size())
     distributed = get_current_dist_strategy(allow_local=False)()
 
     try:
