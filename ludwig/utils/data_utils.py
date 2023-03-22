@@ -222,6 +222,9 @@ read_tsv = functools.partial(read_xsv, separator="\t")
 @DeveloperAPI
 @spread
 def read_json(data_fp, df_lib, normalize=False, **kwargs):
+    # Chunking is not supported for JSON files unless lines=True:
+    kwargs.pop("get_preview", None)
+
     if normalize:
         return df_lib.json_normalize(load_json(data_fp))
     else:
@@ -237,6 +240,9 @@ def read_jsonl(data_fp, df_lib, **kwargs):
 @DeveloperAPI
 @spread
 def read_excel(data_fp, df_lib, **kwargs):
+    # Chunking is not supported for excel files:
+    kwargs.pop("get_preview", None)
+
     fp_split = os.path.splitext(data_fp)
     if fp_split[1] == ".xls":
         excel_engine = "xlrd"
@@ -254,12 +260,23 @@ def read_excel(data_fp, df_lib, **kwargs):
 @DeveloperAPI
 @spread
 def read_parquet(data_fp, df_lib, **kwargs):
-    return inner_read(data_fp, df_lib.read_parquet, **kwargs)
+    if "get_preview" in kwargs:
+        import pyarrow.parquet as pq
+
+        preview = next(pq.ParquetFile(data_fp).iter_batches(batch_size=kwargs["get_preview"])).to_pandas()
+        if is_dask_lib(df_lib):
+            return df_lib.from_pandas(preview)
+        return preview
+
+    return df_lib.read_parquet(data_fp)
 
 
 @DeveloperAPI
 @spread
 def read_pickle(data_fp, df_lib, **kwargs):
+    # Chunking is not supported for pickle files:
+    kwargs.pop("get_preview", None)
+
     # https://github.com/dask/dask/issues/9055
     if is_dask_lib(df_lib):
         logger.warning("Falling back to pd.read_pickle() since dask backend does not support it")
@@ -277,6 +294,9 @@ def read_fwf(data_fp, df_lib, **kwargs):
 @DeveloperAPI
 @spread
 def read_feather(data_fp, df_lib, **kwargs):
+    # Chunking is not supported for feather files:
+    kwargs.pop("get_preview", None)
+
     # https://github.com/dask/dask/issues/9055
     if is_dask_lib(df_lib):
         logger.warning("Falling back to pd.read_feather() since dask backend does not support it")
@@ -287,6 +307,9 @@ def read_feather(data_fp, df_lib, **kwargs):
 @DeveloperAPI
 @spread
 def read_html(data_fp, df_lib, **kwargs):
+    # Chunking is not supported for html files:
+    kwargs.pop("get_preview", None)
+
     # https://github.com/dask/dask/issues/9055
     if is_dask_lib(df_lib):
         logger.warning("Falling back to pd.read_html() since dask backend does not support it")
@@ -297,22 +320,28 @@ def read_html(data_fp, df_lib, **kwargs):
 @DeveloperAPI
 @spread
 def read_orc(data_fp, df_lib, **kwargs):
+    # Chunking is not supported for orc files:
+    kwargs.pop("get_preview", None)
+
     return inner_read(data_fp, df_lib.read_orc, **kwargs)
 
 
 @DeveloperAPI
 @spread
-def read_sas(data_fp, df_lib):
+def read_sas(data_fp, df_lib, **kwargs):
     # https://github.com/dask/dask/issues/9055
     if is_dask_lib(df_lib):
         logger.warning("Falling back to pd.read_sas() since dask backend does not support it")
-        return dd.from_pandas(pd.read_sas(data_fp), npartitions=1)
-    return df_lib.read_sas(data_fp)
+        return dd.from_pandas(inner_read(data_fp, df_lib.read_sas, **kwargs), npartitions=1)
+    return inner_read(data_fp, df_lib.read_sas, **kwargs)
 
 
 @DeveloperAPI
 @spread
-def read_spss(data_fp, df_lib):
+def read_spss(data_fp, df_lib, **kwargs):
+    # Chunking is not supported for spss files:
+    kwargs.pop("get_preview", None)
+
     # https://github.com/dask/dask/issues/9055
     if is_dask_lib(df_lib):
         logger.warning("Falling back to pd.read_spss() since dask backend does not support it")
@@ -322,12 +351,12 @@ def read_spss(data_fp, df_lib):
 
 @DeveloperAPI
 @spread
-def read_stata(data_fp, df_lib):
+def read_stata(data_fp, df_lib, **kwargs):
     # https://github.com/dask/dask/issues/9055
     if is_dask_lib(df_lib):
         logger.warning("Falling back to pd.read_stata() since dask backend does not support it")
-        return dd.from_pandas(pd.read_stata(data_fp), npartitions=1)
-    return df_lib.read_stata(data_fp)
+        return dd.from_pandas(inner_read(data_fp, df_lib.read_stata, **kwargs), npartitions=1)
+    return inner_read(data_fp, df_lib.read_stata, **kwargs)
 
 
 @DeveloperAPI
