@@ -48,7 +48,6 @@ if TYPE_CHECKING:
     from ludwig.api import LudwigModel
 
 from ludwig.api_annotations import DeveloperAPI
-
 from ludwig.backend._ray210_compat import HorovodTrainerRay210, TunerRay210
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.backend.datasource import BinaryIgnoreNoneTypeDatasource
@@ -243,9 +242,9 @@ def tune_batch_size_fn(
     **kwargs,
 ) -> int:
     # Pin GPU before loading the model to prevent memory leaking onto other devices
-#<<<<<<< distributed-auto-batch
-#    initialize_pytorch(local_rank=rt.local_rank(), local_size=_local_size())
-#    distributed = get_current_dist_strategy(allow_local=False)()
+    # <<<<<<< distributed-auto-batch
+    #    initialize_pytorch(local_rank=rt.local_rank(), local_size=_local_size())
+    #    distributed = get_current_dist_strategy(allow_local=False)()
 
     #
     # As of Ray >= 2.1, to use ray.air.session.get_local_rank(), you need to be inside a train session
@@ -421,14 +420,12 @@ class RayAirRunner:
             train_loop_config=config,
             datasets=dataset,
             scaling_config=self.scaling_config,
-# <<<<<<< distributed-auto-batch
+            # <<<<<<< distributed-auto-batch
             # dataset_config=dataset_config,
             # run_config=RunConfig(callbacks=callbacks, verbose=1),
-
             dataset_config=self._get_dataset_configs(dataset, stream_window_size, data_loader_kwargs),
             run_config=RunConfig(callbacks=callbacks, verbose=0),
             **kwargs,
-
         )
 
         if exception_on_error:

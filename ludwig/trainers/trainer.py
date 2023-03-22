@@ -349,7 +349,6 @@ class Trainer(BaseTrainer):
 
         train_summary_writer.flush()
 
-
     def train_for_tuning(
         self,
         batch_size: int,
@@ -435,20 +434,20 @@ class Trainer(BaseTrainer):
                         # Not a CUDA error
                         raise
                     break
-# =======
-#        # When training on CPU, larger batch sizes offer limited benefits due to lack of effective
-#        # parallelization within a batch. As such, to increase chances of stable training, we cap the maximum
-#        # batch size at MAX_CPU_BATCH_SIZE
-#        max_batch_size = (
-#            self.max_batch_size if torch.cuda.is_available() else min(self.max_batch_size, MAX_CPU_BATCH_SIZE)
-#        )
-#
-#        self.dist_model.train()  # Sets model training mode.
-#
-#        evaluator = self._create_batch_size_evaluator()
-#        try:
-#            return evaluator.select_best_batch_size(len(training_set), max_batch_size, max_trials)
-# >>>>>>> master
+        # =======
+        #        # When training on CPU, larger batch sizes offer limited benefits due to lack of effective
+        #        # parallelization within a batch. As such, to increase chances of stable training, we cap the maximum
+        #        # batch size at MAX_CPU_BATCH_SIZE
+        #        max_batch_size = (
+        #            self.max_batch_size if torch.cuda.is_available() else min(self.max_batch_size, MAX_CPU_BATCH_SIZE)
+        #        )
+        #
+        #        self.dist_model.train()  # Sets model training mode.
+        #
+        #        evaluator = self._create_batch_size_evaluator()
+        #        try:
+        #            return evaluator.select_best_batch_size(len(training_set), max_batch_size, max_trials)
+        # >>>>>>> master
         finally:
             # Restore original parameters to defaults
             self.skip_save_model = skip_save_model
