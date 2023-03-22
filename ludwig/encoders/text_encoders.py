@@ -18,7 +18,7 @@ from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 import numpy as np
 import torch
-from peft import PeftModel
+from peft import prepare_model_for_int8_training, LoraConfig, get_peft_model, get_peft_model_state_dict, PeftModel
 from torch import nn
 
 from ludwig.api_annotations import DeveloperAPI
@@ -2083,6 +2083,7 @@ class Llama(HFTextEncoder):
         )
 
         if use_pretrained and not saved_weights_in_checkpoint:
+            self.trainable = trainable
             self.pretrained_kwargs = pretrained_kwargs
             self.pretrained_model_name_or_path = pretrained_model_name_or_path
             transformer = self._load_pretrained_transformer()
@@ -2131,13 +2132,37 @@ class Llama(HFTextEncoder):
             default_pretrained_kwargs = dict(device_map={"": device}, low_cpu_mem_usage=True)
 
         pretrained_kwargs = self.pretrained_kwargs or default_pretrained_kwargs
-        transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+        model, _ = load_pretrained_hf_model_with_hub_fallback(
             LlamaModel, self.pretrained_model_name_or_path, **pretrained_kwargs
         )
 
-        # if peft_model_name_or_path is not None:
-        #     transformer = PeftModel.from_pretrained(transformer, peft_model_name_or_path, torch_dtype=torch.float16)
-        return transformer
+        # LORA / 8bit only supported on GPU
+        if device == "cuda":
+            if self.trainable:
+                LORA_R = 8
+                LORA_ALPHA = 16
+                LORA_DROPOUT = 0.05
+                TARGET_MODULES = [
+                    "q_proj",
+                    "v_proj",
+                ]
+
+                model = prepare_model_for_int8_training(model)
+                config = LoraConfig(
+                    r=LORA_R,
+                    lora_alpha=LORA_ALPHA,
+                    target_modules=TARGET_MODULES,
+                    lora_dropout=LORA_DROPOUT,
+                    bias="none",
+                    task_type="CAUSAL_LM",
+                )
+                model = get_peft_model(model, config)
+            else:
+                # if peft_model_name_or_path is not None:
+                #     model = PeftModel.from_pretrained(model, peft_model_name_or_path, torch_dtype=torch.float16)
+                pass
+
+        return model
 
     def reload(self):
         transformer = self._load_pretrained_transformer()

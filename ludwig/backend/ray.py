@@ -296,6 +296,10 @@ class TqdmCallback(ray.tune.callback.Callback):
 @contextlib.contextmanager
 def create_runner(**kwargs):
     trainer_kwargs = get_trainer_kwargs(**kwargs)
+    trainer_kwargs["resources_per_worker"] = {
+        "CPU": 1,
+        "GPU": 1,
+    }
     yield RayAirRunner(trainer_kwargs)
 
 
