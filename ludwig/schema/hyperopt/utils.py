@@ -7,8 +7,8 @@ parameter_config_registry = Registry()
 scheduler_config_registry = Registry()
 scheduler_dependencies_registry = Registry()
 search_algorithm_config_registry = Registry()
-sa_dependencies_registry = Registry()
-sa_random_state_field_registry = Registry()
+search_algorithm_dependencies_registry = Registry()
+search_algorithm_random_state_field_registry = Registry()
 
 
 @DeveloperAPI
@@ -73,7 +73,7 @@ def get_search_algorithm_dependencies(name: str) -> List[str]:
     Returns:
         The list of imports needed to use the search algorithm
     """
-    return sa_dependencies_registry[name]
+    return search_algorithm_dependencies_registry[name]
 
 
 @DeveloperAPI
@@ -86,7 +86,7 @@ def get_search_algorithm_random_state_field(name: str):
     Returns:
         The name of the random state field in the config
     """
-    return sa_random_state_field_registry[name]
+    return search_algorithm_random_state_field_registry[name]
 
 
 @DeveloperAPI
@@ -163,8 +163,8 @@ def register_search_algorithm_config(
 
     def wrap(cls: Type["BaseSearchAlgorithmConfig"]) -> Type["BaseSearchAlgorithmConfig"]:  # noqa: F821
         search_algorithm_config_registry[name] = cls
-        sa_dependencies_registry[name] = dependencies if dependencies is not None else []
-        sa_random_state_field_registry[name] = random_state_field
+        search_algorithm_dependencies_registry[name] = dependencies if dependencies is not None else []
+        search_algorithm_random_state_field_registry[name] = random_state_field
         return cls
 
     return wrap
