@@ -48,7 +48,6 @@ if TYPE_CHECKING:
     from ludwig.api import LudwigModel
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.backend._ray210_compat import TunerRay210
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.backend.datasource import BinaryIgnoreNoneTypeDatasource
 from ludwig.constants import CPU_RESOURCES_PER_TRIAL, EXECUTOR, MODEL_ECD, NAME, PROC_COLUMN
@@ -71,6 +70,8 @@ from ludwig.utils.types import DataFrame, Series
 _ray220 = version.parse(ray.__version__) >= version.parse("2.2.0")
 _ray230 = version.parse(ray.__version__) >= version.parse("2.3.0")
 
+if not _ray220:
+    from ludwig.backend._ray210_compat import TunerRay210
 
 logger = logging.getLogger(__name__)
 
