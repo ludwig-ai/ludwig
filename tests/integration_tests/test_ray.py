@@ -1148,7 +1148,7 @@ def test_tune_batch_size_error_handling(tmpdir: str, error_batch_size: int, ray_
     backend_config["trainer"]["num_workers"] = 2
 
     csv_filename = os.path.join(tmpdir, "dataset.csv")
-    dataset_csv = generate_data(config["input_features"], config["output_features"], csv_filename, num_examples=200)
+    dataset_csv = generate_data(config["input_features"], config["output_features"], csv_filename, num_examples=1000)
     dataset_parquet = create_data_set_to_use("parquet", dataset_csv)
 
     backend = initialize_backend(backend_config)

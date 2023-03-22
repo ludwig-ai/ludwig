@@ -243,9 +243,9 @@ def tune_batch_size_fn(
     features: Dict[str, Dict] = None,
     trainer_cls: Callable[[], Trainer] = RemoteTrainer,
     **kwargs,
-) -> int:
+):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
-    local_rank = ra.session.get_local_rank() if _ray230 else rt.local_rank()
+    local_rank = ra.session.get_local_rank() if _ray220 else rt.local_rank()
     initialize_pytorch(local_rank=local_rank, local_size=_local_size())
     distributed = get_current_dist_strategy(allow_local=False)()
 
