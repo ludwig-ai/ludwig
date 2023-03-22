@@ -85,4 +85,6 @@ def validate_config_with_synthetic_data(config: ModelConfigDict) -> None:
             end_time = time.time()
             logger.info(f"Synthetic config validation took: {end_time - start_time:4f}s.")
             raise ConfigValidationError(f"During synthetic config validation, got Exception: {e}")
+
+    end_time = time.time()
     logger.info(f"Synthetic config validation took: {end_time - start_time:4f}s.")

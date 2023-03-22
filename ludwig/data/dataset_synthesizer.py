@@ -133,7 +133,10 @@ def return_none(feature):
 
 def assign_vocab(feature):
     encoder_or_decoder = _get_feature_encoder_or_decoder(feature)
-    encoder_or_decoder["idx2str"] = build_vocab(encoder_or_decoder.get("vocab_size", 10))
+    vocab_size = encoder_or_decoder.get("vocab_size", 10)
+    if vocab_size is None:
+        vocab_size = 10
+    encoder_or_decoder["idx2str"] = build_vocab(vocab_size)
     encoder_or_decoder["vocab_size"] = len(encoder_or_decoder["idx2str"])
 
 
