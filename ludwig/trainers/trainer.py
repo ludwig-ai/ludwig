@@ -32,7 +32,17 @@ import psutil
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from ludwig.constants import LOSS, MINIMIZE, MODEL_ECD, TEST, TRAIN, TRAINING, VALIDATION
+from ludwig.constants import (
+    LOSS,
+    MAX_BATCH_SIZE_DATASET_FRACTION,
+    MIN_POSSIBLE_BATCH_SIZE,
+    MINIMIZE,
+    MODEL_ECD,
+    TEST,
+    TRAIN,
+    TRAINING,
+    VALIDATION,
+)
 from ludwig.data.dataset.base import Dataset
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.globals import (
@@ -394,14 +404,17 @@ class Trainer(BaseTrainer):
         logger.info("Tuning batch size...")
 
         def _is_valid_batch_size(batch_size):
-            # make sure that batch size is valid (e.g. less than size of ds)
-            is_smaller_than_training_set = batch_size < len(training_set)
+            # make sure that batch size is valid (e.g. less than 20% of ds size and max_batch_size)
+            dataset_len = len(training_set)
+            is_smaller_than_training_set = batch_size <= MAX_BATCH_SIZE_DATASET_FRACTION * dataset_len
             is_under_max_batch_size = batch_size <= self.max_batch_size
             is_valid = is_smaller_than_training_set and is_under_max_batch_size
             if not is_valid:
                 logger.info(
-                    f"Batch size {batch_size} is invalid, must be smaller than training set size "
-                    f"{len(training_set)} and less than or equal to max batch size {self.max_batch_size}"
+                    f"Batch size {batch_size} is invalid, must be less than or equal to "
+                    f"{MAX_BATCH_SIZE_DATASET_FRACTION * 100}% dataset size "
+                    f"({int(MAX_BATCH_SIZE_DATASET_FRACTION * dataset_len)} samples "
+                    f"of {dataset_len}) and less than or equal to max batch size {self.max_batch_size}"
                 )
             return is_valid
 
@@ -453,6 +466,12 @@ class Trainer(BaseTrainer):
                         raise
                     break
         finally:
+            # Ensure that some batch size is found.
+            # `best_batch_size` can be None if the first batch size is invalid.
+            if best_batch_size is None:
+                logger.info("Could not tune batch size, using minimum batch size of 2")
+                best_batch_size = MIN_POSSIBLE_BATCH_SIZE
+
             # Restore original parameters to defaults
             self.skip_save_model = skip_save_model
             self.skip_save_progress = skip_save_progress
