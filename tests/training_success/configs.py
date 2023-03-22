@@ -4,6 +4,7 @@ from explore_schema import (
     combine_configs_for_sequence_combiner,
 )
 
+# A generic tabular to text config used to generate synthetic data and train a model on it.
 TABULAR_TO_TEXT = """
 input_features:
   - name: category_1
@@ -17,6 +18,7 @@ output_features:
     type: text
 """
 
+# A generic tabular config used to generate synthetic data and train a model on it.
 TABULAR = """
 input_features:
   - name: category_1
@@ -30,6 +32,7 @@ output_features:
     type: category
 """
 
+# A generic config with a single text input feature used to generate synthetic data and train a model on it.
 TEXT_INPUT = """
 input_features:
   - name: text_1
@@ -41,6 +44,7 @@ output_features:
     type: category
 """
 
+# A generic config with a single number input feature used to generate synthetic data and train a model on it.
 NUMBER_INPUT = """
 input_features:
   - name: number_1
@@ -50,6 +54,7 @@ output_features:
     type: category
 """
 
+# A generic config with a single category input feature used to generate synthetic data and train a model on it.
 CATEGORY_INPUT = """
 input_features:
   - name: category_1
@@ -59,6 +64,7 @@ output_features:
     type: category
 """
 
+# A generic config with a single binary input feature used to generate synthetic data and train a model on it.
 BINARY_INPUT = """
 input_features:
   - name: binary_1
@@ -68,6 +74,7 @@ output_features:
     type: category
 """
 
+# A generic config with a text output feature used to generate synthetic data and train a model on it.
 TEXT_OUTPUT = """
 input_features:
   - name: text_1
@@ -79,6 +86,7 @@ output_features:
     type: text
 """
 
+# A generic config with a number output feature used to generate synthetic data and train a model on it.
 NUMBER_OUTPUT = """
 input_features:
   - name: number_1
@@ -88,6 +96,7 @@ output_features:
     type: number
 """
 
+# A generic config with a category output feature used to generate synthetic data and train a model on it.
 CATEGORY_OUTPUT = """
 input_features:
   - name: category_1
@@ -97,6 +106,7 @@ output_features:
     type: category
 """
 
+# A generic config with a binary output feature used to generate synthetic data and train a model on it.
 BINARY_OUTPUT = """
 input_features:
   - name: binary_1
@@ -106,21 +116,21 @@ output_features:
     type: binary
 """
 
-feature_type_to_config_for_encoder_preprocessing = {
+FEATURE_TYPE_TO_CONFIG_FOR_ENCODER_PREPROCESSING = {
     "number": NUMBER_INPUT,
     "category": CATEGORY_INPUT,
     "binary": BINARY_INPUT,
     "text": TEXT_INPUT,
 }
 
-feature_type_to_config_for_decoder_loss = {
+FEATURE_TYPE_TO_CONFIG_FOR_DECODER_LOSS = {
     "number": NUMBER_OUTPUT,
     "category": CATEGORY_OUTPUT,
     "binary": BINARY_OUTPUT,
     "text": TEXT_OUTPUT,
 }
 
-ecd_config_section_to_config = {
+ECD_CONFIG_SECTION_TO_CONFIG = {
     "trainer": TABULAR,
     "comparator": TABULAR,
     "concat": TABULAR,
@@ -132,7 +142,7 @@ ecd_config_section_to_config = {
     "transformer": TABULAR,
 }
 
-combiner_type_to_combine_config_fn = {
+COMBINER_TYPE_TO_COMBINE_FN_MAP = {
     "comparator": combine_configs_for_comparator_combiner,
     "concat": combine_configs,
     "project_aggregate": combine_configs,

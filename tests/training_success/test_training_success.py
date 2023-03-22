@@ -7,10 +7,10 @@ import pandas as pd
 import pytest
 import yaml
 from configs import (
-    combiner_type_to_combine_config_fn,
-    ecd_config_section_to_config,
-    feature_type_to_config_for_decoder_loss,
-    feature_type_to_config_for_encoder_preprocessing,
+    COMBINER_TYPE_TO_COMBINE_FN_MAP,
+    ECD_CONFIG_SECTION_TO_CONFIG,
+    FEATURE_TYPE_TO_CONFIG_FOR_DECODER_LOSS,
+    FEATURE_TYPE_TO_CONFIG_FOR_ENCODER_PREPROCESSING,
 )
 from explore_schema import combine_configs, explore_properties
 
@@ -37,10 +37,10 @@ def defaults_config_generator(feature_type: str, only_include: str) -> Tuple[Mod
     )
 
     if only_include in ["preprocessing", "encoder"]:
-        config = feature_type_to_config_for_encoder_preprocessing[feature_type]
+        config = FEATURE_TYPE_TO_CONFIG_FOR_ENCODER_PREPROCESSING[feature_type]
         config = yaml.safe_load(config)
     else:  # decoder and loss
-        config = feature_type_to_config_for_decoder_loss[feature_type]
+        config = FEATURE_TYPE_TO_CONFIG_FOR_DECODER_LOSS[feature_type]
         config = yaml.safe_load(config)
 
     main_config_keys = list(config.keys())
@@ -61,7 +61,7 @@ def ecd_trainer_config_generator() -> Tuple[ModelConfigDict, pd.DataFrame]:
 
     raw_entry = deque([(dict(), False)])
     explored = explore_properties(properties, parent_key="", dq=raw_entry, only_include=["trainer"])
-    config = ecd_config_section_to_config["trainer"]
+    config = ECD_CONFIG_SECTION_TO_CONFIG["trainer"]
     config = yaml.safe_load(config)
     config["model_type"] = "ecd"
     config["trainer"] = {"train_steps": 1}
@@ -81,12 +81,12 @@ def combiner_config_generator(combiner_type: str) -> Tuple[ModelConfigDict, pd.D
 
     raw_entry = deque([(dict(), False)])
     explored = explore_properties(properties, parent_key="", dq=raw_entry, only_include=["combiner"])
-    config = ecd_config_section_to_config[combiner_type]
+    config = ECD_CONFIG_SECTION_TO_CONFIG[combiner_type]
     config = yaml.safe_load(config)
     config["model_type"] = "ecd"
     config["trainer"] = {"train_steps": 1}
 
-    combine_configs_fn = combiner_type_to_combine_config_fn[combiner_type]
+    combine_configs_fn = COMBINER_TYPE_TO_COMBINE_FN_MAP[combiner_type]
     for config, dataset in combine_configs_fn(explored, config):
         if config["combiner"]["type"] == combiner_type:
             yield config, dataset
