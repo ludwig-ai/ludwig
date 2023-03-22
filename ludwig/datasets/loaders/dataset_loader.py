@@ -428,7 +428,8 @@ class DatasetLoader:
             file_paths = [os.path.join(root_dir, path) for path in file_paths]
         dataframes = [self.load_file_to_dataframe(path) for path in file_paths]
         if self.config.columns:
-            dataframes = [df.set_axis(self.config.columns, axis=1) for df in dataframes]
+            column_names = [column["name"] for column in self.config.columns]
+            dataframes = [df.set_axis(column_names, axis=1) for df in dataframes]
         return pd.concat(dataframes, ignore_index=True)
 
     def load_unprocessed_dataframe(self, file_paths: List[str]) -> pd.DataFrame:

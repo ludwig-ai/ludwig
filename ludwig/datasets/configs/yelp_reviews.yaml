@@ -5,9 +5,6 @@ sha256:
   yelp_review_full_csv.tgz: 56006b0a17a370f1e366504b1f2c3e3754e4a3dda17d3e718a885c552869a559
 train_filenames: yelp_review_full_csv/train.csv
 test_filenames: yelp_review_full_csv/test.csv
-columns:
-  - label
-  - text
 description: |
   The Yelp Reviews dataset
   Details:
@@ -17,6 +14,11 @@ description: |
   Dataset source:
       Character-level Convolutional Networks for Text Classification
       Xiang Zhang et al., 2015
+columns:
+  - name: label
+    type: category
+  - name: text
+    type: text
 output_features:
   - name: label
     type: category

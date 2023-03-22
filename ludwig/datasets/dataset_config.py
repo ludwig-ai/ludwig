@@ -86,7 +86,7 @@ class DatasetConfig:
 
     # List of column names, for datasets which do not have column names. If specified, will override the column names
     # already present in the dataset.
-    columns: List[str] = field(default_factory=list)
+    columns: List[dict] = field(default_factory=list)
 
     # Optional dictionary which maps column name to column type. Column's will be converted to the requested type, or
     # will be inferred from the dataset by default.

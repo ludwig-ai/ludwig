@@ -41,7 +41,7 @@ from ludwig.features.number_feature import NumberFeatureMixin, NumberInputFeatur
 from ludwig.features.sequence_feature import SequenceFeatureMixin, SequenceInputFeature, SequenceOutputFeature
 from ludwig.features.set_feature import SetFeatureMixin, SetInputFeature, SetOutputFeature
 from ludwig.features.text_feature import TextFeatureMixin, TextInputFeature, TextOutputFeature
-from ludwig.features.timeseries_feature import TimeseriesFeatureMixin, TimeseriesInputFeature
+from ludwig.features.timeseries_feature import TimeseriesFeatureMixin, TimeseriesInputFeature, TimeseriesOutputFeature
 from ludwig.features.vector_feature import VectorFeatureMixin, VectorInputFeature, VectorOutputFeature
 from ludwig.utils.misc_utils import get_from_registry
 
@@ -97,6 +97,7 @@ def get_output_type_registry() -> Dict:
         SEQUENCE: SequenceOutputFeature,
         SET: SetOutputFeature,
         TEXT: TextOutputFeature,
+        TIMESERIES: TimeseriesOutputFeature,
         VECTOR: VectorOutputFeature,
     }
 
@@ -121,5 +122,5 @@ def update_config_with_model(config_obj: "ModelConfig", model: "BaseModel"):
     their final config after class initialization.
     """
     for input_feature in config_obj.input_features:
-        model_input_feature = model.input_features[input_feature.name]
+        model_input_feature = model.input_features.get(input_feature.name)
         model_input_feature.update_config_after_module_init(input_feature)

@@ -199,7 +199,9 @@ class CategoricalOneHotEncoder(Encoder):
                Shape: [batch, 1] or [batch]
         """
         t = inputs.reshape(-1).long()
-        return torch.nn.functional.one_hot(t, num_classes=self.vocab_size)
+        # the output of this must be a float so that it can be concatenated with other
+        # encoder outputs and passed to dense layers in the combiner, decoder, etc.
+        return torch.nn.functional.one_hot(t, num_classes=self.vocab_size).float()
 
     @staticmethod
     def get_schema_cls():

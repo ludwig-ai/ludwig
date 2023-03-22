@@ -1,7 +1,9 @@
 import copy
+import os
 import warnings
 from abc import ABC, abstractmethod
 from dataclasses import field, Field
+from functools import lru_cache
 from numbers import Real
 from typing import Any
 from typing import Dict as TDict
@@ -10,17 +12,16 @@ from typing import Optional, Set, Tuple, Type, TypeVar, Union
 
 import marshmallow_dataclass
 import yaml
-from marshmallow import fields, INCLUDE, pre_load, schema, validate, ValidationError
+from marshmallow import EXCLUDE, fields, pre_load, schema, validate, ValidationError
 from marshmallow.utils import missing
 from marshmallow_dataclass import dataclass as m_dataclass
 from marshmallow_jsonschema import JSONSchema as js
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import ACTIVE, COLUMN, NAME, PROC_COLUMN, TYPE
+from ludwig.constants import ACTIVE, COLUMN, LUDWIG_SCHEMA_VALIDATION_POLICY, NAME, PROC_COLUMN, TYPE
 from ludwig.modules.reduction_modules import reduce_mode_registry
 from ludwig.schema.metadata import COMMON_METADATA
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, ParameterMetadata
-from ludwig.utils.misc_utils import memoized_method
 from ludwig.utils.registry import Registry
 from ludwig.utils.torch_utils import activations, initializer_registry
 
@@ -145,6 +146,10 @@ class ListSerializable(ABC):
 ConfigT = TypeVar("ConfigT", bound="BaseMarshmallowConfig")
 
 
+# TODO: Change to RAISE and update descriptions once we want to enforce strict schemas.
+LUDWIG_SCHEMA_VALIDATION_POLICY_VAR = os.environ.get(LUDWIG_SCHEMA_VALIDATION_POLICY, EXCLUDE).lower()
+
+
 @DeveloperAPI
 class BaseMarshmallowConfig(ABC):
     """Base marshmallow class for common attributes and metadata."""
@@ -159,8 +164,8 @@ class BaseMarshmallowConfig(ABC):
         filled in as necessary.
         """
 
-        unknown = INCLUDE  # TODO: Change to RAISE and update descriptions once we want to enforce strict schemas.
-        "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter."
+        unknown = LUDWIG_SCHEMA_VALIDATION_POLICY_VAR
+        "Flag that sets marshmallow `load` calls to handle unknown properties passed as a parameter."
 
         ordered = True
         "Flag that maintains the order of defined parameters in the schema"
@@ -173,19 +178,21 @@ class BaseMarshmallowConfig(ABC):
         return convert_submodules(self.__dict__)
 
     @pre_load
-    def log_deprecation_warnings(self, data, **kwargs):
-        leftover = copy.deepcopy(data)
+    def log_deprecation_warnings_for_any_invalid_parameters(self, data, **kwargs):
+        """Logs a warning for any unknown or invalid parameters passed to a schema.
+
+        Will be removed in Ludwig v0.8, when all such parameters will explicitly raise an error.
+        """
+        copy_data = copy.deepcopy(data)
         for key in data.keys():
             if key not in self.fields:
-                del leftover[key]
-                # `type` is not declared on most schemas and is instead added dynamically:
-                if key != "type" and key != "feature_type":
+                if key != "type":
                     warnings.warn(
                         f'"{key}" is not a valid parameter for the "{self.__class__.__name__}" schema, will be flagged '
                         "as an error in v0.8",
                         DeprecationWarning,
                     )
-        return leftover
+        return copy_data
 
     @classmethod
     def from_dict(cls: Type[ConfigT], d: TDict[str, Any]) -> ConfigT:
@@ -193,13 +200,13 @@ class BaseMarshmallowConfig(ABC):
         return schema.load(d)
 
     @classmethod
-    @memoized_method(maxsize=1)
+    @lru_cache(maxsize=None)
     def get_valid_field_names(cls) -> Set[str]:
         schema = cls.get_class_schema()()
         return set(schema.fields.keys())
 
     @classmethod
-    @memoized_method(maxsize=1)
+    @lru_cache(maxsize=None)
     def get_class_schema(cls):
         return marshmallow_dataclass.class_schema(cls)
 
@@ -421,7 +428,7 @@ def IntegerOptions(
 
 
 @DeveloperAPI
-def Boolean(default: bool, description: str, parameter_metadata: ParameterMetadata = None):
+def Boolean(default: bool, description: str = "", parameter_metadata: ParameterMetadata = None):
     if default is not None:
         try:
             assert isinstance(default, bool)

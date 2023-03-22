@@ -23,6 +23,11 @@ description: |
   pattern recognition methods on real-world data while spending minimal
   efforts on preprocessing and formatting.
   http://yann.lecun.com/exdb/mnist/
+columns:
+  - name: image_path
+    type: image
+  - name: label
+    type: category
 output_features:
     - name: label
       type: category

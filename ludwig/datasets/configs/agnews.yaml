@@ -8,13 +8,16 @@ test_filenames: test.csv
 sha256:
   test.csv: 521465c2428ed7f02f8d6db6ffdd4b5447c1c701962353eb2c40d548c3c85699
   train.csv: 76a0a2d2f92b286371fe4d4044640910a04a803fdd2538e0f3f29a5c6f6b672e
-columns:
-  - class_index
-  - title
-  - description
 loader: agnews.AGNewsLoader
 description: |
   News articles categorized as "World", "Sports", "Business", and "Science".
+columns:
+  - name: class_index
+    type: category
+  - name: title
+    type: text
+  - name: description
+    type: text
 output_features:
   - name: class_index
     type: category

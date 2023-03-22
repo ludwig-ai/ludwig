@@ -12,6 +12,35 @@ description: |
   Innerwear Data from Victoria's Secret and Others
   600,000+ innerwear product data extracted from popular retail sites
   https://www.kaggle.com/PromptCloudHQ/innerwear-data-from-victorias-secret-and-others
+columns:
+  - name: product_name
+    type: category
+  - name: mrp
+    type: category
+  - name: price
+    type: number
+  - name: pdp_url
+    type: category
+  - name: brand_name
+    type: category
+  - name: product_category
+    type: category
+  - name: retailer
+    type: category
+  - name: description
+    type: text
+  - name: rating
+    type: number
+  - name: review_count
+    type: number
+  - name: style_attributes
+    type: set
+  - name: total_sizes
+    type: set
+  - name: available_size
+    type: set
+  - name: color
+    type: category
 output_features:
   - name: price
     type: number

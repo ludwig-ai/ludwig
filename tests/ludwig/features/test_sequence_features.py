@@ -8,6 +8,8 @@ import torchtext
 from ludwig.constants import LAST_HIDDEN, LOGITS, SEQUENCE, TEXT, TYPE
 from ludwig.features.sequence_feature import _SequencePreprocessing, SequenceInputFeature, SequenceOutputFeature
 from ludwig.features.text_feature import TextInputFeature, TextOutputFeature
+from ludwig.schema.features.sequence_feature import SequenceInputFeatureConfig
+from ludwig.schema.features.text_feature import ECDTextInputFeatureConfig
 from ludwig.utils.torch_utils import get_torch_device
 from tests.integration_tests.utils import ENCODERS, sequence_feature
 
@@ -68,7 +70,8 @@ def test_sequence_input_feature(input_sequence: tuple, encoder: str, sequence_ty
 
     # create sequence input feature object
     feature_cls = SequenceInputFeature if sequence_type == SEQUENCE else TextInputFeature
-    sequence_config = feature_cls.get_schema_cls().from_dict(input_feature_def)
+    schema_cls = SequenceInputFeatureConfig if sequence_type == SEQUENCE else ECDTextInputFeatureConfig
+    sequence_config = schema_cls.from_dict(input_feature_def)
     input_feature_obj = feature_cls(sequence_config).to(DEVICE)
 
     # confirm dtype property

@@ -66,6 +66,8 @@ MEAN_SQUARED_ERROR = "mean_squared_error"
 ROOT_MEAN_SQUARED_ERROR = "root_mean_squared_error"
 ROOT_MEAN_SQUARED_PERCENTAGE_ERROR = "root_mean_squared_percentage_error"
 MEAN_ABSOLUTE_ERROR = "mean_absolute_error"
+MEAN_ABSOLUTE_PERCENTAGE_ERROR = "mean_absolute_percentage_error"
+HUBER = "huber"
 R2 = "r2"
 EDIT_DISTANCE = "edit_distance"
 PERPLEXITY = "perplexity"
@@ -279,3 +281,5 @@ JITTER = (0, 1)
 IMAGENET1K = "imagenet1k"
 
 AUGMENTATION = "augmentation"
+
+LUDWIG_SCHEMA_VALIDATION_POLICY = "LUDWIG_SCHEMA_VALIDATION_POLICY"

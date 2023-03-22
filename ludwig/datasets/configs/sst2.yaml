@@ -22,6 +22,11 @@ description: |
   and assign a negative label if the original rating falls
   into the following range: [0, 0.4] and a positive label
   if the original rating is between (0.6, 1.0].
+columns:
+  - name: sentence
+    type: text
+  - name: label
+    type: binary
 output_features:
     - name: label
       type: binary

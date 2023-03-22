@@ -108,19 +108,37 @@ def test_multifile_join_dataset(tmpdir, f_type):
     ludwig.datasets._get_dataset_configs.cache_clear()
 
 
-def test_get_datasets_info():
-    dataset_output_features = ludwig.datasets.get_datasets_output_features()
+@pytest.mark.parametrize(
+    "include_competitions,include_data_modalities", [(True, True), (True, False), (False, True), (False, False)]
+)
+def test_get_datasets_info(include_competitions, include_data_modalities):
+    dataset_output_features = ludwig.datasets.get_datasets_output_features(
+        include_competitions=include_competitions, include_data_modalities=include_data_modalities
+    )
+
     assert len(dataset_output_features) > 1
     assert isinstance(dataset_output_features, dict)
-    assert dataset_output_features["titanic"].get("name", None)
-    assert dataset_output_features["titanic"].get("output_features", None)
-    assert isinstance(dataset_output_features["titanic"]["output_features"], list)
-    assert dataset_output_features["titanic"]["output_features"][0].get("name", None)
-    assert dataset_output_features["titanic"]["output_features"][0].get("type", None)
+    assert dataset_output_features["twitter_bots"].get("name", None)
+    assert dataset_output_features["twitter_bots"].get("output_features", None)
+    assert isinstance(dataset_output_features["twitter_bots"]["output_features"], list)
+    assert dataset_output_features["twitter_bots"]["output_features"][0].get("name", None)
+    assert dataset_output_features["twitter_bots"]["output_features"][0].get("type", None)
 
-    dataset_output_features = ludwig.datasets.get_datasets_output_features(dataset="titanic")
+    if include_competitions:
+        assert dataset_output_features["titanic"].get("name", None)
+    else:
+        assert dataset_output_features.get("titanic", None) is None
+
+    if include_data_modalities:
+        data_modalities = dataset_output_features["twitter_bots"].get("data_modalities", None)
+        assert data_modalities
+        assert len(data_modalities) >= 1
+    else:
+        assert dataset_output_features["twitter_bots"].get("data_modalities", None) is None
+
+    dataset_output_features = ludwig.datasets.get_datasets_output_features(dataset="twitter_bots")
     assert len(dataset_output_features["output_features"]) == 1
-    assert dataset_output_features["name"] == "titanic"
+    assert dataset_output_features["name"] == "twitter_bots"
 
 
 def test_get_dataset_buffer():

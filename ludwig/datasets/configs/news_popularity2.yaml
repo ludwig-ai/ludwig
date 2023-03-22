@@ -14,6 +14,17 @@ description: |
   published by Mashable in a period of two years. The goal is to predict
   the number of shares in social networks (popularity).
   https://archive.ics.uci.edu/ml/datasets/online+news+popularity
+columns:
+  - name: n_tokens_content
+    type: number
+  - name: average_token_length
+    type: number
+  - name: num_keywords
+    type: number
+  - name: log_shares
+    type: number
+  - name: article_title
+    type: text
 output_features:
 - name: log_shares
   type: number
