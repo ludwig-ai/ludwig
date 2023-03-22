@@ -15,11 +15,13 @@
 # ==============================================================================
 """This module contains the class and auxiliary methods of a model."""
 import contextlib
+import gc
 import logging
 import math
 import os
 import os.path
 import signal
+import statistics
 import sys
 import threading
 import time
@@ -30,7 +32,7 @@ import psutil
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from ludwig.constants import LOSS, MINIMIZE, MODEL_ECD, TEST, TRAIN, TRAINING, VALIDATION
+from ludwig.constants import LOSS, MIN_POSSIBLE_BATCH_SIZE, MINIMIZE, MODEL_ECD, TEST, TRAIN, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.globals import (
@@ -391,6 +393,22 @@ class Trainer(BaseTrainer):
     ) -> int:
         logger.info("Tuning batch size...")
 
+        def _is_valid_batch_size(batch_size):
+            # make sure that batch size is valid (e.g. less than size of ds)
+            is_smaller_than_training_set = batch_size < len(training_set)
+            is_under_max_batch_size = batch_size <= self.max_batch_size
+            is_valid = is_smaller_than_training_set and is_under_max_batch_size
+            if not is_valid:
+                logger.info(
+                    f"Batch size {batch_size} is invalid, must be smaller than training set size "
+                    f"{len(training_set)} and less than or equal to max batch size {self.max_batch_size}"
+                )
+            return is_valid
+
+        # TODO (ASN) : Circle back on how we want to set default placeholder value
+        # Currently, since self.batch_size is originally set to auto, we provide a
+        # placeholder starting value
+        batch_size = 2
         skip_save_model = self.skip_save_model
         skip_save_progress = self.skip_save_progress
         skip_save_log = self.skip_save_log
@@ -434,25 +452,20 @@ class Trainer(BaseTrainer):
                         # Not a CUDA error
                         raise
                     break
-        # =======
-        #        # When training on CPU, larger batch sizes offer limited benefits due to lack of effective
-        #        # parallelization within a batch. As such, to increase chances of stable training, we cap the maximum
-        #        # batch size at MAX_CPU_BATCH_SIZE
-        #        max_batch_size = (
-        #            self.max_batch_size if torch.cuda.is_available() else min(self.max_batch_size, MAX_CPU_BATCH_SIZE)
-        #        )
-        #
-        #        self.dist_model.train()  # Sets model training mode.
-        #
-        #        evaluator = self._create_batch_size_evaluator()
-        #        try:
-        #            return evaluator.select_best_batch_size(len(training_set), max_batch_size, max_trials)
-        # >>>>>>> master
         finally:
+            # Ensure that some batch size is found.
+            # `best_batch_size` can be None if the first batch size is invalid.
+            if best_batch_size is None:
+                logger.info("Could not tune batch size, using minimum batch size of 2")
+                best_batch_size = MIN_POSSIBLE_BATCH_SIZE
+
             # Restore original parameters to defaults
             self.skip_save_model = skip_save_model
             self.skip_save_progress = skip_save_progress
             self.skip_save_log = skip_save_log
+
+        logger.info(f"Selected batch_size={best_batch_size}")
+        return best_batch_size
 
     def _create_batch_size_evaluator(self) -> BatchSizeEvaluator:
         trainer = self
