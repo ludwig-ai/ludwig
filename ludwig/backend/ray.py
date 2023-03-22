@@ -24,6 +24,7 @@ import dask
 import numpy as np
 import pandas as pd
 import ray
+import ray.train as rt
 import torch
 import tqdm
 from packaging import version
@@ -34,7 +35,6 @@ from ray.air.checkpoint import Checkpoint
 from ray.air.config import DatasetConfig, RunConfig, ScalingConfig
 from ray.air.result import Result
 from ray.train.base_trainer import TrainingFailedError
-from ray.train.horovod import HorovodTrainer
 from ray.train.torch import TorchCheckpoint
 from ray.train.trainer import BaseTrainer as RayBaseTrainer
 from ray.tune.tuner import Tuner
@@ -48,7 +48,7 @@ if TYPE_CHECKING:
     from ludwig.api import LudwigModel
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.backend._ray210_compat import HorovodTrainerRay210, TunerRay210
+from ludwig.backend._ray210_compat import TunerRay210
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.backend.datasource import BinaryIgnoreNoneTypeDatasource
 from ludwig.constants import CPU_RESOURCES_PER_TRIAL, EXECUTOR, MODEL_ECD, NAME, PROC_COLUMN
@@ -68,6 +68,7 @@ from ludwig.utils.system_utils import Resources
 from ludwig.utils.torch_utils import get_torch_device, initialize_pytorch
 from ludwig.utils.types import DataFrame, Series
 
+_ray220 = version.parse(ray.__version__) >= version.parse("2.2.0")
 _ray230 = version.parse(ray.__version__) >= version.parse("2.3.0")
 
 
@@ -242,17 +243,8 @@ def tune_batch_size_fn(
     **kwargs,
 ) -> int:
     # Pin GPU before loading the model to prevent memory leaking onto other devices
-    # <<<<<<< distributed-auto-batch
-    #    initialize_pytorch(local_rank=rt.local_rank(), local_size=_local_size())
-    #    distributed = get_current_dist_strategy(allow_local=False)()
-
-    #
-    # As of Ray >= 2.1, to use ray.air.session.get_local_rank(), you need to be inside a train session
-    # or a tune session. In Ludwig's current code implementation, batch size tuning doesn't get instantiated
-    # inside of a RayTrainer class, so we manually set the local_rank to 0 so that it picks up the right
-    # device to tune batch size on.
-    initialize_pytorch(local_rank=0, local_size=_local_size())
-    distributed = get_current_dist_strategy(allow_local=True)()
+    initialize_pytorch(local_rank=rt.local_rank(), local_size=_local_size())
+    distributed = get_current_dist_strategy(allow_local=False)()
 
     try:
         train_shard = RayDatasetShard(
@@ -404,7 +396,7 @@ class RayAirRunner:
         stream_window_size: Dict[str, Union[None, float]] = None,
         callbacks: List[Any] = None,
         exception_on_error: bool = True,
-    ) -> Tuple[Dict, TorchCheckpoint]:
+    ) -> Result:
         dataset_config = None
         if dataset is not None:
             data_loader_kwargs = data_loader_kwargs or {}
@@ -412,7 +404,6 @@ class RayAirRunner:
             dataset_config = self._get_dataset_configs(dataset, stream_window_size, data_loader_kwargs)
 
         callbacks = callbacks or []
-        # trainer_cls = HorovodTrainerRay210 if not _ray220 else HorovodTrainer
 
         trainer_cls, kwargs = get_dist_strategy(self.strategy).get_trainer_cls(self.backend_config)
         trainer = trainer_cls(
@@ -420,11 +411,8 @@ class RayAirRunner:
             train_loop_config=config,
             datasets=dataset,
             scaling_config=self.scaling_config,
-            # <<<<<<< distributed-auto-batch
-            # dataset_config=dataset_config,
-            # run_config=RunConfig(callbacks=callbacks, verbose=1),
-            dataset_config=self._get_dataset_configs(dataset, stream_window_size, data_loader_kwargs),
-            run_config=RunConfig(callbacks=callbacks, verbose=0),
+            dataset_config=dataset_config,
+            run_config=RunConfig(callbacks=callbacks, verbose=1),
             **kwargs,
         )
 

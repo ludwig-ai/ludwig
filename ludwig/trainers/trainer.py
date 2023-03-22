@@ -32,7 +32,7 @@ import psutil
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from ludwig.constants import LOSS, MIN_POSSIBLE_BATCH_SIZE, MINIMIZE, MODEL_ECD, TEST, TRAIN, TRAINING, VALIDATION
+from ludwig.constants import LOSS, MINIMIZE, MODEL_ECD, TEST, TRAIN, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.globals import (
@@ -453,12 +453,6 @@ class Trainer(BaseTrainer):
                         raise
                     break
         finally:
-            # Ensure that some batch size is found.
-            # `best_batch_size` can be None if the first batch size is invalid.
-            if best_batch_size is None:
-                logger.info("Could not tune batch size, using minimum batch size of 2")
-                best_batch_size = MIN_POSSIBLE_BATCH_SIZE
-
             # Restore original parameters to defaults
             self.skip_save_model = skip_save_model
             self.skip_save_progress = skip_save_progress
