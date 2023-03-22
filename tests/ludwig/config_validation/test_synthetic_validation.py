@@ -54,3 +54,29 @@ def test_validate_config_with_synthetic_data(config_filename, tmpdir):
     config_path = os.path.join(BENCHMARK_DIRECTORY, config_filename)
     config = load_yaml(config_path)
     validate_config_with_synthetic_data(config)
+
+
+def test_validate_config_with_synthetic_data_tagger_decoder():
+    config = yaml.safe_load(
+        """
+input_features:
+    -
+        name: utterance
+        type: text
+        encoder:
+            type: rnn
+            cell_type: lstm
+            reduce_output: null
+        preprocessing:
+          tokenizer: space
+
+output_features:
+    -
+        name: tag
+        type: sequence
+        decoder:
+            type: tagger
+  """
+    )
+
+    validate_config_with_synthetic_data(config)
