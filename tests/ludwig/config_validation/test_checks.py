@@ -264,5 +264,6 @@ model_type: ecd
     with pytest.raises(ConfigValidationError):
         ModelConfig.from_dict(config)
 
+    # Confirms that the choice of the combiner type is the only reason for the ConfigValidationError.
     config[COMBINER][TYPE] = "sequence_concat"
     ModelConfig.from_dict(config)
