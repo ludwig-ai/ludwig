@@ -35,6 +35,7 @@ from torch.utils.tensorboard import SummaryWriter
 from ludwig.constants import (
     LOSS,
     MAX_BATCH_SIZE_DATASET_FRACTION,
+    MAX_CPU_BATCH_SIZE,
     MIN_POSSIBLE_BATCH_SIZE,
     MINIMIZE,
     MODEL_ECD,
@@ -80,8 +81,6 @@ from ludwig.utils.trainer_utils import (
     get_total_steps,
     ProgressTracker,
 )
-
-MAX_CPU_BATCH_SIZE = 128
 
 logger = logging.getLogger(__name__)
 
@@ -421,6 +420,9 @@ class Trainer(BaseTrainer):
         # TODO (ASN) : Circle back on how we want to set default placeholder value
         # Currently, since self.batch_size is originally set to auto, we provide a
         # placeholder starting value
+        self.max_batch_size = (
+            self.max_batch_size if torch.cuda.is_available() else min(self.max_batch_size, MAX_CPU_BATCH_SIZE)
+        )
         batch_size = 2
         skip_save_model = self.skip_save_model
         skip_save_progress = self.skip_save_progress
