@@ -341,6 +341,7 @@ def check_tagger_decoder_requirements(config: "ModelConfig") -> None:  # noqa: F
         )
 
 
+@register_config_check
 def check_hyperopt_parameter_dicts(config: "ModelConfig") -> None:  # noqa: F821
     """Checks for hyperopt parameter dicts against their config objects."""
     from ludwig.schema.hyperopt.utils import get_parameter_cls, parameter_config_registry
