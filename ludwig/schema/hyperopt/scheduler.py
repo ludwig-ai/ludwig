@@ -7,11 +7,7 @@ from marshmallow import fields, ValidationError
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.hyperopt.utils import (
-    get_scheduler_dependencies,
-    register_scheduler_config,
-    scheduler_config_registry,
-)
+from ludwig.schema.hyperopt import utils as hyperopt_utils
 from ludwig.schema.utils import ludwig_dataclass
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -105,7 +101,8 @@ class BaseSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
         """Some search algorithms require additional packages to be installed, check that they are available."""
         missing_packages = []
         missing_installs = []
-        for package_name, install_name in get_scheduler_dependencies(self.type):
+        for package_name, install_name in hyperopt_utils.get_scheduler_dependencies(self.type):
+            print(f"({[package_name]}, {install_name})")
             try:
                 import_module(package_name)
             except ImportError:
@@ -130,9 +127,9 @@ class BaseHyperbandSchedulerConfig(BaseSchedulerConfig):
 
 
 @DeveloperAPI
-@register_scheduler_config("async_hyperband")
-@register_scheduler_config("asynchyperband")
-@register_scheduler_config("asha")
+@hyperopt_utils.register_scheduler_config("async_hyperband")
+@hyperopt_utils.register_scheduler_config("asynchyperband")
+@hyperopt_utils.register_scheduler_config("asha")
 @ludwig_dataclass
 class AsyncHyperbandSchedulerConfig(BaseHyperbandSchedulerConfig):
     """Asynchronous hyperband (ASHA) scheduler settings."""
@@ -165,7 +162,7 @@ class AsyncHyperbandSchedulerConfig(BaseHyperbandSchedulerConfig):
 
 
 @DeveloperAPI
-@register_scheduler_config("hyperband")
+@hyperopt_utils.register_scheduler_config("hyperband")
 @ludwig_dataclass
 class HyperbandSchedulerConfig(BaseHyperbandSchedulerConfig):
     """Standard hyperband scheduler settings."""
@@ -184,8 +181,8 @@ class HyperbandSchedulerConfig(BaseHyperbandSchedulerConfig):
 
 
 @DeveloperAPI
-@register_scheduler_config("median_stopping_rule")
-@register_scheduler_config("medianstoppingrule")
+@hyperopt_utils.register_scheduler_config("median_stopping_rule")
+@hyperopt_utils.register_scheduler_config("medianstoppingrule")
 @ludwig_dataclass
 class MedianStoppingRuleSchedulerConfig(BaseSchedulerConfig):
     """Median Stopping Rule scheduler settings."""
@@ -225,7 +222,7 @@ class MedianStoppingRuleSchedulerConfig(BaseSchedulerConfig):
 
 
 @DeveloperAPI
-@register_scheduler_config("pbt")
+@hyperopt_utils.register_scheduler_config("pbt")
 @ludwig_dataclass
 class PopulationBasedTrainingSchedulerConfig(BaseSchedulerConfig):
     """Population Based Training scheduler settings."""
@@ -332,7 +329,7 @@ class PopulationBasedTrainingSchedulerConfig(BaseSchedulerConfig):
 
 
 @DeveloperAPI
-@register_scheduler_config("pbt_replay")
+@hyperopt_utils.register_scheduler_config("pbt_replay")
 @ludwig_dataclass
 class PopulationBasedTrainingReplaySchedulerConfig(BaseSchedulerConfig):
     """Population Based Training Replay scheduler settings."""
@@ -351,7 +348,7 @@ class PopulationBasedTrainingReplaySchedulerConfig(BaseSchedulerConfig):
 
 
 @DeveloperAPI
-@register_scheduler_config("pb2", dependencies=[("sklearn", "scikit-learn"), ("GPy", "GPy")])
+@hyperopt_utils.register_scheduler_config("pb2", dependencies=[("sklearn", "scikit-learn"), ("GPy", "GPy")])
 @ludwig_dataclass
 class PopulationBasedBanditsSchedulerConfig(BaseSchedulerConfig):
     """Population Based Bandits (PB2) scheduler settings."""
@@ -416,7 +413,7 @@ class PopulationBasedBanditsSchedulerConfig(BaseSchedulerConfig):
 
 
 @DeveloperAPI
-@register_scheduler_config("hb_bohb")
+@hyperopt_utils.register_scheduler_config("hb_bohb")
 @ludwig_dataclass
 class BOHBSchedulerConfig(BaseHyperbandSchedulerConfig):
     """Hyperband for BOHB (hb_bohb) scheduler settings."""
@@ -436,7 +433,7 @@ class BOHBSchedulerConfig(BaseHyperbandSchedulerConfig):
 
 # TODO: Double-check support for this
 @DeveloperAPI
-@register_scheduler_config("fifo")
+@hyperopt_utils.register_scheduler_config("fifo")
 @ludwig_dataclass
 class FIFOSchedulerConfig(BaseSchedulerConfig):
     """FIFO trial scheduler settings."""
@@ -446,7 +443,7 @@ class FIFOSchedulerConfig(BaseSchedulerConfig):
 
 # TODO: Double-check support for this as well as whether Callable args work properly
 @DeveloperAPI
-@register_scheduler_config("resource_changing")
+@hyperopt_utils.register_scheduler_config("resource_changing")
 @ludwig_dataclass
 class ResourceChangingSchedulerConfig(BaseSchedulerConfig):
     """Resource changing scheduler settings."""
@@ -479,8 +476,8 @@ def get_scheduler_conds():
     """Returns a JSON schema of conditionals to validate against scheduler types defined in
     `ludwig.schema.hyperopt.scheduler_registry`."""
     conds = []
-    for scheduler_config in scheduler_config_registry:
-        scheduler_cls = scheduler_config_registry[scheduler_config]
+    for scheduler_config in hyperopt_utils.scheduler_config_registry:
+        scheduler_cls = hyperopt_utils.scheduler_config_registry[scheduler_config]
         other_props = schema_utils.unload_jsonschema_from_marshmallow_class(scheduler_cls)["properties"]
         schema_utils.remove_duplicate_fields(other_props)
         preproc_cond = schema_utils.create_cond(
@@ -510,8 +507,8 @@ def SchedulerDataclassField(default={"type": "fifo"}, description="Hyperopt sche
             if value is None:
                 return None
             if isinstance(value, dict):
-                if "type" in value and value["type"] in scheduler_config_registry:
-                    scheduler_config_cls = scheduler_config_registry[value["type"].lower()]
+                if "type" in value and value["type"] in hyperopt_utils.scheduler_config_registry:
+                    scheduler_config_cls = hyperopt_utils.scheduler_config_registry[value["type"].lower()]
                     try:
                         return scheduler_config_cls.Schema().load(value)
                     except (TypeError, ValidationError) as e:
@@ -530,7 +527,7 @@ def SchedulerDataclassField(default={"type": "fifo"}, description="Hyperopt sche
                 "properties": {
                     "type": {
                         "type": "string",
-                        "enum": list(scheduler_config_registry.keys()),
+                        "enum": list(hyperopt_utils.scheduler_config_registry.keys()),
                         "default": default["type"],
                         "description": "The type of scheduler to use during hyperopt",
                     },
@@ -541,10 +538,14 @@ def SchedulerDataclassField(default={"type": "fifo"}, description="Hyperopt sche
                 "description": description,
             }
 
-    if not isinstance(default, dict) or "type" not in default or default["type"] not in scheduler_config_registry:
+    if (
+        not isinstance(default, dict)
+        or "type" not in default
+        or default["type"] not in hyperopt_utils.scheduler_config_registry
+    ):
         raise ValidationError(f"Invalid default: `{default}`")
     try:
-        opt = scheduler_config_registry[default["type"].lower()]
+        opt = hyperopt_utils.scheduler_config_registry[default["type"].lower()]
         load_default = lambda: opt.Schema().load(default)
         dump_default = opt.Schema().dump(default)
 
