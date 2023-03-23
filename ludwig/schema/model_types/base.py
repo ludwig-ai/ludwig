@@ -20,6 +20,7 @@ from ludwig.schema.model_types.utils import (
     set_derived_feature_columns_,
     set_hyperopt_defaults_,
     set_preprocessing_parameters,
+    set_tagger_decoder_parameters,
     set_validation_parameters,
 )
 from ludwig.schema.preprocessing import PreprocessingConfig
@@ -52,6 +53,7 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
     def __post_init__(self):
         set_validation_parameters(self)
         set_hyperopt_defaults_(self)
+        set_tagger_decoder_parameters(self)
 
         # Reconcile conflicting preprocessing parameters
         set_preprocessing_parameters(self)

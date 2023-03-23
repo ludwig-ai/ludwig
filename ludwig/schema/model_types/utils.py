@@ -257,6 +257,23 @@ def _set_max_sequence_length(config: "ModelConfig") -> None:  # noqa: F821
                 input_feature.preprocessing.max_sequence_length = sequence_length
 
 
+def set_tagger_decoder_parameters(config: "ModelConfig") -> None:
+    """Overrides the reduce_input parameter for text and sequence output features when a tagger decoder is used.
+    This is done to ensure that the decoder correctly gets a 3D tensor as input.
+
+    Returns:
+        None -> modifies output_features
+    """
+    for output_feature in config.output_features:
+        if output_feature.type in {TEXT, SEQUENCE} and output_feature.decoder.type == "tagger":
+            if output_feature.reduce_input is not None:
+                warnings.warn(
+                    "reduce_input must be set to `None` when using a tagger decoder for your output feature. "
+                    f"Setting reduce_input to `None` for `{output_feature.name}`."
+                )
+                output_feature.reduce_input = None
+
+
 @DeveloperAPI
 def contains_grid_search_parameters(hyperopt_config: HyperoptConfigDict) -> bool:
     """Returns True if any hyperopt parameter in the config is using the grid_search space."""
