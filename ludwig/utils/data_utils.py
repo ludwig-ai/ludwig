@@ -159,12 +159,14 @@ def spread(fn):
     return wrapped_fn
 
 
-def inner_read(fp, read_fn, **kwargs):
-    if "get_preview" in kwargs:
-        chunksize = kwargs["get_preview"]
-        del kwargs["get_preview"]
-        return next(read_fn(fp, chunksize=chunksize, **kwargs))
-    return read_fn(fp, **kwargs)
+def read_nrows_via_chunksize(fp, read_fn, **kwargs):
+    chunksize = kwargs.pop("nrows", None)
+    ret = read_fn(fp, chunksize=chunksize, **kwargs)
+
+    if isinstance(ret, collections.abc.Iterator):
+        return next(ret)
+
+    return ret
 
 
 @DeveloperAPI
@@ -316,8 +318,8 @@ def read_sas(data_fp, df_lib, **kwargs):
     # https://github.com/dask/dask/issues/9055
     if is_dask_lib(df_lib):
         logger.warning("Falling back to pd.read_sas() since dask backend does not support it")
-        return dd.from_pandas(inner_read(data_fp, df_lib.read_sas, **kwargs), npartitions=1)
-    return inner_read(data_fp, df_lib.read_sas, **kwargs)
+        return dd.from_pandas(read_nrows_via_chunksize(data_fp, df_lib.read_sas, **kwargs), npartitions=1)
+    return read_nrows_via_chunksize(data_fp, df_lib.read_sas, **kwargs)
 
 
 @DeveloperAPI
@@ -339,8 +341,8 @@ def read_stata(data_fp, df_lib, **kwargs):
     # https://github.com/dask/dask/issues/9055
     if is_dask_lib(df_lib):
         logger.warning("Falling back to pd.read_stata() since dask backend does not support it")
-        return dd.from_pandas(inner_read(data_fp, df_lib.read_stata, **kwargs), npartitions=1)
-    return inner_read(data_fp, df_lib.read_stata, **kwargs)
+        return dd.from_pandas(read_nrows_via_chunksize(data_fp, df_lib.read_stata, **kwargs), npartitions=1)
+    return read_nrows_via_chunksize(data_fp, df_lib.read_stata, **kwargs)
 
 
 @DeveloperAPI
