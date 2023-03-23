@@ -868,10 +868,9 @@ class RayBackend(RemoteTrainingMixin, Backend):
                 # Revert back to the original number of partitions in this column
                 df = df.into_partitions(n_col_partitions)
 
-            # As of getdaft 0.0.23, there is no support for conversion to Dask
-            # directly so convert to Ray and then convert to Dask
-            # This also forces materialization of the dataset, so we can skip calls to .collect()
-            # Daft -> Ray is a zero-copy op, so this has very minimal cost.
+            # As of getdaft 0.0.24, there is no support for conversion directly to Dask so convert to
+            # Ray and then convert to Dask. This also forces materialization of the dataset, so we can skip
+            # calls to .collect(). Daft -> Ray is a zero-copy op, so this has very minimal cost.
             df = df.to_ray_dataset()
             df = self.df_engine.from_ray_dataset(df)
 
