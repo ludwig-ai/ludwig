@@ -415,7 +415,7 @@ class RayAirRunner:
             datasets=dataset,
             scaling_config=self.scaling_config,
             dataset_config=dataset_config,
-            run_config=RunConfig(callbacks=callbacks, verbose=1),
+            run_config=RunConfig(callbacks=callbacks, verbose=0),
             **kwargs,
         )
 
