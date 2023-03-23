@@ -29,6 +29,7 @@ from ludwig.utils.data_utils import (
     get_abs_path,
     hash_dict,
     NumpyEncoder,
+    PANDAS_DF,
     read_csv,
     read_parquet,
     use_credentials,
@@ -180,4 +181,4 @@ def test_chunking():
 
     # Try chunked versions:
     assert read_csv("s3://ludwig-tests/datasets/synthetic_1k.csv", nrows=100).shape[0] == 100
-    assert read_parquet("s3://ludwig-tests/datasets/synthetic_1k.parquet", nrows=100).shape[0] == 100
+    assert read_parquet("s3://ludwig-tests/datasets/synthetic_1k.parquet", df_lib=PANDAS_DF, nrows=100).shape[0] == 100
