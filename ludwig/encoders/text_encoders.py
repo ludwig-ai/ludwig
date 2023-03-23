@@ -16,6 +16,7 @@
 import logging
 from typing import Any, Callable, Dict, List, Optional, Type, Union
 
+import numpy as np
 import torch
 from torch import nn
 
@@ -40,6 +41,7 @@ from ludwig.schema.encoders.text_encoders import (
     MT5Config,
     RoBERTaConfig,
     T5Config,
+    TfIdfEncoderConfig,
     TransformerXLConfig,
     XLMConfig,
     XLMRoBERTaConfig,
@@ -2112,3 +2114,56 @@ class AutoTransformerEncoder(HFTextEncoder):
     @property
     def input_dtype(self):
         return torch.int32
+
+
+@DeveloperAPI
+@register_encoder("tf_idf", [TEXT])
+class TfIdfEncoder(Encoder):
+    def __init__(
+        self,
+        max_sequence_length: int,
+        encoder_config=None,
+        str2idf=None,
+        vocab=None,
+        vocab_size: int = None,
+        **kwargs,
+    ):
+        super().__init__()
+        self.config = encoder_config
+        self.max_sequence_length = max_sequence_length
+        self.vocab_size = vocab_size
+
+        logger.debug(f" {self.name}")
+
+        # Convert mapping of token -> frequency to a dense array
+        idf = np.zeros(vocab_size)
+        for i, s in enumerate(vocab):
+            idf[i] = str2idf[s]
+        self.idf = torch.from_numpy(idf).float().unsqueeze(0)
+
+    def forward(self, t: torch.Tensor, mask=None):
+        # Compute the term frequency within each row
+        tf = torch.stack([t_i.bincount(minlength=self.vocab_size) for t_i in torch.unbind(t.long())])
+
+        # Normalize the term frequency by the number of tokens in each row
+        tf = tf / tf.sum(dim=1).unsqueeze(-1)
+
+        # Multiply the term frequency by the inverse document frequency
+        tfidf = tf * self.idf
+
+        return {"encoder_output": tfidf}
+
+    @staticmethod
+    def get_schema_cls():
+        return TfIdfEncoderConfig
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([self.vocab_size])
+
+    def get_embedding_layer(self) -> nn.Module:
+        return self

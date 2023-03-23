@@ -10,6 +10,7 @@ from ludwig.features.feature_registries import get_input_type_registry
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.models.base import BaseModel
 from ludwig.schema.features.base import BaseInputFeatureConfig, FeatureCollection
+from ludwig.schema.features.utils import get_input_feature_cls
 from ludwig.types import FeatureConfigDict, TrainingSetMetadataDict
 from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
 from ludwig.utils.dataframe_utils import from_numpy_dataset
@@ -27,7 +28,14 @@ class Embedder(LudwigModule):
         input_feature_configs = []
         for feature in feature_configs:
             feature_cls = get_from_registry(feature[TYPE], get_input_type_registry())
-            feature_obj = feature_cls.get_schema_cls().from_dict(feature)
+
+            # TODO(travis): this assumes ECD is the selected model type, which is not problematic for now, as
+            # the only thing GBM vs ECD changes is the default encoder, but luckily at this point the encoder types
+            # have been fully materialized. However, this could change in the future as ECD and GBM feature configs
+            # diverge, so we should find a way to remove this. The best solution is to the change the input params from
+            # FeatureConfigDict types to BaseInputFeatureConfig types, which will require a refactor of preprocessing to
+            # use the schema, not the dict types.
+            feature_obj = get_input_feature_cls(feature[TYPE]).from_dict(feature)
             feature_cls.update_config_with_metadata(feature_obj, metadata[feature[NAME]])
 
             # When running prediction or eval, we need the preprocessing to use the original pretrained
@@ -48,7 +56,7 @@ class Embedder(LudwigModule):
     def forward(self, inputs: Dict[str, torch.Tensor]):
         encoder_outputs = {}
         for input_feature_name, input_values in inputs.items():
-            encoder = self.input_features[input_feature_name]
+            encoder = self.input_features.get(input_feature_name)
             encoder_output = encoder(input_values)
             encoder_outputs[input_feature_name] = encoder_output["encoder_output"]
         return encoder_outputs

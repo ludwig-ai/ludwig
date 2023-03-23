@@ -17,6 +17,11 @@ description: |
   In the original dataset, the  5 labels: very negative, negative, neutral, positive,
   and very positive have the following cutoffs:
   [0, 0.2], (0.2, 0.4], (0.4, 0.6], (0.6, 0.8], (0.8, 1.0]
+columns:
+  - name: sentence
+    type: text
+  - name: label
+    type: category
 output_features:
     - name: label
       type: category

@@ -18,8 +18,6 @@ class AudioInputFeatureConfigMixin(BaseMarshmallowConfig):
     """AudioInputFeatureConfigMixin is a dataclass that configures the parameters used in both the audio input
     feature and the audio global defaults section of the Ludwig Config."""
 
-    type: str = schema_utils.ProtectedString(AUDIO)
-
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=AUDIO)
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
@@ -35,4 +33,4 @@ class AudioInputFeatureConfigMixin(BaseMarshmallowConfig):
 class AudioInputFeatureConfig(AudioInputFeatureConfigMixin, BaseInputFeatureConfig):
     """AudioInputFeatureConfig is a dataclass that configures the parameters used for an audio input feature."""
 
-    pass
+    type: str = schema_utils.ProtectedString(AUDIO)

@@ -26,13 +26,10 @@ from ludwig.schema.utils import BaseMarshmallowConfig, ludwig_dataclass
 
 @DeveloperAPI
 @input_mixin_registry.register(CATEGORY)
-@gbm_defaults_config_registry.register(CATEGORY)
 @ludwig_dataclass
 class CategoryInputFeatureConfigMixin(BaseMarshmallowConfig):
     """CategoryInputFeatureConfigMixin is a dataclass that configures the parameters used in both the category
     input feature and the category global defaults section of the Ludwig Config."""
-
-    type: str = schema_utils.ProtectedString(CATEGORY)
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=CATEGORY)
 
@@ -42,6 +39,8 @@ class CategoryInputFeatureConfigMixin(BaseMarshmallowConfig):
 class CategoryInputFeatureConfig(CategoryInputFeatureConfigMixin, BaseInputFeatureConfig):
     """CategoryInputFeatureConfig is a dataclass that configures the parameters used for a category input
     feature."""
+
+    type: str = schema_utils.ProtectedString(CATEGORY)
 
     encoder: BaseEncoderConfig = None
 
@@ -69,13 +68,22 @@ class GBMCategoryInputFeatureConfig(CategoryInputFeatureConfig):
 
 
 @DeveloperAPI
+@gbm_defaults_config_registry.register(CATEGORY)
+@ludwig_dataclass
+class GBMCategoryDefaultsConfig(CategoryInputFeatureConfigMixin):
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_GBM,
+        feature_type=CATEGORY,
+        default="passthrough",
+    )
+
+
+@DeveloperAPI
 @output_mixin_registry.register(CATEGORY)
 @ludwig_dataclass
 class CategoryOutputFeatureConfigMixin(BaseMarshmallowConfig):
     """CategoryOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the category
     output feature and the category global defaults section of the Ludwig Config."""
-
-    type: str = schema_utils.ProtectedString(CATEGORY)
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
         feature_type=CATEGORY,
@@ -94,6 +102,8 @@ class CategoryOutputFeatureConfigMixin(BaseMarshmallowConfig):
 class CategoryOutputFeatureConfig(CategoryOutputFeatureConfigMixin, BaseOutputFeatureConfig):
     """CategoryOutputFeatureConfig is a dataclass that configures the parameters used for a category output
     feature."""
+
+    type: str = schema_utils.ProtectedString(CATEGORY)
 
     calibration: bool = schema_utils.Boolean(
         default=False,
@@ -129,7 +139,7 @@ class CategoryOutputFeatureConfig(CategoryOutputFeatureConfigMixin, BaseOutputFe
         parameter_metadata=FEATURE_METADATA[CATEGORY]["reduce_input"],
     )
 
-    top_k: int = schema_utils.NonNegativeInteger(
+    top_k: int = schema_utils.PositiveInteger(
         default=3,
         description="Determines the parameter k, the number of categories to consider when computing the top_k "
         "measure. It computes accuracy but considering as a match if the true category appears in the "

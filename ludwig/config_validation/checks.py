@@ -341,7 +341,6 @@ def check_tagger_decoder_requirements(config: "ModelConfig") -> None:  # noqa: F
         )
 
 
-@register_config_check
 def check_hyperopt_parameter_dicts(config: "ModelConfig") -> None:  # noqa: F821
     """Checks for hyperopt parameter dicts against their config objects."""
     from ludwig.schema.hyperopt.utils import get_parameter_cls, parameter_config_registry
@@ -367,3 +366,33 @@ def check_hyperopt_parameter_dicts(config: "ModelConfig") -> None:  # noqa: F821
                     f"Invalid hyperopt parameter space requested for `hyperopt.parameters.{parameter}`. Valid spaces "
                     f"are {space_types}."
                 )
+
+
+def check_concat_combiner_requirements(config: "ModelConfig") -> None:  # noqa: F821
+    """Checks that if the concat combiner receives a mixture of sequence and non-sequence features, that all
+    sequence features are configured with reduce_output to be 2D tensors."""
+    if config.model_type != MODEL_ECD:
+        return
+    if config.combiner.type != "concat":
+        return
+
+    has_unreduced_sequence_feature = False
+    has_non_sequence_feature = False
+    for input_feature in config.input_features:
+        if (
+            input_feature.type in {SEQUENCE, TEXT, TIMESERIES}
+            and hasattr(input_feature.encoder, "reduce_output")
+            and input_feature.encoder.reduce_output is None
+        ):
+            has_unreduced_sequence_feature = True
+        else:
+            has_non_sequence_feature = True
+
+    if has_unreduced_sequence_feature and has_non_sequence_feature:
+        raise ConfigValidationError(
+            "The concat combiner cannot receive a mix of unreduced sequence features (3D) and non-sequence features "
+            "(2D). Options: 1) Set reduce_output in sequence feature encoders to a value other than None to ensure 2D "
+            "encoder outputs, 2) Choose a different combiner like `sequence_concat` which can handle a mix of 2D and "
+            "3D encoder output shapes, or 3) Remove features to ensure that output shapes from all encoders are the "
+            "same dimension (all 2D or all 3D)."
+        )

@@ -824,3 +824,62 @@ def test_load_config_missing_hyperopt():
     config_obj = ModelConfig.from_dict(old_valid_config)
     assert config_obj.hyperopt is None
     assert config_obj.to_dict()[HYPEROPT] is None
+
+
+def test_defaults_gbm_config():
+    old_valid_config = {
+        "input_features": [
+            {"name": "feature_1", "type": "category"},
+            {"name": "Sex", "type": "category"},
+        ],
+        "output_features": [
+            {"name": "Survived", "type": "category"},
+        ],
+        "defaults": {
+            "binary": {
+                "decoder": {
+                    "type": "regressor",
+                    "num_fc_layers": 0,
+                },
+                "encoder": {"type": "passthrough"},
+                "loss": {
+                    "weight": 1.0,
+                },
+                "preprocessing": {
+                    "missing_value_strategy": "fill_with_false",
+                },
+            },
+            "category": {
+                "decoder": {"type": "classifier", "num_fc_layers": 0},
+                "encoder": {"type": "onehot"},
+                "loss": {"confidence_penalty": 0},
+                "preprocessing": {
+                    "missing_value_strategy": "fill_with_const",
+                    "most_common": 10000,
+                },
+            },
+            "number": {
+                "decoder": {"type": "regressor"},
+                "encoder": {"type": "passthrough"},
+                "loss": {"type": "mean_squared_error"},
+                "preprocessing": {"missing_value_strategy": "fill_with_const"},
+            },
+            "sequence": {
+                "decoder": {},
+                "loss": {},
+                "preprocessing": {},
+                "encoder": {},
+            },
+        },
+        "model_type": "gbm",
+    }
+
+    config_obj = ModelConfig.from_dict(old_valid_config).to_dict()
+
+    # Non GBM supported feature so shouldn't exist in defaults
+    assert "sequence" not in config_obj["defaults"]
+
+    # Ensure defaults only have relevant keys
+    for feature_type in config_obj["defaults"]:
+        assert "decoder" not in config_obj["defaults"][feature_type]
+        assert "loss" not in config_obj["defaults"][feature_type]

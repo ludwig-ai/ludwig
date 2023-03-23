@@ -25,14 +25,11 @@ from ludwig.schema.utils import BaseMarshmallowConfig, ludwig_dataclass
 
 
 @DeveloperAPI
-@gbm_defaults_config_registry.register(BINARY)
 @input_mixin_registry.register(BINARY)
 @ludwig_dataclass
 class BinaryInputFeatureConfigMixin(BaseMarshmallowConfig):
     """BinaryInputFeatureConfigMixin is a dataclass that configures the parameters used in both the binary input
     feature and the binary global defaults section of the Ludwig Config."""
-
-    type: str = schema_utils.ProtectedString(BINARY)
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=BINARY)
 
@@ -41,6 +38,8 @@ class BinaryInputFeatureConfigMixin(BaseMarshmallowConfig):
 @ludwig_dataclass
 class BinaryInputFeatureConfig(BinaryInputFeatureConfigMixin, BaseInputFeatureConfig):
     """BinaryInputFeatureConfig is a dataclass that configures the parameters used for a binary input feature."""
+
+    type: str = schema_utils.ProtectedString(BINARY)
 
     encoder: BaseEncoderConfig = None
 
@@ -68,13 +67,22 @@ class GBMBinaryInputFeatureConfig(BinaryInputFeatureConfig):
 
 
 @DeveloperAPI
+@gbm_defaults_config_registry.register(BINARY)
+@ludwig_dataclass
+class GBMBinaryDefaultsConfig(BinaryInputFeatureConfigMixin):
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_GBM,
+        feature_type=BINARY,
+        default="passthrough",
+    )
+
+
+@DeveloperAPI
 @output_mixin_registry.register(BINARY)
 @ludwig_dataclass
 class BinaryOutputFeatureConfigMixin(BaseMarshmallowConfig):
     """BinaryOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the binary output
     feature and the binary global defaults section of the Ludwig Config."""
-
-    type: str = schema_utils.ProtectedString(BINARY)
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
         feature_type=BINARY,
@@ -92,6 +100,8 @@ class BinaryOutputFeatureConfigMixin(BaseMarshmallowConfig):
 @ludwig_dataclass
 class BinaryOutputFeatureConfig(BinaryOutputFeatureConfigMixin, BaseOutputFeatureConfig):
     """BinaryOutputFeatureConfig is a dataclass that configures the parameters used for a binary output feature."""
+
+    type: str = schema_utils.ProtectedString(BINARY)
 
     calibration: bool = schema_utils.Boolean(
         default=False,

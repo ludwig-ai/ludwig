@@ -10,6 +10,13 @@ description: |
   Source textbook:
   Forecasting: Principles and Practice
       Rob J Hyndman and George Athanasopoulos
+columns:
+    - name: Demand
+      type: number
+    - name: WorkDay
+      type: binary
+    - name: Temperature
+      type: number
 output_features:
   - name: Demand
     type: number

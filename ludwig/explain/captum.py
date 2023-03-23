@@ -9,7 +9,6 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 import torch
-import torch.nn as nn
 from captum.attr import LayerIntegratedGradients, TokenReferenceBase
 from captum.attr._utils.input_layer_wrapper import InputIdentity
 from torch.autograd import Variable
@@ -17,16 +16,32 @@ from tqdm import tqdm
 
 from ludwig.api import LudwigModel
 from ludwig.api_annotations import PublicAPI
-from ludwig.constants import CATEGORY, DATE, IMAGE, INPUT_FEATURES, NAME, PREPROCESSING, SET, TEXT, UNKNOWN_SYMBOL
+from ludwig.constants import (
+    BINARY,
+    CATEGORY,
+    DATE,
+    IMAGE,
+    INPUT_FEATURES,
+    NAME,
+    NUMBER,
+    PREPROCESSING,
+    SET,
+    TEXT,
+    UNKNOWN_SYMBOL,
+)
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.explain.explainer import Explainer
 from ludwig.explain.explanation import ExplanationsResult
-from ludwig.explain.util import get_pred_col
+from ludwig.explain.util import get_pred_col, replace_layer_with_copy
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.models.ecd import ECD
 from ludwig.utils.torch_utils import DEVICE
 
 logger = logging.getLogger(__name__)
+
+# These types as provided as integer values and passed through an embedding layer that breaks integrated gradients.
+# As such, we need to take care to encode them before handing them to the explainer.
+EMBEDDED_TYPES = {TEXT, CATEGORY, SET, DATE}
 
 
 @dataclass
@@ -76,11 +91,12 @@ class WrapperModule(torch.nn.Module):
         super().__init__()
         self.model = model
         self.target = target
-        self.input_maps = nn.ModuleDict(
+        self.input_maps = LudwigFeatureDict()
+        self.input_maps.update(
             {
                 arg_name: InputIdentity(arg_name)
                 for arg_name in self.model.input_features.keys()
-                if self.model.input_features[arg_name].type() not in {TEXT, CATEGORY, DATE, SET}
+                if self.model.input_features.get(arg_name).type() not in EMBEDDED_TYPES
             }
         )
 
@@ -91,8 +107,8 @@ class WrapperModule(torch.nn.Module):
             # Send the input through the identity layer so that we can use the output of the layer for attribution.
             # Except for text/category features where we use the embedding layer for attribution.
             feat_name: feat_input
-            if input_features[feat_name].type() in {TEXT, CATEGORY, DATE, SET}
-            else self.input_maps[feat_name](feat_input)
+            if input_features.get(feat_name).type() in EMBEDDED_TYPES
+            else self.input_maps.get(feat_name)(feat_input)
             for feat_name, feat_input in zip(input_features.keys(), args)
         }
 
@@ -102,9 +118,20 @@ class WrapperModule(torch.nn.Module):
         # and predictions as well, so derive them.
         predictions = {}
         for of_name in self.model.output_features:
-            predictions[of_name] = self.model.output_features[of_name].predictions(outputs, of_name)
+            predictions[of_name] = self.model.output_features.get(of_name).predictions(outputs, of_name)
 
-        return get_pred_col(predictions, self.target)
+        pred_t = get_pred_col(predictions, self.target)
+
+        # If the target feature is a non-scalar type (vector, set, etc.), sum it to get a scalar value.
+        # https://github.com/pytorch/captum/issues/377
+        if len(pred_t.shape) > 1 and self.model.output_features.get(self.target).type() not in {
+            CATEGORY,
+            NUMBER,
+            BINARY,
+        }:
+            pred_t = torch.sum(pred_t.reshape(pred_t.shape[0], -1), dim=1)
+
+        return pred_t
 
 
 @PublicAPI(stability="experimental")
@@ -367,12 +394,22 @@ def get_total_attribution(
 
     layers = []
     for feat_name, feat in input_features.items():
-        if feat.type() in {TEXT, CATEGORY, DATE, SET}:
+        if feat.type() in EMBEDDED_TYPES:
             # Get embedding layer from encoder, which is the first child of the encoder.
-            layers.append(feat.encoder_obj.get_embedding_layer())
+            target_layer = feat.encoder_obj.get_embedding_layer()
+
+            # If the current layer matches any layer in the list, make a deep copy of the layer.
+            if len(layers) > 0 and any(target_layer == layer for layer in layers):
+                # Replace the layer with a deep copy of the layer to ensure that the attributions unique for each input
+                # feature that uses a shared layer.
+                # Recommended here: https://github.com/pytorch/captum/issues/794#issuecomment-1093021638
+                replace_layer_with_copy(feat, target_layer)
+                target_layer = feat.encoder_obj.get_embedding_layer()  # get the new copy
         else:
             # Get the wrapped input layer.
-            layers.append(explanation_model.input_maps[feat_name])
+            target_layer = explanation_model.input_maps.get(feat_name)
+
+        layers.append(target_layer)
 
     explainer = LayerIntegratedGradients(explanation_model, layers)
 

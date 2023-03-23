@@ -19,7 +19,7 @@ from functools import partial
 import torch
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import BINARY, CATEGORY, LOSS, NUMBER, SET, TYPE, VECTOR
+from ludwig.constants import BINARY, CATEGORY, LOSS, NUMBER, SET, TIMESERIES, TYPE, VECTOR
 from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
 from ludwig.schema.decoders.base import ClassifierConfig, PassthroughDecoderConfig, ProjectorConfig, RegressorConfig
@@ -96,7 +96,7 @@ class Regressor(Decoder):
 
 
 @DeveloperAPI
-@register_decoder("projector", [VECTOR])
+@register_decoder("projector", [VECTOR, TIMESERIES])
 class Projector(Decoder):
     def __init__(
         self,
@@ -106,6 +106,7 @@ class Projector(Decoder):
         weights_initializer="xavier_uniform",
         bias_initializer="zeros",
         activation=None,
+        multiplier=1.0,
         clip=None,
         decoder_config=None,
         **kwargs,
@@ -125,6 +126,7 @@ class Projector(Decoder):
         )
 
         self.activation = get_activation(activation)
+        self.multiplier = multiplier
 
         if clip is not None:
             if isinstance(clip, (list, tuple)) and len(clip) == 2:
@@ -146,7 +148,7 @@ class Projector(Decoder):
         return self.dense.input_shape
 
     def forward(self, inputs, **kwargs):
-        values = self.activation(self.dense(inputs))
+        values = self.activation(self.dense(inputs)) * self.multiplier
         if self.clip:
             values = self.clip(values)
         return values

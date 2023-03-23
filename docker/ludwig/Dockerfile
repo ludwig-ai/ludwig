@@ -21,6 +21,8 @@ RUN pip install -U pip
 
 WORKDIR /ludwig
 
+RUN pip install torch==1.13.1 torchtext torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cpu
+
 COPY . .
 RUN HOROVOD_WITH_PYTORCH=1 \
     HOROVOD_WITHOUT_MPI=1 \

@@ -12,6 +12,29 @@ description: |
   A data set of 1,000 most popular movies on IMDB in the last 10 years. The data points included are:
   Title, Genre, Description, Director, Actors, Year, Runtime, Rating, Votes, Revenue, Metascrore
   https://www.kaggle.com/PromptCloudHQ/imdb-data
+columns:
+  - name: Rank
+    type: number
+  - name: Title
+    type: category
+  - name: Description
+    type: text
+  - name: Director
+    type: category
+  - name: Actors
+    type: set
+  - name: Year
+    type: category
+  - name: Runtime (Minutes)
+    type: number
+  - name: Rating Votes
+    type: number
+  - name: Revenue (Millions)
+    type: number
+  - name: Metascore
+    type: number
+  - name: Genre_is_Drama
+    type: binary
 output_features:
 - name: Genre_is_Drama
   type: binary

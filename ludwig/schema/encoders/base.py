@@ -1,14 +1,16 @@
 from abc import ABC
-from typing import List, Union
+from typing import List, TYPE_CHECKING, Union
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import BINARY, MODEL_ECD, MODEL_GBM, NUMBER, VECTOR
+from ludwig.constants import BINARY, MODEL_ECD, MODEL_GBM, NUMBER, TIMESERIES, VECTOR
 from ludwig.schema import common_fields
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.utils import register_encoder_config
-from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.metadata import ENCODER_METADATA
 from ludwig.schema.utils import ludwig_dataclass
+
+if TYPE_CHECKING:
+    from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 
 
 @DeveloperAPI
@@ -24,7 +26,7 @@ class BaseEncoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
         parameter_metadata=ENCODER_METADATA["BaseEncoder"]["skip"],
     )
 
-    def set_fixed_preprocessing_params(self, model_type: str, preprocessing: BasePreprocessingConfig):
+    def set_fixed_preprocessing_params(self, model_type: str, preprocessing: "BasePreprocessingConfig"):
         pass
 
     def is_pretrained(self) -> bool:
@@ -51,7 +53,7 @@ class PassthroughEncoderConfig(BaseEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("dense", [BINARY, NUMBER, VECTOR])
+@register_encoder_config("dense", [BINARY, NUMBER, VECTOR, TIMESERIES])
 @ludwig_dataclass
 class DenseEncoderConfig(BaseEncoderConfig):
     """DenseEncoderConfig is a dataclass that configures the parameters used for a dense encoder."""

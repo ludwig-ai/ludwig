@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import torch
+from packaging.version import parse as parse_version
 
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
@@ -282,6 +283,37 @@ def test_mixed_precision(tmpdir):
     trainer = {
         "epochs": 2,
         "use_mixed_precision": True,
+    }
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "output_size": 14},
+        TRAINER: trainer,
+    }
+
+    # Just test that training completes without error.
+    # TODO(travis): We may want to expand upon this in the future to include some checks on model
+    # convergence like gradient magnitudes, etc. Should also add distributed tests.
+    model = LudwigModel(config, backend=LocalTestBackend(), logging_level=logging.INFO)
+    model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv, output_directory=tmpdir)
+
+
+@pytest.mark.skipif(
+    parse_version(torch.__version__) < parse_version("2.0"), reason="Model compilation requires PyTorch >= 2.0"
+)
+def test_compile(tmpdir):
+    input_features = [text_feature()]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
+
+    csv_filename = os.path.join(tmpdir, "training.csv")
+    data_csv = generate_data(input_features, output_features, csv_filename)
+    val_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "validation.csv"))
+    test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "test.csv"))
+
+    trainer = {
+        "epochs": 2,
+        "compile": True,
     }
 
     config = {

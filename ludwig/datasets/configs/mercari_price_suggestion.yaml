@@ -15,6 +15,31 @@ description: |
   Predict product price based on details like product category name, brand name, and item condition.
   We have converted price to log price by log(1 + price).
   https://www.kaggle.com/c/mercari-price-suggestion-challenge
+columns:
+  - name: train_id
+    type: category
+  - name: name
+    type: category
+  - name: item_condition_id
+    type: category
+  - name: category_name
+    type: category
+  - name: brand_name
+    type: category
+  - name: price
+    type: number
+  - name: shipping
+    type: binary
+  - name: item_description
+    type: text
+  - name: log_price
+    type: number
+  - name: cat1
+    type: category
+  - name: cat2
+    type: category
+  - name: cat3
+    type: category
 output_features:
   - name: log_price
     type: number
