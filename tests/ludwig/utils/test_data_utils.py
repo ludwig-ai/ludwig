@@ -29,6 +29,8 @@ from ludwig.utils.data_utils import (
     get_abs_path,
     hash_dict,
     NumpyEncoder,
+    read_csv,
+    read_parquet,
     use_credentials,
 )
 
@@ -169,3 +171,13 @@ def test_dataset_synthesizer_output_feature_decoder():
     }
     build_synthetic_dataset_df(dataset_size=100, config=config)
     LudwigModel(config=config, logging_level=logging.INFO)
+
+
+def test_chunking():
+    # Try basic reads:
+    read_csv("s3://ludwig-tests/datasets/synthetic_1k.csv")
+    read_parquet("s3://ludwig-tests/datasets/synthetic_1k.parquet")
+
+    # Try chunked versions:
+    assert read_csv("s3://ludwig-tests/datasets/synthetic_1k.csv", nrows=100).shape[0] == 100
+    assert read_parquet("s3://ludwig-tests/datasets/synthetic_1k.parquet", nrows=100).shape[0] == 100
