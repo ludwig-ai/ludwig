@@ -102,7 +102,6 @@ class BaseSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
         missing_packages = []
         missing_installs = []
         for package_name, install_name in hyperopt_utils.get_scheduler_dependencies(self.type):
-            print(f"({[package_name]}, {install_name})")
             try:
                 import_module(package_name)
             except ImportError:
