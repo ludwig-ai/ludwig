@@ -54,7 +54,7 @@ from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.trainers.registry import ray_trainers_registry, register_ray_trainer
 from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer
 from ludwig.types import HyperoptConfigDict, ModelConfigDict, TrainerConfigDict, TrainingSetMetadataDict
-from ludwig.utils.dataframe_utils import set_index_name
+from ludwig.utils.dataframe_utils import is_dask_series_or_df, set_index_name
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.system_utils import Resources
 from ludwig.utils.torch_utils import get_torch_device, initialize_pytorch
@@ -827,6 +827,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
     ) -> Series:
         # normalize NaNs to None
         column = column.fillna(np.nan).replace([np.nan], [None])
+        n_col_partitions = 1 if not is_dask_series_or_df(column, self) else column.npartitions
 
         pd_column = self.df_engine.compute(column)
         fnames = pd_column.values.tolist()
@@ -838,25 +839,34 @@ class RayBackend(RemoteTrainingMixin, Backend):
             from daft import col, DataFrame
 
             # Set the runner for executing Daft dataframes to a Ray cluster
-            try:
-                daft.context.set_runner_ray(address=ray.util.get_node_ip_address())
-            except RuntimeError:
-                # We hit runtime errors if we try to set the runner multiple times in the same process
-                # when there are multiple audio/image features, as well as in our Ludwig test suite
-                # when we re-use the same backend instance/same test fixture multiple times.
-                logger.debug("Daft runner already set, skipping since we can only set this once.")
+            # Prevent re-initialization errors if the runner is already set
+            # This can happen if there are 2 or more audio/image columns
+            daft.context.set_runner_ray(address=ray.util.get_node_ip_address(), noop_if_initialized=True)
 
-            # Get the maximum number of worker threads that can be used to parallelize reads
-            read_parallelism = self._get_binary_read_parallelism(len(fnames), file_size)
+            # Create 1 partition for each available CPU in the Ray cluster
+            # Fall back to distributing this over 1 GPU if no CPUs are available
+            # This is a heuristic to saturate network bandwidth while downloading images
+            # and also prevent large disk spillage to disk from the object store since we will
+            # only spill smaller individual partitions rather than 1 large partition
+            resources = self.get_available_resources()
+            if resources.cpus > 0:
+                num_downloading_partitions = int(resources.cpus)
+            else:
+                num_downloading_partitions = 1
 
             with self.storage.cache.use_credentials():
-                df = (
-                    # Requires initialization from a mapping of col_name -> list of items in the series
-                    # Failed image reads return None automatically, so there's no post processing required.
-                    DataFrame.from_pydict({column.name: fnames}).with_column(
-                        column.name, col(column.name).url.download(max_worker_threads=read_parallelism)
-                    )
-                )
+                # Requires initialization from a mapping of col_name -> list of items in the series
+                # Failed image reads return None automatically, so there's no post processing required.
+                df = DataFrame.from_pydict({column.name: fnames})
+                # This partitioning event doesn't involve shuffling and is very cheap because it splits
+                # the dataframe into n partitions by doing the minimal number of splits or merges. Preserves order.
+                # Very similar to re-aligning divisions in Dask to create partitions.
+                df = df.into_partitions(num_downloading_partitions)
+                # Download binary files in parallel
+                # Use 16 worker threads to maximize image read throughput over each partition
+                df = df.with_column(column.name, col(column.name).url.download(max_worker_threads=16))
+                # Revert back to the original number of partitions in this column
+                df = df.into_partitions(n_col_partitions)
 
             # As of getdaft 0.0.23, there is no support for conversion to Dask
             # directly so convert to Ray and then convert to Dask
@@ -864,10 +874,6 @@ class RayBackend(RemoteTrainingMixin, Backend):
             # Daft -> Ray is a zero-copy op, so this has very minimal cost.
             df = df.to_ray_dataset()
             df = self.df_engine.from_ray_dataset(df)
-
-            # Restore number of partitions of the original column since we lose this during the conversion
-            # from Dask -> Daft -> Ray -> Dask
-            df = df.repartition(npartitions=column.npartitions)
 
             # Persist the dataframe
             df = self.df_engine.persist(df)
@@ -953,20 +959,6 @@ class RayBackend(RemoteTrainingMixin, Backend):
         num_gpus = resources_per_worker.get("GPU", 0)
         num_cpus = resources_per_worker.get("CPU", (1 if num_gpus == 0 else 0))
         return dict(num_cpus=num_cpus, num_gpus=num_gpus)
-
-    def _get_binary_read_parallelism(self, num_files: int, file_size: Optional[int] = None) -> int:
-        """Determine the maximum number of workers to use when reading binary files using file_size."""
-        if self.df_engine.partitioned and file_size is not None:
-            # Heuristic to determine parallelism: if the average file size is known (in bytes), then we can
-            # extrapolate to determine the total file size. We aim to have ~100MB (10e7 bytes) per worker, so we
-            # set parallelism to be the total size / 100MB.
-            total_size = file_size * num_files
-            parallelism = int(total_size / 10e7)
-            # Only set parallelism if it matches or exceeds the Daft default for parallelism
-            return max(8, parallelism)
-
-        # Daft uses a default of 8 worker threads for downloading URLs
-        return 8
 
 
 @ray.remote(max_calls=1)
