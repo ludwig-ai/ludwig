@@ -348,15 +348,23 @@ def check_hyperopt_parameter_dicts(config: "ModelConfig") -> None:  # noqa: F821
 
     if config.hyperopt is not None:
         for parameter, space in config.hyperopt.parameters.items():
-            current = config
-            for p in parameter.split("."):
-                try:
-                    current = current.__getattribute__(p)
-                except AttributeError:
-                    raise ConfigValidationError(
-                        f"The supplied hyperopt parameter {parameter} is not a valid config field. Check the Ludwig "
-                        "docs for the list of valid parameters."
-                    )
+            parameter_attribute_path = parameter.split(".")
+            passed = False
+
+            for root in [config, config.input_features, config.output_features]:
+                current = root
+                for p in parameter_attribute_path:
+                    try:
+                        current = current.__getattribute__(p)
+                        passed = True
+                    except AttributeError:
+                        continue
+
+            if not passed:
+                raise ConfigValidationError(
+                    f"The supplied hyperopt parameter {parameter} is not a valid config field. Check the Ludwig "
+                    "docs for the list of valid parameters."
+                )
 
             try:
                 space_cls = get_parameter_cls(space["space"])
