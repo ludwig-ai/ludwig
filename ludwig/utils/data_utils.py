@@ -237,6 +237,9 @@ def read_excel(data_fp, df_lib, **kwargs):
     fp_split = os.path.splitext(data_fp)
     if fp_split[1] == ".xls":
         excel_engine = "xlrd"
+    else:
+        excel_engine = "openpyxl"
+
     # https://github.com/dask/dask/issues/9055
     if is_dask_lib(df_lib):
         logger.warning("Falling back to pd.read_excel() since dask backend does not support it")
