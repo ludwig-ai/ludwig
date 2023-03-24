@@ -356,7 +356,8 @@ def check_hyperopt_parameter_dicts(config: "ModelConfig") -> None:  # noqa: F821
                 for p in parameter_attribute_path:
                     try:
                         current = current.__getattribute__(p)
-                        passed = True
+                        if p == parameter_attribute_path[-1]:
+                            passed = True
                     except AttributeError:
                         continue
 
