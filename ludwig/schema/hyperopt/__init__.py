@@ -3,6 +3,7 @@ from typing import Dict
 
 from marshmallow_dataclass import dataclass
 
+import ludwig.schema.hyperopt.parameter  # noqa: F401
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import LOSS, TEST, TRAIN, VALIDATION
 from ludwig.modules import metric_modules  # noqa: Needed to ensure that the metric registry is populated.
@@ -53,6 +54,16 @@ class HyperoptConfig(schema_utils.BaseMarshmallowConfig, ABC):
         allow_none=False,
         description=(
             "The split of data that we want to compute our metric on. By default it is the validation split, but "
+            "you have the flexibility to specify also train or test splits."
+        ),
+    )
+
+    eval_split: str = schema_utils.StringOptions(
+        options=[TRAIN, VALIDATION, TEST],
+        default=VALIDATION,
+        allow_none=False,
+        description=(
+            "The split of data that we want to run evaluation on. By default it is the validation split, but "
             "you have the flexibility to specify also train or test splits."
         ),
     )
