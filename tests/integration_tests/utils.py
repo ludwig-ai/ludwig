@@ -495,7 +495,10 @@ def category_prob_feature(**kwargs):
     feature = {
         "name": f"category_prob_{random_string()}",
         "type": "category_prob",
-        DECODER: {"type": "classifier", "vocab": ["a", "b", "c"]},
+        "preprocessing": {
+            "vocab": ["a", "b", "c"],
+        },
+        DECODER: {"type": "classifier"},
     }
     recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]

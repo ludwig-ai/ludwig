@@ -160,7 +160,7 @@ class BinaryAUROCMetric(BinaryAUROC, LudwigMetric):
         super().update(preds, target.type(torch.int8))
 
 
-@register_metric(ROC_AUC, [CATEGORY, CATEGORY_PROB], MAXIMIZE, PROBABILITIES)
+@register_metric(ROC_AUC, [CATEGORY], MAXIMIZE, PROBABILITIES)
 class CategoryAUROCMetric(MulticlassAUROC, LudwigMetric):
     """Area under the receiver operating curve."""
 
@@ -376,7 +376,11 @@ class CategoryAccuracy(MulticlassAccuracy, LudwigMetric):
         super().__init__(num_classes=num_classes, dist_sync_fn=_gather_all_tensors_fn())
 
     def update(self, preds: Tensor, target: Tensor) -> None:
-        super().update(preds, target.type(torch.long))
+        if target.shape == 1:
+            target.type(torch.long)
+        else:
+            target = torch.argmax(target, dim=1)
+        super().update(preds, target)
 
 
 @register_metric(HITS_AT_K, [CATEGORY, CATEGORY_PROB], MAXIMIZE, LOGITS)

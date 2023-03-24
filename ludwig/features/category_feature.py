@@ -222,6 +222,19 @@ class CategoryProbFeatureMixin(VectorFeatureMixin):
     def type():
         return CATEGORY_PROB
 
+    @staticmethod
+    def get_feature_meta(
+        column, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
+    ) -> FeatureMetadataDict:
+        idx2str = preprocessing_parameters["vocab"]
+        str2idx = {s: i for i, s in enumerate(idx2str)}
+        return {
+            "preprocessing": preprocessing_parameters,
+            "idx2str": idx2str,
+            "str2idx": str2idx,
+            "vocab_size": len(idx2str),
+        }
+
 
 class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
     def __init__(self, input_feature_config: CategoryInputFeatureConfig, encoder_obj=None, **kwargs):
@@ -540,104 +553,6 @@ class CategoryProbOutputFeature(CategoryProbFeatureMixin, CategoryOutputFeature)
 
     def metric_kwargs(self):
         return {"top_k": self.top_k, "num_classes": self.num_classes, "task": "multiclass"}
-
-    @staticmethod
-    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
-        feature_config.num_classes = feature_metadata["vocab_size"]
-        feature_config.top_k = min(feature_config.num_classes, feature_config.top_k)
-
-        if isinstance(feature_config.loss.class_weights, (list, tuple)):
-            if len(feature_config.loss.class_weights) != feature_config.num_classes:
-                raise ValueError(
-                    "The length of class_weights ({}) is not compatible with "
-                    "the number of classes ({}) for feature {}. "
-                    "Check the metadata JSON file to see the classes "
-                    "and their order and consider there needs to be a weight "
-                    "for the <UNK> class too.".format(
-                        len(feature_config.loss.class_weights),
-                        feature_config.num_classes,
-                        feature_config.column,
-                    )
-                )
-
-        if isinstance(feature_config.loss.class_weights, dict):
-            if feature_metadata["str2idx"].keys() != feature_config.loss.class_weights.keys():
-                raise ValueError(
-                    "The class_weights keys ({}) are not compatible with "
-                    "the classes ({}) of feature {}. "
-                    "Check the metadata JSON file to see the classes "
-                    "and consider there needs to be a weight "
-                    "for the <UNK> class too.".format(
-                        feature_config.loss.class_weights.keys(),
-                        feature_metadata["str2idx"].keys(),
-                        feature_config.column,
-                    )
-                )
-            else:
-                class_weights = feature_config.loss.class_weights
-                idx2str = feature_metadata["idx2str"]
-                class_weights_list = [class_weights[s] for s in idx2str]
-                feature_config.loss.class_weights = class_weights_list
-
-        if feature_config.loss.class_similarities_temperature > 0:
-            if "class_similarities" in feature_config.loss:
-                similarities = feature_config.loss.class_similarities
-                temperature = feature_config.loss.class_similarities_temperature
-
-                curr_row = 0
-                first_row_length = 0
-                is_first_row = True
-                for row in similarities:
-                    if is_first_row:
-                        first_row_length = len(row)
-                        is_first_row = False
-                        curr_row += 1
-                    else:
-                        curr_row_length = len(row)
-                        if curr_row_length != first_row_length:
-                            raise ValueError(
-                                "The length of row {} of the class_similarities "
-                                "of {} is {}, different from the length of "
-                                "the first row {}. All rows must have "
-                                "the same length.".format(
-                                    curr_row, feature_config.column, curr_row_length, first_row_length
-                                )
-                            )
-                        else:
-                            curr_row += 1
-                all_rows_length = first_row_length
-
-                if all_rows_length != len(similarities):
-                    raise ValueError(
-                        "The class_similarities matrix of {} has "
-                        "{} rows and {} columns, "
-                        "their number must be identical.".format(
-                            feature_config.column, len(similarities), all_rows_length
-                        )
-                    )
-
-                if all_rows_length != feature_config.num_classes:
-                    raise ValueError(
-                        "The size of the class_similarities matrix of {} is "
-                        "{}, different from the number of classes ({}). "
-                        "Check the metadata JSON file to see the classes "
-                        "and their order and "
-                        "consider <UNK> class too.".format(
-                            feature_config.column, all_rows_length, feature_config.num_classes
-                        )
-                    )
-
-                similarities = np.array(similarities, dtype=np.float32)
-                for i in range(len(similarities)):
-                    similarities[i, :] = softmax(similarities[i, :], temperature=temperature)
-
-                feature_config.loss.class_similarities = similarities
-            else:
-                raise ValueError(
-                    "class_similarities_temperature > 0, "
-                    "but no class_similarities are provided "
-                    "for feature {}".format(feature_config.column)
-                )
 
     @staticmethod
     def calculate_overall_stats(predictions, targets, train_set_metadata):

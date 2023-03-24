@@ -167,6 +167,8 @@ class CategoryProbOutputFeatureConfig(BaseOutputFeatureConfig):
         default=SOFTMAX_CROSS_ENTROPY,
     )
 
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="category_prob_output")
+
     calibration: bool = schema_utils.Boolean(
         default=False,
         description="Calibrate the model's output probabilities using temperature scaling.",
@@ -185,8 +187,6 @@ class CategoryProbOutputFeatureConfig(BaseOutputFeatureConfig):
         description="List of input features that this feature depends on.",
         parameter_metadata=FEATURE_METADATA[CATEGORY]["dependencies"],
     )
-
-    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="category_output")
 
     reduce_dependencies: str = schema_utils.ReductionOptions(
         default="sum",

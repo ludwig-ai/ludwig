@@ -476,8 +476,8 @@ def generate_category_prob(feature, outdir: Optional[str] = None) -> str:
     `outdir` is unused.
     """
     # Space delimited string with floating point numbers that sum to 1
-    decoder = feature.get(DECODER, {})
-    vector_size = len(decoder.get("vocab", ["a", "b", "c"]))
+    preprocessing = feature.get(PREPROCESSING, {})
+    vector_size = len(preprocessing.get("vocab", ["a", "b", "c"]))
     v = np.random.rand(vector_size)
     v = v / v.sum()
     return " ".join([str(x) for x in v])

@@ -1,3 +1,4 @@
+from typing import List
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import CATEGORY, DROP_ROW, FILL_WITH_CONST, MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING
 from ludwig.schema import utils as schema_utils
@@ -91,3 +92,18 @@ class CategoryOutputPreprocessingConfig(CategoryPreprocessingConfig):
         "amount, the most infrequent tokens will be treated as unknown.",
         parameter_metadata=FEATURE_METADATA[CATEGORY][PREPROCESSING]["most_common"],
     )
+
+
+@DeveloperAPI
+@register_preprocessor("category_prob_output")
+@ludwig_dataclass
+class CategoryProbOutputPreprocessingConfig(CategoryPreprocessingConfig):
+    missing_value_strategy: str = schema_utils.StringOptions(
+        MISSING_VALUE_STRATEGY_OPTIONS,
+        default=DROP_ROW,
+        allow_none=False,
+        description="What strategy to follow when there's a missing value in a category output feature",
+        parameter_metadata=FEATURE_METADATA[CATEGORY][PREPROCESSING]["missing_value_strategy"],
+    )
+
+    vocab: List[str] = schema_utils.List(default=None)
