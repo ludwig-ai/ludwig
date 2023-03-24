@@ -975,6 +975,14 @@ def test_experiment_category_prob_feature(csv_filename):
     rel_path = generate_data(input_features, output_features, csv_filename)
 
     input_df = pd.read_csv(rel_path)
-    model, _, _, _, _ = run_experiment(input_features, output_features, dataset=rel_path)
+
+    # set batch_size=auto to ensure we produce the correct shaped synthetic data
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "output_size": 14},
+        TRAINER: {"epochs": 2, BATCH_SIZE: "auto"},
+    }
+    model, _, _, _, _ = run_experiment(input_features, output_features, dataset=rel_path, config=config)
     preds, _ = model.predict(input_df)
     print(preds)

@@ -545,11 +545,11 @@ class CategoryProbOutputFeature(CategoryProbFeatureMixin, CategoryOutputFeature)
 
     @classmethod
     def get_output_dtype(cls):
-        return torch.int64
+        return torch.float32
 
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size([1])
+        return torch.Size([self.num_classes])
 
     def metric_kwargs(self):
         return {"top_k": self.top_k, "num_classes": self.num_classes, "task": "multiclass"}
