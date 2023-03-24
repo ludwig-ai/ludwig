@@ -974,4 +974,7 @@ def test_experiment_category_prob_feature(csv_filename):
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
 
-    run_experiment(input_features, output_features, dataset=rel_path)
+    input_df = pd.read_csv(rel_path)
+    model, _, _, _, _ = run_experiment(input_features, output_features, dataset=rel_path)
+    preds, _ = model.predict(input_df)
+    print(preds)
