@@ -89,8 +89,8 @@ def load_pretrained_hf_model_with_hub_fallback(
     pretrained_models_dir = os.environ.get("LUDWIG_PRETRAINED_MODELS_DIR")
     if pretrained_models_dir:
         pretrained_model_path = os.path.join(pretrained_models_dir, pretrained_model_name_or_path)
-        if path_exists(pretrained_model_path):
-            try:
+        try:
+            if path_exists(pretrained_model_path):
                 logger.info(
                     f"Found existing pretrained model artifact {pretrained_model_name_or_path} in directory "
                     f"{pretrained_models_dir}. Downloading."
@@ -99,11 +99,11 @@ def load_pretrained_hf_model_with_hub_fallback(
                     _load_pretrained_hf_model_from_dir(model_class, pretrained_model_path, **pretrained_kwargs),
                     False,
                 )
-            except Exception as e:
-                logger.warning(
-                    f"Failed to download pretrained model from {pretrained_models_dir} with error {e}. "
-                    "Falling back to HuggingFace model hub."
-                )
+        except Exception as e:
+            logger.warning(
+                f"Failed to download pretrained model from {pretrained_models_dir} with error {e}. "
+                "Falling back to HuggingFace model hub."
+            )
 
     # Fallback to HF hub.
     return load_pretrained_hf_model_from_hub(model_class, pretrained_model_name_or_path, **pretrained_kwargs), True
