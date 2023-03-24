@@ -22,6 +22,7 @@ import torch
 from ludwig.constants import NAME, PREPROCESSING, SEQUENCE, TEXT, TIMESERIES, TYPE
 from ludwig.utils.data_utils import hash_dict
 from ludwig.utils.strings_utils import get_tokenizer_from_registry, UNKNOWN_SYMBOL
+from ludwig.utils.torch_utils import LudwigModule
 
 SEQUENCE_TYPES = {SEQUENCE, TEXT, TIMESERIES}
 FEATURE_NAME_SUFFIX = "__ludwig"
@@ -147,7 +148,7 @@ def get_name_from_module_dict_key(key: str, feature_name_suffix_length: int = FE
     return name[:-feature_name_suffix_length]
 
 
-class LudwigFeatureDict(torch.nn.Module):
+class LudwigFeatureDict(LudwigModule):
     """Torch ModuleDict wrapper that permits keys with any name.
 
     Torch's ModuleDict implementation doesn't allow certain keys to be used if they conflict with existing class

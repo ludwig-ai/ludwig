@@ -189,7 +189,7 @@ def train_fn(
         model = ray.get(model_ref)
         model.reload()
         device = get_torch_device()
-        model = model.to(device)
+        # model = model.to(device)
 
         trainer = RemoteTrainer(model=model, distributed=distributed, report_tqdm_to_ray=True, **executable_kwargs)
         results = trainer.train(train_shard, val_shard, test_shard, **kwargs)
@@ -253,8 +253,10 @@ def tune_batch_size_fn(
             training_set_metadata,
         )
 
+        print("RELOAD IN TUNE BATCH SIZE")
+        model.reload()
         device = get_torch_device()
-        model = model.to(device)
+        # model = model.to(device)
 
         trainer = RemoteTrainer(model=model, distributed=distributed, **executable_kwargs)
         return trainer.tune_batch_size(ludwig_config, train_shard, **kwargs)

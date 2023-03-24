@@ -2162,9 +2162,13 @@ class Llama(HFTextEncoder):
                 #     model = PeftModel.from_pretrained(model, peft_model_name_or_path, torch_dtype=torch.float16)
                 pass
 
+        print("LOAD", device)
+        for p in model.parameters():
+            print(p.shape, p.dtype, p.device)
         return model
 
     def reload(self):
+        print("RELOAD")
         transformer = self._load_pretrained_transformer()
         self.transformer.module = transformer
         super().reload()

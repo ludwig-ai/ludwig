@@ -172,7 +172,7 @@ class Trainer(BaseTrainer):
         self.base_learning_rate = base_learning_rate
 
         self.model = model
-        self.model = self.model.to(self.device)
+        # self.model = self.model.to(self.device)
 
         compiled_model = self.model
         if config.compile:
