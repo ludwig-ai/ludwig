@@ -85,8 +85,18 @@ def SearchAlgorithmDataclassField(description: str = "", default: Dict = {"type"
 
         def _jsonschema_type_mapping(self):
             return {
-                **schema_utils.unload_jsonschema_from_marshmallow_class(BaseSearchAlgorithmConfig),
-                "title": "search_algorithm",
+                # **schema_utils.unload_jsonschema_from_marshmallow_class(BaseSearchAlgorithmConfig),
+                "type": "object",
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "enum": list(hyperopt_utils.search_algorithm_config_registry.keys()),
+                        "default": default["type"],
+                        "description": "The type of scheduler to use during hyperopt",
+                    },
+                },
+                "title": "search_algorithm_options",
+                "required": ["type"],
                 "description": description,
             }
 
