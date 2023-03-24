@@ -84,7 +84,7 @@ def test_merge_with_defaults_early_stop(use_train, use_hyperopt_scheduler):
         binary_feature(),
         category_feature(),
         number_feature(),
-        text_feature(),
+        text_feature(name="utterance"),
     ]
     all_output_features = [
         category_feature(output_feature=True),
