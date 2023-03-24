@@ -359,7 +359,9 @@ def check_hyperopt_parameter_dicts(config: "ModelConfig") -> None:  # noqa: F821
                         if p == parameter_attribute_path[-1]:
                             passed = True
                     except AttributeError:
-                        continue
+                        break
+                if passed:
+                    break
 
             if not passed:
                 raise ConfigValidationError(
