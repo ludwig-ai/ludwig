@@ -16,13 +16,13 @@ def quantization_number_field(dtype: Union[Type[float], Type[int]] = float, defa
     if dtype is int:
         field = schema_utils.Integer(default=default, allow_none=True, description=description)
     else:
-        field = schema_utils.Float(default=default, allow_none=True, description=description)
+        field = schema_utils.FloatRange(default=default, allow_none=True, description=description)
 
     return field
 
 
 def log_base_field(default: float = 10) -> Field:
-    return schema_utils.Float(default=default, description="Logarithmic base.")
+    return schema_utils.FloatRange(default=default, description="Logarithmic base.")
 
 
 @DeveloperAPI
@@ -65,9 +65,9 @@ class UniformParameterConfig(schema_utils.BaseMarshmallowConfig):
 
     space: str = schema_utils.ProtectedString("uniform")
 
-    lower: float = schema_utils.Float(default=None, description="The minimum value the parameter can have.")
+    lower: float = schema_utils.FloatRange(default=None, description="The minimum value the parameter can have.")
 
-    upper: float = schema_utils.Float(default=None, description="The maximum value the parameter can have.")
+    upper: float = schema_utils.FloatRange(default=None, description="The maximum value the parameter can have.")
 
 
 @DeveloperAPI
@@ -113,9 +113,9 @@ class RandnParameterConfig(schema_utils.BaseMarshmallowConfig):
 
     space: str = schema_utils.ProtectedString("randn")
 
-    mean: float = schema_utils.Float(default=0.0, description="Mean of the  normal distribution.")
+    mean: float = schema_utils.FloatRange(default=0.0, description="Mean of the  normal distribution.")
 
-    sd: float = schema_utils.Float(default=1.0, description="Standard deviation of the normal distribution.")
+    sd: float = schema_utils.FloatRange(default=1.0, description="Standard deviation of the normal distribution.")
 
 
 @DeveloperAPI
