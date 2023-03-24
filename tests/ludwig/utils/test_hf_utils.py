@@ -42,5 +42,10 @@ def test_load_pretrained_hf_model_with_hub_fallback(tmpdir):
     _, used_fallback = load_pretrained_hf_model_with_hub_fallback(BertModel, BERTEncoder.DEFAULT_MODEL_NAME)
     assert used_fallback
 
+    # Fallback is used for an S3 bucket that access is blocked.
+    os.environ["LUDWIG_PRETRAINED_MODELS_DIR"] = "s3://hf-mirror-us-west-2/hf-mirror"
+    _, used_fallback = load_pretrained_hf_model_with_hub_fallback(AlbertModel, ALBERTEncoder.DEFAULT_MODEL_NAME)
+    assert used_fallback
+
     # Clean up.
     del os.environ["LUDWIG_PRETRAINED_MODELS_DIR"]
