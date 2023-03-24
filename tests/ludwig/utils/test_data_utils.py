@@ -177,7 +177,7 @@ def test_dataset_synthesizer_output_feature_decoder():
 def test_chunking():
     # Try basic reads:
     read_csv("s3://ludwig-tests/datasets/synthetic_1k.csv")
-    read_parquet("s3://ludwig-tests/datasets/synthetic_1k.parquet")
+    read_parquet("s3://ludwig-tests/datasets/synthetic_1k.parquet", df_lib=PANDAS_DF)
 
     # Try chunked versions:
     assert read_csv("s3://ludwig-tests/datasets/synthetic_1k.csv", nrows=100).shape[0] == 100
