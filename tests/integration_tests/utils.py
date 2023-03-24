@@ -491,6 +491,18 @@ def vector_feature(**kwargs):
     return feature
 
 
+def category_prob_feature(**kwargs):
+    feature = {
+        "name": f"category_prob_{random_string()}",
+        "type": "category_prob",
+        DECODER: {"type": "classifier", "vocab": ["a", "b", "c"]},
+    }
+    recursive_update(feature, kwargs)
+    feature[COLUMN] = feature[NAME]
+    feature[PROC_COLUMN] = compute_feature_hash(feature)
+    return feature
+
+
 def run_experiment(
     input_features=None, output_features=None, config=None, skip_save_processed_input=True, backend=None, **kwargs
 ):

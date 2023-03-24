@@ -159,6 +159,7 @@ parameters_builders_registry = {
     "date": return_none,
     "h3": return_none,
     VECTOR: return_none,
+    "category_prob": return_none,
 }
 
 
@@ -469,6 +470,19 @@ def generate_vector(feature, outdir: Optional[str] = None) -> str:
     return " ".join([str(100 * random.random()) for _ in range(vector_size)])
 
 
+def generate_category_prob(feature, outdir: Optional[str] = None) -> str:
+    """Returns a random category probability.
+
+    `outdir` is unused.
+    """
+    # Space delimited string with floating point numbers that sum to 1
+    decoder = feature.get(DECODER, {})
+    vector_size = len(decoder.get("vocab", ["a", "b", "c"]))
+    v = np.random.rand(vector_size)
+    v = v / v.sum()
+    return " ".join([str(x) for x in v])
+
+
 generators_registry = {
     BINARY: generate_binary,
     NUMBER: generate_number,
@@ -483,6 +497,7 @@ generators_registry = {
     H3: generate_h3,
     DATE: generate_datetime,
     VECTOR: generate_vector,
+    "category_prob": generate_category_prob,
 }
 
 category_cycle = 0

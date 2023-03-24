@@ -21,6 +21,7 @@ import torch
 
 from ludwig.constants import (
     CATEGORY,
+    CATEGORY_PROB,
     COLUMN,
     HIDDEN,
     LOGITS,
@@ -34,7 +35,12 @@ from ludwig.constants import (
 )
 from ludwig.error import InputDataError
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
-from ludwig.schema.features.category_feature import CategoryInputFeatureConfig, CategoryOutputFeatureConfig
+from ludwig.schema.features.category_feature import (
+    CategoryInputFeatureConfig,
+    CategoryOutputFeatureConfig,
+    CategoryProbOutputFeatureConfig,
+)
+from ludwig.features.vector_feature import VectorFeatureMixin
 from ludwig.types import (
     FeatureMetadataDict,
     FeaturePostProcessingOutputDict,
@@ -209,6 +215,12 @@ class CategoryFeatureMixin(BaseFeatureMixin):
         )
 
         return proc_df
+
+
+class CategoryProbFeatureMixin(VectorFeatureMixin):
+    @staticmethod
+    def type():
+        return CATEGORY_PROB
 
 
 class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
@@ -467,6 +479,213 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
     @staticmethod
     def get_schema_cls():
         return CategoryOutputFeatureConfig
+
+    @staticmethod
+    def create_postproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
+        return _CategoryPostprocessing(metadata)
+
+
+class CategoryProbOutputFeature(CategoryProbFeatureMixin, CategoryOutputFeature):
+    def __init__(
+        self,
+        output_feature_config: Union[CategoryProbOutputFeatureConfig, Dict],
+        output_features: Dict[str, OutputFeature],
+        **kwargs,
+    ):
+        self.num_classes = output_feature_config.num_classes
+        self.top_k = output_feature_config.top_k
+        super().__init__(output_feature_config, output_features, **kwargs)
+        if hasattr(output_feature_config.decoder, "num_classes"):
+            output_feature_config.decoder.num_classes = output_feature_config.num_classes
+        self.decoder_obj = self.initialize_decoder(output_feature_config.decoder)
+        self._setup_loss()
+        self._setup_metrics()
+
+    def logits(self, inputs, **kwargs):  # hidden
+        hidden = inputs[HIDDEN]
+
+        # EXPECTED SHAPES FOR RETURNED TENSORS
+        # logits: shape [batch_size, num_classes]
+        # hidden: shape [batch_size, size of final fully connected layer]
+        return {LOGITS: self.decoder_obj(hidden), PROJECTION_INPUT: hidden}
+
+    def create_calibration_module(self, feature: CategoryProbOutputFeatureConfig) -> torch.nn.Module:
+        """Creates the appropriate calibration module based on the feature config.
+
+        Today, only one type of calibration ("temperature_scaling") is available, but more options may be supported in
+        the future.
+        """
+        if feature.calibration:
+            calibration_cls = calibration.get_calibration_cls(CATEGORY, "temperature_scaling")
+            return calibration_cls(num_classes=self.num_classes)
+        return None
+
+    def create_predict_module(self) -> PredictModule:
+        return _CategoryPredict(calibration_module=self.calibration_module)
+
+    def get_prediction_set(self):
+        return {PREDICTIONS, PROBABILITIES, LOGITS}
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.input_size])
+
+    @classmethod
+    def get_output_dtype(cls):
+        return torch.int64
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([1])
+
+    def metric_kwargs(self):
+        return {"top_k": self.top_k, "num_classes": self.num_classes, "task": "multiclass"}
+
+    @staticmethod
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
+        feature_config.num_classes = feature_metadata["vocab_size"]
+        feature_config.top_k = min(feature_config.num_classes, feature_config.top_k)
+
+        if isinstance(feature_config.loss.class_weights, (list, tuple)):
+            if len(feature_config.loss.class_weights) != feature_config.num_classes:
+                raise ValueError(
+                    "The length of class_weights ({}) is not compatible with "
+                    "the number of classes ({}) for feature {}. "
+                    "Check the metadata JSON file to see the classes "
+                    "and their order and consider there needs to be a weight "
+                    "for the <UNK> class too.".format(
+                        len(feature_config.loss.class_weights),
+                        feature_config.num_classes,
+                        feature_config.column,
+                    )
+                )
+
+        if isinstance(feature_config.loss.class_weights, dict):
+            if feature_metadata["str2idx"].keys() != feature_config.loss.class_weights.keys():
+                raise ValueError(
+                    "The class_weights keys ({}) are not compatible with "
+                    "the classes ({}) of feature {}. "
+                    "Check the metadata JSON file to see the classes "
+                    "and consider there needs to be a weight "
+                    "for the <UNK> class too.".format(
+                        feature_config.loss.class_weights.keys(),
+                        feature_metadata["str2idx"].keys(),
+                        feature_config.column,
+                    )
+                )
+            else:
+                class_weights = feature_config.loss.class_weights
+                idx2str = feature_metadata["idx2str"]
+                class_weights_list = [class_weights[s] for s in idx2str]
+                feature_config.loss.class_weights = class_weights_list
+
+        if feature_config.loss.class_similarities_temperature > 0:
+            if "class_similarities" in feature_config.loss:
+                similarities = feature_config.loss.class_similarities
+                temperature = feature_config.loss.class_similarities_temperature
+
+                curr_row = 0
+                first_row_length = 0
+                is_first_row = True
+                for row in similarities:
+                    if is_first_row:
+                        first_row_length = len(row)
+                        is_first_row = False
+                        curr_row += 1
+                    else:
+                        curr_row_length = len(row)
+                        if curr_row_length != first_row_length:
+                            raise ValueError(
+                                "The length of row {} of the class_similarities "
+                                "of {} is {}, different from the length of "
+                                "the first row {}. All rows must have "
+                                "the same length.".format(
+                                    curr_row, feature_config.column, curr_row_length, first_row_length
+                                )
+                            )
+                        else:
+                            curr_row += 1
+                all_rows_length = first_row_length
+
+                if all_rows_length != len(similarities):
+                    raise ValueError(
+                        "The class_similarities matrix of {} has "
+                        "{} rows and {} columns, "
+                        "their number must be identical.".format(
+                            feature_config.column, len(similarities), all_rows_length
+                        )
+                    )
+
+                if all_rows_length != feature_config.num_classes:
+                    raise ValueError(
+                        "The size of the class_similarities matrix of {} is "
+                        "{}, different from the number of classes ({}). "
+                        "Check the metadata JSON file to see the classes "
+                        "and their order and "
+                        "consider <UNK> class too.".format(
+                            feature_config.column, all_rows_length, feature_config.num_classes
+                        )
+                    )
+
+                similarities = np.array(similarities, dtype=np.float32)
+                for i in range(len(similarities)):
+                    similarities[i, :] = softmax(similarities[i, :], temperature=temperature)
+
+                feature_config.loss.class_similarities = similarities
+            else:
+                raise ValueError(
+                    "class_similarities_temperature > 0, "
+                    "but no class_similarities are provided "
+                    "for feature {}".format(feature_config.column)
+                )
+
+    @staticmethod
+    def calculate_overall_stats(predictions, targets, train_set_metadata):
+        overall_stats = {}
+        confusion_matrix = ConfusionMatrix(targets, predictions[PREDICTIONS], labels=train_set_metadata["idx2str"])
+        overall_stats["confusion_matrix"] = confusion_matrix.cm.tolist()
+        overall_stats["overall_stats"] = confusion_matrix.stats()
+        overall_stats["per_class_stats"] = confusion_matrix.per_class_stats()
+
+        return overall_stats
+
+    def postprocess_predictions(
+        self,
+        predictions,
+        metadata,
+    ):
+        predictions_col = f"{self.feature_name}_{PREDICTIONS}"
+        if predictions_col in predictions:
+            if "idx2str" in metadata:
+                predictions[predictions_col] = predictions[predictions_col].map(lambda pred: metadata["idx2str"][pred])
+
+        probabilities_col = f"{self.feature_name}_{PROBABILITIES}"
+        if probabilities_col in predictions:
+            prob_col = f"{self.feature_name}_{PROBABILITY}"
+            predictions[prob_col] = predictions[probabilities_col].map(max)
+            predictions[probabilities_col] = predictions[probabilities_col].map(lambda pred: pred.tolist())
+            if "idx2str" in metadata:
+                for i, label in enumerate(metadata["idx2str"]):
+                    key = f"{probabilities_col}_{label}"
+
+                    # Use default param to force a capture before the loop completes, see:
+                    # https://stackoverflow.com/questions/2295290/what-do-lambda-function-closures-capture
+                    predictions[key] = predictions[probabilities_col].map(
+                        lambda prob, i=i: prob[i],
+                    )
+
+        top_k_col = f"{self.feature_name}_predictions_top_k"
+        if top_k_col in predictions:
+            if "idx2str" in metadata:
+                predictions[top_k_col] = predictions[top_k_col].map(
+                    lambda pred_top_k: [metadata["idx2str"][pred] for pred in pred_top_k]
+                )
+
+        return predictions
+
+    @staticmethod
+    def get_schema_cls():
+        return CategoryProbOutputFeatureConfig
 
     @staticmethod
     def create_postproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:

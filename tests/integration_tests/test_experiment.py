@@ -40,6 +40,7 @@ from tests.integration_tests.utils import (
     bag_feature,
     binary_feature,
     category_feature,
+    category_prob_feature,
     create_data_set_to_use,
     date_feature,
     ENCODERS,
@@ -965,3 +966,13 @@ def test_experiment_category_input_feature_with_tagger_decoder(csv_filename):
 
     with pytest.raises(ConfigValidationError):
         run_experiment(input_features, output_features, dataset=rel_path)
+
+
+def test_experiment_category_prob_feature(csv_filename):
+    input_features = [vector_feature()]
+    output_features = [category_prob_feature()]
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    print(pd.read_csv(rel_path))
+
+    run_experiment(input_features, output_features, dataset=rel_path)

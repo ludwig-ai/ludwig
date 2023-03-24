@@ -149,6 +149,68 @@ class CategoryOutputFeatureConfig(CategoryOutputFeatureConfigMixin, BaseOutputFe
 
 
 @DeveloperAPI
+@output_config_registry.register("category_prob")
+@ludwig_dataclass
+class CategoryProbOutputFeatureConfig(BaseOutputFeatureConfig):
+    """CategoryProbOutputFeatureConfig is a dataclass that configures the parameters used for a category output
+    feature."""
+
+    type: str = schema_utils.ProtectedString("category_prob")
+
+    decoder: BaseDecoderConfig = DecoderDataclassField(
+        feature_type=CATEGORY,
+        default="classifier",
+    )
+
+    loss: BaseLossConfig = LossDataclassField(
+        feature_type=CATEGORY,
+        default=SOFTMAX_CROSS_ENTROPY,
+    )
+
+    calibration: bool = schema_utils.Boolean(
+        default=False,
+        description="Calibrate the model's output probabilities using temperature scaling.",
+        parameter_metadata=FEATURE_METADATA[CATEGORY]["calibration"],
+    )
+
+    default_validation_metric: str = schema_utils.StringOptions(
+        [ACCURACY],
+        default=ACCURACY,
+        description="Internal only use parameter: default validation metric for category output feature.",
+        parameter_metadata=INTERNAL_ONLY,
+    )
+
+    dependencies: list = schema_utils.List(
+        default=[],
+        description="List of input features that this feature depends on.",
+        parameter_metadata=FEATURE_METADATA[CATEGORY]["dependencies"],
+    )
+
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="category_output")
+
+    reduce_dependencies: str = schema_utils.ReductionOptions(
+        default="sum",
+        description="How to reduce the dependencies of the output feature.",
+        parameter_metadata=FEATURE_METADATA[CATEGORY]["reduce_dependencies"],
+    )
+
+    reduce_input: str = schema_utils.ReductionOptions(
+        default="sum",
+        description="How to reduce an input that is not a vector, but a matrix or a higher order tensor, on the first "
+        "dimension (second if you count the batch dimension)",
+        parameter_metadata=FEATURE_METADATA[CATEGORY]["reduce_input"],
+    )
+
+    top_k: int = schema_utils.PositiveInteger(
+        default=3,
+        description="Determines the parameter k, the number of categories to consider when computing the top_k "
+        "measure. It computes accuracy but considering as a match if the true category appears in the "
+        "first k predicted categories ranked by decoder's confidence.",
+        parameter_metadata=FEATURE_METADATA[CATEGORY]["top_k"],
+    )
+
+
+@DeveloperAPI
 @ecd_defaults_config_registry.register(CATEGORY)
 @ludwig_dataclass
 class CategoryDefaultsConfig(CategoryInputFeatureConfigMixin, CategoryOutputFeatureConfigMixin):

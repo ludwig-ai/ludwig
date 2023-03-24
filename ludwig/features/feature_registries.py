@@ -20,6 +20,7 @@ from ludwig.constants import (
     BAG,
     BINARY,
     CATEGORY,
+    CATEGORY_PROB,
     DATE,
     H3,
     IMAGE,
@@ -33,7 +34,13 @@ from ludwig.constants import (
 from ludwig.features.audio_feature import AudioFeatureMixin, AudioInputFeature
 from ludwig.features.bag_feature import BagFeatureMixin, BagInputFeature
 from ludwig.features.binary_feature import BinaryFeatureMixin, BinaryInputFeature, BinaryOutputFeature
-from ludwig.features.category_feature import CategoryFeatureMixin, CategoryInputFeature, CategoryOutputFeature
+from ludwig.features.category_feature import (
+    CategoryFeatureMixin,
+    CategoryInputFeature,
+    CategoryOutputFeature,
+    CategoryProbFeatureMixin,
+    CategoryProbOutputFeature,
+)
 from ludwig.features.date_feature import DateFeatureMixin, DateInputFeature
 from ludwig.features.h3_feature import H3FeatureMixin, H3InputFeature
 from ludwig.features.image_feature import ImageFeatureMixin, ImageInputFeature
@@ -66,6 +73,7 @@ def get_base_type_registry() -> Dict:
         H3: H3FeatureMixin,
         DATE: DateFeatureMixin,
         VECTOR: VectorFeatureMixin,
+        CATEGORY_PROB: CategoryProbFeatureMixin,
     }
 
 
@@ -99,6 +107,7 @@ def get_output_type_registry() -> Dict:
         TEXT: TextOutputFeature,
         TIMESERIES: TimeseriesOutputFeature,
         VECTOR: VectorOutputFeature,
+        CATEGORY_PROB: CategoryProbOutputFeature,
     }
 
 
