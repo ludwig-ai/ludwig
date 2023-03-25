@@ -376,7 +376,7 @@ class CategoryAccuracy(MulticlassAccuracy, LudwigMetric):
         super().__init__(num_classes=num_classes, dist_sync_fn=_gather_all_tensors_fn())
 
     def update(self, preds: Tensor, target: Tensor) -> None:
-        if target.shape == 1:
+        if len(target.shape) == 1:
             target.type(torch.long)
         else:
             target = torch.argmax(target, dim=1)
