@@ -1231,14 +1231,13 @@ def _get_bert_config(hf_name):
     initialize the tokenizer object. If no `tokenizer_config.json` is found, then we instantiate the tokenizer with
     default arguments.
     """
-    from transformers.utils.hub import cached_path, EntryNotFoundError
+    from huggingface_hub import hf_hub_download
+    from huggingface_hub.utils import EntryNotFoundError
 
-    vocab_file = cached_path(f"https://huggingface.co/{hf_name}/resolve/main/vocab.txt")
+    vocab_file = hf_hub_download(repo_id=hf_name, filename="vocab.txt")
 
     try:
-        tokenizer_config = load_json(
-            cached_path(f"https://huggingface.co/{hf_name}/resolve/main/tokenizer_config.json")
-        )
+        tokenizer_config = load_json(hf_hub_download(repo_id=hf_name, filename="tokenizer_config.json"))
     except EntryNotFoundError:
         tokenizer_config = {}
 
