@@ -187,9 +187,9 @@ class HFTextEncoderImpl(HFTextEncoder):
             token_type_ids=torch.zeros_like(inputs),
         )
         if self.reduce_output == "cls_pooled":
-            hidden = transformer_outputs[1]
+            hidden = transformer_outputs["pooler_output"]
         else:
-            hidden = transformer_outputs[0][:, 1:-1, :]  # bos + [sent] + sep
+            hidden = transformer_outputs["last_hidden_state"][:, 1:-1, :]  # bos + [sent] + sep
             hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
 

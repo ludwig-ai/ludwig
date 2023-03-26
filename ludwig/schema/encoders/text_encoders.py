@@ -60,13 +60,6 @@ class HFEncoderImplConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["HFEncoder"]["trainable"],
     )
 
-    reduce_output: str = schema_utils.StringOptions(
-        ["cls_pooled", "last", "sum", "mean", "max", "concat", "attention"],
-        default="sum",
-        allow_none=True,
-        description="The method used to reduce a sequence of tensors down to a single tensor.",
-    )
-
     pretrained_kwargs: dict = schema_utils.Dict(
         default=None,
         description="Additional kwargs to pass to the pretrained model.",
@@ -789,6 +782,13 @@ class DebertaV2Config(HFEncoderImplConfig, DebertaModelParams):
         default="microsoft/deberta-v3-base",
         description="Name or path of the pretrained model.",
         parameter_metadata=ENCODER_METADATA["DeBERTa"]["pretrained_model_name_or_path"],
+    )
+
+    reduce_output: str = schema_utils.StringOptions(
+        ["cls_pooled", "last", "sum", "mean", "max", "concat", "attention"],
+        default="sum",
+        allow_none=True,
+        description="The method used to reduce a sequence of tensors down to a single tensor.",
     )
 
 
