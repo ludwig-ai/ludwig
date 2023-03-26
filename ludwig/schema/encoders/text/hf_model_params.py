@@ -4,12 +4,11 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 from ludwig.schema.utils import ludwig_dataclass
 
-
 """
 NOTE TO DEVELOPERS: the implementation of the schema classes below must match the parameters of the HF PretrainedConfig
 class exactly. This is because we convert this object into the matching HF PretrainedConfig object before passing it to
 the model. Additionally, for loading and saving pretrained models, we take the config from the existing model and load
-it into this config before saving. As such, if any params needed by the pretrained model are missing, we will not be 
+it into this config before saving. As such, if any params needed by the pretrained model are missing, we will not be
 able to load checkpoints correctly.
 
 A common mistake is to look at the PretrainedConfig __init__ method params and ignore any additional **kwargs. In some

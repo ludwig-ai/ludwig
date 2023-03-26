@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Type, TypeVar, Union
+from typing import Any, Callable, Dict, List, Optional, Type, TYPE_CHECKING, TypeVar, Union
 
 import numpy as np
 import torch
@@ -1011,7 +1011,8 @@ class DeBERTaEncoder(HFTextEncoderImpl):
     DEFAULT_MODEL_NAME = "microsoft/deberta-v3-base"
 
     def __init__(self, *args, **kwargs):
-        from transformers import DebertaV2Config as _DebertaV2Config, DebertaV2Model
+        from transformers import DebertaV2Config as _DebertaV2Config
+        from transformers import DebertaV2Model
 
         super().__init__(DebertaV2Model, _DebertaV2Config, DebertaV2Config, *args, **kwargs)
 
