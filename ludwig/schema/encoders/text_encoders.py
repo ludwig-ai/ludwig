@@ -1140,8 +1140,8 @@ class GPTConfig(HFEncoderConfig):
     )
 
     afn: str = schema_utils.StringOptions(
-        ["gelu", "relu", "silu", "gelu_new"],
-        default="gelu_new",
+        ["gelu", "relu", "silu"],  # gelu_new results in a KeyError.
+        default="gelu",
         description="The non-linear activation function (function or string) in the encoder and pooler.",
         parameter_metadata=ENCODER_METADATA["GPT"]["afn"],
     )
@@ -2959,12 +2959,12 @@ class LongformerConfig(HFEncoderConfig):
 
     attention_window: Union[List[int], int] = schema_utils.OneOfOptionsField(
         default=512,
-        allow_none=True,
+        allow_none=False,
         description="Size of an attention window around each token. If an int, use the same size for all layers. To "
         "specify a different window size for each layer, use a List[int] where len(attention_window) == "
         "num_hidden_layers.",
         field_options=[
-            schema_utils.PositiveInteger(allow_none=True, description="", default=None),
+            schema_utils.PositiveInteger(allow_none=False, description="", default=512),
             schema_utils.List(list_type=int, allow_none=False),
         ],
         parameter_metadata=ENCODER_METADATA["Longformer"]["attention_window"],

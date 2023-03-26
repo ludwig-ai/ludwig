@@ -14,6 +14,7 @@ from ludwig.explain.gbm import GBMExplainer
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
+    date_feature,
     generate_data,
     image_feature,
     LocalTestBackend,
@@ -144,12 +145,16 @@ def run_test_explainer_api(
 
     if input_features is None:
         input_features = [
-            binary_feature(),
+            # Include a non-canonical name that's not a valid key for a vanilla pytorch ModuleDict:
+            # https://github.com/pytorch/pytorch/issues/71203
+            {"name": "binary.1", "type": "binary"},
             number_feature(),
             category_feature(encoder={"type": "onehot", "reduce_output": "sum"}),
             category_feature(encoder={"type": "passthrough", "reduce_output": "sum"}),
         ]
         if model_type == MODEL_ECD:
+            # TODO(travis): need unit tests to test the get_embedding_layer() of every encoder to ensure it is
+            #  compatible with the explainer
             input_features += [
                 category_feature(encoder={"type": "dense", "reduce_output": "sum"}),
                 text_feature(encoder={"vocab_size": 3}),
@@ -158,7 +163,7 @@ def run_test_explainer_api(
                 image_feature(folder=image_dest_folder),
                 # audio_feature(os.path.join(tmpdir, "generated_audio")), # NOTE: works but takes a long time
                 # sequence_feature(encoder={"vocab_size": 3}),
-                # date_feature(),
+                date_feature(),
                 # h3_feature(),
                 set_feature(encoder={"vocab_size": 3}),
                 # bag_feature(encoder={"vocab_size": 3}),
@@ -210,3 +215,20 @@ def run_test_explainer_api(
         assert e.to_array().shape == (vocab_size, len(input_features))
 
     assert len(explanations_result.expected_values) == vocab_size
+
+
+@pytest.mark.parametrize(
+    "output_feature",
+    [set_feature(decoder={"vocab_size": 3}), vector_feature()],
+    ids=["set", "vector"],
+)
+def test_explainer_api_nonscalar_outputs(output_feature, tmpdir):
+    run_test_explainer_api(IntegratedGradientsExplainer, MODEL_ECD, [output_feature], {}, tmpdir)
+
+
+def test_explainer_api_text_outputs(tmpdir):
+    input_features = [text_feature(encoder={"type": "parallel_cnn", "reduce_output": None})]
+    output_features = [text_feature(output_feature=True, decoder={"type": "tagger"})]
+    run_test_explainer_api(
+        IntegratedGradientsExplainer, MODEL_ECD, output_features, {}, tmpdir, input_features=input_features
+    )

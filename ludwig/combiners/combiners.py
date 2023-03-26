@@ -478,7 +478,8 @@ class TransformerCombiner(Combiner):
             # after flattening the encoder output tensor
             [
                 Linear(
-                    torch.prod(torch.Tensor([*input_features[inp].output_shape])).type(torch.int32), config.hidden_size
+                    torch.prod(torch.Tensor([*input_features.get(inp).output_shape])).type(torch.int32),
+                    config.hidden_size,
                 )
                 for inp in input_features
             ]
@@ -567,7 +568,7 @@ class TabTransformerCombiner(Combiner):
             vocab = [
                 i_f
                 for i_f in input_features
-                if input_features[i_f].type() != NUMBER or input_features[i_f].type() != BINARY
+                if input_features.get(i_f).type() != NUMBER or input_features.get(i_f).type() != BINARY
             ]
             if self.embed_input_feature_name == "add":
                 self.embed_i_f_name_layer = Embed(vocab, config.hidden_size, force_embedding_size=True)
@@ -602,14 +603,14 @@ class TabTransformerCombiner(Combiner):
         self.unembeddable_features = []
         self.embeddable_features = []
         for i_f in input_features:
-            if input_features[i_f].type() in {NUMBER, BINARY}:
+            if input_features.get(i_f).type() in {NUMBER, BINARY}:
                 self.unembeddable_features.append(i_f)
             else:
                 self.embeddable_features.append(i_f)
 
         self.projectors = ModuleList()
         for i_f in self.embeddable_features:
-            flatten_size = self.get_flatten_size(input_features[i_f].output_shape)
+            flatten_size = self.get_flatten_size(input_features.get(i_f).output_shape)
             self.projectors.append(Linear(flatten_size[0], projector_size))
 
         # input to layer_norm are the encoder outputs for unembeddable features,
@@ -617,7 +618,7 @@ class TabTransformerCombiner(Combiner):
         # tensors.  Size should be concatenation of these tensors.
         concatenated_unembeddable_encoders_size = 0
         for i_f in self.unembeddable_features:
-            concatenated_unembeddable_encoders_size += input_features[i_f].output_shape[0]
+            concatenated_unembeddable_encoders_size += input_features.get(i_f).output_shape[0]
 
         self.layer_norm = torch.nn.LayerNorm(concatenated_unembeddable_encoders_size)
 
@@ -902,7 +903,7 @@ class ProjectAggregateCombiner(Combiner):
             # after flattening the encoder output tensor
             [
                 Linear(
-                    torch.prod(torch.Tensor([*input_features[inp].output_shape])).type(torch.int32),
+                    torch.prod(torch.Tensor([*input_features.get(inp).output_shape])).type(torch.int32),
                     config.projection_size,
                 )
                 for inp in input_features
