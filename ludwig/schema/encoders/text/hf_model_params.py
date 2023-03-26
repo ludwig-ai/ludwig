@@ -1,7 +1,8 @@
-from typing import List, Type
+from typing import List, Set, Type
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 from ludwig.schema.utils import ludwig_dataclass
 
 
@@ -23,8 +24,17 @@ class ModelParamsField(schema_utils.DictMarshmallowField):
 
 @ludwig_dataclass
 class DebertaModelParams(schema_utils.BaseMarshmallowConfig):
+    @classmethod
+    def get_hf_config_param_names(cls) -> Set[str]:
+        return DebertaModelParams.get_valid_field_names()
+
     # Model architecture params for training from scratch
     # TODO(travis): conditionally disable setting these when `use_pretrained=True`.
+    vocab_size: int = schema_utils.PositiveInteger(
+        default=None,
+        parameter_metadata=INTERNAL_ONLY,
+    )
+
     hidden_size: int = schema_utils.PositiveInteger(
         default=1536,
         description="Dimensionality of the encoder layers and the pooler layer.",

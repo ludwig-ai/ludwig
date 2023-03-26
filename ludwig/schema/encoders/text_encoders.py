@@ -5,7 +5,7 @@ from ludwig.constants import MODEL_ECD, MODEL_GBM, TEXT
 from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.sequence_encoders import SequenceEncoderConfig
-from ludwig.schema.encoders.text.hf_model_params import DebertaModelParams, ModelParamsField
+from ludwig.schema.encoders.text.hf_model_params import DebertaModelParams
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.metadata import ENCODER_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY, ParameterMetadata
@@ -40,6 +40,59 @@ class HFEncoderConfig(SequenceEncoderConfig):
     def can_cache_embeddings(self) -> bool:
         """Returns true if the encoder's output embeddings will not change during training."""
         return not self.trainable and self.reduce_output != "attention"
+
+
+@DeveloperAPI
+@ludwig_dataclass
+class HFEncoderImplConfig(HFEncoderConfig):
+    """This dataclass configures the base HF encoder implmenetation."""
+
+    use_pretrained: bool = schema_utils.Boolean(
+        default=True,
+        description="Whether to use the pretrained weights for the model. If false, the model will train from "
+        "scratch which is very computationally expensive.",
+        parameter_metadata=ENCODER_METADATA["HFEncoder"]["use_pretrained"],
+    )
+
+    trainable: bool = schema_utils.Boolean(
+        default=False,
+        description="Whether to finetune the model on your dataset.",
+        parameter_metadata=ENCODER_METADATA["HFEncoder"]["trainable"],
+    )
+
+    reduce_output: str = schema_utils.StringOptions(
+        ["cls_pooled", "last", "sum", "mean", "max", "concat", "attention"],
+        default="sum",
+        allow_none=True,
+        description="The method used to reduce a sequence of tensors down to a single tensor.",
+    )
+
+    pretrained_kwargs: dict = schema_utils.Dict(
+        default=None,
+        description="Additional kwargs to pass to the pretrained model.",
+    )
+
+    # Internal params set based on preprocessing metadata
+    max_sequence_length: int = schema_utils.PositiveInteger(
+        default=None,
+        allow_none=True,
+        description="",
+        parameter_metadata=INTERNAL_ONLY,
+    )
+
+    vocab_size: int = schema_utils.PositiveInteger(
+        default=None,
+        parameter_metadata=INTERNAL_ONLY,
+    )
+
+    saved_weights_in_checkpoint: bool = schema_utils.Boolean(
+        default=False,
+        description=(
+            "Are the pretrained encoder weights saved in this model's checkpoint? Automatically set to"
+            "True for trained models to prevent loading pretrained encoder weights from model hub."
+        ),
+        parameter_metadata=INTERNAL_ONLY,
+    )
 
 
 @DeveloperAPI
@@ -719,8 +772,8 @@ class BERTConfig(HFEncoderConfig):
 @DeveloperAPI
 @register_encoder_config("deberta", TEXT)
 @ludwig_dataclass
-class DebertaV2Config(HFEncoderConfig):
-    """This dataclass configures the schema used for a DeBERTa-v2 encoder."""
+class DebertaV2Config(HFEncoderImplConfig, DebertaModelParams):
+    """This dataclass configures the schema used for a DeBERTa-v2 / v3 encoder."""
 
     @staticmethod
     def module_name():
@@ -731,64 +784,11 @@ class DebertaV2Config(HFEncoderConfig):
         description=ENCODER_METADATA["DeBERTa"]["type"].long_description,
     )
 
-    use_pretrained: bool = schema_utils.Boolean(
-        default=True,
-        description="Whether to use the pretrained weights for the model. If false, the model will train from "
-        "scratch which is very computationally expensive.",
-        parameter_metadata=ENCODER_METADATA["HFEncoder"]["use_pretrained"],
-    )
-
     pretrained_model_name_or_path: str = schema_utils.String(
-        default="sileod/deberta-v3-base-tasksource-nli",
+        default="microsoft/deberta-v3-base",
         description="Name or path of the pretrained model.",
         parameter_metadata=ENCODER_METADATA["DeBERTa"]["pretrained_model_name_or_path"],
     )
-
-    trainable: bool = schema_utils.Boolean(
-        default=False,
-        description="Whether to finetune the model on your dataset.",
-        parameter_metadata=ENCODER_METADATA["HFEncoder"]["trainable"],
-    )
-
-    reduce_output: str = schema_utils.StringOptions(
-        ["cls_pooled", "last", "sum", "mean", "max", "concat", "attention"],
-        default="sum",
-        allow_none=True,
-        description="The method used to reduce a sequence of tensors down to a single tensor.",
-    )
-
-    pretrained_kwargs: dict = schema_utils.Dict(
-        default=None,
-        description="Additional kwargs to pass to the pretrained model.",
-    )
-
-    # Internal params set based on preprocessing metadata
-    max_sequence_length: int = schema_utils.PositiveInteger(
-        default=None,
-        allow_none=True,
-        description="",
-        parameter_metadata=INTERNAL_ONLY,
-    )
-
-    vocab_size: int = schema_utils.PositiveInteger(
-        default=None,
-        description=(
-            "Vocabulary size of the DeBERTa-v2 model. Defines the number of different tokens that can be represented "
-            "by the `inputs_ids`."
-        ),
-        parameter_metadata=INTERNAL_ONLY,
-    )
-
-    saved_weights_in_checkpoint: bool = schema_utils.Boolean(
-        default=False,
-        description=(
-            "Are the pretrained encoder weights saved in this model's checkpoint? Automatically set to"
-            "True for trained models to prevent loading pretrained encoder weights from model hub."
-        ),
-        parameter_metadata=INTERNAL_ONLY,
-    )
-
-    model_params: DebertaModelParams = ModelParamsField(DebertaModelParams).get_default_field()
 
 
 # TODO: uncomment once we figure out host memory issue: https://github.com/ludwig-ai/ludwig/issues/3107
