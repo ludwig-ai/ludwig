@@ -13,9 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from abc import ABC, abstractmethod
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Set, Type, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Type, TypeVar, Union
 
 import numpy as np
 import torch
@@ -139,7 +138,7 @@ HFConfigT = TypeVar("HFConfigT", bound="PretrainedConfig")
 ConfigT = TypeVar("ConfigT", bound="HFEncoderConfig")
 
 
-class HFTextEncoderImpl(HFTextEncoder, ABC):
+class HFTextEncoderImpl(HFTextEncoder):
     def __init__(
         self,
         model_cls: Type[HFModelT],
@@ -151,7 +150,6 @@ class HFTextEncoderImpl(HFTextEncoder, ABC):
         saved_weights_in_checkpoint: bool,
         reduce_output: str,
         trainable: bool,
-        vocab_size: int,
         pretrained_kwargs: Dict,
         encoder_config: Optional[ConfigT],
         **kwargs,
@@ -159,6 +157,7 @@ class HFTextEncoderImpl(HFTextEncoder, ABC):
         super().__init__()
 
         # TODO(travis): get_hf_config_param_names should be implemented as abstract in HFEncoderConfig
+        vocab_size = kwargs["vocab_size"]
         hf_config_params = {k: v for k, v in kwargs.items() if k in schema_cls.get_hf_config_param_names()}
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
@@ -207,11 +206,6 @@ class HFTextEncoderImpl(HFTextEncoder, ABC):
     @property
     def input_dtype(self):
         return torch.int32
-
-    @abstractmethod
-    @classmethod
-    def get_hf_config_param_names(cls) -> Set[str]:
-        pass
 
 
 @DeveloperAPI

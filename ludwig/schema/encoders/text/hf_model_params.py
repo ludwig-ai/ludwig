@@ -1,25 +1,24 @@
-from typing import List, Set, Type
+from typing import List, Set
 
-from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 from ludwig.schema.utils import ludwig_dataclass
 
 
-@DeveloperAPI
-class ModelParamsField(schema_utils.DictMarshmallowField):
-    def __init__(self, model_params_cls: Type[schema_utils.BaseMarshmallowConfig]):
-        self.model_params_cls = model_params_cls
-        super().__init__(model_params_cls, default_missing=False)
+"""
+NOTE TO DEVELOPERS: the implementation of the schema classes below must match the parameters of the HF PretrainedConfig
+class exactly. This is because we convert this object into the matching HF PretrainedConfig object before passing it to
+the model. Additionally, for loading and saving pretrained models, we take the config from the existing model and load
+it into this config before saving. As such, if any params needed by the pretrained model are missing, we will not be 
+able to load checkpoints correctly.
 
-    def _jsonschema_type_mapping(self):
-        props = schema_utils.unload_jsonschema_from_marshmallow_class(self.model_params_cls)["properties"]
-        return {
-            "type": ["object"],
-            "properties": props,
-            "title": f"{self.model_params_cls.__name__}_options",
-            "description": "Settings for model parameters",
-        }
+A common mistake is to look at the PretrainedConfig __init__ method params and ignore any additional **kwargs. In some
+cases, these kwargs are used to set additional params on the config object. For example, the DebertaConfig class has
+`position_buckets` as a kwarg param, but it nonetheless requires this to construct the model architecture.
+
+To debug issues with missing parameters, try printing out the `model.config` of the pretrained transformer and check
+for any params it includes that are not present in your schema config.
+"""
 
 
 @ludwig_dataclass
@@ -32,6 +31,7 @@ class DebertaModelParams(schema_utils.BaseMarshmallowConfig):
     # TODO(travis): conditionally disable setting these when `use_pretrained=True`.
     vocab_size: int = schema_utils.PositiveInteger(
         default=None,
+        description="",
         parameter_metadata=INTERNAL_ONLY,
     )
 
@@ -130,4 +130,36 @@ class DebertaModelParams(schema_utils.BaseMarshmallowConfig):
     layer_norm_eps: float = schema_utils.NonNegativeFloat(
         default=1e-12,
         description="The epsilon used by the layer normalization layers.",
+    )
+
+    pooler_hidden_size: int = schema_utils.PositiveInteger(
+        default=1536,
+        description="The hidden size of the pooler layers.",
+    )
+
+    pooler_dropout: float = schema_utils.NonNegativeFloat(
+        default=0,
+        description="The dropout ratio for the pooler layers.",
+    )
+
+    pooler_hidden_act: str = schema_utils.StringOptions(
+        options=["gelu", "relu", "silu", "gelu", "tanh", "gelu_fast", "mish", "linear", "sigmoid", "gelu_new"],
+        default="gelu",
+        description="The activation function (function or string) in the pooler.",
+    )
+
+    position_buckets: int = schema_utils.PositiveInteger(
+        default=256,
+        description="The number of buckets to use for each attention layer.",
+    )
+
+    share_att_key: bool = schema_utils.Boolean(
+        default=True,
+        description="Whether to share attention key across layers.",
+    )
+
+    norm_rel_ebd: str = schema_utils.StringOptions(
+        options=["layer_norm", "none"],
+        default="layer_norm",
+        description="The normalization method for relative embeddings.",
     )

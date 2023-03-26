@@ -82,6 +82,7 @@ class HFEncoderImplConfig(HFEncoderConfig):
 
     vocab_size: int = schema_utils.PositiveInteger(
         default=None,
+        description="",
         parameter_metadata=INTERNAL_ONLY,
     )
 
