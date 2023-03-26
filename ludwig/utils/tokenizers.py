@@ -1032,141 +1032,141 @@ except ImportError:
     pass
 
 
-# try:
-#     import torchtext
+try:
+    import torchtext
 
-#     torchtext_version = torch.torch_version.TorchVersion(torchtext.__version__)
+    torchtext_version = torch.torch_version.TorchVersion(torchtext.__version__)
 
-#     if torchtext_version >= (0, 13, 0):
-#         pass
-#     else:
-#         raise ImportError(f"torchtext>=0.13.0 is required to use these tokenizers: {TORCHTEXT_0_13_0_TOKENIZERS}.")
+    if torchtext_version >= (0, 13, 0):
+        pass
+    else:
+        raise ImportError(f"torchtext>=0.13.0 is required to use these tokenizers: {TORCHTEXT_0_13_0_TOKENIZERS}.")
 
-#     class BERTTokenizer(torch.nn.Module):
-#         def __init__(
-#             self,
-#             vocab_file: Optional[str] = None,
-#             is_hf_tokenizer: Optional[bool] = False,
-#             hf_tokenizer_attrs: Optional[Dict[str, Any]] = None,
-#             **kwargs,
-#         ):
-#             super().__init__()
+    class BERTTokenizer(torch.nn.Module):
+        def __init__(
+            self,
+            vocab_file: Optional[str] = None,
+            is_hf_tokenizer: Optional[bool] = False,
+            hf_tokenizer_attrs: Optional[Dict[str, Any]] = None,
+            **kwargs,
+        ):
+            super().__init__()
 
-#             if vocab_file is None:
-#                 # If vocab_file not passed in, use default "bert-base-uncased" vocab and kwargs.
-#                 kwargs = _get_bert_config("bert-base-uncased")
-#                 vocab_file = kwargs["vocab_file"]
-#                 vocab = self._init_vocab(vocab_file)
-#                 hf_tokenizer_attrs = {
-#                     "pad_token": "[PAD]",
-#                     "unk_token": "[UNK]",
-#                     "sep_token_id": vocab["[SEP]"],
-#                     "cls_token_id": vocab["[CLS]"],
-#                 }
-#             else:
-#                 vocab = self._init_vocab(vocab_file)
+            if vocab_file is None:
+                # If vocab_file not passed in, use default "bert-base-uncased" vocab and kwargs.
+                kwargs = _get_bert_config("bert-base-uncased")
+                vocab_file = kwargs["vocab_file"]
+                vocab = self._init_vocab(vocab_file)
+                hf_tokenizer_attrs = {
+                    "pad_token": "[PAD]",
+                    "unk_token": "[UNK]",
+                    "sep_token_id": vocab["[SEP]"],
+                    "cls_token_id": vocab["[CLS]"],
+                }
+            else:
+                vocab = self._init_vocab(vocab_file)
 
-#             self.vocab = vocab
+            self.vocab = vocab
 
-#             self.is_hf_tokenizer = is_hf_tokenizer
-#             if self.is_hf_tokenizer:
-#                 # Values used by Ludwig extracted from the corresponding HF model.
-#                 self.pad_token = hf_tokenizer_attrs["pad_token"]  # Used as padding symbol
-#                 self.unk_token = hf_tokenizer_attrs["unk_token"]  # Used as unknown symbol
-#                 self.cls_token_id = hf_tokenizer_attrs["cls_token_id"]  # Used as start symbol. Only used if HF.
-#                 self.sep_token_id = hf_tokenizer_attrs["sep_token_id"]  # Used as stop symbol. Only used if HF.
-#                 self.never_split = hf_tokenizer_attrs["all_special_tokens"]
-#             else:
-#                 self.pad_token = PADDING_SYMBOL
-#                 self.unk_token = UNKNOWN_SYMBOL
-#                 self.cls_token_id = None
-#                 self.sep_token_id = None
-#                 self.never_split = [UNKNOWN_SYMBOL]
+            self.is_hf_tokenizer = is_hf_tokenizer
+            if self.is_hf_tokenizer:
+                # Values used by Ludwig extracted from the corresponding HF model.
+                self.pad_token = hf_tokenizer_attrs["pad_token"]  # Used as padding symbol
+                self.unk_token = hf_tokenizer_attrs["unk_token"]  # Used as unknown symbol
+                self.cls_token_id = hf_tokenizer_attrs["cls_token_id"]  # Used as start symbol. Only used if HF.
+                self.sep_token_id = hf_tokenizer_attrs["sep_token_id"]  # Used as stop symbol. Only used if HF.
+                self.never_split = hf_tokenizer_attrs["all_special_tokens"]
+            else:
+                self.pad_token = PADDING_SYMBOL
+                self.unk_token = UNKNOWN_SYMBOL
+                self.cls_token_id = None
+                self.sep_token_id = None
+                self.never_split = [UNKNOWN_SYMBOL]
 
-#             tokenizer_kwargs = {}
-#             if "do_lower_case" in kwargs:
-#                 tokenizer_kwargs["do_lower_case"] = kwargs["do_lower_case"]
-#             if "strip_accents" in kwargs:
-#                 tokenizer_kwargs["strip_accents"] = kwargs["strip_accents"]
+            tokenizer_kwargs = {}
+            if "do_lower_case" in kwargs:
+                tokenizer_kwargs["do_lower_case"] = kwargs["do_lower_case"]
+            if "strip_accents" in kwargs:
+                tokenizer_kwargs["strip_accents"] = kwargs["strip_accents"]
 
-#             # Return tokens as raw tokens only if not being used as a HF tokenizer.
-#             self.return_tokens = not self.is_hf_tokenizer
+            # Return tokens as raw tokens only if not being used as a HF tokenizer.
+            self.return_tokens = not self.is_hf_tokenizer
 
-#             tokenizer_init_kwargs = {
-#                 **tokenizer_kwargs,
-#                 "vocab_path": vocab_file,
-#                 "return_tokens": self.return_tokens,
-#             }
-#             if torchtext_version >= (0, 14, 0):
-#                 # never_split kwarg added in torchtext 0.14.0
-#                 tokenizer_init_kwargs["never_split"] = self.never_split
+            tokenizer_init_kwargs = {
+                **tokenizer_kwargs,
+                "vocab_path": vocab_file,
+                "return_tokens": self.return_tokens,
+            }
+            if torchtext_version >= (0, 14, 0):
+                # never_split kwarg added in torchtext 0.14.0
+                tokenizer_init_kwargs["never_split"] = self.never_split
 
-#             self.tokenizer = torchtext.transforms.BERTTokenizer(**tokenizer_init_kwargs)
+            self.tokenizer = torchtext.transforms.BERTTokenizer(**tokenizer_init_kwargs)
 
-#         def _init_vocab(self, vocab_file: str) -> Dict[str, int]:
-#             from transformers.models.bert.tokenization_bert import load_vocab
+        def _init_vocab(self, vocab_file: str) -> Dict[str, int]:
+            from transformers.models.bert.tokenization_bert import load_vocab
 
-#             return load_vocab(vocab_file)
+            return load_vocab(vocab_file)
 
-#         def forward(self, v: Union[str, List[str], torch.Tensor]) -> Any:
-#             """Implements forward pass for tokenizer.
+        def forward(self, v: Union[str, List[str], torch.Tensor]) -> Any:
+            """Implements forward pass for tokenizer.
 
-#             If the is_hf_tokenizer flag is set to True, then the output follows the HF convention, i.e. the output is an
-#             List[List[int]] of tokens and the cls and sep tokens are automatically added as the start and stop symbols.
+            If the is_hf_tokenizer flag is set to True, then the output follows the HF convention, i.e. the output is an
+            List[List[int]] of tokens and the cls and sep tokens are automatically added as the start and stop symbols.
 
-#             If the is_hf_tokenizer flag is set to False, then the output follows the Ludwig convention, i.e. the output
-#             is a List[List[str]] of tokens.
-#             """
-#             if isinstance(v, torch.Tensor):
-#                 raise ValueError(f"Unsupported input: {v}")
+            If the is_hf_tokenizer flag is set to False, then the output follows the Ludwig convention, i.e. the output
+            is a List[List[str]] of tokens.
+            """
+            if isinstance(v, torch.Tensor):
+                raise ValueError(f"Unsupported input: {v}")
 
-#             inputs: List[str] = []
-#             # Ludwig calls map on List[str] objects, so we need to handle individual strings as well.
-#             if isinstance(v, str):
-#                 inputs.append(v)
-#             else:
-#                 inputs.extend(v)
+            inputs: List[str] = []
+            # Ludwig calls map on List[str] objects, so we need to handle individual strings as well.
+            if isinstance(v, str):
+                inputs.append(v)
+            else:
+                inputs.extend(v)
 
-#             if self.is_hf_tokenizer:
-#                 token_ids_str = self.tokenizer(inputs)
-#                 assert torch.jit.isinstance(token_ids_str, List[List[str]])
-#                 # Must cast token_ids to ints because they are used directly as indices.
-#                 token_ids: List[List[int]] = []
-#                 for token_ids_str_i in token_ids_str:
-#                     token_ids_i = [int(token_id_str) for token_id_str in token_ids_str_i]
-#                     token_ids_i = self._add_special_token_ids(token_ids_i)
-#                     token_ids.append(token_ids_i)
-#                 return token_ids[0] if isinstance(v, str) else token_ids
+            if self.is_hf_tokenizer:
+                token_ids_str = self.tokenizer(inputs)
+                assert torch.jit.isinstance(token_ids_str, List[List[str]])
+                # Must cast token_ids to ints because they are used directly as indices.
+                token_ids: List[List[int]] = []
+                for token_ids_str_i in token_ids_str:
+                    token_ids_i = [int(token_id_str) for token_id_str in token_ids_str_i]
+                    token_ids_i = self._add_special_token_ids(token_ids_i)
+                    token_ids.append(token_ids_i)
+                return token_ids[0] if isinstance(v, str) else token_ids
 
-#             tokens = self.tokenizer(inputs)
-#             assert torch.jit.isinstance(tokens, List[List[str]])
-#             return tokens[0] if isinstance(v, str) else tokens
+            tokens = self.tokenizer(inputs)
+            assert torch.jit.isinstance(tokens, List[List[str]])
+            return tokens[0] if isinstance(v, str) else tokens
 
-#         def get_vocab(self) -> Dict[str, int]:
-#             return self.vocab
+        def get_vocab(self) -> Dict[str, int]:
+            return self.vocab
 
-#         def get_pad_token(self) -> str:
-#             return self.pad_token
+        def get_pad_token(self) -> str:
+            return self.pad_token
 
-#         def get_unk_token(self) -> str:
-#             return self.unk_token
+        def get_unk_token(self) -> str:
+            return self.unk_token
 
-#         def _add_special_token_ids(self, token_ids: List[int]) -> List[int]:
-#             """Adds special token ids to the token_ids list."""
-#             if torch.jit.isinstance(self.cls_token_id, int) and torch.jit.isinstance(self.sep_token_id, int):
-#                 token_ids.insert(0, self.cls_token_id)
-#                 token_ids.append(self.sep_token_id)
-#             return token_ids
+        def _add_special_token_ids(self, token_ids: List[int]) -> List[int]:
+            """Adds special token ids to the token_ids list."""
+            if torch.jit.isinstance(self.cls_token_id, int) and torch.jit.isinstance(self.sep_token_id, int):
+                token_ids.insert(0, self.cls_token_id)
+                token_ids.append(self.sep_token_id)
+            return token_ids
 
-#     tokenizer_registry.update(
-#         {
-#             "bert": BERTTokenizer,
-#         }
-#     )
-#     TORCHSCRIPT_COMPATIBLE_TOKENIZERS.update(TORCHTEXT_0_13_0_TOKENIZERS)
+    tokenizer_registry.update(
+        {
+            "bert": BERTTokenizer,
+        }
+    )
+    TORCHSCRIPT_COMPATIBLE_TOKENIZERS.update(TORCHTEXT_0_13_0_TOKENIZERS)
 
-# except ImportError:
-#     pass
+except ImportError:
+    pass
 
 
 def get_hf_tokenizer(pretrained_model_name_or_path, **kwargs):

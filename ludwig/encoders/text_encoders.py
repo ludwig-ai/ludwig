@@ -2084,17 +2084,16 @@ class AutoTransformerEncoder(HFTextEncoder):
         transformer_outputs = self.transformer.module(
             input_ids=inputs,
             attention_mask=mask,
-            decoder_input_ids=inputs,
+            token_type_ids=torch.zeros_like(inputs),
         )
-        hidden = transformer_outputs[0][:, 0:-1, :]  # [eos token]
-        # if self.reduce_output == "cls_pooled":
-        #     # this works only if the user know that the specific model
-        #     # they want to use has the same outputs of
-        #     # the BERT base class call() function
-        #     hidden = transformer_outputs["pooler_output"]
-        # else:
-        #     hidden = transformer_outputs["last_hidden_state"]
-        hidden = self.reduce_sequence(hidden, self.reduce_output)
+        if self.reduce_output == "cls_pooled":
+            # this works only if the user know that the specific model
+            # they want to use has the same outputs of
+            # the BERT base class call() function
+            hidden = transformer_outputs["pooler_output"]
+        else:
+            hidden = transformer_outputs["last_hidden_state"]
+            hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
 
     @staticmethod
