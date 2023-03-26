@@ -1,6 +1,5 @@
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import ACCURACY, CATEGORY, CATEGORY_PROB, MODEL_ECD, MODEL_GBM, SOFTMAX_CROSS_ENTROPY
-from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -155,10 +154,6 @@ class CategoryOutputFeatureConfig(CategoryOutputFeatureConfigMixin, BaseOutputFe
 class CategoryProbOutputFeatureConfig(BaseOutputFeatureConfig):
     """CategoryProbOutputFeatureConfig is a dataclass that configures the parameters used for a category_prob output
     feature."""
-
-    def __post_init__(self):
-        if self.preprocessing.vocab is None:
-            raise ConfigValidationError("`vocab` must be specified for `category_prob` output feature.")
 
     type: str = schema_utils.ProtectedString(CATEGORY_PROB)
 

@@ -2,6 +2,7 @@ from typing import List
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import CATEGORY, DROP_ROW, FILL_WITH_CONST, MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING
+from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor
@@ -99,6 +100,10 @@ class CategoryOutputPreprocessingConfig(CategoryPreprocessingConfig):
 @register_preprocessor("category_prob_output")
 @ludwig_dataclass
 class CategoryProbOutputPreprocessingConfig(CategoryPreprocessingConfig):
+    def __post_init__(self):
+        if self.vocab is None:
+            raise ConfigValidationError("`vocab` must be specified for `category_prob` output feature.")
+
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
         default=DROP_ROW,
