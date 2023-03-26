@@ -99,7 +99,7 @@ class CategoryOutputPreprocessingConfig(CategoryPreprocessingConfig):
 @DeveloperAPI
 @register_preprocessor("category_prob_output")
 @ludwig_dataclass
-class CategoryProbOutputPreprocessingConfig(CategoryPreprocessingConfig):
+class CategoryProbOutputPreprocessingConfig(BasePreprocessingConfig):
     def __post_init__(self):
         if self.vocab is None:
             raise ConfigValidationError("`vocab` must be specified for `category_prob` output feature.")
