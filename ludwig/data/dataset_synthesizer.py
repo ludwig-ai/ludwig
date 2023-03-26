@@ -34,6 +34,7 @@ from ludwig.constants import (
     BAG,
     BINARY,
     CATEGORY,
+    CATEGORY_PROB,
     DATE,
     DECODER,
     ENCODER,
@@ -497,7 +498,7 @@ generators_registry = {
     H3: generate_h3,
     DATE: generate_datetime,
     VECTOR: generate_vector,
-    "category_prob": generate_category_prob,
+    CATEGORY_PROB: generate_category_prob,
 }
 
 category_cycle = 0
