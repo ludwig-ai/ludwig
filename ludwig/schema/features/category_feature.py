@@ -152,8 +152,8 @@ class CategoryOutputFeatureConfig(CategoryOutputFeatureConfigMixin, BaseOutputFe
 @output_config_registry.register(CATEGORY_PROB)
 @ludwig_dataclass
 class CategoryProbOutputFeatureConfig(CategoryOutputFeatureConfig):
-    """CategoryProbOutputFeatureConfig is a dataclass that configures the parameters used for a category_prob output
-    feature."""
+    """CategoryProbOutputFeatureConfig is a dataclass that configures the parameters used for a category_prob
+    output feature."""
 
     type: str = schema_utils.ProtectedString(CATEGORY_PROB)
 
