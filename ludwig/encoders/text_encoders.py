@@ -66,8 +66,6 @@ def _cls_pooled_error_message(encoder: str):
 
 
 class HFTextEncoder(Encoder):
-    DEFAULT_MODEL_NAME: str
-
     def _init_config(self, transformer, schema_keys: List[str], encoder_config: SequenceEncoderConfig):
         """Creates a config object for the encoder using the transformer model and the passed-in encoder config.
 
@@ -1008,8 +1006,6 @@ class GPT2Encoder(HFTextEncoder):
 @DeveloperAPI
 @register_encoder("deberta", TEXT)
 class DeBERTaEncoder(HFTextEncoderImpl):
-    DEFAULT_MODEL_NAME = "microsoft/deberta-v3-base"
-
     def __init__(self, *args, **kwargs):
         from transformers import DebertaV2Config as _DebertaV2Config
         from transformers import DebertaV2Model

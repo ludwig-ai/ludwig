@@ -779,7 +779,7 @@ class DebertaV2Config(HFEncoderImplConfig, DebertaModelParams):
     )
 
     pretrained_model_name_or_path: str = schema_utils.String(
-        default="microsoft/deberta-v3-base",
+        default="sileod/deberta-v3-base-tasksource-nli",
         description="Name or path of the pretrained model.",
         parameter_metadata=ENCODER_METADATA["DeBERTa"]["pretrained_model_name_or_path"],
     )
