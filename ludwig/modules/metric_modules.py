@@ -160,12 +160,17 @@ class BinaryAUROCMetric(BinaryAUROC, LudwigMetric):
         super().update(preds, target.type(torch.int8))
 
 
-@register_metric(ROC_AUC, [CATEGORY], MAXIMIZE, PROBABILITIES)
+@register_metric(ROC_AUC, [CATEGORY, CATEGORY_PROB], MAXIMIZE, PROBABILITIES)
 class CategoryAUROCMetric(MulticlassAUROC, LudwigMetric):
     """Area under the receiver operating curve."""
 
     def __init__(self, num_classes: int, **kwargs):
         super().__init__(num_classes=num_classes, dist_sync_fn=_gather_all_tensors_fn())
+
+    def update(self, preds: Tensor, target: Tensor) -> None:
+        if len(target.shape) > 1:
+            target = torch.argmax(target, dim=1)
+        super().update(preds, target)
 
 
 @register_metric(SPECIFICITY, [BINARY], MAXIMIZE, PROBABILITIES)
@@ -376,11 +381,9 @@ class CategoryAccuracy(MulticlassAccuracy, LudwigMetric):
         super().__init__(num_classes=num_classes, dist_sync_fn=_gather_all_tensors_fn())
 
     def update(self, preds: Tensor, target: Tensor) -> None:
-        if len(target.shape) == 1:
-            target.type(torch.long)
-        else:
+        if len(target.shape) > 1:
             target = torch.argmax(target, dim=1)
-        super().update(preds, target)
+        super().update(preds, target.type(torch.long))
 
 
 @register_metric(HITS_AT_K, [CATEGORY, CATEGORY_PROB], MAXIMIZE, LOGITS)
@@ -389,6 +392,8 @@ class HitsAtKMetric(MulticlassAccuracy, LudwigMetric):
         super().__init__(num_classes=num_classes, top_k=top_k, dist_sync_fn=_gather_all_tensors_fn(), **kwargs)
 
     def update(self, preds: Tensor, target: Tensor) -> None:
+        if len(target.shape) > 1:
+            target = torch.argmax(target, dim=1)
         super().update(preds, target.type(torch.long))
 
     @classmethod

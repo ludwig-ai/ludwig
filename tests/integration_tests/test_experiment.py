@@ -26,7 +26,7 @@ import yaml
 
 from ludwig.api import LudwigModel
 from ludwig.backend import LOCAL_BACKEND
-from ludwig.constants import BATCH_SIZE, COLUMN, ENCODER, H3, NAME, PREPROCESSING, TRAINER, TYPE
+from ludwig.constants import BATCH_SIZE, COLUMN, ENCODER, H3, NAME, PREPROCESSING, PROC_COLUMN, TRAINER, TYPE
 from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.encoders.registry import get_encoder_classes
@@ -969,8 +969,15 @@ def test_experiment_category_input_feature_with_tagger_decoder(csv_filename):
 
 
 def test_experiment_category_prob_feature(csv_filename):
+    vocab = ["a", "b", "c"]
     input_features = [vector_feature()]
-    output_features = [category_prob_feature()]
+    output_features = [
+        category_prob_feature(
+            preprocessing={
+                "vocab": vocab,
+            }
+        )
+    ]
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
 
@@ -985,4 +992,6 @@ def test_experiment_category_prob_feature(csv_filename):
     }
     model, _, _, _, _ = run_experiment(input_features, output_features, dataset=rel_path, config=config)
     preds, _ = model.predict(input_df)
-    print(preds)
+
+    # Check that predictions are category values drawn from the vocab, not distributions
+    assert all(v in vocab for v in preds[f"{output_features[0][NAME]}_predictions"].values)
