@@ -499,46 +499,6 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
 
 
 class CategoryProbOutputFeature(CategoryProbFeatureMixin, CategoryOutputFeature):
-    def __init__(
-        self,
-        output_feature_config: Union[CategoryProbOutputFeatureConfig, Dict],
-        output_features: Dict[str, OutputFeature],
-        **kwargs,
-    ):
-        self.num_classes = output_feature_config.num_classes
-        self.top_k = output_feature_config.top_k
-        super().__init__(output_feature_config, output_features, **kwargs)
-        if hasattr(output_feature_config.decoder, "num_classes"):
-            output_feature_config.decoder.num_classes = output_feature_config.num_classes
-        self.decoder_obj = self.initialize_decoder(output_feature_config.decoder)
-        self._setup_loss()
-        self._setup_metrics()
-
-    def logits(self, inputs, **kwargs):  # hidden
-        hidden = inputs[HIDDEN]
-
-        # EXPECTED SHAPES FOR RETURNED TENSORS
-        # logits: shape [batch_size, num_classes]
-        # hidden: shape [batch_size, size of final fully connected layer]
-        return {LOGITS: self.decoder_obj(hidden), PROJECTION_INPUT: hidden}
-
-    def create_calibration_module(self, feature: CategoryProbOutputFeatureConfig) -> torch.nn.Module:
-        """Creates the appropriate calibration module based on the feature config.
-
-        Today, only one type of calibration ("temperature_scaling") is available, but more options may be supported in
-        the future.
-        """
-        if feature.calibration:
-            calibration_cls = calibration.get_calibration_cls(CATEGORY, "temperature_scaling")
-            return calibration_cls(num_classes=self.num_classes)
-        return None
-
-    def create_predict_module(self) -> PredictModule:
-        return _CategoryPredict(calibration_module=self.calibration_module)
-
-    def get_prediction_set(self):
-        return {PREDICTIONS, PROBABILITIES, LOGITS}
-
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.input_size])
@@ -551,57 +511,6 @@ class CategoryProbOutputFeature(CategoryProbFeatureMixin, CategoryOutputFeature)
     def output_shape(self) -> torch.Size:
         return torch.Size([self.num_classes])
 
-    def metric_kwargs(self):
-        return {"top_k": self.top_k, "num_classes": self.num_classes, "task": "multiclass"}
-
-    @staticmethod
-    def calculate_overall_stats(predictions, targets, train_set_metadata):
-        overall_stats = {}
-        confusion_matrix = ConfusionMatrix(targets, predictions[PREDICTIONS], labels=train_set_metadata["idx2str"])
-        overall_stats["confusion_matrix"] = confusion_matrix.cm.tolist()
-        overall_stats["overall_stats"] = confusion_matrix.stats()
-        overall_stats["per_class_stats"] = confusion_matrix.per_class_stats()
-
-        return overall_stats
-
-    def postprocess_predictions(
-        self,
-        predictions,
-        metadata,
-    ):
-        predictions_col = f"{self.feature_name}_{PREDICTIONS}"
-        if predictions_col in predictions:
-            if "idx2str" in metadata:
-                predictions[predictions_col] = predictions[predictions_col].map(lambda pred: metadata["idx2str"][pred])
-
-        probabilities_col = f"{self.feature_name}_{PROBABILITIES}"
-        if probabilities_col in predictions:
-            prob_col = f"{self.feature_name}_{PROBABILITY}"
-            predictions[prob_col] = predictions[probabilities_col].map(max)
-            predictions[probabilities_col] = predictions[probabilities_col].map(lambda pred: pred.tolist())
-            if "idx2str" in metadata:
-                for i, label in enumerate(metadata["idx2str"]):
-                    key = f"{probabilities_col}_{label}"
-
-                    # Use default param to force a capture before the loop completes, see:
-                    # https://stackoverflow.com/questions/2295290/what-do-lambda-function-closures-capture
-                    predictions[key] = predictions[probabilities_col].map(
-                        lambda prob, i=i: prob[i],
-                    )
-
-        top_k_col = f"{self.feature_name}_predictions_top_k"
-        if top_k_col in predictions:
-            if "idx2str" in metadata:
-                predictions[top_k_col] = predictions[top_k_col].map(
-                    lambda pred_top_k: [metadata["idx2str"][pred] for pred in pred_top_k]
-                )
-
-        return predictions
-
     @staticmethod
     def get_schema_cls():
         return CategoryProbOutputFeatureConfig
-
-    @staticmethod
-    def create_postproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
-        return _CategoryPostprocessing(metadata)
