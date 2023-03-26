@@ -195,16 +195,16 @@ def test_sequence_accuracy_metric():
     assert torch.isclose(metric.compute(), torch.tensor(0.8438), rtol=0.0001)
 
 
-# @pytest.mark.parametrize("preds", [torch.arange(6)])
-# @pytest.mark.parametrize("target", [torch.tensor([0, 1, 2, 1, 4, 5]).float()])
-# @pytest.mark.parametrize("output", [torch.tensor(0.7500).float()])
-# @pytest.mark.parametrize("one_hot", [False, True])
-# def test_category_accuracy(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor, one_hot: bool):
-#     if one_hot:
-#         target = torch.nn.functional.one_hot(target.long(), num_classes=6).float()
-#     metric = metric_modules.CategoryAccuracy(num_classes=6)
-#     metric.update(preds, target)
-#     assert torch.isclose(output, metric.compute(), rtol=0.0001)
+@pytest.mark.parametrize("preds", [torch.arange(6)])
+@pytest.mark.parametrize("target", [torch.tensor([0, 1, 2, 1, 4, 5]).float()])
+@pytest.mark.parametrize("output", [torch.tensor(0.7500).float()])
+@pytest.mark.parametrize("one_hot", [False, True])
+def test_category_accuracy(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor, one_hot: bool):
+    if one_hot:
+        target = torch.nn.functional.one_hot(target.long(), num_classes=6).float()
+    metric = metric_modules.CategoryAccuracy(num_classes=6)
+    metric.update(preds, target)
+    assert torch.isclose(output, metric.compute(), rtol=0.0001)
 
 
 @pytest.mark.parametrize(
