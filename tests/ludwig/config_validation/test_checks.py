@@ -11,7 +11,9 @@ import contextlib
 from typing import Any, Dict, List, Optional
 
 import pytest
+import yaml
 
+from ludwig.constants import COMBINER, TYPE
 from ludwig.error import ConfigValidationError
 from ludwig.schema.model_types.base import ModelConfig
 from tests.integration_tests.utils import binary_feature, text_feature
@@ -247,3 +249,36 @@ def test_experiment_binary_fill_with_const():
 
     with pytest.raises(ConfigValidationError):
         ModelConfig.from_dict(config)
+
+
+def test_check_concat_combiner_requirements():
+    config = yaml.safe_load(
+        """
+input_features:
+  - name: description
+    type: text
+    encoder:
+      type: embed
+      reduce_output: null
+    column: description
+  - name: required_experience
+    type: category
+    column: required_experience
+output_features:
+  - name: title
+    type: category
+combiner:
+    type: concat
+trainer:
+  train_steps: 2
+model_type: ecd
+"""
+    )
+
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+    # Confirms that the choice of the combiner type is the only reason for the ConfigValidationError.
+    config[COMBINER][TYPE] = "sequence_concat"
+    ModelConfig.from_dict(config)
+
