@@ -150,7 +150,7 @@ def test_numpy_encoder():
     assert json.dumps({"a": "b"}, cls=NumpyEncoder) == '{"a": "b"}'
 
     # Test numpy data type encoding
-    for dtype in [np.byte, np.ubyte, np.short, np.ushort, np.int, np.uint, np.longlong, np.ulonglong]:
+    for dtype in [np.byte, np.ubyte, np.short, np.ushort, np.int32, np.int64, np.uint, np.longlong, np.ulonglong]:
         x = np.arange(5, dtype=dtype)
         assert json.dumps(x, cls=NumpyEncoder) == "[0, 1, 2, 3, 4]"
         for i in x:
