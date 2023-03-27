@@ -37,9 +37,9 @@ from ludwig.error import InputDataError
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.features.vector_feature import VectorFeatureMixin
 from ludwig.schema.features.category_feature import (
+    CategoryDistributionOutputFeatureConfig,
     CategoryInputFeatureConfig,
     CategoryOutputFeatureConfig,
-    CategoryDistributionOutputFeatureConfig,
 )
 from ludwig.types import (
     FeatureMetadataDict,
