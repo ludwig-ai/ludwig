@@ -2146,7 +2146,8 @@ class LongformerEncoder(HFTextEncoder):
 @register_encoder("llama", TEXT)
 class LlamaEncoder(HFTextEncoderImpl):
     def __init__(self, *args, **kwargs):
-        from transformers import LlamaConfig as _LlamaConfig, LlamaModel
+        from transformers import LlamaConfig as _LlamaConfig
+        from transformers import LlamaModel
 
         super().__init__(LlamaModel, _LlamaConfig, LlamaConfig, *args, **kwargs)
 
