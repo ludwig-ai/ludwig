@@ -2202,6 +2202,12 @@ class AutoTransformerEncoder(HFTextEncoder):
         if self.reduce_output is None:
             # TODO(justin): This may need to be conditioned on which AutoModel gets chosen.
             return torch.Size([self.max_sequence_length, self.transformer.module.config.hidden_size])
+        if self.reduce_output == "concat":
+            return torch.Size(
+                [
+                    self.max_sequence_length * self.transformer.module.config.hidden_size,
+                ]
+            )
         return torch.Size([self.transformer.module.config.hidden_size])
 
     @property
