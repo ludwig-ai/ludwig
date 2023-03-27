@@ -281,4 +281,3 @@ model_type: ecd
     # Confirms that the choice of the combiner type is the only reason for the ConfigValidationError.
     config[COMBINER][TYPE] = "sequence_concat"
     ModelConfig.from_dict(config)
-
