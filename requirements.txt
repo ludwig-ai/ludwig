@@ -35,6 +35,7 @@ packaging
 retry
 # required for TransfoXLTokenizer when using transformer_xl
 sacremoses
+sentencepiece
 
 # LLMs
 loralib
