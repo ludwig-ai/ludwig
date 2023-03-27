@@ -320,18 +320,3 @@ def check_tagger_decoder_requirements(config: "ModelConfig") -> None:  # noqa: F
             "Tagger decoder requires at least one of the text, sequence or timeseries input feature encoders to have "
             "`reduce_output` set to `None`."
         )
-
-
-@register_config_check
-def check_fill_with_const_requirements(config: "ModelConfig") -> None:  # noqa: F821
-    """Checks that the user provides a `fill_value` whenever their missing value strategy is `fill_with_const`."""
-    for feature in config.input_features:
-        if (
-            feature.type == "binary"
-            and feature.preprocessing.missing_value_strategy == "fill_with_const"
-            and feature.preprocessing.fill_value is None
-        ):
-            raise ConfigValidationError(
-                "To use missing value strategy `fill_with_const` for boolean features "
-                "please specify a non-null `fill_value`. (e.g. `fill_value: true`)"
-            )
