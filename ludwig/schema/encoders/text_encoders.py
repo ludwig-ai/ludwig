@@ -1,11 +1,11 @@
-from typing import Callable, Dict, List, TYPE_CHECKING, Optional, Union
+from typing import Callable, Dict, List, TYPE_CHECKING, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import MODEL_ECD, MODEL_GBM, TEXT
 from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.sequence_encoders import SequenceEncoderConfig
-from ludwig.schema.encoders.text.hf_model_params import DebertaModelParams
+from ludwig.schema.encoders.text.hf_model_params import DebertaModelParams, LlamaModelParams
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.metadata import ENCODER_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY, ParameterMetadata
@@ -3040,7 +3040,7 @@ class LongformerConfig(HFEncoderConfig):
 @DeveloperAPI
 @register_encoder_config("llama", TEXT)
 @ludwig_dataclass
-class LlamaConfig(HFEncoderConfig):
+class LlamaConfig(HFEncoderImplConfig, LlamaModelParams):
     """This dataclass configures the schema used for a LLaMA encoder."""
 
     @staticmethod
@@ -3052,17 +3052,9 @@ class LlamaConfig(HFEncoderConfig):
         # description=ENCODER_METADATA["LLaMA"]["type"].long_description,
     )
 
-    trainable: bool = schema_utils.Boolean(
-        default=False,
-        description="Whether to finetune the model on your dataset.",
-        parameter_metadata=ENCODER_METADATA["HFEncoder"]["trainable"],
-    )
-
-    use_pretrained: bool = schema_utils.Boolean(
-        default=True,
-        description="Whether to use the pretrained weights for the model. If false, the model will train from "
-        "scratch which is very computationally expensive.",
-        parameter_metadata=ENCODER_METADATA["HFEncoder"]["use_pretrained"],
+    pretrained_model_name_or_path: str = schema_utils.String(
+        default="decapoda-research/llama-7b-hf",
+        description="Name or path of the pretrained model.",
     )
 
     reduce_output: str = schema_utils.String(
@@ -3071,78 +3063,12 @@ class LlamaConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["HFEncoder"]["reduce_output"],
     )
 
-    pretrained_model_name_or_path: str = schema_utils.String(
-        default="decapoda-research/llama-7b-hf",
-        description="Name or path of the pretrained model.",
-    )
-
-    peft_model_name_or_path: Optional[str] = schema_utils.String(
-        default="tloen/alpaca-lora-7b",
-        allow_none=True,
-        description="Name or path of the pretrained PEFT model.",
-    )
-
-    saved_weights_in_checkpoint: bool = schema_utils.Boolean(
-        default=False,
-        description="Are the pretrained encoder weights saved in this model's checkpoint? Automatically set to"
-        "True for trained models to prevent loading pretrained encoder weights from model hub.",
-        parameter_metadata=INTERNAL_ONLY,
-    )
-
-    max_sequence_length: int = schema_utils.PositiveInteger(
-        default=None,
-        allow_none=True,
-        description="Maximum length of the input sequence.",
-        parameter_metadata=INTERNAL_ONLY,
-    )
-
-    vocab_size: int = schema_utils.PositiveInteger(
-        default=32000,
-        description="Vocabulary size of the LLaMA model.",
-        parameter_metadata=INTERNAL_ONLY,
-    )
-
-    hidden_size: int = schema_utils.PositiveInteger(
-        default=4096,
-        description="Dimension of the hidden representations.",
-    )
-
-    intermediate_size: int = schema_utils.PositiveInteger(
-        default=11008,
-        description="Dimension of the MLP representations.",
-    )
-
-    num_hidden_layers: int = schema_utils.PositiveInteger(
-        default=32,
-        description="Number of hidden layers in the Transformer encoder.",
-    )
-
-    num_attention_heads: int = schema_utils.PositiveInteger(
-        default=32,
-        description="Number of attention heads for each attention layer in the Transformer encoder.",
-    )
-
-    hidden_act: str = schema_utils.StringOptions(
-        ["silu"],
-        default="silu",
-        description="The non-linear activation function in the decoder.",
-    )
-
-    initializer_range: float = schema_utils.NonNegativeFloat(
-        default=0.02,
-        description="The standard deviation of the truncated_normal_initializer for initializing all weight "
-        "matrices.",
-    )
-
-    rms_norm_eps: float = schema_utils.NonNegativeFloat(
-        default=1e-12,
-        description="The epsilon used by the rms normalization layers.",
-    )
-
-    tie_word_embeddings: bool = schema_utils.Boolean(
-        default=False,
-        description="Whether to tie weight embeddings",
-    )
+    # TODO(travis): enable when we add PEFT
+    # peft_model_name_or_path: Optional[str] = schema_utils.String(
+    #     default="tloen/alpaca-lora-7b",
+    #     allow_none=True,
+    #     description="Name or path of the pretrained PEFT model.",
+    # )
 
 
 @DeveloperAPI

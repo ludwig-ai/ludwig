@@ -162,3 +162,60 @@ class DebertaModelParams(schema_utils.BaseMarshmallowConfig):
         default="layer_norm",
         description="The normalization method for relative embeddings.",
     )
+
+
+@ludwig_dataclass
+class LlamaModelParams(schema_utils.BaseMarshmallowConfig):
+    @classmethod
+    def get_hf_config_param_names(cls) -> Set[str]:
+        return LlamaModelParams.get_valid_field_names()
+
+    # Model architecture params for training from scratch
+    # TODO(travis): conditionally disable setting these when `use_pretrained=True`.
+    vocab_size: int = schema_utils.PositiveInteger(
+        default=32000,
+        description="Vocabulary size of the LLaMA model.",
+        parameter_metadata=INTERNAL_ONLY,
+    )
+
+    hidden_size: int = schema_utils.PositiveInteger(
+        default=4096,
+        description="Dimension of the hidden representations.",
+    )
+
+    intermediate_size: int = schema_utils.PositiveInteger(
+        default=11008,
+        description="Dimension of the MLP representations.",
+    )
+
+    num_hidden_layers: int = schema_utils.PositiveInteger(
+        default=32,
+        description="Number of hidden layers in the Transformer encoder.",
+    )
+
+    num_attention_heads: int = schema_utils.PositiveInteger(
+        default=32,
+        description="Number of attention heads for each attention layer in the Transformer encoder.",
+    )
+
+    hidden_act: str = schema_utils.StringOptions(
+        ["silu"],
+        default="silu",
+        description="The non-linear activation function in the decoder.",
+    )
+
+    initializer_range: float = schema_utils.NonNegativeFloat(
+        default=0.02,
+        description="The standard deviation of the truncated_normal_initializer for initializing all weight "
+        "matrices.",
+    )
+
+    rms_norm_eps: float = schema_utils.NonNegativeFloat(
+        default=1e-12,
+        description="The epsilon used by the rms normalization layers.",
+    )
+
+    tie_word_embeddings: bool = schema_utils.Boolean(
+        default=False,
+        description="Whether to tie weight embeddings",
+    )

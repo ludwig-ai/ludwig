@@ -18,7 +18,6 @@ from typing import Any, Callable, Dict, List, Optional, Type, TYPE_CHECKING, Typ
 
 import numpy as np
 import torch
-from peft import prepare_model_for_int8_training, LoraConfig, get_peft_model, get_peft_model_state_dict, PeftModel
 from torch import nn
 
 from ludwig.api_annotations import DeveloperAPI
@@ -160,10 +159,7 @@ class HFTextEncoderImpl(HFTextEncoder):
         vocab_size = kwargs["vocab_size"]
         hf_config_params = {k: v for k, v in kwargs.items() if k in schema_cls.get_hf_config_param_names()}
         if use_pretrained and not saved_weights_in_checkpoint:
-            pretrained_kwargs = pretrained_kwargs or {}
-            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
-                model_cls, pretrained_model_name_or_path, **pretrained_kwargs
-            )
+            transformer = self._load_pretrained_transformer(model_cls, pretrained_model_name_or_path, pretrained_kwargs)
         else:
             transformer = self._init_transformer_from_scratch(model_cls, config_cls, hf_config_params, vocab_size)
 
@@ -177,6 +173,15 @@ class HFTextEncoderImpl(HFTextEncoder):
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer = FreezeModule(transformer, frozen=not trainable)
         self.max_sequence_length = max_sequence_length
+
+    def _load_pretrained_transformer(
+        self, model_cls: Type[HFModelT], pretrained_model_name_or_path: str, pretrained_kwargs: Dict = None
+    ) -> nn.Module:
+        pretrained_kwargs = pretrained_kwargs or {}
+        transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+            model_cls, pretrained_model_name_or_path, **pretrained_kwargs
+        )
+        return transformer
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
         if mask is not None:
@@ -2139,85 +2144,15 @@ class LongformerEncoder(HFTextEncoder):
 
 @DeveloperAPI
 @register_encoder("llama", TEXT)
-class Llama(HFTextEncoder):
-    DEFAULT_MODEL_NAME = "decapoda-research/llama-7b-hf"
+class LlamaEncoder(HFTextEncoderImpl):
+    def __init__(self, *args, **kwargs):
+        from transformers import LlamaConfig as _LlamaConfig, LlamaModel
 
-    def __init__(
-        self,
-        max_sequence_length: int,
-        use_pretrained: bool = True,
-        trainable: bool = False,
-        pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
-        peft_model_name_or_path: Optional[str] = None,
-        saved_weights_in_checkpoint: bool = False,
-        reduce_output: Optional[str] = "cls_pooled",
-        vocab_size=32000,
-        hidden_size=4096,
-        intermediate_size=11008,
-        num_hidden_layers=32,
-        num_attention_heads=32,
-        hidden_act="silu",
-        initializer_range=0.02,
-        rms_norm_eps=1e-6,
-        tie_word_embeddings=False,
-        pretrained_kwargs: Dict = None,
-        encoder_config=None,
-        **kwargs,
-    ):
-        super().__init__()
+        super().__init__(LlamaModel, _LlamaConfig, LlamaConfig, *args, **kwargs)
 
-        from transformers import LlamaConfig, LlamaModel
-
-        hf_config_params = dict(
-            vocab_size=vocab_size,
-            hidden_size=hidden_size,
-            intermediate_size=intermediate_size,
-            num_hidden_layers=num_hidden_layers,
-            num_attention_heads=num_attention_heads,
-            hidden_act=hidden_act,
-            initializer_range=initializer_range,
-            rms_norm_eps=rms_norm_eps,
-            tie_word_embeddings=tie_word_embeddings,
-            **kwargs,
-        )
-
-        if use_pretrained and not saved_weights_in_checkpoint:
-            self.trainable = trainable
-            self.pretrained_kwargs = pretrained_kwargs
-            self.pretrained_model_name_or_path = pretrained_model_name_or_path
-            transformer = self._load_pretrained_transformer()
-        else:
-            transformer = self._init_transformer_from_scratch(LlamaModel, LlamaConfig, hf_config_params, vocab_size)
-
-        if encoder_config is not None:
-            self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
-        else:
-            self.config = None
-
-        self.reduce_output = reduce_output
-        if not self.reduce_output == "cls_pooled":
-            self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-        self.transformer = FreezeModule(transformer, frozen=not trainable)
-        self.max_sequence_length = max_sequence_length
-
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None):
-        if mask is not None:
-            mask = mask.to(torch.int32)
-        transformer_outputs = self.transformer.module(
-            input_ids=inputs,
-            attention_mask=mask,
-            return_dict=True,
-        )
-        if self.reduce_output == "cls_pooled":
-            hidden = transformer_outputs.last_hidden_state
-        else:
-            hidden = transformer_outputs.last_hidden_state[:, 1:-1, :]  # bos + [sent] + sep
-            hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
-
-    def _load_pretrained_transformer(self):
-        from transformers import LlamaModel
-
+    def _load_pretrained_transformer(
+        self, model_cls: Type[HFModelT], pretrained_model_name_or_path: str, pretrained_kwargs: Dict = None
+    ) -> nn.Module:
         device = get_torch_device()
         if device == "cuda":
             default_pretrained_kwargs = dict(
@@ -2230,71 +2165,43 @@ class Llama(HFTextEncoder):
         else:
             default_pretrained_kwargs = dict(device_map={"": device}, low_cpu_mem_usage=True)
 
-        pretrained_kwargs = self.pretrained_kwargs or default_pretrained_kwargs
+        pretrained_kwargs = pretrained_kwargs or default_pretrained_kwargs
         model, _ = load_pretrained_hf_model_with_hub_fallback(
-            LlamaModel, self.pretrained_model_name_or_path, **pretrained_kwargs
+            model_cls, pretrained_model_name_or_path, **pretrained_kwargs
         )
 
-        # LORA / 8bit only supported on GPU
-        if device == "cuda":
-            if self.trainable:
-                LORA_R = 8
-                LORA_ALPHA = 16
-                LORA_DROPOUT = 0.05
-                TARGET_MODULES = [
-                    "q_proj",
-                    "v_proj",
-                ]
+        # TODO(travis): add PEFT support
+        # # LORA / 8bit only supported on GPU
+        # if device == "cuda":
+        #     if self.trainable:
+        #         LORA_R = 8
+        #         LORA_ALPHA = 16
+        #         LORA_DROPOUT = 0.05
+        #         TARGET_MODULES = [
+        #             "q_proj",
+        #             "v_proj",
+        #         ]
 
-                model = prepare_model_for_int8_training(model)
-                config = LoraConfig(
-                    r=LORA_R,
-                    lora_alpha=LORA_ALPHA,
-                    target_modules=TARGET_MODULES,
-                    lora_dropout=LORA_DROPOUT,
-                    bias="none",
-                    task_type="CAUSAL_LM",
-                )
-                model = get_peft_model(model, config)
-            else:
-                # if peft_model_name_or_path is not None:
-                #     model = PeftModel.from_pretrained(model, peft_model_name_or_path, torch_dtype=torch.float16)
-                pass
+        #         model = prepare_model_for_int8_training(model)
+        #         config = LoraConfig(
+        #             r=LORA_R,
+        #             lora_alpha=LORA_ALPHA,
+        #             target_modules=TARGET_MODULES,
+        #             lora_dropout=LORA_DROPOUT,
+        #             bias="none",
+        #             task_type="CAUSAL_LM",
+        #         )
+        #         model = get_peft_model(model, config)
+        #     else:
+        #         # if peft_model_name_or_path is not None:
+        #         #     model = PeftModel.from_pretrained(model, peft_model_name_or_path, torch_dtype=torch.float16)
+        #         pass
 
-        print("LOAD", device)
-        for p in model.parameters():
-            print(p.shape, p.dtype, p.device)
         return model
-
-    def reload(self):
-        print("RELOAD")
-        transformer = self._load_pretrained_transformer()
-        self.transformer.module = transformer
-        super().reload()
 
     @staticmethod
     def get_schema_cls():
         return LlamaConfig
-
-    @property
-    def input_shape(self) -> torch.Size:
-        return torch.Size([self.max_sequence_length])
-
-    @property
-    def output_shape(self) -> torch.Size:
-        if self.reduce_output is None:
-            # Subtract 2 to remove CLS and PAD tokens added by tokenizer.
-            return torch.Size(
-                [
-                    self.max_sequence_length - 2,
-                    self.transformer.module.config.hidden_size,
-                ]
-            )
-        return torch.Size([self.transformer.module.config.hidden_size])
-
-    @property
-    def input_dtype(self):
-        return torch.int32
 
 
 @DeveloperAPI
