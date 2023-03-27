@@ -237,6 +237,20 @@ def test_comparator_combiner_entities(entity_1: List[str], entity_2: List[str], 
         assert config_obj.combiner.entity_2 == ["b1", "b2"]
 
 
+def test_experiment_binary_fill_with_const():
+    """Test that the tagger decoder doesn't work with category input features."""
+    config = {
+        "defaults": {"binary": {"preprocessing": {"missing_value_strategy": "fill_with_const"}}},
+        "input_features": [{"name": "binary_1", "type": "binary"}],
+        "model_type": "ecd",
+        "output_features": [{"name": "category_output_1", "type": "category"}],
+        "trainer": {"train_steps": 1},
+    }
+
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+
 def test_check_concat_combiner_requirements():
     config = yaml.safe_load(
         """
