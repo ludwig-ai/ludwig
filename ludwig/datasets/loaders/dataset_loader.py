@@ -427,10 +427,27 @@ class DatasetLoader:
         if root_dir:
             file_paths = [os.path.join(root_dir, path) for path in file_paths]
         dataframes = [self.load_file_to_dataframe(path) for path in file_paths]
-        if self.config.columns:
-            column_names = [column["name"] for column in self.config.columns]
-            dataframes = [df.set_axis(column_names, axis=1) for df in dataframes]
-        return pd.concat(dataframes, ignore_index=True)
+        try:
+            if self.config.columns:
+                column_names = [column["name"] for column in self.config.columns]
+
+                set_cols_dfs = []
+                for df in dataframes:
+                    # Split column is not included in configs, add in if pre-set split is present
+                    if SPLIT in df.columns:
+                        column_names.append(SPLIT)
+
+                    # If the number of columns in the dataframe does not match the number of columns in the config,
+                    # then the dataframe likely has an extra column that we don't want - i.e. "Unnamed: 0".
+                    if len(column_names) != len(df.columns):
+                        df = df[column_names]
+                    set_cols_dfs.append(df.set_axis(column_names, axis=1))
+                return pd.concat(set_cols_dfs, ignore_index=True)
+            else:
+                return pd.concat(dataframes, ignore_index=True)
+        except ValueError as e:
+            logger.warning(f"Error setting column names: {e}")
+            return pd.concat(dataframes, ignore_index=True)
 
     def load_unprocessed_dataframe(self, file_paths: List[str]) -> pd.DataFrame:
         """Load dataset files into a dataframe.

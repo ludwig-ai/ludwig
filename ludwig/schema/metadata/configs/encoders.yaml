@@ -3,6 +3,46 @@ BaseEncoder:
         internal_only: true
         other_information: Internal Only
         ui_display_name: Not Displayed
+HFEncoder:
+    trainable:
+        default_value_reasoning:
+            Trainable is disabled by default to make the model useful for generating fast baselines, which can be
+            further sped up by setting `preprocessing.cache_encoder_embeddings`. In many cases strong performance
+            can be achieved without adjusting the weights of the pretrained model, but for best performance we
+            recommend setting this to true.
+        description_implications:
+            "Ludwig currently supports two variations on fine-tuning, configured via the trainable encoder parameter:
+            (1) modifying the weights of the pretrained encoder to adapt them to the downstream task (trainable=true),
+            or (2) keeping the pretrained encoder weights fixed and training a stack of dense layers that sit
+            downstream as the combiner and decoder modules (trainable=false, default). This is sometimes distinguished
+            as transfer learning. Allowing the weights to be modified by setting trainable=true can significantly
+            improve performance on the downstream task, but will take significantly longer to train (due to the
+            additional backward passes over the pretrained model parameters). Additionally, more care needs to be
+            taken when selecting hyperparameters when trainable=true to prevent
+            [catastrophic forgettng](https://en.wikipedia.org/wiki/Catastrophic_interference), whereby the
+            model forgets all of the valuable information it learned during pretraining."
+        expected_impact: 3
+        ui_display_name: Trainable
+    use_pretrained:
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use Pretrained
 ALBERT:
     type:
         short_description: Similar to BERT with lower memory footprint and faster training.
@@ -5115,6 +5155,34 @@ ResNet:
     width:
         internal_only: true
         ui_display_name: null
+DeBERTa:
+    type:
+        short_description: Improved version of BERT and RoBERTa, achieving good baseline performance on many tasks.
+        long_description:
+            The [DeBERTa](https://arxiv.org/abs/2006.03654) encoder improves the BERT and RoBERTa models using
+            disentangled attention and enhanced mask decoder. With those two improvements, DeBERTa out performs RoBERTa
+            on a majority of NLU tasks with 80GB training data.
+
+            In [DeBERTa V3](https://arxiv.org/abs/2111.09543), the authors further improved the efficiency of DeBERTa
+            using ELECTRA-Style pre-training with Gradient Disentangled Embedding Sharing. Compared to DeBERTa,
+            the V3 version significantly improves the model performance on downstream tasks.
+        literature_references:
+            - https://arxiv.org/abs/2006.03654
+            - https://arxiv.org/abs/2111.09543
+    pretrained_model_name_or_path:
+        default_value_reasoning:
+            The default model was selected based on the benchmarking work done by IBM's
+            [model recycling](https://ibm.github.io/model-recycling/microsoft_deberta-v3-base_table.html) project.
+            In that study, the selected model ranked first among all variants of the `microsoft/deberta-v3-base`
+            architecture on an evaluation across 36 different datasets.
+        description_implications:
+            Considerations when selecting a pretrained model version include number of parameters (how long the model
+            will take to fine-tuning / perform inference), general model performance on various benchmarks, and
+            specific model performance on the task you wish to fine-tune it on.
+        expected_impact: 2
+        related_parameters:
+            - use_pretrained, trainable, pretrained_kwargs
+        ui_display_name: Pretrained model
 RoBERTa:
     type:
         short_description: BERT based model that has higher accuracy and is easier parallelize due to larger mini-batches.

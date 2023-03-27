@@ -569,8 +569,19 @@ def test_in_memory_dataset_size(backend, tmpdir, ray_cluster_2cpu):
 
 
 @pytest.mark.parametrize(
-    "binary_as_input, expected_preprocessing",
+    "binary_as_input, expected_preprocessing, missing_value_strategy",
     [
+        pytest.param(
+            True,
+            {
+                "missing_value_strategy": "fill_with_true",
+                "fill_value": None,
+                "computed_fill_value": ">50K",
+                "fallback_true_label": ">50K",
+            },
+            "fill_with_true",
+            id="binary_as_input_1",
+        ),
         pytest.param(
             True,
             {
@@ -579,7 +590,8 @@ def test_in_memory_dataset_size(backend, tmpdir, ray_cluster_2cpu):
                 "computed_fill_value": "<=50K",
                 "fallback_true_label": ">50K",
             },
-            id="binary_as_input",
+            "fill_with_false",
+            id="binary_as_input_2",
         ),
         pytest.param(
             False,
@@ -589,13 +601,17 @@ def test_in_memory_dataset_size(backend, tmpdir, ray_cluster_2cpu):
                 "computed_fill_value": None,
                 "fallback_true_label": ">50K",
             },
+            "drop_row",
             id="binary_as_output",
         ),
     ],
 )
-def test_non_conventional_bool_with_fallback(binary_as_input, expected_preprocessing, tmpdir):
+def test_non_conventional_bool_with_fallback(binary_as_input, expected_preprocessing, missing_value_strategy, tmpdir):
     # Specify a non-conventional boolean feature with a fallback true label.
-    bin_feature = binary_feature(bool2str=["<=50K", ">50K"], preprocessing={"fallback_true_label": ">50K"})
+    bin_feature = binary_feature(
+        bool2str=["<=50K", ">50K"],
+        preprocessing={"fallback_true_label": ">50K", "missing_value_strategy": missing_value_strategy},
+    )
 
     # Generate data with the non-conventional boolean feature.
     if binary_as_input:
