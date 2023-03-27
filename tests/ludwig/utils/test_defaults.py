@@ -51,9 +51,9 @@ HYPEROPT_CONFIG = {
             "upper": 0.1,
         },
         "combiner.num_fc_layers": {"space": "randint", "lower": 2, "upper": 6},
-        "utterance.cell_type": {"space": "grid_search", "values": ["rnn", "gru"]},
-        "utterance.bidirectional": {"space": "choice", "categories": [True, False]},
-        "utterance.fc_layers": {
+        "utterance.encoder.norm": {"space": "grid_search", "values": ["layer", "batch"]},
+        "utterance.encoder.dropout": {"space": "choice", "categories": [0.0001, 0.001, 0.01]},
+        "utterance.encoder.fc_layers": {
             "space": "choice",
             "categories": [
                 [{"output_size": 512}, {"output_size": 256}],
