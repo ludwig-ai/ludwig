@@ -380,6 +380,7 @@ def check_hyperopt_parameter_dicts(config: "ModelConfig") -> None:  # noqa: F821
                 )
 
 
+@register_config_check
 def check_concat_combiner_requirements(config: "ModelConfig") -> None:  # noqa: F821
     """Checks that if the concat combiner receives a mixture of sequence and non-sequence features, that all
     sequence features are configured with reduce_output to be 2D tensors."""
