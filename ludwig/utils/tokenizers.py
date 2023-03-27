@@ -1177,7 +1177,16 @@ def get_hf_tokenizer(pretrained_model_name_or_path, **kwargs):
     Returns:
         A torchscript-able HF tokenizer if it is available. Else, returns vanilla HF tokenizer.
     """
-    from transformers import BertTokenizer
+    from transformers import BertTokenizer, DistilBertTokenizer, ElectraTokenizer
+
+    # HuggingFace has implemented a DO Repeat Yourself policy for models
+    # https://github.com/huggingface/transformers/issues/19303
+    # We now need to manually track BERT-like tokenizers to map onto the TorchText implementation
+    # until PyTorch improves TorchScript to be able to compile HF tokenizers. This would require
+    #  1. Support for string inputs for torch.jit.trace, or
+    #  2. Support for `kwargs` in torch.jit.script
+    # This is populated in the `get_hf_tokenizer` since the set requires `transformers` to be installed
+    HF_BERTLIKE_TOKENIZER_CLS_SET = {BertTokenizer, DistilBertTokenizer, ElectraTokenizer}
 
     hf_name = pretrained_model_name_or_path
     # use_fast=False to leverage python class inheritance
@@ -1185,7 +1194,9 @@ def get_hf_tokenizer(pretrained_model_name_or_path, **kwargs):
     hf_tokenizer = load_pretrained_hf_tokenizer(hf_name, use_fast=False)
 
     torchtext_tokenizer = None
-    if "bert" in TORCHSCRIPT_COMPATIBLE_TOKENIZERS and isinstance(hf_tokenizer, BertTokenizer):
+    if "bert" in TORCHSCRIPT_COMPATIBLE_TOKENIZERS and any(
+        isinstance(hf_tokenizer, cls) for cls in HF_BERTLIKE_TOKENIZER_CLS_SET
+    ):
         tokenizer_kwargs = _get_bert_config(hf_name)
         torchtext_tokenizer = BERTTokenizer(
             **tokenizer_kwargs,
