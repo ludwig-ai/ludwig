@@ -34,7 +34,7 @@ from ludwig.constants import (
     BAG,
     BINARY,
     CATEGORY,
-    CATEGORY_PROB,
+    CATEGORY_DISTRIBUTION,
     DATE,
     DECODER,
     ENCODER,
@@ -160,7 +160,7 @@ parameters_builders_registry = {
     "date": return_none,
     "h3": return_none,
     VECTOR: return_none,
-    "category_prob": return_none,
+    CATEGORY_DISTRIBUTION: return_none,
 }
 
 
@@ -471,8 +471,8 @@ def generate_vector(feature, outdir: Optional[str] = None) -> str:
     return " ".join([str(100 * random.random()) for _ in range(vector_size)])
 
 
-def generate_category_prob(feature, outdir: Optional[str] = None) -> str:
-    """Returns a random category probability.
+def generate_category_distribution(feature, outdir: Optional[str] = None) -> str:
+    """Returns a random category distribution.
 
     `outdir` is unused.
     """
@@ -498,7 +498,7 @@ generators_registry = {
     H3: generate_h3,
     DATE: generate_datetime,
     VECTOR: generate_vector,
-    CATEGORY_PROB: generate_category_prob,
+    CATEGORY_DISTRIBUTION: generate_category_distribution,
 }
 
 category_cycle = 0

@@ -40,7 +40,7 @@ from tests.integration_tests.utils import (
     bag_feature,
     binary_feature,
     category_feature,
-    category_prob_feature,
+    category_distribution_feature,
     create_data_set_to_use,
     date_feature,
     ENCODERS,
@@ -968,11 +968,11 @@ def test_experiment_category_input_feature_with_tagger_decoder(csv_filename):
         run_experiment(input_features, output_features, dataset=rel_path)
 
 
-def test_experiment_category_prob_feature(csv_filename):
+def test_experiment_category_distribution_feature(csv_filename):
     vocab = ["a", "b", "c"]
     input_features = [vector_feature()]
     output_features = [
-        category_prob_feature(
+        category_distribution_feature(
             preprocessing={
                 "vocab": vocab,
             }

@@ -21,7 +21,7 @@ import torch
 
 from ludwig.constants import (
     CATEGORY,
-    CATEGORY_PROB,
+    CATEGORY_DISTRIBUTION,
     COLUMN,
     HIDDEN,
     LOGITS,
@@ -39,7 +39,7 @@ from ludwig.features.vector_feature import VectorFeatureMixin
 from ludwig.schema.features.category_feature import (
     CategoryInputFeatureConfig,
     CategoryOutputFeatureConfig,
-    CategoryProbOutputFeatureConfig,
+    CategoryDistributionOutputFeatureConfig,
 )
 from ludwig.types import (
     FeatureMetadataDict,
@@ -217,10 +217,10 @@ class CategoryFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
-class CategoryProbFeatureMixin(VectorFeatureMixin):
+class CategoryDistributionFeatureMixin(VectorFeatureMixin):
     @staticmethod
     def type():
-        return CATEGORY_PROB
+        return CATEGORY_DISTRIBUTION
 
     @staticmethod
     def get_feature_meta(
@@ -498,7 +498,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         return _CategoryPostprocessing(metadata)
 
 
-class CategoryProbOutputFeature(CategoryProbFeatureMixin, CategoryOutputFeature):
+class CategoryDistributionOutputFeature(CategoryDistributionFeatureMixin, CategoryOutputFeature):
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.input_size])
@@ -513,4 +513,4 @@ class CategoryProbOutputFeature(CategoryProbFeatureMixin, CategoryOutputFeature)
 
     @staticmethod
     def get_schema_cls():
-        return CategoryProbOutputFeatureConfig
+        return CategoryDistributionOutputFeatureConfig

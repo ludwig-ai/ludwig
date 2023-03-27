@@ -97,12 +97,12 @@ class CategoryOutputPreprocessingConfig(CategoryPreprocessingConfig):
 
 
 @DeveloperAPI
-@register_preprocessor("category_prob_output")
+@register_preprocessor("category_distribution_output")
 @ludwig_dataclass
-class CategoryProbOutputPreprocessingConfig(BasePreprocessingConfig):
+class CategoryDistributionOutputPreprocessingConfig(BasePreprocessingConfig):
     def __post_init__(self):
         if self.vocab is None:
-            raise ConfigValidationError("`vocab` must be specified for `category_prob` output feature.")
+            raise ConfigValidationError("`vocab` must be specified for `category_distribution` output feature.")
 
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,

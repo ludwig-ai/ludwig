@@ -41,7 +41,7 @@ from ludwig.constants import (
     BATCH_SIZE,
     BINARY,
     CATEGORY,
-    CATEGORY_PROB,
+    CATEGORY_DISTRIBUTION,
     COLUMN,
     DATE,
     DECODER,
@@ -477,10 +477,10 @@ def vector_feature(**kwargs):
     return feature
 
 
-def category_prob_feature(**kwargs):
+def category_distribution_feature(**kwargs):
     feature = {
-        "name": f"{CATEGORY_PROB}_{random_string()}",
-        "type": CATEGORY_PROB,
+        "name": f"{CATEGORY_DISTRIBUTION}_{random_string()}",
+        "type": CATEGORY_DISTRIBUTION,
         "preprocessing": {
             "vocab": ["a", "b", "c"],
         },

@@ -40,7 +40,7 @@ from ludwig.constants import (
     BINARY,
     BINARY_WEIGHTED_CROSS_ENTROPY,
     CATEGORY,
-    CATEGORY_PROB,
+    CATEGORY_DISTRIBUTION,
     HITS_AT_K,
     HUBER,
     JACCARD,
@@ -160,7 +160,7 @@ class BinaryAUROCMetric(BinaryAUROC, LudwigMetric):
         super().update(preds, target.type(torch.int8))
 
 
-@register_metric(ROC_AUC, [CATEGORY, CATEGORY_PROB], MAXIMIZE, PROBABILITIES)
+@register_metric(ROC_AUC, [CATEGORY, CATEGORY_DISTRIBUTION], MAXIMIZE, PROBABILITIES)
 class CategoryAUROCMetric(MulticlassAUROC, LudwigMetric):
     """Area under the receiver operating curve."""
 
@@ -301,7 +301,7 @@ class BWCEWLMetric(LossMetric):
         return self.loss_function(preds, target)
 
 
-@register_metric("softmax_cross_entropy", [CATEGORY, CATEGORY_PROB], MINIMIZE, LOGITS)
+@register_metric("softmax_cross_entropy", [CATEGORY, CATEGORY_DISTRIBUTION], MINIMIZE, LOGITS)
 class SoftmaxCrossEntropyMetric(LossMetric):
     def __init__(self, config: SoftmaxCrossEntropyLossConfig, **kwargs):
         super().__init__()
@@ -375,7 +375,7 @@ class Accuracy(BinaryAccuracy, LudwigMetric):
         super().__init__(dist_sync_fn=_gather_all_tensors_fn())
 
 
-@register_metric(ACCURACY, [CATEGORY, CATEGORY_PROB], MAXIMIZE, PREDICTIONS)
+@register_metric(ACCURACY, [CATEGORY, CATEGORY_DISTRIBUTION], MAXIMIZE, PREDICTIONS)
 class CategoryAccuracy(MulticlassAccuracy, LudwigMetric):
     def __init__(self, num_classes: int, **kwargs):
         super().__init__(num_classes=num_classes, dist_sync_fn=_gather_all_tensors_fn())
@@ -386,7 +386,7 @@ class CategoryAccuracy(MulticlassAccuracy, LudwigMetric):
         super().update(preds, target.type(torch.long))
 
 
-@register_metric(HITS_AT_K, [CATEGORY, CATEGORY_PROB], MAXIMIZE, LOGITS)
+@register_metric(HITS_AT_K, [CATEGORY, CATEGORY_DISTRIBUTION], MAXIMIZE, LOGITS)
 class HitsAtKMetric(MulticlassAccuracy, LudwigMetric):
     def __init__(self, num_classes: int, top_k: int, **kwargs):
         super().__init__(num_classes=num_classes, top_k=top_k, dist_sync_fn=_gather_all_tensors_fn(), **kwargs)
