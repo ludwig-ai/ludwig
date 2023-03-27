@@ -1,5 +1,5 @@
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import ACCURACY, CATEGORY, MODEL_ECD, MODEL_GBM, SOFTMAX_CROSS_ENTROPY
+from ludwig.constants import ACCURACY, CATEGORY, CATEGORY_DISTRIBUTION, MODEL_ECD, MODEL_GBM, SOFTMAX_CROSS_ENTROPY
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -149,6 +149,18 @@ class CategoryOutputFeatureConfig(CategoryOutputFeatureConfigMixin, BaseOutputFe
 
 
 @DeveloperAPI
+@output_config_registry.register(CATEGORY_DISTRIBUTION)
+@ludwig_dataclass
+class CategoryDistributionOutputFeatureConfig(CategoryOutputFeatureConfig):
+    """CategoryDistributionOutputFeatureConfig is a dataclass that configures the parameters used for a
+    category_distribution output feature."""
+
+    type: str = schema_utils.ProtectedString(CATEGORY_DISTRIBUTION)
+
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="category_distribution_output")
+
+
+@DeveloperAPI
 @ecd_defaults_config_registry.register(CATEGORY)
 @ludwig_dataclass
 class CategoryDefaultsConfig(CategoryInputFeatureConfigMixin, CategoryOutputFeatureConfigMixin):
@@ -157,3 +169,10 @@ class CategoryDefaultsConfig(CategoryInputFeatureConfigMixin, CategoryOutputFeat
         feature_type=CATEGORY,
         default="dense",
     )
+
+
+@DeveloperAPI
+@ecd_defaults_config_registry.register(CATEGORY_DISTRIBUTION)
+@ludwig_dataclass
+class CategoryDistributionDefaultsConfig(CategoryOutputFeatureConfigMixin):
+    pass
