@@ -54,7 +54,6 @@ HFEncoder:
             have data that differs from the typical distribution, then it might be
             worth training the model from scratch.
         ui_display_name: Use Pretrained
-<<<<<<< HEAD
     reduce_output:
         default_value_reasoning: Sums the tensors along the sequence dimension.
         description_implications:
@@ -80,8 +79,6 @@ HFEncoder:
             compute/memory-constrained, attention-based reduction can potentially
             provide a richer global representation than the default.
         ui_display_name: Sequence Reducer
-=======
->>>>>>> master
 ALBERT:
     type:
         short_description: Similar to BERT with lower memory footprint and faster training.
