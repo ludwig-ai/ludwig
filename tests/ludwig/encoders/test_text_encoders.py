@@ -4,6 +4,7 @@ from typing import Optional, Type, Union
 
 import pytest
 import torch
+from unittest import mock
 
 import ludwig.schema.encoders.utils as schema_encoders_utils
 from ludwig.api import LudwigModel
@@ -30,17 +31,6 @@ def _load_pretrained_hf_model_no_weights(
 
     config = AutoConfig.from_pretrained(pretrained_model_name_or_path)
     return AutoModel.from_config(config), False
-
-
-@pytest.fixture
-def mock_load_encoder_from_hf_hub(monkeypatch):
-    """Mocks encoder downloads from HuggingFace Hub.
-
-    With this mock, only encoder configs are downloaded, not the encoder weights.
-    """
-    monkeypatch.setattr(
-        text_encoders, "load_pretrained_hf_model_with_hub_fallback", _load_pretrained_hf_model_no_weights
-    )
 
 
 def get_mismatched_config_params(ludwig_results_dir, ludwig_model):
@@ -71,7 +61,7 @@ def get_mismatched_config_params(ludwig_results_dir, ludwig_model):
 
 @pytest.mark.slow
 @pytest.mark.parametrize("encoder_name", HF_ENCODERS)
-def test_hf_ludwig_model_e2e(tmpdir, csv_filename, mock_load_encoder_from_hf_hub, encoder_name):
+def test_hf_ludwig_model_e2e(tmpdir, csv_filename, encoder_name):
     """Tests HuggingFace encoders end-to-end.
 
     This test validates the following:
@@ -105,28 +95,31 @@ def test_hf_ludwig_model_e2e(tmpdir, csv_filename, mock_load_encoder_from_hf_hub
     }
     model = LudwigModel(config=config, backend=LocalTestBackend())
 
-    # Validates that the defaults associated with the encoder are compatible with Ludwig training.
-    _, _, _, results_dir = model.experiment(dataset=rel_path, output_directory=tmpdir)
+    with mock.patch(
+        "ludwig.encoders.text_encoders.load_pretrained_hf_model_with_hub_fallback",
+        side_effect=_load_pretrained_hf_model_no_weights,
+    ):
+        # Validates that the defaults associated with the encoder are compatible with Ludwig training.
+        _, _, _, results_dir = model.experiment(dataset=rel_path, output_directory=tmpdir)
 
-    # Validate that the saved config reflects the parameters introduced by the HF encoder.
-    # This ensures that the config updates after initializing the encoder.
-    mismatched_config_params = get_mismatched_config_params(results_dir, model)
-    if len(mismatched_config_params) > 0:
-        raise AssertionError(
-            f"Config parameters mismatched with encoder parameters: {json.dumps(mismatched_config_params, indent=4)}"
-        )
+        # Validate that the saved config reflects the parameters introduced by the HF encoder.
+        # This ensures that the config updates after initializing the encoder.
+        mismatched_config_params = get_mismatched_config_params(results_dir, model)
+        if len(mismatched_config_params) > 0:
+            raise AssertionError(
+                f"Config parameters mismatched with encoder parameters: "
+                f"{json.dumps(mismatched_config_params, indent=4)}"
+            )
 
-    # Validate the model can be loaded.
-    # This ensures that the config reflects the internal architecture of the encoder.
-    LudwigModel.load(os.path.join(results_dir, "model"))
+        # Validate the model can be loaded.
+        # This ensures that the config reflects the internal architecture of the encoder.
+        LudwigModel.load(os.path.join(results_dir, "model"))
 
 
 @pytest.mark.slow
 @pytest.mark.parametrize("reduce_output", [None, "last", "sum", "mean", "max", "concat"])
 @pytest.mark.parametrize("encoder_name", HF_ENCODERS)
-def test_hf_ludwig_model_reduce_options(
-    tmpdir, csv_filename, mock_load_encoder_from_hf_hub, encoder_name, reduce_output
-):
+def test_hf_ludwig_model_reduce_options(tmpdir, csv_filename, encoder_name, reduce_output):
     input_features = [
         text_feature(
             preprocessing={
@@ -158,7 +151,11 @@ def test_hf_ludwig_model_reduce_options(
     model = LudwigModel(config=config, backend=LocalTestBackend())
 
     # Validates that the defaults associated with the encoder are compatible with Ludwig training.
-    model.train(dataset=rel_path, output_directory=tmpdir)
+    with mock.patch(
+        "ludwig.encoders.text_encoders.load_pretrained_hf_model_with_hub_fallback",
+        side_effect=_load_pretrained_hf_model_no_weights,
+    ):
+        model.train(dataset=rel_path, output_directory=tmpdir)
 
 
 @pytest.mark.parametrize("trainable", [True, False])
