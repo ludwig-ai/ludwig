@@ -122,20 +122,23 @@ def test_hf_ludwig_model_e2e(tmpdir, csv_filename, mock_load_encoder_from_hf_hub
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize("encoder_name", ["auto_transformer"])
 @pytest.mark.parametrize("reduce_output", [None, "last", "sum", "mean", "max", "concat"])
+@pytest.mark.parametrize("encoder_name", HF_ENCODERS)
 def test_hf_ludwig_model_reduce_options(
     tmpdir, csv_filename, mock_load_encoder_from_hf_hub, encoder_name, reduce_output
 ):
     input_features = [
         text_feature(
+            preprocessing={
+                "max_sequence_length": 10,
+            },
             encoder={
                 "vocab_size": 30,
                 "min_len": 1,
                 "type": encoder_name,
                 "use_pretrained": True,
                 "reduce_output": reduce_output,
-            }
+            },
         )
     ]
     output_features = [category_feature(decoder={"vocab_size": 2})]

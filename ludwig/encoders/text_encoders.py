@@ -199,6 +199,12 @@ class HFTextEncoderImpl(HFTextEncoder):
     def output_shape(self) -> torch.Size:
         if self.reduce_output is None:
             return torch.Size([self.max_sequence_length - 2, self.transformer.module.config.hidden_size])
+        if self.reduce_output == "concat":
+            return torch.Size(
+                [
+                    (self.max_sequence_length - 2) * self.transformer.module.config.hidden_size,
+                ]
+            )
         return torch.Size([self.transformer.module.config.hidden_size])
 
     @property
