@@ -187,7 +187,6 @@ def train_fn(
             test_shard = RayDatasetShard(test_shard, features, training_set_metadata)
 
         model = ray.get(model_ref)
-        model.reload()
         device = get_torch_device()
         # model = model.to(device)
 
@@ -253,8 +252,6 @@ def tune_batch_size_fn(
             training_set_metadata,
         )
 
-        print("RELOAD IN TUNE BATCH SIZE")
-        model.reload()
         device = get_torch_device()
         # model = model.to(device)
 

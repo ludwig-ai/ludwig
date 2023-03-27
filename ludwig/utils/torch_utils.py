@@ -233,12 +233,6 @@ class LudwigModule(Module):
         else:
             raise ValueError("Unknown output tensor type.")
 
-    def reload(self):
-        for module in self.children():
-            if isinstance(module, LudwigModule):
-                module.reload()
-        return self
-
 
 def freeze_parameters(module: nn.Module):
     """Freezes the parameters of a torch module."""
