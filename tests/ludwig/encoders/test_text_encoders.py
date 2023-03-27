@@ -1,10 +1,10 @@
 import json
 import os
 from typing import Optional, Type, Union
+from unittest import mock
 
 import pytest
 import torch
-from unittest import mock
 
 import ludwig.schema.encoders.utils as schema_encoders_utils
 from ludwig.api import LudwigModel
