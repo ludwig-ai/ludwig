@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Callable, Dict, List, Optional, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Type, TYPE_CHECKING, TypeVar, Union
 
 import numpy as np
 import torch
@@ -32,6 +32,7 @@ from ludwig.schema.encoders.text_encoders import (
     BERTConfig,
     CamemBERTConfig,
     CTRLConfig,
+    DebertaV2Config,
     DistilBERTConfig,
     ELECTRAConfig,
     FlauBERTConfig,
@@ -50,6 +51,11 @@ from ludwig.schema.encoders.text_encoders import (
 from ludwig.utils.hf_utils import load_pretrained_hf_model_with_hub_fallback
 from ludwig.utils.torch_utils import FreezeModule
 
+if TYPE_CHECKING:
+    from transformers import PretrainedConfig, PreTrainedModel
+
+    from ludwig.schema.encoders.text_encoders import HFEncoderConfig
+
 logger = logging.getLogger(__name__)
 
 
@@ -60,8 +66,6 @@ def _cls_pooled_error_message(encoder: str):
 
 
 class HFTextEncoder(Encoder):
-    DEFAULT_MODEL_NAME: str
-
     def _init_config(self, transformer, schema_keys: List[str], encoder_config: SequenceEncoderConfig):
         """Creates a config object for the encoder using the transformer model and the passed-in encoder config.
 
@@ -125,6 +129,81 @@ class HFTextEncoder(Encoder):
 
     def get_embedding_layer(self) -> nn.Module:
         return next(self.transformer.module.children())
+
+
+HFModelT = TypeVar("HFModelT", bound="PreTrainedModel")
+HFConfigT = TypeVar("HFConfigT", bound="PretrainedConfig")
+ConfigT = TypeVar("ConfigT", bound="HFEncoderConfig")
+
+
+class HFTextEncoderImpl(HFTextEncoder):
+    def __init__(
+        self,
+        model_cls: Type[HFModelT],
+        config_cls: Type[HFConfigT],
+        schema_cls: Type[ConfigT],
+        max_sequence_length: int,
+        use_pretrained: bool,
+        pretrained_model_name_or_path: str,
+        saved_weights_in_checkpoint: bool,
+        reduce_output: str,
+        trainable: bool,
+        pretrained_kwargs: Dict,
+        encoder_config: Optional[ConfigT],
+        **kwargs,
+    ):
+        super().__init__()
+
+        # TODO(travis): get_hf_config_param_names should be implemented as abstract in HFEncoderConfig
+        vocab_size = kwargs["vocab_size"]
+        hf_config_params = {k: v for k, v in kwargs.items() if k in schema_cls.get_hf_config_param_names()}
+        if use_pretrained and not saved_weights_in_checkpoint:
+            pretrained_kwargs = pretrained_kwargs or {}
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+                model_cls, pretrained_model_name_or_path, **pretrained_kwargs
+            )
+        else:
+            transformer = self._init_transformer_from_scratch(model_cls, config_cls, hf_config_params, vocab_size)
+
+        if encoder_config is not None:
+            self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
+        else:
+            self.config = None
+
+        self.reduce_output = reduce_output
+        if not self.reduce_output == "cls_pooled":
+            self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+        self.transformer = FreezeModule(transformer, frozen=not trainable)
+        self.max_sequence_length = max_sequence_length
+
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
+        if mask is not None:
+            mask = mask.to(torch.int32)
+        transformer_outputs = self.transformer.module(
+            input_ids=inputs,
+            attention_mask=mask,
+            token_type_ids=torch.zeros_like(inputs),
+        )
+        if self.reduce_output == "cls_pooled":
+            hidden = transformer_outputs["pooler_output"]
+        else:
+            hidden = transformer_outputs["last_hidden_state"][:, 1:-1, :]  # bos + [sent] + sep
+            hidden = self.reduce_sequence(hidden, self.reduce_output)
+        return {"encoder_output": hidden}
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.reduce_output is None:
+            return torch.Size([self.max_sequence_length - 2, self.transformer.module.config.hidden_size])
+        return torch.Size([self.transformer.module.config.hidden_size])
+
+    @property
+    def input_dtype(self):
+        return torch.int32
 
 
 @DeveloperAPI
@@ -922,6 +1001,20 @@ class GPT2Encoder(HFTextEncoder):
     @property
     def input_dtype(self):
         return torch.int32
+
+
+@DeveloperAPI
+@register_encoder("deberta", TEXT)
+class DeBERTaEncoder(HFTextEncoderImpl):
+    def __init__(self, *args, **kwargs):
+        from transformers import DebertaV2Config as _DebertaV2Config
+        from transformers import DebertaV2Model
+
+        super().__init__(DebertaV2Model, _DebertaV2Config, DebertaV2Config, *args, **kwargs)
+
+    @staticmethod
+    def get_schema_cls():
+        return DebertaV2Config
 
 
 @DeveloperAPI
