@@ -255,7 +255,7 @@ def read_parquet(data_fp, df_lib, **kwargs):
         import s3fs
 
         filesystem = s3fs.S3FileSystem() if 's3:' in data_fp else None
-        dataset = pq.ParquetDataset(data_fp, filesystem=s3fs.S3FileSystem(), use_legacy_dataset=False).fragments[0]
+        dataset = pq.ParquetDataset(data_fp, filesystem=filesystem, use_legacy_dataset=False).fragments[0]
         preview = dataset.head(kwargs["nrows"]).to_pandas()
 
         if is_dask_lib(df_lib):
