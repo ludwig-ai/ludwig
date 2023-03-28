@@ -80,3 +80,65 @@ output_features:
     )
 
     validate_config_with_synthetic_data(config)
+
+
+def test_validate_config_number_iq_normalization():
+    config = yaml.safe_load(
+        """
+input_features:
+  - name: TYPE
+    type: binary
+    column: TYPE
+  - name: MARK_IV
+    type: number
+    preprocessing:
+      normalization: iq
+    column: MARK_IV
+  - name: DELTA
+    type: number
+    preprocessing:
+      normalization: null
+    column: DELTA
+  - name: VEGA
+    type: number
+    preprocessing:
+      normalization: iq
+    column: VEGA
+  - name: normalized_width
+    type: number
+    preprocessing:
+      normalization: iq
+    column: normalized_width
+  - name: bbo_quantity
+    type: number
+    preprocessing:
+      normalization: iq
+    column: bbo_quantity
+  - name: TTE
+    type: number
+    preprocessing:
+      normalization: zscore
+    column: TTE
+  - name: ABS_DELTA
+    type: number
+    preprocessing:
+      normalization: zscore
+    column: ABS_DELTA
+output_features:
+  - name: TRADE_COUNT
+    type: number
+    loss:
+      type: huber
+    column: TRADE_COUNT
+trainer:
+  validation_metric: mean_absolute_error
+backend:
+  type: ray
+  processor:
+    type: dask
+    parallelism: 100
+    persist: true
+  """
+    )
+
+    validate_config_with_synthetic_data(config)

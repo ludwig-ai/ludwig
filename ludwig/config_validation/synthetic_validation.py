@@ -25,7 +25,6 @@ def get_abrupt_config(config: ModelConfigDict):
 
     abrupt_model_config = abrupt_model_config.to_dict()
     del abrupt_model_config["hyperopt"]
-    del abrupt_model_config["backend"]
 
     # Replace text encoder with embed encoder.
     for input_feature in abrupt_model_config[INPUT_FEATURES]:
