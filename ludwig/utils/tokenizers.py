@@ -1177,7 +1177,16 @@ def get_hf_tokenizer(pretrained_model_name_or_path, **kwargs):
     Returns:
         A torchscript-able HF tokenizer if it is available. Else, returns vanilla HF tokenizer.
     """
-    from transformers import BertTokenizer
+    from transformers import BertTokenizer, DistilBertTokenizer, ElectraTokenizer
+
+    # HuggingFace has implemented a DO Repeat Yourself policy for models
+    # https://github.com/huggingface/transformers/issues/19303
+    # We now need to manually track BERT-like tokenizers to map onto the TorchText implementation
+    # until PyTorch improves TorchScript to be able to compile HF tokenizers. This would require
+    #  1. Support for string inputs for torch.jit.trace, or
+    #  2. Support for `kwargs` in torch.jit.script
+    # This is populated in the `get_hf_tokenizer` since the set requires `transformers` to be installed
+    HF_BERTLIKE_TOKENIZER_CLS_SET = {BertTokenizer, DistilBertTokenizer, ElectraTokenizer}
 
     hf_name = pretrained_model_name_or_path
     # use_fast=False to leverage python class inheritance
@@ -1185,7 +1194,9 @@ def get_hf_tokenizer(pretrained_model_name_or_path, **kwargs):
     hf_tokenizer = load_pretrained_hf_tokenizer(hf_name, use_fast=False)
 
     torchtext_tokenizer = None
-    if "bert" in TORCHSCRIPT_COMPATIBLE_TOKENIZERS and isinstance(hf_tokenizer, BertTokenizer):
+    if "bert" in TORCHSCRIPT_COMPATIBLE_TOKENIZERS and any(
+        isinstance(hf_tokenizer, cls) for cls in HF_BERTLIKE_TOKENIZER_CLS_SET
+    ):
         tokenizer_kwargs = _get_bert_config(hf_name)
         torchtext_tokenizer = BERTTokenizer(
             **tokenizer_kwargs,
@@ -1231,14 +1242,13 @@ def _get_bert_config(hf_name):
     initialize the tokenizer object. If no `tokenizer_config.json` is found, then we instantiate the tokenizer with
     default arguments.
     """
-    from transformers.utils.hub import cached_path, EntryNotFoundError
+    from huggingface_hub import hf_hub_download
+    from huggingface_hub.utils import EntryNotFoundError
 
-    vocab_file = cached_path(f"https://huggingface.co/{hf_name}/resolve/main/vocab.txt")
+    vocab_file = hf_hub_download(repo_id=hf_name, filename="vocab.txt")
 
     try:
-        tokenizer_config = load_json(
-            cached_path(f"https://huggingface.co/{hf_name}/resolve/main/tokenizer_config.json")
-        )
+        tokenizer_config = load_json(hf_hub_download(repo_id=hf_name, filename="tokenizer_config.json"))
     except EntryNotFoundError:
         tokenizer_config = {}
 
