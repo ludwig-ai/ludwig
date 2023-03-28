@@ -828,10 +828,12 @@ def upgrade_defaults_config_for_gbm(config: ModelConfigDict) -> ModelConfigDict:
 def remove_extra_type_param_in_defaults_config(defaults: FeatureTypeDefaultsDict) -> FeatureTypeDefaultsDict:
     """Fixes a bug introduced before 0.7.3.
 
-    https://github.com/ludwig-ai/ludwig/pull/3223 and subsequent refactors accidentally introduced a bug where a `type`
-    param was added to every feature in the defaults config. It was removed by https://github.com/ludwig-
-    ai/ludwig/pull/3258, but made it into one of the patch releases. This transformation removes the `type` param from
-    the defaults config if it exists.
+    [1] and subsequent refactors accidentally introduced a bug where a `type` param was added to every feature in the
+    defaults config. It was removed by [2], but made it into one of the patch releases. This transformation removes that
+    `type` param from each section of the defaults config if it exists.
+
+    [1]: https://github.com/ludwig-ai/ludwig/pull/3223
+    [2]: https://github.com/ludwig-ai/ludwig/pull/3258
     """
     defaults_copy = copy.deepcopy(defaults)
     for _, feature_config in defaults.items():
