@@ -145,7 +145,9 @@ class DaskEngine(DataFrameEngine):
         return self.df_lib.multi.concat(dfs)
 
     def compute(self, data):
-        return data.compute()
+        if hasattr(data, "compute"):
+            return data.compute()
+        return data
 
     def from_pandas(self, df):
         parallelism = self._parallelism or 1
