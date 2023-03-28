@@ -163,10 +163,12 @@ class InterQuartileTransformer(NumberTransformer):
 
     @staticmethod
     def fit_transform_params(column: np.ndarray, backend: "Backend") -> Dict[str, Any]:  # noqa
+        # backend.df_engine.compute is not used here because `percentile` is not parallelized in dask.
+        # We compute the percentile directly.
         return {
-            "q1": backend.df_engine.compute(np.percentile(column.astype(np.float32), 25)),
-            "q2": backend.df_engine.compute(np.percentile(column.astype(np.float32), 50)),
-            "q3": backend.df_engine.compute(np.percentile(column.astype(np.float32), 75)),
+            "q1": np.percentile(column.astype(np.float32), 25),
+            "q2": np.percentile(column.astype(np.float32), 50),
+            "q3": np.percentile(column.astype(np.float32), 75),
         }
 
 
