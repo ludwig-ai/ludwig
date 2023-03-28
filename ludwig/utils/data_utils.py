@@ -258,7 +258,7 @@ def read_parquet(data_fp, df_lib, **kwargs):
             return df_lib.from_pandas(preview)
         return preview
 
-    return df_lib.read_parquet(data_fp)
+    return df_lib.read_parquet(data_fp, **kwargs)
 
 
 @DeveloperAPI
