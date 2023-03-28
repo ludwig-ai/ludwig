@@ -41,12 +41,14 @@ from ludwig.constants import (
     BATCH_SIZE,
     BINARY,
     CATEGORY,
+    CATEGORY_DISTRIBUTION,
     COLUMN,
     DATE,
     DECODER,
     ENCODER,
     H3,
     IMAGE,
+    MODEL_ECD,
     NAME,
     NUMBER,
     PROC_COLUMN,
@@ -62,6 +64,8 @@ from ludwig.data.dataset_synthesizer import build_synthetic_dataset, DATETIME_FO
 from ludwig.experiment import experiment_cli
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.globals import PREDICTIONS_PARQUET_FILE_NAME
+from ludwig.schema.encoders.text_encoders import HFEncoderConfig
+from ludwig.schema.encoders.utils import get_encoder_classes
 from ludwig.trainers.trainer import Trainer
 from ludwig.utils import fs_utils
 from ludwig.utils.data_utils import read_csv, replace_file_extension, use_credentials
@@ -79,25 +83,7 @@ TEXT_ENCODERS = ENCODERS + ["tf_idf"]
 
 HF_ENCODERS_SHORT = ["distilbert"]
 
-HF_ENCODERS = [
-    "bert",
-    "gpt",
-    "gpt2",
-    "transformer_xl",
-    "xlnet",
-    # "xlm",  # disabled in the schema: https://github.com/ludwig-ai/ludwig/pull/3108
-    "roberta",
-    "distilbert",
-    # "ctrl",  # disabled in the schema: https://github.com/ludwig-ai/ludwig/pull/2976
-    "camembert",
-    "albert",
-    "t5",
-    "xlmroberta",
-    "longformer",
-    "flaubert",
-    "electra",
-    # "mt5",    # disabled in the schema: https://github.com/ludwig-ai/ludwig/pull/2982
-]
+HF_ENCODERS = [name for name, cls in get_encoder_classes(MODEL_ECD, TEXT).items() if issubclass(cls, HFEncoderConfig)]
 
 RAY_BACKEND_CONFIG = {
     "type": "ray",
@@ -484,6 +470,21 @@ def vector_feature(**kwargs):
         "preprocessing": {
             "vector_size": 5,
         },
+    }
+    recursive_update(feature, kwargs)
+    feature[COLUMN] = feature[NAME]
+    feature[PROC_COLUMN] = compute_feature_hash(feature)
+    return feature
+
+
+def category_distribution_feature(**kwargs):
+    feature = {
+        "name": f"{CATEGORY_DISTRIBUTION}_{random_string()}",
+        "type": CATEGORY_DISTRIBUTION,
+        "preprocessing": {
+            "vocab": ["a", "b", "c"],
+        },
+        DECODER: {"type": "classifier"},
     }
     recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]

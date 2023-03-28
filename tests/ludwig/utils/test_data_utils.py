@@ -29,6 +29,9 @@ from ludwig.utils.data_utils import (
     get_abs_path,
     hash_dict,
     NumpyEncoder,
+    PANDAS_DF,
+    read_csv,
+    read_parquet,
     use_credentials,
 )
 
@@ -147,7 +150,7 @@ def test_numpy_encoder():
     assert json.dumps({"a": "b"}, cls=NumpyEncoder) == '{"a": "b"}'
 
     # Test numpy data type encoding
-    for dtype in [np.byte, np.ubyte, np.short, np.ushort, np.int, np.uint, np.longlong, np.ulonglong]:
+    for dtype in [np.byte, np.ubyte, np.short, np.ushort, np.int32, np.int64, np.uint, np.longlong, np.ulonglong]:
         x = np.arange(5, dtype=dtype)
         assert json.dumps(x, cls=NumpyEncoder) == "[0, 1, 2, 3, 4]"
         for i in x:
@@ -169,3 +172,13 @@ def test_dataset_synthesizer_output_feature_decoder():
     }
     build_synthetic_dataset_df(dataset_size=100, config=config)
     LudwigModel(config=config, logging_level=logging.INFO)
+
+
+def test_chunking():
+    # Try basic reads:
+    assert read_csv("s3://ludwig-tests/datasets/synthetic_1k.csv").shape[0] == 1000
+    assert read_parquet("s3://ludwig-tests/datasets/synthetic_1k.parquet", df_lib=PANDAS_DF).shape[0] == 1000
+
+    # Try chunked versions:
+    assert read_csv("s3://ludwig-tests/datasets/synthetic_1k.csv", nrows=100).shape[0] == 100
+    assert read_parquet("s3://ludwig-tests/datasets/synthetic_1k.parquet", df_lib=PANDAS_DF, nrows=100).shape[0] == 100

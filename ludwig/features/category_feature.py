@@ -21,6 +21,7 @@ import torch
 
 from ludwig.constants import (
     CATEGORY,
+    CATEGORY_DISTRIBUTION,
     COLUMN,
     HIDDEN,
     LOGITS,
@@ -34,7 +35,12 @@ from ludwig.constants import (
 )
 from ludwig.error import InputDataError
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
-from ludwig.schema.features.category_feature import CategoryInputFeatureConfig, CategoryOutputFeatureConfig
+from ludwig.features.vector_feature import VectorFeatureMixin
+from ludwig.schema.features.category_feature import (
+    CategoryDistributionOutputFeatureConfig,
+    CategoryInputFeatureConfig,
+    CategoryOutputFeatureConfig,
+)
 from ludwig.types import (
     FeatureMetadataDict,
     FeaturePostProcessingOutputDict,
@@ -209,6 +215,25 @@ class CategoryFeatureMixin(BaseFeatureMixin):
         )
 
         return proc_df
+
+
+class CategoryDistributionFeatureMixin(VectorFeatureMixin):
+    @staticmethod
+    def type():
+        return CATEGORY_DISTRIBUTION
+
+    @staticmethod
+    def get_feature_meta(
+        column, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
+    ) -> FeatureMetadataDict:
+        idx2str = preprocessing_parameters["vocab"]
+        str2idx = {s: i for i, s in enumerate(idx2str)}
+        return {
+            "preprocessing": preprocessing_parameters,
+            "idx2str": idx2str,
+            "str2idx": str2idx,
+            "vocab_size": len(idx2str),
+        }
 
 
 class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
@@ -471,3 +496,21 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
     @staticmethod
     def create_postproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
         return _CategoryPostprocessing(metadata)
+
+
+class CategoryDistributionOutputFeature(CategoryDistributionFeatureMixin, CategoryOutputFeature):
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.input_size])
+
+    @classmethod
+    def get_output_dtype(cls):
+        return torch.float32
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([self.num_classes])
+
+    @staticmethod
+    def get_schema_cls():
+        return CategoryDistributionOutputFeatureConfig
