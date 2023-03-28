@@ -780,3 +780,62 @@ def test_fill_with_mode_different_df_engine(tmpdir, csv_filename, df_engine, ray
 
     ludwig_model = LudwigModel(config)
     ludwig_model.preprocess(dataset=df)
+
+
+@pytest.mark.parametrize(
+    "backend",
+    [
+        pytest.param("local", id="local"),
+        pytest.param("ray", id="ray", marks=pytest.mark.distributed),
+    ],
+)
+def test_prompt_template(backend, tmpdir, ray_cluster_2cpu):
+    """Tests that prompt template is correctly applied to inputs."""
+    prompt_template = """
+    Instruction: predict the output feature. Return only values in {{true, false}}
+    ###
+    Examples:
+    ###
+    Input: foo bar
+    Output: true
+    ###
+    Input: baz quc
+    Output: false
+    ###
+    Input: {input}
+    Output:
+    """
+
+    input_features = [text_feature(preprocessing={"prompt_template": prompt_template})]
+    output_features = [category_feature()]
+    data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=25)
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+    }
+
+    model = LudwigModel(config, backend=backend)
+    train_set, _, _, training_set_metadata = model.preprocess(
+        training_set=data_csv,
+        skip_save_processed_input=True,
+        outpput_directory=os.path.join(tmpdir, "processed"),
+    )
+
+    data_df = pd.read_csv(data_csv)
+    raw_text_values = data_df[input_features[0][COLUMN]].values.tolist()
+
+    train_df = model.backend.df_engine.compute(train_set.to_df())
+    encoded_values = train_df[input_features[0][PROC_COLUMN]].values.tolist()
+
+    assert len(raw_text_values) == len(encoded_values)
+
+    idx2str = training_set_metadata[input_features[0][NAME]]["idx2str"]
+    for raw_text, encoded in zip(raw_text_values, encoded_values):
+        raw_text = raw_text.lower()
+        decoded = " ".join(idx2str[t] for t in encoded)
+        assert decoded.startswith(
+            "<SOS> instruction : predict the output feature . return only values in { true , false } # # # examples : "
+            "# # # input : foo bar output : true # # # input : baz quc output : false # # # input : "
+        ), decoded
+        assert raw_text in decoded, f"'{raw_text}' not in '{decoded}'"
