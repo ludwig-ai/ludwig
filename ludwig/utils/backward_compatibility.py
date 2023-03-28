@@ -836,9 +836,9 @@ def remove_extra_type_param_in_defaults_config(defaults: FeatureTypeDefaultsDict
     [2]: https://github.com/ludwig-ai/ludwig/pull/3258
     """
     defaults_copy = copy.deepcopy(defaults)
-    for _, feature_config in defaults.items():
+    for feature_type, feature_config in defaults.items():
         if TYPE in feature_config:
-            del defaults_copy[TYPE]
+            del defaults_copy[feature_type][TYPE]
     return defaults_copy
 
 
