@@ -252,6 +252,7 @@ def read_excel(data_fp, df_lib, **kwargs):
 def read_parquet(data_fp, df_lib, **kwargs):
     if "nrows" in kwargs:
         import pyarrow.parquet as pq
+
         from ludwig.utils.fs_utils import get_fs_and_path
 
         fs, _ = get_fs_and_path(data_fp)
