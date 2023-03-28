@@ -167,7 +167,9 @@ class SoftmaxCrossEntropyLoss(nn.Module, LogitsInputsMixin):
             target: Tensor of shape [batch], where each element is integral
                 between 0 and num_classes.
         """
-        target = target.long()
+        if len(target.shape) == 1:
+            # Assumes we are providing the target as a single class, rather than a distribution
+            target = target.long()
         return self.loss_fn(preds, target)
 
 
