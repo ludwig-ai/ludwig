@@ -17,6 +17,8 @@ hyperopt:
       type: float
       lower: 0.0
       upper: 0.1
+    # This needs to be loguniform due to invalid schemas created by merging with a choice parameter space. See the
+    # comment in ludwig/automl/defaults/text/bert_config.yaml for more information.
     trainer.learning_rate:
       space: loguniform
       type: float
