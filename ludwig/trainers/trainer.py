@@ -152,6 +152,7 @@ class Trainer(BaseTrainer):
         self.increase_batch_size_on_plateau_rate = config.increase_batch_size_on_plateau_rate
         self.increase_batch_size_eval_metric = config.increase_batch_size_eval_metric
         self.increase_batch_size_eval_split = config.increase_batch_size_eval_split
+        self.gradient_accumulation_steps = config.gradient_accumulation_steps
         self.resume = resume
         self.skip_save_model = skip_save_model
         self.skip_save_progress = skip_save_progress
@@ -168,7 +169,7 @@ class Trainer(BaseTrainer):
         base_learning_rate = config.learning_rate
         if self.distributed:
             lr_scale_fn = learning_rate_scale_fns[config.learning_rate_scaling]
-            base_learning_rate *= lr_scale_fn(self.distributed.size())
+            base_learning_rate *= lr_scale_fn(self.distributed.size() * self.gradient_accumulation_steps)
         self.base_learning_rate = base_learning_rate
 
         self.model = model
@@ -177,7 +178,7 @@ class Trainer(BaseTrainer):
         compiled_model = self.model
         if config.compile:
             compiled_model = torch.compile(self.model)
-            logger.info("Training with dynamo compiled model")
+            logger.info("Training with torchdynamo compiled model")
 
         # Some frameworks like DDP will wrap the model in a new interface that loses the methods from ECD. To
         # workaround this, we maintain a separate attribute for the wrapped model, which will be used for training
@@ -193,6 +194,7 @@ class Trainer(BaseTrainer):
             learning_rate=self.base_learning_rate,
             distributed=self.distributed,
             optimizer_config=optimizer_config,
+            gradient_accumulation_steps=self.gradient_accumulation_steps,
         )
         self.scheduler = LRScheduler(config.learning_rate_scheduler, self.optimizer)
 
@@ -213,13 +215,14 @@ class Trainer(BaseTrainer):
         self.original_sigint_handler = None
 
     def train_step(
-        self, inputs: Dict[str, torch.Tensor], targets: Dict[str, torch.Tensor]
+        self, inputs: Dict[str, torch.Tensor], targets: Dict[str, torch.Tensor], should_step: bool = True
     ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
         """Performs a single training step.
 
         Params:
             inputs: A dictionary of input data, from feature name to tensor.
             targets: A dictionary of target data, from feature name to tensor.
+            should_step: Whether to perform a step of the optimizer after computing gradients.
 
         Returns:
             A tuple of the loss tensor and a dictionary of loss for every output feature.
@@ -227,12 +230,13 @@ class Trainer(BaseTrainer):
         if isinstance(self.optimizer, torch.optim.LBFGS):
             # NOTE: Horovod is not supported for L-BFGS.
             # NOTE: AMP is not supported for L-BFGS yet.
+            # NOTE: gradient accumulation is not supported for L-BFGS yet.
 
             def closure():
                 # Allows L-BFGS to reevaluate the loss function
                 self.optimizer.zero_grad()
                 model_outputs = self.dist_model((inputs, targets))
-                loss, all_losses = self.model.train_loss(
+                loss, _ = self.model.train_loss(
                     targets, model_outputs, self.regularization_type, self.regularization_lambda
                 )
                 loss.backward()
@@ -254,14 +258,14 @@ class Trainer(BaseTrainer):
 
             return loss, all_losses
 
-        self.optimizer.zero_grad()
-
         with torch.cuda.amp.autocast() if self.use_amp else contextlib.nullcontext():
-            # Obtain model predictions and loss
-            model_outputs = self.dist_model((inputs, targets))
-            loss, all_losses = self.model.train_loss(
-                targets, model_outputs, self.regularization_type, self.regularization_lambda
-            )
+            with self.distributed.prepare_model_update(self.dist_model, should_step=should_step):
+                # Obtain model predictions and loss
+                model_outputs = self.dist_model((inputs, targets))
+                loss, all_losses = self.model.train_loss(
+                    targets, model_outputs, self.regularization_type, self.regularization_lambda
+                )
+                loss = loss / self.gradient_accumulation_steps
 
         # Begin the backward pass
         variables = self.dist_model.parameters()
@@ -269,6 +273,10 @@ class Trainer(BaseTrainer):
             self.scaler.scale(loss).backward()
         else:
             loss.backward()
+
+        if not should_step:
+            # Short-circuit the parameter updates if we are still accumulating gradients
+            return loss, all_losses
 
         # Wait for gradient aggregation to complete before clipping the gradients
         # When using AMP, we need to do this before unscaling.
@@ -301,6 +309,8 @@ class Trainer(BaseTrainer):
             # noisy but fast way to get metrics on the training set
             predictions = self.model.outputs_to_predictions(model_outputs)
             self.model.update_metrics(targets, predictions)
+
+        self.optimizer.zero_grad()
 
         return loss, all_losses
 
@@ -395,6 +405,7 @@ class Trainer(BaseTrainer):
         class _TrainerBatchSizeEvaluator(BatchSizeEvaluator):
             def reset(self):
                 trainer.model.reset_metrics()
+                trainer.optimizer.zero_grad()
 
             def step(self, batch_size: int):
                 inputs = {
@@ -774,12 +785,20 @@ class Trainer(BaseTrainer):
         early_stopping_steps: int,
     ) -> bool:
         """Completes up to one epoch through the data."""
+        self.optimizer.zero_grad()
+        batch_idx = 0
         while not batcher.last_batch() and progress_tracker.steps < self.total_steps:
             progress_tracker.learning_rate = self.optimizer.param_groups[0]["lr"]
             self.callback(lambda c: c.on_batch_start(self, progress_tracker, save_path))
 
             # obtain batch
             batch = batcher.next_batch()
+
+            # determine whether we need to accumulate gradients as trigger a full parameter update
+            should_sync_grads = (batch_idx + 1) % self.gradient_accumulation_steps == 0
+            is_checkpoint_step = (progress_tracker.steps + 1) % final_steps_per_checkpoint == 0
+            should_step = should_sync_grads or is_checkpoint_step
+            batch_idx += 1
 
             # Move tensors to cuda here.
             inputs = {
@@ -791,13 +810,11 @@ class Trainer(BaseTrainer):
                 for o_feat in self.model.output_features.values()
             }
 
-            loss, all_losses = self.train_step(
-                inputs,
-                targets,
-            )
+            loss, all_losses = self.train_step(inputs, targets, should_step=should_step)
 
-            # Update LR schduler here to avoid having it updated during batch size tuning, etc.
-            self.scheduler.step()
+            if should_step:
+                # Update LR schduler here instead of train loop to avoid having it updated during batch size tuning, etc.
+                self.scheduler.step()
 
             if self.is_coordinator() and not self.skip_save_log:
                 self.write_step_summary(
@@ -819,7 +836,7 @@ class Trainer(BaseTrainer):
 
             # Executing `on_batch_end` calls before `run_evaluation` enables more accurate
             # batch duration measurements when using timer callbacks.
-            self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path))
+            self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path, sync_step=should_step))
 
             if progress_tracker.steps % final_steps_per_checkpoint == 0:
                 # Checkpoint the model.

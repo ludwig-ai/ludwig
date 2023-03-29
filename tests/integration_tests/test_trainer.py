@@ -328,3 +328,33 @@ def test_compile(tmpdir):
     # convergence like gradient magnitudes, etc. Should also add distributed tests.
     model = LudwigModel(config, backend=LocalTestBackend(), logging_level=logging.INFO)
     model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv, output_directory=tmpdir)
+
+
+@pytest.mark.parametrize("gradient_accumulation_steps", [1, 2, 3])
+def test_gradient_accumulation(gradient_accumulation_steps: int, tmpdir):
+    input_features = [text_feature()]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
+
+    csv_filename = os.path.join(tmpdir, "training.csv")
+    data_csv = generate_data(input_features, output_features, csv_filename, num_examples=64)
+    val_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "validation.csv"))
+    test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "test.csv"))
+
+    trainer = {
+        "epochs": 2,
+        "batch_size": 8,
+        "gradient_accumulation_steps": gradient_accumulation_steps,
+    }
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "output_size": 14},
+        TRAINER: trainer,
+    }
+
+    # Just test that training completes without error.
+    # TODO(travis): We may want to expand upon this in the future to include some checks on model
+    # convergence like gradient magnitudes, etc. Should also add distributed tests.
+    model = LudwigModel(config, backend=LocalTestBackend(), logging_level=logging.INFO)
+    model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv, output_directory=tmpdir)
