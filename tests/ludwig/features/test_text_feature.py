@@ -2,6 +2,7 @@ import pandas as pd
 
 from ludwig.backend import LocalBackend
 from ludwig.features import text_feature
+from ludwig.schema.model_types.base import ModelConfig
 
 
 def test_backwards_compatibility():
@@ -95,8 +96,16 @@ def test_backwards_compatibility():
 
     column = pd.core.series.Series(["hello world", "hello world"])
 
+    config = ModelConfig.from_dict(
+        {
+            "input_features": [{"name": "SibSp", "type": "text", "preprocessing": metadata["SibSp"]["preprocessing"]}],
+            "output_features": [{"name": "Survived", "type": "category"}],
+        }
+    )
+    preprocessing = config.input_features[0].preprocessing
+
     feature_data = text_feature.TextInputFeature.feature_data(
-        column, metadata["SibSp"], metadata["SibSp"]["preprocessing"], LocalBackend()
+        column, metadata["SibSp"], preprocessing.to_dict(), LocalBackend()
     )
 
     assert list(feature_data[0]) == [1, 3, 3]

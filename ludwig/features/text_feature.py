@@ -159,13 +159,13 @@ class TextFeatureMixin(BaseFeatureMixin):
         return build_sequence_matrix(
             sequences=sequences,
             inverse_vocabulary=metadata[f"{prefix}str2idx"],
-            tokenizer_type=preprocessing_parameters[f"{prefix}tokenizer"],
+            tokenizer_type=preprocessing_parameters["tokenizer"],
             length_limit=metadata[f"{prefix}max_sequence_length"],
             padding_symbol=metadata[padding_symbol_metadata_key],
             padding=preprocessing_parameters["padding"],
             unknown_symbol=metadata[unknown_symbol_metadata_key],
             lowercase=preprocessing_parameters["lowercase"],
-            tokenizer_vocab_file=preprocessing_parameters[f"{prefix}vocab_file"],
+            tokenizer_vocab_file=preprocessing_parameters["vocab_file"],
             pretrained_model_name_or_path=preprocessing_parameters["pretrained_model_name_or_path"],
             processor=backend.df_engine,
         )
