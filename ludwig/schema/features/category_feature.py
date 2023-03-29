@@ -13,10 +13,11 @@ from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassFie
 from ludwig.schema.features.utils import (
     ecd_defaults_config_registry,
     ecd_input_config_registry,
+    ecd_output_config_registry,
     gbm_defaults_config_registry,
     gbm_input_config_registry,
+    gbm_output_config_registry,
     input_mixin_registry,
-    output_config_registry,
     output_mixin_registry,
 )
 from ludwig.schema.metadata import FEATURE_METADATA
@@ -97,7 +98,8 @@ class CategoryOutputFeatureConfigMixin(BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-@output_config_registry.register(CATEGORY)
+@ecd_output_config_registry.register(CATEGORY)
+@gbm_output_config_registry.register(CATEGORY)
 @ludwig_dataclass
 class CategoryOutputFeatureConfig(CategoryOutputFeatureConfigMixin, BaseOutputFeatureConfig):
     """CategoryOutputFeatureConfig is a dataclass that configures the parameters used for a category output
@@ -149,7 +151,7 @@ class CategoryOutputFeatureConfig(CategoryOutputFeatureConfigMixin, BaseOutputFe
 
 
 @DeveloperAPI
-@output_config_registry.register(CATEGORY_DISTRIBUTION)
+@ecd_output_config_registry.register(CATEGORY_DISTRIBUTION)
 @ludwig_dataclass
 class CategoryDistributionOutputFeatureConfig(CategoryOutputFeatureConfig):
     """CategoryDistributionOutputFeatureConfig is a dataclass that configures the parameters used for a

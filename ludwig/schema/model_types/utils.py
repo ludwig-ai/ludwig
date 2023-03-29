@@ -151,7 +151,7 @@ def set_validation_parameters(config: "ModelConfig"):
         # The user has not explicitly set any validation fields.
         # Default to using the first output feature's default validation metric.
         out_type = validation_feature.type
-        config.trainer.validation_metric = output_config_registry[out_type].default_validation_metric
+        config.trainer.validation_metric = output_config_registry(config.model_type)[out_type].default_validation_metric
 
 
 def set_derived_feature_columns_(config_obj: "ModelConfig"):
