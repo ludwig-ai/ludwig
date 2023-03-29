@@ -1,6 +1,7 @@
 import logging
 import tempfile
 import time
+import os
 
 from ludwig.api import LudwigModel
 from ludwig.api_annotations import DeveloperAPI
@@ -73,13 +74,21 @@ def validate_config_with_synthetic_data(config: ModelConfigDict) -> None:
         model = LudwigModel(abrupt_model_config)
 
         try:
-            model.train(
+            _, _, output_dir = model.train(
                 dataset=synthetic_df,
                 skip_save_processed_input=True,
                 skip_save_progress=True,
                 skip_save_unprocessed_output=True,
                 output_dir=tmpdir,
             )
+            model.predict(dataset=synthetic_df)
+
+            model_dir = os.path.join(output_dir, "model")
+            loaded_model = LudwigModel.load(model_dir)
+
+            # Necessary before call to get_weights() to materialize the weights
+            loaded_model.predict(dataset=synthetic_df)
+
         except Exception as e:
             end_time = time.time()
             logger.info(f"Synthetic config validation took: {end_time - start_time:4f}s.")

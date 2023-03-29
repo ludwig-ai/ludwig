@@ -142,3 +142,37 @@ backend:
     )
 
     validate_config_with_synthetic_data(config)
+
+
+def test_validate_config_tagger_decoder_on_ray_probabilities_key_error():
+    config = yaml.safe_load(
+        """
+input_features:
+  - name: sentence
+    type: text
+    encoder:
+      type: rnn
+      cell_type: lstm
+      bidirectional: true
+      reduce_output: null
+    preprocessing:
+      tokenizer: space
+    column: sentence
+output_features:
+  - name: tags
+    type: text
+    column: tags
+    decoder:
+      type: tagger
+preprocessing:
+  sample_ratio: 0.5
+backend:
+  type: ray
+  processor:
+    type: dask
+    parallelism: 100
+    persist: true
+"""
+    )
+
+    validate_config_with_synthetic_data(config)
