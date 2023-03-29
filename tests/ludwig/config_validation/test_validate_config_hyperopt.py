@@ -111,22 +111,136 @@ def test_parameter_type_check(space, raises_exception):
             ModelConfig.from_dict(config)
 
 
-@pytest.mark.parametrize("referenced_parameter", ["", " ", ".", "foo.bar", "trainer.bar", "foo.learning_rate"])
-def test_parameter_key_check(referenced_parameter):
-    """Test that references to nonexistent config parameters raise validation errors.
+@pytest.mark.parametrize(
+    "referenced_parameter,raises_exception",
+    [
+        # Passing cases
+        ("trainer.learning_rate", False),
+        ("in_feature.encoder.num_fc_layers", False),
+        ("out_feature.decoder.num_fc_layers", False),
+        # Invalid cases with various nesting of invalid names
+        ("", True),
+        (" ", True),
+        ("foo.bar", True),
+        ("trainer.bar", True),
+        ("foo.learning_rate", True),
+        ("in_feature.encoder.bar", True),
+        ("in_feature.foo.num_fc_layers", True),
+        ("out_feature.encoder.bar", True),
+        ("out_feature.foo.num_fc_layers", True),
+    ],
+)
+def test_parameter_key_check(referenced_parameter, raises_exception):
+    """Test that references to config parameters are validated correctly.
 
     Hyperopt parameters reference the config parameters they search with `.` notation to access different subsections,
     e.g. `trainer.learning_rate`. These are added to the config as arbitrary strings, and an invalid reference should be
     considered a validation error since we will otherwise search over an unused space or defer the error to train time.
     """
     config = {
-        INPUT_FEATURES: [text_feature()],
-        OUTPUT_FEATURES: [binary_feature()],
+        INPUT_FEATURES: [text_feature(name="in_feature")],
+        OUTPUT_FEATURES: [binary_feature(name="out_feature")],
         HYPEROPT: {
             SEARCH_ALG: {TYPE: "random"},
-            PARAMETERS: {referenced_parameter: {"space": "choice", "categories": [0.0001, 0.001, 0.01, 0.1]}},
+            PARAMETERS: {referenced_parameter: {"space": "choice", "categories": [1, 2, 3, 4]}},
         },
     }
 
-    with pytest.raises(ConfigValidationError):
+    if raises_exception:
+        with pytest.raises(ConfigValidationError):
+            ModelConfig.from_dict(config)
+    else:
+        ModelConfig.from_dict(config)
+
+
+@pytest.mark.parametrize(
+    "categories,raises_exception",
+    [
+        # Passing case
+        (
+            [
+                {"combiner": {"type": "tabnet"}, "trainer": {"learning_rate": 0.001, "batch_size": 64}},
+                {"combiner": {"type": "concat"}, "trainer": {"batch_size": 256}},
+            ],
+            False,
+        ),
+        # Errors in top level parameter names (4 cases)
+        (
+            [
+                {"foo": {"type": "tabnet"}, "trainer": {"learning_rate": 0.001, "batch_size": 64}},
+                {"combiner": {"type": "concat"}, "trainer": {"batch_size": 256}},
+            ],
+            True,
+        ),
+        (
+            [
+                {"combiner": {"type": "tabnet"}, "trainer": {"learning_rate": 0.001, "batch_size": 64}},
+                {"foo": {"type": "concat"}, "trainer": {"batch_size": 256}},
+            ],
+            True,
+        ),
+        (
+            [
+                {"combiner": {"type": "tabnet"}, "foo": {"learning_rate": 0.001, "batch_size": 64}},
+                {"combiner": {"type": "concat"}, "trainer": {"batch_size": 256}},
+            ],
+            True,
+        ),
+        (
+            [
+                {"combiner": {"type": "tabnet"}, "trainer": {"learning_rate": 0.001, "batch_size": 64}},
+                {"combiner": {"type": "concat"}, "foo": {"batch_size": 256}},
+            ],
+            True,
+        ),
+        # Errors in nested parameters (3 cases)
+        (
+            [
+                {"combiner": {"bar": "tabnet"}, "trainer": {"bar": 0.001, "batch_size": 64}},
+                {"combiner": {"type": "concat"}, "trainer": {"batch_size": 256}},
+            ],
+            True,
+        ),
+        (
+            [
+                {"combiner": {"bar": "tabnet"}, "trainer": {"bar": 0.001, "batch_size": 64}},
+                {"combiner": {"type": "concat"}, "trainer": {"batch_size": 256}},
+            ],
+            True,
+        ),
+        (
+            [
+                {"combiner": {"type": "tabnet"}, "trainer": {"bar": 0.001, "batch_size": 64}},
+                {"combiner": {"type": "concat"}, "trainer": {"batch_size": 256}},
+            ],
+            True,
+        ),
+        (
+            [
+                {"combiner": {"type": "tabnet"}, "trainer": {"learning_rate": 0.001, "bar": 64}},
+                {"combiner": {"type": "concat"}, "trainer": {"batch_size": 256}},
+            ],
+            True,
+        ),
+        (
+            [
+                {"combiner": {"type": "tabnet"}, "trainer": {"learning_rate": 0.001, "batch_size": 64}},
+                {"combiner": {"type": "concat"}, "trainer": {"bar": 256}},
+            ],
+            True,
+        ),
+    ],
+)
+def test_nested_parameter_key_check(categories, raises_exception):
+    """Test that nested parameters are validated correctly."""
+    config = {
+        INPUT_FEATURES: [text_feature(name="in_feature")],
+        OUTPUT_FEATURES: [binary_feature(name="out_feature")],
+        HYPEROPT: {SEARCH_ALG: {TYPE: "random"}, PARAMETERS: {".": {"space": "choice", "categories": categories}}},
+    }
+
+    if raises_exception:
+        with pytest.raises(ConfigValidationError):
+            ModelConfig.from_dict(config)
+    else:
         ModelConfig.from_dict(config)

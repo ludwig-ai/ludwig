@@ -294,21 +294,25 @@ def check_stacked_transformer_requirements(config: "ModelConfig") -> None:  # no
 @register_config_check
 def check_hyperopt_search_algorithm_dependencies_installed(config: "ModelConfig") -> None:  # noqa: F821
     """Check that the hyperopt search algorithm dependencies are installed."""
-    if config.hyperopt is not None:
-        try:
-            config.hyperopt.search_alg.dependencies_installed()
-        except ImportError as e:
-            raise ConfigValidationError(e.msg)
+    if config.hyperopt is None:
+        return
+
+    try:
+        config.hyperopt.search_alg.dependencies_installed()
+    except ImportError as e:
+        raise ConfigValidationError(e.msg)
 
 
 @register_config_check
 def check_hyperopt_scheduler_dependencies_installed(config: "ModelConfig") -> None:  # noqa: F821
     """Check that the hyperopt scheduler dependencies are installed."""
-    if config.hyperopt is not None:
-        try:
-            config.hyperopt.executor.scheduler.dependencies_installed()
-        except ImportError as e:
-            raise ConfigValidationError(e.msg)
+    if config.hyperopt is None:
+        return
+
+    try:
+        config.hyperopt.executor.scheduler.dependencies_installed()
+    except ImportError as e:
+        raise ConfigValidationError(e.msg)
 
 
 def check_tagger_decoder_requirements(config: "ModelConfig") -> None:  # noqa: F821
@@ -344,10 +348,14 @@ def check_tagger_decoder_requirements(config: "ModelConfig") -> None:  # noqa: F
 @register_config_check
 def check_hyperopt_parameter_dicts(config: "ModelConfig") -> None:  # noqa: F821
     """Checks for hyperopt parameter dicts against their config objects."""
-    from ludwig.schema.hyperopt.utils import get_parameter_cls, parameter_config_registry
+    if config.hyperopt is None:
+        return
 
-    if config.hyperopt is not None:
-        for parameter, space in config.hyperopt.parameters.items():
+    from ludwig.schema.hyperopt.utils import get_parameter_cls, parameter_config_registry  # noqa: F401
+
+    for parameter, space in config.hyperopt.parameters.items():
+        # skip nested hyperopt parameters
+        if parameter != ".":
             parameter_attribute_path = parameter.split(".")
             passed = False
 
@@ -408,4 +416,47 @@ def check_concat_combiner_requirements(config: "ModelConfig") -> None:  # noqa: 
             "encoder outputs, 2) Choose a different combiner like `sequence_concat` which can handle a mix of 2D and "
             "3D encoder output shapes, or 3) Remove features to ensure that output shapes from all encoders are the "
             "same dimension (all 2D or all 3D)."
+        )
+
+
+@register_config_check
+def check_hyperopt_nested_parameter_dicts(config: "ModelConfig") -> None:  # noqa: F821
+    """Checks that all nested parameters in a hyperopt config exist."""
+    if config.hyperopt is None or "." not in config.hyperopt.parameters:
+        return
+
+    from ludwig.schema.hyperopt.utils import get_parameter_cls  # noqa: F401
+
+    invalid_fields = []
+    space = config.hyperopt.parameters["."]
+
+    def check_fields_exist(
+        parameter: dict, config: "BaseMarshmallowConfig", field_path: str = ""  # noqa: F821
+    ) -> bool:
+        """Recursively check config field existence."""
+        for k, v in parameter.items():
+            nested_path = f"{field_path}.{k}"
+            try:
+                if isinstance(v, dict):
+                    check_fields_exist(v, config.__getattribute__(k), field_path=nested_path)
+                else:
+                    config.__getattribute__(k)
+            except AttributeError:
+                invalid_fields.append(nested_path)
+
+    for category in space["categories"]:
+        check_fields_exist(category, config)
+
+    if len(invalid_fields) > 0:
+        raise ConfigValidationError(
+            "The following nested hyperparameters do not correspond to valid config fields: "
+            f"{','.join(invalid_fields)}. Check the Ludwig docs for the list of valid parameters."
+        )
+
+    try:
+        space_cls = get_parameter_cls("choice")
+        space_cls(**space)
+    except KeyError:
+        raise ConfigValidationError(
+            f"Nested hyperparameter search spaces must be of type 'choice'. Requested space type: {space['space']}"
         )
