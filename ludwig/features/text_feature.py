@@ -49,7 +49,6 @@ from ludwig.utils.strings_utils import (
     UNKNOWN_SYMBOL,
     Vocabulary,
 )
-from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
 

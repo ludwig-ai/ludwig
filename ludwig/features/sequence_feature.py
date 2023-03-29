@@ -52,7 +52,7 @@ from ludwig.utils.strings_utils import (
     UNKNOWN_SYMBOL,
 )
 from ludwig.utils.tokenizers import get_tokenizer_from_registry
-from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
+from ludwig.utils.types import TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
 
