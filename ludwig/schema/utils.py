@@ -347,6 +347,8 @@ def StringOptions(
         options += [None]
     if not allow_none and None in options:
         options.remove(None)
+    if len(options) != len(set(options)):
+        raise ValidationError(f"Provided options must be unique! See: {options}")
     if default not in options:
         raise ValidationError(f"Provided default `{default}` is not one of allowed options: {options} ")
     return field(
