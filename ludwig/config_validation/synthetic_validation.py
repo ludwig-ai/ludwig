@@ -1,7 +1,7 @@
 import logging
+import os
 import tempfile
 import time
-import os
 
 from ludwig.api import LudwigModel
 from ludwig.api_annotations import DeveloperAPI
