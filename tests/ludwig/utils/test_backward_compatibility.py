@@ -883,3 +883,49 @@ def test_defaults_gbm_config():
     for feature_type in config_obj["defaults"]:
         assert "decoder" not in config_obj["defaults"][feature_type]
         assert "loss" not in config_obj["defaults"][feature_type]
+
+
+def test_type_removed_from_defaults_config():
+    config = {
+        "input_features": [
+            {"name": "feature_1", "type": "category"},
+            {"name": "Sex", "type": "category"},
+        ],
+        "output_features": [
+            {"name": "Survived", "type": "category"},
+        ],
+        "defaults": {
+            "binary": {
+                "encoder": {
+                    "type": "passthrough",
+                },
+                "preprocessing": {
+                    "missing_value_strategy": "fill_with_false",
+                },
+                "type": "binary",
+            },
+            "category": {
+                "encoder": {
+                    "type": "onehot",
+                },
+                "preprocessing": {
+                    "missing_value_strategy": "fill_with_const",
+                    "most_common": 10000,
+                },
+                "type": "category",
+            },
+        },
+        "model_type": "ecd",
+    }
+
+    config_2 = copy.deepcopy(config)
+    config_2["model_type"] = "gbm"
+
+    config_obj = ModelConfig.from_dict(config).to_dict()
+    config_obj_2 = ModelConfig.from_dict(config_2).to_dict()
+
+    for feature_type in config_obj.get("defaults"):
+        assert "type" not in config_obj["defaults"][feature_type]
+
+    for feature_type in config_obj_2.get("defaults"):
+        assert "type" not in config_obj_2["defaults"][feature_type]

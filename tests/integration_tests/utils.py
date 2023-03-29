@@ -41,6 +41,7 @@ from ludwig.constants import (
     BATCH_SIZE,
     BINARY,
     CATEGORY,
+    CATEGORY_DISTRIBUTION,
     COLUMN,
     DATE,
     DECODER,
@@ -469,6 +470,21 @@ def vector_feature(**kwargs):
         "preprocessing": {
             "vector_size": 5,
         },
+    }
+    recursive_update(feature, kwargs)
+    feature[COLUMN] = feature[NAME]
+    feature[PROC_COLUMN] = compute_feature_hash(feature)
+    return feature
+
+
+def category_distribution_feature(**kwargs):
+    feature = {
+        "name": f"{CATEGORY_DISTRIBUTION}_{random_string()}",
+        "type": CATEGORY_DISTRIBUTION,
+        "preprocessing": {
+            "vocab": ["a", "b", "c"],
+        },
+        DECODER: {"type": "classifier"},
     }
     recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]

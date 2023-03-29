@@ -253,12 +253,18 @@ def read_parquet(data_fp, df_lib, **kwargs):
     if "nrows" in kwargs:
         import pyarrow.parquet as pq
 
-        preview = next(pq.ParquetFile(data_fp).iter_batches(batch_size=kwargs["nrows"])).to_pandas()
+        from ludwig.utils.fs_utils import get_fs_and_path
+
+        fs, _ = get_fs_and_path(data_fp)
+        dataset = pq.ParquetDataset(data_fp, filesystem=fs, use_legacy_dataset=False).fragments[0]
+
+        preview = dataset.head(kwargs["nrows"]).to_pandas()
+
         if is_dask_lib(df_lib):
-            return df_lib.from_pandas(preview)
+            return df_lib.from_pandas(preview, npartitions=1)
         return preview
 
-    return df_lib.read_parquet(data_fp)
+    return df_lib.read_parquet(data_fp, **kwargs)
 
 
 @DeveloperAPI
