@@ -9,7 +9,7 @@
 #   model serving
 #
 
-FROM rayproject/ray:2.2.0-py38
+FROM rayproject/ray:2.3.0-py38
 
 # https://github.com/kubernetes/release/issues/1982
 RUN echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list && \
