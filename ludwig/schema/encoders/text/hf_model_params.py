@@ -55,7 +55,7 @@ class DebertaModelParams(schema_utils.BaseMarshmallowConfig):
     )
 
     hidden_act: str = schema_utils.StringOptions(
-        options=["gelu", "relu", "silu", "gelu", "tanh", "gelu_fast", "mish", "linear", "sigmoid", "gelu_new"],
+        options=["gelu", "relu", "silu", "tanh", "gelu_fast", "mish", "linear", "sigmoid", "gelu_new"],
         default="gelu",
         description="The non-linear activation function (function or string) in the encoder and pooler.",
     )
@@ -142,7 +142,7 @@ class DebertaModelParams(schema_utils.BaseMarshmallowConfig):
     )
 
     pooler_hidden_act: str = schema_utils.StringOptions(
-        options=["gelu", "relu", "silu", "gelu", "tanh", "gelu_fast", "mish", "linear", "sigmoid", "gelu_new"],
+        options=["gelu", "relu", "silu", "tanh", "gelu_fast", "mish", "linear", "sigmoid", "gelu_new"],
         default="gelu",
         description="The activation function (function or string) in the pooler.",
     )
