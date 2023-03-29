@@ -813,7 +813,7 @@ class Trainer(BaseTrainer):
             loss, all_losses = self.train_step(inputs, targets, should_step=should_step)
 
             if should_step:
-                # Update LR schduler here instead of train loop to avoid having it updated during batch size tuning, etc.
+                # Update LR schduler here instead of train loop to avoid updating during batch size tuning, etc.
                 self.scheduler.step()
 
             if self.is_coordinator() and not self.skip_save_log:
