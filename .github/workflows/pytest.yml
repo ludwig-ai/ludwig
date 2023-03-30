@@ -220,9 +220,13 @@ jobs:
           pip list
         shell: bash
 
+      - name: Testing combinatorial config generation code
+        run: |
+          pytest -vs --durations 100 -m "combinatorial" --junitxml pytest.xml tests/ludwig/config_sampling
+
       - name: Combinatorial Tests
         run: |
-          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "combinatorial" --junitxml pytest.xml tests/training_success
+          pytest -vs --durations 100 -m "combinatorial" --junitxml pytest.xml tests/training_success
 
 
   test-minimal-install:

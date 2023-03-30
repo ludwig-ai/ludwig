@@ -1,3 +1,5 @@
+import pytest
+
 from ludwig.utils.data_utils import load_json
 from tests.training_success.test_training_success import (
     combiner_config_generator,
@@ -10,6 +12,7 @@ def full_config_generator(generator_fn, *args):
     return len(list(generator_fn(*args)))
 
 
+@pytest.mark.combinatorial
 def test_config_sampling():
     static_schema = load_json("tests/ludwig/config_sampling/static_schema.json")
     total_count = 0
