@@ -50,7 +50,10 @@ RUN pip install torch==1.13.1 torchtext torchvision torchaudio --extra-index-url
 #     libnccl2=2.11.4-1+cuda11.6 libnccl-dev=2.11.4-1+cuda11.6
 
 COPY . .
-RUN HOROVOD_GPU_OPERATIONS=NCCL \
+
+# https://github.com/horovod/horovod/issues/3831
+RUN CMAKE_CUDA_RUNTIME_LIBRARY=Static \
+    HOROVOD_GPU_OPERATIONS=NCCL \
     HOROVOD_WITH_PYTORCH=1 \
     HOROVOD_WITHOUT_MPI=1 \
     HOROVOD_WITHOUT_TENSORFLOW=1 \
