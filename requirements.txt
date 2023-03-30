@@ -10,7 +10,7 @@ torch>=1.13.0
 torchaudio
 torchtext
 torchvision
-transformers>=4.10.1,<4.22
+transformers>=4.10.1
 spacy>=2.3
 PyYAML>=3.12
 absl-py
@@ -36,6 +36,7 @@ packaging
 retry
 # required for TransfoXLTokenizer when using transformer_xl
 sacremoses
+sentencepiece
 
 # new data format support
 xlwt            # excel
