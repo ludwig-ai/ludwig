@@ -44,6 +44,12 @@ class ChoiceParameterConfig(schema_utils.BaseMarshmallowConfig):
             schema_utils.List(list_type=float, allow_none=False, description="The list of floats to randomly sample."),
             schema_utils.List(list_type=int, allow_none=False, description="The list of integers to randomly sample."),
             schema_utils.List(list_type=str, allow_none=False, description="The list of strings to randomly sample."),
+            schema_utils.List(
+                list_type=list,
+                inner_type=dict,
+                allow_none=False,
+                description="The list of lists of configs to randomly sample.",
+            ),
             schema_utils.DictList(allow_none=False, description="A list of nested config parameters to sample."),
         ],
     )
