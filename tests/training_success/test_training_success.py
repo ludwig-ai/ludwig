@@ -8,6 +8,7 @@ import pytest
 import yaml
 
 from ludwig.api import LudwigModel
+from ludwig.config_sampling.explore_schema import combine_configs, ConfigOption, explore_properties
 from ludwig.config_validation.validation import get_schema
 from ludwig.types import ModelConfigDict
 
@@ -17,7 +18,6 @@ from .configs import (
     FEATURE_TYPE_TO_CONFIG_FOR_DECODER_LOSS,
     FEATURE_TYPE_TO_CONFIG_FOR_ENCODER_PREPROCESSING,
 )
-from .explore_schema import combine_configs, ConfigOption, explore_properties
 
 
 def defaults_config_generator(feature_type: str, allow_list: str) -> Tuple[ModelConfigDict, pd.DataFrame]:

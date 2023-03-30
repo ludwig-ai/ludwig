@@ -1,4 +1,4 @@
-from .explore_schema import (
+from ludwig.config_sampling.explore_schema import (
     combine_configs,
     combine_configs_for_comparator_combiner,
     combine_configs_for_sequence_combiner,
