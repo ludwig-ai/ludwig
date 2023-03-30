@@ -269,3 +269,28 @@ def test_nested_parameter_key_check(categories, raises_exception):
             ModelConfig.from_dict(config)
     else:
         ModelConfig.from_dict(config)
+
+
+@pytest.mark.parametrize(
+    "config",
+    [
+        {
+            "out_feature.decoder.fc_layers": {
+                "space": "choice",
+                "categories": [
+                    [{"output_size": 64}, {"output_size": 32}],
+                    [{"output_size": 64}],
+                    [{"output_size": 32}],
+                ],
+            }
+        }
+    ],
+)
+def test_flat_parameter_edge_cases(config):
+    config = {
+        INPUT_FEATURES: [text_feature(name="in_feature")],
+        OUTPUT_FEATURES: [binary_feature(name="out_feature")],
+        HYPEROPT: {SEARCH_ALG: {TYPE: "random"}, PARAMETERS: config},
+    }
+
+    ModelConfig.from_dict(config)
