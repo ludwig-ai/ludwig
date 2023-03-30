@@ -57,11 +57,18 @@ class GridSearchParameterConfig(schema_utils.BaseMarshmallowConfig):
 
     space: str = schema_utils.ProtectedString("grid_search")
 
-    values: List = schema_utils.List(
+    values: List = schema_utils.OneOfOptionsField(
+        default=None,
+        allow_none=True,
         description=(
             "The list of values to use in creating the grid search space. The type of each value of the list is "
             "general, i.e., they could be strings, integers, floats and anything else, even entire dictionaries."
-        )
+        ),
+        field_options=[
+            schema_utils.List(list_type=float, allow_none=False, description="The list of floats to randomly sample."),
+            schema_utils.List(list_type=int, allow_none=False, description="The list of integers to randomly sample."),
+            schema_utils.List(list_type=str, allow_none=False, description="The list of strings to randomly sample."),
+        ],
     )
 
 
