@@ -159,7 +159,10 @@ def test_parameter_key_check(referenced_parameter, raises_exception):
         # Passing case
         (
             [
-                {"combiner": {"type": "tabnet"}, "trainer": {"learning_rate": 0.001, "batch_size": 64}},
+                {
+                    "combiner": {"type": "tabnet", "bn_virtual_bs": 256},
+                    "trainer": {"learning_rate": 0.001, "batch_size": 64},
+                },
                 {"combiner": {"type": "concat"}, "trainer": {"batch_size": 256}},
             ],
             False,
@@ -167,64 +170,86 @@ def test_parameter_key_check(referenced_parameter, raises_exception):
         # Errors in top level parameter names (4 cases)
         (
             [
-                {"foo": {"type": "tabnet"}, "trainer": {"learning_rate": 0.001, "batch_size": 64}},
+                {
+                    "foo": {"type": "tabnet", "bn_virtual_bs": 256},
+                    "trainer": {"learning_rate": 0.001, "batch_size": 64},
+                },
                 {"combiner": {"type": "concat"}, "trainer": {"batch_size": 256}},
             ],
             True,
         ),
         (
             [
-                {"combiner": {"type": "tabnet"}, "trainer": {"learning_rate": 0.001, "batch_size": 64}},
+                {
+                    "combiner": {"type": "tabnet", "bn_virtual_bs": 256},
+                    "trainer": {"learning_rate": 0.001, "batch_size": 64},
+                },
                 {"foo": {"type": "concat"}, "trainer": {"batch_size": 256}},
             ],
             True,
         ),
         (
             [
-                {"combiner": {"type": "tabnet"}, "foo": {"learning_rate": 0.001, "batch_size": 64}},
+                {
+                    "combiner": {"type": "tabnet", "bn_virtual_bs": 256},
+                    "foo": {"learning_rate": 0.001, "batch_size": 64},
+                },
                 {"combiner": {"type": "concat"}, "trainer": {"batch_size": 256}},
             ],
             True,
         ),
         (
             [
-                {"combiner": {"type": "tabnet"}, "trainer": {"learning_rate": 0.001, "batch_size": 64}},
+                {
+                    "combiner": {"type": "tabnet", "bn_virtual_bs": 256},
+                    "trainer": {"learning_rate": 0.001, "batch_size": 64},
+                },
                 {"combiner": {"type": "concat"}, "foo": {"batch_size": 256}},
             ],
             True,
         ),
-        # Errors in nested parameters (3 cases)
+        # Errors in nested parameters (6 cases)
         (
             [
-                {"combiner": {"bar": "tabnet"}, "trainer": {"bar": 0.001, "batch_size": 64}},
+                {"combiner": {"bar": "tabnet", "bn_virtual_bs": 256}, "trainer": {"bar": 0.001, "batch_size": 64}},
                 {"combiner": {"type": "concat"}, "trainer": {"batch_size": 256}},
             ],
             True,
         ),
         (
             [
-                {"combiner": {"bar": "tabnet"}, "trainer": {"bar": 0.001, "batch_size": 64}},
+                {"combiner": {"type": "tabnet", "bar": 256}, "trainer": {"learning_rate": 0.001, "batch_size": 64}},
+                {"combiner": {"type": "concat"}, "trainer": {"batch_size": 256}},
+            ],
+            False,
+        ),
+        (
+            [
+                {"combiner": {"type": "tabnet", "bn_virtual_bs": 256}, "trainer": {"bar": 0.001, "batch_size": 64}},
                 {"combiner": {"type": "concat"}, "trainer": {"batch_size": 256}},
             ],
             True,
         ),
         (
             [
-                {"combiner": {"type": "tabnet"}, "trainer": {"bar": 0.001, "batch_size": 64}},
+                {"combiner": {"type": "tabnet", "bn_virtual_bs": 256}, "trainer": {"bar": 0.001, "batch_size": 64}},
                 {"combiner": {"type": "concat"}, "trainer": {"batch_size": 256}},
             ],
             True,
         ),
         (
             [
-                {"combiner": {"type": "tabnet"}, "trainer": {"learning_rate": 0.001, "bar": 64}},
+                {"combiner": {"type": "tabnet", "bn_virtual_bs": 256}, "trainer": {"learning_rate": 0.001, "bar": 64}},
                 {"combiner": {"type": "concat"}, "trainer": {"batch_size": 256}},
             ],
             True,
         ),
         (
             [
-                {"combiner": {"type": "tabnet"}, "trainer": {"learning_rate": 0.001, "batch_size": 64}},
+                {
+                    "combiner": {"type": "tabnet", "bn_virtual_bs": 256},
+                    "trainer": {"learning_rate": 0.001, "batch_size": 64},
+                },
                 {"combiner": {"type": "concat"}, "trainer": {"bar": 256}},
             ],
             True,
