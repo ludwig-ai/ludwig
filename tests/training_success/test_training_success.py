@@ -6,17 +6,18 @@ from typing import Tuple
 import pandas as pd
 import pytest
 import yaml
-from configs import (
+
+from ludwig.api import LudwigModel
+from ludwig.config_validation.validation import get_schema
+from ludwig.types import ModelConfigDict
+
+from .configs import (
     COMBINER_TYPE_TO_COMBINE_FN_MAP,
     ECD_CONFIG_SECTION_TO_CONFIG,
     FEATURE_TYPE_TO_CONFIG_FOR_DECODER_LOSS,
     FEATURE_TYPE_TO_CONFIG_FOR_ENCODER_PREPROCESSING,
 )
-from explore_schema import combine_configs, explore_properties
-
-from ludwig.api import LudwigModel
-from ludwig.config_validation.validation import get_schema
-from ludwig.types import ModelConfigDict
+from .explore_schema import combine_configs, explore_properties
 
 
 def defaults_config_generator(feature_type: str, only_include: str) -> Tuple[ModelConfigDict, pd.DataFrame]:
