@@ -1,7 +1,7 @@
 import logging
 from collections import deque
 from pprint import pprint
-from typing import Tuple
+from typing import Any, Dict, Tuple
 
 import pandas as pd
 import pytest
@@ -20,7 +20,9 @@ from .configs import (
 )
 
 
-def defaults_config_generator(feature_type: str, allow_list: str) -> Tuple[ModelConfigDict, pd.DataFrame]:
+def defaults_config_generator(
+    feature_type: str, allow_list: str, static_schema: Dict[str, Any] = None
+) -> Tuple[ModelConfigDict, pd.DataFrame]:
     """Generate combinatorial configs for the defaults section of the Ludwig config.
 
     Args:
@@ -30,7 +32,7 @@ def defaults_config_generator(feature_type: str, allow_list: str) -> Tuple[Model
     assert isinstance(allow_list, str)
     assert allow_list in {"preprocessing", "encoder", "decoder", "loss"}
 
-    schema = get_schema()
+    schema = get_schema() if not static_schema else static_schema
     properties = schema["properties"]["defaults"]["properties"][feature_type]["properties"]
     raw_entry = deque([ConfigOption(dict(), False)])
     explored = explore_properties(
@@ -59,9 +61,9 @@ def defaults_config_generator(feature_type: str, allow_list: str) -> Tuple[Model
         yield config, dataset
 
 
-def ecd_trainer_config_generator() -> Tuple[ModelConfigDict, pd.DataFrame]:
+def ecd_trainer_config_generator(static_schema: Dict[str, Any] = None) -> Tuple[ModelConfigDict, pd.DataFrame]:
     """Generate combinatorial configs for the ECD trainer section of the Ludwig config."""
-    schema = get_schema()
+    schema = get_schema() if not static_schema else static_schema
     properties = schema["properties"]
 
     raw_entry = deque([ConfigOption(dict(), False)])
@@ -78,13 +80,15 @@ def ecd_trainer_config_generator() -> Tuple[ModelConfigDict, pd.DataFrame]:
         yield config, dataset
 
 
-def combiner_config_generator(combiner_type: str) -> Tuple[ModelConfigDict, pd.DataFrame]:
+def combiner_config_generator(
+    combiner_type: str, static_schema: Dict[str, Any] = None
+) -> Tuple[ModelConfigDict, pd.DataFrame]:
     """Generate combinatorial configs for the combiner section of the Ludwig config.
 
     Args:
         combiner_type: combiner type to explore.
     """
-    schema = get_schema()
+    schema = get_schema() if not static_schema else static_schema
     properties = schema["properties"]
 
     raw_entry = deque([ConfigOption(dict(), False)])
