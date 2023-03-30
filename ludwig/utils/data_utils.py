@@ -159,6 +159,16 @@ def spread(fn):
     return wrapped_fn
 
 
+def read_nrows_via_chunksize(fp, read_fn, **kwargs):
+    chunksize = kwargs.pop("nrows", None)
+    ret = read_fn(fp, chunksize=chunksize, **kwargs)
+
+    if isinstance(ret, collections.abc.Iterator):
+        return next(ret)
+
+    return ret
+
+
 @DeveloperAPI
 @spread
 def read_xsv(data_fp, df_lib=PANDAS_DF, separator=",", header=0, nrows=None, skiprows=None, dtype=object, **kwargs):
@@ -205,22 +215,25 @@ read_tsv = functools.partial(read_xsv, separator="\t")
 
 @DeveloperAPI
 @spread
-def read_json(data_fp, df_lib, normalize=False):
+def read_json(data_fp, df_lib, normalize=False, **kwargs):
+    # Not supported unless lines=True
+    kwargs.pop("nrows", None)
+
     if normalize:
         return df_lib.json_normalize(load_json(data_fp))
     else:
-        return df_lib.read_json(data_fp)
+        return df_lib.read_json(data_fp, **kwargs)
 
 
 @DeveloperAPI
 @spread
-def read_jsonl(data_fp, df_lib):
-    return df_lib.read_json(data_fp, lines=True)
+def read_jsonl(data_fp, df_lib, **kwargs):
+    return df_lib.read_json(data_fp, lines=True, **kwargs)
 
 
 @DeveloperAPI
 @spread
-def read_excel(data_fp, df_lib):
+def read_excel(data_fp, df_lib, **kwargs):
     fp_split = os.path.splitext(data_fp)
     if fp_split[1] == ".xls":
         excel_engine = "xlrd"
@@ -230,19 +243,36 @@ def read_excel(data_fp, df_lib):
     # https://github.com/dask/dask/issues/9055
     if is_dask_lib(df_lib):
         logger.warning("Falling back to pd.read_excel() since dask backend does not support it")
-        return dd.from_pandas(pd.read_excel(data_fp, engine=excel_engine), npartitions=1)
-    return df_lib.read_excel(data_fp, engine=excel_engine)
+        return dd.from_pandas(pd.read_excel(data_fp, engine=excel_engine, **kwargs), npartitions=1)
+    return df_lib.read_excel(data_fp, engine=excel_engine, **kwargs)
 
 
 @DeveloperAPI
 @spread
-def read_parquet(data_fp, df_lib):
-    return df_lib.read_parquet(data_fp)
+def read_parquet(data_fp, df_lib, **kwargs):
+    if "nrows" in kwargs:
+        import pyarrow.parquet as pq
+
+        from ludwig.utils.fs_utils import get_fs_and_path
+
+        fs, _ = get_fs_and_path(data_fp)
+        dataset = pq.ParquetDataset(data_fp, filesystem=fs, use_legacy_dataset=False).fragments[0]
+
+        preview = dataset.head(kwargs["nrows"]).to_pandas()
+
+        if is_dask_lib(df_lib):
+            return df_lib.from_pandas(preview, npartitions=1)
+        return preview
+
+    return df_lib.read_parquet(data_fp, **kwargs)
 
 
 @DeveloperAPI
 @spread
-def read_pickle(data_fp, df_lib):
+def read_pickle(data_fp, df_lib, **kwargs):
+    # Chunking is not supported for pickle files:
+    kwargs.pop("nrows", None)
+
     # https://github.com/dask/dask/issues/9055
     if is_dask_lib(df_lib):
         logger.warning("Falling back to pd.read_pickle() since dask backend does not support it")
@@ -252,13 +282,16 @@ def read_pickle(data_fp, df_lib):
 
 @DeveloperAPI
 @spread
-def read_fwf(data_fp, df_lib):
-    return df_lib.read_fwf(data_fp)
+def read_fwf(data_fp, df_lib, **kwargs):
+    return df_lib.read_fwf(data_fp, **kwargs)
 
 
 @DeveloperAPI
 @spread
-def read_feather(data_fp, df_lib):
+def read_feather(data_fp, df_lib, **kwargs):
+    # Chunking is not supported for feather files:
+    kwargs.pop("nrows", None)
+
     # https://github.com/dask/dask/issues/9055
     if is_dask_lib(df_lib):
         logger.warning("Falling back to pd.read_feather() since dask backend does not support it")
@@ -268,7 +301,10 @@ def read_feather(data_fp, df_lib):
 
 @DeveloperAPI
 @spread
-def read_html(data_fp, df_lib):
+def read_html(data_fp, df_lib, **kwargs):
+    # Chunking is not supported for html files:
+    kwargs.pop("nrows", None)
+
     # https://github.com/dask/dask/issues/9055
     if is_dask_lib(df_lib):
         logger.warning("Falling back to pd.read_html() since dask backend does not support it")
@@ -278,23 +314,29 @@ def read_html(data_fp, df_lib):
 
 @DeveloperAPI
 @spread
-def read_orc(data_fp, df_lib):
-    return df_lib.read_orc(data_fp)
+def read_orc(data_fp, df_lib, **kwargs):
+    # Chunking is not supported for orc files:
+    kwargs.pop("nrows", None)
+
+    return df_lib.read_orc(data_fp, **kwargs)
 
 
 @DeveloperAPI
 @spread
-def read_sas(data_fp, df_lib):
+def read_sas(data_fp, df_lib, **kwargs):
     # https://github.com/dask/dask/issues/9055
     if is_dask_lib(df_lib):
         logger.warning("Falling back to pd.read_sas() since dask backend does not support it")
-        return dd.from_pandas(pd.read_sas(data_fp), npartitions=1)
-    return df_lib.read_sas(data_fp)
+        return dd.from_pandas(read_nrows_via_chunksize(data_fp, df_lib.read_sas, **kwargs), npartitions=1)
+    return read_nrows_via_chunksize(data_fp, df_lib.read_sas, **kwargs)
 
 
 @DeveloperAPI
 @spread
-def read_spss(data_fp, df_lib):
+def read_spss(data_fp, df_lib, **kwargs):
+    # Chunking is not supported for spss files:
+    kwargs.pop("nrows", None)
+
     # https://github.com/dask/dask/issues/9055
     if is_dask_lib(df_lib):
         logger.warning("Falling back to pd.read_spss() since dask backend does not support it")
@@ -304,12 +346,12 @@ def read_spss(data_fp, df_lib):
 
 @DeveloperAPI
 @spread
-def read_stata(data_fp, df_lib):
+def read_stata(data_fp, df_lib, **kwargs):
     # https://github.com/dask/dask/issues/9055
     if is_dask_lib(df_lib):
         logger.warning("Falling back to pd.read_stata() since dask backend does not support it")
-        return dd.from_pandas(pd.read_stata(data_fp), npartitions=1)
-    return df_lib.read_stata(data_fp)
+        return dd.from_pandas(read_nrows_via_chunksize(data_fp, df_lib.read_stata, **kwargs), npartitions=1)
+    return read_nrows_via_chunksize(data_fp, df_lib.read_stata, **kwargs)
 
 
 @DeveloperAPI

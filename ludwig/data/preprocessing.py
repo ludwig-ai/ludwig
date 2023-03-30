@@ -37,6 +37,7 @@ from ludwig.constants import (
     FILL_WITH_FALSE,
     FILL_WITH_MEAN,
     FILL_WITH_MODE,
+    FILL_WITH_TRUE,
     FULL,
     META,
     MIN_DATASET_SPLIT_ROWS,
@@ -1467,6 +1468,8 @@ def build_data(
     """
     proc_cols = {}
     for feature_config in feature_configs:
+        # TODO(travis): instead of using raw dictionary, this should be loaded into a proper PreprocessingConfig
+        #  object, so we don't need to hackily check for the presence of added keys.
         preprocessing_parameters = training_set_metadata[feature_config[NAME]][PREPROCESSING]
 
         # Need to run this again here as cast_columns may have introduced new missing values
@@ -1557,16 +1560,19 @@ def precompute_fill_value(
                 f"only for number types, not for type {feature[TYPE]}.",
             )
         return backend.df_engine.compute(dataset_cols[feature[COLUMN]].astype(float).mean())
-    elif missing_value_strategy == FILL_WITH_FALSE:
+    elif missing_value_strategy in {FILL_WITH_FALSE, FILL_WITH_TRUE}:
         distinct_values = backend.df_engine.compute(
             dataset_cols[feature[COLUMN]].drop_duplicates().dropna()
         ).values.tolist()
         if len(distinct_values) > 2:
             raise ValueError(
-                f"Missing value strategy `fill_with_false` "
+                f"Missing value strategy `{missing_value_strategy}` "
                 f"for column {feature[COLUMN]} expects 2 distinct values, "
                 f"found: {len(distinct_values)} (ex: {distinct_values[:10]})"
             )
+
+        fill_to_bool_value = {FILL_WITH_FALSE: False, FILL_WITH_TRUE: True}
+        bool_needed = fill_to_bool_value[missing_value_strategy]
 
         # Determine the False label.
         # Distinct values are sorted in reverse to mirror the selection of the default fallback_true_label (in
@@ -1578,10 +1584,11 @@ def precompute_fill_value(
                 if preprocessing_parameters["fallback_true_label"]
                 else "true"
             )
-            if strings_utils.str2bool(v, fallback_true_label) is False:
+            if strings_utils.str2bool(v, fallback_true_label) is bool_needed:
                 return v
         raise ValueError(
-            f"Unable to determine False value for column {feature[COLUMN]} with distinct values: {distinct_values}."
+            f"Unable to determine {bool_needed} value for column {feature[COLUMN]} "
+            f"with distinct values: {distinct_values}."
         )
     # Otherwise, we cannot precompute the fill value for this dataset
     return None
@@ -1616,7 +1623,7 @@ def _handle_missing_values(
     dataset_cols, feature, missing_value_strategy: str, computed_fill_value: Optional[float], backend
 ):
     if (
-        missing_value_strategy in {FILL_WITH_CONST, FILL_WITH_MODE, FILL_WITH_MEAN, FILL_WITH_FALSE}
+        missing_value_strategy in {FILL_WITH_CONST, FILL_WITH_MODE, FILL_WITH_MEAN, FILL_WITH_FALSE, FILL_WITH_TRUE}
         and computed_fill_value is not None
     ):
         dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].fillna(

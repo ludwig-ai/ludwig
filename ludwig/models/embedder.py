@@ -105,7 +105,7 @@ def create_embed_transform_fn(
             with torch.no_grad():
                 encoder_outputs = self.embedder(inputs)
 
-            encoded = {name_to_proc[k]: v.detach().cpu().numpy() for k, v in encoder_outputs.items()}
+            encoded = {name_to_proc[k]: v.detach().cpu().float().numpy() for k, v in encoder_outputs.items()}
             output_df = from_numpy_dataset(encoded)
 
             for c in output_df.columns:

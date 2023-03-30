@@ -19,7 +19,7 @@ from functools import partial
 import torch
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import BINARY, CATEGORY, LOSS, NUMBER, SET, TIMESERIES, TYPE, VECTOR
+from ludwig.constants import BINARY, CATEGORY, CATEGORY_DISTRIBUTION, LOSS, NUMBER, SET, TIMESERIES, TYPE, VECTOR
 from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
 from ludwig.schema.decoders.base import ClassifierConfig, PassthroughDecoderConfig, ProjectorConfig, RegressorConfig
@@ -155,7 +155,7 @@ class Projector(Decoder):
 
 
 @DeveloperAPI
-@register_decoder("classifier", [CATEGORY, SET])
+@register_decoder("classifier", [CATEGORY, CATEGORY_DISTRIBUTION, SET])
 class Classifier(Decoder):
     def __init__(
         self,
