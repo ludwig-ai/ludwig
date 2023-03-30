@@ -1180,7 +1180,7 @@ class TypeSelection(fields.Field):
                 except (TypeError, ValidationError) as e:
                     raise ValidationError(f"Invalid params: {value}, see `{cls}` definition") from e
             raise ValidationError(f"Invalid type: '{cls_type}', expected one of: {list(self.registry.keys())}")
-            
+
         maybe_str = ", `str`," if self.allow_str_value else ""
         raise ValidationError(f"Invalid param {value}, expected `None`{maybe_str} or `dict`")
 
