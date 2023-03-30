@@ -21,6 +21,7 @@ from ludwig.constants import (
 )
 from ludwig.error import ConfigValidationError
 from ludwig.utils.metric_utils import get_feature_to_metric_names_map_from_feature_collection
+from ludwig.utils.misc_utils import merge_dict
 
 if TYPE_CHECKING:
     from ludwig.schema.model_config import ModelConfig
@@ -379,7 +380,7 @@ def check_hyperopt_parameter_dicts(config: "ModelConfig") -> None:  # noqa: F821
 
             try:
                 space_cls = get_parameter_cls(space["space"])
-                space_cls(**space)
+                space_cls.from_dict(space)
             except KeyError:
                 space_types = ", ".join(parameter_config_registry.keys())
                 raise ConfigValidationError(
@@ -426,36 +427,29 @@ def check_hyperopt_nested_parameter_dicts(config: "ModelConfig") -> None:  # noq
         return
 
     from ludwig.schema.hyperopt.utils import get_parameter_cls  # noqa: F401
+    from ludwig.schema.model_types.base import ModelConfig
 
-    invalid_fields = []
     space = config.hyperopt.parameters["."]
 
-    def check_fields_exist(
-        parameter: dict, config: "BaseMarshmallowConfig", field_path: str = ""  # noqa: F821
-    ) -> bool:
-        """Recursively check config field existence."""
-        for k, v in parameter.items():
-            nested_path = f"{field_path}.{k}"
-            try:
-                if isinstance(v, dict):
-                    check_fields_exist(v, config.__getattribute__(k), field_path=nested_path)
-                else:
-                    config.__getattribute__(k)
-            except AttributeError:
-                invalid_fields.append(nested_path)
-
+    # Build the config that would be produced by each parameter dict to validate subsections that may be in
+    config_dict = config.to_dict()
+    del config_dict["hyperopt"]
     for category in space["categories"]:
-        check_fields_exist(category, config)
+        for i, k in enumerate(category.keys()):
+            try:
+                config.__getattribute__(k)
+            except AttributeError:
+                raise ConfigValidationError(f"Invalid config block {k} in nested hyperopt parameter dict {i}: {space}.")
 
-    if len(invalid_fields) > 0:
-        raise ConfigValidationError(
-            "The following nested hyperparameters do not correspond to valid config fields: "
-            f"{','.join(invalid_fields)}. Check the Ludwig docs for the list of valid parameters."
-        )
+        category_dict = merge_dict(config_dict, category)
+        try:
+            ModelConfig.from_dict(category_dict)
+        except ConfigValidationError as e:
+            raise ConfigValidationError(f"Invalid config in hyperopt nested parameter config: {category}. {e.message}")
 
     try:
         space_cls = get_parameter_cls("choice")
-        space_cls(**space)
+        space_cls.from_dict(space)
     except KeyError:
         raise ConfigValidationError(
             f"Nested hyperparameter search spaces must be of type 'choice'. Requested space type: {space['space']}"
