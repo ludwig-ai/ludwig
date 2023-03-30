@@ -1138,10 +1138,12 @@ class TypeSelection(fields.Field):
         key: str = "type",
         description: str = "",
         parameter_metadata: ParameterMetadata = None,
+        allow_str_value: bool = False,
     ):
         self.registry = registry
         self.default_value = default_value
         self.key = key
+        self.allow_str_value = allow_str_value
 
         dump_default = missing
         load_default = missing
@@ -1163,6 +1165,11 @@ class TypeSelection(fields.Field):
     def _deserialize(self, value, attr, data, **kwargs):
         if value is None:
             return None
+
+        if self.allow_str_value and isinstance(value, str):
+            # If user provided the value as a string, assume they were providing the type
+            value = {self.key: value}
+
         if isinstance(value, dict):
             cls_type = value.get(self.key)
             cls_type = cls_type.lower() if cls_type else self.default_value
