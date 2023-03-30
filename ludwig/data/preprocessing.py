@@ -1468,6 +1468,8 @@ def build_data(
     """
     proc_cols = {}
     for feature_config in feature_configs:
+        # TODO(travis): instead of using raw dictionary, this should be loaded into a proper PreprocessingConfig
+        #  object, so we don't need to hackily check for the presence of added keys.
         preprocessing_parameters = training_set_metadata[feature_config[NAME]][PREPROCESSING]
 
         # Need to run this again here as cast_columns may have introduced new missing values
