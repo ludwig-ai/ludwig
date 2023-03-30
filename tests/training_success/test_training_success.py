@@ -17,27 +17,27 @@ from .configs import (
     FEATURE_TYPE_TO_CONFIG_FOR_DECODER_LOSS,
     FEATURE_TYPE_TO_CONFIG_FOR_ENCODER_PREPROCESSING,
 )
-from .explore_schema import combine_configs, explore_properties
+from .explore_schema import combine_configs, ConfigOption, explore_properties
 
 
-def defaults_config_generator(feature_type: str, only_include: str) -> Tuple[ModelConfigDict, pd.DataFrame]:
+def defaults_config_generator(feature_type: str, allow_list: str) -> Tuple[ModelConfigDict, pd.DataFrame]:
     """Generate combinatorial configs for the defaults section of the Ludwig config.
 
     Args:
         feature_type: feature type to explore.
-        only_include: top-level parameter of the defaults sections that should be included.
+        allow_list: top-level parameter of the defaults sections that should be included.
     """
-    assert isinstance(only_include, str)
-    assert only_include in {"preprocessing", "encoder", "decoder", "loss"}
+    assert isinstance(allow_list, str)
+    assert allow_list in {"preprocessing", "encoder", "decoder", "loss"}
 
     schema = get_schema()
     properties = schema["properties"]["defaults"]["properties"][feature_type]["properties"]
-    raw_entry = deque([(dict(), False)])
+    raw_entry = deque([ConfigOption(dict(), False)])
     explored = explore_properties(
-        properties, parent_key="defaults." + feature_type, dq=raw_entry, only_include=[only_include]
+        properties, parent_parameter_path=f"defaults.{feature_type}", dq=raw_entry, allow_list=[allow_list]
     )
 
-    if only_include in ["preprocessing", "encoder"]:
+    if allow_list in ["preprocessing", "encoder"]:
         config = FEATURE_TYPE_TO_CONFIG_FOR_ENCODER_PREPROCESSING[feature_type]
         config = yaml.safe_load(config)
     else:  # decoder and loss
@@ -51,7 +51,11 @@ def defaults_config_generator(feature_type: str, only_include: str) -> Tuple[Mod
 
     config["model_type"] = "ecd"
     config["trainer"] = {"train_steps": 1}
-    for config, dataset in combine_configs(explored, config):
+
+    combined_configs = combine_configs(explored, config)
+    logging.info(f"Generated {len(combined_configs)} for {feature_type} {allow_list} combinatorial tests.")
+
+    for config, dataset in combined_configs:
         yield config, dataset
 
 
@@ -60,14 +64,17 @@ def ecd_trainer_config_generator() -> Tuple[ModelConfigDict, pd.DataFrame]:
     schema = get_schema()
     properties = schema["properties"]
 
-    raw_entry = deque([(dict(), False)])
-    explored = explore_properties(properties, parent_key="", dq=raw_entry, only_include=["trainer"])
+    raw_entry = deque([ConfigOption(dict(), False)])
+    explored = explore_properties(properties, parent_parameter_path="", dq=raw_entry, allow_list=["trainer"])
     config = ECD_CONFIG_SECTION_TO_CONFIG["trainer"]
     config = yaml.safe_load(config)
     config["model_type"] = "ecd"
     config["trainer"] = {"train_steps": 1}
 
-    for config, dataset in combine_configs(explored, config):
+    combined_configs = combine_configs(explored, config)
+    logging.info(f"Generated {len(combined_configs)} for ECD trainer combinatorial tests.")
+
+    for config, dataset in combined_configs:
         yield config, dataset
 
 
@@ -80,17 +87,23 @@ def combiner_config_generator(combiner_type: str) -> Tuple[ModelConfigDict, pd.D
     schema = get_schema()
     properties = schema["properties"]
 
-    raw_entry = deque([(dict(), False)])
-    explored = explore_properties(properties, parent_key="", dq=raw_entry, only_include=["combiner"])
+    raw_entry = deque([ConfigOption(dict(), False)])
+    explored = explore_properties(properties, parent_parameter_path="", dq=raw_entry, allow_list=["combiner"])
     config = ECD_CONFIG_SECTION_TO_CONFIG[combiner_type]
     config = yaml.safe_load(config)
     config["model_type"] = "ecd"
     config["trainer"] = {"train_steps": 1}
 
     combine_configs_fn = COMBINER_TYPE_TO_COMBINE_FN_MAP[combiner_type]
-    for config, dataset in combine_configs_fn(explored, config):
-        if config["combiner"]["type"] == combiner_type:
-            yield config, dataset
+
+    combined_configs = combine_configs_fn(explored, config)
+    combined_configs = [
+        (config, dataset) for config, dataset in combined_configs if config["combiner"]["type"] == combiner_type
+    ]
+    logging.info(f"Generated {len(combined_configs)} for {combiner_type} combiner combinatorial tests.")
+
+    for config, dataset in combined_configs:
+        yield config, dataset
 
 
 def train_and_evaluate(config: ModelConfigDict, dataset: pd.DataFrame):
