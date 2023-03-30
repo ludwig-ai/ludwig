@@ -337,20 +337,21 @@ def StringOptions(
 
     By default, None is allowed (and automatically appended) to the allowed list of options.
     """
+    assert len(options) > 0, "Must provide non-empty list of options!"
+
+    if default is not None:
+        assert isinstance(default, str), f"Provided default `{default}` should be a string!"
+
     # If None should be allowed for an enum field, it also has to be defined as a valid
     # [option](https://github.com/json-schema-org/json-schema-spec/issues/258):
-    if len(options) <= 0:
-        raise ValidationError("Must provide non-empty list of options!")
-    if default is not None and not isinstance(default, str):
-        raise ValidationError(f"Provided default `{default}` should be a string!")
     if allow_none and None not in options:
         options += [None]
     if not allow_none and None in options:
         options.remove(None)
-    if len(options) != len(set(options)):
-        raise ValidationError(f"Provided options must be unique! See: {options}")
-    if default not in options:
-        raise ValidationError(f"Provided default `{default}` is not one of allowed options: {options} ")
+
+    assert len(options) == len(set(options)), f"Provided options must be unique! See: {options}"
+    assert default in options, f"Provided default `{default}` is not one of allowed options: {options} "
+
     return field(
         metadata={
             "marshmallow_field": fields.String(
