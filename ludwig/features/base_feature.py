@@ -558,4 +558,8 @@ def create_passthrough_input_feature(feature: InputFeature, config: BaseFeatureC
         def unskip(self) -> InputFeature:
             return feature
 
+        @property
+        def encoder_obj(self) -> torch.nn.Module:
+            return feature.encoder_obj
+
     return _InputPassthroughFeature(config)
