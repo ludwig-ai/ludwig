@@ -249,8 +249,8 @@ def read_excel(data_fp, df_lib, **kwargs):
 
 @DeveloperAPI
 @spread
-def read_parquet(data_fp, df_lib, **kwargs):
-    if "nrows" in kwargs:
+def read_parquet(data_fp, df_lib, nrows=None, **kwargs):
+    if nrows is not None:
         import pyarrow.parquet as pq
 
         from ludwig.utils.fs_utils import get_fs_and_path
