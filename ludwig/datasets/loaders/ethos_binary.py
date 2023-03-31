@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+from typing import List
+
 import pandas as pd
 
 from ludwig.datasets.loaders.dataset_loader import DatasetLoader
@@ -22,8 +24,8 @@ class EthosBinaryLoader(DatasetLoader):
         # This dataset uses ; seperator instead of ,
         return pd.read_csv(file_path, sep=";")
 
-    def transform_dataframe(self, dataframe: pd.DataFrame) -> pd.DataFrame:
-        processed_df = super().transform_dataframe(dataframe)
+    def transform_dataframe(self, dataframe: pd.DataFrame, features_to_strcat: List[str] = []) -> pd.DataFrame:
+        processed_df = super().transform_dataframe(dataframe, features_to_strcat=features_to_strcat)
         # convert float labels (0.0, 1.0) to binary labels
         processed_df["isHate"] = processed_df["isHate"] >= 0.5
         processed_df["isHate"] = processed_df["isHate"].astype(int)

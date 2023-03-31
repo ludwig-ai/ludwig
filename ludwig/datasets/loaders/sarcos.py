@@ -13,6 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 import os
+from typing import List
 
 import pandas as pd
 from scipy.io import loadmat
@@ -48,8 +49,8 @@ class SarcosLoader(DatasetLoader):
         file_df = pd.DataFrame(mat[os.path.basename(file_path).split(".")[0]])
         return file_df
 
-    def transform_dataframe(self, dataframe: pd.DataFrame) -> pd.DataFrame:
-        processed_df = super().transform_dataframe(dataframe)
+    def transform_dataframe(self, dataframe: pd.DataFrame, features_to_strcat: List[str] = []) -> pd.DataFrame:
+        processed_df = super().transform_dataframe(dataframe, features_to_strcat=features_to_strcat)
         columns = []
         columns += [f"position_{i}" for i in range(1, 8)]
         columns += [f"velocity_{i}" for i in range(1, 8)]

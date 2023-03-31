@@ -13,7 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 import os
-from typing import Optional
+from typing import List, Optional
 
 import pandas as pd
 
@@ -33,8 +33,8 @@ class KDDCup2009Loader(DatasetLoader):
         """Loads a file into a dataframe."""
         return pd.read_csv(file_path, sep="\t")
 
-    def transform_dataframe(self, dataframe: pd.DataFrame) -> pd.DataFrame:
-        train_df = super().transform_dataframe(dataframe)
+    def transform_dataframe(self, dataframe: pd.DataFrame, features_to_strcat: List[str] = []) -> pd.DataFrame:
+        train_df = super().transform_dataframe(dataframe, features_to_strcat=features_to_strcat)
         train_df = process_categorical_features(train_df, categorical_features)
         train_df = process_number_features(train_df, categorical_features)
 

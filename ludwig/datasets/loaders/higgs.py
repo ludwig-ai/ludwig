@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from typing import Optional
+from typing import List, Optional
 
 import pandas as pd
 
@@ -29,8 +29,8 @@ class HiggsLoader(DatasetLoader):
         """Loads a file into a dataframe."""
         return pd.read_csv(file_path, header=None)
 
-    def transform_dataframe(self, dataframe: pd.DataFrame) -> pd.DataFrame:
-        processed_df = super().transform_dataframe(dataframe)
+    def transform_dataframe(self, dataframe: pd.DataFrame, features_to_strcat: List[str] = []) -> pd.DataFrame:
+        processed_df = super().transform_dataframe(dataframe, features_to_strcat)
         if self.add_validation_set:
             processed_df["split"] = [0] * 10000000 + [1] * 500000 + [2] * 500000
         else:

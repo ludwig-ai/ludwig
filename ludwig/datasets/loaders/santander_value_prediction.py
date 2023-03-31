@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+from typing import List
+
 import pandas as pd
 
 from ludwig.datasets.loaders.dataset_loader import DatasetLoader
@@ -23,8 +25,8 @@ class SantanderValuePredictionLoader(DatasetLoader):
     https://www.kaggle.com/c/santander-value-prediction-challenge
     """
 
-    def transform_dataframe(self, dataframe: pd.DataFrame) -> pd.DataFrame:
-        processed_df = super().transform_dataframe(dataframe)
+    def transform_dataframe(self, dataframe: pd.DataFrame, features_to_strcat: List[str] = []) -> pd.DataFrame:
+        processed_df = super().transform_dataframe(dataframe, features_to_strcat=features_to_strcat)
         # Ensure feature column names are strings (some are numeric); keep special names as is
         processed_df.columns = ["C" + str(col) for col in processed_df.columns]
         processed_df.rename(columns={"CID": "ID", "Ctarget": "target", "Csplit": "split"}, inplace=True)

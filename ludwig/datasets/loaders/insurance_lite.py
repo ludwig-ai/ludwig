@@ -13,6 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 import os
+from typing import List
 
 import pandas as pd
 
@@ -23,8 +24,8 @@ class InsuranceLiteLoader(DatasetLoader):
     """Health Insurance Cross Sell Prediction Predict Health Insurance Owners' who will be interested in Vehicle
     Insurance https://www.kaggle.com/datasets/arashnic/imbalanced-data-practice."""
 
-    def transform_dataframe(self, dataframe: pd.DataFrame) -> pd.DataFrame:
-        df = super().transform_dataframe(dataframe)
+    def transform_dataframe(self, dataframe: pd.DataFrame, features_to_strcat: List[str] = []) -> pd.DataFrame:
+        df = super().transform_dataframe(dataframe, features_to_strcat=features_to_strcat)
         # Make image paths relative to dataset root directory
         df["image_path"] = df["image_path"].apply(
             lambda x: os.path.join("Fast_Furious_Insured", "trainImages", os.path.basename(x))

@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+from typing import List
+
 import numpy as np
 import pandas as pd
 
@@ -26,7 +28,7 @@ class RandomSplitLoader(DatasetLoader):
      test: 20%
     ."""
 
-    def transform_dataframe(self, dataframe: pd.DataFrame) -> pd.DataFrame:
-        df = super().transform_dataframe(dataframe)
+    def transform_dataframe(self, dataframe: pd.DataFrame, features_to_strcat: List[str] = []) -> pd.DataFrame:
+        df = super().transform_dataframe(dataframe, features_to_strcat=features_to_strcat)
         df[SPLIT] = np.random.choice(3, len(df), p=(0.7, 0.1, 0.2)).astype(np.int8)
         return df

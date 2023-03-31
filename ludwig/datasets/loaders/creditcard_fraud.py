@@ -12,14 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+from typing import List
+
 import pandas as pd
 
 from ludwig.datasets.loaders.dataset_loader import DatasetLoader
 
 
 class CreditCardFraudLoader(DatasetLoader):
-    def transform_dataframe(self, dataframe: pd.DataFrame) -> pd.DataFrame:
-        processed_df = super().transform_dataframe(dataframe)
+    def transform_dataframe(self, dataframe: pd.DataFrame, features_to_strcat: List[str] = []) -> pd.DataFrame:
+        processed_df = super().transform_dataframe(dataframe, features_to_strcat=features_to_strcat)
         # Train/Test split like https://www.kaggle.com/competitions/1056lab-fraud-detection-in-credit-card/overview
         processed_df = processed_df.sort_values(by=["Time"])
         processed_df.loc[:198365, "split"] = 0

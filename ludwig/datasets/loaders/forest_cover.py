@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from typing import Optional
+from typing import List, Optional
 
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -26,8 +26,8 @@ class ForestCoverLoader(DatasetLoader):
         super().__init__(config, cache_dir=cache_dir)
         self.use_tabnet_split = use_tabnet_split
 
-    def transform_dataframe(self, dataframe: pd.DataFrame) -> pd.DataFrame:
-        df = super().transform_dataframe(dataframe)
+    def transform_dataframe(self, dataframe: pd.DataFrame, features_to_strcat: List[str] = []) -> pd.DataFrame:
+        df = super().transform_dataframe(dataframe, features_to_strcat=features_to_strcat)
         # Elevation                               quantitative    meters                       Elevation in meters
         # Aspect                                  quantitative    azimuth                      Aspect in degrees azimuth
         # Slope                                   quantitative    degrees                      Slope in degrees
