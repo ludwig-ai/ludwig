@@ -869,6 +869,9 @@ def figure_data_format_dataset(dataset):
     elif isinstance(dataset, dict):
         return dict
     elif isinstance(dataset, str):
+        if dataset.startswith("ludwig://"):
+            return "ludwig"
+
         dataset = dataset.lower()
         if dataset.endswith(".csv"):
             return "csv"
