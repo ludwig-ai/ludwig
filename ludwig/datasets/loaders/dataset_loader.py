@@ -68,6 +68,11 @@ def get_default_cache_location() -> str:
         return str(Path.home().joinpath(".ludwig_cache"))
 
 
+def _get_strcat_feature_name(features_to_strcat: List) -> str:
+    """Returns a string representation of the features to concatenate."""
+    return f'concat_{"__".join(sorted(features_to_strcat))}'
+
+
 def _list_of_strings(list_or_string: Union[str, List[str]]) -> List[str]:
     """Helper function to accept single string or lists in config."""
     return [list_or_string] if isinstance(list_or_string, str) else list_or_string
@@ -248,9 +253,9 @@ class DatasetLoader:
         preserved_paths = _glob_multiple(_list_of_strings(self.config.preserve_paths), root_dir=root_dir)
         return [os.path.relpath(p, start=root_dir) for p in preserved_paths]
 
-    def export(self, output_directory: str) -> None:
+    def export(self, output_directory: str, features_to_strcat=[]) -> None:
         """Exports the dataset (and any files required by it) into the specified directory."""
-        self._download_and_process()
+        self._download_and_process(features_to_strcat=features_to_strcat)
         os.makedirs(output_directory, exist_ok=True)
         shutil.copy2(self.processed_dataset_path, os.path.join(output_directory, self.processed_dataset_filename))
         preserve_paths = self._get_preserved_paths()
@@ -262,7 +267,7 @@ class DatasetLoader:
             else:
                 shutil.copy2(source, destination)
 
-    def _download_and_process(self, kaggle_username=None, kaggle_key=None):
+    def _download_and_process(self, kaggle_username=None, kaggle_key=None, features_to_strcat=[]):
         """Loads the dataset, downloaded and processing it if needed.
 
         If dataset is already processed, does nothing.
@@ -289,20 +294,26 @@ class DatasetLoader:
         if self.state == DatasetState.EXTRACTED:
             # Transform dataset
             try:
-                self.transform()
+                self.transform(features_to_strcat=features_to_strcat)
             except Exception:
                 logger.exception("Failed to transform dataset")
 
-    def load(self, split=False, kaggle_username=None, kaggle_key=None) -> pd.DataFrame:
-        """Loads the dataset, downloaded and processing it if needed.
+    def load(
+        self, split=False, kaggle_username=None, kaggle_key=None, features_to_strcat: List[str] = []
+    ) -> pd.DataFrame:
+        """Loads the dataset, downloading and processing it if needed.
 
         Note: This method is also responsible for splitting the data, returning a single dataframe if split=False, and a
         3-tuple of train, val, test if split=True.
 
-        :param split: (bool) splits dataset along 'split' column if present. The split column should always have values
-        0: train, 1: validation, 2: test.
+        Args:
+            split: (bool) splits dataset along 'split' column if present. The split column should always have values
+            0: train, 1: validation, 2: test.
         """
-        self._download_and_process(kaggle_username=kaggle_username, kaggle_key=kaggle_key)
+        print("Called dataset_loader.load().")
+        self._download_and_process(
+            kaggle_username=kaggle_username, kaggle_key=kaggle_key, features_to_strcat=features_to_strcat
+        )
         if self.state == DatasetState.TRANSFORMED:
             dataset_df = self.load_transformed_dataset()
             if split:
@@ -374,13 +385,13 @@ class DatasetLoader:
                         logger.warning(f"Error extracting {extracted_file}" + str(e))
         return list(extracted_files)
 
-    def transform(self) -> None:
+    def transform(self, features_to_strcat: List[str] = []) -> None:
         data_filenames = [
             os.path.join(self.raw_dataset_dir, f) for f in os.listdir(self.raw_dataset_dir) if not is_archive(f)
         ]
         transformed_files = self.transform_files(data_filenames)
         unprocessed_dataframe = self.load_unprocessed_dataframe(transformed_files)
-        transformed_dataframe = self.transform_dataframe(unprocessed_dataframe)
+        transformed_dataframe = self.transform_dataframe(unprocessed_dataframe, features_to_strcat=features_to_strcat)
         self.save_processed(transformed_dataframe)
 
     def transform_files(self, file_paths: List[str]) -> List[str]:
@@ -481,13 +492,26 @@ class DatasetLoader:
             dataframes.append(self.load_files_to_dataframe(dataset_paths))
         return pd.concat(dataframes, ignore_index=True)
 
-    def transform_dataframe(self, dataframe: pd.DataFrame) -> pd.DataFrame:
+    def transform_dataframe(self, dataframe: pd.DataFrame, features_to_strcat: List[str] = []) -> pd.DataFrame:
         """Transforms a dataframe of the entire dataset.
 
         Subclasses should override this method if transformation of the dataframe is needed.
         """
+        present_features_to_strcat = []
         for column_name, type in self.config.column_types.items():
+            if column_name in features_to_strcat:
+                present_features_to_strcat.append(column_name)
             dataframe[column_name] = dataframe[column_name].astype(type)
+
+        if present_features_to_strcat:
+            # For any features that we want to strcat, we need to convert them to strings first, and add the column name
+            # as a prefix.
+            for feature_name in present_features_to_strcat:
+                dataframe[feature_name] = dataframe[feature_name].astype(str).apply(lambda x: f"{feature_name}: {x}")
+
+            # Set the name of the new column to be the concatenation of the feature names.
+            strcat_feature_name = _get_strcat_feature_name(present_features_to_strcat)
+            dataframe[strcat_feature_name] = dataframe[present_features_to_strcat].agg(" // ".join, axis=1)
         return dataframe
 
     def save_processed(self, dataframe: pd.DataFrame) -> None:

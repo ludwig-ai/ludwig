@@ -21,3 +21,6 @@ columns:
 output_features:
   - name: class_index
     type: category
+column_types:
+  title: str
+  description: str
