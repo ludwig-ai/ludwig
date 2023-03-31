@@ -258,7 +258,7 @@ def read_parquet(data_fp, df_lib, nrows=None, **kwargs):
         fs, _ = get_fs_and_path(data_fp)
         dataset = pq.ParquetDataset(data_fp, filesystem=fs, use_legacy_dataset=False).fragments[0]
 
-        preview = dataset.head(kwargs["nrows"]).to_pandas()
+        preview = dataset.head(nrows).to_pandas()
 
         if is_dask_lib(df_lib):
             return df_lib.from_pandas(preview, npartitions=1)
