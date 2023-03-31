@@ -253,7 +253,7 @@ class DatasetLoader:
         preserved_paths = _glob_multiple(_list_of_strings(self.config.preserve_paths), root_dir=root_dir)
         return [os.path.relpath(p, start=root_dir) for p in preserved_paths]
 
-    def export(self, output_directory: str, features_to_strcat=[]) -> None:
+    def export(self, output_directory: str, features_to_strcat: List[str] = []) -> None:
         """Exports the dataset (and any files required by it) into the specified directory."""
         self._download_and_process(features_to_strcat=features_to_strcat)
         os.makedirs(output_directory, exist_ok=True)
@@ -267,7 +267,7 @@ class DatasetLoader:
             else:
                 shutil.copy2(source, destination)
 
-    def _download_and_process(self, kaggle_username=None, kaggle_key=None, features_to_strcat=[]):
+    def _download_and_process(self, kaggle_username=None, kaggle_key=None, features_to_strcat: List[str] = []):
         """Loads the dataset, downloaded and processing it if needed.
 
         If dataset is already processed, does nothing.
@@ -308,7 +308,12 @@ class DatasetLoader:
 
         Args:
             split: (bool) splits dataset along 'split' column if present. The split column should always have values
-            0: train, 1: validation, 2: test.
+                0: train, 1: validation, 2: test.
+            kaggle_username: (str) username for kaggle.com. Required if dataset is hosted on kaggle.com.
+            kaggle_key: (str) key for kaggle.com. Required if dataset is hosted on kaggle.com.
+            features_to_strcat: (list) List of features to concatenate into a single string. This is useful for
+                linearizing multiple features into a single text string as to be used with a single text encoder. Also
+                see: https://ai.googleblog.com/2020/02/exploring-transfer-learning-with-t5.html
         """
         self._download_and_process(
             kaggle_username=kaggle_username, kaggle_key=kaggle_key, features_to_strcat=features_to_strcat
