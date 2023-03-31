@@ -114,3 +114,30 @@ def test_onehot_encoding_preprocessing(model_type, cache_encoder_embeddings, tmp
         assert proc_series.values.dtype == "int8"
         data = proc_series.to_numpy()
         assert data.shape == (num_examples,)
+
+
+def test_hf_text_embedding_tied(tmpdir):
+    input_features = [
+        text_feature(
+            encoder={
+                "type": "auto_transformer",
+                "pretrained_model_name_or_path": "hf-internal-testing/tiny-bert-for-token-classification",
+            },
+            preprocessing={"cache_encoder_embeddings": True},
+        ),
+        text_feature(
+            encoder={
+                "type": "auto_transformer",
+                "pretrained_model_name_or_path": "hf-internal-testing/tiny-bert-for-token-classification",
+            },
+            preprocessing={"cache_encoder_embeddings": True},
+        ),
+    ]
+    input_features[1]["tied"] = input_features[0]["name"]
+    output_features = [binary_feature()]
+
+    data_csv_path = os.path.join(tmpdir, "dataset.csv")
+    dataset = generate_data(input_features, output_features, data_csv_path)
+
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 1}}
+    run_test_suite(config, dataset, "local")

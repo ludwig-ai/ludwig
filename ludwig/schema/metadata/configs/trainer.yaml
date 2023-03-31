@@ -404,6 +404,24 @@ ecd:
             Suggested to enable this if training is taking too
             long on GPU.
         ui_display_name: Compile
+    gradient_accumulation_steps:
+        default_value_reasoning:
+            Gradient accumulation is something that should be enabled only once it has been observed that either GPU
+            utilization is low due to low bandwidth between distributed workers, or that there is too much variance
+            in the training process due to very low batch sizes.
+        description_implications:
+            Gradient accumulation is useful to (1) reduce network bandwidth overhead in multi-node distributed training
+            scenarios where bandwidth is the bottleneck, and (2) train with larger effective batch sizes when the max
+            batch size the GPU can accommodate is very small. The first scenario occurs when the interconnect between
+            nodes is slow, so performing gradient synchronization (allreduce) less frequently will speed up training.
+            The second scenario occurs in cases where the model being trained is very large (e.g., LLM) so training with
+            a larger batch size will help to smooth out the variance from training with a very small batch size.
+        expected_impact: 2
+        suggested_values: false
+        suggested_values_reasoning:
+            Suggested to enable this if training is proceeding very slowly in distributed training (and GPU
+            utilization is low), or the batch size is very small and the loss curves look very spiky.
+        ui_display_name: Gradient Accumulation Steps
     validation_field:
         default_value_reasoning:
             Concrete evaluation metrics are usually better than loss,
