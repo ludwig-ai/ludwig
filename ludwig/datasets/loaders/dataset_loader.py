@@ -37,6 +37,8 @@ from ludwig.utils.strings_utils import make_safe_filename
 
 logger = logging.getLogger(__name__)
 
+FEATURES_TO_STRCAT_JOIN_STR = " // "
+
 
 @DeveloperAPI
 class TqdmUpTo(tqdm):
@@ -312,8 +314,11 @@ class DatasetLoader:
             kaggle_username: (str) username for kaggle.com. Required if dataset is hosted on kaggle.com.
             kaggle_key: (str) key for kaggle.com. Required if dataset is hosted on kaggle.com.
             features_to_strcat: (list) List of features to concatenate into a single string. This is useful for
-                linearizing multiple features into a single text string as to be used with a single text encoder. Also
-                see: https://ai.googleblog.com/2020/02/exploring-transfer-learning-with-t5.html
+                linearizing multiple features into a single text string as to be used with a single text encoder.
+                If features_to_strcat is specified, an additioncal column `f'concat__{"__".join(features_to_strcat)}'`
+                is added to the dataset, which contains the concatenated string of the specified features, e.g.
+                `concat__title__description`: "title: Intro to CS // description: Hello World".
+                Also see: https://ai.googleblog.com/2020/02/exploring-transfer-learning-with-t5.html
         """
         self._download_and_process(
             kaggle_username=kaggle_username, kaggle_key=kaggle_key, features_to_strcat=features_to_strcat
@@ -508,14 +513,17 @@ class DatasetLoader:
             dataframe[column_name] = dataframe[column_name].astype(type)
 
         if present_features_to_strcat:
-            # For any features that we want to strcat, we need to convert them to strings first, and add the column name
-            # as a prefix.
+            # For any features that we want to strcat, we need to convert them to strings first. By convention, we add
+            # the column name as a prefix.
             for feature_name in present_features_to_strcat:
                 dataframe[feature_name] = dataframe[feature_name].astype(str).apply(lambda x: f"{feature_name}: {x}")
 
-            # Set the name of the new column to be the concatenation of the feature names.
+            # Set the name of the strcat column to be the concatenation of the features, joined by
+            # FEATURES_TO_STRCAT_JOIN_STR.
             strcat_feature_name = _get_strcat_feature_name(present_features_to_strcat)
-            dataframe[strcat_feature_name] = dataframe[present_features_to_strcat].agg(" // ".join, axis=1)
+            dataframe[strcat_feature_name] = dataframe[present_features_to_strcat].agg(
+                FEATURES_TO_STRCAT_JOIN_STR.join, axis=1
+            )
         return dataframe
 
     def save_processed(self, dataframe: pd.DataFrame) -> None:
