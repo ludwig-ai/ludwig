@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import functools
 import json
 import logging
 
@@ -174,11 +175,13 @@ def test_dataset_synthesizer_output_feature_decoder():
     LudwigModel(config=config, logging_level=logging.INFO)
 
 
-def test_chunking():
-    # Try basic reads:
-    assert read_csv("s3://ludwig-tests/datasets/synthetic_1k.csv").shape[0] == 1000
-    assert read_parquet("s3://ludwig-tests/datasets/synthetic_1k.parquet", df_lib=PANDAS_DF).shape[0] == 1000
+@pytest.mark.parametrize(
+    "dataset_1k_url", ["s3://ludwig-tests/datasets/synthetic_1k.csv", "s3://ludwig-tests/datasets/synthetic_1k.parquet"]
+)
+@pytest.mark.parametrize("nrows", [None, 100])
+def test_chunking(dataset_1k_url, nrows):
+    reader_fn = {"csv": read_csv, "parquet": functools.partial(read_parquet, df_lib=PANDAS_DF)}
 
-    # Try chunked versions:
-    assert read_csv("s3://ludwig-tests/datasets/synthetic_1k.csv", nrows=100).shape[0] == 100
-    assert read_parquet("s3://ludwig-tests/datasets/synthetic_1k.parquet", df_lib=PANDAS_DF, nrows=100).shape[0] == 100
+    format = figure_data_format_dataset(dataset_1k_url)
+
+    assert reader_fn[format](dataset_1k_url, nrows=nrows).shape[0] == (nrows if nrows else 1000)

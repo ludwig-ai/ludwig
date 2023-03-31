@@ -249,8 +249,8 @@ def read_excel(data_fp, df_lib, **kwargs):
 
 @DeveloperAPI
 @spread
-def read_parquet(data_fp, df_lib, **kwargs):
-    if "nrows" in kwargs:
+def read_parquet(data_fp, df_lib, nrows=None, **kwargs):
+    if nrows is not None:
         import pyarrow.parquet as pq
 
         from ludwig.utils.fs_utils import get_fs_and_path
@@ -258,7 +258,7 @@ def read_parquet(data_fp, df_lib, **kwargs):
         fs, _ = get_fs_and_path(data_fp)
         dataset = pq.ParquetDataset(data_fp, filesystem=fs, use_legacy_dataset=False).fragments[0]
 
-        preview = dataset.head(kwargs["nrows"]).to_pandas()
+        preview = dataset.head(nrows).to_pandas()
 
         if is_dask_lib(df_lib):
             return df_lib.from_pandas(preview, npartitions=1)
