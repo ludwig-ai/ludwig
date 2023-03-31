@@ -97,10 +97,6 @@ def EncoderDataclassField(
     """
     encoder_registry = get_encoder_classes(model_type, feature_type)
 
-    # NOTE: Edit carefully if necessary! We want these enums to remain in a consistent order, so do not use sets or
-    # other unordered data structures to chaperone the registry keys around.
-    enum = [e for e in encoder_registry.keys() if e not in blocklist]
-
     class EncoderSelection(schema_utils.TypeSelection):
         def __init__(self):
             super().__init__(registry=encoder_registry, default_value=default, description=description)
@@ -109,6 +105,13 @@ def EncoderDataclassField(
             return encoder_registry[key]
 
         def _jsonschema_type_mapping(self):
+            # NOTE: Edit carefully if necessary! We want these enums to remain in a consistent order, so do not use sets
+            # or other unordered data structures to chaperone the registry keys around.
+            #
+            # Also, note the placement inside this function - since this is a list, it will not update with any late
+            # additions to the registry (e.g. in our tests)!
+            enum = [e for e in encoder_registry.keys() if e not in blocklist]
+
             return {
                 "type": "object",
                 "properties": {
