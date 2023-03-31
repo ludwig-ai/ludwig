@@ -582,6 +582,23 @@ def test_sequence_tagger_text(csv_filename):
     run_experiment(input_features, output_features, dataset=rel_path)
 
 
+def test_sequence_tagger_text_ray(csv_filename, ray_cluster_2cpu):
+    # Define input and output features
+    input_features = [text_feature(encoder={"max_len": 10, "type": "rnn", "reduce_output": None})]
+    output_features = [
+        sequence_feature(
+            decoder={"max_len": 10, "type": "tagger"},
+            reduce_input=None,
+        )
+    ]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+
+    # run the experiment
+    run_experiment(input_features, output_features, dataset=rel_path, backend="ray")
+
+
 def test_experiment_sequence_combiner_with_reduction_fails(csv_filename):
     config = {
         "input_features": [
