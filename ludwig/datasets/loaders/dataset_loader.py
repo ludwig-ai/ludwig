@@ -315,9 +315,15 @@ class DatasetLoader:
             kaggle_key: (str) key for kaggle.com. Required if dataset is hosted on kaggle.com.
             features_to_strcat: (list) List of features to concatenate into a single string. This is useful for
                 linearizing multiple features into a single text string as to be used with a single text encoder.
-                If features_to_strcat is specified, an additioncal column `f'concat__{"__".join(features_to_strcat)}'`
-                is added to the dataset, which contains the concatenated string of the specified features, e.g.
-                `concat__title__description`: "title: Intro to CS // description: Hello World".
+                If `features_to_strcat` is specified, an additioncal column `f'concat__{"__".join(features_to_strcat)}'`
+                is added to the dataset, which contains concatenated strings of the specified features, e.g.
+
+                    ╒════════════════════════════════════════════════╕
+                    │ concat__title__description                     │
+                    ╞════════════════════════════════════════════════╡
+                    │ title: Intro to CS // description: Hello World │
+                    ╘════════════════════════════════════════════════╛
+
                 Also see: https://ai.googleblog.com/2020/02/exploring-transfer-learning-with-t5.html
         """
         self._download_and_process(
