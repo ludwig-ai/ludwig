@@ -96,8 +96,9 @@ def EncoderDataclassField(
     Returns: Initialized dataclass field that converts an untyped dict with params to an encoder config.
     """
     encoder_registry = get_encoder_classes(model_type, feature_type)
-    # print(len(encoder_registry.keys()) == len(set(encoder_registry.keys())))
-    print(type(encoder_registry.keys()))
+
+    # NOTE: Edit carefully if necessary! We want these enums to remain in a consistent order, so do not use sets or
+    # other unordered data structures to chaperone the registry keys around.
     enum = [e for e in encoder_registry.keys() if e not in blocklist]
 
     class EncoderSelection(schema_utils.TypeSelection):
