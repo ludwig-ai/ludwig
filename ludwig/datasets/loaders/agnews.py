@@ -21,7 +21,6 @@ from ludwig.datasets.loaders.dataset_loader import DatasetLoader
 
 class AGNewsLoader(DatasetLoader):
     def transform_dataframe(self, dataframe: pd.DataFrame, features_to_strcat: List[str] = []) -> pd.DataFrame:
-        print(f"Called AGNewsLoader.transform_dataframe() with features_to_strcat: {features_to_strcat}")
         processed_df = super().transform_dataframe(dataframe, features_to_strcat=features_to_strcat)
         # Maps class_index to class name.
         class_names = ["", "world", "sports", "business", "sci_tech"]

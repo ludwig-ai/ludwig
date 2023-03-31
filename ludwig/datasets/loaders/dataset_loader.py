@@ -70,7 +70,7 @@ def get_default_cache_location() -> str:
 
 def _get_strcat_feature_name(features_to_strcat: List) -> str:
     """Returns a string representation of the features to concatenate."""
-    return f'concat_{"__".join(sorted(features_to_strcat))}'
+    return f'concat__{"__".join(features_to_strcat)}'
 
 
 def _list_of_strings(list_or_string: Union[str, List[str]]) -> List[str]:
@@ -310,7 +310,6 @@ class DatasetLoader:
             split: (bool) splits dataset along 'split' column if present. The split column should always have values
             0: train, 1: validation, 2: test.
         """
-        print("Called dataset_loader.load().")
         self._download_and_process(
             kaggle_username=kaggle_username, kaggle_key=kaggle_key, features_to_strcat=features_to_strcat
         )
