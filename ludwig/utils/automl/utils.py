@@ -30,8 +30,10 @@ logger = logging.getLogger(__name__)
 @DeveloperAPI
 def avg_num_tokens(field: Series) -> int:
     # sample a subset if dataframe is large
-    if len(field) > 5000:
-        field = field.sample(n=5000, random_state=40)
+    field_size = len(field)
+    if field_size > 5000:
+        frac = 5000 / field_size
+        field = field.sample(frac=frac, random_state=40)
     unique_entries = field.unique()
     avg_words = round(nan_to_num(Series(unique_entries).str.split().str.len().mean()))
     return avg_words
