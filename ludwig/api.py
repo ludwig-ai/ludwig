@@ -1818,6 +1818,8 @@ def kfold_cross_validate(
     # use Ludwig's utility to facilitate creating a dataframe
     # that is used as the basis for creating folds
 
+    dataset, _, _, _ = load_dataset_uris(dataset, None, None, None, backend)
+
     # determine data format of provided dataset
     if not data_format or data_format == "auto":
         data_format = figure_data_format(dataset)
