@@ -102,6 +102,9 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
         schema = cls.get_class_schema()()
         try:
             config_obj: ModelConfig = schema.load(config)
+            from marshmallow_dataclass import _internal_class_schema
+
+            _internal_class_schema.cache_clear()
         except ValidationError as e:
             raise ConfigValidationError(f"Config validation error raised during config deserialization: {e}") from e
 
