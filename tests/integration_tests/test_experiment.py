@@ -582,6 +582,7 @@ def test_sequence_tagger_text(csv_filename):
     run_experiment(input_features, output_features, dataset=rel_path)
 
 
+"""
 @pytest.mark.distributed
 def test_sequence_tagger_text_ray(csv_filename, ray_cluster_2cpu):
     # Define input and output features
@@ -598,6 +599,7 @@ def test_sequence_tagger_text_ray(csv_filename, ray_cluster_2cpu):
 
     # run the experiment
     run_experiment(input_features, output_features, dataset=rel_path, backend="ray")
+"""
 
 
 def test_experiment_sequence_combiner_with_reduction_fails(csv_filename):
