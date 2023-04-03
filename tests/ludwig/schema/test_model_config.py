@@ -32,6 +32,8 @@ from ludwig.constants import (
     TRAINER,
     TYPE,
 )
+from ludwig.schema.decoders.base import ClassifierConfig
+from ludwig.schema.encoders.text_encoders import BERTConfig
 from ludwig.schema.features.augmentation.image import RandomBlurConfig, RandomRotateConfig
 from ludwig.schema.features.image_feature import AUGMENTATION_DEFAULT_OPERATIONS
 from ludwig.schema.features.number_feature import NumberOutputFeatureConfig
@@ -767,3 +769,18 @@ def test_gbm_encoders():
 
     for feature_type in config_obj.get("defaults"):
         assert "encoder" in config_obj["defaults"][feature_type]
+
+
+def test_encoder_decoder_values_as_str():
+    """Tests that encoder / decoder params provided as strings are properly converted to the correct type."""
+    config = {
+        "input_features": [
+            {"name": "text_input", "type": "text", "encoder": "bert"},
+        ],
+        "output_features": [{"name": "cat_output", "type": "category", "decoder": "classifier"}],
+    }
+
+    config_obj = ModelConfig.from_dict(config)
+
+    assert isinstance(config_obj.input_features[0].encoder, BERTConfig)
+    assert isinstance(config_obj.output_features[0].decoder, ClassifierConfig)
