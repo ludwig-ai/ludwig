@@ -15,7 +15,6 @@
 # ==============================================================================
 """This module contains the class and auxiliary methods of a model."""
 import contextlib
-import gc
 import logging
 import math
 import os
@@ -32,18 +31,7 @@ import psutil
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from ludwig.constants import (
-    LOSS,
-    MAX_BATCH_SIZE_DATASET_FRACTION,
-    MAX_CPU_BATCH_SIZE,
-    MIN_POSSIBLE_BATCH_SIZE,
-    MINIMIZE,
-    MODEL_ECD,
-    TEST,
-    TRAIN,
-    TRAINING,
-    VALIDATION,
-)
+from ludwig.constants import LOSS, MAX_CPU_BATCH_SIZE, MINIMIZE, MODEL_ECD, TEST, TRAIN, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.globals import (
@@ -411,86 +399,26 @@ class Trainer(BaseTrainer):
         on_best_batch_size_updated: Optional[Callable[[int, float, int], None]] = None,
     ) -> int:
         logger.info("Tuning batch size...")
-
-        def _is_valid_batch_size(batch_size):
-            # make sure that batch size is valid (e.g. less than 20% of ds size and max_batch_size)
-            dataset_len = len(training_set)
-            is_smaller_than_training_set = batch_size <= MAX_BATCH_SIZE_DATASET_FRACTION * dataset_len
-            is_under_max_batch_size = batch_size <= self.max_batch_size
-            is_valid = is_smaller_than_training_set and is_under_max_batch_size
-            if not is_valid:
-                logger.info(
-                    f"Batch size {batch_size} is invalid, must be less than or equal to "
-                    f"{MAX_BATCH_SIZE_DATASET_FRACTION * 100}% dataset size "
-                    f"({int(MAX_BATCH_SIZE_DATASET_FRACTION * dataset_len)} samples "
-                    f"of {dataset_len}) and less than or equal to max batch size {self.max_batch_size}"
-                )
-            return is_valid
-
-        # TODO (ASN) : Circle back on how we want to set default placeholder value
-        # Currently, since self.batch_size is originally set to auto, we provide a
-        # placeholder starting value
-        self.max_batch_size = (
-            self.max_batch_size if torch.cuda.is_available() else min(self.max_batch_size, MAX_CPU_BATCH_SIZE)
-        )
-        batch_size = 2
         skip_save_model = self.skip_save_model
         skip_save_progress = self.skip_save_progress
         skip_save_log = self.skip_save_log
-
         # Set temporary values
         self.skip_save_model = True
         self.skip_save_progress = True
         self.skip_save_log = True
 
-        best_samples_per_sec = 0
-        best_batch_size = None
+        max_batch_size = (
+            self.max_batch_size if torch.cuda.is_available() else min(self.max_batch_size, MAX_CPU_BATCH_SIZE)
+        )
+        self.dist_model.train()  # Sets model training mode.
+        evaluator = self._create_batch_size_evaluator()
         try:
-            count = 0
-            while count < max_trials and _is_valid_batch_size(batch_size):
-                logger.info(f"Exploring batch_size={batch_size}")
-                gc.collect()
-
-                try:
-                    samples_per_sec = self.train_for_tuning(batch_size)
-                    logger.info(f"Throughput at batch_size={batch_size}: {samples_per_sec:.5f} samples/s")
-                    if samples_per_sec < best_samples_per_sec:
-                        # We assume that once the throughput starts degrading, it won't go up again
-                        logger.info(f"Throughput decrease at batch_size={batch_size}")
-                        break
-
-                    best_samples_per_sec = samples_per_sec
-                    best_batch_size = batch_size
-                    count += 1
-
-                    if on_best_batch_size_updated is not None:
-                        on_best_batch_size_updated(best_batch_size, best_samples_per_sec, count)
-
-                    # double batch size
-                    batch_size *= 2
-                except RuntimeError as e:
-                    # PyTorch only generates Runtime errors for CUDA OOM.
-                    gc.collect()
-                    if "CUDA out of memory" in str(e):
-                        logger.info(f"OOM at batch_size={batch_size}")
-                    else:
-                        # Not a CUDA error
-                        raise
-                    break
+            return evaluator.select_best_batch_size(len(training_set), max_batch_size, max_trials)
         finally:
-            # Ensure that some batch size is found.
-            # `best_batch_size` can be None if the first batch size is invalid.
-            if best_batch_size is None:
-                logger.info("Could not tune batch size, using minimum batch size of 2")
-                best_batch_size = MIN_POSSIBLE_BATCH_SIZE
-
             # Restore original parameters to defaults
             self.skip_save_model = skip_save_model
             self.skip_save_progress = skip_save_progress
             self.skip_save_log = skip_save_log
-
-        logger.info(f"Selected batch_size={best_batch_size}")
-        return best_batch_size
 
     def _create_batch_size_evaluator(self) -> BatchSizeEvaluator:
         trainer = self
