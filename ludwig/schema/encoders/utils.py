@@ -99,7 +99,9 @@ def EncoderDataclassField(
 
     class EncoderSelection(schema_utils.TypeSelection):
         def __init__(self):
-            super().__init__(registry=encoder_registry, default_value=default, description=description)
+            super().__init__(
+                registry=encoder_registry, default_value=default, description=description, allow_str_value=True
+            )
 
         def get_schema_from_registry(self, key: str) -> Type[schema_utils.BaseMarshmallowConfig]:
             return encoder_registry[key]
