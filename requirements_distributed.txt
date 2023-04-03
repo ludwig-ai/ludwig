@@ -2,8 +2,6 @@
 dask[dataframe]
 pyarrow
 
-# requirements for horovod
-horovod[pytorch]>=0.24.0,!=0.26.0
 # requirements for ray
 ray[default,data,serve,tune]>=2.0.0
 tensorboardX<2.3
