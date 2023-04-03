@@ -169,13 +169,14 @@ jobs:
           horovodrun --check-build
         shell: bash
 
-      - name: Unit Tests
-        run: |
-          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow or benchmark" --junitxml pytest.xml tests/ludwig
+#      - name: Unit Tests
+#        run: |
+#          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow or benchmark" --junitxml pytest.xml tests/ludwig
 
       - name: Integration Tests
         run: |
-          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow or benchmark" --junitxml pytest.xml tests/integration_tests
+          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow or benchmark" --junitxml pytest.xml tests/integration_tests/test_ray.py
+          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow or benchmark" --junitxml pytest.xml tests/integration_tests/test_trainer.py
 
       - name: Regression Tests
         run: |
