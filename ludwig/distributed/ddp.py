@@ -27,7 +27,7 @@ class DDPStrategy(DistributedStrategy):
     def wrap_model(self, model: nn.Module) -> nn.Module:
         return DDP(model)
 
-    def wrap_optimizer(self, optimizer: Optimizer, model: nn.Module) -> Optimizer:
+    def wrap_optimizer(self, optimizer: Optimizer, model: nn.Module, gradient_accumulation_steps: int) -> Optimizer:
         return optimizer
 
     def size(self) -> int:
@@ -68,6 +68,15 @@ class DDPStrategy(DistributedStrategy):
 
     def wait_optimizer_synced(self, optimizer: Optimizer):
         pass
+
+    @contextlib.contextmanager
+    def prepare_model_update(self, model: nn.Module, should_step: bool):
+        if should_step:
+            yield
+        else:
+            # Prevents DDP from syncing gradients during accumulation step
+            with model.no_sync():
+                yield
 
     @contextlib.contextmanager
     def prepare_optimizer_update(self, optimizer: Optimizer):

@@ -1154,10 +1154,12 @@ class TypeSelection(fields.Field):
         key: str = "type",
         description: str = "",
         parameter_metadata: ParameterMetadata = None,
+        allow_str_value: bool = False,
     ):
         self.registry = registry
         self.default_value = default_value
         self.key = key
+        self.allow_str_value = allow_str_value
 
         dump_default = missing
         load_default = missing
@@ -1179,6 +1181,11 @@ class TypeSelection(fields.Field):
     def _deserialize(self, value, attr, data, **kwargs):
         if value is None:
             return None
+
+        if self.allow_str_value and isinstance(value, str):
+            # If user provided the value as a string, assume they were providing the type
+            value = {self.key: value}
+
         if isinstance(value, dict):
             cls_type = value.get(self.key)
             cls_type = cls_type.lower() if cls_type else self.default_value
@@ -1189,7 +1196,9 @@ class TypeSelection(fields.Field):
                 except (TypeError, ValidationError) as e:
                     raise ValidationError(f"Invalid params: {value}, see `{cls}` definition") from e
             raise ValidationError(f"Invalid type: '{cls_type}', expected one of: {list(self.registry.keys())}")
-        raise ValidationError(f"Invalid param {value}, expected `None` or `dict`")
+
+        maybe_str = ", `str`," if self.allow_str_value else ""
+        raise ValidationError(f"Invalid param {value}, expected `None`{maybe_str} or `dict`")
 
     def get_schema_from_registry(self, key: str) -> Type[BaseMarshmallowConfig]:
         return self.registry[key]
