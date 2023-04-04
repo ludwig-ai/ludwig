@@ -8,7 +8,7 @@ from ludwig.utils.data_utils import read_csv
 try:
     import dask.dataframe as dd
 
-    from ludwig.automl import create_auto_config, create_auto_config_with_dataset_profile
+    from ludwig.automl import create_auto_config
 except ImportError:
     pass
 
@@ -36,11 +36,3 @@ def test_mixed_csv_data_source(ray_cluster_2cpu):
     assert len(config["input_features"]) == 2
     assert config["input_features"][0]["type"] == TEXT
     assert config["input_features"][1]["type"] == TEXT
-
-
-@pytest.mark.distributed
-def test_mixed_csv_data_source_with_profile(ray_cluster_2cpu):
-    config = create_auto_config_with_dataset_profile(dataset=get_test_df(), target="lives_in_sf")
-
-    assert len(config["input_features"]) == 2
-    assert len(config["output_features"]) == 1
