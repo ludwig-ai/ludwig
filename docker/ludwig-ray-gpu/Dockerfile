@@ -50,11 +50,4 @@ RUN sudo apt install --allow-change-held-packages --allow-downgrades -y \
     libnccl2=2.11.4-1+cuda11.6 libnccl-dev=2.11.4-1+cuda11.6
 
 COPY . .
-RUN HOROVOD_GPU_OPERATIONS=NCCL \
-    HOROVOD_WITH_PYTORCH=1 \
-    HOROVOD_WITHOUT_MPI=1 \
-    HOROVOD_WITHOUT_TENSORFLOW=1 \
-    HOROVOD_WITHOUT_MXNET=1 \
-    pip install --no-cache-dir '.[full]' --extra-index-url https://download.pytorch.org/whl/cu116 && \
-    horovodrun --check-build && \
-    python -c "import horovod.torch; horovod.torch.init()"
+RUN pip install --no-cache-dir '.[full]' --extra-index-url https://download.pytorch.org/whl/cu116
