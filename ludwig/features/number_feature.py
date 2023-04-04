@@ -174,11 +174,13 @@ class InterQuartileTransformer(NumberTransformer):
 class Log1pTransformer(NumberTransformer):
     def __init__(self, **kwargs: dict):
         super().__init__()
+        self.feature_name = kwargs.get(NAME, "")
 
     def transform(self, x: np.ndarray) -> np.ndarray:
         if np.any(x <= 0):
             raise ValueError(
-                "One or more values are non-positive.  " "log1p normalization is defined only for positive values."
+                f"One or more values in the `{self.feature_name}` feature are non-positive.  "
+                "log1p normalization is defined only for positive values."
             )
         return np.log1p(x)
 

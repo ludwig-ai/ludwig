@@ -60,7 +60,7 @@ def compute_token_probabilities(
         An np.ndarray with shape (sequence_length,) containing the maximum probability for each timestep.
     """
     if isinstance(probabilities, (list, tuple)):
-        if not hasattr(probabilities[0], "len"):
+        if not hasattr(probabilities[0], "__len__"):
             raise ValueError(
                 "Received token probabilities as a flat 1D list. Expected list of list of probabilities "
                 "(sequence_length, vocab_size)."
