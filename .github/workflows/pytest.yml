@@ -153,7 +153,19 @@ jobs:
           curl -L https://github.com/uber/neuropod/releases/download/v${{ env.NEUROPOD_VERISON }}/libneuropod-cpu-linux-v${{ env.NEUROPOD_VERISON }}-torchscript-${{ env.TORCHSCRIPT_VERISON }}-backend.tar.gz | sudo tar -xz -C "$NEUROPOD_BASE_DIR"
         shell: bash
 
-      - name: Reinstall Horovod if necessary
+      - name: Unit Tests
+        run: |
+          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow and not combinatorial and not horovod" --junitxml pytest.xml tests/ludwig
+
+      - name: Integration Tests
+        run: |
+          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow and not combinatorial and not horovod" --junitxml pytest.xml tests/integration_tests
+
+      - name: Regression Tests
+        run: |
+          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow and not combinatorial and not horovod or benchmark" --junitxml pytest.xml tests/regression_tests
+
+      - name: Install Horovod if necessary
         if: matrix.test-markers == 'distributed'
         env:
           HOROVOD_WITH_PYTORCH: 1
@@ -161,6 +173,7 @@ jobs:
           HOROVOD_WITHOUT_TENSORFLOW: 1
           HOROVOD_WITHOUT_MXNET: 1
         run: |
+          pip install -r requirements_extra.txt
           HOROVOD_BUILT=$(python -c "import horovod.torch; horovod.torch.nccl_built(); print('SUCCESS')" || true)
           if [[ $HOROVOD_BUILT != "SUCCESS" ]]; then
             pip uninstall -y horovod
@@ -169,17 +182,9 @@ jobs:
           horovodrun --check-build
         shell: bash
 
-      - name: Unit Tests
+      - name: Horovod Tests
         run: |
-          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow and not combinatorial or benchmark" --junitxml pytest.xml tests/ludwig
-
-      - name: Integration Tests
-        run: |
-          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow and not combinatorial or benchmark" --junitxml pytest.xml tests/integration_tests
-
-      - name: Regression Tests
-        run: |
-          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow and not combinatorial or benchmark" --junitxml pytest.xml tests/regression_tests
+          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and horovod and not slow and not combinatorial" --junitxml pytest.xml tests/integration_tests
 
       - name: Upload Unit Test Results
         if: ${{ always() && !env.ACT }}

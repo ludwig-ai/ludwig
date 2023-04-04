@@ -21,7 +21,7 @@ pytestmark = pytest.mark.distributed
     "trainer_config,cluster_resources,num_nodes,expected_kwargs",
     [
         # Prioritize using the GPU when available over multi-node
-        (
+        pytest.param(
             {},
             {"CPU": 4, "GPU": 1},
             2,
@@ -35,9 +35,11 @@ pytestmark = pytest.mark.distributed
                     "GPU": 1,
                 },
             ),
+            id="prioritize-gpu-when-available-over-multinode",
+            marks=[pytest.mark.distributed, pytest.mark.horovod],
         ),
         # Test DDP
-        (
+        pytest.param(
             {"strategy": "ddp"},
             {"CPU": 4, "GPU": 1},
             2,
@@ -51,9 +53,11 @@ pytestmark = pytest.mark.distributed
                     "GPU": 1,
                 },
             ),
+            id="ddp",
+            marks=pytest.mark.distributed,
         ),
         # Use one worker per node for CPU, chck NIC override
-        (
+        pytest.param(
             {"nics": [""]},
             {"CPU": 4, "GPU": 0},
             2,
@@ -67,9 +71,11 @@ pytestmark = pytest.mark.distributed
                     "GPU": 0,
                 },
             ),
+            id="one-worker-per-node-nic-override",
+            marks=[pytest.mark.distributed, pytest.mark.horovod],
         ),
         # Allow explicitly setting GPU usage for autoscaling clusters
-        (
+        pytest.param(
             {"use_gpu": True, "num_workers": 2},
             {"CPU": 4, "GPU": 0},
             1,
@@ -83,9 +89,11 @@ pytestmark = pytest.mark.distributed
                     "GPU": 1,
                 },
             ),
+            id="set-gpu-usage-autoscaling-clusters",
+            marks=[pytest.mark.distributed, pytest.mark.horovod],
         ),
         # Allow overriding resources_per_worker
-        (
+        pytest.param(
             {"resources_per_worker": {"CPU": 2, "GPU": 1}},
             {"CPU": 4, "GPU": 2},
             2,
@@ -99,6 +107,8 @@ pytestmark = pytest.mark.distributed
                     "GPU": 1,
                 },
             ),
+            id="override-resources-per-worker",
+            marks=[pytest.mark.distributed, pytest.mark.horovod],
         ),
     ],
 )

@@ -159,6 +159,7 @@ def test_tune_batch_size_and_lr(tmpdir, eval_batch_size, is_cpu):
 
 @pytest.mark.parametrize("learning_rate_scaling, expected_lr", [("constant", 1), ("sqrt", 2), ("linear", 4)])
 @pytest.mark.distributed
+@pytest.mark.horovod
 def test_scale_lr(learning_rate_scaling, expected_lr, tmpdir, ray_cluster_2cpu):
     base_lr = 1.0
     num_workers = 4
