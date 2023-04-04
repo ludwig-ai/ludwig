@@ -29,7 +29,7 @@ torchinfo
 filelock
 psutil==5.9.4
 protobuf
-experiment_impact_tracker
+py-cpuinfo==9.0.0
 gpustat
 rich~=12.4.4
 packaging
