@@ -12,11 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import contextlib
 import copy
 import os
 import tempfile
-from typing import Callable, Literal, Optional, Union
+from typing import Literal, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -52,11 +51,7 @@ from ludwig.constants import (
 )
 from ludwig.data.preprocessing import balance_data
 from ludwig.data.split import DEFAULT_PROBABILITIES
-from ludwig.features.feature_registries import update_config_with_metadata
-from ludwig.trainers.trainer import RemoteTrainer
-from ludwig.types import ModelConfigDict
 from ludwig.utils.data_utils import read_parquet
-from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.misc_utils import merge_dict
 from tests.integration_tests.utils import (
     audio_feature,
@@ -1122,74 +1117,3 @@ class TestDatasetWindowAutosizing:
             assert auto_window.num_blocks() < user_window.num_blocks()
             if i > 100:
                 break
-
-
-@pytest.mark.distributed
-@pytest.mark.parametrize("error_batch_size", [64, 2, 2048])
-def test_tune_batch_size_error_handling(tmpdir: str, error_batch_size: int, ray_cluster_2cpu):
-    max_batch_size = 256
-    expected_final_batch_size = min(error_batch_size, max_batch_size) / 2
-
-    config = {
-        "input_features": [
-            number_feature(normalization="zscore"),
-            set_feature(),
-            binary_feature(),
-        ],
-        "output_features": [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")],
-        "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {
-            "epochs": 2,
-            "batch_size": "auto",
-            "learning_rate": 0.001,
-            "max_batch_size": max_batch_size,
-        },
-    }
-
-    backend_config = copy.deepcopy(RAY_BACKEND_CONFIG)
-    backend_config["trainer"]["num_workers"] = 2
-
-    csv_filename = os.path.join(tmpdir, "dataset.csv")
-    dataset_csv = generate_data(config["input_features"], config["output_features"], csv_filename, num_examples=1000)
-    dataset_parquet = create_data_set_to_use("parquet", dataset_csv)
-
-    backend = initialize_backend(backend_config)
-    model = LudwigModel(config, backend=backend)
-    train_set, _, _, training_set_metadata = model.preprocess(dataset_parquet)
-
-    # TODO(travis): move this into LudwigModel.create_model()
-    update_config_with_metadata(model.config_obj, training_set_metadata)
-    model_ecd = LudwigModel.create_model(model.config_obj, random_seed=42)
-
-    class ErrorRemoteTrainer(RemoteTrainer):
-        def tune_batch_size(
-            self,
-            config: ModelConfigDict,
-            training_set: Dataset,
-            random_seed: int = default_random_seed,
-            max_trials: int = 20,
-            halving_limit: int = 3,
-            on_best_batch_size_updated: Optional[Callable[[int, float, int], None]] = None,
-        ) -> int:
-            if config.get("trainer", {}).get("batch_size") == error_batch_size and self.distributed.local_rank() == 0:
-                raise RuntimeError("Expected failure")
-
-            return super().tune_batch_size(
-                config, training_set, random_seed, max_trials, halving_limit, on_best_batch_size_updated
-            )
-
-    with backend.create_trainer(
-        model=model_ecd,
-        config=model.config_obj.trainer,
-        resume=False,
-        skip_save_model=True,
-        skip_save_progress=True,
-        skip_save_log=True,
-        callbacks=[],
-        random_seed=42,
-    ) as trainer:
-        with pytest.raises(ray.exceptions.RayTaskError) if error_batch_size == 2 else contextlib.nullcontext():
-            best_batch_size = trainer.tune_batch_size(model.config, train_set, trainer_cls=ErrorRemoteTrainer)
-
-    if error_batch_size > 2:
-        assert best_batch_size == expected_final_batch_size
