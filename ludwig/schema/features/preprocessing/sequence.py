@@ -47,7 +47,7 @@ class SequencePreprocessingConfig(BasePreprocessingConfig):
 
     most_common: int = schema_utils.PositiveInteger(
         default=None,
-        allow_none=False,
+        allow_none=True,
         description="The maximum number of most common tokens in the vocabulary. If the data contains more than this "
         "amount, the most infrequent symbols will be treated as unknown.",
         parameter_metadata=FEATURE_METADATA[SHARED][PREPROCESSING]["most_common"],
