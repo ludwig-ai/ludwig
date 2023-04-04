@@ -370,7 +370,7 @@ def test_hash_split(df_engine, ray_cluster_2cpu):
     df2["id"] = np.arange(100, 200)
 
     nrows *= 2
-    df = df.append(df2)
+    df = df_engine.concat([df, df2])
 
     splits2 = splitter.split(df, backend)
     assert len(splits2) == 3
