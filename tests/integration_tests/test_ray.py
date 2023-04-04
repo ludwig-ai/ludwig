@@ -16,7 +16,7 @@ import contextlib
 import copy
 import os
 import tempfile
-from typing import Literal, Optional, Union
+from typing import Callable, Literal, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -54,7 +54,9 @@ from ludwig.data.preprocessing import balance_data
 from ludwig.data.split import DEFAULT_PROBABILITIES
 from ludwig.features.feature_registries import update_config_with_metadata
 from ludwig.trainers.trainer import RemoteTrainer
+from ludwig.types import ModelConfigDict
 from ludwig.utils.data_utils import read_parquet
+from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.misc_utils import merge_dict
 from tests.integration_tests.utils import (
     audio_feature,
@@ -1160,18 +1162,21 @@ def test_tune_batch_size_error_handling(tmpdir: str, error_batch_size: int, ray_
     model_ecd = LudwigModel.create_model(model.config_obj, random_seed=42)
 
     class ErrorRemoteTrainer(RemoteTrainer):
-        def train_for_tuning(
+        def tune_batch_size(
             self,
-            batch_size: int,
-            total_steps: int = 3,
-        ) -> float:
-            if batch_size == error_batch_size and self.distributed.local_rank() == 0:
+            config: ModelConfigDict,
+            training_set: Dataset,
+            random_seed: int = default_random_seed,
+            max_trials: int = 20,
+            halving_limit: int = 3,
+            on_best_batch_size_updated: Optional[Callable[[int, float, int], None]] = None,
+        ) -> int:
+            if config.get("trainer", {}).get("batch_size") == error_batch_size and self.distributed.local_rank() == 0:
                 raise RuntimeError("Expected failure")
 
-            super().train_for_tuning(batch_size, total_steps)
-
-            # Trick to ensure that we never early-stop due to throughput decrease
-            return batch_size
+            return super().tune_batch_size(
+                config, training_set, random_seed, max_trials, halving_limit, on_best_batch_size_updated
+            )
 
     with backend.create_trainer(
         model=model_ecd,
