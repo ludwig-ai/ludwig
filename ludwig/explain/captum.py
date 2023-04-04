@@ -39,6 +39,10 @@ from ludwig.utils.torch_utils import DEVICE
 
 logger = logging.getLogger(__name__)
 
+# These types as provided as integer values and passed through an embedding layer that breaks integrated gradients.
+# As such, we need to take care to encode them before handing them to the explainer.
+EMBEDDED_TYPES = {TEXT, CATEGORY, SET, DATE}
+
 
 @dataclass
 class ExplanationRunConfig:
@@ -92,7 +96,7 @@ class WrapperModule(torch.nn.Module):
             {
                 arg_name: InputIdentity(arg_name)
                 for arg_name in self.model.input_features.keys()
-                if self.model.input_features.get(arg_name).type() not in {TEXT, CATEGORY, DATE, SET}
+                if self.model.input_features.get(arg_name).type() not in EMBEDDED_TYPES
             }
         )
 
@@ -103,7 +107,7 @@ class WrapperModule(torch.nn.Module):
             # Send the input through the identity layer so that we can use the output of the layer for attribution.
             # Except for text/category features where we use the embedding layer for attribution.
             feat_name: feat_input
-            if input_features.get(feat_name).type() in {TEXT, CATEGORY, DATE, SET}
+            if input_features.get(feat_name).type() in EMBEDDED_TYPES
             else self.input_maps.get(feat_name)(feat_input)
             for feat_name, feat_input in zip(input_features.keys(), args)
         }
@@ -390,7 +394,7 @@ def get_total_attribution(
 
     layers = []
     for feat_name, feat in input_features.items():
-        if feat.type() in {TEXT, CATEGORY, DATE, SET}:
+        if feat.type() in EMBEDDED_TYPES:
             # Get embedding layer from encoder, which is the first child of the encoder.
             target_layer = feat.encoder_obj.get_embedding_layer()
 

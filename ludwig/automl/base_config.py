@@ -37,8 +37,6 @@ from ludwig.constants import (
     TEXT,
     TYPE,
 )
-from ludwig.profiling import dataset_profile_pb2
-from ludwig.profiling.dataset_profile import get_dataset_profile_proto, get_dataset_profile_view
 from ludwig.types import ModelConfigDict
 from ludwig.utils.automl.data_source import DataSource, wrap_data_source
 from ludwig.utils.automl.field_info import FieldConfig, FieldInfo, FieldMetadata
@@ -290,11 +288,6 @@ def is_field_boolean(source: DataSource, field: str) -> bool:
 
 
 @DeveloperAPI
-def get_dataset_profile_from_source(source: DataSource) -> dataset_profile_pb2.DatasetProfile:
-    return get_dataset_profile_proto(get_dataset_profile_view(source.df))
-
-
-@DeveloperAPI
 def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
     """Constructs FieldInfo objects for each feature in dataset. These objects are used for downstream type
     inference.
@@ -315,15 +308,22 @@ def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
         nonnull_values = source.get_nonnull_values(field)
         image_values = source.get_image_values(field)
         audio_values = source.get_audio_values(field)
-        avg_words = None
+
         if dtype == "object":
             # Check if it is a nullboolean field. We do this since if you read a csv with
             # pandas that has a column of booleans and some missing values, the column is
             # interpreted as object dtype instead of bool
             if is_field_boolean(source, field):
                 dtype = "bool"
+
+        avg_words = None
         if source.is_string_type(dtype):
-            avg_words = source.get_avg_num_tokens(field)
+            try:
+                avg_words = source.get_avg_num_tokens(field)
+            except AttributeError:
+                # Series is not actually a string type despite being an object, e.g., Decimal, Datetime, etc.
+                avg_words = None
+
         fields.append(
             FieldInfo(
                 name=field,

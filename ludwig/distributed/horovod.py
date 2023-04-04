@@ -27,10 +27,9 @@ class HorovodStrategy(DistributedStrategy):
     def wrap_model(self, model: nn.Module) -> nn.Module:
         return model
 
-    def wrap_optimizer(self, optimizer: Optimizer, model: nn.Module) -> Optimizer:
+    def wrap_optimizer(self, optimizer: Optimizer, model: nn.Module, gradient_accumulation_steps: int) -> Optimizer:
         return hvd.DistributedOptimizer(
-            optimizer,
-            named_parameters=model.named_parameters(),
+            optimizer, named_parameters=model.named_parameters(), backward_passes_per_step=gradient_accumulation_steps
         )
 
     def size(self) -> int:
@@ -65,6 +64,10 @@ class HorovodStrategy(DistributedStrategy):
 
     def wait_optimizer_synced(self, optimizer: _DistributedOptimizer):
         optimizer.synchronize()
+
+    @contextlib.contextmanager
+    def prepare_model_update(self, model: nn.Module, should_step: bool):
+        yield
 
     @contextlib.contextmanager
     def prepare_optimizer_update(self, optimizer: _DistributedOptimizer):

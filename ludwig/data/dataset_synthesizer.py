@@ -34,6 +34,7 @@ from ludwig.constants import (
     BAG,
     BINARY,
     CATEGORY,
+    CATEGORY_DISTRIBUTION,
     DATE,
     DECODER,
     ENCODER,
@@ -159,6 +160,7 @@ parameters_builders_registry = {
     "date": return_none,
     "h3": return_none,
     VECTOR: return_none,
+    CATEGORY_DISTRIBUTION: return_none,
 }
 
 
@@ -469,6 +471,19 @@ def generate_vector(feature, outdir: Optional[str] = None) -> str:
     return " ".join([str(100 * random.random()) for _ in range(vector_size)])
 
 
+def generate_category_distribution(feature, outdir: Optional[str] = None) -> str:
+    """Returns a random category distribution.
+
+    `outdir` is unused.
+    """
+    # Space delimited string with floating point numbers that sum to 1
+    preprocessing = feature.get(PREPROCESSING, {})
+    vector_size = len(preprocessing.get("vocab", ["a", "b", "c"]))
+    v = np.random.rand(vector_size)
+    v = v / v.sum()
+    return " ".join([str(x) for x in v])
+
+
 generators_registry = {
     BINARY: generate_binary,
     NUMBER: generate_number,
@@ -483,6 +498,7 @@ generators_registry = {
     H3: generate_h3,
     DATE: generate_datetime,
     VECTOR: generate_vector,
+    CATEGORY_DISTRIBUTION: generate_category_distribution,
 }
 
 category_cycle = 0

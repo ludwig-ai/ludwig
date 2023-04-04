@@ -163,22 +163,25 @@ class InterQuartileTransformer(NumberTransformer):
 
     @staticmethod
     def fit_transform_params(column: np.ndarray, backend: "Backend") -> Dict[str, Any]:  # noqa
-        compute = backend.df_engine.compute
+        # backend.df_engine.compute is not used here because `percentile` is not parallelized in dask.
+        # We compute the percentile directly.
         return {
-            "q1": compute(np.percentile(column.astype(np.float32), 25)),
-            "q2": compute(np.percentile(column.astype(np.float32), 50)),
-            "q3": compute(np.percentile(column.astype(np.float32), 75)),
+            "q1": np.percentile(column.astype(np.float32), 25),
+            "q2": np.percentile(column.astype(np.float32), 50),
+            "q3": np.percentile(column.astype(np.float32), 75),
         }
 
 
 class Log1pTransformer(NumberTransformer):
     def __init__(self, **kwargs: dict):
         super().__init__()
+        self.feature_name = kwargs.get(NAME, "")
 
     def transform(self, x: np.ndarray) -> np.ndarray:
         if np.any(x <= 0):
             raise ValueError(
-                "One or more values are non-positive.  " "log1p normalization is defined only for positive values."
+                f"One or more values in the `{self.feature_name}` feature are non-positive.  "
+                "log1p normalization is defined only for positive values."
             )
         return np.log1p(x)
 

@@ -39,6 +39,7 @@ from tests.integration_tests.utils import (
     audio_feature,
     bag_feature,
     binary_feature,
+    category_distribution_feature,
     category_feature,
     create_data_set_to_use,
     date_feature,
@@ -581,6 +582,26 @@ def test_sequence_tagger_text(csv_filename):
     run_experiment(input_features, output_features, dataset=rel_path)
 
 
+"""
+@pytest.mark.distributed
+def test_sequence_tagger_text_ray(csv_filename, ray_cluster_2cpu):
+    # Define input and output features
+    input_features = [text_feature(encoder={"max_len": 10, "type": "rnn", "reduce_output": None})]
+    output_features = [
+        sequence_feature(
+            decoder={"max_len": 10, "type": "tagger"},
+            reduce_input=None,
+        )
+    ]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+
+    # run the experiment
+    run_experiment(input_features, output_features, dataset=rel_path, backend="ray")
+"""
+
+
 def test_experiment_sequence_combiner_with_reduction_fails(csv_filename):
     config = {
         "input_features": [
@@ -960,8 +981,43 @@ def test_experiment_category_input_feature_with_tagger_decoder(csv_filename):
     input_features = [category_feature()]
     output_features = [sequence_feature(output_feature=True, decoder={"type": "tagger"})]
 
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "output_size": 14, "reduce_output": None},
+    }
+
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
 
     with pytest.raises(ConfigValidationError):
-        run_experiment(input_features, output_features, dataset=rel_path)
+        run_experiment(config=config, dataset=rel_path)
+
+
+def test_experiment_category_distribution_feature(csv_filename):
+    vocab = ["a", "b", "c"]
+    input_features = [vector_feature()]
+    output_features = [
+        category_distribution_feature(
+            preprocessing={
+                "vocab": vocab,
+            }
+        )
+    ]
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+
+    input_df = pd.read_csv(rel_path)
+
+    # set batch_size=auto to ensure we produce the correct shaped synthetic data
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "output_size": 14},
+        TRAINER: {"epochs": 2, BATCH_SIZE: "auto"},
+    }
+    model, _, _, _, _ = run_experiment(input_features, output_features, dataset=rel_path, config=config)
+    preds, _ = model.predict(input_df)
+
+    # Check that predictions are category values drawn from the vocab, not distributions
+    assert all(v in vocab for v in preds[f"{output_features[0][NAME]}_predictions"].values)

@@ -192,7 +192,7 @@ class Callback(ABC):
         """
         pass
 
-    def on_batch_end(self, trainer, progress_tracker, save_path: str):
+    def on_batch_end(self, trainer, progress_tracker, save_path: str, sync_step: bool = True):
         """Called on coordinator only after each batch.
 
         :param trainer: The trainer instance.
@@ -200,6 +200,7 @@ class Callback(ABC):
         :param progress_tracker: An object which tracks training progress.
         :type progress_tracker: ludwig.utils.trainer_utils.ProgressTracker
         :param save_path: The path to the directory model is saved in.
+        :param sync_step: Whether the model params were updated and synced in this step.
         """
         pass
 

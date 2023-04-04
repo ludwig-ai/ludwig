@@ -337,18 +337,21 @@ def StringOptions(
 
     By default, None is allowed (and automatically appended) to the allowed list of options.
     """
+    assert len(options) > 0, "Must provide non-empty list of options!"
+
+    if default is not None:
+        assert isinstance(default, str), f"Provided default `{default}` should be a string!"
+
     # If None should be allowed for an enum field, it also has to be defined as a valid
     # [option](https://github.com/json-schema-org/json-schema-spec/issues/258):
-    if len(options) <= 0:
-        raise ValidationError("Must provide non-empty list of options!")
-    if default is not None and not isinstance(default, str):
-        raise ValidationError(f"Provided default `{default}` should be a string!")
     if allow_none and None not in options:
         options += [None]
     if not allow_none and None in options:
         options.remove(None)
-    if default not in options:
-        raise ValidationError(f"Provided default `{default}` is not one of allowed options: {options} ")
+
+    assert len(options) == len(set(options)), f"Provided options must be unique! See: {options}"
+    assert default in options, f"Provided default `{default}` is not one of allowed options: {options} "
+
     return field(
         metadata={
             "marshmallow_field": fields.String(
@@ -1138,10 +1141,12 @@ class TypeSelection(fields.Field):
         key: str = "type",
         description: str = "",
         parameter_metadata: ParameterMetadata = None,
+        allow_str_value: bool = False,
     ):
         self.registry = registry
         self.default_value = default_value
         self.key = key
+        self.allow_str_value = allow_str_value
 
         dump_default = missing
         load_default = missing
@@ -1163,6 +1168,11 @@ class TypeSelection(fields.Field):
     def _deserialize(self, value, attr, data, **kwargs):
         if value is None:
             return None
+
+        if self.allow_str_value and isinstance(value, str):
+            # If user provided the value as a string, assume they were providing the type
+            value = {self.key: value}
+
         if isinstance(value, dict):
             cls_type = value.get(self.key)
             cls_type = cls_type.lower() if cls_type else self.default_value
@@ -1173,7 +1183,9 @@ class TypeSelection(fields.Field):
                 except (TypeError, ValidationError) as e:
                     raise ValidationError(f"Invalid params: {value}, see `{cls}` definition") from e
             raise ValidationError(f"Invalid type: '{cls_type}', expected one of: {list(self.registry.keys())}")
-        raise ValidationError(f"Invalid param {value}, expected `None` or `dict`")
+
+        maybe_str = ", `str`," if self.allow_str_value else ""
+        raise ValidationError(f"Invalid param {value}, expected `None`{maybe_str} or `dict`")
 
     def get_schema_from_registry(self, key: str) -> Type[BaseMarshmallowConfig]:
         return self.registry[key]
