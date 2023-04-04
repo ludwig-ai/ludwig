@@ -30,7 +30,7 @@ RUN pip install -U pip
 WORKDIR /ludwig
 
 COPY . .
-RUN pip install --no-cache-dir '.[full]' --extra-index-url https://download.pytorch.org/whl/cu116
+RUN pip install --no-cache-dir '.[full]' --extra-index-url https://download.pytorch.org/whl/cu118
 
 WORKDIR /data
 

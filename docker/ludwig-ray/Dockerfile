@@ -9,7 +9,7 @@
 #   model serving
 #
 
-FROM rayproject/ray:2.2.0-py38
+FROM rayproject/ray:2.3.1-py39
 
 # https://github.com/kubernetes/release/issues/1982
 RUN echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list && \
@@ -29,7 +29,7 @@ RUN pip install -U pip
 
 WORKDIR /ludwig
 
-RUN pip install torch==1.13.1 torchtext torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cpu
+RUN pip install torch==2.0.0 torchtext torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cpu
 
 COPY . .
 RUN pip install --no-cache-dir '.[full]' --extra-index-url https://download.pytorch.org/whl/cpu
