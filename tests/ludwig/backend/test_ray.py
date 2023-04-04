@@ -5,6 +5,7 @@ import pytest
 
 # Skip these tests if Ray is not installed
 ray = pytest.importorskip("ray")  # noqa
+horovod = pytest.importorskip("horovod")  # noqa
 
 from ray.train.horovod import HorovodConfig  # noqa
 from ray.train.torch import TorchConfig  # noqa
