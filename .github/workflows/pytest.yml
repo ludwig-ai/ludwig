@@ -226,7 +226,7 @@ jobs:
 
       - name: Combinatorial Tests
         run: |
-          pytest -vs --durations 100 -m "combinatorial" --junitxml pytest.xml tests/training_success
+          pytest -rx --durations 100 -m "combinatorial" --junitxml pytest.xml tests/training_success
 
 
   test-minimal-install:
