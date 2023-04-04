@@ -866,10 +866,8 @@ def test_tune_batch_size_lr_cpu(tmpdir, ray_cluster_2cpu, max_batch_size, expect
         if max_batch_size is None
         else min(max_batch_size_by_train_examples, max_batch_size)
     )
-
-    assert model.config[TRAINER]["learning_rate"] == expected_final_learning_rate
     assert 2 < model.config[TRAINER]["batch_size"] <= max_batch_size
-    print("\n\nFINAL TUNED BATCH SIZE", model.config[TRAINER]["batch_size"], "\n")
+    assert model.config[TRAINER]["learning_rate"] == expected_final_learning_rate
 
 
 @pytest.mark.distributed

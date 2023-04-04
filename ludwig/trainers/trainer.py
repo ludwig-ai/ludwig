@@ -20,7 +20,6 @@ import math
 import os
 import os.path
 import signal
-import statistics
 import sys
 import threading
 import time
@@ -358,34 +357,6 @@ class Trainer(BaseTrainer):
 
         train_summary_writer.flush()
 
-    def train_for_tuning(
-        self,
-        batch_size: int,
-        total_steps: int = 11,
-    ) -> float:
-        """Function to be used by tune_batch_size.
-
-        Return:
-            Median throughput in samples / sec.
-        """
-        self.dist_model.train()  # Sets model training mode.
-        durations = []
-        for _ in range(total_steps):
-            self.model.reset_metrics()
-            start_ts = time.time()
-            inputs = {
-                input_feature_name: input_feature.create_sample_input(batch_size=batch_size).to(self.device)
-                for input_feature_name, input_feature in self.model.input_features.items()
-            }
-            targets = {
-                output_feature_name: output_feature.create_sample_output(batch_size=batch_size).to(self.device)
-                for output_feature_name, output_feature in self.model.output_features.items()
-            }
-            self.train_step(inputs, targets)
-            durations.append(time.time() - start_ts)
-        med_duration_s = statistics.median(durations)
-        return batch_size / med_duration_s
-
     def is_cpu_training(self):
         return torch.device(self.device) == torch.device("cpu")
 
@@ -407,6 +378,9 @@ class Trainer(BaseTrainer):
         self.skip_save_progress = True
         self.skip_save_log = True
 
+        # When training on CPU, larger batch sizes offer limited benefits due to lack of effective
+        # parallelization within a batch. As such, to increase chances of stable training, we cap the maximum
+        # batch size at MAX_CPU_BATCH_SIZE
         max_batch_size = (
             self.max_batch_size if torch.cuda.is_available() else min(self.max_batch_size, MAX_CPU_BATCH_SIZE)
         )
