@@ -46,8 +46,8 @@ RUN pip install torch==1.13.1 torchtext torchvision torchaudio --extra-index-url
 
 # Downgrade NCCL to 2.11.4 to for compatibility with CUDA 11.6
 # https://github.com/horovod/horovod/issues/3625#issuecomment-1309786643
-RUN sudo apt install --allow-change-held-packages --allow-downgrades -y \
-    libnccl2=2.11.4-1+cuda11.6 libnccl-dev=2.11.4-1+cuda11.6
+# RUN sudo apt install --allow-change-held-packages --allow-downgrades -y \
+#     libnccl2=2.11.4-1+cuda11.6 libnccl-dev=2.11.4-1+cuda11.6
 
 COPY . .
 RUN pip install --no-cache-dir '.[full]' --extra-index-url https://download.pytorch.org/whl/cu116
