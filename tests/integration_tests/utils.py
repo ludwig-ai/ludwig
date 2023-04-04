@@ -814,7 +814,7 @@ def create_data_set_to_use(data_format, raw_data, nan_percent=0.0):
         processed_df_rows = []
         for _, row in df.iterrows():
             processed_df_row = {}
-            for feature_name, raw_feature in row.iteritems():
+            for feature_name, raw_feature in row.items():
                 if "image" in feature_name and not (type(raw_feature) == float and np.isnan(raw_feature)):
                     feature = np.array(Image.open(raw_feature))
                 else:
