@@ -25,14 +25,14 @@ jobs:
         python-version: ["3.8", "3.9", "3.10"]
         test-markers: ["distributed"]
         include:
-          # - python-version: "3.8"
-          #   pytorch-version: 1.13.0
-          #   torchscript-version: 1.10.2
-          #   ray-version: 2.2.0
-          # - python-version: "3.9"
-          #   pytorch-version: 2.0.0
-          #   torchscript-version: 1.10.2
-          #   ray-version: 2.3.0
+          - python-version: "3.8"
+            pytorch-version: 1.13.0
+            torchscript-version: 1.10.2
+            ray-version: 2.2.0
+          - python-version: "3.9"
+            pytorch-version: 2.0.0
+            torchscript-version: 1.10.2
+            ray-version: 2.3.0
           - python-version: "3.10"
             pytorch-version: nightly
             torchscript-version: 1.10.2
@@ -229,7 +229,6 @@ jobs:
       - name: Combinatorial Tests
         run: |
           pytest -rx --durations 100 -m "combinatorial" --junitxml pytest.xml tests/training_success
-
 
   test-minimal-install:
     name: Test Minimal Install
