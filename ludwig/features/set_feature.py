@@ -155,8 +155,9 @@ class SetFeatureMixin(BaseFeatureMixin):
     ) -> FeatureMetadataDict:
         vocabulary = create_vocabulary(
             column,
-            preprocessing_parameters["tokenizer"],
-            num_most_frequent=preprocessing_parameters["most_common"],
+            tokenizer_type=preprocessing_parameters["tokenizer"],
+            most_common=preprocessing_parameters["most_common"],
+            most_common_percentile=preprocessing_parameters["most_common_percentile"],
             lowercase=preprocessing_parameters["lowercase"],
             add_special_symbols=False,
             processor=backend.df_engine,

@@ -203,7 +203,7 @@ class SequenceFeatureMixin(BaseFeatureMixin):
     ) -> FeatureMetadataDict:
         vocabulary = create_vocabulary(
             column,
-            preprocessing_parameters["tokenizer"],
+            tokenizer_type=preprocessing_parameters["tokenizer"],
             lowercase=preprocessing_parameters["lowercase"],
             most_common_percentile=preprocessing_parameters["most_common_percentile"],
             most_common=preprocessing_parameters["most_common"],
