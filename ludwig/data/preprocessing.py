@@ -1299,13 +1299,14 @@ def embed_fixed_features(
     if not features_to_encode:
         return dataset
 
+    logger.info(f"Cache encoder embeddings for features: {[f[NAME] for f in features_to_encode]}")
     for feature in features_to_encode:
         # Temporarily set to False to ensure proper encoding
         metadata[feature[NAME]][PREPROCESSING]["cache_encoder_embeddings"] = False
 
     batch_size = backend.tune_batch_size(create_embed_batch_size_evaluator(features_to_encode, metadata), len(dataset))
     transform_fn = create_embed_transform_fn(features_to_encode, metadata)
-    results = backend.batch_transform(dataset, batch_size, transform_fn)
+    results = backend.batch_transform(dataset, batch_size, transform_fn, name="Caching encoder embeddings")
 
     for feature in features_to_encode:
         # Set metadata so we know to skip encoding the feature
@@ -1468,6 +1469,8 @@ def build_data(
     """
     proc_cols = {}
     for feature_config in feature_configs:
+        # TODO(travis): instead of using raw dictionary, this should be loaded into a proper PreprocessingConfig
+        #  object, so we don't need to hackily check for the presence of added keys.
         preprocessing_parameters = training_set_metadata[feature_config[NAME]][PREPROCESSING]
 
         # Need to run this again here as cast_columns may have introduced new missing values

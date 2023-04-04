@@ -24,7 +24,7 @@ class DistributedStrategy(ABC):
         pass
 
     @abstractmethod
-    def wrap_optimizer(self, optimizer: Optimizer, model: nn.Module) -> Optimizer:
+    def wrap_optimizer(self, optimizer: Optimizer, model: nn.Module, gradient_accumulation_steps: int) -> Optimizer:
         pass
 
     @abstractmethod
@@ -73,6 +73,11 @@ class DistributedStrategy(ABC):
 
     @abstractmethod
     @contextlib.contextmanager
+    def prepare_model_update(self, model: nn.Module, should_step: bool):
+        pass
+
+    @abstractmethod
+    @contextlib.contextmanager
     def prepare_optimizer_update(self, optimizer: Optimizer):
         pass
 
@@ -117,7 +122,7 @@ class LocalStrategy(DistributedStrategy):
     def wrap_model(self, model: nn.Module) -> nn.Module:
         return model
 
-    def wrap_optimizer(self, optimizer: Optimizer, model: nn.Module) -> Optimizer:
+    def wrap_optimizer(self, optimizer: Optimizer, model: nn.Module, gradient_accumulation_steps: int) -> Optimizer:
         return optimizer
 
     def size(self) -> int:
@@ -152,6 +157,10 @@ class LocalStrategy(DistributedStrategy):
 
     def wait_optimizer_synced(self, optimizer: Optimizer):
         pass
+
+    @contextlib.contextmanager
+    def prepare_model_update(self, model: nn.Module, should_step: bool):
+        yield
 
     @contextlib.contextmanager
     def prepare_optimizer_update(self, optimizer: Optimizer):

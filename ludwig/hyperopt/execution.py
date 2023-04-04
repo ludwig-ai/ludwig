@@ -267,13 +267,10 @@ class RayTuneExecutor:
             stats = stats[metric_part]
         return isinstance(stats, float)
 
-    def get_metric_score(self, train_stats) -> float:
-        if self._has_metric(train_stats, VALIDATION):
-            logger.info("Returning metric score from training (validation) statistics")
-            return self.get_metric_score_from_train_stats(train_stats, VALIDATION)
-        elif self._has_metric(train_stats, TRAINING):
-            logger.info("Returning metric score from training split statistics, " "as no validation was given")
-            return self.get_metric_score_from_train_stats(train_stats, TRAINING)
+    def get_metric_score(self, train_stats, split=VALIDATION) -> float:
+        if self._has_metric(train_stats, split):
+            logger.info(f"Returning metric score from training ({split}) statistics")
+            return self.get_metric_score_from_train_stats(train_stats, split)
         else:
             raise RuntimeError("Unable to obtain metric score from missing training (validation) statistics")
 
@@ -456,6 +453,7 @@ class RayTuneExecutor:
         decode_ctx,
         is_using_ray_backend=False,
     ):
+
         for gpu_id in ray.get_gpu_ids():
             # Previous trial may not have freed its memory yet, so wait to avoid OOM
             wait_for_gpu(gpu_id)
@@ -488,7 +486,7 @@ class RayTuneExecutor:
         else:
             ray_queue = None
 
-        def report(progress_tracker):
+        def report(progress_tracker, split=VALIDATION):
             # The progress tracker's metrics are nested dictionaries of TrainerMetrics: feature_name -> metric_name ->
             # List[TrainerMetric], with one entry per training checkpoint, according to steps_per_checkpoint.
             # We reduce the dictionary of TrainerMetrics to a simple list of floats for interfacing with Ray Tune.
@@ -498,7 +496,7 @@ class RayTuneExecutor:
                 TEST: metric_utils.reduce_trainer_metrics_dict(progress_tracker.test_metrics),
             }
 
-            metric_score = tune_executor.get_metric_score(train_stats)
+            metric_score = tune_executor.get_metric_score(train_stats, split)
             tune.report(
                 parameters=json.dumps(config, cls=NumpyEncoder),
                 metric_score=metric_score,
@@ -513,6 +511,7 @@ class RayTuneExecutor:
                 super().__init__()
                 self.last_steps = 0
                 self.resume_ckpt_ref = None
+                self.eval_split = hyperopt_dict["eval_split"]
 
             def _get_remote_checkpoint_dir(self) -> Optional[Union[str, Tuple[str, str]]]:
                 # sync client has to be recreated to avoid issues with serialization
@@ -574,7 +573,7 @@ class RayTuneExecutor:
                 self.last_steps = progress_tracker.steps
                 self._checkpoint_progress(trainer, progress_tracker, save_path)
                 if not is_using_ray_backend:
-                    report(progress_tracker)
+                    report(progress_tracker, self.eval_split)
 
             def on_trainer_train_teardown(self, trainer, progress_tracker, save_path, is_coordinator):
                 if is_coordinator and progress_tracker.steps > self.last_steps:
@@ -582,7 +581,7 @@ class RayTuneExecutor:
                     # for some ray samplers if no steps have happened since the last eval.
                     self._checkpoint_progress(trainer, progress_tracker, save_path)
                     if not is_using_ray_backend:
-                        report(progress_tracker)
+                        report(progress_tracker, self.eval_split)
 
         callbacks = hyperopt_dict.get("callbacks") or []
         hyperopt_dict["callbacks"] = callbacks + [RayTuneReportCallback()]
@@ -637,7 +636,7 @@ class RayTuneExecutor:
                         trainer_ckpt = Checkpoint(obj_ref=ckpt_ref)
                         with trainer_ckpt.as_directory() as save_path:
                             checkpoint(progress_tracker, save_path)
-                        report(progress_tracker)
+                        report(progress_tracker, hyperopt_dict["eval_split"])
 
             while thread.is_alive():
                 thread.join(timeout=0)
@@ -653,7 +652,7 @@ class RayTuneExecutor:
             raise RuntimeError("Experiment did not complete.")
         train_stats, eval_stats = stats.pop()
 
-        metric_score = self.get_metric_score(train_stats)
+        metric_score = self.get_metric_score(train_stats, hyperopt_dict["eval_split"])
         tune.report(
             parameters=json.dumps(config, cls=NumpyEncoder),
             metric_score=metric_score,
