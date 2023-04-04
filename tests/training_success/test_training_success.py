@@ -46,11 +46,6 @@ def defaults_config_generator(
         config = FEATURE_TYPE_TO_CONFIG_FOR_DECODER_LOSS[feature_type]
         config = yaml.safe_load(config)
 
-    main_config_keys = list(config.keys())
-    for key in main_config_keys:
-        if key not in ["input_features", "output_features"]:
-            del config[key]
-
     config["model_type"] = "ecd"
     config["trainer"] = {"train_steps": 1}
 

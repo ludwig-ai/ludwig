@@ -19,33 +19,33 @@ ConfigOption = namedtuple("ConfigOption", ["config_option", "fully_explored"])
 
 
 def explore_properties(
-    jsonschema_properties: Dict[str, Any], parent_parameter_path: str, dq: Deque[ConfigOption], allow_list=[]
+    jsonschema_properties: Dict[str, Any],
+    parent_parameter_path: str,
+    dq: Deque[ConfigOption],
+    allow_list: List[str] = [],
 ) -> Deque[Tuple[Dict, bool]]:
     """Recursively explores the `properties` part of any subsection of the schema.
 
     Args:
         jsonschema_properties: any properties section of the schema.
-        parent_parameter_path: parent dictionary keys up to the current property dictionary
+        parent_parameter_path: period-delimited list of parent dictionary keys up to the given jsonschema_properties
             (e.g. defaults.number.preprocessing)
         dq: dequeue data structure that stores tuples of (config_options, fully_explored).
             config_options: Dict[str, List], fully_explored: bool is a dictionary is a dictionary of parameter name to
             list of values to explore.
-            fully_explored is a boolean value indicating that all subsections of the properties dictionary have been
+            fully_explored is a boolean value indicating whether all subsections of the properties dictionary have been
             explored.
         allow_list: list of top level keys of the properties dictionary to skip.
 
     Returns:
-        A deque of tuples.
-        Details:
-        - The second element of the tuple is whether we've explored this "config path"
-            fully. Parameters for a concat combiner are different from parameters for a TabNet combiner.
-            We refer to these as two config paths.
+        A deque of (dict, bool) tuples.
         - The first element of the tuple contains a dictionary of config options, which maps from a ludwig
             config parameter to a list of the values to be explored for that parameter. Here's an example:
-
                 trainer.batch_size: ["auto", 2, 43]
                 trainer.learning_rate: ["auto", 0.1, 0.00002, 0.32424]
                 ...
+        - The second element of the tuple is whether we've explored this "config path"
+            fully. This is important to track when recursing into nested structures.
     """
     # processed_dq will contain complete config options with all the parameters in the properties dictionary
     # dq will contain configs options that are still being completed.

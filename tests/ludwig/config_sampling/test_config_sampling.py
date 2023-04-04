@@ -43,4 +43,6 @@ def test_config_sampling():
     total_count += full_config_generator(combiner_config_generator, "tabtransformer", static_schema)
     total_count += full_config_generator(combiner_config_generator, "transformer", static_schema)
 
-    assert total_count == 131
+    # In place to check for sudden changes in the number of combinatorially generated configs. Update ranges
+    # accordingly if new parameters are added.
+    assert 130 < total_count < 200

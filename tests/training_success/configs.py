@@ -116,6 +116,7 @@ output_features:
     type: binary
 """
 
+# Dictionary that maps from feature type to base config used to test the encoder and preprocessing sections.
 FEATURE_TYPE_TO_CONFIG_FOR_ENCODER_PREPROCESSING = {
     "number": NUMBER_INPUT,
     "category": CATEGORY_INPUT,
@@ -123,6 +124,7 @@ FEATURE_TYPE_TO_CONFIG_FOR_ENCODER_PREPROCESSING = {
     "text": TEXT_INPUT,
 }
 
+# Dictionary that maps from feature type to base config used to test the decoder and loss sections.
 FEATURE_TYPE_TO_CONFIG_FOR_DECODER_LOSS = {
     "number": NUMBER_OUTPUT,
     "category": CATEGORY_OUTPUT,
@@ -130,6 +132,7 @@ FEATURE_TYPE_TO_CONFIG_FOR_DECODER_LOSS = {
     "text": TEXT_OUTPUT,
 }
 
+# Dictionary that maps from config section to base config used to test that section.
 ECD_CONFIG_SECTION_TO_CONFIG = {
     "trainer": TABULAR,
     "comparator": TABULAR,
@@ -142,6 +145,7 @@ ECD_CONFIG_SECTION_TO_CONFIG = {
     "transformer": TABULAR,
 }
 
+# Dictionary that maps from the combiner type to base config used to test that combiner.
 COMBINER_TYPE_TO_COMBINE_FN_MAP = {
     "comparator": combine_configs_for_comparator_combiner,
     "concat": combine_configs,
