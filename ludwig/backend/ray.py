@@ -930,7 +930,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
             )
         )
 
-    def batch_transform(self, df: DataFrame, batch_size: int, transform_fn: Callable) -> DataFrame:
+    def batch_transform(self, df: DataFrame, batch_size: int, transform_fn: Callable, name: str = None) -> DataFrame:
         ds = self.df_engine.to_ray_dataset(df)
         with tensor_extension_casting(False):
             ds = ds.map_batches(

@@ -19,7 +19,7 @@ def get_marshmallow_from_dataclass_field(dfield):
 def test_StringOptions():
     # Test case of default conflicting with allowed options:
     test_options = ["one"]
-    with pytest.raises(MarshmallowValidationError):
+    with pytest.raises(AssertionError):
         schema_utils.StringOptions(test_options, default=None, allow_none=False)
 
     # Test creating a schema with simple option, null not allowed:

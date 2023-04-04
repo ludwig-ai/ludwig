@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import functools
 import json
 import logging
 
@@ -29,6 +30,9 @@ from ludwig.utils.data_utils import (
     get_abs_path,
     hash_dict,
     NumpyEncoder,
+    PANDAS_DF,
+    read_csv,
+    read_parquet,
     use_credentials,
 )
 
@@ -147,7 +151,7 @@ def test_numpy_encoder():
     assert json.dumps({"a": "b"}, cls=NumpyEncoder) == '{"a": "b"}'
 
     # Test numpy data type encoding
-    for dtype in [np.byte, np.ubyte, np.short, np.ushort, np.int, np.uint, np.longlong, np.ulonglong]:
+    for dtype in [np.byte, np.ubyte, np.short, np.ushort, np.int32, np.int64, np.uint, np.longlong, np.ulonglong]:
         x = np.arange(5, dtype=dtype)
         assert json.dumps(x, cls=NumpyEncoder) == "[0, 1, 2, 3, 4]"
         for i in x:
@@ -169,3 +173,15 @@ def test_dataset_synthesizer_output_feature_decoder():
     }
     build_synthetic_dataset_df(dataset_size=100, config=config)
     LudwigModel(config=config, logging_level=logging.INFO)
+
+
+@pytest.mark.parametrize(
+    "dataset_1k_url", ["s3://ludwig-tests/datasets/synthetic_1k.csv", "s3://ludwig-tests/datasets/synthetic_1k.parquet"]
+)
+@pytest.mark.parametrize("nrows", [None, 100])
+def test_chunking(dataset_1k_url, nrows):
+    reader_fn = {"csv": read_csv, "parquet": functools.partial(read_parquet, df_lib=PANDAS_DF)}
+
+    format = figure_data_format_dataset(dataset_1k_url)
+
+    assert reader_fn[format](dataset_1k_url, nrows=nrows).shape[0] == (nrows if nrows else 1000)
