@@ -21,12 +21,10 @@ hyperopt:
       categories: [4]
     combiner.dropout:
       space: uniform
-      type: float
       lower: 0.1
       upper: 0.3
     combiner.num_layers:
       space: randint
-      type: int
       lower: 3
       upper: 4
     combiner.num_fc_layers:
@@ -34,6 +32,5 @@ hyperopt:
       categories: [1, 2]
     combiner.fc_dropout:
       space: uniform
-      type: float
       lower: 0.1
       upper: 0.5
