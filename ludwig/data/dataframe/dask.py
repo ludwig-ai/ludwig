@@ -318,7 +318,7 @@ class DaskEngine(DataFrameEngine):
             else:
                 meta = schema.empty_table().to_pandas()
 
-        if not meta and not schema:
+        if meta is None and schema is None:
             return dd.DataFrame.from_dict({}, npartitions=1)
 
         ddf = dd.from_delayed(
