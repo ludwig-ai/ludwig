@@ -8,7 +8,6 @@ import time
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import lightgbm as lgb
-import ray
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
@@ -47,6 +46,11 @@ from ludwig.utils.trainer_utils import (
     get_new_progress_tracker,
     ProgressTracker,
 )
+
+try:
+    import ray
+except:
+    ray = None
 
 logger = logging.getLogger(__name__)
 
@@ -946,62 +950,72 @@ class LightGBMRayTrainer(LightGBMTrainer):
     def get_schema_cls() -> BaseTrainerConfig:
         return GBMTrainerConfig
 
-    def train_step(
+    def _train_loop(
         self,
         params: Dict[str, Any],
-        lgb_train: "RayDMatrix",  # noqa: F821
-        eval_sets: List["RayDMatrix"],  # noqa: F821
+        lgb_train: lgb.Dataset,
+        eval_sets: List[lgb.Dataset],
         eval_names: List[str],
-        init_model: lgb.LGBMModel,
-        boost_rounds_per_train_step: int,
-        evals_result: Dict,
-    ) -> lgb.LGBMModel:
-        """Trains a LightGBM model using ray.
+        progress_tracker: ProgressTracker,
+        progress_bar: LudwigProgressBar,
+        save_path: str,
+        training_set: Union["Dataset", "RayDataset"],  # noqa: F821
+        validation_set: Union["Dataset", "RayDataset"],  # noqa: F821
+        test_set: Union["Dataset", "RayDataset"],  # noqa: F821
+        train_summary_writer: SummaryWriter,
+        validation_summary_writer: SummaryWriter,
+        test_summary_writer: SummaryWriter,
+        early_stopping_steps: int,
+    ) -> bool:
+        self.callback(lambda c: c.on_batch_start(self, progress_tracker, save_path))
 
-        Args:
-            params: parameters for LightGBM
-            lgb_train: RayDMatrix dataset for training
-            eval_sets: RayDMatrix datasets for evaluation
-            eval_names: names of the evaluation datasets
-
-        Returns:
-            LightGBM Booster model
-        """
-        from lightgbm_ray import RayLGBMClassifier, RayLGBMRegressor
-
-        output_feature = get_single_output_feature(self.model)
-        gbm_sklearn_cls = RayLGBMRegressor if output_feature.type() == NUMBER else RayLGBMClassifier
-
-        additional_results = {}
-        gbm, additional_results = ray.get(
-            instantiate_gbm_cls.remote(
-                gbm_sklearn_cls,
-                boost_rounds_per_train_step,
+        evals_result = {}
+        self.model.lgbm_model, evals_result = ray.get(
+            lightgbm_ray_train_step.remote(
+                self.model,
                 params,
                 lgb_train,
-                init_model,
                 eval_sets,
                 eval_names,
+                self.model.lgbm_model,
+                self.boosting_rounds_per_checkpoint,
+                evals_result,
                 self.ray_params,
+                self.evaluate_training_set,
+                self.device
             )
         )
-        evals_result.update(gbm.evals_result_)
 
-        if not self.evaluate_training_set:
-            # Update evaluation metrics with current model params:
-            # noisy but fast way to get metrics on the training set
+        progress_bar.update(self.boosting_rounds_per_checkpoint)
+        progress_tracker.steps += self.boosting_rounds_per_checkpoint
 
-            # Only use the first actor's predictions.
-            actor_callback_return = next(iter(additional_results["callback_returns"]))
-            # Only a single TrainLogits is expected (final iteration).
-            train_logits: TrainLogits = next(iter(actor_callback_return))
-            predictions = logits_to_predictions(self.model, train_logits.preds)
+        output_features = self.model.output_features
+        metrics_names = get_metric_names(output_features)
+        output_feature_name = next(iter(output_features))
 
-            targets = get_targets(lgb_train, output_feature, self.device, actor_rank=0)
+        loss_name = params["metric"][0]
+        loss = evals_result["train"][loss_name][-1]
+        loss = torch.tensor(loss, dtype=torch.float32)
 
-            self.model.update_metrics(targets, predictions)
+        should_break = self.run_evaluation(
+            training_set,
+            validation_set,
+            test_set,
+            progress_tracker,
+            train_summary_writer,
+            validation_summary_writer,
+            test_summary_writer,
+            output_features,
+            metrics_names,
+            save_path,
+            loss,
+            {output_feature_name: loss},
+            early_stopping_steps,
+        )
 
-        return gbm.to_local()
+        self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path))
+
+        return should_break
 
     def _construct_lgb_datasets(
         self,
@@ -1058,17 +1072,38 @@ class LightGBMRayTrainer(LightGBMTrainer):
         return lgb_train, eval_sets, eval_names
 
 
+# We need to add max_calls here to ensure that the Ray actors that get created by the LightGBM class 
+# for each boosting round don't leave dangling resources in the object store memory.
 @ray.remote(max_calls=1)
-def instantiate_gbm_cls(
-    gbm_sklearn_cls,
-    boost_rounds_per_train_step,
-    params,
-    lgb_train,
-    init_model,
-    eval_sets,
-    eval_names,
-    ray_params,
-):
+def lightgbm_ray_train_step(
+    model: GBM,
+    params: Dict[str, Any],
+    lgb_train: "RayDMatrix",  # noqa: F821
+    eval_sets: List["RayDMatrix"],  # noqa: F821
+    eval_names: List[str],
+    init_model: lgb.LGBMModel,
+    boost_rounds_per_train_step: int,
+    evals_result: Dict,
+    ray_params: "RayParams",
+    evaluate_training_set: bool,
+    device: Optional[str] = None,
+) -> lgb.LGBMModel:
+    """Trains a LightGBM model using ray.
+
+    Args:
+        params: parameters for LightGBM
+        lgb_train: RayDMatrix dataset for training
+        eval_sets: RayDMatrix datasets for evaluation
+        eval_names: names of the evaluation datasets
+
+    Returns:
+        LightGBM Booster model
+    """
+    from lightgbm_ray import RayLGBMClassifier, RayLGBMRegressor
+
+    output_feature = get_single_output_feature(model)
+    gbm_sklearn_cls = RayLGBMRegressor if output_feature.type() == NUMBER else RayLGBMClassifier
+
     additional_results = {}
     gbm = gbm_sklearn_cls(n_estimators=boost_rounds_per_train_step, **params).fit(
         X=lgb_train,
@@ -1084,5 +1119,20 @@ def instantiate_gbm_cls(
         additional_results=additional_results,
         ray_params=ray_params,
     )
+    evals_result.update(gbm.evals_result_)
 
-    return gbm, additional_results
+    if not evaluate_training_set:
+        # Update evaluation metrics with current model params:
+        # noisy but fast way to get metrics on the training set
+
+        # Only use the first actor's predictions.
+        actor_callback_return = next(iter(additional_results["callback_returns"]))
+        # Only a single TrainLogits is expected (final iteration).
+        train_logits: TrainLogits = next(iter(actor_callback_return))
+        predictions = logits_to_predictions(model, train_logits.preds)
+
+        targets = get_targets(lgb_train, output_feature, device, actor_rank=0)
+
+        model.update_metrics(targets, predictions)
+
+    return gbm.to_local(), evals_result
