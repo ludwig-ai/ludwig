@@ -39,10 +39,12 @@ sacremoses
 sentencepiece
 
 # new data format support
-xlwt            # excel
-xlrd            # excel
-openpyxl        # excel
-pyarrow         # parquet
-lxml            # html
+xlwt                # excel
+xlrd>=2.0.1         # excel
+xlsxwriter>=1.4.3   # excel
+openpyxl>=3.0.7     # excel
+pyxlsb>=1.0.8       # excel
+pyarrow             # parquet
+lxml                # html
 
 whylogs>=1.1.9
