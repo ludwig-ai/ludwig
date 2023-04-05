@@ -58,8 +58,7 @@ try:
         return callback.lr
 
 except ImportError:
-    dask = None
-    ray = None
+    logging.warn("Failed to import some modules")
 
 
 def test_tune_learning_rate(tmpdir):
