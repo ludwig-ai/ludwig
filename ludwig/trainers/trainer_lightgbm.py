@@ -973,17 +973,18 @@ class LightGBMRayTrainer(LightGBMTrainer):
         gbm_sklearn_cls = RayLGBMRegressor if output_feature.type() == NUMBER else RayLGBMClassifier
 
         additional_results = {}
-        gbm = instantiate_gbm_cls(
-            gbm_sklearn_cls,
-            boost_rounds_per_train_step,
-            params,
-            lgb_train,
-            init_model,
-            eval_sets,
-            eval_names,
-            additional_results,
-            self.ray_params,
-        ).remote()
+        gbm, additional_results = ray.get(
+            instantiate_gbm_cls.remote(
+                gbm_sklearn_cls,
+                boost_rounds_per_train_step,
+                params,
+                lgb_train,
+                init_model,
+                eval_sets,
+                eval_names,
+                self.ray_params,
+            )
+        )
         evals_result.update(gbm.evals_result_)
 
         if not self.evaluate_training_set:
@@ -1066,10 +1067,10 @@ def instantiate_gbm_cls(
     init_model,
     eval_sets,
     eval_names,
-    additional_results,
     ray_params,
 ):
-    return gbm_sklearn_cls(n_estimators=boost_rounds_per_train_step, **params).fit(
+    additional_results = {}
+    gbm = gbm_sklearn_cls(n_estimators=boost_rounds_per_train_step, **params).fit(
         X=lgb_train,
         y=None,
         init_model=init_model,
@@ -1083,3 +1084,5 @@ def instantiate_gbm_cls(
         additional_results=additional_results,
         ray_params=ray_params,
     )
+
+    return gbm, additional_results
