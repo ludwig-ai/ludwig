@@ -970,21 +970,25 @@ class LightGBMRayTrainer(LightGBMTrainer):
         self.callback(lambda c: c.on_batch_start(self, progress_tracker, save_path))
 
         evals_result = {}
-        self.model.lgbm_model, evals_result = ray.get(
-            lightgbm_ray_train_step.remote(
-                self.model,
-                params,
-                lgb_train,
-                eval_sets,
-                eval_names,
-                self.model.lgbm_model,
-                self.boosting_rounds_per_checkpoint,
-                evals_result,
-                self.ray_params,
-                self.evaluate_training_set,
-                self.device,
-            )
+        model_ref = lightgbm_ray_train_step.remote(
+            self.model,
+            params,
+            lgb_train,
+            eval_sets,
+            eval_names,
+            self.model.lgbm_model,
+            self.boosting_rounds_per_checkpoint,
+            evals_result,
+            self.ray_params,
+            self.evaluate_training_set,
+            self.device,
         )
+
+        if not self.evaluate_training_set:
+            self.model.lgbm_model, targets, predictions, evals_result = ray.get(model_ref)
+            self.model.update_metrics(targets, predictions)
+        else:
+            self.model.lgbm_model, evals_result = ray.get(model_ref)
 
         progress_bar.update(self.boosting_rounds_per_checkpoint)
         progress_tracker.steps += self.boosting_rounds_per_checkpoint
@@ -1140,6 +1144,8 @@ def lightgbm_ray_train_step(
 
         targets = get_targets(lgb_train, output_feature, device, actor_rank=0)
 
-        model.update_metrics(targets, predictions)
+        # Return raw target and prediction tensors so we can update top-level
+        # model metrics in the caller of the remote function.
+        return gbm.to_local(), targets, predictions, evals_result
 
     return gbm.to_local(), evals_result
