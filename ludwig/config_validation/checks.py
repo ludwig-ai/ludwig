@@ -316,6 +316,7 @@ def check_hyperopt_scheduler_dependencies_installed(config: "ModelConfig") -> No
         raise ConfigValidationError(e.msg)
 
 
+@register_config_check
 def check_tagger_decoder_requirements(config: "ModelConfig") -> None:  # noqa: F821
     """Checks that the tagger decoder has at least one sequence, text or timeseries input feature where the
     encoder's reduce_output will produce a 3D shaped output from the combiner."""
