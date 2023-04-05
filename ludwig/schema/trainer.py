@@ -5,7 +5,15 @@ import torch
 from packaging.version import parse as parse_version
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import DEFAULT_BATCH_SIZE, LOSS, MAX_POSSIBLE_BATCH_SIZE, MODEL_ECD, MODEL_GBM, TRAINING
+from ludwig.constants import (
+    DEFAULT_BATCH_SIZE,
+    LOSS,
+    MAX_POSSIBLE_BATCH_SIZE,
+    MODEL_ECD,
+    MODEL_GBM,
+    MODEL_LLM,
+    TRAINING,
+)
 from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.lr_scheduler import LRSchedulerConfig, LRSchedulerDataclassField
@@ -677,6 +685,23 @@ class GBMTrainerConfig(BaseTrainerConfig):
 
 
 @DeveloperAPI
+@ludwig_dataclass
+class LLMTrainerConfig(BaseTrainerConfig):
+    """Base class for all LLM trainer configs."""
+
+    pass
+
+
+@DeveloperAPI
+@register_trainer_schema(MODEL_LLM)
+@ludwig_dataclass
+class ZeroShotTrainerConfig(LLMTrainerConfig):
+    """Dataclass that configures most of the hyperparameters used for GBM model training."""
+
+    pass
+
+
+@DeveloperAPI
 def get_model_type_jsonschema(model_type: str = MODEL_ECD):
     enum = [MODEL_ECD]
     if model_type == MODEL_GBM:
@@ -721,3 +746,12 @@ class GBMTrainerField(schema_utils.DictMarshmallowField):
 
     def _jsonschema_type_mapping(self):
         return get_trainer_jsonschema(MODEL_GBM)
+
+
+@DeveloperAPI
+class LLMTrainerField(schema_utils.DictMarshmallowField):
+    def __init__(self):
+        super().__init__(ZeroShotTrainerConfig)
+
+    def _jsonschema_type_mapping(self):
+        return get_trainer_jsonschema(MODEL_ECD)

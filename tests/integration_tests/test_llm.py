@@ -52,6 +52,7 @@ def test_llm_text_to_text(tmpdir, backend):  # , ray_cluster_4cpu):
 
     config = {
         MODEL_TYPE: "llm",
+        "model_name": "hf-internal-testing/tiny-random-GPTJForCausalLM",
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
     }
