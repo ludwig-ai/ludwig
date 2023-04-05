@@ -3,13 +3,19 @@ import time
 
 import numpy as np
 import pandas as pd
+import pytest
 import torch
+from packaging.version import parse as parse_version
 
 from ludwig.api import LudwigModel
 from ludwig.benchmarking.profiler import LudwigProfiler
 from ludwig.constants import BATCH_SIZE, TRAINER
 
 
+@pytest.mark.skipif(
+    parse_version(pd.__version__) > parse_version("1.5.3"),
+    reason="experiment_impact_tracker package is incompatible with pandas 2.0",
+)
 def test_ludwig_profiler(tmpdir):
     @LudwigProfiler(tag="test_function", output_dir=tmpdir, use_torch_profiler=False, logging_interval=0.1)
     def func(duration):
