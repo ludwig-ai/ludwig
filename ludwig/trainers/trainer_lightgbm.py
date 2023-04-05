@@ -982,7 +982,7 @@ class LightGBMRayTrainer(LightGBMTrainer):
                 evals_result,
                 self.ray_params,
                 self.evaluate_training_set,
-                self.device
+                self.device,
             )
         )
 
@@ -1072,7 +1072,7 @@ class LightGBMRayTrainer(LightGBMTrainer):
         return lgb_train, eval_sets, eval_names
 
 
-# We need to add max_calls here to ensure that the Ray actors that get created by the LightGBM class 
+# We need to add max_calls here to ensure that the Ray actors that get created by the LightGBM class
 # for each boosting round don't leave dangling resources in the object store memory.
 @ray.remote(max_calls=1)
 def lightgbm_ray_train_step(
