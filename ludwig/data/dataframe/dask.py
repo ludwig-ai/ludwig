@@ -318,6 +318,9 @@ class DaskEngine(DataFrameEngine):
             else:
                 meta = schema.empty_table().to_pandas()
 
+        if not meta and not schema:
+            return dd.DataFrame.from_dict({}, npartitions=1)
+
         ddf = dd.from_delayed(
             [block_to_df(block) for block in dataset.get_internal_block_refs()],
             meta=meta,
