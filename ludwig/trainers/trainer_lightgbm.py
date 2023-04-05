@@ -8,6 +8,7 @@ import time
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import lightgbm as lgb
+import ray
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
@@ -972,20 +973,17 @@ class LightGBMRayTrainer(LightGBMTrainer):
         gbm_sklearn_cls = RayLGBMRegressor if output_feature.type() == NUMBER else RayLGBMClassifier
 
         additional_results = {}
-        gbm = gbm_sklearn_cls(n_estimators=boost_rounds_per_train_step, **params).fit(
-            X=lgb_train,
-            y=None,
-            init_model=init_model,
-            eval_set=[(s, n) for s, n in zip(eval_sets, eval_names)],
-            eval_names=eval_names,
-            callbacks=[
-                # add early stopping callback to populate best_iteration
-                lgb.early_stopping(boost_rounds_per_train_step),
-                store_predictions_ray(boost_rounds_per_train_step),
-            ],
-            additional_results=additional_results,
-            ray_params=self.ray_params,
-        )
+        gbm = instantiate_gbm_cls(
+            gbm_sklearn_cls,
+            boost_rounds_per_train_step,
+            params,
+            lgb_train,
+            init_model,
+            eval_sets,
+            eval_names,
+            additional_results,
+            self.ray_params,
+        ).remote()
         evals_result.update(gbm.evals_result_)
 
         if not self.evaluate_training_set:
@@ -1057,3 +1055,31 @@ class LightGBMRayTrainer(LightGBMTrainer):
             eval_names.append(LightGBMTrainer.TEST_KEY)
 
         return lgb_train, eval_sets, eval_names
+
+
+@ray.remote(max_calls=1)
+def instantiate_gbm_cls(
+    gbm_sklearn_cls,
+    boost_rounds_per_train_step,
+    params,
+    lgb_train,
+    init_model,
+    eval_sets,
+    eval_names,
+    additional_results,
+    ray_params,
+):
+    return gbm_sklearn_cls(n_estimators=boost_rounds_per_train_step, **params).fit(
+        X=lgb_train,
+        y=None,
+        init_model=init_model,
+        eval_set=[(s, n) for s, n in zip(eval_sets, eval_names)],
+        eval_names=eval_names,
+        callbacks=[
+            # add early stopping callback to populate best_iteration
+            lgb.early_stopping(boost_rounds_per_train_step),
+            store_predictions_ray(boost_rounds_per_train_step),
+        ],
+        additional_results=additional_results,
+        ray_params=ray_params,
+    )
