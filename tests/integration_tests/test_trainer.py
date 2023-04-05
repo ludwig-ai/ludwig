@@ -25,12 +25,16 @@ from tests.integration_tests.utils import (
 )
 
 try:
+    from ludwig.backend.horovod import HorovodBackend
+    from ludwig.distributed.horovod import HorovodStrategy
+except ImportError:
+    pass
+
+try:
     import dask
     import ray
 
-    from ludwig.backend.horovod import HorovodBackend
     from ludwig.data.dataset.ray import RayDataset
-    from ludwig.distributed.horovod import HorovodStrategy
     from ludwig.models.gbm import GBM
     from ludwig.schema.model_config import ModelConfig
     from ludwig.schema.trainer import GBMTrainerConfig
