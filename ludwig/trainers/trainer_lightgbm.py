@@ -970,19 +970,6 @@ class LightGBMRayTrainer(LightGBMTrainer):
         self.callback(lambda c: c.on_batch_start(self, progress_tracker, save_path))
 
         evals_result = {}
-        # model_ref = lightgbm_ray_train_step.remote(
-        # self.model,
-        # params,
-        # lgb_train,
-        # eval_sets,
-        # eval_names,
-        # self.model.lgbm_model,
-        # self.boosting_rounds_per_checkpoint,
-        # evals_result,
-        # self.ray_params,
-        # self.evaluate_training_set,
-        # self.device,
-        # )
         model_ref = lightgbm_ray_train_step(
             self.model,
             params,
