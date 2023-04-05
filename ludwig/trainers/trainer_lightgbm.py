@@ -970,7 +970,20 @@ class LightGBMRayTrainer(LightGBMTrainer):
         self.callback(lambda c: c.on_batch_start(self, progress_tracker, save_path))
 
         evals_result = {}
-        model_ref = lightgbm_ray_train_step.remote(
+        # model_ref = lightgbm_ray_train_step.remote(
+        # self.model,
+        # params,
+        # lgb_train,
+        # eval_sets,
+        # eval_names,
+        # self.model.lgbm_model,
+        # self.boosting_rounds_per_checkpoint,
+        # evals_result,
+        # self.ray_params,
+        # self.evaluate_training_set,
+        # self.device,
+        # )
+        model_ref = lightgbm_ray_train_step(
             self.model,
             params,
             lgb_train,
@@ -1076,9 +1089,7 @@ class LightGBMRayTrainer(LightGBMTrainer):
         return lgb_train, eval_sets, eval_names
 
 
-# We need to add max_calls here to ensure that the Ray actors that get created by the LightGBM class
-# for each boosting round don't leave dangling resources in the object store memory.
-@ray.remote(max_calls=1)
+# Add a top-level function wrapper to handle non-distributed test import errors
 def lightgbm_ray_train_step(
     model: GBM,
     params: Dict[str, Any],
@@ -1092,60 +1103,91 @@ def lightgbm_ray_train_step(
     evaluate_training_set: bool,
     device: Optional[str] = None,
 ) -> lgb.LGBMModel:
-    """Trains a LightGBM model using ray.
 
-    Args:
-        model: Ludwig model
-        params: parameters for LightGBM
-        lgb_train: RayDMatrix dataset for training
-        eval_sets: RayDMatrix datasets for evaluation
-        eval_names: names of the evaluation datasets
-        init_model: LightGBM model to initialize from
-        boost_rounds_per_train_step: number of boosting rounds to train
-        evals_result: dictionary to store evaluation results
-        ray_params: RayParams object configured with num workers and resources
-        evaluate_training_set: whether to evaluate the training set
-        device: device to use for training
-    Returns:
-        gbm: LightGBM Booster model
-        evals_result: dictionary containing evaluation results
-    """
-    from lightgbm_ray import RayLGBMClassifier, RayLGBMRegressor
+    # We need to add max_calls here to ensure that the Ray actors that get created by the LightGBM class
+    # for each boosting round don't leave dangling resources in the object store memory.
+    @ray.remote(max_calls=1)
+    def lightgbm_ray_train_step_helper(
+        model,
+        params,
+        lgb_train,
+        eval_sets,
+        eval_names,
+        init_model,
+        boost_rounds_per_train_step,
+        evals_result,
+        ray_params,
+        evaluate_training_set,
+        device,
+    ) -> lgb.LGBMModel:
+        """Trains a LightGBM model using ray.
 
-    output_feature = get_single_output_feature(model)
-    gbm_sklearn_cls = RayLGBMRegressor if output_feature.type() == NUMBER else RayLGBMClassifier
+        Args:
+            model: Ludwig model
+            params: parameters for LightGBM
+            lgb_train: RayDMatrix dataset for training
+            eval_sets: RayDMatrix datasets for evaluation
+            eval_names: names of the evaluation datasets
+            init_model: LightGBM model to initialize from
+            boost_rounds_per_train_step: number of boosting rounds to train
+            evals_result: dictionary to store evaluation results
+            ray_params: RayParams object configured with num workers and resources
+            evaluate_training_set: whether to evaluate the training set
+            device: device to use for training
+        Returns:
+            gbm: LightGBM Booster model
+            evals_result: dictionary containing evaluation results
+        """
+        from lightgbm_ray import RayLGBMClassifier, RayLGBMRegressor
 
-    additional_results = {}
-    gbm = gbm_sklearn_cls(n_estimators=boost_rounds_per_train_step, **params).fit(
-        X=lgb_train,
-        y=None,
-        init_model=init_model,
-        eval_set=[(s, n) for s, n in zip(eval_sets, eval_names)],
-        eval_names=eval_names,
-        callbacks=[
-            # add early stopping callback to populate best_iteration
-            lgb.early_stopping(boost_rounds_per_train_step),
-            store_predictions_ray(boost_rounds_per_train_step),
-        ],
-        additional_results=additional_results,
-        ray_params=ray_params,
+        output_feature = get_single_output_feature(model)
+        gbm_sklearn_cls = RayLGBMRegressor if output_feature.type() == NUMBER else RayLGBMClassifier
+
+        additional_results = {}
+        gbm = gbm_sklearn_cls(n_estimators=boost_rounds_per_train_step, **params).fit(
+            X=lgb_train,
+            y=None,
+            init_model=init_model,
+            eval_set=[(s, n) for s, n in zip(eval_sets, eval_names)],
+            eval_names=eval_names,
+            callbacks=[
+                # add early stopping callback to populate best_iteration
+                lgb.early_stopping(boost_rounds_per_train_step),
+                store_predictions_ray(boost_rounds_per_train_step),
+            ],
+            additional_results=additional_results,
+            ray_params=ray_params,
+        )
+        evals_result.update(gbm.evals_result_)
+
+        if not evaluate_training_set:
+            # Update evaluation metrics with current model params:
+            # noisy but fast way to get metrics on the training set
+
+            # Only use the first actor's predictions.
+            actor_callback_return = next(iter(additional_results["callback_returns"]))
+            # Only a single TrainLogits is expected (final iteration).
+            train_logits: TrainLogits = next(iter(actor_callback_return))
+            predictions = logits_to_predictions(model, train_logits.preds)
+
+            targets = get_targets(lgb_train, output_feature, device, actor_rank=0)
+
+            # Return raw target and prediction tensors so we can update top-level
+            # model metrics in the caller of the remote function.
+            return gbm.to_local(), targets, predictions, evals_result
+
+        return gbm.to_local(), evals_result
+
+    return lightgbm_ray_train_step_helper.remote(
+        model,
+        params,
+        lgb_train,
+        eval_sets,
+        eval_names,
+        init_model,
+        boost_rounds_per_train_step,
+        evals_result,
+        ray_params,
+        evaluate_training_set,
+        device,
     )
-    evals_result.update(gbm.evals_result_)
-
-    if not evaluate_training_set:
-        # Update evaluation metrics with current model params:
-        # noisy but fast way to get metrics on the training set
-
-        # Only use the first actor's predictions.
-        actor_callback_return = next(iter(additional_results["callback_returns"]))
-        # Only a single TrainLogits is expected (final iteration).
-        train_logits: TrainLogits = next(iter(actor_callback_return))
-        predictions = logits_to_predictions(model, train_logits.preds)
-
-        targets = get_targets(lgb_train, output_feature, device, actor_rank=0)
-
-        # Return raw target and prediction tensors so we can update top-level
-        # model metrics in the caller of the remote function.
-        return gbm.to_local(), targets, predictions, evals_result
-
-    return gbm.to_local(), evals_result
