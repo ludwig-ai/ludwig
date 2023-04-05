@@ -59,8 +59,8 @@ class SetPreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[SHARED][PREPROCESSING]["most_common"],
     )
 
-    most_common_percentile: int = schema_utils.FloatRange(
-        default=0.95,
+    most_common_percentile: float = schema_utils.FloatRange(
+        default=0.99,
         min=0.0,
         max=1.0,
         min_inclusive=False,
