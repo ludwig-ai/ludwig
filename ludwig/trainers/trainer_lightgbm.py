@@ -1091,13 +1091,20 @@ def lightgbm_ray_train_step(
     """Trains a LightGBM model using ray.
 
     Args:
+        model: Ludwig model
         params: parameters for LightGBM
         lgb_train: RayDMatrix dataset for training
         eval_sets: RayDMatrix datasets for evaluation
         eval_names: names of the evaluation datasets
-
+        init_model: LightGBM model to initialize from
+        boost_rounds_per_train_step: number of boosting rounds to train
+        evals_result: dictionary to store evaluation results
+        ray_params: RayParams object configured with num workers and resources
+        evaluate_training_set: whether to evaluate the training set
+        device: device to use for training
     Returns:
-        LightGBM Booster model
+        gbm: LightGBM Booster model
+        evals_result: dictionary containing evaluation results
     """
     from lightgbm_ray import RayLGBMClassifier, RayLGBMRegressor
 
