@@ -806,7 +806,7 @@ def test_prompt_template(backend, tmpdir, ray_cluster_2cpu):
     Output:
     """
 
-    input_features = [text_feature(preprocessing={"prompt_template": prompt_template})]
+    input_features = [text_feature(preprocessing={"prompt_template": prompt_template, "most_common_percentile": 1})]
     output_features = [category_feature()]
     data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=25)
 
