@@ -49,7 +49,7 @@ from ludwig.utils.trainer_utils import (
 
 try:
     import ray
-except Exception:
+except ImportError:
     ray = None
 
 logger = logging.getLogger(__name__)
@@ -953,8 +953,8 @@ class LightGBMRayTrainer(LightGBMTrainer):
     def _train_loop(
         self,
         params: Dict[str, Any],
-        lgb_train: lgb.Dataset,
-        eval_sets: List[lgb.Dataset],
+        lgb_train: "RayDMatrix",  # noqa: F821
+        eval_sets: List["RayDMatrix"],  # noqa: F821
         eval_names: List[str],
         progress_tracker: ProgressTracker,
         progress_bar: LudwigProgressBar,
