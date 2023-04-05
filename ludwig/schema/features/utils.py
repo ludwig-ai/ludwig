@@ -1,17 +1,20 @@
 from collections import defaultdict
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import MODEL_ECD, MODEL_GBM
+from ludwig.constants import MODEL_ECD, MODEL_GBM, MODEL_LLM
 from ludwig.schema import utils as schema_utils
 from ludwig.utils.registry import Registry
 
 input_config_registries = defaultdict(Registry)
 output_config_registries = defaultdict(Registry)
+
 ecd_input_config_registry = input_config_registries[MODEL_ECD]
 gbm_input_config_registry = input_config_registries[MODEL_GBM]
+llm_input_config_registry = input_config_registries[MODEL_LLM]
 
 ecd_output_config_registry = output_config_registries[MODEL_ECD]
 gbm_output_config_registry = output_config_registries[MODEL_GBM]
+llm_output_config_registry = output_config_registries[MODEL_LLM]
 
 input_mixin_registry = Registry()
 output_mixin_registry = Registry()
@@ -30,6 +33,8 @@ be registered by this registry (whereas, conversely, `BinaryDefaultsConfig` is a
 the ECD defaults registry).
 """
 gbm_defaults_config_registry = Registry()
+
+llm_defaults_config_registry = Registry()
 
 
 def input_config_registry(model_type: str) -> Registry:

@@ -5,6 +5,7 @@ from typing import Dict, Tuple, Union
 import numpy as np
 import torch
 import torchmetrics
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from ludwig.constants import MODEL_LLM
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
@@ -34,24 +35,13 @@ class LLM(BaseModel):
 
         super().__init__(random_seed=self._random_seed)
 
-        # ================ Inputs ================
-        try:
-            self.input_features.update(self.build_inputs(input_feature_configs=self.config_obj.input_features))
-        except KeyError as e:
-            raise KeyError(
-                f"An input feature has a name that conflicts with a class attribute of torch's ModuleDict: {e}"
-            )
-
-        # ================ Outputs ================
-        self.output_features.update(
-            self.build_outputs(output_feature_configs=self.config_obj.output_features, combiner=self.combiner)
-        )
+        self.tokenizer = AutoTokenizer.from_pretrained(self.config_obj.model_name)
+        self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.model_name)
 
         # ================ Combined loss metric ================
         self.eval_loss_metric = torchmetrics.MeanMetric()
         self.eval_additional_losses_metrics = torchmetrics.MeanMetric()
 
-        # After constructing all layers, clear the cache to free up memory
         clear_data_cache()
 
     def forward(
@@ -91,6 +81,9 @@ class LLM(BaseModel):
             generated_ids = self.model.generate(**inputs, generation_config=self.generation_config, max_new_tokens=4)
         outputs = self.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
         return self.extract(outputs)
+
+    def extract(self, outputs):
+        return {self.config_obj.input_features[0].name: outputs}
 
     def save(self, save_path):
         """Saves the model to the given path."""

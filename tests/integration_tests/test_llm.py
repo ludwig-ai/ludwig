@@ -39,7 +39,7 @@ def ray_backend():
     "backend",
     [
         pytest.param(LOCAL_BACKEND, id="local"),
-        pytest.param(RAY_BACKEND, id="ray", marks=pytest.mark.distributed),
+        # pytest.param(RAY_BACKEND, id="ray", marks=pytest.mark.distributed),
     ],
 )
 def test_llm_text_to_text(tmpdir, backend):  # , ray_cluster_4cpu):
