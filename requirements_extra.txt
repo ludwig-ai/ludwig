@@ -1,0 +1,2 @@
+# requirements for horovod
+horovod[pytorch]>=0.24.0,!=0.26.0
