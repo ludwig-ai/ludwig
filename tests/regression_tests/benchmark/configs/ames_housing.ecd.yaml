@@ -5,6 +5,9 @@ defaults:
     preprocessing:
       missing_value_strategy: fill_with_mean
       normalization: null
+  category:
+    preprocessing:
+      most_common_percentile: 1
 input_features:
   - name: MSSubClass
     type: category
