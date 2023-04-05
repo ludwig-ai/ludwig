@@ -21,14 +21,10 @@ RUN pip install -U pip
 
 WORKDIR /ludwig
 
-RUN pip install torch==1.13.1 torchtext torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cpu
+RUN pip install torch==2.0.0 torchtext torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cpu
 
 COPY . .
-RUN HOROVOD_WITH_PYTORCH=1 \
-    HOROVOD_WITHOUT_MPI=1 \
-    HOROVOD_WITHOUT_TENSORFLOW=1 \
-    HOROVOD_WITHOUT_MXNET=1 \
-    pip install --no-cache-dir '.[full]'
+RUN pip install --no-cache-dir '.[full]'
 
 WORKDIR /data
 

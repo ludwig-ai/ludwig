@@ -37,8 +37,6 @@ from ludwig.constants import (
     TEXT,
     TYPE,
 )
-from ludwig.profiling import dataset_profile_pb2
-from ludwig.profiling.dataset_profile import get_dataset_profile_proto, get_dataset_profile_view
 from ludwig.types import ModelConfigDict
 from ludwig.utils.automl.data_source import DataSource, wrap_data_source
 from ludwig.utils.automl.field_info import FieldConfig, FieldInfo, FieldMetadata
@@ -287,11 +285,6 @@ def is_field_boolean(source: DataSource, field: str) -> bool:
             return False
         return True
     return False
-
-
-@DeveloperAPI
-def get_dataset_profile_from_source(source: DataSource) -> dataset_profile_pb2.DatasetProfile:
-    return get_dataset_profile_proto(get_dataset_profile_view(source.df))
 
 
 @DeveloperAPI
