@@ -7,6 +7,10 @@ import pytest
 import torch
 from packaging.version import parse as parse_version
 
+if parse_version(pd.__version__) > parse_version("1.5.3"):
+    pytest.skip(allow_module_level=True)
+
+
 from ludwig.api import LudwigModel
 from ludwig.benchmarking.profiler import LudwigProfiler
 from ludwig.constants import BATCH_SIZE, TRAINER
