@@ -79,7 +79,7 @@ def test_create_vocabulary_chars():
     )
     vocab = vocabulary.vocab
 
-    assert len(vocab) == 21
+    assert len(vocab) == 24
     assert vocab[strings_utils.SpecialSymbol.START.value] == strings_utils.START_SYMBOL
     assert vocab[strings_utils.SpecialSymbol.STOP.value] == strings_utils.STOP_SYMBOL
     assert vocab[strings_utils.SpecialSymbol.PADDING.value] == strings_utils.PADDING_SYMBOL
