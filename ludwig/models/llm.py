@@ -46,8 +46,8 @@ class LLM(BaseModel):
             num_beams=4,
             pad_token_id=self.model.config.pad_token_id,
             eos_token_id=self.model.config.eos_token_id,
-            min_new_tokens=9,
-            max_new_tokens=9,
+            # min_new_tokens=9,
+            # max_new_tokens=9,
         )
 
         # ================ Inputs ================
