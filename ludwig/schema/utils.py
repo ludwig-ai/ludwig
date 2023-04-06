@@ -659,7 +659,7 @@ def FloatRange(
 
 
 @DeveloperAPI
-def dict(
+def Dict(
     default: Union[None, TDict] = None,
     allow_none: bool = True,
     description: str = "",
@@ -696,7 +696,7 @@ def dict(
 
 
 @DeveloperAPI
-def list(
+def List(
     list_type: Union[type[str], type[int], type[float], type[list]] = str,
     inner_type: Union[type[str], type[int], type[float], type[dict]] = float,
     default: Union[None, TList[Any]] = None,
