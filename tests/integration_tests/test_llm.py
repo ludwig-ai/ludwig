@@ -58,5 +58,6 @@ def test_llm_text_to_text(tmpdir, backend):  # , ray_cluster_4cpu):
     }
 
     model = LudwigModel(config, backend=backend)
+    model.train(dataset=dataset_filename, output_directory=str(tmpdir))
     preds, _ = model.predict(dataset=dataset_filename, output_directory=str(tmpdir), split="test")
     print(preds)

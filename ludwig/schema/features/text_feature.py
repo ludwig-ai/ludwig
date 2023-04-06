@@ -1,5 +1,5 @@
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import LOSS, MODEL_ECD, MODEL_GBM, MODEL_LLM, SEQUENCE_SOFTMAX_CROSS_ENTROPY, TEXT
+from ludwig.constants import LOSS, MODEL_ECD, MODEL_GBM, MODEL_LLM, PERPLEXITY, SEQUENCE_SOFTMAX_CROSS_ENTROPY, TEXT
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -169,7 +169,16 @@ class TextOutputFeatureConfig(TextOutputFeatureConfigMixin, BaseOutputFeatureCon
 @llm_output_config_registry.register(TEXT)
 @ludwig_dataclass
 class LLMTextOutputFeatureConfig(TextOutputFeatureConfigMixin, BaseOutputFeatureConfig):
-    pass
+    type: str = schema_utils.ProtectedString(TEXT)
+
+    default_validation_metric: str = schema_utils.StringOptions(
+        [PERPLEXITY],
+        default=PERPLEXITY,
+        description="Internal only use parameter: default validation metric for text output feature.",
+        parameter_metadata=INTERNAL_ONLY,
+    )
+
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="text_output")
 
 
 @DeveloperAPI

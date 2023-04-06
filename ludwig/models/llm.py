@@ -5,11 +5,13 @@ from typing import Dict, Tuple, Union
 import numpy as np
 import torch
 import torchmetrics
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, GenerationConfig
 
 from ludwig.constants import MODEL_LLM
+from ludwig.features.base_feature import OutputFeature
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
+from ludwig.schema.features.base import BaseOutputFeatureConfig, FeatureCollection
 from ludwig.schema.model_types.llm import LLMModelConfig
 from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.fs_utils import open_file
@@ -37,12 +39,51 @@ class LLM(BaseModel):
 
         self.tokenizer = AutoTokenizer.from_pretrained(self.config_obj.model_name)
         self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.model_name)
+        self.generation_config = GenerationConfig(
+            temperature=0.1,
+            top_p=0.75,
+            top_k=40,
+            num_beams=4,
+            pad_token_id=self.model.config.pad_token_id,
+            eos_token_id=self.model.config.eos_token_id,
+        )
+
+        # ================ Inputs ================
+        try:
+            self.input_features.update(self.build_inputs(input_feature_configs=self.config_obj.input_features))
+        except KeyError as e:
+            raise KeyError(
+                f"An input feature has a name that conflicts with a class attribute of torch's ModuleDict: {e}"
+            )
+
+        # ================ Outputs ================
+        self.output_features.update(
+            self.build_outputs(output_feature_configs=self.config_obj.output_features, input_size=self.input_shape[-1])
+        )
 
         # ================ Combined loss metric ================
         self.eval_loss_metric = torchmetrics.MeanMetric()
         self.eval_additional_losses_metrics = torchmetrics.MeanMetric()
 
         clear_data_cache()
+
+    @classmethod
+    def build_outputs(
+        cls, output_feature_configs: FeatureCollection[BaseOutputFeatureConfig], input_size: int
+    ) -> Dict[str, OutputFeature]:
+        """Builds and returns output feature."""
+        # TODO: only single task currently
+        if len(output_feature_configs) > 1:
+            raise ValueError("Only single task currently supported")
+
+        output_feature_config = output_feature_configs[0]
+        output_feature_config.input_size = input_size
+
+        output_features = {}
+        output_feature = cls.build_single_output(output_feature_config, output_features)
+        output_features[output_feature_config.name] = output_feature
+
+        return output_features
 
     def forward(
         self,
@@ -78,12 +119,17 @@ class LLM(BaseModel):
         assert list(inputs.keys()) == self.input_features.keys()
 
         with torch.no_grad():
-            generated_ids = self.model.generate(**inputs, generation_config=self.generation_config, max_new_tokens=4)
+            generated_ids = self.model.generate(
+                input_ids=inputs[self.config_obj.input_features[0].name].type(torch.int32),
+                attention_mask=mask,
+                generation_config=self.generation_config,
+                max_new_tokens=4,
+            )
         outputs = self.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
         return self.extract(outputs)
 
     def extract(self, outputs):
-        return {self.config_obj.input_features[0].name: outputs}
+        return {self.config_obj.output_features[0].name: outputs}
 
     def save(self, save_path):
         """Saves the model to the given path."""

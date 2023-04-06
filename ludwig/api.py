@@ -594,7 +594,7 @@ class LudwigModel:
                 set_saved_weights_in_checkpoint_flag(self.config_obj)
 
             # auto tune learning rate
-            if self.config_obj.trainer.learning_rate == AUTO:
+            if hasattr(self.config_obj.trainer, "learning_rate") and self.config_obj.trainer.learning_rate == AUTO:
                 detected_learning_rate = get_auto_learning_rate(self.config_obj)
                 self.config_obj.trainer.learning_rate = detected_learning_rate
 
