@@ -6,7 +6,6 @@ hyperopt:
   parameters:
     combiner.num_fc_layers:
       space: randint
-      type: int
       lower: 1
       upper: 4
     combiner.output_size:
@@ -14,12 +13,12 @@ hyperopt:
       categories: [128, 256]
     combiner.dropout:
       space: uniform
-      type: float
       lower: 0.0
       upper: 0.1
+    # This needs to be loguniform due to invalid schemas created by merging with a choice parameter space. See the
+    # comment in ludwig/automl/defaults/text/bert_config.yaml for more information.
     trainer.learning_rate:
       space: loguniform
-      type: float
       lower: 0.00002
       upper: 0.001
     trainer.batch_size:

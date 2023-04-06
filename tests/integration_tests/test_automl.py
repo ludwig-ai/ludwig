@@ -29,12 +29,7 @@ ray = pytest.importorskip("ray")
 import dask.dataframe as dd  # noqa
 from ray.tune.experiment.trial import Trial  # noqa
 
-from ludwig.automl import (  # noqa
-    auto_train,
-    create_auto_config,
-    create_auto_config_with_dataset_profile,
-    train_with_config,
-)
+from ludwig.automl import auto_train, create_auto_config, train_with_config  # noqa
 from ludwig.hyperopt.execution import RayTuneExecutor  # noqa
 
 pytestmark = pytest.mark.distributed
@@ -210,20 +205,6 @@ def test_create_auto_config(test_data, expectations, ray_cluster_2cpu, request):
 
     expected = merge_dict_with_features(config, expectations)
     assert config == expected
-
-
-@pytest.mark.distributed
-def test_create_auto_config_with_dataset_profile(test_data_tabular_large, ray_cluster_2cpu):
-    input_features, output_features, dataset_csv = test_data_tabular_large
-    targets = [feature[NAME] for feature in output_features]
-    df = dd.read_csv(dataset_csv)
-    config = create_auto_config_with_dataset_profile(dataset=df, target=targets[0], backend="ray")
-
-    # Ensure our configs are using the latest Ludwig schema
-    ModelConfig.from_dict(config)
-
-    assert to_name_set(config[INPUT_FEATURES]) == to_name_set(input_features)
-    assert to_name_set(config[OUTPUT_FEATURES]) == to_name_set([output_features[0]])
 
 
 def _get_sample_df(class_probs):
