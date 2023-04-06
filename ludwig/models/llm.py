@@ -46,6 +46,8 @@ class LLM(BaseModel):
             num_beams=4,
             pad_token_id=self.model.config.pad_token_id,
             eos_token_id=self.model.config.eos_token_id,
+            min_new_tokens=9,
+            max_new_tokens=9,
         )
 
         # ================ Inputs ================
@@ -118,6 +120,7 @@ class LLM(BaseModel):
 
         assert list(inputs.keys()) == self.input_features.keys()
 
+        print("INPUTS", inputs[self.config_obj.input_features[0].name].type(torch.int32))
         with torch.no_grad():
             generated_ids = self.model.generate(
                 input_ids=inputs[self.config_obj.input_features[0].name].type(torch.int32),
@@ -125,11 +128,20 @@ class LLM(BaseModel):
                 generation_config=self.generation_config,
                 max_new_tokens=4,
             )
-        outputs = self.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
-        return self.extract(outputs)
+        print("OUTPUTS", generated_ids)
+        return self.extract(generated_ids)
 
     def extract(self, outputs):
-        return {self.config_obj.output_features[0].name: outputs}
+        return {self.config_obj.output_features[0].name: {"predictions": outputs}}
+
+    def outputs_to_predictions(self, outputs: Dict[str, torch.Tensor]) -> Dict[str, Dict[str, torch.Tensor]]:
+        """Returns the model's predictions given the raw model outputs."""
+        predictions = {}
+        for of_name in self.output_features:
+            generated_ids = outputs[of_name]
+            # outputs = self.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
+            predictions[of_name] = generated_ids
+        return predictions
 
     def save(self, save_path):
         """Saves the model to the given path."""

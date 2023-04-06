@@ -343,6 +343,9 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         """
         for metric_name, metric_fn in self._metric_functions.items():
             prediction_key = get_metric_tensor_input(metric_name)
+            if metric_name == "loss":
+                continue
+            print("METRIC NAME", metric_name, predictions, prediction_key)
             metric_fn = metric_fn.to(predictions[prediction_key].device)
             metric_fn.update(predictions[prediction_key].detach(), targets)
 
