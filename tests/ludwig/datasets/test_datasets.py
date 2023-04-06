@@ -10,6 +10,7 @@ import ludwig.datasets
 from ludwig.api import LudwigModel
 from ludwig.datasets.dataset_config import DatasetConfig
 from ludwig.datasets.loaders.dataset_loader import DatasetState
+from tests.integration_tests.utils import private_test
 
 SUPPORTED_UNCOMPRESSED_FILETYPES = ["json", "jsonl", "tsv", "csv"]
 
@@ -218,6 +219,7 @@ def test_train_dataset_uri(tmpdir):
     ludwig.datasets._get_dataset_configs.cache_clear()
 
 
+@private_test
 @pytest.mark.parametrize("dataset_name,shape", [("mercedes_benz_greener", (8418, 379)), ("ames_housing", (2919, 82))])
 def test_dataset_fallback_mirror(dataset_name, shape):
     dataset_module = ludwig.datasets.get_dataset(dataset_name)

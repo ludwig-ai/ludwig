@@ -142,6 +142,12 @@ def parse_flag_from_env(key, default=False):
 _run_private_tests = parse_flag_from_env("RUN_PRIVATE", default=False)
 
 
+private_test = pytest.mark.skipif(
+    not _run_private_tests,
+    reason="Skipping: this test is marked private, set RUN_PRIVATE=1 in your environment to run",
+)
+
+
 def private_param(param):
     """Wrap param to mark it as private, meaning it requires credentials to run.
 
