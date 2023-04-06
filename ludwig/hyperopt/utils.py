@@ -4,7 +4,7 @@ import json
 import logging
 import os
 import warnings
-from typing import Any, Dict
+from typing import Any
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
@@ -139,7 +139,7 @@ def feature_dict_to_list(config: ModelConfigDict) -> ModelConfigDict:
 
 def substitute_parameters(
     config: ModelConfigDict,
-    parameters: Dict[str, Any],
+    parameters: dict[str, Any],
 ):
     """Update Ludwig config with parameters sampled from the Hyperopt sampler."""
 

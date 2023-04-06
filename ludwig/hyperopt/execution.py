@@ -11,10 +11,11 @@ import threading
 import time
 import traceback
 import uuid
+from collections.abc import Callable
 from functools import lru_cache
 from inspect import signature
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Optional, Union
 
 import ray
 from packaging import version
@@ -91,7 +92,7 @@ def _get_relative_checkpoints_dir_parts(path: Path):
 
 
 @default_retry()
-def _download_local_tmpdir(ckpt_path: str, tmpdir: str, creds: Dict[str, Any]) -> str:
+def _download_local_tmpdir(ckpt_path: str, tmpdir: str, creds: dict[str, Any]) -> str:
     local_ckpt_path = os.path.join(tmpdir, uuid.uuid4().hex)
     with use_credentials(creds):
         fs_utils.download(ckpt_path, local_ckpt_path)
@@ -102,7 +103,7 @@ def _download_local_tmpdir(ckpt_path: str, tmpdir: str, creds: Dict[str, Any]) -
 def ray_resource_allocation_function(
     trial_runner: "trial_runner.TrialRunner",  # noqa
     trial: "Trial",  # noqa
-    result: Dict[str, Any],
+    result: dict[str, Any],
     scheduler: "ResourceChangingScheduler",
 ):
     """Determine resources to allocate to running trials."""
@@ -146,15 +147,15 @@ class RayTuneExecutor:
         metric: str,
         goal: str,
         split: str,
-        search_alg: Dict,
-        trial_driver_resources: Optional[Dict] = None,
+        search_alg: dict,
+        trial_driver_resources: Optional[dict] = None,
         cpu_resources_per_trial: int = None,
         gpu_resources_per_trial: int = None,
         kubernetes_namespace: str = None,
         time_budget_s: Union[int, float, datetime.timedelta] = None,
         max_concurrent_trials: Optional[int] = None,
         num_samples: int = 1,
-        scheduler: Optional[Dict] = None,
+        scheduler: Optional[dict] = None,
         **kwargs,
     ) -> None:
         # Force-populate the search algorithm registry
@@ -185,7 +186,7 @@ class RayTuneExecutor:
         # Head node is the node to which all checkpoints are synced if running on a K8s cluster.
         self.head_node_ip = ray.util.get_node_ip_address()
 
-    def _get_search_space(self, parameters: Dict) -> Tuple[Dict, Dict]:
+    def _get_search_space(self, parameters: dict) -> tuple[dict, dict]:
         """Encode search space parameters as JSON with context for decoding."""
         config = {}
         ctx = {}
@@ -212,7 +213,7 @@ class RayTuneExecutor:
         return config, ctx
 
     @staticmethod
-    def encode_values(param: str, values: Dict, ctx: Dict) -> Dict:
+    def encode_values(param: str, values: dict, ctx: dict) -> dict:
         """JSON encodes any search spaces whose values are lists / dicts.
 
         Only applies to grid search and choice options.  See here for details:
@@ -227,7 +228,7 @@ class RayTuneExecutor:
         return values
 
     @staticmethod
-    def decode_values(config: Dict, ctx: Dict) -> Dict:
+    def decode_values(config: dict, ctx: dict) -> dict:
         """Decode config values with the decode function in the context.
 
         Uses the identity function if no encoding is needed.
@@ -317,7 +318,7 @@ class RayTuneExecutor:
     def _gpu_resources_per_trial_non_none(self):
         return self.gpu_resources_per_trial if self.gpu_resources_per_trial is not None else 0
 
-    def _get_remote_checkpoint_dir(self, trial_dir: Path) -> Optional[Union[str, Tuple[str, str]]]:
+    def _get_remote_checkpoint_dir(self, trial_dir: Path) -> Optional[Union[str, tuple[str, str]]]:
         """Get the path to remote checkpoint directory."""
         if self.sync_config is None:
             return None
@@ -375,7 +376,7 @@ class RayTuneExecutor:
 
     @staticmethod
     @contextlib.contextmanager
-    def _get_best_model_path(trial_path: str, analysis: ExperimentAnalysis, creds: Dict[str, Any]) -> str:
+    def _get_best_model_path(trial_path: str, analysis: ExperimentAnalysis, creds: dict[str, Any]) -> str:
         # `trial_dir` returned by RayTune may have a leading slash, but get_best_checkpoint
         # requires a path without a leading slash since it does a direct key lookup with analysis.trial_dataframes.
         trial_path = trial_path.rstrip("/") if isinstance(trial_path, str) else trial_path
@@ -487,7 +488,7 @@ class RayTuneExecutor:
 
         def report(progress_tracker, split=VALIDATION):
             # The progress tracker's metrics are nested dictionaries of TrainerMetrics: feature_name -> metric_name ->
-            # List[TrainerMetric], with one entry per training checkpoint, according to steps_per_checkpoint.
+            # list[TrainerMetric], with one entry per training checkpoint, according to steps_per_checkpoint.
             # We reduce the dictionary of TrainerMetrics to a simple list of floats for interfacing with Ray Tune.
             train_stats = {
                 TRAINING: metric_utils.reduce_trainer_metrics_dict(progress_tracker.train_metrics),
@@ -512,7 +513,7 @@ class RayTuneExecutor:
                 self.resume_ckpt_ref = None
                 self.eval_split = hyperopt_dict["eval_split"]
 
-            def _get_remote_checkpoint_dir(self) -> Optional[Union[str, Tuple[str, str]]]:
+            def _get_remote_checkpoint_dir(self) -> Optional[Union[str, tuple[str, str]]]:
                 # sync client has to be recreated to avoid issues with serialization
                 return tune_executor._get_remote_checkpoint_dir(trial_dir)
 
@@ -955,7 +956,7 @@ class RayTuneExecutor:
 class CallbackStopper(Stopper):
     """Ray Tune Stopper that triggers the entire job to stop if one callback returns True."""
 
-    def __init__(self, callbacks: Optional[List[Callback]]):
+    def __init__(self, callbacks: Optional[list[Callback]]):
         self.callbacks = callbacks or []
 
     def __call__(self, trial_id, result):
@@ -975,7 +976,7 @@ def get_build_hyperopt_executor(executor_type):
 executor_registry = {"ray": RayTuneExecutor}
 
 
-def set_values(params: Dict[str, Any], model_dict: Dict[str, Any]):
+def set_values(params: dict[str, Any], model_dict: dict[str, Any]):
     for key, value in params.items():
         if isinstance(value, dict):
             for sub_key, sub_value in value.items():

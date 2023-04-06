@@ -1,7 +1,7 @@
 # !/usr/bin/env python
 
 from dataclasses import dataclass
-from typing import Any, List
+from typing import Any
 
 from dataclasses_json import dataclass_json
 
@@ -22,5 +22,5 @@ class TrialResults:
 
 @dataclass
 class HyperoptResults:
-    ordered_trials: List[TrialResults]
+    ordered_trials: list[TrialResults]
     experiment_analysis: ExperimentAnalysis

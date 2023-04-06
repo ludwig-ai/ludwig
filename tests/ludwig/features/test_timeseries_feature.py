@@ -1,5 +1,3 @@
-from typing import Dict
-
 import pytest
 import torch
 
@@ -34,7 +32,7 @@ def timeseries_config():
 
 
 @pytest.mark.parametrize("encoder", ["rnn", "stacked_cnn", "parallel_cnn"])
-def test_timeseries_input_feature(timeseries_config: Dict, encoder: str) -> None:
+def test_timeseries_input_feature(timeseries_config: dict, encoder: str) -> None:
     timeseries_config[ENCODER][TYPE] = encoder
 
     timeseries_config, _ = load_config_with_kwargs(TimeseriesInputFeatureConfig, timeseries_config)

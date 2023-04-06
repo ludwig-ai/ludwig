@@ -1,7 +1,8 @@
 # Implements https://github.com/ray-project/ray/pull/30598 ahead of Ray 2.2 release.
 
 import math
-from typing import Any, Callable, Dict, Optional, Type, TYPE_CHECKING, Union
+from collections.abc import Callable
+from typing import Any, Optional, TYPE_CHECKING, Union
 
 import ray
 from ray.air.config import RunConfig
@@ -29,19 +30,19 @@ class TunerRay210(Tuner):
             Union[
                 str,
                 Callable,
-                Type[Trainable],
+                type[Trainable],
                 "BaseTrainer",
             ]
         ] = None,
         *,
-        param_space: Optional[Dict[str, Any]] = None,
+        param_space: Optional[dict[str, Any]] = None,
         tune_config: Optional[TuneConfig] = None,
         run_config: Optional[RunConfig] = None,
         # This is internal only arg.
         # Only for dogfooding purposes. We can slowly promote these args
         # to RunConfig or TuneConfig as needed.
         # TODO(xwjiang): Remove this later.
-        _tuner_kwargs: Optional[Dict] = None,
+        _tuner_kwargs: Optional[dict] = None,
         _tuner_internal: Optional[TunerInternal] = None,
     ):
         """Configure and construct a tune run."""

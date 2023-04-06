@@ -3,7 +3,7 @@ import gc
 import logging
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -144,11 +144,11 @@ class IntegratedGradientsExplainer(Explainer):
         :return: ExplanationsResult containing the explanations.
             `global_explanations`: (Explanation) Aggregate explanation for the entire input data.
 
-            `row_explanations`: (List[Explanation]) A list of explanations, one for each row in the input data. Each
+            `row_explanations`: (list[Explanation]) A list of explanations, one for each row in the input data. Each
             explanation contains the integrated gradients for each label in the target feature's vocab with respect to
             each input feature.
 
-            `expected_values`: (List[float]) of length [output feature cardinality] Average convergence delta for each
+            `expected_values`: (list[float]) of length [output feature cardinality] Average convergence delta for each
             label in the target feature's vocab.
         """
 
@@ -251,7 +251,7 @@ class IntegratedGradientsExplainer(Explainer):
 
 def get_input_tensors(
     model: LudwigModel, input_set: pd.DataFrame, run_config: ExplanationRunConfig
-) -> List[torch.Tensor]:
+) -> list[torch.Tensor]:
     """Convert the input data into a list of variables, one for each input feature.
 
     # Inputs
@@ -300,10 +300,10 @@ def get_input_tensors(
         for name, feature in model.model.input_features.items()
     }
 
-    # Dict of lists to list of dicts
+    # dict of lists to list of dicts
     input_batches = [dict(zip(inputs, t)) for t in zip(*inputs.values())]
 
-    # List of dicts to dict of lists
+    # list of dicts to dict of lists
     preproc_inputs = {k: torch.cat([d[k] for d in input_batches]) for k in input_batches[0]}
 
     data_to_predict = [v for _, v in preproc_inputs.items()]
@@ -325,7 +325,7 @@ def get_input_tensors(
     return tensors
 
 
-def get_baseline(model: LudwigModel, sample_encoded: List[Variable]) -> List[torch.Tensor]:
+def get_baseline(model: LudwigModel, sample_encoded: list[Variable]) -> list[torch.Tensor]:
     # TODO(travis): pre-compute this during training from the full training dataset.
     input_features: LudwigFeatureDict = model.model.input_features
 
@@ -357,11 +357,11 @@ def get_total_attribution(
     model: LudwigModel,
     target_feature_name: str,
     target_idx: Optional[int],
-    feature_inputs: List[Variable],
-    baseline: List[torch.Tensor],
+    feature_inputs: list[Variable],
+    baseline: list[torch.Tensor],
     nsamples: int,
     run_config: ExplanationRunConfig,
-) -> Tuple[npt.NDArray[np.float64], Dict[str, List[List[Tuple[str, float]]]]]:
+) -> tuple[npt.NDArray[np.float64], dict[str, list[list[tuple[str, float]]]]]:
     """Compute the total attribution for each input feature for each row in the input data.
 
     Args:
@@ -379,7 +379,7 @@ def get_total_attribution(
         `total_attribution_rows`: (npt.NDArray[np.float64]) of shape [num_rows, num_features]
         The total attribution for each input feature for each row in the input data.
 
-        `feat_to_token_attributions`: (Dict[str, List[List[Tuple[str, float]]]]) with values of shape
+        `feat_to_token_attributions`: (dict[str, list[list[tuple[str, float]]]]) with values of shape
         [num_rows, seq_len, 2]
 
         `total_attribution_global`: (npt.NDArray[np.float64]) of shape [num_features]
@@ -479,7 +479,7 @@ def get_token_attributions(
     feature_name: str,
     input_ids: torch.Tensor,
     token_attributions: torch.Tensor,
-) -> List[List[Tuple[str, float]]]:
+) -> list[list[tuple[str, float]]]:
     """Convert token-level attributions to an array of token-attribution pairs of shape.
 
     [batch_size, sequence_length, 2].

@@ -80,7 +80,7 @@ def test_multiple_dependencies(reduce_dependencies, hidden_shape, dependent_hidd
         else:
             expected_hidden_size += dependent_hidden_shape2[-1]
 
-    # Set up dependency reducers.
+    # set up dependency reducers.
     dependency_reducers = torch.nn.ModuleDict()
     for feature_name in other_dependencies.keys():
         dependency_reducers[feature_name] = SequenceReducer(reduce_mode=reduce_dependencies)

@@ -14,7 +14,8 @@
 # limitations under the License.
 # ==============================================================================
 import contextlib
-from typing import Iterable, Optional
+from collections.abc import Iterable
+from typing import Optional
 
 import numpy as np
 from pandas import DataFrame

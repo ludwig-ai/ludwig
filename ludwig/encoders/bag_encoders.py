@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import torch
 
@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 class BagEmbedWeightedEncoder(Encoder):
     def __init__(
         self,
-        vocab: List[str],
+        vocab: list[str],
         embedding_size: int = 50,
         representation: str = "dense",
         embeddings_trainable: bool = True,
@@ -48,7 +48,7 @@ class BagEmbedWeightedEncoder(Encoder):
         weights_initializer: str = "xavier_uniform",
         bias_initializer: str = "zeros",
         norm: Optional[str] = None,
-        norm_params: Optional[Dict[str, Any]] = None,
+        norm_params: Optional[dict[str, Any]] = None,
         activation: str = "relu",
         dropout: float = 0.0,
         encoder_config=None,

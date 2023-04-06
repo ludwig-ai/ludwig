@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import List, TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BINARY, MODEL_ECD, MODEL_GBM, NUMBER, TIMESERIES, VECTOR
@@ -100,4 +100,4 @@ class DenseEncoderConfig(BaseEncoderConfig):
 
     num_layers: int = common_fields.NumFCLayersField(default=1, non_zero=True)
 
-    fc_layers: List[dict] = common_fields.FCLayersField()
+    fc_layers: list[dict] = common_fields.FCLayersField()

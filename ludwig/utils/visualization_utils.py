@@ -17,7 +17,6 @@ import copy
 import logging
 from collections import Counter
 from sys import platform
-from typing import Dict, List
 
 import numpy as np
 import pandas as pd
@@ -324,7 +323,7 @@ def radar_chart(
 
     num_classes = len(ground_truth)
 
-    # Set ticks to the number of properties (in radians)
+    # set ticks to the number of properties (in radians)
     t = np.arange(0, 2 * np.pi, 2 * np.pi / num_classes)
     if _matplotlib_34:
         ax.set_xticks(t)
@@ -332,9 +331,9 @@ def radar_chart(
         ax.set_xticks(t, [])
     ax.set_xticklabels(np.arange(0, num_classes))
 
-    # Set yticks from 0 to 10
+    # set yticks from 0 to 10
     # ax.set_yticks(np.linspace(0, 10, 11))
-    # Set axes limits
+    # set axes limits
     # ax.set_rlim(0, 1)
     # ax.set_rscale('log')
 
@@ -901,8 +900,8 @@ def roc_curves(
 
 
 def precision_recall_curves_plot(
-    precision_recalls: Dict[str, List[float]],
-    model_names: List[str],
+    precision_recalls: dict[str, list[float]],
+    model_names: list[str],
     title: str = None,
     filename: str = None,
     callbacks=None,
@@ -1142,7 +1141,7 @@ def confusion_matrix_plot(
     ax.xaxis.tick_top()
     ax.xaxis.set_label_position("top")
 
-    # Set alpha value to prevent blue hues from being too dark
+    # set alpha value to prevent blue hues from being too dark
     cax = ax.matshow(confusion_matrix, cmap="Blues", alpha=0.6)
     # Annotate confusion matrix plot
     for (i, j), z in np.ndenumerate(confusion_matrix):

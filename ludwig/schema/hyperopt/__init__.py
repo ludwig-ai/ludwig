@@ -1,5 +1,4 @@
 from abc import ABC
-from typing import Dict
 
 from marshmallow_dataclass import dataclass
 
@@ -83,7 +82,7 @@ class HyperoptConfig(schema_utils.BaseMarshmallowConfig, ABC):
         )
     )
 
-    parameters: Dict = schema_utils.Dict(
+    parameters: dict = schema_utils.Dict(
         allow_none=False,
         description=(
             "This section consists of a set of hyperparameters to optimize. They are provided as keys (the names of "

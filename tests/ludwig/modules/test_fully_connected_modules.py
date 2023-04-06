@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 
 import numpy as np
 import pytest
@@ -42,7 +42,7 @@ def test_fc_layer(
 )
 def test_fc_stack(
     first_layer_input_size: Optional[int],
-    layers: Optional[List],
+    layers: Optional[list],
     num_layers: Optional[int],
 ):
     set_random_seed(RANDOM_SEED)

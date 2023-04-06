@@ -13,7 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import List
 
 import numpy as np
 import torch
@@ -40,7 +39,7 @@ class _H3Preprocessing(torch.nn.Module):
         self.computed_fill_value = float(metadata["preprocessing"]["computed_fill_value"])
 
     def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
-        if torch.jit.isinstance(v, List[torch.Tensor]):
+        if torch.jit.isinstance(v, list[torch.Tensor]):
             v = torch.stack(v)
 
         if not torch.jit.isinstance(v, torch.Tensor):
@@ -49,16 +48,16 @@ class _H3Preprocessing(torch.nn.Module):
         v = torch.nan_to_num(v, nan=self.computed_fill_value)
         v = v.long()
 
-        outputs: List[torch.Tensor] = []
+        outputs: list[torch.Tensor] = []
         for v_i in v:
             components = h3_to_components(v_i)
-            header: List[int] = [
+            header: list[int] = [
                 components.mode,
                 components.edge,
                 components.resolution,
                 components.base_cell,
             ]
-            cells_padding: List[int] = [self.h3_padding_value] * (self.max_h3_resolution - len(components.cells))
+            cells_padding: list[int] = [self.h3_padding_value] * (self.max_h3_resolution - len(components.cells))
             output = torch.tensor(header + components.cells + cells_padding, dtype=torch.uint8, device=v.device)
             outputs.append(output)
 

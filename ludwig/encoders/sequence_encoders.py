@@ -132,7 +132,7 @@ class SequenceEmbedEncoder(SequenceEncoder):
     ):
         """
         :param vocab: Vocabulary of the input feature to encode
-        :type vocab: List
+        :type vocab: list
         :param max_sequence_length: The maximum sequence length.
         :type max_sequence_length: int
         :param representation: the possible values are `dense` and `sparse`.
@@ -290,7 +290,7 @@ class ParallelCNN(SequenceEncoder):
                to be made of integers and will be mapped into embeddings
         :type should_embed: Boolean
         :param vocab: Vocabulary of the input feature to encode
-        :type vocab: List
+        :type vocab: list
         :param representation: the possible values are `dense` and `sparse`.
                `dense` means the embeddings are initialized randomly,
                `sparse` means they are initialized to be one-hot encodings.
@@ -340,7 +340,7 @@ class ParallelCNN(SequenceEncoder):
                list will be assigned to `conv_layers` with the value
                `[{filter_size: 2}, {filter_size: 3}, {filter_size: 4},
                {filter_size: 5}]`.
-        :type conv_layers: List
+        :type conv_layers: list
         :param num_conv_layers: if `conv_layers` is `None`, this is
                the number of parallel convolutional layers.
         :type num_conv_layers: Integer
@@ -374,7 +374,7 @@ class ParallelCNN(SequenceEncoder):
                to `fc_layers` with the value
                `[{output_size: 512}, {output_size: 256}]`
                (only applies if `reduce_output` is not `None`).
-        :type fc_layers: List
+        :type fc_layers: list
         :param num_fc_layers: if `fc_layers` is `None`, this is the number
                of stacked fully connected layers (only applies if
                `reduce_output` is not `None`).
@@ -598,7 +598,7 @@ class StackedCNN(SequenceEncoder):
                to be made of integers and will be mapped into embeddings
         :type should_embed: Boolean
         :param vocab: Vocabulary of the input feature to encode
-        :type vocab: List
+        :type vocab: list
         :param representation: the possible values are `dense` and `sparse`.
                `dense` means the embeddings are initialized randomly,
                `sparse` means they are initialized to be one-hot encodings.
@@ -648,7 +648,7 @@ class StackedCNN(SequenceEncoder):
                list will be assigned to `conv_layers` with the value
                `[{filter_size: 2}, {filter_size: 3}, {filter_size: 4},
                {filter_size: 5}]`.
-        :type conv_layers: List
+        :type conv_layers: list
         :param num_conv_layers: if `conv_layers` is `None`, this is
                the number of stacked convolutional layers.
         :type num_conv_layers: Integer
@@ -682,7 +682,7 @@ class StackedCNN(SequenceEncoder):
                to `fc_layers` with the value
                `[{output_size: 512}, {output_size: 256}]`
                (only applies if `reduce_output` is not `None`).
-        :type fc_layers: List
+        :type fc_layers: list
         :param num_fc_layers: if `fc_layers` is `None`, this is the number
                of stacked fully connected layers (only applies if
                `reduce_output` is not `None`).
@@ -929,7 +929,7 @@ class StackedParallelCNN(SequenceEncoder):
                to be made of integers and will be mapped into embeddings
         :type should_embed: Boolean
         :param vocab: Vocabulary of the input feature to encode
-        :type vocab: List
+        :type vocab: list
         :param representation: the possible values are `dense` and `sparse`.
                `dense` means the embeddings are initialized randomly,
                `sparse` means they are initialized to be one-hot encodings.
@@ -985,7 +985,7 @@ class StackedParallelCNN(SequenceEncoder):
                {filter_size: 3}, {filter_size: 4}, {filter_size: 5}],
                [{filter_size: 2}, {filter_size: 3}, {filter_size: 4},
                {filter_size: 5}]]`.
-        :type stacked_layers: List
+        :type stacked_layers: list
         :param num_stacked_layers: if `stacked_layers` is `None`, this is
                the number of elements in the stack of
                parallel convolutional layers.
@@ -1020,7 +1020,7 @@ class StackedParallelCNN(SequenceEncoder):
                to `fc_layers` with the value
                `[{output_size: 512}, {output_size: 256}]`
                (only applies if `reduce_output` is not `None`).
-        :type fc_layers: List
+        :type fc_layers: list
         :param num_fc_layers: if `fc_layers` is `None`, this is the number
                of stacked fully connected layers (only applies if
                `reduce_output` is not `None`).
@@ -1246,7 +1246,7 @@ class StackedRNN(SequenceEncoder):
                to be made of integers and will be mapped into embeddings
         :type should_embed: Boolean
         :param vocab: Vocabulary of the input feature to encode
-        :type vocab: List
+        :type vocab: list
         :param representation: the possible values are `dense` and `sparse`.
                `dense` means the embeddings are initialized randomly,
                `sparse` means they are initialized to be one-hot encodings.
@@ -1296,7 +1296,7 @@ class StackedRNN(SequenceEncoder):
                list will be assigned to `conv_layers` with the value
                `[{filter_size: 2}, {filter_size: 3}, {filter_size: 4},
                {filter_size: 5}]`.
-        :type conv_layers: List
+        :type conv_layers: list
         :param num_conv_layers: if `conv_layers` is `None`, this is
                the number of stacked convolutional layers.
         :type num_conv_layers: Integer
@@ -1530,7 +1530,7 @@ class StackedCNNRNN(SequenceEncoder):
                to be made of integers and will be mapped into embeddings
         :type should_embed: Boolean
         :param vocab: Vocabulary of the input feature to encode
-        :type vocab: List
+        :type vocab: list
         :param representation: the possible values are `dense` and `sparse`.
                `dense` means the embeddings are initialized randomly,
                `sparse` means they are initialized to be one-hot encodings.
@@ -1799,7 +1799,7 @@ class StackedTransformer(SequenceEncoder):
                to be made of integers and will be mapped into embeddings
         :type should_embed: Boolean
         :param vocab: Vocabulary of the input feature to encode
-        :type vocab: List
+        :type vocab: list
         :param representation: the possible values are `dense` and `sparse`.
                `dense` means the embeddings are initialized randomly,
                `sparse` means they are initialized to be one-hot encodings.
@@ -1849,7 +1849,7 @@ class StackedTransformer(SequenceEncoder):
                list will be assigned to `conv_layers` with the value
                `[{filter_size: 2}, {filter_size: 3}, {filter_size: 4},
                {filter_size: 5}]`.
-        :type conv_layers: List
+        :type conv_layers: list
         :param num_conv_layers: if `conv_layers` is `None`, this is
                the number of stacked convolutional layers.
         :type num_conv_layers: Integer

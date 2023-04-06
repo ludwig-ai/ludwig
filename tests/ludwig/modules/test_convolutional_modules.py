@@ -1,4 +1,5 @@
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from collections.abc import Callable
+from typing import Optional, Union
 
 import pytest
 import torch
@@ -347,13 +348,13 @@ def test_conv2d_layer(
     out_channels: int,
     kernel_size: int,
     stride: int,
-    padding: Union[int, Tuple[int], str],
-    dilation: Union[int, Tuple[int]],
+    padding: Union[int, tuple[int], str],
+    dilation: Union[int, tuple[int]],
     norm: str,
-    pool_kernel_size: Union[int, Tuple[int]],
+    pool_kernel_size: Union[int, tuple[int]],
     pool_stride: int,
-    pool_padding: Union[int, Tuple[int], str],
-    pool_dilation: Union[int, Tuple[int]],
+    pool_padding: Union[int, tuple[int], str],
+    pool_dilation: Union[int, tuple[int]],
 ) -> None:
     conv2d_layer = Conv2DLayer(
         img_height=img_height,
@@ -388,7 +389,7 @@ def test_conv2d_layer(
 def test_conv2d_stack(
     img_height: int,
     img_width: int,
-    layers: Optional[List[Dict]],
+    layers: Optional[list[dict]],
     num_layers: Optional[int],
     first_in_channels: Optional[int],
 ) -> None:

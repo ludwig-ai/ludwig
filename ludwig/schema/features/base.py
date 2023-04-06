@@ -1,6 +1,7 @@
 import logging
+from collections.abc import Iterable
 from dataclasses import Field, field
-from typing import Any, Dict, Generic, Iterable, List, Optional, Tuple, TypeVar
+from typing import Any, Generic, Optional, TypeVar
 
 from marshmallow import fields, validate
 from rich.console import Console
@@ -66,7 +67,7 @@ class BaseFeatureConfig(schema_utils.BaseMarshmallowConfig):
         default=None,
         allow_none=True,
         options=[AUDIO, BAG, BINARY, CATEGORY, DATE, H3, IMAGE, NUMBER, SEQUENCE, SET, TEXT, TIMESERIES, VECTOR],
-        description="Type of the feature.",
+        description="type of the feature.",
     )
 
     column: str = schema_utils.String(
@@ -159,9 +160,9 @@ class BaseOutputFeatureConfig(BaseFeatureConfig):
         parameter_metadata=INTERNAL_ONLY,
     )
 
-    dependencies: List[str] = schema_utils.List(
+    dependencies: list[str] = schema_utils.List(
         default=[],
-        description="List of input features that this feature depends on.",
+        description="list of input features that this feature depends on.",
     )
 
     reduce_dependencies: str = schema_utils.ReductionOptions(
@@ -188,19 +189,19 @@ T = TypeVar("T", bound=BaseFeatureConfig)
 
 
 class FeatureCollection(Generic[T], schema_utils.ListSerializable):
-    def __init__(self, features: List[T]):
+    def __init__(self, features: list[T]):
         self._features = features
         self._name_to_feature = {f.name: f for f in features}
         for k, v in self._name_to_feature.items():
             setattr(self, k, v)
 
-    def to_list(self) -> List[Dict[str, Any]]:
+    def to_list(self) -> list[dict[str, Any]]:
         out_list = []
         for feature in self._features:
             out_list.append(feature.to_dict())
         return out_list
 
-    def items(self) -> Iterable[Tuple[str, T]]:
+    def items(self) -> Iterable[tuple[str, T]]:
         return self._name_to_feature.items()
 
     def __iter__(self):
@@ -217,7 +218,7 @@ class FeatureCollection(Generic[T], schema_utils.ListSerializable):
 
 
 class FeatureList(fields.List):
-    def _serialize(self, value, attr, obj, **kwargs) -> Optional[List[Any]]:
+    def _serialize(self, value, attr, obj, **kwargs) -> Optional[list[Any]]:
         if value is None:
             return None
 
@@ -271,7 +272,7 @@ class ECDInputFeatureSelection(FeaturesTypeSelection):
     def __init__(self):
         super().__init__(
             registry=ecd_input_config_registry,
-            description="Type of the input feature",
+            description="type of the input feature",
             supplementary_metadata={"uniqueItemProperties": ["name"]},
         )
 
@@ -281,7 +282,7 @@ class ECDInputFeatureSelection(FeaturesTypeSelection):
 
 class GBMInputFeatureSelection(FeaturesTypeSelection):
     def __init__(self):
-        super().__init__(registry=gbm_input_config_registry, description="Type of the input feature")
+        super().__init__(registry=gbm_input_config_registry, description="type of the input feature")
 
     def _jsonschema_type_mapping(self):
         return get_input_feature_jsonschema(MODEL_GBM)
@@ -289,7 +290,7 @@ class GBMInputFeatureSelection(FeaturesTypeSelection):
 
 class ECDOutputFeatureSelection(FeaturesTypeSelection):
     def __init__(self):
-        super().__init__(registry=ecd_output_config_registry, description="Type of the output feature")
+        super().__init__(registry=ecd_output_config_registry, description="type of the output feature")
 
     def _jsonschema_type_mapping(self):
         return get_output_feature_jsonschema(MODEL_ECD)
@@ -297,7 +298,7 @@ class ECDOutputFeatureSelection(FeaturesTypeSelection):
 
 class GBMOutputFeatureSelection(FeaturesTypeSelection):
     def __init__(self):
-        super().__init__(max_length=1, registry=gbm_output_config_registry, description="Type of the output feature")
+        super().__init__(max_length=1, registry=gbm_output_config_registry, description="type of the output feature")
 
     def _jsonschema_type_mapping(self):
         return get_output_feature_jsonschema(MODEL_GBM)

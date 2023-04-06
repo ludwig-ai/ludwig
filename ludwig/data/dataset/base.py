@@ -16,7 +16,8 @@
 
 import contextlib
 from abc import ABC, abstractmethod
-from typing import Iterable, Optional
+from collections.abc import Iterable
+from typing import Optional
 
 from ludwig.distributed import DistributedStrategy
 from ludwig.features.base_feature import BaseFeature

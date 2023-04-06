@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.error import ConfigValidationError
@@ -20,7 +20,7 @@ class ComparatorCombinerConfig(BaseCombinerConfig):
         if self.num_fc_layers == 0 and self.fc_layers is None:
             raise ConfigValidationError(
                 "`combiner.type=comparator` requires at least one fully connected layer. "
-                "Set `num_fc_layers > 0` or `fc_layers`."
+                "set `num_fc_layers > 0` or `fc_layers`."
             )
 
         if not self.entity_1:
@@ -38,7 +38,7 @@ class ComparatorCombinerConfig(BaseCombinerConfig):
         description=COMBINER_METADATA["comparator"]["type"].long_description,
     )
 
-    entity_1: List[str] = schema_utils.List(
+    entity_1: list[str] = schema_utils.List(
         default=None,
         description=(
             "The list of input feature names `[feature_1, feature_2, ...]` constituting the first entity to compare. "
@@ -47,7 +47,7 @@ class ComparatorCombinerConfig(BaseCombinerConfig):
         parameter_metadata=COMBINER_METADATA["comparator"]["entity_1"],
     )
 
-    entity_2: List[str] = schema_utils.List(
+    entity_2: list[str] = schema_utils.List(
         default=None,
         description=(
             "The list of input feature names `[feature_1, feature_2, ...]` constituting the second entity to compare. "
@@ -66,9 +66,9 @@ class ComparatorCombinerConfig(BaseCombinerConfig):
         parameter_metadata=COMBINER_METADATA["comparator"]["use_bias"],
     )
 
-    bias_initializer: Union[str, Dict] = common_fields.BiasInitializerField()
+    bias_initializer: Union[str, dict] = common_fields.BiasInitializerField()
 
-    weights_initializer: Union[str, Dict] = common_fields.WeightsInitializerField()
+    weights_initializer: Union[str, dict] = common_fields.WeightsInitializerField()
 
     num_fc_layers: int = common_fields.NumFCLayersField(default=1)
 
@@ -82,4 +82,4 @@ class ComparatorCombinerConfig(BaseCombinerConfig):
 
     norm_params: Optional[dict] = common_fields.NormParamsField()
 
-    fc_layers: Optional[List[Dict[str, Any]]] = common_fields.FCLayersField()
+    fc_layers: Optional[list[dict[str, Any]]] = common_fields.FCLayersField()

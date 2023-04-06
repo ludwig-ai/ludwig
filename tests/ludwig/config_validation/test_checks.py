@@ -8,7 +8,7 @@ ModelConfig.from_dict(config)
 """
 
 import contextlib
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import pytest
 import yaml
@@ -157,7 +157,7 @@ def test_unsupported_features_config():
     ],
 )
 def test_comparator_fc_layer_config(
-    num_fc_layers: Optional[int], fc_layers: Optional[Dict[str, Any]], expect_success: bool
+    num_fc_layers: Optional[int], fc_layers: Optional[dict[str, Any]], expect_success: bool
 ):
     config = {
         "input_features": [
@@ -214,7 +214,7 @@ def test_dense_binary_encoder_0_layer():
         (["a1"], ["b1"], False),
     ],
 )
-def test_comparator_combiner_entities(entity_1: List[str], entity_2: List[str], expected: bool):
+def test_comparator_combiner_entities(entity_1: list[str], entity_2: list[str], expected: bool):
     config = {
         "input_features": [
             {"name": "a1", "type": "category"},

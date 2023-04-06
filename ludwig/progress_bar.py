@@ -1,5 +1,4 @@
 import uuid
-from typing import Dict
 
 import tqdm
 
@@ -43,7 +42,7 @@ class LudwigProgressBar:
     def __init__(
         self,
         report_to_ray: bool,
-        config: Dict,
+        config: dict,
         is_coordinator: bool,
     ) -> None:
         """Constructor for the LudwigProgressBar class.
@@ -62,7 +61,7 @@ class LudwigProgressBar:
         :return: (None) `None`
         """
         if report_to_ray and session is None:
-            raise ValueError("Set report_to_ray=True but ray is not installed. Run `pip install ray`")
+            raise ValueError("set report_to_ray=True but ray is not installed. Run `pip install ray`")
 
         self.id = str(uuid.uuid4())[-8:]
 

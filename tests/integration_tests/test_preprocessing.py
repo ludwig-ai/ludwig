@@ -468,7 +468,7 @@ def test_presplit_override(format, tmpdir):
     data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=25)
     data_df = pd.read_csv(data_csv)
 
-    # Set the feature value equal to an ordinal index so we can ensure the splits are identical before and after
+    # set the feature value equal to an ordinal index so we can ensure the splits are identical before and after
     # preprocessing.
     data_df[num_feat[COLUMN]] = data_df.index
 

@@ -16,10 +16,10 @@ class GBMExplainer(Explainer):
         :return: ExplanationsResult containing the explanations.
             `global_explanations`: (Explanation) Aggregate explanation for the entire input data.
 
-            `row_explanations`: (List[Explanation]) A list of explanations, one for each row in the input data. Each
+            `row_explanations`: (list[Explanation]) A list of explanations, one for each row in the input data. Each
             explanation contains the feature attributions for each label in the target feature's vocab.
 
-            `expected_values`: (List[float]) of length [output feature cardinality] Expected value for each label in
+            `expected_values`: (list[float]) of length [output feature cardinality] Expected value for each label in
             the target feature's vocab.
         """
         base_model: GBM = self.model.model

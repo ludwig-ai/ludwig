@@ -1,6 +1,6 @@
 import logging
 import time
-from typing import Any, List, Tuple
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -9,7 +9,7 @@ import scipy
 from ludwig.utils.types import DataFrame
 
 
-def _negative_sample_user(interaction_row: np.array, neg_pos_ratio: int, extra_samples: int) -> Tuple[List[int], int]:
+def _negative_sample_user(interaction_row: np.array, neg_pos_ratio: int, extra_samples: int) -> tuple[list[int], int]:
     """Returns a list of negative item indices for given user-item interactions.
 
     If there are not enough negative items, takes all of them and adds the difference to the extra_samples
@@ -20,7 +20,7 @@ def _negative_sample_user(interaction_row: np.array, neg_pos_ratio: int, extra_s
         neg_pos_ratio: number of negative samples per positive sample
         extra_samples: number of additional samples to add to the negative sample list
     Returns:
-        Tuple of list of negative item indices and number of extra samples
+        tuple of list of negative item indices and number of extra samples
     """
     # Find all items that are not interacted with by the user
     neg_items = np.where(interaction_row == 0)[1]

@@ -15,14 +15,13 @@
 # ==============================================================================
 
 from abc import ABC, abstractmethod
-from typing import Dict
 
 import numpy as np
 
 
 class Batcher(ABC):
     @abstractmethod
-    def next_batch(self) -> Dict[str, np.ndarray]:
+    def next_batch(self) -> dict[str, np.ndarray]:
         raise NotImplementedError()
 
     @abstractmethod

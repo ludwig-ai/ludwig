@@ -233,7 +233,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
     regularization_type: Optional[str] = schema_utils.RegularizerOptions(
         default="l2",
         allow_none=True,
-        description="Type of regularization.",
+        description="type of regularization.",
         parameter_metadata=TRAINER_METADATA[MODEL_ECD]["regularization_type"],
     )
 
@@ -411,7 +411,7 @@ class GBMTrainerConfig(BaseTrainerConfig):
         ["serial", "feature", "data", "voting"],
         allow_none=False,
         default="serial",
-        description="Type of tree learner to use with GBM trainer.",
+        description="type of tree learner to use with GBM trainer.",
         parameter_metadata=TRAINER_METADATA[MODEL_GBM]["tree_learner"],
     )
 
@@ -421,7 +421,7 @@ class GBMTrainerConfig(BaseTrainerConfig):
         ["gbdt", "dart"],
         allow_none=False,
         default="gbdt",
-        description="Type of boosting algorithm to use with GBM trainer.",
+        description="type of boosting algorithm to use with GBM trainer.",
         parameter_metadata=TRAINER_METADATA[MODEL_GBM]["boosting_type"],
     )
 
@@ -707,7 +707,7 @@ def get_trainer_jsonschema(model_type: str):
         "properties": props,
         "title": "trainer_options",
         "additionalProperties": False,
-        "description": "Schema for trainer determined by Model Type",
+        "description": "Schema for trainer determined by Model type",
     }
 
 

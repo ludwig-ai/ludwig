@@ -75,7 +75,7 @@ class VectorOutputFeatureConfig(VectorOutputFeatureConfigMixin, BaseOutputFeatur
 
     dependencies: list = schema_utils.List(
         default=[],
-        description="List of input features that this feature depends on.",
+        description="list of input features that this feature depends on.",
         parameter_metadata=FEATURE_METADATA[VECTOR]["dependencies"],
     )
 

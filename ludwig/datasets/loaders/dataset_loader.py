@@ -20,7 +20,7 @@ import shutil
 import urllib
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple, Union
+from typing import Optional, Union
 from urllib.parse import urlparse
 
 import pandas as pd
@@ -68,12 +68,12 @@ def get_default_cache_location() -> str:
         return str(Path.home().joinpath(".ludwig_cache"))
 
 
-def _list_of_strings(list_or_string: Union[str, List[str]]) -> List[str]:
+def _list_of_strings(list_or_string: Union[str, list[str]]) -> list[str]:
     """Helper function to accept single string or lists in config."""
     return [list_or_string] if isinstance(list_or_string, str) else list_or_string
 
 
-def _glob_multiple(pathnames: List[str], root_dir: str = None, recursive: bool = True) -> Set[str]:
+def _glob_multiple(pathnames: list[str], root_dir: str = None, recursive: bool = True) -> set[str]:
     """Recursive glob multiple patterns, returns set of matches.
 
     Note: glob's root_dir argument was added in python 3.10, not using it for compatibility.
@@ -197,11 +197,11 @@ class DatasetLoader:
         return DatasetState.NOT_LOADED
 
     @property
-    def download_urls(self) -> List[str]:
+    def download_urls(self) -> list[str]:
         return _list_of_strings(self.config.download_urls)
 
     @property
-    def download_filenames(self) -> List[str]:
+    def download_filenames(self) -> list[str]:
         """Filenames for downloaded files inferred from download_urls."""
         if self.config.archive_filenames:
             return _list_of_strings(self.config.archive_filenames)
@@ -222,17 +222,17 @@ class DatasetLoader:
         return f"{self.config.name} {self.config.version}\n{self.config.description}"
 
     @property
-    def model_configs(self) -> Dict[str, Dict]:
+    def model_configs(self) -> dict[str, dict]:
         """Returns a dictionary of built-in model configs for this dataset."""
         return model_configs_for_dataset(self.config.name)
 
     @property
-    def best_model_config(self) -> Optional[Dict]:
+    def best_model_config(self) -> Optional[dict]:
         """Returns the best built-in model config for this dataset, or None."""
         return self.model_configs.get("best")
 
     @property
-    def default_model_config(self) -> Optional[Dict]:
+    def default_model_config(self) -> Optional[dict]:
         """Returns the default built-in model config for this dataset.
 
         This is a good first model which should train in under 10m on a current laptop without GPU acceleration.
@@ -310,7 +310,7 @@ class DatasetLoader:
             else:
                 return dataset_df
 
-    def download(self, kaggle_username=None, kaggle_key=None) -> List[str]:
+    def download(self, kaggle_username=None, kaggle_key=None) -> list[str]:
         if not os.path.exists(self.raw_dataset_dir):
             os.makedirs(self.raw_dataset_dir)
         if self.is_kaggle_dataset:
@@ -357,7 +357,7 @@ class DatasetLoader:
                     digest = _sha256_digest(path)
                     logger.info(f"    {filename}: {digest}")
 
-    def extract(self) -> List[str]:
+    def extract(self) -> list[str]:
         extracted_files = set()
         for download_filename in self.download_filenames:
             download_path = os.path.join(self.raw_dataset_dir, download_filename)
@@ -383,7 +383,7 @@ class DatasetLoader:
         transformed_dataframe = self.transform_dataframe(unprocessed_dataframe)
         self.save_processed(transformed_dataframe)
 
-    def transform_files(self, file_paths: List[str]) -> List[str]:
+    def transform_files(self, file_paths: list[str]) -> list[str]:
         """Transform data files before loading to dataframe.
 
         Subclasses should override this method to process files before loading dataframe, calling the base class
@@ -419,7 +419,7 @@ class DatasetLoader:
         else:
             raise ValueError(f"Unsupported dataset file type: {file_extension}")
 
-    def load_files_to_dataframe(self, file_paths: List[str], root_dir=None) -> pd.DataFrame:
+    def load_files_to_dataframe(self, file_paths: list[str], root_dir=None) -> pd.DataFrame:
         """Loads a file or list of files and returns a dataframe.
 
         Subclasses may override this method to change the loader's behavior for groups of files.
@@ -449,7 +449,7 @@ class DatasetLoader:
             logger.warning(f"Error setting column names: {e}")
             return pd.concat(dataframes, ignore_index=True)
 
-    def load_unprocessed_dataframe(self, file_paths: List[str]) -> pd.DataFrame:
+    def load_unprocessed_dataframe(self, file_paths: list[str]) -> pd.DataFrame:
         """Load dataset files into a dataframe.
 
         Will use the list of data files in the dataset directory as a default if all of config's dataset_filenames,
@@ -504,7 +504,7 @@ class DatasetLoader:
         """Last modified time of the processed dataset after downloading successfully."""
         return os.path.getmtime(self.processed_dataset_path)
 
-    def split(self, dataset: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    def split(self, dataset: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         if SPLIT in dataset:
             dataset[SPLIT] = pd.to_numeric(dataset[SPLIT])
             training_set = dataset[dataset[SPLIT] == 0].drop(columns=[SPLIT])

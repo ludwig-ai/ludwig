@@ -1,5 +1,5 @@
 from dataclasses import field
-from typing import Dict, Optional, Union
+from typing import Optional, Union
 
 from marshmallow import fields, ValidationError
 
@@ -30,7 +30,7 @@ class ExecutorConfig(schema_utils.BaseMarshmallowConfig):
         default=3600, allow_none=True, description="The number of seconds for the entire hyperopt run."
     )
 
-    trial_driver_resources: Dict[str, float] = schema_utils.Dict(
+    trial_driver_resources: dict[str, float] = schema_utils.Dict(
         default=None,
         description=(
             "The resources reserved by each trial driver. This differs from cpu_resources_per_trial and "
@@ -77,7 +77,7 @@ class ExecutorConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-def ExecutorDataclassField(description: str, default: Dict = {}):
+def ExecutorDataclassField(description: str, default: dict = {}):
     class ExecutorMarshmallowField(fields.Field):
         def _deserialize(self, value, attr, data, **kwargs):
             if isinstance(value, dict):

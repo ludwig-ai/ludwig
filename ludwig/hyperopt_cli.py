@@ -16,7 +16,7 @@
 import argparse
 import logging
 import sys
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 from ludwig.backend import ALL_BACKENDS, Backend, initialize_backend
 from ludwig.callbacks import Callback
@@ -53,10 +53,10 @@ def hyperopt_cli(
     skip_save_eval_stats: bool = False,
     skip_save_hyperopt_statistics: bool = False,
     output_directory: str = "results",
-    gpus: Union[str, int, List[int]] = None,
+    gpus: Union[str, int, list[int]] = None,
     gpu_memory_limit: Optional[float] = None,
     allow_parallel_threads: bool = True,
-    callbacks: List[Callback] = None,
+    callbacks: list[Callback] = None,
     backend: Union[Backend, str] = None,
     random_seed: int = default_random_seed,
     hyperopt_log_verbosity: int = 3,

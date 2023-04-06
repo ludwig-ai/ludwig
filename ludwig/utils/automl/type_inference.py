@@ -1,5 +1,4 @@
 import logging
-from typing import Set
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import AUDIO, BINARY, CATEGORY, DATE, IMAGE, NUMBER, TEXT
@@ -72,7 +71,7 @@ def infer_type(field: FieldInfo, missing_value_percent: float, row_count: int) -
 
 @DeveloperAPI
 def should_exclude(
-    idx: int, field: FieldInfo, dtype: str, column_count: int, row_count: int, targets: Set[str]
+    idx: int, field: FieldInfo, dtype: str, column_count: int, row_count: int, targets: set[str]
 ) -> bool:
     if field.key == "PRI":
         logging.info(f"Exclude {field.name} ({dtype}): primary key")

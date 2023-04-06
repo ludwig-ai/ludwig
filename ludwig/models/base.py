@@ -1,7 +1,7 @@
 import logging
 from abc import ABCMeta, abstractmethod
 from collections import OrderedDict
-from typing import Dict, Optional, Tuple, Union
+from typing import Optional, Union
 
 import numpy as np
 import torch
@@ -49,7 +49,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         self.output_features = LudwigFeatureDict()
 
     @classmethod
-    def build_inputs(cls, input_feature_configs: FeatureCollection[BaseInputFeatureConfig]) -> Dict[str, InputFeature]:
+    def build_inputs(cls, input_feature_configs: FeatureCollection[BaseInputFeatureConfig]) -> dict[str, InputFeature]:
         """Builds and returns input features in topological order."""
         input_features = OrderedDict()
         input_features_def = topological_sort_feature_dependencies(input_feature_configs.to_list())
@@ -61,7 +61,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
 
     @staticmethod
     def build_single_input(
-        feature_config: BaseInputFeatureConfig, other_input_features: Optional[Dict[str, InputFeature]]
+        feature_config: BaseInputFeatureConfig, other_input_features: Optional[dict[str, InputFeature]]
     ) -> InputFeature:
         """Builds a single input feature from the input feature definition."""
         logger.debug(f"Input {feature_config.type} feature {feature_config.name}")
@@ -77,7 +77,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
     @classmethod
     def build_outputs(
         cls, output_feature_configs: FeatureCollection[BaseOutputFeatureConfig], combiner: Combiner
-    ) -> Dict[str, OutputFeature]:
+    ) -> dict[str, OutputFeature]:
         """Builds and returns output features in topological order."""
         output_features_def = topological_sort_feature_dependencies(output_feature_configs.to_list())
         output_features = {}
@@ -93,7 +93,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
 
     @staticmethod
     def build_single_output(
-        feature_config: BaseOutputFeatureConfig, output_features: Optional[Dict[str, OutputFeature]]
+        feature_config: BaseOutputFeatureConfig, output_features: Optional[dict[str, OutputFeature]]
     ) -> OutputFeature:
         """Builds a single output feature from the output feature definition."""
         logger.debug(f"Output {feature_config.type} feature {feature_config.name}")
@@ -148,10 +148,10 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
     def forward(
         self,
         inputs: Union[
-            Dict[str, torch.Tensor], Dict[str, np.ndarray], Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
+            dict[str, torch.Tensor], dict[str, np.ndarray], tuple[dict[str, torch.Tensor], dict[str, torch.Tensor]]
         ],
         mask=None,
-    ) -> Dict[str, torch.Tensor]:
+    ) -> dict[str, torch.Tensor]:
         """Forward pass of the model.
 
         Args:
@@ -170,7 +170,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         outputs = self(inputs)
         return self.outputs_to_predictions(outputs)
 
-    def outputs_to_predictions(self, outputs: Dict[str, torch.Tensor]) -> Dict[str, Dict[str, torch.Tensor]]:
+    def outputs_to_predictions(self, outputs: dict[str, torch.Tensor]) -> dict[str, dict[str, torch.Tensor]]:
         """Returns the model's predictions given the raw model outputs."""
         predictions = {}
         for of_name in self.output_features:
@@ -193,7 +193,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         predictions,
         regularization_type: Optional[str] = None,
         regularization_lambda: Optional[float] = None,
-    ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+    ) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
         """Computes the training loss for the model.
 
         Args:
@@ -254,7 +254,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         self.eval_loss_metric.update(eval_loss)
         self.eval_additional_losses_metrics.update(additional_losses)
 
-    def get_metrics(self) -> Dict[str, Dict[str, float]]:
+    def get_metrics(self) -> dict[str, dict[str, float]]:
         """Returns a dictionary of metrics for each output feature of the model."""
         all_of_metrics = {}
         for of_name, of_obj in self.output_features.items():

@@ -1,6 +1,6 @@
 import os
 from contextlib import contextmanager
-from typing import Dict, Optional, Tuple, Union
+from typing import Optional, Union
 
 import lightgbm as lgb
 import numpy as np
@@ -60,7 +60,7 @@ class GBM(BaseModel):
     @classmethod
     def build_outputs(
         cls, output_feature_configs: FeatureCollection[BaseOutputFeatureConfig], input_size: int
-    ) -> Dict[str, OutputFeature]:
+    ) -> dict[str, OutputFeature]:
         """Builds and returns output feature."""
         # TODO: only single task currently
         if len(output_feature_configs) > 1:
@@ -99,10 +99,10 @@ class GBM(BaseModel):
     def forward(
         self,
         inputs: Union[
-            Dict[str, torch.Tensor], Dict[str, np.ndarray], Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
+            dict[str, torch.Tensor], dict[str, np.ndarray], tuple[dict[str, torch.Tensor], dict[str, torch.Tensor]]
         ],
         mask=None,
-    ) -> Dict[str, torch.Tensor]:
+    ) -> dict[str, torch.Tensor]:
         # Invoke output features.
         output_logits = {}
         output_feature_name = self.output_features.keys()[0]

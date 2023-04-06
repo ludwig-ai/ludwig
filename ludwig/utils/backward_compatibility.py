@@ -16,7 +16,8 @@
 import copy
 import logging
 import warnings
-from typing import Any, Callable, Dict, List, Union
+from collections.abc import Callable
+from typing import Any, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
@@ -88,7 +89,7 @@ config_transformation_registry = VersionTransformationRegistry()
 
 
 @DeveloperAPI
-def register_config_transformation(version: str, prefixes: Union[str, List[str]] = []) -> Callable:
+def register_config_transformation(version: str, prefixes: Union[str, list[str]] = []) -> Callable:
     """This decorator registers a transformation function for a config version. Version is the first version which
     requires the transform. For example, since "training" is renamed to "trainer" in 0.5, this change should be
     registered with 0.5.  from_version < version <= to_version.
@@ -103,7 +104,7 @@ def register_config_transformation(version: str, prefixes: Union[str, List[str]]
     if isinstance(prefixes, str):
         prefixes = [prefixes]
 
-    def wrap(fn: Callable[[Dict], Dict]):
+    def wrap(fn: Callable[[dict], dict]):
         config_transformation_registry.register(VersionTransformation(transform=fn, version=version, prefixes=prefixes))
         return fn
 
@@ -126,7 +127,7 @@ def upgrade_config_dict_to_latest_version(config: ModelConfigDict) -> ModelConfi
     )
 
 
-def upgrade_model_progress(model_progress: Dict) -> Dict:
+def upgrade_model_progress(model_progress: dict) -> dict:
     """Updates model progress info to be compatible with latest ProgressTracker implementation.
 
     Notably, we convert epoch-based stats to their step-based equivalents and reformat metrics into `TrainerMetric`
@@ -205,7 +206,7 @@ def upgrade_model_progress(model_progress: Dict) -> Dict:
     return ret
 
 
-def _traverse_dicts(config: Any, f: Callable[[Dict], None]):
+def _traverse_dicts(config: Any, f: Callable[[dict], None]):
     """Recursively applies function f to every dictionary contained in config.
 
     f should in-place modify the config dict. f will be called on leaves first, root last.
@@ -220,7 +221,7 @@ def _traverse_dicts(config: Any, f: Callable[[Dict], None]):
 
 
 @register_config_transformation("0.6", "backend")
-def _update_backend_cache_credentials(backend: Dict[str, Any]) -> Dict[str, Any]:
+def _update_backend_cache_credentials(backend: dict[str, Any]) -> dict[str, Any]:
     if "cache_credentials" in backend:
         credentials = backend.get("credentials", {})
         if "cache" in credentials:
@@ -366,7 +367,7 @@ def _upgrade_encoder_decoder_params(feature: FeatureConfigDict, input_feature: b
     """
     This function nests un-nested encoder/decoder parameters to conform with the new config structure for 0.6
     Args:
-        feature (Dict): Feature to nest encoder/decoder params for.
+        feature (dict): Feature to nest encoder/decoder params for.
         input_feature (Bool): Whether this feature is an input feature or not.
     """
     if TYPE not in feature:

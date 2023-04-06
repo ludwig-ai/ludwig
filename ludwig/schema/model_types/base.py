@@ -1,6 +1,6 @@
 import copy
 from abc import ABC
-from typing import Any, Dict, Optional, Set
+from typing import Any, Optional
 
 from marshmallow import ValidationError
 
@@ -48,7 +48,7 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
     defaults: BaseDefaultsConfig
     hyperopt: Optional[HyperoptConfig] = None
 
-    backend: Dict[str, Any] = schema_utils.Dict()  # TODO(jeffkinnison): Add backend schema
+    backend: dict[str, Any] = schema_utils.Dict()  # TODO(jeffkinnison): Add backend schema
     ludwig_version: str = schema_utils.ProtectedString(LUDWIG_VERSION)
 
     def __post_init__(self):
@@ -93,7 +93,7 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
         #
         # Illustrative example: test_validate_config_misc.py::test_validate_no_trainer_type
         #
-        # TODO: Set `additionalProperties=False` for all Ludwig schema, and look into passing in `unknown='RAISE'` to
+        # TODO: set `additionalProperties=False` for all Ludwig schema, and look into passing in `unknown='RAISE'` to
         # marshmallow.load(), which raises an error for unknown fields during deserialization.
         # https://marshmallow.readthedocs.io/en/stable/marshmallow.schema.html#marshmallow.schema.Schema.load
         check_schema(config)
@@ -111,7 +111,7 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
     def from_yaml(config_path: str) -> "ModelConfig":
         return ModelConfig.from_dict(load_yaml(config_path))
 
-    def get_feature_names(self) -> Set[str]:
+    def get_feature_names(self) -> set[str]:
         """Returns a set of all feature names."""
         feature_names = set()
         feature_names.update([f.column for f in self.input_features])
@@ -137,7 +137,7 @@ def register_model_type(name: str):
     return wrap
 
 
-def _merge_encoder_cache_params(preprocessing_params: Dict[str, Any], encoder_params: Dict[str, Any]) -> Dict[str, Any]:
+def _merge_encoder_cache_params(preprocessing_params: dict[str, Any], encoder_params: dict[str, Any]) -> dict[str, Any]:
     if preprocessing_params.get("cache_encoder_embeddings"):
         preprocessing_params[ENCODER] = encoder_params
     return preprocessing_params

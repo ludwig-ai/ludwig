@@ -1,7 +1,8 @@
 from abc import ABC
+from collections.abc import Callable
 from dataclasses import field
 from importlib import import_module
-from typing import Callable, Dict, Optional, Tuple, Union
+from typing import Optional, Union
 
 from marshmallow import fields, ValidationError
 
@@ -247,7 +248,7 @@ class PopulationBasedTrainingSchedulerConfig(BaseSchedulerConfig):
         ),
     )
 
-    hyperparam_mutations: Optional[Dict] = schema_utils.Dict(
+    hyperparam_mutations: Optional[dict] = schema_utils.Dict(
         default=None,
         description=(
             "Hyperparams to mutate. The format is as follows: for each key, either a list, function, or a tune search "
@@ -282,7 +283,7 @@ class PopulationBasedTrainingSchedulerConfig(BaseSchedulerConfig):
         ),
     )
 
-    perturbation_factors: Tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(
+    perturbation_factors: tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(
         default=(1.2, 0.8),
         allow_none=False,
         max=None,
@@ -364,7 +365,7 @@ class PopulationBasedBanditsSchedulerConfig(BaseSchedulerConfig):
         ),
     )
 
-    hyperparam_bounds: Optional[Dict] = schema_utils.Dict(
+    hyperparam_bounds: Optional[dict] = schema_utils.Dict(
         default=None,
         description=(
             "Hyperparameters to mutate. The format is as follows: for each key, enter a list of the form [min, max] "
@@ -492,7 +493,7 @@ def SchedulerDataclassField(default={"type": "fifo"}, description="Hyperopt sche
     """Custom dataclass field that when used inside of a dataclass will allow any scheduler in
     `ludwig.schema.hyperopt.scheduler.scheduler_registry`. Sets default scheduler to 'fifo'.
 
-    :param default: Dict specifying a scheduler with a `type` field and its associated parameters. Will attempt to use
+    :param default: dict specifying a scheduler with a `type` field and its associated parameters. Will attempt to use
            `type` to load scheduler from registry with given params. (default: {"type": "fifo"}).
     :return: Initialized dataclass field that converts untyped dicts with params to scheduler dataclass instances.
     """

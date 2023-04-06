@@ -4,10 +4,7 @@ import warnings
 from abc import ABC, abstractmethod
 from dataclasses import field, Field
 from functools import lru_cache
-from typing import Any
-from typing import Dict as TDict
-from typing import List as TList
-from typing import Optional, Set, Tuple, Type, TypeVar, Union
+from typing import Any, Optional, TypeVar, Union
 
 import marshmallow_dataclass
 import yaml
@@ -24,6 +21,8 @@ from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, 
 from ludwig.utils.registry import Registry
 from ludwig.utils.torch_utils import activations, initializer_registry
 
+TDict = dict
+TList = list
 RECURSION_STOP_ENUM = {"weights_initializer", "bias_initializer", "norm_params"}
 ludwig_dataclass = m_dataclass(repr=False, order=True)
 
@@ -35,7 +34,7 @@ def get_marshmallow_field_class_name(field):
 
 
 @DeveloperAPI
-def load_config(cls: Type["BaseMarshmallowConfig"], **kwargs) -> "BaseMarshmallowConfig":  # noqa 0821
+def load_config(cls: type["BaseMarshmallowConfig"], **kwargs) -> "BaseMarshmallowConfig":  # noqa 0821
     """Takes a marshmallow class and instantiates it with the given keyword args as parameters."""
     assert_is_a_marshmallow_class(cls)
     schema = cls.Schema()
@@ -45,7 +44,7 @@ def load_config(cls: Type["BaseMarshmallowConfig"], **kwargs) -> "BaseMarshmallo
 @DeveloperAPI
 def load_trainer_with_kwargs(
     model_type: str, kwargs: dict
-) -> Tuple["BaseMarshmallowConfig", TDict[str, Any]]:  # noqa: F821
+) -> tuple["BaseMarshmallowConfig", TDict[str, Any]]:  # noqa: F821
     """Special case of `load_config_with_kwargs` for the trainer schemas.
 
     In particular, it chooses the correct default type for an incoming config (if it doesn't have one already), but
@@ -61,8 +60,8 @@ def load_trainer_with_kwargs(
 
 @DeveloperAPI
 def load_config_with_kwargs(
-    cls: Type["BaseMarshmallowConfig"], kwargs_overrides
-) -> Tuple["BaseMarshmallowConfig", TDict[str, Any]]:  # noqa 0821
+    cls: type["BaseMarshmallowConfig"], kwargs_overrides
+) -> tuple["BaseMarshmallowConfig", TDict[str, Any]]:  # noqa 0821
     """Instatiates an instance of the marshmallow class and kwargs overrides instantiantes the schema.
 
     Returns a tuple of config, and a dictionary of any keys in kwargs_overrides which are not present in config.
@@ -194,13 +193,13 @@ class BaseMarshmallowConfig(ABC):
         return copy_data
 
     @classmethod
-    def from_dict(cls: Type[ConfigT], d: TDict[str, Any]) -> ConfigT:
+    def from_dict(cls: type[ConfigT], d: TDict[str, Any]) -> ConfigT:
         schema = cls.get_class_schema()()
         return schema.load(d)
 
     @classmethod
     @lru_cache(maxsize=None)
-    def get_valid_field_names(cls) -> Set[str]:
+    def get_valid_field_names(cls) -> set[str]:
         schema = cls.get_class_schema()()
         return set(schema.fields.keys())
 
@@ -660,7 +659,7 @@ def FloatRange(
 
 
 @DeveloperAPI
-def Dict(
+def dict(
     default: Union[None, TDict] = None,
     allow_none: bool = True,
     description: str = "",
@@ -697,9 +696,9 @@ def Dict(
 
 
 @DeveloperAPI
-def List(
-    list_type: Union[Type[str], Type[int], Type[float], Type[list]] = str,
-    inner_type: Union[Type[str], Type[int], Type[float], Type[dict]] = float,
+def list(
+    list_type: Union[type[str], type[int], type[float], type[list]] = str,
+    inner_type: Union[type[str], type[int], type[float], type[dict]] = float,
     default: Union[None, TList[Any]] = None,
     allow_none: bool = True,
     description: str = "",
@@ -708,8 +707,8 @@ def List(
     """Returns a dataclass field with marshmallow metadata enforcing input must be a list.
 
     Args:
-        list_type: Type of the top-level list items.
-        inner_type: Type of the contents of inner lists. Only used when `list_type` is `list`.
+        list_type: type of the top-level list items.
+        inner_type: type of the contents of inner lists. Only used when `list_type` is `list`.
     """
     if default is not None:
         try:
@@ -724,7 +723,7 @@ def List(
 
     # When using a flat list, we just need to check that the type of the contents is valid. Lists of lists were
     # originally restricted to contain floats, but we now include a type check that includes all flat list types and
-    # dictionaries. List of list of dict supports some valid hyperopt categorical parameter configs (e.g.,
+    # dictionaries. list of list of dict supports some valid hyperopt categorical parameter configs (e.g.,
     # hyperopting `decoder.fc_layers` configs).
     if list_type is not list:
         try:
@@ -874,9 +873,9 @@ def InitializerOrDict(
 
             if isinstance(value, dict):
                 if "type" not in value:
-                    raise ValidationError("Dict must contain 'type'")
+                    raise ValidationError("dict must contain 'type'")
                 if value["type"] not in initializers:
-                    raise ValidationError(f"Dict expected key 'type' to be one of: {initializers}, found: {value}")
+                    raise ValidationError(f"dict expected key 'type' to be one of: {initializers}, found: {value}")
                 return value
 
             raise ValidationError("Field should be str or dict")
@@ -931,7 +930,7 @@ def InitializerOrDict(
 @DeveloperAPI
 def FloatRangeTupleDataclassField(
     n: int = 2,
-    default: Union[Tuple, None] = (0.9, 0.999),
+    default: Union[tuple, None] = (0.9, 0.999),
     allow_none: bool = False,
     min: Union[int, None] = 0,
     max: Union[int, None] = 1,
@@ -973,7 +972,7 @@ def FloatRangeTupleDataclassField(
                 "description": "Valid options for FloatRangeTupleDataclassField.",
             }
 
-    def validate_range(data: Tuple):
+    def validate_range(data: tuple):
         if isinstance(data, tuple) and all([isinstance(x, float) or isinstance(x, int) for x in data]):
             minmax_checks = []
             if min is not None:
@@ -985,7 +984,7 @@ def FloatRangeTupleDataclassField(
             raise ValidationError(
                 f"Values in received tuple should be in range [{min},{max}], instead received: {data}"
             )
-        raise ValidationError(f'Received value should be of {n}-dimensional "Tuple[float]", instead received: {data}')
+        raise ValidationError(f'Received value should be of {n}-dimensional "tuple[float]", instead received: {data}')
 
     try:
         if default is not None:
@@ -1200,7 +1199,7 @@ class TypeSelection(fields.Field):
         maybe_str = ", `str`," if self.allow_str_value else ""
         raise ValidationError(f"Invalid param {value}, expected `None`{maybe_str} or `dict`")
 
-    def get_schema_from_registry(self, key: str) -> Type[BaseMarshmallowConfig]:
+    def get_schema_from_registry(self, key: str) -> type[BaseMarshmallowConfig]:
         return self.registry[key]
 
     def get_default_field(self) -> Field:
@@ -1218,7 +1217,7 @@ class TypeSelection(fields.Field):
 class DictMarshmallowField(fields.Field):
     def __init__(
         self,
-        cls: Type[BaseMarshmallowConfig],
+        cls: type[BaseMarshmallowConfig],
         allow_none: bool = True,
         default_missing: bool = False,
         description: str = "",

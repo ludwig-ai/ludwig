@@ -1,6 +1,5 @@
 import logging
 from collections import defaultdict, OrderedDict
-from typing import Dict, List, Tuple
 
 try:
     from typing import Literal
@@ -19,8 +18,8 @@ logger = logging.getLogger(__name__)
 
 
 @DeveloperAPI
-def initialize_trainer_metric_dict(output_features) -> Dict[str, Dict[str, List[TrainerMetric]]]:
-    """Returns a dict of dict of metrics, output_feature_name -> metric_name -> List[TrainerMetric]."""
+def initialize_trainer_metric_dict(output_features) -> dict[str, dict[str, list[TrainerMetric]]]:
+    """Returns a dict of dict of metrics, output_feature_name -> metric_name -> list[TrainerMetric]."""
     metrics = OrderedDict()
 
     for output_feature_name, output_feature in output_features.items():
@@ -33,8 +32,8 @@ def initialize_trainer_metric_dict(output_features) -> Dict[str, Dict[str, List[
 
 
 def get_latest_metrics_dict(
-    progress_tracker_metrics: Dict[str, Dict[str, List[TrainerMetric]]]
-) -> Dict[str, Dict[str, float]]:
+    progress_tracker_metrics: dict[str, dict[str, list[TrainerMetric]]]
+) -> dict[str, dict[str, float]]:
     """Returns a dict of field name -> metric name -> latest metric value."""
     latest_metrics_dict = defaultdict(dict)
     for feature_name, metrics_dict in progress_tracker_metrics.items():
@@ -52,7 +51,7 @@ def get_new_progress_tracker(
     best_eval_metric_value: float,
     best_increase_batch_size_eval_metric: float,
     learning_rate: float,
-    output_features: Dict[str, OutputFeature],
+    output_features: dict[str, OutputFeature],
 ):
     """Returns a new instance of a ProgressTracker with empty metrics."""
     return ProgressTracker(
@@ -105,19 +104,19 @@ class ProgressTracker:
         learning_rate: float,
         num_reductions_learning_rate: int,
         num_increases_batch_size: int,
-        train_metrics: Dict[str, Dict[str, List[TrainerMetric]]],
-        validation_metrics: Dict[str, Dict[str, List[TrainerMetric]]],
-        test_metrics: Dict[str, Dict[str, List[TrainerMetric]]],
+        train_metrics: dict[str, dict[str, list[TrainerMetric]]],
+        validation_metrics: dict[str, dict[str, list[TrainerMetric]]],
+        test_metrics: dict[str, dict[str, list[TrainerMetric]]],
         last_learning_rate_reduction: int,
         last_increase_batch_size: int,
-        best_eval_train_metrics: Dict[str, Dict[str, float]],
-        best_eval_validation_metrics: Dict[str, Dict[str, float]],
-        best_eval_test_metrics: Dict[str, Dict[str, float]],
+        best_eval_train_metrics: dict[str, dict[str, float]],
+        best_eval_validation_metrics: dict[str, dict[str, float]],
+        best_eval_test_metrics: dict[str, dict[str, float]],
     ):
         """JSON-serializable holder object that stores information related to training progress.
 
         [train/vali/test]_metrics is a nested dictionary of TrainerMetrics: feature_name -> metric_name ->
-        List[TrainerMetrics], with one entry per training checkpoint.
+        list[TrainerMetrics], with one entry per training checkpoint.
 
         Note that when a model resumes training from a checkpoint, the progress tracker is deserialized from JSON, which
         automatically converts TrainerMetrics namedtuples into regular (epoch, steps, value) tuples.
@@ -193,7 +192,7 @@ class ProgressTracker:
         save_json(filepath, self.__dict__)
 
     @staticmethod
-    def load(progress_tracking_dict: Dict):
+    def load(progress_tracking_dict: dict):
         from ludwig.utils.backward_compatibility import upgrade_model_progress
 
         loaded = upgrade_model_progress(progress_tracking_dict)
@@ -248,10 +247,10 @@ class ProgressTracker:
 def append_metrics(
     model: BaseModel,
     dataset_name: Literal["train", "validation", "test"],
-    results: Dict[str, Dict[str, float]],
-    metrics_log: Dict[str, Dict[str, List[TrainerMetric]]],
+    results: dict[str, dict[str, float]],
+    metrics_log: dict[str, dict[str, list[TrainerMetric]]],
     progress_tracker: ProgressTracker,
-) -> Dict[str, Dict[str, List[TrainerMetric]]]:
+) -> dict[str, dict[str, list[TrainerMetric]]]:
     epoch = progress_tracker.epoch
     steps = progress_tracker.steps
     for output_feature in model.output_features:
@@ -291,7 +290,7 @@ def get_final_steps_per_checkpoint(
             "other, or specify neither to checkpoint/eval the model every epoch."
         )
 
-    # Set steps_per_checkpoint based on the checkpoints_per_epoch, if checkpoints_per_epoch was specified.
+    # set steps_per_checkpoint based on the checkpoints_per_epoch, if checkpoints_per_epoch was specified.
     if checkpoints_per_epoch != 0:
         steps_per_checkpoint = int(steps_per_epoch / checkpoints_per_epoch)
 
@@ -316,9 +315,9 @@ def get_training_report(
     validation_field: str,
     validation_metric: str,
     include_test_set: bool,
-    train_valiset_stats: Dict[str, Dict[str, List[float]]],
-    train_testset_stats: Dict[str, Dict[str, List[float]]],
-) -> List[Tuple[str, str]]:
+    train_valiset_stats: dict[str, dict[str, list[float]]],
+    train_testset_stats: dict[str, dict[str, list[float]]],
+) -> list[tuple[str, str]]:
     """Returns a training report in the form of a list [(report item, value)]."""
     validation_field_result = train_valiset_stats[validation_field]
     best_function = get_best_function(validation_metric)

@@ -17,7 +17,7 @@ import argparse
 import logging
 import os
 import sys
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 import pandas as pd
 
@@ -59,10 +59,10 @@ def experiment_cli(
     skip_collect_predictions: bool = False,
     skip_collect_overall_stats: bool = False,
     output_directory: str = "results",
-    gpus: Union[str, int, List[int]] = None,
+    gpus: Union[str, int, list[int]] = None,
     gpu_memory_limit: Optional[float] = None,
     allow_parallel_threads: bool = True,
-    callbacks: List[Callback] = None,
+    callbacks: list[Callback] = None,
     backend: Union[Backend, str] = None,
     random_seed: int = default_random_seed,
     logging_level: int = logging.INFO,
@@ -175,12 +175,12 @@ def experiment_cli(
      :param logging_level: (int) Log level that will be sent to stderr.
 
      # Return
-     :return: (Tuple[LudwigModel, dict, dict, tuple, str)):
+     :return: (tuple[LudwigModel, dict, dict, tuple, str)):
         `(model, evaluation_statistics, training_statistics, preprocessed_data, output_directory)`
          `model` LudwigModel instance
          `evaluation_statistics` dictionary with evaluation performance
              statistics on the test_set,
-         `training_statistics` is a nested dictionary of dataset -> feature_name -> metric_name -> List of metrics.
+         `training_statistics` is a nested dictionary of dataset -> feature_name -> metric_name -> list of metrics.
                 Each metric corresponds to each training checkpoint.
          `preprocessed_data` tuple containing preprocessed
          `(training_set, validation_set, test_set)`, `output_directory`

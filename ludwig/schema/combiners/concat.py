@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import common_fields
@@ -38,9 +38,9 @@ class ConcatCombinerConfig(BaseCombinerConfig):
         parameter_metadata=COMBINER_METADATA["concat"]["use_bias"],
     )
 
-    bias_initializer: Union[str, Dict] = common_fields.BiasInitializerField()
+    bias_initializer: Union[str, dict] = common_fields.BiasInitializerField()
 
-    weights_initializer: Union[str, Dict] = common_fields.WeightsInitializerField()
+    weights_initializer: Union[str, dict] = common_fields.WeightsInitializerField()
 
     num_fc_layers: int = common_fields.NumFCLayersField()
 
@@ -54,4 +54,4 @@ class ConcatCombinerConfig(BaseCombinerConfig):
 
     norm_params: Optional[dict] = common_fields.NormParamsField()
 
-    fc_layers: Optional[List[Dict[str, Any]]] = common_fields.FCLayersField()
+    fc_layers: Optional[list[dict[str, Any]]] = common_fields.FCLayersField()

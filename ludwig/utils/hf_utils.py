@@ -2,7 +2,7 @@ import logging
 import os
 import tempfile
 from os import PathLike
-from typing import Optional, Tuple, Type, Union
+from typing import Optional, Union
 
 from transformers import AutoTokenizer, PreTrainedModel
 from transformers.tokenization_utils import PreTrainedTokenizer
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 @default_retry()
 def load_pretrained_hf_model_from_hub(
-    model_class: Type,
+    model_class: type,
     pretrained_model_name_or_path: Optional[Union[str, PathLike]],
     **pretrained_kwargs,
 ) -> PreTrainedModel:
@@ -49,7 +49,7 @@ def load_pretrained_hf_tokenizer(
 
 
 def _load_pretrained_hf_model_from_dir(
-    model_class: Type,
+    model_class: type,
     pretrained_model_name_or_path: Optional[Union[str, PathLike]],
     **pretrained_kwargs,
 ) -> PreTrainedModel:
@@ -61,10 +61,10 @@ def _load_pretrained_hf_model_from_dir(
 
 @DeveloperAPI
 def load_pretrained_hf_model_with_hub_fallback(
-    model_class: Type,
+    model_class: type,
     pretrained_model_name_or_path: Optional[Union[str, PathLike]],
     **pretrained_kwargs,
-) -> Tuple[PreTrainedModel, bool]:
+) -> tuple[PreTrainedModel, bool]:
     """Returns the model and a boolean indicating whether the model was downloaded from the HuggingFace hub.
 
     If the `LUDWIG_PRETRAINED_MODELS_DIR` environment variable is set, we attempt to load the HF model from this

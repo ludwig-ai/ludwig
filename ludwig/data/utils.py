@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Optional
 
 import numpy as np
 
@@ -10,7 +10,7 @@ from ludwig.utils.types import DataFrame
 
 def convert_to_dict(
     predictions: DataFrame,
-    output_features: Dict[str, FeatureConfigDict],
+    output_features: dict[str, FeatureConfigDict],
     backend: Optional["Backend"] = None,  # noqa: F821
 ):
     """Convert predictions from DataFrame format to a dictionary."""

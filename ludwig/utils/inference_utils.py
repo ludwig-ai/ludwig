@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Optional
 
 import pandas as pd
 import torch
@@ -46,7 +46,7 @@ def get_filename_from_stage(stage: str, device: TorchDevice) -> str:
 
 def to_inference_module_input_from_dataframe(
     dataset: pd.DataFrame, config: ModelConfigDict, load_paths: bool = False, device: Optional[torch.device] = None
-) -> Dict[str, TorchscriptPreprocessingInput]:
+) -> dict[str, TorchscriptPreprocessingInput]:
     """Converts a pandas DataFrame to be compatible with a torchscripted InferenceModule forward pass."""
     inputs = {}
     for if_config in config["input_features"]:

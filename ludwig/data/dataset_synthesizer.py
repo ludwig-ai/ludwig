@@ -20,7 +20,7 @@ import random
 import string
 import sys
 import uuid
-from typing import Dict, List, Optional, Union
+from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -176,11 +176,11 @@ def build_synthetic_dataset_df(dataset_size: int, config: ModelConfigDict) -> pd
 
 
 @DeveloperAPI
-def build_synthetic_dataset(dataset_size: int, features: List[dict], outdir: str = "."):
+def build_synthetic_dataset(dataset_size: int, features: list[dict], outdir: str = "."):
     """Synthesizes a dataset for testing purposes.
 
     :param dataset_size: (int) size of the dataset
-    :param features: (List[dict]) list of features to generate in YAML format.
+    :param features: (list[dict]) list of features to generate in YAML format.
         Provide a list containing one dictionary for each feature,
         each dictionary must include a name, a type
         and can include some generation parameters depending on the type
@@ -223,7 +223,7 @@ def build_synthetic_dataset(dataset_size: int, features: List[dict], outdir: str
         yield generate_datapoint(features=features, outdir=outdir)
 
 
-def generate_datapoint(features: List[Dict], outdir: str) -> Union[str, int, bool]:
+def generate_datapoint(features: list[dict], outdir: str) -> Union[str, int, bool]:
     """Returns a synthetic example containing features specified by the features spec.
 
     `outdir` is only used for generating synthetic image and synthetic audio features. Otherwise, it is unused.
@@ -530,11 +530,11 @@ def cycle_binary(feature):
 cyclers_registry = {"category": cycle_category, "binary": cycle_binary}
 
 
-def cli_synthesize_dataset(dataset_size: int, features: List[dict], output_path: str, **kwargs) -> None:
+def cli_synthesize_dataset(dataset_size: int, features: list[dict], output_path: str, **kwargs) -> None:
     """Symthesizes a dataset for testing purposes.
 
     :param dataset_size: (int) size of the dataset
-    :param features: (List[dict]) list of features to generate in YAML format.
+    :param features: (list[dict]) list of features to generate in YAML format.
         Provide a list contaning one dictionary for each feature,
         each dictionary must include a name, a type
         and can include some generation parameters depending on the type

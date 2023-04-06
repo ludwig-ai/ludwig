@@ -16,7 +16,7 @@ import logging
 import os
 import struct
 from multiprocessing.pool import ThreadPool
-from typing import List, Optional
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -45,13 +45,13 @@ class MNISTLoader(DatasetLoader):
             raise
         super().__init__(config, cache_dir)
 
-    def transform_files(self, file_paths: List[str]) -> List[str]:
+    def transform_files(self, file_paths: list[str]) -> list[str]:
         for dataset in ["training", "testing"]:
             labels, images = self.read_source_dataset(dataset, self.raw_dataset_dir)
             self.write_output_dataset(labels, images, os.path.join(self.raw_dataset_dir, dataset))
         return super().transform_files(file_paths)
 
-    def load_unprocessed_dataframe(self, file_paths: List[str]) -> pd.DataFrame:
+    def load_unprocessed_dataframe(self, file_paths: list[str]) -> pd.DataFrame:
         """Load dataset files into a dataframe."""
         return self.output_training_and_test_data()
 

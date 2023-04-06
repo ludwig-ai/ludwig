@@ -20,6 +20,6 @@ from ludwig.datasets.loaders.dataset_loader import DatasetLoader
 class GoEmotionsLoader(DatasetLoader):
     def transform_dataframe(self, dataframe: pd.DataFrame) -> pd.DataFrame:
         processed_df = super().transform_dataframe(dataframe)
-        # Format emotion IDs as space-delimited string (Set).
+        # Format emotion IDs as space-delimited string (set).
         processed_df["emotion_ids"] = processed_df["emotion_ids"].apply(lambda e_id: " ".join(e_id.split(",")))
         return processed_df

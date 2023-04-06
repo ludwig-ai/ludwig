@@ -8,7 +8,7 @@ import threading
 import time
 from queue import Empty as EmptyQueueException
 from queue import Queue
-from typing import Any, Dict, List
+from typing import Any
 
 import psutil
 import torch
@@ -33,7 +33,7 @@ STOP_MESSAGE = "stop"
 logger = logging.getLogger()
 
 
-def monitor(queue: Queue, info: Dict[str, Any], logging_interval: int, cuda_is_available: bool) -> None:
+def monitor(queue: Queue, info: dict[str, Any], logging_interval: int, cuda_is_available: bool) -> None:
     """Monitors hardware resource use.
 
     Collects system specific metrics (CPU/CUDA, CPU/CUDA memory) at a `logging_interval` interval and pushes
@@ -222,8 +222,8 @@ class LudwigProfiler(contextlib.ContextDecorator):
         save_json(file_name, profiler_dataclass_to_flat_dict(system_usage_metrics))
 
     def _reformat_torch_usage_metrics_tags(
-        self, torch_usage_metrics: Dict[str, Any]
-    ) -> Dict[str, List[TorchProfilerMetrics]]:
+        self, torch_usage_metrics: dict[str, Any]
+    ) -> dict[str, list[TorchProfilerMetrics]]:
         reformatted_dict = {}
         for key, value in torch_usage_metrics.items():
             assert key.startswith(LUDWIG_TAG)

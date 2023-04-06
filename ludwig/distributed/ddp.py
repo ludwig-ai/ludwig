@@ -1,7 +1,8 @@
 import contextlib
 import logging
 import socket
-from typing import Any, Callable, Dict, Optional, Tuple, Type
+from collections.abc import Callable
+from typing import Any, Optional
 
 import torch
 import torch.distributed as dist
@@ -97,7 +98,7 @@ class DDPStrategy(DistributedStrategy):
         return TorchConfig()
 
     @classmethod
-    def get_trainer_cls(cls, backend_config: BackendConfig) -> Tuple[Type[DataParallelTrainer], Dict[str, Any]]:
+    def get_trainer_cls(cls, backend_config: BackendConfig) -> tuple[type[DataParallelTrainer], dict[str, Any]]:
         return TorchTrainer, dict(torch_config=backend_config)
 
     def shutdown(self):
@@ -109,7 +110,7 @@ class DDPStrategy(DistributedStrategy):
         pass
 
 
-def local_rank_and_size() -> Tuple[int, int]:
+def local_rank_and_size() -> tuple[int, int]:
     # Gather the rank and hostnames from every worker so we can count up how many belong to the same host, which
     # constitutes the local group.
     rank = dist.get_rank()

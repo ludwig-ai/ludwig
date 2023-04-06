@@ -50,7 +50,7 @@ def test_ghostbatchnormalization_chunk_size_2() -> None:
     # setup inputs to test
     inputs = torch.randn([7, 6], dtype=torch.float32)
 
-    # Set to training mode
+    # set to training mode
     ghost_batch_norm.train(mode=True)
 
     # run tensor through

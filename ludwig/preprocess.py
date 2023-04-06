@@ -16,7 +16,7 @@
 import argparse
 import logging
 import sys
-from typing import List, Union
+from typing import Union
 
 import pandas as pd
 import yaml
@@ -43,7 +43,7 @@ def preprocess_cli(
     data_format: str = None,
     random_seed: int = default_random_seed,
     logging_level: int = logging.INFO,
-    callbacks: List[Callback] = None,
+    callbacks: list[Callback] = None,
     backend: Union[Backend, str] = None,
     **kwargs
 ) -> None:

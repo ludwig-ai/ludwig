@@ -17,7 +17,7 @@
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import List, Type, Union
+from typing import Union
 
 import numpy as np
 import torch
@@ -33,7 +33,7 @@ calibration_registry = Registry()
 
 
 @DeveloperAPI
-def register_calibration(name: str, features: Union[str, List[str]], default=False):
+def register_calibration(name: str, features: Union[str, list[str]], default=False):
     """Registers a calibration implementation for a list of features."""
     if isinstance(features, str):
         features = [features]
@@ -52,7 +52,7 @@ def register_calibration(name: str, features: Union[str, List[str]], default=Fal
 
 
 @DeveloperAPI
-def get_calibration_cls(feature: str, calibration_method: str) -> Type["CalibrationModule"]:
+def get_calibration_cls(feature: str, calibration_method: str) -> type["CalibrationModule"]:
     """Get calibration class for specified feature type and calibration method."""
     if not calibration_method:
         return None

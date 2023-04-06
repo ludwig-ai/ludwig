@@ -1,6 +1,6 @@
 from abc import ABC
 from dataclasses import field
-from typing import ClassVar, Dict, Optional, Tuple, Type
+from typing import ClassVar, Optional
 
 import torch
 from marshmallow import fields, ValidationError
@@ -145,7 +145,7 @@ class AdamOptimizerConfig(BaseOptimizerConfig):
        (default: 'adam')"""
 
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adam.html#torch.optim.Adam :
-    betas: Tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(
+    betas: tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(
         default=(0.9, 0.999),
         description="Coefficients used for computing running averages of gradient and its square.",
         parameter_metadata=OPTIMIZER_METADATA["betas"],
@@ -183,7 +183,7 @@ class AdamWOptimizerConfig(BaseOptimizerConfig):
        (default: 'adamw')"""
 
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adam.html#torch.optim.Adam :
-    betas: Tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(
+    betas: tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(
         default=(0.9, 0.999),
         description="Coefficients used for computing running averages of gradient and its square.",
         parameter_metadata=OPTIMIZER_METADATA["betas"],
@@ -288,7 +288,7 @@ class AdamaxOptimizerConfig(BaseOptimizerConfig):
        (default: 'adamax')"""
 
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adamax.html#torch.optim.Adamax :
-    betas: Tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(
+    betas: tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(
         default=(0.9, 0.999),
         description="Coefficients used for computing running averages of gradient and its square.",
         parameter_metadata=OPTIMIZER_METADATA["betas"],
@@ -341,7 +341,7 @@ class NadamOptimizerConfig(BaseOptimizerConfig):
 
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.NAdam.html#torch.optim.NAdam :
 
-    betas: Tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(
+    betas: tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(
         default=(0.9, 0.999),
         description="Coefficients used for computing running averages of gradient and its square.",
         parameter_metadata=OPTIMIZER_METADATA["betas"],
@@ -428,7 +428,7 @@ def OptimizerDataclassField(default="adam", description="", parameter_metadata: 
 
     Sets default optimizer to 'adam'.
 
-    :param default: Dict specifying an optimizer with a `type` field and its associated parameters. Will attempt to use
+    :param default: dict specifying an optimizer with a `type` field and its associated parameters. Will attempt to use
            `type` to load optimizer from registry with given params. (default: {"type": "adam"}).
     :return: Initialized dataclass field that converts untyped dicts with params to optimizer dataclass instances.
     """
@@ -446,7 +446,7 @@ def OptimizerDataclassField(default="adam", description="", parameter_metadata: 
                 parameter_metadata=parameter_metadata,
             )
 
-        def get_schema_from_registry(self, key: str) -> Type[schema_utils.BaseMarshmallowConfig]:
+        def get_schema_from_registry(self, key: str) -> type[schema_utils.BaseMarshmallowConfig]:
             return get_optimizer_cls(key)
 
         def _jsonschema_type_mapping(self):
@@ -499,7 +499,7 @@ class GradientClippingConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-def GradientClippingDataclassField(description: str, default: Dict = {}):
+def GradientClippingDataclassField(description: str, default: dict = {}):
     """Returns custom dataclass field for `ludwig.modules.optimization_modules.GradientClippingConfig`. Allows
     `None` by default.
 

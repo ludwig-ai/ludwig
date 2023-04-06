@@ -17,7 +17,7 @@ import argparse
 import logging
 import os
 import sys
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 import numpy as np
 import torchinfo
@@ -36,26 +36,26 @@ logger = logging.getLogger(__name__)
 
 def collect_activations(
     model_path: str,
-    layers: List[str],
+    layers: list[str],
     dataset: str,
     data_format: str = None,
     split: str = FULL,
     batch_size: int = 128,
     output_directory: str = "results",
-    gpus: List[str] = None,
+    gpus: list[str] = None,
     gpu_memory_limit: Optional[float] = None,
     allow_parallel_threads: bool = True,
-    callbacks: List[Callback] = None,
+    callbacks: list[Callback] = None,
     backend: Union[Backend, str] = None,
     **kwargs,
-) -> List[str]:
+) -> list[str]:
     """Uses the pretrained model to collect the tensors corresponding to a datapoint in the dataset. Saves the
     tensors to the experiment directory.
 
     # Inputs
 
     :param model_path: (str) filepath to pre-trained model.
-    :param layers: (List[str]) list of strings for layer names in the model
+    :param layers: (list[str]) list of strings for layer names in the model
         to collect activations.
     :param dataset: (str) source
         containing the data to make predictions.
@@ -88,7 +88,7 @@ def collect_activations(
 
     # Return
 
-    :return: (List[str]) list of filepath to `*.npy` files containing
+    :return: (list[str]) list of filepath to `*.npy` files containing
         the activations.
     """
     logger.info(f"Dataset path: {dataset}")
@@ -119,19 +119,19 @@ def collect_activations(
     return saved_filenames
 
 
-def collect_weights(model_path: str, tensors: List[str], output_directory: str = "results", **kwargs) -> List[str]:
+def collect_weights(model_path: str, tensors: list[str], output_directory: str = "results", **kwargs) -> list[str]:
     """Loads a pretrained model and collects weights.
 
     # Inputs
     :param model_path: (str) filepath to pre-trained model.
-    :param tensors: (list, default: `None`) List of tensor names to collect
+    :param tensors: (list, default: `None`) list of tensor names to collect
         weights
     :param output_directory: (str, default: `'results'`) the directory where
         collected weights will be stored.
 
     # Return
 
-    :return: (List[str]) list of filepath to `*.npy` files containing
+    :return: (list[str]) list of filepath to `*.npy` files containing
         the weights.
     """
     logger.info(f"Model path: {model_path}")

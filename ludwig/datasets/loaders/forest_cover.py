@@ -39,8 +39,8 @@ class ForestCoverLoader(DatasetLoader):
         # Hillshade_3pm                           quantitative    0 to 255 index               Hillshade index at 3pm, summer solstice          # noqa: E501
         # Horizontal_Distance_To_Fire_Points      quantitative    meters                       Horz Dist to nearest wildfire ignition points    # noqa: E501
         # Wilderness_Area (4 binary columns)      qualitative     0 (absence) or 1 (presence)  Wilderness area designation                      # noqa: E501
-        # Soil_Type (40 binary columns)           qualitative     0 (absence) or 1 (presence)  Soil Type designation
-        # Cover_Type (7 types)                    integer         1 to 7                       Forest Cover Type designation                    # noqa: E501
+        # Soil_Type (40 binary columns)           qualitative     0 (absence) or 1 (presence)  Soil type designation
+        # Cover_Type (7 types)                    integer         1 to 7                       Forest Cover type designation                    # noqa: E501
 
         # Map the 40 soil types to a single integer instead of 40 binary columns
         st_cols = [

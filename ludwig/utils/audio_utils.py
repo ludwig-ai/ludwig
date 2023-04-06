@@ -16,7 +16,7 @@
 import functools
 import logging
 from io import BytesIO
-from typing import Any, List, Optional, Union
+from typing import Any, Optional, Union
 
 import torch
 import torch.nn.functional as F
@@ -42,7 +42,7 @@ def is_torch_audio_tuple(audio: Any) -> bool:
 
 
 @DeveloperAPI
-def get_default_audio(audio_lst: List[TorchAudioTuple]) -> TorchAudioTuple:
+def get_default_audio(audio_lst: list[TorchAudioTuple]) -> TorchAudioTuple:
     sampling_rates = [audio[1] for audio in audio_lst]
     tensor_list = [audio[0] for audio in audio_lst]
 

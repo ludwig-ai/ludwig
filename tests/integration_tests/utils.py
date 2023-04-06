@@ -24,7 +24,7 @@ import tempfile
 import traceback
 import uuid
 from distutils.util import strtobool
-from typing import Any, Dict, List, Optional, Set, Tuple, TYPE_CHECKING, Union
+from typing import Any, Optional, TYPE_CHECKING, Union
 
 import cloudpickle
 import numpy as np
@@ -145,7 +145,7 @@ _run_private_tests = parse_flag_from_env("RUN_PRIVATE", default=False)
 def private_param(param):
     """Wrap param to mark it as private, meaning it requires credentials to run.
 
-    Private tests are skipped by default. Set the RUN_PRIVATE environment variable to a truth value to run them.
+    Private tests are skipped by default. set the RUN_PRIVATE environment variable to a truth value to run them.
     """
     return pytest.param(
         *param,
@@ -620,7 +620,7 @@ def spawn(fn):
     return wrapped_fn
 
 
-def get_weights(model: torch.nn.Module) -> List[torch.Tensor]:
+def get_weights(model: torch.nn.Module) -> list[torch.Tensor]:
     return [param.data for param in model.parameters()]
 
 
@@ -830,7 +830,7 @@ def create_data_set_to_use(data_format, raw_data, nan_percent=0.0):
 
 
 def augment_dataset_with_none(
-    df: pd.DataFrame, first_row_none: bool = False, last_row_none: bool = False, nan_cols: Optional[List] = None
+    df: pd.DataFrame, first_row_none: bool = False, last_row_none: bool = False, nan_cols: Optional[list] = None
 ) -> pd.DataFrame:
     """Optionally sets the first and last rows of nan_cols of the given dataframe to nan.
 
@@ -948,7 +948,7 @@ def train_with_backend(
 
 
 def assert_all_required_metrics_exist(
-    feature_to_metrics_dict: Dict[str, Dict[str, Any]], required_metrics: Optional[Dict[str, Set]] = None
+    feature_to_metrics_dict: dict[str, dict[str, Any]], required_metrics: Optional[dict[str, set]] = None
 ):
     """Checks that all `required_metrics` exist in the dictionary returned during Ludwig model evaluation.
 
@@ -996,7 +996,7 @@ def assert_preprocessed_dataset_shape_and_dtype_for_feature(
     preprocessed_dataset: "Dataset",
     config_obj: "ModelConfig",
     expected_dtype: np.dtype,
-    expected_shape: Tuple,
+    expected_shape: tuple,
 ):
     """Asserts that the preprocessed dataset has the correct shape and dtype for a given feature type.
 

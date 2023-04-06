@@ -5,7 +5,7 @@ import os
 from collections import OrderedDict
 from functools import lru_cache
 from io import BytesIO
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Optional, Union
 
 import yaml
 
@@ -34,7 +34,7 @@ def _load_dataset_config(config_filename: str):
 
 
 @lru_cache(maxsize=1)
-def _get_dataset_configs() -> Dict[str, DatasetConfig]:
+def _get_dataset_configs() -> dict[str, DatasetConfig]:
     """Returns all dataset configs indexed by name."""
     import importlib.resources
 
@@ -71,7 +71,7 @@ def load_dataset_uris(
     validation_set: Optional[Union[str, DataFrame]],
     test_set: Optional[Union[str, DataFrame]],
     backend: Backend,
-) -> Tuple[
+) -> tuple[
     Optional[CacheableDataframe],
     Optional[CacheableDataframe],
     Optional[CacheableDataframe],
@@ -130,7 +130,7 @@ def _load_cacheable_dataset(dataset: str, backend: Backend) -> CacheableDatafram
 
 
 @PublicAPI
-def list_datasets() -> List[str]:
+def list_datasets() -> list[str]:
     """Returns a list of the names of all available datasets."""
     return sorted(_get_dataset_configs().keys())
 

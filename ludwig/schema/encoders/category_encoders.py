@@ -1,4 +1,4 @@
-from typing import List, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import CATEGORY, MODEL_ECD, MODEL_GBM
@@ -45,7 +45,7 @@ class CategoricalEmbedConfig(BaseEncoderConfig):
 
     dropout: float = common_fields.DropoutField()
 
-    vocab: List[str] = common_fields.VocabField()
+    vocab: list[str] = common_fields.VocabField()
 
     embedding_initializer: str = common_fields.EmbeddingInitializerField()
 
@@ -81,7 +81,7 @@ class CategoricalSparseConfig(BaseEncoderConfig):
 
     dropout: float = common_fields.DropoutField()
 
-    vocab: List[str] = common_fields.VocabField()
+    vocab: list[str] = common_fields.VocabField()
 
     embedding_initializer: str = common_fields.EmbeddingInitializerField()
 
@@ -103,10 +103,10 @@ class CategoricalOneHotEncoderConfig(BaseEncoderConfig):
 
     type: str = schema_utils.ProtectedString(
         "onehot",
-        description="Type of encoder.",
+        description="type of encoder.",
     )
 
-    vocab: List[str] = common_fields.VocabField()
+    vocab: list[str] = common_fields.VocabField()
 
     def set_fixed_preprocessing_params(self, model_type: str, preprocessing: "CategoryPreprocessingConfig"):
         if model_type == MODEL_GBM:

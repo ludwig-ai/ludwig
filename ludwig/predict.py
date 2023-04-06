@@ -16,7 +16,7 @@
 import argparse
 import logging
 import sys
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 import pandas as pd
 
@@ -40,10 +40,10 @@ def predict_cli(
     skip_save_unprocessed_output: bool = False,
     skip_save_predictions: bool = False,
     output_directory: str = "results",
-    gpus: Union[str, int, List[int]] = None,
+    gpus: Union[str, int, list[int]] = None,
     gpu_memory_limit: Optional[float] = None,
     allow_parallel_threads: bool = True,
-    callbacks: List[Callback] = None,
+    callbacks: list[Callback] = None,
     backend: Union[Backend, str] = None,
     logging_level: int = logging.INFO,
     **kwargs,

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
@@ -67,7 +67,7 @@ class ProjectAggregateCombinerConfig(BaseCombinerConfig):
         parameter_metadata=COMBINER_METADATA["project_aggregate"]["norm_params"],
     )
 
-    fc_layers: Optional[List[Dict[str, Any]]] = schema_utils.DictList(
+    fc_layers: Optional[list[dict[str, Any]]] = schema_utils.DictList(
         description="Full specification of the fully connected layers after the aggregation. It should be a list of "
         "dict, each dict representing one layer of the fully connected layer stack. ",
         parameter_metadata=COMBINER_METADATA["project_aggregate"]["fc_layers"],
@@ -79,13 +79,13 @@ class ProjectAggregateCombinerConfig(BaseCombinerConfig):
         parameter_metadata=COMBINER_METADATA["project_aggregate"]["use_bias"],
     )
 
-    bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
+    bias_initializer: Union[str, dict] = schema_utils.InitializerOrDict(
         default="zeros",
         description="Initializer to use for the bias of the projection and for the fully connected layers.",
         parameter_metadata=COMBINER_METADATA["project_aggregate"]["bias_initializer"],
     )
 
-    weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
+    weights_initializer: Union[str, dict] = schema_utils.InitializerOrDict(
         default="xavier_uniform",
         description="Initializer to use for the weights of the projection and for the fully connected layers.",
         parameter_metadata=COMBINER_METADATA["project_aggregate"]["weights_initializer"],

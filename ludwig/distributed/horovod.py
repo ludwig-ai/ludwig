@@ -1,6 +1,7 @@
 import contextlib
 import logging
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type
+from collections.abc import Callable
+from typing import Any, Optional
 
 import horovod.torch as hvd
 import ray
@@ -83,7 +84,7 @@ class HorovodStrategy(DistributedStrategy):
         return gather_all_tensors
 
     @classmethod
-    def get_ray_trainer_backend(cls, nics: Optional[List[str]] = None, **kwargs) -> Optional[Any]:
+    def get_ray_trainer_backend(cls, nics: Optional[list[str]] = None, **kwargs) -> Optional[Any]:
         from ray.train.horovod import HorovodConfig
 
         # Explicitly override network interfaces Horovod will attempt to use
@@ -92,7 +93,7 @@ class HorovodStrategy(DistributedStrategy):
         return HorovodConfig(nics=nics)
 
     @classmethod
-    def get_trainer_cls(cls, backend_config: BackendConfig) -> Tuple[Type[DataParallelTrainer], Dict[str, Any]]:
+    def get_trainer_cls(cls, backend_config: BackendConfig) -> tuple[type[DataParallelTrainer], dict[str, Any]]:
         if not _ray220:
             from ludwig.distributed._ray_210_compat import HorovodTrainerRay210
 

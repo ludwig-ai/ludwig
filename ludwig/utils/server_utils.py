@@ -1,7 +1,7 @@
 import json
 import os
 import tempfile
-from typing import Any, Dict, Union
+from typing import Any, Union
 
 import numpy as np
 import pandas as pd
@@ -157,7 +157,7 @@ def deserialize_request(form) -> tuple:
 
 
 class NumpyJSONResponse(JSONResponse):
-    def render(self, content: Dict[str, Any]) -> str:
+    def render(self, content: dict[str, Any]) -> str:
         """Override the default JSONResponse behavior to encode numpy arrays.
 
         Args:

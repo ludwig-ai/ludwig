@@ -9,7 +9,7 @@ import re
 import signal
 import tempfile
 from glob import glob
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import torch
 from torch.optim import Optimizer
@@ -156,7 +156,7 @@ class Checkpoint:
             if orig_handler is not None:
                 signal.signal(signal.SIGINT, orig_handler)
 
-    def _get_global_step(self, state: Dict[str, Any], save_path: str) -> int:
+    def _get_global_step(self, state: dict[str, Any], save_path: str) -> int:
         global_step = state.get("global_step")
         if global_step is None:
             # Legacy step detection for older checkpoint format which encoded the

@@ -1,5 +1,4 @@
 from copy import deepcopy
-from typing import Dict
 
 import pytest
 import torch
@@ -35,7 +34,7 @@ def category_config():
 
 @pytest.mark.parametrize("encoder", ["dense", "sparse"])
 def test_category_input_feature(
-    category_config: Dict,
+    category_config: dict,
     encoder: str,
 ) -> None:
     # setup image input feature definition

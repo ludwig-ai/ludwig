@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Dict, List, Optional
+from typing import Optional
 
 import torch
 
@@ -41,14 +41,14 @@ class DateEmbed(Encoder):
         self,
         embedding_size: int = 10,
         embeddings_on_cpu: bool = False,
-        fc_layers: Optional[List[Dict]] = None,
+        fc_layers: Optional[list[dict]] = None,
         num_fc_layers: int = 0,
         output_size: int = 10,
         use_bias: bool = True,
         weights_initializer: str = "xavier_uniform",
         bias_initializer: str = "zeros",
         norm: Optional[str] = None,
-        norm_params: Optional[Dict] = None,
+        norm_params: Optional[dict] = None,
         activation: str = "relu",
         dropout: float = 0,
         encoder_config=None,
@@ -71,7 +71,7 @@ class DateEmbed(Encoder):
             CPU and GPU memory.
         :param fc_layers: list of dictionaries containing the parameters of
             all the fully connected layers.
-        :type fc_layers: List
+        :type fc_layers: list
         :param num_fc_layers: Number of stacked fully connected layers.
         :type num_fc_layers: Integer
         :param output_size: Size of each layer.
@@ -224,7 +224,7 @@ class DateEmbed(Encoder):
             default_dropout=dropout,
         )
 
-    def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor) -> dict[str, torch.Tensor]:
         """
         :param inputs: The input vector fed into the encoder.
             Shape: [batch x DATE_INPUT_SIZE], type torch.int8
@@ -282,14 +282,14 @@ class DateEmbed(Encoder):
 class DateWave(Encoder):
     def __init__(
         self,
-        fc_layers: Optional[List[FCStack]] = None,
+        fc_layers: Optional[list[FCStack]] = None,
         num_fc_layers: int = 1,
         output_size: int = 10,
         use_bias: bool = True,
         weights_initializer: str = "xavier_uniform",
         bias_initializer: str = "zeros",
         norm: Optional[str] = None,
-        norm_params: Optional[Dict] = None,
+        norm_params: Optional[dict] = None,
         activation: str = "relu",
         dropout: float = 0,
         encoder_config=None,
@@ -298,7 +298,7 @@ class DateWave(Encoder):
         """
         :param fc_layers: list of dictionaries containing the parameters of
             all the fully connected layers.
-        :type fc_layers: List
+        :type fc_layers: list
         :param num_fc_layers: Number of stacked fully connected layers.
         :type num_fc_layers: Integer
         :param output_size: Size of each layer.
@@ -358,7 +358,7 @@ class DateWave(Encoder):
             default_dropout=dropout,
         )
 
-    def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor) -> dict[str, torch.Tensor]:
         """
         :param inputs: The input vector fed into the encoder.
             Shape: [batch x DATE_INPUT_SIZE], type torch.int8

@@ -16,7 +16,7 @@
 import argparse
 import logging
 import sys
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 import pandas as pd
 
@@ -52,10 +52,10 @@ def train_cli(
     skip_save_log: bool = False,
     skip_save_processed_input: bool = False,
     output_directory: str = "results",
-    gpus: Union[str, int, List[int]] = None,
+    gpus: Union[str, int, list[int]] = None,
     gpu_memory_limit: Optional[float] = None,
     allow_parallel_threads: bool = True,
-    callbacks: List[Callback] = None,
+    callbacks: list[Callback] = None,
     backend: Union[Backend, str] = None,
     random_seed: int = default_random_seed,
     logging_level: int = logging.INFO,

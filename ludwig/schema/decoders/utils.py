@@ -1,5 +1,5 @@
 from dataclasses import Field
-from typing import Any, Dict, List, Type, Union
+from typing import Any, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import TYPE
@@ -12,7 +12,7 @@ decoder_config_registry = Registry()
 
 
 @DeveloperAPI
-def register_decoder_config(name: str, features: Union[str, List[str]]):
+def register_decoder_config(name: str, features: Union[str, list[str]]):
     if isinstance(features, str):
         features = [features]
 
@@ -64,7 +64,7 @@ def get_decoder_descriptions(feature_type: str):
 
 
 @DeveloperAPI
-def get_decoder_conds(feature_type: str) -> List[Dict[str, Any]]:
+def get_decoder_conds(feature_type: str) -> list[dict[str, Any]]:
     """Returns a JSON schema of conditionals to validate against decoder types for specific feature types."""
     conds = []
     for decoder in get_decoder_classes(feature_type):
@@ -91,7 +91,7 @@ def DecoderDataclassField(feature_type: str, default: str) -> Field:
         def __init__(self):
             super().__init__(registry=decoder_registry, default_value=default, allow_str_value=True)
 
-        def get_schema_from_registry(self, key: str) -> Type[schema_utils.BaseMarshmallowConfig]:
+        def get_schema_from_registry(self, key: str) -> type[schema_utils.BaseMarshmallowConfig]:
             return get_decoder_cls(feature_type, key)
 
         def _jsonschema_type_mapping(self):

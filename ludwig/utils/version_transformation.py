@@ -16,8 +16,9 @@
 import copy
 import logging
 from collections import defaultdict
+from collections.abc import Callable
 from functools import total_ordering
-from typing import Callable, Dict, List, Optional
+from typing import Optional
 
 from packaging import version as pkg_version
 
@@ -28,11 +29,11 @@ logger = logging.getLogger(__name__)
 class VersionTransformation:
     """Wrapper class for transformations to config dicts."""
 
-    def __init__(self, transform: Callable[[Dict], Dict], version: str, prefixes: List[str] = None):
+    def __init__(self, transform: Callable[[dict], dict], version: str, prefixes: list[str] = None):
         """Constructor.
 
         Args:
-            transform: A function or other callable from Dict -> Dict which returns a modified version of the config.
+            transform: A function or other callable from dict -> dict which returns a modified version of the config.
                        The callable may update the config in-place and return it, or return a new dict.
             version: The Ludwig version, should be the first version which requires this transform.
             prefixes: A list of config prefixes this transform should apply to, i.e. ["hyperopt"].  If not specified,
@@ -43,7 +44,7 @@ class VersionTransformation:
         self.pkg_version = pkg_version.parse(version)
         self.prefixes = prefixes if prefixes else []
 
-    def transform_config(self, config: Dict):
+    def transform_config(self, config: dict):
         """Transforms the sepcified config, returns the transformed config."""
         prefixes = self.prefixes if self.prefixes else [""]
         for prefix in prefixes:
@@ -54,7 +55,7 @@ class VersionTransformation:
             config = self.transform_config_with_prefix(config, prefix)
         return config
 
-    def transform_config_with_prefix(self, config: Dict, prefix: Optional[str] = None) -> Dict:
+    def transform_config_with_prefix(self, config: dict, prefix: Optional[str] = None) -> dict:
         """Applied this version transformation to a specified prefix of the config, returns the updated config. If
         prefix names a list, i.e. "input_features", applies the transformation to each list element (input
         feature).
@@ -128,7 +129,7 @@ class VersionTransformationRegistry:
         """Registers a version transformation."""
         self._registry[transformation.version].append(transformation)
 
-    def get_transformations(self, from_version: str, to_version: str) -> List[VersionTransformation]:
+    def get_transformations(self, from_version: str, to_version: str) -> list[VersionTransformation]:
         """Filters transformations to create an ordered list of the config transformations from one version to
         another. All transformations returned have version st. from_version < version <= to_version.
 
@@ -153,7 +154,7 @@ class VersionTransformationRegistry:
         transforms = sorted(t for v in versions for t in self._registry[v])
         return transforms
 
-    def update_config(self, config: Dict, from_version: str, to_version: str) -> Dict:
+    def update_config(self, config: dict, from_version: str, to_version: str) -> dict:
         """Applies the transformations from an older version to a newer version.
 
         Args:

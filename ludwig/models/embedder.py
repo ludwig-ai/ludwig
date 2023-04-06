@@ -1,4 +1,4 @@
-from typing import Callable, Dict, List
+from collections.abc import Callable
 
 import numpy as np
 import pandas as pd
@@ -20,7 +20,7 @@ from ludwig.utils.torch_utils import get_torch_device, LudwigModule
 
 @DeveloperAPI
 class Embedder(LudwigModule):
-    def __init__(self, feature_configs: List[FeatureConfigDict], metadata: TrainingSetMetadataDict):
+    def __init__(self, feature_configs: list[FeatureConfigDict], metadata: TrainingSetMetadataDict):
         super().__init__()
 
         self.input_features = LudwigFeatureDict()
@@ -53,7 +53,7 @@ class Embedder(LudwigModule):
                 f"An input feature has a name that conflicts with a class attribute of torch's ModuleDict: {e}"
             )
 
-    def forward(self, inputs: Dict[str, torch.Tensor]):
+    def forward(self, inputs: dict[str, torch.Tensor]):
         encoder_outputs = {}
         for input_feature_name, input_values in inputs.items():
             encoder = self.input_features.get(input_feature_name)
@@ -64,7 +64,7 @@ class Embedder(LudwigModule):
 
 @DeveloperAPI
 def create_embed_batch_size_evaluator(
-    features_to_encode: List[FeatureConfigDict], metadata: TrainingSetMetadataDict
+    features_to_encode: list[FeatureConfigDict], metadata: TrainingSetMetadataDict
 ) -> BatchSizeEvaluator:
     class _EmbedBatchSizeEvaluator(BatchSizeEvaluator):
         def __init__(self):
@@ -86,7 +86,7 @@ def create_embed_batch_size_evaluator(
 
 @DeveloperAPI
 def create_embed_transform_fn(
-    features_to_encode: List[FeatureConfigDict], metadata: TrainingSetMetadataDict
+    features_to_encode: list[FeatureConfigDict], metadata: TrainingSetMetadataDict
 ) -> Callable:
     class EmbedTransformFn:
         def __init__(self):
@@ -118,8 +118,8 @@ def create_embed_transform_fn(
 
 # TODO(travis): consolidate with implementation in data/ray.py
 def _prepare_batch(
-    df: pd.DataFrame, features: List[FeatureConfigDict], metadata: TrainingSetMetadataDict
-) -> Dict[str, np.ndarray]:
+    df: pd.DataFrame, features: list[FeatureConfigDict], metadata: TrainingSetMetadataDict
+) -> dict[str, np.ndarray]:
     batch = {}
     for feature in features:
         c = feature[PROC_COLUMN]

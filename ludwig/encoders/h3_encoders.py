@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Dict, List, Optional
+from typing import Optional
 
 import torch
 
@@ -43,14 +43,14 @@ class H3Embed(Encoder):
         self,
         embedding_size: int = 10,
         embeddings_on_cpu: bool = False,
-        fc_layers: Optional[List] = None,
+        fc_layers: Optional[list] = None,
         num_fc_layers: int = 0,
         output_size: int = 10,
         use_bias: bool = True,
         weights_initializer: str = "xavier_uniform",
         bias_initializer: str = "zeros",
         norm: str = None,
-        norm_params: Dict = None,
+        norm_params: dict = None,
         activation: str = "relu",
         dropout: float = 0,
         reduce_output: str = "sum",
@@ -167,7 +167,7 @@ class H3Embed(Encoder):
             default_dropout=dropout,
         )
 
-    def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor) -> dict[str, torch.Tensor]:
         """
         :param inputs: The input vector fed into the encoder.
                Shape: [batch x H3_INPUT_SIZE], type torch.int8
@@ -224,14 +224,14 @@ class H3WeightedSum(Encoder):
         embedding_size: int = 10,
         embeddings_on_cpu: bool = False,
         should_softmax: bool = False,
-        fc_layers: Optional[List] = None,
+        fc_layers: Optional[list] = None,
         num_fc_layers: int = 0,
         output_size: int = 10,
         use_bias: bool = True,
         weights_initializer: str = "xavier_uniform",
         bias_initializer: str = "zeros",
         norm: Optional[str] = None,
-        norm_params: Dict = None,
+        norm_params: dict = None,
         activation: str = "relu",
         dropout: float = 0,
         encoder_config=None,
@@ -293,7 +293,7 @@ class H3WeightedSum(Encoder):
             default_dropout=dropout,
         )
 
-    def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor) -> dict[str, torch.Tensor]:
         """
         :param inputs: The input vector fed into the encoder.
                Shape: [batch x H3_INPUT_SIZE], type torch.int8
@@ -438,7 +438,7 @@ class H3RNN(Encoder):
             dropout=recurrent_dropout,
         )
 
-    def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor) -> dict[str, torch.Tensor]:
         """
         :param inputs: The input vector fed into the encoder.
                Shape: [batch x H3_INPUT_SIZE], type torch.int8

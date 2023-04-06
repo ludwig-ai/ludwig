@@ -1,5 +1,4 @@
 from dataclasses import Field
-from typing import Type
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
@@ -30,7 +29,7 @@ def LossDataclassField(feature_type: str, default: str) -> Field:
         def __init__(self):
             super().__init__(registry=loss_registry, default_value=default)
 
-        def get_schema_from_registry(self, key: str) -> Type[schema_utils.BaseMarshmallowConfig]:
+        def get_schema_from_registry(self, key: str) -> type[schema_utils.BaseMarshmallowConfig]:
             return get_loss_cls(feature_type, key)
 
         def _jsonschema_type_mapping(self):

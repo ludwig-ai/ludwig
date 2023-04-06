@@ -4,7 +4,6 @@ import sys
 from abc import ABC, abstractmethod
 from collections import defaultdict, OrderedDict
 from pprint import pformat
-from typing import Dict
 
 import numpy as np
 import pandas as pd
@@ -126,7 +125,7 @@ class Predictor(BasePredictor):
         self.model.train(prev_model_training_mode)
         return from_numpy_dataset(predictions)
 
-    def _predict(self, model: BaseModel, batch: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
+    def _predict(self, model: BaseModel, batch: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
         """Predict a batch of data.
 
         Params:
@@ -166,7 +165,7 @@ class Predictor(BasePredictor):
             collect_logits: Return model logits and final layer activations.
 
         Returns:
-            Tuple of dictionaries of (metrics, predictions). The keys of metrics are determined by the metrics in the
+            tuple of dictionaries of (metrics, predictions). The keys of metrics are determined by the metrics in the
             model config. The keys of the predictions dictionary depend on which values are requested by the caller:
             collect_predictions, collect_logits.
         """

@@ -17,8 +17,9 @@
 import contextlib
 import copy
 import logging
+from collections.abc import Callable
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TYPE_CHECKING, Union
+from typing import Any, Optional, TYPE_CHECKING, Union
 
 import dask
 import numpy as np
@@ -154,10 +155,10 @@ def _local_size() -> int:
 
 
 def train_fn(
-    executable_kwargs: Dict[str, Any] = None,
+    executable_kwargs: dict[str, Any] = None,
     model_ref: ObjectRef = None,  # noqa: F821
     training_set_metadata: TrainingSetMetadataDict = None,
-    features: Dict[str, Dict] = None,
+    features: dict[str, dict] = None,
     **kwargs,
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
@@ -229,12 +230,12 @@ def train_fn(
 @ray.remote(max_calls=1)
 def tune_batch_size_fn(
     dataset: RayDataset = None,
-    data_loader_kwargs: Dict[str, Any] = None,
-    executable_kwargs: Dict[str, Any] = None,
+    data_loader_kwargs: dict[str, Any] = None,
+    executable_kwargs: dict[str, Any] = None,
     model: ECD = None,  # noqa: F821
     ludwig_config: ModelConfigDict = None,
     training_set_metadata: TrainingSetMetadataDict = None,
-    features: Dict[str, Dict] = None,
+    features: dict[str, dict] = None,
     **kwargs,
 ) -> int:
     # Pin GPU before loading the model to prevent memory leaking onto other devices
@@ -299,7 +300,7 @@ def create_runner(**kwargs):
 
 
 class RayAirRunner:
-    def __init__(self, trainer_kwargs: Dict[str, Any]) -> None:
+    def __init__(self, trainer_kwargs: dict[str, Any]) -> None:
         trainer_kwargs = copy.copy(trainer_kwargs)
         self.backend_config = trainer_kwargs.pop("backend", None)
         self.strategy = trainer_kwargs.pop("strategy", get_default_strategy_name())
@@ -322,10 +323,10 @@ class RayAirRunner:
 
     def _get_dataset_configs(
         self,
-        datasets: Dict[str, Any],
-        stream_window_size: Dict[str, Union[None, float]],
-        data_loader_kwargs: Dict[str, Any],
-    ) -> Dict[str, DatasetConfig]:
+        datasets: dict[str, Any],
+        stream_window_size: dict[str, Union[None, float]],
+        data_loader_kwargs: dict[str, Any],
+    ) -> dict[str, DatasetConfig]:
         """Generates DatasetConfigs for each dataset passed into the trainer."""
         dataset_configs = {}
         for dataset_name, _ in datasets.items():
@@ -357,12 +358,12 @@ class RayAirRunner:
     def run(
         self,
         train_loop_per_worker: Callable,
-        config: Dict[str, Any],
-        dataset: Dict[str, Any],
-        data_loader_kwargs: Dict[str, Any],
-        stream_window_size: Dict[str, Union[None, float]],
-        callbacks: List[Any] = [],
-    ) -> Tuple[Dict, TorchCheckpoint]:
+        config: dict[str, Any],
+        dataset: dict[str, Any],
+        data_loader_kwargs: dict[str, Any],
+        stream_window_size: dict[str, Union[None, float]],
+        callbacks: list[Any] = [],
+    ) -> tuple[dict, TorchCheckpoint]:
         trainer_cls, kwargs = get_dist_strategy(self.strategy).get_trainer_cls(self.backend_config)
         trainer = trainer_cls(
             train_loop_per_worker=train_loop_per_worker,
@@ -381,9 +382,9 @@ class RayTrainerV2(BaseTrainer):
     def __init__(
         self,
         model: BaseModel,
-        trainer_kwargs: Dict[str, Any],
-        data_loader_kwargs: Dict[str, Any],
-        executable_kwargs: Dict[str, Any],
+        trainer_kwargs: dict[str, Any],
+        data_loader_kwargs: dict[str, Any],
+        executable_kwargs: dict[str, Any],
         **kwargs,
     ):
         self.model = model.cpu()
@@ -434,7 +435,7 @@ class RayTrainerV2(BaseTrainer):
                 stream_window_size=stream_window_size,
             )
 
-        # Set validation field and metric used by trainer
+        # set validation field and metric used by trainer
         self._validation_field = trainer_results.metrics["validation_field"]
         self._validation_metric = trainer_results.metrics["validation_metric"]
 
@@ -502,7 +503,7 @@ class RayTrainerV2(BaseTrainer):
         self.config.eval_batch_size = value
 
     @property
-    def resources_per_worker(self) -> Dict[str, Any]:
+    def resources_per_worker(self) -> dict[str, Any]:
         trainer_kwargs = get_trainer_kwargs(**self.trainer_kwargs)
         return trainer_kwargs.get("resources_per_worker", {})
 
@@ -525,10 +526,10 @@ class HorovodRemoteTrainer(RemoteTrainer):
 
 
 def eval_fn(
-    predictor_kwargs: Dict[str, Any] = None,
+    predictor_kwargs: dict[str, Any] = None,
     model_ref: ObjectRef = None,  # noqa: F821
     training_set_metadata: TrainingSetMetadataDict = None,
-    features: Dict[str, Dict] = None,
+    features: dict[str, dict] = None,
     **kwargs,
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
@@ -568,10 +569,10 @@ class RayPredictor(BasePredictor):
         self.model = model.cpu()
         self.df_engine = df_engine
 
-    def get_trainer_kwargs(self) -> Dict[str, Any]:
+    def get_trainer_kwargs(self) -> dict[str, Any]:
         return get_trainer_kwargs(**self.trainer_kwargs)
 
-    def get_resources_per_worker(self) -> Tuple[int, int]:
+    def get_resources_per_worker(self) -> tuple[int, int]:
         trainer_kwargs = self.get_trainer_kwargs()
         resources_per_worker = trainer_kwargs.get("resources_per_worker", {})
         num_gpus = resources_per_worker.get("GPU", 0)
@@ -669,9 +670,9 @@ class RayPredictor(BasePredictor):
     def get_batch_infer_model(
         self,
         model: "LudwigModel",  # noqa: F821
-        predictor_kwargs: Dict[str, Any],
-        output_columns: List[str],
-        features: Dict[str, Dict],
+        predictor_kwargs: dict[str, Any],
+        output_columns: list[str],
+        features: dict[str, dict],
         training_set_metadata: TrainingSetMetadataDict,
         *args,
         **kwargs,
@@ -702,7 +703,7 @@ class RayPredictor(BasePredictor):
                 return ordered_predictions
 
             # TODO(travis): consolidate with implementation in data/ray.py
-            def _prepare_batch(self, batch: pd.DataFrame) -> Dict[str, np.ndarray]:
+            def _prepare_batch(self, batch: pd.DataFrame) -> dict[str, np.ndarray]:
                 res = {}
                 for c in self.features.keys():
                     if batch[c].values.dtype == "object":
@@ -922,7 +923,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
 
         return max_possible_trials
 
-    def tune_batch_size(self, evaluator_cls: Type[BatchSizeEvaluator], dataset_len: int) -> int:
+    def tune_batch_size(self, evaluator_cls: type[BatchSizeEvaluator], dataset_len: int) -> int:
         return ray.get(
             _tune_batch_size_fn.options(**self._get_transform_kwargs()).remote(
                 evaluator_cls,
@@ -942,7 +943,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
             )
             return self.df_engine.from_ray_dataset(ds)
 
-    def _get_transform_kwargs(self) -> Dict[str, Any]:
+    def _get_transform_kwargs(self) -> dict[str, Any]:
         trainer_kwargs = get_trainer_kwargs(**self._horovod_kwargs)
         resources_per_worker = trainer_kwargs.get("resources_per_worker", {})
         num_gpus = resources_per_worker.get("GPU", 0)
@@ -951,7 +952,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
 
 
 @ray.remote(max_calls=1)
-def _tune_batch_size_fn(evaluator_cls: Type[BatchSizeEvaluator], dataset_len: int) -> int:
+def _tune_batch_size_fn(evaluator_cls: type[BatchSizeEvaluator], dataset_len: int) -> int:
     evaluator = evaluator_cls()
     return evaluator.select_best_batch_size(dataset_len)
 

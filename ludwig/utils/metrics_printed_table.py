@@ -1,6 +1,5 @@
 import logging
 from collections import OrderedDict
-from typing import Dict
 
 from tabulate import tabulate
 
@@ -33,7 +32,7 @@ class MetricsPrintedTable:
     ╘════════════╧════════╛
     """
 
-    def __init__(self, output_features: Dict[str, "OutputFeature"]):  # noqa
+    def __init__(self, output_features: dict[str, "OutputFeature"]):  # noqa
         self.printed_table = OrderedDict()
         for output_feature_name, output_feature in output_features.items():
             self.printed_table[output_feature_name] = [[output_feature_name] + output_feature.metric_names]
@@ -47,7 +46,7 @@ class MetricsPrintedTable:
             self.metrics_headers[output_feature_name] = self.printed_table[output_feature_name][0][1:]
         self.metrics_headers[COMBINED] = [LOSS]
 
-    def add_metrics_to_printed_table(self, metrics_log: Dict[str, Dict[str, TrainerMetric]], split_name: str):
+    def add_metrics_to_printed_table(self, metrics_log: dict[str, dict[str, TrainerMetric]], split_name: str):
         """Add metrics to tables by the order of the table's metric header."""
         for output_feature_name, output_feature_metrics in metrics_log.items():
             printed_metrics = []

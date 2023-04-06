@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import pytest
 
@@ -45,7 +45,7 @@ def test_set_fixed_preprocessing_params(pretrained_model_name_or_path: str):
     ],
     ids=["parallel_cnn", "bert_fixed", "bert_trainable"],
 )
-def test_set_fixed_preprocessing_params_cache_embeddings(encoder_params: Dict[str, Any], expected: Optional[bool]):
+def test_set_fixed_preprocessing_params_cache_embeddings(encoder_params: dict[str, Any], expected: Optional[bool]):
     preprocessing = TextPreprocessingConfig.from_dict(
         {
             "tokenizer": "space",

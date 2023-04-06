@@ -13,7 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 import os
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 import torch
 
@@ -42,7 +42,7 @@ def has_horovodrun():
     return "OMPI_COMM_WORLD_RANK" in os.environ or "HOROVOD_RANK" in os.environ
 
 
-def gather_all_tensors(result: torch.Tensor, group: Optional[Any] = None) -> List[torch.Tensor]:
+def gather_all_tensors(result: torch.Tensor, group: Optional[Any] = None) -> list[torch.Tensor]:
     """Function to gather all tensors from several processes onto a list that is broadcast to all processes.
 
     Works on tensors that have the same number of dimensions, but where each dimension may differ. In this case

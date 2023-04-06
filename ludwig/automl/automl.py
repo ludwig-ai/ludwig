@@ -12,7 +12,7 @@ import copy
 import logging
 import os
 import warnings
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -77,7 +77,7 @@ TABULAR_TYPES = {CATEGORY, NUMBER, BINARY}
 
 
 class AutoTrainResults:
-    def __init__(self, experiment_analysis: ExperimentAnalysis, creds: Dict[str, Any] = None):
+    def __init__(self, experiment_analysis: ExperimentAnalysis, creds: dict[str, Any] = None):
         self._experiment_analysis = experiment_analysis
         self._creds = creds
 
@@ -114,7 +114,7 @@ def auto_train(
     time_limit_s: Union[int, float],
     output_directory: str = OUTPUT_DIR,
     tune_for_memory: bool = False,
-    user_config: Dict = None,
+    user_config: dict = None,
     random_seed: int = default_random_seed,
     use_reference_config: bool = False,
     **kwargs,
@@ -160,10 +160,10 @@ def auto_train(
 @PublicAPI
 def create_auto_config(
     dataset: Union[str, pd.DataFrame, dd.core.DataFrame, DatasetInfo],
-    target: Union[str, List[str]],
+    target: Union[str, list[str]],
     time_limit_s: Union[int, float],
     tune_for_memory: bool = False,
-    user_config: Dict = None,
+    user_config: dict = None,
     random_seed: int = default_random_seed,
     imbalance_threshold: float = 0.9,
     use_reference_config: bool = False,
@@ -174,7 +174,7 @@ def create_auto_config(
 
     # Inputs
     :param dataset: (str, pd.DataFrame, dd.core.DataFrame, DatasetInfo) data source to train over.
-    :param target: (str, List[str]) name of target feature
+    :param target: (str, list[str]) name of target feature
     :param time_limit_s: (int, float) total time allocated to auto_train. acts
                          as the stopping parameter
     :param tune_for_memory: (bool) DEPRECATED refine hyperopt search space for available
@@ -219,10 +219,10 @@ def create_auto_config(
 def create_automl_config_for_features(
     features_config: ModelConfigDict,
     dataset_info: DatasetInfo,
-    target: Union[str, List[str]],
+    target: Union[str, list[str]],
     time_limit_s: Union[int, float],
     tune_for_memory: bool = False,
-    user_config: Dict = None,
+    user_config: dict = None,
     random_seed: int = default_random_seed,
     imbalance_threshold: float = 0.9,
     use_reference_config: bool = False,
@@ -242,7 +242,7 @@ def create_automl_config_for_features(
 @PublicAPI
 def create_features_config(
     dataset_info: DatasetInfo,
-    target_name: Union[str, List[str]] = None,
+    target_name: Union[str, list[str]] = None,
 ) -> ModelConfigDict:
     return get_features_config(dataset_info.fields, dataset_info.row_count, target_name)
 
@@ -389,7 +389,7 @@ def _model_select(
 
 
 def _train(
-    config: Dict,
+    config: dict,
     dataset: Union[str, pd.DataFrame, dd.core.DataFrame],
     output_directory: str,
     model_name: str,
@@ -410,7 +410,7 @@ def _train(
 
 def init_config(
     dataset: str,
-    target: Union[str, List[str]],
+    target: Union[str, list[str]],
     time_limit_s: Union[int, float],
     tune_for_memory: bool = False,
     suggested: bool = False,

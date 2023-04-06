@@ -15,7 +15,7 @@
 # ==============================================================================
 import logging
 from functools import partial
-from typing import Dict, Union
+from typing import Union
 
 import torch
 
@@ -250,8 +250,8 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
 class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     def __init__(
         self,
-        output_feature_config: Union[TextOutputFeatureConfig, Dict],
-        output_features: Dict[str, OutputFeature],
+        output_feature_config: Union[TextOutputFeatureConfig, dict],
+        output_features: dict[str, OutputFeature],
         **kwargs,
     ):
         super().__init__(output_feature_config, output_features, **kwargs)

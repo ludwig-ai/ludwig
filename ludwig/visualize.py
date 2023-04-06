@@ -18,8 +18,9 @@ import itertools
 import logging
 import os
 import sys
+from collections.abc import Callable
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -101,8 +102,8 @@ def _vectorize_ground_truth(
 def validate_conf_thresholds_and_probabilities_2d_3d(probabilities, threshold_output_feature_names):
     """Ensure probabilities and threshold output_feature_names arrays have two members each.
 
-    :param probabilities: List of probabilities per model
-    :param threshhold_output_feature_names: List of threshhold output_feature_names per model
+    :param probabilities: list of probabilities per model
+    :param threshhold_output_feature_names: list of threshhold output_feature_names per model
     :raise: RuntimeError
     """
     validation_mapping = {
@@ -118,13 +119,13 @@ def validate_conf_thresholds_and_probabilities_2d_3d(probabilities, threshold_ou
 
 
 @DeveloperAPI
-def load_data_for_viz(load_type, model_file_statistics, dtype=int, ground_truth_split=2) -> Dict[str, Any]:
+def load_data_for_viz(load_type, model_file_statistics, dtype=int, ground_truth_split=2) -> dict[str, Any]:
     """Load JSON files (training stats, evaluation stats...) for a list of models.
 
     :param load_type: type of the data loader to be used.
     :param model_file_statistics: JSON file or list of json files containing any
            model experiment stats.
-    :return List of training statistics loaded as json objects.
+    :return list of training statistics loaded as json objects.
     """
     supported_load_types = dict(
         load_json=load_json,
@@ -147,7 +148,7 @@ def load_training_stats_for_viz(load_type, model_file_statistics, dtype=int, gro
     :param load_type: type of the data loader to be used.
     :param model_file_statistics: JSON file or list of json files containing any
            model experiment stats.
-    :return List of model statistics loaded as TrainingStats objects.
+    :return list of model statistics loaded as TrainingStats objects.
     """
     stats_per_model = load_data_for_viz(
         load_type, model_file_statistics, dtype=dtype, ground_truth_split=ground_truth_split
@@ -338,12 +339,12 @@ def generate_filename_template_path(output_dir, filename_template):
 
 
 @DeveloperAPI
-def compare_performance_cli(test_statistics: Union[str, List[str]], **kwargs: dict) -> None:
+def compare_performance_cli(test_statistics: Union[str, list[str]], **kwargs: dict) -> None:
     """Load model data from files to be shown by compare_performance.
 
     # Inputs
 
-    :param test_statistics: (Union[str, List[str]]) path to experiment test
+    :param test_statistics: (Union[str, list[str]]) path to experiment test
         statistics file.
     :param kwargs: (dict) parameters for the requested visualizations.
 
@@ -356,12 +357,12 @@ def compare_performance_cli(test_statistics: Union[str, List[str]], **kwargs: di
 
 
 @DeveloperAPI
-def learning_curves_cli(training_statistics: Union[str, List[str]], **kwargs: dict) -> None:
+def learning_curves_cli(training_statistics: Union[str, list[str]], **kwargs: dict) -> None:
     """Load model data from files to be shown by learning_curves.
 
     # Inputs
 
-    :param training_statistics: (Union[str, List[str]]) path to experiment
+    :param training_statistics: (Union[str, list[str]]) path to experiment
         training statistics file
     :param kwargs: (dict) parameters for the requested visualizations.
 
@@ -375,7 +376,7 @@ def learning_curves_cli(training_statistics: Union[str, List[str]], **kwargs: di
 
 @DeveloperAPI
 def compare_classifiers_performance_from_prob_cli(
-    probabilities: Union[str, List[str]],
+    probabilities: Union[str, list[str]],
     ground_truth: str,
     ground_truth_split: int,
     split_file: str,
@@ -388,7 +389,7 @@ def compare_classifiers_performance_from_prob_cli(
 
     # Inputs
 
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
+    :param probabilities: (Union[str, list[str]]) list of prediction results file names
         to extract probabilities from.
     :param ground_truth: (str) path to ground truth file
     :param ground_truth_split: (str) type of ground truth split -
@@ -430,7 +431,7 @@ def compare_classifiers_performance_from_prob_cli(
 
 @DeveloperAPI
 def compare_classifiers_performance_from_pred_cli(
-    predictions: List[str],
+    predictions: list[str],
     ground_truth: str,
     ground_truth_metadata: str,
     ground_truth_split: int,
@@ -443,7 +444,7 @@ def compare_classifiers_performance_from_pred_cli(
 
     # Inputs
 
-    :param predictions: (List[str]) list of prediction results file names
+    :param predictions: (list[str]) list of prediction results file names
         to extract predictions from.
     :param ground_truth: (str) path to ground truth file.
     :param ground_truth_metadata: (str) path to ground truth metadata file.
@@ -478,7 +479,7 @@ def compare_classifiers_performance_from_pred_cli(
 
 @DeveloperAPI
 def compare_classifiers_performance_subset_cli(
-    probabilities: Union[str, List[str]],
+    probabilities: Union[str, list[str]],
     ground_truth: str,
     ground_truth_split: int,
     split_file: str,
@@ -491,7 +492,7 @@ def compare_classifiers_performance_subset_cli(
 
     # Inputs
 
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
+    :param probabilities: (Union[str, list[str]]) list of prediction results file names
         to extract probabilities from.
     :param ground_truth: (str) path to ground truth file
     :param ground_truth_split: (str) type of ground truth split -
@@ -530,7 +531,7 @@ def compare_classifiers_performance_subset_cli(
 
 @DeveloperAPI
 def compare_classifiers_performance_changing_k_cli(
-    probabilities: Union[str, List[str]],
+    probabilities: Union[str, list[str]],
     ground_truth: str,
     ground_truth_split: int,
     split_file: str,
@@ -543,7 +544,7 @@ def compare_classifiers_performance_changing_k_cli(
 
     # Inputs
 
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
+    :param probabilities: (Union[str, list[str]]) list of prediction results file names
         to extract probabilities from.
     :param ground_truth: (str) path to ground truth file
     :param ground_truth_split: (str) type of ground truth split -
@@ -582,13 +583,13 @@ def compare_classifiers_performance_changing_k_cli(
 
 @DeveloperAPI
 def compare_classifiers_multiclass_multimetric_cli(
-    test_statistics: Union[str, List[str]], ground_truth_metadata: str, **kwargs: dict
+    test_statistics: Union[str, list[str]], ground_truth_metadata: str, **kwargs: dict
 ) -> None:
     """Load model data from files to be shown by compare_classifiers_multiclass.
 
     # Inputs
 
-    :param test_statistics: (Union[str, List[str]]) path to experiment test
+    :param test_statistics: (Union[str, list[str]]) path to experiment test
         statistics file.
     :param ground_truth_metadata: (str) path to ground truth metadata file.
     :param kwargs: (dict) parameters for the requested visualizations.
@@ -604,7 +605,7 @@ def compare_classifiers_multiclass_multimetric_cli(
 
 @DeveloperAPI
 def compare_classifiers_predictions_cli(
-    predictions: List[str],
+    predictions: list[str],
     ground_truth: str,
     ground_truth_split: int,
     split_file: str,
@@ -617,7 +618,7 @@ def compare_classifiers_predictions_cli(
 
     # Inputs
 
-    :param predictions: (List[str]) list of prediction results file names
+    :param predictions: (list[str]) list of prediction results file names
         to extract predictions from.
     :param ground_truth: (str) path to ground truth file.
     :param ground_truth_split: (str) type of ground truth split -
@@ -651,7 +652,7 @@ def compare_classifiers_predictions_cli(
 
 @DeveloperAPI
 def compare_classifiers_predictions_distribution_cli(
-    predictions: List[str],
+    predictions: list[str],
     ground_truth: str,
     ground_truth_split: int,
     split_file: str,
@@ -664,7 +665,7 @@ def compare_classifiers_predictions_distribution_cli(
 
     # Inputs
 
-    :param predictions: (List[str]) list of prediction results file names
+    :param predictions: (list[str]) list of prediction results file names
         to extract predictions from.
     :param ground_truth: (str) path to ground truth file.
     :param ground_truth_split: (str) type of ground truth split -
@@ -697,7 +698,7 @@ def compare_classifiers_predictions_distribution_cli(
 
 @DeveloperAPI
 def confidence_thresholding_cli(
-    probabilities: Union[str, List[str]],
+    probabilities: Union[str, list[str]],
     ground_truth: str,
     ground_truth_split: int,
     split_file: str,
@@ -710,7 +711,7 @@ def confidence_thresholding_cli(
 
     # Inputs
 
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
+    :param probabilities: (Union[str, list[str]]) list of prediction results file names
         to extract probabilities from.
     :param ground_truth: (str) path to ground truth file.
     :param ground_truth_split: (str) type of ground truth split -
@@ -748,7 +749,7 @@ def confidence_thresholding_cli(
 
 @DeveloperAPI
 def confidence_thresholding_data_vs_acc_cli(
-    probabilities: Union[str, List[str]],
+    probabilities: Union[str, list[str]],
     ground_truth: str,
     ground_truth_split: int,
     split_file: str,
@@ -761,7 +762,7 @@ def confidence_thresholding_data_vs_acc_cli(
 
     # Inputs
 
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
+    :param probabilities: (Union[str, list[str]]) list of prediction results file names
         to extract probabilities from.
     :param ground_truth: (str) path to ground truth file.
     :param ground_truth_split: (str) type of ground truth split -
@@ -799,7 +800,7 @@ def confidence_thresholding_data_vs_acc_cli(
 
 @DeveloperAPI
 def confidence_thresholding_data_vs_acc_subset_cli(
-    probabilities: Union[str, List[str]],
+    probabilities: Union[str, list[str]],
     ground_truth: str,
     ground_truth_split: int,
     split_file: str,
@@ -812,7 +813,7 @@ def confidence_thresholding_data_vs_acc_subset_cli(
 
     # Inputs
 
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
+    :param probabilities: (Union[str, list[str]]) list of prediction results file names
         to extract probabilities from.
     :param ground_truth: (str) path to ground truth file.
     :param ground_truth_split: (str) type of ground truth split -
@@ -850,7 +851,7 @@ def confidence_thresholding_data_vs_acc_subset_cli(
 
 @DeveloperAPI
 def confidence_thresholding_data_vs_acc_subset_per_class_cli(
-    probabilities: Union[str, List[str]],
+    probabilities: Union[str, list[str]],
     ground_truth: str,
     ground_truth_metadata: str,
     ground_truth_split: int,
@@ -863,7 +864,7 @@ def confidence_thresholding_data_vs_acc_subset_per_class_cli(
 
     # Inputs
 
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
+    :param probabilities: (Union[str, list[str]]) list of prediction results file names
         to extract probabilities from.
     :param ground_truth: (str) path to ground truth file.
     :param ground_truth_metadata: (str) path to ground truth metadata file.
@@ -900,12 +901,12 @@ def confidence_thresholding_data_vs_acc_subset_per_class_cli(
 
 @DeveloperAPI
 def confidence_thresholding_2thresholds_2d_cli(
-    probabilities: Union[str, List[str]],
+    probabilities: Union[str, list[str]],
     ground_truth: str,
     ground_truth_split: int,
     split_file: str,
     ground_truth_metadata: str,
-    threshold_output_feature_names: List[str],
+    threshold_output_feature_names: list[str],
     output_directory: str,
     **kwargs: dict,
 ) -> None:
@@ -913,7 +914,7 @@ def confidence_thresholding_2thresholds_2d_cli(
 
     # Inputs
 
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
+    :param probabilities: (Union[str, list[str]]) list of prediction results file names
         to extract probabilities from.
     :param ground_truth: (str) path to ground truth file.
     :param ground_truth_split: (str) type of ground truth split -
@@ -922,7 +923,7 @@ def confidence_thresholding_2thresholds_2d_cli(
     :param split_file: (str, None) file path to csv file containing split values
     :param ground_truth_metadata: (str) file path to feature metadata json file
         created during training.
-    :param threshold_output_feature_names: (List[str]) name of the output
+    :param threshold_output_feature_names: (list[str]) name of the output
         feature to visualizes.
     :param output_directory: (str) name of output directory containing training
          results.
@@ -959,12 +960,12 @@ def confidence_thresholding_2thresholds_2d_cli(
 
 @DeveloperAPI
 def confidence_thresholding_2thresholds_3d_cli(
-    probabilities: Union[str, List[str]],
+    probabilities: Union[str, list[str]],
     ground_truth: str,
     ground_truth_split: int,
     split_file: str,
     ground_truth_metadata: str,
-    threshold_output_feature_names: List[str],
+    threshold_output_feature_names: list[str],
     output_directory: str,
     **kwargs: dict,
 ) -> None:
@@ -972,7 +973,7 @@ def confidence_thresholding_2thresholds_3d_cli(
 
     # Inputs
 
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
+    :param probabilities: (Union[str, list[str]]) list of prediction results file names
         to extract probabilities from.
     :param ground_truth: (str) path to ground truth file.
     :param ground_truth_split: (str) type of ground truth split -
@@ -981,7 +982,7 @@ def confidence_thresholding_2thresholds_3d_cli(
     :param split_file: (str, None) file path to csv file containing split values
     :param ground_truth_metadata: (str) file path to feature metadata json file
         created during training.
-    :param threshold_output_feature_names: (List[str]) name of the output
+    :param threshold_output_feature_names: (list[str]) name of the output
         feature to visualizes.
     :param output_directory: (str) name of output directory containing training
          results.
@@ -1017,7 +1018,7 @@ def confidence_thresholding_2thresholds_3d_cli(
 
 @DeveloperAPI
 def binary_threshold_vs_metric_cli(
-    probabilities: Union[str, List[str]],
+    probabilities: Union[str, list[str]],
     ground_truth: str,
     ground_truth_split: int,
     split_file: str,
@@ -1030,7 +1031,7 @@ def binary_threshold_vs_metric_cli(
 
     # Inputs
 
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
+    :param probabilities: (Union[str, list[str]]) list of prediction results file names
         to extract probabilities from.
     :param ground_truth: (str) path to ground truth file.
     :param ground_truth_split: (str) type of ground truth split -
@@ -1069,7 +1070,7 @@ def binary_threshold_vs_metric_cli(
 
 @DeveloperAPI
 def precision_recall_curves_cli(
-    probabilities: Union[str, List[str]],
+    probabilities: Union[str, list[str]],
     ground_truth: str,
     ground_truth_split: int,
     split_file: str,
@@ -1082,7 +1083,7 @@ def precision_recall_curves_cli(
 
     Args
 
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
+    :param probabilities: (Union[str, list[str]]) list of prediction results file names
         to extract probabilities from.
     :param ground_truth: (str) path to ground truth file.
     :param ground_truth_split: (str) type of ground truth split -
@@ -1120,7 +1121,7 @@ def precision_recall_curves_cli(
 
 @DeveloperAPI
 def roc_curves_cli(
-    probabilities: Union[str, List[str]],
+    probabilities: Union[str, list[str]],
     ground_truth: str,
     ground_truth_split: int,
     split_file: str,
@@ -1133,7 +1134,7 @@ def roc_curves_cli(
 
     # Inputs
 
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
+    :param probabilities: (Union[str, list[str]]) list of prediction results file names
         to extract probabilities from.
     :param ground_truth: (str) path to ground truth file.
     :param ground_truth_split: (str) type of ground truth split -
@@ -1171,11 +1172,11 @@ def roc_curves_cli(
 
 
 @DeveloperAPI
-def roc_curves_from_test_statistics_cli(test_statistics: Union[str, List[str]], **kwargs: dict) -> None:
+def roc_curves_from_test_statistics_cli(test_statistics: Union[str, list[str]], **kwargs: dict) -> None:
     """Load model data from files to be shown by roc_curves_from_test_statistics_cli.
 
     # Inputs
-    :param test_statistics: (Union[str, List[str]]) path to experiment test
+    :param test_statistics: (Union[str, list[str]]) path to experiment test
         statistics file.
     :param kwargs: (dict) parameters for the requested visualizations.
 
@@ -1188,12 +1189,12 @@ def roc_curves_from_test_statistics_cli(test_statistics: Union[str, List[str]], 
 
 
 @DeveloperAPI
-def precision_recall_curves_from_test_statistics_cli(test_statistics: Union[str, List[str]], **kwargs: dict) -> None:
+def precision_recall_curves_from_test_statistics_cli(test_statistics: Union[str, list[str]], **kwargs: dict) -> None:
     """Load model data from files to be shown by precision_recall_curves_from_test_statistics_cli.
 
     Args:
 
-    :param test_statistics: (Union[str, List[str]]) path to experiment test
+    :param test_statistics: (Union[str, list[str]]) path to experiment test
         statistics file.
     :param kwargs: (dict) parameters for the requested visualizations.
 
@@ -1207,7 +1208,7 @@ def precision_recall_curves_from_test_statistics_cli(test_statistics: Union[str,
 
 @DeveloperAPI
 def calibration_1_vs_all_cli(
-    probabilities: Union[str, List[str]],
+    probabilities: Union[str, list[str]],
     ground_truth: str,
     ground_truth_split: int,
     split_file: str,
@@ -1222,7 +1223,7 @@ def calibration_1_vs_all_cli(
 
     # Inputs
 
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
+    :param probabilities: (Union[str, list[str]]) list of prediction results file names
         to extract probabilities from.
     :param ground_truth: (str) path to ground truth file
     :param ground_truth_split: (str) type of ground truth split -
@@ -1269,7 +1270,7 @@ def calibration_1_vs_all_cli(
 
 @DeveloperAPI
 def calibration_multiclass_cli(
-    probabilities: Union[str, List[str]],
+    probabilities: Union[str, list[str]],
     ground_truth: str,
     ground_truth_split: int,
     split_file: str,
@@ -1282,7 +1283,7 @@ def calibration_multiclass_cli(
 
     # Inputs
 
-    :param probabilities: (Union[str, List[str]]) list of prediction results file names
+    :param probabilities: (Union[str, list[str]]) list of prediction results file names
         to extract probabilities from.
     :param ground_truth: (str) path to ground truth file
     :param ground_truth_split: (str) type of ground truth split -
@@ -1320,12 +1321,12 @@ def calibration_multiclass_cli(
 
 
 @DeveloperAPI
-def confusion_matrix_cli(test_statistics: Union[str, List[str]], ground_truth_metadata: str, **kwargs: dict) -> None:
+def confusion_matrix_cli(test_statistics: Union[str, list[str]], ground_truth_metadata: str, **kwargs: dict) -> None:
     """Load model data from files to be shown by confusion_matrix.
 
     # Inputs
 
-    :param test_statistics: (Union[str, List[str]]) path to experiment test
+    :param test_statistics: (Union[str, list[str]]) path to experiment test
         statistics file.
     :param ground_truth_metadata: (str) path to ground truth metadata file.
     :param kwargs: (dict) parameters for the requested visualizations.
@@ -1340,12 +1341,12 @@ def confusion_matrix_cli(test_statistics: Union[str, List[str]], ground_truth_me
 
 
 @DeveloperAPI
-def frequency_vs_f1_cli(test_statistics: Union[str, List[str]], ground_truth_metadata: str, **kwargs: dict) -> None:
+def frequency_vs_f1_cli(test_statistics: Union[str, list[str]], ground_truth_metadata: str, **kwargs: dict) -> None:
     """Load model data from files to be shown by frequency_vs_f1.
 
     # Inputs
 
-    :param test_statistics: (Union[str, List[str]]) path to experiment test
+    :param test_statistics: (Union[str, list[str]]) path to experiment test
         statistics file.
     :param ground_truth_metadata: (str) path to ground truth metadata file.
     :param kwargs: (dict) parameters for the requested visualizations.
@@ -1361,12 +1362,12 @@ def frequency_vs_f1_cli(test_statistics: Union[str, List[str]], ground_truth_met
 
 @DeveloperAPI
 def learning_curves(
-    train_stats_per_model: List[dict],
+    train_stats_per_model: list[dict],
     output_feature_name: Union[str, None] = None,
-    model_names: Union[str, List[str]] = None,
+    model_names: Union[str, list[str]] = None,
     output_directory: str = None,
     file_format: str = "pdf",
-    callbacks: List[Callback] = None,
+    callbacks: list[Callback] = None,
     **kwargs,
 ) -> None:
     """Show how model metrics change over training and validation data epochs.
@@ -1377,11 +1378,11 @@ def learning_curves(
 
     # Inputs
 
-    :param train_stats_per_model: (List[dict]) list containing dictionary of
+    :param train_stats_per_model: (list[dict]) list containing dictionary of
         training statistics per model.
     :param output_feature_name: (Union[str, `None`], default: `None`) name of the output feature
         to use for the visualization.  If `None`, use all output features.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
+    :param model_names: (Union[str, list[str]], default: `None`) model name or
         list of the model names to use as labels.
     :param output_directory: (str, default: `None`) directory where to save
         plots. If not specified, plots will be displayed in a window
@@ -1439,9 +1440,9 @@ def learning_curves(
 
 @DeveloperAPI
 def compare_performance(
-    test_stats_per_model: List[dict],
+    test_stats_per_model: list[dict],
     output_feature_name: Union[str, None] = None,
-    model_names: Union[str, List[str]] = None,
+    model_names: Union[str, list[str]] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     **kwargs,
@@ -1454,11 +1455,11 @@ def compare_performance(
 
     # Inputs
 
-    :param test_stats_per_model: (List[dict]) dictionary containing evaluation
+    :param test_stats_per_model: (list[dict]) dictionary containing evaluation
         performance statistics.
     :param output_feature_name: (Union[str, `None`], default: `None`) name of the output feature
         to use for the visualization.  If `None`, use all output features.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
+    :param model_names: (Union[str, list[str]], default: `None`) model name or
         list of the model names to use as labels.
     :param output_directory: (str, default: `None`) directory where to save
         plots. If not specified, plots will be displayed in a window
@@ -1539,13 +1540,13 @@ def compare_performance(
 
 @DeveloperAPI
 def compare_classifiers_performance_from_prob(
-    probabilities_per_model: List[np.ndarray],
+    probabilities_per_model: list[np.ndarray],
     ground_truth: Union[pd.Series, np.ndarray],
     metadata: dict,
     output_feature_name: str,
     labels_limit: int = 0,
-    top_n_classes: Union[List[int], int] = 3,
-    model_names: Union[str, List[str]] = None,
+    top_n_classes: Union[list[int], int] = 3,
+    model_names: Union[str, list[str]] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
@@ -1559,17 +1560,17 @@ def compare_classifiers_performance_from_prob(
 
     # Inputs
 
-    :param probabilities_per_model: (List[np.ndarray]) path to experiment
+    :param probabilities_per_model: (list[np.ndarray]) path to experiment
         probabilities file
     :param ground_truth: (pd.Series) ground truth values
     :param metadata: (dict) feature metadata dictionary
     :param output_feature_name: (str) output feature name
-    :param top_n_classes: (List[int]) list containing the number of classes
+    :param top_n_classes: (list[int]) list containing the number of classes
         to plot.
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
         `labels_limit` are considered to be "rare" labels.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
+    :param model_names: (Union[str, list[str]], default: `None`) model name or
         list of the model names to use as labels.
     :param output_directory: (str, default: `None`) directory where to save
         plots. If not specified, plots will be displayed in a window
@@ -1635,12 +1636,12 @@ def compare_classifiers_performance_from_prob(
 
 @DeveloperAPI
 def compare_classifiers_performance_from_pred(
-    predictions_per_model: List[np.ndarray],
+    predictions_per_model: list[np.ndarray],
     ground_truth: Union[pd.Series, np.ndarray],
     metadata: dict,
     output_feature_name: str,
     labels_limit: int,
-    model_names: Union[str, List[str]] = None,
+    model_names: Union[str, list[str]] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
@@ -1654,14 +1655,14 @@ def compare_classifiers_performance_from_pred(
 
     # Inputs
 
-    :param predictions_per_model: (List[str]) path to experiment predictions file.
+    :param predictions_per_model: (list[str]) path to experiment predictions file.
     :param ground_truth: (pd.Series) ground truth values
     :param metadata: (dict) feature metadata dictionary.
     :param output_feature_name: (str) name of the output feature to visualize.
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
         `labels_limit` are considered to be "rare" labels.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
+    :param model_names: (Union[str, list[str]], default: `None`) model name or
         list of the model names to use as labels.
     :param output_directory: (str, default: `None`) directory where to save
         plots. If not specified, plots will be displayed in a window
@@ -1722,14 +1723,14 @@ def compare_classifiers_performance_from_pred(
 
 @DeveloperAPI
 def compare_classifiers_performance_subset(
-    probabilities_per_model: List[np.array],
+    probabilities_per_model: list[np.array],
     ground_truth: Union[pd.Series, np.ndarray],
     metadata: dict,
     output_feature_name: str,
-    top_n_classes: List[int],
+    top_n_classes: list[int],
     labels_limit: (int),
     subset: str,
-    model_names: Union[str, List[str]] = None,
+    model_names: Union[str, list[str]] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
@@ -1745,19 +1746,19 @@ def compare_classifiers_performance_subset(
 
      # Inputs
 
-    :param probabilities_per_model: (List[numpy.array]) list of model
+    :param probabilities_per_model: (list[numpy.array]) list of model
         probabilities.
     :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
     :param metadata: (dict) feature metadata dictionary
     :param output_feature_name: (str) output feature name
-    :param top_n_classes: (List[int]) list containing the number of classes
+    :param top_n_classes: (list[int]) list containing the number of classes
         to plot.
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
         `labels_limit` are considered to be "rare" labels.
     :param subset: (str) string specifying type of subset filtering.  Valid
         values are `ground_truth` or `predictions`.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
+    :param model_names: (Union[str, list[str]], default: `None`) model name or
         list of the model names to use as labels.
     :param output_directory: (str, default: `None`) directory where to save
         plots. If not specified, plots will be displayed in a window
@@ -1844,13 +1845,13 @@ def compare_classifiers_performance_subset(
 
 @DeveloperAPI
 def compare_classifiers_performance_changing_k(
-    probabilities_per_model: List[np.array],
+    probabilities_per_model: list[np.array],
     ground_truth: Union[pd.Series, np.ndarray],
     metadata: dict,
     output_feature_name: str,
     top_k: int,
     labels_limit: int,
-    model_names: Union[str, List[str]] = None,
+    model_names: Union[str, list[str]] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
@@ -1865,7 +1866,7 @@ def compare_classifiers_performance_changing_k(
 
     # Inputs
 
-    :param probabilities_per_model: (List[numpy.array]) list of model
+    :param probabilities_per_model: (list[numpy.array]) list of model
         probabilities.
     :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
     :param metadata: (dict) feature metadata dictionary
@@ -1874,7 +1875,7 @@ def compare_classifiers_performance_changing_k(
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
         `labels_limit` are considered to be "rare" labels.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
+    :param model_names: (Union[str, list[str]], default: `None`) model name or
         list of the model names to use as labels.
     :param output_directory: (str, default: `None`) directory where to save
         plots. If not specified, plots will be displayed in a window
@@ -1930,11 +1931,11 @@ def compare_classifiers_performance_changing_k(
 
 @DeveloperAPI
 def compare_classifiers_multiclass_multimetric(
-    test_stats_per_model: List[dict],
+    test_stats_per_model: list[dict],
     metadata: dict,
     output_feature_name: str,
-    top_n_classes: List[int],
-    model_names: Union[str, List[str]] = None,
+    top_n_classes: list[int],
+    model_names: Union[str, list[str]] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     **kwargs,
@@ -1946,15 +1947,15 @@ def compare_classifiers_multiclass_multimetric(
 
     # Inputs
 
-    :param test_stats_per_model: (List[dict]) list containing dictionary of
+    :param test_stats_per_model: (list[dict]) list containing dictionary of
         evaluation performance statistics
     :param metadata: (dict) intermediate preprocess structure created during
         training containing the mappings of the input dataset.
     :param output_feature_name: (Union[str, `None`]) name of the output feature
         to use for the visualization.  If `None`, use all output features.
-    :param top_n_classes: (List[int]) list containing the number of classes
+    :param top_n_classes: (list[int]) list containing the number of classes
         to plot.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
+    :param model_names: (Union[str, list[str]], default: `None`) model name or
         list of the model names to use as labels.
     :param output_directory: (str, default: `None`) directory where to save
         plots. If not specified, plots will be displayed in a window
@@ -2080,12 +2081,12 @@ def compare_classifiers_multiclass_multimetric(
 
 @DeveloperAPI
 def compare_classifiers_predictions(
-    predictions_per_model: List[list],
+    predictions_per_model: list[list],
     ground_truth: Union[pd.Series, np.ndarray],
     metadata: dict,
     output_feature_name: str,
     labels_limit: int,
-    model_names: Union[str, List[str]] = None,
+    model_names: Union[str, list[str]] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
@@ -2095,7 +2096,7 @@ def compare_classifiers_predictions(
 
     # Inputs
 
-    :param predictions_per_model: (List[list]) list containing the model
+    :param predictions_per_model: (list[list]) list containing the model
         predictions for the specified output_feature_name.
     :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
     :param metadata: (dict) feature metadata dictionary
@@ -2103,7 +2104,7 @@ def compare_classifiers_predictions(
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
         `labels_limit` are considered to be "rare" labels.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
+    :param model_names: (Union[str, list[str]], default: `None`) model name or
         list of the model names to use as labels.
     :param output_directory: (str, default: `None`) directory where to save
         plots. If not specified, plots will be displayed in a window
@@ -2221,12 +2222,12 @@ def compare_classifiers_predictions(
 
 @DeveloperAPI
 def compare_classifiers_predictions_distribution(
-    predictions_per_model: List[list],
+    predictions_per_model: list[list],
     ground_truth: Union[pd.Series, np.ndarray],
     metadata: dict,
     output_feature_name: str,
     labels_limit: int,
-    model_names: Union[str, List[str]] = None,
+    model_names: Union[str, list[str]] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
@@ -2240,7 +2241,7 @@ def compare_classifiers_predictions_distribution(
 
     # Inputs
 
-    :param predictions_per_model: (List[list]) list containing the model
+    :param predictions_per_model: (list[list]) list containing the model
         predictions for the specified output_feature_name.
     :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
     :param metadata: (dict) feature metadata dictionary
@@ -2248,7 +2249,7 @@ def compare_classifiers_predictions_distribution(
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
         `labels_limit` are considered to be "rare" labels.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
+    :param model_names: (Union[str, list[str]], default: `None`) model name or
         list of the model names to use as labels.
     :param output_directory: (str, default: `None`) directory where to save
         plots. If not specified, plots will be displayed in a window
@@ -2295,12 +2296,12 @@ def compare_classifiers_predictions_distribution(
 
 @DeveloperAPI
 def confidence_thresholding(
-    probabilities_per_model: List[np.array],
+    probabilities_per_model: list[np.array],
     ground_truth: Union[pd.Series, np.ndarray],
     metadata: dict,
     output_feature_name: str,
     labels_limit: int,
-    model_names: Union[str, List[str]] = None,
+    model_names: Union[str, list[str]] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
@@ -2314,7 +2315,7 @@ def confidence_thresholding(
 
     # Inputs
 
-    :param probabilities_per_model: (List[numpy.array]) list of model
+    :param probabilities_per_model: (list[numpy.array]) list of model
         probabilities.
     :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
     :param metadata: (dict) feature metadata dictionary
@@ -2322,7 +2323,7 @@ def confidence_thresholding(
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
         `labels_limit` are considered to be "rare" labels.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
+    :param model_names: (Union[str, list[str]], default: `None`) model name or
         list of the model names to use as labels.
     :param output_directory: (str, default: `None`) directory where to save
         plots. If not specified, plots will be displayed in a window
@@ -2386,12 +2387,12 @@ def confidence_thresholding(
 
 @DeveloperAPI
 def confidence_thresholding_data_vs_acc(
-    probabilities_per_model: List[np.array],
+    probabilities_per_model: list[np.array],
     ground_truth: Union[pd.Series, np.ndarray],
     metadata: dict,
     output_feature_name: str,
     labels_limit: int,
-    model_names: Union[str, List[str]] = None,
+    model_names: Union[str, list[str]] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
@@ -2408,7 +2409,7 @@ def confidence_thresholding_data_vs_acc(
 
     # Inputs
 
-    :param probabilities_per_model: (List[numpy.array]) list of model
+    :param probabilities_per_model: (list[numpy.array]) list of model
         probabilities.
     :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
     :param metadata: (dict) feature metadata dictionary
@@ -2416,7 +2417,7 @@ def confidence_thresholding_data_vs_acc(
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
         `labels_limit` are considered to be "rare" labels.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
+    :param model_names: (Union[str, list[str]], default: `None`) model name or
         list of the model names to use as labels.
     :param output_directory: (str, default: `None`) directory where to save
         plots. If not specified, plots will be displayed in a window
@@ -2483,14 +2484,14 @@ def confidence_thresholding_data_vs_acc(
 
 @DeveloperAPI
 def confidence_thresholding_data_vs_acc_subset(
-    probabilities_per_model: List[np.array],
+    probabilities_per_model: list[np.array],
     ground_truth: Union[pd.Series, np.ndarray],
     metadata: dict,
     output_feature_name: str,
-    top_n_classes: List[int],
+    top_n_classes: list[int],
     labels_limit: int,
     subset: str,
-    model_names: Union[str, List[str]] = None,
+    model_names: Union[str, list[str]] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
@@ -2518,19 +2519,19 @@ def confidence_thresholding_data_vs_acc_subset(
 
     # Inputs
 
-    :param probabilities_per_model: (List[numpy.array]) list of model
+    :param probabilities_per_model: (list[numpy.array]) list of model
         probabilities.
     :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
     :param metadata: (dict) feature metadata dictionary
     :param output_feature_name: (str) output feature name
-    :param top_n_classes: (List[int]) list containing the number of classes
+    :param top_n_classes: (list[int]) list containing the number of classes
         to plot.
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
         `labels_limit` are considered to be "rare" labels.
     :param subset: (str) string specifying type of subset filtering.  Valid
         values are `ground_truth` or `predictions`.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
+    :param model_names: (Union[str, list[str]], default: `None`) model name or
         list of the model names to use as labels.
     :param output_directory: (str, default: `None`) directory where to save
         plots. If not specified, plots will be displayed in a window
@@ -2619,14 +2620,14 @@ def confidence_thresholding_data_vs_acc_subset(
 
 @DeveloperAPI
 def confidence_thresholding_data_vs_acc_subset_per_class(
-    probabilities_per_model: List[np.array],
+    probabilities_per_model: list[np.array],
     ground_truth: Union[pd.Series, np.ndarray],
     metadata: dict,
     output_feature_name: str,
-    top_n_classes: Union[int, List[int]],
+    top_n_classes: Union[int, list[int]],
     labels_limit: int,
     subset: str,
-    model_names: Union[str, List[str]] = None,
+    model_names: Union[str, list[str]] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
@@ -2659,21 +2660,21 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
 
     # Inputs
 
-    :param probabilities_per_model: (List[numpy.array]) list of model
+    :param probabilities_per_model: (list[numpy.array]) list of model
         probabilities.
     :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
     :param metadata: (dict) intermediate preprocess structure created during
         training containing the mappings of the input dataset.
     :param output_feature_name: (str) name of the output feature to use
         for the visualization.
-    :param top_n_classes: (Union[int, List[int]]) number of top classes or list
+    :param top_n_classes: (Union[int, list[int]]) number of top classes or list
         containing the number of top classes to plot.
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
         `labels_limit` are considered to be "rare" labels.
     :param subset: (str) string specifying type of subset filtering.  Valid
         values are `ground_truth` or `predictions`.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
+    :param model_names: (Union[str, list[str]], default: `None`) model name or
         list of the model names to use as labels.
     :param output_directory: (str, default: `None`) directory where to save
         plots. If not specified, plots will be displayed in a window
@@ -2771,12 +2772,12 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
 
 @DeveloperAPI
 def confidence_thresholding_2thresholds_2d(
-    probabilities_per_model: List[np.array],
-    ground_truths: Union[List[np.array], List[pd.Series]],
+    probabilities_per_model: list[np.array],
+    ground_truths: Union[list[np.array], list[pd.Series]],
     metadata,
-    threshold_output_feature_names: List[str],
+    threshold_output_feature_names: list[str],
     labels_limit: int,
-    model_names: Union[str, List[str]] = None,
+    model_names: Union[str, list[str]] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     **kwargs,
@@ -2793,17 +2794,17 @@ def confidence_thresholding_2thresholds_2d(
 
     # Inputs
 
-    :param probabilities_per_model: (List[numpy.array]) list of model
+    :param probabilities_per_model: (list[numpy.array]) list of model
         probabilities.
-    :param ground_truth: (Union[List[np.array], List[pd.Series]]) containing
+    :param ground_truth: (Union[list[np.array], list[pd.Series]]) containing
         ground truth data
     :param metadata: (dict) feature metadata dictionary
-    :param threshold_output_feature_names: (List[str]) List containing two output
+    :param threshold_output_feature_names: (list[str]) list containing two output
         feature names for visualization.
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
         `labels_limit` are considered to be "rare" labels.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
+    :param model_names: (Union[str, list[str]], default: `None`) model name or
         list of the model names to use as labels.
     :param output_directory: (str, default: `None`) directory where to save
         plots. If not specified, plots will be displayed in a window
@@ -2962,10 +2963,10 @@ def confidence_thresholding_2thresholds_2d(
 
 @DeveloperAPI
 def confidence_thresholding_2thresholds_3d(
-    probabilities_per_model: List[np.array],
-    ground_truths: Union[List[np.array], List[pd.Series]],
+    probabilities_per_model: list[np.array],
+    ground_truths: Union[list[np.array], list[pd.Series]],
     metadata,
-    threshold_output_feature_names: List[str],
+    threshold_output_feature_names: list[str],
     labels_limit: int,
     output_directory: str = None,
     file_format: str = "pdf",
@@ -2981,12 +2982,12 @@ def confidence_thresholding_2thresholds_3d(
 
     # Inputs
 
-    :param probabilities_per_model: (List[numpy.array]) list of model
+    :param probabilities_per_model: (list[numpy.array]) list of model
         probabilities.
-    :param ground_truth: (Union[List[np.array], List[pd.Series]]) containing
+    :param ground_truth: (Union[list[np.array], list[pd.Series]]) containing
         ground truth data
     :param metadata: (dict) feature metadata dictionary
-    :param threshold_output_feature_names: (List[str]) List containing two output
+    :param threshold_output_feature_names: (list[str]) list containing two output
         feature names for visualization.
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
@@ -3085,13 +3086,13 @@ def confidence_thresholding_2thresholds_3d(
 
 @DeveloperAPI
 def binary_threshold_vs_metric(
-    probabilities_per_model: List[np.array],
+    probabilities_per_model: list[np.array],
     ground_truth: Union[pd.Series, np.ndarray],
     metadata: dict,
     output_feature_name: str,
-    metrics: List[str],
+    metrics: list[str],
     positive_label: int = 1,
-    model_names: List[str] = None,
+    model_names: list[str] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
@@ -3111,16 +3112,16 @@ def binary_threshold_vs_metric(
 
     # Inputs
 
-    :param probabilities_per_model: (List[numpy.array]) list of model
+    :param probabilities_per_model: (list[numpy.array]) list of model
         probabilities.
     :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
     :param metadata: (dict) feature metadata dictionary
     :param output_feature_name: (str) output feature name
-    :param metrics: (List[str]) metrics to display (`'f1'`, `'precision'`,
+    :param metrics: (list[str]) metrics to display (`'f1'`, `'precision'`,
         `'recall'`, `'accuracy'`).
     :param positive_label: (int, default: `1`) numeric encoded value for the
         positive class.
-    :param model_names: (List[str], default: `None`) list of the names of the
+    :param model_names: (list[str], default: `None`) list of the names of the
         models to use as labels.
     :param output_directory: (str, default: `None`) directory where to save
         plots. If not specified, plots will be displayed in a window
@@ -3199,12 +3200,12 @@ def binary_threshold_vs_metric(
 
 @DeveloperAPI
 def precision_recall_curves(
-    probabilities_per_model: List[np.array],
+    probabilities_per_model: list[np.array],
     ground_truth: Union[pd.Series, np.ndarray],
     metadata: dict,
     output_feature_name: str,
     positive_label: int = 1,
-    model_names: Union[str, List[str]] = None,
+    model_names: Union[str, list[str]] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
@@ -3222,14 +3223,14 @@ def precision_recall_curves(
 
     # Inputs
 
-    :param probabilities_per_model: (List[numpy.array]) list of model
+    :param probabilities_per_model: (list[numpy.array]) list of model
         probabilities.
     :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
     :param metadata: (dict) feature metadata dictionary
     :param output_feature_name: (str) output feature name
     :param positive_label: (int, default: `1`) numeric encoded value for the
         positive class.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
+    :param model_names: (Union[str, list[str]], default: `None`) model name or
         list of the model names to use as labels.
     :param output_directory: (str, default: `None`) directory where to save
         plots. If not specified, plots will be displayed in a window
@@ -3271,9 +3272,9 @@ def precision_recall_curves(
 
 @DeveloperAPI
 def precision_recall_curves_from_test_statistics(
-    test_stats_per_model: List[dict],
+    test_stats_per_model: list[dict],
     output_feature_name: str,
-    model_names: Union[str, List[str]] = None,
+    model_names: Union[str, list[str]] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     **kwargs,
@@ -3287,11 +3288,11 @@ def precision_recall_curves_from_test_statistics(
 
     Args:
 
-    :param test_stats_per_model: (List[dict]) dictionary containing evaluation
+    :param test_stats_per_model: (list[dict]) dictionary containing evaluation
         performance statistics.
     :param output_feature_name: (str) name of the output feature to use
         for the visualization.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
+    :param model_names: (Union[str, list[str]], default: `None`) model name or
         list of the model names to use as labels.
     :param output_directory: (str, default: `None`) directory where to save
         plots. If not specified, plots will be displayed in a window
@@ -3318,12 +3319,12 @@ def precision_recall_curves_from_test_statistics(
 
 @DeveloperAPI
 def roc_curves(
-    probabilities_per_model: List[np.array],
+    probabilities_per_model: list[np.array],
     ground_truth: Union[pd.Series, np.ndarray],
     metadata: dict,
     output_feature_name: str,
     positive_label: int = 1,
-    model_names: Union[str, List[str]] = None,
+    model_names: Union[str, list[str]] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
@@ -3341,14 +3342,14 @@ def roc_curves(
 
     # Inputs
 
-    :param probabilities_per_model: (List[numpy.array]) list of model
+    :param probabilities_per_model: (list[numpy.array]) list of model
         probabilities.
     :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
     :param metadata: (dict) feature metadata dictionary
     :param output_feature_name: (str) output feature name
     :param positive_label: (int, default: `1`) numeric encoded value for the
         positive class.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
+    :param model_names: (Union[str, list[str]], default: `None`) model name or
         list of the model names to use as labels.
     :param output_directory: (str, default: `None`) directory where to save
         plots. If not specified, plots will be displayed in a window
@@ -3388,9 +3389,9 @@ def roc_curves(
 
 @DeveloperAPI
 def roc_curves_from_test_statistics(
-    test_stats_per_model: List[dict],
+    test_stats_per_model: list[dict],
     output_feature_name: str,
-    model_names: Union[str, List[str]] = None,
+    model_names: Union[str, list[str]] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     **kwargs,
@@ -3404,11 +3405,11 @@ def roc_curves_from_test_statistics(
 
     # Inputs
 
-    :param test_stats_per_model: (List[dict]) dictionary containing evaluation
+    :param test_stats_per_model: (list[dict]) dictionary containing evaluation
         performance statistics.
     :param output_feature_name: (str) name of the output feature to use
         for the visualization.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
+    :param model_names: (Union[str, list[str]], default: `None`) model name or
         list of the model names to use as labels.
     :param output_directory: (str, default: `None`) directory where to save
         plots. If not specified, plots will be displayed in a window
@@ -3433,13 +3434,13 @@ def roc_curves_from_test_statistics(
 
 @DeveloperAPI
 def calibration_1_vs_all(
-    probabilities_per_model: List[np.array],
+    probabilities_per_model: list[np.array],
     ground_truth: Union[pd.Series, np.ndarray],
     metadata: dict,
     output_feature_name: str,
-    top_n_classes: List[int],
+    top_n_classes: list[int],
     labels_limit: int,
-    model_names: List[str] = None,
+    model_names: list[str] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
@@ -3463,16 +3464,16 @@ def calibration_1_vs_all(
 
     # Inputs
 
-    :param probabilities_per_model: (List[numpy.array]) list of model
+    :param probabilities_per_model: (list[numpy.array]) list of model
         probabilities.
     :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
     :param metadata: (dict) feature metadata dictionary
     :param output_feature_name: (str) output feature name
-    :param top_n_classes: (list) List containing the number of classes to plot.
+    :param top_n_classes: (list) list containing the number of classes to plot.
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
         `labels_limit` are considered to be "rare" labels.
-    :param model_names: (List[str], default: `None`) list of the names of the
+    :param model_names: (list[str], default: `None`) list of the names of the
         models to use as labels.
     :param output_directory: (str, default: `None`) directory where to save
         plots. If not specified, plots will be displayed in a window
@@ -3578,12 +3579,12 @@ def calibration_1_vs_all(
 
 @DeveloperAPI
 def calibration_multiclass(
-    probabilities_per_model: List[np.array],
+    probabilities_per_model: list[np.array],
     ground_truth: Union[pd.Series, np.ndarray],
     metadata: dict,
     output_feature_name: str,
     labels_limit: int,
-    model_names: Union[str, List[str]] = None,
+    model_names: Union[str, list[str]] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     ground_truth_apply_idx: bool = True,
@@ -3593,7 +3594,7 @@ def calibration_multiclass(
 
     # Inputs
 
-    :param probabilities_per_model: (List[numpy.array]) list of model
+    :param probabilities_per_model: (list[numpy.array]) list of model
         probabilities.
     :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
     :param metadata: (dict) feature metadata dictionary
@@ -3601,7 +3602,7 @@ def calibration_multiclass(
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
         `labels_limit` are considered to be "rare" labels.
-    :param model_names: (List[str], default: `None`) list of the names of the
+    :param model_names: (list[str], default: `None`) list of the names of the
         models to use as labels.
     :param output_directory: (str, default: `None`) directory where to save
         plots. If not specified, plots will be displayed in a window
@@ -3677,12 +3678,12 @@ def calibration_multiclass(
 
 @DeveloperAPI
 def confusion_matrix(
-    test_stats_per_model: List[dict],
+    test_stats_per_model: list[dict],
     metadata: dict,
     output_feature_name: Union[str, None],
-    top_n_classes: List[int],
+    top_n_classes: list[int],
     normalize: bool,
-    model_names: Union[str, List[str]] = None,
+    model_names: Union[str, list[str]] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     **kwargs,
@@ -3697,16 +3698,16 @@ def confusion_matrix(
 
     # Inputs
 
-    :param test_stats_per_model: (List[dict]) dictionary containing evaluation
+    :param test_stats_per_model: (list[dict]) dictionary containing evaluation
       performance statistics.
     :param metadata: (dict) intermediate preprocess structure created during
         training containing the mappings of the input dataset.
     :param output_feature_name: (Union[str, `None`]) name of the output feature
         to use for the visualization.  If `None`, use all output features.
-    :param top_n_classes: (List[int]) number of top classes or list
+    :param top_n_classes: (list[int]) number of top classes or list
         containing the number of top classes to plot.
     :param normalize: (bool) flag to normalize rows in confusion matrix.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
+    :param model_names: (Union[str, list[str]], default: `None`) model name or
         list of the model names to use as labels.
     :param output_directory: (str, default: `None`) directory where to save
         plots. If not specified, plots will be displayed in a window
@@ -3791,11 +3792,11 @@ def confusion_matrix(
 
 @DeveloperAPI
 def frequency_vs_f1(
-    test_stats_per_model: List[dict],
+    test_stats_per_model: list[dict],
     metadata: dict,
     output_feature_name: Union[str, None],
-    top_n_classes: List[int],
-    model_names: Union[str, List[str]] = None,
+    top_n_classes: list[int],
+    model_names: Union[str, list[str]] = None,
     output_directory: str = None,
     file_format: str = "pdf",
     **kwargs,
@@ -3819,15 +3820,15 @@ def frequency_vs_f1(
 
     # Inputs
 
-    :param test_stats_per_model: (List[dict]) dictionary containing evaluation
+    :param test_stats_per_model: (list[dict]) dictionary containing evaluation
         performance statistics.
     :param metadata: (dict) intermediate preprocess structure created during
         training containing the mappings of the input dataset.
     :param output_feature_name: (Union[str, `None`]) name of the output feature
         to use for the visualization.  If `None`, use all output features.
-    :param top_n_classes: (List[int]) number of top classes or list
+    :param top_n_classes: (list[int]) number of top classes or list
         containing the number of top classes to plot.
-    :param model_names: (Union[str, List[str]], default: `None`) model name or
+    :param model_names: (Union[str, list[str]], default: `None`) model name or
         list of the model names to use as labels.
     :param output_directory: (str, default: `None`) directory where to save
         plots. If not specified, plots will be displayed in a window
@@ -4034,7 +4035,7 @@ def hyperopt_results_to_dataframe(hyperopt_results, hyperopt_parameters, metric)
 
 
 @DeveloperAPI
-def get_visualizations_registry() -> Dict[str, Callable]:
+def get_visualizations_registry() -> dict[str, Callable]:
     return {
         "compare_performance": compare_performance_cli,
         "compare_classifiers_performance_from_prob": compare_classifiers_performance_from_prob_cli,

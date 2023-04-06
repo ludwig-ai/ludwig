@@ -14,8 +14,9 @@
 # ==============================================================================
 import logging
 from abc import ABC, abstractmethod
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
-from typing import Any, Callable, Generator, Optional, Type
+from typing import Any, Optional
 
 import torch
 from torch import Tensor, tensor
@@ -461,7 +462,7 @@ class HuberMetric(LossMetric):
         return self.loss_function(preds, target)
 
 
-def get_metric_cls(metric_name: str) -> Type[LudwigMetric]:
+def get_metric_cls(metric_name: str) -> type[LudwigMetric]:
     return get_metric_registry()[metric_name]
 
 

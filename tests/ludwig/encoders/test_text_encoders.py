@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Optional, Type, Union
+from typing import Optional, Union
 from unittest import mock
 
 import pytest
@@ -22,7 +22,7 @@ RANDOM_SEED = 1919
 
 
 def _load_pretrained_hf_model_no_weights(
-    modelClass: Type,
+    modelClass: type,
     pretrained_model_name_or_path: Optional[Union[str, os.PathLike]],
     **pretrained_kwargs,
 ):

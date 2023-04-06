@@ -1,4 +1,4 @@
-from typing import Dict, Tuple, Union
+from typing import Union
 
 import pytest
 from marshmallow.exceptions import ValidationError as MarshmallowValidationError
@@ -77,7 +77,7 @@ def test_InitializerOrDict():
     # Test simple schema creation:
     @dataclass
     class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
-        foo: Union[None, str, Dict] = schema_utils.InitializerOrDict()
+        foo: Union[None, str, dict] = schema_utils.InitializerOrDict()
 
     # Test invalid non-dict loads:
     with pytest.raises(MarshmallowValidationError):
@@ -114,7 +114,7 @@ def test_FloatRangeTupleDataclassField():
     # Test default schema creation:
     @dataclass
     class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
-        foo: Tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(allow_none=True)
+        foo: tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(allow_none=True)
 
     # Test empty load:
     assert CustomTestSchema.Schema().load({}).foo == (0.9, 0.999)
@@ -129,7 +129,7 @@ def test_FloatRangeTupleDataclassField():
     # Test non-default schema (N=3, other custom metadata):
     @dataclass
     class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
-        foo: Tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(n=3, default=(1, 1, 1), min=-10, max=10)
+        foo: tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(n=3, default=(1, 1, 1), min=-10, max=10)
 
     assert CustomTestSchema.Schema().load({}).foo == (1, 1, 1)
     assert CustomTestSchema.Schema().load({"foo": [2, 2, 2]}).foo == (2, 2, 2)

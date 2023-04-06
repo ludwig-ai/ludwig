@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Dict, Tuple, Union
+from typing import Union
 
 import numpy as np
 import torch
@@ -64,7 +64,7 @@ class ECD(BaseModel):
     def encode(
         self,
         inputs: Union[
-            Dict[str, torch.Tensor], Dict[str, np.ndarray], Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
+            dict[str, torch.Tensor], dict[str, np.ndarray], tuple[dict[str, torch.Tensor], dict[str, torch.Tensor]]
         ],
     ):
         # Convert inputs to tensors.
@@ -107,10 +107,10 @@ class ECD(BaseModel):
     def forward(
         self,
         inputs: Union[
-            Dict[str, torch.Tensor], Dict[str, np.ndarray], Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
+            dict[str, torch.Tensor], dict[str, np.ndarray], tuple[dict[str, torch.Tensor], dict[str, torch.Tensor]]
         ],
         mask=None,
-    ) -> Dict[str, torch.Tensor]:
+    ) -> dict[str, torch.Tensor]:
         """Forward pass of the model.
 
         Args:

@@ -1,7 +1,7 @@
 import json
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Union
+from typing import Any, Union
 
 from dataclasses_json import dataclass_json
 
@@ -60,11 +60,11 @@ class ParameterMetadata:
     default_value_reasoning: Union[str, None] = None
     """The reasoning behind the default value for this parameter."""
 
-    example_value: Union[List[Any], None] = None
+    example_value: Union[list[Any], None] = None
     """Examples of other values that can be used for this parameter."""
 
-    related_parameters: Union[List[str], None] = None
-    """List of related parameters that this parameter interacts with or depends on."""
+    related_parameters: Union[list[str], None] = None
+    """list of related parameters that this parameter interacts with or depends on."""
 
     other_information: Union[str, None] = None
     """Other information that is relevant for this parameter."""
@@ -90,8 +90,8 @@ class ParameterMetadata:
     expected_impact: ExpectedImpact = ExpectedImpact.UNKNOWN
     """The expected impact of determining a "good" value for this parameter."""
 
-    literature_references: Union[List[str], None] = None
-    """List of links, papers, and blog posts to learn more."""
+    literature_references: Union[list[str], None] = None
+    """list of links, papers, and blog posts to learn more."""
 
     internal_only: bool = False
     """True if this parameter is used strictly internally and should not be exposed to users."""
@@ -101,12 +101,12 @@ class ParameterMetadata:
     throughput."""
 
     @memoized_method(maxsize=1)
-    def to_json_dict(self) -> Dict[str, Any]:
+    def to_json_dict(self) -> dict[str, Any]:
         return json.loads(self.to_json())
 
 
 @DeveloperAPI
-def convert_metadata_to_json(pm: ParameterMetadata) -> Dict[str, Any]:
+def convert_metadata_to_json(pm: ParameterMetadata) -> dict[str, Any]:
     """Converts a ParameterMetadata dict to a normal JSON dict.
 
     NOTE: Without the json.loads call, to_json() returns

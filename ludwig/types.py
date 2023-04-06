@@ -1,49 +1,49 @@
 """Public API: Common typing for Ludwig dictionary parameters."""
 
-from typing import Any, Dict
+from typing import Any
 
-FeatureConfigDict = Dict[str, Any]
+FeatureConfigDict = dict[str, Any]
 """Dictionary of parameters used to configure an input or output feature.
 
 https://ludwig.ai/latest/configuration/features/supported_data_types/
 """
 
-ModelConfigDict = Dict[str, Any]
+ModelConfigDict = dict[str, Any]
 """Dictionary representation of the ModelConfig object.
 
 https://ludwig.ai/latest/configuration/
 """
 
-TrainingSetMetadataDict = Dict[str, Any]
+TrainingSetMetadataDict = dict[str, Any]
 """Training set metadata, which consists of internal configuration parameters."""
 
-PreprocessingConfigDict = Dict[str, Any]
+PreprocessingConfigDict = dict[str, Any]
 """Dictionary of parameters used to configure preprocessing.
 
 May be type-defaults global preprocessing or feature-specific preprocessing.
 https://ludwig.ai/latest/configuration/preprocessing/
 """
 
-HyperoptConfigDict = Dict[str, Any]
+HyperoptConfigDict = dict[str, Any]
 """Dictionary of parameters used to configure hyperopt.
 
 https://ludwig.ai/latest/configuration/hyperparameter_optimization/
 """
 
-TrainerConfigDict = Dict[str, Any]
+TrainerConfigDict = dict[str, Any]
 """Dictionary of parameters used to configure training.
 
 https://ludwig.ai/latest/configuration/trainer/
 """
 
-FeatureTypeDefaultsDict = Dict[str, FeatureConfigDict]
+FeatureTypeDefaultsDict = dict[str, FeatureConfigDict]
 """Dictionary of type to parameters that configure the defaults for that feature type.
 
 https://ludwig.ai/latest/configuration/defaults/
 """
 
-FeatureMetadataDict = Dict[str, Any]
+FeatureMetadataDict = dict[str, Any]
 """Metadata for a specific feature like idx2str."""
 
-FeaturePostProcessingOutputDict = Dict[str, Any]
+FeaturePostProcessingOutputDict = dict[str, Any]
 """Output from feature post-processing."""

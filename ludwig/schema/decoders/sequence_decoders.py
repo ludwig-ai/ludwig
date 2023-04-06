@@ -28,7 +28,7 @@ class SequenceGeneratorDecoderConfig(BaseDecoderConfig):
     cell_type: str = schema_utils.StringOptions(
         ["rnn", "lstm", "gru"],
         default="gru",
-        description="Type of recurrent cell to use.",
+        description="type of recurrent cell to use.",
         parameter_metadata=DECODER_METADATA["SequenceGeneratorDecoder"]["cell_type"],
     )
 

@@ -15,7 +15,6 @@
 import os
 import shutil
 from copy import deepcopy
-from typing import List
 
 import numpy as np
 import pandas as pd
@@ -519,7 +518,7 @@ def test_torchscript_e2e_date(tmpdir, csv_filename):
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
 
-@pytest.mark.parametrize("vector_type", [torch.Tensor, List[torch.Tensor]])
+@pytest.mark.parametrize("vector_type", [torch.Tensor, list[torch.Tensor]])
 def test_torchscript_preproc_vector_alternative_type(tmpdir, csv_filename, vector_type):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     feature = vector_feature()
@@ -708,14 +707,14 @@ def test_torchscript_preproc_with_nans(tmpdir, csv_filename, feature):
         h3_feature,
         date_feature,
         # TODO: future support
-        # binary_feature(),                # Torchscript takes List[str] as input, so currently CPU only
-        # category_feature(encoder={"vocab_size": 3}),  # Torchscript takes List[str] as input, so currently CPU only
-        # set_feature(encoder={"vocab_size": 3}),       # Torchscript takes List[str] as input, so currently CPU only
-        # sequence_feature(encoder={"vocab_size": 3}),  # Torchscript takes List[str] as input, so currently CPU only
-        # text_feature(encoder={"vocab_size": 3}),      # Torchscript takes List[str] as input, so currently CPU only
-        # vector_feature(),                # Torchscript takes List[str] as input, so currently CPU only
-        # bag_feature(encoder={"vocab_size": 3}),       # Torchscript takes List[str] as input, so currently CPU only
-        # timeseries_feature(),            # Torchscript takes List[str] as input, so currently CPU only
+        # binary_feature(),                # Torchscript takes list[str] as input, so currently CPU only
+        # category_feature(encoder={"vocab_size": 3}),  # Torchscript takes list[str] as input, so currently CPU only
+        # set_feature(encoder={"vocab_size": 3}),       # Torchscript takes list[str] as input, so currently CPU only
+        # sequence_feature(encoder={"vocab_size": 3}),  # Torchscript takes list[str] as input, so currently CPU only
+        # text_feature(encoder={"vocab_size": 3}),      # Torchscript takes list[str] as input, so currently CPU only
+        # vector_feature(),                # Torchscript takes list[str] as input, so currently CPU only
+        # bag_feature(encoder={"vocab_size": 3}),       # Torchscript takes list[str] as input, so currently CPU only
+        # timeseries_feature(),            # Torchscript takes list[str] as input, so currently CPU only
     ],
 )
 def test_torchscript_preproc_gpu(tmpdir, csv_filename, feature_fn):

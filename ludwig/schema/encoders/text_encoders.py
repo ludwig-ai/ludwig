@@ -1,4 +1,5 @@
-from typing import Callable, Dict, List, TYPE_CHECKING, Union
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import MODEL_ECD, MODEL_GBM, TEXT
@@ -424,7 +425,7 @@ class MT5Config(HFEncoderConfig):
     feed_forward_proj: str = schema_utils.StringOptions(
         ["relu", "gated-gelu"],
         default="gated-gelu",
-        description="Type of feed forward layer to be used. ",
+        description="type of feed forward layer to be used. ",
         parameter_metadata=ENCODER_METADATA["MT5"]["feed_forward_proj"],
     )
 
@@ -743,7 +744,7 @@ class BERTConfig(HFEncoderConfig):
     position_embedding_type: str = schema_utils.StringOptions(
         ["absolute", "relative_key", "relative_key_query"],
         default="absolute",
-        description="Type of position embedding.",
+        description="type of position embedding.",
         parameter_metadata=ENCODER_METADATA["BERT"]["position_embedding_type"],
     )
 
@@ -923,7 +924,7 @@ class XLMConfig(HFEncoderConfig):
 
     n_langs: int = schema_utils.PositiveInteger(
         default=1,
-        description="The number of languages the model handles. Set to 1 for monolingual models.",
+        description="The number of languages the model handles. set to 1 for monolingual models.",
         parameter_metadata=ENCODER_METADATA["XLM"]["n_langs"],
     )
 
@@ -1497,7 +1498,7 @@ class TransformerXLConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["TransformerXL"]["vocab_size"],
     )
 
-    cutoffs: List[int] = schema_utils.List(
+    cutoffs: list[int] = schema_utils.List(
         int,
         default=[20000, 40000, 200000],
         description="Cutoffs for the adaptive softmax.",
@@ -2353,7 +2354,7 @@ class CamemBERTConfig(HFEncoderConfig):
     position_embedding_type: str = schema_utils.StringOptions(
         ["absolute", "relative_key", "relative_key_query"],
         default="absolute",
-        description="Type of position embedding.",
+        description="type of position embedding.",
         parameter_metadata=ENCODER_METADATA["CamemBERT"]["position_embedding_type"],
     )
 
@@ -2508,7 +2509,7 @@ class T5Config(HFEncoderConfig):
     feed_forward_proj: str = schema_utils.StringOptions(
         ["relu", "gated-gelu"],
         default="relu",
-        description="Type of feed forward layer to be used. Should be one of 'relu' or 'gated-gelu'. T5v1.1 uses the "
+        description="type of feed forward layer to be used. Should be one of 'relu' or 'gated-gelu'. T5v1.1 uses the "
         "'gated-gelu' feed forward projection. Original T5 uses 'relu'.",
         parameter_metadata=ENCODER_METADATA["T5"]["feed_forward_proj"],
     )
@@ -2666,7 +2667,7 @@ class FlauBERTConfig(HFEncoderConfig):
 
     n_langs: int = schema_utils.PositiveInteger(
         default=1,
-        description="The number of languages the model handles. Set to 1 for monolingual models.",
+        description="The number of languages the model handles. set to 1 for monolingual models.",
         parameter_metadata=ENCODER_METADATA["FlauBERT"]["n_langs"],
     )
 
@@ -2909,7 +2910,7 @@ class ELECTRAConfig(HFEncoderConfig):
     position_embedding_type: str = schema_utils.StringOptions(
         ["absolute", "relative_key", "relative_key_query"],
         default="absolute",
-        description="Type of position embedding.",
+        description="type of position embedding.",
         parameter_metadata=ENCODER_METADATA["ELECTRA"]["position_embedding_type"],
     )
 
@@ -2958,11 +2959,11 @@ class LongformerConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["Longformer"]["use_pretrained"],
     )
 
-    attention_window: Union[List[int], int] = schema_utils.OneOfOptionsField(
+    attention_window: Union[list[int], int] = schema_utils.OneOfOptionsField(
         default=512,
         allow_none=False,
         description="Size of an attention window around each token. If an int, use the same size for all layers. To "
-        "specify a different window size for each layer, use a List[int] where len(attention_window) == "
+        "specify a different window size for each layer, use a list[int] where len(attention_window) == "
         "num_hidden_layers.",
         field_options=[
             schema_utils.PositiveInteger(allow_none=False, description="", default=512),
@@ -3112,7 +3113,7 @@ class TfIdfEncoderConfig(SequenceEncoderConfig):
 
     max_sequence_length: int = schema_utils.Integer(default=None, allow_none=True, parameter_metadata=INTERNAL_ONLY)
 
-    str2idf: Dict[str, int] = schema_utils.Dict(parameter_metadata=INTERNAL_ONLY)
+    str2idf: dict[str, int] = schema_utils.Dict(parameter_metadata=INTERNAL_ONLY)
 
     vocab: list = schema_utils.List(default=None, parameter_metadata=INTERNAL_ONLY)
 

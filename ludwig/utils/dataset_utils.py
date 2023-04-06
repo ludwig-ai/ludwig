@@ -1,4 +1,4 @@
-from typing import List, Tuple, Union
+from typing import Union
 
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -97,7 +97,7 @@ def get_repeatable_train_val_test_split(
 
 def generate_dataset_statistics(
     training_set: Dataset, validation_set: Union[Dataset, None], test_set: Union[Dataset, None]
-) -> List[Tuple[str, int, int]]:
+) -> list[tuple[str, int, int]]:
     from ludwig.benchmarking.utils import format_memory
 
     dataset_statistics = [["Dataset", "Size (Rows)", "Size (In Memory)"]]

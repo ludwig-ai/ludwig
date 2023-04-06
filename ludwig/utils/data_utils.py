@@ -30,7 +30,7 @@ import re
 import tempfile
 import threading
 from itertools import islice
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Union
 
 import numpy as np
 import pandas as pd
@@ -545,7 +545,7 @@ def save_array(data_fp, array):
 
 # TODO(shreya): Confirm types of args
 @DeveloperAPI
-def load_pretrained_embeddings(embeddings_path: str, vocab: List[str]) -> np.ndarray:
+def load_pretrained_embeddings(embeddings_path: str, vocab: list[str]) -> np.ndarray:
     """Create an embedding matrix of all words in vocab."""
     embeddings, embeddings_size = load_glove(embeddings_path, return_embedding_size=True)
 
@@ -570,7 +570,7 @@ def load_pretrained_embeddings(embeddings_path: str, vocab: List[str]) -> np.nda
 
 @DeveloperAPI
 @functools.lru_cache(1)
-def load_glove(file_path: str, return_embedding_size: bool = False) -> Dict[str, np.ndarray]:
+def load_glove(file_path: str, return_embedding_size: bool = False) -> dict[str, np.ndarray]:
     """Loads Glove embeddings for each word.
 
     Returns:
@@ -616,14 +616,14 @@ def load_glove(file_path: str, return_embedding_size: bool = False) -> Dict[str,
 
 
 @DeveloperAPI
-def split_data(split: float, data: List) -> Tuple[List, List]:
+def split_data(split: float, data: list) -> tuple[list, list]:
     split_length = int(round(split * len(data)))
     random.shuffle(data)
     return data[:split_length], data[split_length:]
 
 
 @DeveloperAPI
-def split_by_slices(slices: List[Any], n: int, probabilities: List[float]) -> List[Any]:
+def split_by_slices(slices: list[Any], n: int, probabilities: list[float]) -> list[Any]:
     splits = []
     indices = cumsum([int(x * n) for x in probabilities])
     start = 0

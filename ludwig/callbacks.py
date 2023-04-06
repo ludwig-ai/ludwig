@@ -15,7 +15,8 @@
 # ==============================================================================
 
 from abc import ABC
-from typing import Any, Callable, Dict, List, Union
+from collections.abc import Callable
+from typing import Any, Union
 
 from ludwig.api_annotations import PublicAPI
 from ludwig.types import HyperoptConfigDict, ModelConfigDict, TrainingSetMetadataDict
@@ -23,7 +24,7 @@ from ludwig.types import HyperoptConfigDict, ModelConfigDict, TrainingSetMetadat
 
 @PublicAPI
 class Callback(ABC):
-    def on_cmdline(self, cmd: str, *args: List[str]):
+    def on_cmdline(self, cmd: str, *args: list[str]):
         """Called when Ludwig is run on the command line with the callback enabled.
 
         :param cmd: The Ludwig subcommand being run, ex. "train", "evaluate", "predict", ...
@@ -356,13 +357,13 @@ class Callback(ABC):
         """
         pass
 
-    def prepare_ray_tune(self, train_fn: Callable, tune_config: Dict[str, Any], tune_callbacks: List[Callable]):
+    def prepare_ray_tune(self, train_fn: Callable, tune_config: dict[str, Any], tune_callbacks: list[Callable]):
         """Configures Ray Tune callback and config.
 
         :param train_fn: The function which runs the experiment trial.
         :param tune_config: The ray tune configuration dictionary.
-        :param tune_callbacks: List of callbacks (not used yet).
+        :param tune_callbacks: list of callbacks (not used yet).
 
-        :returns: Tuple[Callable, Dict] The train_fn and tune_config, which will be passed to ray tune.
+        :returns: tuple[Callable, dict] The train_fn and tune_config, which will be passed to ray tune.
         """
         return train_fn, tune_config

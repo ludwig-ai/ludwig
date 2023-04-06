@@ -16,8 +16,9 @@
 
 import collections
 import logging
+from collections.abc import Iterable
 from contextlib import contextmanager
-from typing import Any, Dict, Iterable, Tuple, Union
+from typing import Any, Union
 
 import dask
 import dask.array as da
@@ -66,7 +67,7 @@ def reset_index_across_all_partitions(df):
     # Create temporary column of ones
     df = df.assign(**{TMP_COLUMN: 1})
 
-    # Set the index to the cumulative sum of TMP_COLUMN, which we know to be sorted; this improves efficiency.
+    # set the index to the cumulative sum of TMP_COLUMN, which we know to be sorted; this improves efficiency.
     df = df.set_index(df[TMP_COLUMN].cumsum() - 1, sorted=True)
 
     # Drop temporary column and ensure the index is not named TMP_COLUMN
@@ -88,7 +89,7 @@ class DaskEngine(DataFrameEngine):
     def set_parallelism(self, parallelism):
         self._parallelism = parallelism
 
-    def df_like(self, df: dd.DataFrame, proc_cols: Dict[str, dd.Series]):
+    def df_like(self, df: dd.DataFrame, proc_cols: dict[str, dd.Series]):
         """Outer joins the given DataFrame with the given processed columns.
 
         NOTE: If any of the processed columns have been repartitioned, the original index is replaced with a
@@ -259,9 +260,9 @@ class DaskEngine(DataFrameEngine):
         meta: Union[
             pd.DataFrame,
             pd.Series,
-            Dict[str, Any],
+            dict[str, Any],
             Iterable[Any],
-            Tuple[Any],
+            tuple[Any],
             None,
         ] = None,
     ) -> dd.DataFrame:

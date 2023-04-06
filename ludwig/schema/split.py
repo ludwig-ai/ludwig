@@ -1,5 +1,4 @@
 from dataclasses import Field
-from typing import Type
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import SPLIT, TYPE
@@ -34,7 +33,7 @@ class RandomSplitConfig(BaseSplitConfig):
 
     type: str = schema_utils.ProtectedString(
         "random",
-        description="Type of splitting to use during preprocessing.",
+        description="type of splitting to use during preprocessing.",
     )
 
     probabilities: list = schema_utils.List(
@@ -53,7 +52,7 @@ class FixedSplitConfig(BaseSplitConfig):
 
     type: str = schema_utils.ProtectedString(
         "fixed",
-        description="Type of splitting to use during preprocessing.",
+        description="type of splitting to use during preprocessing.",
     )
 
     column: str = schema_utils.String(
@@ -71,7 +70,7 @@ class StratifySplitConfig(BaseSplitConfig):
 
     type: str = schema_utils.ProtectedString(
         "stratify",
-        description="Type of splitting to use during preprocessing.",
+        description="type of splitting to use during preprocessing.",
     )
 
     column: str = schema_utils.String(
@@ -96,7 +95,7 @@ class DateTimeSplitConfig(BaseSplitConfig):
 
     type: str = schema_utils.ProtectedString(
         "datetime",
-        description="Type of splitting to use during preprocessing.",
+        description="type of splitting to use during preprocessing.",
     )
 
     column: str = schema_utils.String(
@@ -130,7 +129,7 @@ class HashSplitConfig(BaseSplitConfig):
 
     type: str = schema_utils.ProtectedString(
         "hash",
-        description="Type of splitting to use during preprocessing.",
+        description="type of splitting to use during preprocessing.",
     )
 
     column: str = schema_utils.String(
@@ -176,7 +175,7 @@ def SplitDataclassField(default: str) -> Field:
         def __init__(self):
             super().__init__(registry=split_config_registry.data, default_value=default)
 
-        def get_schema_from_registry(self, key: str) -> Type[schema_utils.BaseMarshmallowConfig]:
+        def get_schema_from_registry(self, key: str) -> type[schema_utils.BaseMarshmallowConfig]:
             return split_config_registry.data[key]
 
         def _jsonschema_type_mapping(self):
@@ -185,7 +184,7 @@ def SplitDataclassField(default: str) -> Field:
                 "properties": {
                     "type": {
                         "type": "string",
-                        "description": "Type of splitting to use during preprocessing.",
+                        "description": "type of splitting to use during preprocessing.",
                         "enum": list(split_config_registry.data.keys()),
                         "default": default,
                     },

@@ -1,6 +1,6 @@
 import logging
 import math
-from typing import Any, Dict
+from typing import Any
 
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LambdaLR, ReduceLROnPlateau
@@ -119,13 +119,13 @@ class LRScheduler:
                 progress_tracker.steps - progress_tracker.last_learning_rate_reduction_steps
             )
 
-    def state_dict(self) -> Dict[str, Any]:
+    def state_dict(self) -> dict[str, Any]:
         return {
             "train_scheduler_state": self._train_scheduler.state_dict(),
             "eval_scheduler_state": self._eval_scheduler.state_dict() if self._eval_scheduler is not None else {},
         }
 
-    def load_state_dict(self, d: Dict[str, Any]):
+    def load_state_dict(self, d: dict[str, Any]):
         self._train_scheduler.load_state_dict(d["train_scheduler_state"])
         if self._eval_scheduler is not None:
             self._eval_scheduler.load_state_dict(d["eval_scheduler_state"])

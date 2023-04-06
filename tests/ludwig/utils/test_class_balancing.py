@@ -33,7 +33,7 @@ def test_balance(method, balance):
         {
             "Index": np.arange(0, 200, 1),
             "random_1": np.random.randint(0, 50, 200),
-            "random_2": np.random.choice(["Type A", "Type B", "Type C", "Type D"], 200),
+            "random_2": np.random.choice(["type A", "type B", "type C", "type D"], 200),
             "Label": np.concatenate((np.zeros(180), np.ones(20))),
             "split": np.zeros(200),
         }

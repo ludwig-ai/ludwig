@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from typing import Tuple
 
 import numpy as np
 import pandas as pd
@@ -31,7 +30,7 @@ def number_feature():
     return feature
 
 
-def get_test_data(backend: str) -> Tuple[DataFrame, DataFrame]:
+def get_test_data(backend: str) -> tuple[DataFrame, DataFrame]:
     """Returns test data for the given backend."""
     data_df = pd.DataFrame(pd.Series([2, 4, 6, 8, 10]), columns=["x"])
     proc_df = pd.DataFrame(columns=["x"])

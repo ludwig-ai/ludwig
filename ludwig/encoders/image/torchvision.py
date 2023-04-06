@@ -1,7 +1,7 @@
 import logging
 import os
 from abc import abstractmethod
-from typing import Dict, Optional, Union
+from typing import Optional, Union
 
 import torch
 import torchvision.models as tvm
@@ -114,7 +114,7 @@ class TVBaseEncoder(ImageEncoder):
         for p in self.model.parameters():
             p.requires_grad_(trainable)
 
-    def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor) -> dict[str, torch.Tensor]:
         return {"encoder_output": self.model(inputs)}
 
     @abstractmethod

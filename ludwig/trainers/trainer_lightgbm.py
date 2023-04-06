@@ -5,7 +5,7 @@ import signal
 import sys
 import threading
 import time
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Optional, Union
 
 import lightgbm as lgb
 import torch
@@ -64,7 +64,7 @@ class LightGBMTrainer(BaseTrainer):
         skip_save_model: bool = False,
         skip_save_progress: bool = False,
         skip_save_log: bool = False,
-        callbacks: List = None,
+        callbacks: list = None,
         report_tqdm_to_ray=False,
         random_seed: float = default_random_seed,
         distributed: Optional[DistributedStrategy] = None,
@@ -185,7 +185,7 @@ class LightGBMTrainer(BaseTrainer):
         self,
         dataset: "Dataset",  # noqa: F821
         dataset_name: str,
-        metrics_log: Dict[str, Dict[str, List[TrainerMetric]]],
+        metrics_log: dict[str, dict[str, list[TrainerMetric]]],
         batch_size: int,
         progress_tracker: ProgressTracker,
     ):
@@ -224,10 +224,10 @@ class LightGBMTrainer(BaseTrainer):
         validation_summary_writer: SummaryWriter,
         test_summary_writer: SummaryWriter,
         output_features: LudwigFeatureDict,
-        metrics_names: Dict[str, List[str]],
+        metrics_names: dict[str, list[str]],
         save_path: str,
         loss: torch.Tensor,
-        all_losses: Dict[str, torch.Tensor],
+        all_losses: dict[str, torch.Tensor],
         early_stopping_steps: int,
     ) -> bool:
         """Runs evaluation over training, validation, and test sets.
@@ -339,10 +339,10 @@ class LightGBMTrainer(BaseTrainer):
 
     def _train_loop(
         self,
-        params: Dict[str, Any],
+        params: dict[str, Any],
         lgb_train: lgb.Dataset,
-        eval_sets: List[lgb.Dataset],
-        eval_names: List[str],
+        eval_sets: list[lgb.Dataset],
+        eval_names: list[str],
         progress_tracker: ProgressTracker,
         progress_bar: LudwigProgressBar,
         save_path: str,
@@ -496,13 +496,13 @@ class LightGBMTrainer(BaseTrainer):
 
     def train_step(
         self,
-        params: Dict[str, Any],
+        params: dict[str, Any],
         lgb_train: lgb.Dataset,
-        eval_sets: List[lgb.Dataset],
-        eval_names: List[str],
+        eval_sets: list[lgb.Dataset],
+        eval_names: list[str],
         init_model: lgb.LGBMModel,
         boost_rounds_per_train_step: int,
-        evals_result: Dict,
+        evals_result: dict,
     ) -> lgb.LGBMModel:
         """Trains a LightGBM model.
 
@@ -739,7 +739,7 @@ class LightGBMTrainer(BaseTrainer):
                 signal.signal(signal.SIGINT, self.original_sigint_handler)
             sys.exit(1)
 
-    def _construct_lgb_params(self) -> Tuple[dict, dict]:
+    def _construct_lgb_params(self) -> tuple[dict, dict]:
         output_params = {}
         feature = get_single_output_feature(self.model)
 
@@ -822,7 +822,7 @@ class LightGBMTrainer(BaseTrainer):
         training_set: "Dataset",  # noqa: F821
         validation_set: Optional["Dataset"] = None,  # noqa: F821
         test_set: Optional["Dataset"] = None,  # noqa: F821
-    ) -> Tuple[lgb.Dataset, List[lgb.Dataset], List[str]]:
+    ) -> tuple[lgb.Dataset, list[lgb.Dataset], list[str]]:
         X_train = training_set.to_scalar_df(self.model.input_features.values())
         y_train = training_set.to_scalar_df(self.model.output_features.values())
 
@@ -887,7 +887,7 @@ class LightGBMTrainer(BaseTrainer):
                 fn(callback)
 
 
-def _map_to_lgb_ray_params(params: Dict[str, Any]) -> "RayParams":  # noqa
+def _map_to_lgb_ray_params(params: dict[str, Any]) -> "RayParams":  # noqa
     from lightgbm_ray import RayParams
 
     ray_params = {}
@@ -914,13 +914,13 @@ class LightGBMRayTrainer(LightGBMTrainer):
         skip_save_model: bool = False,
         skip_save_progress: bool = False,
         skip_save_log: bool = False,
-        callbacks: List = None,
+        callbacks: list = None,
         random_seed: float = default_random_seed,
         distributed: Optional[DistributedStrategy] = None,
         device: Optional[str] = None,
-        trainer_kwargs: Optional[Dict] = {},
-        data_loader_kwargs: Optional[Dict] = None,
-        executable_kwargs: Optional[Dict] = None,
+        trainer_kwargs: Optional[dict] = {},
+        data_loader_kwargs: Optional[dict] = None,
+        executable_kwargs: Optional[dict] = None,
         **kwargs,
     ):
         super().__init__(
@@ -947,13 +947,13 @@ class LightGBMRayTrainer(LightGBMTrainer):
 
     def train_step(
         self,
-        params: Dict[str, Any],
+        params: dict[str, Any],
         lgb_train: "RayDMatrix",  # noqa: F821
-        eval_sets: List["RayDMatrix"],  # noqa: F821
-        eval_names: List[str],
+        eval_sets: list["RayDMatrix"],  # noqa: F821
+        eval_names: list[str],
         init_model: lgb.LGBMModel,
         boost_rounds_per_train_step: int,
-        evals_result: Dict,
+        evals_result: dict,
     ) -> lgb.LGBMModel:
         """Trains a LightGBM model using ray.
 
@@ -1009,7 +1009,7 @@ class LightGBMRayTrainer(LightGBMTrainer):
         training_set: "RayDataset",  # noqa: F821
         validation_set: Optional["RayDataset"] = None,  # noqa: F821
         test_set: Optional["RayDataset"] = None,  # noqa: F821
-    ) -> Tuple["RayDMatrix", List["RayDMatrix"], List[str]]:  # noqa: F821
+    ) -> tuple["RayDMatrix", list["RayDMatrix"], list[str]]:  # noqa: F821
         """Prepares Ludwig RayDataset objects for use in LightGBM."""
 
         from lightgbm_ray import RayDMatrix

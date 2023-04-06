@@ -15,9 +15,10 @@
 # ==============================================================================
 
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
-from typing import Any, Callable, Dict, Optional, Type, Union
+from typing import Any, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -50,7 +51,7 @@ class Backend(ABC):
         self,
         dataset_manager: DatasetManager,
         cache_dir: Optional[str] = None,
-        credentials: Optional[Dict[str, Dict[str, Any]]] = None,
+        credentials: Optional[dict[str, dict[str, Any]]] = None,
     ):
         credentials = credentials or {}
         self._dataset_manager = dataset_manager
@@ -122,7 +123,7 @@ class Backend(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def tune_batch_size(self, evaluator_cls: Type[BatchSizeEvaluator], dataset_len: int) -> int:
+    def tune_batch_size(self, evaluator_cls: type[BatchSizeEvaluator], dataset_len: int) -> int:
         """Returns best batch size (measured in samples / s) on the given evaluator.
 
         The evaluator class will need to be instantiated on each worker in the backend cluster, then call
@@ -201,7 +202,7 @@ class LocalTrainingMixin:
     def is_coordinator(self):
         return True
 
-    def tune_batch_size(self, evaluator_cls: Type[BatchSizeEvaluator], dataset_len: int) -> int:
+    def tune_batch_size(self, evaluator_cls: type[BatchSizeEvaluator], dataset_len: int) -> int:
         evaluator = evaluator_cls()
         return evaluator.select_best_batch_size(dataset_len)
 

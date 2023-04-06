@@ -68,7 +68,7 @@ def get_input_feature_jsonschema(model_type: str):
                 "type": "string",
                 "enum": input_feature_types,
                 "title": "type",
-                "description": "Type of the input feature",
+                "description": "type of the input feature",
             },
             "column": {"type": "string", "title": "column", "description": "Name of the column."},
         },
@@ -86,7 +86,7 @@ def get_input_feature_conds(model_type: str):
     """This function returns a list of if-then JSON clauses for each input feature type along with their properties
     and constraints.
 
-    Returns: List of JSON clauses
+    Returns: list of JSON clauses
     """
     input_feature_types = sorted(list(input_config_registry(model_type).keys()))
     conds = []
@@ -117,7 +117,7 @@ def get_output_feature_jsonschema(model_type: str):
                 "type": "string",
                 "enum": output_feature_types,
                 "title": "type",
-                "description": "Type of the output feature",
+                "description": "type of the output feature",
             },
             "column": {"type": "string", "title": "column", "description": "Name of the column."},
         },
@@ -135,7 +135,7 @@ def get_output_feature_conds(model_type: str):
     """This function returns a list of if-then JSON clauses for each output feature type along with their
     properties and constraints.
 
-    Returns: List of JSON clauses
+    Returns: list of JSON clauses
     """
     output_feature_types = sorted(list(output_config_registry(model_type).keys()))
     conds = []

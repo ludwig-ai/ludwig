@@ -1,5 +1,4 @@
 import logging
-from typing import Dict
 
 import torch
 
@@ -45,7 +44,7 @@ class SequenceTaggerDecoder(Decoder):
             input_size = self.self_attention.output_shape[0]
         self.projection_layer = Dense(input_size=input_size, output_size=vocab_size, use_bias=use_bias)
 
-    def forward(self, inputs: Dict[str, torch.Tensor], target: torch.Tensor = None) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: dict[str, torch.Tensor], target: torch.Tensor = None) -> dict[str, torch.Tensor]:
         """Decodes the inputs into a sequence.
 
         Args:

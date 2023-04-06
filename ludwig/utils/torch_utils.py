@@ -3,7 +3,7 @@ import os
 import warnings
 from abc import abstractmethod
 from functools import lru_cache
-from typing import List, Optional, Tuple, Union
+from typing import Optional, Union
 
 import torch
 from torch import nn
@@ -12,7 +12,7 @@ from torch.nn import Module, ModuleDict
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.utils.strings_utils import SpecialSymbol
 
-_TORCH_INIT_PARAMS: Optional[Tuple] = None
+_TORCH_INIT_PARAMS: Optional[tuple] = None
 
 
 @DeveloperAPI
@@ -290,7 +290,7 @@ class Dense(LudwigModule):
 
 @DeveloperAPI
 def initialize_pytorch(
-    gpus: Optional[Union[int, str, List[int]]] = None,
+    gpus: Optional[Union[int, str, list[int]]] = None,
     gpu_memory_limit: Optional[float] = None,
     allow_parallel_threads: bool = True,
     local_rank: int = 0,
@@ -338,7 +338,7 @@ def initialize_pytorch(
         # CUDA_VISIBLE_DEVICES syntax for disabling all GPUs
         os.environ["CUDA_VISIBLE_DEVICES"] = ""
     elif torch.cuda.is_available():
-        # Set visible devices so GPU utilization is isolated
+        # set visible devices so GPU utilization is isolated
         # (no GPU contention between workers).
         if gpus is not None:
             if len(gpus) == 1:
@@ -354,12 +354,12 @@ def initialize_pytorch(
     _set_torch_init_params(param_tuple)
 
 
-def _set_torch_init_params(params: Optional[Tuple]):
+def _set_torch_init_params(params: Optional[tuple]):
     global _TORCH_INIT_PARAMS
     _TORCH_INIT_PARAMS = params
 
 
-def _get_torch_init_params() -> Optional[Tuple]:
+def _get_torch_init_params() -> Optional[tuple]:
     return _TORCH_INIT_PARAMS
 
 

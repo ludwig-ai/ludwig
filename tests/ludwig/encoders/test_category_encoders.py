@@ -1,5 +1,3 @@
-from typing import List
-
 import pytest
 import torch
 
@@ -14,7 +12,7 @@ DEVICE = get_torch_device()
 @pytest.mark.parametrize("trainable", [True, False])
 @pytest.mark.parametrize("vocab", [["red", "orange", "yellow", "green", "blue", "violet"], ["a", "b", "c"]])
 @pytest.mark.parametrize("embedding_size", [4, 6, 10])
-def test_categorical_dense_encoder(vocab: List[str], embedding_size: int, trainable: bool):
+def test_categorical_dense_encoder(vocab: list[str], embedding_size: int, trainable: bool):
     # make repeatable
     torch.manual_seed(RANDOM_SEED)
 
@@ -45,7 +43,7 @@ def test_categorical_dense_encoder(vocab: List[str], embedding_size: int, traina
 
 @pytest.mark.parametrize("trainable", [True, False])
 @pytest.mark.parametrize("vocab", [["red", "orange", "yellow", "green", "blue", "violet"], ["a", "b", "c"]])
-def test_categorical_sparse_encoder(vocab: List[str], trainable: bool):
+def test_categorical_sparse_encoder(vocab: list[str], trainable: bool):
     # make repeatable
     torch.manual_seed(RANDOM_SEED)
 

@@ -1,5 +1,4 @@
 import logging
-from typing import Dict, Tuple
 
 from ludwig.constants import (
     BATCH_SIZE,
@@ -26,7 +25,7 @@ logger.setLevel(logging.INFO)
 logging.getLogger("ludwig").setLevel(logging.INFO)
 
 
-def _prepare_data(csv_filename: str) -> Tuple[Dict, str]:
+def _prepare_data(csv_filename: str) -> tuple[dict, str]:
     input_features = [
         text_feature(name="title", reduce_output="sum"),
         text_feature(name="summary"),

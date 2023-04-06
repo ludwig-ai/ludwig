@@ -55,7 +55,7 @@ def test_missing_value_prediction(tmpdir, csv_filename):
     model = LudwigModel(config)
     _, _, output_dir = model.train(dataset=dataset, output_directory=tmpdir)
 
-    # Set the input column to None, we should be able to replace the missing value with the mode
+    # set the input column to None, we should be able to replace the missing value with the mode
     # from the training set
     dataset[input_features[0]["name"]] = None
     model.predict(dataset=dataset)

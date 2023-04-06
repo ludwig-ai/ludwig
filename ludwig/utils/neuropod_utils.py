@@ -2,7 +2,7 @@ import importlib.util
 import logging
 import os
 import tempfile
-from typing import Any, Dict, List
+from typing import Any
 
 import torch
 
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 INFERENCE_MODULE_TEMPLATE = """
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Union
 import torch
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
@@ -26,7 +26,7 @@ class GeneratedInferenceModule(torch.nn.Module):
         self.inference_module = inference_module
 
     def forward(self, {input_signature}):
-        inputs: Dict[str, TorchscriptPreprocessingInput] = {input_dict}
+        inputs: dict[str, TorchscriptPreprocessingInput] = {input_dict}
         results = self.inference_module(inputs)
         return {output_dicts}
 """
@@ -80,7 +80,7 @@ def generate_neuropod_torchscript(model: LudwigModel):
     return scripted_module
 
 
-def _get_input_spec(model: LudwigModel) -> List[Dict[str, Any]]:
+def _get_input_spec(model: LudwigModel) -> list[dict[str, Any]]:
     spec = []
     for feature_name, feature in model.model.input_features.items():
         metadata = model.training_set_metadata[feature_name]
@@ -90,7 +90,7 @@ def _get_input_spec(model: LudwigModel) -> List[Dict[str, Any]]:
     return spec
 
 
-def _get_output_spec(model: LudwigModel) -> List[Dict[str, Any]]:
+def _get_output_spec(model: LudwigModel) -> list[dict[str, Any]]:
     spec = []
     for feature_name, feature in model.model.output_features.items():
         metadata = model.training_set_metadata[feature_name]

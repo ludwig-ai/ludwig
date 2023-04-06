@@ -17,9 +17,10 @@ import logging
 import os
 import warnings
 from collections import Counter
+from collections.abc import Callable
 from dataclasses import dataclass
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Optional, Union
 
 import numpy as np
 import torch
@@ -183,9 +184,9 @@ class RandomBlur(torch.nn.Module):
 class ImageAugmentation(torch.nn.Module):
     def __init__(
         self,
-        augmentation_list: List[BaseAugmentationConfig],
-        normalize_mean: Optional[List[float]] = None,
-        normalize_std: Optional[List[float]] = None,
+        augmentation_list: list[BaseAugmentationConfig],
+        normalize_mean: Optional[list[float]] = None,
+        normalize_std: Optional[list[float]] = None,
     ):
         super().__init__()
 
@@ -253,7 +254,7 @@ class ImageTransformMetadata:
 
 def _get_torchvision_transform(
     torchvision_parameters: TVModelVariant,
-) -> Tuple[torch.nn.Module, ImageTransformMetadata]:
+) -> tuple[torch.nn.Module, ImageTransformMetadata]:
     """Returns a torchvision transform that is compatible with the model variant.
 
     Note that the raw torchvision transform is not returned. Instead, a Sequential module that includes
@@ -310,13 +311,13 @@ class _ImagePreprocessing(torch.nn.Module):
         If `v` is already a torch.Tensor, we assume that the images are already preprocessed to be the same size.
         """
         # Nested conditional is a workaround to short-circuit boolean evaluation.
-        if not torch.jit.isinstance(v, List[torch.Tensor]):
+        if not torch.jit.isinstance(v, list[torch.Tensor]):
             if not torch.jit.isinstance(v, torch.Tensor):
                 raise ValueError(f"Unsupported input: {v}")
 
         if self.torchvision_transform is not None:
             # perform pre-processing for torchvision pretrained model encoders
-            if torch.jit.isinstance(v, List[torch.Tensor]):
+            if torch.jit.isinstance(v, list[torch.Tensor]):
                 imgs = [self.torchvision_transform(img) for img in v]
             else:
                 # convert batch of image tensors to a list and then run torchvision pretrained
@@ -327,7 +328,7 @@ class _ImagePreprocessing(torch.nn.Module):
             imgs_stacked = torch.stack(imgs)
         else:
             # perform pre-processing for Ludwig defined image encoders
-            if torch.jit.isinstance(v, List[torch.Tensor]):
+            if torch.jit.isinstance(v, list[torch.Tensor]):
                 imgs = [resize_image(img, (self.height, self.width), self.resize_method) for img in v]
                 imgs_stacked = torch.stack(imgs)
             else:
@@ -501,7 +502,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
     @staticmethod
     def _set_image_and_height_equal_for_encoder(
         width: int, height: int, preprocessing_parameters: dict, encoder_type: str
-    ) -> Tuple[int, int]:
+    ) -> tuple[int, int]:
         """Some pretrained image encoders require images with the same dimension, or images with a specific width
         and heigh values. The returned width and height are set based on compatibility with the downstream encoder
         using the encoder parameters for the feature.
@@ -524,18 +525,18 @@ class ImageFeatureMixin(BaseFeatureMixin):
             preprocessing_parameters["width"] = width
             preprocessing_parameters["height"] = height
             logger.info(
-                f"Set image feature height and width to {width} to be compatible with" f" {encoder_type} encoder."
+                f"set image feature height and width to {width} to be compatible with" f" {encoder_type} encoder."
             )
         return width, height
 
     @staticmethod
     def _infer_image_size(
-        image_sample: List[torch.Tensor],
+        image_sample: list[torch.Tensor],
         max_height: int,
         max_width: int,
         preprocessing_parameters: dict,
         encoder_type: str,
-    ) -> Tuple[int, int]:
+    ) -> tuple[int, int]:
         """Infers the size to use from a group of images. The returned height will be the average height of images
         in image_sample rounded to the nearest integer, or max_height. Likewise for width.
 
@@ -565,7 +566,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
         return height, width
 
     @staticmethod
-    def _infer_number_of_channels(image_sample: List[torch.Tensor]):
+    def _infer_number_of_channels(image_sample: list[torch.Tensor]):
         """Infers the channel depth to use from a group of images.
 
         We make the assumption that the majority of datasets scraped from the web will be RGB, so if we get a mixed bag
@@ -606,7 +607,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
         preprocessing_parameters: dict,
         encoder_type: str,
         column: Series,
-    ) -> Tuple:
+    ) -> tuple:
         """Helper method to determine the height, width and number of channels for preprocessing the image data.
 
         This is achieved by looking at the parameters provided by the user. When there are some missing parameters, we
@@ -941,7 +942,7 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
         return ImageInputFeatureConfig
 
     @staticmethod
-    def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+    def create_preproc_module(metadata: dict[str, Any]) -> torch.nn.Module:
         model_type = metadata["preprocessing"].get("torchvision_model_type")
         model_variant = metadata["preprocessing"].get("torchvision_model_variant")
         if model_variant:

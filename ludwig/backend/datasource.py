@@ -1,6 +1,7 @@
 import contextlib
 import logging
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, TYPE_CHECKING, Union
+from collections.abc import Callable, Iterable
+from typing import Any, Optional, TYPE_CHECKING, Union
 
 import ray
 import urllib3
@@ -51,16 +52,16 @@ class BinaryIgnoreNoneTypeDatasource(BinaryDatasource):
     def prepare_read(
         self,
         parallelism: int,
-        path_and_idxs: Union[str, List[str], Tuple[str, int], List[Tuple[str, int]]],
+        path_and_idxs: Union[str, list[str], tuple[str, int], list[tuple[str, int]]],
         filesystem: Optional["pyarrow.fs.FileSystem"] = None,
         schema: Optional[Union[type, "pyarrow.lib.Schema"]] = None,
-        open_stream_args: Optional[Dict[str, Any]] = None,
+        open_stream_args: Optional[dict[str, Any]] = None,
         meta_provider: BaseFileMetadataProvider = DefaultFileMetadataProvider(),
         partition_filter: "PathPartitionFilter" = None,
         # TODO(ekl) deprecate this once read fusion is available.
         _block_udf: Optional[Callable[[Block], Block]] = None,
         **reader_args,
-    ) -> List[ReadTask]:
+    ) -> list[ReadTask]:
         """Creates and returns read tasks for a file-based datasource.
 
         If `paths` is a tuple, The resulting dataset will have an `idx` key containing the second item in the tuple.
@@ -98,7 +99,7 @@ class BinaryIgnoreNoneTypeDatasource(BinaryDatasource):
     def _read_file(
         self,
         f: Union["pyarrow.NativeFile", contextlib.nullcontext],
-        path_and_idx: Tuple[str, int] = None,
+        path_and_idx: tuple[str, int] = None,
         **reader_args,
     ):
         include_paths = reader_args.get("include_paths", False)
@@ -132,10 +133,10 @@ class _BinaryIgnoreNoneTypeDatasourceReader:
     def __init__(
         self,
         delegate: Datasource,
-        path_and_idxs: Union[str, List[str], Tuple[str, int], List[Tuple[str, int]]],
+        path_and_idxs: Union[str, list[str], tuple[str, int], list[tuple[str, int]]],
         filesystem: Optional["pyarrow.fs.FileSystem"] = None,
         schema: Optional[Union[type, "pyarrow.lib.Schema"]] = None,
-        open_stream_args: Optional[Dict[str, Any]] = None,
+        open_stream_args: Optional[dict[str, Any]] = None,
         meta_provider: BaseFileMetadataProvider = DefaultFileMetadataProvider(),
         partition_filter: "PathPartitionFilter" = None,
         # TODO(ekl) deprecate this once read fusion is available.
@@ -151,7 +152,7 @@ class _BinaryIgnoreNoneTypeDatasourceReader:
         self._block_udf = _block_udf
         self._reader_args = reader_args
 
-        has_idx = isinstance(path_and_idxs[0], tuple)  # include idx if paths is a list of Tuple[str, int]
+        has_idx = isinstance(path_and_idxs[0], tuple)  # include idx if paths is a list of tuple[str, int]
         raw_paths_and_idxs = path_and_idxs if has_idx else [(path, None) for path in path_and_idxs]
 
         self._paths = []
@@ -179,7 +180,7 @@ class _BinaryIgnoreNoneTypeDatasourceReader:
                 total_size += sz
         return total_size
 
-    def get_read_tasks(self, parallelism: int) -> List[ReadTask]:
+    def get_read_tasks(self, parallelism: int) -> list[ReadTask]:
         import numpy as np
 
         open_stream_args = self._open_stream_args
@@ -199,7 +200,7 @@ class _BinaryIgnoreNoneTypeDatasourceReader:
         open_input_source = self._delegate._open_input_source
 
         def read_files(
-            read_paths_and_idxs: List[Tuple[str, int]],
+            read_paths_and_idxs: list[tuple[str, int]],
             fs: Union["pyarrow.fs.FileSystem", _S3FileSystemWrapper],
         ) -> Iterable[Block]:
             logger.debug(f"Reading {len(read_paths)} files.")

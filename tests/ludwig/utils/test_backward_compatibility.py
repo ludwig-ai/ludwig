@@ -1,6 +1,6 @@
 import copy
 import math
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 
@@ -792,7 +792,7 @@ def test_cache_credentials_backward_compatibility():
     ],
     ids=["resnet", "vit", "resnet_legacy", "vit_legacy"],
 )
-def test_legacy_image_encoders(encoder: Dict[str, Any], upgraded_type: str):
+def test_legacy_image_encoders(encoder: dict[str, Any], upgraded_type: str):
     config = {
         "input_features": [{"name": "image1", "type": "image", "encoder": encoder}],
         "output_features": [{"name": "binary1", "type": "binary"}],

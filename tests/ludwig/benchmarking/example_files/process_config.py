@@ -14,7 +14,7 @@ def process_config(ludwig_config: dict, experiment_dict: dict) -> dict:
             if key not in ["input_features", "output_features"]:
                 del ludwig_config[key]
 
-    # Set the early_stop criteria to stop training after 7 epochs of no score improvement.
+    # set the early_stop criteria to stop training after 7 epochs of no score improvement.
     ludwig_config["trainer"] = {"early_stop": 7}
 
     # use sparse encoder for categorical features to mimic logreg

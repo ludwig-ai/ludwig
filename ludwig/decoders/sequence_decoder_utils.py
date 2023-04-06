@@ -1,6 +1,5 @@
 """Utility functions related to sequence decoders."""
 
-from typing import Dict, Tuple
 
 import torch
 
@@ -21,7 +20,7 @@ def repeat_2D_tensor(tensor, k):
 
 
 def get_rnn_init_state(
-    combiner_outputs: Dict[str, torch.Tensor], sequence_reducer: SequenceReducer, num_layers: int
+    combiner_outputs: dict[str, torch.Tensor], sequence_reducer: SequenceReducer, num_layers: int
 ) -> torch.Tensor:
     """Computes the hidden state that the RNN decoder should start with.
 
@@ -64,8 +63,8 @@ def get_rnn_init_state(
 
 
 def get_lstm_init_state(
-    combiner_outputs: Dict[str, torch.Tensor], sequence_reducer: SequenceReducer, num_layers: int
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    combiner_outputs: dict[str, torch.Tensor], sequence_reducer: SequenceReducer, num_layers: int
+) -> tuple[torch.Tensor, torch.Tensor]:
     """Returns the states that the LSTM decoder should start with.
 
     Args:
@@ -74,7 +73,7 @@ def get_lstm_init_state(
         num_layers: Number of layers the decoder uses.
 
     Returns:
-        Tuple of 2 tensors (decoder hidden state, decoder cell state), each [num_layers, batch_size, hidden_size].
+        tuple of 2 tensors (decoder hidden state, decoder cell state), each [num_layers, batch_size, hidden_size].
     """
     if "encoder_output_state" not in combiner_outputs:
         # Use the combiner's hidden state.

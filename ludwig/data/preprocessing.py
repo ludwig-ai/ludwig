@@ -17,7 +17,7 @@ import contextlib
 import logging
 import warnings
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -1101,14 +1101,14 @@ def build_dataset(
 
     Args:
         dataset_df: Pandas or Dask dataframe
-        features: List of features
+        features: list of features
         global_preprocessing_parameters: Global preprocessing parameters
         mode: One of ['training', 'prediction']
         metadata: Training set metadata if available
         backend: Backend
         random_seed: Random seed
         skip_save_processed_input: Whether to skip saving the processed input
-        callbacks: List of callbacks
+        callbacks: list of callbacks
 
     Returns:
         A tuple of (dataset, metadata)
@@ -1290,7 +1290,7 @@ def build_dataset(
 
 
 def embed_fixed_features(
-    dataset: DataFrame, feature_configs: List[FeatureConfigDict], metadata: TrainingSetMetadataDict, backend: Backend
+    dataset: DataFrame, feature_configs: list[FeatureConfigDict], metadata: TrainingSetMetadataDict, backend: Backend
 ) -> DataFrame:
     """Transforms every input feature with cacheable encoder embeddings into its encoded form and updates
     metadata."""
@@ -1309,15 +1309,15 @@ def embed_fixed_features(
     results = backend.batch_transform(dataset, batch_size, transform_fn, name="Caching encoder embeddings")
 
     for feature in features_to_encode:
-        # Set metadata so we know to skip encoding the feature
+        # set metadata so we know to skip encoding the feature
         metadata[feature[NAME]][PREPROCESSING]["cache_encoder_embeddings"] = True
 
     return results
 
 
 def get_features_with_cacheable_fixed_embeddings(
-    feature_configs: List[FeatureConfigDict], metadata: TrainingSetMetadataDict
-) -> List[FeatureConfigDict]:
+    feature_configs: list[FeatureConfigDict], metadata: TrainingSetMetadataDict
+) -> list[FeatureConfigDict]:
     """Returns list of features with `cache_encoder_embeddings=True` set in the preprocessing config."""
     features_to_encode = []
     for feature_config in feature_configs:
@@ -1336,7 +1336,7 @@ def get_features_with_cacheable_fixed_embeddings(
                     encoder = encoder_class.from_dict(encoder_params)
                     if not encoder.can_cache_embeddings():
                         raise ValueError(
-                            f"Set `cache_encoder_embeddings=True` for feature {feature_config[NAME]} with "
+                            f"set `cache_encoder_embeddings=True` for feature {feature_config[NAME]} with "
                             f"encoder {encoder_params[TYPE]}, but encoder embeddings are not static."
                         )
 
@@ -1372,8 +1372,8 @@ def merge_preprocessing(
 
 
 def build_preprocessing_parameters(
-    dataset_cols: Dict[str, Series],
-    feature_configs: List[FeatureConfigDict],
+    dataset_cols: dict[str, Series],
+    feature_configs: list[FeatureConfigDict],
     global_preprocessing_parameters: PreprocessingConfigDict,
     backend: Backend,
     metadata: Optional[TrainingSetMetadataDict] = None,
@@ -1425,9 +1425,9 @@ def is_input_feature(feature_config: FeatureConfigDict) -> bool:
 
 def build_metadata(
     metadata: TrainingSetMetadataDict,
-    feature_name_to_preprocessing_parameters: Dict[str, PreprocessingConfigDict],
-    dataset_cols: Dict[str, Series],
-    feature_configs: List[FeatureConfigDict],
+    feature_name_to_preprocessing_parameters: dict[str, PreprocessingConfigDict],
+    dataset_cols: dict[str, Series],
+    feature_configs: list[FeatureConfigDict],
     backend: Backend,
 ) -> TrainingSetMetadataDict:
     for feature_config in feature_configs:
@@ -1449,17 +1449,17 @@ def build_metadata(
 
 def build_data(
     input_cols: DataFrame,
-    feature_configs: List[Dict],
-    training_set_metadata: Dict,
+    feature_configs: list[dict],
+    training_set_metadata: dict,
     backend: Backend,
     skip_save_processed_input: bool,
-) -> Dict[str, DataFrame]:
+) -> dict[str, DataFrame]:
     """Preprocesses the input dataframe columns, handles missing values, and potentially adds metadata to
     training_set_metadata.
 
     Args:
         input_cols: Input dataframe to be processed.
-        feature_configs: List of feature configs.
+        feature_configs: list of feature configs.
         training_set_metadata: Training set metadata. Additional fields may be added.
         backend: Backend for data processing.
         skip_save_processed_input: (bool) Whether to skip saving the processed input.
@@ -1496,8 +1496,8 @@ def build_data(
 
 def balance_data(
     dataset_df: DataFrame,
-    output_features: List[Dict],
-    preprocessing_parameters: Dict,
+    output_features: list[dict],
+    preprocessing_parameters: dict,
     backend: Backend,
     random_seed: int,
 ):
@@ -1506,7 +1506,7 @@ def balance_data(
 
     Args:
         dataset_df: Input dataframe to be over-sampled or under-sampled.
-        output_features: List of feature configs.
+        output_features: list of feature configs.
         preprocessing_parameters: Dictionary of the global preprocessing parameters.
         backend: Backend for data processing.
         random_seed: Integer to seed the random sampling to ensure determinism.
@@ -1709,7 +1709,7 @@ def preprocess_for_training(
     backend=LOCAL_BACKEND,
     random_seed=default_random_seed,
     callbacks=None,
-) -> Tuple[Dataset, Dataset, Dataset, TrainingSetMetadataDict]:
+) -> tuple[Dataset, Dataset, Dataset, TrainingSetMetadataDict]:
     """Returns training, val and test datasets with training set metadata."""
 
     # sanity check to make sure some data source is provided
@@ -2054,7 +2054,7 @@ def preprocess_for_prediction(
         data_format: Format of the data
         split: The split of dataset to return
         include_outputs: Whether to include outputs
-        backend: Type of backend to use for preprocessing
+        backend: type of backend to use for preprocessing
         callbacks: Any callbacks passed in
 
     Returns:

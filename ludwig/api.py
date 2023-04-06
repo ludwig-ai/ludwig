@@ -28,7 +28,7 @@ import tempfile
 import traceback
 from collections import OrderedDict
 from pprint import pformat
-from typing import Any, ClassVar, Dict, List, Optional, Tuple, Union
+from typing import Any, ClassVar, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -134,9 +134,9 @@ class TrainingStats:
     This class replaces those while preserving dict and tuple-like behavior (unpacking, [] access).
     """
 
-    training: Dict[str, Any]
-    validation: Dict[str, Any]
-    test: Dict[str, Any]
+    training: dict[str, Any]
+    validation: dict[str, Any]
+    test: dict[str, Any]
     evaluation_frequency: EvaluationFrequency = dataclasses.field(default_factory=EvaluationFrequency)
 
     # TODO(daniel): deprecate multiple return value unpacking and dictionary-style element access
@@ -204,7 +204,7 @@ class LudwigModel:
     :param logging_level: (int) Log level that will be sent to stderr.
     :param backend: (Union[Backend, str]) `Backend` or string name
         of backend to use to execute preprocessing / training steps.
-    :param gpus: (Union[str, int, List[int]], default: `None`) GPUs
+    :param gpus: (Union[str, int, list[int]], default: `None`) GPUs
         to use (it uses the same syntax of CUDA_VISIBLE_DEVICES)
     :param gpu_memory_limit: (float: default: `None`) maximum memory fraction
         [0, 1] allowed to allocate per GPU device.
@@ -268,10 +268,10 @@ class LudwigModel:
         config: Union[str, dict],
         logging_level: int = logging.ERROR,
         backend: Union[Backend, str] = None,
-        gpus: Union[str, int, List[int]] = None,
+        gpus: Union[str, int, list[int]] = None,
         gpu_memory_limit: Optional[float] = None,
         allow_parallel_threads: bool = True,
-        callbacks: List[Callback] = None,
+        callbacks: list[Callback] = None,
     ) -> None:
         """Constructor for the Ludwig Model class.
 
@@ -282,7 +282,7 @@ class LudwigModel:
         :param logging_level: (int) Log level that will be sent to stderr.
         :param backend: (Union[Backend, str]) `Backend` or string name
             of backend to use to execute preprocessing / training steps.
-        :param gpus: (Union[str, int, List[int]], default: `None`) GPUs
+        :param gpus: (Union[str, int, list[int]], default: `None`) GPUs
             to use (it uses the same syntax of CUDA_VISIBLE_DEVICES)
         :param gpu_memory_limit: (float: default: `None`) maximum memory fraction
             [0, 1] allowed to allocate per GPU device.
@@ -432,9 +432,9 @@ class LudwigModel:
 
         # Return
 
-        :return: (Tuple[Dict, Union[Dict, pd.DataFrame], str]) tuple containing
+        :return: (tuple[dict, Union[dict, pd.DataFrame], str]) tuple containing
             `(training_statistics, preprocessed_data, output_directory)`.
-            `training_statistics` is a nested dictionary of dataset -> feature_name -> metric_name -> List of metrics.
+            `training_statistics` is a nested dictionary of dataset -> feature_name -> metric_name -> list of metrics.
                 Each metric corresponds to each training checkpoint.
             `preprocessed_data` is the tuple containing these three data sets
             `(training_set, validation_set, test_set)`.
@@ -678,7 +678,7 @@ class LudwigModel:
 
                     # Unpack train()'s return.
                     # The statistics are all nested dictionaries of TrainerMetrics: feature_name -> metric_name ->
-                    # List[TrainerMetric], with one entry per training checkpoint, according to steps_per_checkpoint.
+                    # list[TrainerMetric], with one entry per training checkpoint, according to steps_per_checkpoint.
                     # We reduce the dictionary of TrainerMetrics to a simple list of floats for interfacing with Ray
                     # Tune.
                     (self.model, train_trainset_stats, train_valiset_stats, train_testset_stats) = train_stats
@@ -824,9 +824,9 @@ class LudwigModel:
         skip_save_predictions: bool = True,
         output_directory: str = "results",
         return_type: Union[str, dict, pd.DataFrame] = pd.DataFrame,
-        callbacks: Optional[List[Callback]] = None,
+        callbacks: Optional[list[Callback]] = None,
         **kwargs,
-    ) -> Tuple[Union[dict, pd.DataFrame], str]:
+    ) -> tuple[Union[dict, pd.DataFrame], str]:
         """Using a trained model, make predictions from the provided dataset.
 
         # Inputs
@@ -857,13 +857,13 @@ class LudwigModel:
             model and the training progress files.
         :param return_type: (Union[str, dict, pandas.DataFrame], default: pd.DataFrame)
             indicates the format of the returned predictions.
-        :param callbacks: (Optional[List[Callback]], default: None)
+        :param callbacks: (Optional[list[Callback]], default: None)
             optional list of callbacks to use during this predict operation. Any callbacks
             already registered to the model will be preserved.
 
         # Return
 
-        :return: (Tuple[Union[dict, pd.DataFrame], str]) `(predictions, output_directory)`
+        :return: (tuple[Union[dict, pd.DataFrame], str]) `(predictions, output_directory)`
             `predictions` predictions from the provided dataset,
             `output_directory` filepath string to where data was stored.
         """
@@ -931,7 +931,7 @@ class LudwigModel:
         output_directory: str = "results",
         return_type: Union[str, dict, pd.DataFrame] = pd.DataFrame,
         **kwargs,
-    ) -> Tuple[dict, Union[dict, pd.DataFrame], str]:
+    ) -> tuple[dict, Union[dict, pd.DataFrame], str]:
         """This function is used to predict the output variables given the input variables using the trained model
         and compute test statistics like performance measures, confusion matrices and the like.
 
@@ -1165,7 +1165,7 @@ class LudwigModel:
         output_directory: str = "results",
         random_seed: int = default_random_seed,
         **kwargs,
-    ) -> Tuple[Optional[dict], TrainingStats, PreprocessedDataset, str]:
+    ) -> tuple[Optional[dict], TrainingStats, PreprocessedDataset, str]:
         """Trains a model on a dataset's training and validation splits and uses it to predict on the test split.
         It saves the trained model and the statistics of training and testing.
 
@@ -1257,11 +1257,11 @@ class LudwigModel:
             initialization, splits and any other random function.
 
         # Return
-        :return: (Tuple[dict, dict, tuple, str))
+        :return: (tuple[dict, dict, tuple, str))
             `(evaluation_statistics, training_statistics, preprocessed_data, output_directory)`
             `evaluation_statistics` dictionary with evaluation performance
                 statistics on the test_set,
-            `training_statistics` is a nested dictionary of dataset -> feature_name -> metric_name -> List of metrics.
+            `training_statistics` is a nested dictionary of dataset -> feature_name -> metric_name -> list of metrics.
                 Each metric corresponds to each training checkpoint.
             `preprocessed_data` tuple containing preprocessed
             `(training_set, validation_set, test_set)`, `output_directory`
@@ -1336,15 +1336,15 @@ class LudwigModel:
 
         return eval_stats, train_stats, preprocessed_data, output_directory
 
-    def collect_weights(self, tensor_names: List[str] = None, **kwargs) -> list:
+    def collect_weights(self, tensor_names: list[str] = None, **kwargs) -> list:
         """Load a pre-trained model and collect the tensors with a specific name.
 
         # Inputs
-        :param tensor_names: (list, default: `None`) List of tensor names to collect
+        :param tensor_names: (list, default: `None`) list of tensor names to collect
             weights
 
         # Return
-        :return: (list) List of tensors
+        :return: (list) list of tensors
         """
         self._check_initialization()
         collected_tensors = self.model.collect_weights(tensor_names)
@@ -1352,8 +1352,8 @@ class LudwigModel:
 
     def collect_activations(
         self,
-        layer_names: List[str],
-        dataset: Union[str, Dict[str, list], pd.DataFrame],
+        layer_names: list[str],
+        dataset: Union[str, dict[str, list], pd.DataFrame],
         data_format: str = None,
         split: str = FULL,
         batch_size: int = 128,
@@ -1366,7 +1366,7 @@ class LudwigModel:
         # Inputs
         :param layer_names: (list) list of strings for layer names in the model
             to collect activations.
-        :param dataset: (Union[str, Dict[str, list], pandas.DataFrame]) source
+        :param dataset: (Union[str, dict[str, list], pandas.DataFrame]) source
             containing the data to make predictions.
         :param data_format: (str, default: `None`) format to interpret data
             sources. Will be inferred automatically if not specified.  Valid
@@ -1505,10 +1505,10 @@ class LudwigModel:
         model_dir: str,
         logging_level: int = logging.ERROR,
         backend: Union[Backend, str] = None,
-        gpus: Union[str, int, List[int]] = None,
+        gpus: Union[str, int, list[int]] = None,
         gpu_memory_limit: Optional[float] = None,
         allow_parallel_threads: bool = True,
-        callbacks: List[Callback] = None,
+        callbacks: list[Callback] = None,
     ) -> "LudwigModel":  # return is an instance of ludwig.api.LudwigModel class
         """This function allows for loading pretrained models.
 
@@ -1521,7 +1521,7 @@ class LudwigModel:
             stderr.
         :param backend: (Union[Backend, str]) `Backend` or string name
             of backend to use to execute preprocessing / training steps.
-        :param gpus: (Union[str, int, List[int]], default: `None`) GPUs
+        :param gpus: (Union[str, int, list[int]], default: `None`) GPUs
             to use (it uses the same syntax of CUDA_VISIBLE_DEVICES)
         :param gpu_memory_limit: (float: default: `None`) maximum memory fraction
             [0, 1] allowed to allocate per GPU device.
@@ -1735,7 +1735,7 @@ class LudwigModel:
 
         # Inputs
 
-        :param logging_level: (int) Set/Update the logging level. Use logging
+        :param logging_level: (int) set/Update the logging level. Use logging
         constants like `logging.DEBUG` , `logging.INFO` and `logging.ERROR`.
 
         # Return
@@ -1781,13 +1781,13 @@ def kfold_cross_validate(
     skip_collect_overall_stats: bool = False,
     output_directory: str = "results",
     random_seed: int = default_random_seed,
-    gpus: Union[str, int, List[int]] = None,
+    gpus: Union[str, int, list[int]] = None,
     gpu_memory_limit: Optional[float] = None,
     allow_parallel_threads: bool = True,
     backend: Union[Backend, str] = None,
     logging_level: int = logging.INFO,
     **kwargs,
-) -> Tuple[dict, dict]:
+) -> tuple[dict, dict]:
     """Performs k-fold cross validation and returns result data structures.
 
     # Inputs

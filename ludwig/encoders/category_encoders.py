@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Dict, List, Optional, Union
+from typing import Optional, Union
 
 import torch
 from torch import nn
@@ -72,13 +72,13 @@ class CategoricalPassthroughEncoder(Encoder):
 class CategoricalEmbedEncoder(Encoder):
     def __init__(
         self,
-        vocab: List[str],
+        vocab: list[str],
         embedding_size: int = 50,
         embeddings_trainable: bool = True,
         pretrained_embeddings: Optional[str] = None,
         embeddings_on_cpu: bool = False,
         dropout: float = 0.0,
-        embedding_initializer: Optional[Union[str, Dict]] = None,
+        embedding_initializer: Optional[Union[str, dict]] = None,
         encoder_config=None,
         **kwargs,
     ):
@@ -128,12 +128,12 @@ class CategoricalEmbedEncoder(Encoder):
 class CategoricalSparseEncoder(Encoder):
     def __init__(
         self,
-        vocab: List[str],
+        vocab: list[str],
         embeddings_trainable: bool = False,
         pretrained_embeddings: Optional[str] = None,
         embeddings_on_cpu: bool = False,
         dropout: float = 0.0,
-        embedding_initializer: Optional[Union[str, Dict]] = None,
+        embedding_initializer: Optional[Union[str, dict]] = None,
         encoder_config=None,
         **kwargs,
     ):
@@ -183,7 +183,7 @@ class CategoricalSparseEncoder(Encoder):
 class CategoricalOneHotEncoder(Encoder):
     def __init__(
         self,
-        vocab: List[str],
+        vocab: list[str],
         encoder_config=None,
         **kwargs,
     ):

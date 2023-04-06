@@ -1,5 +1,3 @@
-from typing import List
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import CATEGORY, DROP_ROW, FILL_WITH_CONST, MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING
 from ludwig.error import ConfigValidationError
@@ -112,4 +110,4 @@ class CategoryDistributionOutputPreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[CATEGORY][PREPROCESSING]["missing_value_strategy"],
     )
 
-    vocab: List[str] = schema_utils.List(default=None)
+    vocab: list[str] = schema_utils.List(default=None)

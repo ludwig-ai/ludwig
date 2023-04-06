@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple
+from typing import Optional
 
 import torch
 import torch.nn as nn
@@ -91,7 +91,7 @@ class TabNet(LudwigModule):
         self.register_buffer("aggregated_mask", torch.zeros(input_size))
         self.register_buffer("prior_scales", torch.ones(input_size))
 
-    def forward(self, features: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, List[torch.Tensor]]:
+    def forward(self, features: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, list[torch.Tensor]]:
         if features.dim() != 2:
             raise ValueError(f"Expecting incoming tensor to be dim 2, " f"instead dim={features.dim()}")
 
@@ -285,7 +285,7 @@ class FeatureTransformer(LudwigModule):
         self,
         input_size: int,
         size: int,
-        shared_fc_layers: Optional[List] = None,
+        shared_fc_layers: Optional[list] = None,
         num_total_blocks: int = 4,
         num_shared_blocks: int = 2,
         bn_momentum: float = 0.1,

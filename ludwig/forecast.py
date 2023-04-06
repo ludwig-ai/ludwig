@@ -1,7 +1,7 @@
 import argparse
 import logging
 import sys
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 import pandas as pd
 
@@ -22,7 +22,7 @@ def forecast_cli(
     horizon: int = 1,
     output_directory: Optional[str] = None,
     output_format: str = "parquet",
-    callbacks: List[Callback] = None,
+    callbacks: list[Callback] = None,
     backend: Union[Backend, str] = None,
     logging_level: int = logging.INFO,
     **kwargs,

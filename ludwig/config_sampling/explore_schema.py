@@ -1,7 +1,7 @@
 import copy
 import random
 from collections import deque, namedtuple
-from typing import Any, Deque, Dict, List, Tuple, Union
+from typing import Any, Union
 
 import pandas as pd
 
@@ -19,11 +19,11 @@ ConfigOption = namedtuple("ConfigOption", ["config_option", "fully_explored"])
 
 
 def explore_properties(
-    jsonschema_properties: Dict[str, Any],
+    jsonschema_properties: dict[str, Any],
     parent_parameter_path: str,
-    dq: Deque[ConfigOption],
-    allow_list: List[str] = [],
-) -> Deque[Tuple[Dict, bool]]:
+    dq: deque[ConfigOption],
+    allow_list: list[str] = [],
+) -> deque[tuple[dict, bool]]:
     """Recursively explores the `properties` part of any subsection of the schema.
 
     Args:
@@ -31,7 +31,7 @@ def explore_properties(
         parent_parameter_path: period-delimited list of parent dictionary keys up to the given jsonschema_properties
             (e.g. defaults.number.preprocessing)
         dq: dequeue data structure that stores tuples of (config_options, fully_explored).
-            config_options: Dict[str, List], fully_explored: bool is a dictionary is a dictionary of parameter name to
+            config_options: dict[str, list], fully_explored: bool is a dictionary is a dictionary of parameter name to
             list of values to explore.
             fully_explored is a boolean value indicating whether all subsections of the properties dictionary have been
             explored.
@@ -100,7 +100,7 @@ def explore_properties(
     return processed_dq
 
 
-def get_samples(jsonschema_property: Dict[str, Any]) -> List[ParameterBaseTypes]:
+def get_samples(jsonschema_property: dict[str, Any]) -> list[ParameterBaseTypes]:
     """Get possible values for a leaf property (no sub-properties).
 
     Args:
@@ -115,7 +115,7 @@ def get_samples(jsonschema_property: Dict[str, Any]) -> List[ParameterBaseTypes]
         return get_potential_values(jsonschema_property)
 
 
-def merge_dq(config_options: Dict[str, Any], child_config_options_dq: Deque[ConfigOption]) -> Deque[ConfigOption]:
+def merge_dq(config_options: dict[str, Any], child_config_options_dq: deque[ConfigOption]) -> deque[ConfigOption]:
     """Merge config_options with the child_config_options in the dq."""
     dq = deque()
     while child_config_options_dq:
@@ -125,7 +125,7 @@ def merge_dq(config_options: Dict[str, Any], child_config_options_dq: Deque[Conf
     return dq
 
 
-def explore_from_all_of(config_options: Dict[str, Any], item: Dict[str, Any], key_so_far: str) -> Deque[ConfigOption]:
+def explore_from_all_of(config_options: dict[str, Any], item: dict[str, Any], key_so_far: str) -> deque[ConfigOption]:
     """Takes a child of `allOf` and calls `explore_properties` on it."""
     for parameter_name_or_section in item["if"]["properties"]:
         config_options[key_so_far + "." + parameter_name_or_section] = item["if"]["properties"][
@@ -136,7 +136,7 @@ def explore_from_all_of(config_options: Dict[str, Any], item: Dict[str, Any], ke
     return explore_properties(jsonschema_properties, parent_parameter_path=key_so_far, dq=raw_entry)
 
 
-def get_potential_values(item: Dict[str, Any]) -> List[Union[ParameterBaseTypes, List[ParameterBaseTypes]]]:
+def get_potential_values(item: dict[str, Any]) -> list[Union[ParameterBaseTypes, list[ParameterBaseTypes]]]:
     """Returns a list of values to explore for a config parameter.
 
     Param:
@@ -159,7 +159,7 @@ def get_potential_values(item: Dict[str, Any]) -> List[Union[ParameterBaseTypes,
     return unique_temp
 
 
-def generate_possible_configs(config_options: Dict[str, Any]):
+def generate_possible_configs(config_options: dict[str, Any]):
     """Generate exhaustive configs from config_options.
 
     This function does not take a cross product of all the options for all the config parameters. It selects parameter
@@ -193,7 +193,7 @@ def generate_possible_configs(config_options: Dict[str, Any]):
         yield create_nested_dict(config)
 
 
-def create_nested_dict(flat_dict: Dict[str, Union[float, str]]) -> ModelConfigDict:
+def create_nested_dict(flat_dict: dict[str, Union[float, str]]) -> ModelConfigDict:
     """Generate a nested dict out of a flat dict whose keys are delimited by a delimiter character.
 
     Args:
@@ -209,7 +209,7 @@ def create_nested_dict(flat_dict: Dict[str, Union[float, str]]) -> ModelConfigDi
                 learning_rate: 0.0635
     """
 
-    def to_nested_format(parameter_name: str, value: Union[str, int, float], delimiter: str = ".") -> Dict[str, Any]:
+    def to_nested_format(parameter_name: str, value: Union[str, int, float], delimiter: str = ".") -> dict[str, Any]:
         # https://stackoverflow.com/a/40401961
         split_parameter_name = parameter_name.split(delimiter)
         for parameter_name_or_section in reversed(split_parameter_name):
@@ -225,8 +225,8 @@ def create_nested_dict(flat_dict: Dict[str, Union[float, str]]) -> ModelConfigDi
 
 
 def combine_configs(
-    explored: Deque[Tuple[Dict, bool]], config: ModelConfigDict
-) -> List[Tuple[ModelConfigDict, pd.DataFrame]]:
+    explored: deque[tuple[dict, bool]], config: ModelConfigDict
+) -> list[tuple[ModelConfigDict, pd.DataFrame]]:
     """Merge base config with explored sections.
 
     Args:
@@ -247,8 +247,8 @@ def combine_configs(
 
 
 def combine_configs_for_comparator_combiner(
-    explored: Deque[Tuple], config: ModelConfigDict
-) -> List[Tuple[ModelConfigDict, pd.DataFrame]]:
+    explored: deque[tuple], config: ModelConfigDict
+) -> list[tuple[ModelConfigDict, pd.DataFrame]]:
     """Merge base config with explored sections.
 
     Completes the entity_1 and entity_2 paramters of the comparator combiner.
@@ -278,8 +278,8 @@ def combine_configs_for_comparator_combiner(
 
 
 def combine_configs_for_sequence_combiner(
-    explored: Deque[Tuple], config: ModelConfigDict
-) -> List[Tuple[ModelConfigDict, pd.DataFrame]]:
+    explored: deque[tuple], config: ModelConfigDict
+) -> list[tuple[ModelConfigDict, pd.DataFrame]]:
     """Merge base config with explored sections.
 
     Uses the right reduce_output strategy for the sequence and sequence_concat combiners.

@@ -1,4 +1,4 @@
-from typing import Dict, List, Type, Union
+from typing import Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
@@ -75,30 +75,30 @@ class BaseLossConfig(schema_utils.BaseMarshmallowConfig):
         return "[undefined]"
 
 
-_loss_registry = Registry[Type[BaseLossConfig]]()
-_loss_feature_registry = Registry[Dict[str, Type[BaseLossConfig]]]()
+_loss_registry = Registry[type[BaseLossConfig]]()
+_loss_feature_registry = Registry[dict[str, type[BaseLossConfig]]]()
 
 
 @DeveloperAPI
-def get_loss_schema_registry() -> Registry[Type[BaseLossConfig]]:
+def get_loss_schema_registry() -> Registry[type[BaseLossConfig]]:
     return _loss_registry
 
 
 @DeveloperAPI
-def get_loss_cls(feature: str, name: str) -> Type[BaseLossConfig]:
+def get_loss_cls(feature: str, name: str) -> type[BaseLossConfig]:
     return _loss_feature_registry[feature][name]
 
 
 @DeveloperAPI
-def get_loss_classes(feature: str) -> Dict[str, Type[BaseLossConfig]]:
+def get_loss_classes(feature: str) -> dict[str, type[BaseLossConfig]]:
     return _loss_feature_registry[feature]
 
 
-def register_loss(features: Union[str, List[str]]):
+def register_loss(features: Union[str, list[str]]):
     if isinstance(features, str):
         features = [features]
 
-    def wrap(cls: Type[BaseLossConfig]):
+    def wrap(cls: type[BaseLossConfig]):
         _loss_registry[cls.type] = cls
         for feature in features:
             feature_registry = _loss_feature_registry.get(feature, {})
@@ -115,7 +115,7 @@ def register_loss(features: Union[str, List[str]]):
 class MSELossConfig(BaseLossConfig):
     type: str = schema_utils.ProtectedString(
         MEAN_SQUARED_ERROR,
-        description="Type of loss.",
+        description="type of loss.",
     )
 
     weight: float = schema_utils.NonNegativeFloat(
@@ -135,7 +135,7 @@ class MSELossConfig(BaseLossConfig):
 class MAELossConfig(BaseLossConfig):
     type: str = schema_utils.ProtectedString(
         MEAN_ABSOLUTE_ERROR,
-        description="Type of loss.",
+        description="type of loss.",
     )
 
     weight: float = schema_utils.NonNegativeFloat(
@@ -155,7 +155,7 @@ class MAELossConfig(BaseLossConfig):
 class MAPELossConfig(BaseLossConfig):
     type: str = schema_utils.ProtectedString(
         MEAN_ABSOLUTE_PERCENTAGE_ERROR,
-        description="Type of loss.",
+        description="type of loss.",
     )
 
     weight: float = schema_utils.NonNegativeFloat(
@@ -175,7 +175,7 @@ class MAPELossConfig(BaseLossConfig):
 class RMSELossConfig(BaseLossConfig):
     type: str = schema_utils.ProtectedString(
         ROOT_MEAN_SQUARED_ERROR,
-        description="Type of loss.",
+        description="type of loss.",
     )
 
     weight: float = schema_utils.NonNegativeFloat(
@@ -195,7 +195,7 @@ class RMSELossConfig(BaseLossConfig):
 class RMSPELossConfig(BaseLossConfig):
     type: str = schema_utils.ProtectedString(
         ROOT_MEAN_SQUARED_PERCENTAGE_ERROR,
-        description="Type of loss.",
+        description="type of loss.",
     )
 
     weight: float = schema_utils.NonNegativeFloat(
@@ -215,7 +215,7 @@ class RMSPELossConfig(BaseLossConfig):
 class BWCEWLossConfig(BaseLossConfig):
     type: str = schema_utils.ProtectedString(
         BINARY_WEIGHTED_CROSS_ENTROPY,
-        description="Type of loss.",
+        description="type of loss.",
     )
 
     positive_class_weight: float = schema_utils.NonNegativeFloat(
@@ -254,10 +254,10 @@ class BWCEWLossConfig(BaseLossConfig):
 class SoftmaxCrossEntropyLossConfig(BaseLossConfig):
     type: str = schema_utils.ProtectedString(
         SOFTMAX_CROSS_ENTROPY,
-        description="Type of loss.",
+        description="type of loss.",
     )
 
-    class_weights: Union[List[float], float, None] = schema_utils.List(
+    class_weights: Union[list[float], float, None] = schema_utils.List(
         list_type=float,
         default=None,
         description=CLASS_WEIGHTS_DESCRIPTION,
@@ -306,10 +306,10 @@ class SoftmaxCrossEntropyLossConfig(BaseLossConfig):
 class SequenceSoftmaxCrossEntropyLossConfig(BaseLossConfig):
     type: str = schema_utils.ProtectedString(
         SEQUENCE_SOFTMAX_CROSS_ENTROPY,
-        description="Type of loss.",
+        description="type of loss.",
     )
 
-    class_weights: Union[List[float], float, None] = schema_utils.List(
+    class_weights: Union[list[float], float, None] = schema_utils.List(
         list_type=float,
         default=None,
         description=CLASS_WEIGHTS_DESCRIPTION,
@@ -364,10 +364,10 @@ class SequenceSoftmaxCrossEntropyLossConfig(BaseLossConfig):
 class SigmoidCrossEntropyLossConfig(BaseLossConfig):
     type: str = schema_utils.ProtectedString(
         SIGMOID_CROSS_ENTROPY,
-        description="Type of loss.",
+        description="type of loss.",
     )
 
-    class_weights: Union[List[float], float, None] = schema_utils.List(
+    class_weights: Union[list[float], float, None] = schema_utils.List(
         list_type=float,
         default=None,
         description=CLASS_WEIGHTS_DESCRIPTION,

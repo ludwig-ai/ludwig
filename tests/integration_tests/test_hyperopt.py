@@ -16,7 +16,6 @@ import json
 import os
 import os.path
 import uuid
-from typing import Dict, Tuple
 
 import pytest
 
@@ -108,7 +107,7 @@ SCHEDULERS_FOR_TESTING = [
 ]
 
 
-def _setup_ludwig_config(dataset_fp: str, model_type: str = MODEL_ECD) -> Tuple[Dict, str]:
+def _setup_ludwig_config(dataset_fp: str, model_type: str = MODEL_ECD) -> tuple[dict, str]:
     input_features = [category_feature(encoder={"vocab_size": 3})]
     output_features = [category_feature(decoder={"vocab_size": 3})]
 

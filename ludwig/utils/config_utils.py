@@ -1,5 +1,3 @@
-from typing import Set
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import DECODER, ENCODER, IMAGE, PREPROCESSING, SEQUENCE, TEXT, TIMESERIES, TYPE
 from ludwig.features.feature_registries import get_input_type_registry
@@ -10,7 +8,7 @@ from ludwig.types import FeatureConfigDict, FeatureTypeDefaultsDict, Preprocessi
 @DeveloperAPI
 def get_feature_type_parameter_values_from_section(
     config: ModelConfig, features_section: str, feature_type: str, parameter_name: str
-) -> Set:
+) -> set:
     """Returns the set of all parameter values used for the given features_section, feature_type, and
     parameter_name."""
     parameter_values = set()

@@ -128,7 +128,7 @@ def _append_doc(obj, message: str, directive: Optional[str] = None) -> str:
 
 
 def _mark_annotated(obj) -> None:
-    # Set magic token for check_api_annotations linter.
+    # set magic token for check_api_annotations linter.
     if hasattr(obj, "__name__"):
         obj._annotated = obj.__name__
 

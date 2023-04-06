@@ -15,7 +15,6 @@
 import json
 import logging
 import os.path
-from typing import Dict, List
 
 import mlflow
 import pandas as pd
@@ -90,7 +89,7 @@ SCENARIOS = [
 ]
 
 
-def _get_config(search_alg: Dict, executor: Dict, epochs: int):
+def _get_config(search_alg: dict, executor: dict, epochs: int):
     input_features = [
         text_feature(name="utterance", encoder={"cell_type": "lstm", "reduce_output": "sum"}),
         category_feature(encoder={"vocab_size": 2}, reduce_input="sum"),
@@ -120,11 +119,11 @@ class HyperoptTestCallback(TuneCallback):
         self.user_config = {}
         self.rendered_config = {}
 
-    def on_trial_start(self, iteration: int, trials: List["Trial"], trial: "Trial", **info):
+    def on_trial_start(self, iteration: int, trials: list["Trial"], trial: "Trial", **info):
         super().on_trial_start(iteration, trials, trial, **info)
         self.trial_ids.add(trial.trial_id)
 
-    def on_trial_complete(self, iteration: int, trials: List["Trial"], trial: "Trial", **info):  # noqa
+    def on_trial_complete(self, iteration: int, trials: list["Trial"], trial: "Trial", **info):  # noqa
         super().on_trial_complete(iteration, trials, trial, **info)
         self.trial_status[trial.trial_id] = trial.status
 

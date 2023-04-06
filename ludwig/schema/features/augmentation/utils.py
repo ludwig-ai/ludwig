@@ -1,6 +1,6 @@
 import copy
 from dataclasses import field
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
 from marshmallow import fields, ValidationError
 
@@ -19,7 +19,7 @@ def get_augmentation_config_registry() -> Registry:
 
 
 @DeveloperAPI
-def register_augmentation_config(name: str, features: Union[str, List[str]]):
+def register_augmentation_config(name: str, features: Union[str, list[str]]):
     if isinstance(features, str):
         features = [features]
 
@@ -47,7 +47,7 @@ def get_augmentation_classes(feature: str):
 def AugmentationDataclassField(
     feature_type: str,
     default: Union[str, BaseAugmentationConfig] = False,
-    default_augmentations: Optional[List[BaseAugmentationConfig]] = None,
+    default_augmentations: Optional[list[BaseAugmentationConfig]] = None,
     description: str = "",
 ):
     """Custom dataclass field that when used inside a dataclass will allow the user to specify an augmentation
@@ -133,7 +133,7 @@ def AugmentationDataclassField(
 
 
 @DeveloperAPI
-def get_augmentation_list_jsonschema(feature_type: str, default: List[Dict[str, Any]]):
+def get_augmentation_list_jsonschema(feature_type: str, default: list[dict[str, Any]]):
     """This function returns a JSON augmentation schema.
 
     Returns: JSON Schema
@@ -150,7 +150,7 @@ def get_augmentation_list_jsonschema(feature_type: str, default: List[Dict[str, 
                             "type": "string",
                             "enum": augmentation_types,
                             "title": "type",
-                            "description": "Type of augmentation to apply.",
+                            "description": "type of augmentation to apply.",
                         },
                     },
                     "additionalProperties": True,
@@ -174,7 +174,7 @@ def get_augmentation_list_conds(feature_type: str):
     """This function returns a list of if-then JSON clauses for each augmentation type along with their properties
     and constraints.
 
-    Returns: List of JSON clauses
+    Returns: list of JSON clauses
     """
     conds = []
     for augmentation_op in get_augmentation_classes(feature_type):

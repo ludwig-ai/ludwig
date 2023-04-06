@@ -14,7 +14,7 @@
 # ==============================================================================
 import logging
 from functools import partial
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Optional, Union
 
 import torch
 import torch.nn as nn
@@ -534,22 +534,22 @@ class Conv2DLayer(LudwigModule):
         img_width: int,
         in_channels: int,
         out_channels: int = 256,
-        kernel_size: Union[int, Tuple[int]] = 3,
-        stride: Union[int, Tuple[int]] = 1,
-        padding: Union[int, Tuple[int], str] = "valid",
-        dilation: Union[int, Tuple[int]] = 1,
+        kernel_size: Union[int, tuple[int]] = 3,
+        stride: Union[int, tuple[int]] = 1,
+        padding: Union[int, tuple[int], str] = "valid",
+        dilation: Union[int, tuple[int]] = 1,
         groups: int = 1,
         use_bias: bool = True,
         padding_mode: str = "zeros",
         norm: Optional[str] = None,
-        norm_params: Optional[Dict[str, Any]] = None,
+        norm_params: Optional[dict[str, Any]] = None,
         activation: str = "relu",
         dropout: float = 0,
         pool_function: int = "max",
-        pool_kernel_size: Union[int, Tuple[int]] = None,
+        pool_kernel_size: Union[int, tuple[int]] = None,
         pool_stride: Optional[int] = None,
-        pool_padding: Union[int, Tuple[int]] = 0,
-        pool_dilation: Union[int, Tuple[int]] = 1,
+        pool_padding: Union[int, tuple[int]] = 0,
+        pool_dilation: Union[int, tuple[int]] = 1,
     ):
         super().__init__()
 
@@ -628,26 +628,26 @@ class Conv2DStack(LudwigModule):
         self,
         img_height: int,
         img_width: int,
-        layers: Optional[List[Dict]] = None,
+        layers: Optional[list[dict]] = None,
         num_layers: Optional[int] = None,
         first_in_channels: Optional[int] = None,
         default_out_channels: int = 256,
-        default_kernel_size: Union[int, Tuple[int]] = 3,
-        default_stride: Union[int, Tuple[int]] = 1,
-        default_padding: Union[int, Tuple[int], str] = "valid",
-        default_dilation: Union[int, Tuple[int]] = 1,
+        default_kernel_size: Union[int, tuple[int]] = 3,
+        default_stride: Union[int, tuple[int]] = 1,
+        default_padding: Union[int, tuple[int], str] = "valid",
+        default_dilation: Union[int, tuple[int]] = 1,
         default_groups: int = 1,
         default_use_bias: bool = True,
         default_padding_mode: str = "zeros",
         default_norm: Optional[str] = None,
-        default_norm_params: Optional[Dict[str, Any]] = None,
+        default_norm_params: Optional[dict[str, Any]] = None,
         default_activation: str = "relu",
         default_dropout: int = 0,
         default_pool_function: int = "max",
-        default_pool_kernel_size: Union[int, Tuple[int]] = 2,
-        default_pool_stride: Union[int, Tuple[int]] = None,
-        default_pool_padding: Union[int, Tuple[int]] = 0,
-        default_pool_dilation: Union[int, Tuple[int]] = 1,
+        default_pool_kernel_size: Union[int, tuple[int]] = 2,
+        default_pool_stride: Union[int, tuple[int]] = None,
+        default_pool_padding: Union[int, tuple[int]] = 0,
+        default_pool_dilation: Union[int, tuple[int]] = 1,
     ):
         super().__init__()
 
@@ -766,7 +766,7 @@ class Conv2DStack(LudwigModule):
 
         return hidden
 
-    def _check_in_channels(self, first_in_channels: Optional[int], layers: Optional[List[Dict]]) -> None:
+    def _check_in_channels(self, first_in_channels: Optional[int], layers: Optional[list[dict]]) -> None:
         """Confirms that in_channels for first layer of the stack exists."""
 
         if first_in_channels is not None:
@@ -1064,7 +1064,7 @@ class ResNetBlockLayer(LudwigModule):
         is_bottleneck: bool,
         block_fn: Union[ResNetBlock, ResNetBottleneckBlock],
         num_blocks: int,
-        stride: Union[int, Tuple[int]] = 1,
+        stride: Union[int, tuple[int]] = 1,
         batch_norm_momentum: float = 0.1,
         batch_norm_epsilon: float = 0.001,
     ):
@@ -1141,12 +1141,12 @@ class ResNet(LudwigModule):
         first_in_channels: int,
         out_channels: int,
         resnet_size: int = 34,
-        kernel_size: Union[int, Tuple[int]] = 7,
-        conv_stride: Union[int, Tuple[int]] = 2,
-        first_pool_kernel_size: Union[int, Tuple[int]] = 3,
-        first_pool_stride: Union[int, Tuple[int]] = 2,
-        block_sizes: List[int] = None,
-        block_strides: List[Union[int, Tuple[int]]] = None,
+        kernel_size: Union[int, tuple[int]] = 7,
+        conv_stride: Union[int, tuple[int]] = 2,
+        first_pool_kernel_size: Union[int, tuple[int]] = 3,
+        first_pool_stride: Union[int, tuple[int]] = 2,
+        block_sizes: list[int] = None,
+        block_strides: list[Union[int, tuple[int]]] = None,
         batch_norm_momentum: float = 0.1,
         batch_norm_epsilon: float = 0.001,
     ):
@@ -1172,7 +1172,7 @@ class ResNet(LudwigModule):
           block_sizes: A list containing n values, where n is the number of sets of
             block layers desired. Each value should be the number of blocks in the
             i-th set.
-          block_strides: List of integers representing the desired stride size for
+          block_strides: list of integers representing the desired stride size for
             each of the sets of block layers. Should be same length as block_sizes.
         Raises:
           ValueError: if invalid version is selected.
@@ -1236,7 +1236,7 @@ class ResNet(LudwigModule):
 
         self._output_shape = (in_channels, img_height, img_width)
 
-    def get_is_bottleneck(self, resnet_size: int, block_sizes: List[int]) -> bool:
+    def get_is_bottleneck(self, resnet_size: int, block_sizes: list[int]) -> bool:
         if (resnet_size is not None and resnet_size >= 50) or (block_sizes is not None and sum(block_sizes) >= 16):
             return True
         return False
@@ -1246,7 +1246,7 @@ class ResNet(LudwigModule):
             return ResNetBottleneckBlock
         return ResNetBlock
 
-    def get_blocks(self, resnet_size: int, block_sizes: List[int], block_strides: List[int]) -> Tuple[List[int]]:
+    def get_blocks(self, resnet_size: int, block_sizes: list[int], block_strides: list[int]) -> tuple[list[int]]:
         if block_sizes is None:
             block_sizes = get_resnet_block_sizes(resnet_size)
         if block_strides is None:

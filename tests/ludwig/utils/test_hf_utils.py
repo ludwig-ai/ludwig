@@ -1,5 +1,4 @@
 import os
-from typing import Type
 
 import pytest
 from transformers import AlbertModel, BertModel, BertTokenizer
@@ -15,7 +14,7 @@ from ludwig.utils.hf_utils import load_pretrained_hf_model_from_hub, load_pretra
         (BertTokenizer, "bert-base-uncased"),
     ],
 )
-def test_load_pretrained_hf_model_from_hub(model: Type, name: str, tmpdir: os.PathLike):
+def test_load_pretrained_hf_model_from_hub(model: type, name: str, tmpdir: os.PathLike):
     """Ensure that the HF models used in ludwig download correctly."""
     cache_dir = os.path.join(tmpdir, name.replace(os.path.sep, "_") if name else str(model.__name__))
     os.makedirs(cache_dir, exist_ok=True)

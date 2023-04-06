@@ -1,4 +1,4 @@
-from typing import Dict, List, Type, Union
+from typing import Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.encoders.base import Encoder
@@ -26,7 +26,7 @@ def register_sequence_encoder(name: str):
     return wrap
 
 
-def register_encoder(name: str, features: Union[str, List[str]]):
+def register_encoder(name: str, features: Union[str, list[str]]):
     if isinstance(features, str):
         features = [features]
 
@@ -43,9 +43,9 @@ def register_encoder(name: str, features: Union[str, List[str]]):
     return wrap
 
 
-def get_encoder_cls(feature: str, name: str) -> Type[Encoder]:
+def get_encoder_cls(feature: str, name: str) -> type[Encoder]:
     return get_encoder_registry()[feature][name]
 
 
-def get_encoder_classes(feature: str) -> Dict[str, Type[Encoder]]:
+def get_encoder_classes(feature: str) -> dict[str, type[Encoder]]:
     return get_encoder_registry()[feature]

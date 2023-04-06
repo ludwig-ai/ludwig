@@ -15,7 +15,7 @@
 # ==============================================================================
 
 import time
-from typing import Type, Union
+from typing import Union
 
 import psutil
 import torch
@@ -91,6 +91,6 @@ class HorovodBackend(LocalPreprocessingMixin, Backend):
         # Return None since there is no Ray component
         return None
 
-    def tune_batch_size(self, evaluator_cls: Type[BatchSizeEvaluator], dataset_len: int) -> int:
+    def tune_batch_size(self, evaluator_cls: type[BatchSizeEvaluator], dataset_len: int) -> int:
         evaluator = evaluator_cls()
         return evaluator.select_best_batch_size(dataset_len)

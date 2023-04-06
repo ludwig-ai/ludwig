@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from typing import List, NamedTuple
+from typing import NamedTuple
 
 
 class H3Data(NamedTuple):
@@ -21,11 +21,11 @@ class H3Data(NamedTuple):
     edge: int
     resolution: int
     base_cell: int
-    cells: List[int]
+    cells: list[int]
 
 
 def set_bit(v, index, x):
-    """Set the index:th bit of v to 1 if x is truthy, else to 0, and return the new value."""
+    """set the index:th bit of v to 1 if x is truthy, else to 0, and return the new value."""
     mask = 1 << index  # Compute mask, an integer with just bit 'index' set.
     v &= ~mask  # Clear the bit indicated by the mask (if x is False)
     if x:
@@ -83,7 +83,7 @@ def h3_component(h3_long: int, i: int) -> int:
     return bitslice(h3_long, 64 - 19 - 3 * i, 3)
 
 
-def h3_components(h3_long: int) -> List[int]:
+def h3_components(h3_long: int) -> list[int]:
     return [h3_component(h3_long, i) for i in range(1, h3_resolution(h3_long) + 1)]
 
 

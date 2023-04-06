@@ -15,10 +15,10 @@
 # ==============================================================================
 import logging
 import warnings
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from io import BytesIO
-from typing import Callable, List, Optional, Tuple, Union
+from typing import Optional, Union
 
 import numpy as np
 import torch
@@ -81,7 +81,7 @@ def get_gray_default_image(num_channels: int, height: int, width: int) -> np.nda
 
 
 @DeveloperAPI
-def get_average_image(image_lst: List[np.ndarray]) -> np.array:
+def get_average_image(image_lst: list[np.ndarray]) -> np.array:
     return np.mean([x for x in image_lst if x is not None], axis=(0), dtype=np.float32)
 
 
@@ -145,7 +145,7 @@ def get_image_read_mode_from_num_channels(num_channels: int) -> ImageReadMode:
 @DeveloperAPI
 def read_image_from_path(
     path: str, num_channels: Optional[int] = None, return_num_bytes=False
-) -> Union[Optional[torch.Tensor], Tuple[Optional[torch.Tensor], int]]:
+) -> Union[Optional[torch.Tensor], tuple[Optional[torch.Tensor], int]]:
     """Reads image from path.
 
     Useful for reading from a small number of paths. For more intensive reads, use backend.read_binary_files instead. If
@@ -215,13 +215,13 @@ def read_image_as_numpy(bytes_obj: Optional[bytes] = None) -> Optional[torch.Ten
 @DeveloperAPI
 def pad(
     img: torch.Tensor,
-    new_size: Union[int, Tuple[int, int]],
+    new_size: Union[int, tuple[int, int]],
 ) -> torch.Tensor:
     """torchscript-compatible implementation of pad.
 
     Args:
         img (torch.Tensor): image with shape [..., height, width] to pad
-        new_size (Union[int, Tuple[int, int]]): size to pad to. If int, resizes to square image of that size.
+        new_size (Union[int, tuple[int, int]]): size to pad to. If int, resizes to square image of that size.
 
     Returns:
         torch.Tensor: padded image of size [..., size[0], size[1]] or [..., size, size] if size is int.
@@ -238,13 +238,13 @@ def pad(
 @DeveloperAPI
 def crop(
     img: torch.Tensor,
-    new_size: Union[int, Tuple[int, int]],
+    new_size: Union[int, tuple[int, int]],
 ) -> torch.Tensor:
     """torchscript-compatible implementation of crop.
 
     Args:
         img (torch.Tensor): image with shape [..., height, width] to crop
-        size (Union[int, Tuple[int, int]]): size to crop to. If int, crops to square image of that size.
+        size (Union[int, tuple[int, int]]): size to crop to. If int, crops to square image of that size.
 
     Returns:
         torch.Tensor: cropped image of size [..., size[0], size[1]] or [..., size, size] if size is int.
@@ -254,12 +254,12 @@ def crop(
 
 
 @DeveloperAPI
-def crop_or_pad(img: torch.Tensor, new_size: Union[int, Tuple[int, int]]):
+def crop_or_pad(img: torch.Tensor, new_size: Union[int, tuple[int, int]]):
     """torchscript-compatible implementation of resize using constants.CROP_OR_PAD.
 
     Args:
         img (torch.Tensor): image with shape [..., height, width] to resize
-        new_size (Union[int, Tuple[int, int]]): size to resize to. If int, resizes to square image of that size.
+        new_size (Union[int, tuple[int, int]]): size to resize to. If int, resizes to square image of that size.
 
     Returns:
         torch.Tensor: resized image of size [..., size[0], size[1]] or [..., size, size] if size is int.
@@ -275,7 +275,7 @@ def crop_or_pad(img: torch.Tensor, new_size: Union[int, Tuple[int, int]]):
 @DeveloperAPI
 def resize_image(
     img: torch.Tensor,
-    new_size: Union[int, Tuple[int, int]],
+    new_size: Union[int, tuple[int, int]],
     resize_method: str,
     crop_or_pad_constant: str = CROP_OR_PAD,
     interpolate_constant: str = INTERPOLATE,
@@ -284,7 +284,7 @@ def resize_image(
 
     Args:
         img (torch.Tensor): image with shape [..., height, width] to resize
-        new_size (Union[int, Tuple[int, int]]): size to resize to. If int, resizes to square image of that size.
+        new_size (Union[int, tuple[int, int]]): size to resize to. If int, resizes to square image of that size.
         resize_method (str): method to use for resizing. Either constants.CROP_OR_PAD or constants.INTERPOLATE.
 
     Returns:
@@ -319,7 +319,7 @@ def num_channels_in_image(img: torch.Tensor):
 
 
 @DeveloperAPI
-def to_tuple(v: Union[int, Tuple[int, int]]) -> Tuple[int, int]:
+def to_tuple(v: Union[int, tuple[int, int]]) -> tuple[int, int]:
     """Converts int or tuple to tuple of ints."""
     if torch.jit.isinstance(v, int):
         return v, v
@@ -349,11 +349,11 @@ def to_np_tuple(prop: Union[int, Iterable]) -> np.ndarray:
 def get_img_output_shape(
     img_height: int,
     img_width: int,
-    kernel_size: Union[int, Tuple[int]],
-    stride: Union[int, Tuple[int]],
-    padding: Union[int, Tuple[int], str],
-    dilation: Union[int, Tuple[int]],
-) -> Tuple[int]:
+    kernel_size: Union[int, tuple[int]],
+    stride: Union[int, tuple[int]],
+    padding: Union[int, tuple[int], str],
+    dilation: Union[int, tuple[int]],
+) -> tuple[int]:
     """Returns the height and width of an image after a 2D img op.
 
     Currently supported for Conv2D, MaxPool2D and AvgPool2d ops.
@@ -378,7 +378,7 @@ def get_img_output_shape(
 torchvision_model_registry = Registry()
 
 
-def register_torchvision_model_variants(variants: List[TVModelVariant]):
+def register_torchvision_model_variants(variants: list[TVModelVariant]):
     def wrap(cls):
         # prime with empty placeholder
         torchvision_model_registry[cls.torchvision_model_type] = {}

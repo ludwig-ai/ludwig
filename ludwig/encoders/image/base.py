@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Optional, Union
 
 import torch
 
@@ -43,34 +43,34 @@ class Stacked2DCNN(ImageEncoder):
         self,
         height: int,
         width: int,
-        conv_layers: Optional[List[Dict]] = None,
+        conv_layers: Optional[list[dict]] = None,
         num_conv_layers: Optional[int] = None,
         num_channels: int = None,
         out_channels: int = 32,
-        kernel_size: Union[int, Tuple[int]] = 3,
-        stride: Union[int, Tuple[int]] = 1,
-        padding: Union[int, Tuple[int], str] = "valid",
-        dilation: Union[int, Tuple[int]] = 1,
+        kernel_size: Union[int, tuple[int]] = 3,
+        stride: Union[int, tuple[int]] = 1,
+        padding: Union[int, tuple[int], str] = "valid",
+        dilation: Union[int, tuple[int]] = 1,
         conv_use_bias: bool = True,
         padding_mode: str = "zeros",
         conv_norm: Optional[str] = None,
-        conv_norm_params: Optional[Dict[str, Any]] = None,
+        conv_norm_params: Optional[dict[str, Any]] = None,
         conv_activation: str = "relu",
         conv_dropout: int = 0,
         pool_function: str = "max",
-        pool_kernel_size: Union[int, Tuple[int]] = 2,
-        pool_stride: Union[int, Tuple[int]] = None,
-        pool_padding: Union[int, Tuple[int]] = 0,
-        pool_dilation: Union[int, Tuple[int]] = 1,
+        pool_kernel_size: Union[int, tuple[int]] = 2,
+        pool_stride: Union[int, tuple[int]] = None,
+        pool_padding: Union[int, tuple[int]] = 0,
+        pool_dilation: Union[int, tuple[int]] = 1,
         groups: int = 1,
-        fc_layers: Optional[List[Dict]] = None,
+        fc_layers: Optional[list[dict]] = None,
         num_fc_layers: Optional[int] = 1,
         output_size: int = 128,
         fc_use_bias: bool = True,
         fc_weights_initializer: str = "xavier_uniform",
         fc_bias_initializer: str = "zeros",
         fc_norm: Optional[str] = None,
-        fc_norm_params: Optional[Dict[str, Any]] = None,
+        fc_norm_params: Optional[dict[str, Any]] = None,
         fc_activation: str = "relu",
         fc_dropout: float = 0,
         encoder_config=None,
@@ -136,7 +136,7 @@ class Stacked2DCNN(ImageEncoder):
             default_dropout=fc_dropout,
         )
 
-    def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor) -> dict[str, torch.Tensor]:
         """
         :param inputs: The inputs fed into the encoder.
                 Shape: [batch x channels x height x width], type torch.uint8
@@ -171,20 +171,20 @@ class ResNetEncoder(ImageEncoder):
         resnet_size: int = 50,
         num_channels: int = 3,
         out_channels: int = 16,
-        kernel_size: Union[int, Tuple[int]] = 3,
-        conv_stride: Union[int, Tuple[int]] = 1,
-        first_pool_kernel_size: Union[int, Tuple[int]] = None,
-        first_pool_stride: Union[int, Tuple[int]] = None,
+        kernel_size: Union[int, tuple[int]] = 3,
+        conv_stride: Union[int, tuple[int]] = 1,
+        first_pool_kernel_size: Union[int, tuple[int]] = None,
+        first_pool_stride: Union[int, tuple[int]] = None,
         batch_norm_momentum: float = 0.1,
         batch_norm_epsilon: float = 0.001,
-        fc_layers: Optional[List[Dict]] = None,
+        fc_layers: Optional[list[dict]] = None,
         num_fc_layers: Optional[int] = 1,
         output_size: int = 256,
         use_bias: bool = True,
         weights_initializer: str = "xavier_uniform",
         bias_initializer: str = "zeros",
         norm: Optional[str] = None,
-        norm_params: Optional[Dict[str, Any]] = None,
+        norm_params: Optional[dict[str, Any]] = None,
         activation: str = "relu",
         dropout: float = 0,
         encoder_config=None,
@@ -232,7 +232,7 @@ class ResNetEncoder(ImageEncoder):
             default_dropout=dropout,
         )
 
-    def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor) -> dict[str, torch.Tensor]:
         hidden = self.resnet(inputs)
         axes = [2, 3]
         hidden = torch.mean(hidden, axes)
@@ -300,7 +300,7 @@ class MLPMixerEncoder(ImageEncoder):
 
         self._output_shape = self.mlp_mixer.output_shape
 
-    def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor) -> dict[str, torch.Tensor]:
         hidden = self.mlp_mixer(inputs)
         return {"encoder_output": hidden}
 
@@ -399,7 +399,7 @@ class ViTEncoder(ImageEncoder):
         self._output_shape = (transformer.config.hidden_size,)
         self.output_attentions = output_attentions
 
-    def forward(self, inputs: torch.Tensor, head_mask: torch.Tensor = None) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor, head_mask: torch.Tensor = None) -> dict[str, torch.Tensor]:
         output = self.transformer.module(inputs, head_mask=head_mask, output_attentions=self.output_attentions)
         return_dict = {"encoder_output": output.pooler_output}
         if self.output_attentions:

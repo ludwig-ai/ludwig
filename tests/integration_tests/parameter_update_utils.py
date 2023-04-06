@@ -1,5 +1,6 @@
 import logging
-from typing import Callable, Tuple, Union
+from collections.abc import Callable
+from typing import Union
 
 import torch
 
@@ -14,12 +15,12 @@ class ParameterUpdateError(Exception):
 
 def check_module_parameters_updated(
     module: LudwigModule,
-    module_input_args: Tuple,
+    module_input_args: tuple,
     module_target: torch.Tensor,
     loss_function: Union[Callable, None] = None,
     max_steps: int = 1,
     learning_rate: float = 0.001,
-) -> Tuple:
+) -> tuple:
     """
     Reports on the number of parameters in a Ludwig component and their update status.
     Args:
@@ -31,7 +32,7 @@ def check_module_parameters_updated(
             updates.
         learning_rate: (float, default=0.001) learning rate for the optimizer
 
-    Returns: Tuple(frozen_parameters, trainable_parameters, parameters_updated, not_updated)
+    Returns: tuple(frozen_parameters, trainable_parameters, parameters_updated, not_updated)
         frozen_parameters: count of frozen parameters
         trainable_parameters: count of trainable parameters
         parameters_updated: count of trainable parameters that were updated

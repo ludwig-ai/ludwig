@@ -13,7 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Optional, Union
 
 import torch
 from torch import nn
@@ -29,14 +29,14 @@ DEVICE = get_torch_device()
 
 
 def embedding_matrix(
-    vocab: List[str],
+    vocab: list[str],
     embedding_size: int,
     representation: str = "dense",
     embeddings_trainable: bool = True,
     pretrained_embeddings: Optional[str] = None,
     force_embedding_size: bool = False,
-    embedding_initializer: Optional[Union[str, Dict]] = None,
-) -> Tuple[nn.Module, int]:
+    embedding_initializer: Optional[Union[str, dict]] = None,
+) -> tuple[nn.Module, int]:
     """Returns initialized torch.nn.Embedding module and embedding size."""
 
     vocab_size = len(vocab)
@@ -85,7 +85,7 @@ def embedding_matrix(
 
 
 def embedding_matrix_on_device(
-    vocab: List[str],
+    vocab: list[str],
     embedding_size: int,
     representation: str = "dense",
     embeddings_trainable: bool = True,
@@ -93,7 +93,7 @@ def embedding_matrix_on_device(
     force_embedding_size: bool = False,
     embeddings_on_cpu: bool = False,
     embedding_initializer: Optional[str] = None,
-) -> Tuple[nn.Module, int]:
+) -> tuple[nn.Module, int]:
     embeddings, embedding_size = embedding_matrix(
         vocab,
         embedding_size,
@@ -116,7 +116,7 @@ class Embed(LudwigModule):
 
     def __init__(
         self,
-        vocab: List[str],
+        vocab: list[str],
         embedding_size: int,
         representation: str = "dense",
         embeddings_trainable: bool = True,
@@ -124,7 +124,7 @@ class Embed(LudwigModule):
         force_embedding_size: bool = False,
         embeddings_on_cpu: bool = False,
         dropout: float = 0.0,
-        embedding_initializer: Optional[Union[str, Dict]] = None,
+        embedding_initializer: Optional[Union[str, dict]] = None,
     ):
         super().__init__()
         self.supports_masking = True
@@ -167,11 +167,11 @@ class Embed(LudwigModule):
 
 
 class EmbedSet(LudwigModule):
-    """Module to embed Set data types, works on multi-hot encoded input."""
+    """Module to embed set data types, works on multi-hot encoded input."""
 
     def __init__(
         self,
-        vocab: List[str],
+        vocab: list[str],
         embedding_size: int,
         representation: str = "dense",
         embeddings_trainable: bool = True,
@@ -179,7 +179,7 @@ class EmbedSet(LudwigModule):
         force_embedding_size: bool = False,
         embeddings_on_cpu: bool = False,
         dropout: float = 0.0,
-        embedding_initializer: Optional[Union[str, Dict]] = None,
+        embedding_initializer: Optional[Union[str, dict]] = None,
         aggregation_function: str = "sum",
     ):
         super().__init__()
@@ -247,7 +247,7 @@ class EmbedWeighted(LudwigModule):
 
     def __init__(
         self,
-        vocab: List[str],
+        vocab: list[str],
         embedding_size: int,
         representation: str = "dense",
         embeddings_trainable: bool = True,
@@ -310,7 +310,7 @@ class EmbedWeighted(LudwigModule):
 # class EmbedSparse(LudwigModule):
 #     def __init__(
 #             self,
-#             vocab: List[str],
+#             vocab: list[str],
 #             embedding_size: int = 50,
 #             representation: str = 'dense',
 #             embeddings_trainable: bool = True,
@@ -373,7 +373,7 @@ class EmbedWeighted(LudwigModule):
 class EmbedSequence(LudwigModule):
     def __init__(
         self,
-        vocab: List[str],
+        vocab: list[str],
         embedding_size: int,
         max_sequence_length: int,
         representation: str = "dense",

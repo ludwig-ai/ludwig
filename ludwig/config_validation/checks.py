@@ -1,7 +1,8 @@
 """Checks that are not easily covered by marshmallow JSON schema validation like parameter interdependencies."""
 
 from abc import ABC, abstractmethod
-from typing import Callable, TYPE_CHECKING
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
@@ -26,7 +27,7 @@ from ludwig.utils.misc_utils import merge_dict
 if TYPE_CHECKING:
     from ludwig.schema.model_config import ModelConfig
 
-# Set of all sequence feature types.
+# set of all sequence feature types.
 SEQUENCE_OUTPUT_FEATURE_TYPES = {SEQUENCE, TEXT, SET, VECTOR}
 
 
@@ -143,7 +144,7 @@ def check_ray_backend_in_memory_preprocessing(config: "ModelConfig") -> None:  #
     if config.backend.type == "ray" and not config.trainer.preprocessing.in_memory:
         raise ConfigValidationError(
             "RayBackend does not support lazy loading of data files at train time. "
-            "Set preprocessing config `in_memory: True`"
+            "set preprocessing config `in_memory: True`"
         )
 
     for input_feature in config.input_features:
@@ -151,7 +152,7 @@ def check_ray_backend_in_memory_preprocessing(config: "ModelConfig") -> None:  #
             if not input_feature.preprocessing.in_memory and config.backend.type != "ray":
                 raise ConfigValidationError(
                     "RayBackend does not support lazy loading of data files at train time. "
-                    f"Set preprocessing config `in_memory: True` for input feature {input_feature.name}"
+                    f"set preprocessing config `in_memory: True` for input feature {input_feature.name}"
                 )
 
 
@@ -414,7 +415,7 @@ def check_concat_combiner_requirements(config: "ModelConfig") -> None:  # noqa: 
     if has_unreduced_sequence_feature and has_non_sequence_feature:
         raise ConfigValidationError(
             "The concat combiner cannot receive a mix of unreduced sequence features (3D) and non-sequence features "
-            "(2D). Options: 1) Set reduce_output in sequence feature encoders to a value other than None to ensure 2D "
+            "(2D). Options: 1) set reduce_output in sequence feature encoders to a value other than None to ensure 2D "
             "encoder outputs, 2) Choose a different combiner like `sequence_concat` which can handle a mix of 2D and "
             "3D encoder output shapes, or 3) Remove features to ensure that output shapes from all encoders are the "
             "same dimension (all 2D or all 3D)."

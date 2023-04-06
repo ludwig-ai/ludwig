@@ -87,7 +87,7 @@ def NormParamsField(description: str = None, parameter_metadata: ParameterMetada
 
 def FCLayersField(description: str = None, parameter_metadata: ParameterMetadata = None) -> Field:
     description = description or (
-        "List of dictionaries containing the parameters of all the fully connected layers. "
+        "list of dictionaries containing the parameters of all the fully connected layers. "
         "The length of the list determines the number of stacked fully connected layers "
         "and the content of each dictionary determines the parameters for a specific layer. "
         "The available parameters for each layer are: `activation`, `dropout`, `norm`, `norm_params`, "

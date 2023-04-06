@@ -1,6 +1,7 @@
 import contextlib
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, Optional, Tuple, Type, TYPE_CHECKING
+from collections.abc import Callable
+from typing import Any, Optional, TYPE_CHECKING
 
 import torch
 from torch import nn
@@ -98,7 +99,7 @@ class DistributedStrategy(ABC):
 
     @classmethod
     @abstractmethod
-    def get_trainer_cls(cls, backend_config: "BackendConfig") -> Tuple[Type["DataParallelTrainer"], Dict[str, Any]]:
+    def get_trainer_cls(cls, backend_config: "BackendConfig") -> tuple[type["DataParallelTrainer"], dict[str, Any]]:
         pass
 
     @abstractmethod
@@ -181,7 +182,7 @@ class LocalStrategy(DistributedStrategy):
         return None
 
     @classmethod
-    def get_trainer_cls(cls, backend_config: "BackendConfig") -> Tuple[Type["DataParallelTrainer"], Dict[str, Any]]:
+    def get_trainer_cls(cls, backend_config: "BackendConfig") -> tuple[type["DataParallelTrainer"], dict[str, Any]]:
         raise ValueError("Cannot construct a trainer from a local strategy.")
 
     def shutdown(self):

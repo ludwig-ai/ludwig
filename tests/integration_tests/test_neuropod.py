@@ -15,7 +15,7 @@
 import os
 import platform
 import sys
-from typing import List, Union
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -112,7 +112,7 @@ def test_neuropod_torchscript(csv_filename, tmpdir):
 
     neuropod_module = load_neuropod(neuropod_path)
 
-    def to_input(s: pd.Series) -> Union[List[str], torch.Tensor]:
+    def to_input(s: pd.Series) -> Union[list[str], torch.Tensor]:
         if s.dtype == "object":
             return np.array(s.to_list())
         return s.to_numpy().astype(np.float32)

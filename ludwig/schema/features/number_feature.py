@@ -1,4 +1,4 @@
-from typing import List, Tuple, Union
+from typing import Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import MEAN_SQUARED_ERROR, MODEL_ECD, MODEL_GBM, NUMBER
@@ -108,7 +108,7 @@ class NumberOutputFeatureConfig(NumberOutputFeatureConfigMixin, BaseOutputFeatur
 
     type: str = schema_utils.ProtectedString(NUMBER)
 
-    clip: Union[List[int], Tuple[int]] = schema_utils.FloatRangeTupleDataclassField(
+    clip: Union[list[int], tuple[int]] = schema_utils.FloatRangeTupleDataclassField(
         n=2,
         default=None,
         allow_none=True,
@@ -127,7 +127,7 @@ class NumberOutputFeatureConfig(NumberOutputFeatureConfigMixin, BaseOutputFeatur
 
     dependencies: list = schema_utils.List(
         default=[],
-        description="List of input features that this feature depends on.",
+        description="list of input features that this feature depends on.",
         parameter_metadata=FEATURE_METADATA[NUMBER]["dependencies"],
     )
 

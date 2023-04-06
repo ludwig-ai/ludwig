@@ -2,7 +2,7 @@ import copy
 import logging
 import os
 from pprint import pformat
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 import pandas as pd
 import yaml
@@ -82,11 +82,11 @@ def hyperopt(
     skip_save_eval_stats: bool = False,
     skip_save_hyperopt_statistics: bool = False,
     output_directory: str = "results",
-    gpus: Union[str, int, List[int]] = None,
+    gpus: Union[str, int, list[int]] = None,
     gpu_memory_limit: Optional[float] = None,
     allow_parallel_threads: bool = True,
-    callbacks: List[Callback] = None,
-    tune_callbacks: List[TuneCallback] = None,
+    callbacks: list[Callback] = None,
+    tune_callbacks: list[TuneCallback] = None,
     backend: Union[Backend, str] = None,
     random_seed: int = default_random_seed,
     hyperopt_log_verbosity: int = 3,
@@ -193,7 +193,7 @@ def hyperopt(
 
     # Return
 
-    :return: (List[dict]) List of results for each trial, ordered by
+    :return: (list[dict]) list of results for each trial, ordered by
         descending performance on the target metric.
     """
     from ludwig.hyperopt.execution import get_build_hyperopt_executor, RayTuneExecutor

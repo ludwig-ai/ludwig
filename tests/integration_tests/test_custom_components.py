@@ -1,6 +1,5 @@
 import os
 import tempfile
-from typing import Dict
 
 import torch
 from marshmallow_dataclass import dataclass
@@ -65,11 +64,11 @@ class CustomTestCombinerConfig(BaseCombinerConfig):
 
 @register_combiner(CustomTestCombinerConfig)
 class CustomTestCombiner(Combiner):
-    def __init__(self, input_features: Dict = None, config: CustomTestCombinerConfig = None, **kwargs):
+    def __init__(self, input_features: dict = None, config: CustomTestCombinerConfig = None, **kwargs):
         super().__init__(input_features)
         self.foo = config.foo
 
-    def forward(self, inputs: Dict) -> Dict:  # encoder outputs
+    def forward(self, inputs: dict) -> dict:  # encoder outputs
         if not self.foo:
             raise ValueError("expected foo to be True")
 

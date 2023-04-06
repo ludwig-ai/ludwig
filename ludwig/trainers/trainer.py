@@ -23,7 +23,7 @@ import signal
 import sys
 import threading
 import time
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 
 import numpy as np
 import psutil
@@ -90,7 +90,7 @@ class Trainer(BaseTrainer):
         skip_save_model: bool = False,
         skip_save_progress: bool = False,
         skip_save_log: bool = False,
-        callbacks: List = None,
+        callbacks: list = None,
         report_tqdm_to_ray=False,
         random_seed: float = default_random_seed,
         distributed: Optional[DistributedStrategy] = None,
@@ -117,7 +117,7 @@ class Trainer(BaseTrainer):
         :param skip_save_log: Disables saving TensorBoard logs. By default Ludwig saves logs for the TensorBoard, but if
                 it is not needed turning it off can slightly increase the overall speed. (default: False).
         :type skip_save_log: Boolean
-        :param callbacks: List of `ludwig.callbacks.Callback` objects that provide hooks into the Ludwig pipeline.
+        :param callbacks: list of `ludwig.callbacks.Callback` objects that provide hooks into the Ludwig pipeline.
                 (default: None).
         :type callbacks: list
         :param report_tqdm_to_ray: Enables using the ray based tqdm Callback for progress bar reporting
@@ -215,8 +215,8 @@ class Trainer(BaseTrainer):
         self.original_sigint_handler = None
 
     def train_step(
-        self, inputs: Dict[str, torch.Tensor], targets: Dict[str, torch.Tensor], should_step: bool = True
-    ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+        self, inputs: dict[str, torch.Tensor], targets: dict[str, torch.Tensor], should_step: bool = True
+    ) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
         """Performs a single training step.
 
         Params:
@@ -376,7 +376,7 @@ class Trainer(BaseTrainer):
         skip_save_progress = self.skip_save_progress
         skip_save_log = self.skip_save_log
 
-        # Set temporary values
+        # set temporary values
         self.skip_save_model = True
         self.skip_save_progress = True
         self.skip_save_log = True
@@ -434,7 +434,7 @@ class Trainer(BaseTrainer):
         metrics_names,
         save_path,
         loss: torch.Tensor,
-        all_losses: Dict[str, torch.Tensor],
+        all_losses: dict[str, torch.Tensor],
         early_stopping_steps: int,
     ) -> bool:
         """Runs evaluation over training, validation, and test sets.

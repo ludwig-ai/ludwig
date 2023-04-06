@@ -18,8 +18,9 @@ import logging
 import math
 import queue
 import threading
+from collections.abc import Iterable, Iterator
 from functools import lru_cache
-from typing import Dict, Iterable, Iterator, Literal, Optional, Union
+from typing import Literal, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -74,7 +75,7 @@ class RayDataset(Dataset):
     def __init__(
         self,
         df: Union[str, DataFrame],
-        features: Dict[str, FeatureConfigDict],
+        features: dict[str, FeatureConfigDict],
         training_set_metadata: TrainingSetMetadataDict,
         backend: Backend,
         window_size_bytes: Optional[Union[int, Literal["auto"]]] = None,
@@ -221,7 +222,7 @@ class RayDatasetShard(Dataset):
     def __init__(
         self,
         dataset_shard: DatasetPipeline,
-        features: Dict[str, FeatureConfigDict],
+        features: dict[str, FeatureConfigDict],
         training_set_metadata: TrainingSetMetadataDict,
     ):
         self.dataset_shard = dataset_shard
@@ -293,7 +294,7 @@ class RayDatasetBatcher(Batcher):
     def __init__(
         self,
         dataset_epoch_iterator: Iterator[DatasetPipeline],
-        features: Dict[str, Dict],
+        features: dict[str, dict],
         training_set_metadata: TrainingSetMetadataDict,
         batch_size: int,
         samples_per_epoch: int,
@@ -380,7 +381,7 @@ class RayDatasetBatcher(Batcher):
         except StopIteration:
             self._last_batch = True
 
-    def _prepare_batch(self, batch: pd.DataFrame) -> Dict[str, np.ndarray]:
+    def _prepare_batch(self, batch: pd.DataFrame) -> dict[str, np.ndarray]:
         res = {}
         for c in self.columns:
             if batch[c].values.dtype == "object":
