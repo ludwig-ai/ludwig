@@ -9,7 +9,7 @@ on:
   pull_request:
     branches: ["master", "release-*"]
 
-# we want an ongoing run of this workflow to be canceled by a later commit
+# We want an ongoing run of this workflow to be canceled by a later commit
 # so that there is only one concurrent run of this workflow for each branch
 concurrency:
   group: pytest-${{ github.head_ref || github.sha }}
@@ -22,7 +22,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        python-version: ["3.8", "3.8"]
+        python-version: ["3.8", "3.9", "3.10"]
         test-markers: ["not distributed", "distributed"]
         include:
           - python-version: "3.8"
