@@ -50,7 +50,7 @@ class LLM(BaseModel):
             # min_new_tokens=9,
             # max_new_tokens=9,
         )
-        self.max_new_tokens = 8
+        self.max_new_tokens = 10
 
         # ================ Inputs ================
         try:
@@ -151,7 +151,7 @@ class LLM(BaseModel):
                 # Unnormalized log probabilities
                 # It is a tuple containing one entry for each generated token. Each tuple member is a tensor
                 # containing the log probabilities from the model, for all words in the vocabulary.
-                "probabilities": outputs.scores,
+                # "probabilities": outputs.scores,
             }
         }
 
