@@ -1,3 +1,4 @@
+import copy
 import logging
 import os
 from typing import Dict, Tuple, Union
@@ -133,6 +134,66 @@ class LLM(BaseModel):
 
     def extract(self, outputs):
         return {self.config_obj.output_features[0].name: {"predictions": outputs}}
+
+    def realign_target_tensor(self, targets, predictions, of_name: str):
+        """Realigns the target tensor with the predictions.
+
+        This is necessary for text metrics that require the target and prediction
+        to be of the same length.
+
+        Args:
+            targets: The target tensor.
+            predictions: The prediction tensor.
+
+        Returns:
+            The realigned target tensor.
+        """
+        _targets = copy.deepcopy(targets)
+        _targets[of_name] = torch.nn.functional.pad(
+            _targets.get(of_name),
+            (0, predictions[of_name].get("predictions").size()[1] - _targets.get(of_name).size()[1]),
+            # TODO: Change to 0 when we have a way to calculate 2D tensor lengths
+            # correctly/deterministically downstream in the sequence_length_2D function
+            value=1,
+        )
+        return _targets
+
+    def update_metrics(self, targets, predictions):
+        """Updates the model's metrics given targets and predictions."""
+        for of_name, of_obj in self.output_features.items():
+            # Align the target length with the predictions length to enable text metric evaluation.
+            _targets = self.realign_target_tensor(targets, predictions, of_name)
+            of_obj.update_metrics(_targets[of_name], predictions[of_name])
+
+        # To update eval-loss, we need "logits" but right now we're only producing "predictions"
+        # This is required by the SequenceSoftmaxCrossEntropyLoss function
+        # eval_loss, additional_losses = self.eval_loss(targets, predictions)
+        # self.eval_loss_metric.update(eval_loss)
+        # self.eval_additional_losses_metrics.update(additional_losses)
+
+    def eval_loss(self, targets, predictions):
+        """Computes all evaluation losses for the model given targets and predictions.
+
+        Args:
+            targets: A dictionary of target names to target tensors.
+            predictions: A dictionary of output names to output tensors.
+
+        Returns:
+            A tuple of loss values for eval losses and additional losses.
+        """
+        eval_loss = 0
+        for of_name, of_obj in self.output_features.items():
+            # Align the target length with the predictions length to enable text metric evaluation.
+            _targets = self.realign_target_tensor(targets, predictions, of_name)
+            of_eval_loss = of_obj.eval_loss(_targets[of_name], predictions[of_name])
+            eval_loss += of_obj.loss.weight * of_eval_loss
+
+        additional_loss = 0
+        additional_losses = self.losses()
+        if additional_losses:
+            additional_loss = torch.sum(torch.stack(additional_losses))  # other losses
+
+        return eval_loss, additional_loss
 
     def outputs_to_predictions(self, outputs: Dict[str, torch.Tensor]) -> Dict[str, Dict[str, torch.Tensor]]:
         """Returns the model's predictions given the raw model outputs."""

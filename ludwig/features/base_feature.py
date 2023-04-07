@@ -343,11 +343,13 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         """
         for metric_name, metric_fn in self._metric_functions.items():
             prediction_key = get_metric_tensor_input(metric_name)
-            if metric_name == "loss":
+            # Perplexity needs to be computed from "probabilities" tensor, but right now
+            # we're only producing a "predictions" tensor as output from the forward pass.
+            if metric_name in ("loss", "perplexity"):
                 continue
-            print("METRIC NAME", metric_name, predictions, prediction_key)
             metric_fn = metric_fn.to(predictions[prediction_key].device)
             metric_fn.update(predictions[prediction_key].detach(), targets)
+            print("METRIC NAME", metric_name, predictions, prediction_key)
 
     def get_metrics(self):
         metric_vals = {}
