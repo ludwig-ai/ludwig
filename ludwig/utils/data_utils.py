@@ -869,6 +869,7 @@ def figure_data_format_dataset(dataset):
     elif isinstance(dataset, dict):
         return dict
     elif isinstance(dataset, str):
+        dataset = dataset.strip()
         if dataset.startswith("ludwig://"):
             return "ludwig"
 
