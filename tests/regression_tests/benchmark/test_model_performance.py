@@ -12,8 +12,12 @@ SKIPPED_CONFIG_ISSUES = {
     "mercedes_benz_greener.ecd.yaml": "https://github.com/ludwig-ai/ludwig/issues/2978",
     "sarcos.ecd.yaml": "Takes more than 300s",
 }
-
-CONFIGS_REQUIRING_DATASET_CREDENTIALS = {"mercedes_benz_greener.gbm.yaml", "mercedes_benz_greener.ecd.yaml", "ames_housing.gbm.yaml", "ames_housing.ecd.yaml"}
+CONFIGS_REQUIRING_DATASET_CREDENTIALS = {
+    "mercedes_benz_greener.gbm.yaml",
+    "mercedes_benz_greener.ecd.yaml",
+    "ames_housing.gbm.yaml",
+    "ames_housing.ecd.yaml",
+}
 RUN_PRIVATE = parse_flag_from_env("RUN_PRIVATE", default=False)
 
 
