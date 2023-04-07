@@ -85,6 +85,13 @@ def test_get_abs_path():
     assert get_abs_path(None, "b.jpg") == "b.jpg"
 
 
+@pytest.mark.parametrize(
+    "path, expected_format", [("s3://path/to.parquet ", "parquet"), ("/Users/path/to.csv \n", "csv")]
+)
+def test_figure_data_format_dataset_strip(path, expected_format):
+    assert figure_data_format_dataset(path) == expected_format
+
+
 @pytest.mark.distributed
 def test_figure_data_format_dataset():
     assert figure_data_format_dataset({"a": "b"}) == dict
