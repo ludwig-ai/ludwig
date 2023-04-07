@@ -50,6 +50,7 @@ class LLM(BaseModel):
             # min_new_tokens=9,
             # max_new_tokens=9,
         )
+        self.max_new_tokens = 8
 
         # ================ Inputs ================
         try:
@@ -123,17 +124,36 @@ class LLM(BaseModel):
 
         print("INPUTS", inputs[self.config_obj.input_features[0].name].type(torch.int32))
         with torch.no_grad():
-            generated_ids = self.model.generate(
+            outputs = self.model.generate(
                 input_ids=inputs[self.config_obj.input_features[0].name].type(torch.int32),
                 attention_mask=mask,
                 generation_config=self.generation_config,
-                max_new_tokens=4,
+                max_new_tokens=self.max_new_tokens,
+                return_dict_in_generate=True,
+                output_scores=True,
             )
-        print("OUTPUTS", generated_ids)
-        return self.extract(generated_ids)
+            # Computes the transition scores of sequences given the generation scores (and beam indices,
+            # if beam search was used).
+            # transition_scores = self.model.compute_transition_scores(
+            #     outputs.sequences,
+            #     outputs.scores,
+            #     outputs.beam_indices,
+            #     normalize_logits=True,
+            # )
+        print("OUTPUTS", outputs)
+        return self.extract(outputs)
 
     def extract(self, outputs):
-        return {self.config_obj.output_features[0].name: {"predictions": outputs}}
+        return {
+            self.config_obj.output_features[0].name: {
+                # Only return generated token ids in the sequence (not perfect, need to fix)
+                "predictions": outputs.sequences[:, -self.max_new_tokens :],
+                # Unnormalized log probabilities
+                # It is a tuple containing one entry for each generated token. Each tuple member is a tensor
+                # containing the log probabilities from the model, for all words in the vocabulary.
+                "probabilities": outputs.scores,
+            }
+        }
 
     def realign_target_tensor(self, targets, predictions, of_name: str):
         """Realigns the target tensor with the predictions.
