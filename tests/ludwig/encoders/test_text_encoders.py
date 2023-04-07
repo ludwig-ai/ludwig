@@ -167,6 +167,10 @@ def test_hf_ludwig_model_reduce_options(tmpdir, csv_filename, encoder_name, redu
     ],
 )
 def test_hf_ludwig_model_auto_transformers(tmpdir, csv_filename, pretrained_model_name_or_path):
+    """Tests different AutoModel types to ensure our wrapper handles them correctly.
+
+    This is needed because different PretrainedModel implemetnations have different input / output signatures.
+    """
     input_features = [
         text_feature(
             preprocessing={

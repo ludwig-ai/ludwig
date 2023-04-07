@@ -2170,6 +2170,8 @@ class AutoTransformerEncoder(HFTextEncoder):
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.max_sequence_length = max_sequence_length
 
+        # Precompute the set of params that are included in the forward signature of the AutoModel implementation so
+        # we can filter out unused params during the `forward` call.
         self.forward_kwargs = set(inspect.signature(self.transformer.module.forward).parameters.keys())
 
     def _maybe_resize_token_embeddings(self, transformer, vocab_size: Optional[int] = None):
@@ -2184,6 +2186,8 @@ class AutoTransformerEncoder(HFTextEncoder):
         if mask is not None:
             mask = mask.to(torch.int32)
 
+        # The forward signature of AutoModel is not consistent across implementations, so we need to make sure we're
+        # only passing in params included in the forward signature.
         kwargs = dict(
             input_ids=inputs,
             attention_mask=mask,
