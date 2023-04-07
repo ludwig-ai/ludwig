@@ -2166,7 +2166,9 @@ class AutoTransformerEncoder(HFTextEncoder):
         self.transformer = FreezeModule(transformer, frozen=not trainable)
         self.reduce_output = reduce_output
         if self.reduce_output != "cls_pooled":
-            self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+            self.reduce_sequence = SequenceReducer(
+                reduce_mode=reduce_output, encoding_size=self.transformer.module.config.hidden_size
+            )
         self.max_sequence_length = max_sequence_length
 
     def _maybe_resize_token_embeddings(self, transformer, vocab_size: Optional[int] = None):

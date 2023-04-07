@@ -132,6 +132,8 @@ def parse_flag_from_env(key, default=False):
     else:
         # KEY is set, convert it to True or False.
         try:
+            if isinstance(value, bool):
+                return 1 if value else 0
             _value = strtobool(value)
         except ValueError:
             # More values are supported, but let's keep the message simple.
@@ -140,6 +142,12 @@ def parse_flag_from_env(key, default=False):
 
 
 _run_private_tests = parse_flag_from_env("RUN_PRIVATE", default=False)
+
+
+private_test = pytest.mark.skipif(
+    not _run_private_tests,
+    reason="Skipping: this test is marked private, set RUN_PRIVATE=1 in your environment to run",
+)
 
 
 def private_param(param):

@@ -35,6 +35,7 @@ from ludwig.utils.data_utils import (
     read_parquet,
     use_credentials,
 )
+from tests.integration_tests.utils import private_param
 
 try:
     import dask.dataframe as dd
@@ -176,7 +177,11 @@ def test_dataset_synthesizer_output_feature_decoder():
 
 
 @pytest.mark.parametrize(
-    "dataset_1k_url", ["s3://ludwig-tests/datasets/synthetic_1k.csv", "s3://ludwig-tests/datasets/synthetic_1k.parquet"]
+    "dataset_1k_url",
+    [
+        private_param(["s3://ludwig-tests/datasets/synthetic_1k.csv"]),
+        private_param(["s3://ludwig-tests/datasets/synthetic_1k.parquet"]),
+    ],
 )
 @pytest.mark.parametrize("nrows", [None, 100])
 def test_chunking(dataset_1k_url, nrows):
