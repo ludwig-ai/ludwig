@@ -15,7 +15,14 @@ from ludwig.schema.model_config import ModelConfig
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.torch_utils import get_torch_device
 from tests.integration_tests.parameter_update_utils import check_module_parameters_updated
-from tests.integration_tests.utils import category_feature, generate_data, HF_ENCODERS, LocalTestBackend, text_feature
+from tests.integration_tests.utils import (
+    category_feature,
+    clear_huggingface_cache,
+    generate_data,
+    HF_ENCODERS,
+    LocalTestBackend,
+    text_feature,
+)
 
 DEVICE = get_torch_device()
 RANDOM_SEED = 1919
@@ -114,6 +121,7 @@ def test_hf_ludwig_model_e2e(tmpdir, csv_filename, encoder_name):
         # Validate the model can be loaded.
         # This ensures that the config reflects the internal architecture of the encoder.
         LudwigModel.load(os.path.join(results_dir, "model"))
+    clear_huggingface_cache()
 
 
 @pytest.mark.slow
@@ -156,6 +164,7 @@ def test_hf_ludwig_model_reduce_options(tmpdir, csv_filename, encoder_name, redu
         side_effect=_load_pretrained_hf_model_no_weights,
     ):
         model.train(dataset=rel_path, output_directory=tmpdir)
+    clear_huggingface_cache()
 
 
 @pytest.mark.parametrize("trainable", [True, False])

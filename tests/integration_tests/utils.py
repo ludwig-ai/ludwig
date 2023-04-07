@@ -32,6 +32,7 @@ import pandas as pd
 import pytest
 import torch
 from PIL import Image
+from transformers import file_utils
 
 from ludwig.api import LudwigModel
 from ludwig.backend import LocalBackend
@@ -1071,3 +1072,10 @@ def minio_test_creds():
             }
         }
     }
+
+
+def clear_huggingface_cache():
+    cache_path = file_utils.default_cache_path.rstrip("/")
+    while not cache_path.endswith("huggingface") and cache_path:
+        cache_path = "/".join(cache_path.split("/")[:-1])
+    shutil.rmtree(cache_path, ignore_errors=False)
