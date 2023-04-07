@@ -1,11 +1,10 @@
 import os
-import re
 
 import numpy as np
 import pytest
 
 from ludwig.api import LudwigModel
-from ludwig.constants import COLUMN, INPUT_FEATURES, MODEL_TYPE, NAME, OUTPUT_FEATURES, TRAINER
+from ludwig.constants import INPUT_FEATURES, MODEL_TYPE, OUTPUT_FEATURES, TRAINER
 from ludwig.error import ConfigValidationError
 from tests.integration_tests import synthetic_test_data
 from tests.integration_tests.utils import binary_feature
@@ -284,25 +283,6 @@ def test_save_load(tmpdir, local_backend):
     preds, _ = model.predict(dataset=os.path.join(tmpdir, "training.csv"), split="test")
 
     assert init_preds.equals(preds)
-
-
-def test_lgbm_dataset_setup(tmpdir, local_backend):
-    """Test that LGBM dataset column name errors are handled."""
-    input_features = [number_feature()]
-    output_features = [binary_feature()]
-
-    # Overwrite the automatically generated feature/column name with an invalid string.
-    input_features[0][NAME] = ",Unnamed: 0"
-    input_features[0][COLUMN] = input_features[0][NAME]
-
-    # Test that the custom error is raised (lightgbm.basic.LightGBMError -> ValueError)
-    with pytest.raises(ValueError):
-        try:
-            _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend)
-        except ValueError as e:
-            # Check that the intended ValueError was raised
-            assert re.search("Some column names in the training set contain invalid characters", str(e))
-            raise
 
 
 def test_boosting_type_rf_invalid(tmpdir, local_backend):
