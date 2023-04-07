@@ -89,11 +89,6 @@ jobs:
           key: ${{ runner.os }}-pip-py${{ matrix.python-version }}-torch${{ matrix.pytorch-version }}-${{ matrix.test-markers }}-${{ hashFiles('requirements*.txt', '.github/workflows/pytest.yml') }}
 
       - name: Install dependencies
-        env:
-          HOROVOD_WITH_PYTORCH: 1
-          HOROVOD_WITHOUT_MPI: 1
-          HOROVOD_WITHOUT_TENSORFLOW: 1
-          HOROVOD_WITHOUT_MXNET: 1
         run: |
           python --version
           pip --version
