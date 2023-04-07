@@ -109,6 +109,51 @@ def test_hf_ludwig_model_e2e(tmpdir, csv_filename, mock_load_encoder_from_hf_hub
     LudwigModel.load(os.path.join(results_dir, "model"))
 
 
+@pytest.mark.parametrize(
+    "pretrained_model_name_or_path",
+    [
+        "hf-internal-testing/tiny-random-bloom",
+        "hf-internal-testing/tiny-random-OPTModel",
+        "hf-internal-testing/tiny-random-GPTJModel",
+    ],
+)
+def test_hf_ludwig_model_auto_transformers(tmpdir, csv_filename, pretrained_model_name_or_path):
+    """Tests different AutoModel types to ensure our wrapper handles them correctly.
+
+    This is needed because different PretrainedModel implemetnations have different input / output signatures.
+    """
+    input_features = [
+        text_feature(
+            preprocessing={
+                "max_sequence_length": 10,
+            },
+            encoder={
+                "vocab_size": 30,
+                "min_len": 1,
+                "type": "auto_transformer",
+                "pretrained_model_name_or_path": pretrained_model_name_or_path,
+                "use_pretrained": True,
+            },
+        )
+    ]
+    output_features = [category_feature(decoder={"vocab_size": 2})]
+    rel_path = generate_data(input_features, output_features, csv_filename)
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"train_steps": 1},
+    }
+    model = LudwigModel(config=config, backend=LocalTestBackend())
+
+    # Validates that the defaults associated with the encoder are compatible with Ludwig training.
+    with mock.patch(
+        "ludwig.encoders.text_encoders.load_pretrained_hf_model_with_hub_fallback",
+        side_effect=_load_pretrained_hf_model_no_weights,
+    ):
+        model.train(dataset=rel_path, output_directory=tmpdir)
+
+
 @pytest.mark.parametrize("trainable", [True, False])
 def test_distilbert_param_updates(trainable: bool):
     max_sequence_length = 20
