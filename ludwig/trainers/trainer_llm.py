@@ -20,8 +20,7 @@ from ludwig.utils import time_utils
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.metric_utils import TrainerMetric
 from ludwig.utils.metrics_printed_table import MetricsPrintedTable
-from ludwig.utils.trainer_utils import ProgressTracker, append_metrics, get_new_progress_tracker
-
+from ludwig.utils.trainer_utils import append_metrics, get_new_progress_tracker, ProgressTracker
 
 logger = logging.getLogger(__name__)
 

@@ -16,10 +16,10 @@ from ludwig.schema.features.utils import (
     ecd_output_config_registry,
     gbm_defaults_config_registry,
     gbm_input_config_registry,
+    input_mixin_registry,
     llm_defaults_config_registry,
     llm_input_config_registry,
     llm_output_config_registry,
-    input_mixin_registry,
     output_mixin_registry,
 )
 from ludwig.schema.metadata import FEATURE_METADATA
