@@ -282,8 +282,7 @@ class LLM(BaseModel):
         _targets[of_name] = torch.nn.functional.pad(
             _targets.get(of_name),
             (0, predictions[of_name].get("predictions").size()[1] - _targets.get(of_name).size()[1]),
-            # TODO: Change to 0 when we have a way to calculate 2D tensor lengths
-            # correctly/deterministically downstream in the sequence_length_2D function
-            value=1,
+            "constant",
+            0,
         )
         return _targets
