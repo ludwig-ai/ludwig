@@ -29,9 +29,9 @@ logger = logging.getLogger()
 def get_gpu_info():
     """Gathers general hardware information about an nvidia GPU.
 
-    :param args:
-    :param kwargs:
-    :return:
+    This function was copied from `experiment_impact_tracker` to get around a Pandas 2.0 breaking change impacting the
+    package. https://github.com/Breakend/experiment-impact-
+    tracker/blob/master/experiment_impact_tracker/gpu/nvidia.py#L48-L73
     """
     p = Popen(["nvidia-smi", "-q", "-x"], stdout=PIPE)
     outs, errors = p.communicate()
