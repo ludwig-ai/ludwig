@@ -19,16 +19,13 @@ import pandas as pd
 import yaml
 
 from ludwig.api import LudwigModel
-from ludwig.api_annotations import DeveloperAPI, PublicAPI
+from ludwig.api_annotations import PublicAPI
 from ludwig.automl.base_config import (
-    allocate_experiment_resources,
     create_default_config,
     DatasetInfo,
     get_dataset_info,
-    get_default_automl_hyperopt,
     get_features_config,
     get_reference_configs,
-    get_resource_aware_hyperopt_config,
 )
 from ludwig.backend import Backend, initialize_backend
 from ludwig.constants import (
@@ -55,13 +52,6 @@ from ludwig.data.cache.types import CacheableDataset
 from ludwig.datasets import load_dataset_uris
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.hyperopt.run import hyperopt
-from ludwig.profiling import dataset_profile_pb2
-from ludwig.profiling.dataset_profile import (
-    get_column_profile_summaries_from_proto,
-    get_dataset_profile_proto,
-    get_dataset_profile_view,
-)
-from ludwig.profiling.type_inference import get_ludwig_type_map_from_column_profile_summaries
 from ludwig.schema.model_config import ModelConfig
 from ludwig.types import ModelConfigDict
 from ludwig.utils.automl.ray_utils import _ray_init
@@ -72,7 +62,6 @@ from ludwig.utils.fs_utils import open_file
 from ludwig.utils.heuristics import get_auto_learning_rate
 from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.print_utils import print_ludwig
-from ludwig.utils.types import DataFrame
 
 try:
     import dask.dataframe as dd
@@ -166,68 +155,6 @@ def auto_train(
         use_reference_config=use_reference_config,
     )
     return train_with_config(dataset, config, output_directory=output_directory, random_seed=random_seed, **kwargs)
-
-
-@DeveloperAPI
-def create_auto_config_with_dataset_profile(
-    target: str,
-    dataset: Optional[Union[str, DataFrame]] = None,
-    dataset_profile: dataset_profile_pb2.DatasetProfile = None,
-    random_seed: int = default_random_seed,
-    include_hyperopt: bool = False,
-    time_limit_s: Union[int, float] = None,
-    backend: Union[Backend, str] = None,
-) -> dict:
-    """Returns the best single-shot Ludwig config given a Ludwig dataset or dataset profile.
-
-    If only the dataset is provided, then a new profile is computed.
-    Only one of the dataset or dataset_profile should be specified, not both.
-
-    This function is intended to eventually replace create_auto_config().
-    """
-    if dataset is None and dataset_profile is None:
-        raise ValueError("Please specify either a dataset or a dataset_profile.")
-    if dataset is not None and dataset_profile is not None:
-        raise ValueError("Please specify either a dataset or a dataset_profile. It is an error to specify both.")
-
-    # Get the dataset profile.
-    if dataset_profile is None:
-        dataset_profile = get_dataset_profile_proto(get_dataset_profile_view(dataset))
-
-    # Use the dataset profile to get Ludwig types.
-    ludwig_type_map = get_ludwig_type_map_from_column_profile_summaries(
-        get_column_profile_summaries_from_proto(dataset_profile)
-    )
-
-    # Add features along with their profiled types.
-    automl_config = {}
-    automl_config[INPUT_FEATURES] = []
-    automl_config[OUTPUT_FEATURES] = []
-    for feature_name, ludwig_type in ludwig_type_map.items():
-        if feature_name == target:
-            automl_config[OUTPUT_FEATURES].append({"name": feature_name, "type": ludwig_type})
-        else:
-            automl_config[INPUT_FEATURES].append({"name": feature_name, "type": ludwig_type})
-
-    # Set the combiner to tabnet, by default.
-    # TODO(travis): consolidate this logic with `create_auto_config` to reduce duplication and make the
-    # switch easier
-    automl_config.get("combiner", {})[TYPE] = "tabnet"
-
-    # Add hyperopt, if desired.
-    if include_hyperopt:
-        automl_config[HYPEROPT] = get_default_automl_hyperopt()
-
-        # Merge resource-sensitive settings.
-        backend = initialize_backend(backend)
-        resources = backend.get_available_resources()
-        experiment_resources = allocate_experiment_resources(resources)
-        automl_config = merge_dict(
-            automl_config, get_resource_aware_hyperopt_config(experiment_resources, time_limit_s, random_seed)
-        )
-
-    # TODO: Adjust preprocessing parameters according to output feature imbalance.
-    return automl_config
 
 
 @PublicAPI

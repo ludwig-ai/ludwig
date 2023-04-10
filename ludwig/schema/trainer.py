@@ -327,6 +327,12 @@ class ECDTrainerConfig(BaseTrainerConfig):
         parameter_metadata=TRAINER_METADATA[MODEL_ECD]["compile"],
     )
 
+    gradient_accumulation_steps: int = schema_utils.PositiveInteger(
+        default=1,
+        description="Number of steps to accumulate gradients over before performing a weight update.",
+        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["gradient_accumulation_steps"],
+    )
+
 
 @DeveloperAPI
 @register_trainer_schema(MODEL_GBM)

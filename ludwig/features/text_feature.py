@@ -344,10 +344,24 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
 
         probs_col = f"{self.feature_name}_{PROBABILITIES}"
         prob_col = f"{self.feature_name}_{PROBABILITY}"
+
+        # "Summarizes" the `result`'s probability-related output:
+        # - result[probs_col]:
+        #       Each row is now a list of "max" probabilities. Each element is the probability of the argmax token for
+        #       the given time step.
+        #
+        #       Note that we intentionally do not return full list of probabilties for each time step because the output
+        #       of postprocess_predictions is saved to disk and the full probability distribution can be huge,
+        #       especially for large vocab sizes:
+        #           dataset_size x sequence_length x vocab_size
+        #
+        #       TODO: Add a mechanism that lets the user save the full probability distribution if they want.
+        # - result[prob_col]:
+        #       Each row is the overall probability of the sequence. This is the product of the max probabilities over
+        #       all time steps.
         if probs_col in result:
-            # currently does not return full probabilties because usually it is huge:
-            # dataset x length x classes
-            # TODO: add a mechanism for letting the user decide to save it
+            # result[probs_col]: From PredictModule, each row has a list of size (sequence_length) of a list of
+            # probabiltiies of (vocab_size). compute_token_probabilities gets the maximum probability per timestep.
             result[probs_col] = result[probs_col].map(compute_token_probabilities)
             result[prob_col] = result[probs_col].map(
                 partial(

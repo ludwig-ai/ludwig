@@ -699,12 +699,18 @@ def Dict(
 @DeveloperAPI
 def List(
     list_type: Union[Type[str], Type[int], Type[float], Type[list]] = str,
+    inner_type: Union[Type[str], Type[int], Type[float], Type[dict]] = float,
     default: Union[None, TList[Any]] = None,
     allow_none: bool = True,
     description: str = "",
     parameter_metadata: ParameterMetadata = None,
 ):
-    """Returns a dataclass field with marshmallow metadata enforcing input must be a list."""
+    """Returns a dataclass field with marshmallow metadata enforcing input must be a list.
+
+    Args:
+        list_type: Type of the top-level list items.
+        inner_type: Type of the contents of inner lists. Only used when `list_type` is `list`.
+    """
     if default is not None:
         try:
             assert isinstance(default, list)
@@ -714,16 +720,23 @@ def List(
     elif not allow_none:
         default = []
 
-    if list_type is str:
-        field_type = fields.String()
-    elif list_type is int:
-        field_type = fields.Integer()
-    elif list_type is float:
-        field_type = fields.Float()
-    elif list_type is list:
-        field_type = fields.List(fields.Float())
+    type_map = {str: fields.String, int: fields.Integer, float: fields.Float}
+
+    # When using a flat list, we just need to check that the type of the contents is valid. Lists of lists were
+    # originally restricted to contain floats, but we now include a type check that includes all flat list types and
+    # dictionaries. List of list of dict supports some valid hyperopt categorical parameter configs (e.g.,
+    # hyperopting `decoder.fc_layers` configs).
+    if list_type is not list:
+        try:
+            field_type = type_map[list_type]()
+        except KeyError:
+            raise ValueError(f"Invalid list type: `{list_type}`")
     else:
-        raise ValueError(f"Invalid list type: `{list_type}`")
+        try:
+            inner_field_type = type_map[inner_type]() if inner_type is not dict else fields.Dict(fields.String())
+        except KeyError:
+            raise ValueError(f"Invalid inner list type. Requested list of {inner_type}.")
+        field_type = fields.List(inner_field_type)
 
     load_default = lambda: copy.deepcopy(default)
     return field(
@@ -1141,10 +1154,12 @@ class TypeSelection(fields.Field):
         key: str = "type",
         description: str = "",
         parameter_metadata: ParameterMetadata = None,
+        allow_str_value: bool = False,
     ):
         self.registry = registry
         self.default_value = default_value
         self.key = key
+        self.allow_str_value = allow_str_value
 
         dump_default = missing
         load_default = missing
@@ -1166,6 +1181,11 @@ class TypeSelection(fields.Field):
     def _deserialize(self, value, attr, data, **kwargs):
         if value is None:
             return None
+
+        if self.allow_str_value and isinstance(value, str):
+            # If user provided the value as a string, assume they were providing the type
+            value = {self.key: value}
+
         if isinstance(value, dict):
             cls_type = value.get(self.key)
             cls_type = cls_type.lower() if cls_type else self.default_value
@@ -1176,7 +1196,9 @@ class TypeSelection(fields.Field):
                 except (TypeError, ValidationError) as e:
                     raise ValidationError(f"Invalid params: {value}, see `{cls}` definition") from e
             raise ValidationError(f"Invalid type: '{cls_type}', expected one of: {list(self.registry.keys())}")
-        raise ValidationError(f"Invalid param {value}, expected `None` or `dict`")
+
+        maybe_str = ", `str`," if self.allow_str_value else ""
+        raise ValidationError(f"Invalid param {value}, expected `None`{maybe_str} or `dict`")
 
     def get_schema_from_registry(self, key: str) -> Type[BaseMarshmallowConfig]:
         return self.registry[key]

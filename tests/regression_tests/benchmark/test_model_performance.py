@@ -6,11 +6,24 @@ from expected_metric import ExpectedMetric
 
 from ludwig.benchmarking.benchmark import benchmark
 from ludwig.utils.data_utils import load_yaml
+from tests.integration_tests.utils import parse_flag_from_env
 
 SKIPPED_CONFIG_ISSUES = {
     "mercedes_benz_greener.ecd.yaml": "https://github.com/ludwig-ai/ludwig/issues/2978",
     "sarcos.ecd.yaml": "Takes more than 300s",
 }
+CONFIGS_REQUIRING_DATASET_CREDENTIALS = {
+    "mercedes_benz_greener.gbm.yaml",
+    "mercedes_benz_greener.ecd.yaml",
+    "ames_housing.gbm.yaml",
+    "ames_housing.ecd.yaml",
+}
+RUN_PRIVATE = parse_flag_from_env("RUN_PRIVATE", default=False)
+
+
+def update_skipped_configs_issues(config_filename):
+    if not RUN_PRIVATE and config_filename in CONFIGS_REQUIRING_DATASET_CREDENTIALS:
+        SKIPPED_CONFIG_ISSUES[config_filename] = "Requires credentials. Can't run from a forked repo."
 
 
 def get_test_config_filenames() -> List[str]:
@@ -27,6 +40,7 @@ def get_dataset_from_config_path(config_path: str) -> str:
 @pytest.mark.benchmark
 @pytest.mark.parametrize("config_filename", get_test_config_filenames())
 def test_performance(config_filename, tmpdir):
+    update_skipped_configs_issues(config_filename)
     if config_filename in SKIPPED_CONFIG_ISSUES:
         pytest.skip(reason=SKIPPED_CONFIG_ISSUES[config_filename])
         return

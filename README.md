@@ -118,7 +118,7 @@ in the same unified configuration system.
 
 - **[Distributed training](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/distributed_training)**
 
-  Train models in a distributed setting using [Horovod](https://github.com/horovod/horovod),
+  Train models in a distributed setting
   which allows training on a single machine with multiple GPUs or multiple
   machines with multiple GPUs.
 

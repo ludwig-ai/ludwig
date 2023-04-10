@@ -22,6 +22,7 @@ from ludwig.constants import (
 )
 from ludwig.error import ConfigValidationError
 from ludwig.utils.metric_utils import get_feature_to_metric_names_map_from_feature_collection
+from ludwig.utils.misc_utils import merge_dict
 
 if TYPE_CHECKING:
     from ludwig.schema.model_config import ModelConfig
@@ -293,6 +294,30 @@ def check_stacked_transformer_requirements(config: "ModelConfig") -> None:  # no
 
 
 @register_config_check
+def check_hyperopt_search_algorithm_dependencies_installed(config: "ModelConfig") -> None:  # noqa: F821
+    """Check that the hyperopt search algorithm dependencies are installed."""
+    if config.hyperopt is None:
+        return
+
+    try:
+        config.hyperopt.search_alg.dependencies_installed()
+    except ImportError as e:
+        raise ConfigValidationError(e.msg)
+
+
+@register_config_check
+def check_hyperopt_scheduler_dependencies_installed(config: "ModelConfig") -> None:  # noqa: F821
+    """Check that the hyperopt scheduler dependencies are installed."""
+    if config.hyperopt is None:
+        return
+
+    try:
+        config.hyperopt.executor.scheduler.dependencies_installed()
+    except ImportError as e:
+        raise ConfigValidationError(e.msg)
+
+
+@register_config_check
 def check_tagger_decoder_requirements(config: "ModelConfig") -> None:  # noqa: F821
     """Checks that the tagger decoder has at least one sequence, text or timeseries input feature where the
     encoder's reduce_output will produce a 3D shaped output from the combiner."""
@@ -324,6 +349,49 @@ def check_tagger_decoder_requirements(config: "ModelConfig") -> None:  # noqa: F
 
 
 @register_config_check
+def check_hyperopt_parameter_dicts(config: "ModelConfig") -> None:  # noqa: F821
+    """Checks for hyperopt parameter dicts against their config objects."""
+    if config.hyperopt is None:
+        return
+
+    from ludwig.schema.hyperopt.utils import get_parameter_cls, parameter_config_registry  # noqa: F401
+
+    for parameter, space in config.hyperopt.parameters.items():
+        # skip nested hyperopt parameters
+        if parameter != ".":
+            parameter_attribute_path = parameter.split(".")
+            passed = False
+
+            for root in [config, config.input_features, config.output_features]:
+                current = root
+                for p in parameter_attribute_path:
+                    try:
+                        current = current.__getattribute__(p)
+                        if p == parameter_attribute_path[-1]:
+                            passed = True
+                    except AttributeError:
+                        break
+                if passed:
+                    break
+
+            if not passed:
+                raise ConfigValidationError(
+                    f"The supplied hyperopt parameter {parameter} is not a valid config field. Check the Ludwig "
+                    "docs for the list of valid parameters."
+                )
+
+            try:
+                space_cls = get_parameter_cls(space["space"])
+                space_cls.from_dict(space)
+            except KeyError:
+                space_types = ", ".join(parameter_config_registry.keys())
+                raise ConfigValidationError(
+                    f"Invalid hyperopt parameter space requested for `hyperopt.parameters.{parameter}`. Valid spaces "
+                    f"are {space_types}."
+                )
+
+
+@register_config_check
 def check_concat_combiner_requirements(config: "ModelConfig") -> None:  # noqa: F821
     """Checks that if the concat combiner receives a mixture of sequence and non-sequence features, that all
     sequence features are configured with reduce_output to be 2D tensors."""
@@ -351,6 +419,42 @@ def check_concat_combiner_requirements(config: "ModelConfig") -> None:  # noqa: 
             "encoder outputs, 2) Choose a different combiner like `sequence_concat` which can handle a mix of 2D and "
             "3D encoder output shapes, or 3) Remove features to ensure that output shapes from all encoders are the "
             "same dimension (all 2D or all 3D)."
+        )
+
+
+@register_config_check
+def check_hyperopt_nested_parameter_dicts(config: "ModelConfig") -> None:  # noqa: F821
+    """Checks that all nested parameters in a hyperopt config exist."""
+    if config.hyperopt is None or "." not in config.hyperopt.parameters:
+        return
+
+    from ludwig.schema.hyperopt.utils import get_parameter_cls  # noqa: F401
+    from ludwig.schema.model_types.base import ModelConfig
+
+    space = config.hyperopt.parameters["."]
+
+    # Build the config that would be produced by each parameter dict to validate subsections that may be in
+    config_dict = config.to_dict()
+    del config_dict["hyperopt"]
+    for category in space["categories"]:
+        for i, k in enumerate(category.keys()):
+            try:
+                config.__getattribute__(k)
+            except AttributeError:
+                raise ConfigValidationError(f"Invalid config block {k} in nested hyperopt parameter dict {i}: {space}.")
+
+        category_dict = merge_dict(config_dict, category)
+        try:
+            ModelConfig.from_dict(category_dict)
+        except ConfigValidationError as e:
+            raise ConfigValidationError(f"Invalid config in hyperopt nested parameter config: {category}. {e.message}")
+
+    try:
+        space_cls = get_parameter_cls("choice")
+        space_cls.from_dict(space)
+    except KeyError:
+        raise ConfigValidationError(
+            f"Nested hyperparameter search spaces must be of type 'choice'. Requested space type: {space['space']}"
         )
 
 

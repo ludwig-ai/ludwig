@@ -18,8 +18,9 @@ from typing import Optional
 import torch
 
 from ludwig.distributed.base import DistributedStrategy
-from ludwig.schema.optimizers import BaseOptimizerConfig, GradientClippingConfig, optimizer_registry, SGDOptimizerConfig
+from ludwig.schema.optimizers import BaseOptimizerConfig, GradientClippingConfig, optimizer_registry
 from ludwig.utils.misc_utils import get_from_registry
+from ludwig.utils.torch_utils import LudwigModule
 
 
 def create_clipper(gradient_clipping_config: Optional[GradientClippingConfig]):
@@ -31,18 +32,19 @@ def create_clipper(gradient_clipping_config: Optional[GradientClippingConfig]):
 
 
 def create_optimizer(
-    model,
-    learning_rate,
+    model: LudwigModule,
+    learning_rate: float,
     distributed: DistributedStrategy,
-    optimizer_config: BaseOptimizerConfig = SGDOptimizerConfig(),
+    optimizer_config: BaseOptimizerConfig,
+    gradient_accumulation_steps: int,
 ):
     """Returns a ready-to-use torch optimizer instance based on the given optimizer config.
 
     :param model: Underlying Ludwig model
     :param learning_rate: Initial learning rate for the optimizer
-    :param optimizer_config: Instance of `ludwig.modules.optimization_modules.BaseOptimizerConfig` (default:
-           `ludwig.modules.optimization_modules.SGDOptimizerConfig()`).
-    :param horovod: Horovod parameters (default: None).
+    :param distributed: Distributed strategy
+    :param optimizer_config: Instance of `ludwig.modules.optimization_modules.BaseOptimizerConfig`.
+    :param gradient_accumulation_steps: Number of gradient accumulation steps
     :return: Initialized instance of a torch optimizer.
     """
     # Get the corresponding torch optimizer class for the given config:
@@ -54,5 +56,7 @@ def create_optimizer(
 
     # Instantiate the optimizer:
     torch_optimizer: torch.optim.Optimizer = optimizer_cls(params=model.parameters(), **cls_kwargs)
-    torch_optimizer = distributed.wrap_optimizer(torch_optimizer, model)
+    torch_optimizer = distributed.wrap_optimizer(
+        torch_optimizer, model, gradient_accumulation_steps=gradient_accumulation_steps
+    )
     return torch_optimizer

@@ -23,6 +23,7 @@ import numpy as np
 import pandas as pd
 import psutil
 import torch
+from tqdm import tqdm
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend.utils.storage import StorageManager
@@ -130,7 +131,7 @@ class Backend(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def batch_transform(self, df: DataFrame, batch_size: int, transform_fn: Callable) -> DataFrame:
+    def batch_transform(self, df: DataFrame, batch_size: int, transform_fn: Callable, name: str = None) -> DataFrame:
         """Applies `transform_fn` to every `batch_size` length batch of `df` and returns the result."""
         raise NotImplementedError()
 
@@ -164,10 +165,11 @@ class LocalPreprocessingMixin:
 
         return pd.Series(result, index=column.index, name=column.name)
 
-    def batch_transform(self, df: DataFrame, batch_size: int, transform_fn: Callable) -> DataFrame:
+    def batch_transform(self, df: DataFrame, batch_size: int, transform_fn: Callable, name: str = None) -> DataFrame:
+        name = name or "Batch Transform"
         batches = to_batches(df, batch_size)
         transform = transform_fn()
-        out_batches = [transform(batch.reset_index(drop=True)) for batch in batches]
+        out_batches = [transform(batch.reset_index(drop=True)) for batch in tqdm(batches, desc=name)]
         out_df = from_batches(out_batches).reset_index(drop=True)
         return out_df
 

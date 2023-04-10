@@ -147,6 +147,7 @@ def test_train_cli_training_set(tmpdir, csv_filename):
 
 
 @pytest.mark.distributed
+@pytest.mark.horovod
 def test_train_cli_horovod(tmpdir, csv_filename):
     """Test training using `horovodrun -np 2 ludwig train --dataset`."""
     config_filename = os.path.join(tmpdir, "config.yaml")
@@ -309,7 +310,7 @@ def test_preprocess_cli(tmpdir, csv_filename):
     "backend",
     [
         pytest.param("local", id="local"),
-        pytest.param("horovod", id="horovod", marks=pytest.mark.distributed),
+        pytest.param("horovod", id="horovod", marks=[pytest.mark.distributed, pytest.mark.horovod]),
     ],
 )
 def test_reproducible_cli_runs(

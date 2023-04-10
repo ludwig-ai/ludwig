@@ -16,9 +16,14 @@ defaults:
 hyperopt:
   # goal: maximize
   parameters:
+    # This parameter space was updated to be loguniform because of issues merging with the trainer.learning_rate
+    # parameter space in ludwig/automl/defaults/combiner/concat_config.yaml. Doing automl on a text feature would
+    # create an invalid combination of loguniform and choice paramters.
+    # TODO(jeffkinnison): Add a second pass `merge_dicts` to handle parameter spaces
     trainer.learning_rate:
-      space: choice
-      categories: [0.00002, 0.00003]
+      space: loguniform
+      lower: 0.00002
+      upper: 0.00003
     trainer.batch_size:
       space: choice
       categories: [16, 32, 64, 128]

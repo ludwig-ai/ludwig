@@ -582,6 +582,26 @@ def test_sequence_tagger_text(csv_filename):
     run_experiment(input_features, output_features, dataset=rel_path)
 
 
+"""
+@pytest.mark.distributed
+def test_sequence_tagger_text_ray(csv_filename, ray_cluster_2cpu):
+    # Define input and output features
+    input_features = [text_feature(encoder={"max_len": 10, "type": "rnn", "reduce_output": None})]
+    output_features = [
+        sequence_feature(
+            decoder={"max_len": 10, "type": "tagger"},
+            reduce_input=None,
+        )
+    ]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+
+    # run the experiment
+    run_experiment(input_features, output_features, dataset=rel_path, backend="ray")
+"""
+
+
 def test_experiment_sequence_combiner_with_reduction_fails(csv_filename):
     config = {
         "input_features": [
@@ -691,8 +711,13 @@ def test_experiment_model_resume(tmpdir):
     shutil.rmtree(output_dir, ignore_errors=True)
 
 
-@pytest.mark.distributed
-@pytest.mark.parametrize("dist_strategy", ["horovod", "ddp"])
+@pytest.mark.parametrize(
+    "dist_strategy",
+    [
+        pytest.param("ddp", id="ddp", marks=pytest.mark.distributed),
+        pytest.param("horovod", id="horovod", marks=[pytest.mark.distributed, pytest.mark.horovod]),
+    ],
+)
 def test_experiment_model_resume_distributed(tmpdir, dist_strategy, ray_cluster_4cpu):
     # Single sequence input, single category output
     # Tests saving a model file, loading it to rerun training and predict
@@ -961,11 +986,17 @@ def test_experiment_category_input_feature_with_tagger_decoder(csv_filename):
     input_features = [category_feature()]
     output_features = [sequence_feature(output_feature=True, decoder={"type": "tagger"})]
 
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "output_size": 14, "reduce_output": None},
+    }
+
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
 
     with pytest.raises(ConfigValidationError):
-        run_experiment(input_features, output_features, dataset=rel_path)
+        run_experiment(config=config, dataset=rel_path)
 
 
 def test_experiment_category_distribution_feature(csv_filename):
