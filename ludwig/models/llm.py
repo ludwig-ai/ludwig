@@ -121,26 +121,64 @@ class LLM(BaseModel):
 
         assert list(inputs.keys()) == self.input_features.keys()
 
-        print("INPUTS", inputs[self.config_obj.input_features[0].name].type(torch.int32))
+        print("INPUTS", self.get_input_ids(inputs))
         with torch.no_grad():
             outputs = self.model.generate(
-                input_ids=inputs[self.config_obj.input_features[0].name].type(torch.int32),
+                input_ids=self.get_input_ids(inputs),
                 attention_mask=mask,
                 generation_config=self.generation_config,
                 max_new_tokens=self.max_new_tokens,
                 return_dict_in_generate=True,
                 output_scores=True,
             )
-            # Computes the transition scores of sequences given the generation scores (and beam indices,
-            # if beam search was used).
-            # transition_scores = self.model.compute_transition_scores(
-            #     outputs.sequences,
-            #     outputs.scores,
-            #     outputs.beam_indices,
-            #     normalize_logits=True,
-            # )
         print("OUTPUTS", outputs)
-        return self.extract(outputs)
+        return self.extract(inputs, outputs)
+
+    def get_input_ids(self, inputs):
+        """Returns the input ids for the text feature input."""
+        return inputs[self.config_obj.input_features[0].name].type(torch.int32)
+
+    def extract(
+        self,
+        inputs: Union[
+            Dict[str, torch.Tensor], Dict[str, np.ndarray], Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
+        ],
+        outputs,
+    ):
+        """Extracts predictions and probabilities from the model outputs."""
+        return {
+            self.config_obj.output_features[0].name: {
+                "predictions": self.extract_predictions(inputs, outputs.sequences)
+                # Unnormalized log probabilities
+                # It is a tuple containing one entry for each generated token. Each tuple member is a tensor
+                # containing the log probabilities from the model, for all words in the vocabulary.
+                # "probabilities": self.extract_logits(outputs.scores),
+            }
+        }
+
+    def extract_predictions(self, inputs, output_sequences):
+        """Extracts the predictions from the model outputs by removing the input sequence from the generated
+        sequence."""
+        input_ids = self.get_input_ids(inputs)
+
+        if input_ids.size()[0] == 1:
+            return output_sequences[:, input_ids.size()[1] :]
+
+        generated_predictions = []
+        input_ids_lens = [input_id.size()[0] for input_id in input_ids]
+        for idx, input_id_len in enumerate(input_ids_lens):
+            # Remove the input sequence from the generated sequence
+            generated_sequence = output_sequences[idx][input_id_len:]
+            # Pad the sequence if it is shorter than the max_new_tokens for downstream metric computation
+            if generated_sequence.size()[0] < self.max_new_tokens:
+                generated_sequence = torch.tensor([self.model.config.eos_token_id])
+                generated_sequence = torch.nn.functional.pad(
+                    generated_sequence, (0, self.max_new_tokens - generated_sequence.size()[0]), "constant", 0
+                )
+            generated_predictions.append(generated_sequence)
+        # Stack the predictions for each example in the batch
+        generated_predictions = torch.stack(generated_predictions, dim=0)
+        return generated_predictions
 
     def extract_logits(self, scores):
         """Extracts the logits from the scores.
@@ -161,46 +199,11 @@ class LLM(BaseModel):
             probs.append(torch.nn.functional.softmax(log_prob, dim=-1))
         return probs
 
-    def extract(self, outputs):
-        return {
-            self.config_obj.output_features[0].name: {
-                # Only return generated token ids in the sequence (not perfect, need to fix)
-                "predictions": outputs.sequences[:, -self.max_new_tokens :],
-                # Unnormalized log probabilities
-                # It is a tuple containing one entry for each generated token. Each tuple member is a tensor
-                # containing the log probabilities from the model, for all words in the vocabulary.
-                # "probabilities": self.extract_logits(outputs.scores),
-            }
-        }
-
-    def realign_target_tensor(self, targets, predictions, of_name: str):
-        """Realigns the target tensor with the predictions.
-
-        This is necessary for text metrics that require the target and prediction
-        to be of the same length.
-
-        Args:
-            targets: The target tensor.
-            predictions: The prediction tensor.
-
-        Returns:
-            The realigned target tensor.
-        """
-        _targets = copy.deepcopy(targets)
-        _targets[of_name] = torch.nn.functional.pad(
-            _targets.get(of_name),
-            (0, predictions[of_name].get("predictions").size()[1] - _targets.get(of_name).size()[1]),
-            # TODO: Change to 0 when we have a way to calculate 2D tensor lengths
-            # correctly/deterministically downstream in the sequence_length_2D function
-            value=1,
-        )
-        return _targets
-
     def update_metrics(self, targets, predictions):
         """Updates the model's metrics given targets and predictions."""
         for of_name, of_obj in self.output_features.items():
             # Align the target length with the predictions length to enable text metric evaluation.
-            _targets = self.realign_target_tensor(targets, predictions, of_name)
+            _targets = self._realign_target_tensor(targets, predictions, of_name)
             of_obj.update_metrics(_targets[of_name], predictions[of_name])
 
         # To update eval-loss, we need "logits" but right now we're only producing "predictions"
@@ -222,7 +225,7 @@ class LLM(BaseModel):
         eval_loss = 0
         for of_name, of_obj in self.output_features.items():
             # Align the target length with the predictions length to enable text metric evaluation.
-            _targets = self.realign_target_tensor(targets, predictions, of_name)
+            _targets = self._realign_target_tensor(targets, predictions, of_name)
             of_eval_loss = of_obj.eval_loss(_targets[of_name], predictions[of_name])
             eval_loss += of_obj.loss.weight * of_eval_loss
 
@@ -261,3 +264,26 @@ class LLM(BaseModel):
             self.config_obj.output_features.to_list(),
             self._random_seed,
         )
+
+    def _realign_target_tensor(self, targets, predictions, of_name: str):
+        """Realigns the target tensor with the predictions.
+
+        This is necessary for text metrics that require the target and prediction
+        to be of the same length.
+
+        Args:
+            targets: The target tensor.
+            predictions: The prediction tensor.
+
+        Returns:
+            The realigned target tensor.
+        """
+        _targets = copy.deepcopy(targets)
+        _targets[of_name] = torch.nn.functional.pad(
+            _targets.get(of_name),
+            (0, predictions[of_name].get("predictions").size()[1] - _targets.get(of_name).size()[1]),
+            # TODO: Change to 0 when we have a way to calculate 2D tensor lengths
+            # correctly/deterministically downstream in the sequence_length_2D function
+            value=1,
+        )
+        return _targets

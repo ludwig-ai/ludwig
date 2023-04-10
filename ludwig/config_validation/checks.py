@@ -355,7 +355,7 @@ def check_concat_combiner_requirements(config: "ModelConfig") -> None:  # noqa: 
 
 
 @register_config_check
-def check_llm_one_text_feature_input(config: "ModelConfig"):  # noqa: F821
+def check_llm_atleast_one_input_text_feature(config: "ModelConfig"):  # noqa: F821
     if config.model_type != MODEL_LLM:
         return
 
