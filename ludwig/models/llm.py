@@ -6,7 +6,7 @@ from typing import Dict, Tuple, Union
 import numpy as np
 import torch
 import torchmetrics
-from transformers import AutoModelForCausalLM, AutoTokenizer, GenerationConfig
+from transformers import AutoModelForCausalLM, GenerationConfig
 
 from ludwig.constants import MODEL_LLM
 from ludwig.features.base_feature import OutputFeature
@@ -38,10 +38,9 @@ class LLM(BaseModel):
 
         super().__init__(random_seed=self._random_seed)
 
-        self.tokenizer = AutoTokenizer.from_pretrained(self.config_obj.model_name)
         self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.model_name)
         self.generation_config = GenerationConfig(
-            temperature=0.1,
+            temperature=1.0,
             top_p=0.75,
             top_k=40,
             num_beams=4,
@@ -143,6 +142,25 @@ class LLM(BaseModel):
         print("OUTPUTS", outputs)
         return self.extract(outputs)
 
+    def extract_logits(self, scores):
+        """Extracts the logits from the scores.
+
+        Args:
+            scores: A tuple containing one entry for each generated token. Each tuple member
+                is a tensor containing the log probabilities from the model, for all words in the vocabulary.
+
+        Returns:
+            A list of tensors, each containing the normalized probabilities for each word in the vocabulary.
+
+        (TODO): Assumes num_beams = 1 from the generation config. Need to understand how to modify this for
+        num_beams > 1 since a probability distribution is returned for each beam. Also need to adapt this
+        for the batch size > 1.
+        """
+        probs = []
+        for log_prob in list(scores):
+            probs.append(torch.nn.functional.softmax(log_prob, dim=-1))
+        return probs
+
     def extract(self, outputs):
         return {
             self.config_obj.output_features[0].name: {
@@ -151,7 +169,7 @@ class LLM(BaseModel):
                 # Unnormalized log probabilities
                 # It is a tuple containing one entry for each generated token. Each tuple member is a tensor
                 # containing the log probabilities from the model, for all words in the vocabulary.
-                # "probabilities": outputs.scores,
+                # "probabilities": self.extract_logits(outputs.scores),
             }
         }
 
@@ -220,7 +238,6 @@ class LLM(BaseModel):
         predictions = {}
         for of_name in self.output_features:
             generated_ids = outputs[of_name]
-            # outputs = self.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
             predictions[of_name] = generated_ids
         return predictions
 

@@ -293,6 +293,33 @@ def set_tagger_decoder_parameters(config: "ModelConfig") -> None:
                 output_feature.reduce_input = None
 
 
+def set_llm_tokenizers(config: "ModelConfig") -> None:
+    """Sets the tokenizers for the LLM model to the pretrained model name or path. This ensures that they use the
+    correct shared vocabulary from the tokenizer.
+
+    This also ensures padding is correctly set to left padding to prevent the LLM from trying to continue to sequence
+    based on the right padding tokens, which might exist based on sequence length.
+    """
+    if config.model_type != "llm":
+        return
+
+    pretrained_model_name_or_path = config.model_name
+    if pretrained_model_name_or_path is None:
+        raise ValueError("Must set model_name when using the LLM model.")
+
+    for input_feature in config.input_features:
+        if input_feature.type == TEXT:
+            input_feature.preprocessing.tokenizer = "hf_tokenizer"
+            input_feature.preprocessing.pretrained_model_name_or_path = pretrained_model_name_or_path
+            input_feature.preprocessing.padding = "left"
+
+    for output_feature in config.output_features:
+        if output_feature.type == TEXT:
+            output_feature.preprocessing.tokenizer = "hf_tokenizer"
+            output_feature.preprocessing.pretrained_model_name_or_path = pretrained_model_name_or_path
+            output_feature.preprocessing.padding = "left"
+
+
 @DeveloperAPI
 def contains_grid_search_parameters(hyperopt_config: HyperoptConfigDict) -> bool:
     """Returns True if any hyperopt parameter in the config is using the grid_search space."""

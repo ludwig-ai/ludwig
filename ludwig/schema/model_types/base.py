@@ -20,6 +20,7 @@ from ludwig.schema.model_types.utils import (
     merge_with_defaults,
     set_derived_feature_columns_,
     set_hyperopt_defaults_,
+    set_llm_tokenizers,
     set_preprocessing_parameters,
     set_tagger_decoder_parameters,
     set_validation_parameters,
@@ -57,6 +58,9 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
         set_hyperopt_defaults_(self)
         set_tagger_decoder_parameters(self)
         filter_combiner_entities_(self)
+
+        # Set preprocessing parameters for text features for LLM model type
+        set_llm_tokenizers(self)
 
         # Reconcile conflicting preprocessing parameters
         set_preprocessing_parameters(self)

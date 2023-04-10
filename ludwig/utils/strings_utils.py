@@ -519,3 +519,11 @@ def build_sequence_matrix(
 
     padded = processor.map_objects(unit_vectors, pad)
     return padded
+
+
+def get_tokenizer(tokenizer_type: str, tokenizer_vocab_file: str, pretrained_model_name_or_path: str):
+    """Returns a tokenizer object based on the tokenizer type."""
+    return get_tokenizer_from_registry(tokenizer_type)(
+        vocab_file=tokenizer_vocab_file,
+        pretrained_model_name_or_path=pretrained_model_name_or_path,
+    )
