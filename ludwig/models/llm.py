@@ -14,6 +14,7 @@ from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
 from ludwig.schema.features.base import BaseOutputFeatureConfig, FeatureCollection
 from ludwig.schema.model_types.llm import LLMModelConfig
+from ludwig.utils.augmentation_utils import AugmentationPipelines
 from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.fs_utils import open_file
 from ludwig.utils.state_dict_backward_compatibility import update_state_dict
@@ -148,7 +149,7 @@ class LLM(BaseModel):
         """Extracts predictions and probabilities from the model outputs."""
         return {
             self.config_obj.output_features[0].name: {
-                "predictions": self.extract_predictions(inputs, outputs.sequences)
+                "predictions": self.extract_predictions(inputs, outputs.sequences),
                 # Unnormalized log probabilities
                 # It is a tuple containing one entry for each generated token. Each tuple member is a tensor
                 # containing the log probabilities from the model, for all words in the vocabulary.
@@ -286,3 +287,7 @@ class LLM(BaseModel):
             0,
         )
         return _targets
+
+    def get_augmentation_pipelines(self) -> AugmentationPipelines:
+        """Returns the augmentation pipeline for this model."""
+        return AugmentationPipelines({})
