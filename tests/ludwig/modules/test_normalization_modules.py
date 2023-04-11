@@ -38,3 +38,20 @@ def test_ghostbatchnormalization(mode: bool, virtual_batch_size: Optional[int]) 
 
     assert isinstance(ghost_batch_norm.moving_variance, torch.Tensor)
     assert ghost_batch_norm.moving_variance.shape == (OUTPUT_SIZE,)
+
+
+def test_ghostbatchnormalization_chunk_size_2() -> None:
+    """Test GhostBatchNormalization with virtual_batch_size=2 and batch_size=7 This creates chunks of size 2, 2, 2,
+    1 which should be handled correctly since we should skip applying batch norm to the last chunk since it is size
+    1."""
+    # setup up GhostBatchNormalization layer
+    ghost_batch_norm = GhostBatchNormalization(6, virtual_batch_size=2)
+
+    # setup inputs to test
+    inputs = torch.randn([7, 6], dtype=torch.float32)
+
+    # Set to training mode
+    ghost_batch_norm.train(mode=True)
+
+    # run tensor through
+    ghost_batch_norm(inputs)

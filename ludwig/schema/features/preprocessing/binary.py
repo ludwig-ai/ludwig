@@ -1,7 +1,16 @@
 from typing import Union
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import BINARY, DROP_ROW, FILL_WITH_FALSE, MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING
+from ludwig.constants import (
+    BFILL,
+    BINARY,
+    DROP_ROW,
+    FFILL,
+    FILL_WITH_FALSE,
+    FILL_WITH_MODE,
+    FILL_WITH_TRUE,
+    PREPROCESSING,
+)
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor
@@ -17,7 +26,7 @@ class BinaryPreprocessingConfig(BasePreprocessingConfig):
     """BinaryPreprocessingConfig is a dataclass that configures the parameters used for a binary input feature."""
 
     missing_value_strategy: str = schema_utils.StringOptions(
-        MISSING_VALUE_STRATEGY_OPTIONS + [FILL_WITH_FALSE],
+        [FILL_WITH_MODE, BFILL, FFILL, DROP_ROW, FILL_WITH_FALSE, FILL_WITH_TRUE],
         default=FILL_WITH_FALSE,
         allow_none=False,
         description="What strategy to follow when there's a missing value in a binary column",
@@ -63,7 +72,7 @@ class BinaryPreprocessingConfig(BasePreprocessingConfig):
 @ludwig_dataclass
 class BinaryOutputPreprocessingConfig(BinaryPreprocessingConfig):
     missing_value_strategy: str = schema_utils.StringOptions(
-        MISSING_VALUE_STRATEGY_OPTIONS + [FILL_WITH_FALSE],
+        [FILL_WITH_MODE, BFILL, FFILL, DROP_ROW, FILL_WITH_FALSE, FILL_WITH_TRUE],
         default=DROP_ROW,
         allow_none=False,
         description="What strategy to follow when there's a missing value in a binary output feature",

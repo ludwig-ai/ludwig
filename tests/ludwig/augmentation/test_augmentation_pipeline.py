@@ -139,14 +139,14 @@ def run_augmentation_training(
         },
     }
 
-    model = LudwigModel(config, logging_level=logging.INFO)
-    model.experiment(
-        dataset=train_fp,
-        skip_save_processed_input=True,
-        skip_save_model=True,
-    )
-    return model
-
+    with tempfile.TemporaryDirectory() as tmpdir:
+        model = LudwigModel(config, logging_level=logging.INFO)
+        model.experiment(
+            dataset=train_fp,
+            skip_save_processed_input=True,
+            skip_save_model=True,
+            output_directory=os.path.join(tmpdir, "output"),
+        )
     return model
 
 
@@ -171,7 +171,9 @@ def run_augmentation_training(
 # test image augmentation pipeline
 def test_image_augmentation(test_image, augmentation_pipeline_ops):
     # define augmentation pipeline
-    feature = ImageInputFeatureConfig.from_dict({"augmentation": augmentation_pipeline_ops})
+    feature = ImageInputFeatureConfig.from_dict(
+        {"name": "foo", "type": "image", "augmentation": augmentation_pipeline_ops}
+    )
     augmentation_pipeline = ImageAugmentation(feature.augmentation)
     # apply augmentation pipeline to batch of test images
     augmentation_pipeline(test_image)

@@ -8,34 +8,20 @@ from ludwig.constants import (
     AUDIO,
     BINARY,
     CATEGORY,
-    COMBINER,
-    DECODER,
-    ENCODER,
     IMAGE,
     IN_MEMORY,
-    INPUT_FEATURES,
     MODEL_ECD,
     MODEL_GBM,
-    MODEL_TYPE,
-    NAME,
     NUMBER,
-    OUTPUT_FEATURES,
     SEQUENCE,
     SET,
     TEXT,
     TIMESERIES,
-    TRAINER,
-    TYPE,
     VECTOR,
 )
-from ludwig.decoders.registry import get_decoder_registry
-from ludwig.encoders.registry import get_encoder_registry
 from ludwig.error import ConfigValidationError
-from ludwig.schema.combiners.utils import get_combiner_registry
-from ludwig.schema.features.utils import input_config_registry
-from ludwig.schema.optimizers import optimizer_registry
-from ludwig.types import ModelConfigDict
 from ludwig.utils.metric_utils import get_feature_to_metric_names_map_from_feature_collection
+from ludwig.utils.misc_utils import merge_dict
 
 if TYPE_CHECKING:
     from ludwig.schema.model_config import ModelConfig
@@ -80,76 +66,6 @@ class ConfigCheck(ABC):
     def check(config: "ModelConfig") -> None:  # noqa: F821
         """Checks config for validity."""
         raise NotImplementedError
-
-
-def check_basic_required_parameters(config: ModelConfigDict) -> None:
-    """Checks basic required parameters like that all features have names and types, and all types are valid."""
-    model_type = config["model_type"]
-
-    # Check input features.
-    for input_feature in config[INPUT_FEATURES]:
-        if NAME not in input_feature:
-            raise ConfigValidationError("All input features must have a name.")
-        if TYPE not in input_feature:
-            raise ConfigValidationError(f"Input feature {input_feature[NAME]} must have a type.")
-        if input_feature[TYPE] not in input_config_registry(model_type):
-            raise ConfigValidationError(
-                f"Input feature {input_feature[NAME]} uses an invalid/unsupported type "
-                f"'{input_feature[TYPE]}'. Input feature types: {list(get_encoder_registry().keys())}."
-            )
-        if ENCODER in input_feature:
-            if (
-                TYPE in input_feature[ENCODER]
-                and input_feature[ENCODER][TYPE] not in get_encoder_registry()[input_feature[TYPE]]
-            ):
-                raise ConfigValidationError(
-                    f"Encoder type '{input_feature[ENCODER][TYPE]}' for input feature {input_feature[NAME]} must be "
-                    f"one of: {list(get_encoder_registry()[input_feature[TYPE]].keys())}."
-                )
-
-    # Check output features.
-    for output_feature in config[OUTPUT_FEATURES]:
-        if NAME not in output_feature:
-            raise ConfigValidationError("All output features must have a name.")
-        if TYPE not in output_feature:
-            raise ConfigValidationError(f"Output feature {output_feature[NAME]} must have a type.")
-        if output_feature[TYPE] not in get_decoder_registry():
-            raise ConfigValidationError(
-                f"Output feature {output_feature[NAME]} uses an invalid/unsupported output type "
-                f"'{output_feature[TYPE]}'. Supported output features: {list(get_decoder_registry().keys())}."
-            )
-        if DECODER in output_feature:
-            if (
-                TYPE in output_feature[DECODER]
-                and output_feature[DECODER][TYPE] not in get_decoder_registry()[output_feature[TYPE]]
-            ):
-                raise ConfigValidationError(
-                    f"Decoder type for output feature {output_feature[NAME]} must be one of: "
-                    f"{list(get_decoder_registry()[output_feature[TYPE]].keys())}."
-                )
-
-    # Check combiners.
-    if config.get(MODEL_TYPE, MODEL_ECD) == MODEL_ECD:
-        if COMBINER not in config:
-            return
-        if TYPE not in config[COMBINER]:
-            raise ConfigValidationError("Combiner must have a type.")
-        if config[COMBINER][TYPE] not in get_combiner_registry():
-            raise ConfigValidationError(f"Combiner type must be one of: {list(get_combiner_registry().keys())}.")
-
-    # Check trainer.
-    if TRAINER in config and config[TRAINER] is None:
-        raise ConfigValidationError("Trainer cannot be None.")
-
-    # Check optimizer.
-    if TRAINER in config and "optimizer" in config[TRAINER]:
-        if config[TRAINER]["optimizer"] is None:
-            raise ConfigValidationError("Trainer.optimizer cannot be None.")
-        if TYPE in config[TRAINER]["optimizer"]:
-            if config[TRAINER]["optimizer"][TYPE] not in optimizer_registry:
-                raise ConfigValidationError(
-                    f"Trainer.optimizer.type must be one of: {list(optimizer_registry.keys())}."
-                )
 
 
 @register_config_check
@@ -200,7 +116,8 @@ def check_gbm_horovod_incompatibility(config: "ModelConfig") -> None:  # noqa: F
     """
     if config.backend is None:
         return
-    if config.model_type == MODEL_GBM and config.backend.type == "horovod":
+    # TODO (jeffkinnison): Revert to object access when https://github.com/ludwig-ai/ludwig/pull/3127 lands
+    if config.model_type == MODEL_GBM and config.backend.get("type") == "horovod":
         raise ConfigValidationError("Horovod backend does not support GBM models.")
 
 
@@ -260,10 +177,10 @@ def check_comparator_combiner_requirements(config: "ModelConfig") -> None:  # no
     """Checks that all of the feature names for entity_1 and entity_2 are valid features."""
     if config.model_type != MODEL_ECD:
         return
-    if config.combiner != "comparator":
+    if config.combiner.type != "comparator":
         return
 
-    input_feature_names = {input_feature.name for input_feature in config.input_features}
+    input_feature_names = [input_feature.name for input_feature in config.input_features]
     for feature_name in config.combiner.entity_1:
         if feature_name not in input_feature_names:
             raise ConfigValidationError(
@@ -274,6 +191,9 @@ def check_comparator_combiner_requirements(config: "ModelConfig") -> None:  # no
             raise ConfigValidationError(
                 f"Feature {feature_name} in entity_2 for the comparator combiner is not a valid " "input feature name."
             )
+
+    if sorted(config.combiner.entity_1 + config.combiner.entity_2) != sorted(input_feature_names):
+        raise ConfigValidationError("Not all input features are present as entities in the comparator combiner.")
 
 
 @register_config_check
@@ -370,3 +290,168 @@ def check_stacked_transformer_requirements(config: "ModelConfig") -> None:  # no
                 f"Input feature {input_feature.name} transformer encoder requires encoder.hidden_size to be divisible "
                 f"by encoder.num_heads. Found hidden_size {encoder.hidden_size} and num_heads {encoder.num_heads}."
             )
+
+
+@register_config_check
+def check_hyperopt_search_algorithm_dependencies_installed(config: "ModelConfig") -> None:  # noqa: F821
+    """Check that the hyperopt search algorithm dependencies are installed."""
+    if config.hyperopt is None:
+        return
+
+    try:
+        config.hyperopt.search_alg.dependencies_installed()
+    except ImportError as e:
+        raise ConfigValidationError(e.msg)
+
+
+@register_config_check
+def check_hyperopt_scheduler_dependencies_installed(config: "ModelConfig") -> None:  # noqa: F821
+    """Check that the hyperopt scheduler dependencies are installed."""
+    if config.hyperopt is None:
+        return
+
+    try:
+        config.hyperopt.executor.scheduler.dependencies_installed()
+    except ImportError as e:
+        raise ConfigValidationError(e.msg)
+
+
+@register_config_check
+def check_tagger_decoder_requirements(config: "ModelConfig") -> None:  # noqa: F821
+    """Checks that the tagger decoder has at least one sequence, text or timeseries input feature where the
+    encoder's reduce_output will produce a 3D shaped output from the combiner."""
+    # Check if there is a text or sequence output feature using a tagger decoder
+    output_feature_with_tagger_decoder = False
+    for output_feature in config.output_features:
+        if output_feature.type in {TEXT, SEQUENCE} and output_feature.decoder.type == "tagger":
+            output_feature_with_tagger_decoder = True
+
+    if not output_feature_with_tagger_decoder:
+        return
+
+    # Check that there is at least one sequence, text or timeseries input feature that doesn't reduce the
+    # output of the encoder.
+    has_sequence_feature = False
+    for input_feature in config.input_features:
+        if input_feature.type in {SEQUENCE, TEXT, TIMESERIES}:
+            has_sequence_feature = True
+            if input_feature.encoder.reduce_output is None:
+                return
+
+    if not has_sequence_feature:
+        raise ConfigValidationError("Tagger decoder requires at least one text, sequence or timeseries input feature.")
+    else:
+        raise ConfigValidationError(
+            "Tagger decoder requires at least one of the text, sequence or timeseries input feature encoders to have "
+            "`reduce_output` set to `None`."
+        )
+
+
+@register_config_check
+def check_hyperopt_parameter_dicts(config: "ModelConfig") -> None:  # noqa: F821
+    """Checks for hyperopt parameter dicts against their config objects."""
+    if config.hyperopt is None:
+        return
+
+    from ludwig.schema.hyperopt.utils import get_parameter_cls, parameter_config_registry  # noqa: F401
+
+    for parameter, space in config.hyperopt.parameters.items():
+        # skip nested hyperopt parameters
+        if parameter != ".":
+            parameter_attribute_path = parameter.split(".")
+            passed = False
+
+            for root in [config, config.input_features, config.output_features]:
+                current = root
+                for p in parameter_attribute_path:
+                    try:
+                        current = current.__getattribute__(p)
+                        if p == parameter_attribute_path[-1]:
+                            passed = True
+                    except AttributeError:
+                        break
+                if passed:
+                    break
+
+            if not passed:
+                raise ConfigValidationError(
+                    f"The supplied hyperopt parameter {parameter} is not a valid config field. Check the Ludwig "
+                    "docs for the list of valid parameters."
+                )
+
+            try:
+                space_cls = get_parameter_cls(space["space"])
+                space_cls.from_dict(space)
+            except KeyError:
+                space_types = ", ".join(parameter_config_registry.keys())
+                raise ConfigValidationError(
+                    f"Invalid hyperopt parameter space requested for `hyperopt.parameters.{parameter}`. Valid spaces "
+                    f"are {space_types}."
+                )
+
+
+@register_config_check
+def check_concat_combiner_requirements(config: "ModelConfig") -> None:  # noqa: F821
+    """Checks that if the concat combiner receives a mixture of sequence and non-sequence features, that all
+    sequence features are configured with reduce_output to be 2D tensors."""
+    if config.model_type != MODEL_ECD:
+        return
+    if config.combiner.type != "concat":
+        return
+
+    has_unreduced_sequence_feature = False
+    has_non_sequence_feature = False
+    for input_feature in config.input_features:
+        if (
+            input_feature.type in {SEQUENCE, TEXT, TIMESERIES}
+            and hasattr(input_feature.encoder, "reduce_output")
+            and input_feature.encoder.reduce_output is None
+        ):
+            has_unreduced_sequence_feature = True
+        else:
+            has_non_sequence_feature = True
+
+    if has_unreduced_sequence_feature and has_non_sequence_feature:
+        raise ConfigValidationError(
+            "The concat combiner cannot receive a mix of unreduced sequence features (3D) and non-sequence features "
+            "(2D). Options: 1) Set reduce_output in sequence feature encoders to a value other than None to ensure 2D "
+            "encoder outputs, 2) Choose a different combiner like `sequence_concat` which can handle a mix of 2D and "
+            "3D encoder output shapes, or 3) Remove features to ensure that output shapes from all encoders are the "
+            "same dimension (all 2D or all 3D)."
+        )
+
+
+@register_config_check
+def check_hyperopt_nested_parameter_dicts(config: "ModelConfig") -> None:  # noqa: F821
+    """Checks that all nested parameters in a hyperopt config exist."""
+    if config.hyperopt is None or "." not in config.hyperopt.parameters:
+        return
+
+    from ludwig.schema.hyperopt.utils import get_parameter_cls  # noqa: F401
+    from ludwig.schema.model_types.base import ModelConfig
+
+    space = config.hyperopt.parameters["."]
+
+    # Build the config that would be produced by each parameter dict to validate subsections that may be in
+    config_dict = config.to_dict()
+    del config_dict["hyperopt"]
+    for category in space["categories"]:
+        for i, k in enumerate(category.keys()):
+            try:
+                config.__getattribute__(k)
+            except AttributeError:
+                raise ConfigValidationError(f"Invalid config block {k} in nested hyperopt parameter dict {i}: {space}.")
+
+        category_dict = merge_dict(config_dict, category)
+        try:
+            ModelConfig.from_dict(category_dict)
+        except ConfigValidationError as e:
+            raise ConfigValidationError(f"Invalid config in hyperopt nested parameter config: {category}. {e.message}")
+
+    try:
+        space_cls = get_parameter_cls("choice")
+        space_cls.from_dict(space)
+    except KeyError:
+        raise ConfigValidationError(
+            f"Nested hyperparameter search spaces must be of type 'choice'. Requested space type: {space['space']}"
+        )

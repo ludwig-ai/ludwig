@@ -23,13 +23,15 @@ from ludwig.constants import (
     TIMESERIES,
     VECTOR,
 )
+from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.utils import (
     ecd_input_config_registry,
+    ecd_output_config_registry,
     gbm_input_config_registry,
+    gbm_output_config_registry,
     get_input_feature_jsonschema,
     get_output_feature_jsonschema,
-    output_config_registry,
 )
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY, ParameterMetadata
 from ludwig.schema.utils import ludwig_dataclass
@@ -43,6 +45,14 @@ _info_console = Console(stderr=True, style="bold green")
 @ludwig_dataclass
 class BaseFeatureConfig(schema_utils.BaseMarshmallowConfig):
     """Base class for feature configs."""
+
+    def __post_init__(self):
+        # TODO(travis): this should be done through marshmallow dataclass' `required` field param,
+        # but requires a refactor`
+        if self.name is None:
+            raise ConfigValidationError("All features must have a name.")
+        if self.type is None:
+            raise ConfigValidationError(f"Feature {self.name} must have a type.")
 
     active: bool = True
 
@@ -110,7 +120,9 @@ class BaseInputFeatureConfig(BaseFeatureConfig):
         default=None,
         allow_none=True,
         description="Name of input feature to tie the weights of the encoder with.  It needs to be the name of a "
-        "feature of the same type and with the same encoder parameters.",
+        "feature of the same type and with the same encoder parameters. If text or sequence features are tied, "
+        "consider setting the `sequence_length` parameter in `preprocessing` to ensure that the tied features have "
+        "equal sized outputs. This is necessary when using the `sequence` combiner.",
     )
 
     def has_augmentation(self) -> bool:
@@ -218,10 +230,18 @@ class FeatureList(fields.List):
 
 
 class FeaturesTypeSelection(schema_utils.TypeSelection):
-    def __init__(self, *args, min_length: Optional[int] = 1, max_length: Optional[int] = None, **kwargs):
+    def __init__(
+        self,
+        *args,
+        min_length: Optional[int] = 1,
+        max_length: Optional[int] = None,
+        supplementary_metadata=None,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
         self.min_length = min_length
         self.max_length = max_length
+        self.supplementary_metadata = {} if supplementary_metadata is None else supplementary_metadata
 
     def get_list_field(self) -> Field:
         min_length = self.min_length
@@ -241,6 +261,7 @@ class FeaturesTypeSelection(schema_utils.TypeSelection):
                         max=max_length,
                         equal=equal,
                     ),
+                    metadata=self.supplementary_metadata,
                 )
             },
         )
@@ -248,10 +269,13 @@ class FeaturesTypeSelection(schema_utils.TypeSelection):
 
 class ECDInputFeatureSelection(FeaturesTypeSelection):
     def __init__(self):
-        super().__init__(registry=ecd_input_config_registry, description="Type of the input feature")
+        super().__init__(
+            registry=ecd_input_config_registry,
+            description="Type of the input feature",
+            supplementary_metadata={"uniqueItemProperties": ["name"]},
+        )
 
-    @staticmethod
-    def _jsonschema_type_mapping():
+    def _jsonschema_type_mapping(self):
         return get_input_feature_jsonschema(MODEL_ECD)
 
 
@@ -259,24 +283,21 @@ class GBMInputFeatureSelection(FeaturesTypeSelection):
     def __init__(self):
         super().__init__(registry=gbm_input_config_registry, description="Type of the input feature")
 
-    @staticmethod
-    def _jsonschema_type_mapping():
+    def _jsonschema_type_mapping(self):
         return get_input_feature_jsonschema(MODEL_GBM)
 
 
 class ECDOutputFeatureSelection(FeaturesTypeSelection):
     def __init__(self):
-        super().__init__(registry=output_config_registry, description="Type of the output feature")
+        super().__init__(registry=ecd_output_config_registry, description="Type of the output feature")
 
-    @staticmethod
-    def _jsonschema_type_mapping():
+    def _jsonschema_type_mapping(self):
         return get_output_feature_jsonschema(MODEL_ECD)
 
 
 class GBMOutputFeatureSelection(FeaturesTypeSelection):
     def __init__(self):
-        super().__init__(max_length=1, registry=output_config_registry, description="Type of the output feature")
+        super().__init__(max_length=1, registry=gbm_output_config_registry, description="Type of the output feature")
 
-    @staticmethod
-    def _jsonschema_type_mapping():
+    def _jsonschema_type_mapping(self):
         return get_output_feature_jsonschema(MODEL_GBM)

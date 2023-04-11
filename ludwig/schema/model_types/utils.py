@@ -15,19 +15,20 @@ from ludwig.constants import (
     GRID_SEARCH,
     INPUT_FEATURES,
     LOSS,
+    MODEL_ECD,
     OUTPUT_FEATURES,
     PARAMETERS,
     PREPROCESSING,
+    SEQUENCE,
     SPACE,
+    TEXT,
     TYPE,
 )
 from ludwig.features.feature_utils import compute_feature_hash
-from ludwig.schema.encoders.utils import get_encoder_cls
-from ludwig.schema.features.utils import input_config_registry, output_config_registry
+from ludwig.schema.features.utils import output_config_registry
 from ludwig.schema.hyperopt.scheduler import BaseHyperbandSchedulerConfig
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.types import HyperoptConfigDict, ModelConfigDict
-from ludwig.utils.misc_utils import merge_dict
 
 if TYPE_CHECKING:
     from ludwig.schema.model_types.base import ModelConfig
@@ -85,15 +86,10 @@ def _merge_dict_with_types(dct: Dict[str, Any], merge_dct: Dict[str, Any], exclu
 
 
 @DeveloperAPI
-def merge_fixed_preprocessing_params(
-    model_type: str, feature_type: str, preprocessing_params: Dict[str, Any], encoder_params: Dict[str, Any]
-) -> Dict[str, Any]:
+def merge_fixed_preprocessing_params(config: "ModelConfig"):
     """Update preprocessing parameters if encoders require fixed preprocessing parameters."""
-    feature_cls = input_config_registry(model_type)[feature_type]
-    encoder_type = encoder_params.get(TYPE, feature_cls().encoder.type)
-    encoder_class = get_encoder_cls(model_type, feature_type, encoder_type)
-    encoder = encoder_class.from_dict(encoder_params)
-    return merge_dict(preprocessing_params, encoder.get_fixed_preprocessing_params())
+    for feature in config.input_features:
+        feature.encoder.set_fixed_preprocessing_params(config.model_type, feature.preprocessing)
 
 
 def set_validation_parameters(config: "ModelConfig"):
@@ -155,7 +151,7 @@ def set_validation_parameters(config: "ModelConfig"):
         # The user has not explicitly set any validation fields.
         # Default to using the first output feature's default validation metric.
         out_type = validation_feature.type
-        config.trainer.validation_metric = output_config_registry[out_type].default_validation_metric
+        config.trainer.validation_metric = output_config_registry(config.model_type)[out_type].default_validation_metric
 
 
 def set_derived_feature_columns_(config_obj: "ModelConfig"):
@@ -174,6 +170,31 @@ def set_derived_feature_columns_(config_obj: "ModelConfig"):
             feature.column = feature.name
         if feature.proc_column is None:
             feature.proc_column = compute_feature_hash(feature.to_dict())
+
+
+def filter_combiner_entities_(config: "ModelConfig"):
+    if config.model_type != MODEL_ECD or config.combiner.type != "comparator":
+        return
+
+    input_feature_names = {input_feature.name for input_feature in config.input_features}
+
+    entity_1_excluded = {fname for fname in config.combiner.entity_1 if fname not in input_feature_names}
+    if entity_1_excluded:
+        logger.warning(
+            f"Excluding `entity_1` features {entity_1_excluded} from the comparator combiner because they are not "
+            f"present in the `input_features`."
+        )
+
+    config.combiner.entity_1 = [fname for fname in config.combiner.entity_1 if fname not in entity_1_excluded]
+
+    entity_2_excluded = {fname for fname in config.combiner.entity_2 if fname not in input_feature_names}
+    if entity_2_excluded:
+        logger.warning(
+            f"Excluding `entity_2` features {entity_2_excluded} from the comparator combiner because they are not "
+            f"present in the `input_features`."
+        )
+
+    config.combiner.entity_2 = [fname for fname in config.combiner.entity_2 if fname not in entity_2_excluded]
 
 
 def set_hyperopt_defaults_(config: "ModelConfig"):
@@ -232,6 +253,44 @@ def set_hyperopt_defaults_(config: "ModelConfig"):
                 config.trainer.epochs = max_t
         elif epochs is not None:
             scheduler.max_t = epochs  # run scheduler until trainer epochs limit hit
+
+
+def set_preprocessing_parameters(config: "ModelConfig") -> None:  # noqa: F821
+    """Reconcile conflicting preprocessing parameters in place."""
+    _set_max_sequence_length(config)
+
+
+def _set_max_sequence_length(config: "ModelConfig") -> None:  # noqa: F821
+    """Ensures that `max_sequence_length` is never less than `sequence_length`."""
+
+    types_with_sequence_length = [SEQUENCE, TEXT]
+    for input_feature in config.input_features:
+        if input_feature.type in types_with_sequence_length:
+            sequence_length = input_feature.preprocessing.sequence_length
+            max_sequence_length = input_feature.preprocessing.max_sequence_length
+            if sequence_length is not None and sequence_length > max_sequence_length:
+                warnings.warn(
+                    "if `sequence_length` is not None, `max_sequence_length` must be greater than or equal "
+                    "to `sequence_length`. Setting `max_sequence_length` to `sequence_length`."
+                )
+                input_feature.preprocessing.max_sequence_length = sequence_length
+
+
+def set_tagger_decoder_parameters(config: "ModelConfig") -> None:
+    """Overrides the reduce_input parameter for text and sequence output features when a tagger decoder is used.
+    This is done to ensure that the decoder correctly gets a 3D tensor as input.
+
+    Returns:
+        None -> modifies output_features
+    """
+    for output_feature in config.output_features:
+        if output_feature.type in {TEXT, SEQUENCE} and output_feature.decoder.type == "tagger":
+            if output_feature.reduce_input is not None:
+                warnings.warn(
+                    "reduce_input must be set to `None` when using a tagger decoder for your output feature. "
+                    f"Setting reduce_input to `None` for `{output_feature.name}`."
+                )
+                output_feature.reduce_input = None
 
 
 @DeveloperAPI

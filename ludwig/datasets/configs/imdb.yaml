@@ -7,6 +7,11 @@ sha256:
 description: |
   IMDB dataset having 50K movie reviews for natural language processing or Text analytics.
   https://www.kaggle.com/datasets/lakshmi25npathi/imdb-dataset-of-50k-movie-reviews
+columns:
+  - name: review
+    type: text
+  - name: sentiment
+    type: category
 output_features:
   - name: sentiment
     type: binary

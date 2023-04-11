@@ -17,6 +17,7 @@ import logging
 from typing import Dict, List, Optional, Union
 
 import torch
+from torch import nn
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import CATEGORY
@@ -25,6 +26,7 @@ from ludwig.encoders.registry import register_encoder
 from ludwig.modules.embedding_modules import Embed
 from ludwig.schema.encoders.category_encoders import (
     CategoricalEmbedConfig,
+    CategoricalOneHotEncoderConfig,
     CategoricalPassthroughEncoderConfig,
     CategoricalSparseConfig,
 )
@@ -60,6 +62,9 @@ class CategoricalPassthroughEncoder(Encoder):
     @property
     def output_shape(self) -> torch.Size:
         return self.input_shape
+
+    def get_embedding_layer(self) -> nn.Module:
+        return self
 
 
 @DeveloperAPI
@@ -171,3 +176,44 @@ class CategoricalSparseEncoder(Encoder):
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([1])
+
+
+@DeveloperAPI
+@register_encoder("onehot", [CATEGORY])
+class CategoricalOneHotEncoder(Encoder):
+    def __init__(
+        self,
+        vocab: List[str],
+        encoder_config=None,
+        **kwargs,
+    ):
+        super().__init__()
+        self.config = encoder_config
+
+        logger.debug(f" {self.name}")
+        self.vocab_size = len(vocab)
+
+    def forward(self, inputs, mask=None):
+        """
+        :param inputs: The inputs fed into the encoder.
+               Shape: [batch, 1] or [batch]
+        """
+        t = inputs.reshape(-1).long()
+        # the output of this must be a float so that it can be concatenated with other
+        # encoder outputs and passed to dense layers in the combiner, decoder, etc.
+        return torch.nn.functional.one_hot(t, num_classes=self.vocab_size).float()
+
+    @staticmethod
+    def get_schema_cls():
+        return CategoricalOneHotEncoderConfig
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([1])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([self.vocab_size])
+
+    def get_embedding_layer(self) -> nn.Module:
+        return self

@@ -19,15 +19,17 @@ from typing import Any, Callable, Generator, Optional, Type
 
 import torch
 from torch import Tensor, tensor
-from torchmetrics import AUROC, CharErrorRate, MeanAbsoluteError
+from torchmetrics import CharErrorRate, MeanAbsoluteError, MeanAbsolutePercentageError
 from torchmetrics import MeanMetric as _MeanMetric
 from torchmetrics import MeanSquaredError, Metric
 from torchmetrics.classification import (
     BinaryAccuracy,
+    BinaryAUROC,
     BinaryPrecision,
     BinaryRecall,
     BinarySpecificity,
     MulticlassAccuracy,
+    MulticlassAUROC,
 )
 from torchmetrics.functional.regression.r2 import _r2_score_compute, _r2_score_update
 from torchmetrics.metric import jit_distributed_available
@@ -38,12 +40,15 @@ from ludwig.constants import (
     BINARY,
     BINARY_WEIGHTED_CROSS_ENTROPY,
     CATEGORY,
+    CATEGORY_DISTRIBUTION,
     HITS_AT_K,
+    HUBER,
     JACCARD,
     LOGITS,
     LOSS,
     MAXIMIZE,
     MEAN_ABSOLUTE_ERROR,
+    MEAN_ABSOLUTE_PERCENTAGE_ERROR,
     MEAN_SQUARED_ERROR,
     MINIMIZE,
     NUMBER,
@@ -61,17 +66,26 @@ from ludwig.constants import (
     SET,
     SPECIFICITY,
     TEXT,
+    TIMESERIES,
     TOKEN_ACCURACY,
     VECTOR,
 )
 from ludwig.distributed import get_current_dist_strategy
 from ludwig.modules.loss_modules import (
     BWCEWLoss,
+    HuberLoss,
     SequenceSoftmaxCrossEntropyLoss,
     SigmoidCrossEntropyLoss,
     SoftmaxCrossEntropyLoss,
 )
 from ludwig.modules.metric_registry import get_metric_objective, get_metric_registry, register_metric
+from ludwig.schema.features.loss.loss import (
+    BWCEWLossConfig,
+    HuberLossConfig,
+    SequenceSoftmaxCrossEntropyLossConfig,
+    SigmoidCrossEntropyLossConfig,
+    SoftmaxCrossEntropyLossConfig,
+)
 from ludwig.utils.loss_utils import rmspe_loss
 from ludwig.utils.metric_utils import masked_correct_predictions
 from ludwig.utils.torch_utils import sequence_length_2D
@@ -136,7 +150,7 @@ class RecallMetric(BinaryRecall, LudwigMetric):
 
 
 @register_metric(ROC_AUC, [BINARY], MAXIMIZE, PROBABILITIES)
-class BinaryAUROCMetric(AUROC, LudwigMetric):
+class BinaryAUROCMetric(BinaryAUROC, LudwigMetric):
     """Area under the receiver operating curve."""
 
     def __init__(self, **kwargs):
@@ -146,12 +160,17 @@ class BinaryAUROCMetric(AUROC, LudwigMetric):
         super().update(preds, target.type(torch.int8))
 
 
-@register_metric(ROC_AUC, [CATEGORY], MAXIMIZE, PROBABILITIES)
-class CategoryAUROCMetric(AUROC, LudwigMetric):
+@register_metric(ROC_AUC, [CATEGORY, CATEGORY_DISTRIBUTION], MAXIMIZE, PROBABILITIES)
+class CategoryAUROCMetric(MulticlassAUROC, LudwigMetric):
     """Area under the receiver operating curve."""
 
     def __init__(self, num_classes: int, **kwargs):
         super().__init__(num_classes=num_classes, dist_sync_fn=_gather_all_tensors_fn())
+
+    def update(self, preds: Tensor, target: Tensor) -> None:
+        if len(target.shape) > 1:
+            target = torch.argmax(target, dim=1)
+        super().update(preds, target)
 
 
 @register_metric(SPECIFICITY, [BINARY], MAXIMIZE, PROBABILITIES)
@@ -195,7 +214,7 @@ class RMSPEMetric(MeanMetric):
         return rmspe_loss(target, preds)
 
 
-@register_metric(R2, [NUMBER, VECTOR], MAXIMIZE, PREDICTIONS)
+@register_metric(R2, [NUMBER, VECTOR, TIMESERIES], MAXIMIZE, PREDICTIONS)
 class R2Score(LudwigMetric):
     """Custom R-squared metric implementation that modifies torchmetrics R-squared implementation to return Nan
     when there is only sample. This is because R-squared is only defined for two or more samples.
@@ -274,30 +293,19 @@ class LossMetric(MeanMetric, ABC):
 class BWCEWLMetric(LossMetric):
     """Binary Weighted Cross Entropy Weighted Logits Score Metric."""
 
-    def __init__(
-        self,
-        positive_class_weight: Optional[Tensor] = None,
-        robust_lambda: int = 0,
-        confidence_penalty: int = 0,
-        **kwargs,
-    ):
+    def __init__(self, config: BWCEWLossConfig, **kwargs):
         super().__init__()
-
-        self.loss_function = BWCEWLoss(
-            positive_class_weight=positive_class_weight,
-            robust_lambda=robust_lambda,
-            confidence_penalty=confidence_penalty,
-        )
+        self.loss_function = BWCEWLoss(config)
 
     def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
         return self.loss_function(preds, target)
 
 
-@register_metric("softmax_cross_entropy", [CATEGORY], MINIMIZE, LOGITS)
+@register_metric("softmax_cross_entropy", [CATEGORY, CATEGORY_DISTRIBUTION], MINIMIZE, LOGITS)
 class SoftmaxCrossEntropyMetric(LossMetric):
-    def __init__(self, **kwargs):
+    def __init__(self, config: SoftmaxCrossEntropyLossConfig, **kwargs):
         super().__init__()
-        self.softmax_cross_entropy_function = SoftmaxCrossEntropyLoss(**kwargs)
+        self.softmax_cross_entropy_function = SoftmaxCrossEntropyLoss(config)
 
     def get_current_value(self, preds: Tensor, target: Tensor):
         return self.softmax_cross_entropy_function(preds, target)
@@ -305,9 +313,9 @@ class SoftmaxCrossEntropyMetric(LossMetric):
 
 @register_metric("sequence_softmax_cross_entropy", [SEQUENCE, TEXT], MINIMIZE, LOGITS)
 class SequenceSoftmaxCrossEntropyMetric(LossMetric):
-    def __init__(self, **kwargs):
+    def __init__(self, config: SequenceSoftmaxCrossEntropyLossConfig, **kwargs):
         super().__init__()
-        self.sequence_softmax_cross_entropy_function = SequenceSoftmaxCrossEntropyLoss(**kwargs)
+        self.sequence_softmax_cross_entropy_function = SequenceSoftmaxCrossEntropyLoss(config)
 
     def get_current_value(self, preds: Tensor, target: Tensor):
         return self.sequence_softmax_cross_entropy_function(preds, target)
@@ -315,9 +323,9 @@ class SequenceSoftmaxCrossEntropyMetric(LossMetric):
 
 @register_metric("sigmoid_cross_entropy", [SET], MINIMIZE, LOGITS)
 class SigmoidCrossEntropyMetric(LossMetric):
-    def __init__(self, **kwargs):
+    def __init__(self, config: SigmoidCrossEntropyLossConfig, **kwargs):
         super().__init__()
-        self.sigmoid_cross_entropy_function = SigmoidCrossEntropyLoss(**kwargs)
+        self.sigmoid_cross_entropy_function = SigmoidCrossEntropyLoss(config)
 
     def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
         return self.sigmoid_cross_entropy_function(preds, target)
@@ -367,21 +375,25 @@ class Accuracy(BinaryAccuracy, LudwigMetric):
         super().__init__(dist_sync_fn=_gather_all_tensors_fn())
 
 
-@register_metric(ACCURACY, [CATEGORY], MAXIMIZE, PREDICTIONS)
+@register_metric(ACCURACY, [CATEGORY, CATEGORY_DISTRIBUTION], MAXIMIZE, PREDICTIONS)
 class CategoryAccuracy(MulticlassAccuracy, LudwigMetric):
     def __init__(self, num_classes: int, **kwargs):
         super().__init__(num_classes=num_classes, dist_sync_fn=_gather_all_tensors_fn())
 
     def update(self, preds: Tensor, target: Tensor) -> None:
+        if len(target.shape) > 1:
+            target = torch.argmax(target, dim=1)
         super().update(preds, target.type(torch.long))
 
 
-@register_metric(HITS_AT_K, [CATEGORY], MAXIMIZE, LOGITS)
+@register_metric(HITS_AT_K, [CATEGORY, CATEGORY_DISTRIBUTION], MAXIMIZE, LOGITS)
 class HitsAtKMetric(MulticlassAccuracy, LudwigMetric):
     def __init__(self, num_classes: int, top_k: int, **kwargs):
         super().__init__(num_classes=num_classes, top_k=top_k, dist_sync_fn=_gather_all_tensors_fn(), **kwargs)
 
     def update(self, preds: Tensor, target: Tensor) -> None:
+        if len(target.shape) > 1:
+            target = torch.argmax(target, dim=1)
         super().update(preds, target.type(torch.long))
 
     @classmethod
@@ -389,7 +401,7 @@ class HitsAtKMetric(MulticlassAccuracy, LudwigMetric):
         return feature.num_classes > feature.top_k
 
 
-@register_metric(MEAN_ABSOLUTE_ERROR, [NUMBER, VECTOR], MINIMIZE, PREDICTIONS)
+@register_metric(MEAN_ABSOLUTE_ERROR, [NUMBER, VECTOR, TIMESERIES], MINIMIZE, PREDICTIONS)
 class MAEMetric(MeanAbsoluteError, LudwigMetric):
     def __init__(self, **kwargs):
         super().__init__(dist_sync_fn=_gather_all_tensors_fn())
@@ -398,8 +410,17 @@ class MAEMetric(MeanAbsoluteError, LudwigMetric):
         super().update(preds.detach(), target)
 
 
-@register_metric(MEAN_SQUARED_ERROR, [NUMBER, VECTOR], MINIMIZE, PREDICTIONS)
+@register_metric(MEAN_SQUARED_ERROR, [NUMBER, VECTOR, TIMESERIES], MINIMIZE, PREDICTIONS)
 class MSEMetric(MeanSquaredError, LudwigMetric):
+    def __init__(self, **kwargs):
+        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
+
+    def update(self, preds: Tensor, target: Tensor) -> None:
+        super().update(preds, target)
+
+
+@register_metric(MEAN_ABSOLUTE_PERCENTAGE_ERROR, [NUMBER, VECTOR, TIMESERIES], MINIMIZE, PREDICTIONS)
+class MAPEMetric(MeanAbsolutePercentageError, LudwigMetric):
     def __init__(self, **kwargs):
         super().__init__(dist_sync_fn=_gather_all_tensors_fn())
 
@@ -424,6 +445,20 @@ class JaccardMetric(MeanMetric):
         union = torch.sum(torch.logical_or(target, preds).type(torch.float32), dim=-1)
 
         return intersection / union  # shape [b]
+
+
+@register_metric(HUBER, [NUMBER, VECTOR, TIMESERIES], MINIMIZE, PREDICTIONS)
+class HuberMetric(LossMetric):
+    def __init__(
+        self,
+        config: HuberLossConfig,
+        **kwargs,
+    ):
+        super().__init__()
+        self.loss_function = HuberLoss(config=config)
+
+    def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
+        return self.loss_function(preds, target)
 
 
 def get_metric_cls(metric_name: str) -> Type[LudwigMetric]:

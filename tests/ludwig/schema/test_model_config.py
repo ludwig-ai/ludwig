@@ -32,6 +32,8 @@ from ludwig.constants import (
     TRAINER,
     TYPE,
 )
+from ludwig.schema.decoders.base import ClassifierConfig
+from ludwig.schema.encoders.text_encoders import BERTConfig
 from ludwig.schema.features.augmentation.image import RandomBlurConfig, RandomRotateConfig
 from ludwig.schema.features.image_feature import AUGMENTATION_DEFAULT_OPERATIONS
 from ludwig.schema.features.number_feature import NumberOutputFeatureConfig
@@ -682,3 +684,103 @@ def test_augmentation_pipeline(augmentation, expected):
     # Test the serializing and reloading yields the same results
     config_obj2 = ModelConfig.from_dict(config_dict)
     assert config_obj2.input_features[0].augmentation == config_obj.input_features[0].augmentation
+
+
+@pytest.mark.parametrize(
+    "sequence_length, max_sequence_length, max_sequence_length_expected",
+    [
+        (None, 100, 100),
+        (50, 100, 100),
+        (100, 50, 100),
+    ],
+)
+def test_preprocessing_max_sequence_length(sequence_length, max_sequence_length, max_sequence_length_expected):
+    config = {
+        "input_features": [
+            {
+                "name": "text1",
+                "type": "text",
+                "preprocessing": {
+                    "sequence_length": sequence_length,
+                    "max_sequence_length": max_sequence_length,
+                },
+            },
+            {
+                "name": "sequence1",
+                "type": "sequence",
+                "preprocessing": {
+                    "sequence_length": sequence_length,
+                    "max_sequence_length": max_sequence_length,
+                },
+            },
+        ],
+        "output_features": [
+            {
+                "name": "number1",
+                "type": "number",
+            },
+        ],
+    }
+    config_obj = ModelConfig.from_dict(config)
+    assert config_obj.input_features[0].preprocessing.max_sequence_length == max_sequence_length_expected
+    assert config_obj.input_features[1].preprocessing.max_sequence_length == max_sequence_length_expected
+
+
+def test_gbm_encoders():
+    config = {
+        "input_features": [
+            {"name": "feature_1", "type": "category"},
+            {"name": "Sex", "type": "category"},
+        ],
+        "output_features": [
+            {"name": "Survived", "type": "category"},
+        ],
+        "defaults": {
+            "binary": {
+                "encoder": {
+                    "type": "passthrough",
+                },
+                "preprocessing": {
+                    "missing_value_strategy": "fill_with_false",
+                },
+            },
+            "category": {
+                "encoder": {
+                    "type": "onehot",
+                },
+                "preprocessing": {
+                    "missing_value_strategy": "fill_with_const",
+                    "most_common": 10000,
+                },
+            },
+            "number": {
+                "encoder": {
+                    "type": "passthrough",
+                },
+                "preprocessing": {
+                    "missing_value_strategy": "fill_with_const",
+                },
+            },
+        },
+        "model_type": "gbm",
+    }
+
+    config_obj = ModelConfig.from_dict(config).to_dict()
+
+    for feature_type in config_obj.get("defaults"):
+        assert "encoder" in config_obj["defaults"][feature_type]
+
+
+def test_encoder_decoder_values_as_str():
+    """Tests that encoder / decoder params provided as strings are properly converted to the correct type."""
+    config = {
+        "input_features": [
+            {"name": "text_input", "type": "text", "encoder": "bert"},
+        ],
+        "output_features": [{"name": "cat_output", "type": "category", "decoder": "classifier"}],
+    }
+
+    config_obj = ModelConfig.from_dict(config)
+
+    assert isinstance(config_obj.input_features[0].encoder, BERTConfig)
+    assert isinstance(config_obj.output_features[0].decoder, ClassifierConfig)

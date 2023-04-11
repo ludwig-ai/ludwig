@@ -30,13 +30,7 @@ RUN pip install -U pip
 WORKDIR /ludwig
 
 COPY . .
-RUN HOROVOD_GPU_OPERATIONS=NCCL \
-    HOROVOD_WITH_PYTORCH=1 \
-    HOROVOD_WITHOUT_MPI=1 \
-    HOROVOD_WITHOUT_TENSORFLOW=1 \
-    HOROVOD_WITHOUT_MXNET=1 \
-    pip install --no-cache-dir '.[full]' --extra-index-url https://download.pytorch.org/whl/cu113 && \
-    horovodrun --check-build
+RUN pip install --no-cache-dir '.[full]' --extra-index-url https://download.pytorch.org/whl/cu118
 
 WORKDIR /data
 

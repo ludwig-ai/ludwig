@@ -11,10 +11,10 @@ from ludwig.schema.features.loss.utils import LossDataclassField
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
 from ludwig.schema.features.utils import (
-    defaults_config_registry,
+    ecd_defaults_config_registry,
     ecd_input_config_registry,
+    ecd_output_config_registry,
     input_mixin_registry,
-    output_config_registry,
     output_mixin_registry,
 )
 from ludwig.schema.metadata import FEATURE_METADATA
@@ -41,11 +41,11 @@ class SequenceInputFeatureConfigMixin(BaseMarshmallowConfig):
 @DeveloperAPI
 @ecd_input_config_registry.register(SEQUENCE)
 @ludwig_dataclass
-class SequenceInputFeatureConfig(BaseInputFeatureConfig, SequenceInputFeatureConfigMixin):
+class SequenceInputFeatureConfig(SequenceInputFeatureConfigMixin, BaseInputFeatureConfig):
     """SequenceInputFeatureConfig is a dataclass that configures the parameters used for a sequence input
     feature."""
 
-    pass
+    type: str = schema_utils.ProtectedString(SEQUENCE)
 
 
 @DeveloperAPI
@@ -67,11 +67,13 @@ class SequenceOutputFeatureConfigMixin(BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-@output_config_registry.register(SEQUENCE)
+@ecd_output_config_registry.register(SEQUENCE)
 @ludwig_dataclass
-class SequenceOutputFeatureConfig(BaseOutputFeatureConfig, SequenceOutputFeatureConfigMixin):
+class SequenceOutputFeatureConfig(SequenceOutputFeatureConfigMixin, BaseOutputFeatureConfig):
     """SequenceOutputFeatureConfig is a dataclass that configures the parameters used for a sequence output
     feature."""
+
+    type: str = schema_utils.ProtectedString(SEQUENCE)
 
     default_validation_metric: str = schema_utils.StringOptions(
         [LOSS],
@@ -103,7 +105,7 @@ class SequenceOutputFeatureConfig(BaseOutputFeatureConfig, SequenceOutputFeature
 
 
 @DeveloperAPI
-@defaults_config_registry.register(SEQUENCE)
+@ecd_defaults_config_registry.register(SEQUENCE)
 @ludwig_dataclass
 class SequenceDefaultsConfig(SequenceInputFeatureConfigMixin, SequenceOutputFeatureConfigMixin):
     pass

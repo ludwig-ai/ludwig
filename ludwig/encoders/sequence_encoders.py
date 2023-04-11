@@ -71,6 +71,7 @@ class SequencePassthroughEncoder(SequenceEncoder):
         """
         super().__init__()
         self.config = encoder_config
+        self.max_sequence_length = max_sequence_length
 
         logger.debug(f" {self.name}")
 
@@ -101,6 +102,14 @@ class SequencePassthroughEncoder(SequenceEncoder):
     @staticmethod
     def get_schema_cls():
         return SequencePassthroughConfig
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.input_shape
 
 
 @DeveloperAPI
@@ -1752,6 +1761,7 @@ class StackedCNNRNN(SequenceEncoder):
 
 
 @DeveloperAPI
+@register_sequence_encoder("transformer")
 @register_encoder("transformer", [SEQUENCE, TEXT, TIMESERIES])
 class StackedTransformer(SequenceEncoder):
     def __init__(
@@ -1933,7 +1943,7 @@ class StackedTransformer(SequenceEncoder):
                 self.should_project = True
         else:
             logger.debug("  project_to_embed_size")
-            self.project_to_hidden_size = nn.Linear(1, hidden_size)
+            self.project_to_hidden_size = nn.Linear(embedding_size, hidden_size)
             self.should_project = True
 
         logger.debug("  TransformerStack")

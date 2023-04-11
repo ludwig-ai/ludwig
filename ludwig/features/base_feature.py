@@ -24,7 +24,7 @@ from ludwig.decoders.registry import get_decoder_cls
 from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_utils import get_input_size_with_dependencies
 from ludwig.modules.fully_connected_modules import FCStack
-from ludwig.modules.loss_modules import get_loss_cls
+from ludwig.modules.loss_modules import create_loss
 from ludwig.modules.metric_modules import MeanMetric
 from ludwig.modules.metric_registry import get_metric_classes, get_metric_cls, get_metric_tensor_input
 from ludwig.modules.reduction_modules import SequenceReducer
@@ -234,7 +234,10 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
     @abstractmethod
     def get_prediction_set(self):
-        """Returns the set of prediction keys returned by this feature."""
+        """Returns the set of tensor keys returned by this feature's PredictModule.
+
+        TODO(Justin): Move this to the PredictModule.
+        """
         raise NotImplementedError("OutputFeature is missing implementation for get_prediction_set.")
 
     @classmethod
@@ -267,15 +270,14 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         return self.eval_loss_metric(predictions[prediction_key].detach(), targets)
 
     def _setup_loss(self):
-        loss_kwargs = self.loss_kwargs()
-        self.train_loss_function = get_loss_cls(self.type(), self.loss.type)(**loss_kwargs)
-        self.eval_loss_metric = get_metric_cls(self.type(), self.loss.type)(**loss_kwargs)
+        self.train_loss_function = create_loss(self.loss)
+        self.eval_loss_metric = get_metric_cls(self.type(), self.loss.type)(config=self.loss)
 
     def _setup_metrics(self):
         self._metric_functions = {
             LOSS: self.eval_loss_metric,
             **{
-                name: cls(**self.loss_kwargs(), **self.metric_kwargs())
+                name: cls(config=self.loss, **self.metric_kwargs())
                 for name, cls in get_metric_classes(self.type()).items()
                 if cls.can_report(self)
             },
@@ -331,10 +333,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         """
         raise NotImplementedError("OutputFeature is missing logits() implementation.")
 
-    def loss_kwargs(self) -> Dict[str, Any]:
-        """Returns arguments that are used to instantiate an instance of the loss class."""
-        return {}
-
     def metric_kwargs(self) -> Dict[str, Any]:
         """Returns arguments that are used to instantiate an instance of each metric class."""
         return {}
@@ -356,8 +354,8 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         for metric_name, metric_fn in self._metric_functions.items():
             try:
                 metric_vals[metric_name] = get_scalar_from_ludwig_metric(metric_fn)
-            except Exception as e:
-                logger.error(f"Caught exception computing metric: {metric_name}. Exception: {e}")
+            except Exception:
+                logger.exception(f"Caught exception computing metric: {metric_name}.")
         return metric_vals
 
     def reset_metrics(self):
@@ -562,5 +560,9 @@ def create_passthrough_input_feature(feature: InputFeature, config: BaseFeatureC
 
         def unskip(self) -> InputFeature:
             return feature
+
+        @property
+        def encoder_obj(self) -> torch.nn.Module:
+            return feature.encoder_obj
 
     return _InputPassthroughFeature(config)

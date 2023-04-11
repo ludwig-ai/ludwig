@@ -108,8 +108,7 @@ ecd:
             through the data.
         ui_display_name: Epochs
     eval_batch_size:
-        default_value_reasoning:
-            Use the same batch size used for training.
+        default_value_reasoning: Use the same batch size used for training.
         description_implications:
             By increasing the `eval_batch_size` past the `batch_size`
             parameter set value, you allow for more parallelism in the batch evaluation
@@ -244,12 +243,12 @@ ecd:
             results without an advanced fine tuning.
         description_implications:
             "Choosing a good optimizer for your machine learning
-             project can be overwhelming. Popular deep learning libraries such as PyTorch
-             or TensorFLow offer a broad selection of different optimizers, each
-             with its own strengths and weaknesses. However, picking the wrong optimizer
-             can have a substantial negative impact on the performance of your machine
-             learning model [1][2]. This makes optimizers a critical design choice in
-             the process of building, testing, and deploying your machine learning model."
+            project can be overwhelming. Popular deep learning libraries such as PyTorch
+            or TensorFLow offer a broad selection of different optimizers, each
+            with its own strengths and weaknesses. However, picking the wrong optimizer
+            can have a substantial negative impact on the performance of your machine
+            learning model [1][2]. This makes optimizers a critical design choice in
+            the process of building, testing, and deploying your machine learning model."
         expected_impact: 3
         literature_references:
             - https://www.youtube.com/watch?v=mdKjMPmcWjY
@@ -287,22 +286,22 @@ ecd:
         suggested_values: 0.1
         suggested_values_reasoning:
             "The most common type of regularization is L2, also
-             called weight decay, with values often on a logarithmic
-             scale between 0 and 0.1, such as 0.1, 0.001, 0.0001, etc."
+            called weight decay, with values often on a logarithmic
+            scale between 0 and 0.1, such as 0.1, 0.001, 0.0001, etc."
         ui_display_name: Regularization Lambda
     regularization_type:
         default_value_reasoning: L2 is a standard regularization to start with.
         description_implications:
             "L1 regularization penalizes the sum of absolute values
-             of the weights, whereas L2 regularization penalizes the sum of squares of
-             the weights.
-             The L1 regularization solution is sparse, meaning some weights will be zero,
-             others will be large.
-             The L2 regularization solution is non-sparse, most weights will be small.
-             L2 regularization does not perform feature
-             selection, since weights are only reduced to values near 0 instead of 0.
-             L1 regularization implicitly performs feature selection. L1 regularization is more
-             robust to outliers."
+            of the weights, whereas L2 regularization penalizes the sum of squares of
+            the weights.
+            The L1 regularization solution is sparse, meaning some weights will be zero,
+            others will be large.
+            The L2 regularization solution is non-sparse, most weights will be small.
+            L2 regularization does not perform feature
+            selection, since weights are only reduced to values near 0 instead of 0.
+            L1 regularization implicitly performs feature selection. L1 regularization is more
+            robust to outliers."
         expected_impact: 3
         literature_references:
             - "https://neptune.ai/blog/fighting-overfitting-with-l1-or-l2-regularization#:~:text=The%20differences%20between%20L1%20and,regularization%20solution%20is%20non%2Dsparse. "
@@ -391,6 +390,38 @@ ecd:
             Suggested to enable this if training is taking too
             long on GPU.
         ui_display_name: Use Mixed Precision
+    compile:
+        default_value_reasoning:
+            Model compilation has been shown to significantly speedup training by upwards of 20%, but does impose
+            some delay to compile the model at the beginning of training. This feature is experimental for now,
+            but may become the default in future versions.
+        description_implications:
+            Model compilation on GPU, when used in conjunction with automatic mixed precision, can speed up training
+            by upwards of 20%.
+        expected_impact: 3
+        suggested_values: false
+        suggested_values_reasoning:
+            Suggested to enable this if training is taking too
+            long on GPU.
+        ui_display_name: Compile
+    gradient_accumulation_steps:
+        default_value_reasoning:
+            Gradient accumulation is something that should be enabled only once it has been observed that either GPU
+            utilization is low due to low bandwidth between distributed workers, or that there is too much variance
+            in the training process due to very low batch sizes.
+        description_implications:
+            Gradient accumulation is useful to (1) reduce network bandwidth overhead in multi-node distributed training
+            scenarios where bandwidth is the bottleneck, and (2) train with larger effective batch sizes when the max
+            batch size the GPU can accommodate is very small. The first scenario occurs when the interconnect between
+            nodes is slow, so performing gradient synchronization (allreduce) less frequently will speed up training.
+            The second scenario occurs in cases where the model being trained is very large (e.g., LLM) so training with
+            a larger batch size will help to smooth out the variance from training with a very small batch size.
+        expected_impact: 2
+        suggested_values: false
+        suggested_values_reasoning:
+            Suggested to enable this if training is proceeding very slowly in distributed training (and GPU
+            utilization is low), or the batch size is very small and the loss curves look very spiky.
+        ui_display_name: Gradient Accumulation Steps
     validation_field:
         default_value_reasoning:
             Concrete evaluation metrics are usually better than loss,
@@ -463,28 +494,28 @@ ecd:
             ui_display_name: Warmup Fraction
         decay:
             description_implications:
-                    "It\u2019s almost always a good idea to use a schedule.\
-                    \ For most models, try the exponential decay schedule first.\n\nThe exponential\
-                    \ schedule divides the learning rate by the same factor (%) every epoch. This\
-                    \ means that the learning rate will decrease rapidly in the first few epochs,\
-                    \ and spend more epochs with a lower value, but never reach exactly zero.\
-                    \ As a rule of thumb, compared to training without a schedule, you can use\
-                    \ a slightly higher maximum learning rate. Since the learning rate changes\
-                    \ over time, the whole training is not so sensitive to the value picked."
+                "It\u2019s almost always a good idea to use a schedule.\
+                \ For most models, try the exponential decay schedule first.\n\nThe exponential\
+                \ schedule divides the learning rate by the same factor (%) every epoch. This\
+                \ means that the learning rate will decrease rapidly in the first few epochs,\
+                \ and spend more epochs with a lower value, but never reach exactly zero.\
+                \ As a rule of thumb, compared to training without a schedule, you can use\
+                \ a slightly higher maximum learning rate. Since the learning rate changes\
+                \ over time, the whole training is not so sensitive to the value picked."
             expected_impact: 3
             literature_references:
-                    - "https://peltarion.com/knowledge-center/documentation/modeling-view/run-a-model/optimization-principles-(in-deep-learning)/learning-rate-schedule "
+                - "https://peltarion.com/knowledge-center/documentation/modeling-view/run-a-model/optimization-principles-(in-deep-learning)/learning-rate-schedule "
             related_parameters:
-                    - decay_rate
-                    - decay_steps
-                    - learning_rate
+                - decay_rate
+                - decay_steps
+                - learning_rate
             suggested_values: exponential
             suggested_values_reasoning:
-                    Starting with exponential decay is a safe place to start, as it is a "softer" decrease in the learning
-                    rate over time, as compared with linear, which is more steep after the initial drop. Linear decay is
-                    most useful when the risk of catastrophic forgetting is very high (e.g, for fine-tuning pretrained models).
-                    If you observe your loss curves shooting up (even on the training set) in later epochs, increasing the
-                    decay rate may help mitigate this effect.
+                Starting with exponential decay is a safe place to start, as it is a "softer" decrease in the learning
+                rate over time, as compared with linear, which is more steep after the initial drop. Linear decay is
+                most useful when the risk of catastrophic forgetting is very high (e.g, for fine-tuning pretrained models).
+                If you observe your loss curves shooting up (even on the training set) in later epochs, increasing the
+                decay rate may help mitigate this effect.
             ui_display_name: Decay
         decay_rate:
             default_value_reasoning:
@@ -532,8 +563,7 @@ ecd:
                 think of `decay_steps` as a rate of decay for the `decay_rate`.
             ui_display_name: Decay Steps
         staircase:
-            default_value_reasoning:
-                Performs learning rate decay in stepwise discrete manner.
+            default_value_reasoning: Performs learning rate decay in stepwise discrete manner.
             description_implications:
                 An excessively aggressive decay results in optimizers
                 never reaching the minima, whereas a slow decay leads to chaotic updates without
@@ -612,8 +642,7 @@ gbm:
             indicator that the model converged or overfitted.
         ui_display_name: Early Stop
     eval_batch_size:
-        default_value_reasoning:
-            Use the same batch size used for training.
+        default_value_reasoning: Use the same batch size used for training.
         description_implications:
             By increasing the `eval_batch_size` past the `batch_size`
             parameter set value, you allow for more parallelism in the batch evaluation

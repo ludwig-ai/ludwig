@@ -89,13 +89,12 @@ def DecoderDataclassField(feature_type: str, default: str) -> Field:
 
     class DecoderSelection(schema_utils.TypeSelection):
         def __init__(self):
-            super().__init__(registry=decoder_registry, default_value=default)
+            super().__init__(registry=decoder_registry, default_value=default, allow_str_value=True)
 
         def get_schema_from_registry(self, key: str) -> Type[schema_utils.BaseMarshmallowConfig]:
             return get_decoder_cls(feature_type, key)
 
-        @staticmethod
-        def _jsonschema_type_mapping():
+        def _jsonschema_type_mapping(self):
             return {
                 "type": "object",
                 "properties": {

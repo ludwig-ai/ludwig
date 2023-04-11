@@ -42,7 +42,13 @@ from ludwig.features.sequence_feature import (
 from ludwig.schema.features.text_feature import TextInputFeatureConfig, TextOutputFeatureConfig
 from ludwig.types import FeatureMetadataDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils.math_utils import softmax
-from ludwig.utils.strings_utils import build_sequence_matrix, create_vocabulary, SpecialSymbol, UNKNOWN_SYMBOL
+from ludwig.utils.strings_utils import (
+    build_sequence_matrix,
+    create_vocabulary,
+    SpecialSymbol,
+    UNKNOWN_SYMBOL,
+    Vocabulary,
+)
 from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
@@ -58,17 +64,8 @@ class TextFeatureMixin(BaseFeatureMixin):
         return column.astype(str)
 
     @staticmethod
-    def feature_meta(column, preprocessing_parameters: PreprocessingConfigDict, backend):
-        (
-            idx2str,
-            str2idx,
-            str2freq,
-            max_len,
-            max_len_99ptile,
-            pad_idx,
-            padding_symbol,
-            unknown_symbol,
-        ) = create_vocabulary(
+    def feature_meta(column, preprocessing_parameters: PreprocessingConfigDict, backend) -> Vocabulary:
+        return create_vocabulary(
             column,
             tokenizer_type=preprocessing_parameters["tokenizer"],
             num_most_frequent=preprocessing_parameters["most_common"],
@@ -78,46 +75,57 @@ class TextFeatureMixin(BaseFeatureMixin):
             padding_symbol=preprocessing_parameters["padding_symbol"],
             pretrained_model_name_or_path=preprocessing_parameters["pretrained_model_name_or_path"],
             ngram_size=preprocessing_parameters["ngram_size"],
+            compute_idf=preprocessing_parameters["compute_idf"],
+            prompt_template=preprocessing_parameters.get("prompt_template"),
             processor=backend.df_engine,
-        )
-        return (
-            idx2str,
-            str2idx,
-            str2freq,
-            max_len,
-            max_len_99ptile,
-            pad_idx,
-            padding_symbol,
-            unknown_symbol,
         )
 
     @staticmethod
     def get_feature_meta(
         column, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
     ) -> FeatureMetadataDict:
-        tf_meta = TextFeatureMixin.feature_meta(column, preprocessing_parameters, backend)
-        (
-            idx2str,
-            str2idx,
-            str2freq,
-            max_len,
-            max_len_99ptile,
-            pad_idx,
-            padding_symbol,
-            unknown_symbol,
-        ) = tf_meta
-        max_len = min(preprocessing_parameters["max_sequence_length"], max_len)
-        max_len_99ptile = min(max_len, max_len_99ptile)
+        vocabulary = TextFeatureMixin.feature_meta(column, preprocessing_parameters, backend)
+        logger.info(
+            f"Max length of feature '{column.name}': {vocabulary.line_length_max} (without start and stop symbols)"
+        )
+
+        # Use sequence_length if provided, otherwise use max length found in dataset.
+        if preprocessing_parameters["sequence_length"] is not None:
+            logger.info(
+                f"Setting max length to sequence_length={preprocessing_parameters['sequence_length']} provided in "
+                f"preprocessing parameters"
+            )
+            max_sequence_length = preprocessing_parameters["sequence_length"]
+            max_sequence_length_99ptile = preprocessing_parameters["sequence_length"]
+        else:
+            max_sequence_length = vocabulary.line_length_max + 2  # For start and stop symbols.
+            max_sequence_length_99ptile = vocabulary.line_length_99ptile + 2  # For start and stop symbols.
+            logger.info(f"Setting max length using dataset: {max_sequence_length} (including start and stop symbols)")
+
+            # If max_sequence_length is None, then use the max length found in the dataset.
+            if (
+                preprocessing_parameters["max_sequence_length"] is not None
+                and preprocessing_parameters["max_sequence_length"] < max_sequence_length
+            ):
+                logger.info(
+                    f"Truncating max length with max_sequence_length={preprocessing_parameters['max_sequence_length']} "
+                    f"from preprocessing parameters"
+                )
+                max_sequence_length = preprocessing_parameters["max_sequence_length"]
+                max_sequence_length_99ptile = min(vocabulary.line_length_99ptile, max_sequence_length)
+
+        logger.info(f"max sequence length is {max_sequence_length} for feature '{column.name}'")
         return {
-            "idx2str": idx2str,
-            "str2idx": str2idx,
-            "str2freq": str2freq,
-            "vocab_size": len(idx2str),
-            "max_sequence_length": max_len + 2,  # For start and stop symbols.
-            "max_sequence_length_99ptile": max_len_99ptile + 2,  # For start and stop symbols.
-            "pad_idx": pad_idx,
-            "padding_symbol": padding_symbol,
-            "unknown_symbol": unknown_symbol,
+            "idx2str": vocabulary.vocab,
+            "str2idx": vocabulary.str2idx,
+            "str2freq": vocabulary.str2freq,
+            "str2idf": vocabulary.str2idf,
+            "vocab_size": len(vocabulary.vocab),
+            "max_sequence_length": max_sequence_length,
+            "max_sequence_length_99ptile": max_sequence_length_99ptile,
+            "pad_idx": vocabulary.pad_idx,
+            "padding_symbol": vocabulary.padding_symbol,
+            "unknown_symbol": vocabulary.unknown_symbol,
         }
 
     @staticmethod
@@ -143,8 +151,13 @@ class TextFeatureMixin(BaseFeatureMixin):
         ):
             preprocessing_parameters["computed_fill_value"] = preprocessing_parameters["unknown_symbol"]
 
+        sequences = column
+        prompt_template = preprocessing_parameters.get("prompt_template")
+        if prompt_template is not None:
+            sequences = backend.df_engine.map_objects(sequences, lambda x: prompt_template.format(input=x))
+
         return build_sequence_matrix(
-            sequences=column,
+            sequences=sequences,
             inverse_vocabulary=metadata[f"{prefix}str2idx"],
             tokenizer_type=preprocessing_parameters[f"{prefix}tokenizer"],
             length_limit=metadata[f"{prefix}max_sequence_length"],
@@ -217,6 +230,8 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         feature_config.encoder.max_sequence_length = feature_metadata["max_sequence_length"]
         feature_config.encoder.pad_idx = feature_metadata["pad_idx"]
         feature_config.encoder.num_tokens = len(feature_metadata["idx2str"])
+        feature_config.encoder.str2freq = feature_metadata["str2freq"]
+        feature_config.encoder.str2idf = feature_metadata["str2idf"]
         feature_config.encoder.skip = feature_metadata[PREPROCESSING].get("cache_encoder_embeddings", False)
 
     @staticmethod
@@ -314,10 +329,24 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
 
         probs_col = f"{self.feature_name}_{PROBABILITIES}"
         prob_col = f"{self.feature_name}_{PROBABILITY}"
+
+        # "Summarizes" the `result`'s probability-related output:
+        # - result[probs_col]:
+        #       Each row is now a list of "max" probabilities. Each element is the probability of the argmax token for
+        #       the given time step.
+        #
+        #       Note that we intentionally do not return full list of probabilties for each time step because the output
+        #       of postprocess_predictions is saved to disk and the full probability distribution can be huge,
+        #       especially for large vocab sizes:
+        #           dataset_size x sequence_length x vocab_size
+        #
+        #       TODO: Add a mechanism that lets the user save the full probability distribution if they want.
+        # - result[prob_col]:
+        #       Each row is the overall probability of the sequence. This is the product of the max probabilities over
+        #       all time steps.
         if probs_col in result:
-            # currently does not return full probabilties because usually it is huge:
-            # dataset x length x classes
-            # TODO: add a mechanism for letting the user decide to save it
+            # result[probs_col]: From PredictModule, each row has a list of size (sequence_length) of a list of
+            # probabiltiies of (vocab_size). compute_token_probabilities gets the maximum probability per timestep.
             result[probs_col] = result[probs_col].map(compute_token_probabilities)
             result[prob_col] = result[probs_col].map(
                 partial(

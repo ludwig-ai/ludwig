@@ -20,6 +20,7 @@ from ludwig.constants import (
     BAG,
     BINARY,
     CATEGORY,
+    CATEGORY_DISTRIBUTION,
     DATE,
     H3,
     IMAGE,
@@ -33,7 +34,13 @@ from ludwig.constants import (
 from ludwig.features.audio_feature import AudioFeatureMixin, AudioInputFeature
 from ludwig.features.bag_feature import BagFeatureMixin, BagInputFeature
 from ludwig.features.binary_feature import BinaryFeatureMixin, BinaryInputFeature, BinaryOutputFeature
-from ludwig.features.category_feature import CategoryFeatureMixin, CategoryInputFeature, CategoryOutputFeature
+from ludwig.features.category_feature import (
+    CategoryDistributionFeatureMixin,
+    CategoryDistributionOutputFeature,
+    CategoryFeatureMixin,
+    CategoryInputFeature,
+    CategoryOutputFeature,
+)
 from ludwig.features.date_feature import DateFeatureMixin, DateInputFeature
 from ludwig.features.h3_feature import H3FeatureMixin, H3InputFeature
 from ludwig.features.image_feature import ImageFeatureMixin, ImageInputFeature
@@ -41,7 +48,7 @@ from ludwig.features.number_feature import NumberFeatureMixin, NumberInputFeatur
 from ludwig.features.sequence_feature import SequenceFeatureMixin, SequenceInputFeature, SequenceOutputFeature
 from ludwig.features.set_feature import SetFeatureMixin, SetInputFeature, SetOutputFeature
 from ludwig.features.text_feature import TextFeatureMixin, TextInputFeature, TextOutputFeature
-from ludwig.features.timeseries_feature import TimeseriesFeatureMixin, TimeseriesInputFeature
+from ludwig.features.timeseries_feature import TimeseriesFeatureMixin, TimeseriesInputFeature, TimeseriesOutputFeature
 from ludwig.features.vector_feature import VectorFeatureMixin, VectorInputFeature, VectorOutputFeature
 from ludwig.utils.misc_utils import get_from_registry
 
@@ -66,6 +73,7 @@ def get_base_type_registry() -> Dict:
         H3: H3FeatureMixin,
         DATE: DateFeatureMixin,
         VECTOR: VectorFeatureMixin,
+        CATEGORY_DISTRIBUTION: CategoryDistributionFeatureMixin,
     }
 
 
@@ -97,7 +105,9 @@ def get_output_type_registry() -> Dict:
         SEQUENCE: SequenceOutputFeature,
         SET: SetOutputFeature,
         TEXT: TextOutputFeature,
+        TIMESERIES: TimeseriesOutputFeature,
         VECTOR: VectorOutputFeature,
+        CATEGORY_DISTRIBUTION: CategoryDistributionOutputFeature,
     }
 
 
@@ -121,5 +131,5 @@ def update_config_with_model(config_obj: "ModelConfig", model: "BaseModel"):
     their final config after class initialization.
     """
     for input_feature in config_obj.input_features:
-        model_input_feature = model.input_features[input_feature.name]
+        model_input_feature = model.input_features.get(input_feature.name)
         model_input_feature.update_config_after_module_init(input_feature)

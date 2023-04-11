@@ -88,7 +88,9 @@ def get_encoder_conds(encoder_classes: Dict[str, Type["BaseEncoderConfig"]]) -> 
 
 
 @DeveloperAPI
-def EncoderDataclassField(model_type: str, feature_type: str, default: str, description: str = "") -> Field:
+def EncoderDataclassField(
+    model_type: str, feature_type: str, default: str, description: str = "", blocklist: List[str] = []
+) -> Field:
     """Custom dataclass field that when used inside a dataclass will allow the user to specify an encoder config.
 
     Returns: Initialized dataclass field that converts an untyped dict with params to an encoder config.
@@ -97,19 +99,27 @@ def EncoderDataclassField(model_type: str, feature_type: str, default: str, desc
 
     class EncoderSelection(schema_utils.TypeSelection):
         def __init__(self):
-            super().__init__(registry=encoder_registry, default_value=default, description=description)
+            super().__init__(
+                registry=encoder_registry, default_value=default, description=description, allow_str_value=True
+            )
 
         def get_schema_from_registry(self, key: str) -> Type[schema_utils.BaseMarshmallowConfig]:
             return encoder_registry[key]
 
-        @staticmethod
-        def _jsonschema_type_mapping():
+        def _jsonschema_type_mapping(self):
+            # NOTE: Edit carefully if necessary! We want these enums to remain in a consistent order, so do not use sets
+            # or other unordered data structures to chaperone the registry keys around.
+            #
+            # Also, note the placement inside this function - since this is a list, it will not update with any late
+            # additions to the registry (e.g. in our tests)!
+            enum = [e for e in encoder_registry.keys() if e not in blocklist]
+
             return {
                 "type": "object",
                 "properties": {
                     "type": {
                         "type": "string",
-                        "enum": list(encoder_registry.keys()),
+                        "enum": enum,
                         "enumDescriptions": get_encoder_descriptions(model_type, feature_type),
                         "default": default,
                     },

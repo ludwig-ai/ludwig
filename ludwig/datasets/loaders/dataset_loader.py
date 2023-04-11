@@ -29,9 +29,10 @@ from tqdm import tqdm
 from ludwig.api_annotations import DeveloperAPI, PublicAPI
 from ludwig.constants import SPLIT
 from ludwig.datasets.archives import extract_archive, is_archive, list_archive
-from ludwig.datasets.dataset_config import DatasetConfig
+from ludwig.datasets.dataset_config import DatasetConfig, DatasetFallbackMirror
 from ludwig.datasets.kaggle import download_kaggle_dataset
 from ludwig.datasets.utils import model_configs_for_dataset
+from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.strings_utils import make_safe_filename
 
 logger = logging.getLogger(__name__)
@@ -206,6 +207,16 @@ class DatasetLoader:
             return _list_of_strings(self.config.archive_filenames)
         return [os.path.basename(urlparse(url).path) for url in self.download_urls]
 
+    def get_mirror_download_paths(self, mirror: DatasetFallbackMirror):
+        """Filenames for downloaded files inferred from mirror download_paths."""
+        return _list_of_strings(mirror.download_paths)
+
+    def get_mirror_download_filenames(self, mirror: DatasetFallbackMirror):
+        """Filenames for downloaded files inferred from mirror download_paths."""
+        if self.config.archive_filenames:
+            return _list_of_strings(self.config.archive_filenames)
+        return [os.path.basename(path) for path in mirror.download_paths]
+
     def description(self) -> str:
         """Returns human-readable description of the dataset."""
         return f"{self.config.name} {self.config.version}\n{self.config.description}"
@@ -259,8 +270,15 @@ class DatasetLoader:
         if self.state == DatasetState.NOT_LOADED:
             try:
                 self.download(kaggle_username=kaggle_username, kaggle_key=kaggle_key)
-            except Exception:
-                logger.exception("Failed to download dataset")
+            except Exception as e:
+                logger.warning(
+                    f"Finding fallback mirrors to download the dataset. Downloading from "
+                    f"the original source failed with the following error {e}."
+                )
+                if not self.config.fallback_mirrors:
+                    logger.exception(f"No fallback mirror found. Failed to download dataset {self.config.name}.")
+                else:
+                    self.download_from_fallback_mirrors()
         self.verify()
         if self.state == DatasetState.DOWNLOADED:
             # Extract dataset
@@ -308,6 +326,21 @@ class DatasetLoader:
                 downloaded_file_path = os.path.join(self.raw_dataset_dir, filename)
                 with TqdmUpTo(unit="B", unit_scale=True, unit_divisor=1024, miniters=1, desc=filename) as t:
                     urllib.request.urlretrieve(url, downloaded_file_path, t.update_to)
+
+    def download_from_fallback_mirrors(self):
+        for mirror in self.config.fallback_mirrors:
+            logger.info(f"Attempting download from mirror {mirror.name}.")
+            try:
+                download_paths = self.get_mirror_download_paths(mirror)
+                filenames = self.get_mirror_download_filenames(mirror)
+                for path, filename in zip(download_paths, filenames):
+                    downloaded_file_path = os.path.join(self.raw_dataset_dir, filename)
+                    with TqdmUpTo(unit="B", unit_scale=True, unit_divisor=1024, miniters=1, desc=filename):
+                        fs, path = get_fs_and_path(path)
+                        fs.get(path, downloaded_file_path)
+                return
+            except Exception:
+                logger.exception(f"Download from mirror `{mirror.name}` failed.")
 
     def verify(self) -> None:
         """Verifies checksums for dataset."""
@@ -394,9 +427,27 @@ class DatasetLoader:
         if root_dir:
             file_paths = [os.path.join(root_dir, path) for path in file_paths]
         dataframes = [self.load_file_to_dataframe(path) for path in file_paths]
-        if self.config.columns:
-            dataframes = [df.set_axis(self.config.columns, axis=1) for df in dataframes]
-        return pd.concat(dataframes, ignore_index=True)
+        try:
+            if self.config.columns:
+                column_names = [column["name"] for column in self.config.columns]
+
+                set_cols_dfs = []
+                for df in dataframes:
+                    # Split column is not included in configs, add in if pre-set split is present
+                    if SPLIT in df.columns:
+                        column_names.append(SPLIT)
+
+                    # If the number of columns in the dataframe does not match the number of columns in the config,
+                    # then the dataframe likely has an extra column that we don't want - i.e. "Unnamed: 0".
+                    if len(column_names) != len(df.columns):
+                        df = df[column_names]
+                    set_cols_dfs.append(df.set_axis(column_names, axis=1))
+                return pd.concat(set_cols_dfs, ignore_index=True)
+            else:
+                return pd.concat(dataframes, ignore_index=True)
+        except ValueError as e:
+            logger.warning(f"Error setting column names: {e}")
+            return pd.concat(dataframes, ignore_index=True)
 
     def load_unprocessed_dataframe(self, file_paths: List[str]) -> pd.DataFrame:
         """Load dataset files into a dataframe.

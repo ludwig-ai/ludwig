@@ -21,11 +21,13 @@ import torch
 
 from ludwig.constants import (
     CATEGORY,
+    CATEGORY_DISTRIBUTION,
     COLUMN,
     HIDDEN,
     LOGITS,
     NAME,
     PREDICTIONS,
+    PREPROCESSING,
     PROBABILITIES,
     PROBABILITY,
     PROC_COLUMN,
@@ -33,7 +35,12 @@ from ludwig.constants import (
 )
 from ludwig.error import InputDataError
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
-from ludwig.schema.features.category_feature import CategoryInputFeatureConfig, CategoryOutputFeatureConfig
+from ludwig.features.vector_feature import VectorFeatureMixin
+from ludwig.schema.features.category_feature import (
+    CategoryDistributionOutputFeatureConfig,
+    CategoryInputFeatureConfig,
+    CategoryOutputFeatureConfig,
+)
 from ludwig.types import (
     FeatureMetadataDict,
     FeaturePostProcessingOutputDict,
@@ -210,6 +217,25 @@ class CategoryFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
+class CategoryDistributionFeatureMixin(VectorFeatureMixin):
+    @staticmethod
+    def type():
+        return CATEGORY_DISTRIBUTION
+
+    @staticmethod
+    def get_feature_meta(
+        column, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
+    ) -> FeatureMetadataDict:
+        idx2str = preprocessing_parameters["vocab"]
+        str2idx = {s: i for i, s in enumerate(idx2str)}
+        return {
+            "preprocessing": preprocessing_parameters,
+            "idx2str": idx2str,
+            "str2idx": str2idx,
+            "vocab_size": len(idx2str),
+        }
+
+
 class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
     def __init__(self, input_feature_config: CategoryInputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, **kwargs)
@@ -229,12 +255,13 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
         )
         assert len(inputs.shape) == 1 or (len(inputs.shape) == 2 and inputs.shape[1] == 1)
 
-        if len(inputs.shape) == 1:
-            inputs = inputs.unsqueeze(dim=1)
-
+        inputs = inputs.reshape(-1, 1)
         if inputs.dtype == torch.int8 or inputs.dtype == torch.int16:
             inputs = inputs.type(torch.int)
         encoder_output = self.encoder_obj(inputs)
+
+        batch_size = inputs.shape[0]
+        inputs = inputs.reshape(batch_size, -1)
 
         return {"encoder_output": encoder_output}
 
@@ -253,6 +280,7 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
     @staticmethod
     def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
         feature_config.encoder.vocab = feature_metadata["idx2str"]
+        feature_config.encoder.skip = feature_metadata[PREPROCESSING].get("cache_encoder_embeddings", False)
 
     @staticmethod
     def get_schema_cls():
@@ -468,3 +496,21 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
     @staticmethod
     def create_postproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
         return _CategoryPostprocessing(metadata)
+
+
+class CategoryDistributionOutputFeature(CategoryDistributionFeatureMixin, CategoryOutputFeature):
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.input_size])
+
+    @classmethod
+    def get_output_dtype(cls):
+        return torch.float32
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([self.num_classes])
+
+    @staticmethod
+    def get_schema_cls():
+        return CategoryDistributionOutputFeatureConfig

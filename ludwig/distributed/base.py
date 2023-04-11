@@ -1,10 +1,14 @@
 import contextlib
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Dict, Optional, Tuple, Type, TYPE_CHECKING
 
 import torch
 from torch import nn
 from torch.optim import Optimizer
+
+if TYPE_CHECKING:
+    from ray.train.backend import BackendConfig
+    from ray.train.data_parallel_trainer import DataParallelTrainer
 
 
 class DistributedStrategy(ABC):
@@ -20,7 +24,7 @@ class DistributedStrategy(ABC):
         pass
 
     @abstractmethod
-    def wrap_optimizer(self, optimizer: Optimizer, model: nn.Module) -> Optimizer:
+    def wrap_optimizer(self, optimizer: Optimizer, model: nn.Module, gradient_accumulation_steps: int) -> Optimizer:
         pass
 
     @abstractmethod
@@ -69,6 +73,11 @@ class DistributedStrategy(ABC):
 
     @abstractmethod
     @contextlib.contextmanager
+    def prepare_model_update(self, model: nn.Module, should_step: bool):
+        pass
+
+    @abstractmethod
+    @contextlib.contextmanager
     def prepare_optimizer_update(self, optimizer: Optimizer):
         pass
 
@@ -85,6 +94,11 @@ class DistributedStrategy(ABC):
     @classmethod
     @abstractmethod
     def get_ray_trainer_backend(cls, **kwargs) -> Optional[Any]:
+        pass
+
+    @classmethod
+    @abstractmethod
+    def get_trainer_cls(cls, backend_config: "BackendConfig") -> Tuple[Type["DataParallelTrainer"], Dict[str, Any]]:
         pass
 
     @abstractmethod
@@ -108,7 +122,7 @@ class LocalStrategy(DistributedStrategy):
     def wrap_model(self, model: nn.Module) -> nn.Module:
         return model
 
-    def wrap_optimizer(self, optimizer: Optimizer, model: nn.Module) -> Optimizer:
+    def wrap_optimizer(self, optimizer: Optimizer, model: nn.Module, gradient_accumulation_steps: int) -> Optimizer:
         return optimizer
 
     def size(self) -> int:
@@ -145,6 +159,10 @@ class LocalStrategy(DistributedStrategy):
         pass
 
     @contextlib.contextmanager
+    def prepare_model_update(self, model: nn.Module, should_step: bool):
+        yield
+
+    @contextlib.contextmanager
     def prepare_optimizer_update(self, optimizer: Optimizer):
         yield
 
@@ -161,6 +179,10 @@ class LocalStrategy(DistributedStrategy):
     @classmethod
     def get_ray_trainer_backend(cls, **kwargs) -> Optional[Any]:
         return None
+
+    @classmethod
+    def get_trainer_cls(cls, backend_config: "BackendConfig") -> Tuple[Type["DataParallelTrainer"], Dict[str, Any]]:
+        raise ValueError("Cannot construct a trainer from a local strategy.")
 
     def shutdown(self):
         pass

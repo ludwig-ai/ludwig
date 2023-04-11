@@ -13,9 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import inspect
 import logging
-from typing import Any, Callable, Dict, List, Optional, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Type, TYPE_CHECKING, TypeVar, Union
 
+import numpy as np
 import torch
 from torch import nn
 
@@ -31,6 +33,7 @@ from ludwig.schema.encoders.text_encoders import (
     BERTConfig,
     CamemBERTConfig,
     CTRLConfig,
+    DebertaV2Config,
     DistilBERTConfig,
     ELECTRAConfig,
     FlauBERTConfig,
@@ -40,13 +43,19 @@ from ludwig.schema.encoders.text_encoders import (
     MT5Config,
     RoBERTaConfig,
     T5Config,
+    TfIdfEncoderConfig,
     TransformerXLConfig,
     XLMConfig,
     XLMRoBERTaConfig,
     XLNetConfig,
 )
-from ludwig.utils.hf_utils import load_pretrained_hf_model
+from ludwig.utils.hf_utils import load_pretrained_hf_model_with_hub_fallback
 from ludwig.utils.torch_utils import FreezeModule
+
+if TYPE_CHECKING:
+    from transformers import PretrainedConfig, PreTrainedModel
+
+    from ludwig.schema.encoders.text_encoders import HFEncoderConfig
 
 logger = logging.getLogger(__name__)
 
@@ -58,8 +67,6 @@ def _cls_pooled_error_message(encoder: str):
 
 
 class HFTextEncoder(Encoder):
-    DEFAULT_MODEL_NAME: str
-
     def _init_config(self, transformer, schema_keys: List[str], encoder_config: SequenceEncoderConfig):
         """Creates a config object for the encoder using the transformer model and the passed-in encoder config.
 
@@ -123,6 +130,87 @@ class HFTextEncoder(Encoder):
 
     def get_embedding_layer(self) -> nn.Module:
         return next(self.transformer.module.children())
+
+
+HFModelT = TypeVar("HFModelT", bound="PreTrainedModel")
+HFConfigT = TypeVar("HFConfigT", bound="PretrainedConfig")
+ConfigT = TypeVar("ConfigT", bound="HFEncoderConfig")
+
+
+class HFTextEncoderImpl(HFTextEncoder):
+    def __init__(
+        self,
+        model_cls: Type[HFModelT],
+        config_cls: Type[HFConfigT],
+        schema_cls: Type[ConfigT],
+        max_sequence_length: int,
+        use_pretrained: bool,
+        pretrained_model_name_or_path: str,
+        saved_weights_in_checkpoint: bool,
+        reduce_output: str,
+        trainable: bool,
+        pretrained_kwargs: Dict,
+        encoder_config: Optional[ConfigT],
+        **kwargs,
+    ):
+        super().__init__()
+
+        # TODO(travis): get_hf_config_param_names should be implemented as abstract in HFEncoderConfig
+        vocab_size = kwargs["vocab_size"]
+        hf_config_params = {k: v for k, v in kwargs.items() if k in schema_cls.get_hf_config_param_names()}
+        if use_pretrained and not saved_weights_in_checkpoint:
+            pretrained_kwargs = pretrained_kwargs or {}
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+                model_cls, pretrained_model_name_or_path, **pretrained_kwargs
+            )
+        else:
+            transformer = self._init_transformer_from_scratch(model_cls, config_cls, hf_config_params, vocab_size)
+
+        if encoder_config is not None:
+            self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
+        else:
+            self.config = None
+
+        self.reduce_output = reduce_output
+        if not self.reduce_output == "cls_pooled":
+            self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+        self.transformer = FreezeModule(transformer, frozen=not trainable)
+        self.max_sequence_length = max_sequence_length
+
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
+        if mask is not None:
+            mask = mask.to(torch.int32)
+        transformer_outputs = self.transformer.module(
+            input_ids=inputs,
+            attention_mask=mask,
+            token_type_ids=torch.zeros_like(inputs),
+        )
+        if self.reduce_output == "cls_pooled":
+            hidden = transformer_outputs["pooler_output"]
+        else:
+            hidden = transformer_outputs["last_hidden_state"][:, 1:-1, :]  # bos + [sent] + sep
+            hidden = self.reduce_sequence(hidden, self.reduce_output)
+        return {"encoder_output": hidden}
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.reduce_output is None:
+            return torch.Size([self.max_sequence_length - 2, self.transformer.module.config.hidden_size])
+        if self.reduce_output == "concat":
+            return torch.Size(
+                [
+                    (self.max_sequence_length - 2) * self.transformer.module.config.hidden_size,
+                ]
+            )
+        return torch.Size([self.transformer.module.config.hidden_size])
+
+    @property
+    def input_dtype(self):
+        return torch.int32
 
 
 @DeveloperAPI
@@ -191,7 +279,9 @@ class ALBERTEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model(AlbertModel, pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+                AlbertModel, pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             transformer = self._init_transformer_from_scratch(AlbertModel, AlbertConfig, hf_config_params, vocab_size)
 
@@ -311,7 +401,9 @@ class MT5Encoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model(MT5EncoderModel, pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+                MT5EncoderModel, pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             transformer = self._init_transformer_from_scratch(MT5EncoderModel, MT5Config, hf_config_params, vocab_size)
 
@@ -401,7 +493,9 @@ class XLMRoBERTaEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model(XLMRobertaModel, pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+                XLMRobertaModel, pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             transformer = self._init_transformer_from_scratch(
                 XLMRobertaModel, XLMRobertaConfig, hf_config_params, vocab_size
@@ -517,7 +611,9 @@ class BERTEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model(BertModel, pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+                BertModel, pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             transformer = self._init_transformer_from_scratch(BertModel, BertConfig, hf_config_params, vocab_size)
 
@@ -658,7 +754,9 @@ class XLMEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model(XLMModel, pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+                XLMModel, pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             transformer = self._init_transformer_from_scratch(XLMModel, XLMConfig, hf_config_params, vocab_size)
 
@@ -759,7 +857,9 @@ class GPTEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model(OpenAIGPTModel, pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+                OpenAIGPTModel, pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             transformer = self._init_transformer_from_scratch(
                 OpenAIGPTModel, OpenAIGPTConfig, hf_config_params, vocab_size
@@ -861,7 +961,9 @@ class GPT2Encoder(HFTextEncoder):
 
         if use_pretrained:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model(GPT2Model, pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+                GPT2Model, pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             transformer = self._init_transformer_from_scratch(GPT2Model, GPT2Config, hf_config_params, vocab_size)
 
@@ -909,6 +1011,20 @@ class GPT2Encoder(HFTextEncoder):
 
 
 @DeveloperAPI
+@register_encoder("deberta", TEXT)
+class DeBERTaEncoder(HFTextEncoderImpl):
+    def __init__(self, *args, **kwargs):
+        from transformers import DebertaV2Config as _DebertaV2Config
+        from transformers import DebertaV2Model
+
+        super().__init__(DebertaV2Model, _DebertaV2Config, DebertaV2Config, *args, **kwargs)
+
+    @staticmethod
+    def get_schema_cls():
+        return DebertaV2Config
+
+
+@DeveloperAPI
 @register_encoder("roberta", TEXT)
 class RoBERTaEncoder(HFTextEncoder):
     DEFAULT_MODEL_NAME = "roberta-base"
@@ -945,7 +1061,9 @@ class RoBERTaEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model(RobertaModel, pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+                RobertaModel, pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             transformer = self._init_transformer_from_scratch(RobertaModel, RobertaConfig, hf_config_params, vocab_size)
 
@@ -1072,7 +1190,9 @@ class TransformerXLEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model(TransfoXLModel, pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+                TransfoXLModel, pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             config = TransfoXLConfig(**hf_config_params)
             transformer = TransfoXLModel(config)
@@ -1195,7 +1315,9 @@ class XLNetEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model(XLNetModel, pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+                XLNetModel, pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             transformer = self._init_transformer_from_scratch(XLNetModel, XLNetConfig, hf_config_params, vocab_size)
 
@@ -1295,7 +1417,9 @@ class DistilBERTEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model(DistilBertModel, pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+                DistilBertModel, pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             transformer = self._init_transformer_from_scratch(
                 DistilBertModel, DistilBertConfig, hf_config_params, vocab_size
@@ -1399,7 +1523,9 @@ class CTRLEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model(CTRLModel, pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+                CTRLModel, pretrained_model_name_or_path, **pretrained_kwargs
+            )
             self.vocab_size = transformer.config.vocab_size
         else:
             transformer = self._init_transformer_from_scratch(CTRLModel, CTRLConfig, hf_config_params, vocab_size)
@@ -1506,7 +1632,9 @@ class CamemBERTEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model(CamembertModel, pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+                CamembertModel, pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             transformer = self._init_transformer_from_scratch(
                 CamembertModel, CamembertConfig, hf_config_params, vocab_size
@@ -1614,7 +1742,9 @@ class T5Encoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model(T5Model, pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+                T5Model, pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             transformer = self._init_transformer_from_scratch(T5Model, T5Config, hf_config_params, vocab_size)
 
@@ -1745,7 +1875,9 @@ class FlauBERTEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model(FlaubertModel, pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+                FlaubertModel, pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             transformer = self._init_transformer_from_scratch(
                 FlaubertModel, FlaubertConfig, hf_config_params, vocab_size
@@ -1856,7 +1988,9 @@ class ELECTRAEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model(ElectraModel, pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+                ElectraModel, pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             transformer = self._init_transformer_from_scratch(ElectraModel, ElectraConfig, hf_config_params, vocab_size)
 
@@ -1943,7 +2077,9 @@ class LongformerEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model(LongformerModel, pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+                LongformerModel, pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             transformer = self._init_transformer_from_scratch(
                 LongformerModel, LongformerConfig, hf_config_params, vocab_size
@@ -2021,7 +2157,9 @@ class AutoTransformerEncoder(HFTextEncoder):
         from transformers import AutoModel
 
         pretrained_kwargs = pretrained_kwargs or {}
-        transformer = load_pretrained_hf_model(AutoModel, pretrained_model_name_or_path, **pretrained_kwargs)
+        transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+            AutoModel, pretrained_model_name_or_path, **pretrained_kwargs
+        )
         self._maybe_resize_token_embeddings(transformer, vocab_size)
 
         self.config = self._init_config(transformer, [], encoder_config)
@@ -2029,8 +2167,14 @@ class AutoTransformerEncoder(HFTextEncoder):
         self.transformer = FreezeModule(transformer, frozen=not trainable)
         self.reduce_output = reduce_output
         if self.reduce_output != "cls_pooled":
-            self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+            self.reduce_sequence = SequenceReducer(
+                reduce_mode=reduce_output, encoding_size=self.transformer.module.config.hidden_size
+            )
         self.max_sequence_length = max_sequence_length
+
+        # Precompute the set of params that are included in the forward signature of the AutoModel implementation so
+        # we can filter out unused params during the `forward` call.
+        self.forward_kwargs = set(inspect.signature(self.transformer.module.forward).parameters.keys())
 
     def _maybe_resize_token_embeddings(self, transformer, vocab_size: Optional[int] = None):
         """Overridden because AutoModel should use its own vocab size unless vocab size is explicitly specified."""
@@ -2043,11 +2187,17 @@ class AutoTransformerEncoder(HFTextEncoder):
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None):
         if mask is not None:
             mask = mask.to(torch.int32)
-        transformer_outputs = self.transformer.module(
+
+        # The forward signature of AutoModel is not consistent across implementations, so we need to make sure we're
+        # only passing in params included in the forward signature.
+        kwargs = dict(
             input_ids=inputs,
             attention_mask=mask,
             token_type_ids=torch.zeros_like(inputs),
         )
+        kwargs = {k: v for k, v in kwargs.items() if k in self.forward_kwargs}
+
+        transformer_outputs = self.transformer.module(**kwargs)
         if self.reduce_output == "cls_pooled":
             # this works only if the user know that the specific model
             # they want to use has the same outputs of
@@ -2071,8 +2221,67 @@ class AutoTransformerEncoder(HFTextEncoder):
         if self.reduce_output is None:
             # TODO(justin): This may need to be conditioned on which AutoModel gets chosen.
             return torch.Size([self.max_sequence_length, self.transformer.module.config.hidden_size])
+        if self.reduce_output == "concat":
+            return torch.Size(
+                [
+                    self.max_sequence_length * self.transformer.module.config.hidden_size,
+                ]
+            )
         return torch.Size([self.transformer.module.config.hidden_size])
 
     @property
     def input_dtype(self):
         return torch.int32
+
+
+@DeveloperAPI
+@register_encoder("tf_idf", [TEXT])
+class TfIdfEncoder(Encoder):
+    def __init__(
+        self,
+        max_sequence_length: int,
+        encoder_config=None,
+        str2idf=None,
+        vocab=None,
+        vocab_size: int = None,
+        **kwargs,
+    ):
+        super().__init__()
+        self.config = encoder_config
+        self.max_sequence_length = max_sequence_length
+        self.vocab_size = vocab_size
+
+        logger.debug(f" {self.name}")
+
+        # Convert mapping of token -> frequency to a dense array
+        idf = np.zeros(vocab_size)
+        for i, s in enumerate(vocab):
+            idf[i] = str2idf[s]
+        self.idf = torch.from_numpy(idf).float().unsqueeze(0)
+
+    def forward(self, t: torch.Tensor, mask=None):
+        # Compute the term frequency within each row
+        tf = torch.stack([t_i.bincount(minlength=self.vocab_size) for t_i in torch.unbind(t.long())])
+
+        # Normalize the term frequency by the number of tokens in each row
+        tf = tf / tf.sum(dim=1).unsqueeze(-1)
+
+        # Multiply the term frequency by the inverse document frequency
+        tfidf = tf * self.idf
+
+        return {"encoder_output": tfidf}
+
+    @staticmethod
+    def get_schema_cls():
+        return TfIdfEncoderConfig
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([self.vocab_size])
+
+    def get_embedding_layer(self) -> nn.Module:
+        return self

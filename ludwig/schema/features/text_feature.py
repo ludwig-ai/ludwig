@@ -1,5 +1,5 @@
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import LOSS, MODEL_ECD, SEQUENCE_SOFTMAX_CROSS_ENTROPY, TEXT
+from ludwig.constants import LOSS, MODEL_ECD, MODEL_GBM, SEQUENCE_SOFTMAX_CROSS_ENTROPY, TEXT
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -11,10 +11,12 @@ from ludwig.schema.features.loss.utils import LossDataclassField
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
 from ludwig.schema.features.utils import (
-    defaults_config_registry,
+    ecd_defaults_config_registry,
     ecd_input_config_registry,
+    ecd_output_config_registry,
+    gbm_defaults_config_registry,
+    gbm_input_config_registry,
     input_mixin_registry,
-    output_config_registry,
     output_mixin_registry,
 )
 from ludwig.schema.metadata import FEATURE_METADATA
@@ -31,6 +33,21 @@ class TextInputFeatureConfigMixin(BaseMarshmallowConfig):
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=TEXT)
 
+
+@DeveloperAPI
+@ludwig_dataclass
+class TextInputFeatureConfig(TextInputFeatureConfigMixin, BaseInputFeatureConfig):
+    """TextInputFeatureConfig is a dataclass that configures the parameters used for a text input feature."""
+
+    type: str = schema_utils.ProtectedString(TEXT)
+
+    encoder: BaseEncoderConfig = None
+
+
+@DeveloperAPI
+@ecd_input_config_registry.register(TEXT)
+@ludwig_dataclass
+class ECDTextInputFeatureConfig(TextInputFeatureConfig):
     encoder: BaseEncoderConfig = EncoderDataclassField(
         MODEL_ECD,
         feature_type=TEXT,
@@ -39,12 +56,25 @@ class TextInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-@ecd_input_config_registry.register(TEXT)
+@gbm_input_config_registry.register(TEXT)
 @ludwig_dataclass
-class TextInputFeatureConfig(BaseInputFeatureConfig, TextInputFeatureConfigMixin):
-    """TextInputFeatureConfig is a dataclass that configures the parameters used for a text input feature."""
+class GBMTextInputFeatureConfig(TextInputFeatureConfig):
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_GBM,
+        feature_type=TEXT,
+        default="tf_idf",
+    )
 
-    pass
+
+@DeveloperAPI
+@gbm_defaults_config_registry.register(TEXT)
+@ludwig_dataclass
+class GBMTextDefaultsConfig(TextInputFeatureConfigMixin):
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_GBM,
+        feature_type=TEXT,
+        default="tf_idf",
+    )
 
 
 @DeveloperAPI
@@ -66,10 +96,12 @@ class TextOutputFeatureConfigMixin(BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-@output_config_registry.register(TEXT)
+@ecd_output_config_registry.register(TEXT)
 @ludwig_dataclass
-class TextOutputFeatureConfig(BaseOutputFeatureConfig, TextOutputFeatureConfigMixin):
+class TextOutputFeatureConfig(TextOutputFeatureConfigMixin, BaseOutputFeatureConfig):
     """TextOutputFeatureConfig is a dataclass that configures the parameters used for a text output feature."""
+
+    type: str = schema_utils.ProtectedString(TEXT)
 
     class_similarities: list = schema_utils.List(
         list,
@@ -109,9 +141,15 @@ class TextOutputFeatureConfig(BaseOutputFeatureConfig, TextOutputFeatureConfigMi
 
 
 @DeveloperAPI
-@defaults_config_registry.register(TEXT)
+@ecd_defaults_config_registry.register(TEXT)
 @ludwig_dataclass
 class TextDefaultsConfig(TextInputFeatureConfigMixin, TextOutputFeatureConfigMixin):
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_ECD,
+        feature_type=TEXT,
+        default="parallel_cnn",
+    )
+
     loss: BaseLossConfig = LossDataclassField(
         feature_type=TEXT,
         default=SEQUENCE_SOFTMAX_CROSS_ENTROPY,

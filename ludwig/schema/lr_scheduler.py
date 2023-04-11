@@ -29,7 +29,7 @@ class LRSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
         min=0,
         max=1,
         description="Decay per epoch (%): Factor to decrease the Learning rate.",
-        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["learning_rate_scheduler"]["decay_steps"],
+        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["learning_rate_scheduler"]["decay_rate"],
     )
 
     decay_steps: int = schema_utils.PositiveInteger(
@@ -133,8 +133,7 @@ def LRSchedulerDataclassField(description: str, default: Dict = None):
                     )
             raise ValidationError("Field should be None or dict")
 
-        @staticmethod
-        def _jsonschema_type_mapping():
+        def _jsonschema_type_mapping(self):
             return {
                 **schema_utils.unload_jsonschema_from_marshmallow_class(LRSchedulerConfig),
                 "title": "learning_rate_scheduler_options",

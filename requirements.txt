@@ -1,16 +1,16 @@
 Cython>=0.25
 h5py>=2.6,!=3.0.0
 numpy>=1.15
-pandas>=0.25,!=1.1.5
+pandas>=0.25,!=1.1.5,<2.0
 scipy>=0.18
 tabulate>=0.7
-scikit-learn<1.2.0
+scikit-learn
 tqdm
 torch>=1.13.0
 torchaudio
 torchtext
 torchvision
-transformers>=4.10.1,<4.22
+transformers>=4.10.1
 spacy>=2.3
 PyYAML>=3.12
 absl-py
@@ -22,7 +22,7 @@ dataclasses-json
 jsonschema>=4.5.0,<4.7
 marshmallow
 marshmallow-jsonschema
-marshmallow-dataclass==8.5.5
+marshmallow-dataclass==8.5.4
 tensorboard
 torchmetrics>=0.11
 torchinfo
@@ -36,12 +36,13 @@ packaging
 retry
 # required for TransfoXLTokenizer when using transformer_xl
 sacremoses
+sentencepiece
 
 # new data format support
 xlwt            # excel
 xlrd            # excel
 openpyxl        # excel
-pyarrow==6.0.1  # parquet https://github.com/ray-project/ray/issues/22310
+pyarrow         # parquet
 lxml            # html
 
 whylogs>=1.1.9

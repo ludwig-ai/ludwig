@@ -41,12 +41,14 @@ from ludwig.constants import (
     BATCH_SIZE,
     BINARY,
     CATEGORY,
+    CATEGORY_DISTRIBUTION,
     COLUMN,
     DATE,
     DECODER,
     ENCODER,
     H3,
     IMAGE,
+    MODEL_ECD,
     NAME,
     NUMBER,
     PROC_COLUMN,
@@ -62,6 +64,8 @@ from ludwig.data.dataset_synthesizer import build_synthetic_dataset, DATETIME_FO
 from ludwig.experiment import experiment_cli
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.globals import PREDICTIONS_PARQUET_FILE_NAME
+from ludwig.schema.encoders.text_encoders import HFEncoderConfig
+from ludwig.schema.encoders.utils import get_encoder_classes
 from ludwig.trainers.trainer import Trainer
 from ludwig.utils import fs_utils
 from ludwig.utils.data_utils import read_csv, replace_file_extension, use_credentials
@@ -75,28 +79,11 @@ logger = logging.getLogger(__name__)
 # Used in sequence-related unit tests (encoders, features) as well as end-to-end integration tests.
 # Missing: passthrough encoder.
 ENCODERS = ["embed", "rnn", "parallel_cnn", "cnnrnn", "stacked_parallel_cnn", "stacked_cnn", "transformer"]
+TEXT_ENCODERS = ENCODERS + ["tf_idf"]
 
 HF_ENCODERS_SHORT = ["distilbert"]
 
-HF_ENCODERS = [
-    "bert",
-    "gpt",
-    "gpt2",
-    "transformer_xl",
-    "xlnet",
-    # "xlm",  # disabled in the schema: https://github.com/ludwig-ai/ludwig/pull/3108
-    "roberta",
-    "distilbert",
-    # "ctrl",  # disabled in the schema: https://github.com/ludwig-ai/ludwig/pull/2976
-    "camembert",
-    "albert",
-    "t5",
-    "xlmroberta",
-    "longformer",
-    "flaubert",
-    "electra",
-    # "mt5",    # disabled in the schema: https://github.com/ludwig-ai/ludwig/pull/2982
-]
+HF_ENCODERS = [name for name, cls in get_encoder_classes(MODEL_ECD, TEXT).items() if issubclass(cls, HFEncoderConfig)]
 
 RAY_BACKEND_CONFIG = {
     "type": "ray",
@@ -145,6 +132,8 @@ def parse_flag_from_env(key, default=False):
     else:
         # KEY is set, convert it to True or False.
         try:
+            if isinstance(value, bool):
+                return 1 if value else 0
             _value = strtobool(value)
         except ValueError:
             # More values are supported, but let's keep the message simple.
@@ -153,6 +142,12 @@ def parse_flag_from_env(key, default=False):
 
 
 _run_private_tests = parse_flag_from_env("RUN_PRIVATE", default=False)
+
+
+private_test = pytest.mark.skipif(
+    not _run_private_tests,
+    reason="Skipping: this test is marked private, set RUN_PRIVATE=1 in your environment to run",
+)
 
 
 def private_param(param):
@@ -406,8 +401,22 @@ def timeseries_feature(**kwargs):
     feature = {
         "name": f"{TIMESERIES}_{random_string()}",
         "type": TIMESERIES,
-        ENCODER: {"type": "parallel_cnn", "max_len": 7},
     }
+
+    output_feature = DECODER in kwargs
+    if output_feature:
+        feature.update(
+            {
+                DECODER: {"type": "projector"},
+            }
+        )
+    else:
+        feature.update(
+            {
+                ENCODER: {"type": "parallel_cnn", "max_len": 7},
+            }
+        )
+
     recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
@@ -476,6 +485,21 @@ def vector_feature(**kwargs):
     return feature
 
 
+def category_distribution_feature(**kwargs):
+    feature = {
+        "name": f"{CATEGORY_DISTRIBUTION}_{random_string()}",
+        "type": CATEGORY_DISTRIBUTION,
+        "preprocessing": {
+            "vocab": ["a", "b", "c"],
+        },
+        DECODER: {"type": "classifier"},
+    }
+    recursive_update(feature, kwargs)
+    feature[COLUMN] = feature[NAME]
+    feature[PROC_COLUMN] = compute_feature_hash(feature)
+    return feature
+
+
 def run_experiment(
     input_features=None, output_features=None, config=None, skip_save_processed_input=True, backend=None, **kwargs
 ):
@@ -518,7 +542,7 @@ def run_experiment(
         }
         args.update(kwargs)
 
-        experiment_cli(**args)
+        return experiment_cli(**args)
 
 
 def generate_output_features_with_dependencies(main_feature, dependencies):
@@ -905,7 +929,8 @@ def train_with_backend(
                         k: {
                             metric_name: value
                             for metric_name, value in v.items()
-                            if metric_name not in {"loss", "root_mean_squared_percentage_error", "jaccard"}
+                            if metric_name
+                            not in {"loss", "root_mean_squared_percentage_error", "jaccard", "token_accuracy"}
                         }
                         for k, v in stats.items()
                     }

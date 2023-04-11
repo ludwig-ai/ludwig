@@ -1,6 +1,9 @@
 import copy
+import os
+import warnings
 from abc import ABC, abstractmethod
 from dataclasses import field, Field
+from functools import lru_cache
 from typing import Any
 from typing import Dict as TDict
 from typing import List as TList
@@ -8,17 +11,16 @@ from typing import Optional, Set, Tuple, Type, TypeVar, Union
 
 import marshmallow_dataclass
 import yaml
-from marshmallow import EXCLUDE, fields, schema, validate, ValidationError
+from marshmallow import EXCLUDE, fields, pre_load, schema, validate, ValidationError
 from marshmallow.utils import missing
 from marshmallow_dataclass import dataclass as m_dataclass
 from marshmallow_jsonschema import JSONSchema as js
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import ACTIVE, COLUMN, NAME, PROC_COLUMN, TYPE
+from ludwig.constants import ACTIVE, COLUMN, LUDWIG_SCHEMA_VALIDATION_POLICY, NAME, PROC_COLUMN, TYPE
 from ludwig.modules.reduction_modules import reduce_mode_registry
 from ludwig.schema.metadata import COMMON_METADATA
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, ParameterMetadata
-from ludwig.utils.misc_utils import memoized_method
 from ludwig.utils.registry import Registry
 from ludwig.utils.torch_utils import activations, initializer_registry
 
@@ -143,6 +145,10 @@ class ListSerializable(ABC):
 ConfigT = TypeVar("ConfigT", bound="BaseMarshmallowConfig")
 
 
+# TODO: Change to RAISE and update descriptions once we want to enforce strict schemas.
+LUDWIG_SCHEMA_VALIDATION_POLICY_VAR = os.environ.get(LUDWIG_SCHEMA_VALIDATION_POLICY, EXCLUDE).lower()
+
+
 @DeveloperAPI
 class BaseMarshmallowConfig(ABC):
     """Base marshmallow class for common attributes and metadata."""
@@ -157,8 +163,8 @@ class BaseMarshmallowConfig(ABC):
         filled in as necessary.
         """
 
-        unknown = EXCLUDE
-        "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter."
+        unknown = LUDWIG_SCHEMA_VALIDATION_POLICY_VAR
+        "Flag that sets marshmallow `load` calls to handle unknown properties passed as a parameter."
 
         ordered = True
         "Flag that maintains the order of defined parameters in the schema"
@@ -170,19 +176,36 @@ class BaseMarshmallowConfig(ABC):
         """
         return convert_submodules(self.__dict__)
 
+    @pre_load
+    def log_deprecation_warnings_for_any_invalid_parameters(self, data, **kwargs):
+        """Logs a warning for any unknown or invalid parameters passed to a schema.
+
+        Will be removed in Ludwig v0.8, when all such parameters will explicitly raise an error.
+        """
+        copy_data = copy.deepcopy(data)
+        for key in data.keys():
+            if key not in self.fields:
+                if key != "type":
+                    warnings.warn(
+                        f'"{key}" is not a valid parameter for the "{self.__class__.__name__}" schema, will be flagged '
+                        "as an error in v0.8",
+                        DeprecationWarning,
+                    )
+        return copy_data
+
     @classmethod
     def from_dict(cls: Type[ConfigT], d: TDict[str, Any]) -> ConfigT:
         schema = cls.get_class_schema()()
         return schema.load(d)
 
     @classmethod
-    @memoized_method(maxsize=1)
+    @lru_cache(maxsize=None)
     def get_valid_field_names(cls) -> Set[str]:
         schema = cls.get_class_schema()()
         return set(schema.fields.keys())
 
     @classmethod
-    @memoized_method(maxsize=1)
+    @lru_cache(maxsize=None)
     def get_class_schema(cls):
         return marshmallow_dataclass.class_schema(cls)
 
@@ -314,18 +337,21 @@ def StringOptions(
 
     By default, None is allowed (and automatically appended) to the allowed list of options.
     """
+    assert len(options) > 0, "Must provide non-empty list of options!"
+
+    if default is not None:
+        assert isinstance(default, str), f"Provided default `{default}` should be a string!"
+
     # If None should be allowed for an enum field, it also has to be defined as a valid
     # [option](https://github.com/json-schema-org/json-schema-spec/issues/258):
-    if len(options) <= 0:
-        raise ValidationError("Must provide non-empty list of options!")
-    if default is not None and not isinstance(default, str):
-        raise ValidationError(f"Provided default `{default}` should be a string!")
     if allow_none and None not in options:
         options += [None]
     if not allow_none and None in options:
         options.remove(None)
-    if default not in options:
-        raise ValidationError(f"Provided default `{default}` is not one of allowed options: {options} ")
+
+    assert len(options) == len(set(options)), f"Provided options must be unique! See: {options}"
+    assert default in options, f"Provided default `{default}` is not one of allowed options: {options} "
+
     return field(
         metadata={
             "marshmallow_field": fields.String(
@@ -404,7 +430,7 @@ def IntegerOptions(
 
 
 @DeveloperAPI
-def Boolean(default: bool, description: str, parameter_metadata: ParameterMetadata = None):
+def Boolean(default: bool, description: str = "", parameter_metadata: ParameterMetadata = None):
     if default is not None:
         try:
             assert isinstance(default, bool)
@@ -673,12 +699,18 @@ def Dict(
 @DeveloperAPI
 def List(
     list_type: Union[Type[str], Type[int], Type[float], Type[list]] = str,
+    inner_type: Union[Type[str], Type[int], Type[float], Type[dict]] = float,
     default: Union[None, TList[Any]] = None,
     allow_none: bool = True,
     description: str = "",
     parameter_metadata: ParameterMetadata = None,
 ):
-    """Returns a dataclass field with marshmallow metadata enforcing input must be a list."""
+    """Returns a dataclass field with marshmallow metadata enforcing input must be a list.
+
+    Args:
+        list_type: Type of the top-level list items.
+        inner_type: Type of the contents of inner lists. Only used when `list_type` is `list`.
+    """
     if default is not None:
         try:
             assert isinstance(default, list)
@@ -688,16 +720,23 @@ def List(
     elif not allow_none:
         default = []
 
-    if list_type is str:
-        field_type = fields.String()
-    elif list_type is int:
-        field_type = fields.Integer()
-    elif list_type is float:
-        field_type = fields.Float()
-    elif list_type is list:
-        field_type = fields.List(fields.Float())
+    type_map = {str: fields.String, int: fields.Integer, float: fields.Float}
+
+    # When using a flat list, we just need to check that the type of the contents is valid. Lists of lists were
+    # originally restricted to contain floats, but we now include a type check that includes all flat list types and
+    # dictionaries. List of list of dict supports some valid hyperopt categorical parameter configs (e.g.,
+    # hyperopting `decoder.fc_layers` configs).
+    if list_type is not list:
+        try:
+            field_type = type_map[list_type]()
+        except KeyError:
+            raise ValueError(f"Invalid list type: `{list_type}`")
     else:
-        raise ValueError(f"Invalid list type: `{list_type}`")
+        try:
+            inner_field_type = type_map[inner_type]() if inner_type is not dict else fields.Dict(fields.String())
+        except KeyError:
+            raise ValueError(f"Invalid inner list type. Requested list of {inner_type}.")
+        field_type = fields.List(inner_field_type)
 
     load_default = lambda: copy.deepcopy(default)
     return field(
@@ -855,7 +894,7 @@ def InitializerOrDict(
                         },
                         "required": ["type"],
                         "title": f"{self.name}_custom_option",
-                        "additionalProperties": True,
+                        "additionalProperties": True,  # Will be removed by initializer refactor PR.
                         "description": "Customize an existing initializer.",
                         "parameter_metadata": param_metadata,
                     },
@@ -917,16 +956,18 @@ def FloatRangeTupleDataclassField(
                 items_schema["minimum"] = min
             if max is not None:
                 items_schema["maximum"] = max
+            one_of = [
+                {
+                    "type": "array",
+                    "items": [{**items_schema}] * n,
+                    "default": default,
+                    "description": description,
+                },
+            ]
+            if allow_none:
+                one_of.append({"type": "null", "title": "null_float_tuple_option", "description": "None"})
             return {
-                "oneOf": [
-                    {
-                        "type": "array",
-                        "items": [{**items_schema}] * n,
-                        "default": default,
-                        "description": description,
-                    },
-                    {"type": "null", "title": "null_float_tuple_option", "description": "None"},
-                ],
+                "oneOf": one_of,
                 "title": self.name,
                 "default": default,
                 "description": "Valid options for FloatRangeTupleDataclassField.",
@@ -1092,9 +1133,14 @@ def OneOfOptionsField(
     return field(
         metadata={
             "marshmallow_field": OneOfOptionsCombinatorialField(
-                allow_none=allow_none, load_default=default, dump_default=default, metadata={"description": description}
+                allow_none=allow_none,
+                load_default=default,
+                dump_default=default,
+                metadata={
+                    "description": description,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
+                },
             ),
-            "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
         },
         **default_kwarg,
     )
@@ -1102,11 +1148,18 @@ def OneOfOptionsField(
 
 class TypeSelection(fields.Field):
     def __init__(
-        self, registry: Registry, default_value: Optional[str] = None, key: str = "type", description: str = ""
+        self,
+        registry: Registry,
+        default_value: Optional[str] = None,
+        key: str = "type",
+        description: str = "",
+        parameter_metadata: ParameterMetadata = None,
+        allow_str_value: bool = False,
     ):
         self.registry = registry
         self.default_value = default_value
         self.key = key
+        self.allow_str_value = allow_str_value
 
         dump_default = missing
         load_default = missing
@@ -1122,12 +1175,17 @@ class TypeSelection(fields.Field):
             allow_none=False,
             dump_default=dump_default,
             load_default=load_default,
-            metadata={"description": description},
+            metadata={"description": description, "parameter_metadata": convert_metadata_to_json(parameter_metadata)},
         )
 
     def _deserialize(self, value, attr, data, **kwargs):
         if value is None:
             return None
+
+        if self.allow_str_value and isinstance(value, str):
+            # If user provided the value as a string, assume they were providing the type
+            value = {self.key: value}
+
         if isinstance(value, dict):
             cls_type = value.get(self.key)
             cls_type = cls_type.lower() if cls_type else self.default_value
@@ -1138,7 +1196,9 @@ class TypeSelection(fields.Field):
                 except (TypeError, ValidationError) as e:
                     raise ValidationError(f"Invalid params: {value}, see `{cls}` definition") from e
             raise ValidationError(f"Invalid type: '{cls_type}', expected one of: {list(self.registry.keys())}")
-        raise ValidationError(f"Invalid param {value}, expected `None` or `dict`")
+
+        maybe_str = ", `str`," if self.allow_str_value else ""
+        raise ValidationError(f"Invalid param {value}, expected `None`{maybe_str} or `dict`")
 
     def get_schema_from_registry(self, key: str) -> Type[BaseMarshmallowConfig]:
         return self.registry[key]
@@ -1201,3 +1261,6 @@ class DictMarshmallowField(fields.Field):
             metadata={"marshmallow_field": self},
             default_factory=default_factory,
         )
+
+    def _jsonschema_type_mapping(self):
+        return unload_jsonschema_from_marshmallow_class(self.cls)

@@ -1,13 +1,14 @@
 from abc import ABC
 from dataclasses import field
+from importlib import import_module
 from typing import Callable, Dict, Optional, Tuple, Union
 
 from marshmallow import fields, ValidationError
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.hyperopt import utils as hyperopt_utils
 from ludwig.schema.utils import ludwig_dataclass
-from ludwig.utils.registry import Registry
 
 # ----------------------------------------------------------------------------------------------------------------------
 # To prevent direct dependency on ray import, the following static key stores are duplicated:
@@ -27,17 +28,6 @@ DEFAULT_RESULT_KEYS = (TRAINING_ITERATION, TIME_TOTAL_S, TIMESTEPS_TOTAL, MEAN_A
 # from ray.tune.result import DEFAULT_METRIC
 RAY_TUNE_DESULT_DEFAULT_METRIC = "_metric"
 # ----------------------------------------------------------------------------------------------------------------------
-
-scheduler_config_registry = Registry()
-
-
-@DeveloperAPI
-def register_scheduler_config(name: str):
-    def wrap(scheduler_config: BaseSchedulerConfig):
-        scheduler_config_registry[name] = scheduler_config
-        return scheduler_config
-
-    return wrap
 
 
 # Field aliases to cut down on code reuse:
@@ -107,6 +97,27 @@ class BaseSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
         ),
     )
 
+    def dependencies_installed(self):
+        """Some search algorithms require additional packages to be installed, check that they are available."""
+        missing_packages = []
+        missing_installs = []
+        for package_name, install_name in hyperopt_utils.get_scheduler_dependencies(self.type):
+            try:
+                import_module(package_name)
+            except ImportError:
+                missing_packages.append(package_name)
+                missing_installs.append(install_name)
+
+        if missing_packages:
+            missing_packages = ", ".join(missing_packages)
+            missing_installs = " ".join(missing_installs)
+            raise ImportError(
+                f"Some packages needed to use hyperopt scheduler {self.type} are not installed: "
+                f"{missing_packages}. To add these dependencies, run `pip install {missing_installs}`. For more "
+                "details, please refer to Ray Tune documentation for this scheduler."
+            )
+        return True
+
 
 @DeveloperAPI
 @ludwig_dataclass
@@ -115,8 +126,9 @@ class BaseHyperbandSchedulerConfig(BaseSchedulerConfig):
 
 
 @DeveloperAPI
-@register_scheduler_config("async_hyperband")
-@register_scheduler_config("asynchyperband")
+@hyperopt_utils.register_scheduler_config("async_hyperband")
+@hyperopt_utils.register_scheduler_config("asynchyperband")
+@hyperopt_utils.register_scheduler_config("asha")
 @ludwig_dataclass
 class AsyncHyperbandSchedulerConfig(BaseHyperbandSchedulerConfig):
     """Asynchronous hyperband (ASHA) scheduler settings."""
@@ -128,7 +140,7 @@ class AsyncHyperbandSchedulerConfig(BaseHyperbandSchedulerConfig):
     grace_period: int = schema_utils.PositiveInteger(
         default=1,
         description=(
-            "Only stop trials at least this old in time. The units are the same as the attribute named by time_attr."
+            "Only stop trials at least this old in time. The units are the same as the attribute named by `time_attr`."
         ),
     )
 
@@ -136,9 +148,20 @@ class AsyncHyperbandSchedulerConfig(BaseHyperbandSchedulerConfig):
         default=4, description=("Used to set halving rate and amount. This is simply a unit-less scalar.")
     )
 
+    brackets: int = schema_utils.PositiveInteger(
+        default=1,
+        description=(
+            "Number of brackets. Each bracket has a different halving rate, specified by the reduction factor."
+        ),
+    )
+
+    stop_last_trials: bool = schema_utils.Boolean(
+        default=True, description="Whether to terminate the trials after reaching `max_t`."
+    )
+
 
 @DeveloperAPI
-@register_scheduler_config("hyperband")
+@hyperopt_utils.register_scheduler_config("hyperband")
 @ludwig_dataclass
 class HyperbandSchedulerConfig(BaseHyperbandSchedulerConfig):
     """Standard hyperband scheduler settings."""
@@ -157,8 +180,8 @@ class HyperbandSchedulerConfig(BaseHyperbandSchedulerConfig):
 
 
 @DeveloperAPI
-@register_scheduler_config("median_stopping_rule")
-@register_scheduler_config("medianstoppingrule")
+@hyperopt_utils.register_scheduler_config("median_stopping_rule")
+@hyperopt_utils.register_scheduler_config("medianstoppingrule")
 @ludwig_dataclass
 class MedianStoppingRuleSchedulerConfig(BaseSchedulerConfig):
     """Median Stopping Rule scheduler settings."""
@@ -171,7 +194,7 @@ class MedianStoppingRuleSchedulerConfig(BaseSchedulerConfig):
         default=60.0,
         description=(
             "Only stop trials at least this old in time. The mean will only be computed from this time onwards. The "
-            "units are the same as the attribute named by time_attr."
+            "units are the same as the attribute named by `time_attr`."
         ),
     )
 
@@ -182,9 +205,9 @@ class MedianStoppingRuleSchedulerConfig(BaseSchedulerConfig):
     min_time_slice: int = schema_utils.NonNegativeInteger(
         default=0,
         description=(
-            "Each trial runs at least this long before yielding (assuming it isn’t stopped). Note: trials ONLY yield if"
-            " there are not enough samples to evaluate performance for the current result AND there are other trials "
-            "waiting to run. The units are the same as the attribute named by time_attr."
+            "Each trial runs at least this long before yielding (assuming it isn't stopped). Note: trials ONLY yield "
+            "if there are not enough samples to evaluate performance for the current result AND there are other "
+            "trials waiting to run. The units are the same as the attribute named by `time_attr`."
         ),
     )
 
@@ -198,7 +221,7 @@ class MedianStoppingRuleSchedulerConfig(BaseSchedulerConfig):
 
 
 @DeveloperAPI
-@register_scheduler_config("pbt")
+@hyperopt_utils.register_scheduler_config("pbt")
 @ludwig_dataclass
 class PopulationBasedTrainingSchedulerConfig(BaseSchedulerConfig):
     """Population Based Training scheduler settings."""
@@ -210,8 +233,8 @@ class PopulationBasedTrainingSchedulerConfig(BaseSchedulerConfig):
     perturbation_interval: float = schema_utils.NonNegativeFloat(
         default=60.0,
         description=(
-            "Models will be considered for perturbation at this interval of time_attr. Note that perturbation incurs "
-            "checkpoint overhead, so you shouldn’t set this to be too frequent."
+            "Models will be considered for perturbation at this interval of `time_attr`. Note that perturbation incurs "
+            "checkpoint overhead, so you shouldn't set this to be too frequent."
         ),
     )
 
@@ -228,13 +251,13 @@ class PopulationBasedTrainingSchedulerConfig(BaseSchedulerConfig):
         default=None,
         description=(
             "Hyperparams to mutate. The format is as follows: for each key, either a list, function, or a tune search "
-            "space object (tune.loguniform, tune.uniform, etc.) can be provided. A list specifies an allowed set of "
+            "space object (`tune.loguniform`, tune.uniform, etc.) can be provided. A list specifies an allowed set of "
             "categorical values. A function or tune search space object specifies the distribution of a continuous "
-            "parameter. You must use tune.choice, tune.uniform, tune.loguniform, etc.. Arbitrary tune.sample_from "
-            "objects are not supported. A key can also hold a dict for nested hyperparameters. You must specify at "
-            "least one of hyperparam_mutations or custom_explore_fn. Tune will sample the search space provided by "
-            "hyperparam_mutations for the initial hyperparameter values if the corresponding hyperparameters are not "
-            "present in a trial’s initial config."
+            "parameter. You must use `tune.choice`, `tune.uniform`, `tune.loguniform`, etc.. Arbitrary "
+            "`tune.sample_from` objects are not supported. A key can also hold a dict for nested hyperparameters. You "
+            "must specify at least one of `hyperparam_mutations` or `custom_explore_fn`. Tune will sample the search "
+            "space provided by `hyperparam_mutations` for the initial hyperparameter values if the corresponding "
+            "hyperparameters are not present in a trial's initial config."
         ),
     )
 
@@ -244,18 +267,18 @@ class PopulationBasedTrainingSchedulerConfig(BaseSchedulerConfig):
         min=0,
         max=0.5,
         description=(
-            "Parameters are transferred from the top quantile_fraction fraction of trials to the bottom "
-            "quantile_fraction fraction. Needs to be between 0 and 0.5. Setting it to 0 essentially implies doing no "
-            "exploitation at all."
+            "Parameters are transferred from the top `quantile_fraction` fraction of trials to the bottom "
+            "`quantile_fraction` fraction. Needs to be between 0 and 0.5. Setting it to 0 essentially implies doing "
+            "no exploitation at all."
         ),
     )
 
     resample_probability: float = schema_utils.NonNegativeFloat(
         default=0.25,
         description=(
-            "The probability of resampling from the original distribution when applying hyperparam_mutations. If not "
-            "resampled, the value will be perturbed by a factor chosen from perturbation_factors if continuous, or "
-            "changed to an adjacent value if discrete."
+            "The probability of resampling from the original distribution when applying `hyperparam_mutations`. If "
+            "not resampled, the value will be perturbed by a factor chosen from `perturbation_factors` if continuous, "
+            "or changed to an adjacent value if discrete."
         ),
     )
 
@@ -271,16 +294,16 @@ class PopulationBasedTrainingSchedulerConfig(BaseSchedulerConfig):
         default=None,
         allow_none=True,
         description=(
-            "You can also specify a custom exploration function. This function is invoked as f(config) after built-in "
-            "perturbations from hyperparam_mutations are applied, and should return config updated as needed. You must "
-            "specify at least one of hyperparam_mutations or custom_explore_fn."
+            "You can also specify a custom exploration function. This function is invoked as `f(config)` after "
+            "built-in perturbations from `hyperparam_mutations` are applied, and should return config updated as "
+            "needed. You must specify at least one of `hyperparam_mutations` or `custom_explore_fn`."
         ),
     )
 
     log_config: bool = schema_utils.Boolean(
         default=True,
         description=(
-            "Whether to log the ray config of each model to local_dir at each exploit. Allows config schedule to be "
+            "Whether to log the ray config of each model to `local_dir` at each exploit. Allows config schedule to be "
             "reconstructed."
         ),
     )
@@ -288,8 +311,8 @@ class PopulationBasedTrainingSchedulerConfig(BaseSchedulerConfig):
     require_attrs: bool = schema_utils.Boolean(
         default=True,
         description=(
-            "Whether to require time_attr and metric to appear in result for every iteration. If True, error will be "
-            "raised if these values are not present in trial result."
+            "Whether to require `time_attr` and metric to appear in result for every iteration. If True, error will "
+            "be raised if these values are not present in trial result."
         ),
     )
 
@@ -297,15 +320,15 @@ class PopulationBasedTrainingSchedulerConfig(BaseSchedulerConfig):
         default=False,
         description=(
             "If False, will use asynchronous implementation of PBT. Trial perturbations occur every "
-            "perturbation_interval for each trial independently. If True, will use synchronous implementation of PBT. "
-            "Perturbations will occur only after all trials are synced at the same time_attr every "
-            "perturbation_interval. Defaults to False. See Appendix A.1 here https://arxiv.org/pdf/1711.09846.pdf."
+            "`perturbation_interval` for each trial independently. If True, will use synchronous implementation of "
+            "PBT. Perturbations will occur only after all trials are synced at the same `time_attr` every "
+            "`perturbation_interval`. Defaults to False. See Appendix A.1 here https://arxiv.org/pdf/1711.09846.pdf."
         ),
     )
 
 
 @DeveloperAPI
-@register_scheduler_config("pbt_replay")
+@hyperopt_utils.register_scheduler_config("pbt_replay")
 @ludwig_dataclass
 class PopulationBasedTrainingReplaySchedulerConfig(BaseSchedulerConfig):
     """Population Based Training Replay scheduler settings."""
@@ -317,14 +340,14 @@ class PopulationBasedTrainingReplaySchedulerConfig(BaseSchedulerConfig):
         default=None,
         allow_none=True,
         description=(
-            "The PBT policy file. Usually this is stored in ~/ray_results/experiment_name/pbt_policy_xxx.txt where xxx "
-            "is the trial ID."
+            "The PBT policy file. Usually this is stored in `~/ray_results/experiment_name/pbt_policy_xxx.txt` where "
+            "`xxx` is the trial ID."
         ),
     )
 
 
 @DeveloperAPI
-@register_scheduler_config("pb2")
+@hyperopt_utils.register_scheduler_config("pb2", dependencies=[("sklearn", "scikit-learn"), ("GPy", "GPy")])
 @ludwig_dataclass
 class PopulationBasedBanditsSchedulerConfig(BaseSchedulerConfig):
     """Population Based Bandits (PB2) scheduler settings."""
@@ -336,8 +359,8 @@ class PopulationBasedBanditsSchedulerConfig(BaseSchedulerConfig):
     perturbation_interval: float = schema_utils.NonNegativeFloat(
         default=60.0,
         description=(
-            "Models will be considered for perturbation at this interval of time_attr. Note that perturbation incurs "
-            "checkpoint overhead, so you shouldn’t set this to be too frequent."
+            "Models will be considered for perturbation at this interval of `time_attr`. Note that perturbation "
+            "incurs checkpoint overhead, so you shouldn't set this to be too frequent."
         ),
     )
 
@@ -345,7 +368,7 @@ class PopulationBasedBanditsSchedulerConfig(BaseSchedulerConfig):
         default=None,
         description=(
             "Hyperparameters to mutate. The format is as follows: for each key, enter a list of the form [min, max] "
-            "representing the minimum and maximum possible hyperparam values."
+            "representing the minimum and maximum possible hyperparameter values."
         ),
     )
 
@@ -355,16 +378,16 @@ class PopulationBasedBanditsSchedulerConfig(BaseSchedulerConfig):
         min=0,
         max=0.5,
         description=(
-            "Parameters are transferred from the top quantile_fraction fraction of trials to the bottom "
-            "quantile_fraction fraction. Needs to be between 0 and 0.5. Setting it to 0 essentially implies doing no "
-            "exploitation at all."
+            "Parameters are transferred from the top `quantile_fraction` fraction of trials to the bottom "
+            "`quantile_fraction` fraction. Needs to be between 0 and 0.5. Setting it to 0 essentially implies doing "
+            "no exploitation at all."
         ),
     )
 
     log_config: bool = schema_utils.Boolean(
         default=True,
         description=(
-            "Whether to log the ray config of each model to local_dir at each exploit. Allows config schedule to be "
+            "Whether to log the ray config of each model to `local_dir` at each exploit. Allows config schedule to be "
             "reconstructed."
         ),
     )
@@ -372,8 +395,8 @@ class PopulationBasedBanditsSchedulerConfig(BaseSchedulerConfig):
     require_attrs: bool = schema_utils.Boolean(
         default=True,
         description=(
-            "Whether to require time_attr and metric to appear in result for every iteration. If True, error will be "
-            "raised if these values are not present in trial result."
+            "Whether to require `time_attr` and metric to appear in result for every iteration. If True, error will "
+            "be raised if these values are not present in trial result."
         ),
     )
 
@@ -381,15 +404,15 @@ class PopulationBasedBanditsSchedulerConfig(BaseSchedulerConfig):
         default=False,
         description=(
             "If False, will use asynchronous implementation of PBT. Trial perturbations occur every "
-            "perturbation_interval for each trial independently. If True, will use synchronous implementation of PBT. "
-            "Perturbations will occur only after all trials are synced at the same time_attr every "
-            "perturbation_interval. Defaults to False. See Appendix A.1 here https://arxiv.org/pdf/1711.09846.pdf."
+            "`perturbation_interval` for each trial independently. If True, will use synchronous implementation of "
+            "PBT. Perturbations will occur only after all trials are synced at the same `time_attr` every "
+            "`perturbation_interval`. Defaults to False. See Appendix A.1 here https://arxiv.org/pdf/1711.09846.pdf."
         ),
     )
 
 
 @DeveloperAPI
-@register_scheduler_config("hb_bohb")
+@hyperopt_utils.register_scheduler_config("hb_bohb")
 @ludwig_dataclass
 class BOHBSchedulerConfig(BaseHyperbandSchedulerConfig):
     """Hyperband for BOHB (hb_bohb) scheduler settings."""
@@ -403,13 +426,13 @@ class BOHBSchedulerConfig(BaseHyperbandSchedulerConfig):
     )
 
     stop_last_trials: bool = schema_utils.Boolean(
-        default=True, description=("Whether to terminate the trials after reaching max_t. Defaults to True.")
+        default=True, description=("Whether to terminate the trials after reaching `max_t`. Defaults to True.")
     )
 
 
 # TODO: Double-check support for this
 @DeveloperAPI
-@register_scheduler_config("fifo")
+@hyperopt_utils.register_scheduler_config("fifo")
 @ludwig_dataclass
 class FIFOSchedulerConfig(BaseSchedulerConfig):
     """FIFO trial scheduler settings."""
@@ -419,7 +442,7 @@ class FIFOSchedulerConfig(BaseSchedulerConfig):
 
 # TODO: Double-check support for this as well as whether Callable args work properly
 @DeveloperAPI
-@register_scheduler_config("resource_changing")
+@hyperopt_utils.register_scheduler_config("resource_changing")
 @ludwig_dataclass
 class ResourceChangingSchedulerConfig(BaseSchedulerConfig):
     """Resource changing scheduler settings."""
@@ -437,12 +460,12 @@ class ResourceChangingSchedulerConfig(BaseSchedulerConfig):
         allow_none=True,
         description=(
             "The callable used to change live trial resource requiements during tuning. This callable will be called on"
-            " each trial as it finishes one step of training. The callable must take four arguments: TrialRunner, "
-            "current Trial, current result dict and the ResourceChangingScheduler calling it. The callable must return "
-            "a PlacementGroupFactory, Resources, dict or None (signifying no need for an update). If "
-            "resources_allocation_function is None, no resource requirements will be changed at any time. By default, "
-            "DistributeResources will be used, distributing available CPUs and GPUs over all running trials in a robust"
-            " way, without any prioritization."
+            " each trial as it finishes one step of training. The callable must take four arguments: `TrialRunner`, "
+            "current `Trial`, current result `dict` and the `ResourceChangingScheduler` calling it. The callable must "
+            "return a `PlacementGroupFactory`, `Resources`, `dict` or None (signifying no need for an update). If "
+            "`resources_allocation_function` is None, no resource requirements will be changed at any time. By "
+            " default, `DistributeResources` will be used, distributing available CPUs and GPUs over all running "
+            "trials in a robust way, without any prioritization."
         ),
     )
 
@@ -452,8 +475,8 @@ def get_scheduler_conds():
     """Returns a JSON schema of conditionals to validate against scheduler types defined in
     `ludwig.schema.hyperopt.scheduler_registry`."""
     conds = []
-    for scheduler_config in scheduler_config_registry:
-        scheduler_cls = scheduler_config_registry[scheduler_config]
+    for scheduler_config in hyperopt_utils.scheduler_config_registry:
+        scheduler_cls = hyperopt_utils.scheduler_config_registry[scheduler_config]
         other_props = schema_utils.unload_jsonschema_from_marshmallow_class(scheduler_cls)["properties"]
         schema_utils.remove_duplicate_fields(other_props)
         preproc_cond = schema_utils.create_cond(
@@ -483,8 +506,8 @@ def SchedulerDataclassField(default={"type": "fifo"}, description="Hyperopt sche
             if value is None:
                 return None
             if isinstance(value, dict):
-                if "type" in value and value["type"] in scheduler_config_registry:
-                    scheduler_config_cls = scheduler_config_registry[value["type"].lower()]
+                if "type" in value and value["type"] in hyperopt_utils.scheduler_config_registry:
+                    scheduler_config_cls = hyperopt_utils.scheduler_config_registry[value["type"].lower()]
                     try:
                         return scheduler_config_cls.Schema().load(value)
                     except (TypeError, ValidationError) as e:
@@ -496,15 +519,14 @@ def SchedulerDataclassField(default={"type": "fifo"}, description="Hyperopt sche
                 )
             raise ValidationError("Field should be None or dict")
 
-        @staticmethod
-        def _jsonschema_type_mapping():
+        def _jsonschema_type_mapping(self):
             # Note that this uses the same conditional pattern as combiners:
             return {
                 "type": "object",
                 "properties": {
                     "type": {
                         "type": "string",
-                        "enum": list(scheduler_config_registry.keys()),
+                        "enum": list(hyperopt_utils.scheduler_config_registry.keys()),
                         "default": default["type"],
                         "description": "The type of scheduler to use during hyperopt",
                     },
@@ -515,10 +537,14 @@ def SchedulerDataclassField(default={"type": "fifo"}, description="Hyperopt sche
                 "description": description,
             }
 
-    if not isinstance(default, dict) or "type" not in default or default["type"] not in scheduler_config_registry:
+    if (
+        not isinstance(default, dict)
+        or "type" not in default
+        or default["type"] not in hyperopt_utils.scheduler_config_registry
+    ):
         raise ValidationError(f"Invalid default: `{default}`")
     try:
-        opt = scheduler_config_registry[default["type"].lower()]
+        opt = hyperopt_utils.scheduler_config_registry[default["type"].lower()]
         load_default = lambda: opt.Schema().load(default)
         dump_default = opt.Schema().dump(default)
 

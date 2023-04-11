@@ -71,6 +71,7 @@ def test_progress_tracker_empty():
         CategoryOutputFeatureConfig,
         {
             "name": "category_feature",
+            "type": "category",
             "decoder": {
                 "type": "classifier",
             },
@@ -78,7 +79,7 @@ def test_progress_tracker_empty():
             "input_size": 10,
         },
     )
-    output_features["category_feature"] = CategoryOutputFeature(category_feature, {})
+    output_features.set("category_feature", CategoryOutputFeature(category_feature, {}))
 
     progress_tracker = trainer_utils.get_new_progress_tracker(
         batch_size=5,
@@ -111,6 +112,7 @@ def test_progress_tracker():
         CategoryOutputFeatureConfig,
         {
             "name": "category_feature",
+            "type": "category",
             "decoder": {
                 "type": "classifier",
             },
@@ -118,7 +120,7 @@ def test_progress_tracker():
             "input_size": 10,
         },
     )
-    output_features["category_feature"] = CategoryOutputFeature(category_feature, {})
+    output_features.set("category_feature", CategoryOutputFeature(category_feature, {}))
 
     progress_tracker = trainer_utils.get_new_progress_tracker(
         batch_size=5,

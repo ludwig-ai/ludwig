@@ -9,7 +9,7 @@ on:
   pull_request:
     branches: ["master", "release-*"]
 
-# we want an ongoing run of this workflow to be canceled by a later commit
+# We want an ongoing run of this workflow to be canceled by a later commit
 # so that there is only one concurrent run of this workflow for each branch
 concurrency:
   group: pytest-${{ github.head_ref || github.sha }}
@@ -28,15 +28,15 @@ jobs:
           - python-version: "3.8"
             pytorch-version: 1.13.0
             torchscript-version: 1.10.2
-            ray-version: 2.0.0
+            ray-version: 2.2.0
           - python-version: "3.9"
-            pytorch-version: 1.13.0
+            pytorch-version: 2.0.0
             torchscript-version: 1.10.2
-            ray-version: 2.1.0
+            ray-version: 2.3.0
           - python-version: "3.10"
             pytorch-version: nightly
             torchscript-version: 1.10.2
-            ray-version: 2.2.0 # TODO: Upgrade to nightly.
+            ray-version: 2.3.1
     env:
       PYTORCH: ${{ matrix.pytorch-version }}
       MARKERS: ${{ matrix.test-markers }}
@@ -46,7 +46,9 @@ jobs:
       RAY_VERSION: ${{ matrix.ray-version }}
       AWS_ACCESS_KEY_ID: ${{ secrets.LUDWIG_TESTS_AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.LUDWIG_TESTS_AWS_SECRET_ACCESS_KEY }}
-      EXCLUDED_MARKERS: "benchmark"
+      KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+      KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+      IS_NOT_FORK: ${{ !(github.event.pull_request.base.repo.full_name == 'ludwig-ai/ludwig' && github.event.pull_request.head.repo.fork) }}
 
     name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, ${{ matrix.test-markers }}, ${{ matrix.os }}, ray ${{ matrix.ray-version }}
     services:
@@ -58,7 +60,7 @@ jobs:
         ports:
           - 9000:9000
 
-    timeout-minutes: 90
+    timeout-minutes: 120
     steps:
       - name: Setup ludwigai/ludwig-ray container for local testing with act.
         if: ${{ env.ACT }}
@@ -122,8 +124,8 @@ jobs:
 
           if [ "$MARKERS" == "distributed" ]; then
             if [ "$RAY_VERSION" == "nightly" ]; then
-              # NOTE: hardcoded for python 3.9 on Linux
-              pip install https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-3.0.0.dev0-cp39-cp39-manylinux2014_x86_64.whl
+              # NOTE: hardcoded for python 3.10 on Linux
+              pip install https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-3.0.0.dev0-cp310-cp310-manylinux2014_x86_64.whl
             else
               # installing `six` early resolves ModuleNotFound error in ray==2.1.0
               pip install six
@@ -152,7 +154,19 @@ jobs:
           curl -L https://github.com/uber/neuropod/releases/download/v${{ env.NEUROPOD_VERISON }}/libneuropod-cpu-linux-v${{ env.NEUROPOD_VERISON }}-torchscript-${{ env.TORCHSCRIPT_VERISON }}-backend.tar.gz | sudo tar -xz -C "$NEUROPOD_BASE_DIR"
         shell: bash
 
-      - name: Reinstall Horovod if necessary
+      - name: Unit Tests
+        run: |
+          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow and not combinatorial and not horovod" --junitxml pytest.xml tests/ludwig
+
+      - name: Integration Tests
+        run: |
+          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow and not combinatorial and not horovod" --junitxml pytest.xml tests/integration_tests
+
+      - name: Regression Tests
+        run: |
+          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow and not combinatorial and not horovod or benchmark" --junitxml pytest.xml tests/regression_tests
+
+      - name: Install Horovod if necessary
         if: matrix.test-markers == 'distributed'
         env:
           HOROVOD_WITH_PYTORCH: 1
@@ -160,6 +174,7 @@ jobs:
           HOROVOD_WITHOUT_TENSORFLOW: 1
           HOROVOD_WITHOUT_MXNET: 1
         run: |
+          pip install -r requirements_extra.txt
           HOROVOD_BUILT=$(python -c "import horovod.torch; horovod.torch.nccl_built(); print('SUCCESS')" || true)
           if [[ $HOROVOD_BUILT != "SUCCESS" ]]; then
             pip uninstall -y horovod
@@ -168,9 +183,10 @@ jobs:
           horovodrun --check-build
         shell: bash
 
-      - name: Tests
+      - name: Horovod Tests
+        if: matrix.test-markers == 'distributed'
         run: |
-          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=4500 pytest -v --timeout 300 --durations 100 -m "($MARKERS) and not ($EXCLUDED_MARKERS or slow)" --junitxml pytest.xml tests
+          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and horovod and not slow and not combinatorial" --junitxml pytest.xml tests/
 
       - name: Upload Unit Test Results
         if: ${{ always() && !env.ACT }}
@@ -178,6 +194,88 @@ jobs:
         with:
           name: Unit Test Results (Python ${{ matrix.python-version }} ${{ matrix.test-markers }})
           path: pytest.xml
+
+  combinatorial-tests:
+    name: Combinatorial Tests
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Setup Linux
+        if: runner.os == 'linux'
+        run: |
+          sudo apt-get install -y cmake libsndfile1
+
+      - name: Setup macOS
+        if: runner.os == 'macOS'
+        run: |
+          brew install libuv
+
+      - name: Install dependencies
+        run: |
+          python --version
+          pip --version
+          python -m pip install -U pip
+          pip install -r requirements.txt
+          pip install -r requirements_test.txt
+          pip list
+        shell: bash
+
+      - name: Testing combinatorial config generation code
+        run: |
+          pytest -vs --durations 100 -m "combinatorial" --junitxml pytest.xml tests/ludwig/config_sampling
+
+      - name: Combinatorial Tests
+        run: |
+          pytest -rx --durations 100 -m "combinatorial" --junitxml pytest.xml tests/training_success
+
+
+  test-minimal-install:
+    name: Test Minimal Install
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Setup Linux
+        if: runner.os == 'linux'
+        run: |
+          sudo apt-get install -y cmake libsndfile1
+
+      - name: Setup macOS
+        if: runner.os == 'macOS'
+        run: |
+          brew install libuv
+
+      - name: Install dependencies
+        run: |
+          python --version
+          pip --version
+          python -m pip install -U pip
+          pip install '.'
+          pip list
+        shell: bash
+
+      - name: Check Install
+        run: |
+          ludwig check_install
+        shell: bash
+
+      - name: Test Getting Started
+        run: |
+          cd examples/getting_started && sh ./run.sh
+        shell: bash
 
   # start-runner:
   #   name: Start self-hosted EC2 runner

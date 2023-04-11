@@ -41,6 +41,8 @@ from ludwig.constants import (
     LOSS,
     MISSING_VALUE_STRATEGY,
     MODEL_ECD,
+    MODEL_GBM,
+    MODEL_TYPE,
     NAME,
     NUM_SAMPLES,
     NUMBER,
@@ -67,9 +69,11 @@ from ludwig.constants import (
 )
 from ludwig.features.feature_registries import get_base_type_registry, get_input_type_registry, get_output_type_registry
 from ludwig.globals import LUDWIG_VERSION
+from ludwig.schema.defaults.gbm import GBMDefaultsConfig
 from ludwig.schema.encoders.utils import get_encoder_cls
 from ludwig.types import (
     FeatureConfigDict,
+    FeatureTypeDefaultsDict,
     HyperoptConfigDict,
     ModelConfigDict,
     PreprocessingConfigDict,
@@ -796,6 +800,46 @@ def upgrade_missing_hyperopt(config: ModelConfigDict) -> ModelConfigDict:
         )
         del config[HYPEROPT]
     return config
+
+
+@register_config_transformation("0.7")
+def upgrade_defaults_config_for_gbm(config: ModelConfigDict) -> ModelConfigDict:
+    model_type = config.get(MODEL_TYPE, "")
+    if model_type != MODEL_GBM:
+        return config
+
+    defaults_ref = config.get(DEFAULTS, {})
+    defaults = copy.deepcopy(defaults_ref)
+    gbm_feature_types = GBMDefaultsConfig.Schema().fields.keys()
+    for feature_type in defaults_ref:
+        # GBM only supports binary, number, category and text features
+        if feature_type not in gbm_feature_types:
+            del defaults[feature_type]
+            continue
+
+        # Remove decoder and loss from defaults since they only apply to ECD
+        defaults[feature_type].pop("decoder", None)
+        defaults[feature_type].pop("loss", None)
+    config[DEFAULTS] = defaults
+    return config
+
+
+@register_config_transformation("0.7", "defaults")
+def remove_extra_type_param_in_defaults_config(defaults: FeatureTypeDefaultsDict) -> FeatureTypeDefaultsDict:
+    """Fixes a bug introduced before 0.7.3.
+
+    [1] and subsequent refactors accidentally introduced a bug where a `type` param was added to every feature in the
+    defaults config. It was removed by [2], but made it into one of the patch releases. This transformation removes that
+    `type` param from each section of the defaults config if it exists.
+
+    [1]: https://github.com/ludwig-ai/ludwig/pull/3223
+    [2]: https://github.com/ludwig-ai/ludwig/pull/3258
+    """
+    defaults_copy = copy.deepcopy(defaults)
+    for feature_type, feature_config in defaults.items():
+        if TYPE in feature_config:
+            del defaults_copy[feature_type][TYPE]
+    return defaults_copy
 
 
 def upgrade_metadata(metadata: TrainingSetMetadataDict) -> TrainingSetMetadataDict:

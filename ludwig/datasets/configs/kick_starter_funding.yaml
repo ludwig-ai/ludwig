@@ -12,6 +12,27 @@ description: |
   Funding Successful Projects on Kickstarter
   Predict if a project will get successfully funded or not using labeled data
   https://www.kaggle.com/codename007/funding-successful-projects
+columns:
+  - name: name
+    type: category
+  - name: desc
+    type: text
+  - name: goal
+    type: number
+  - name: keywords
+    type: category
+  - name: disable_communication
+    type: binary
+  - name: country
+    type: category
+  - name: currency
+    type: category
+  - name: deadline
+    type: number
+  - name: created_at
+    type: number
+  - name: final_status
+    type: binary
 output_features:
   - name: final_status
-    type: category
+    type: binary

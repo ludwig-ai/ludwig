@@ -27,6 +27,7 @@ import pandas as pd
 import pyarrow as pa
 import ray
 from dask.diagnostics import ProgressBar
+from packaging import version
 from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray.data import Dataset, read_parquet
 from ray.data.block import Block, BlockAccessor
@@ -45,6 +46,9 @@ TMP_COLUMN = "__TMP_COLUMN__"
 PandasBlockSchema = collections.namedtuple("PandasBlockSchema", ["names", "types"])
 
 logger = logging.getLogger(__name__)
+
+
+_ray_230 = version.parse(ray.__version__) >= version.parse("2.3.0")
 
 
 @DeveloperAPI
@@ -238,7 +242,7 @@ class DaskEngine(DataFrameEngine):
         ds = read_parquet(path, filesystem=PyFileSystem(FSSpecHandler(fs)))
         return self.from_ray_dataset(ds)
 
-    def to_ray_dataset(self, df):
+    def to_ray_dataset(self, df) -> Dataset:
         from ray.data import from_dask
 
         return from_dask(df)
@@ -266,17 +270,31 @@ class DaskEngine(DataFrameEngine):
 
         TODO(Arnav): Remove in Ray 2.2
         """
+        if _ray_230:
 
-        @dask.delayed
-        def block_to_df(block: Block):
-            if isinstance(block, (ray.ObjectRef, ClientObjectRef)):
-                raise ValueError(
-                    "Dataset.to_dask() must be used with Dask-on-Ray, please "
-                    "set the Dask scheduler to ray_dask_get (located in "
-                    "ray.util.dask)."
-                )
-            block = BlockAccessor.for_block(block)
-            return block.to_pandas()
+            @dask.delayed
+            def block_to_df(block: Block):
+                block = BlockAccessor.for_block(block)
+                if isinstance(block, (ray.ObjectRef, ClientObjectRef)):
+                    raise ValueError(
+                        "Dataset.to_dask() must be used with Dask-on-Ray, please "
+                        "set the Dask scheduler to ray_dask_get (located in "
+                        "ray.util.dask)."
+                    )
+                return block.to_pandas()
+
+        else:
+
+            @dask.delayed
+            def block_to_df(block: Block):
+                if isinstance(block, (ray.ObjectRef, ClientObjectRef)):
+                    raise ValueError(
+                        "Dataset.to_dask() must be used with Dask-on-Ray, please "
+                        "set the Dask scheduler to ray_dask_get (located in "
+                        "ray.util.dask)."
+                    )
+                block = BlockAccessor.for_block(block)
+                return block.to_pandas()
 
         # Infer Dask metadata from Datasets schema.
         schema = dataset.schema()
@@ -299,6 +317,9 @@ class DaskEngine(DataFrameEngine):
                 )
             else:
                 meta = schema.empty_table().to_pandas()
+
+        if meta is None and schema is None:
+            return dd.DataFrame.from_dict({}, npartitions=1)
 
         ddf = dd.from_delayed(
             [block_to_df(block) for block in dataset.get_internal_block_refs()],

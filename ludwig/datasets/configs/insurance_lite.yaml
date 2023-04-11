@@ -6,20 +6,28 @@ sha256:
   fast-furious-and-insured.zip: 3b88ada517aa88d9c9187121d7ef42f4b5539808677a2b0827b989ca0fa19600
 dataset_filenames: Fast_Furious_Insured/train.csv
 preserve_paths: Fast_Furious_Insured
-columns:
-  - image_path
-  - insurance_company
-  - cost_of_vehicle
-  - min_coverage
-  - expiry_date
-  - max_coverage
-  - condition
-  - amount
 loader: insurance_lite.InsuranceLiteLoader
 description: |
   The dataset consists of parameters such as the images of damaged cars,
   the price of the cars and their insurance claim, and the like.
   Predict the insurance claim for the cars that are provided in the dataset.
+columns:
+    - name: image_path
+      type: image
+    - name: insurance_company
+      type: category
+    - name: cost_of_vehicle
+      type: number
+    - name: min_coverage
+      type: number
+    - name: expiry_date
+      type: date
+    - name: max_coverage
+      type: number
+    - name: condition
+      type: binary
+    - name: amount
+      type: number
 output_features:
   - name: amount
     type: number

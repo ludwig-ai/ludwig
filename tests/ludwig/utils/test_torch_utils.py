@@ -106,7 +106,7 @@ def test_initialize_pytorch_without_gpu(mock_torch):
 
 
 @patch("ludwig.utils.torch_utils.torch")
-def test_initialize_pytorch_with_horovod(mock_torch):
+def test_initialize_pytorch_with_distributed(mock_torch):
     mock_torch.cuda.is_available.return_value = True
     mock_torch.cuda.device_count.return_value = 4
 
@@ -119,7 +119,7 @@ def test_initialize_pytorch_with_horovod(mock_torch):
 
 @patch("ludwig.utils.torch_utils.warnings")
 @patch("ludwig.utils.torch_utils.torch")
-def test_initialize_pytorch_with_horovod_bad_local_rank(mock_torch, mock_warnings):
+def test_initialize_pytorch_with_distributed_bad_local_rank(mock_torch, mock_warnings):
     """In this scenario, the local_size 5 is out of the bounds of the GPU indices."""
     mock_torch.cuda.is_available.return_value = True
     mock_torch.cuda.device_count.return_value = 4
@@ -132,7 +132,7 @@ def test_initialize_pytorch_with_horovod_bad_local_rank(mock_torch, mock_warning
 
 
 @patch("ludwig.utils.torch_utils.torch")
-def test_initialize_pytorch_with_horovod_explicit_gpus(mock_torch):
+def test_initialize_pytorch_with_distributed_explicit_gpus(mock_torch):
     mock_torch.cuda.is_available.return_value = True
     mock_torch.cuda.device_count.return_value = 4
 

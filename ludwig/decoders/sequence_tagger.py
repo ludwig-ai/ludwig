@@ -4,7 +4,7 @@ from typing import Dict
 import torch
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import HIDDEN, LOGITS, SEQUENCE, TEXT
+from ludwig.constants import HIDDEN, LOGITS, PREDICTIONS, PROBABILITIES, SEQUENCE, TEXT
 from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
 from ludwig.modules.attention_modules import MultiHeadSelfAttention
@@ -77,7 +77,7 @@ class SequenceTaggerDecoder(Decoder):
         return {LOGITS: logits}
 
     def get_prediction_set(self):
-        return {LOGITS}
+        return {LOGITS, PROBABILITIES, PREDICTIONS}
 
     @staticmethod
     def get_schema_cls():

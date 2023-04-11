@@ -10,6 +10,7 @@ import ludwig.datasets
 from ludwig.api import LudwigModel
 from ludwig.datasets.dataset_config import DatasetConfig
 from ludwig.datasets.loaders.dataset_loader import DatasetState
+from tests.integration_tests.utils import private_test
 
 SUPPORTED_UNCOMPRESSED_FILETYPES = ["json", "jsonl", "tsv", "csv"]
 
@@ -108,19 +109,37 @@ def test_multifile_join_dataset(tmpdir, f_type):
     ludwig.datasets._get_dataset_configs.cache_clear()
 
 
-def test_get_datasets_info():
-    dataset_output_features = ludwig.datasets.get_datasets_output_features()
+@pytest.mark.parametrize(
+    "include_competitions,include_data_modalities", [(True, True), (True, False), (False, True), (False, False)]
+)
+def test_get_datasets_info(include_competitions, include_data_modalities):
+    dataset_output_features = ludwig.datasets.get_datasets_output_features(
+        include_competitions=include_competitions, include_data_modalities=include_data_modalities
+    )
+
     assert len(dataset_output_features) > 1
     assert isinstance(dataset_output_features, dict)
-    assert dataset_output_features["titanic"].get("name", None)
-    assert dataset_output_features["titanic"].get("output_features", None)
-    assert isinstance(dataset_output_features["titanic"]["output_features"], list)
-    assert dataset_output_features["titanic"]["output_features"][0].get("name", None)
-    assert dataset_output_features["titanic"]["output_features"][0].get("type", None)
+    assert dataset_output_features["twitter_bots"].get("name", None)
+    assert dataset_output_features["twitter_bots"].get("output_features", None)
+    assert isinstance(dataset_output_features["twitter_bots"]["output_features"], list)
+    assert dataset_output_features["twitter_bots"]["output_features"][0].get("name", None)
+    assert dataset_output_features["twitter_bots"]["output_features"][0].get("type", None)
 
-    dataset_output_features = ludwig.datasets.get_datasets_output_features(dataset="titanic")
+    if include_competitions:
+        assert dataset_output_features["titanic"].get("name", None)
+    else:
+        assert dataset_output_features.get("titanic", None) is None
+
+    if include_data_modalities:
+        data_modalities = dataset_output_features["twitter_bots"].get("data_modalities", None)
+        assert data_modalities
+        assert len(data_modalities) >= 1
+    else:
+        assert dataset_output_features["twitter_bots"].get("data_modalities", None) is None
+
+    dataset_output_features = ludwig.datasets.get_datasets_output_features(dataset="twitter_bots")
     assert len(dataset_output_features["output_features"]) == 1
-    assert dataset_output_features["name"] == "titanic"
+    assert dataset_output_features["name"] == "twitter_bots"
 
 
 def test_get_dataset_buffer():
@@ -129,7 +148,7 @@ def test_get_dataset_buffer():
     assert isinstance(buffer, io.BytesIO)
 
 
-def test_preprocess_dataset_uri(tmpdir):
+def test_train_dataset_uri(tmpdir):
     input_df = pd.DataFrame(
         {
             "input": ["a", "b", "a", "b", "a", "b", "c", "c", "a", "b"],
@@ -155,6 +174,8 @@ def test_preprocess_dataset_uri(tmpdir):
         "input_features": [{"name": "input", "type": "category"}],
         "output_features": [{"name": "output", "type": "number"}],
         "preprocessing": {"split": {"type": "fixed"}},
+        "combiner": {"type": "concat", "fc_size": 14},
+        "trainer": {"batch_size": 8, "epochs": 1},
     }
 
     ludwig.datasets._get_dataset_configs.cache_clear()
@@ -162,7 +183,8 @@ def test_preprocess_dataset_uri(tmpdir):
         with mock.patch("ludwig.datasets.loaders.dataset_loader.get_default_cache_location", return_value=str(tmpdir)):
             model = LudwigModel(model_config, backend="local")
 
-            proc_result = model.preprocess(dataset=f"ludwig://{dataset_name}")
+            results = model.train(dataset=f"ludwig://{dataset_name}")
+            proc_result = results.preprocessed_data
             train_df1 = proc_result.training_set.to_df()
             val_df1 = proc_result.validation_set.to_df()
             test_df1 = proc_result.test_set.to_df()
@@ -171,11 +193,12 @@ def test_preprocess_dataset_uri(tmpdir):
             assert len(val_df1) == 1
             assert len(test_df1) == 2
 
-            proc_result_split = model.preprocess(
+            results = model.train(
                 training_set=f"ludwig://{dataset_name}",
                 validation_set=f"ludwig://{dataset_name}",
                 test_set=f"ludwig://{dataset_name}",
             )
+            proc_result_split = results.preprocessed_data
             train_df2 = proc_result_split.training_set.to_df()
             val_df2 = proc_result_split.validation_set.to_df()
             test_df2 = proc_result_split.test_set.to_df()
@@ -184,8 +207,23 @@ def test_preprocess_dataset_uri(tmpdir):
             assert len(val_df2) == 1
             assert len(test_df2) == 2
 
-            assert train_df1.equals(train_df2)
-            assert val_df1.equals(val_df2)
-            assert test_df1.equals(test_df2)
+            sort_col = train_df1.columns[-1]
+
+            def sort_df(df):
+                return df.sort_values(by=[sort_col]).reset_index(drop=True)
+
+            assert sort_df(train_df1).equals(sort_df(train_df2))
+            assert sort_df(val_df1).equals(sort_df(val_df2))
+            assert sort_df(test_df1).equals(sort_df(test_df2))
 
     ludwig.datasets._get_dataset_configs.cache_clear()
+
+
+@private_test
+@pytest.mark.parametrize("dataset_name,shape", [("mercedes_benz_greener", (8418, 379)), ("ames_housing", (2919, 82))])
+def test_dataset_fallback_mirror(dataset_name, shape):
+    dataset_module = ludwig.datasets.get_dataset(dataset_name)
+    dataset = dataset_module.load(kaggle_key="dummy_key", kaggle_username="dummy_username")
+
+    assert isinstance(dataset, pd.DataFrame)
+    assert dataset.shape == shape

@@ -14,12 +14,13 @@ trainer:
 hyperopt:
   parameters:
     trainer.learning_rate:
-      space: choice
-      categories: [0.005, 0.01, 0.02, 0.025]
-    trainer.decay_rate:
+      space: loguniform
+      lower: 0.00002
+      upper: 0.001
+    trainer.learning_rate_scheduler.decay_rate:
       space: choice
       categories: [0.8, 0.9, 0.95]
-    trainer.decay_steps:
+    trainer.learning_rate_scheduler.decay_steps:
       space: choice
       categories: [500, 2000, 8000, 10000, 20000]
     combiner.size:

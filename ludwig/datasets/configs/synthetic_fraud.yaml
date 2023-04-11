@@ -7,6 +7,29 @@ sha256:
 description: |
   The Synthetic Financial Datasets For Fraud Detection dataset.
   https://www.kaggle.com/ealaxi/paysim1
+columns:
+  - name: step
+    type: category
+  - name: type
+    type: category
+  - name: amount
+    type: number
+  - name: nameOrig
+    type: category
+  - name: oldbalanceOrg
+    type: number
+  - name: newbalanceOrig
+    type: number
+  - name: nameDest
+    type: category
+  - name: oldbalanceDest
+    type: number
+  - name: newbalanceDest
+    type: number
+  - name: isFraud
+    type: binary
+  - name: isFlaggedFraud
+    type: binary
 output_features:
   - name: isFraud
     type: binary

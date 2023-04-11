@@ -2,6 +2,11 @@ import pytest
 import torch
 
 from ludwig.modules import metric_modules
+from ludwig.schema.features.loss.loss import (
+    BWCEWLossConfig,
+    SigmoidCrossEntropyLossConfig,
+    SoftmaxCrossEntropyLossConfig,
+)
 
 
 @pytest.mark.parametrize("preds", [torch.arange(6).reshape(3, 2).float()])
@@ -63,7 +68,7 @@ def test_r2_score_single_sample():
 @pytest.mark.parametrize("target", [torch.arange(6, 12).reshape(3, 2).float()])
 @pytest.mark.parametrize("output", [torch.tensor(-21.4655).float()])
 def test_bwcewl_metric(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor):
-    metric = metric_modules.BWCEWLMetric()
+    metric = metric_modules.BWCEWLMetric(BWCEWLossConfig())
     metric.update(preds, target)
     assert torch.isclose(output, metric.compute(), rtol=0.0001)
 
@@ -72,7 +77,7 @@ def test_bwcewl_metric(preds: torch.Tensor, target: torch.Tensor, output: torch.
 @pytest.mark.parametrize("target", [torch.tensor([1, 1, 0])])
 @pytest.mark.parametrize("output", [torch.tensor(0.5763)])
 def test_softmax_cross_entropy_metric(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor):
-    metric = metric_modules.SoftmaxCrossEntropyMetric()
+    metric = metric_modules.SoftmaxCrossEntropyMetric(SoftmaxCrossEntropyLossConfig())
     metric.update(preds, target)
     assert torch.isclose(output, metric.compute(), rtol=0.0001)
 
@@ -81,7 +86,7 @@ def test_softmax_cross_entropy_metric(preds: torch.Tensor, target: torch.Tensor,
 @pytest.mark.parametrize("target", [torch.arange(6, 12).reshape(3, 2).float()])
 @pytest.mark.parametrize("output", [torch.tensor(-21.4655).float()])
 def test_sigmoid_cross_entropy_metric(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor):
-    metric = metric_modules.SigmoidCrossEntropyMetric()
+    metric = metric_modules.SigmoidCrossEntropyMetric(SigmoidCrossEntropyLossConfig())
     metric.update(preds, target)
     assert torch.isclose(output, metric.compute(), rtol=0.0001)
 
@@ -190,10 +195,13 @@ def test_sequence_accuracy_metric():
     assert torch.isclose(metric.compute(), torch.tensor(0.8438), rtol=0.0001)
 
 
-@pytest.mark.parametrize("preds", [torch.arange(6).reshape(3, 2)])
-@pytest.mark.parametrize("target", [torch.tensor([[0, 1], [2, 1], [4, 5]]).float()])
+@pytest.mark.parametrize("preds", [torch.arange(6)])
+@pytest.mark.parametrize("target", [torch.tensor([0, 1, 2, 1, 4, 5]).float()])
 @pytest.mark.parametrize("output", [torch.tensor(0.7500).float()])
-def test_category_accuracy(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor):
+@pytest.mark.parametrize("one_hot", [False, True])
+def test_category_accuracy(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor, one_hot: bool):
+    if one_hot:
+        target = torch.nn.functional.one_hot(target.long(), num_classes=6).float()
     metric = metric_modules.CategoryAccuracy(num_classes=6)
     metric.update(preds, target)
     assert torch.isclose(output, metric.compute(), rtol=0.0001)
@@ -232,6 +240,15 @@ def test_mse_metric(preds: torch.Tensor, target: torch.Tensor, output: torch.Ten
     metric = metric_modules.MSEMetric()
     metric.update(preds, target)
     assert output == metric.compute()
+
+
+@pytest.mark.parametrize("preds", [torch.arange(6).reshape(3, 2).float()])
+@pytest.mark.parametrize("target", [torch.arange(6, 12).reshape(3, 2).float()])
+@pytest.mark.parametrize("output", [torch.tensor(0.7365440726280212)])
+def test_mape_metric(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor):
+    metric = metric_modules.MAPEMetric()
+    metric.update(preds, target)
+    assert output.item() == metric.compute().item()
 
 
 @pytest.mark.parametrize("preds", [torch.tensor([[0, 1], [1, 1]])])

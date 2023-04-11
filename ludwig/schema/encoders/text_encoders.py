@@ -1,13 +1,18 @@
-from typing import Any, Callable, Dict, List, Union
+from typing import Callable, Dict, List, TYPE_CHECKING, Union
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import TEXT
+from ludwig.constants import MODEL_ECD, MODEL_GBM, TEXT
+from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.sequence_encoders import SequenceEncoderConfig
+from ludwig.schema.encoders.text.hf_model_params import DebertaModelParams
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.metadata import ENCODER_METADATA
-from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
+from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY, ParameterMetadata
 from ludwig.schema.utils import ludwig_dataclass
+
+if TYPE_CHECKING:
+    from ludwig.schema.features.preprocessing.text import TextPreprocessingConfig
 
 
 class HFEncoderConfig(SequenceEncoderConfig):
@@ -16,7 +21,7 @@ class HFEncoderConfig(SequenceEncoderConfig):
     pretrained_model_name_or_path: str
     reduce_output: str
 
-    def get_fixed_preprocessing_params(self) -> Dict[str, Any]:
+    def set_fixed_preprocessing_params(self, model_type: str, preprocessing: "TextPreprocessingConfig"):
         model_name = self.pretrained_model_name_or_path
         if model_name is None and self.use_pretrained:
             # no default model name, so model name is required by the subclass
@@ -24,15 +29,10 @@ class HFEncoderConfig(SequenceEncoderConfig):
                 f"Missing required parameter for `{self.type}` encoder: `pretrained_model_name_or_path` when "
                 "`use_pretrained` is True."
             )
-        params = {
-            "tokenizer": "hf_tokenizer",
-            "pretrained_model_name_or_path": model_name,
-        }
-
+        preprocessing.tokenizer = "hf_tokenizer"
+        preprocessing.pretrained_model_name_or_path = model_name
         if not self.can_cache_embeddings():
-            params["cache_encoder_embeddings"] = False
-
-        return params
+            preprocessing.cache_encoder_embeddings = False
 
     def is_pretrained(self) -> bool:
         return self.use_pretrained
@@ -40,6 +40,53 @@ class HFEncoderConfig(SequenceEncoderConfig):
     def can_cache_embeddings(self) -> bool:
         """Returns true if the encoder's output embeddings will not change during training."""
         return not self.trainable and self.reduce_output != "attention"
+
+
+@DeveloperAPI
+@ludwig_dataclass
+class HFEncoderImplConfig(HFEncoderConfig):
+    """This dataclass configures the base HF encoder implmenetation."""
+
+    use_pretrained: bool = schema_utils.Boolean(
+        default=True,
+        description="Whether to use the pretrained weights for the model. If false, the model will train from "
+        "scratch which is very computationally expensive.",
+        parameter_metadata=ENCODER_METADATA["HFEncoder"]["use_pretrained"],
+    )
+
+    trainable: bool = schema_utils.Boolean(
+        default=False,
+        description="Whether to finetune the model on your dataset.",
+        parameter_metadata=ENCODER_METADATA["HFEncoder"]["trainable"],
+    )
+
+    pretrained_kwargs: dict = schema_utils.Dict(
+        default=None,
+        description="Additional kwargs to pass to the pretrained model.",
+    )
+
+    # Internal params set based on preprocessing metadata
+    max_sequence_length: int = schema_utils.PositiveInteger(
+        default=None,
+        allow_none=True,
+        description="",
+        parameter_metadata=INTERNAL_ONLY,
+    )
+
+    vocab_size: int = schema_utils.PositiveInteger(
+        default=None,
+        description="",
+        parameter_metadata=INTERNAL_ONLY,
+    )
+
+    saved_weights_in_checkpoint: bool = schema_utils.Boolean(
+        default=False,
+        description=(
+            "Are the pretrained encoder weights saved in this model's checkpoint? Automatically set to"
+            "True for trained models to prevent loading pretrained encoder weights from model hub."
+        ),
+        parameter_metadata=INTERNAL_ONLY,
+    )
 
 
 @DeveloperAPI
@@ -716,6 +763,35 @@ class BERTConfig(HFEncoderConfig):
     )
 
 
+@DeveloperAPI
+@register_encoder_config("deberta", TEXT)
+@ludwig_dataclass
+class DebertaV2Config(HFEncoderImplConfig, DebertaModelParams):
+    """This dataclass configures the schema used for a DeBERTa-v2 / v3 encoder."""
+
+    @staticmethod
+    def module_name():
+        return "DeBERTa"
+
+    type: str = schema_utils.ProtectedString(
+        "deberta",
+        description=ENCODER_METADATA["DeBERTa"]["type"].long_description,
+    )
+
+    pretrained_model_name_or_path: str = schema_utils.String(
+        default="sileod/deberta-v3-base-tasksource-nli",
+        description="Name or path of the pretrained model.",
+        parameter_metadata=ENCODER_METADATA["DeBERTa"]["pretrained_model_name_or_path"],
+    )
+
+    reduce_output: str = schema_utils.StringOptions(
+        ["cls_pooled", "last", "sum", "mean", "max", "concat", "attention"],
+        default="sum",
+        allow_none=True,
+        description="The method used to reduce a sequence of tensors down to a single tensor.",
+    )
+
+
 # TODO: uncomment once we figure out host memory issue: https://github.com/ludwig-ai/ludwig/issues/3107
 @DeveloperAPI
 # @register_encoder_config("xlm", TEXT)
@@ -1065,8 +1141,8 @@ class GPTConfig(HFEncoderConfig):
     )
 
     afn: str = schema_utils.StringOptions(
-        ["gelu", "relu", "silu", "gelu_new"],
-        default="gelu_new",
+        ["gelu", "relu", "silu"],  # gelu_new results in a KeyError.
+        default="gelu",
         description="The non-linear activation function (function or string) in the encoder and pooler.",
         parameter_metadata=ENCODER_METADATA["GPT"]["afn"],
     )
@@ -2884,12 +2960,12 @@ class LongformerConfig(HFEncoderConfig):
 
     attention_window: Union[List[int], int] = schema_utils.OneOfOptionsField(
         default=512,
-        allow_none=True,
+        allow_none=False,
         description="Size of an attention window around each token. If an int, use the same size for all layers. To "
         "specify a different window size for each layer, use a List[int] where len(attention_window) == "
         "num_hidden_layers.",
         field_options=[
-            schema_utils.PositiveInteger(allow_none=True, description="", default=None),
+            schema_utils.PositiveInteger(allow_none=False, description="", default=512),
             schema_utils.List(list_type=int, allow_none=False),
         ],
         parameter_metadata=ENCODER_METADATA["Longformer"]["attention_window"],
@@ -2964,6 +3040,12 @@ class LongformerConfig(HFEncoderConfig):
 class AutoTransformerConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an AutoTransformer encoder."""
 
+    def __post_init__(self):
+        if self.pretrained_model_name_or_path is None:
+            raise ConfigValidationError(
+                "`pretrained_model_name_or_path` must be specified for encoder: `auto_transformer`."
+            )
+
     @staticmethod
     def module_name():
         return "AutoTransformer"
@@ -2974,7 +3056,8 @@ class AutoTransformerConfig(HFEncoderConfig):
     )
 
     pretrained_model_name_or_path: str = schema_utils.String(
-        default="bert-base-uncased",
+        default=None,
+        allow_none=True,
         description="Name or path of the pretrained model.",
         parameter_metadata=ENCODER_METADATA["AutoTransformer"]["pretrained_model_name_or_path"],
     )
@@ -3019,3 +3102,26 @@ class AutoTransformerConfig(HFEncoderConfig):
         description="Additional kwargs to pass to the pretrained model.",
         parameter_metadata=ENCODER_METADATA["AutoTransformer"]["pretrained_kwargs"],
     )
+
+
+@DeveloperAPI
+@register_encoder_config("tf_idf", TEXT, model_types=[MODEL_ECD, MODEL_GBM])
+@ludwig_dataclass
+class TfIdfEncoderConfig(SequenceEncoderConfig):
+    type: str = schema_utils.ProtectedString("tf_idf")
+
+    max_sequence_length: int = schema_utils.Integer(default=None, allow_none=True, parameter_metadata=INTERNAL_ONLY)
+
+    str2idf: Dict[str, int] = schema_utils.Dict(parameter_metadata=INTERNAL_ONLY)
+
+    vocab: list = schema_utils.List(default=None, parameter_metadata=INTERNAL_ONLY)
+
+    vocab_size: int = schema_utils.Integer(default=None, allow_none=True, parameter_metadata=INTERNAL_ONLY)
+
+    def set_fixed_preprocessing_params(self, model_type: str, preprocessing: "TextPreprocessingConfig"):
+        if model_type == MODEL_GBM:
+            preprocessing.cache_encoder_embeddings = True
+        preprocessing.compute_idf = True
+
+    def can_cache_embeddings(self) -> bool:
+        return True

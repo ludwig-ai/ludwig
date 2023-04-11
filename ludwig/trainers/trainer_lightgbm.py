@@ -47,6 +47,11 @@ from ludwig.utils.trainer_utils import (
     ProgressTracker,
 )
 
+try:
+    import ray
+except ImportError:
+    ray = None
+
 logger = logging.getLogger(__name__)
 
 
@@ -823,8 +828,8 @@ class LightGBMTrainer(BaseTrainer):
         validation_set: Optional["Dataset"] = None,  # noqa: F821
         test_set: Optional["Dataset"] = None,  # noqa: F821
     ) -> Tuple[lgb.Dataset, List[lgb.Dataset], List[str]]:
-        X_train = training_set.to_df(self.model.input_features.values())
-        y_train = training_set.to_df(self.model.output_features.values())
+        X_train = training_set.to_scalar_df(self.model.input_features.values())
+        y_train = training_set.to_scalar_df(self.model.output_features.values())
 
         # create dataset for lightgbm
         # keep raw data for continued training https://github.com/microsoft/LightGBM/issues/4965#issuecomment-1019344293
@@ -842,8 +847,8 @@ class LightGBMTrainer(BaseTrainer):
         eval_sets = [lgb_train]
         eval_names = [LightGBMTrainer.TRAIN_KEY]
         if validation_set is not None:
-            X_val = validation_set.to_df(self.model.input_features.values())
-            y_val = validation_set.to_df(self.model.output_features.values())
+            X_val = validation_set.to_scalar_df(self.model.input_features.values())
+            y_val = validation_set.to_scalar_df(self.model.output_features.values())
             try:
                 lgb_val = lgb.Dataset(X_val, label=y_val, reference=lgb_train, free_raw_data=False).construct()
             except lgb.basic.LightGBMError as e:
@@ -861,8 +866,8 @@ class LightGBMTrainer(BaseTrainer):
             pass
 
         if test_set is not None:
-            X_test = test_set.to_df(self.model.input_features.values())
-            y_test = test_set.to_df(self.model.output_features.values())
+            X_test = test_set.to_scalar_df(self.model.input_features.values())
+            y_test = test_set.to_scalar_df(self.model.output_features.values())
             try:
                 lgb_test = lgb.Dataset(X_test, label=y_test, reference=lgb_train, free_raw_data=False).construct()
             except lgb.basic.LightGBMError as e:
@@ -945,30 +950,184 @@ class LightGBMRayTrainer(LightGBMTrainer):
     def get_schema_cls() -> BaseTrainerConfig:
         return GBMTrainerConfig
 
-    def train_step(
+    def _train_loop(
         self,
         params: Dict[str, Any],
         lgb_train: "RayDMatrix",  # noqa: F821
         eval_sets: List["RayDMatrix"],  # noqa: F821
         eval_names: List[str],
-        init_model: lgb.LGBMModel,
-        boost_rounds_per_train_step: int,
-        evals_result: Dict,
+        progress_tracker: ProgressTracker,
+        progress_bar: LudwigProgressBar,
+        save_path: str,
+        training_set: Union["Dataset", "RayDataset"],  # noqa: F821
+        validation_set: Union["Dataset", "RayDataset"],  # noqa: F821
+        test_set: Union["Dataset", "RayDataset"],  # noqa: F821
+        train_summary_writer: SummaryWriter,
+        validation_summary_writer: SummaryWriter,
+        test_summary_writer: SummaryWriter,
+        early_stopping_steps: int,
+    ) -> bool:
+        self.callback(lambda c: c.on_batch_start(self, progress_tracker, save_path))
+
+        evals_result = {}
+        model_ref = lightgbm_ray_train_step(
+            self.model,
+            params,
+            lgb_train,
+            eval_sets,
+            eval_names,
+            self.model.lgbm_model,
+            self.boosting_rounds_per_checkpoint,
+            evals_result,
+            self.ray_params,
+            self.evaluate_training_set,
+            self.device,
+        )
+
+        if not self.evaluate_training_set:
+            self.model.lgbm_model, targets, predictions, evals_result = ray.get(model_ref)
+            self.model.update_metrics(targets, predictions)
+        else:
+            self.model.lgbm_model, evals_result = ray.get(model_ref)
+
+        progress_bar.update(self.boosting_rounds_per_checkpoint)
+        progress_tracker.steps += self.boosting_rounds_per_checkpoint
+
+        output_features = self.model.output_features
+        metrics_names = get_metric_names(output_features)
+        output_feature_name = next(iter(output_features))
+
+        loss_name = params["metric"][0]
+        loss = evals_result["train"][loss_name][-1]
+        loss = torch.tensor(loss, dtype=torch.float32)
+
+        should_break = self.run_evaluation(
+            training_set,
+            validation_set,
+            test_set,
+            progress_tracker,
+            train_summary_writer,
+            validation_summary_writer,
+            test_summary_writer,
+            output_features,
+            metrics_names,
+            save_path,
+            loss,
+            {output_feature_name: loss},
+            early_stopping_steps,
+        )
+
+        self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path))
+
+        return should_break
+
+    def _construct_lgb_datasets(
+        self,
+        training_set: "RayDataset",  # noqa: F821
+        validation_set: Optional["RayDataset"] = None,  # noqa: F821
+        test_set: Optional["RayDataset"] = None,  # noqa: F821
+    ) -> Tuple["RayDMatrix", List["RayDMatrix"], List[str]]:  # noqa: F821
+        """Prepares Ludwig RayDataset objects for use in LightGBM."""
+
+        from lightgbm_ray import RayDMatrix
+
+        output_feature = get_single_output_feature(self.model)
+        label_col = output_feature.proc_column
+
+        # TODO(shreya): Refactor preprocessing so that this can be moved upstream.
+        if training_set.ds.num_blocks() < self.ray_params.num_actors:
+            # Repartition to ensure that there is at least one block per actor
+            training_set.repartition(self.ray_params.num_actors)
+
+        features = list(self.model.input_features.values()) + list(self.model.output_features.values())
+        lgb_train = RayDMatrix(
+            # NOTE: batch_size=None to make sure map_batches doesn't change num_blocks.
+            # Need num_blocks to equal num_actors in order to feed all actors.
+            training_set.to_scalar(features),
+            label=label_col,
+        )
+
+        eval_sets = [lgb_train]
+        eval_names = [LightGBMTrainer.TRAIN_KEY]
+        if validation_set is not None:
+            if validation_set.ds.num_blocks() < self.ray_params.num_actors:
+                # Repartition to ensure that there is at least one block per actor
+                validation_set.repartition(self.ray_params.num_actors)
+
+            lgb_val = RayDMatrix(
+                validation_set.to_scalar(features),
+                label=label_col,
+            )
+            eval_sets.append(lgb_val)
+            eval_names.append(LightGBMTrainer.VALID_KEY)
+
+        if test_set is not None:
+            if test_set.ds.num_blocks() < self.ray_params.num_actors:
+                # Repartition to ensure that there is at least one block per actor
+                test_set.repartition(self.ray_params.num_actors)
+
+            lgb_test = RayDMatrix(
+                test_set.to_scalar(features),
+                label=label_col,
+            )
+            eval_sets.append(lgb_test)
+            eval_names.append(LightGBMTrainer.TEST_KEY)
+
+        return lgb_train, eval_sets, eval_names
+
+
+# Add a top-level function wrapper to handle non-distributed test import errors
+def lightgbm_ray_train_step(
+    model: GBM,
+    params: Dict[str, Any],
+    lgb_train: "RayDMatrix",  # noqa: F821
+    eval_sets: List["RayDMatrix"],  # noqa: F821
+    eval_names: List[str],
+    init_model: lgb.LGBMModel,
+    boost_rounds_per_train_step: int,
+    evals_result: Dict,
+    ray_params: "RayParams",  # noqa
+    evaluate_training_set: bool,
+    device: Optional[str] = None,
+) -> lgb.LGBMModel:
+
+    # We need to add max_calls here to ensure that the Ray actors that get created by the LightGBM class
+    # for each boosting round don't leave dangling resources in the object store memory.
+    @ray.remote(max_calls=1)
+    def lightgbm_ray_train_step_helper(
+        model,
+        params,
+        lgb_train,
+        eval_sets,
+        eval_names,
+        init_model,
+        boost_rounds_per_train_step,
+        evals_result,
+        ray_params,
+        evaluate_training_set,
+        device,
     ) -> lgb.LGBMModel:
         """Trains a LightGBM model using ray.
 
         Args:
+            model: Ludwig model
             params: parameters for LightGBM
             lgb_train: RayDMatrix dataset for training
             eval_sets: RayDMatrix datasets for evaluation
             eval_names: names of the evaluation datasets
-
+            init_model: LightGBM model to initialize from
+            boost_rounds_per_train_step: number of boosting rounds to train
+            evals_result: dictionary to store evaluation results
+            ray_params: RayParams object configured with num workers and resources
+            evaluate_training_set: whether to evaluate the training set
+            device: device to use for training
         Returns:
-            LightGBM Booster model
+            gbm: LightGBM Booster model
+            evals_result: dictionary containing evaluation results
         """
         from lightgbm_ray import RayLGBMClassifier, RayLGBMRegressor
 
-        output_feature = get_single_output_feature(self.model)
+        output_feature = get_single_output_feature(model)
         gbm_sklearn_cls = RayLGBMRegressor if output_feature.type() == NUMBER else RayLGBMClassifier
 
         additional_results = {}
@@ -984,11 +1143,11 @@ class LightGBMRayTrainer(LightGBMTrainer):
                 store_predictions_ray(boost_rounds_per_train_step),
             ],
             additional_results=additional_results,
-            ray_params=self.ray_params,
+            ray_params=ray_params,
         )
         evals_result.update(gbm.evals_result_)
 
-        if not self.evaluate_training_set:
+        if not evaluate_training_set:
             # Update evaluation metrics with current model params:
             # noisy but fast way to get metrics on the training set
 
@@ -996,67 +1155,26 @@ class LightGBMRayTrainer(LightGBMTrainer):
             actor_callback_return = next(iter(additional_results["callback_returns"]))
             # Only a single TrainLogits is expected (final iteration).
             train_logits: TrainLogits = next(iter(actor_callback_return))
-            predictions = logits_to_predictions(self.model, train_logits.preds)
+            predictions = logits_to_predictions(model, train_logits.preds)
 
-            targets = get_targets(lgb_train, output_feature, self.device, actor_rank=0)
+            targets = get_targets(lgb_train, output_feature, device, actor_rank=0)
 
-            self.model.update_metrics(targets, predictions)
+            # Return raw target and prediction tensors so we can update top-level
+            # model metrics in the caller of the remote function.
+            return gbm.to_local(), targets, predictions, evals_result
 
-        return gbm.to_local()
+        return gbm.to_local(), evals_result
 
-    def _construct_lgb_datasets(
-        self,
-        training_set: "RayDataset",  # noqa: F821
-        validation_set: Optional["RayDataset"] = None,  # noqa: F821
-        test_set: Optional["RayDataset"] = None,  # noqa: F821
-    ) -> Tuple["RayDMatrix", List["RayDMatrix"], List[str]]:  # noqa: F821
-        """Prepares Ludwig RayDataset objects for use in LightGBM."""
-
-        from lightgbm_ray import RayDMatrix
-
-        output_feature = get_single_output_feature(self.model)
-        label_col = output_feature.proc_column
-
-        in_feat = [f.proc_column for f in self.model.input_features.values()]
-        out_feat = [f.proc_column for f in self.model.output_features.values()]
-        feat_cols = in_feat + out_feat
-
-        # TODO(shreya): Refactor preprocessing so that this can be moved upstream.
-        if training_set.ds.num_blocks() < self.ray_params.num_actors:
-            # Repartition to ensure that there is at least one block per actor
-            training_set.repartition(self.ray_params.num_actors)
-
-        lgb_train = RayDMatrix(
-            # NOTE: batch_size=None to make sure map_batches doesn't change num_blocks.
-            # Need num_blocks to equal num_actors in order to feed all actors.
-            training_set.ds.map_batches(lambda df: df[feat_cols], batch_size=None),
-            label=label_col,
-        )
-
-        eval_sets = [lgb_train]
-        eval_names = [LightGBMTrainer.TRAIN_KEY]
-        if validation_set is not None:
-            if validation_set.ds.num_blocks() < self.ray_params.num_actors:
-                # Repartition to ensure that there is at least one block per actor
-                validation_set.repartition(self.ray_params.num_actors)
-
-            lgb_val = RayDMatrix(
-                validation_set.ds.map_batches(lambda df: df[feat_cols], batch_size=None),
-                label=label_col,
-            )
-            eval_sets.append(lgb_val)
-            eval_names.append(LightGBMTrainer.VALID_KEY)
-
-        if test_set is not None:
-            if test_set.ds.num_blocks() < self.ray_params.num_actors:
-                # Repartition to ensure that there is at least one block per actor
-                test_set.repartition(self.ray_params.num_actors)
-
-            lgb_test = RayDMatrix(
-                test_set.ds.map_batches(lambda df: df[feat_cols], batch_size=None),
-                label=label_col,
-            )
-            eval_sets.append(lgb_test)
-            eval_names.append(LightGBMTrainer.TEST_KEY)
-
-        return lgb_train, eval_sets, eval_names
+    return lightgbm_ray_train_step_helper.remote(
+        model,
+        params,
+        lgb_train,
+        eval_sets,
+        eval_names,
+        init_model,
+        boost_rounds_per_train_step,
+        evals_result,
+        ray_params,
+        evaluate_training_set,
+        device,
+    )

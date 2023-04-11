@@ -48,8 +48,7 @@ def PreprocessingDataclassField(feature_type: str):
                 )
             raise ValidationError("Field should be None or dict")
 
-        @staticmethod
-        def _jsonschema_type_mapping():
+        def _jsonschema_type_mapping(self):
             preprocessor_cls = preprocessing_registry[feature_type]
             props = schema_utils.unload_jsonschema_from_marshmallow_class(preprocessor_cls)["properties"]
             return {
@@ -61,8 +60,8 @@ def PreprocessingDataclassField(feature_type: str):
 
     try:
         preprocessor = preprocessing_registry[feature_type]
-        load_default = lambda: preprocessor.Schema().load({"feature_type": feature_type})
-        dump_default = preprocessor.Schema().dump({"feature_type": feature_type})
+        load_default = lambda: preprocessor.Schema().load({})
+        dump_default = preprocessor.Schema().dump({})
 
         return field(
             metadata={

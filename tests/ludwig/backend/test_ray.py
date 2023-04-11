@@ -5,8 +5,10 @@ import pytest
 
 # Skip these tests if Ray is not installed
 ray = pytest.importorskip("ray")  # noqa
+horovod = pytest.importorskip("horovod")  # noqa
 
 from ray.train.horovod import HorovodConfig  # noqa
+from ray.train.torch import TorchConfig  # noqa
 
 from ludwig.backend import initialize_backend  # noqa
 from ludwig.backend.ray import get_trainer_kwargs  # noqa
@@ -20,12 +22,13 @@ pytestmark = pytest.mark.distributed
     "trainer_config,cluster_resources,num_nodes,expected_kwargs",
     [
         # Prioritize using the GPU when available over multi-node
-        (
+        pytest.param(
             {},
             {"CPU": 4, "GPU": 1},
             2,
             dict(
                 backend=HorovodConfig(),
+                strategy="horovod",
                 num_workers=1,
                 use_gpu=True,
                 resources_per_worker={
@@ -33,14 +36,35 @@ pytestmark = pytest.mark.distributed
                     "GPU": 1,
                 },
             ),
+            id="prioritize-gpu-when-available-over-multinode",
+            marks=[pytest.mark.distributed, pytest.mark.horovod],
+        ),
+        # Test DDP
+        pytest.param(
+            {"strategy": "ddp"},
+            {"CPU": 4, "GPU": 1},
+            2,
+            dict(
+                backend=TorchConfig(),
+                strategy="ddp",
+                num_workers=1,
+                use_gpu=True,
+                resources_per_worker={
+                    "CPU": 0,
+                    "GPU": 1,
+                },
+            ),
+            id="ddp",
+            marks=pytest.mark.distributed,
         ),
         # Use one worker per node for CPU, chck NIC override
-        (
+        pytest.param(
             {"nics": [""]},
             {"CPU": 4, "GPU": 0},
             2,
             dict(
                 backend=HorovodConfig(nics={""}),
+                strategy="horovod",
                 num_workers=2,
                 use_gpu=False,
                 resources_per_worker={
@@ -48,14 +72,17 @@ pytestmark = pytest.mark.distributed
                     "GPU": 0,
                 },
             ),
+            id="one-worker-per-node-nic-override",
+            marks=[pytest.mark.distributed, pytest.mark.horovod],
         ),
         # Allow explicitly setting GPU usage for autoscaling clusters
-        (
+        pytest.param(
             {"use_gpu": True, "num_workers": 2},
             {"CPU": 4, "GPU": 0},
             1,
             dict(
                 backend=HorovodConfig(),
+                strategy="horovod",
                 num_workers=2,
                 use_gpu=True,
                 resources_per_worker={
@@ -63,14 +90,17 @@ pytestmark = pytest.mark.distributed
                     "GPU": 1,
                 },
             ),
+            id="set-gpu-usage-autoscaling-clusters",
+            marks=[pytest.mark.distributed, pytest.mark.horovod],
         ),
         # Allow overriding resources_per_worker
-        (
+        pytest.param(
             {"resources_per_worker": {"CPU": 2, "GPU": 1}},
             {"CPU": 4, "GPU": 2},
             2,
             dict(
                 backend=HorovodConfig(),
+                strategy="horovod",
                 num_workers=2,
                 use_gpu=True,
                 resources_per_worker={
@@ -78,6 +108,8 @@ pytestmark = pytest.mark.distributed
                     "GPU": 1,
                 },
             ),
+            id="override-resources-per-worker",
+            marks=[pytest.mark.distributed, pytest.mark.horovod],
         ),
     ],
 )
@@ -94,7 +126,8 @@ def test_get_trainer_kwargs(trainer_config, cluster_resources, num_nodes, expect
             expected_backend = expected_kwargs.pop("backend")
 
             assert type(actual_backend) == type(expected_backend)
-            assert actual_backend.nics == expected_backend.nics
+            if isinstance(actual_backend, HorovodConfig):
+                assert actual_backend.nics == expected_backend.nics
             assert actual_kwargs == expected_kwargs
 
 

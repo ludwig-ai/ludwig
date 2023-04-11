@@ -24,7 +24,7 @@ from ray.air.config import CheckpointConfig, FailureConfig, RunConfig
 from ray.tune import ExperimentAnalysis, register_trainable, Stopper, TuneConfig
 from ray.tune.execution.placement_groups import PlacementGroupFactory
 from ray.tune.schedulers.resource_changing_scheduler import DistributeResources, ResourceChangingScheduler
-from ray.tune.search import BasicVariantGenerator, ConcurrencyLimiter, SEARCH_ALG_IMPORT
+from ray.tune.search import BasicVariantGenerator, ConcurrencyLimiter
 from ray.tune.tuner import Tuner
 from ray.tune.utils import wait_for_gpu
 from ray.util.queue import Queue as RayQueue
@@ -32,15 +32,14 @@ from ray.util.queue import Queue as RayQueue
 from ludwig.api import LudwigModel
 from ludwig.api_annotations import PublicAPI
 from ludwig.backend import initialize_backend, RAY
-from ludwig.backend._ray210_compat import TunerRay210
 from ludwig.backend.ray import initialize_ray
 from ludwig.callbacks import Callback
 from ludwig.constants import MAXIMIZE, TEST, TRAINER, TRAINING, TYPE, VALIDATION
-from ludwig.hyperopt.registry import instantiate_search_algorithm
 from ludwig.hyperopt.results import HyperoptResults, TrialResults
 from ludwig.hyperopt.syncer import RemoteSyncer
 from ludwig.hyperopt.utils import load_json_values, substitute_parameters
 from ludwig.modules.metric_modules import get_best_function
+from ludwig.schema.hyperopt.utils import get_search_algorithm_cls
 from ludwig.schema.model_config import ModelConfig
 from ludwig.types import ModelConfigDict
 from ludwig.utils import fs_utils, metric_utils
@@ -53,6 +52,11 @@ from ludwig.utils.misc_utils import get_from_registry
 logger = logging.getLogger(__name__)
 
 _ray220 = version.parse(ray.__version__) >= version.parse("2.2.0")
+
+if not _ray220:
+    from ludwig.backend._ray210_compat import TunerRay210
+else:
+    TunerRay210 = None
 
 
 try:
@@ -154,7 +158,6 @@ class RayTuneExecutor:
         **kwargs,
     ) -> None:
         # Force-populate the search algorithm registry
-        import ludwig.hyperopt.search_algos  # noqa
 
         if ray is None:
             raise ImportError("ray module is not installed. To install it, try running pip install ray")
@@ -165,7 +168,7 @@ class RayTuneExecutor:
         self.search_space, self.decode_ctx = self._get_search_space(parameters)
         self.num_samples = num_samples
         self.goal = goal
-        self.search_algorithm = instantiate_search_algorithm(search_alg)
+        self.search_algorithm = get_search_algorithm_cls(search_alg[TYPE])(**search_alg)
         self.scheduler = None if scheduler is None else tune.create_scheduler(scheduler[TYPE], **scheduler)
         self.output_feature = output_feature
         self.metric = metric
@@ -263,13 +266,10 @@ class RayTuneExecutor:
             stats = stats[metric_part]
         return isinstance(stats, float)
 
-    def get_metric_score(self, train_stats) -> float:
-        if self._has_metric(train_stats, VALIDATION):
-            logger.info("Returning metric score from training (validation) statistics")
-            return self.get_metric_score_from_train_stats(train_stats, VALIDATION)
-        elif self._has_metric(train_stats, TRAINING):
-            logger.info("Returning metric score from training split statistics, " "as no validation was given")
-            return self.get_metric_score_from_train_stats(train_stats, TRAINING)
+    def get_metric_score(self, train_stats, split=VALIDATION) -> float:
+        if self._has_metric(train_stats, split):
+            logger.info(f"Returning metric score from training ({split}) statistics")
+            return self.get_metric_score_from_train_stats(train_stats, split)
         else:
             raise RuntimeError("Unable to obtain metric score from missing training (validation) statistics")
 
@@ -352,9 +352,15 @@ class RayTuneExecutor:
 
         return kubernetes_syncer.get_node_address_by_ip
 
-    # For specified [stopped] trial, remove checkpoint marker on any partial checkpoints
     @staticmethod
     def _remove_partial_checkpoints(trial_path: str):
+        """For specified [stopped] trial, remove checkpoint marker on any partial checkpoints.
+
+        These may have been created for a trial that was terminated early by RayTune because the time budget was
+        exceeded.
+        """
+        # `trial_dir` returned by RayTune may have a leading slash, so we need to remove it.
+        trial_path = trial_path.rstrip("/") if isinstance(trial_path, str) else trial_path
         marker_paths = glob.glob(os.path.join(glob.escape(trial_path), "checkpoint_*/.is_checkpoint"))
         for marker_path in marker_paths:
             chkpt_dir = os.path.dirname(marker_path)
@@ -446,6 +452,7 @@ class RayTuneExecutor:
         decode_ctx,
         is_using_ray_backend=False,
     ):
+
         for gpu_id in ray.get_gpu_ids():
             # Previous trial may not have freed its memory yet, so wait to avoid OOM
             wait_for_gpu(gpu_id)
@@ -478,7 +485,7 @@ class RayTuneExecutor:
         else:
             ray_queue = None
 
-        def report(progress_tracker):
+        def report(progress_tracker, split=VALIDATION):
             # The progress tracker's metrics are nested dictionaries of TrainerMetrics: feature_name -> metric_name ->
             # List[TrainerMetric], with one entry per training checkpoint, according to steps_per_checkpoint.
             # We reduce the dictionary of TrainerMetrics to a simple list of floats for interfacing with Ray Tune.
@@ -488,7 +495,7 @@ class RayTuneExecutor:
                 TEST: metric_utils.reduce_trainer_metrics_dict(progress_tracker.test_metrics),
             }
 
-            metric_score = tune_executor.get_metric_score(train_stats)
+            metric_score = tune_executor.get_metric_score(train_stats, split)
             tune.report(
                 parameters=json.dumps(config, cls=NumpyEncoder),
                 metric_score=metric_score,
@@ -503,6 +510,7 @@ class RayTuneExecutor:
                 super().__init__()
                 self.last_steps = 0
                 self.resume_ckpt_ref = None
+                self.eval_split = hyperopt_dict["eval_split"]
 
             def _get_remote_checkpoint_dir(self) -> Optional[Union[str, Tuple[str, str]]]:
                 # sync client has to be recreated to avoid issues with serialization
@@ -522,7 +530,7 @@ class RayTuneExecutor:
                     # When using the Ray backend and resuming from a previous checkpoint, we must sync
                     # the checkpoint files from the trial driver to the trainer worker.
                     resume_ckpt = Checkpoint.from_directory(checkpoint_dir)
-                    self.resume_ckpt_ref = resume_ckpt.to_object_ref()
+                    self.resume_ckpt_ref = ray.put(resume_ckpt)
 
             def on_trainer_train_setup(self, trainer, save_path, is_coordinator):
                 # Check local rank before manipulating files, as otherwise there will be a race condition
@@ -531,7 +539,9 @@ class RayTuneExecutor:
                     # The resume checkpoint is not None, so we are resuming from a previous state, and the
                     # node of the trainer worker is not the same as the trial driver, otherwise the files would
                     # not need to be synced as they would share the same local filesystem.
-                    trainer_ckpt = Checkpoint(obj_ref=self.resume_ckpt_ref)
+
+                    # Load the checkpoint directly from the reference in the object store.
+                    trainer_ckpt = ray.get(self.resume_ckpt_ref)
                     with trainer_ckpt.as_directory() as ckpt_path:
                         # Attempt an atomic move from the ckpt_path to the save_path
                         # This may first require removing the existing save_path
@@ -562,15 +572,15 @@ class RayTuneExecutor:
                 self.last_steps = progress_tracker.steps
                 self._checkpoint_progress(trainer, progress_tracker, save_path)
                 if not is_using_ray_backend:
-                    report(progress_tracker)
+                    report(progress_tracker, self.eval_split)
 
             def on_trainer_train_teardown(self, trainer, progress_tracker, save_path, is_coordinator):
                 if is_coordinator and progress_tracker.steps > self.last_steps:
                     # Note: Calling tune.report in both on_eval_end() and here can cause multiprocessing issues
-                    # for some ray samplers if not steps have happened since the last eval.
+                    # for some ray samplers if no steps have happened since the last eval.
                     self._checkpoint_progress(trainer, progress_tracker, save_path)
                     if not is_using_ray_backend:
-                        report(progress_tracker)
+                        report(progress_tracker, self.eval_split)
 
         callbacks = hyperopt_dict.get("callbacks") or []
         hyperopt_dict["callbacks"] = callbacks + [RayTuneReportCallback()]
@@ -625,7 +635,7 @@ class RayTuneExecutor:
                         trainer_ckpt = Checkpoint(obj_ref=ckpt_ref)
                         with trainer_ckpt.as_directory() as save_path:
                             checkpoint(progress_tracker, save_path)
-                        report(progress_tracker)
+                        report(progress_tracker, hyperopt_dict["eval_split"])
 
             while thread.is_alive():
                 thread.join(timeout=0)
@@ -641,7 +651,7 @@ class RayTuneExecutor:
             raise RuntimeError("Experiment did not complete.")
         train_stats, eval_stats = stats.pop()
 
-        metric_score = self.get_metric_score(train_stats)
+        metric_score = self.get_metric_score(train_stats, hyperopt_dict["eval_split"])
         tune.report(
             parameters=json.dumps(config, cls=NumpyEncoder),
             metric_score=metric_score,
@@ -735,22 +745,15 @@ class RayTuneExecutor:
         metric = "metric_score"
         use_gpu = bool(self._gpu_resources_per_trial_non_none)
 
-        # if random seed not set, use Ludwig seed
-        self.search_algorithm.check_for_random_seed(random_seed)
-        if self.search_algorithm.search_alg_dict is not None:
-            if TYPE not in self.search_algorithm.search_alg_dict:
-                candiate_search_algs = [search_alg for search_alg in SEARCH_ALG_IMPORT.keys()]
-                logger.warning(
-                    "WARNING: search_alg type parameter missing, using 'variant_generator' as default. "
-                    f"These are possible values for the type parameter: {candiate_search_algs}."
-                )
-                search_alg = None
-            else:
-                search_alg_type = self.search_algorithm.search_alg_dict[TYPE]
-                search_alg = tune.create_searcher(
-                    search_alg_type, metric=metric, mode=mode, **self.search_algorithm.search_alg_dict
-                )
+        if self.search_algorithm is not None:
+            self.search_algorithm.set_random_state(random_seed)
+            sa_kwargs = self.search_algorithm.to_dict()
+            del sa_kwargs[TYPE]
+            sa_kwargs["mode"] = mode
+            sa_kwargs["metric"] = metric
+            search_alg = tune.create_searcher(self.search_algorithm.type, **sa_kwargs)
         else:
+            logging.info("No hyperopt search algorithm specified, defaulting to `variant_generator`")
             search_alg = None
 
         if self.max_concurrent_trials:
@@ -769,6 +772,8 @@ class RayTuneExecutor:
                 search_alg = ConcurrencyLimiter(search_alg, max_concurrent=self.max_concurrent_trials)
 
         def run_experiment_trial(config, local_hyperopt_dict, checkpoint_dir=None):
+            # Checkpoint dir exists when trials are temporarily paused and resumed, for e.g.,
+            # when using the HB_BOHB scheduler.
             return self._run_experiment(
                 config,
                 checkpoint_dir,
@@ -779,6 +784,8 @@ class RayTuneExecutor:
 
         tune_config = {}
         for callback in callbacks or []:
+            # Note: tune_config will contain the MLFlow keys from the last callback
+            # in the list of callbacks that implements prepare_ray_tune.
             run_experiment_trial, tune_config = callback.prepare_ray_tune(
                 run_experiment_trial,
                 tune_config,
@@ -909,6 +916,9 @@ class RayTuneExecutor:
                     # Evaluate the best model on the eval_split, which is validation_set
                     if validation_set is not None and validation_set.size > 0:
                         trial_path = trial["trial_dir"]
+                        # Remove partial checkpoints that may have been created by RayTune
+                        # when time budget is reached (if one was set)
+                        self._remove_partial_checkpoints(trial_path)
                         with self._get_best_model_path(
                             trial_path, analysis, backend.storage.artifacts.credentials
                         ) as best_model_path:
