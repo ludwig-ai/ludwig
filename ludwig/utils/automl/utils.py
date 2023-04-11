@@ -28,13 +28,22 @@ logger = logging.getLogger(__name__)
 
 
 @DeveloperAPI
+def avg_num_tokens_decoder(x):
+    if x is None:
+        return None
+    if type(x) == bytes:
+        return x.decode("utf-8")
+    return str(x)
+
+
+@DeveloperAPI
 def avg_num_tokens(field: Series) -> int:
     # sample a subset if dataframe is large
     field_size = len(field)
     if field_size > 5000:
         frac = 5000 / field_size
         field = field.sample(frac=frac, random_state=40)
-    field = field.apply(lambda x: x.decode("utf-8") if x and type(x) == bytes else x)
+    field = field.apply(avg_num_tokens_decoder)
     unique_entries = field.unique()
     avg_words = round(nan_to_num(Series(unique_entries).str.split().str.len().mean()))
     return avg_words
