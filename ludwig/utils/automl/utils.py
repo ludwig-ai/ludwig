@@ -35,7 +35,7 @@ def avg_num_tokens(field: Series) -> int:
         frac = 5000 / field_size
         field = field.sample(frac=frac, random_state=40)
     unique_entries = field.unique()
-    avg_words = round(nan_to_num(Series(unique_entries).str.split().str.len().mean()))
+    avg_words = round(nan_to_num(Series(unique_entries).str.decode('utf-8').split().str.len().mean()))
     return avg_words
 
 
