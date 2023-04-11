@@ -429,13 +429,14 @@ def test_gbm_text_tfidf(tmpdir, backend, ray_cluster_4cpu):
     "backend",
     [
         pytest.param(LOCAL_BACKEND, id="local"),
-        # pytest.param(RAY_BACKEND, id="ray", marks=pytest.mark.distributed),
+        pytest.param(RAY_BACKEND, id="ray", marks=pytest.mark.distributed),
     ],
 )
 def test_gbm_feature_name_special_characters(tmpdir, feature_name, feature_type, backend, ray_cluster_4cpu):
     """Test that feature names containing JSON special characters are properly sanitized.
 
-    LGBM Datasets do not support feature names with JSON special characters. This tests that LightGBM
+    LGBM Datasets do not support feature names with JSON special characters. This tests that our sanitizer both solves
+    the special character error and also does not impede training.
     """
     input_features = [binary_feature(name=feature_name)] if feature_name == "input" else [binary_feature()]
     output_features = [binary_feature(name=feature_name)] if feature_type == "output" else [binary_feature()]
