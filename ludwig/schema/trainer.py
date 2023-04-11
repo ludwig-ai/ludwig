@@ -695,7 +695,10 @@ class GBMTrainerConfig(BaseTrainerConfig):
 class LLMTrainerConfig(BaseTrainerConfig):
     """Base class for all LLM trainer configs."""
 
-    pass
+    eval_batch_size: int = schema_utils.PositiveInteger(
+        default=1,
+        description="Batch size used for evaluation in the LLM trainer.",
+    )
 
 
 @DeveloperAPI

@@ -115,6 +115,7 @@ def test_llm_text_to_text(tmpdir, backend):  # , ray_cluster_4cpu):
     # (TODO): Need to debug issue when skip_save_processed_input is False
     model.train(dataset=dataset_filename, output_directory=str(tmpdir), skip_save_processed_input=True)
     preds, _ = model.predict(dataset=dataset_filename, output_directory=str(tmpdir), split="test")
+    # model.experiment(dataset_filename, output_directory=str(tmpdir), skip_save_processed_input=True)
 
     import pprint
 
