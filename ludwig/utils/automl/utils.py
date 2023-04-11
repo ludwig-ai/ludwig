@@ -38,13 +38,10 @@ def avg_num_tokens_decoder(x):
 
 @DeveloperAPI
 def avg_num_tokens(field: Series) -> int:
-    # sample a subset if dataframe is large
-    field_size = len(field)
-    if field_size > 5000:
-        frac = 5000 / field_size
-        field = field.sample(frac=frac, random_state=40)
-    field = field.apply(avg_num_tokens_decoder)
-    unique_entries = field.unique()
+    logger.info(f"Calculating average number tokens for field {field.name} using sample of 100 rows.")
+    field_sample = field.head(100).apply(avg_num_tokens_decoder)
+
+    unique_entries = field_sample.unique()
     avg_words = round(nan_to_num(Series(unique_entries).str.split().str.len().mean()))
     return avg_words
 
