@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Any, Dict, List, Tuple, Union
+from typing import Dict, List, Tuple, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BINARY, CATEGORY, NUMBER, SET, TIMESERIES, VECTOR
@@ -266,39 +266,3 @@ class ClassifierConfig(BaseDecoderConfig):
         description="Initializer for the bias vector.",
         parameter_metadata=DECODER_METADATA["Classifier"]["bias_initializer"],
     )
-
-
-@DeveloperAPI
-@register_decoder_config("parser", [CATEGORY])
-@ludwig_dataclass
-class ParserDecoderConfig(BaseDecoderConfig):
-    @classmethod
-    def module_name(cls):
-        return "ParserDecoder"
-
-    type: str = schema_utils.ProtectedString(
-        "parser",
-    )
-
-    input_size: int = schema_utils.PositiveInteger(
-        default=None,
-        allow_none=True,
-        description="Size of the input to the decoder.",
-        parameter_metadata=DECODER_METADATA["Projector"]["input_size"],
-    )
-
-    # Match is a dict of label class
-    match: Dict[str, Dict[str, Any]] = schema_utils.Dict(
-        default=None,
-        allow_none=False,
-    )
-
-    tokenizer: str = "hf_tokenizer"
-
-    pretrained_model_name_or_path: str = ""
-
-    vocab_file: str = None
-
-    labels: List[str] = None
-
-    fallback_label: str = None

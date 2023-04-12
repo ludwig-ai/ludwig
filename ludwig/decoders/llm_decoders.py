@@ -10,7 +10,7 @@ from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
 
 # from ludwig.schema.features.preprocessing.category import CategoryOutputPreprocessingConfig
-from ludwig.schema.decoders.base import ParserDecoderConfig
+from ludwig.schema.decoders.llm_decoders import ParserDecoderConfig
 from ludwig.utils.strings_utils import get_tokenizer
 
 logger = logging.getLogger(__name__)
