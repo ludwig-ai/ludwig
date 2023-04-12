@@ -132,7 +132,7 @@ class CategoryDistributionOutputPreprocessingConfig(BasePreprocessingConfig):
 # @DeveloperAPI
 # @register_preprocessor("category_llm")
 # @ludwig_dataclass
-# class LLMCategoryPreprocessingConfig(CategoryPreprocessingConfig):
+# class LLMCategoryPreprocessingConfig(CategoryOutputPreprocessingConfig):
 #     def __post_init__(self):
 #         if self.labels is None:
 #             raise ConfigValidationError("`labels` must be specified for `category_llm` output feature.")

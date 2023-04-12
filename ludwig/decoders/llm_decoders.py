@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, Union
 
 import torch
 
@@ -77,12 +77,16 @@ class ParserDecoder(Decoder):
         tokenizer: str,
         pretrained_model_name_or_path: str,
         vocab_file: str,
-        labels: List[str],
+        str2idx: Dict[str, int],
         fallback_label: str,
         **kwargs,
     ):
         super().__init__()
         self.input_size = input_size
+        self.fallback_label = fallback_label
+        self.str2idx = str2idx
+
+        # Create Matcher object to perform matching on the decoded output
         self.matcher = Matcher(match)
 
         # Tokenizer
@@ -93,15 +97,6 @@ class ParserDecoder(Decoder):
         # Load tokenizer required for decoding the output from the generate
         # function of the text input feature for LLMs.
         self.tokenizer = get_tokenizer(self.tokenizer_type, self.vocab_file, self.pretrained_model_name_or_path)
-
-        # Set labels and fallback label for the output feature to perform a reverse lookup
-        # after parsing the output from the generate function of the text input feature.
-        self.labels = labels
-        self.fallback_label = fallback_label
-        assert fallback_label in labels, f"fallback_label {fallback_label} not in labels {labels}"
-
-        self.idx2str = labels
-        self.str2idx = {label: idx for idx, label in enumerate(labels)}
 
     @staticmethod
     def get_schema_cls():

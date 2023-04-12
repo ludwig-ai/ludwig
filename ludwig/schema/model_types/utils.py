@@ -324,7 +324,6 @@ def set_llm_tokenizers(config: "ModelConfig") -> None:
             output_feature.decoder.tokenizer = "hf_tokenizer"
             output_feature.decoder.pretrained_model_name_or_path = pretrained_model_name_or_path
             # Parameters for building decoder vocabulary
-            output_feature.decoder.labels = output_feature.preprocessing.labels
             output_feature.decoder.fallback_label = output_feature.preprocessing.fallback_label
 
 

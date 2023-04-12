@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import CATEGORY
@@ -36,6 +36,9 @@ class ParserDecoderConfig(BaseDecoderConfig):
 
     vocab_file: str = None
 
-    labels: List[str] = None
+    str2idx: Dict[str, int] = schema_utils.Dict(
+        default=None,
+        allow_none=True,
+    )
 
     fallback_label: str = None
