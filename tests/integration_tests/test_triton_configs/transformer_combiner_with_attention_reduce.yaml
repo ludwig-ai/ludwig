@@ -1,0 +1,19 @@
+input_features:
+  - name: founded_on_timestamp
+    type: number
+  - name: first_equity_timestamp
+    type: number
+  - name: founded_first_equity_diff
+    type: number
+output_features:
+  - name: assigned_label
+    type: number
+combiner:
+  type: transformer
+  hidden_size: 16
+  output_size: 64
+  num_fc_layers: 0
+  reduce_output: attention
+  transformer_output_size: 56
+trainer:
+  train_steps: 1

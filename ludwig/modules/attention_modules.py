@@ -39,6 +39,14 @@ class FeedForwardAttentionReducer(LudwigModule):
         gated_inputs = torch.sum(attention * inputs, dim=1)
         return gated_inputs  # [b, h]
 
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([1])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([1])
+
 
 class MultiHeadSelfAttention(LudwigModule):
     def __init__(self, input_size, hidden_size, num_heads=8):
