@@ -1088,4 +1088,8 @@ def clear_huggingface_cache():
         f"Clearing HuggingFace cache under path: `{cache_path}`. "
         f"Free disk space is {100 * du.free / du.total}% of total disk space."
     )
-    shutil.rmtree(cache_path, ignore_errors=False)
+    for root, dirs, files in os.walk(cache_path):
+        for f in files:
+            os.unlink(os.path.join(root, f))
+        for d in dirs:
+            shutil.rmtree(os.path.join(root, d))
