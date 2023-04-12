@@ -10,6 +10,7 @@ from transformers import AutoModelForCausalLM, GenerationConfig
 
 from ludwig.constants import MODEL_LLM
 from ludwig.features.base_feature import OutputFeature
+from ludwig.features.text_feature import TextOutputFeature
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
 from ludwig.schema.features.base import BaseOutputFeatureConfig, FeatureCollection
@@ -203,9 +204,12 @@ class LLM(BaseModel):
     def update_metrics(self, targets, predictions):
         """Updates the model's metrics given targets and predictions."""
         for of_name, of_obj in self.output_features.items():
-            # Align the target length with the predictions length to enable text metric evaluation.
-            _targets = self._realign_target_tensor(targets, predictions, of_name)
-            of_obj.update_metrics(_targets[of_name], predictions[of_name])
+            if isinstance(of_obj, TextOutputFeature):
+                # Align the target length with the predictions length to enable text metric evaluation.
+                _targets = self._realign_target_tensor(targets, predictions, of_name)
+                of_obj.update_metrics(_targets[of_name], predictions[of_name])
+                continue
+            of_obj.update_metrics(targets[of_name], predictions[of_name])
 
         # To update eval-loss, we need "logits" but right now we're only producing "predictions"
         # This is required by the SequenceSoftmaxCrossEntropyLoss function
@@ -225,9 +229,12 @@ class LLM(BaseModel):
         """
         eval_loss = 0
         for of_name, of_obj in self.output_features.items():
-            # Align the target length with the predictions length to enable text metric evaluation.
-            _targets = self._realign_target_tensor(targets, predictions, of_name)
-            of_eval_loss = of_obj.eval_loss(_targets[of_name], predictions[of_name])
+            if isinstance(of_obj, TextOutputFeature):
+                # Align the target length with the predictions length to enable text metric evaluation.
+                _targets = self._realign_target_tensor(targets, predictions, of_name)
+                of_eval_loss = of_obj.eval_loss(_targets[of_name], predictions[of_name])
+            else:
+                of_eval_loss = of_obj.eval_loss(targets[of_name], predictions[of_name])
             eval_loss += of_obj.loss.weight * of_eval_loss
 
         additional_loss = 0

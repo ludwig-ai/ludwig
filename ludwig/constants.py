@@ -255,6 +255,7 @@ AUDIO_FEATURE_KEYS = [
     "num_filter_bands",
 ]
 
+MODEL_NAME = "model_name"
 MODEL_TYPE = "model_type"
 MODEL_ECD = "ecd"
 MODEL_GBM = "gbm"

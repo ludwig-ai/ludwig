@@ -75,7 +75,7 @@ config = yaml.safe_load(
             - name: Answer
               type: text
         model_type: llm
-        model_name: "facebook/opt-350m"
+        model_name: hf-internal-testing/tiny-random-GPTJForCausalLM
     """
 )
 
