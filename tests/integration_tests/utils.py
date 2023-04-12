@@ -1080,8 +1080,10 @@ def clear_huggingface_cache():
         cache_path = "/".join(cache_path.split("/")[:-1])
     du = shutil.disk_usage(cache_path)
 
-    # only clean up cache if less than 20% of disk space is used.
-    if du.free / du.total > 0.2:
+    logger.info(f"Current disk usage {du}")
+
+    # only clean up cache if less than 30% of disk space is used.
+    if du.free / du.total > 0.3:
         return
 
     logger.info(
