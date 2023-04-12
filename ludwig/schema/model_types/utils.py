@@ -8,6 +8,7 @@ from marshmallow import ValidationError
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
+    CATEGORY,
     COMBINED,
     DECODER,
     DEFAULTS,
@@ -318,6 +319,13 @@ def set_llm_tokenizers(config: "ModelConfig") -> None:
             output_feature.preprocessing.tokenizer = "hf_tokenizer"
             output_feature.preprocessing.pretrained_model_name_or_path = pretrained_model_name_or_path
             output_feature.preprocessing.padding = "left"
+        elif output_feature.type == CATEGORY:
+            # Tokenizer parameters
+            output_feature.decoder.tokenizer = "hf_tokenizer"
+            output_feature.decoder.pretrained_model_name_or_path = pretrained_model_name_or_path
+            # Parameters for building decoder vocabulary
+            output_feature.decoder.labels = output_feature.preprocessing.labels
+            output_feature.decoder.fallback_label = output_feature.preprocessing.fallback_label
 
 
 @DeveloperAPI

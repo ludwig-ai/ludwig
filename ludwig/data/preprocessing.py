@@ -15,6 +15,7 @@
 # ==============================================================================
 import contextlib
 import logging
+import re
 import warnings
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Tuple
@@ -27,8 +28,10 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend import Backend, LOCAL_BACKEND
 from ludwig.constants import (
     BFILL,
+    CATEGORY,
     CHECKSUM,
     COLUMN,
+    DECODER,
     DEFAULTS,
     DROP_ROW,
     ENCODER,
@@ -49,6 +52,7 @@ from ludwig.constants import (
     SPLIT,
     SRC,
     TEST,
+    TEXT,
     TRAINING,
     TYPE,
     VALIDATION,
@@ -1195,6 +1199,10 @@ def build_dataset(
         preprocessing_parameters = feature_name_to_preprocessing_parameters[feature_config[NAME]]
         handle_missing_values(dataset_cols, feature_config, preprocessing_parameters, backend)
 
+    # If we're using LLMs for zero-shot/few-shot learning, update text input features with the prompt
+    # ahead of time so that we can compute metadata and build the preprocessed data correctly.
+    handle_llm_prompt_injection(dataset_cols, feature_configs, feature_name_to_preprocessing_parameters, backend)
+
     # Happens after missing values are handled to avoid NaN casting issues.
     logger.debug("cast columns")
     cast_columns(dataset_cols, feature_configs, backend)
@@ -1659,6 +1667,62 @@ def _handle_missing_values(
             )
     else:
         raise ValueError(f"Invalid missing value strategy {missing_value_strategy}")
+
+
+def handle_llm_prompt_injection(
+    dataset_cols, feature_configs, feature_name_to_preprocessing_parameters, backend
+) -> None:
+    """If output feature is a category feature and it's preprocessing has prompt_template, then we need to inject
+    the prompt into the input text feature(s)."""
+
+    # Recover input and output features
+    input_features = []
+    output_features = []
+    for feature in feature_configs:
+        if ENCODER in feature:
+            input_features.append(feature)
+        elif DECODER in feature:
+            output_features.append(feature)
+
+    # If output feature is a category feature and it's preprocessing has prompt_template, then we need to
+    # inject the prompt into the input text feature(s). Currently assumes only one output feature.
+    feature_injection_feature_names = None
+    labels = None
+    prompt = None
+    for output_feature in output_features:
+        if output_feature[TYPE] != CATEGORY:
+            continue
+        if "prompt_template" not in feature_name_to_preprocessing_parameters[output_feature[COLUMN]]:
+            continue
+
+        prompt: str = feature_name_to_preprocessing_parameters[output_feature[COLUMN]]["prompt_template"]
+        labels: List = feature_name_to_preprocessing_parameters[output_feature[COLUMN]]["labels"]
+        feature_injection_feature_names: List = _extract_prompt_injection_feature_names(prompt)
+
+    if not prompt:
+        return
+
+    # Substitute labels specified in the category feature's preprocessing parameters
+    # into the prompt template.
+    if feature_injection_feature_names and "labels" in feature_injection_feature_names:
+        # Replace {labels} with the actual labels
+        prompt = prompt.replace("{labels}", ", ".join(labels))
+        feature_injection_feature_names.pop(feature_injection_feature_names.index("labels"))
+
+    # Substitute values from the input features into the prompt template, and update the values in
+    # dataset_cols with the updated injected prompt. Assumes just text input features for now.
+    for input_feature in input_features:
+        if input_feature[COLUMN] in feature_injection_feature_names and input_feature[TYPE] == TEXT:
+            match_str = "{" + input_feature[COLUMN] + "}"
+            dataset_cols[input_feature[COLUMN]] = dataset_cols[input_feature[COLUMN]].apply(
+                lambda x: prompt.replace(match_str, x)
+            )
+
+
+def _extract_prompt_injection_feature_names(prompt_template: str) -> List[str]:
+    pattern = r"{([^}]*)}"
+    matches = re.findall(pattern, prompt_template)
+    return matches
 
 
 def load_hdf5(hdf5_file_path, preprocessing_params, backend, split_data=True, shuffle_training=False):

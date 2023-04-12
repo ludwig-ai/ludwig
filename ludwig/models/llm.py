@@ -8,7 +8,7 @@ import torch
 import torchmetrics
 from transformers import AutoModelForCausalLM, GenerationConfig
 
-from ludwig.constants import MODEL_LLM
+from ludwig.constants import CATEGORY, MODEL_LLM, TEXT
 from ludwig.features.base_feature import OutputFeature
 from ludwig.features.text_feature import TextOutputFeature
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
@@ -51,7 +51,7 @@ class LLM(BaseModel):
             # min_new_tokens=9,
             # max_new_tokens=9,
         )
-        self.max_new_tokens = 10
+        self.max_new_tokens = 5
 
         # ================ Inputs ================
         try:
@@ -148,17 +148,26 @@ class LLM(BaseModel):
         outputs,
     ):
         """Extracts predictions and probabilities from the model outputs."""
-        return {
-            self.config_obj.output_features[0].name: {
-                "predictions": self.extract_predictions(inputs, outputs.sequences),
-                # Unnormalized log probabilities
-                # It is a tuple containing one entry for each generated token. Each tuple member is a tensor
-                # containing the log probabilities from the model, for all words in the vocabulary.
-                # "probabilities": self.extract_logits(outputs.scores),
+        of_feature_type = self.config_obj.output_features[0].type
+        if of_feature_type == TEXT:
+            return {
+                self.config_obj.output_features[0].name: {
+                    "predictions": self.extract_text_predictions(inputs, outputs.sequences),
+                    # Unnormalized log probabilities
+                    # It is a tuple containing one entry for each generated token. Each tuple member is a tensor
+                    # containing the log probabilities from the model, for all words in the vocabulary.
+                    # "probabilities": self.extract_logits(outputs.scores),
+                }
             }
-        }
+        elif of_feature_type == CATEGORY:
+            return {
+                self.config_obj.output_features[0].name: {
+                    "predictions": self.extract_category_predictions(inputs, outputs.sequences),
+                    # "probabilities": self.extract_logits(outputs.scores),
+                }
+            }
 
-    def extract_predictions(self, inputs, output_sequences):
+    def extract_text_predictions(self, inputs, output_sequences):
         """Extracts the predictions from the model outputs by removing the input sequence from the generated
         sequence."""
         input_ids = self.get_input_ids(inputs)
@@ -181,6 +190,26 @@ class LLM(BaseModel):
         # Stack the predictions for each example in the batch
         generated_predictions = torch.stack(generated_predictions, dim=0)
         return generated_predictions
+
+    def extract_category_predictions(self, inputs, output_sequences):
+        """Extracts the predictions from the model outputs by removing the input sequence from the generated
+        sequence and running it through the category vocabulary."""
+        input_ids = self.get_input_ids(inputs)
+        _, of_obj = self.output_features.items()[0]
+
+        if input_ids.size()[0] == 1:
+            # Forward pass through the decoder for extraction
+            return of_obj.decoder_obj.forward(output_sequences[:, input_ids.size()[1] :])
+
+        generated_predictions = []
+        input_ids_lens = [input_id.size()[0] for input_id in input_ids]
+        for idx, input_id_len in enumerate(input_ids_lens):
+            # Remove the input sequence from the generated sequence
+            generated_sequence = output_sequences[idx][input_id_len:]
+            generated_predictions.append(generated_sequence)
+        # Stack the predictions for each example in the batch
+        generated_predictions = torch.stack(generated_predictions, dim=0)
+        return of_obj.decoder_obj.forward(generated_predictions)
 
     def extract_logits(self, scores):
         """Extracts the logits from the scores.

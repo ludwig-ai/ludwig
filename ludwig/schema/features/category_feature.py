@@ -18,6 +18,7 @@ from ludwig.schema.features.utils import (
     gbm_input_config_registry,
     gbm_output_config_registry,
     input_mixin_registry,
+    llm_output_config_registry,
     output_mixin_registry,
 )
 from ludwig.schema.metadata import FEATURE_METADATA
@@ -178,3 +179,18 @@ class CategoryDefaultsConfig(CategoryInputFeatureConfigMixin, CategoryOutputFeat
 @ludwig_dataclass
 class CategoryDistributionDefaultsConfig(CategoryOutputFeatureConfigMixin):
     pass
+
+
+@DeveloperAPI
+@llm_output_config_registry.register(CATEGORY)
+@ludwig_dataclass
+class LLMCategoryOutputFeatureConfig(CategoryOutputFeatureConfig):
+    """LLMCategoryOutputFeatureConfig is a dataclass that configures the parameters used for a category output
+    feature when using the Ludwig Light Model."""
+
+    # preprocessing: LLMCategoryPreprocessingConfig = PreprocessingDataclassField(feature_type="category_llm")
+
+    decoder: BaseDecoderConfig = DecoderDataclassField(
+        feature_type=CATEGORY,
+        default="parser",
+    )
