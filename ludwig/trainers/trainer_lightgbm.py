@@ -891,7 +891,19 @@ class LightGBMTrainer(BaseTrainer):
                 fn(callback)
 
     def sanitize_feature_names(self, df: "DataFrame") -> "DataFrame":  # noqa: F821
-        """"""
+        """Remove JSON special characters from feature names.
+
+        LightGBM Datasets raise an error when processing feature names with JSON special characters (e.g., ".", "{",
+        "}", "[", "]"). This method replaces non-word characters in DataFrame column names with "_" and creates a map
+        of `feature_name` -> `sanitized_feature_name`. Assumes that repeated calls will operate on dataframes with the
+        same columns.
+
+        Args:
+            df: The dataframe to sanitize.
+
+        Returns:
+            A copy of `df` with non-word characters removed from the column names.
+        """
         sanitizer = lambda k: re.sub(r"[\W]", "_", k)
 
         if self.feature_names_map is None:
@@ -900,7 +912,17 @@ class LightGBMTrainer(BaseTrainer):
         return df.rename(columns=self.feature_names_map)
 
     def desanitize_feature_names(self, df: "DataFrame") -> "DataFrame":  # noqa: F821
-        """"""
+        """Restore original feature names to a df.
+
+        The inverse of `LightGBMTrainer.sanitize_feature_names`, this method maps sanitized feature names back to their
+        original formats. Assumes that repeated calls will operate on dataframes with the same columns.
+
+        Args:
+            df: A dataframe previously run through `LightGBMTrainer.sanitize_feature_names`.
+
+        Returns:
+            A copy of `df` with the original feature names restored.
+        """
         if self.feature_names_map is None:
             return df
         else:
