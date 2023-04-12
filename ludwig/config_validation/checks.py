@@ -468,14 +468,3 @@ def check_llm_atleast_one_input_text_feature(config: "ModelConfig"):  # noqa: F8
             return
 
     raise ConfigValidationError("LLM requires at least one text input feature.")
-
-
-@register_config_check
-def check_llm_only_one_output_feature(config: "ModelConfig"):  # noqa: F821
-    """TODO(Arnav): Add support for multiple output features by making fewer
-    assumptions about the output features through the training process"""
-    if config.model_type != MODEL_LLM:
-        return
-
-    if len(config.output_features) > 1:
-        raise ConfigValidationError("LLM only supports one output feature.")

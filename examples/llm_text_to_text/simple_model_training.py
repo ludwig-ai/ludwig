@@ -2,8 +2,9 @@
 
 # # Simple Model Training Example
 #
-# This example is the API example for this Ludwig command line example
-# (https://ludwig-ai.github.io/ludwig-docs/latest/examples/titanic/).
+# This is a simple example of how to use the LLM model type to train
+# a model on a simple question and answer dataset. It uses the
+# facebook/opt-350m model as the base LLM model.
 
 # Import required libraries
 import logging
@@ -75,7 +76,7 @@ config = yaml.safe_load(
             - name: Answer
               type: text
         model_type: llm
-        model_name: hf-internal-testing/tiny-random-GPTJForCausalLM
+        model_name: facebook/opt-350m
     """
 )
 
