@@ -73,11 +73,7 @@ class GBMTextInputFeatureConfig(TextInputFeatureConfig):
 @llm_input_config_registry.register(TEXT)
 @ludwig_dataclass
 class LLMTextInputFeatureConfig(TextInputFeatureConfig):
-    encoder: BaseEncoderConfig = EncoderDataclassField(
-        MODEL_LLM,
-        feature_type=TEXT,
-        default="passthrough",
-    )
+    pass
 
 
 @DeveloperAPI

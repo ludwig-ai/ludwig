@@ -1,5 +1,6 @@
 import os
 
+import pandas as pd
 import pytest
 
 from ludwig.api import LudwigModel
@@ -58,14 +59,9 @@ def test_llm_text_to_text(tmpdir, backend):  # , ray_cluster_4cpu):
     }
 
     model = LudwigModel(config, backend=backend)
-    # (TODO): Need to debug issue when skip_save_processed_input is False
     model.train(dataset=dataset_filename, output_directory=str(tmpdir), skip_save_processed_input=True)
     preds, _ = model.predict(dataset=dataset_filename, output_directory=str(tmpdir), split="test")
-    # model.experiment(dataset_filename, output_directory=str(tmpdir), skip_save_processed_input=True)
-
-    import pprint
-
-    pprint.pprint(preds.to_dict())
+    print(preds)
 
 
 @pytest.mark.parametrize(
@@ -80,16 +76,15 @@ def test_llm_zero_shot_classification(tmpdir, backend):  # , ray_cluster_4cpu):
     output_features = [
         category_feature(
             name="label",
-            # (TODO): Figure out why preprocessing is not getting reflected in the config
             preprocessing={
                 "labels": ["positive", "neutral", "negative"],
                 "fallback_label": "neutral",
                 "prompt_template": """
-                Context information is below.
-                ###
-                {review}
-                ###
-                Given the context information and not prior knowledge, classify the context as one of: {labels}
+                    Context information is below.
+                    ###
+                    {review}
+                    ###
+                    Given the context information and not prior knowledge, classify the context as one of: {labels}
                 """,
             },
             # How can we avoid using r here for regex, since it is technically an implementation detail?
@@ -103,8 +98,6 @@ def test_llm_zero_shot_classification(tmpdir, backend):  # , ray_cluster_4cpu):
             },
         )
     ]
-
-    import pandas as pd
 
     reviews = [
         "I loved this movie!",
@@ -142,8 +135,6 @@ def test_llm_zero_shot_classification(tmpdir, backend):  # , ray_cluster_4cpu):
     }
 
     model = LudwigModel(config, backend=backend)
-
-    # (TODO): Need to debug issue when skip_save_processed_input is False
     model.train(dataset=df, output_directory=str(tmpdir))
 
     prediction_df = pd.DataFrame(
@@ -160,6 +151,4 @@ def test_llm_zero_shot_classification(tmpdir, backend):  # , ray_cluster_4cpu):
     preds, _ = model.predict(dataset=prediction_df, output_directory=str(tmpdir))
     # model.experiment(dataset_filename, output_directory=str(tmpdir), skip_save_processed_input=True)
 
-    import pprint
-
-    pprint.pprint(preds.to_dict())
+    print(preds.to_dict())

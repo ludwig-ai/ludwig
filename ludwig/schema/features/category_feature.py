@@ -188,7 +188,7 @@ class LLMCategoryOutputFeatureConfig(CategoryOutputFeatureConfig):
     """LLMCategoryOutputFeatureConfig is a dataclass that configures the parameters used for a category output
     feature when using the Ludwig Light Model."""
 
-    # preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="category_llm")
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="category_llm")
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
         feature_type=CATEGORY,

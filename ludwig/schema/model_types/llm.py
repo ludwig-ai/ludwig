@@ -6,9 +6,9 @@ from ludwig.schema.defaults.ecd import ECDDefaultsConfig, ECDDefaultsField
 from ludwig.schema.features.base import (
     BaseInputFeatureConfig,
     BaseOutputFeatureConfig,
-    ECDInputFeatureSelection,
-    ECDOutputFeatureSelection,
     FeatureCollection,
+    LLMInputFeatureSelection,
+    LLMOutputFeatureSelection,
 )
 from ludwig.schema.hyperopt import HyperoptConfig, HyperoptField
 from ludwig.schema.model_types.base import ModelConfig, register_model_type
@@ -26,8 +26,8 @@ class LLMModelConfig(ModelConfig):
     model_type: str = schema_utils.ProtectedString("llm")
     model_name: str = ""
 
-    input_features: FeatureCollection[BaseInputFeatureConfig] = ECDInputFeatureSelection().get_list_field()
-    output_features: FeatureCollection[BaseOutputFeatureConfig] = ECDOutputFeatureSelection().get_list_field()
+    input_features: FeatureCollection[BaseInputFeatureConfig] = LLMInputFeatureSelection().get_list_field()
+    output_features: FeatureCollection[BaseOutputFeatureConfig] = LLMOutputFeatureSelection().get_list_field()
 
     trainer: LLMTrainerConfig = LLMTrainerField().get_default_field()
     preprocessing: PreprocessingConfig = PreprocessingField().get_default_field()

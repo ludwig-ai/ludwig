@@ -95,20 +95,6 @@ class CategoryOutputPreprocessingConfig(CategoryPreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[CATEGORY][PREPROCESSING]["most_common"],
     )
 
-    labels: List[str] = schema_utils.List(default=None)
-
-    fallback_label: str = schema_utils.String(
-        default=None,
-        allow_none=True,
-        description="The label to use when the model doesn't match any of the labels in the `labels` list.",
-    )
-
-    prompt_template: str = schema_utils.String(
-        default=f"Classify the following text into one of the following categories: {labels}.",
-        allow_none=True,
-        description="The template to use for the prompt. The labels will be inserted into the template.",
-    )
-
 
 @DeveloperAPI
 @register_preprocessor("category_distribution_output")
@@ -129,26 +115,26 @@ class CategoryDistributionOutputPreprocessingConfig(BasePreprocessingConfig):
     vocab: List[str] = schema_utils.List(default=None)
 
 
-# @DeveloperAPI
-# @register_preprocessor("category_llm")
-# @ludwig_dataclass
-# class LLMCategoryPreprocessingConfig(CategoryOutputPreprocessingConfig):
-#     def __post_init__(self):
-#         if self.labels is None:
-#             raise ConfigValidationError("`labels` must be specified for `category_llm` output feature.")
-#         if self.fallback_label is None:
-#             raise ConfigValidationError("`fallback_label` must be specified for `category_llm` output feature.")
+@DeveloperAPI
+@register_preprocessor("category_llm")
+@ludwig_dataclass
+class LLMCategoryOutputPreprocessingConfig(CategoryOutputPreprocessingConfig):
+    def __post_init__(self):
+        if self.labels is None:
+            raise ConfigValidationError("`labels` must be specified for `category_llm` output feature.")
+        if self.fallback_label is None:
+            raise ConfigValidationError("`fallback_label` must be specified for `category_llm` output feature.")
 
-#     labels: List[str] = schema_utils.List(default=None)
+    labels: List[str] = schema_utils.List(default=None)
 
-#     fallback_label: str = schema_utils.String(
-#         default=None,
-#         allow_none=True,
-#         description="The label to use when the model doesn't match any of the labels in the `labels` list.",
-#     )
+    fallback_label: str = schema_utils.String(
+        default="",
+        allow_none=False,
+        description="The label to use when the model doesn't match any of the labels in the `labels` list.",
+    )
 
-#     prompt_template: str = schema_utils.String(
-#         default=f"Classify the following text into one of the following categories: {labels}.",
-#         allow_none=True,
-#         description="The template to use for the prompt. The labels will be inserted into the template.",
-#     )
+    prompt_template: str = schema_utils.String(
+        default="",
+        allow_none=False,
+        description="The template to use for the prompt. The labels will be inserted into the template.",
+    )

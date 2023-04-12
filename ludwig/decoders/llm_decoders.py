@@ -112,9 +112,6 @@ class ParserDecoder(Decoder):
         print(f"Decoded output: {decoded_outputs}")
 
         # Parse labels based on matching criteria
-        # TODO: Figure out why neutral (ID 1) is mapping to negative (ID 2)
-        # Related to how str2idx/idx2str is calculated in the metadata during preprocessing,
-        # see create_vocabulary_single_token
         matched_labels = []
         for output in decoded_outputs:
             matched_label = self.matcher(output)
