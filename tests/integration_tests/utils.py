@@ -1075,15 +1075,16 @@ def minio_test_creds():
 
 
 def clear_huggingface_cache():
-    du = shutil.disk_usage("~")
+    cache_path = file_utils.default_cache_path.rstrip("/")
+    while not cache_path.endswith("huggingface") and cache_path:
+        cache_path = "/".join(cache_path.split("/")[:-1])
     print("\nCLEARNING HUGGINGFACE CACHE")
+    print("DELETING FROM PATH:", cache_path, "\n")
+    du = shutil.disk_usage(cache_path)
+
     print(du)
     # only clean up cache if less than 20% of disk space is used.
     if du.free / du.total > 0.2:
         return
 
-    cache_path = file_utils.default_cache_path.rstrip("/")
-    while not cache_path.endswith("huggingface") and cache_path:
-        cache_path = "/".join(cache_path.split("/")[:-1])
-    print("DELETING FROM PATH:", cache_path, "\n")
     shutil.rmtree(cache_path, ignore_errors=False)
