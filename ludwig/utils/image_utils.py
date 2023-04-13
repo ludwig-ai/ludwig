@@ -29,7 +29,6 @@ from torchvision.models._api import WeightsEnum
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import CROP_OR_PAD, INTERPOLATE
 from ludwig.encoders.base import Encoder
-from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.fs_utils import get_bytes_obj_from_path
 from ludwig.utils.registry import Registry
 
@@ -93,7 +92,7 @@ def is_bytes_image(bytes_obj) -> bool:
 
 @DeveloperAPI
 def is_image_score(img_entry):
-    if isinstance(img_entry, str) and img_entry.lower().endswith(IMAGE_EXTENSIONS):
+    if isinstance(img_entry, str) and any(ext for ext in IMAGE_EXTENSIONS if ext in img_entry.lower()):
         return 1
     return 0
 
