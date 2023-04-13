@@ -87,6 +87,7 @@ def get_average_image(image_lst: List[np.ndarray]) -> np.array:
 @DeveloperAPI
 def is_bytes_image(bytes_obj) -> bool:
     import imghdr
+
     return imghdr.what(None, bytes_obj) is not None
 
 
