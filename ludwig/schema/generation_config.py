@@ -5,21 +5,7 @@ from ludwig.schema import utils as schema_utils
 
 
 @DeveloperAPI
-def get_generation_config_jsonschema():
-    return {
-        "type": "object",
-        # "properties":
-        "title": "generation_config",
-        "additionalProperties": False,
-        "description": (
-            "The generation config to use for the model. This is a dictionary "
-            "that will be passed to the `generate` method of the HuggingFace "
-            "model. See the HuggingFace documentation for more details."
-        ),
-    }
-
-
-@DeveloperAPI
+@schema_utils.ludwig_dataclass
 class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
     """Parameters for LLM Generation Config.
 
@@ -37,7 +23,7 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     max_new_tokens: Optional[int] = schema_utils.PositiveInteger(
-        default=None,
+        default=20,
         allow_none=True,
         description="The maximum number of new tokens to generate, ignoring the number of tokens in the input prompt.",
     )
@@ -303,5 +289,9 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-class GenerationConfigField(schema_utils.DictMarshmallowField):
-    pass
+class LLMGenerationConfigField(schema_utils.DictMarshmallowField):
+    def __init__(self):
+        super().__init__(LLMGenerationConfig)
+
+    def _jsonschema_type_mapping(self):
+        return schema_utils.unload_jsonschema_from_marshmallow_class(LLMGenerationConfig)

@@ -41,17 +41,8 @@ class LLM(BaseModel):
         super().__init__(random_seed=self._random_seed)
 
         self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.model_name)
-        self.generation_config = GenerationConfig(
-            temperature=1.0,
-            top_p=0.75,
-            top_k=40,
-            num_beams=4,
-            pad_token_id=self.model.config.pad_token_id,
-            eos_token_id=self.model.config.eos_token_id,
-            # min_new_tokens=9,
-            # max_new_tokens=9,
-        )
-        self.max_new_tokens = 5
+        self.generation_config = GenerationConfig(**self.config_obj.generation_config.to_dict())
+        self.max_new_tokens = self.config_obj.generation_config.max_new_tokens
 
         # ================ Inputs ================
         try:
@@ -129,7 +120,6 @@ class LLM(BaseModel):
                 input_ids=self.get_input_ids(inputs),
                 attention_mask=mask,
                 generation_config=self.generation_config,
-                max_new_tokens=self.max_new_tokens,
                 return_dict_in_generate=True,
                 output_scores=True,
             )

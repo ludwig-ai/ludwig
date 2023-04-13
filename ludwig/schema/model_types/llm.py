@@ -10,6 +10,7 @@ from ludwig.schema.features.base import (
     LLMInputFeatureSelection,
     LLMOutputFeatureSelection,
 )
+from ludwig.schema.generation_config import LLMGenerationConfig, LLMGenerationConfigField
 from ludwig.schema.hyperopt import HyperoptConfig, HyperoptField
 from ludwig.schema.model_types.base import ModelConfig, register_model_type
 from ludwig.schema.preprocessing import PreprocessingConfig, PreprocessingField
@@ -37,15 +38,7 @@ class LLMModelConfig(ModelConfig):
         ),
     )
 
-    generation_config: dict = schema_utils.Dict(
-        default={},
-        allow_none=False,
-        description=(
-            "The generation config to use for the model. This is a dictionary "
-            "that will be passed to the `generate` method of the HuggingFace "
-            "model. See the HuggingFace documentation for more details."
-        ),
-    )
+    generation_config: LLMGenerationConfig = LLMGenerationConfigField().get_default_field()
 
     input_features: FeatureCollection[BaseInputFeatureConfig] = LLMInputFeatureSelection().get_list_field()
     output_features: FeatureCollection[BaseOutputFeatureConfig] = LLMOutputFeatureSelection().get_list_field()

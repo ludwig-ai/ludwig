@@ -7,8 +7,6 @@ from ludwig.api import LudwigModel
 from ludwig.constants import INPUT_FEATURES, MODEL_LLM, MODEL_NAME, MODEL_TYPE, OUTPUT_FEATURES
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
 
-BOOSTING_TYPES = ["gbdt", "goss", "dart"]
-TREE_LEARNERS = ["serial", "feature", "data", "voting"]
 LOCAL_BACKEND = {"type": "local"}
 RAY_BACKEND = {
     "type": "ray",
@@ -24,6 +22,7 @@ RAY_BACKEND = {
         },
     },
 }
+TEST_MODEL_NAME = "hf-internal-testing/tiny-random-GPTJForCausalLM"
 
 
 @pytest.fixture(scope="module")
@@ -34,6 +33,16 @@ def local_backend():
 @pytest.fixture(scope="module")
 def ray_backend():
     return RAY_BACKEND
+
+
+def get_generation_config():
+    return {
+        "temperature": 0.1,
+        "top_p": 0.75,
+        "top_k": 40,
+        "num_beams": 4,
+        "max_new_tokens": 5,
+    }
 
 
 @pytest.mark.parametrize(
@@ -53,7 +62,8 @@ def test_llm_text_to_text(tmpdir, backend):  # , ray_cluster_4cpu):
 
     config = {
         MODEL_TYPE: MODEL_LLM,
-        MODEL_NAME: "hf-internal-testing/tiny-random-GPTJForCausalLM",
+        MODEL_NAME: TEST_MODEL_NAME,
+        "generation_config": get_generation_config(),
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
     }
@@ -129,7 +139,8 @@ def test_llm_zero_shot_classification(tmpdir, backend):  # , ray_cluster_4cpu):
 
     config = {
         MODEL_TYPE: MODEL_LLM,
-        MODEL_NAME: "hf-internal-testing/tiny-random-GPTJForCausalLM",
+        MODEL_NAME: TEST_MODEL_NAME,
+        "generation_config": get_generation_config(),
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
     }
@@ -149,6 +160,4 @@ def test_llm_zero_shot_classification(tmpdir, backend):  # , ray_cluster_4cpu):
     )
 
     preds, _ = model.predict(dataset=prediction_df, output_directory=str(tmpdir))
-    # model.experiment(dataset_filename, output_directory=str(tmpdir), skip_save_processed_input=True)
-
     print(preds.to_dict())
