@@ -92,17 +92,9 @@ def is_bytes_image(bytes_obj) -> bool:
 
 
 @DeveloperAPI
-def is_image_score(src_path, img_entry, column: str):
-    """Used for AutoML For image inference, want to bias towards both readable images, but also account for
-    unreadable (i.e. expired) urls with image extensions."""
-    if isinstance(img_entry, str):
-        if img_entry.lower().endswith(IMAGE_EXTENSIONS):
-            return 1
-        path = get_abs_path(src_path, img_entry)
-        bytes_obj = get_bytes_obj_from_path(path)
-        if isinstance(bytes_obj, bytes):
-            if is_bytes_image(src_path, img_entry, column):
-                return 1
+def is_image_score(img_entry):
+    if isinstance(img_entry, str) and img_entry.lower().endswith(IMAGE_EXTENSIONS):
+        return 1
     return 0
 
 
