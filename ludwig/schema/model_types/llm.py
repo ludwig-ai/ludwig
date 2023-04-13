@@ -24,6 +24,7 @@ class LLMModelConfig(ModelConfig):
     """Parameters for LLM Model Type."""
 
     model_type: str = schema_utils.ProtectedString("llm")
+
     model_name: str = schema_utils.String(
         default="",
         allow_none=False,
@@ -33,6 +34,16 @@ class LLMModelConfig(ModelConfig):
             "model name. If it is a local path, it must be a valid HuggingFace "
             "model name or a path to a local directory containing a valid "
             "HuggingFace model."
+        ),
+    )
+
+    generation_config: dict = schema_utils.Dict(
+        default={},
+        allow_none=False,
+        description=(
+            "The generation config to use for the model. This is a dictionary "
+            "that will be passed to the `generate` method of the HuggingFace "
+            "model. See the HuggingFace documentation for more details."
         ),
     )
 
