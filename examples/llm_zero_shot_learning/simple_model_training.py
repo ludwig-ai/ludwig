@@ -18,64 +18,35 @@ from ludwig.api import LudwigModel
 # clean out prior results
 shutil.rmtree("./results", ignore_errors=True)
 
-df = pd.DataFrame(
-    {
-        "review": [
-            "I loved this movie!",
-            "The food was okay, but the service was terrible.",
-            "I can't believe how rude the staff was.",
-            "This book was a real page-turner.",
-            "The hotel room was dirty and smelled bad.",
-            "I had a great experience at this restaurant.",
-            "The concert was amazing!",
-            "The traffic was terrible on my way to work this morning.",
-            "The customer service was excellent.",
-            "I was disappointed with the quality of the product.",
-            "The scenery on the hike was breathtaking.",
-            "I had a terrible experience at this hotel.",
-            "The coffee at this cafe was delicious.",
-            "The weather was perfect for a day at the beach.",
-            "I would definitely recommend this product.",
-            "The wait time at the doctor's office was ridiculous.",
-            "The museum was a bit underwhelming.",
-            "I had a fantastic time at the amusement park.",
-            "The staff at this store was extremely helpful.",
-            "The airline lost my luggage and was very unhelpful.",
-            "This album is a must-listen for any music fan.",
-            "The food at this restaurant was just okay.",
-            "I was pleasantly surprised by how great this movie was.",
-            "The car rental process was quick and easy.",
-            "The service at this hotel was top-notch.",
-        ],
-        "label": [
-            "positive",
-            "negative",
-            "negative",
-            "positive",
-            "negative",
-            "positive",
-            "positive",
-            "negative",
-            "positive",
-            "negative",
-            "positive",
-            "negative",
-            "positive",
-            "positive",
-            "positive",
-            "negative",
-            "neutral",
-            "positive",
-            "positive",
-            "negative",
-            "positive",
-            "neutral",
-            "positive",
-            "positive",
-            "positive",
-        ],
-    }
-)
+review_label_pairs = [
+    {"review": "I loved this movie!", "label": "positive"},
+    {"review": "The food was okay, but the service was terrible.", "label": "negative"},
+    {"review": "I can't believe how rude the staff was.", "label": "negative"},
+    {"review": "This book was a real page-turner.", "label": "positive"},
+    {"review": "The hotel room was dirty and smelled bad.", "label": "negative"},
+    {"review": "I had a great experience at this restaurant.", "label": "positive"},
+    {"review": "The concert was amazing!", "label": "positive"},
+    {"review": "The traffic was terrible on my way to work this morning.", "label": "negative"},
+    {"review": "The customer service was excellent.", "label": "positive"},
+    {"review": "I was disappointed with the quality of the product.", "label": "negative"},
+    {"review": "The scenery on the hike was breathtaking.", "label": "positive"},
+    {"review": "I had a terrible experience at this hotel.", "label": "negative"},
+    {"review": "The coffee at this cafe was delicious.", "label": "positive"},
+    {"review": "The weather was perfect for a day at the beach.", "label": "positive"},
+    {"review": "I would definitely recommend this product.", "label": "positive"},
+    {"review": "The wait time at the doctor's office was ridiculous.", "label": "negative"},
+    {"review": "The museum was a bit underwhelming.", "label": "neutral"},
+    {"review": "I had a fantastic time at the amusement park.", "label": "positive"},
+    {"review": "The staff at this store was extremely helpful.", "label": "positive"},
+    {"review": "The airline lost my luggage and was very unhelpful.", "label": "negative"},
+    {"review": "This album is a must-listen for any music fan.", "label": "positive"},
+    {"review": "The food at this restaurant was just okay.", "label": "neutral"},
+    {"review": "I was pleasantly surprised by how great this movie was.", "label": "positive"},
+    {"review": "The car rental process was quick and easy.", "label": "positive"},
+    {"review": "The service at this hotel was top-notch.", "label": "positive"},
+]
+
+df = pd.DataFrame(review_label_pairs)
 
 config = yaml.safe_load(
     """
@@ -107,7 +78,13 @@ config = yaml.safe_load(
                         type: contains
                         value: negative
         model_type: llm
-        model_name: hf-internal-testing/tiny-random-GPTJForCausalLM
+        generation_config:
+            temperature: 0.1
+            top_p: 0.75
+            top_k: 40
+            num_beams: 4
+            max_new_tokens: 5
+        model_name: facebook/opt-350m
     """
 )
 

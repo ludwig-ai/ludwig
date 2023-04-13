@@ -1201,7 +1201,9 @@ def build_dataset(
 
     # If we're using LLMs for zero-shot/few-shot learning, update text input features with the prompt
     # ahead of time so that we can compute metadata and build the preprocessed data correctly.
-    handle_llm_prompt_injection(dataset_cols, feature_configs, feature_name_to_preprocessing_parameters, backend)
+    handle_data_augmentation_with_prompt(
+        dataset_cols, feature_configs, feature_name_to_preprocessing_parameters, backend
+    )
 
     # Happens after missing values are handled to avoid NaN casting issues.
     logger.debug("cast columns")
@@ -1669,11 +1671,29 @@ def _handle_missing_values(
         raise ValueError(f"Invalid missing value strategy {missing_value_strategy}")
 
 
-def handle_llm_prompt_injection(
-    dataset_cols, feature_configs, feature_name_to_preprocessing_parameters, backend
+def handle_data_augmentation_with_prompt(
+    dataset_cols: Dict[str, pd.Series],
+    feature_configs: List[FeatureConfigDict],
+    feature_name_to_preprocessing_parameters: Dict[str, PreprocessingConfigDict],
+    backend: Backend,
 ) -> None:
     """If output feature is a category feature and it's preprocessing has prompt_template, then we need to inject
-    the prompt into the input text feature(s)."""
+    the prompt into the input text feature(s).
+
+    Example input prompt:
+        Context information is below.
+        ###
+        {review}
+        ###
+        Given the context information and not prior knowledge, classify the context as one of: {labels}
+
+    Example output prompt:
+        Context information is below.
+        ###
+        The food at the restaurant was great!
+        ###
+        Given the context information and not prior knowledge, classify the context as one of: [positive, negative]
+    """
 
     # Recover input and output features
     input_features = []
@@ -1720,7 +1740,8 @@ def handle_llm_prompt_injection(
 
 
 def _extract_prompt_injection_feature_names(prompt_template: str) -> List[str]:
-    pattern = r"{([^}]*)}"
+    """Extracts feature names from the prompt template that need to be injected into the input text features."""
+    pattern = re.compile(r"{([^}]*)}")
     matches = re.findall(pattern, prompt_template)
     return matches
 
