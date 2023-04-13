@@ -348,7 +348,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             prediction_key = get_metric_tensor_input(metric_name)
             # Perplexity needs to be computed from "probabilities" tensor, but right now
             # we're only producing a "predictions" tensor as output from the forward pass.
-            if metric_name in ("loss", "perplexity", "roc_auc"):
+            if metric_name in ("loss", "perplexity"):
                 continue
             metric_fn = metric_fn.to(predictions[prediction_key].device)
             metric_fn.update(predictions[prediction_key].detach(), targets)

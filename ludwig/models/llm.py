@@ -159,11 +159,12 @@ class LLM(BaseModel):
                     # "probabilities": self.extract_logits(outputs.scores),
                 }
             }
-        elif of_feature_type == CATEGORY:
+        if of_feature_type == CATEGORY:
+            predictions = self.extract_category_predictions(inputs, outputs.sequences)
             return {
                 self.config_obj.output_features[0].name: {
-                    "predictions": self.extract_category_predictions(inputs, outputs.sequences),
-                    # "probabilities": self.extract_logits(outputs.scores),
+                    "predictions": predictions["predictions"],
+                    "probabilities": predictions["probabilities"],
                 }
             }
 
@@ -274,11 +275,11 @@ class LLM(BaseModel):
         return eval_loss, additional_loss
 
     def outputs_to_predictions(self, outputs: Dict[str, torch.Tensor]) -> Dict[str, Dict[str, torch.Tensor]]:
-        """Returns the model's predictions given the raw model outputs."""
+        """Returns the model's predictions for each output feature."""
         predictions = {}
         for of_name in self.output_features:
-            generated_ids = outputs[of_name]
-            predictions[of_name] = generated_ids
+            generated_predictions = outputs[of_name]
+            predictions[of_name] = generated_predictions
         return predictions
 
     def save(self, save_path):

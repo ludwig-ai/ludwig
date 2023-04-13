@@ -85,6 +85,7 @@ class ParserDecoder(Decoder):
         self.input_size = input_size
         self.fallback_label = fallback_label
         self.str2idx = str2idx
+        self.num_labels = len(str2idx)
 
         # Create Matcher object to perform matching on the decoded output
         self.matcher = Matcher(match)
@@ -111,13 +112,22 @@ class ParserDecoder(Decoder):
         decoded_outputs = self.tokenizer.tokenizer.batch_decode(inputs, skip_special_tokens=True)
         print(f"Decoded output: {decoded_outputs}")
 
-        # Parse labels based on matching criteria
+        # Parse labels based on matching criteria and return probability vectors
         matched_labels = []
+        probabilities = []
         for output in decoded_outputs:
             matched_label = self.matcher(output)
-            if matched_label in self.str2idx:
-                matched_labels.append(self.str2idx[matched_label])
-            else:
-                matched_labels.append(self.str2idx[self.fallback_label])
+            idx = self.str2idx[matched_label] if matched_label in self.str2idx else self.str2idx[self.fallback_label]
 
-        return torch.tensor(matched_labels)
+            # Append the index of the matched label
+            matched_labels.append(idx)
+
+            # Append the probability vector for the matched label
+            probability_vec = [0] * self.num_labels
+            probability_vec[idx] = 1
+            probabilities.append(probability_vec)
+
+        return {
+            "predictions": torch.tensor(matched_labels),
+            "probabilities": torch.tensor(probabilities, dtype=torch.float32),
+        }
