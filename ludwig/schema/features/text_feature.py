@@ -176,6 +176,12 @@ class LLMTextOutputFeatureConfig(TextOutputFeatureConfigMixin, BaseOutputFeature
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="text_output")
 
+    is_llm_task: bool = schema_utils.Boolean(
+        default=True,
+        description="Whether the model is a language modeling task or not.",
+        parameter_metadata=INTERNAL_ONLY,
+    )
+
 
 @DeveloperAPI
 @ecd_defaults_config_registry.register(TEXT)

@@ -18,6 +18,7 @@ from functools import partial
 from typing import Dict, Union
 
 import torch
+from torch import Tensor
 
 from ludwig.constants import (
     COLUMN,
@@ -39,6 +40,7 @@ from ludwig.features.sequence_feature import (
     SequenceInputFeature,
     SequenceOutputFeature,
 )
+from ludwig.modules.metric_registry import get_metric_tensor_input
 from ludwig.schema.features.text_feature import TextInputFeatureConfig, TextOutputFeatureConfig
 from ludwig.types import FeatureMetadataDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils.math_utils import softmax
@@ -256,6 +258,11 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
         **kwargs,
     ):
         super().__init__(output_feature_config, output_features, **kwargs)
+        # Save the is_llm_task flag to be used during metric update
+        if hasattr(output_feature_config, "is_llm_task"):
+            self.is_llm_task = output_feature_config.is_llm_task
+        else:
+            self.is_llm_task = False
 
     @classmethod
     def get_output_dtype(cls):
@@ -293,6 +300,24 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
                     "but no class similarities are provided "
                     "for feature {}".format(feature_config.column)
                 )
+
+    def update_metrics(self, targets: Tensor, predictions: Dict[str, Tensor]) -> None:
+        """Updates metrics with the given targets and predictions.
+
+        Args:
+            targets: Tensor with target values for this output feature.
+            predictions: Dict of tensors returned by predictions().
+        """
+        for metric_name, metric_fn in self._metric_functions.items():
+            # Skip loss metric for LLMs, since we don't compute it in the forward pass
+            # Perplexity needs to be computed from "probabilities" tensor, but right now
+            # we're only producing a "predictions" tensor as output from the forward pass.
+            if self.is_llm_task and metric_name in ("loss", "perplexity"):
+                continue
+            prediction_key = get_metric_tensor_input(metric_name)
+            metric_fn = metric_fn.to(predictions[prediction_key].device)
+            metric_fn.update(predictions[prediction_key].detach(), targets)
+            print("METRIC NAME", metric_name, predictions, prediction_key)
 
     @staticmethod
     def calculate_overall_stats(

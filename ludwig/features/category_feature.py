@@ -18,6 +18,7 @@ from typing import Any, Dict, List, Union
 
 import numpy as np
 import torch
+from torch import Tensor
 
 from ludwig.constants import (
     CATEGORY,
@@ -36,6 +37,7 @@ from ludwig.constants import (
 from ludwig.error import InputDataError
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.features.vector_feature import VectorFeatureMixin
+from ludwig.modules.metric_registry import get_metric_tensor_input
 from ludwig.schema.features.category_feature import (
     CategoryDistributionOutputFeatureConfig,
     CategoryInputFeatureConfig,
@@ -307,11 +309,16 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         output_features: Dict[str, OutputFeature],
         **kwargs,
     ):
+        super().__init__(output_feature_config, output_features, **kwargs)
         self.num_classes = output_feature_config.num_classes
         self.top_k = output_feature_config.top_k
-        super().__init__(output_feature_config, output_features, **kwargs)
         if hasattr(output_feature_config.decoder, "num_classes"):
             output_feature_config.decoder.num_classes = output_feature_config.num_classes
+        # Save the is_llm_task flag to be used during metric update
+        if hasattr(output_feature_config.preprocessing, "is_llm_task"):
+            self.is_llm_task = output_feature_config.preprocessing.is_llm_task
+        else:
+            self.is_llm_task = False
         self.decoder_obj = self.initialize_decoder(output_feature_config.decoder)
         self._setup_loss()
         self._setup_metrics()
@@ -458,6 +465,22 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                     "but no class_similarities are provided "
                     "for feature {}".format(feature_config.column)
                 )
+
+    def update_metrics(self, targets: Tensor, predictions: Dict[str, Tensor]) -> None:
+        """Updates metrics with the given targets and predictions.
+
+        Args:
+            targets: Tensor with target values for this output feature.
+            predictions: Dict of tensors returned by predictions().
+        """
+        for metric_name, metric_fn in self._metric_functions.items():
+            # Skip loss metric for LLMs, since we don't compute it in the forward pass
+            if self.is_llm_task and metric_name == "loss":
+                continue
+            prediction_key = get_metric_tensor_input(metric_name)
+            metric_fn = metric_fn.to(predictions[prediction_key].device)
+            metric_fn.update(predictions[prediction_key].detach(), targets)
+            print("METRIC NAME", metric_name, predictions, prediction_key)
 
     @staticmethod
     def calculate_overall_stats(predictions, targets, train_set_metadata):

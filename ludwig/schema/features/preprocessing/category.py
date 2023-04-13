@@ -7,6 +7,7 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor
 from ludwig.schema.metadata import FEATURE_METADATA, PREPROCESSING_METADATA
+from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils import strings_utils
 
@@ -137,4 +138,10 @@ class LLMCategoryOutputPreprocessingConfig(CategoryOutputPreprocessingConfig):
         default="",
         allow_none=False,
         description="The template to use for the prompt. The labels will be inserted into the template.",
+    )
+
+    is_llm_task: bool = schema_utils.Boolean(
+        default=True,
+        description="Whether the model is a language modeling task or not.",
+        parameter_metadata=INTERNAL_ONLY,
     )
