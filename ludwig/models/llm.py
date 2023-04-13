@@ -155,6 +155,7 @@ class LLM(BaseModel):
                 self.config_obj.output_features[0].name: {
                     "predictions": predictions["predictions"],
                     "probabilities": predictions["probabilities"],
+                    "logits": predictions["logits"],
                 }
             }
 

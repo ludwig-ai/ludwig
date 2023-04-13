@@ -115,6 +115,7 @@ class ParserDecoder(Decoder):
         # Parse labels based on matching criteria and return probability vectors
         matched_labels = []
         probabilities = []
+        logits = []
         for output in decoded_outputs:
             matched_label = self.matcher(output)
             idx = self.str2idx[matched_label] if matched_label in self.str2idx else self.str2idx[self.fallback_label]
@@ -127,7 +128,12 @@ class ParserDecoder(Decoder):
             probability_vec[idx] = 1
             probabilities.append(probability_vec)
 
+            # TODO(Arnav): Figure out how to compute logits. For now, we return
+            # a tensor of zeros.
+            logits.append([0] * self.num_labels)
+
         return {
             "predictions": torch.tensor(matched_labels),
             "probabilities": torch.tensor(probabilities, dtype=torch.float32),
+            "logits": torch.tensor(logits, dtype=torch.float32),
         }

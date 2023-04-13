@@ -1680,6 +1680,10 @@ def handle_data_augmentation_with_prompt(
     """If output feature is a category feature and it's preprocessing has prompt_template, then we need to inject
     the prompt into the input text feature(s).
 
+    Example context:
+        In the example below, {review} is the input text feature, and {labels} are the labels that are passed
+        into the category output feature's preprocessing config.
+
     Example input prompt:
         Context information is below.
         ###
@@ -1695,7 +1699,7 @@ def handle_data_augmentation_with_prompt(
         Given the context information and not prior knowledge, classify the context as one of: [positive, negative]
     """
 
-    # Recover input and output features
+    # Recover input and output features from combined list of feature configs
     input_features = []
     output_features = []
     for feature in feature_configs:
@@ -1705,7 +1709,7 @@ def handle_data_augmentation_with_prompt(
             output_features.append(feature)
 
     # If output feature is a category feature and it's preprocessing has prompt_template, then we need to
-    # inject the prompt into the input text feature(s). Currently assumes only one output feature.
+    # add the prompt in the input text feature(s). This step assumes only one output feature.
     feature_injection_feature_names = None
     labels = None
     prompt = None
@@ -1740,7 +1744,8 @@ def handle_data_augmentation_with_prompt(
 
 
 def _extract_prompt_injection_feature_names(prompt_template: str) -> List[str]:
-    """Extracts feature names from the prompt template that need to be injected into the input text features."""
+    """Extracts feature names from the prompt template whose data needs to be retrieved and injected into the input
+    text features."""
     pattern = re.compile(r"{([^}]*)}")
     matches = re.findall(pattern, prompt_template)
     return matches

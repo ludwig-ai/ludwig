@@ -348,6 +348,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             prediction_key = get_metric_tensor_input(metric_name)
             metric_fn = metric_fn.to(predictions[prediction_key].device)
             metric_fn.update(predictions[prediction_key].detach(), targets)
+            print("METRIC NAME", metric_name, predictions, prediction_key)
 
     def get_metrics(self):
         metric_vals = {}
