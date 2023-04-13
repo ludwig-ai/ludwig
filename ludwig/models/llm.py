@@ -228,7 +228,7 @@ class LLM(BaseModel):
         """
         probs = []
         for log_prob in list(scores):
-            probs.append(torch.nn.functional.softmax(log_prob, dim=-1))
+            probs.append(torch.nn.functional.exp(log_prob, dim=-1))
         return probs
 
     def update_metrics(self, targets, predictions):
@@ -241,6 +241,7 @@ class LLM(BaseModel):
                 continue
             of_obj.update_metrics(targets[of_name], predictions[of_name])
 
+        # TODO(Arnav): Figure out loss updates.
         # To update eval-loss, we need "logits" but right now we're only producing "predictions"
         # This is required by the SequenceSoftmaxCrossEntropyLoss function
         # eval_loss, additional_losses = self.eval_loss(targets, predictions)

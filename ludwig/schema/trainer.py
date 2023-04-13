@@ -695,6 +695,50 @@ class GBMTrainerConfig(BaseTrainerConfig):
 class LLMTrainerConfig(BaseTrainerConfig):
     """Base class for all LLM trainer configs."""
 
+    batch_size: int = schema_utils.PositiveInteger(
+        default=1,
+        description="Batch size used for training in the LLM trainer.",
+    )
+
+    base_learning_rate: float = schema_utils.NonNegativeFloat(
+        default=0.0,
+        description="Base learning rate used for training in the LLM trainer.",
+    )
+
+    should_shuffle: bool = schema_utils.Boolean(
+        default=True,
+        description="Whether to shuffle the training data in the LLM trainer.",
+    )
+
+    epochs: int = schema_utils.PositiveInteger(
+        default=1,
+        description="Number of epochs to train in the LLM trainer.",
+    )
+
+    train_steps: int = schema_utils.PositiveInteger(
+        default=None,
+        description="Number of training steps to train in the LLM trainer.",
+    )
+
+    steps_per_checkpoint: int = schema_utils.NonNegativeInteger(
+        default=0,
+        description="Number of steps per checkpoint in the LLM trainer.",
+    )
+
+    checkpoints_per_epoch: int = schema_utils.NonNegativeInteger(
+        default=0,
+        description="Number of checkpoints per epoch in the LLM trainer.",
+    )
+
+    early_stop: int = schema_utils.IntegerRange(
+        default=-1,
+        min=-1,
+        description=(
+            "Number of consecutive rounds of evaluation without any improvement on the `validation_metric` that "
+            "triggers training to stop. Can be set to -1, which disables early stopping entirely."
+        ),
+    )
+
     eval_batch_size: int = schema_utils.PositiveInteger(
         default=1,
         description="Batch size used for evaluation in the LLM trainer.",
@@ -705,7 +749,7 @@ class LLMTrainerConfig(BaseTrainerConfig):
 @register_trainer_schema(MODEL_LLM)
 @ludwig_dataclass
 class ZeroShotTrainerConfig(LLMTrainerConfig):
-    """Dataclass that configures most of the hyperparameters used for GBM model training."""
+    """Dataclass that configures most of the hyperparameters used for zero-shot LLM model training."""
 
     pass
 

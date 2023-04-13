@@ -21,10 +21,20 @@ from ludwig.schema.utils import ludwig_dataclass
 @register_model_type(name="llm")
 @ludwig_dataclass
 class LLMModelConfig(ModelConfig):
-    """Parameters for LLM."""
+    """Parameters for LLM Model Type."""
 
     model_type: str = schema_utils.ProtectedString("llm")
-    model_name: str = ""
+    model_name: str = schema_utils.String(
+        default="",
+        allow_none=False,
+        description=(
+            "The name of the model to use. This can be a local path or a "
+            "remote path. If it is a remote path, it must be a valid HuggingFace "
+            "model name. If it is a local path, it must be a valid HuggingFace "
+            "model name or a path to a local directory containing a valid "
+            "HuggingFace model."
+        ),
+    )
 
     input_features: FeatureCollection[BaseInputFeatureConfig] = LLMInputFeatureSelection().get_list_field()
     output_features: FeatureCollection[BaseOutputFeatureConfig] = LLMOutputFeatureSelection().get_list_field()

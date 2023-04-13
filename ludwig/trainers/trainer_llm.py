@@ -106,16 +106,15 @@ class ZeroShotTrainer(BaseTrainer):
         self.model = model
         self.model = self.model.to(self.device)
 
-        # (TODO): Replace using values from ZeroShotTrainerConfig
-        self.batch_size = 1
-        self.eval_batch_size = 1
-        self.base_learning_rate = 0.0
-        self.should_shuffle = True
-        self.epochs = 1
-        self.train_steps = None
-        self.steps_per_checkpoint = 0
-        self.checkpoints_per_epoch = 0
-        self.early_stop = -1
+        self.batch_size = self.config.batch_size
+        self.eval_batch_size = self.config.eval_batch_size
+        self.base_learning_rate = self.config.base_learning_rate
+        self.should_shuffle = self.config.should_shuffle
+        self.epochs = self.config.epochs
+        self.train_steps = self.config.train_steps
+        self.steps_per_checkpoint = self.config.steps_per_checkpoint
+        self.checkpoints_per_epoch = self.config.checkpoints_per_epoch
+        self.early_stop = self.config.early_stop
 
     def train(self, training_set, validation_set=None, test_set=None, save_path="model", **kwargs):
         logger.info("Starting Training")
