@@ -237,8 +237,12 @@ class RayDatasetShard(Dataset):
                     # Dataset shard is a DatasetIterator that was created from a DatasetPipeline object.
                     # Retrieve the base object that was used to create the DatasetIterator so that we can
                     # create the iter_epochs() like in Ray <= 2.2.
-                    self.epoch_iter = self.dataset_shard._base_dataset_pipeline.iter_epochs()
-                    return
+                    try:
+                        self.epoch_iter = self.dataset_shard._base_dataset_pipeline.iter_batches()
+                    except AttributeError:
+                        self.epoch_iter = self.dataset_shard.iter_batches()
+                    finally:
+                        return
         else:
             # In Ray <= 2.2, session.get_dataset_shard() returns a DatasetPipeline object.
             if isinstance(self.dataset_shard, DatasetPipeline):
