@@ -28,9 +28,18 @@ logger = logging.getLogger(__name__)
 
 
 @DeveloperAPI
+def avg_num_tokens_decoder(x):
+    if x is None:
+        return None
+    if type(x) == bytes:
+        return x.decode("utf-8")
+    return str(x)
+
+
+@DeveloperAPI
 def avg_num_tokens(field: Series) -> int:
     logger.info(f"Calculating average number tokens for field {field.name} using sample of 100 rows.")
-    field_sample = field.head(100)
+    field_sample = field.head(100).apply(avg_num_tokens_decoder)
 
     unique_entries = field_sample.unique()
     avg_words = round(nan_to_num(Series(unique_entries).str.split().str.len().mean()))
