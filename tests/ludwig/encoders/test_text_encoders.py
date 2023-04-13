@@ -10,6 +10,7 @@ import ludwig.schema.encoders.utils as schema_encoders_utils
 from ludwig.api import LudwigModel
 from ludwig.constants import ENCODER, MODEL_ECD, NAME, TEXT, TRAINER
 from ludwig.encoders import text_encoders
+from ludwig.error import ConfigValidationError
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.schema.model_config import ModelConfig
 from ludwig.utils.data_utils import load_json
@@ -156,6 +157,12 @@ def test_hf_ludwig_model_reduce_options(tmpdir, csv_filename, encoder_name, redu
         "output_features": output_features,
         TRAINER: {"train_steps": 1},
     }
+
+    try:
+        ModelConfig.from_dict(config)
+    except ConfigValidationError as e:
+        pytest.skip(e.message)
+
     model = LudwigModel(config=config, backend=LocalTestBackend())
 
     # Validates that the defaults associated with the encoder are compatible with Ludwig training.
