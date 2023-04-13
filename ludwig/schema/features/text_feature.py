@@ -73,7 +73,11 @@ class GBMTextInputFeatureConfig(TextInputFeatureConfig):
 @llm_input_config_registry.register(TEXT)
 @ludwig_dataclass
 class LLMTextInputFeatureConfig(TextInputFeatureConfig):
-    pass
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_ECD,
+        feature_type=TEXT,
+        default="parallel_cnn",
+    )
 
 
 @DeveloperAPI
