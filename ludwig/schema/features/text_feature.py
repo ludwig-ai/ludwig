@@ -74,9 +74,9 @@ class GBMTextInputFeatureConfig(TextInputFeatureConfig):
 @ludwig_dataclass
 class LLMTextInputFeatureConfig(TextInputFeatureConfig):
     encoder: BaseEncoderConfig = EncoderDataclassField(
-        MODEL_ECD,
+        MODEL_LLM,
         feature_type=TEXT,
-        default="parallel_cnn",
+        default="passthrough",
     )
 
 
