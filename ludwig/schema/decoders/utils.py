@@ -80,11 +80,11 @@ def get_decoder_conds(decoder_classes: Dict[str, Type["BaseDecoderConfig"]]) -> 
     for decoder_type, decoder_cls in decoder_classes.items():
         other_props = schema_utils.unload_jsonschema_from_marshmallow_class(decoder_cls)["properties"]
         schema_utils.remove_duplicate_fields(other_props)
-        encoder_cond = schema_utils.create_cond(
+        decoder_cond = schema_utils.create_cond(
             {"type": decoder_type},
             other_props,
         )
-        conds.append(encoder_cond)
+        conds.append(decoder_cond)
     return conds
 
 
