@@ -87,10 +87,7 @@ class NumberOutputFeatureConfigMixin(BaseMarshmallowConfig):
     """NumberOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the number output
     feature and the number global defaults section of the Ludwig Config."""
 
-    decoder: BaseDecoderConfig = DecoderDataclassField(
-        feature_type=NUMBER,
-        default="regressor",
-    )
+    decoder: BaseDecoderConfig = None
 
     loss: BaseLossConfig = LossDataclassField(
         feature_type=NUMBER,
@@ -99,8 +96,6 @@ class NumberOutputFeatureConfigMixin(BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-@ecd_output_config_registry.register(NUMBER)
-@gbm_output_config_registry.register(NUMBER)
 @ludwig_dataclass
 class NumberOutputFeatureConfig(NumberOutputFeatureConfigMixin, BaseOutputFeatureConfig):
     """NumberOutputFeatureConfig is a dataclass that configures the parameters used for a category output
@@ -148,6 +143,28 @@ class NumberOutputFeatureConfig(NumberOutputFeatureConfigMixin, BaseOutputFeatur
 
 
 @DeveloperAPI
+@ecd_output_config_registry.register(NUMBER)
+@ludwig_dataclass
+class ECDNumberOutputFeatureConfig(NumberOutputFeatureConfig):
+    decoder: BaseDecoderConfig = DecoderDataclassField(
+        MODEL_ECD,
+        feature_type=NUMBER,
+        default="regressor",
+    )
+
+
+@DeveloperAPI
+@gbm_output_config_registry.register(NUMBER)
+@ludwig_dataclass
+class GBMNumberOutputFeatureConfig(NumberOutputFeatureConfig):
+    decoder: BaseDecoderConfig = DecoderDataclassField(
+        MODEL_GBM,
+        feature_type=NUMBER,
+        default="regressor",
+    )
+
+
+@DeveloperAPI
 @ecd_defaults_config_registry.register(NUMBER)
 @ludwig_dataclass
 class NumberDefaultsConfig(NumberInputFeatureConfigMixin, NumberOutputFeatureConfigMixin):
@@ -155,4 +172,10 @@ class NumberDefaultsConfig(NumberInputFeatureConfigMixin, NumberOutputFeatureCon
         MODEL_ECD,
         feature_type=NUMBER,
         default="passthrough",
+    )
+
+    decoder: BaseDecoderConfig = DecoderDataclassField(
+        MODEL_ECD,
+        feature_type=NUMBER,
+        default="regressor",
     )
