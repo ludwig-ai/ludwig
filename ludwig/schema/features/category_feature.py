@@ -192,5 +192,5 @@ class LLMCategoryOutputFeatureConfig(CategoryOutputFeatureConfig):
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
         feature_type=CATEGORY,
-        default="parser",
+        default="category_parser",
     )

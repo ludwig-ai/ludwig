@@ -9,14 +9,14 @@ from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
-@register_decoder_config("parser", [CATEGORY])
+@register_decoder_config("category_parser", [CATEGORY])
 @ludwig_dataclass
-class ParserDecoderConfig(BaseDecoderConfig):
+class CategoryParserDecoderConfig(BaseDecoderConfig):
     @classmethod
     def module_name(cls):
-        return "ParserDecoder"
+        return "CategoryParserDecoder"
 
-    type: str = schema_utils.ProtectedString("parser")
+    type: str = schema_utils.ProtectedString("category_parser")
 
     input_size: int = schema_utils.PositiveInteger(
         default=None,

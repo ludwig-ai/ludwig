@@ -8,9 +8,7 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import CATEGORY
 from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
-
-# from ludwig.schema.features.preprocessing.category import CategoryOutputPreprocessingConfig
-from ludwig.schema.decoders.llm_decoders import ParserDecoderConfig
+from ludwig.schema.decoders.llm_decoders import CategoryParserDecoderConfig
 from ludwig.utils.strings_utils import get_tokenizer
 
 logger = logging.getLogger(__name__)
@@ -68,8 +66,8 @@ class Matcher:
 
 
 @DeveloperAPI
-@register_decoder("parser", [CATEGORY])
-class ParserDecoder(Decoder):
+@register_decoder("category_parser", [CATEGORY])
+class CategoryParserDecoder(Decoder):
     def __init__(
         self,
         input_size: int,
@@ -101,15 +99,33 @@ class ParserDecoder(Decoder):
 
     @staticmethod
     def get_schema_cls():
-        return ParserDecoderConfig
+        return CategoryParserDecoderConfig
 
     @property
     def input_shape(self):
         return self.input_size
 
     def forward(self, inputs, **kwargs):
-        # Decode inputs from the text input feature's generate function.
-        decoded_outputs = self.tokenizer.tokenizer.batch_decode(inputs, skip_special_tokens=True)
+        # Extract the sequences tensor from the LLMs forward pass
+        raw_generated_output_sequences = inputs.sequences
+        # Get the input sequence passed into the forward pass of the LLM model
+        llm_model_inputs = kwargs.get("llm_model_inputs", None)
+
+        # Remove the input sequence from the generated output sequence(s)
+        if raw_generated_output_sequences.size()[0] == 1:
+            generated_outputs = raw_generated_output_sequences[:, llm_model_inputs.size()[1] :]
+        else:
+            generated_outputs = []
+            input_ids_lens = [input_ids.size()[0] for input_ids in raw_generated_output_sequences]
+            for idx, input_id_len in enumerate(input_ids_lens):
+                # Remove the input sequence from the generated sequence
+                generated_sequence = raw_generated_output_sequences[idx][input_id_len:]
+                generated_outputs.append(generated_sequence)
+            # Stack the predictions for each example in the batch
+            generated_outputs = torch.stack(generated_outputs, dim=0)
+
+        # Decode generated outputs from the LLM's generate function.
+        decoded_outputs = self.tokenizer.tokenizer.batch_decode(generated_outputs, skip_special_tokens=True)
         print(f"Decoded output: {decoded_outputs}")
 
         # Parse labels based on matching criteria and return probability vectors

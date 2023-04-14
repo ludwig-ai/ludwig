@@ -1677,8 +1677,8 @@ def handle_data_augmentation_with_prompt(
     feature_name_to_preprocessing_parameters: Dict[str, PreprocessingConfigDict],
     backend: Backend,
 ) -> None:
-    """If output feature is a category feature and it's preprocessing has prompt_template, then we need to inject
-    the prompt into the input text feature(s).
+    """If output feature is a category feature and it's preprocessing has prompt_template, then we need to update
+    the input feature data with the prompt.
 
     Example context:
         In the example below, {review} is the input text feature, and {labels} are the labels that are passed
@@ -1710,37 +1710,41 @@ def handle_data_augmentation_with_prompt(
 
     # If output feature is a category feature and it's preprocessing has prompt_template, then we need to
     # add the prompt in the input text feature(s). This step assumes only one output feature.
-    feature_injection_feature_names = None
+    names_of_features_to_substitute = None
     labels = None
     prompt = None
     for output_feature in output_features:
         if output_feature[TYPE] != CATEGORY:
             continue
-        if "prompt_template" not in feature_name_to_preprocessing_parameters[output_feature[COLUMN]]:
+        if "prompt_template" not in feature_name_to_preprocessing_parameters[output_feature[NAME]]:
             continue
 
-        prompt: str = feature_name_to_preprocessing_parameters[output_feature[COLUMN]]["prompt_template"]
-        labels: List = feature_name_to_preprocessing_parameters[output_feature[COLUMN]]["labels"]
-        feature_injection_feature_names: List = _extract_prompt_injection_feature_names(prompt)
+        prompt: str = feature_name_to_preprocessing_parameters[output_feature[NAME]]["prompt_template"]
+        labels: List = feature_name_to_preprocessing_parameters[output_feature[NAME]]["labels"]
+        names_of_features_to_substitute: List = _extract_prompt_injection_feature_names(prompt)
 
     if not prompt:
         return
 
     # Substitute labels specified in the category feature's preprocessing parameters
     # into the prompt template.
-    if feature_injection_feature_names and "labels" in feature_injection_feature_names:
+    if names_of_features_to_substitute and "labels" in names_of_features_to_substitute:
         # Replace {labels} with the actual labels
         prompt = prompt.replace("{labels}", ", ".join(labels))
-        feature_injection_feature_names.pop(feature_injection_feature_names.index("labels"))
+        names_of_features_to_substitute.pop(names_of_features_to_substitute.index("labels"))
 
     # Substitute values from the input features into the prompt template, and update the values in
     # dataset_cols with the updated injected prompt. Assumes just text input features for now.
     for input_feature in input_features:
-        if input_feature[COLUMN] in feature_injection_feature_names and input_feature[TYPE] == TEXT:
-            match_str = "{" + input_feature[COLUMN] + "}"
+        if input_feature[COLUMN] in names_of_features_to_substitute and input_feature[TYPE] == TEXT:
+            # Ensure that any special characters in the value of input_feature[COLUMN] are properly escaped
+            # before being used in the regular expression pattern.
+            pattern = re.compile(r"\{" + re.escape(input_feature[COLUMN]) + r"\}")
             dataset_cols[input_feature[COLUMN]] = dataset_cols[input_feature[COLUMN]].apply(
-                lambda x: prompt.replace(match_str, x)
+                lambda x: re.sub(pattern, x, prompt)
             )
+        # TODO(Arnav): Add log message showing an updated value with prompt
+        # substituion in dataset_cols
 
 
 def _extract_prompt_injection_feature_names(prompt_template: str) -> List[str]:

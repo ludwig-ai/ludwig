@@ -99,7 +99,7 @@ def test_llm_zero_shot_classification(tmpdir, backend):  # , ray_cluster_4cpu):
             },
             # How can we avoid using r here for regex, since it is technically an implementation detail?
             decoder={
-                "type": "parser",
+                "type": "category_parser",
                 "match": {
                     "positive": {"type": "contains", "value": "positive"},
                     "neutral": {"type": "regex", "value": r"\bneutral\b"},

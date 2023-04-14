@@ -66,7 +66,7 @@ config = yaml.safe_load(
                     ###
                     Given the context information and not prior knowledge, classify the context as one of: {labels}
               decoder:
-                type: parser
+                type: category_parser
                 match:
                     positive:
                         type: contains
