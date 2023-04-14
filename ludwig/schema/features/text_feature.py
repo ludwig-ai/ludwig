@@ -81,39 +81,13 @@ class LLMTextInputFeatureConfig(TextInputFeatureConfig):
 
 
 @DeveloperAPI
-@gbm_defaults_config_registry.register(TEXT)
-@ludwig_dataclass
-class GBMTextDefaultsConfig(TextInputFeatureConfigMixin):
-    encoder: BaseEncoderConfig = EncoderDataclassField(
-        MODEL_GBM,
-        feature_type=TEXT,
-        default="tf_idf",
-    )
-
-
-@DeveloperAPI
-@llm_defaults_config_registry.register(TEXT)
-@ludwig_dataclass
-class LLMTextDefaultsConfig(TextInputFeatureConfigMixin):
-    encoder: BaseEncoderConfig = EncoderDataclassField(
-        MODEL_LLM,
-        feature_type=TEXT,
-        default="passthrough",
-    )
-
-
-@DeveloperAPI
 @output_mixin_registry.register(TEXT)
 @ludwig_dataclass
 class TextOutputFeatureConfigMixin(BaseMarshmallowConfig):
     """TextOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the text output
     feature and the text global defaults section of the Ludwig Config."""
 
-    decoder: BaseDecoderConfig = DecoderDataclassField(
-        MODEL_ECD,
-        feature_type=TEXT,
-        default="generator",
-    )
+    decoder: BaseDecoderConfig = None
 
     loss: BaseLossConfig = LossDataclassField(
         feature_type=TEXT,
@@ -122,7 +96,6 @@ class TextOutputFeatureConfigMixin(BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-@ecd_output_config_registry.register(TEXT)
 @ludwig_dataclass
 class TextOutputFeatureConfig(TextOutputFeatureConfigMixin, BaseOutputFeatureConfig):
     """TextOutputFeatureConfig is a dataclass that configures the parameters used for a text output feature."""
@@ -167,19 +140,26 @@ class TextOutputFeatureConfig(TextOutputFeatureConfigMixin, BaseOutputFeatureCon
 
 
 @DeveloperAPI
+@ecd_output_config_registry.register(TEXT)
+@ludwig_dataclass
+class ECDTextOutputFeatureConfig(TextOutputFeatureConfig):
+    decoder: BaseDecoderConfig = DecoderDataclassField(
+        MODEL_ECD,
+        feature_type=TEXT,
+        default="generator",
+    )
+
+
+@DeveloperAPI
 @llm_output_config_registry.register(TEXT)
 @ludwig_dataclass
-class LLMTextOutputFeatureConfig(TextOutputFeatureConfigMixin, BaseOutputFeatureConfig):
-    type: str = schema_utils.ProtectedString(TEXT)
-
+class LLMTextOutputFeatureConfig(TextOutputFeatureConfig):
     default_validation_metric: str = schema_utils.StringOptions(
         [PERPLEXITY],
         default=PERPLEXITY,
         description="Internal only use parameter: default validation metric for text output feature.",
         parameter_metadata=INTERNAL_ONLY,
     )
-
-    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="text_output")
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
         MODEL_LLM,
@@ -196,6 +176,45 @@ class TextDefaultsConfig(TextInputFeatureConfigMixin, TextOutputFeatureConfigMix
         MODEL_ECD,
         feature_type=TEXT,
         default="parallel_cnn",
+    )
+
+    decoder: BaseDecoderConfig = DecoderDataclassField(
+        MODEL_ECD,
+        feature_type=TEXT,
+        default="generator",
+    )
+
+    loss: BaseLossConfig = LossDataclassField(
+        feature_type=TEXT,
+        default=SEQUENCE_SOFTMAX_CROSS_ENTROPY,
+    )
+
+
+@DeveloperAPI
+@gbm_defaults_config_registry.register(TEXT)
+@ludwig_dataclass
+class GBMTextDefaultsConfig(TextInputFeatureConfigMixin):
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_GBM,
+        feature_type=TEXT,
+        default="tf_idf",
+    )
+
+
+@DeveloperAPI
+@llm_defaults_config_registry.register(TEXT)
+@ludwig_dataclass
+class LLMTextDefaultsConfig(TextInputFeatureConfigMixin, TextOutputFeatureConfigMixin):
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_LLM,
+        feature_type=TEXT,
+        default="passthrough",
+    )
+
+    decoder: BaseDecoderConfig = DecoderDataclassField(
+        MODEL_LLM,
+        feature_type=TEXT,
+        default="text_parser",
     )
 
     loss: BaseLossConfig = LossDataclassField(

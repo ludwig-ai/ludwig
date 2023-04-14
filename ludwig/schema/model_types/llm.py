@@ -2,7 +2,7 @@ from typing import Optional
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.defaults.ecd import ECDDefaultsConfig, ECDDefaultsField
+from ludwig.schema.defaults.llm import LLMDefaultsConfig, LLMDefaultsField
 from ludwig.schema.features.base import (
     BaseInputFeatureConfig,
     BaseOutputFeatureConfig,
@@ -45,5 +45,5 @@ class LLMModelConfig(ModelConfig):
 
     trainer: LLMTrainerConfig = LLMTrainerField().get_default_field()
     preprocessing: PreprocessingConfig = PreprocessingField().get_default_field()
-    defaults: Optional[ECDDefaultsConfig] = ECDDefaultsField().get_default_field()
+    defaults: Optional[LLMDefaultsConfig] = LLMDefaultsField().get_default_field()
     hyperopt: Optional[HyperoptConfig] = HyperoptField().get_default_field()
