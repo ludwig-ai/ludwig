@@ -807,4 +807,4 @@ class LLMTrainerField(schema_utils.DictMarshmallowField):
         super().__init__(ZeroShotTrainerConfig)
 
     def _jsonschema_type_mapping(self):
-        return get_trainer_jsonschema(MODEL_ECD)
+        return get_trainer_jsonschema(MODEL_LLM)

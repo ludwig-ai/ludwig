@@ -112,7 +112,7 @@ class TextParserDecoder(Decoder):
             generated_outputs = raw_generated_output_sequences[:, llm_model_inputs.size()[1] :]
         else:
             generated_outputs = []
-            input_ids_lens = [input_ids.size()[0] for input_ids in raw_generated_output_sequences]
+            input_ids_lens = [input_ids.size()[0] for input_ids in llm_model_inputs]
             for idx, input_id_len in enumerate(input_ids_lens):
                 # Remove the input sequence from the generated sequence
                 generated_sequence = raw_generated_output_sequences[idx][input_id_len:]
