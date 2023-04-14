@@ -54,7 +54,7 @@ def get_generation_config():
 )
 def test_llm_text_to_text(tmpdir, backend):  # , ray_cluster_4cpu)
     """Test that the LLM model can train and predict with text inputs and text outputs."""
-    input_features = [text_feature(name="Question")]
+    input_features = [{"name": "Question", "type": "text"}]
     output_features = [text_feature(output_feature=True, name="Answer", decoder={"type": "text_parser"})]
 
     csv_filename = os.path.join(tmpdir, "training.csv")
@@ -71,7 +71,15 @@ def test_llm_text_to_text(tmpdir, backend):  # , ray_cluster_4cpu)
     model = LudwigModel(config, backend=backend)
     model.train(dataset=dataset_filename, output_directory=str(tmpdir), skip_save_processed_input=True)
     preds, _ = model.predict(dataset=dataset_filename, output_directory=str(tmpdir), split="test")
-    print(preds)
+    preds = preds.to_dict()
+
+    assert "Answer_predictions" in preds
+    assert "Answer_probabilities" in preds
+    assert "Answer_probability" in preds
+
+    assert preds["Answer_predictions"]
+    assert preds["Answer_probabilities"]
+    assert preds["Answer_probability"]
 
 
 @pytest.mark.parametrize(
@@ -82,7 +90,7 @@ def test_llm_text_to_text(tmpdir, backend):  # , ray_cluster_4cpu)
     ],
 )
 def test_llm_zero_shot_classification(tmpdir, backend):  # , ray_cluster_4cpu):
-    input_features = [text_feature(name="review")]
+    input_features = [{"name": "review", "type": "text"}]
     output_features = [
         category_feature(
             name="label",
@@ -146,7 +154,7 @@ def test_llm_zero_shot_classification(tmpdir, backend):  # , ray_cluster_4cpu):
     }
 
     model = LudwigModel(config, backend=backend)
-    model.train(dataset=df, output_directory=str(tmpdir))
+    model.train(dataset=df, output_directory=str(tmpdir), skip_save_processed_input=True)
 
     prediction_df = pd.DataFrame(
         {
@@ -160,4 +168,18 @@ def test_llm_zero_shot_classification(tmpdir, backend):  # , ray_cluster_4cpu):
     )
 
     preds, _ = model.predict(dataset=prediction_df, output_directory=str(tmpdir))
-    print(preds)
+    preds = preds.to_dict()
+
+    assert "label_predictions" in preds
+    assert "label_probabilities" in preds
+    assert "label_probability" in preds
+    assert "label_probabilities_positive" in preds
+    assert "label_probabilities_neutral" in preds
+    assert "label_probabilities_negative" in preds
+
+    assert preds["label_predictions"]
+    assert preds["label_probabilities"]
+    assert preds["label_probability"]
+    assert preds["label_probabilities_positive"]
+    assert preds["label_probabilities_neutral"]
+    assert preds["label_probabilities_negative"]
