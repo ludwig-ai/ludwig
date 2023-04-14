@@ -154,7 +154,7 @@ jobs:
         env:
           TRANSFORMERS_CACHE: "/root/huggingface_cache"
         run: |
-          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=6000 pytest -vs --timeout 450 --durations 100 -m "($MARKERS) and (not $EXCLUDED_MARKERS)" --junitxml pytest_slow.xml tests/ludwig/encoders/test_text_encoders.py::test_hf_ludwig_model_reduce_options
+          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=6000 pytest -vs --timeout 450 --durations 100 -m "($MARKERS) and (not $EXCLUDED_MARKERS)" --junitxml pytest_slow.xml tests
 
       - name: Upload Unit Test Results
         if: ${{ always() && !env.ACT }}
