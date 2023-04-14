@@ -961,8 +961,8 @@ class _BPETokenizer(torch.nn.Module):
     def forward(self, v: Union[str, List[str], torch.Tensor]) -> Any:
         """Implements forward pass for tokenizer.
 
-        BPE tokenizers from torchtext return ids directly, which is inconsistent with the Ludwig tokenizer API.
-        The below implementation works around this by converting the ids back to their original string tokens.
+        BPE tokenizers from torchtext return ids directly, which is inconsistent with the Ludwig tokenizer API. The
+        below implementation works around this by converting the ids back to their original string tokens.
         """
         if isinstance(v, torch.Tensor):
             raise ValueError(f"Unsupported input: {v}")
