@@ -63,11 +63,16 @@ class CategoryParserDecoderConfig(BaseParserDecoderConfig, BaseDecoderConfig):
     match: Dict[str, Dict[str, Any]] = schema_utils.Dict(
         default=None,
         allow_none=False,
+        description="A dictionary of label classes and their corresponding "
+        "match patterns definitions that will be used to parse the output "
+        "of the LLM.",
     )
 
     str2idx: Dict[str, int] = schema_utils.Dict(
         default=None,
         allow_none=True,
+        description="A dictionary of label classes and their corresponding "
+        "indices that will be used to parse the output of the LLM.",
     )
 
     fallback_label: str = schema_utils.String(
