@@ -86,10 +86,10 @@ def test_llm_text_to_text(tmpdir, backend):  # , ray_cluster_4cpu)
     "backend",
     [
         pytest.param(LOCAL_BACKEND, id="local"),
-        # pytest.param(RAY_BACKEND, id="ray", marks=pytest.mark.distributed),
+        pytest.param(RAY_BACKEND, id="ray", marks=pytest.mark.distributed),
     ],
 )
-def test_llm_zero_shot_classification(tmpdir, backend):  # , ray_cluster_4cpu):
+def test_llm_zero_shot_classification(tmpdir, backend, ray_cluster_4cpu):
     input_features = [{"name": "review", "type": "text"}]
     output_features = [
         category_feature(
@@ -158,7 +158,7 @@ def test_llm_zero_shot_classification(tmpdir, backend):  # , ray_cluster_4cpu):
 
     prediction_df = pd.DataFrame(
         {
-            "review": ["The food was amazing!", "The service was terrible.", "The food was okay. "],
+            "review": ["The food was amazing!", "The service was terrible.", "The food was okay."],
             "label": [
                 "positive",
                 "negative",
@@ -168,7 +168,11 @@ def test_llm_zero_shot_classification(tmpdir, backend):  # , ray_cluster_4cpu):
     )
 
     preds, _ = model.predict(dataset=prediction_df, output_directory=str(tmpdir))
-    preds = preds.to_dict()
+
+    if backend["type"] == "ray":
+        preds = preds.compute().to_dict()
+    else:
+        preds = preds.to_dict()
 
     assert "label_predictions" in preds
     assert "label_probabilities" in preds
