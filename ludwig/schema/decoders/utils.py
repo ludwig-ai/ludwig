@@ -1,5 +1,5 @@
 from dataclasses import Field
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union
+from typing import Any, Dict, List, Optional, Type, TYPE_CHECKING, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import MODEL_ECD, TYPE
