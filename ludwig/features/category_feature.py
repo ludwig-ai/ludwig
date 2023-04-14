@@ -137,7 +137,7 @@ class CategoryFeatureMixin(BaseFeatureMixin):
             processor=backend.df_engine,
         )
 
-        if "labels" in preprocessing_parameters:
+        if "vocab" in preprocessing_parameters:
             # This is a category output feature for LLMs
             # Check if the fallback label is in the vocab, if not add it.
             if preprocessing_parameters["fallback_label"] not in str2idx:
@@ -362,7 +362,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         feature_config.top_k = min(feature_config.num_classes, feature_config.top_k)
 
         # If labels are provided, then this is a classification task for LLMs
-        if hasattr(feature_config.preprocessing, "labels"):
+        if hasattr(feature_config.preprocessing, "vocab"):
             # Enrich the feature config's decoder with str2idx
             feature_config.decoder.str2idx = feature_metadata["str2idx"]
 

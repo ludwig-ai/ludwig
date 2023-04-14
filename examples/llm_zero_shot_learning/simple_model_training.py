@@ -57,7 +57,7 @@ config = yaml.safe_load(
             - name: label
               type: category
               preprocessing:
-                labels: [positive, neutral, negative]
+                vocab: [positive, neutral, negative]
                 fallback_label: neutral
                 prompt_template: |
                     Context information is below.

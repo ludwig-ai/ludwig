@@ -120,12 +120,16 @@ class CategoryDistributionOutputPreprocessingConfig(BasePreprocessingConfig):
 @ludwig_dataclass
 class LLMCategoryOutputPreprocessingConfig(CategoryOutputPreprocessingConfig):
     def __post_init__(self):
-        if self.labels is None:
-            raise ConfigValidationError("`labels` must be specified for `category_llm` output feature.")
+        if self.vocab is None:
+            raise ConfigValidationError("`vocab` must be specified for `category_llm` output feature.")
         if self.fallback_label is None:
             raise ConfigValidationError("`fallback_label` must be specified for `category_llm` output feature.")
 
-    labels: List[str] = schema_utils.List(default=None)
+    vocab: List[str] = schema_utils.List(
+        default=None,
+        allow_none=False,
+        description="The list of labels that the model can predict.",
+    )
 
     fallback_label: str = schema_utils.String(
         default="",

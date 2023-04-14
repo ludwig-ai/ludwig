@@ -1711,7 +1711,7 @@ def handle_data_augmentation_with_prompt(
     # If output feature is a category feature and it's preprocessing has prompt_template, then we need to
     # add the prompt in the input text feature(s). This step assumes only one output feature.
     names_of_features_to_substitute = None
-    labels = None
+    vocab = None
     prompt = None
     for output_feature in output_features:
         if output_feature[TYPE] != CATEGORY:
@@ -1720,18 +1720,18 @@ def handle_data_augmentation_with_prompt(
             continue
 
         prompt: str = feature_name_to_preprocessing_parameters[output_feature[NAME]]["prompt_template"]
-        labels: List = feature_name_to_preprocessing_parameters[output_feature[NAME]]["labels"]
+        vocab: List = feature_name_to_preprocessing_parameters[output_feature[NAME]]["vocab"]
         names_of_features_to_substitute: List = _extract_feature_names_from_prompt(prompt)
 
     if not prompt:
         return
 
-    # Substitute labels specified in the category feature's preprocessing parameters
+    # Substitute vocab specified in the category feature's preprocessing parameters
     # into the prompt template.
-    if names_of_features_to_substitute and "labels" in names_of_features_to_substitute:
-        # Replace {labels} with the actual labels
-        prompt = prompt.replace("{labels}", ", ".join(labels))
-        names_of_features_to_substitute.pop(names_of_features_to_substitute.index("labels"))
+    if names_of_features_to_substitute and "vocab" in names_of_features_to_substitute:
+        # Replace {vocab} with the actual labels
+        prompt = prompt.replace("{vocab}", ", ".join(vocab))
+        names_of_features_to_substitute.pop(names_of_features_to_substitute.index("vocab"))
 
     # Substitute values from the input features into the prompt template, and update the values in
     # dataset_cols with the updated injected prompt. Assumes just text input features for now.

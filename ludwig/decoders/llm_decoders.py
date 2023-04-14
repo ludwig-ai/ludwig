@@ -137,7 +137,7 @@ class CategoryParserDecoder(Decoder):
         self.input_size = input_size
         self.fallback_label = fallback_label
         self.str2idx = str2idx
-        self.num_labels = len(str2idx)
+        self.vocab_size = len(str2idx)
 
         # Create Matcher object to perform matching on the decoded output
         self.matcher = Matcher(match)
@@ -184,13 +184,13 @@ class CategoryParserDecoder(Decoder):
             matched_labels.append(idx)
 
             # Append the probability vector for the matched label
-            probability_vec = [0] * self.num_labels
+            probability_vec = [0] * self.vocab_size
             probability_vec[idx] = 1
             probabilities.append(probability_vec)
 
             # TODO(Arnav): Figure out how to compute logits. For now, we return
             # a tensor of zeros.
-            logits.append([0] * self.num_labels)
+            logits.append([0] * self.vocab_size)
 
         return {
             "predictions": torch.tensor(matched_labels),

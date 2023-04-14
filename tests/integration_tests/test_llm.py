@@ -95,14 +95,14 @@ def test_llm_zero_shot_classification(tmpdir, backend):  # , ray_cluster_4cpu):
         category_feature(
             name="label",
             preprocessing={
-                "labels": ["positive", "neutral", "negative"],
+                "vocab": ["positive", "neutral", "negative"],
                 "fallback_label": "neutral",
                 "prompt_template": """
                     Context information is below.
                     ###
                     {review}
                     ###
-                    Given the context information and not prior knowledge, classify the context as one of: {labels}
+                    Given the context information and not prior knowledge, classify the context as one of: {vocab}
                 """,
             },
             # How can we avoid using r here for regex, since it is technically an implementation detail?
