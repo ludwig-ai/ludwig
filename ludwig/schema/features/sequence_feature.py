@@ -56,6 +56,7 @@ class SequenceOutputFeatureConfigMixin(BaseMarshmallowConfig):
     output feature and the sequence global defaults section of the Ludwig Config."""
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
+        MODEL_ECD,
         feature_type=SEQUENCE,
         default="generator",
     )

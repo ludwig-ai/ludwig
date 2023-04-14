@@ -3,15 +3,17 @@ import glob
 import logging
 import os
 import shutil
-import sys
 import threading
 import time
 from queue import Empty as EmptyQueueException
 from queue import Queue
+from subprocess import PIPE, Popen
 from typing import Any, Dict, List
+from xml.etree.ElementTree import fromstring
 
 import psutil
 import torch
+from cpuinfo import get_cpu_info
 from gpustat.core import GPUStatCollection
 
 from ludwig.benchmarking.profiler_dataclasses import profiler_dataclass_to_flat_dict, TorchProfilerMetrics
@@ -20,17 +22,36 @@ from ludwig.constants import LUDWIG_TAG
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.data_utils import save_json
 
-# disabling print because the following imports are verbose
-f = open(os.devnull, "w")
-sys.stdout = f
-from experiment_impact_tracker.cpu.common import get_my_cpu_info  # noqa E402
-from experiment_impact_tracker.gpu.nvidia import get_gpu_info  # noqa E402
-
-f.close()
-sys.stdout = sys.__stdout__
-
 STOP_MESSAGE = "stop"
 logger = logging.getLogger()
+
+
+def get_gpu_info():
+    """Gathers general hardware information about an nvidia GPU.
+
+    This function was copied from `experiment_impact_tracker` to get around a Pandas 2.0 breaking change impacting the
+    package. https://github.com/Breakend/experiment-impact-
+    tracker/blob/master/experiment_impact_tracker/gpu/nvidia.py#L48-L73
+    """
+    p = Popen(["nvidia-smi", "-q", "-x"], stdout=PIPE)
+    outs, errors = p.communicate()
+    xml = fromstring(outs)
+    data = []
+    driver_version = xml.findall("driver_version")[0].text
+    cuda_version = xml.findall("cuda_version")[0].text
+
+    for gpu_id, gpu in enumerate(xml.getiterator("gpu")):
+        gpu_data = {}
+        name = [x for x in gpu.getiterator("product_name")][0].text
+        memory_usage = gpu.findall("fb_memory_usage")[0]
+        total_memory = memory_usage.findall("total")[0].text
+
+        gpu_data["name"] = name
+        gpu_data["total_memory"] = total_memory
+        gpu_data["driver_version"] = driver_version
+        gpu_data["cuda_version"] = cuda_version
+        data.append(gpu_data)
+    return data
 
 
 def monitor(queue: Queue, info: Dict[str, Any], logging_interval: int, cuda_is_available: bool) -> None:
@@ -132,7 +153,7 @@ class LudwigProfiler(contextlib.ContextDecorator):
         self.info["start_disk_usage"] = shutil.disk_usage(os.path.expanduser("~")).used
 
         # CPU information
-        cpu_info = get_my_cpu_info()
+        cpu_info = get_cpu_info()
         self.info["cpu_architecture"] = cpu_info["arch"]
         self.info["num_cpu"] = psutil.cpu_count()
         self.info["cpu_name"] = cpu_info.get("brand_raw", "unknown")

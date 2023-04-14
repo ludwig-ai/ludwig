@@ -87,10 +87,7 @@ class CategoryOutputFeatureConfigMixin(BaseMarshmallowConfig):
     """CategoryOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the category
     output feature and the category global defaults section of the Ludwig Config."""
 
-    decoder: BaseDecoderConfig = DecoderDataclassField(
-        feature_type=CATEGORY,
-        default="classifier",
-    )
+    decoder: BaseDecoderConfig = None
 
     loss: BaseLossConfig = LossDataclassField(
         feature_type=CATEGORY,
@@ -99,8 +96,6 @@ class CategoryOutputFeatureConfigMixin(BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-@ecd_output_config_registry.register(CATEGORY)
-@gbm_output_config_registry.register(CATEGORY)
 @ludwig_dataclass
 class CategoryOutputFeatureConfig(CategoryOutputFeatureConfigMixin, BaseOutputFeatureConfig):
     """CategoryOutputFeatureConfig is a dataclass that configures the parameters used for a category output
@@ -152,6 +147,28 @@ class CategoryOutputFeatureConfig(CategoryOutputFeatureConfigMixin, BaseOutputFe
 
 
 @DeveloperAPI
+@ecd_output_config_registry.register(CATEGORY)
+@ludwig_dataclass
+class ECDCategoryOutputFeatureConfig(CategoryOutputFeatureConfig):
+    decoder: BaseDecoderConfig = DecoderDataclassField(
+        MODEL_ECD,
+        feature_type=CATEGORY,
+        default="classifier",
+    )
+
+
+@DeveloperAPI
+@gbm_output_config_registry.register(CATEGORY)
+@ludwig_dataclass
+class GBMCategoryOutputFeatureConfig(CategoryOutputFeatureConfig):
+    decoder: BaseDecoderConfig = DecoderDataclassField(
+        MODEL_GBM,
+        feature_type=CATEGORY,
+        default="classifier",
+    )
+
+
+@DeveloperAPI
 @ecd_output_config_registry.register(CATEGORY_DISTRIBUTION)
 @ludwig_dataclass
 class CategoryDistributionOutputFeatureConfig(CategoryOutputFeatureConfig):
@@ -159,6 +176,12 @@ class CategoryDistributionOutputFeatureConfig(CategoryOutputFeatureConfig):
     category_distribution output feature."""
 
     type: str = schema_utils.ProtectedString(CATEGORY_DISTRIBUTION)
+
+    decoder: BaseDecoderConfig = DecoderDataclassField(
+        MODEL_ECD,
+        feature_type=CATEGORY,
+        default="classifier",
+    )
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="category_distribution_output")
 
@@ -171,6 +194,12 @@ class CategoryDefaultsConfig(CategoryInputFeatureConfigMixin, CategoryOutputFeat
         MODEL_ECD,
         feature_type=CATEGORY,
         default="dense",
+    )
+
+    decoder: BaseDecoderConfig = DecoderDataclassField(
+        MODEL_ECD,
+        feature_type=CATEGORY,
+        default="classifier",
     )
 
 
