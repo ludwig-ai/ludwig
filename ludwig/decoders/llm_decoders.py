@@ -8,6 +8,7 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import CATEGORY, TEXT
 from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
+from ludwig.decoders.utils import extract_generated_tokens
 from ludwig.schema.decoders.llm_decoders import CategoryParserDecoderConfig, TextParserDecoderConfig
 from ludwig.utils.strings_utils import get_tokenizer
 
@@ -103,27 +104,12 @@ class TextParserDecoder(Decoder):
 
     def forward(self, inputs, **kwargs):
         # Extract the sequences tensor from the LLMs forward pass
-        raw_generated_output_sequences = inputs.sequences
-        # Get the input sequence passed into the forward pass of the LLM model
-        llm_model_inputs = kwargs.get("llm_model_inputs", None)
-
-        # Remove the input sequence from the generated output sequence(s)
-        if raw_generated_output_sequences.size()[0] == 1:
-            generated_outputs = raw_generated_output_sequences[:, llm_model_inputs.size()[1] :]
-        else:
-            generated_outputs = []
-            input_ids_lens = [input_ids.size()[0] for input_ids in llm_model_inputs]
-            for idx, input_id_len in enumerate(input_ids_lens):
-                # Remove the input sequence from the generated sequence
-                generated_sequence = raw_generated_output_sequences[idx][input_id_len:]
-                # Pad the sequence if it is shorter than the max_new_tokens for downstream metric computation
-                if generated_sequence.size()[0] < self.max_new_tokens:
-                    generated_sequence = torch.nn.functional.pad(
-                        generated_sequence, (0, self.max_new_tokens - generated_sequence.size()[0]), "constant", 0
-                    )
-                generated_outputs.append(generated_sequence)
-            # Stack the predictions for each example in the batch
-            generated_outputs = torch.stack(generated_outputs, dim=0)
+        generated_outputs = extract_generated_tokens(
+            raw_generated_output_sequences=inputs.sequences,
+            llm_model_inputs=kwargs.get("llm_model_inputs", []),
+            max_new_tokens=self.max_new_tokens,
+            pad_sequence=True,
+        )
 
         return {
             "predictions": generated_outputs,
@@ -175,22 +161,12 @@ class CategoryParserDecoder(Decoder):
 
     def forward(self, inputs, **kwargs):
         # Extract the sequences tensor from the LLMs forward pass
-        raw_generated_output_sequences = inputs.sequences
-        # Get the input sequence passed into the forward pass of the LLM model
-        llm_model_inputs = kwargs.get("llm_model_inputs", None)
-
-        # Remove the input sequence from the generated output sequence(s)
-        if raw_generated_output_sequences.size()[0] == 1:
-            generated_outputs = raw_generated_output_sequences[:, llm_model_inputs.size()[1] :]
-        else:
-            generated_outputs = []
-            input_ids_lens = [input_ids.size()[0] for input_ids in raw_generated_output_sequences]
-            for idx, input_id_len in enumerate(input_ids_lens):
-                # Remove the input sequence from the generated sequence
-                generated_sequence = raw_generated_output_sequences[idx][input_id_len:]
-                generated_outputs.append(generated_sequence)
-            # Stack the predictions for each example in the batch
-            generated_outputs = torch.stack(generated_outputs, dim=0)
+        generated_outputs = extract_generated_tokens(
+            raw_generated_output_sequences=inputs.sequences,
+            llm_model_inputs=kwargs.get("llm_model_inputs", []),
+            max_new_tokens=None,
+            pad_sequence=False,
+        )
 
         # Decode generated outputs from the LLM's generate function.
         decoded_outputs = self.tokenizer.tokenizer.batch_decode(generated_outputs, skip_special_tokens=True)
