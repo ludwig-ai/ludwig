@@ -1,5 +1,13 @@
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import ACCURACY, CATEGORY, CATEGORY_DISTRIBUTION, MODEL_ECD, MODEL_GBM, SOFTMAX_CROSS_ENTROPY
+from ludwig.constants import (
+    ACCURACY,
+    CATEGORY,
+    CATEGORY_DISTRIBUTION,
+    MODEL_ECD,
+    MODEL_GBM,
+    MODEL_LLM,
+    SOFTMAX_CROSS_ENTROPY,
+)
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -220,6 +228,7 @@ class LLMCategoryOutputFeatureConfig(CategoryOutputFeatureConfig):
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="category_llm")
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
+        MODEL_LLM,
         feature_type=CATEGORY,
         default="category_parser",
     )

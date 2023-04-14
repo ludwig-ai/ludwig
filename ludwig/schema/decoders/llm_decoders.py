@@ -1,7 +1,7 @@
 from typing import Any, Dict
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import CATEGORY, TEXT
+from ludwig.constants import CATEGORY, MODEL_LLM, TEXT
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import register_decoder_config
@@ -39,7 +39,7 @@ class BaseParserDecoderConfig(BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-@register_decoder_config("text_parser", [TEXT])
+@register_decoder_config("text_parser", [TEXT], model_types=[MODEL_LLM])
 @ludwig_dataclass
 class TextParserDecoderConfig(BaseParserDecoderConfig, BaseDecoderConfig):
     @classmethod
@@ -50,7 +50,7 @@ class TextParserDecoderConfig(BaseParserDecoderConfig, BaseDecoderConfig):
 
 
 @DeveloperAPI
-@register_decoder_config("category_parser", [CATEGORY])
+@register_decoder_config("category_parser", [CATEGORY], model_types=[MODEL_LLM])
 @ludwig_dataclass
 class CategoryParserDecoderConfig(BaseParserDecoderConfig, BaseDecoderConfig):
     @classmethod

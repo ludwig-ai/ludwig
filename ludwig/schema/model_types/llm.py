@@ -45,5 +45,5 @@ class LLMModelConfig(ModelConfig):
 
     trainer: LLMTrainerConfig = LLMTrainerField().get_default_field()
     preprocessing: PreprocessingConfig = PreprocessingField().get_default_field()
-    defaults: ECDDefaultsConfig = ECDDefaultsField().get_default_field()
+    defaults: Optional[ECDDefaultsConfig] = ECDDefaultsField().get_default_field()
     hyperopt: Optional[HyperoptConfig] = HyperoptField().get_default_field()

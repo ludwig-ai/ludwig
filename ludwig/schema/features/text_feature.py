@@ -182,6 +182,7 @@ class LLMTextOutputFeatureConfig(TextOutputFeatureConfigMixin, BaseOutputFeature
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="text_output")
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
+        MODEL_LLM,
         feature_type=TEXT,
         default="text_parser",
     )

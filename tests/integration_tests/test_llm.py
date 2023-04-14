@@ -23,7 +23,9 @@ RAY_BACKEND = {
         },
     },
 }
+
 TEST_MODEL_NAME = "hf-internal-testing/tiny-random-GPTJForCausalLM"
+GENERATION_CONFIG = "generation_config"
 
 
 @pytest.fixture(scope="module")
@@ -70,7 +72,7 @@ def test_llm_text_to_text(tmpdir, backend):  # , ray_cluster_4cpu)
     config = {
         MODEL_TYPE: MODEL_LLM,
         MODEL_NAME: TEST_MODEL_NAME,
-        "generation_config": get_generation_config(),
+        GENERATION_CONFIG: get_generation_config(),
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
     }
@@ -125,38 +127,25 @@ def test_llm_zero_shot_classification(tmpdir, backend, ray_cluster_4cpu):
         )
     ]
 
-    reviews = [
-        "I loved this movie!",
-        "The food was okay, but the service was terrible.",
-        "I can't believe how rude the staff was.",
-        "This book was a real page-turner.",
-        "The hotel room was dirty and smelled bad.",
-        "I had a great experience at this restaurant.",
-        "The concert was amazing!",
-        "The traffic was terrible on my way to work this morning.",
-        "The customer service was excellent.",
-        "I was disappointed with the quality of the product.",
+    data = [
+        {"review": "I loved this movie!", "label": "positive"},
+        {"review": "The food was okay, but the service was terrible.", "label": "negative"},
+        {"review": "I can't believe how rude the staff was.", "label": "negative"},
+        {"review": "This book was a real page-turner.", "label": "positive"},
+        {"review": "The hotel room was dirty and smelled bad.", "label": "negative"},
+        {"review": "I had a great experience at this restaurant.", "label": "positive"},
+        {"review": "The concert was amazing!", "label": "positive"},
+        {"review": "The traffic was terrible on my way to work this morning.", "label": "negative"},
+        {"review": "The customer service was excellent.", "label": "positive"},
+        {"review": "I was disappointed with the quality of the product.", "label": "negative"},
     ]
 
-    labels = [
-        "positive",
-        "negative",
-        "negative",
-        "positive",
-        "negative",
-        "positive",
-        "positive",
-        "negative",
-        "positive",
-        "negative",
-    ]
-
-    df = pd.DataFrame({"review": reviews, "label": labels})
+    df = pd.DataFrame(data)
 
     config = {
         MODEL_TYPE: MODEL_LLM,
         MODEL_NAME: TEST_MODEL_NAME,
-        "generation_config": get_generation_config(),
+        GENERATION_CONFIG: get_generation_config(),
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
     }
@@ -165,14 +154,11 @@ def test_llm_zero_shot_classification(tmpdir, backend, ray_cluster_4cpu):
     model.train(dataset=df, output_directory=str(tmpdir), skip_save_processed_input=True)
 
     prediction_df = pd.DataFrame(
-        {
-            "review": ["The food was amazing!", "The service was terrible.", "The food was okay."],
-            "label": [
-                "positive",
-                "negative",
-                "neutral",
-            ],
-        }
+        [
+            {"review": "The food was amazing!", "label": "positive"},
+            {"review": "The service was terrible.", "label": "negative"},
+            {"review": "The food was okay.", "label": "neutral"},
+        ]
     )
 
     preds, _ = model.predict(dataset=prediction_df, output_directory=str(tmpdir))
