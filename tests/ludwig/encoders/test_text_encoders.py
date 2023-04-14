@@ -1,3 +1,4 @@
+import gc
 import json
 import os
 from typing import Optional, Type, Union
@@ -165,7 +166,16 @@ def test_hf_ludwig_model_reduce_options(tmpdir, csv_filename, encoder_name, redu
     except ConfigValidationError as e:
         pytest.skip(e.message)
 
-    model = LudwigModel(config=config, backend=LocalTestBackend())
+    model = LudwigModel(
+        config=config,
+        backend=LocalTestBackend(),
+        skip_save_training_description=True,
+        skip_save_training_statistics=True,
+        skip_save_model=True,
+        skip_save_progress=True,
+        skip_save_log=True,
+        skip_save_processed_input=True,
+    )
 
     # Validates that the defaults associated with the encoder are compatible with Ludwig training.
     with mock.patch(
@@ -173,6 +183,10 @@ def test_hf_ludwig_model_reduce_options(tmpdir, csv_filename, encoder_name, redu
         side_effect=_load_pretrained_hf_model_no_weights,
     ):
         model.train(dataset=rel_path, output_directory=tmpdir)
+
+    # Clean up
+    del model
+    gc.collect()
     clear_huggingface_cache()
 
 
