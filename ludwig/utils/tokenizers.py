@@ -925,21 +925,19 @@ tokenizer_registry = {
 Only available with torchtext>=0.12.0.
 """
 
+
 class SentencePieceTokenizer(torch.nn.Module):
     def __init__(self, pretrained_model_name_or_path: Optional[str] = None, **kwargs):
         super().__init__()
         if pretrained_model_name_or_path is None:
-            pretrained_model_name_or_path = (
-                "https://download.pytorch.org/models/text/xlmr.sentencepiece.bpe.model"
-            )
-        self.tokenizer = torchtext.transforms.SentencePieceTokenizer(
-            sp_model_path=pretrained_model_name_or_path
-        )
+            pretrained_model_name_or_path = "https://download.pytorch.org/models/text/xlmr.sentencepiece.bpe.model"
+        self.tokenizer = torchtext.transforms.SentencePieceTokenizer(sp_model_path=pretrained_model_name_or_path)
 
     def forward(self, v: Union[str, List[str], torch.Tensor]):
         if isinstance(v, torch.Tensor):
             raise ValueError(f"Unsupported input: {v}")
         return self.tokenizer(v)
+
 
 class _BPETokenizer(torch.nn.Module):
     """Superclass for tokenizers that use BPE, such as CLIPTokenizer and GPT2BPETokenizer."""
@@ -962,8 +960,8 @@ class _BPETokenizer(torch.nn.Module):
     def forward(self, v: Union[str, List[str], torch.Tensor]) -> Any:
         """Implements forward pass for tokenizer.
 
-        BPE tokenizers from torchtext return ids directly, which is inconsistent with the Ludwig tokenizer API.
-        The below implementation works around this by converting the ids back to their original string tokens.
+        BPE tokenizers from torchtext return ids directly, which is inconsistent with the Ludwig tokenizer API. The
+        below implementation works around this by converting the ids back to their original string tokens.
         """
         if isinstance(v, torch.Tensor):
             raise ValueError(f"Unsupported input: {v}")
@@ -984,10 +982,9 @@ class _BPETokenizer(torch.nn.Module):
     def get_vocab(self) -> Dict[str, str]:
         return self.str2idx
 
+
 class CLIPTokenizer(_BPETokenizer):
-    def __init__(
-        self, pretrained_model_name_or_path: Optional[str] = None, vocab_file: Optional[str] = None, **kwargs
-    ):
+    def __init__(self, pretrained_model_name_or_path: Optional[str] = None, vocab_file: Optional[str] = None, **kwargs):
         if pretrained_model_name_or_path is None:
             pretrained_model_name_or_path = "http://download.pytorch.org/models/text/clip_merges.bpe"
         if vocab_file is None:
@@ -999,10 +996,9 @@ class CLIPTokenizer(_BPETokenizer):
             encoder_json_path=vocab_file, merges_path=pretrained_model_name_or_path
         )
 
+
 class GPT2BPETokenizer(_BPETokenizer):
-    def __init__(
-        self, pretrained_model_name_or_path: Optional[str] = None, vocab_file: Optional[str] = None, **kwargs
-    ):
+    def __init__(self, pretrained_model_name_or_path: Optional[str] = None, vocab_file: Optional[str] = None, **kwargs):
         if pretrained_model_name_or_path is None:
             pretrained_model_name_or_path = "https://download.pytorch.org/models/text/gpt2_bpe_vocab.bpe"
         if vocab_file is None:
@@ -1013,6 +1009,7 @@ class GPT2BPETokenizer(_BPETokenizer):
         return torchtext.transforms.GPT2BPETokenizer(
             encoder_json_path=vocab_file, vocab_bpe_path=pretrained_model_name_or_path
         )
+
 
 tokenizer_registry.update(
     {
