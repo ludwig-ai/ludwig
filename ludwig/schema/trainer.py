@@ -696,7 +696,7 @@ class LLMTrainerConfig(BaseTrainerConfig):
     """Base class for all LLM trainer configs."""
 
     batch_size: int = schema_utils.PositiveInteger(
-        default=1,
+        default=2,
         description="Batch size used for training in the LLM trainer.",
     )
 

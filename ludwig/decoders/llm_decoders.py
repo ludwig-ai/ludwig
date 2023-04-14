@@ -5,7 +5,7 @@ from typing import Any, Dict, Union
 import torch
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import CATEGORY, TEXT
+from ludwig.constants import CATEGORY, LOGITS, PREDICTIONS, PROBABILITIES, TEXT
 from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
 from ludwig.decoders.utils import extract_generated_tokens
@@ -72,19 +72,17 @@ class TextParserDecoder(Decoder):
     def __init__(
         self,
         input_size: int,
-        tokenizer: str,
-        pretrained_model_name_or_path: str,
-        vocab_file: str,
-        max_new_tokens: int,
+        decoder_config=None,
         **kwargs,
     ):
         super().__init__()
+        self.config = decoder_config
         self.input_size = input_size
 
         # Tokenizer
-        self.tokenizer_type = tokenizer
-        self.pretrained_model_name_or_path = pretrained_model_name_or_path
-        self.vocab_file = vocab_file
+        self.tokenizer_type = self.config.tokenizer
+        self.pretrained_model_name_or_path = self.config.pretrained_model_name_or_path
+        self.vocab_file = self.config.vocab_file
 
         # Load tokenizer required for decoding the output from the generate
         # function of the text input feature for LLMs.
@@ -92,7 +90,7 @@ class TextParserDecoder(Decoder):
         self.tokenizer_vocab_size = self.tokenizer.tokenizer.vocab_size
 
         # Maximum number of new tokens that will be generated
-        self.max_new_tokens = max_new_tokens
+        self.max_new_tokens = self.config.max_new_tokens
 
     @staticmethod
     def get_schema_cls():
@@ -101,6 +99,9 @@ class TextParserDecoder(Decoder):
     @property
     def input_shape(self):
         return self.input_size
+
+    def get_prediction_set(self):
+        return {LOGITS, PREDICTIONS, PROBABILITIES}
 
     def forward(self, inputs, **kwargs):
         # Extract the sequences tensor from the LLMs forward pass
@@ -112,10 +113,10 @@ class TextParserDecoder(Decoder):
         )
 
         return {
-            "predictions": generated_outputs,
+            PREDICTIONS: generated_outputs,
             # TODO(Arnav): Add support for probabilities and logits
-            "probabilities": torch.zeros((len(generated_outputs), self.max_new_tokens, self.tokenizer_vocab_size)),
-            "logits": torch.zeros((len(generated_outputs), self.max_new_tokens, self.tokenizer_vocab_size)),
+            PROBABILITIES: torch.zeros((len(generated_outputs), self.max_new_tokens, self.tokenizer_vocab_size)),
+            LOGITS: torch.zeros((len(generated_outputs), self.max_new_tokens, self.tokenizer_vocab_size)),
         }
 
 
@@ -124,28 +125,24 @@ class TextParserDecoder(Decoder):
 class CategoryParserDecoder(Decoder):
     def __init__(
         self,
-        input_size: int,
-        match: Dict[str, Dict[str, Any]],
-        tokenizer: str,
-        pretrained_model_name_or_path: str,
-        vocab_file: str,
-        str2idx: Dict[str, int],
-        fallback_label: str,
+        decoder_config=None,
         **kwargs,
     ):
         super().__init__()
-        self.input_size = input_size
-        self.fallback_label = fallback_label
-        self.str2idx = str2idx
-        self.vocab_size = len(str2idx)
+        self.config = decoder_config
+
+        self.input_size = self.config.input_size
+        self.fallback_label = self.config.fallback_label
+        self.str2idx = self.config.str2idx
+        self.vocab_size = len(self.config.str2idx)
 
         # Create Matcher object to perform matching on the decoded output
-        self.matcher = Matcher(match)
+        self.matcher = Matcher(self.config.match)
 
         # Tokenizer
-        self.tokenizer_type = tokenizer
-        self.pretrained_model_name_or_path = pretrained_model_name_or_path
-        self.vocab_file = vocab_file
+        self.tokenizer_type = self.config.tokenizer
+        self.pretrained_model_name_or_path = self.config.pretrained_model_name_or_path
+        self.vocab_file = self.config.vocab_file
 
         # Load tokenizer required for decoding the output from the generate
         # function of the text input feature for LLMs.
@@ -159,6 +156,9 @@ class CategoryParserDecoder(Decoder):
     def input_shape(self):
         return self.input_size
 
+    def get_prediction_set(self):
+        return {LOGITS, PREDICTIONS, PROBABILITIES}
+
     def forward(self, inputs, **kwargs):
         # Extract the sequences tensor from the LLMs forward pass
         generated_outputs = extract_generated_tokens(
@@ -170,7 +170,7 @@ class CategoryParserDecoder(Decoder):
 
         # Decode generated outputs from the LLM's generate function.
         decoded_outputs = self.tokenizer.tokenizer.batch_decode(generated_outputs, skip_special_tokens=True)
-        print(f"Decoded output: {decoded_outputs}")
+        logger.info(f"Decoded output: {decoded_outputs}")
 
         # Parse labels based on matching criteria and return probability vectors
         matched_labels = []
@@ -193,7 +193,7 @@ class CategoryParserDecoder(Decoder):
             logits.append([0] * self.vocab_size)
 
         return {
-            "predictions": torch.tensor(matched_labels),
-            "probabilities": torch.tensor(probabilities, dtype=torch.float32),
-            "logits": torch.tensor(logits, dtype=torch.float32),
+            PREDICTIONS: torch.tensor(matched_labels),
+            PROBABILITIES: torch.tensor(probabilities, dtype=torch.float32),
+            LOGITS: torch.tensor(logits, dtype=torch.float32),
         }

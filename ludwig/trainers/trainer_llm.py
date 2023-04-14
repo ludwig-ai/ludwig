@@ -17,7 +17,7 @@ from ludwig.modules.metric_modules import get_initial_validation_value
 from ludwig.progress_bar import LudwigProgressBar
 from ludwig.schema.trainer import BaseTrainerConfig, ZeroShotTrainerConfig
 from ludwig.trainers.base import BaseTrainer
-from ludwig.trainers.registry import register_trainer
+from ludwig.trainers.registry import register_ray_trainer, register_trainer
 from ludwig.types import ModelConfigDict
 from ludwig.utils import time_utils
 from ludwig.utils.defaults import default_random_seed
@@ -36,6 +36,7 @@ from ludwig.utils.trainer_utils import (
 logger = logging.getLogger(__name__)
 
 
+@register_ray_trainer(MODEL_LLM)
 @register_trainer(MODEL_LLM)
 class ZeroShotTrainer(BaseTrainer):
     """ZeroShotTrainer is a trainer that does not train a model."""
