@@ -1080,11 +1080,11 @@ def clear_huggingface_cache():
         cache_path = "/".join(cache_path.split("/")[:-1])
     du = shutil.disk_usage(cache_path)
 
-    logger.info(f"Current disk usage {du}")
+    logger.info(f"Current disk usage {du} ({100 * du.free / du.total}% usage)")
 
     # only clean up cache if less than 30% of disk space is used.
-    if du.free / du.total > 0.3:
-        return
+    # if du.free / du.total > 0.9:
+    #     return
 
     logger.info(
         f"Clearing HuggingFace cache under path: `{cache_path}`. "
@@ -1092,6 +1092,8 @@ def clear_huggingface_cache():
     )
     for root, dirs, files in os.walk(cache_path):
         for f in files:
+            print("trying to clean up", os.path.join(root, f))
             os.unlink(os.path.join(root, f))
         for d in dirs:
+            print("trying to clean up", os.path.join(root, d))
             shutil.rmtree(os.path.join(root, d))
