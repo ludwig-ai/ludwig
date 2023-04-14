@@ -169,12 +169,6 @@ def test_hf_ludwig_model_reduce_options(tmpdir, csv_filename, encoder_name, redu
     model = LudwigModel(
         config=config,
         backend=LocalTestBackend(),
-        skip_save_training_description=True,
-        skip_save_training_statistics=True,
-        skip_save_model=True,
-        skip_save_progress=True,
-        skip_save_log=True,
-        skip_save_processed_input=True,
     )
 
     # Validates that the defaults associated with the encoder are compatible with Ludwig training.
@@ -182,7 +176,16 @@ def test_hf_ludwig_model_reduce_options(tmpdir, csv_filename, encoder_name, redu
         "ludwig.encoders.text_encoders.load_pretrained_hf_model_with_hub_fallback",
         side_effect=_load_pretrained_hf_model_no_weights,
     ):
-        model.train(dataset=rel_path, output_directory=tmpdir)
+        model.train(
+            dataset=rel_path,
+            output_directory=tmpdir,
+            skip_save_training_description=True,
+            skip_save_training_statistics=True,
+            skip_save_model=True,
+            skip_save_progress=True,
+            skip_save_log=True,
+            skip_save_processed_input=True,
+        )
 
     # Clean up
     del model
