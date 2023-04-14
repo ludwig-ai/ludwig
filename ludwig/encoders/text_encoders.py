@@ -1255,7 +1255,7 @@ class TransformerXLEncoder(HFTextEncoder):
             return torch.Size([self.max_sequence_length, self.transformer.module.config.d_model])
         elif self.reduce_output == "concat":
             # add the -2 to account of start and end tokens.
-            return torch.Size([self.transformer.module.config.d_model * (self.max_sequence_length - 2)])
+            return torch.Size([self.transformer.module.config.d_model * self.max_sequence_length])
         return torch.Size([self.transformer.module.config.d_model])
 
     @property
@@ -1386,8 +1386,7 @@ class XLNetEncoder(HFTextEncoder):
         if self.reduce_output is None:
             return torch.Size([self.max_sequence_length, self.transformer.module.config.d_model])
         elif self.reduce_output == "concat":
-            # add the -2 to account of start and end tokens.
-            return torch.Size([self.transformer.module.config.d_model * (self.max_sequence_length - 2)])
+            return torch.Size([self.transformer.module.config.d_model * self.max_sequence_length])
         return torch.Size([self.transformer.module.config.d_model])
 
     @property
@@ -1831,7 +1830,7 @@ class T5Encoder(HFTextEncoder):
             )
         elif self.reduce_output == "concat":
             # add the -2 to account of start and end tokens.
-            return torch.Size([self.transformer.module.config.hidden_size * (self.max_sequence_length - 2)])
+            return torch.Size([self.transformer.module.config.hidden_size * (self.max_sequence_length - 1)])
         return torch.Size([self.transformer.module.config.d_model])
 
     @property
