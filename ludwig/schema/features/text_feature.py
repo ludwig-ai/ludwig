@@ -85,6 +85,7 @@ class TextOutputFeatureConfigMixin(BaseMarshmallowConfig):
     feature and the text global defaults section of the Ludwig Config."""
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
+        MODEL_ECD,
         feature_type=TEXT,
         default="generator",
     )
