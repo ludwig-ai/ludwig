@@ -1,5 +1,5 @@
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import CATEGORY, TEXT
+from ludwig.constants import TEXT
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.defaults.base import BaseDefaultsConfig
 from ludwig.schema.defaults.utils import DefaultsDataclassField
@@ -11,10 +11,6 @@ from ludwig.schema.utils import ludwig_dataclass
 @DeveloperAPI
 @ludwig_dataclass
 class LLMDefaultsConfig(BaseDefaultsConfig):
-    category: BaseFeatureConfig = DefaultsDataclassField(
-        feature_type=CATEGORY, defaults_registry=llm_defaults_config_registry
-    )
-
     text: BaseFeatureConfig = DefaultsDataclassField(feature_type=TEXT, defaults_registry=llm_defaults_config_registry)
 
 
