@@ -95,7 +95,6 @@ def DecoderDataclassField(model_type: str, feature_type: str, default: str) -> F
     Returns: Initialized dataclass field that converts an untyped dict with params to a decoder config.
     """
     decoder_registry = get_decoder_classes(model_type, feature_type)
-    print("DECODERS", decoder_registry.keys(), default, model_type, feature_type)
 
     class DecoderSelection(schema_utils.TypeSelection):
         def __init__(self):

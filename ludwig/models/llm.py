@@ -117,7 +117,6 @@ class LLM(BaseModel):
 
         assert list(inputs.keys()) == self.input_features.keys()
 
-        print("INPUTS", self.get_input_ids(inputs))
         with torch.no_grad():
             input_ids = self.get_input_ids(inputs)
             # Generate text using the model
@@ -134,7 +133,6 @@ class LLM(BaseModel):
                 outputs,
                 llm_model_inputs=input_ids,
             )
-        print("OUTPUTS", outputs)
         return self.extract(outputs)
 
     def get_input_ids(self, inputs):

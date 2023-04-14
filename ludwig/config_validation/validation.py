@@ -55,7 +55,6 @@ def check_schema(updated_config):
     The incoming config may not be comprehensive, but is assumed to be up to date with the latest ludwig schema.
     """
     model_type = updated_config.get(MODEL_TYPE, MODEL_ECD)
-    print("MODEL TYPE", model_type)
     error = None
     with VALIDATION_LOCK:
         try:
