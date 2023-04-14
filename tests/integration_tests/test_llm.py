@@ -52,7 +52,7 @@ def get_generation_config():
         # pytest.param(RAY_BACKEND, id="ray", marks=pytest.mark.distributed),
     ],
 )
-def test_llm_text_to_text(tmpdir, backend):  # , ray_cluster_4cpu):
+def test_llm_text_to_text(tmpdir, backend):  # , ray_cluster_4cpu)
     """Test that the LLM model can train and predict with text inputs and text outputs."""
     input_features = [text_feature(name="Question")]
     output_features = [text_feature(output_feature=True, name="Answer", decoder={"type": "text_parser"})]
@@ -160,4 +160,4 @@ def test_llm_zero_shot_classification(tmpdir, backend):  # , ray_cluster_4cpu):
     )
 
     preds, _ = model.predict(dataset=prediction_df, output_directory=str(tmpdir))
-    print(preds.to_dict())
+    print(preds)

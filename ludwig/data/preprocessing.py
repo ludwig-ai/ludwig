@@ -1721,7 +1721,7 @@ def handle_data_augmentation_with_prompt(
 
         prompt: str = feature_name_to_preprocessing_parameters[output_feature[NAME]]["prompt_template"]
         labels: List = feature_name_to_preprocessing_parameters[output_feature[NAME]]["labels"]
-        names_of_features_to_substitute: List = _extract_prompt_injection_feature_names(prompt)
+        names_of_features_to_substitute: List = _extract_feature_names_from_prompt(prompt)
 
     if not prompt:
         return
@@ -1747,7 +1747,7 @@ def handle_data_augmentation_with_prompt(
         # substituion in dataset_cols
 
 
-def _extract_prompt_injection_feature_names(prompt_template: str) -> List[str]:
+def _extract_feature_names_from_prompt(prompt_template: str) -> List[str]:
     """Extracts feature names from the prompt template whose data needs to be retrieved and injected into the input
     text features."""
     pattern = re.compile(r"{([^}]*)}")
