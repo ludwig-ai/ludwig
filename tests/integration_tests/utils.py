@@ -1076,6 +1076,7 @@ def minio_test_creds():
 
 def clear_huggingface_cache():
     cache_path = os.environ.get("TRANSFORMERS_CACHE")
+
     if cache_path is None:
         cache_path = file_utils.default_cache_path.rstrip("/")
         while not cache_path.endswith("huggingface") and cache_path:
@@ -1085,9 +1086,9 @@ def clear_huggingface_cache():
 
     logger.info(f"Current disk usage {du} ({100 * du.free / du.total}% usage)")
 
-    # only clean up cache if less than 30% of disk space is used.
-    # if du.free / du.total > 0.9:
-    #     return
+    # only clean up cache if less than 25% of disk space is used.
+    if du.free / du.total > 0.25:
+        return
 
     logger.info(
         f"Clearing HuggingFace cache under path: `{cache_path}`. "

@@ -1,4 +1,3 @@
-import gc
 import json
 import os
 from typing import Optional, Type, Union
@@ -187,9 +186,6 @@ def test_hf_ludwig_model_reduce_options(tmpdir, csv_filename, encoder_name, redu
             skip_save_processed_input=True,
         )
 
-    # Clean up
-    del model
-    gc.collect()
     clear_huggingface_cache()
 
 
