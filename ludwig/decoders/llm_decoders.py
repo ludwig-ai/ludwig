@@ -5,10 +5,10 @@ from typing import Any, Dict, Union
 import torch
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import CATEGORY
+from ludwig.constants import CATEGORY, TEXT
 from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
-from ludwig.schema.decoders.llm_decoders import CategoryParserDecoderConfig
+from ludwig.schema.decoders.llm_decoders import CategoryParserDecoderConfig, TextParserDecoderConfig
 from ludwig.utils.strings_utils import get_tokenizer
 
 logger = logging.getLogger(__name__)
@@ -63,6 +63,74 @@ class Matcher:
             if is_match:
                 return label
         return None
+
+
+@DeveloperAPI
+@register_decoder("text_parser", [TEXT])
+class TextParserDecoder(Decoder):
+    def __init__(
+        self,
+        input_size: int,
+        tokenizer: str,
+        pretrained_model_name_or_path: str,
+        vocab_file: str,
+        max_new_tokens: int,
+        **kwargs,
+    ):
+        super().__init__()
+        self.input_size = input_size
+
+        # Tokenizer
+        self.tokenizer_type = tokenizer
+        self.pretrained_model_name_or_path = pretrained_model_name_or_path
+        self.vocab_file = vocab_file
+
+        # Load tokenizer required for decoding the output from the generate
+        # function of the text input feature for LLMs.
+        self.tokenizer = get_tokenizer(self.tokenizer_type, self.vocab_file, self.pretrained_model_name_or_path)
+        self.tokenizer_vocab_size = self.tokenizer.tokenizer.vocab_size
+
+        # Maximum number of new tokens that will be generated
+        self.max_new_tokens = max_new_tokens
+
+    @staticmethod
+    def get_schema_cls():
+        return TextParserDecoderConfig
+
+    @property
+    def input_shape(self):
+        return self.input_size
+
+    def forward(self, inputs, **kwargs):
+        # Extract the sequences tensor from the LLMs forward pass
+        raw_generated_output_sequences = inputs.sequences
+        # Get the input sequence passed into the forward pass of the LLM model
+        llm_model_inputs = kwargs.get("llm_model_inputs", None)
+
+        # Remove the input sequence from the generated output sequence(s)
+        if raw_generated_output_sequences.size()[0] == 1:
+            generated_outputs = raw_generated_output_sequences[:, llm_model_inputs.size()[1] :]
+        else:
+            generated_outputs = []
+            input_ids_lens = [input_ids.size()[0] for input_ids in raw_generated_output_sequences]
+            for idx, input_id_len in enumerate(input_ids_lens):
+                # Remove the input sequence from the generated sequence
+                generated_sequence = raw_generated_output_sequences[idx][input_id_len:]
+                # Pad the sequence if it is shorter than the max_new_tokens for downstream metric computation
+                if generated_sequence.size()[0] < self.max_new_tokens:
+                    generated_sequence = torch.nn.functional.pad(
+                        generated_sequence, (0, self.max_new_tokens - generated_sequence.size()[0]), "constant", 0
+                    )
+                generated_outputs.append(generated_sequence)
+            # Stack the predictions for each example in the batch
+            generated_outputs = torch.stack(generated_outputs, dim=0)
+
+        return {
+            "predictions": generated_outputs,
+            # TODO(Arnav): Add support for probabilities and logits
+            "probabilities": torch.zeros((len(generated_outputs), self.max_new_tokens, self.tokenizer_vocab_size)),
+            "logits": torch.zeros((len(generated_outputs), self.max_new_tokens, self.tokenizer_vocab_size)),
+        }
 
 
 @DeveloperAPI

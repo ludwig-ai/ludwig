@@ -1,22 +1,17 @@
 from typing import Any, Dict
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import CATEGORY
+from ludwig.constants import CATEGORY, TEXT
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import register_decoder_config
-from ludwig.schema.utils import ludwig_dataclass
+from ludwig.schema.utils import BaseMarshmallowConfig, ludwig_dataclass
 
 
 @DeveloperAPI
-@register_decoder_config("category_parser", [CATEGORY])
 @ludwig_dataclass
-class CategoryParserDecoderConfig(BaseDecoderConfig):
-    @classmethod
-    def module_name(cls):
-        return "CategoryParserDecoder"
-
-    type: str = schema_utils.ProtectedString("category_parser")
+class BaseParserDecoderConfig(BaseMarshmallowConfig):
+    tokenizer: str = "hf_tokenizer"
 
     input_size: int = schema_utils.PositiveInteger(
         default=None,
@@ -24,21 +19,59 @@ class CategoryParserDecoderConfig(BaseDecoderConfig):
         description="Size of the input to the decoder.",
     )
 
+    pretrained_model_name_or_path: str = schema_utils.String(
+        default="",
+        allow_none=True,
+        description="Path to the pretrained model or model identifier from huggingface.co/models.",
+    )
+
+    vocab_file: str = schema_utils.String(
+        default="",
+        allow_none=True,
+        description="Path to the vocabulary file.",
+    )
+
+    max_new_tokens: int = schema_utils.Integer(
+        default=None,
+        allow_none=True,
+        description="Maximum number of new tokens that will be generated.",
+    )
+
+
+@DeveloperAPI
+@register_decoder_config("text_parser", [TEXT])
+@ludwig_dataclass
+class TextParserDecoderConfig(BaseParserDecoderConfig, BaseDecoderConfig):
+    @classmethod
+    def module_name(cls):
+        return "TextParserDecoder"
+
+    type: str = schema_utils.ProtectedString("text_parser")
+
+
+@DeveloperAPI
+@register_decoder_config("category_parser", [CATEGORY])
+@ludwig_dataclass
+class CategoryParserDecoderConfig(BaseParserDecoderConfig, BaseDecoderConfig):
+    @classmethod
+    def module_name(cls):
+        return "CategoryParserDecoder"
+
+    type: str = schema_utils.ProtectedString("category_parser")
+
     # Match is a dict of label class
     match: Dict[str, Dict[str, Any]] = schema_utils.Dict(
         default=None,
         allow_none=False,
     )
 
-    tokenizer: str = "hf_tokenizer"
-
-    pretrained_model_name_or_path: str = ""
-
-    vocab_file: str = None
-
     str2idx: Dict[str, int] = schema_utils.Dict(
         default=None,
         allow_none=True,
     )
 
-    fallback_label: str = None
+    fallback_label: str = schema_utils.String(
+        default="",
+        allow_none=True,
+        description="The label to use if the parser fails to parse the input.",
+    )

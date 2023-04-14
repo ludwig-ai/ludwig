@@ -8,7 +8,7 @@ import torch
 import torchmetrics
 from transformers import AutoModelForCausalLM, GenerationConfig
 
-from ludwig.constants import CATEGORY, MODEL_LLM, TEXT
+from ludwig.constants import MODEL_LLM
 from ludwig.features.base_feature import OutputFeature
 from ludwig.features.text_feature import TextOutputFeature
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
@@ -19,7 +19,6 @@ from ludwig.utils.augmentation_utils import AugmentationPipelines
 from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.fs_utils import open_file
 from ludwig.utils.state_dict_backward_compatibility import update_state_dict
-from ludwig.utils.strings_utils import get_tokenizer
 from ludwig.utils.torch_utils import get_torch_device
 
 logger = logging.getLogger(__name__)
@@ -36,10 +35,10 @@ class LLM(BaseModel):
         random_seed=None,
         **_kwargs,
     ):
+        super().__init__(random_seed=random_seed)
+
         self.config_obj = config_obj
         self._random_seed = random_seed
-
-        super().__init__(random_seed=self._random_seed)
 
         self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.model_name)
         self.generation_config = GenerationConfig(**self.config_obj.generation_config.to_dict())
@@ -57,6 +56,7 @@ class LLM(BaseModel):
         self.output_features.update(
             self.build_outputs(output_feature_configs=self.config_obj.output_features, input_size=self.input_shape[-1])
         )
+
         # Extract the decoder object for the forward pass
         _, self.output_feature_decoder = self.output_features.items()[0]
 
@@ -120,6 +120,7 @@ class LLM(BaseModel):
         print("INPUTS", self.get_input_ids(inputs))
         with torch.no_grad():
             input_ids = self.get_input_ids(inputs)
+            # Generate text using the model
             outputs = self.model.generate(
                 input_ids=input_ids,
                 attention_mask=mask,
@@ -127,12 +128,14 @@ class LLM(BaseModel):
                 return_dict_in_generate=True,
                 output_scores=True,
             )
+            # Extract the predictions, probabilities and logits from the model outputs
+            # through the forward pass of the output feature
             outputs = self.output_feature_decoder.decoder_obj.forward(
                 outputs,
                 llm_model_inputs=input_ids,
             )
         print("OUTPUTS", outputs)
-        return self.extract(inputs, outputs)
+        return self.extract(outputs)
 
     def get_input_ids(self, inputs):
         """Returns the input ids for the text feature input."""
@@ -140,68 +143,10 @@ class LLM(BaseModel):
 
     def extract(
         self,
-        inputs: Union[
-            Dict[str, torch.Tensor], Dict[str, np.ndarray], Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
-        ],
         outputs,
     ):
         """Extracts predictions and probabilities from the model outputs."""
-        of_feature_type = self.config_obj.output_features[0].type
-        of_name = self.config_obj.output_features[0].name
-
-        if of_feature_type == TEXT:
-            predictions = self.extract_text_predictions(inputs, outputs.sequences)
-            return {
-                of_name: {
-                    "predictions": predictions["predictions"],
-                    "probabilities": predictions["probabilities"],
-                    "logits": predictions["logits"],
-                }
-            }
-        elif of_feature_type == CATEGORY:
-            return {of_name: outputs}
-
-    def extract_text_predictions(self, inputs, output_sequences):
-        """Extracts the predictions from the model outputs by removing the input sequence from the generated
-        sequence."""
-        input_ids = self.get_input_ids(inputs)
-        tokenizer = get_tokenizer(
-            tokenizer_type="hf_tokenizer",
-            tokenizer_vocab_file=self.config_obj.output_features[0].preprocessing.vocab_file,
-            pretrained_model_name_or_path=self.config_obj.model_name,
-        )
-        tokenizer_vocab_size = tokenizer.tokenizer.vocab_size
-
-        if input_ids.size()[0] == 1:
-            return {
-                # Remove the input sequence from the generated sequence
-                "predictions": output_sequences[:, input_ids.size()[1] :],
-                # TODO(Arnav): Add support for probabilities and logits
-                "probabilities": torch.zeros((1, self.max_new_tokens, tokenizer_vocab_size)),
-                "logits": torch.zeros((1, self.max_new_tokens, tokenizer_vocab_size)),
-            }
-
-        generated_predictions = []
-        input_ids_lens = [input_id.size()[0] for input_id in input_ids]
-        for idx, input_id_len in enumerate(input_ids_lens):
-            # Remove the input sequence from the generated sequence
-            generated_sequence = output_sequences[idx][input_id_len:]
-            # Pad the sequence if it is shorter than the max_new_tokens for downstream metric computation
-            if generated_sequence.size()[0] < self.max_new_tokens:
-                generated_sequence = torch.tensor([self.model.config.eos_token_id])
-                generated_sequence = torch.nn.functional.pad(
-                    generated_sequence, (0, self.max_new_tokens - generated_sequence.size()[0]), "constant", 0
-                )
-            generated_predictions.append(generated_sequence)
-        # Stack the predictions for each example in the batch
-        generated_predictions = torch.stack(generated_predictions, dim=0)
-
-        return {
-            "predictions": generated_predictions,
-            # TODO(Arnav): Add support for probabilities and logits
-            "probabilities": torch.zeros((len(generated_predictions), self.max_new_tokens, tokenizer_vocab_size)),
-            "logits": torch.zeros((len(generated_predictions), self.max_new_tokens, tokenizer_vocab_size)),
-        }
+        return {self.config_obj.output_features[0].name: outputs}
 
     # def extract_logits(self, scores):
     #     """Extracts the logits from the scores.

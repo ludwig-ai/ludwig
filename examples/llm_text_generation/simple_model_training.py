@@ -51,6 +51,8 @@ config = yaml.safe_load(
         output_features:
             - name: Answer
               type: text
+              decoder:
+                type: text_parser
         model_type: llm
         generation_config:
             temperature: 0.1

@@ -316,9 +316,14 @@ def set_llm_tokenizers(config: "ModelConfig") -> None:
 
     for output_feature in config.output_features:
         if output_feature.type == TEXT:
+            # Add tokenizer parameters to preprocessing so it can be used during post processing
             output_feature.preprocessing.tokenizer = "hf_tokenizer"
             output_feature.preprocessing.pretrained_model_name_or_path = pretrained_model_name_or_path
             output_feature.preprocessing.padding = "left"
+
+            # Add tokenizer parameters to decoder so it can be used during the forward pass
+            output_feature.decoder.pretrained_model_name_or_path = pretrained_model_name_or_path
+            output_feature.decoder.max_new_tokens = config.generation_config.max_new_tokens
         elif output_feature.type == CATEGORY:
             # Tokenizer parameters
             output_feature.decoder.tokenizer = "hf_tokenizer"

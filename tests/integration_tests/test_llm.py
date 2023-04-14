@@ -55,7 +55,7 @@ def get_generation_config():
 def test_llm_text_to_text(tmpdir, backend):  # , ray_cluster_4cpu):
     """Test that the LLM model can train and predict with text inputs and text outputs."""
     input_features = [text_feature(name="Question")]
-    output_features = [text_feature(output_feature=True, name="Answer")]
+    output_features = [text_feature(output_feature=True, name="Answer", decoder={"type": "text_parser"})]
 
     csv_filename = os.path.join(tmpdir, "training.csv")
     dataset_filename = generate_data(input_features, output_features, csv_filename, num_examples=100)

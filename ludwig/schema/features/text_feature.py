@@ -180,6 +180,11 @@ class LLMTextOutputFeatureConfig(TextOutputFeatureConfigMixin, BaseOutputFeature
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="text_output")
 
+    decoder: BaseDecoderConfig = DecoderDataclassField(
+        feature_type=TEXT,
+        default="text_parser",
+    )
+
 
 @DeveloperAPI
 @ecd_defaults_config_registry.register(TEXT)
