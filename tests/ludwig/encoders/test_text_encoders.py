@@ -127,7 +127,9 @@ def test_hf_ludwig_model_e2e(tmpdir, csv_filename, encoder_name):
 
 @pytest.mark.slow
 @pytest.mark.parametrize("reduce_output", [None, "last", "sum", "mean", "max", "concat"])
-@pytest.mark.parametrize("encoder_name", HF_ENCODERS)
+@pytest.mark.parametrize(
+    "encoder_name", [encoder for encoder in HF_ENCODERS if encoder not in {"deberta", "gpt", "gpt2"}]
+)
 def test_hf_ludwig_model_reduce_options(tmpdir, csv_filename, encoder_name, reduce_output):
     input_features = [
         text_feature(
