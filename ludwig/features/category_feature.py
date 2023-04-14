@@ -307,9 +307,9 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         output_features: Dict[str, OutputFeature],
         **kwargs,
     ):
-        super().__init__(output_feature_config, output_features, **kwargs)
         self.num_classes = output_feature_config.num_classes
         self.top_k = output_feature_config.top_k
+        super().__init__(output_feature_config, output_features, **kwargs)
         if hasattr(output_feature_config.decoder, "num_classes"):
             output_feature_config.decoder.num_classes = output_feature_config.num_classes
         self.decoder_obj = self.initialize_decoder(output_feature_config.decoder)
