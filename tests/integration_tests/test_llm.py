@@ -5,6 +5,7 @@ import pytest
 
 from ludwig.api import LudwigModel
 from ludwig.constants import INPUT_FEATURES, MODEL_LLM, MODEL_NAME, MODEL_TYPE, OUTPUT_FEATURES
+from ludwig.utils.types import DataFrame
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
 
 LOCAL_BACKEND = {"type": "local"}
@@ -45,6 +46,12 @@ def get_generation_config():
     }
 
 
+def convert_preds(backend: dict, preds: DataFrame):
+    if backend["type"] == "ray":
+        return preds.compute().to_dict()
+    return preds.to_dict()
+
+
 @pytest.mark.parametrize(
     "backend",
     [
@@ -70,8 +77,9 @@ def test_llm_text_to_text(tmpdir, backend):  # , ray_cluster_4cpu)
 
     model = LudwigModel(config, backend=backend)
     model.train(dataset=dataset_filename, output_directory=str(tmpdir), skip_save_processed_input=True)
+
     preds, _ = model.predict(dataset=dataset_filename, output_directory=str(tmpdir), split="test")
-    preds = preds.to_dict()
+    preds = convert_preds(backend, preds)
 
     assert "Answer_predictions" in preds
     assert "Answer_probabilities" in preds
@@ -168,11 +176,7 @@ def test_llm_zero_shot_classification(tmpdir, backend, ray_cluster_4cpu):
     )
 
     preds, _ = model.predict(dataset=prediction_df, output_directory=str(tmpdir))
-
-    if backend["type"] == "ray":
-        preds = preds.compute().to_dict()
-    else:
-        preds = preds.to_dict()
+    preds = convert_preds(backend, preds)
 
     assert "label_predictions" in preds
     assert "label_probabilities" in preds
