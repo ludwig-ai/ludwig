@@ -11,6 +11,7 @@ from tests.integration_tests.utils import parse_flag_from_env
 SKIPPED_CONFIG_ISSUES = {
     "mercedes_benz_greener.ecd.yaml": "https://github.com/ludwig-ai/ludwig/issues/2978",
     "sarcos.ecd.yaml": "Takes more than 300s",
+    "ames_housing.ecd.yaml": "https://github.com/ludwig-ai/ludwig/issues/3344",
 }
 CONFIGS_REQUIRING_DATASET_CREDENTIALS = {
     "mercedes_benz_greener.gbm.yaml",
