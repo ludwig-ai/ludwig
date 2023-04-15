@@ -1,17 +1,20 @@
 from collections import defaultdict
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import MODEL_ECD, MODEL_GBM
+from ludwig.constants import MODEL_ECD, MODEL_GBM, MODEL_LLM
 from ludwig.schema import utils as schema_utils
 from ludwig.utils.registry import Registry
 
 input_config_registries = defaultdict(Registry)
 output_config_registries = defaultdict(Registry)
+
 ecd_input_config_registry = input_config_registries[MODEL_ECD]
 gbm_input_config_registry = input_config_registries[MODEL_GBM]
+llm_input_config_registry = input_config_registries[MODEL_LLM]
 
 ecd_output_config_registry = output_config_registries[MODEL_ECD]
 gbm_output_config_registry = output_config_registries[MODEL_GBM]
+llm_output_config_registry = output_config_registries[MODEL_LLM]
 
 input_mixin_registry = Registry()
 output_mixin_registry = Registry()
@@ -31,6 +34,8 @@ the ECD defaults registry).
 """
 gbm_defaults_config_registry = Registry()
 
+llm_defaults_config_registry = Registry()
+
 
 def input_config_registry(model_type: str) -> Registry:
     return input_config_registries[model_type]
@@ -41,15 +46,15 @@ def output_config_registry(model_type: str) -> Registry:
 
 
 @DeveloperAPI
-def get_input_feature_cls(name: str):
+def get_input_feature_cls(model_type: str, name: str):
     # TODO(travis): not needed once we remove existing model config implementation
-    return input_config_registries[MODEL_ECD][name]
+    return input_config_registries[model_type][name]
 
 
 @DeveloperAPI
-def get_output_feature_cls(name: str):
+def get_output_feature_cls(model_type: str, name: str):
     # TODO(ksbrar): What is this?
-    return output_config_registries[MODEL_ECD][name]
+    return output_config_registries[model_type][name]
 
 
 @DeveloperAPI
@@ -91,7 +96,7 @@ def get_input_feature_conds(model_type: str):
     input_feature_types = sorted(list(input_config_registry(model_type).keys()))
     conds = []
     for feature_type in input_feature_types:
-        schema_cls = get_input_feature_cls(feature_type)
+        schema_cls = get_input_feature_cls(model_type, feature_type)
         feature_schema = schema_utils.unload_jsonschema_from_marshmallow_class(schema_cls)
         feature_props = feature_schema["properties"]
         schema_utils.remove_duplicate_fields(feature_props)
@@ -140,7 +145,7 @@ def get_output_feature_conds(model_type: str):
     output_feature_types = sorted(list(output_config_registry(model_type).keys()))
     conds = []
     for feature_type in output_feature_types:
-        schema_cls = get_output_feature_cls(feature_type)
+        schema_cls = get_output_feature_cls(model_type, feature_type)
         feature_schema = schema_utils.unload_jsonschema_from_marshmallow_class(schema_cls)
         feature_props = feature_schema["properties"]
         schema_utils.remove_duplicate_fields(feature_props)

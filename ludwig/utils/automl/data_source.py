@@ -74,7 +74,7 @@ class DataframeSourceMixin:
         return len(self.df[column].notnull())
 
     def get_image_values(self, column: str, sample_size: int = 10) -> int:
-        return int(sum(is_image_score(None, x, column) for x in self.df[column].head(sample_size)))
+        return int(sum(is_image_score(x) for x in self.df[column].head(sample_size)))
 
     def get_audio_values(self, column: str, sample_size: int = 10) -> int:
         return int(sum(is_audio_score(x) for x in self.df[column].head(sample_size)))
@@ -121,7 +121,7 @@ class DaskDataSource(DataframeSource):
         return self.df[column].notnull().sum().compute()
 
     def get_image_values(self, column: str, sample_size: int = 10) -> int:
-        return int(sum(is_image_score(None, x, column) for x in self.sample[column].head(sample_size)))
+        return int(sum(is_image_score(x) for x in self.sample[column].head(sample_size)))
 
     def get_audio_values(self, column: str, sample_size: int = 10) -> int:
         return int(sum(is_audio_score(x) for x in self.sample[column].head(sample_size)))

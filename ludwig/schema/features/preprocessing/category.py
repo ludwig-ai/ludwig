@@ -110,4 +110,33 @@ class CategoryDistributionOutputPreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[CATEGORY][PREPROCESSING]["missing_value_strategy"],
     )
 
-    vocab: list[str] = schema_utils.List(default=None)
+    vocab: List[str] = schema_utils.List(default=None)
+
+
+@DeveloperAPI
+@register_preprocessor("category_llm")
+@ludwig_dataclass
+class LLMCategoryOutputPreprocessingConfig(CategoryOutputPreprocessingConfig):
+    def __post_init__(self):
+        if self.vocab is None:
+            raise ConfigValidationError("`vocab` must be specified for `category_llm` output feature.")
+        if self.fallback_label is None:
+            raise ConfigValidationError("`fallback_label` must be specified for `category_llm` output feature.")
+
+    vocab: list[str] = schema_utils.List(
+        default=None,
+        allow_none=False,
+        description="The list of labels that the model can predict.",
+    )
+
+    fallback_label: str = schema_utils.String(
+        default="",
+        allow_none=False,
+        description="The label to use when the model doesn't match any of the labels in the `labels` list.",
+    )
+
+    prompt_template: str = schema_utils.String(
+        default="",
+        allow_none=False,
+        description="The template to use for the prompt. The labels will be inserted into the template.",
+    )

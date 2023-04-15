@@ -55,6 +55,7 @@ def get_encoder_descriptions(model_type: str, feature_type: str) -> dict[str, An
     encoder name that matches a valid encoder, add the description metadata to the output dictionary.
 
     Args:
+        model_type (str): The model type to get encoder descriptions for
         feature_type (str): The feature type to get encoder descriptions for
     Returns:
          dict: A dictionary mapping encoder registered names to their respective description metadata.

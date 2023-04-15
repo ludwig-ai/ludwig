@@ -136,6 +136,15 @@ class CategoryFeatureMixin(BaseFeatureMixin):
             num_most_frequent=preprocessing_parameters["most_common"],
             processor=backend.df_engine,
         )
+
+        if "vocab" in preprocessing_parameters:
+            # This is a category output feature for LLMs
+            # Check if the fallback label is in the vocab, if not add it.
+            if preprocessing_parameters["fallback_label"] not in str2idx:
+                str2idx[preprocessing_parameters["fallback_label"]] = len(str2idx)
+                idx2str.append(preprocessing_parameters["fallback_label"])
+                str2freq[preprocessing_parameters["fallback_label"]] = 0
+
         vocab_size = len(str2idx)
         if not is_input_feature and vocab_size <= 1:
             # Category output feature with vocab size 1
@@ -351,6 +360,11 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
     def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
         feature_config.num_classes = feature_metadata["vocab_size"]
         feature_config.top_k = min(feature_config.num_classes, feature_config.top_k)
+
+        # If labels are provided, then this is a classification task for LLMs
+        if hasattr(feature_config.preprocessing, "vocab"):
+            # Enrich the feature config's decoder with str2idx
+            feature_config.decoder.str2idx = feature_metadata["str2idx"]
 
         if isinstance(feature_config.loss.class_weights, (list, tuple)):
             if len(feature_config.loss.class_weights) != feature_config.num_classes:

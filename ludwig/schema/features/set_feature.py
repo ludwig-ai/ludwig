@@ -55,6 +55,7 @@ class SetOutputFeatureConfigMixin(BaseMarshmallowConfig):
     feature and the set global defaults section of the Ludwig Config."""
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
+        MODEL_ECD,
         feature_type=SET,
         default="classifier",
     )

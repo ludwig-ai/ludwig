@@ -13,12 +13,16 @@
 # limitations under the License.
 # ==============================================================================
 import os
+from typing import List
 
 import pandas as pd
+import pytest
 import torch
 
 from ludwig.api import LudwigModel
 from ludwig.constants import BATCH_SIZE, TRAINER
+from ludwig.data.dataset_synthesizer import build_synthetic_dataset_df
+from ludwig.utils.data_utils import load_yaml
 from ludwig.utils.inference_utils import to_inference_module_input_from_dataframe
 from ludwig.utils.triton_utils import export_triton, get_inference_modules, POSTPROCESSOR, PREDICTOR, PREPROCESSOR
 from tests.integration_tests.utils import (
@@ -148,4 +152,38 @@ def test_triton_torchscript(csv_filename, tmpdir):
         elif isinstance(out_value, torch.Tensor):
             assert torch.allclose(out_value, triton_postprocessor_output[i])
         else:
-            raise ValueError("Value should be either list[str] or torch.Tensor.")
+            raise ValueError("Value should be either List[str] or torch.Tensor.")
+
+
+def get_test_config_filenames() -> list[str]:
+    """Return list of the config filenames used for Triton export."""
+    configs_directory = "/".join(__file__.split("/")[:-1] + ["test_triton_configs"])
+    return [os.path.join(configs_directory, config_fp) for config_fp in os.listdir(configs_directory)]
+
+
+@pytest.mark.parametrize("config_path", get_test_config_filenames())
+def test_triton_exportability(config_path, tmpdir):
+    """Tests whether Triton export succeeds for a config."""
+    config = load_yaml(config_path)
+    dataset = build_synthetic_dataset_df(100, config)
+    ludwig_model = LudwigModel(config)
+    ludwig_model.train(
+        dataset=dataset,
+        skip_save_training_description=True,
+        skip_save_training_statistics=True,
+        skip_save_model=True,
+        skip_save_progress=True,
+        skip_save_log=True,
+        skip_save_processed_input=True,
+    )
+
+    triton_path = os.path.join(tmpdir, "triton")
+    model_name = "test_triton"
+    model_version = "1"
+    export_triton(
+        model=ludwig_model,
+        data_example=dataset.head(10),
+        model_name=model_name,
+        output_path=triton_path,
+        model_version=model_version,
+    )

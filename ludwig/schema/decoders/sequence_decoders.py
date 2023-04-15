@@ -1,5 +1,5 @@
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import SEQUENCE, TEXT
+from ludwig.constants import MODEL_ECD, SEQUENCE, TEXT
 from ludwig.schema import common_fields
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
@@ -9,7 +9,7 @@ from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
-@register_decoder_config("generator", [SEQUENCE, TEXT])
+@register_decoder_config("generator", [SEQUENCE, TEXT], model_types=[MODEL_ECD])
 @ludwig_dataclass
 class SequenceGeneratorDecoderConfig(BaseDecoderConfig):
     @staticmethod
@@ -54,7 +54,7 @@ class SequenceGeneratorDecoderConfig(BaseDecoderConfig):
 
 
 @DeveloperAPI
-@register_decoder_config("tagger", [SEQUENCE, TEXT])
+@register_decoder_config("tagger", [SEQUENCE, TEXT], model_types=[MODEL_ECD])
 @ludwig_dataclass
 class SequenceTaggerDecoderConfig(BaseDecoderConfig):
     @classmethod
