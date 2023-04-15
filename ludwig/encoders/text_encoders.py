@@ -919,8 +919,7 @@ class GPTEncoder(HFTextEncoder):
         if self.reduce_output is None:
             return torch.Size([self.max_sequence_length, self.transformer.module.config.hidden_size])
         elif self.reduce_output == "concat":
-            # add the -2 to account of start and end tokens.
-            return torch.Size([self.transformer.module.config.hidden_size * (self.max_sequence_length - 2)])
+            return torch.Size([self.transformer.module.config.hidden_size * self.max_sequence_length])
         return torch.Size([self.transformer.module.config.hidden_size])
 
     @property
@@ -1024,8 +1023,7 @@ class GPT2Encoder(HFTextEncoder):
         if self.reduce_output is None:
             return torch.Size([self.max_sequence_length, self.transformer.module.config.hidden_size])
         elif self.reduce_output == "concat":
-            # add the -2 to account of start and end tokens.
-            return torch.Size([self.transformer.module.config.hidden_size * (self.max_sequence_length - 2)])
+            return torch.Size([self.transformer.module.config.hidden_size * (self.max_sequence_length)])
         return torch.Size([self.transformer.module.config.hidden_size])
 
     @property

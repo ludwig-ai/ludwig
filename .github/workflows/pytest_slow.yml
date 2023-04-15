@@ -1,5 +1,5 @@
 # This workflow will install Python dependencies and run all tests marked as `slow` on a single Python version.
-# The tests will run on a high-memory AWS compute instance to accommodate memory-intensive workloads
+# The tests will run on a high-memory AWS compute instance to accommodate memory-intensive workloads.
 
 name: pytest (slow)
 
@@ -7,6 +7,7 @@ on:
   push:
     branches: ["master", "release-*"]
     tags: ["v*.*.*"]
+  # just for testing, will be removed so that it only runs on commit to master.
   pull_request:
     branches: ["master", "release-*"]
 
