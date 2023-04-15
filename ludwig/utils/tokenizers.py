@@ -934,7 +934,7 @@ class SentencePieceTokenizer(torch.nn.Module):
             pretrained_model_name_or_path = "https://download.pytorch.org/models/text/xlmr.sentencepiece.bpe.model"
         self.tokenizer = torchtext.transforms.SentencePieceTokenizer(sp_model_path=pretrained_model_name_or_path)
 
-    def forward(self, v: Union[str, List[str], torch.Tensor]):
+    def forward(self, v: Union[str, list[str], torch.Tensor]):
         if isinstance(v, torch.Tensor):
             raise ValueError(f"Unsupported input: {v}")
         return self.tokenizer(v)
@@ -948,7 +948,7 @@ class _BPETokenizer(torch.nn.Module):
         self.str2idx, self.idx2str = self._init_vocab(vocab_file)
         self.tokenizer = self._init_tokenizer(pretrained_model_name_or_path, vocab_file)
 
-    def _init_vocab(self, vocab_file: str) -> Dict[str, str]:
+    def _init_vocab(self, vocab_file: str) -> dict[str, str]:
         """Loads the vocab from the vocab file."""
         str2idx = load_json(torchtext.utils.get_asset_local_path(vocab_file))
         _, idx2str = zip(*sorted((v, k) for k, v in str2idx.items()))
@@ -1083,7 +1083,7 @@ class BERTTokenizer(torch.nn.Module):
 
         self.tokenizer = torchtext.transforms.BERTTokenizer(**tokenizer_init_kwargs)
 
-    def _init_vocab(self, vocab_file: str) -> Dict[str, int]:
+    def _init_vocab(self, vocab_file: str) -> dict[str, int]:
         from transformers.models.bert.tokenization_bert import load_vocab
 
         return load_vocab(vocab_file)
@@ -1122,7 +1122,7 @@ class BERTTokenizer(torch.nn.Module):
         assert torch.jit.isinstance(tokens, list[list[str]])
         return tokens[0] if isinstance(v, str) else tokens
 
-    def get_vocab(self) -> Dict[str, int]:
+    def get_vocab(self) -> dict[str, int]:
         return self.vocab
 
     def get_pad_token(self) -> str:

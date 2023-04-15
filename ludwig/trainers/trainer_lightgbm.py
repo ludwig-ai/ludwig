@@ -1079,13 +1079,13 @@ class LightGBMRayTrainer(LightGBMTrainer):
 # Add a top-level function wrapper to handle non-distributed test import errors
 def lightgbm_ray_train_step(
     model: GBM,
-    params: Dict[str, Any],
+    params: dict[str, Any],
     lgb_train: "RayDMatrix",  # noqa: F821
     eval_sets: List["RayDMatrix"],  # noqa: F821
-    eval_names: List[str],
+    eval_names: list[str],
     init_model: lgb.LGBMModel,
     boost_rounds_per_train_step: int,
-    evals_result: Dict,
+    evals_result: dict,
     ray_params: "RayParams",  # noqa
     evaluate_training_set: bool,
     device: Optional[str] = None,

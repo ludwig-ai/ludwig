@@ -1672,9 +1672,9 @@ def _handle_missing_values(
 
 
 def handle_data_augmentation_with_prompt(
-    dataset_cols: Dict[str, pd.Series],
-    feature_configs: List[FeatureConfigDict],
-    feature_name_to_preprocessing_parameters: Dict[str, PreprocessingConfigDict],
+    dataset_cols: dict[str, pd.Series],
+    feature_configs: list[FeatureConfigDict],
+    feature_name_to_preprocessing_parameters: dict[str, PreprocessingConfigDict],
     backend: Backend,
 ) -> None:
     """If output feature is a category feature and it's preprocessing has prompt_template, then we need to update
@@ -1720,8 +1720,8 @@ def handle_data_augmentation_with_prompt(
             continue
 
         prompt: str = feature_name_to_preprocessing_parameters[output_feature[NAME]]["prompt_template"]
-        vocab: List = feature_name_to_preprocessing_parameters[output_feature[NAME]]["vocab"]
-        names_of_features_to_substitute: List = _extract_feature_names_from_prompt(prompt)
+        vocab: list = feature_name_to_preprocessing_parameters[output_feature[NAME]]["vocab"]
+        names_of_features_to_substitute: list = _extract_feature_names_from_prompt(prompt)
 
     if not prompt:
         return
@@ -1747,7 +1747,7 @@ def handle_data_augmentation_with_prompt(
         # substituion in dataset_cols
 
 
-def _extract_feature_names_from_prompt(prompt_template: str) -> List[str]:
+def _extract_feature_names_from_prompt(prompt_template: str) -> list[str]:
     """Extracts feature names from the prompt template whose data needs to be retrieved and injected into the input
     text features."""
     pattern = re.compile(r"{([^}]*)}")

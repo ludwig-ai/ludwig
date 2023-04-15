@@ -41,7 +41,7 @@ def get_decoder_cls(model_type: str, feature: str, name: str):
 
 
 @DeveloperAPI
-def get_decoder_classes(model_type: str, feature: str) -> Dict[str, Type["BaseDecoderConfig"]]:
+def get_decoder_classes(model_type: str, feature: str) -> dict[str, type["BaseDecoderConfig"]]:
     return decoder_config_registry[(model_type, feature)]
 
 

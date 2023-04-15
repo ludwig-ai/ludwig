@@ -110,7 +110,7 @@ class CategoryDistributionOutputPreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[CATEGORY][PREPROCESSING]["missing_value_strategy"],
     )
 
-    vocab: List[str] = schema_utils.List(default=None)
+    vocab: list[str] = schema_utils.List(default=None)
 
 
 @DeveloperAPI
