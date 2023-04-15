@@ -1,5 +1,3 @@
-from typing import List
-
 import torch
 from torch import Tensor
 
@@ -9,7 +7,7 @@ def extract_generated_tokens(
     llm_model_inputs: Tensor,
     max_new_tokens: int,
     pad_sequence: bool,
-) -> List[Tensor]:
+) -> list[Tensor]:
     """Extracts the generated tokens from the raw output sequences of the language model.
 
     Args:

@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import Any, Dict, Union
+from typing import Any, Union
 
 import torch
 
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 # TODO(Arnav): Refactor to split into strategies like splitters
 class Matcher:
-    def __init__(self, match: Dict[str, Dict[str, Any]]):
+    def __init__(self, match: dict[str, dict[str, Any]]):
         self.match = match
 
     def contains(self, decoded_input: str, value: str) -> bool:

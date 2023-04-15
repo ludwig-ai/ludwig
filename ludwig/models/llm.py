@@ -1,7 +1,7 @@
 import copy
 import logging
 import os
-from typing import Dict, Tuple, Union
+from typing import Union
 
 import numpy as np
 import torch
@@ -69,7 +69,7 @@ class LLM(BaseModel):
     @classmethod
     def build_outputs(
         cls, output_feature_configs: FeatureCollection[BaseOutputFeatureConfig], input_size: int
-    ) -> Dict[str, OutputFeature]:
+    ) -> dict[str, OutputFeature]:
         """Builds and returns output feature."""
         # TODO: only single task currently
         if len(output_feature_configs) > 1:
@@ -87,10 +87,10 @@ class LLM(BaseModel):
     def forward(
         self,
         inputs: Union[
-            Dict[str, torch.Tensor], Dict[str, np.ndarray], Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
+            dict[str, torch.Tensor], dict[str, np.ndarray], tuple[dict[str, torch.Tensor], dict[str, torch.Tensor]]
         ],
         mask=None,
-    ) -> Dict[str, torch.Tensor]:
+    ) -> dict[str, torch.Tensor]:
         """Forward pass of the model.
 
         Args:
@@ -209,7 +209,7 @@ class LLM(BaseModel):
 
         return eval_loss, additional_loss
 
-    def outputs_to_predictions(self, outputs: Dict[str, torch.Tensor]) -> Dict[str, Dict[str, torch.Tensor]]:
+    def outputs_to_predictions(self, outputs: dict[str, torch.Tensor]) -> dict[str, dict[str, torch.Tensor]]:
         """Returns the model's predictions for each output feature."""
         predictions = {}
         for of_name in self.output_features:

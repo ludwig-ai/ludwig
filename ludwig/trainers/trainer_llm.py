@@ -2,7 +2,7 @@ import logging
 import os
 import sys
 import time
-from typing import Dict, List, Optional, Union
+from typing import Optional, Union
 
 from torch.utils.tensorboard import SummaryWriter
 
@@ -49,7 +49,7 @@ class ZeroShotTrainer(BaseTrainer):
         skip_save_model: bool = False,
         skip_save_progress: bool = False,
         skip_save_log: bool = False,
-        callbacks: List = None,
+        callbacks: list = None,
         report_tqdm_to_ray=False,
         random_seed: float = default_random_seed,
         distributed: Optional[DistributedStrategy] = None,
@@ -365,7 +365,7 @@ class ZeroShotTrainer(BaseTrainer):
         self,
         dataset: "Dataset",  # noqa: F821
         dataset_name: str,
-        metrics_log: Dict[str, Dict[str, List[TrainerMetric]]],
+        metrics_log: dict[str, dict[str, list[TrainerMetric]]],
         batch_size: int,
         progress_tracker: ProgressTracker,
     ):

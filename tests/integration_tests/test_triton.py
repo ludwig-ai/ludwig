@@ -151,7 +151,7 @@ def test_triton_torchscript(csv_filename, tmpdir):
         elif isinstance(out_value, torch.Tensor):
             assert torch.allclose(out_value, triton_postprocessor_output[i])
         else:
-            raise ValueError("Value should be either List[str] or torch.Tensor.")
+            raise ValueError("Value should be either list[str] or torch.Tensor.")
 
 
 def get_test_config_filenames() -> list[str]:

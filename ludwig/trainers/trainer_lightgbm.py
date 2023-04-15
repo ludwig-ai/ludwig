@@ -1081,7 +1081,7 @@ def lightgbm_ray_train_step(
     model: GBM,
     params: dict[str, Any],
     lgb_train: "RayDMatrix",  # noqa: F821
-    eval_sets: List["RayDMatrix"],  # noqa: F821
+    eval_sets: list["RayDMatrix"],  # noqa: F821
     eval_names: list[str],
     init_model: lgb.LGBMModel,
     boost_rounds_per_train_step: int,
