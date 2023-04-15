@@ -12,6 +12,7 @@ from ludwig.constants import (
     IN_MEMORY,
     MODEL_ECD,
     MODEL_GBM,
+    MODEL_LLM,
     NUMBER,
     SEQUENCE,
     SET,
@@ -455,3 +456,15 @@ def check_hyperopt_nested_parameter_dicts(config: "ModelConfig") -> None:  # noq
         raise ConfigValidationError(
             f"Nested hyperparameter search spaces must be of type 'choice'. Requested space type: {space['space']}"
         )
+
+
+@register_config_check
+def check_llm_atleast_one_input_text_feature(config: "ModelConfig"):  # noqa: F821
+    if config.model_type != MODEL_LLM:
+        return
+
+    for input_feature in config.input_features:
+        if input_feature.type == TEXT:
+            return
+
+    raise ConfigValidationError("LLM requires at least one text input feature.")

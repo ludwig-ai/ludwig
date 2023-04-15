@@ -148,7 +148,7 @@ class RegressorConfig(BaseDecoderConfig):
 
 
 @DeveloperAPI
-@register_decoder_config("projector", [VECTOR, TIMESERIES])
+@register_decoder_config("projector", [VECTOR, TIMESERIES], model_types=[MODEL_ECD])
 @ludwig_dataclass
 class ProjectorConfig(BaseDecoderConfig):
     """ProjectorConfig is a dataclass that configures the parameters used for a projector decoder."""
