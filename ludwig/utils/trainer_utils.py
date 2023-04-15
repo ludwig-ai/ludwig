@@ -4,7 +4,7 @@ from collections import defaultdict, OrderedDict
 try:
     from typing import Literal
 except ImportError:
-    from typing_extensions import Literal
+    from typing import Literal
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import COMBINED, LOSS
