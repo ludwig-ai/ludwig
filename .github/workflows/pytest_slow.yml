@@ -7,9 +7,6 @@ on:
   push:
     branches: ["master", "release-*"]
     tags: ["v*.*.*"]
-  # just for testing, will be removed so that it only runs on commit to master.
-  pull_request:
-    branches: ["master", "release-*"]
 
 jobs:
   start-runner:
@@ -78,7 +75,7 @@ jobs:
     needs: start-runner # required to start the main job when the runner is ready
     runs-on: ${{ needs.start-runner.outputs.label }} # run the job on the newly created runners
 
-    timeout-minutes: 120
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}

@@ -1827,7 +1827,7 @@ class T5Encoder(HFTextEncoder):
                 ]
             )
         elif self.reduce_output == "concat":
-            # add the -2 to account of start and end tokens.
+            # add the -1 to account of start and end tokens.
             return torch.Size([self.transformer.module.config.hidden_size * (self.max_sequence_length - 1)])
         return torch.Size([self.transformer.module.config.d_model])
 

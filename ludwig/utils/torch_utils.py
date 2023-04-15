@@ -271,7 +271,6 @@ class Dense(LudwigModule):
         bias_initializer="zeros",
     ):
         super().__init__()
-        self.input_size_debug, self.output_size_debug = input_size, output_size
         self.dense = nn.Linear(in_features=input_size, out_features=output_size, bias=use_bias)
         weights_initializer = initializer_registry[weights_initializer]
         weights_initializer(self.dense.weight)

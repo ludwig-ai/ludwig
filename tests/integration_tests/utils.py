@@ -1096,10 +1096,6 @@ def clear_huggingface_cache():
     )
     for root, dirs, files in os.walk(cache_path):
         for f in files:
-            print("trying to clean up", os.path.join(root, f))
             os.unlink(os.path.join(root, f))
-            print(os.path.join(root, f), "exists?", os.path.exists(os.path.join(root, f)))
         for d in dirs:
-            print("trying to clean up", os.path.join(root, d))
             shutil.rmtree(os.path.join(root, d))
-            print(os.path.join(root, d), "exists?", os.path.exists(os.path.join(root, d)))
