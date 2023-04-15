@@ -11,6 +11,7 @@
     (base implementation -- # CPU, # GPU)
 """
 
+import logging
 import os
 from dataclasses import dataclass
 from typing import Any, Dict, List, Set, Union
@@ -20,6 +21,7 @@ import numpy as np
 import pandas as pd
 import yaml
 from dataclasses_json import dataclass_json, LetterCase
+from tqdm import tqdm
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend import Backend
@@ -44,6 +46,8 @@ from ludwig.utils.automl.type_inference import infer_type, should_exclude
 from ludwig.utils.data_utils import load_yaml
 from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.system_utils import Resources
+
+logger = logging.getLogger(__name__)
 
 PATH_HERE = os.path.abspath(os.path.dirname(__file__))
 CONFIG_DIR = os.path.join(PATH_HERE, "defaults")
@@ -300,7 +304,8 @@ def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
     """
     row_count = len(source)
     fields = []
-    for field in source.columns:
+    for field in tqdm(source.columns, desc="Analyzing fields", total=len(source.columns)):
+        logger.info(f"Analyzing field: {field}")
         dtype = source.get_dtype(field)
         num_distinct_values, distinct_values, distinct_values_balance = source.get_distinct_values(
             field, MAX_DISTINCT_VALUES_TO_RETURN

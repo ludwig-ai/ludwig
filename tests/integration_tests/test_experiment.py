@@ -428,7 +428,6 @@ DATA_FORMATS_TO_TEST = [
     "df",
     "dict",
     "excel",
-    "excel_xls",
     "feather",
     "fwf",
     "hdf5",

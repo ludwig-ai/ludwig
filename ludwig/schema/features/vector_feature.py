@@ -55,6 +55,7 @@ class VectorOutputFeatureConfigMixin(BaseMarshmallowConfig):
     feature and the vector global defaults section of the Ludwig Config."""
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
+        MODEL_ECD,
         feature_type=VECTOR,
         default="projector",
     )
