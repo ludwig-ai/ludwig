@@ -41,8 +41,8 @@ class LLM(BaseModel):
         self._random_seed = random_seed
 
         self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.model_name)
-        self.generation_config = GenerationConfig(**self.config_obj.generation_config.to_dict())
-        self.max_new_tokens = self.config_obj.generation_config.max_new_tokens
+        self.generation = GenerationConfig(**self.config_obj.generation.to_dict())
+        self.max_new_tokens = self.config_obj.generation.max_new_tokens
 
         # ================ Inputs ================
         try:
@@ -123,7 +123,7 @@ class LLM(BaseModel):
             outputs = self.model.generate(
                 input_ids=input_ids,
                 attention_mask=mask,
-                generation_config=self.generation_config,
+                generation_config=self.generation,
                 return_dict_in_generate=True,
                 output_scores=True,
             )
