@@ -2,6 +2,7 @@ import os
 
 import pandas as pd
 import pytest
+import yaml
 
 from ludwig.api import LudwigModel
 from ludwig.constants import INPUT_FEATURES, MODEL_LLM, MODEL_NAME, MODEL_TYPE, OUTPUT_FEATURES
@@ -285,10 +286,9 @@ preprocessing:
     prompt:
         task: "Given the sample input, complete this sentence by 
             replacing XXXX: The review rating is XXXX. Choose one value 
-            in this list: {reviews_rating_floor}."
+            in this list: [1, 2, 3, 4, 5]."
         retrieval: 
-            type: "semantic"
-            index_path: None  # TODO: add ability to load index from file
+            type: "index"
             model_name: multi-qa-MiniLM-L6-cos-v1
             k: 5
 input_features:
@@ -326,8 +326,6 @@ output_features:
                 type: contains
                 value: "5"
 """
-    import yaml
-
     config = yaml.safe_load(config)
 
     model = LudwigModel(config, backend={"type": "local", "cache_dir": str(tmpdir)})

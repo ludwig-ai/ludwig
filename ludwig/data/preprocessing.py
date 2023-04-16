@@ -1202,6 +1202,7 @@ def build_dataset(
         preprocessing_parameters = feature_name_to_preprocessing_parameters[feature_config[NAME]]
         handle_missing_values(dataset_cols, feature_config, preprocessing_parameters, backend)
 
+    breakpoint()
     if global_preprocessing_parameters["prompt"] is not None:
         # If we're using LLMs for zero-shot/few-shot learning, update text input features with the prompt
         # ahead of time so that we can compute metadata and build the preprocessed data correctly.
@@ -1725,7 +1726,7 @@ def format_data_with_prompt(
     }
 
     USER: Provide an exact answer to the question: Given the sample input, complete this sentence by replacing XXXX:
-    The review rating is XXXX. Choose one value in this list: ['1', '2', '3', '4', '5'].
+    The review rating is XXXX. Choose one value in this list: [1, 2, 3, 4, 5].
 
     ASSISTANT:
     ```
@@ -1734,12 +1735,10 @@ def format_data_with_prompt(
     # TODO(geoffrey): we need to get this to work with Dask, but for now let's just use Pandas
     df = pd.DataFrame({feature[COLUMN]: dataset_cols[feature[COLUMN]] for feature in feature_configs})
 
-    input_features, output_features = get_input_and_output_features(feature_configs)
+    input_features, _ = get_input_and_output_features(feature_configs)
     if len(input_features) != 1:
-        raise ValueError("input_features needs to be of length 1 for now.")
-    if len(output_features) != 1:
-        raise ValueError("hello? output_features needs to be of length 1 for now.")
-
+        raise ValueError(f"input_features needs to be of length 1 for now, got: {len(input_features)}")
+    
     # initialize the retrieval model
     if prompt_config["retrieval"] is not None:
         retrieval_model = get_retrieval_model(prompt_config["retrieval"]["type"])
@@ -1761,8 +1760,6 @@ def format_data_with_prompt(
     prompt_fn = partial(
         generate_prompt,
         context_fn=context_fn,
-        output_feature_name=output_features[0][COLUMN],
-        output_feature_labels=output_features[0]["preprocessing"]["vocab"],
         prompt_config=prompt_config,
     )
     df[input_features[0][COLUMN]] = df.apply(prompt_fn, axis=1)
@@ -1789,8 +1786,6 @@ def get_input_and_output_features(feature_configs):
 def generate_prompt(
     row: DataFrame,
     context_fn: Callable,
-    output_feature_name: str,
-    output_feature_labels: List[str],
     prompt_config: Dict[str, Any] = None,
 ):
     prompt = context_fn(row)
@@ -1799,7 +1794,7 @@ def generate_prompt(
     # NOTE: this should safely fail if the prompt does not leverage output_feature_name
     prompt += f"sample input: {json.dumps(row.to_dict(), indent=2)}\n\n"
     prompt += "USER: Provide an exact answer to the question: "
-    prompt += prompt_config["task"].format(**{output_feature_name: output_feature_labels})
+    prompt += prompt_config["task"]
     prompt += "\n\nASSISTANT: "
     return prompt
 
@@ -2252,7 +2247,10 @@ def preprocess_for_prediction(
     config_defaults = config.get(DEFAULTS, {})
     for feature_type in config_defaults:
         preprocessing_params[feature_type] = config_defaults[feature_type].get(PREPROCESSING, {})
-    preprocessing_params[SPLIT] = config.get(PREPROCESSING, {}).get(SPLIT, {})
+    preprocessing_params[SPLIT] = config.get(PREPROCESSING, {}).get(SPLIT, {});
+    
+    # Ensure that the prompt is passed to the preprocessing parameters    
+    preprocessing_params["prompt"] = config.get(PREPROCESSING, {}).get("prompt", {})
 
     preprocessing_params = merge_dict(default_prediction_preprocessing_parameters, preprocessing_params)
 
