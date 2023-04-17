@@ -191,52 +191,42 @@ def test_llm_few_shot_classification(tmpdir, backend):
     df = pd.DataFrame(
         [
             {
-                "reviews_title": "Bowling Trip",
                 "reviews_text": "I liked the look and location of the",
                 "reviews_rating_floor": 3,
             },
             {
-                "reviews_title": "Best Hotel in San Antonio",
                 "reviews_text": "My wife and I have not stayed in",
                 "reviews_rating_floor": 5,
             },
             {
-                "reviews_title": "perfect!",
                 "reviews_text": "This was the hotel our son and daughter",
                 "reviews_rating_floor": 5,
             },
             {
-                "reviews_title": "right on the ocean",
                 "reviews_text": "great hotel right on the ocean with a",
                 "reviews_rating_floor": 4,
             },
             {
-                "reviews_title": "Trip to Anaheim for a Ducks Game",
                 "reviews_text": "The hotel was great from the start.",
                 "reviews_rating_floor": 5,
             },
             {
-                "reviews_title": "Fitted our needs",
                 "reviews_text": "We stayed here pre and post cruise.",
                 "reviews_rating_floor": 4,
             },
             {
-                "reviews_title": "Try to go elsewhere, bed bugs!",
                 "reviews_text": "This place was just ok, sketchy looking",
                 "reviews_rating_floor": 2,
             },
             {
-                "reviews_title": "Good location to a few of the museums",
                 "reviews_text": "Stayed here for a business trip. Very",
                 "reviews_rating_floor": 4,
             },
             {
-                "reviews_title": "June trip to New Orleans",
                 "reviews_text": "We went on a trip to new orleans it was fun",
                 "reviews_rating_floor": 3,
             },
             {
-                "reviews_title": "Great Hotel",
                 "reviews_text": "My wife and I have stayed at Ascend brand ",
                 "reviews_rating_floor": 5,
             },
@@ -246,27 +236,22 @@ def test_llm_few_shot_classification(tmpdir, backend):
     prediction_df = pd.DataFrame(
         [
             {
-                "reviews_title": "Comfortable, clean and great desk staff...but loud mornings!",
                 "reviews_text": "I really liked this hotel. I stayed in",
                 "reviews_rating_floor": 4,
             },
             {
-                "reviews_title": "Pleasant Stay",
                 "reviews_text": "Stayed for One night but really enjoyed our stay",
                 "reviews_rating_floor": 4,
             },
             {
-                "reviews_title": "Hampton Inn and Suites El Paso",
                 "reviews_text": "Very conveniently located near the airport and Ft.",
                 "reviews_rating_floor": 5,
             },
             {
-                "reviews_title": "Just as good the 2nd time.",
                 "reviews_text": "We stayed at the Del Sol Inn again over",
                 "reviews_rating_floor": 5,
             },
             {
-                "reviews_title": "Great Stay!",
                 "reviews_text": "We had a wonderful time staying at Eden Roc",
                 "reviews_rating_floor": 5,
             },

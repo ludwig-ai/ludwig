@@ -1,5 +1,6 @@
 import hashlib
 import json
+import os
 from typing import Any, Dict, List, Optional, Union
 
 import faiss
@@ -17,7 +18,6 @@ def df_checksum(df: pd.DataFrame) -> str:
 
 
 # TODO: support Ray backend
-# TODO: support loading index from disk
 class RetrievalModel:
     def create_dataset_index(self, df: pd.DataFrame, columns_to_index: Optional[List[str]] = None):
         raise NotImplementedError
@@ -25,10 +25,10 @@ class RetrievalModel:
     def search(self, query: str, k: int = 10, return_data: bool = False) -> Union[List[int], List[Dict[str, Any]]]:
         raise NotImplementedError
 
-    def save_index(self, name: str):
+    def save_index(self, name: str, cache_directory: str):
         raise NotImplementedError
     
-    def load_index(self, name: str):
+    def load_index(self, name: str, cache_directory: str):
         raise NotImplementedError
     
     def ping(self) -> bool:
@@ -50,17 +50,21 @@ class RandomRetrieval(RetrievalModel):
             return self.index_data.iloc[indices].to_dict(orient="records")
         return indices
     
-    def save_index(self, name: str):
-        np.save(name + ".index", self.index)
-        self.index_data.to_csv(name + ".csv", index=False)
+    def save_index(self, name: str, cache_directory: str):
+        index_file_path = os.path.join(cache_directory, name + ".index")
+        np.save(index_file_path, self.index)
+
+        index_data_file_path = os.path.join(cache_directory, name + "_data.csv")
+        self.index_data.to_csv(index_data_file_path, index=False)
+
+    def load_index(self, name: str, cache_directory: str):
+        index_file_path = os.path.join(cache_directory, name + ".index")
+        self.index = np.load(index_file_path)
         
-    def load_index(self, name: str):
-        self.index = np.load(name + ".index")
-        self.index_data = pd.read_csv(name + ".csv")
+        index_data_file_path = os.path.join(cache_directory, name + "_data.csv")
+        self.index_data = pd.read_csv(index_data_file_path)
 
 
-
-# @ray.remote
 class SemanticRetrieval(RetrievalModel):
     def __init__(self, model_name: str = SENTENCE_TRANSFORMER_MODEL_NAME):
         self.model = SentenceTransformer(model_name)
@@ -97,13 +101,19 @@ class SemanticRetrieval(RetrievalModel):
             return self.index_data.iloc[indices].to_dict(orient="records")
         return indices
 
-    def save_index(self, name: str):
-        faiss.write_index(self.index, name + ".index")
-        self.index_data.to_csv(name + ".csv", index=False)
+    def save_index(self, name: str, cache_directory: str):
+        index_file_path = os.path.join(cache_directory, name + ".index")
+        faiss.write_index(self.index, index_file_path)
+        
+        index_data_file_path = os.path.join(cache_directory, name + "_data.csv")
+        self.index_data.to_csv(index_data_file_path, index=False)
 
-    def load_index(self, name: str):
-        self.index = faiss.read_index(name + ".index")
-        self.index_data = pd.read_csv(name + ".csv")
+    def load_index(self, name: str, cache_directory: str):
+        index_file_path = os.path.join(cache_directory, name + ".index")
+        self.index = faiss.read_index(index_file_path)
+
+        index_data_file_path = os.path.join(cache_directory, name + "_data.csv")
+        self.index_data = pd.read_csv(index_data_file_path)
 
 
 def get_retrieval_model(type: str, **kwargs) -> RetrievalModel:

@@ -17,6 +17,7 @@ import contextlib
 import json
 import logging
 import re
+import uuid
 import warnings
 from abc import ABC, abstractmethod
 from functools import partial
@@ -124,7 +125,7 @@ from ludwig.utils.defaults import (
     default_random_seed,
     default_training_preprocessing_parameters,
 )
-from ludwig.utils.fs_utils import file_lock, path_exists
+from ludwig.utils.fs_utils import file_lock, path_exists, get_default_cache_location
 from ludwig.utils.misc_utils import get_from_registry, merge_dict
 from ludwig.utils.types import DataFrame, Series
 
@@ -1207,7 +1208,8 @@ def build_dataset(
         handle_missing_values(dataset_cols, feature_config, preprocessing_parameters, backend)
 
     logger.debug("handle text features with prompt parameters")
-    handle_features_with_prompt_config(dataset_cols, feature_name_to_preprocessing_parameters, features)
+    handle_features_with_prompt_config(
+        dataset_cols, feature_name_to_preprocessing_parameters, features)
 
     # Happens after missing values are handled to avoid NaN casting issues.
     logger.debug("cast columns")
@@ -1695,10 +1697,12 @@ def handle_features_with_prompt_config(
             }
             
             if prompt_config["retrieval"] is not None:
+                index_cache_directory = get_default_cache_location()
                 retrieval_model, index_name = index_input_col(
                     prompt_config["retrieval"],
                     input_col_name=input_col_name,
                     dataset_cols=input_and_output_cols,
+                    cache_directory=index_cache_directory,
                 )
                 # NOTE: after indexing the input column, we update the index_name in the prompt config IN PLACE.
                 # This ensures that the preprocessing parameters for this feature have an up-to-date index_name
@@ -1722,17 +1726,21 @@ def handle_features_with_prompt_config(
             )
 
 
-def index_input_col(retrieval_config: Dict[str, Any], input_col_name: str, dataset_cols: Dict[str, Series]):
+def index_input_col(
+    retrieval_config: Dict[str, Any], 
+    input_col_name: str, 
+    dataset_cols: Dict[str, Series],
+    cache_directory: str,
+):
     retrieval_model = get_retrieval_model(retrieval_config["type"])
     index_name = retrieval_config["index_name"]
     if index_name is None:
         df = pd.DataFrame(dataset_cols)
         retrieval_model.create_dataset_index(df, columns_to_index=[input_col_name])
-        # TODO(geoffrey): make sure this is placed in a cache directory and that we can use caching to avoid re-indexing
-        index_name = f"TEST_INDEX_{input_col_name}"
-        retrieval_model.save_index(index_name)
+        index_name = f"embedding_index_{uuid.uuid4()}"
+        retrieval_model.save_index(index_name, cache_directory=cache_directory)
     else:
-        retrieval_model.load_index(index_name)
+        retrieval_model.load_index(index_name, cache_directory=cache_directory)
     return retrieval_model, index_name
 
 
