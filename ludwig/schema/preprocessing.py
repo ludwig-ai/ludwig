@@ -2,7 +2,6 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import RANDOM
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata import PREPROCESSING_METADATA
-from ludwig.schema.prompt import PromptConfig
 from ludwig.schema.split import BaseSplitConfig, SplitDataclassField
 from ludwig.schema.utils import ludwig_dataclass
 
@@ -11,9 +10,6 @@ from ludwig.schema.utils import ludwig_dataclass
 @ludwig_dataclass
 class PreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     """Global preprocessing config is a dataclass that configures the parameters used for global preprocessing."""
-    
-    # TODO(geoffrey): figure out how to give this a default value of None correctly
-    prompt: PromptConfig = schema_utils.Dict()
 
     sample_ratio: float = schema_utils.NonNegativeFloat(
         default=1.0,

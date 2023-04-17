@@ -119,6 +119,12 @@ START_SYMBOL = "<SOS>"
 PADDING_SYMBOL = "<PAD>"
 UNKNOWN_SYMBOL = "<UNK>"
 
+# Prompt constants
+CONTEXT = "context"
+SAMPLE_INPUT = "sample input"
+USER = "USER"
+ASSISTANT = "ASSISTANT"
+
 TRAINER = "trainer"
 OPTIMIZER = "optimizer"
 METRIC = "metric"

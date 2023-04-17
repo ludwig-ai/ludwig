@@ -282,19 +282,20 @@ generation:
     top_k: 40
     num_beams: 4
     max_new_tokens: 5
-preprocessing:
-    prompt:
-        task: "Given the sample input, complete this sentence by 
-            replacing XXXX: The review rating is XXXX. Choose one value 
-            in this list: [1, 2, 3, 4, 5]."
-        retrieval: 
-            type: "index"
-            model_name: multi-qa-MiniLM-L6-cos-v1
-            k: 5
 input_features:
 -
     name: reviews_text
     type: text
+    preprocessing:
+        prompt:
+            retrieval: 
+                type: "semantic"
+                index_name: null
+                model_name: multi-qa-MiniLM-L6-cos-v1
+                k: 5
+            task: "Given the sample input, complete this sentence by 
+                replacing XXXX: The review rating is XXXX. Choose one value 
+                in this list: [1, 2, 3, 4, 5]."
 output_features:
 -
     name: reviews_rating_floor

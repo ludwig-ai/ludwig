@@ -7,6 +7,7 @@ from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor
 from ludwig.schema.metadata import FEATURE_METADATA, PREPROCESSING_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
+from ludwig.schema.prompt import PromptConfig
 from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils import strings_utils
 from ludwig.utils.tokenizers import tokenizer_registry
@@ -17,6 +18,9 @@ from ludwig.utils.tokenizers import tokenizer_registry
 @ludwig_dataclass
 class TextPreprocessingConfig(BasePreprocessingConfig):
     """TextPreprocessingConfig is a dataclass that configures the parameters used for a text input feature."""
+    
+    # TODO(geoffrey): finalize the schema for this class.
+    prompt: PromptConfig = schema_utils.Dict()
 
     pretrained_model_name_or_path: str = schema_utils.String(
         default=None,

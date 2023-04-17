@@ -29,10 +29,12 @@ import torch
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend import Backend, LOCAL_BACKEND
 from ludwig.constants import (
+    ASSISTANT,
     BFILL,
     CATEGORY,
     CHECKSUM,
     COLUMN,
+    CONTEXT,
     DECODER,
     DEFAULTS,
     DROP_ROW,
@@ -51,12 +53,14 @@ from ludwig.constants import (
     NUMBER,
     PREPROCESSING,
     PROC_COLUMN,
+    SAMPLE_INPUT,
     SPLIT,
     SRC,
     TEST,
     TEXT,
     TRAINING,
     TYPE,
+    USER,
     VALIDATION,
 )
 from ludwig.data.cache.manager import DatasetCache
@@ -1202,11 +1206,8 @@ def build_dataset(
         preprocessing_parameters = feature_name_to_preprocessing_parameters[feature_config[NAME]]
         handle_missing_values(dataset_cols, feature_config, preprocessing_parameters, backend)
 
-    breakpoint()
-    if global_preprocessing_parameters["prompt"] is not None:
-        # If we're using LLMs for zero-shot/few-shot learning, update text input features with the prompt
-        # ahead of time so that we can compute metadata and build the preprocessed data correctly.
-        format_data_with_prompt(dataset_cols, global_preprocessing_parameters["prompt"], feature_configs)
+    logger.debug("handle text features with prompt parameters")
+    handle_features_with_prompt_config(dataset_cols, feature_name_to_preprocessing_parameters, features)
 
     # Happens after missing values are handled to avoid NaN casting issues.
     logger.debug("cast columns")
@@ -1674,98 +1675,146 @@ def _handle_missing_values(
         raise ValueError(f"Invalid missing value strategy {missing_value_strategy}")
 
 
-def format_data_with_prompt(
-    dataset_cols: Dict[str, Series],
-    prompt_config: Dict[str, Any],
-    feature_configs: List[FeatureConfigDict],
-) -> Dict[str, Series]:
-    """Adds the prompt to the input data.
+def handle_features_with_prompt_config(
+    dataset_cols: Dict[str, pd.Series], 
+    feature_name_to_preprocessing_parameters: Dict[str, PreprocessingConfigDict],
+    features: List[FeatureConfigDict], 
+):
+    input_features, output_features = get_input_and_output_features(features)
+    output_feature_col_names = [output_feature_config[COLUMN] for output_feature_config in output_features]
+    for input_feature_config in input_features:        
+        # If we're using LLMs for zero-shot/few-shot learning, update text input features with the prompt
+        # ahead of time so that we can compute metadata and build the preprocessed data correctly.
+        input_feature_preprocessing_parameters = feature_name_to_preprocessing_parameters[input_feature_config[NAME]]
+        if input_feature_preprocessing_parameters.get("prompt", False):
+            prompt_config = input_feature_preprocessing_parameters["prompt"]
+            input_col_name = input_feature_config[COLUMN]
+            input_and_output_col_names = [input_col_name] + output_feature_col_names
+            input_and_output_cols = {
+                k: v for k, v in dataset_cols.items() if k in input_and_output_col_names
+            }
+            
+            if prompt_config["retrieval"] is not None:
+                retrieval_model, index_name = index_input_col(
+                    prompt_config["retrieval"],
+                    input_col_name=input_col_name,
+                    dataset_cols=input_and_output_cols,
+                )
+                # NOTE: after indexing the input column, we update the index_name in the prompt config IN PLACE.
+                # This ensures that the preprocessing parameters for this feature have an up-to-date index_name
+                # when the training set metadata is saved.
+                prompt_config["retrieval"]["index_name"] = index_name
 
-    The prompt is formatted as a string with the following structure:
-    1. Context (if retrieval is not None)
-    2. Sample input (the input feature data)
-    3. Task (the user-defined prompt task)
+                search_fn = partial(
+                    _search_fn,
+                    retrieval_model=retrieval_model,
+                    k=prompt_config["retrieval"]["k"],
+                )
+            else:
+                search_fn = None
 
-    Example config:
-    ```
-    prompt:
-        task: "Given the sample input, complete this sentence by
-            replacing XXXX: The review rating is XXXX. Choose one value
-            in this list: {{reviews_rating_floor}}."
-        retrieval:
-            type: "random"
-            k: 2
-    input_features:
-    - name: reviews_text
-      type: text
-    output_features:
-    - name: reviews_rating_floor
-      type: category
-      ...
-    ```
+            input_col = input_and_output_cols[input_col_name]
+            dataset_cols[input_col_name] = format_input_with_prompt(
+                input_col_name,
+                input_col,
+                search_fn=search_fn,
+                task_str = prompt_config["task"],
+            )
 
-    Fully rendered prompt for the `reviews_text` input feature:
-    ```
-    Below is relevant context.[
-        {
-            "reviews_text": "Truly enjoyed our overnight stay.",
-            "reviews_rating_floor": 5
-        },
-        {
-            "reviews_text": "We stayed one night January 4, 2018, after an overnight flight from Europe.",
-            "reviews_rating_floor": 3
-        }
-    ]
 
-    The context is comprised of labeled samples whose embeddings were similar to that of the sample input.
-    The labels in these samples could aid you in your final prediction. Given this context and no prior knowledge,
-    follow the instructions below.
-
-    sample input: {
-        "reviews_text": "Only staying overnight for easy airport access for early morning flight."
-    }
-
-    USER: Provide an exact answer to the question: Given the sample input, complete this sentence by replacing XXXX:
-    The review rating is XXXX. Choose one value in this list: [1, 2, 3, 4, 5].
-
-    ASSISTANT:
-    ```
-    """
-    # We need to merge the feature columns to create a single DataFrame so we can reason about retrieval
-    # TODO(geoffrey): we need to get this to work with Dask, but for now let's just use Pandas
-    df = pd.DataFrame({feature[COLUMN]: dataset_cols[feature[COLUMN]] for feature in feature_configs})
-
-    input_features, _ = get_input_and_output_features(feature_configs)
-    if len(input_features) != 1:
-        raise ValueError(f"input_features needs to be of length 1 for now, got: {len(input_features)}")
-    
-    # initialize the retrieval model
-    if prompt_config["retrieval"] is not None:
-        retrieval_model = get_retrieval_model(prompt_config["retrieval"]["type"])
-        retrieval_model.create_dataset_index(df[[feature[COLUMN] for feature in input_features]])
-        k = prompt_config["retrieval"]["k"]
+def index_input_col(retrieval_config: Dict[str, Any], input_col_name: str, dataset_cols: Dict[str, Series]):
+    retrieval_model = get_retrieval_model(retrieval_config["type"])
+    index_name = retrieval_config["index_name"]
+    if index_name is None:
+        df = pd.DataFrame(dataset_cols)
+        retrieval_model.create_dataset_index(df, columns_to_index=[input_col_name])
+        # TODO(geoffrey): make sure this is placed in a cache directory and that we can use caching to avoid re-indexing
+        index_name = f"TEST_INDEX_{input_col_name}"
+        retrieval_model.save_index(index_name)
     else:
-        retrieval_model = None
-        k = 0
+        retrieval_model.load_index(index_name)
+    return retrieval_model, index_name
 
-    # function for retrieving the context for a given sample
-    context_fn = partial(
-        get_context,
-        retrieval_model=retrieval_model,
-        df=df,
-        k=k, 
+
+def format_input_with_prompt(
+    input_col_name: str,
+    input_col: Series,
+    task_str: str,
+    search_fn: Optional[Callable[[str], List[Dict[str, Any]]]] = None,
+) -> Series:
+    """Returns a new Series with the input column data formatted with the prompt."""
+    # function for retrieving the context for a given sample.
+    # If `search_fn` is not provided, context is omitted.
+    if search_fn is not None:
+        context_fn = partial(
+            get_context,
+            search_fn=search_fn
+        )
+    else:
+        context_fn = lambda _: ""
+    
+    # function for getting the sample input. This ensures that only the input_features of a sample are returned
+    sample_input_fn = partial(
+        get_sample_input,
+        input_col_name=input_col_name,
+    )
+    
+    # function for getting the task.
+    task_fn = partial(
+        get_task,
+        task_str=task_str
     )
     
     # function for generating the prompt (context + sample input + task) for a given sample
     prompt_fn = partial(
         generate_prompt,
         context_fn=context_fn,
-        prompt_config=prompt_config,
+        sample_input_fn=sample_input_fn,
+        task_fn=task_fn,
     )
-    df[input_features[0][COLUMN]] = df.apply(prompt_fn, axis=1)
     
-    # return DataFrame as dataset_cols again
-    return {feature[COLUMN]: df[feature[COLUMN]] for feature in feature_configs}
+    return input_col.map(prompt_fn)
+
+
+def get_context(
+    entry: str,
+    search_fn: Callable[[str], List[Dict[str, Any]]],
+):
+    """Returns a string representation of the context retrieved by `search_fn`."""
+    k_samples = search_fn(query=entry)
+    return (f"{CONTEXT}: Below is relevant context. \n{json.dumps(k_samples, indent=2)}\n"
+            f"The context is comprised of labeled samples whose embeddings were "
+            f"similar to that of the sample input. The labels in these samples "
+            f"could aid you in your final prediction. Given this context and no "
+            f"prior knowledge, follow the instructions below.\n\n")
+
+
+def get_sample_input(
+    entry: str, 
+    input_col_name: str,
+):
+    """Returns a string representation of the sample input for the prompt."""
+    return f"{SAMPLE_INPUT}: {json.dumps({input_col_name: entry}, indent=2)}\n\n"
+
+
+def get_task(entry: str, task_str: str):
+    """Returns a string representation of the task for the prompt."""
+    return f"{USER}: Complete the following task: {task_str}\n\n"
+
+
+def generate_prompt(
+    entry: str,
+    context_fn: Callable,
+    sample_input_fn: Callable,
+    task_fn: Callable,
+):
+    prompt = context_fn(entry)
+    # TODO(geoffrey): figure out how to inject feature information into the prompt
+    # TODO(geoffrey): figure out how to use {{x}} notation in the YAML file (probably needs regex)
+    prompt += sample_input_fn(entry)
+    prompt += task_fn(entry)
+    prompt += f"{ASSISTANT}: "
+    return prompt
 
 
 def get_input_and_output_features(feature_configs):
@@ -1782,38 +1831,12 @@ def get_input_and_output_features(feature_configs):
             output_features.append(feature)
     return input_features, output_features
 
-
-def generate_prompt(
-    row: DataFrame,
-    context_fn: Callable,
-    prompt_config: Dict[str, Any] = None,
-):
-    prompt = context_fn(row)
-    # TODO(geoffrey): figure out how to inject input features into the prompt
-    # TODO(geoffrey): figure out how to use {{x}} notation in the YAML file (probably needs regex)
-    # NOTE: this should safely fail if the prompt does not leverage output_feature_name
-    prompt += f"sample input: {json.dumps(row.to_dict(), indent=2)}\n\n"
-    prompt += "USER: Provide an exact answer to the question: "
-    prompt += prompt_config["task"]
-    prompt += "\n\nASSISTANT: "
-    return prompt
-
-def get_context(
-    row: DataFrame, 
+def _search_fn(
+    query: str, 
     retrieval_model: RetrievalModel, 
-    df: DataFrame, 
-    k: int,
-):
-    """Returns a string representation of the context retrieved by `retrieval_model`."""
-    if retrieval_model is not None:
-        k_ids = retrieval_model.search(row.to_dict(), k=k)
-        k_samples = df.iloc[k_ids].to_dict(orient="records")
-        return (f"Below is relevant context. \n{json.dumps(k_samples, indent=2)}"
-                f"The context is comprised of labeled samples whose embeddings were "
-                f"similar to that of the sample input. The labels in these samples "
-                f"could aid you in your final prediction. Given this context and no "
-                f"prior knowledge, follow the instructions below.\n\n")
-    return ""
+    k: int, 
+) -> List[Dict[str, Any]]:
+    return retrieval_model.search(query, k, return_data=True)
 
 
 def _extract_feature_names_from_prompt(prompt_template: str) -> List[str]:
