@@ -137,7 +137,6 @@ jobs:
 
           torch_expected=$(python -c "import torch; print(torch.__version__)")
 
-          pip install --no-build-isolation --no-use-pep517 ConfigSpace # temporary fix: https://github.com/automl/ConfigSpace/issues/173
           pip install '.[test]' --extra-index-url $extra_index_url
           pip list
 
