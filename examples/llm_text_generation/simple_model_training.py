@@ -53,11 +53,9 @@ config = yaml.safe_load(
               type: text
         model_type: llm
         generation_config:
-            temperature: 0.1
-            top_p: 0.75
-            top_k: 40
+            temperature: 1.0
             num_beams: 4
-            max_new_tokens: 5
+            max_new_tokens: 20
         model_name: facebook/opt-350m
     """
 )
@@ -71,7 +69,11 @@ model = LudwigModel(config=config, logging_level=logging.INFO)
     preprocessed_data,  # tuple Ludwig Dataset objects of pre-processed training data
     output_directory,  # location of training results stored on disk
 ) = model.train(
-    dataset=df, experiment_name="simple_experiment", model_name="simple_model", skip_save_processed_input=True
+    dataset=df,
+    experiment_name="simple_experiment",
+    model_name="simple_model",
+    skip_save_processed_input=True,
+    skip_save_model=True,
 )
 
 training_set, val_set, test_set, _ = preprocessed_data

@@ -53,6 +53,12 @@ df = pd.DataFrame(review_label_pairs)
 
 config = yaml.safe_load(
     """
+        model_type: llm
+        model_name: bigscience/bloomz-560m
+        generation_config:
+            temperature: 1.0
+            num_beams: 4
+            max_new_tokens: 10
         input_features:
             - name: review
               type: text
@@ -74,7 +80,7 @@ config = yaml.safe_load(
                         type: contains
                         value: positive
                     neutral:
-                        type: regex
+                        type: contains
                         value: neutral
                     negative:
                         type: contains
@@ -83,12 +89,6 @@ config = yaml.safe_load(
             split:
                 type: fixed
                 column: split
-        model_type: llm
-        model_name: bigscience/bloomz-560m
-        generation_config:
-            temperature: 1.0
-            num_beams: 4
-            max_new_tokens: 10
     """
 )
 
