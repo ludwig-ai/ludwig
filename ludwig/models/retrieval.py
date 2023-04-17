@@ -3,11 +3,10 @@ import json
 from typing import Any, Dict, List, Optional, Union
 
 import faiss
+import numpy as np
 import pandas as pd
 import ray
-import numpy as np
 from sentence_transformers import SentenceTransformer
-
 
 SENTENCE_TRANSFORMER_MODEL_NAME = "multi-qa-MiniLM-L6-cos-v1"
 
@@ -27,12 +26,13 @@ class RetrievalModel:
 
     def save_index(self, name: str):
         raise NotImplementedError
-    
+
     def load_index(self, name: str):
         raise NotImplementedError
-    
+
     def ping(self) -> bool:
         return True
+
 
 class RandomRetrieval(RetrievalModel):
     def __init__(self, **kwargs):
@@ -49,15 +49,14 @@ class RandomRetrieval(RetrievalModel):
         if return_data:
             return self.index_data.iloc[indices].to_dict(orient="records")
         return indices
-    
+
     def save_index(self, name: str):
         np.save(name + ".index", self.index)
         self.index_data.to_csv(name + ".csv", index=False)
-        
+
     def load_index(self, name: str):
         self.index = np.load(name + ".index")
         self.index_data = pd.read_csv(name + ".csv")
-
 
 
 # @ray.remote
@@ -92,7 +91,7 @@ class SemanticRetrieval(RetrievalModel):
         query_vector = self.model.encode([query])
         top_k = self.index.search(query_vector, k)
         indices = top_k[1].tolist()[0]
-        
+
         if return_data:
             return self.index_data.iloc[indices].to_dict(orient="records")
         return indices

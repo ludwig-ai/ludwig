@@ -1676,13 +1676,13 @@ def _handle_missing_values(
 
 
 def handle_features_with_prompt_config(
-    dataset_cols: Dict[str, pd.Series], 
+    dataset_cols: Dict[str, pd.Series],
     feature_name_to_preprocessing_parameters: Dict[str, PreprocessingConfigDict],
-    features: List[FeatureConfigDict], 
+    features: List[FeatureConfigDict],
 ):
     input_features, output_features = get_input_and_output_features(features)
     output_feature_col_names = [output_feature_config[COLUMN] for output_feature_config in output_features]
-    for input_feature_config in input_features:        
+    for input_feature_config in input_features:
         # If we're using LLMs for zero-shot/few-shot learning, update text input features with the prompt
         # ahead of time so that we can compute metadata and build the preprocessed data correctly.
         input_feature_preprocessing_parameters = feature_name_to_preprocessing_parameters[input_feature_config[NAME]]
@@ -1690,10 +1690,8 @@ def handle_features_with_prompt_config(
             prompt_config = input_feature_preprocessing_parameters["prompt"]
             input_col_name = input_feature_config[COLUMN]
             input_and_output_col_names = [input_col_name] + output_feature_col_names
-            input_and_output_cols = {
-                k: v for k, v in dataset_cols.items() if k in input_and_output_col_names
-            }
-            
+            input_and_output_cols = {k: v for k, v in dataset_cols.items() if k in input_and_output_col_names}
+
             if prompt_config["retrieval"] is not None:
                 retrieval_model, index_name = index_input_col(
                     prompt_config["retrieval"],
@@ -1718,7 +1716,7 @@ def handle_features_with_prompt_config(
                 input_col_name,
                 input_col,
                 search_fn=search_fn,
-                task_str = prompt_config["task"],
+                task_str=prompt_config["task"],
             )
 
 
@@ -1746,25 +1744,19 @@ def format_input_with_prompt(
     # function for retrieving the context for a given sample.
     # If `search_fn` is not provided, context is omitted.
     if search_fn is not None:
-        context_fn = partial(
-            get_context,
-            search_fn=search_fn
-        )
+        context_fn = partial(get_context, search_fn=search_fn)
     else:
         context_fn = lambda _: ""
-    
+
     # function for getting the sample input. This ensures that only the input_features of a sample are returned
     sample_input_fn = partial(
         get_sample_input,
         input_col_name=input_col_name,
     )
-    
+
     # function for getting the task.
-    task_fn = partial(
-        get_task,
-        task_str=task_str
-    )
-    
+    task_fn = partial(get_task, task_str=task_str)
+
     # function for generating the prompt (context + sample input + task) for a given sample
     prompt_fn = partial(
         generate_prompt,
@@ -1772,7 +1764,7 @@ def format_input_with_prompt(
         sample_input_fn=sample_input_fn,
         task_fn=task_fn,
     )
-    
+
     return input_col.map(prompt_fn)
 
 
@@ -1782,15 +1774,17 @@ def get_context(
 ):
     """Returns a string representation of the context retrieved by `search_fn`."""
     k_samples = search_fn(query=entry)
-    return (f"{CONTEXT}: Below is relevant context. \n{json.dumps(k_samples, indent=2)}\n"
-            f"The context is comprised of labeled samples whose embeddings were "
-            f"similar to that of the sample input. The labels in these samples "
-            f"could aid you in your final prediction. Given this context and no "
-            f"prior knowledge, follow the instructions below.\n\n")
+    return (
+        f"{CONTEXT}: Below is relevant context. \n{json.dumps(k_samples, indent=2)}\n"
+        f"The context is comprised of labeled samples whose embeddings were "
+        f"similar to that of the sample input. The labels in these samples "
+        f"could aid you in your final prediction. Given this context and no "
+        f"prior knowledge, follow the instructions below.\n\n"
+    )
 
 
 def get_sample_input(
-    entry: str, 
+    entry: str,
     input_col_name: str,
 ):
     """Returns a string representation of the sample input for the prompt."""
@@ -1831,10 +1825,11 @@ def get_input_and_output_features(feature_configs):
             output_features.append(feature)
     return input_features, output_features
 
+
 def _search_fn(
-    query: str, 
-    retrieval_model: RetrievalModel, 
-    k: int, 
+    query: str,
+    retrieval_model: RetrievalModel,
+    k: int,
 ) -> List[Dict[str, Any]]:
     return retrieval_model.search(query, k, return_data=True)
 
@@ -2270,9 +2265,9 @@ def preprocess_for_prediction(
     config_defaults = config.get(DEFAULTS, {})
     for feature_type in config_defaults:
         preprocessing_params[feature_type] = config_defaults[feature_type].get(PREPROCESSING, {})
-    preprocessing_params[SPLIT] = config.get(PREPROCESSING, {}).get(SPLIT, {});
-    
-    # Ensure that the prompt is passed to the preprocessing parameters    
+    preprocessing_params[SPLIT] = config.get(PREPROCESSING, {}).get(SPLIT, {})
+
+    # Ensure that the prompt is passed to the preprocessing parameters
     preprocessing_params["prompt"] = config.get(PREPROCESSING, {}).get("prompt", {})
 
     preprocessing_params = merge_dict(default_prediction_preprocessing_parameters, preprocessing_params)

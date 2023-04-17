@@ -18,7 +18,7 @@ from ludwig.utils.tokenizers import tokenizer_registry
 @ludwig_dataclass
 class TextPreprocessingConfig(BasePreprocessingConfig):
     """TextPreprocessingConfig is a dataclass that configures the parameters used for a text input feature."""
-    
+
     # TODO(geoffrey): finalize the schema for this class.
     prompt: PromptConfig = schema_utils.Dict()
 

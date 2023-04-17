@@ -226,7 +226,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         feature_config.encoder = self.encoder_obj.config
 
     @staticmethod
-    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):        
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
         feature_config.encoder.vocab = feature_metadata["idx2str"]
         feature_config.encoder.vocab_size = len(feature_metadata["idx2str"])
         feature_config.encoder.max_sequence_length = feature_metadata["max_sequence_length"]
@@ -236,7 +236,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         feature_config.encoder.str2idf = feature_metadata["str2idf"]
         feature_config.encoder.skip = feature_metadata[PREPROCESSING].get("cache_encoder_embeddings", False)
         # TODO(geoffrey): use dot notation once everything is schemafied
-        feature_config.preprocessing.prompt['retrieval']['index_name'] = feature_metadata["index_name"]
+        feature_config.preprocessing.prompt["retrieval"]["index_name"] = feature_metadata["index_name"]
 
     @staticmethod
     def get_schema_cls():

@@ -47,6 +47,7 @@ default_training_preprocessing_parameters.update(PreprocessingConfig().to_dict()
 default_prediction_preprocessing_parameters = copy.deepcopy(default_feature_specific_preprocessing_parameters)
 default_prediction_preprocessing_parameters.update({"prompt": None})
 
+
 @DeveloperAPI
 def render_config(config=None, output=None, **kwargs):
     upgraded_config = upgrade_config_dict_to_latest_version(config)
