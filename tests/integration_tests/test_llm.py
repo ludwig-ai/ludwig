@@ -58,10 +58,10 @@ def convert_preds(backend: dict, preds: DataFrame):
     "backend",
     [
         pytest.param(LOCAL_BACKEND, id="local"),
-        # pytest.param(RAY_BACKEND, id="ray", marks=pytest.mark.distributed),
+        pytest.param(RAY_BACKEND, id="ray", marks=pytest.mark.distributed),
     ],
 )
-def test_llm_text_to_text(tmpdir, backend):  # , ray_cluster_4cpu)
+def test_llm_text_to_text(tmpdir, backend, ray_cluster_4cpu):
     """Test that the LLM model can train and predict with text inputs and text outputs."""
     input_features = [{"name": "Question", "type": "text"}]
     output_features = [text_feature(output_feature=True, name="Answer", decoder={"type": "text_parser"})]
