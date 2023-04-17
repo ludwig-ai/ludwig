@@ -13,8 +13,8 @@ from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassFie
 from ludwig.schema.features.utils import (
     ecd_defaults_config_registry,
     ecd_input_config_registry,
+    ecd_output_config_registry,
     input_mixin_registry,
-    output_config_registry,
     output_mixin_registry,
 )
 from ludwig.schema.metadata import FEATURE_METADATA
@@ -56,6 +56,7 @@ class SequenceOutputFeatureConfigMixin(BaseMarshmallowConfig):
     output feature and the sequence global defaults section of the Ludwig Config."""
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
+        MODEL_ECD,
         feature_type=SEQUENCE,
         default="generator",
     )
@@ -67,7 +68,7 @@ class SequenceOutputFeatureConfigMixin(BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-@output_config_registry.register(SEQUENCE)
+@ecd_output_config_registry.register(SEQUENCE)
 @ludwig_dataclass
 class SequenceOutputFeatureConfig(SequenceOutputFeatureConfigMixin, BaseOutputFeatureConfig):
     """SequenceOutputFeatureConfig is a dataclass that configures the parameters used for a sequence output

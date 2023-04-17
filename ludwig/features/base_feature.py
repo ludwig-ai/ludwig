@@ -234,7 +234,10 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
     @abstractmethod
     def get_prediction_set(self):
-        """Returns the set of prediction keys returned by this feature."""
+        """Returns the set of tensor keys returned by this feature's PredictModule.
+
+        TODO(Justin): Move this to the PredictModule.
+        """
         raise NotImplementedError("OutputFeature is missing implementation for get_prediction_set.")
 
     @classmethod
@@ -549,5 +552,9 @@ def create_passthrough_input_feature(feature: InputFeature, config: BaseFeatureC
 
         def unskip(self) -> InputFeature:
             return feature
+
+        @property
+        def encoder_obj(self) -> torch.nn.Module:
+            return feature.encoder_obj
 
     return _InputPassthroughFeature(config)

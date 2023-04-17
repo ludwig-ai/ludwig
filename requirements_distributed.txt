@@ -1,11 +1,9 @@
 # requirements for dask
-dask[dataframe]
+dask[dataframe]<2023.4.0
 pyarrow
 
-# requirements for horovod
-horovod[pytorch]>=0.24.0,!=0.26.0
 # requirements for ray
-ray[default,data,serve,tune]>=2.0.0
+ray[default,data,serve,tune]>=2.2.0
 tensorboardX<2.3
 GPUtil
 tblib

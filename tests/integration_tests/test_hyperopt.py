@@ -37,9 +37,12 @@ from ludwig.constants import (
     NAME,
     OUTPUT_FEATURES,
     RAY,
+    TEST,
     TEXT,
     TRAINER,
+    TRAINING,
     TYPE,
+    VALIDATION,
 )
 from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.hyperopt.results import HyperoptResults
@@ -143,6 +146,7 @@ def test_hyperopt_search_alg(
     ray_cluster_7cpu,
     validate_output_feature=False,
     validation_metric=None,
+    split="validation",
 ):
     config, rel_path = _setup_ludwig_config(csv_filename, model_type)
 
@@ -174,7 +178,6 @@ def test_hyperopt_search_alg(
         hyperopt_config[EXECUTOR][MAX_CONCURRENT_TRIALS] = backend.max_concurrent_trials(hyperopt_config)
 
     parameters = hyperopt_config["parameters"]
-    split = hyperopt_config["split"]
     output_feature = hyperopt_config["output_feature"]
     metric = hyperopt_config["metric"]
     goal = hyperopt_config["goal"]
@@ -204,6 +207,18 @@ def test_hyperopt_executor_with_metric(model_type, csv_filename, tmpdir, ray_clu
         ray_cluster_7cpu,
         validate_output_feature=True,
         validation_metric=ACCURACY,
+    )
+
+
+@pytest.mark.parametrize("split", [TRAINING, VALIDATION, TEST])
+def test_hyperopt_with_split(split, csv_filename, tmpdir, ray_cluster_7cpu):
+    test_hyperopt_search_alg(
+        search_alg="variant_generator",
+        model_type=MODEL_ECD,
+        csv_filename=csv_filename,
+        tmpdir=tmpdir,
+        ray_cluster_7cpu=ray_cluster_7cpu,
+        split=split,
     )
 
 
@@ -290,7 +305,7 @@ def _run_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, backend, ray_
                 "space": "loguniform",
             },
             output_feature_name
-            + ".fc_layers": {
+            + ".decoder.fc_layers": {
                 "space": "choice",
                 "categories": [
                     [{"output_size": 64}, {"output_size": 32}],
@@ -298,13 +313,13 @@ def _run_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, backend, ray_
                     [{"output_size": 32}],
                 ],
             },
-            output_feature_name + ".output_size": {"space": "choice", "categories": [16, 21, 26, 31, 36]},
+            output_feature_name + ".decoder.fc_output_size": {"space": "choice", "categories": [16, 21, 26, 31, 36]},
         }
     else:
         # grid search space will be product each parameter size
         search_parameters = {
             "trainer.learning_rate": {"space": "grid_search", "values": [0.001, 0.01]},
-            output_feature_name + ".output_size": {"space": "grid_search", "values": [16, 21]},
+            output_feature_name + ".decoder.fc_output_size": {"space": "grid_search", "values": [16, 21]},
         }
 
     hyperopt_configs = {
