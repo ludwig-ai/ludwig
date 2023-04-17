@@ -170,7 +170,7 @@ class CategoryParserDecoder(Decoder):
 
         # Decode generated outputs from the LLM's generate function.
         decoded_outputs = self.tokenizer.tokenizer.batch_decode(generated_outputs, skip_special_tokens=True)
-        logger.info(f"Decoded output: {decoded_outputs}")
+        logger.info(f"Generated output: {decoded_outputs}")
 
         # Parse labels based on matching criteria and return probability vectors
         matched_labels = []

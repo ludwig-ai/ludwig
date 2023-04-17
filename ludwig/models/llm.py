@@ -251,6 +251,8 @@ class LLM(BaseModel):
         Returns:
             The realigned target tensor.
         """
+        # TODO(Arnav): Realign both target and prediction tensors.
+        # If the prediction tensor is shorter, also realign the probability and logit tensors
         _targets = copy.deepcopy(targets)
         _targets[of_name] = torch.nn.functional.pad(
             _targets.get(of_name),
