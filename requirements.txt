@@ -28,7 +28,6 @@ torchmetrics>=0.11
 torchinfo
 filelock
 psutil==5.9.4
-protobuf
 py-cpuinfo==9.0.0
 gpustat
 rich~=12.4.4
