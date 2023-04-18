@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Dict, Optional
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
@@ -39,6 +39,7 @@ class LLMModelConfig(ModelConfig):
     )
 
     generation_config: LLMGenerationConfig = LLMGenerationConfigField().get_default_field()
+    adapter: Optional[Dict] = schema_utils.Dict()
 
     input_features: FeatureCollection[BaseInputFeatureConfig] = LLMInputFeatureSelection().get_list_field()
     output_features: FeatureCollection[BaseOutputFeatureConfig] = LLMOutputFeatureSelection().get_list_field()

@@ -267,6 +267,9 @@ PREPROCESSOR = "preprocessor"
 PREDICTOR = "predictor"
 POSTPROCESSOR = "postprocessor"
 
+GENERATION_CONFIG = "generation_config"
+ADAPTER = "adapter"
+
 S3 = "s3"
 CACHE = "cache"
 

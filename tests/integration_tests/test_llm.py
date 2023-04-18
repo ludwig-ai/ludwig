@@ -4,7 +4,15 @@ import pandas as pd
 import pytest
 
 from ludwig.api import LudwigModel
-from ludwig.constants import INPUT_FEATURES, MODEL_LLM, MODEL_NAME, MODEL_TYPE, OUTPUT_FEATURES
+from ludwig.constants import (
+    ADAPTER,
+    GENERATION_CONFIG,
+    INPUT_FEATURES,
+    MODEL_LLM,
+    MODEL_NAME,
+    MODEL_TYPE,
+    OUTPUT_FEATURES,
+)
 from ludwig.utils.types import DataFrame
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
 
@@ -25,7 +33,6 @@ RAY_BACKEND = {
 }
 
 TEST_MODEL_NAME = "hf-internal-testing/tiny-random-GPTJForCausalLM"
-GENERATION_CONFIG = "generation_config"
 
 
 @pytest.fixture(scope="module")
@@ -177,3 +184,78 @@ def test_llm_zero_shot_classification(tmpdir, backend, ray_cluster_4cpu):
     assert preds["label_probabilities_positive"]
     assert preds["label_probabilities_neutral"]
     assert preds["label_probabilities_negative"]
+
+
+@pytest.mark.parametrize(
+    "backend",
+    [
+        pytest.param(LOCAL_BACKEND, id="local"),
+        # pytest.param(RAY_BACKEND, id="ray", marks=pytest.mark.distributed),
+    ],
+)
+def test_llm_prompt_tuning(tmpdir, backend):  # ray_cluster_4cpu
+    input_features = [{"name": "review", "type": "text"}]
+    output_features = [
+        category_feature(
+            name="label",
+            preprocessing={
+                "vocab": ["positive", "neutral", "negative"],
+                "fallback_label": "neutral",
+            },
+            decoder={
+                "type": "category_parser",
+                "match": {
+                    "positive": {"type": "contains", "value": "positive"},
+                    "neutral": {"type": "contains", "value": "neutral"},
+                    "negative": {"type": "contains", "value": "negative"},
+                },
+            },
+        )
+    ]
+
+    data = [
+        {"review": "I loved this movie!", "label": "positive"},
+        {"review": "The food was okay, but the service was terrible.", "label": "negative"},
+        {"review": "I can't believe how rude the staff was.", "label": "negative"},
+        {"review": "This book was a real page-turner.", "label": "positive"},
+        {"review": "The hotel room was dirty and smelled bad.", "label": "negative"},
+        {"review": "I had a great experience at this restaurant.", "label": "positive"},
+        {"review": "The concert was amazing!", "label": "positive"},
+        {"review": "The traffic was terrible on my way to work this morning.", "label": "negative"},
+        {"review": "The customer service was excellent.", "label": "positive"},
+        {"review": "I was disappointed with the quality of the product.", "label": "negative"},
+    ]
+
+    df = pd.DataFrame(data)
+
+    config = {
+        MODEL_TYPE: MODEL_LLM,
+        MODEL_NAME: TEST_MODEL_NAME,
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        GENERATION_CONFIG: get_generation_config(),
+        ADAPTER: {
+            "type": "prompt_tuning",
+            "parameters": {
+                "task_type": "CAUSAL_LM",
+                "prompt_tuning_init": "TEXT",
+                "num_virtual_tokens": 8,
+                "prompt_tuning_init_text": "Classify if the review is positive, negative, or neutral: ",
+                "tokenizer_name_or_path": TEST_MODEL_NAME,
+            },
+        },
+    }
+
+    model = LudwigModel(config, backend=backend)
+    model.train(dataset=df, output_directory=str(tmpdir), skip_save_processed_input=True)
+
+    prediction_df = pd.DataFrame(
+        [
+            {"review": "The food was amazing!", "label": "positive"},
+            {"review": "The service was terrible.", "label": "negative"},
+            {"review": "The food was okay.", "label": "neutral"},
+        ]
+    )
+
+    preds, _ = model.predict(dataset=prediction_df, output_directory=str(tmpdir))
+    preds = convert_preds(backend, preds)
