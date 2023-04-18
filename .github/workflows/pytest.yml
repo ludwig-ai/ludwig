@@ -94,11 +94,6 @@ jobs:
           key: ${{ runner.os }}-pip-py${{ matrix.python-version }}-torch${{ matrix.pytorch-version }}-${{ matrix.test-markers }}-${{ hashFiles('requirements*.txt', '.github/workflows/pytest.yml') }}
 
       - name: Install dependencies
-        env:
-          HOROVOD_WITH_PYTORCH: 1
-          HOROVOD_WITHOUT_MPI: 1
-          HOROVOD_WITHOUT_TENSORFLOW: 1
-          HOROVOD_WITHOUT_MXNET: 1
         run: |
           python --version
           pip --version
@@ -125,7 +120,7 @@ jobs:
             extra_index_url=https://download.pytorch.org/whl/cpu
             pip install torch==$PYTORCH torchtext torchvision torchaudio --extra-index-url $extra_index_url
           fi
-          pip install protobuf==3.20.1 # https://github.com/databrickslabs/dbx/issues/257
+          # pip install protobuf==3.20.1 # https://github.com/databrickslabs/dbx/issues/257
 
           if [ "$MARKERS" == "distributed" ]; then
             if [ "$RAY_VERSION" == "nightly" ]; then
