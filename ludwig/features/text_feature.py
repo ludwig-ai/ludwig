@@ -230,7 +230,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         feature_config.encoder = self.encoder_obj.config
 
     @staticmethod
-    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):        
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
         feature_config.encoder.vocab = feature_metadata["idx2str"]
         feature_config.encoder.vocab_size = len(feature_metadata["idx2str"])
         feature_config.encoder.max_sequence_length = feature_metadata["max_sequence_length"]

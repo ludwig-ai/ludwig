@@ -273,13 +273,13 @@ input_features:
     type: text
     preprocessing:
         prompt:
-            retrieval: 
+            retrieval:
                 type: "semantic"
                 index_name: null
                 model_name: multi-qa-MiniLM-L6-cos-v1
                 k: 5
-            task: "Given the sample input, complete this sentence by 
-                replacing XXXX: The review rating is XXXX. Choose one value 
+            task: "Given the sample input, complete this sentence by
+                replacing XXXX: The review rating is XXXX. Choose one value
                 in this list: [1, 2, 3, 4, 5]."
 output_features:
 -

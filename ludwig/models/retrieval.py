@@ -5,9 +5,9 @@ import os
 from typing import Any, Dict, List, Optional, Union
 
 import faiss
+import numpy as np
 import pandas as pd
 import ray
-import numpy as np
 from sentence_transformers import SentenceTransformer
 
 
@@ -34,9 +34,10 @@ class RetrievalModel:
     
     def load_index(self, name: str, cache_directory: str):
         raise NotImplementedError
-    
+
     def ping(self) -> bool:
         return True
+
 
 class RandomRetrieval(RetrievalModel):
     def __init__(self, **kwargs):
@@ -102,7 +103,7 @@ class SemanticRetrieval(RetrievalModel):
         query_vector = self.model.encode([query], show_progress_bar=False)
         top_k = self.index.search(query_vector, k)
         indices = top_k[1].tolist()[0]
-        
+
         if return_data:
             return self.index_data.iloc[indices].to_dict(orient="records")
         return indices
