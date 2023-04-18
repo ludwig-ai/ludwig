@@ -31,7 +31,7 @@ from ludwig.datasets.archives import extract_archive, is_archive, list_archive
 from ludwig.datasets.dataset_config import DatasetConfig, DatasetFallbackMirror
 from ludwig.datasets.kaggle import download_kaggle_dataset
 from ludwig.datasets.utils import model_configs_for_dataset
-from ludwig.utils.fs_utils import get_fs_and_path, get_default_cache_location
+from ludwig.utils.fs_utils import get_default_cache_location, get_fs_and_path
 from ludwig.utils.strings_utils import make_safe_filename
 
 logger = logging.getLogger(__name__)

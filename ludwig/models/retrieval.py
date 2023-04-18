@@ -10,7 +10,6 @@ import pandas as pd
 import ray
 from sentence_transformers import SentenceTransformer
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -31,7 +30,7 @@ class RetrievalModel:
 
     def save_index(self, name: str, cache_directory: str):
         raise NotImplementedError
-    
+
     def load_index(self, name: str, cache_directory: str):
         raise NotImplementedError
 
@@ -54,7 +53,7 @@ class RandomRetrieval(RetrievalModel):
         if return_data:
             return self.index_data.iloc[indices].to_dict(orient="records")
         return indices
-    
+
     def save_index(self, name: str, cache_directory: str):
         logger.info(f"Saving index to cache directory {cache_directory} with name {name}")
         index_file_path = os.path.join(cache_directory, name + ".index")
@@ -67,7 +66,7 @@ class RandomRetrieval(RetrievalModel):
         logger.info(f"Loading index to cache directory {cache_directory} with name {name}")
         index_file_path = os.path.join(cache_directory, name + ".index")
         self.index = np.load(index_file_path)
-        
+
         index_data_file_path = os.path.join(cache_directory, name + "_data.csv")
         self.index_data = pd.read_csv(index_data_file_path)
 
@@ -112,7 +111,7 @@ class SemanticRetrieval(RetrievalModel):
         logger.info(f"Saving index to cache directory {cache_directory} with name {name}")
         index_file_path = os.path.join(cache_directory, name + ".index")
         faiss.write_index(self.index, index_file_path)
-        
+
         index_data_file_path = os.path.join(cache_directory, name + "_data.csv")
         self.index_data.to_csv(index_data_file_path, index=False)
 

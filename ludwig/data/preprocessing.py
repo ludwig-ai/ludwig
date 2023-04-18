@@ -126,7 +126,7 @@ from ludwig.utils.defaults import (
     default_random_seed,
     default_training_preprocessing_parameters,
 )
-from ludwig.utils.fs_utils import file_lock, path_exists, get_default_cache_location
+from ludwig.utils.fs_utils import file_lock, get_default_cache_location, path_exists
 from ludwig.utils.misc_utils import get_from_registry, merge_dict
 from ludwig.utils.types import DataFrame, Series
 
@@ -1214,7 +1214,8 @@ def build_dataset(
 
     logger.debug("handle text features with prompt parameters")
     handle_features_with_prompt_config(
-        dataset_cols, feature_name_to_preprocessing_parameters, features, split_col=split_col)
+        dataset_cols, feature_name_to_preprocessing_parameters, features, split_col=split_col
+    )
 
     # Happens after missing values are handled to avoid NaN casting issues.
     logger.debug("cast columns")
@@ -1683,9 +1684,9 @@ def _handle_missing_values(
 
 
 def handle_features_with_prompt_config(
-    dataset_cols: Dict[str, Series], 
+    dataset_cols: Dict[str, Series],
     feature_name_to_preprocessing_parameters: Dict[str, PreprocessingConfigDict],
-    features: List[FeatureConfigDict], 
+    features: List[FeatureConfigDict],
     split_col: Optional[Series] = None,
 ):
     input_features, output_features = get_input_and_output_features(features)
@@ -1732,8 +1733,8 @@ def handle_features_with_prompt_config(
 
 
 def index_input_col(
-    retrieval_config: Dict[str, Any], 
-    input_col_name: str, 
+    retrieval_config: Dict[str, Any],
+    input_col_name: str,
     dataset_cols: Dict[str, Series],
     cache_directory: str,
     split_col: Optional[Series] = None,
@@ -1784,7 +1785,7 @@ def format_input_with_prompt(
         sample_input_fn=sample_input_fn,
         task_fn=task_fn,
     )
-    
+
     tqdm.pandas()
     return input_col.progress_map(prompt_fn)
 

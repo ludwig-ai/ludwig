@@ -116,7 +116,7 @@ class TextFeatureMixin(BaseFeatureMixin):
                 max_sequence_length_99ptile = min(vocabulary.line_length_99ptile, max_sequence_length)
 
         logger.info(f"max sequence length is {max_sequence_length} for feature '{column.name}'")
-        
+
         index_name = None
         if preprocessing_parameters["prompt"].get("retrieval"):
             index_name = preprocessing_parameters["prompt"]["retrieval"]["index_name"]
@@ -240,8 +240,8 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         feature_config.encoder.str2idf = feature_metadata["str2idf"]
         feature_config.encoder.skip = feature_metadata[PREPROCESSING].get("cache_encoder_embeddings", False)
         # TODO(geoffrey): use dot notation once everything is schemafied
-        if feature_config.preprocessing.prompt['retrieval']:
-            feature_config.preprocessing.prompt['retrieval']['index_name'] = feature_metadata["index_name"]
+        if feature_config.preprocessing.prompt["retrieval"]:
+            feature_config.preprocessing.prompt["retrieval"]["index_name"] = feature_metadata["index_name"]
 
     @staticmethod
     def get_schema_cls():

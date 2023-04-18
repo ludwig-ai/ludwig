@@ -47,7 +47,7 @@ def get_default_cache_location() -> str:
         cache_path = os.environ["LUDWIG_CACHE"]
     else:
         cache_path = str(pathlib.Path.home().joinpath(".ludwig_cache"))
-    
+
     # Check if the cache path exists, if not create it
     if not os.path.exists(cache_path):
         os.makedirs(cache_path)
