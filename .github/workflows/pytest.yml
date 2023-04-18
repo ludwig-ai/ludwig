@@ -105,6 +105,10 @@ jobs:
           python -m pip install -U pip
           cmake --version
 
+          # Install numpy early.
+          pip install numpy
+          pip show numpy
+
           if [ "$MARKERS" != "distributed" ]; then
             # Skip distributed and hyperopt requirements to test optional imports
             echo > requirements-temp && mv requirements-temp requirements_distributed.txt
@@ -122,8 +126,6 @@ jobs:
             pip install torch==$PYTORCH torchtext torchvision torchaudio --extra-index-url $extra_index_url
           fi
           pip install protobuf==3.20.1 # https://github.com/databrickslabs/dbx/issues/257
-          pip install numpy
-          pip show numpy
 
           if [ "$MARKERS" == "distributed" ]; then
             if [ "$RAY_VERSION" == "nightly" ]; then
