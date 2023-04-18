@@ -22,9 +22,6 @@ bayesian-optimization
 # search_alg: cfo and blendsearch
 flaml[blendsearch]
 
-# search_alg: dragonfly
-dragonfly-opt
-
 # search_alg: hebo
 HEBO
 
