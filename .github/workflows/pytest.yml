@@ -122,6 +122,8 @@ jobs:
             pip install torch==$PYTORCH torchtext torchvision torchaudio --extra-index-url $extra_index_url
           fi
           pip install protobuf==3.20.1 # https://github.com/databrickslabs/dbx/issues/257
+          pip install numpy
+          pip show numpy
 
           if [ "$MARKERS" == "distributed" ]; then
             if [ "$RAY_VERSION" == "nightly" ]; then
