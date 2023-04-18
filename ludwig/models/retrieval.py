@@ -1,5 +1,6 @@
 import hashlib
 import json
+import logging
 import os
 from typing import Any, Dict, List, Optional, Union
 
@@ -8,6 +9,9 @@ import pandas as pd
 import ray
 import numpy as np
 from sentence_transformers import SentenceTransformer
+
+
+logger = logging.getLogger(__name__)
 
 
 SENTENCE_TRANSFORMER_MODEL_NAME = "multi-qa-MiniLM-L6-cos-v1"
@@ -51,6 +55,7 @@ class RandomRetrieval(RetrievalModel):
         return indices
     
     def save_index(self, name: str, cache_directory: str):
+        logger.info(f"Saving index to cache directory {cache_directory} with name {name}")
         index_file_path = os.path.join(cache_directory, name + ".index")
         np.save(index_file_path, self.index)
 
@@ -58,6 +63,7 @@ class RandomRetrieval(RetrievalModel):
         self.index_data.to_csv(index_data_file_path, index=False)
 
     def load_index(self, name: str, cache_directory: str):
+        logger.info(f"Loading index to cache directory {cache_directory} with name {name}")
         index_file_path = os.path.join(cache_directory, name + ".index")
         self.index = np.load(index_file_path)
         
@@ -67,7 +73,7 @@ class RandomRetrieval(RetrievalModel):
 
 class SemanticRetrieval(RetrievalModel):
     def __init__(self, model_name: str = SENTENCE_TRANSFORMER_MODEL_NAME):
-        self.model = SentenceTransformer(model_name)
+        self.model = SentenceTransformer(model_name, device="cuda:3")
         self.index: faiss.Index = None
         self.index_data: pd.DataFrame = None
         self.checksum = None
@@ -93,7 +99,7 @@ class SemanticRetrieval(RetrievalModel):
         self.index_data = df
 
     def search(self, query: str, k: int = 10, return_data: bool = False) -> Union[List[int], List[Dict[str, Any]]]:
-        query_vector = self.model.encode([query])
+        query_vector = self.model.encode([query], show_progress_bar=False)
         top_k = self.index.search(query_vector, k)
         indices = top_k[1].tolist()[0]
         
@@ -102,6 +108,7 @@ class SemanticRetrieval(RetrievalModel):
         return indices
 
     def save_index(self, name: str, cache_directory: str):
+        logger.info(f"Saving index to cache directory {cache_directory} with name {name}")
         index_file_path = os.path.join(cache_directory, name + ".index")
         faiss.write_index(self.index, index_file_path)
         
@@ -109,6 +116,7 @@ class SemanticRetrieval(RetrievalModel):
         self.index_data.to_csv(index_data_file_path, index=False)
 
     def load_index(self, name: str, cache_directory: str):
+        logger.info(f"Loading index to cache directory {cache_directory} with name {name}")
         index_file_path = os.path.join(cache_directory, name + ".index")
         self.index = faiss.read_index(index_file_path)
 

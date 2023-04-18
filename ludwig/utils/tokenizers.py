@@ -792,7 +792,14 @@ class HFTokenizer(BaseTokenizer):
     def __init__(self, pretrained_model_name_or_path, **kwargs):
         super().__init__()
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
-        self.tokenizer = load_pretrained_hf_tokenizer(self.pretrained_model_name_or_path)
+
+        # HACK(geoffrey): `LlamaTokenizer` hangs on `use_fast=True`
+        # TODO(geoffrey): use class inheritance to determine the tokenizer class instead
+        pretrained_kwargs = {}
+        if self.pretrained_model_name_or_path == "eachadea/vicuna-13b-1.1":
+            pretrained_kwargs["use_fast"] = False
+
+        self.tokenizer = load_pretrained_hf_tokenizer(self.pretrained_model_name_or_path, **pretrained_kwargs)
 
     def __call__(self, text):
         return self.tokenizer.encode(text, truncation=True)
@@ -804,7 +811,7 @@ class HFTokenizer(BaseTokenizer):
         # HACK(geoffrey): gpt2 has no pad token. Recommendation is to use eos token instead.
         # https://github.com/huggingface/transformers/issues/2630#issuecomment-1290809338
         # https://github.com/huggingface/transformers/issues/2648#issuecomment-616177044
-        if self.pretrained_model_name_or_path == "gpt2":
+        if self.pretrained_model_name_or_path in {"gpt2", "eachadea/vicuna-13b-1.1"}:
             self.tokenizer.pad_token = self.tokenizer.eos_token
         return self.tokenizer.pad_token
 

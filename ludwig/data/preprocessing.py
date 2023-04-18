@@ -26,6 +26,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 import torch
+from tqdm import tqdm
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend import Backend, LOCAL_BACKEND
@@ -1186,6 +1187,10 @@ def build_dataset(
     for feature_config in feature_configs:
         dataset_cols[feature_config[COLUMN]] = dataset_df[feature_config[COLUMN]]
 
+    split_col = None
+    if global_preprocessing_parameters["split"]["type"] == "fixed":
+        split_col = dataset_df[global_preprocessing_parameters["split"]["column"]]
+
     logger.debug("build preprocessing parameters")
     feature_name_to_preprocessing_parameters = build_preprocessing_parameters(
         dataset_cols, feature_configs, global_preprocessing_parameters, backend, metadata=metadata
@@ -1209,7 +1214,7 @@ def build_dataset(
 
     logger.debug("handle text features with prompt parameters")
     handle_features_with_prompt_config(
-        dataset_cols, feature_name_to_preprocessing_parameters, features)
+        dataset_cols, feature_name_to_preprocessing_parameters, features, split_col=split_col)
 
     # Happens after missing values are handled to avoid NaN casting issues.
     logger.debug("cast columns")
@@ -1678,9 +1683,10 @@ def _handle_missing_values(
 
 
 def handle_features_with_prompt_config(
-    dataset_cols: Dict[str, pd.Series], 
+    dataset_cols: Dict[str, Series], 
     feature_name_to_preprocessing_parameters: Dict[str, PreprocessingConfigDict],
     features: List[FeatureConfigDict], 
+    split_col: Optional[Series] = None,
 ):
     input_features, output_features = get_input_and_output_features(features)
     output_feature_col_names = [output_feature_config[COLUMN] for output_feature_config in output_features]
@@ -1703,6 +1709,7 @@ def handle_features_with_prompt_config(
                     input_col_name=input_col_name,
                     dataset_cols=input_and_output_cols,
                     cache_directory=index_cache_directory,
+                    split_col=split_col,
                 )
                 # NOTE: after indexing the input column, we update the index_name in the prompt config IN PLACE.
                 # This ensures that the preprocessing parameters for this feature have an up-to-date index_name
@@ -1731,11 +1738,16 @@ def index_input_col(
     input_col_name: str, 
     dataset_cols: Dict[str, Series],
     cache_directory: str,
+    split_col: Optional[Series] = None,
 ):
     retrieval_model = get_retrieval_model(retrieval_config["type"])
     index_name = retrieval_config["index_name"]
     if index_name is None:
         df = pd.DataFrame(dataset_cols)
+        if split_col is None:
+            raise ValueError("split column must be provided if using retrieval")
+
+        df = df[split_col.astype(int) == 0]  # Ensures that the index is only built on the training set
         retrieval_model.create_dataset_index(df, columns_to_index=[input_col_name])
         index_name = f"embedding_index_{uuid.uuid4()}"
         retrieval_model.save_index(index_name, cache_directory=cache_directory)
@@ -1781,7 +1793,8 @@ def format_input_with_prompt(
         task_fn=task_fn,
     )
     
-    return input_col.map(prompt_fn)
+    tqdm.pandas()
+    return input_col.progress_map(prompt_fn)
 
 
 def get_context(
@@ -1821,7 +1834,7 @@ def generate_prompt(
     # TODO(geoffrey): figure out how to use {{x}} notation in the YAML file (probably needs regex)
     prompt += sample_input_fn(entry)
     prompt += task_fn(entry)
-    prompt += f"{ASSISTANT}: "
+    prompt += f"{ASSISTANT}:"
     return prompt
 
 

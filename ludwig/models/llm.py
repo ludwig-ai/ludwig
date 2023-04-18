@@ -6,7 +6,7 @@ from typing import Dict, Tuple, Union
 import numpy as np
 import torch
 import torchmetrics
-from transformers import AutoModelForCausalLM, GenerationConfig
+from transformers import AutoModelForCausalLM, GenerationConfig, AutoTokenizer
 
 from ludwig.constants import MODEL_LLM
 from ludwig.features.base_feature import OutputFeature
@@ -40,9 +40,30 @@ class LLM(BaseModel):
         self.config_obj = config_obj
         self._random_seed = random_seed
 
-        self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.model_name)
+        print("Loading large language model...")
+        self.model = AutoModelForCausalLM.from_pretrained(
+            self.config_obj.model_name, 
+            low_cpu_mem_usage=True,
+            torch_dtype=torch.float16,
+            device_map="auto", 
+            max_memory={i: "13GiB" for i in range(3)},
+        )
+        print("Done.")
+        
+        # Used only for its metadata about the vocabulary
+        self.tokenizer = AutoTokenizer.from_pretrained(self.config_obj.model_name, use_fast=False)
+        
+        # Determines the maximum length of the context (input + output tokens)
+        if hasattr(self.model.config, "max_sequence_length"):
+            self.context_len = self.model.config.max_sequence_length
+        elif hasattr(self.model.config, "max_position_embeddings"):
+            self.context_len = self.model.config.max_position_embeddings
+        else:
+            self.context_len = 2048
+        
         self.generation = GenerationConfig(**self.config_obj.generation.to_dict())
         self.max_new_tokens = self.config_obj.generation.max_new_tokens
+        self.max_input_length = self.context_len - self.max_new_tokens - 8
 
         # ================ Inputs ================
         try:
@@ -119,19 +140,36 @@ class LLM(BaseModel):
 
         with torch.no_grad():
             input_ids = self.get_input_ids(inputs)
-            # Generate text using the model
-            outputs = self.model.generate(
-                input_ids=input_ids,
-                attention_mask=mask,
-                generation_config=self.generation,
-                return_dict_in_generate=True,
-                output_scores=True,
-            )
+
+            input_lengths = []
+            sequences_list = []
+            for input_ids_sample in input_ids:
+                bos_idxs = torch.where(input_ids_sample == self.tokenizer.bos_token_id)[0]  # all BOS token locations
+                bos_idx = bos_idxs[0]  # get first BOS token location
+
+                input_ids_sample_no_padding = input_ids_sample[bos_idx:].unsqueeze(0)
+                if input_ids_sample_no_padding.shape[1] > self.max_input_length:
+                    print(f"Input length {input_ids_sample_no_padding.shape[1]} is "
+                          f"greater than max input length {self.max_input_length}. Truncating.")
+                    input_ids_sample_no_padding = input_ids_sample_no_padding[:, -self.max_input_length:]
+
+                input_lengths.append(input_ids_sample_no_padding.shape[1])
+
+                # Generate text using the model
+                model_outputs = self.model.generate(
+                    input_ids=input_ids_sample_no_padding,
+                    attention_mask=mask,
+                    generation_config=self.generation,
+                    return_dict_in_generate=True,
+                    output_scores=True,
+                )
+                sequences_list.append(model_outputs.sequences[0])
+
             # Extract the predictions, probabilities and logits from the model outputs
             # through the forward pass of the output feature
             outputs = self.output_feature_decoder.decoder_obj.forward(
-                outputs,
-                llm_model_inputs=input_ids,
+                sequences_list,
+                llm_model_input_lengths=input_lengths,
             )
         return self.extract(outputs)
 

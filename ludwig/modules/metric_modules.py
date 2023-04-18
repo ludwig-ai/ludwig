@@ -378,7 +378,7 @@ class Accuracy(BinaryAccuracy, LudwigMetric):
 @register_metric(ACCURACY, [CATEGORY, CATEGORY_DISTRIBUTION], MAXIMIZE, PREDICTIONS)
 class CategoryAccuracy(MulticlassAccuracy, LudwigMetric):
     def __init__(self, num_classes: int, **kwargs):
-        super().__init__(num_classes=num_classes, dist_sync_fn=_gather_all_tensors_fn())
+        super().__init__(num_classes=num_classes, dist_sync_fn=_gather_all_tensors_fn(), average="micro")
 
     def update(self, preds: Tensor, target: Tensor) -> None:
         if len(target.shape) > 1:

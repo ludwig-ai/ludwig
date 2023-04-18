@@ -77,7 +77,8 @@ class Predictor(BasePredictor):
 
         # TODO (jeffkinnison): revert to using the requested device for GBMs when device usage is fixed
         self.device = get_torch_device() if not model.type() == MODEL_GBM else "cpu"
-        self.model = model.to(self.device)
+        # self.model = model.to(self.device)  # Don't want to do this either
+        self.model = model
 
     def batch_predict(self, dataset: Dataset, dataset_name: str = None, collect_logits: bool = False):
         prev_model_training_mode = self.model.training  # store previous model training mode
@@ -173,6 +174,7 @@ class Predictor(BasePredictor):
         prev_model_training_mode = self.model.training  # store previous model training mode
         self.model.eval()  # set model to eval mode
 
+        print(f"Evaluating model on {dataset_name} split")
         with torch.no_grad():
             with dataset.initialize_batcher(
                 self._batch_size, should_shuffle=False, distributed=self._distributed
@@ -187,6 +189,7 @@ class Predictor(BasePredictor):
                 progress_bar = LudwigProgressBar(self.report_tqdm_to_ray, progress_bar_config, self.is_coordinator())
 
                 predictions = defaultdict(list)
+                idx = 0
                 while not batcher.last_batch():
                     batch = batcher.next_batch()
                     logger.debug(
@@ -207,6 +210,10 @@ class Predictor(BasePredictor):
                     }
 
                     preds = self.model.evaluation_step(inputs, targets)
+                    print("idx: ", idx)
+                    print("preds: ", preds)
+                    print("targets: ", targets)
+                    idx += 1
 
                     # accumulate predictions from batch for each output feature
                     if collect_predictions:

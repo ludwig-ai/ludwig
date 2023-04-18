@@ -105,7 +105,7 @@ class ZeroShotTrainer(BaseTrainer):
             self.device = get_torch_device()
 
         self.model = model
-        self.model = self.model.to(self.device)
+        # self.model = self.model.to(self.device)  # Model should already be on device due to model parallel load-in
 
         self.batch_size = self.config.batch_size
         self.eval_batch_size = self.config.eval_batch_size
@@ -370,7 +370,7 @@ class ZeroShotTrainer(BaseTrainer):
         progress_tracker: ProgressTracker,
     ):
         predictor = Predictor(
-            self.model, batch_size=batch_size, distributed=self.distributed, report_tqdm_to_ray=self.report_tqdm_to_ray
+            self.model, batch_size=1, distributed=self.distributed, report_tqdm_to_ray=self.report_tqdm_to_ray
         )
         metrics, _ = predictor.batch_evaluation(dataset, collect_predictions=False, dataset_name=dataset_name)
 
@@ -427,7 +427,7 @@ class ZeroShotTrainer(BaseTrainer):
 
         # Run a separate pass over the training data to compute metrics
         # Appends results to progress_tracker.train_metrics.
-        self.evaluation(training_set, "train", progress_tracker.train_metrics, self.eval_batch_size, progress_tracker)
+        # self.evaluation(training_set, "train", progress_tracker.train_metrics, self.eval_batch_size, progress_tracker)
 
         # eval metrics on the train set
         printed_table.add_metrics_to_printed_table(progress_tracker.train_metrics, TRAIN)

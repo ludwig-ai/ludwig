@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import Any, Dict, Union
+from typing import Any, Dict, List, Union
 
 import torch
 
@@ -107,7 +107,7 @@ class TextParserDecoder(Decoder):
         # Extract the sequences tensor from the LLMs forward pass
         generated_outputs = extract_generated_tokens(
             raw_generated_output_sequences=inputs.sequences,
-            llm_model_inputs=kwargs.get("llm_model_inputs", []),
+            llm_model_input_lengths=kwargs.get("llm_model_input_lengths", []),
             max_new_tokens=self.max_new_tokens,
             pad_sequence=True,
         )
@@ -159,18 +159,19 @@ class CategoryParserDecoder(Decoder):
     def get_prediction_set(self):
         return {LOGITS, PREDICTIONS, PROBABILITIES}
 
-    def forward(self, inputs, **kwargs):
+    def forward(self, inputs: List[torch.Tensor], **kwargs):        
         # Extract the sequences tensor from the LLMs forward pass
         generated_outputs = extract_generated_tokens(
-            raw_generated_output_sequences=inputs.sequences,
-            llm_model_inputs=kwargs.get("llm_model_inputs", []),
+            raw_generated_output_sequences=inputs,
+            llm_model_input_lengths=kwargs.get("llm_model_input_lengths", []),
             max_new_tokens=None,
             pad_sequence=False,
         )
+        outputs_device = generated_outputs.device
 
         # Decode generated outputs from the LLM's generate function.
         decoded_outputs = self.tokenizer.tokenizer.batch_decode(generated_outputs, skip_special_tokens=True)
-        logger.info(f"Decoded output: {decoded_outputs}")
+        print(f"Decoded output: {decoded_outputs}")
 
         # Parse labels based on matching criteria and return probability vectors
         matched_labels = []
@@ -193,7 +194,7 @@ class CategoryParserDecoder(Decoder):
             logits.append([0] * self.vocab_size)
 
         return {
-            PREDICTIONS: torch.tensor(matched_labels),
-            PROBABILITIES: torch.tensor(probabilities, dtype=torch.float32),
-            LOGITS: torch.tensor(logits, dtype=torch.float32),
+            PREDICTIONS: torch.tensor(matched_labels, device=outputs_device),
+            PROBABILITIES: torch.tensor(probabilities, dtype=torch.float32, device=outputs_device),
+            LOGITS: torch.tensor(logits, dtype=torch.float32, device=outputs_device),
         }
