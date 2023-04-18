@@ -124,7 +124,6 @@ jobs:
             extra_index_url=https://download.pytorch.org/whl/cpu
             pip install torch==$PYTORCH torchtext torchvision torchaudio --extra-index-url $extra_index_url
           fi
-          pip install protobuf==3.20.1 # https://github.com/databrickslabs/dbx/issues/257
 
           if [ "$RAY_VERSION" == "nightly" ]; then
             # NOTE: hardcoded for python 3.9 on Linux
