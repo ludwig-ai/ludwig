@@ -236,13 +236,11 @@ def test_llm_prompt_tuning(tmpdir, backend):  # ray_cluster_4cpu
         GENERATION_CONFIG: get_generation_config(),
         ADAPTER: {
             "type": "prompt_tuning",
-            "parameters": {
-                "task_type": "CAUSAL_LM",
-                "prompt_tuning_init": "TEXT",
-                "num_virtual_tokens": 8,
-                "prompt_tuning_init_text": "Classify if the review is positive, negative, or neutral: ",
-                "tokenizer_name_or_path": TEST_MODEL_NAME,
-            },
+            "task_type": "CAUSAL_LM",
+            "prompt_tuning_init": "TEXT",
+            "num_virtual_tokens": 8,
+            "prompt_tuning_init_text": "Classify if the review is positive, negative, or neutral: ",
+            "tokenizer_name_or_path": TEST_MODEL_NAME,
         },
     }
 

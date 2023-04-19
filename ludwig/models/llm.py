@@ -6,6 +6,7 @@ from typing import Dict, Tuple, Union
 import numpy as np
 import torch
 import torchmetrics
+from peft import get_peft_config, get_peft_model
 from transformers import AutoModelForCausalLM, GenerationConfig
 
 from ludwig.constants import MODEL_LLM
@@ -41,8 +42,20 @@ class LLM(BaseModel):
         self._random_seed = random_seed
 
         self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.model_name)
+        # If an adapter config is provided, we want to wrap the model with a PEFT model
+        # for fine-tuning.
+        if self.config_obj.adapter:
+            # TODO: Refactor once adapter is a config object instead of a dict
+            self.adapter = copy.deepcopy(self.config_obj.adapter)
+            self.adapter["peft_type"] = self.adapter.pop("type").upper()
+            self.model = get_peft_model(self.model, get_peft_config(**self.adapter))
+
         self.generation_config = GenerationConfig(**self.config_obj.generation_config.to_dict())
         self.max_new_tokens = self.config_obj.generation_config.max_new_tokens
+
+        self.vocab = []
+        if hasattr(self.config_obj.output_features[0].preprocessing, "vocab"):
+            self.vocab = self.config_obj.output_features[0].preprocessing.vocab
 
         # ================ Inputs ================
         try:

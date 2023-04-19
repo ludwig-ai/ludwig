@@ -746,10 +746,19 @@ class LLMTrainerConfig(BaseTrainerConfig):
 
 
 @DeveloperAPI
-@register_trainer_schema(MODEL_LLM)
+# @register_trainer_schema(MODEL_LLM)
 @ludwig_dataclass
 class ZeroShotTrainerConfig(LLMTrainerConfig):
     """Dataclass that configures most of the hyperparameters used for zero-shot LLM model training."""
+
+    pass
+
+
+@DeveloperAPI
+@register_trainer_schema(MODEL_LLM)
+@ludwig_dataclass
+class FineTuneTrainerConfig(ECDTrainerConfig):
+    """Dataclass that configures most of the hyperparameters used for fine-tuning LLM model training."""
 
     pass
 
@@ -804,7 +813,7 @@ class GBMTrainerField(schema_utils.DictMarshmallowField):
 @DeveloperAPI
 class LLMTrainerField(schema_utils.DictMarshmallowField):
     def __init__(self):
-        super().__init__(ZeroShotTrainerConfig)
+        super().__init__(FineTuneTrainerConfig)
 
     def _jsonschema_type_mapping(self):
         return get_trainer_jsonschema(MODEL_LLM)

@@ -15,9 +15,10 @@ from ludwig.models.llm import LLM
 from ludwig.models.predictor import Predictor
 from ludwig.modules.metric_modules import get_initial_validation_value
 from ludwig.progress_bar import LudwigProgressBar
-from ludwig.schema.trainer import BaseTrainerConfig, ZeroShotTrainerConfig
+from ludwig.schema.trainer import BaseTrainerConfig, FineTuneTrainerConfig, ZeroShotTrainerConfig
 from ludwig.trainers.base import BaseTrainer
 from ludwig.trainers.registry import register_ray_trainer, register_trainer
+from ludwig.trainers.trainer import Trainer
 from ludwig.types import ModelConfigDict
 from ludwig.utils import time_utils
 from ludwig.utils.defaults import default_random_seed
@@ -36,8 +37,8 @@ from ludwig.utils.trainer_utils import (
 logger = logging.getLogger(__name__)
 
 
-@register_ray_trainer(MODEL_LLM)
-@register_trainer(MODEL_LLM)
+# @register_ray_trainer(MODEL_LLM)
+# @register_trainer(MODEL_LLM)
 class ZeroShotTrainer(BaseTrainer):
     """ZeroShotTrainer is a trainer that does not train a model."""
 
@@ -488,3 +489,30 @@ class ZeroShotTrainer(BaseTrainer):
         self.callback(lambda c: c.on_eval_end(self, progress_tracker, save_path))
 
         return False
+
+
+@register_ray_trainer(MODEL_LLM)
+@register_trainer(MODEL_LLM)
+class FineTuneTrainer(Trainer):
+    @staticmethod
+    def get_schema_cls():
+        return FineTuneTrainerConfig
+
+    def __init__(
+        self,
+        config: FineTuneTrainerConfig,
+        model: LLM,
+        resume: float = False,
+        skip_save_model: bool = False,
+        skip_save_progress: bool = False,
+        skip_save_log: bool = False,
+        callbacks: List = None,
+        report_tqdm_to_ray=False,
+        random_seed: float = default_random_seed,
+        distributed: Optional[DistributedStrategy] = None,
+        device: Optional[str] = None,
+        **kwargs,
+    ):
+        super().__init__(
+            config,
+        )
