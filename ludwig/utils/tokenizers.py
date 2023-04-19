@@ -793,6 +793,7 @@ class HFTokenizer(BaseTokenizer):
         super().__init__()
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
         self.tokenizer = load_pretrained_hf_tokenizer(self.pretrained_model_name_or_path)
+        self.set_pad_token_id()
 
     def __call__(self, text):
         return self.tokenizer.encode(text, truncation=True)
@@ -810,6 +811,10 @@ class HFTokenizer(BaseTokenizer):
 
     def get_unk_token(self) -> str:
         return self.tokenizer.unk_token
+
+    def set_pad_token_id(self):
+        if hasattr(self.tokenizer, "pad_token_id") and self.tokenizer.pad_token_id is None:
+            self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
 
 
 tokenizer_registry = {
