@@ -515,4 +515,15 @@ class FineTuneTrainer(Trainer):
     ):
         super().__init__(
             config,
+            model,
+            resume,
+            skip_save_model,
+            skip_save_progress,
+            skip_save_log,
+            callbacks,
+            report_tqdm_to_ray,
+            random_seed,
+            distributed,
+            device,
+            **kwargs,
         )

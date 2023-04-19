@@ -6,7 +6,7 @@ from typing import Dict, Tuple, Union
 import numpy as np
 import torch
 import torchmetrics
-from peft import get_peft_config, get_peft_model
+from peft import get_peft_model, PromptTuningConfig  # get_peft_config,
 from transformers import AutoModelForCausalLM, GenerationConfig
 
 from ludwig.constants import MODEL_LLM
@@ -20,6 +20,7 @@ from ludwig.utils.augmentation_utils import AugmentationPipelines
 from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.fs_utils import open_file
 from ludwig.utils.state_dict_backward_compatibility import update_state_dict
+from ludwig.utils.strings_utils import get_tokenizer
 from ludwig.utils.torch_utils import get_torch_device
 
 logger = logging.getLogger(__name__)
@@ -41,21 +42,26 @@ class LLM(BaseModel):
         self.config_obj = config_obj
         self._random_seed = random_seed
 
+        self.tokenizer = get_tokenizer(
+            tokenizer_type="hf_tokenizer",
+            tokenizer_vocab_file=None,
+            pretrained_model_name_or_path=self.config_obj.model_name,
+        )
+
         self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.model_name)
+
         # If an adapter config is provided, we want to wrap the model with a PEFT model
         # for fine-tuning.
         if self.config_obj.adapter:
             # TODO: Refactor once adapter is a config object instead of a dict
             self.adapter = copy.deepcopy(self.config_obj.adapter)
             self.adapter["peft_type"] = self.adapter.pop("type").upper()
-            self.model = get_peft_model(self.model, get_peft_config(**self.adapter))
+            # TODO: Figure out how to use peft_model_config properly
+            self.model = get_peft_model(self.model, PromptTuningConfig(**self.adapter))
 
+        # Initialize the generation config to use for generation calls.
         self.generation_config = GenerationConfig(**self.config_obj.generation_config.to_dict())
         self.max_new_tokens = self.config_obj.generation_config.max_new_tokens
-
-        self.vocab = []
-        if hasattr(self.config_obj.output_features[0].preprocessing, "vocab"):
-            self.vocab = self.config_obj.output_features[0].preprocessing.vocab
 
         # ================ Inputs ================
         try:
@@ -72,6 +78,16 @@ class LLM(BaseModel):
 
         # Extract the decoder object for the forward pass
         _, self.output_feature_decoder = self.output_features.items()[0]
+
+        # Extract vocab and str2idx for fine-tuning
+        # TODO(Arnav): See if we can get rid of using vocab/str2idx
+        self.vocab = []
+        self.str2idx = {}
+        self.idx2str = {}
+        if self.config_obj.output_features[0].type == "category":
+            self.vocab = self.config_obj.output_features[0].preprocessing.vocab
+            self.str2idx = self.config_obj.output_features[0].decoder.str2idx
+            self.idx2str = {v: k for k, v in self.str2idx.items()}
 
         # ================ Combined loss metric ================
         self.eval_loss_metric = torchmetrics.MeanMetric()
@@ -96,6 +112,15 @@ class LLM(BaseModel):
         output_features[output_feature_config.name] = output_feature
 
         return output_features
+
+    def get_input_ids(
+        self,
+        inputs: Union[
+            Dict[str, torch.Tensor], Dict[str, np.ndarray], Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
+        ],
+    ):
+        """Returns the input ids for the text feature input."""
+        return inputs[self.config_obj.input_features[0].name].type(torch.int32)
 
     def forward(
         self,
@@ -130,27 +155,66 @@ class LLM(BaseModel):
 
         assert list(inputs.keys()) == self.input_features.keys()
 
-        with torch.no_grad():
-            input_ids = self.get_input_ids(inputs)
-            # Generate text using the model
-            outputs = self.model.generate(
-                input_ids=input_ids,
-                attention_mask=mask,
-                generation_config=self.generation_config,
-                return_dict_in_generate=True,
-                output_scores=True,
-            )
-            # Extract the predictions, probabilities and logits from the model outputs
-            # through the forward pass of the output feature
-            outputs = self.output_feature_decoder.decoder_obj.forward(
-                outputs,
-                llm_model_inputs=input_ids,
-            )
-        return self.extract(outputs)
+        if self.adapter:
+            # Preprocess inputs for fine-tuning
+            preprocessed_inputs = self.preprocess_batch_for_fine_tuning(inputs, targets)
+            # Forward pass using PEFT model for fine-tuning
+            outputs = self.model(**preprocessed_inputs)
+            return outputs
+        else:
+            with torch.no_grad():
+                input_ids = self.get_input_ids(inputs)
+                # Generate text using the model
+                outputs = self.model.generate(
+                    input_ids=input_ids,
+                    attention_mask=mask,
+                    generation_config=self.generation_config,
+                    return_dict_in_generate=True,
+                    output_scores=True,
+                )
+                # Extract the predictions, probabilities and logits from the model outputs
+                # through the forward pass of the output feature
+                outputs = self.output_feature_decoder.decoder_obj.forward(
+                    outputs,
+                    llm_model_inputs=input_ids,
+                )
+                return self.extract(outputs)
 
-    def get_input_ids(self, inputs):
-        """Returns the input ids for the text feature input."""
-        return inputs[self.config_obj.input_features[0].name].type(torch.int32)
+    def preprocess_batch_for_fine_tuning(
+        self,
+        inputs: Union[
+            Dict[str, torch.Tensor], Dict[str, np.ndarray], Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
+        ],
+        targets: Union[Dict[str, torch.Tensor], Dict[str, np.ndarray]],
+    ):
+        inputs = inputs[self.config_obj.input_features[0].name]
+
+        # Get tokenized versions of labels from targets tensor
+        targets = [self.idx2str[target.item()] for target in targets[self.config_obj.output_features[0].name]]
+        targets = self.tokenizer.tokenizer(targets)
+
+        fine_tuning_inputs = {"input_ids": [None] * inputs.shape[0], "attention_mask": [None] * inputs.shape[0]}
+        batch_size = inputs.shape[0]
+
+        for i in range(batch_size):
+            sample_input_ids = inputs[i].tolist()
+            # Add padding to the end of the label
+            sample_target_ids = targets["input_ids"][i] + [self.tokenizer.tokenizer.pad_token_id]
+            # Update input and target tensors
+            fine_tuning_inputs["input_ids"][i] = sample_input_ids + sample_target_ids
+            fine_tuning_inputs["attention_mask"][i] = [1] * len(fine_tuning_inputs["input_ids"][i])
+            targets["input_ids"][i] = [-100] * len(sample_input_ids) + sample_target_ids
+            # Convert to tensors - use torch.tensor to preserve dtype
+            fine_tuning_inputs["input_ids"][i] = torch.tensor(fine_tuning_inputs["input_ids"][i])
+            fine_tuning_inputs["attention_mask"][i] = torch.tensor(fine_tuning_inputs["attention_mask"][i])
+            targets["input_ids"][i] = torch.tensor(targets["input_ids"][i])
+        fine_tuning_inputs["labels"] = targets["input_ids"]
+
+        # Stack the tensors to create a final tensor for each key in the fine_tuning_inputs dictionary
+        for k, v in fine_tuning_inputs.items():
+            fine_tuning_inputs[k] = torch.stack(v).to(self.device)
+
+        return fine_tuning_inputs
 
     def extract(
         self,
@@ -158,25 +222,6 @@ class LLM(BaseModel):
     ):
         """Extracts predictions and probabilities from the model outputs."""
         return {self.config_obj.output_features[0].name: outputs}
-
-    # def extract_logits(self, scores):
-    #     """Extracts the logits from the scores.
-
-    #     Args:
-    #         scores: A tuple containing one entry for each generated token. Each tuple member
-    #             is a tensor containing the log probabilities from the model, for all words in the vocabulary.
-
-    #     Returns:
-    #         A list of tensors, each containing the normalized probabilities for each word in the vocabulary.
-
-    #     (TODO): Assumes num_beams = 1 from the generation config. Need to understand how to modify this for
-    #     num_beams > 1 since a probability distribution is returned for each beam. Also need to adapt this
-    #     for the batch size > 1.
-    #     """
-    #     probs = []
-    #     for log_prob in list(scores):
-    #         probs.append(torch.nn.functional.exp(log_prob, dim=-1))
-    #     return probs
 
     def update_metrics(self, targets, predictions):
         """Updates the model's metrics given targets and predictions."""
@@ -232,11 +277,13 @@ class LLM(BaseModel):
 
     def save(self, save_path):
         """Saves the model to the given path."""
+        # TODO(Rewrite to just save fine-tuned weights)
         weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
         torch.save(self.state_dict(), weights_save_path)
 
     def load(self, save_path):
         """Loads the model from the given path."""
+        # TODO(Rewrite to just load fine-tuned weights)
         weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
         device = torch.device(get_torch_device())
         with open_file(weights_save_path, "rb") as f:
