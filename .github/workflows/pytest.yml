@@ -131,9 +131,14 @@ jobs:
           pip install '.[test]' --extra-index-url $extra_index_url
           pip list
 
-          python -c "import torch; assert torch.__version__ == \"$PYTORCH\", f\"torch {torch.__version__} != $PYTORCH\""
+          if [ "$PYTORCH" == "nightly" ]; then
+            python -c "from packaging import version; import torch; assert version.parse(torch.__version__) >= version.parse(\"2.0.0\"), f\"torch {torch.__version__} != $PYTORCH\""
+          else
+            python -c "from packaging import version; import torch; assert version.parse(torch.__version__) == version.parse(\"$PYTORCH\"), f\"torch {torch.__version__} != $PYTORCH\""
+          fi
+
           if [ "$MARKERS" == "distributed" ]; then
-            python -c "import ray; assert ray.__version__ == \"$RAY_VERSION\", f\"ray {ray.__version__} != $RAY_VERSION\""
+            python -c "from packaging import version; import ray; assert version.parse(ray.__version__) == version.parse(\"$RAY_VERSION\"), f\"ray {ray.__version__} != $RAY_VERSION\""
           else
             python -c "import importlib.util; assert importlib.util.find_spec('ray') is None, \"found ray but expected it to not be installed\""
           fi
