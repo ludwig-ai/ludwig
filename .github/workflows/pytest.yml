@@ -132,13 +132,13 @@ jobs:
           pip list
 
           if [ "$PYTORCH" == "nightly" ]; then
-            python -c "from packaging import version; import torch; assert version.parse(torch.__version__) >= version.parse(\"2.0.0\")"
+            python -c "from packaging import version; import torch; assert version.parse(torch.__version__) >= version.parse(\"2.0.0\"), f\"torch {version.parse(torch.__version__)} < version.parse(\"2.0.0\")\""
           else
-            python -c "from packaging import version; import torch; assert version.parse(torch.__version__) == version.parse(\"$PYTORCH\")"
+            python -c "from packaging import version; import torch; assert version.parse(torch.__version__) == version.parse(\"$PYTORCH\"), f\"torch {version.parse(torch.__version__)} != version.parse(\"$PYTORCH\")\""
           fi
 
           if [ "$MARKERS" == "distributed" ]; then
-            python -c "from packaging import version; import ray; assert version.parse(ray.__version__) == version.parse(\"$RAY_VERSION\")"
+            python -c "from packaging import version; import ray; assert version.parse(ray.__version__) == version.parse(\"$RAY_VERSION\"), f\"ray {ray.__version__} != $RAY_VERSION\""
           else
             python -c "import importlib.util; assert importlib.util.find_spec('ray') is None, \"found ray but expected it to not be installed\""
           fi
