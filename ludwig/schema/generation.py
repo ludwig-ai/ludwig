@@ -230,7 +230,7 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     remove_invalid_values: Optional[bool] = schema_utils.Boolean(
-        default=None,
+        default=False,
         description="Whether to remove possible nan and inf outputs of the model to prevent the generation method to "
         "crash. Note that using remove_invalid_values can slow down generation.",
     )

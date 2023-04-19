@@ -50,9 +50,9 @@ def get_generation_config():
 
 
 def convert_preds(backend: dict, preds: DataFrame):
-    if backend["type"] == "ray":
-        return preds.compute().to_dict()
-    return preds.to_dict()
+    if isinstance(preds, pd.DataFrame):
+        return preds.to_dict()
+    return preds.compute().to_dict()
 
 
 @pytest.mark.parametrize(
@@ -183,7 +183,7 @@ def test_llm_zero_shot_classification(tmpdir, backend, ray_cluster_4cpu):
 @pytest.mark.parametrize(
     "backend",
     [
-        pytest.param(LOCAL_BACKEND, id="local"),
+        pytest.param(RAY_BACKEND, id="ray"),
         # pytest.param(RAY_BACKEND, id="ray", marks=pytest.mark.distributed),
     ],
 )
@@ -232,6 +232,7 @@ def test_llm_few_shot_classification(tmpdir, backend):
             },
         ]
     )
+    df['split'] = 0
 
     prediction_df = pd.DataFrame(
         [
@@ -257,6 +258,7 @@ def test_llm_few_shot_classification(tmpdir, backend):
             },
         ]
     )
+    prediction_df['split'] = 2
 
     config = """
 model_type: llm
@@ -267,6 +269,10 @@ generation:
     top_k: 40
     num_beams: 4
     max_new_tokens: 5
+preprocessing:
+    split:
+        type: fixed
+        column: split
 input_features:
 -
     name: reviews_text
@@ -314,7 +320,7 @@ output_features:
 """
     config = yaml.safe_load(config)
 
-    model = LudwigModel(config, backend={"type": "local", "cache_dir": str(tmpdir)})
+    model = LudwigModel(config, backend={**backend, "cache_dir": str(tmpdir)})
     model.train(dataset=df, output_directory=str(tmpdir), skip_save_processed_input=True)
 
     preds, _ = model.predict(dataset=prediction_df, output_directory=str(tmpdir))

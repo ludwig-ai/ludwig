@@ -661,8 +661,8 @@ class LudwigModel:
                                 calibrator.train_calibration(training_set, TRAINING)
                             else:
                                 calibrator.train_calibration(validation_set, VALIDATION)
-                        if not skip_save_model:
-                            self.model.save(model_dir)
+                        # if not skip_save_model:
+                            # self.model.save(model_dir)
 
                     # Evaluation Frequency
                     if self.config_obj.model_type == MODEL_ECD and self.config_obj.trainer.steps_per_checkpoint:

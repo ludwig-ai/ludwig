@@ -145,7 +145,10 @@ class LLM(BaseModel):
             sequences_list = []
             for input_ids_sample in input_ids:
                 bos_idxs = torch.where(input_ids_sample == self.tokenizer.bos_token_id)[0]  # all BOS token locations
-                bos_idx = bos_idxs[0]  # get first BOS token location
+                if len(bos_idxs) != 0:
+                    bos_idx = bos_idxs[0]  # get first BOS token location
+                else:
+                    bos_idx = 0
 
                 input_ids_sample_no_padding = input_ids_sample[bos_idx:].unsqueeze(0)
                 if input_ids_sample_no_padding.shape[1] > self.max_input_length:

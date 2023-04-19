@@ -68,6 +68,7 @@ from ludwig.constants import (
 from ludwig.data.cache.manager import DatasetCache
 from ludwig.data.cache.types import wrap
 from ludwig.data.concatenate_datasets import concatenate_df, concatenate_files, concatenate_splits
+from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.split import get_splitter, split_dataset
 from ludwig.data.utils import set_fixed_split
@@ -1214,7 +1215,7 @@ def build_dataset(
 
     logger.debug("handle text features with prompt parameters")
     handle_features_with_prompt_config(
-        dataset_cols, feature_name_to_preprocessing_parameters, features, split_col=split_col)
+        dataset_cols, feature_name_to_preprocessing_parameters, features, split_col=split_col, df_engine=df_engine)
 
     # Happens after missing values are handled to avoid NaN casting issues.
     logger.debug("cast columns")
@@ -1686,6 +1687,7 @@ def handle_features_with_prompt_config(
     dataset_cols: Dict[str, Series], 
     feature_name_to_preprocessing_parameters: Dict[str, PreprocessingConfigDict],
     features: List[FeatureConfigDict], 
+    df_engine: DataFrameEngine,
     split_col: Optional[Series] = None,
 ):
     input_features, output_features = get_input_and_output_features(features)
@@ -1707,6 +1709,7 @@ def handle_features_with_prompt_config(
                     input_col_name=input_col_name,
                     dataset_cols=input_and_output_cols,
                     cache_directory=index_cache_directory,
+                    df_engine=df_engine,
                     split_col=split_col,
                 )
                 # NOTE: after indexing the input column, we update the index_name in the prompt config IN PLACE.
@@ -1726,8 +1729,9 @@ def handle_features_with_prompt_config(
             dataset_cols[input_col_name] = format_input_with_prompt(
                 input_col_name,
                 input_col,
-                search_fn=search_fn,
                 task_str=prompt_config["task"],
+                df_engine=df_engine,
+                search_fn=search_fn,
             )
 
 
@@ -1736,16 +1740,18 @@ def index_input_col(
     input_col_name: str, 
     dataset_cols: Dict[str, Series],
     cache_directory: str,
+    df_engine: DataFrameEngine,
     split_col: Optional[Series] = None,
 ):
     retrieval_model = get_retrieval_model(retrieval_config["type"])
     index_name = retrieval_config["index_name"]
     if index_name is None:
-        df = pd.DataFrame(dataset_cols)
         if split_col is None:
             raise ValueError("split column must be provided if using retrieval")
-
-        df = df[split_col.astype(int) == 0]  # Ensures that the index is only built on the training set
+        split_col = df_engine.compute(split_col).astype(int)
+        
+        df = pd.DataFrame({name: df_engine.compute(col) for name, col in dataset_cols.items()})
+        df = df[split_col == 0]  # Ensures that the index is only built on the training set
         retrieval_model.create_dataset_index(df, columns_to_index=[input_col_name])
         index_name = f"embedding_index_{uuid.uuid4()}"
         retrieval_model.save_index(index_name, cache_directory=cache_directory)
@@ -1758,6 +1764,7 @@ def format_input_with_prompt(
     input_col_name: str,
     input_col: Series,
     task_str: str,
+    df_engine: DataFrameEngine,
     search_fn: Optional[Callable[[str], List[Dict[str, Any]]]] = None,
 ) -> Series:
     """Returns a new Series with the input column data formatted with the prompt."""
@@ -1784,9 +1791,8 @@ def format_input_with_prompt(
         sample_input_fn=sample_input_fn,
         task_fn=task_fn,
     )
-    
-    tqdm.pandas()
-    return input_col.progress_map(prompt_fn)
+
+    return df_engine.map_objects(input_col, prompt_fn)
 
 
 def get_context(
