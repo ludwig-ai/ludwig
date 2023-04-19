@@ -1,6 +1,5 @@
 # This workflow will install Python dependencies, run tests and lint with a variety of Python versions
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
-# debug
 
 name: pytest
 
@@ -100,44 +99,45 @@ jobs:
           python -m pip install -U pip
           cmake --version
 
+          # remove torch and ray from the dependencies so we can add them depending on the matrix args for the job.
+          cat requirements.txt | sed '/^torch[>=<\b]/d' | sed '/^torchtext/d' | sed '/^torchvision/d' | sed '/^torchaudio/d' > requirements-temp && mv requirements-temp requirements.txt
+          cat requirements_distributed.txt | sed '/^ray[\[]/d'
+
           if [ "$MARKERS" != "distributed" ]; then
             # Skip distributed and hyperopt requirements to test optional imports
             echo > requirements-temp && mv requirements-temp requirements_distributed.txt
             echo > requirements-temp && mv requirements-temp requirements_hyperopt.txt
+
             # Skip distributed tree requirement (lightgbm-ray)
             cat requirements_tree.txt | sed '/^lightgbm-ray/d' > requirements-temp && mv requirements-temp requirements_tree.txt
+          else
+            if [ "$RAY_VERSION" == "nightly" ]; then
+              # NOTE: hardcoded for python 3.10 on Linux
+              echo "ray[default,data,serve,tune] @ https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-3.0.0.dev0-cp310-cp310-manylinux2014_x86_64.whl" >> requirements_distributed.txt
+            else
+              echo "ray[default,data,serve,tune]==$RAY_VERSION" >> requirements_distributed.txt
+            fi
           fi
 
           if [ "$PYTORCH" == "nightly" ]; then
-            cat requirements.txt | sed '/^torch[>=<]/d' | sed '/^torchtext[>=<]/d' | sed '/^torchvision[>=<]/d' | sed '/^torchaudio[>=<]/d' > requirements-temp && mv requirements-temp requirements.txt
             extra_index_url=https://download.pytorch.org/whl/nightly/cpu
-            # torch "nightly" version may need to be updated as dated dev releases go out of date.
-            pip install --pre torch==2.1.0.dev20230418+cpu torchtext torchvision torchaudio --extra-index-url $extra_index_url
+            pip install --pre torch torchtext torchvision torchaudio --index-url $extra_index_url
           else
             extra_index_url=https://download.pytorch.org/whl/cpu
             pip install torch==$PYTORCH torchtext torchvision torchaudio --extra-index-url $extra_index_url
           fi
 
-          if [ "$MARKERS" == "distributed" ]; then
-            if [ "$RAY_VERSION" == "nightly" ]; then
-              # NOTE: hardcoded for python 3.10 on Linux
-              pip install https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-3.0.0.dev0-cp310-cp310-manylinux2014_x86_64.whl
-            else
-              # installing `six` early resolves ModuleNotFound error in ray==2.1.0
-              pip install six
-              pip install ray==$RAY_VERSION
-            fi
-            ray_expected=$(python -c "import ray; print(ray.__version__)")
-          fi
-
-          torch_expected=$(python -c "import torch; print(torch.__version__)")
-
           pip install '.[test]' --extra-index-url $extra_index_url
           pip list
 
-          python -c "import torch; assert torch.__version__ == \"$torch_expected\", f\"torch {torch.__version__} != $torch_expected\""
+          if [ "$PYTORCH" == "nightly" ]; then
+            python -c "from packaging import version; import torch; assert version.parse(torch.__version__).release >= version.parse(\"2.0.0\").release, f\"torch {version.parse(torch.__version__).release} < version.parse(\'2.0.0\').release\""
+          else
+            python -c "from packaging import version; import torch; assert version.parse(torch.__version__).release == version.parse(\"$PYTORCH\").release, f\"torch {version.parse(torch.__version__).release} != version.parse(\'$PYTORCH\').release\""
+          fi
+
           if [ "$MARKERS" == "distributed" ]; then
-            python -c "import ray; assert ray.__version__ == \"$ray_expected\", f\"ray {ray.__version__} != $ray_expected\""
+            python -c "from packaging import version; import ray; assert version.parse(ray.__version__).release == version.parse(\"$RAY_VERSION\").release, f\"ray {version.parse(ray.__version__).release} != version.parse(\'$RAY_VERSION\').release\""
           else
             python -c "import importlib.util; assert importlib.util.find_spec('ray') is None, \"found ray but expected it to not be installed\""
           fi
