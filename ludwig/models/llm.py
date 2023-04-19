@@ -19,6 +19,7 @@ from ludwig.schema.model_types.llm import LLMModelConfig
 from ludwig.utils.augmentation_utils import AugmentationPipelines
 from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.fs_utils import open_file
+from ludwig.utils.output_feature_utils import set_output_feature_tensor
 from ludwig.utils.state_dict_backward_compatibility import update_state_dict
 from ludwig.utils.strings_utils import get_tokenizer
 from ludwig.utils.torch_utils import get_torch_device
@@ -79,15 +80,10 @@ class LLM(BaseModel):
         # Extract the decoder object for the forward pass
         _, self.output_feature_decoder = self.output_features.items()[0]
 
-        # Extract vocab and str2idx for fine-tuning
-        # TODO(Arnav): See if we can get rid of using vocab/str2idx
-        self.vocab = []
-        self.str2idx = {}
+        # Get idx2str to  convert targets to strings for fine-tuning
         self.idx2str = {}
         if self.config_obj.output_features[0].type == "category":
-            self.vocab = self.config_obj.output_features[0].preprocessing.vocab
-            self.str2idx = self.config_obj.output_features[0].decoder.str2idx
-            self.idx2str = {v: k for k, v in self.str2idx.items()}
+            self.idx2str = {v: k for k, v in self.config_obj.output_features[0].decoder.str2idx.items()}
 
         # ================ Combined loss metric ================
         self.eval_loss_metric = torchmetrics.MeanMetric()
@@ -159,7 +155,10 @@ class LLM(BaseModel):
             # Preprocess inputs for fine-tuning
             preprocessed_inputs = self.preprocess_batch_for_fine_tuning(inputs, targets)
             # Forward pass using PEFT model for fine-tuning
-            outputs = self.model(**preprocessed_inputs)
+            model_outputs = self.model(**preprocessed_inputs)
+            outputs = {}
+            set_output_feature_tensor(outputs, self.config_obj.output_features[0].name, "loss", model_outputs.loss)
+            set_output_feature_tensor(outputs, self.config_obj.output_features[0].name, "logits", model_outputs.logits)
             return outputs
         else:
             with torch.no_grad():
