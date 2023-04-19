@@ -2,6 +2,8 @@ from typing import Dict, Optional
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
+
+# from ludwig.schema.adapter_config import LLMBaseAdapterConfig, LLMAdapterConfigField
 from ludwig.schema.defaults.llm import LLMDefaultsConfig, LLMDefaultsField
 from ludwig.schema.features.base import (
     BaseInputFeatureConfig,
