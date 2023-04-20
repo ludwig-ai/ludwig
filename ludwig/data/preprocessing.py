@@ -1215,7 +1215,8 @@ def build_dataset(
 
     logger.debug("handle text features with prompt parameters")
     handle_features_with_prompt_config(
-        dataset_cols, feature_name_to_preprocessing_parameters, features, split_col=split_col, df_engine=df_engine)
+        dataset_cols, feature_name_to_preprocessing_parameters, features, split_col=split_col, df_engine=df_engine
+    )
 
     # Happens after missing values are handled to avoid NaN casting issues.
     logger.debug("cast columns")
@@ -1686,7 +1687,7 @@ def _handle_missing_values(
 def handle_features_with_prompt_config(
     dataset_cols: Dict[str, Series],
     feature_name_to_preprocessing_parameters: Dict[str, PreprocessingConfigDict],
-    features: List[FeatureConfigDict], 
+    features: List[FeatureConfigDict],
     df_engine: DataFrameEngine,
     split_col: Optional[Series] = None,
 ):
@@ -1749,7 +1750,7 @@ def index_input_col(
         if split_col is None:
             raise ValueError("split column must be provided if using retrieval")
         split_col = df_engine.compute(split_col).astype(int)
-        
+
         df = pd.DataFrame({name: df_engine.compute(col) for name, col in dataset_cols.items()})
         df = df[split_col == 0]  # Ensures that the index is only built on the training set
         retrieval_model.create_dataset_index(df, columns_to_index=[input_col_name])

@@ -232,7 +232,7 @@ def test_llm_few_shot_classification(tmpdir, backend):
             },
         ]
     )
-    df['split'] = 0
+    df["split"] = 0
 
     prediction_df = pd.DataFrame(
         [
@@ -258,7 +258,7 @@ def test_llm_few_shot_classification(tmpdir, backend):
             },
         ]
     )
-    prediction_df['split'] = 2
+    prediction_df["split"] = 2
 
     config = """
 model_type: llm
