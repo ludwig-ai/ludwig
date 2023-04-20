@@ -1,12 +1,15 @@
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.backend.loader import LoaderConfig, LoaderDataclassField
-from ludwig.schema.backend.processor import ProcessorConfig, ProcessorDataclassField
-from ludwig.schema.backend.trainer import TrainerConfig, TrainerDataclassField
+from ludwig.schema.backend.loader import BaseLoaderConfig, LoaderDataclassField
+from ludwig.schema.backend.processor import BaseProcessorConfig, ProcessorDataclassField
+from ludwig.schema.backend.trainer import BackendTrainerDataclassField, BaseBackendTrainerConfig
+from ludwig.schema.backend.utils import register_backend_config
 from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
+@register_backend_config("local")
+@register_backend_config("horovod")
 @ludwig_dataclass
 class BaseBackendConfig(schema_utils.BaseMarshmallowConfig):
     """Global backend compute resource/usage configuration."""
@@ -32,12 +35,13 @@ class BaseBackendConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @DeveloperAPI
+@register_backend_config("ray")
 @ludwig_dataclass
 class RayBackendConfig(BaseBackendConfig):
     type: str = schema_utils.ProtectedString("ray", description="Distribute training with Ray.")
 
-    processor: ProcessorConfig = ProcessorDataclassField()
+    processor: BaseProcessorConfig = ProcessorDataclassField()
 
-    trainer: TrainerConfig = TrainerDataclassField()
+    trainer: BaseBackendTrainerConfig = BackendTrainerDataclassField()
 
-    loader: LoaderConfig = LoaderDataclassField()
+    loader: BaseLoaderConfig = LoaderDataclassField()
