@@ -48,13 +48,15 @@ class LLM(BaseModel):
             pretrained_model_name_or_path=self.config_obj.model_name,
         )
 
-        self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.model_name)
+        self.model_name = self.config_obj.model_name
+        self.model = AutoModelForCausalLM.from_pretrained(self.model_name)
 
         # If an adapter config is provided, we want to wrap the model with a PEFT model
         # for fine-tuning.
         if self.config_obj.adapter:
             # TODO: Refactor once adapter is a config object instead of a dict
             self.adapter["peft_type"] = self.adapter.pop("type").upper()
+            self.adapter["tokenizer_name_or_path"] = self.model_name
             # TODO: Figure out how to use peft_model_config properly
             self.model = get_peft_model(self.model, PromptTuningConfig(**self.adapter))
             logger.info("Trainable Parameters For Fine-Tuning:")
