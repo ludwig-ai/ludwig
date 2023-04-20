@@ -127,7 +127,7 @@ from ludwig.utils.defaults import (
     default_random_seed,
     default_training_preprocessing_parameters,
 )
-from ludwig.utils.fs_utils import file_lock, path_exists, get_default_cache_location
+from ludwig.utils.fs_utils import file_lock, get_default_cache_location, path_exists
 from ludwig.utils.misc_utils import get_from_registry, merge_dict
 from ludwig.utils.types import DataFrame, Series
 
@@ -1684,7 +1684,7 @@ def _handle_missing_values(
 
 
 def handle_features_with_prompt_config(
-    dataset_cols: Dict[str, Series], 
+    dataset_cols: Dict[str, Series],
     feature_name_to_preprocessing_parameters: Dict[str, PreprocessingConfigDict],
     features: List[FeatureConfigDict], 
     df_engine: DataFrameEngine,
@@ -1736,8 +1736,8 @@ def handle_features_with_prompt_config(
 
 
 def index_input_col(
-    retrieval_config: Dict[str, Any], 
-    input_col_name: str, 
+    retrieval_config: Dict[str, Any],
+    input_col_name: str,
     dataset_cols: Dict[str, Series],
     cache_directory: str,
     df_engine: DataFrameEngine,

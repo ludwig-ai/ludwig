@@ -159,7 +159,7 @@ class CategoryParserDecoder(Decoder):
     def get_prediction_set(self):
         return {LOGITS, PREDICTIONS, PROBABILITIES}
 
-    def forward(self, inputs: List[torch.Tensor], **kwargs):        
+    def forward(self, inputs: List[torch.Tensor], **kwargs):
         # Extract the sequences tensor from the LLMs forward pass
         generated_outputs = extract_generated_tokens(
             raw_generated_output_sequences=inputs,
