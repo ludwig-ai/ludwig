@@ -18,7 +18,7 @@ import logging
 import torch
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import BINARY, NUMBER, TIMESERIES, VECTOR
+from ludwig.constants import BINARY, NUMBER, TEXT, TIMESERIES, VECTOR
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.modules.fully_connected_modules import FCStack
@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 @DeveloperAPI
-@register_encoder("passthrough", [BINARY, NUMBER, VECTOR])
+@register_encoder("passthrough", [BINARY, NUMBER, TEXT, VECTOR])
 class PassthroughEncoder(Encoder):
     def __init__(self, input_size=1, encoder_config=None, **kwargs):
         super().__init__()

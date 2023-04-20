@@ -32,6 +32,7 @@ import pandas as pd
 import pytest
 import torch
 from PIL import Image
+from transformers import file_utils
 
 from ludwig.api import LudwigModel
 from ludwig.backend import LocalBackend
@@ -132,6 +133,8 @@ def parse_flag_from_env(key, default=False):
     else:
         # KEY is set, convert it to True or False.
         try:
+            if isinstance(value, bool):
+                return 1 if value else 0
             _value = strtobool(value)
         except ValueError:
             # More values are supported, but let's keep the message simple.
@@ -140,6 +143,12 @@ def parse_flag_from_env(key, default=False):
 
 
 _run_private_tests = parse_flag_from_env("RUN_PRIVATE", default=False)
+
+
+private_test = pytest.mark.skipif(
+    not _run_private_tests,
+    reason="Skipping: this test is marked private, set RUN_PRIVATE=1 in your environment to run",
+)
 
 
 def private_param(param):
@@ -814,7 +823,7 @@ def create_data_set_to_use(data_format, raw_data, nan_percent=0.0):
         processed_df_rows = []
         for _, row in df.iterrows():
             processed_df_row = {}
-            for feature_name, raw_feature in row.iteritems():
+            for feature_name, raw_feature in row.items():
                 if "image" in feature_name and not (type(raw_feature) == float and np.isnan(raw_feature)):
                     feature = np.array(Image.open(raw_feature))
                 else:
@@ -1071,3 +1080,30 @@ def minio_test_creds():
             }
         }
     }
+
+
+def clear_huggingface_cache():
+    cache_path = os.environ.get("TRANSFORMERS_CACHE")
+
+    if cache_path is None:
+        cache_path = file_utils.default_cache_path.rstrip("/")
+        while not cache_path.endswith("huggingface") and cache_path:
+            cache_path = "/".join(cache_path.split("/")[:-1])
+
+    du = shutil.disk_usage(cache_path)
+
+    logger.info(f"Current disk usage {du} ({100 * du.free / du.total}% usage)")
+
+    # only clean up cache if less than 25% of disk space is used.
+    if du.free / du.total > 0.25:
+        return
+
+    logger.info(
+        f"Clearing HuggingFace cache under path: `{cache_path}`. "
+        f"Free disk space is {100 * du.free / du.total}% of total disk space."
+    )
+    for root, dirs, files in os.walk(cache_path):
+        for f in files:
+            os.unlink(os.path.join(root, f))
+        for d in dirs:
+            shutil.rmtree(os.path.join(root, d))
