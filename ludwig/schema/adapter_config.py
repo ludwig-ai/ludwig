@@ -130,21 +130,6 @@
 #             return get_adapter_cls(key)
 
 #         def _jsonschema_type_mapping(self):
-#             # return {
-#             #     "type": "object",
-#             #     "properties": {
-#             #         "type": {
-#             #             "type": "string",
-#             #             "enum": list(optimizer_registry.keys()),
-#             #             "default": default,
-#             #             "description": "The type of optimizer to use during the learning process",
-#             #         },
-#             #     },
-#             #     "title": "optimizer_options",
-#             #     "allOf": get_optimizer_conds(),
-#             #     "required": ["type"],
-#             #     "description": description,
-#             # }
 #             return {
 #                 "oneOf": [
 #                     {

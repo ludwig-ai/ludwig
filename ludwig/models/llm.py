@@ -158,7 +158,7 @@ class LLM(BaseModel):
         input_ids = self.get_input_ids(inputs)
         if self.adapter:
             # Forward pass using PEFT model for fine-tuning
-            model_outputs = self.model(input_ids)  # self.model(**preprocessed_inputs)
+            model_outputs = self.model(input_ids)
             # Pass generated tokens through decoder after averaging the token probabilities
             logits_with_averaged_token_probabilities = torch.mean(model_outputs[LOGITS], dim=1)
             decoder_outputs = self.output_feature_decoder.decoder_obj(logits_with_averaged_token_probabilities)
