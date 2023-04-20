@@ -83,11 +83,6 @@ class LLM(BaseModel):
         # Extract the decoder object for the forward pass
         _, self.output_feature_decoder = self.output_features.items()[0]
 
-        # Get idx2str to  convert targets to strings for fine-tuning
-        self.idx2str = {}
-        if self.config_obj.output_features[0].type == "category":
-            self.idx2str = {v: k for k, v in self.config_obj.output_features[0].decoder.str2idx.items()}
-
         # ================ Combined loss metric ================
         self.eval_loss_metric = torchmetrics.MeanMetric()
         self.eval_additional_losses_metrics = torchmetrics.MeanMetric()
@@ -154,13 +149,11 @@ class LLM(BaseModel):
 
         assert list(inputs.keys()) == self.input_features.keys()
 
+        input_ids = self.get_input_ids(inputs)
         if self.adapter:
-            input_ids = self.get_input_ids(inputs)
-            # Preprocess inputs for fine-tuning
-            # preprocessed_inputs = self.preprocess_batch_for_fine_tuning(inputs, targets)
             # Forward pass using PEFT model for fine-tuning
             model_outputs = self.model(input_ids)  # self.model(**preprocessed_inputs)
-            # Pass generated tokens through decoder
+            # Pass generated tokens through decoder after averaging the token probabilities
             logits_with_averaged_token_probabilities = torch.mean(model_outputs[LOGITS], dim=1)
             decoder_outputs = self.output_feature_decoder.decoder_obj(logits_with_averaged_token_probabilities)
             outputs = {}
@@ -168,7 +161,6 @@ class LLM(BaseModel):
             return outputs
         else:
             with torch.no_grad():
-                input_ids = self.get_input_ids(inputs)
                 # Generate text using the model
                 outputs = self.model.generate(
                     input_ids=input_ids,
@@ -184,42 +176,6 @@ class LLM(BaseModel):
                     llm_model_inputs=input_ids,
                 )
                 return self.extract(outputs)
-
-    # def preprocess_batch_for_fine_tuning(
-    #     self,
-    #     inputs: Union[
-    #         Dict[str, torch.Tensor], Dict[str, np.ndarray], Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
-    #     ],
-    #     targets: Union[Dict[str, torch.Tensor], Dict[str, np.ndarray]],
-    # ):
-    #     inputs = inputs[self.config_obj.input_features[0].name]
-
-    #     # Get tokenized versions of labels from targets tensor
-    #     targets = [self.idx2str[target.item()] for target in targets[self.config_obj.output_features[0].name]]
-    #     targets = self.tokenizer.tokenizer(targets)
-
-    #     fine_tuning_inputs = {"input_ids": [None] * inputs.shape[0], "attention_mask": [None] * inputs.shape[0]}
-    #     batch_size = inputs.shape[0]
-
-    #     for i in range(batch_size):
-    #         sample_input_ids = inputs[i].tolist()
-    #         # Add padding to the end of the label
-    #         sample_target_ids = targets["input_ids"][i] + [self.tokenizer.tokenizer.pad_token_id]
-    #         # Update input and target tensors
-    #         fine_tuning_inputs["input_ids"][i] = sample_input_ids + sample_target_ids
-    #         fine_tuning_inputs["attention_mask"][i] = [1] * len(fine_tuning_inputs["input_ids"][i])
-    #         targets["input_ids"][i] = [-100] * len(sample_input_ids) + sample_target_ids
-    #         # Convert to tensors - use torch.tensor to preserve dtype
-    #         fine_tuning_inputs["input_ids"][i] = torch.tensor(fine_tuning_inputs["input_ids"][i])
-    #         fine_tuning_inputs["attention_mask"][i] = torch.tensor(fine_tuning_inputs["attention_mask"][i])
-    #         targets["input_ids"][i] = torch.tensor(targets["input_ids"][i])
-    #     fine_tuning_inputs["labels"] = targets["input_ids"]
-
-    #     # Stack the tensors to create a final tensor for each key in the fine_tuning_inputs dictionary
-    #     for k, v in fine_tuning_inputs.items():
-    #         fine_tuning_inputs[k] = torch.stack(v).to(self.device)
-
-    #     return fine_tuning_inputs
 
     def extract(
         self,
