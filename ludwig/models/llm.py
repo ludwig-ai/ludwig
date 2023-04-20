@@ -76,7 +76,11 @@ class LLM(BaseModel):
         self.output_features.update(
             self.build_outputs(
                 output_feature_configs=self.config_obj.output_features,
-                input_size=self.tokenizer.tokenizer.vocab_size,
+                # Set the input size to the model vocab size instead of the tokenizer vocab size
+                # because the model has additional "head" layers that are used to predict the next
+                # token in the sequence. These head layers can add additional dimensions to the
+                # logits tensor, beyond the vocab_size dimension.
+                input_size=self.model.config.vocab_size,
             )
         )
 
@@ -156,6 +160,7 @@ class LLM(BaseModel):
             # Pass generated tokens through decoder after averaging the token probabilities
             logits_with_averaged_token_probabilities = torch.mean(model_outputs[LOGITS], dim=1)
             decoder_outputs = self.output_feature_decoder.decoder_obj(logits_with_averaged_token_probabilities)
+            # Set the output feature tensor to the decoder outputs (logits)
             outputs = {}
             set_output_feature_tensor(outputs, self.config_obj.output_features[0].name, LOGITS, decoder_outputs)
             return outputs
@@ -250,6 +255,7 @@ class LLM(BaseModel):
         if self.adapter:
             weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
             config = PeftConfig.from_pretrained(weights_save_path)
+            config.inference_mode = False
             self.model = AutoModelForCausalLM.from_pretrained(config.base_model_name_or_path)
             self.model = PeftModel.from_pretrained(self.model, weights_save_path)
 

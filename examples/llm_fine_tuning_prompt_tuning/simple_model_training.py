@@ -59,14 +59,14 @@ config = yaml.safe_load(
               decoder:
                 type: classifier
         model_type: llm
-        model_name: hf-internal-testing/tiny-random-GPTJForCausalLM
+        model_name: bigscience/bloomz-560m
         adapter:
             type: prompt_tuning
             task_type: CAUSAL_LM
             prompt_tuning_init: TEXT
             num_virtual_tokens: 16
             prompt_tuning_init_text: "Classify the review sentiment as one positive, negative, neutral: "
-            tokenizer_name_or_path: hf-internal-testing/tiny-random-GPTJForCausalLM
+            tokenizer_name_or_path: bigscience/bloomz-560m
         trainer:
             batch_size: 2
             early_stop: 20
