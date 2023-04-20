@@ -28,20 +28,20 @@ def load_local():
 STRATEGIES = {"ddp": load_ddp, "fsdp": load_fsdp, "horovod": load_horovod, "local": load_local}
 
 
-def get_current_dist_strategy(allow_local=True) -> Type[DistributedStrategy]:
-    for strategy_loader in STRATEGIES.values():
-        try:
-            strategy_cls = strategy_loader()
-        except ImportError:
-            continue
+_current_strategy: DistributedStrategy = None
 
-        if strategy_cls.is_available():
-            return strategy_cls
 
-    if allow_local:
-        return LocalStrategy
+def init_dist_strategy(stategy: str) -> DistributedStrategy:
+    global _current_strategy
+    obj = STRATEGIES[stategy]()
+    _current_strategy = obj
+    return obj
 
-    raise RuntimeError("Expected current distributed strategy, but none is available")
+
+def get_current_dist_strategy() -> DistributedStrategy:
+    if _current_strategy is None:
+        raise RuntimeError("Distributed strategy not initialized")
+    return _current_strategy
 
 
 def get_dist_strategy(name: str) -> Type[DistributedStrategy]:
@@ -49,12 +49,4 @@ def get_dist_strategy(name: str) -> Type[DistributedStrategy]:
 
 
 def get_default_strategy_name() -> str:
-    try:
-        # Use horovod by default for now if it's available
-        load_horovod()
-        return "horovod"
-    except ImportError:
-        pass
-
-    # Fallback to DDP if not
     return "ddp"
