@@ -5,6 +5,7 @@ from marshmallow import fields, ValidationError
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.backend.utils import register_processor_config
 from ludwig.schema.utils import ludwig_dataclass
 
 
@@ -19,6 +20,13 @@ class BaseProcessorConfig(schema_utils.BaseMarshmallowConfig):
         description='Distributed data processing engine to use. `"dask"`: (default) a lazily executed version of '
         'distributed Pandas. `"modin"`: an eagerly executed version of distributed Pandas.',
     )
+
+
+@DeveloperAPI
+@register_processor_config("dask")
+@ludwig_dataclass
+class DaskProcessorConfig(BaseProcessorConfig):
+    type: str = schema_utils.ProtectedString("dask")
 
     parallelism: int = schema_utils.NonNegativeInteger(
         default=None,
@@ -35,6 +43,13 @@ class BaseProcessorConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @DeveloperAPI
+@register_processor_config("modin")
+@ludwig_dataclass
+class ModinProcessorConfig(BaseProcessorConfig):
+    type: str = schema_utils.ProtectedString("modin")
+
+
+@DeveloperAPI
 def ProcessorDataclassField(description: str = "", default: Dict = {}):
     class ProcessorMarshmallowField(fields.Field):
         def _deserialize(self, value, attr, data, **kwargs):
@@ -42,7 +57,7 @@ def ProcessorDataclassField(description: str = "", default: Dict = {}):
                 try:
                     return BaseProcessorConfig.Schema().load(value)
                 except (TypeError, ValidationError):
-                    raise ValidationError(f"Invalid params for processor: {value}, see ProcessorConfig class.")
+                    raise ValidationError(f"Invalid params for processor: {value}, see BaseProcessorConfig class.")
             raise ValidationError("Field should be dict")
 
         def _jsonschema_type_mapping(self):
