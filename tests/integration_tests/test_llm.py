@@ -12,6 +12,7 @@ from ludwig.constants import (
     MODEL_NAME,
     MODEL_TYPE,
     OUTPUT_FEATURES,
+    TRAINER,
 )
 from ludwig.utils.types import DataFrame
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
@@ -190,10 +191,10 @@ def test_llm_zero_shot_classification(tmpdir, backend, ray_cluster_4cpu):
     "backend",
     [
         pytest.param(LOCAL_BACKEND, id="local"),
-        # pytest.param(RAY_BACKEND, id="ray", marks=pytest.mark.distributed),
+        pytest.param(RAY_BACKEND, id="ray", marks=pytest.mark.distributed),
     ],
 )
-def test_llm_prompt_tuning(tmpdir, backend):  # ray_cluster_4cpu
+def test_llm_prompt_tuning(tmpdir, backend, ray_cluster_4cpu):
     input_features = [{"name": "review", "type": "text"}]
     output_features = [
         category_feature(
@@ -235,6 +236,9 @@ def test_llm_prompt_tuning(tmpdir, backend):  # ray_cluster_4cpu
             "prompt_tuning_init": "TEXT",
             "num_virtual_tokens": 8,
             "prompt_tuning_init_text": "Classify if the review is positive, negative, or neutral: ",
+        },
+        TRAINER: {
+            "epochs": 5,
         },
     }
 
