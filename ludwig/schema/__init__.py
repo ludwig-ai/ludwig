@@ -1,5 +1,4 @@
 # TODO(travis): figure out why we need these imports to avoid circular import error
-# from ludwig.schema.adapter_config import get_adapter_jsonschema  # noqa
 from ludwig.schema.combiners.utils import get_combiner_jsonschema  # noqa
 from ludwig.schema.features.utils import get_input_feature_jsonschema, get_output_feature_jsonschema  # noqa
 from ludwig.schema.hyperopt import get_hyperopt_jsonschema  # noqa

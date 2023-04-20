@@ -3,7 +3,7 @@ from typing import Dict, Optional
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
 
-# from ludwig.schema.adapter_config import LLMBaseAdapterConfig, LLMAdapterConfigField
+# from ludwig.schema.adapter_config import BaseAdapterConfig, AdapterDataclassField
 from ludwig.schema.defaults.llm import LLMDefaultsConfig, LLMDefaultsField
 from ludwig.schema.features.base import (
     BaseInputFeatureConfig,
@@ -42,6 +42,7 @@ class LLMModelConfig(ModelConfig):
 
     generation_config: LLMGenerationConfig = LLMGenerationConfigField().get_default_field()
     adapter: Optional[Dict] = schema_utils.Dict()
+    # adapter: Optional[BaseAdapterConfig] = AdapterDataclassField() #.get_default_field()
 
     input_features: FeatureCollection[BaseInputFeatureConfig] = LLMInputFeatureSelection().get_list_field()
     output_features: FeatureCollection[BaseOutputFeatureConfig] = LLMOutputFeatureSelection().get_list_field()
