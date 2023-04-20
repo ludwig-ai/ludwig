@@ -6,7 +6,7 @@ from typing import Dict, Tuple, Union
 import numpy as np
 import torch
 import torchmetrics
-from peft import get_peft_model, PromptTuningConfig  # get_peft_config,
+from peft import get_peft_model, PeftConfig, PeftModel, PromptTuningConfig  # get_peft_config,
 from transformers import AutoModelForCausalLM, GenerationConfig
 
 from ludwig.constants import LOGITS, MODEL_LLM
@@ -18,11 +18,8 @@ from ludwig.schema.features.base import BaseOutputFeatureConfig, FeatureCollecti
 from ludwig.schema.model_types.llm import LLMModelConfig
 from ludwig.utils.augmentation_utils import AugmentationPipelines
 from ludwig.utils.data_utils import clear_data_cache
-from ludwig.utils.fs_utils import open_file
 from ludwig.utils.output_feature_utils import set_output_feature_tensor
-from ludwig.utils.state_dict_backward_compatibility import update_state_dict
 from ludwig.utils.strings_utils import get_tokenizer
-from ludwig.utils.torch_utils import get_torch_device
 
 logger = logging.getLogger(__name__)
 
@@ -288,18 +285,17 @@ class LLM(BaseModel):
 
     def save(self, save_path):
         """Saves the model to the given path."""
-        # TODO(Rewrite to just save fine-tuned weights)
-        weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
-        torch.save(self.state_dict(), weights_save_path)
+        if self.adapter:
+            weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
+            self.model.save_pretrained(weights_save_path)
 
     def load(self, save_path):
         """Loads the model from the given path."""
-        # TODO(Rewrite to just load fine-tuned weights)
-        weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
-        device = torch.device(get_torch_device())
-        with open_file(weights_save_path, "rb") as f:
-            state_dict = torch.load(f, map_location=device)
-            self.load_state_dict(update_state_dict(state_dict))
+        if self.adapter:
+            weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
+            config = PeftConfig.from_pretrained(weights_save_path)
+            self.model = AutoModelForCausalLM.from_pretrained(config.base_model_name_or_path)
+            self.model = PeftModel.from_pretrained(self.model, weights_save_path)
 
     def get_args(self):
         """Returns init arguments for constructing this model."""
