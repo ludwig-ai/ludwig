@@ -9,7 +9,7 @@ import torchmetrics
 from peft import get_peft_model, PromptTuningConfig  # get_peft_config,
 from transformers import AutoModelForCausalLM, GenerationConfig
 
-from ludwig.constants import MODEL_LLM
+from ludwig.constants import LOGITS, MODEL_LLM
 from ludwig.features.base_feature import OutputFeature
 from ludwig.features.text_feature import TextOutputFeature
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
@@ -43,6 +43,8 @@ class LLM(BaseModel):
         self.config_obj = config_obj
         self._random_seed = random_seed
 
+        self.adapter = copy.deepcopy(self.config_obj.adapter)
+
         self.tokenizer = get_tokenizer(
             tokenizer_type="hf_tokenizer",
             tokenizer_vocab_file=None,
@@ -55,10 +57,11 @@ class LLM(BaseModel):
         # for fine-tuning.
         if self.config_obj.adapter:
             # TODO: Refactor once adapter is a config object instead of a dict
-            self.adapter = copy.deepcopy(self.config_obj.adapter)
             self.adapter["peft_type"] = self.adapter.pop("type").upper()
             # TODO: Figure out how to use peft_model_config properly
             self.model = get_peft_model(self.model, PromptTuningConfig(**self.adapter))
+            logger.info("Trainable Parameters For Fine-Tuning:")
+            self.model.print_trainable_parameters()
 
         # Initialize the generation config to use for generation calls.
         self.generation_config = GenerationConfig(**self.config_obj.generation_config.to_dict())
@@ -74,7 +77,10 @@ class LLM(BaseModel):
 
         # ================ Outputs ================
         self.output_features.update(
-            self.build_outputs(output_feature_configs=self.config_obj.output_features, input_size=self.input_shape[-1])
+            self.build_outputs(
+                output_feature_configs=self.config_obj.output_features,
+                input_size=self.tokenizer.tokenizer.vocab_size,
+            )
         )
 
         # Extract the decoder object for the forward pass
@@ -152,13 +158,16 @@ class LLM(BaseModel):
         assert list(inputs.keys()) == self.input_features.keys()
 
         if self.adapter:
+            input_ids = self.get_input_ids(inputs)
             # Preprocess inputs for fine-tuning
-            preprocessed_inputs = self.preprocess_batch_for_fine_tuning(inputs, targets)
+            # preprocessed_inputs = self.preprocess_batch_for_fine_tuning(inputs, targets)
             # Forward pass using PEFT model for fine-tuning
-            model_outputs = self.model(**preprocessed_inputs)
+            model_outputs = self.model(input_ids)  # self.model(**preprocessed_inputs)
+            # Pass generated tokens through decoder
+            logits_with_averaged_token_probabilities = torch.mean(model_outputs[LOGITS], dim=1)
+            decoder_outputs = self.output_feature_decoder.decoder_obj(logits_with_averaged_token_probabilities)
             outputs = {}
-            set_output_feature_tensor(outputs, self.config_obj.output_features[0].name, "loss", model_outputs.loss)
-            set_output_feature_tensor(outputs, self.config_obj.output_features[0].name, "logits", model_outputs.logits)
+            set_output_feature_tensor(outputs, self.config_obj.output_features[0].name, LOGITS, decoder_outputs)
             return outputs
         else:
             with torch.no_grad():
@@ -173,47 +182,47 @@ class LLM(BaseModel):
                 )
                 # Extract the predictions, probabilities and logits from the model outputs
                 # through the forward pass of the output feature
-                outputs = self.output_feature_decoder.decoder_obj.forward(
+                outputs = self.output_feature_decoder.decoder_obj(
                     outputs,
                     llm_model_inputs=input_ids,
                 )
                 return self.extract(outputs)
 
-    def preprocess_batch_for_fine_tuning(
-        self,
-        inputs: Union[
-            Dict[str, torch.Tensor], Dict[str, np.ndarray], Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
-        ],
-        targets: Union[Dict[str, torch.Tensor], Dict[str, np.ndarray]],
-    ):
-        inputs = inputs[self.config_obj.input_features[0].name]
+    # def preprocess_batch_for_fine_tuning(
+    #     self,
+    #     inputs: Union[
+    #         Dict[str, torch.Tensor], Dict[str, np.ndarray], Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
+    #     ],
+    #     targets: Union[Dict[str, torch.Tensor], Dict[str, np.ndarray]],
+    # ):
+    #     inputs = inputs[self.config_obj.input_features[0].name]
 
-        # Get tokenized versions of labels from targets tensor
-        targets = [self.idx2str[target.item()] for target in targets[self.config_obj.output_features[0].name]]
-        targets = self.tokenizer.tokenizer(targets)
+    #     # Get tokenized versions of labels from targets tensor
+    #     targets = [self.idx2str[target.item()] for target in targets[self.config_obj.output_features[0].name]]
+    #     targets = self.tokenizer.tokenizer(targets)
 
-        fine_tuning_inputs = {"input_ids": [None] * inputs.shape[0], "attention_mask": [None] * inputs.shape[0]}
-        batch_size = inputs.shape[0]
+    #     fine_tuning_inputs = {"input_ids": [None] * inputs.shape[0], "attention_mask": [None] * inputs.shape[0]}
+    #     batch_size = inputs.shape[0]
 
-        for i in range(batch_size):
-            sample_input_ids = inputs[i].tolist()
-            # Add padding to the end of the label
-            sample_target_ids = targets["input_ids"][i] + [self.tokenizer.tokenizer.pad_token_id]
-            # Update input and target tensors
-            fine_tuning_inputs["input_ids"][i] = sample_input_ids + sample_target_ids
-            fine_tuning_inputs["attention_mask"][i] = [1] * len(fine_tuning_inputs["input_ids"][i])
-            targets["input_ids"][i] = [-100] * len(sample_input_ids) + sample_target_ids
-            # Convert to tensors - use torch.tensor to preserve dtype
-            fine_tuning_inputs["input_ids"][i] = torch.tensor(fine_tuning_inputs["input_ids"][i])
-            fine_tuning_inputs["attention_mask"][i] = torch.tensor(fine_tuning_inputs["attention_mask"][i])
-            targets["input_ids"][i] = torch.tensor(targets["input_ids"][i])
-        fine_tuning_inputs["labels"] = targets["input_ids"]
+    #     for i in range(batch_size):
+    #         sample_input_ids = inputs[i].tolist()
+    #         # Add padding to the end of the label
+    #         sample_target_ids = targets["input_ids"][i] + [self.tokenizer.tokenizer.pad_token_id]
+    #         # Update input and target tensors
+    #         fine_tuning_inputs["input_ids"][i] = sample_input_ids + sample_target_ids
+    #         fine_tuning_inputs["attention_mask"][i] = [1] * len(fine_tuning_inputs["input_ids"][i])
+    #         targets["input_ids"][i] = [-100] * len(sample_input_ids) + sample_target_ids
+    #         # Convert to tensors - use torch.tensor to preserve dtype
+    #         fine_tuning_inputs["input_ids"][i] = torch.tensor(fine_tuning_inputs["input_ids"][i])
+    #         fine_tuning_inputs["attention_mask"][i] = torch.tensor(fine_tuning_inputs["attention_mask"][i])
+    #         targets["input_ids"][i] = torch.tensor(targets["input_ids"][i])
+    #     fine_tuning_inputs["labels"] = targets["input_ids"]
 
-        # Stack the tensors to create a final tensor for each key in the fine_tuning_inputs dictionary
-        for k, v in fine_tuning_inputs.items():
-            fine_tuning_inputs[k] = torch.stack(v).to(self.device)
+    #     # Stack the tensors to create a final tensor for each key in the fine_tuning_inputs dictionary
+    #     for k, v in fine_tuning_inputs.items():
+    #         fine_tuning_inputs[k] = torch.stack(v).to(self.device)
 
-        return fine_tuning_inputs
+    #     return fine_tuning_inputs
 
     def extract(
         self,
@@ -232,12 +241,11 @@ class LLM(BaseModel):
                 continue
             of_obj.update_metrics(targets[of_name], predictions[of_name])
 
-        # TODO(Arnav): Figure out loss updates.
-        # To update eval-loss, we need "logits" but right now we're only producing "predictions"
-        # This is required by the SequenceSoftmaxCrossEntropyLoss function
-        # eval_loss, additional_losses = self.eval_loss(targets, predictions)
-        # self.eval_loss_metric.update(eval_loss)
-        # self.eval_additional_losses_metrics.update(additional_losses)
+        # Only update loss during fine-tuning since logits are computed during the LLMs forward pass.
+        if self.adapter:
+            eval_loss, additional_losses = self.eval_loss(targets, predictions)
+            self.eval_loss_metric.update(eval_loss)
+            self.eval_additional_losses_metrics.update(additional_losses)
 
     def eval_loss(self, targets, predictions):
         """Computes all evaluation losses for the model given targets and predictions.
@@ -270,8 +278,12 @@ class LLM(BaseModel):
         """Returns the model's predictions for each output feature."""
         predictions = {}
         for of_name in self.output_features:
-            generated_predictions = outputs[of_name]
-            predictions[of_name] = generated_predictions
+            if self.adapter:
+                predictions[of_name] = self.output_features.get(of_name).predictions(outputs, of_name)
+            else:
+                # TODO: Format with the :: notation in the forward pass
+                generated_predictions = outputs[of_name]
+                predictions[of_name] = generated_predictions
         return predictions
 
     def save(self, save_path):

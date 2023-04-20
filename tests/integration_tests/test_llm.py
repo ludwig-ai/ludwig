@@ -203,12 +203,7 @@ def test_llm_prompt_tuning(tmpdir, backend):  # ray_cluster_4cpu
                 "fallback_label": "neutral",
             },
             decoder={
-                "type": "category_parser",
-                "match": {
-                    "positive": {"type": "contains", "value": "positive"},
-                    "neutral": {"type": "contains", "value": "neutral"},
-                    "negative": {"type": "contains", "value": "negative"},
-                },
+                "type": "classifier",
             },
         )
     ]
@@ -257,3 +252,17 @@ def test_llm_prompt_tuning(tmpdir, backend):  # ray_cluster_4cpu
 
     preds, _ = model.predict(dataset=prediction_df, output_directory=str(tmpdir))
     preds = convert_preds(backend, preds)
+
+    assert "label_predictions" in preds
+    assert "label_probabilities" in preds
+    assert "label_probability" in preds
+    assert "label_probabilities_positive" in preds
+    assert "label_probabilities_neutral" in preds
+    assert "label_probabilities_negative" in preds
+
+    assert preds["label_predictions"]
+    assert preds["label_probabilities"]
+    assert preds["label_probability"]
+    assert preds["label_probabilities_positive"]
+    assert preds["label_probabilities_neutral"]
+    assert preds["label_probabilities_negative"]
