@@ -25,12 +25,16 @@ from tests.integration_tests.utils import (
 )
 
 try:
+    from ludwig.backend.horovod import HorovodBackend
+    from ludwig.distributed.horovod import HorovodStrategy
+except ImportError:
+    pass
+
+try:
     import dask
     import ray
 
-    from ludwig.backend.horovod import HorovodBackend
     from ludwig.data.dataset.ray import RayDataset
-    from ludwig.distributed.horovod import HorovodStrategy
     from ludwig.models.gbm import GBM
     from ludwig.schema.model_config import ModelConfig
     from ludwig.schema.trainer import GBMTrainerConfig
@@ -58,8 +62,7 @@ try:
         return callback.lr
 
 except ImportError:
-    dask = None
-    ray = None
+    logging.warn("Failed to import some modules")
 
 
 def test_tune_learning_rate(tmpdir):
@@ -159,6 +162,7 @@ def test_tune_batch_size_and_lr(tmpdir, eval_batch_size, is_cpu):
 
 @pytest.mark.parametrize("learning_rate_scaling, expected_lr", [("constant", 1), ("sqrt", 2), ("linear", 4)])
 @pytest.mark.distributed
+@pytest.mark.horovod
 def test_scale_lr(learning_rate_scaling, expected_lr, tmpdir, ray_cluster_2cpu):
     base_lr = 1.0
     num_workers = 4

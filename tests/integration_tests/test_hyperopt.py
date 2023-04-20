@@ -305,7 +305,7 @@ def _run_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, backend, ray_
                 "space": "loguniform",
             },
             output_feature_name
-            + ".fc_layers": {
+            + ".decoder.fc_layers": {
                 "space": "choice",
                 "categories": [
                     [{"output_size": 64}, {"output_size": 32}],
@@ -313,13 +313,13 @@ def _run_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, backend, ray_
                     [{"output_size": 32}],
                 ],
             },
-            output_feature_name + ".output_size": {"space": "choice", "categories": [16, 21, 26, 31, 36]},
+            output_feature_name + ".decoder.fc_output_size": {"space": "choice", "categories": [16, 21, 26, 31, 36]},
         }
     else:
         # grid search space will be product each parameter size
         search_parameters = {
             "trainer.learning_rate": {"space": "grid_search", "values": [0.001, 0.01]},
-            output_feature_name + ".output_size": {"space": "grid_search", "values": [16, 21]},
+            output_feature_name + ".decoder.fc_output_size": {"space": "grid_search", "values": [16, 21]},
         }
 
     hyperopt_configs = {

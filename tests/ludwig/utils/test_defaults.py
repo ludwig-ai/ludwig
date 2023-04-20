@@ -51,9 +51,9 @@ HYPEROPT_CONFIG = {
             "upper": 0.1,
         },
         "combiner.num_fc_layers": {"space": "randint", "lower": 2, "upper": 6},
-        "utterance.cell_type": {"space": "grid_search", "values": ["rnn", "gru"]},
-        "utterance.bidirectional": {"space": "choice", "categories": [True, False]},
-        "utterance.fc_layers": {
+        "utterance.encoder.norm": {"space": "grid_search", "values": ["layer", "batch"]},
+        "utterance.encoder.dropout": {"space": "choice", "categories": [0.0001, 0.001, 0.01]},
+        "utterance.encoder.fc_layers": {
             "space": "choice",
             "categories": [
                 [{"output_size": 512}, {"output_size": 256}],
@@ -84,7 +84,7 @@ def test_merge_with_defaults_early_stop(use_train, use_hyperopt_scheduler):
         binary_feature(),
         category_feature(),
         number_feature(),
-        text_feature(),
+        text_feature(name="utterance"),
     ]
     all_output_features = [
         category_feature(output_feature=True),
@@ -189,10 +189,7 @@ def test_merge_with_defaults():
     legacy_config_format = {
         "ludwig_version": "0.4",
         INPUT_FEATURES: [
-            {
-                "type": "numerical",
-                "name": "number_input_feature",
-            },
+            {"type": "numerical", "name": "number_input_feature", "encoder": {"type": "dense"}},
             {
                 "type": "image",
                 "name": "image_input_feature",
@@ -217,11 +214,11 @@ def test_merge_with_defaults():
         "training": {"eval_batch_size": 0, "optimizer": {"type": "adadelta"}},
         HYPEROPT: {
             "parameters": {
-                "training.learning_rate": {},
-                "training.early_stop": {},
-                "number_input_feature.num_fc_layers": {},
-                "number_output_feature.embedding_size": {},
-                "number_output_feature.dropout": 0.2,
+                "training.learning_rate": {"space": "choice", "categories": [0.0001, 0.001, 0.01]},
+                "training.early_stop": {"space": "choice", "categories": [5, 10, 15]},
+                "number_input_feature.encoder.num_layers": {"space": "choice", "categories": [2, 3, 4]},
+                "number_output_feature.decoder.fc_output_size": {"space": "choice", "categories": [128, 256, 512]},
+                "number_output_feature.decoder.fc_dropout": {"space": "uniform", "lower": 0, "upper": 1},
             },
             "executor": {
                 "type": "serial",

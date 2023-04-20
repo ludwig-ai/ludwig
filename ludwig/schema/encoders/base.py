@@ -2,7 +2,7 @@ from abc import ABC
 from typing import List, TYPE_CHECKING, Union
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import BINARY, MODEL_ECD, MODEL_GBM, NUMBER, TIMESERIES, VECTOR
+from ludwig.constants import BINARY, MODEL_ECD, MODEL_GBM, MODEL_LLM, NUMBER, TEXT, TIMESERIES, VECTOR
 from ludwig.schema import common_fields
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.utils import register_encoder_config
@@ -37,6 +37,7 @@ class BaseEncoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
 
 @DeveloperAPI
+@register_encoder_config("passthrough", [TEXT], model_types=[MODEL_LLM])
 @register_encoder_config("passthrough", [BINARY, NUMBER, VECTOR], model_types=[MODEL_ECD, MODEL_GBM])
 @ludwig_dataclass
 class PassthroughEncoderConfig(BaseEncoderConfig):

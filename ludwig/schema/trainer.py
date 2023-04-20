@@ -5,7 +5,15 @@ import torch
 from packaging.version import parse as parse_version
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import DEFAULT_BATCH_SIZE, LOSS, MAX_POSSIBLE_BATCH_SIZE, MODEL_ECD, MODEL_GBM, TRAINING
+from ludwig.constants import (
+    DEFAULT_BATCH_SIZE,
+    LOSS,
+    MAX_POSSIBLE_BATCH_SIZE,
+    MODEL_ECD,
+    MODEL_GBM,
+    MODEL_LLM,
+    TRAINING,
+)
 from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.lr_scheduler import LRSchedulerConfig, LRSchedulerDataclassField
@@ -683,6 +691,70 @@ class GBMTrainerConfig(BaseTrainerConfig):
 
 
 @DeveloperAPI
+@ludwig_dataclass
+class LLMTrainerConfig(BaseTrainerConfig):
+    """Base class for all LLM trainer configs."""
+
+    batch_size: int = schema_utils.PositiveInteger(
+        default=2,
+        description="Batch size used for training in the LLM trainer.",
+    )
+
+    base_learning_rate: float = schema_utils.NonNegativeFloat(
+        default=0.0,
+        description="Base learning rate used for training in the LLM trainer.",
+    )
+
+    should_shuffle: bool = schema_utils.Boolean(
+        default=True,
+        description="Whether to shuffle the training data in the LLM trainer.",
+    )
+
+    epochs: int = schema_utils.PositiveInteger(
+        default=1,
+        description="Number of epochs to train in the LLM trainer.",
+    )
+
+    train_steps: int = schema_utils.PositiveInteger(
+        default=None,
+        description="Number of training steps to train in the LLM trainer.",
+    )
+
+    steps_per_checkpoint: int = schema_utils.NonNegativeInteger(
+        default=0,
+        description="Number of steps per checkpoint in the LLM trainer.",
+    )
+
+    checkpoints_per_epoch: int = schema_utils.NonNegativeInteger(
+        default=0,
+        description="Number of checkpoints per epoch in the LLM trainer.",
+    )
+
+    early_stop: int = schema_utils.IntegerRange(
+        default=-1,
+        min=-1,
+        description=(
+            "Number of consecutive rounds of evaluation without any improvement on the `validation_metric` that "
+            "triggers training to stop. Can be set to -1, which disables early stopping entirely."
+        ),
+    )
+
+    eval_batch_size: int = schema_utils.PositiveInteger(
+        default=1,
+        description="Batch size used for evaluation in the LLM trainer.",
+    )
+
+
+@DeveloperAPI
+@register_trainer_schema(MODEL_LLM)
+@ludwig_dataclass
+class ZeroShotTrainerConfig(LLMTrainerConfig):
+    """Dataclass that configures most of the hyperparameters used for zero-shot LLM model training."""
+
+    pass
+
+
+@DeveloperAPI
 def get_model_type_jsonschema(model_type: str = MODEL_ECD):
     enum = [MODEL_ECD]
     if model_type == MODEL_GBM:
@@ -727,3 +799,12 @@ class GBMTrainerField(schema_utils.DictMarshmallowField):
 
     def _jsonschema_type_mapping(self):
         return get_trainer_jsonschema(MODEL_GBM)
+
+
+@DeveloperAPI
+class LLMTrainerField(schema_utils.DictMarshmallowField):
+    def __init__(self):
+        super().__init__(ZeroShotTrainerConfig)
+
+    def _jsonschema_type_mapping(self):
+        return get_trainer_jsonschema(MODEL_LLM)
