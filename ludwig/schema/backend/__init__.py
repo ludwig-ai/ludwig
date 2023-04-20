@@ -1,7 +1,8 @@
-from typing import Optional
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.backend.loader import LoaderConfig, LoaderDataclassField
+from ludwig.schema.backend.processor import ProcessorConfig, ProcessorDataclassField
+from ludwig.schema.backend.trainer import TrainerConfig, TrainerDataclassField
 from ludwig.schema.utils import ludwig_dataclass
 
 
@@ -35,8 +36,8 @@ class BaseBackendConfig(schema_utils.BaseMarshmallowConfig):
 class RayBackendConfig(BaseBackendConfig):
     type: str = schema_utils.ProtectedString("ray", description="Distribute training with Ray.")
 
-    processor: Optional["ProcessorConfig"]  # noqa: F821
+    processor: ProcessorConfig = ProcessorDataclassField()
 
-    trainer: Optional["TrainerConfig"]  # noqa: F821
+    trainer: TrainerConfig = TrainerDataclassField()
 
-    loader: Optional["LoaderConfig"]  # noqa: F821
+    loader: LoaderConfig = LoaderDataclassField()
