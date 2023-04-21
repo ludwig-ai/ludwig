@@ -33,7 +33,7 @@ _current_strategy: DistributedStrategy = None
 
 def init_dist_strategy(stategy: str) -> DistributedStrategy:
     global _current_strategy
-    obj = STRATEGIES[stategy]()
+    obj = get_dist_strategy(stategy)()
     _current_strategy = obj
     return obj
 
