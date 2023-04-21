@@ -32,7 +32,7 @@ class DeepSpeedStrategy(DDPStrategy):
                 "offload_optimizer": {"device": "auto"},
                 "offload_param": {"device": "auto"},
             },
-            "gradient_clipping": trainer_config.gradient_clipping_config.clipglobalnorm,
+            "gradient_clipping": trainer_config.gradient_clipping.clipglobalnorm,
             "train_batch_size": trainer_config.batch_size * self.size(),
             "train_micro_batch_size_per_gpu": trainer_config.batch_size,
             "gradient_accumulation_steps": trainer_config.gradient_accumulation_steps,
