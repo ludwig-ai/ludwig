@@ -137,8 +137,8 @@ class DistributedStrategy(ABC):
 
 class LocalStrategy(DistributedStrategy):
     def prepare(
-        self, model: nn.Module, optimizer: Optimizer, lr_scheduler: LRScheduler, trainer_config: ECDTrainerConfig
-    ) -> Tuple[nn.Module, Optimizer, LRScheduler]:
+        self, model: nn.Module, optimizer: Optimizer, lr_scheduler: "LRScheduler", trainer_config: "ECDTrainerConfig"
+    ) -> Tuple[nn.Module, Optimizer, "LRScheduler"]:
         return model, optimizer, lr_scheduler
 
     def size(self) -> int:

@@ -714,6 +714,7 @@ def test_experiment_model_resume(tmpdir):
     "dist_strategy",
     [
         pytest.param("ddp", id="ddp", marks=pytest.mark.distributed),
+        pytest.param("deepspeed", id="deepspeed", marks=pytest.mark.distributed),
         pytest.param("horovod", id="horovod", marks=[pytest.mark.distributed, pytest.mark.horovod]),
     ],
 )

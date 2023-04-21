@@ -153,7 +153,7 @@ class Trainer(BaseTrainer):
         self.increase_batch_size_eval_metric = config.increase_batch_size_eval_metric
         self.increase_batch_size_eval_split = config.increase_batch_size_eval_split
         self.gradient_accumulation_steps = (
-            config.gradient_accumulation_steps if self.distributed.allow_gradient_accumulation() else 1
+            config.gradient_accumulation_steps if distributed.allow_gradient_accumulation() else 1
         )
         self.resume = resume
         self.skip_save_model = skip_save_model
@@ -192,7 +192,7 @@ class Trainer(BaseTrainer):
             optimizer_config=optimizer_config,
             gradient_accumulation_steps=self.gradient_accumulation_steps,
         )
-        scheduler = LRScheduler(config.learning_rate_scheduler, self.optimizer)
+        scheduler = LRScheduler(config.learning_rate_scheduler, optimizer)
 
         self.dist_model, self.optimizer, self.scheduler = self.distributed.prepare(
             compiled_model,
