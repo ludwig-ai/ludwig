@@ -355,9 +355,9 @@ class RayDatasetBatcher(Batcher):
         return math.ceil(self.samples_per_epoch / self.batch_size)
 
     def _fetch_next_epoch(self):
-        if not isinstance(self.dataset_epoch_iterator, ray.data.DatasetIterator):
+        try:
             pipeline = next(self.dataset_epoch_iterator)
-        else:
+        except TypeError:
             pipeline = self.dataset_epoch_iterator
 
         read_parallelism = 1
