@@ -18,3 +18,6 @@ class FSDPStrategy(DDPStrategy):
         self, model: nn.Module, optimizer: Optimizer, lr_scheduler: LRScheduler, trainer_config: ECDTrainerConfig
     ) -> Tuple[nn.Module, Optimizer, LRScheduler]:
         return FSDP(model), optimizer, lr_scheduler
+
+    def to_device(self, model: nn.Module) -> nn.Module:
+        return model

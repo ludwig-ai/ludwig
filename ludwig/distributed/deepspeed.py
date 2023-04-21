@@ -42,6 +42,9 @@ class DeepSpeedStrategy(DDPStrategy):
         )
         return model_engine, optimizer, lr_scheduler
 
+    def to_device(self, model: nn.Module) -> nn.Module:
+        return model
+
 
 # Helpers taken from Accelerate: https://github.com/huggingface/accelerate/blob/main/src/accelerate/utils/deepspeed.py
 class DeepSpeedEngineWrapper:

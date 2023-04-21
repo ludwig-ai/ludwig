@@ -7,6 +7,7 @@ from torch import nn
 from torch.optim import Optimizer
 
 from ludwig.modules.lr_scheduler import LRScheduler
+from ludwig.utils.torch_utils import get_torch_device
 
 if TYPE_CHECKING:
     from ray.train.backend import BackendConfig
@@ -27,6 +28,9 @@ class DistributedStrategy(ABC):
         self, model: nn.Module, optimizer: Optimizer, lr_scheduler: LRScheduler, trainer_config: ECDTrainerConfig
     ) -> Tuple[nn.Module, Optimizer, LRScheduler]:
         pass
+
+    def to_device(self, model: nn.Module) -> nn.Module:
+        return model.to(get_torch_device())
 
     @abstractmethod
     def size(self) -> int:
