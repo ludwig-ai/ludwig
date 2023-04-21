@@ -4,6 +4,7 @@ from typing import Tuple
 import deepspeed
 from deepspeed.runtime.engine import DeepSpeedEngine
 from torch import nn
+import torch
 from torch.optim.optimizer import Optimizer
 
 from ludwig.distributed.ddp import DDPStrategy
@@ -20,6 +21,9 @@ class DeepSpeedStrategy(DDPStrategy):
     ) -> Tuple[nn.Module, Optimizer, LRScheduler]:
         ds_config = {
             "bf16": {"enabled": "auto"},
+            "amp": {
+                "enabled": trainer_config.use_mixed_precision,
+            },
             "zero_optimization": {
                 "stage": "auto",
                 "stage3_gather_16bit_weights_on_model_save": "auto",
@@ -44,6 +48,9 @@ class DeepSpeedStrategy(DDPStrategy):
 
     def to_device(self, model: nn.Module) -> nn.Module:
         return model
+
+    def backward(self, loss: torch.Tensor, model: nn.Module):
+        model.backward(loss)
 
 
 # Helpers taken from Accelerate: https://github.com/huggingface/accelerate/blob/main/src/accelerate/utils/deepspeed.py

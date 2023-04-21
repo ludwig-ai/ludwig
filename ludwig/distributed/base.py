@@ -32,6 +32,9 @@ class DistributedStrategy(ABC):
     def to_device(self, model: nn.Module) -> nn.Module:
         return model.to(get_torch_device())
 
+    def backward(self, loss: torch.Tensor, model: nn.Module):
+        loss.backward()
+
     @abstractmethod
     def size(self) -> int:
         pass
