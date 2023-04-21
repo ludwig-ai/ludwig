@@ -46,13 +46,25 @@ class DeepSpeedStrategy(DDPStrategy):
             config=ds_config,
             dist_init_required=False,
         )
-        return model_engine, optimizer, lr_scheduler
+        return DeepSpeedEngineWrapper(model_engine), DeepSpeedOptimizerWrapper(optimizer), lr_scheduler
 
     def to_device(self, model: nn.Module) -> nn.Module:
         return model
 
     def backward(self, loss: torch.Tensor, model: nn.Module):
         model.backward(loss)
+
+    def allow_gradient_accumulation(self) -> bool:
+        """DeepSpeed handles gradient accumulation internally."""
+        return False
+
+    def allow_mixed_precision(self) -> bool:
+        """DeepSpeed handles mixed precision internally."""
+        return False
+
+    def allow_clip_gradients(self) -> bool:
+        """DeepSpeed handles gradient clipping internally."""
+        return False
 
 
 # Helpers taken from Accelerate: https://github.com/huggingface/accelerate/blob/main/src/accelerate/utils/deepspeed.py

@@ -152,7 +152,9 @@ class Trainer(BaseTrainer):
         self.increase_batch_size_on_plateau_rate = config.increase_batch_size_on_plateau_rate
         self.increase_batch_size_eval_metric = config.increase_batch_size_eval_metric
         self.increase_batch_size_eval_split = config.increase_batch_size_eval_split
-        self.gradient_accumulation_steps = config.gradient_accumulation_steps
+        self.gradient_accumulation_steps = (
+            config.gradient_accumulation_steps if self.distributed.allow_gradient_accumulation() else 1
+        )
         self.resume = resume
         self.skip_save_model = skip_save_model
         self.skip_save_progress = skip_save_progress
@@ -200,7 +202,7 @@ class Trainer(BaseTrainer):
         )
 
         # Setup for automatic mixed precision (AMP)
-        self.use_amp = config.use_mixed_precision
+        self.use_amp = config.use_mixed_precision and self.distributed.allow_mixed_precision()
         if self.use_amp:
             if torch.cuda.is_available():
                 logger.info("Enabling automatic mixed precision (AMP)")
@@ -273,7 +275,7 @@ class Trainer(BaseTrainer):
         if self.use_amp:
             self.scaler.scale(loss).backward()
         else:
-            loss.backward()
+            self.distributed.backward(loss, self.dist_model)
 
         if not should_step:
             # Short-circuit the parameter updates if we are still accumulating gradients
@@ -290,8 +292,9 @@ class Trainer(BaseTrainer):
             # https://pytorch.org/docs/master/notes/amp_examples.html#gradient-clipping
             self.scaler.unscale_(self.optimizer)
 
-        # Clip gradients
-        self.clip_grads(variables)
+        if self.distributed.allow_clip_gradients():
+            # Clip gradients
+            self.clip_grads(variables)
 
         # Apply gradient updates
         with self.distributed.prepare_optimizer_update(self.optimizer):

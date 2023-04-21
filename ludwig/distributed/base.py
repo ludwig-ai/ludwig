@@ -125,6 +125,15 @@ class DistributedStrategy(ABC):
 
         return wrapped
 
+    def allow_gradient_accumulation(self) -> bool:
+        return True
+
+    def allow_mixed_precision(self) -> bool:
+        return True
+
+    def allow_clip_gradients(self) -> bool:
+        return True
+
 
 class LocalStrategy(DistributedStrategy):
     def prepare(
