@@ -233,16 +233,11 @@ class RayDatasetShard(Dataset):
         if _ray_230:
             # In Ray >= 2.3, session.get_dataset_shard() returns a DatasetIterator object.
             if isinstance(self.dataset_shard, ray.data.DatasetIterator):
-                if hasattr(self.dataset_shard, "_base_dataset_pipeline"):
-                    # Dataset shard is a DatasetIterator that was created from a DatasetPipeline object.
-                    # Retrieve the base object that was used to create the DatasetIterator so that we can
-                    # create the iter_epochs() like in Ray <= 2.2.
-                    try:
-                        self.epoch_iter = self.dataset_shard._base_dataset_pipeline.iter_batches()
-                    except AttributeError:
-                        self.epoch_iter = self.dataset_shard.iter_batches()
-                    finally:
-                        return
+                # Dataset shard is a DatasetIterator that was created from a DatasetPipeline object.
+                # Retrieve the base object that was used to create the DatasetIterator so that we can
+                # create the iter_epochs() like in Ray <= 2.2.
+                self.epoch_iter = self.dataset_shard
+                return
         else:
             # In Ray <= 2.2, session.get_dataset_shard() returns a DatasetPipeline object.
             if isinstance(self.dataset_shard, DatasetPipeline):
@@ -255,7 +250,7 @@ class RayDatasetShard(Dataset):
         # since it does not come from within the RayTrainer's train_fn.
         # Convert Ray Dataset to a DatasetPipeline object before enabling epoch iteration
         # In this scenario, there is no need to worry about windowing, shuffling etc.
-        self.epoch_iter = self.dataset_shard.repeat().iter_epochs()
+        self.epoch_iter = self.dataset_shard.iter_batches()
 
     @contextlib.contextmanager
     def initialize_batcher(
@@ -279,7 +274,13 @@ class RayDatasetShard(Dataset):
 
     @lru_cache(1)
     def __len__(self):
-        return next(self.epoch_iter).count()
+        try:
+            count = next(self.epoch_iter).count()
+        except TypeError:
+            count = next(self.epoch_iter.iter_batches()).count()
+        if not isinstance(count, int):
+            count = count[0]
+        return count
 
     @property
     def size(self):
@@ -354,7 +355,10 @@ class RayDatasetBatcher(Batcher):
         return math.ceil(self.samples_per_epoch / self.batch_size)
 
     def _fetch_next_epoch(self):
-        pipeline = next(self.dataset_epoch_iterator)
+        if not isinstance(self.dataset_epoch_iterator, ray.data.DatasetIterator):
+            pipeline = next(self.dataset_epoch_iterator)
+        else:
+            pipeline = self.dataset_epoch_iterator
 
         read_parallelism = 1
         if read_parallelism == 1:
