@@ -32,6 +32,7 @@ from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataframe.pandas import PANDAS
 from ludwig.data.dataset.base import DatasetManager
 from ludwig.data.dataset.pandas import PandasDatasetManager
+from ludwig.distributed import init_dist_strategy
 from ludwig.models.base import BaseModel
 from ludwig.schema.trainer import ECDTrainerConfig, GBMTrainerConfig
 from ludwig.types import HyperoptConfigDict
@@ -175,6 +176,9 @@ class LocalPreprocessingMixin:
 
 
 class LocalTrainingMixin:
+    def initialize(self):
+        init_dist_strategy("local")
+
     def initialize_pytorch(self, *args, **kwargs):
         initialize_pytorch(*args, **kwargs)
 
@@ -230,9 +234,6 @@ class LocalBackend(LocalPreprocessingMixin, LocalTrainingMixin, Backend):
 
     def __init__(self, **kwargs):
         super().__init__(dataset_manager=PandasDatasetManager(self), **kwargs)
-
-    def initialize(self):
-        pass
 
     @property
     def num_nodes(self) -> int:

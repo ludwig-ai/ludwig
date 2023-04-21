@@ -22,7 +22,7 @@ import torch
 
 from ludwig.backend.base import Backend, LocalPreprocessingMixin
 from ludwig.data.dataset.pandas import PandasDatasetManager
-from ludwig.distributed.horovod import HorovodStrategy
+from ludwig.distributed import init_dist_strategy
 from ludwig.models.base import BaseModel
 from ludwig.models.predictor import Predictor
 from ludwig.trainers.trainer import Trainer
@@ -40,7 +40,7 @@ class HorovodBackend(LocalPreprocessingMixin, Backend):
         self._distributed = None
 
     def initialize(self):
-        self._distributed = HorovodStrategy()
+        self._distributed = init_dist_strategy("horovod")
 
     def initialize_pytorch(self, *args, **kwargs):
         initialize_pytorch(
