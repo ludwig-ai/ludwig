@@ -180,23 +180,24 @@ class Trainer(BaseTrainer):
             compiled_model = torch.compile(self.model)
             logger.info("Training with torchdynamo compiled model")
 
-        # Some frameworks like DDP will wrap the model in a new interface that loses the methods from ECD. To
-        # workaround this, we maintain a separate attribute for the wrapped model, which will be used for training
-        # steps, while other operations happen on the original ECD model. Parameters are shared between the two models
-        # so it is safe to train with the wrapped model and save the best model from the ECD model.
-        self.dist_model = self.distributed.wrap_model(compiled_model)
-
         # ================ Optimizer tuning ================
         optimizer_config = config.optimizer
         self.gradient_clipping_config = create_clipper(config.gradient_clipping)
-        self.optimizer = create_optimizer(
-            self.dist_model,
+        optimizer = create_optimizer(
+            compiled_model,
             learning_rate=self.base_learning_rate,
             distributed=self.distributed,
             optimizer_config=optimizer_config,
             gradient_accumulation_steps=self.gradient_accumulation_steps,
         )
-        self.scheduler = LRScheduler(config.learning_rate_scheduler, self.optimizer)
+        scheduler = LRScheduler(config.learning_rate_scheduler, self.optimizer)
+
+        self.dist_model, self.optimizer, self.scheduler = self.distributed.prepare(
+            compiled_model,
+            optimizer,
+            scheduler,
+            config,
+        )
 
         # Setup for automatic mixed precision (AMP)
         self.use_amp = config.use_mixed_precision

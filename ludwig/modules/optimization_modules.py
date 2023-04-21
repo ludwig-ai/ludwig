@@ -37,7 +37,7 @@ def create_optimizer(
     distributed: DistributedStrategy,
     optimizer_config: BaseOptimizerConfig,
     gradient_accumulation_steps: int,
-):
+) -> torch.optim.Optimizer:
     """Returns a ready-to-use torch optimizer instance based on the given optimizer config.
 
     :param model: Underlying Ludwig model
@@ -55,8 +55,4 @@ def create_optimizer(
     cls_kwargs["lr"] = learning_rate
 
     # Instantiate the optimizer:
-    torch_optimizer: torch.optim.Optimizer = optimizer_cls(params=model.parameters(), **cls_kwargs)
-    torch_optimizer = distributed.wrap_optimizer(
-        torch_optimizer, model, gradient_accumulation_steps=gradient_accumulation_steps
-    )
-    return torch_optimizer
+    return optimizer_cls(params=model.parameters(), **cls_kwargs)

@@ -15,6 +15,12 @@ def load_fsdp():
     return FSDPStrategy
 
 
+def load_deepspeed():
+    from ludwig.distributed.deepspeed import DeepSpeedStrategy
+
+    return DeepSpeedStrategy
+
+
 def load_horovod():
     from ludwig.distributed.horovod import HorovodStrategy
 
@@ -25,7 +31,13 @@ def load_local():
     return LocalStrategy
 
 
-STRATEGIES = {"ddp": load_ddp, "fsdp": load_fsdp, "horovod": load_horovod, "local": load_local}
+STRATEGIES = {
+    "ddp": load_ddp,
+    "fsdp": load_fsdp,
+    "deepspeed": load_deepspeed,
+    "horovod": load_horovod,
+    "local": load_local,
+}
 
 
 def get_current_dist_strategy(allow_local=True) -> Type[DistributedStrategy]:

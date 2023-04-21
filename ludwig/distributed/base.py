@@ -6,9 +6,12 @@ import torch
 from torch import nn
 from torch.optim import Optimizer
 
+from ludwig.modules.lr_scheduler import LRScheduler
+
 if TYPE_CHECKING:
     from ray.train.backend import BackendConfig
     from ray.train.data_parallel_trainer import DataParallelTrainer
+    from ludwig.schema.trainer import ECDTrainerConfig
 
 
 class DistributedStrategy(ABC):
@@ -20,11 +23,9 @@ class DistributedStrategy(ABC):
     """
 
     @abstractmethod
-    def wrap_model(self, model: nn.Module) -> nn.Module:
-        pass
-
-    @abstractmethod
-    def wrap_optimizer(self, optimizer: Optimizer, model: nn.Module, gradient_accumulation_steps: int) -> Optimizer:
+    def prepare(
+        self, model: nn.Module, optimizer: Optimizer, lr_scheduler: LRScheduler, trainer_config: ECDTrainerConfig
+    ) -> Tuple[nn.Module, Optimizer, LRScheduler]:
         pass
 
     @abstractmethod
@@ -119,11 +120,10 @@ class DistributedStrategy(ABC):
 
 
 class LocalStrategy(DistributedStrategy):
-    def wrap_model(self, model: nn.Module) -> nn.Module:
-        return model
-
-    def wrap_optimizer(self, optimizer: Optimizer, model: nn.Module, gradient_accumulation_steps: int) -> Optimizer:
-        return optimizer
+    def prepare(
+        self, model: nn.Module, optimizer: Optimizer, lr_scheduler: LRScheduler, trainer_config: ECDTrainerConfig
+    ) -> Tuple[nn.Module, Optimizer, LRScheduler]:
+        return model, optimizer, lr_scheduler
 
     def size(self) -> int:
         return 1
