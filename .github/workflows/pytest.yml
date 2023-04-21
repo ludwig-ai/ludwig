@@ -101,7 +101,7 @@ jobs:
 
           # remove torch and ray from the dependencies so we can add them depending on the matrix args for the job.
           cat requirements.txt | sed '/^torch[>=<\b]/d' | sed '/^torchtext/d' | sed '/^torchvision/d' | sed '/^torchaudio/d' > requirements-temp && mv requirements-temp requirements.txt
-          cat requirements_distributed.txt | sed '/^ray[\[]/d'
+          cat requirements_distributed.txt | sed '/^ray[\[]/d' > requirements-temp && mv requirements-temp requirements_distributed.txt
 
           if [ "$MARKERS" != "distributed" ]; then
             # Skip distributed and hyperopt requirements to test optional imports
