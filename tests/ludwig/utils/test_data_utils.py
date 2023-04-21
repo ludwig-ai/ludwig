@@ -188,6 +188,7 @@ def test_dataset_synthesizer_output_feature_decoder():
     [
         private_param(["s3://ludwig-tests/datasets/synthetic_1k.csv"]),
         private_param(["s3://ludwig-tests/datasets/synthetic_1k.parquet"]),
+        private_param(["s3://ludwig-tests/datasets/synthetic_1k/"]),
     ],
 )
 @pytest.mark.parametrize("nrows", [None, 100])
