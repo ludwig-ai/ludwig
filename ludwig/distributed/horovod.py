@@ -1,6 +1,6 @@
 import contextlib
 import logging
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Type
 
 import horovod.torch as hvd
 import ray
@@ -14,9 +14,11 @@ from torch import nn
 from torch.optim import Optimizer
 
 from ludwig.distributed.base import DistributedStrategy
-from ludwig.modules.lr_scheduler import LRScheduler
-from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.utils.horovod_utils import gather_all_tensors, is_distributed_available
+
+if TYPE_CHECKING:
+    from ludwig.modules.lr_scheduler import LRScheduler
+    from ludwig.schema.trainer import ECDTrainerConfig
 
 _ray220 = version.parse(ray.__version__) >= version.parse("2.2.0")
 
@@ -27,8 +29,8 @@ class HorovodStrategy(DistributedStrategy):
         logging.info("Using Horovod strategy")
 
     def prepare(
-        self, model: nn.Module, optimizer: Optimizer, lr_scheduler: LRScheduler, trainer_config: ECDTrainerConfig
-    ) -> Tuple[nn.Module, Optimizer, LRScheduler]:
+        self, model: nn.Module, optimizer: Optimizer, lr_scheduler: "LRScheduler", trainer_config: "ECDTrainerConfig"
+    ) -> Tuple[nn.Module, Optimizer, "LRScheduler"]:
         dist_optimizer = hvd.DistributedOptimizer(
             optimizer,
             named_parameters=model.named_parameters(),

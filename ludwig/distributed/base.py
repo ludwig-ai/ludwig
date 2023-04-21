@@ -6,12 +6,12 @@ import torch
 from torch import nn
 from torch.optim import Optimizer
 
-from ludwig.modules.lr_scheduler import LRScheduler
 from ludwig.utils.torch_utils import get_torch_device
 
 if TYPE_CHECKING:
     from ray.train.backend import BackendConfig
     from ray.train.data_parallel_trainer import DataParallelTrainer
+    from ludwig.modules.lr_scheduler import LRScheduler
     from ludwig.schema.trainer import ECDTrainerConfig
 
 
@@ -25,8 +25,8 @@ class DistributedStrategy(ABC):
 
     @abstractmethod
     def prepare(
-        self, model: nn.Module, optimizer: Optimizer, lr_scheduler: LRScheduler, trainer_config: ECDTrainerConfig
-    ) -> Tuple[nn.Module, Optimizer, LRScheduler]:
+        self, model: nn.Module, optimizer: Optimizer, lr_scheduler: "LRScheduler", trainer_config: "ECDTrainerConfig"
+    ) -> Tuple[nn.Module, Optimizer, "LRScheduler"]:
         pass
 
     def to_device(self, model: nn.Module) -> nn.Module:

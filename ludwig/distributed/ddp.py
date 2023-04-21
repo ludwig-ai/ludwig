@@ -1,7 +1,7 @@
 import contextlib
 import logging
 import socket
-from typing import Any, Callable, Dict, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Tuple, Type
 
 import torch
 import torch.distributed as dist
@@ -14,8 +14,10 @@ from torch.optim import Optimizer
 from torchmetrics.utilities.distributed import gather_all_tensors
 
 from ludwig.distributed.base import DistributedStrategy
-from ludwig.modules.lr_scheduler import LRScheduler
-from ludwig.schema.trainer import ECDTrainerConfig
+
+if TYPE_CHECKING:
+    from ludwig.modules.lr_scheduler import LRScheduler
+    from ludwig.schema.trainer import ECDTrainerConfig
 
 
 class DDPStrategy(DistributedStrategy):
@@ -27,8 +29,8 @@ class DDPStrategy(DistributedStrategy):
         logging.info("Using DDP strategy")
 
     def prepare(
-        self, model: nn.Module, optimizer: Optimizer, lr_scheduler: LRScheduler, trainer_config: ECDTrainerConfig
-    ) -> Tuple[nn.Module, Optimizer, LRScheduler]:
+        self, model: nn.Module, optimizer: Optimizer, lr_scheduler: "LRScheduler", trainer_config: "ECDTrainerConfig"
+    ) -> Tuple[nn.Module, Optimizer, "LRScheduler"]:
         return DDP(model), optimizer, lr_scheduler
 
     def size(self) -> int:

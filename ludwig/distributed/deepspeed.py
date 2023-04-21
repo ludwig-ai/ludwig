@@ -1,5 +1,5 @@
 import logging
-from typing import Tuple
+from typing import TYPE_CHECKING, Tuple
 
 import deepspeed
 from deepspeed.runtime.engine import DeepSpeedEngine
@@ -8,8 +8,10 @@ import torch
 from torch.optim.optimizer import Optimizer
 
 from ludwig.distributed.ddp import DDPStrategy
-from ludwig.modules.lr_scheduler import LRScheduler
-from ludwig.schema.trainer import ECDTrainerConfig
+
+if TYPE_CHECKING:
+    from ludwig.modules.lr_scheduler import LRScheduler
+    from ludwig.schema.trainer import ECDTrainerConfig
 
 
 class DeepSpeedStrategy(DDPStrategy):
@@ -17,8 +19,8 @@ class DeepSpeedStrategy(DDPStrategy):
         logging.info("Using DeepSpeed strategy")
 
     def prepare(
-        self, model: nn.Module, optimizer: Optimizer, lr_scheduler: LRScheduler, trainer_config: ECDTrainerConfig
-    ) -> Tuple[nn.Module, Optimizer, LRScheduler]:
+        self, model: nn.Module, optimizer: Optimizer, lr_scheduler: "LRScheduler", trainer_config: "ECDTrainerConfig"
+    ) -> Tuple[nn.Module, Optimizer, "LRScheduler"]:
         ds_config = {
             "bf16": {"enabled": "auto"},
             "amp": {
