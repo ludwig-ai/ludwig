@@ -104,10 +104,6 @@ class DDPStrategy(DistributedStrategy):
     def get_trainer_cls(cls, backend_config: BackendConfig) -> Tuple[Type[DataParallelTrainer], Dict[str, Any]]:
         return TorchTrainer, dict(torch_config=backend_config)
 
-    @classmethod
-    def get_initializer(cls, **kwargs) -> Callable[[], "DistributedStrategy"]:
-        return lambda: DDPStrategy()
-
     def shutdown(self):
         # TODO(travis): currently Ray handles this for us, but is subject to hangs if one of the workers raises an
         # exception and the other makes a collective op. We should figure out a way to make this safe to call

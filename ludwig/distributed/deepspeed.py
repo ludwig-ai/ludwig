@@ -1,12 +1,11 @@
 import logging
 import os
-from typing import Any, Callable, Dict, Optional, Tuple, TYPE_CHECKING
+from typing import Any, Dict, Optional, Tuple, TYPE_CHECKING
 
 import deepspeed
 import torch
 from torch import nn
 from torch.optim.optimizer import Optimizer
-from ludwig.distributed.base import DistributedStrategy
 
 from ludwig.distributed.ddp import DDPStrategy
 
@@ -105,8 +104,3 @@ class DeepSpeedStrategy(DDPStrategy):
     def allow_clip_gradients(self) -> bool:
         """DeepSpeed handles gradient clipping internally."""
         return False
-
-    @classmethod
-    def get_initializer(cls, **kwargs) -> Callable[[], "DistributedStrategy"]:
-        zero_initialization = kwargs.get("zero_optimization")
-        return lambda: DeepSpeedStrategy(zero_initialization=zero_initialization)

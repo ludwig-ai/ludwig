@@ -106,9 +106,5 @@ class HorovodStrategy(DistributedStrategy):
 
         return HorovodTrainer, dict(horovod_config=backend_config)
 
-    @classmethod
-    def get_initializer(cls, **kwargs) -> Callable[[], "DistributedStrategy"]:
-        return lambda: HorovodStrategy()
-
     def shutdown(self):
         hvd.shutdown()

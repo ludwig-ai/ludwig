@@ -1,4 +1,4 @@
-from typing import Callable, Type, Union
+from typing import Any, Dict, Type, Union
 
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 
@@ -43,12 +43,13 @@ STRATEGIES = {
 _current_strategy: DistributedStrategy = None
 
 
-def init_dist_strategy(stategy: Union[str, Callable[[], "DistributedStrategy"]], **kwargs) -> DistributedStrategy:
+def init_dist_strategy(strategy: Union[str, Dict[str, Any]], **kwargs) -> DistributedStrategy:
     global _current_strategy
-    if callable(stategy):
-        obj = stategy(**kwargs)
+    if isinstance(strategy, dict):
+        dtype = strategy.pop("type", None)
+        obj = get_dist_strategy(dtype)(**strategy)
     else:
-        obj = get_dist_strategy(stategy)(**kwargs)
+        obj = get_dist_strategy(strategy)(**kwargs)
     _current_strategy = obj
     return obj
 
@@ -59,7 +60,10 @@ def get_current_dist_strategy() -> DistributedStrategy:
     return _current_strategy
 
 
-def get_dist_strategy(name: str) -> Type[DistributedStrategy]:
+def get_dist_strategy(strategy: Union[str, Dict[str, Any]]) -> Type[DistributedStrategy]:
+    name = strategy
+    if isinstance(strategy, dict):
+        name = strategy["name"]
     return STRATEGIES[name]()
 
 
