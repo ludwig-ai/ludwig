@@ -1,4 +1,5 @@
 import logging
+import os
 from typing import Any, Dict, Optional, Tuple, TYPE_CHECKING
 
 import deepspeed
@@ -23,8 +24,19 @@ DEFAULT_ZERO_OPTIMIZATION = {
 
 class DeepSpeedStrategy(DDPStrategy):
     def __init__(self, zero_optimization: Optional[Dict[str, Any]] = None, **kwargs):
+        # If we're initializing from a `deepspeed` CLI command, deepspeed will have already been initialized, as
+        # indicated by the presence of the LOCAL_RANK var. Otherwise, we're initializing from Ray / torchrun, and will
+        # need to set this var ourselves, then init DeepSpeed here.
+        local_rank, local_size = os.environ.get("LOCAL_RANK"), os.environ.get("LOCAL_SIZE")
+        init_deepspeed = local_rank is None or local_size is None
+
         super().__init__(**kwargs)
         self.zero_optimization = zero_optimization or DEFAULT_ZERO_OPTIMIZATION
+
+        if init_deepspeed:
+            os.environ["LOCAL_RANK"] = str(self.local_rank())
+            os.environ["LOCAL_SIZE"] = str(self.local_size())
+            deepspeed.init_distributed()
 
     def _log_on_init(self):
         logging.info("Using DeepSpeed strategy")

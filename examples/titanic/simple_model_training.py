@@ -52,18 +52,17 @@ trainer:
     batch_size: 128
 
 backend:
-    type: deepspeed
-    zero_optimization:
-        stage: 2
-    
-    # type: ray
-    # trainer:
-    #     strategy: deepspeed
-    #     num_workers: 2
-    #     use_gpu: True
-    #     resources_per_worker:
-    #         CPU: 1
-    #         GPU: 1
+    # type: deepspeed
+    # zero_optimization:
+    #     stage: 3
+    type: ray
+    trainer:
+        strategy: deepspeed
+        num_workers: 2
+        use_gpu: True
+        resources_per_worker:
+            CPU: 1
+            GPU: 1
 
 """
 )
