@@ -35,6 +35,12 @@ class DistributedStrategy(ABC):
     def backward(self, loss: torch.Tensor, model: nn.Module):
         loss.backward()
 
+    def step(self, optimizer: Optimizer, *args, **kwargs):
+        optimizer.step(*args, **kwargs)
+
+    def zero_grad(self, optimizer: Optimizer):
+        optimizer.zero_grad()
+
     @abstractmethod
     def size(self) -> int:
         pass

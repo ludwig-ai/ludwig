@@ -48,6 +48,9 @@ output_features:
     - name: Survived
       type: binary
 
+trainer:
+    batch_size: 128
+
 backend:
     type: deepspeed
     # type: ray

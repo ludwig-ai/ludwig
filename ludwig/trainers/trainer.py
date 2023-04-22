@@ -237,7 +237,7 @@ class Trainer(BaseTrainer):
 
             def closure():
                 # Allows L-BFGS to reevaluate the loss function
-                self.optimizer.zero_grad()
+                self.distributed.zero_grad(self.optimizer)
                 model_outputs = self.dist_model((inputs, targets))
                 loss, _ = self.model.train_loss(
                     targets, model_outputs, self.regularization_type, self.regularization_lambda
@@ -245,7 +245,7 @@ class Trainer(BaseTrainer):
                 loss.backward()
                 return loss
 
-            self.optimizer.step(closure)
+            self.distributed.step(self.optimizer, closure)
 
             # Obtain model predictions and loss
             model_outputs = self.dist_model((inputs, targets))
@@ -302,7 +302,7 @@ class Trainer(BaseTrainer):
             if self.use_amp:
                 self.scaler.step(self.optimizer)
             else:
-                self.optimizer.step()
+                self.distributed.step(self.optimizer)
 
         if self.use_amp:
             # Update scaler in case of overflow/underflow
@@ -314,7 +314,7 @@ class Trainer(BaseTrainer):
             predictions = self.model.outputs_to_predictions(model_outputs)
             self.model.update_metrics(targets, predictions)
 
-        self.optimizer.zero_grad()
+        self.distributed.zero_grad(self.optimizer)
 
         return loss, all_losses
 
@@ -789,7 +789,7 @@ class Trainer(BaseTrainer):
         early_stopping_steps: int,
     ) -> bool:
         """Completes up to one epoch through the data."""
-        self.optimizer.zero_grad()
+        self.distributed.zero_grad(self.optimizer)
         batch_idx = 0
         while not batcher.last_batch() and progress_tracker.steps < self.total_steps:
             progress_tracker.learning_rate = self.optimizer.param_groups[0]["lr"]
