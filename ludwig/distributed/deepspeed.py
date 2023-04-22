@@ -6,8 +6,8 @@ import deepspeed
 import torch
 from torch import nn
 from torch.optim.optimizer import Optimizer
-from ludwig.distributed.base import DistributedStrategy
 
+from ludwig.distributed.base import DistributedStrategy
 from ludwig.distributed.ddp import DDPStrategy
 
 if TYPE_CHECKING:
