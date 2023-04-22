@@ -49,14 +49,15 @@ output_features:
       type: binary
 
 backend:
-    type: ray
-    trainer:
-        strategy: deepspeed
-        num_workers: 2
-        use_gpu: True
-        resources_per_worker:
-            CPU: 1
-            GPU: 1
+    type: deepspeed
+    # type: ray
+    # trainer:
+    #     strategy: deepspeed
+    #     num_workers: 2
+    #     use_gpu: True
+    #     resources_per_worker:
+    #         CPU: 1
+    #         GPU: 1
 
 """
 )
