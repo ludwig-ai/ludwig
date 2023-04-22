@@ -63,7 +63,7 @@ def get_current_dist_strategy() -> DistributedStrategy:
 def get_dist_strategy(strategy: Union[str, Dict[str, Any]]) -> Type[DistributedStrategy]:
     name = strategy
     if isinstance(strategy, dict):
-        name = strategy["name"]
+        name = strategy["type"]
     return STRATEGIES[name]()
 
 

@@ -57,7 +57,10 @@ backend:
     #     stage: 3
     type: ray
     trainer:
-        strategy: deepspeed
+        strategy:
+            type: deepspeed
+            zero_optimization:
+                stage: 3
         num_workers: 2
         use_gpu: True
         resources_per_worker:
