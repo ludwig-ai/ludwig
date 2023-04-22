@@ -131,6 +131,8 @@ class Trainer(BaseTrainer):
                 (default: `ludwig.schema.trainer.ECDTrainerConfig()`).
         """
 
+        self.distributed = distributed if distributed is not None else LocalStrategy()
+
         self.epochs = config.epochs
         self.train_steps = config.train_steps
         self.total_steps = 0  # Computed during training, after batcher has been initialized.
@@ -153,14 +155,13 @@ class Trainer(BaseTrainer):
         self.increase_batch_size_eval_metric = config.increase_batch_size_eval_metric
         self.increase_batch_size_eval_split = config.increase_batch_size_eval_split
         self.gradient_accumulation_steps = (
-            config.gradient_accumulation_steps if distributed.allow_gradient_accumulation() else 1
+            config.gradient_accumulation_steps if self.distributed.allow_gradient_accumulation() else 1
         )
         self.resume = resume
         self.skip_save_model = skip_save_model
         self.skip_save_progress = skip_save_progress
         self.skip_save_log = skip_save_log
         self.random_seed = random_seed
-        self.distributed = distributed if distributed is not None else LocalStrategy()
         self.received_sigint = False
         self.report_tqdm_to_ray = report_tqdm_to_ray
         self.callbacks = callbacks or []
