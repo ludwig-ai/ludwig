@@ -1,6 +1,6 @@
 import contextlib
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Type
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TYPE_CHECKING
 
 import horovod.torch as hvd
 import ray

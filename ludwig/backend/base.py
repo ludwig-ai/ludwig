@@ -14,10 +14,10 @@
 # limitations under the License.
 # ==============================================================================
 
+import time
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
-import time
 from typing import Any, Callable, Dict, Optional, Type, Union
 
 import numpy as np

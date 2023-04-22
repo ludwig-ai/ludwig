@@ -11,6 +11,7 @@ from ludwig.utils.torch_utils import get_torch_device
 if TYPE_CHECKING:
     from ray.train.backend import BackendConfig
     from ray.train.data_parallel_trainer import DataParallelTrainer
+
     from ludwig.modules.lr_scheduler import LRScheduler
     from ludwig.schema.trainer import ECDTrainerConfig
 
