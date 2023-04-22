@@ -117,7 +117,7 @@ def local_rank_and_size() -> Tuple[int, int]:
     # DeepSpeed CLI and other tools may set these environment variables for us.
     local_rank, local_size = os.environ.get("LOCAL_RANK"), os.environ.get("LOCAL_SIZE")
     if local_rank is not None and local_size is not None:
-        return local_rank, local_size
+        return int(local_rank), int(local_size)
 
     # Gather the rank and hostnames from every worker so we can count up how many belong to the same host, which
     # constitutes the local group.
