@@ -116,6 +116,11 @@ class DistributedStrategy(ABC):
     def get_trainer_cls(cls, backend_config: "BackendConfig") -> Tuple[Type["DataParallelTrainer"], Dict[str, Any]]:
         pass
 
+    @classmethod
+    @abstractmethod
+    def get_initializer(cls: Type["DistributedStrategy"], **kwargs) -> Callable[[], "DistributedStrategy"]:
+        pass
+
     @abstractmethod
     def shutdown(self):
         pass
@@ -206,6 +211,10 @@ class LocalStrategy(DistributedStrategy):
     @classmethod
     def get_trainer_cls(cls, backend_config: "BackendConfig") -> Tuple[Type["DataParallelTrainer"], Dict[str, Any]]:
         raise ValueError("Cannot construct a trainer from a local strategy.")
+
+    @classmethod
+    def get_initializer(cls, **kwargs) -> Callable[[], "DistributedStrategy"]:
+        return lambda: LocalStrategy()
 
     def shutdown(self):
         pass

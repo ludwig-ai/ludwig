@@ -1,10 +1,11 @@
 import logging
-from typing import Tuple, TYPE_CHECKING
+from typing import Callable, Tuple, TYPE_CHECKING
 
 from torch import nn
 from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
 from torch.optim import Optimizer
 
+from ludwig.distributed.base import DistributedStrategy
 from ludwig.distributed.ddp import DDPStrategy
 
 if TYPE_CHECKING:
@@ -23,3 +24,7 @@ class FSDPStrategy(DDPStrategy):
 
     def to_device(self, model: nn.Module) -> nn.Module:
         return model
+
+    @classmethod
+    def get_initializer(cls, **kwargs) -> Callable[[], "DistributedStrategy"]:
+        return lambda: FSDPStrategy()

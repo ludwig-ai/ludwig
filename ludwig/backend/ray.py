@@ -37,6 +37,7 @@ from ray.util.dask import ray_dask_get
 from ray.util.placement_group import placement_group, remove_placement_group
 
 from ludwig.distributed import get_default_strategy_name, get_dist_strategy, init_dist_strategy
+from ludwig.distributed.base import DistributedStrategy
 from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
 
 if TYPE_CHECKING:
@@ -154,7 +155,7 @@ def _local_size() -> int:
 
 
 def train_fn(
-    distributed_strategy: str,
+    distributed_strategy: Callable[[], "DistributedStrategy"],
     executable_kwargs: Dict[str, Any] = None,
     model_ref: ObjectRef = None,  # noqa: F821
     training_set_metadata: TrainingSetMetadataDict = None,
@@ -302,6 +303,7 @@ def create_runner(**kwargs):
 class RayAirRunner:
     def __init__(self, trainer_kwargs: Dict[str, Any]) -> None:
         trainer_kwargs = copy.copy(trainer_kwargs)
+        self.trainer_kwargs = trainer_kwargs
         self.backend_config = trainer_kwargs.pop("backend", None)
         self.strategy = trainer_kwargs.pop("strategy", get_default_strategy_name())
 
@@ -364,8 +366,9 @@ class RayAirRunner:
         stream_window_size: Dict[str, Union[None, float]],
         callbacks: List[Any] = [],
     ) -> Tuple[Dict, TorchCheckpoint]:
-        trainer_cls, kwargs = get_dist_strategy(self.strategy).get_trainer_cls(self.backend_config)
-        train_loop_config = {**config, "distributed_strategy": self.strategy}
+        strategy_cls = get_dist_strategy(self.strategy)
+        trainer_cls, kwargs = strategy_cls.get_trainer_cls(self.backend_config)
+        train_loop_config = {**config, "distributed_strategy": strategy_cls.get_initializer(**self.trainer_kwargs)}
         trainer = trainer_cls(
             train_loop_per_worker=train_loop_per_worker,
             train_loop_config=train_loop_config,
@@ -521,7 +524,7 @@ class RayTrainerV2(BaseTrainer):
 
 
 def eval_fn(
-    distributed_strategy: str,
+    distributed_strategy: Callable[[], "DistributedStrategy"],
     predictor_kwargs: Dict[str, Any] = None,
     model_ref: ObjectRef = None,  # noqa: F821
     training_set_metadata: TrainingSetMetadataDict = None,
