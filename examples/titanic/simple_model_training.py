@@ -53,6 +53,9 @@ trainer:
 
 backend:
     type: deepspeed
+    zero_optimization:
+        stage: 2
+    
     # type: ray
     # trainer:
     #     strategy: deepspeed

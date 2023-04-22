@@ -43,9 +43,9 @@ STRATEGIES = {
 _current_strategy: DistributedStrategy = None
 
 
-def init_dist_strategy(stategy: str) -> DistributedStrategy:
+def init_dist_strategy(stategy: str, **kwargs) -> DistributedStrategy:
     global _current_strategy
-    obj = get_dist_strategy(stategy)()
+    obj = get_dist_strategy(stategy)(**kwargs)
     _current_strategy = obj
     return obj
 

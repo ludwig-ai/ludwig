@@ -1,5 +1,5 @@
 import logging
-from typing import Tuple, TYPE_CHECKING
+from typing import Any, Dict, Optional, Tuple, TYPE_CHECKING
 
 import deepspeed
 import torch
@@ -13,7 +13,19 @@ if TYPE_CHECKING:
     from ludwig.schema.trainer import ECDTrainerConfig
 
 
+DEFAULT_ZERO_OPTIMIZATION = {
+    "stage": "auto",
+    "stage3_gather_16bit_weights_on_model_save": "auto",
+    "offload_optimizer": {"device": "auto"},
+    "offload_param": {"device": "auto"},
+}
+
+
 class DeepSpeedStrategy(DDPStrategy):
+    def __init__(self, zero_optimization: Optional[Dict[str, Any]] = None, **kwargs):
+        super().__init__(**kwargs)
+        self.zero_optimization = zero_optimization or DEFAULT_ZERO_OPTIMIZATION
+
     def _log_on_init(self):
         logging.info("Using DeepSpeed strategy")
 
@@ -24,12 +36,7 @@ class DeepSpeedStrategy(DDPStrategy):
             "amp": {
                 "enabled": trainer_config.use_mixed_precision,
             },
-            "zero_optimization": {
-                "stage": "auto",
-                "stage3_gather_16bit_weights_on_model_save": "auto",
-                "offload_optimizer": {"device": "auto"},
-                "offload_param": {"device": "auto"},
-            },
+            "zero_optimization": self.zero_optimization,
             "gradient_clipping": trainer_config.gradient_clipping.clipglobalnorm,
             "train_batch_size": trainer_config.batch_size * self.size(),
             "train_micro_batch_size_per_gpu": trainer_config.batch_size,
