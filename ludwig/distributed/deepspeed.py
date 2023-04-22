@@ -21,7 +21,6 @@ class DeepSpeedStrategy(DDPStrategy):
         self, model: nn.Module, optimizer: Optimizer, lr_scheduler: "LRScheduler", trainer_config: "ECDTrainerConfig"
     ) -> Tuple[nn.Module, Optimizer, "LRScheduler"]:
         ds_config = {
-            "bf16": {"enabled": "auto"},
             "amp": {
                 "enabled": trainer_config.use_mixed_precision,
             },
@@ -37,7 +36,7 @@ class DeepSpeedStrategy(DDPStrategy):
             "gradient_accumulation_steps": trainer_config.gradient_accumulation_steps,
             "steps_per_print": trainer_config.steps_per_checkpoint or 10000,
         }
-        model_engine, optimizer, _, lr_scheduler = deepspeed.initialize(
+        model_engine, optimizer, _, _ = deepspeed.initialize(
             model=model,
             model_parameters=model.parameters(),
             optimizer=optimizer,
