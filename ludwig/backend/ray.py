@@ -24,8 +24,6 @@ import dask
 import numpy as np
 import pandas as pd
 import ray
-import ray.air as ra
-import ray.train as rt
 import torch
 import tqdm
 from packaging import version
@@ -236,6 +234,7 @@ def train_fn(
 
 
 def tune_batch_size_fn(
+    distributed_strategy: str,
     dataset: RayDataset = None,
     executable_kwargs: Dict[str, Any] = None,
     model_ref: ObjectRef = None,
@@ -246,17 +245,8 @@ def tune_batch_size_fn(
     **kwargs,
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
-    local_rank = ra.session.get_local_rank() if _ray220 else rt.local_rank()
-    initialize_pytorch(local_rank=local_rank, local_size=_local_size())
-    distributed = get_current_dist_strategy(allow_local=False)()
-
-    #
-    # As of Ray >= 2.1, to use ray.air.session.get_local_rank(), you need to be inside a train session
-    # or a tune session. In Ludwig's current code implementation, batch size tuning doesn't get instantiated
-    # inside of a RayTrainer class, so we manually set the local_rank to 0 so that it picks up the right
-    # device to tune batch size on.
-    initialize_pytorch(local_rank=0, local_size=_local_size())
-    distributed = init_dist_strategy("local")
+    initialize_pytorch(local_rank=session.get_local_rank(), local_size=_local_size())
+    distributed = init_dist_strategy(distributed_strategy)
     try:
         train_shard = RayDatasetShard(
             dataset.ds,
