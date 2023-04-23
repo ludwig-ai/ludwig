@@ -20,7 +20,7 @@ class DeepSpeedBackend(DataParallelBackend):
         self._distributed = init_dist_strategy(self.BACKEND_TYPE, zero_optimization=self.zero_optimization)
 
     def supports_batch_size_tuning(self) -> bool:
-        # TODO(travis): figure out why this causes: https://github.com/microsoft/DeepSpeed/issues/3068
+        # TODO(travis): need to fix checkpoint saving/loading for DeepSpeed to enable tuning
         return False
 
     def tune_batch_size(self, evaluator_cls: Type[BatchSizeEvaluator], dataset_len: int) -> int:

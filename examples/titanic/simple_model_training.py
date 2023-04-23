@@ -50,8 +50,8 @@ output_features:
       type: binary
 
 trainer:
-    batch_size: auto
-    epochs: 20
+    batch_size: 64
+    epochs: 10
 
 backend:
     type: deepspeed
