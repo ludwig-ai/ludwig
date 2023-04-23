@@ -62,7 +62,7 @@ class DeepSpeedStrategy(DDPStrategy):
             model=model,
             model_parameters=model.parameters(),
             optimizer=optimizer,
-            lr_scheduler=None,  # Don't let DeepSpeed manager the learning rate scheduler
+            lr_scheduler=None,  # Don't let DeepSpeed manage the learning rate scheduler
             config=ds_config,
             dist_init_required=False,
         )

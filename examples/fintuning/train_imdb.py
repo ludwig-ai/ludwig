@@ -1,11 +1,3 @@
-#!/usr/bin/env python
-
-# # Simple Model Training Example
-#
-# This example is the API example for this Ludwig command line example
-# (https://ludwig-ai.github.io/ludwig-docs/latest/examples/titanic/).
-
-# Import required libraries
 import logging
 import os
 import shutil
@@ -14,7 +6,7 @@ import yaml
 
 from ludwig.api import LudwigModel
 
-# from ludwig.datasets import titanic
+# from ludwig.datasets import imdb
 
 # clean out prior results
 shutil.rmtree("./results", ignore_errors=True)
@@ -26,28 +18,12 @@ shutil.rmtree("./results", ignore_errors=True)
 config = yaml.safe_load(
     """
 input_features:
-    - name: Pclass
-      type: category
-    - name: Sex
-      type: category
-    - name: Age
-      type: number
-      preprocessing:
-          missing_value_strategy: fill_with_mean
-    - name: SibSp
-      type: number
-    - name: Parch
-      type: number
-    - name: Fare
-      type: number
-      preprocessing:
-          missing_value_strategy: fill_with_mean
-    - name: Embarked
-      type: category
+    - name: review
+      type: text
 
 output_features:
-    - name: Survived
-      type: binary
+    - name: sentiment
+      type: category
 
 trainer:
     batch_size: 32
@@ -81,10 +57,9 @@ model = LudwigModel(config=config, logging_level=logging.INFO)
     preprocessed_data,  # tuple Ludwig Dataset objects of pre-processed training data
     output_directory,  # location of training results stored on disk
 ) = model.train(
-    dataset="/home/ray/titanic.csv",
-    experiment_name="simple_experiment",
-    model_name="simple_model",
-    # model_resume_path=model_dir,
+    dataset="/home/ray/imdb.parquet",
+    experiment_name="imdb_sentiment",
+    model_name="parallel_cnn",
 )
 
 # list contents of output directory
