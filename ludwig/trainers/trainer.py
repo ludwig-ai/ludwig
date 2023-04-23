@@ -413,6 +413,7 @@ class Trainer(BaseTrainer):
                 trainer.optimizer.zero_grad()
 
             def step(self, batch_size: int):
+                trainer.distributed.set_batch_size(trainer.dist_model, batch_size)
                 inputs = {
                     input_feature_name: input_feature.create_sample_input(batch_size=batch_size).to(trainer.device)
                     for input_feature_name, input_feature in trainer.model.input_features.items()
@@ -635,6 +636,9 @@ class Trainer(BaseTrainer):
         self.distributed.sync_model(self.dist_model)
         self.distributed.sync_optimizer(self.optimizer)
         self.scheduler.load_state_dict(self.distributed.broadcast_object(self.scheduler.state_dict()))
+
+        # For DeepSpeed, we need to set the batch size here in case it was modfied during auto-tuning
+        self.distributed.set_batch_size(self.dist_model, self.batch_size)
 
         set_random_seed(self.random_seed)
 

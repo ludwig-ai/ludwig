@@ -42,6 +42,9 @@ class DistributedStrategy(ABC):
     def zero_grad(self, optimizer: Optimizer):
         optimizer.zero_grad()
 
+    def set_batch_size(self, model: nn.Module, batch_size: int):
+        pass
+
     @abstractmethod
     def size(self) -> int:
         pass

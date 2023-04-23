@@ -18,6 +18,7 @@ from ludwig.api import LudwigModel
 
 # clean out prior results
 shutil.rmtree("./results", ignore_errors=True)
+# model_dir = "/src/results/simple_experiment_simple_model/model"
 
 # Download and prepare the dataset
 # training_set, test_set, _ = titanic.load(split=True)
@@ -50,6 +51,7 @@ output_features:
 
 trainer:
     batch_size: 128
+    epochs: 20
 
 backend:
     type: deepspeed
@@ -82,6 +84,7 @@ model = LudwigModel(config=config, logging_level=logging.INFO)
     dataset="/home/ray/titanic.csv",
     experiment_name="simple_experiment",
     model_name="simple_model",
+    # model_resume_path=model_dir,
 )
 
 # list contents of output directory
@@ -90,4 +93,21 @@ for item in os.listdir(output_directory):
     print("\t", item)
 
 # batch prediction
-# model.predict(test_set, skip_save_predictions=False)
+# backend = {
+#     "type": "ray",
+#     "trainer": {
+#         "strategy": {"type": "deepspeed", "zero_optimization": {"stage": 3}},
+#         "num_workers": 2,
+#         "use_gpu": True,
+#         "resources_per_worker": {"CPU": 1, "GPU": 1},
+#     },
+# }
+# backend = {
+#     "type": "deepspeed",
+#     "zero_optimization": {"stage": 3},
+# }
+
+# print(model_dir)
+# model = LudwigModel.load(model_dir, backend=backend)
+# results, _ = model.predict("/home/ray/titanic.csv", skip_save_predictions=False)
+# print(results)

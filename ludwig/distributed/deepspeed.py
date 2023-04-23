@@ -3,6 +3,7 @@ import os
 from typing import Any, Dict, Optional, Tuple, TYPE_CHECKING
 
 import deepspeed
+import deepspeed.comm
 import torch
 from torch import nn
 from torch.optim.optimizer import Optimizer
@@ -44,14 +45,16 @@ class DeepSpeedStrategy(DDPStrategy):
     def prepare(
         self, model: nn.Module, optimizer: Optimizer, lr_scheduler: "LRScheduler", trainer_config: "ECDTrainerConfig"
     ) -> Tuple[nn.Module, Optimizer, "LRScheduler"]:
+        # If `batch_size=auto`, we set to 2 temporarily until auto-tuning adjusts it`
+        batch_size = trainer_config.batch_size if isinstance(trainer_config.batch_size, int) else 2
         ds_config = {
             "amp": {
                 "enabled": trainer_config.use_mixed_precision,
             },
             "zero_optimization": self.zero_optimization,
             "gradient_clipping": trainer_config.gradient_clipping.clipglobalnorm,
-            "train_batch_size": trainer_config.batch_size * self.size(),
-            "train_micro_batch_size_per_gpu": trainer_config.batch_size,
+            "train_batch_size": batch_size * self.size(),
+            "train_micro_batch_size_per_gpu": batch_size,
             "gradient_accumulation_steps": trainer_config.gradient_accumulation_steps,
             "steps_per_print": trainer_config.steps_per_checkpoint or 10000,
         }
@@ -92,6 +95,15 @@ class DeepSpeedStrategy(DDPStrategy):
     def zero_grad(self, optimizer: Optimizer):
         # Handled by `self.backward(loss)`
         pass
+
+    def set_batch_size(self, model: nn.Module, batch_size: int):
+        # Adapted from:
+        # https://github.com/microsoft/DeepSpeed/blob/7ce371b139521b1ebbf052f0496b1a16397c1d19/deepspeed/runtime/engine.py#L422  # noqa: E501
+        model._config.micro_batch_size_per_gpu = batch_size
+        model._config.train_batch_size = batch_size * self.size() * model._config.gradient_accumulation_steps
+
+    def barrier(self):
+        deepspeed.comm.barrier()
 
     def allow_gradient_accumulation(self) -> bool:
         """DeepSpeed handles gradient accumulation internally."""
