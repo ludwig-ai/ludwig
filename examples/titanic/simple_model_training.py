@@ -50,7 +50,7 @@ output_features:
       type: binary
 
 trainer:
-    batch_size: 128
+    batch_size: auto
     epochs: 20
 
 backend:

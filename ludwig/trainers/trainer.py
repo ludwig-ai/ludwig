@@ -21,6 +21,7 @@ import os
 import os.path
 import signal
 import sys
+import tempfile
 import threading
 import time
 from typing import Dict, List, Optional, Tuple
@@ -374,6 +375,7 @@ class Trainer(BaseTrainer):
         random_seed: int = default_random_seed,
         max_trials: int = 20,
         halving_limit: int = 3,
+        snapshot_weights: bool = True,
     ) -> int:
         logger.info("Tuning batch size...")
 
@@ -396,13 +398,20 @@ class Trainer(BaseTrainer):
         self.dist_model.train()  # Sets model training mode.
 
         evaluator = self._create_batch_size_evaluator()
-        try:
-            return evaluator.select_best_batch_size(len(training_set), max_batch_size, max_trials)
-        finally:
-            # Restore original parameters to defaults
-            self.skip_save_model = skip_save_model
-            self.skip_save_progress = skip_save_progress
-            self.skip_save_log = skip_save_log
+        with tempfile.TemporaryDirectory() as tmpdir:
+            if snapshot_weights:
+                checkpoint = Checkpoint(model=self.dist_model, optimizer=self.optimizer, scheduler=self.scheduler)
+                checkpoint.save(os.path.join(tmpdir, "latest.ckpt"), global_step=0)
+            try:
+                best_batch_size = evaluator.select_best_batch_size(len(training_set), max_batch_size, max_trials)
+                return self.distributed.broadcast_object(best_batch_size)
+            finally:
+                # Restore original parameters to defaults
+                self.skip_save_model = skip_save_model
+                self.skip_save_progress = skip_save_progress
+                self.skip_save_log = skip_save_log
+                if snapshot_weights:
+                    self.resume_weights_and_optimizer(str(tmpdir), checkpoint)
 
     def _create_batch_size_evaluator(self) -> BatchSizeEvaluator:
         trainer = self
