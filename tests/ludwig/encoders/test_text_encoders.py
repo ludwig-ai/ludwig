@@ -10,12 +10,20 @@ import ludwig.schema.encoders.utils as schema_encoders_utils
 from ludwig.api import LudwigModel
 from ludwig.constants import ENCODER, MODEL_ECD, NAME, TEXT, TRAINER
 from ludwig.encoders import text_encoders
+from ludwig.error import ConfigValidationError
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.schema.model_config import ModelConfig
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.torch_utils import get_torch_device
 from tests.integration_tests.parameter_update_utils import check_module_parameters_updated
-from tests.integration_tests.utils import category_feature, generate_data, HF_ENCODERS, LocalTestBackend, text_feature
+from tests.integration_tests.utils import (
+    category_feature,
+    clear_huggingface_cache,
+    generate_data,
+    HF_ENCODERS,
+    LocalTestBackend,
+    text_feature,
+)
 
 DEVICE = get_torch_device()
 RANDOM_SEED = 1919
@@ -114,6 +122,7 @@ def test_hf_ludwig_model_e2e(tmpdir, csv_filename, encoder_name):
         # Validate the model can be loaded.
         # This ensures that the config reflects the internal architecture of the encoder.
         LudwigModel.load(os.path.join(results_dir, "model"))
+    clear_huggingface_cache()
 
 
 @pytest.mark.slow
@@ -142,6 +151,71 @@ def test_hf_ludwig_model_reduce_options(tmpdir, csv_filename, encoder_name, redu
         input_features[0][ENCODER][
             "pretrained_model_name_or_path"
         ] = "hf-internal-testing/tiny-bert-for-token-classification"
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"train_steps": 1},
+    }
+
+    try:
+        ModelConfig.from_dict(config)
+    except ConfigValidationError as e:
+        pytest.skip(e.message)
+
+    model = LudwigModel(
+        config=config,
+        backend=LocalTestBackend(),
+    )
+
+    # Validates that the defaults associated with the encoder are compatible with Ludwig training.
+    with mock.patch(
+        "ludwig.encoders.text_encoders.load_pretrained_hf_model_with_hub_fallback",
+        side_effect=_load_pretrained_hf_model_no_weights,
+    ):
+        model.train(
+            dataset=rel_path,
+            output_directory=tmpdir,
+            skip_save_training_description=True,
+            skip_save_training_statistics=True,
+            skip_save_model=True,
+            skip_save_progress=True,
+            skip_save_log=True,
+            skip_save_processed_input=True,
+        )
+
+    clear_huggingface_cache()
+
+
+@pytest.mark.parametrize(
+    "pretrained_model_name_or_path",
+    [
+        "hf-internal-testing/tiny-random-bloom",
+        "hf-internal-testing/tiny-random-OPTModel",
+        "hf-internal-testing/tiny-random-GPTJModel",
+    ],
+)
+def test_hf_ludwig_model_auto_transformers(tmpdir, csv_filename, pretrained_model_name_or_path):
+    """Tests different AutoModel types to ensure our wrapper handles them correctly.
+
+    This is needed because different PretrainedModel implemetnations have different input / output signatures.
+    """
+    input_features = [
+        text_feature(
+            preprocessing={
+                "max_sequence_length": 10,
+            },
+            encoder={
+                "vocab_size": 30,
+                "min_len": 1,
+                "type": "auto_transformer",
+                "pretrained_model_name_or_path": pretrained_model_name_or_path,
+                "use_pretrained": True,
+            },
+        )
+    ]
+    output_features = [category_feature(decoder={"vocab_size": 2})]
+    rel_path = generate_data(input_features, output_features, csv_filename)
 
     config = {
         "input_features": input_features,

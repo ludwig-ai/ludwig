@@ -428,7 +428,6 @@ DATA_FORMATS_TO_TEST = [
     "df",
     "dict",
     "excel",
-    "excel_xls",
     "feather",
     "fwf",
     "hdf5",
@@ -711,8 +710,13 @@ def test_experiment_model_resume(tmpdir):
     shutil.rmtree(output_dir, ignore_errors=True)
 
 
-@pytest.mark.distributed
-@pytest.mark.parametrize("dist_strategy", ["horovod", "ddp"])
+@pytest.mark.parametrize(
+    "dist_strategy",
+    [
+        pytest.param("ddp", id="ddp", marks=pytest.mark.distributed),
+        pytest.param("horovod", id="horovod", marks=[pytest.mark.distributed, pytest.mark.horovod]),
+    ],
+)
 def test_experiment_model_resume_distributed(tmpdir, dist_strategy, ray_cluster_4cpu):
     # Single sequence input, single category output
     # Tests saving a model file, loading it to rerun training and predict

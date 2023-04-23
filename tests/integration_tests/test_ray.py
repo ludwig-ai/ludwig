@@ -389,8 +389,13 @@ def test_ray_read_binary_files(tmpdir, df_engine, ray_cluster_2cpu):
 
 
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
-@pytest.mark.parametrize("trainer_strategy", ["horovod", "ddp"])
-@pytest.mark.distributed
+@pytest.mark.parametrize(
+    "trainer_strategy",
+    [
+        pytest.param("ddp", id="ddp", marks=pytest.mark.distributed),
+        pytest.param("horovod", id="horovod", marks=[pytest.mark.distributed, pytest.mark.horovod]),
+    ],
+)
 def test_ray_outputs(dataset_type, trainer_strategy, ray_cluster_2cpu):
     input_features = [
         binary_feature(),

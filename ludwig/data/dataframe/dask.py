@@ -271,18 +271,30 @@ class DaskEngine(DataFrameEngine):
         TODO(Arnav): Remove in Ray 2.2
         """
         if _ray_230:
-            return dataset.to_dask()
 
-        @dask.delayed
-        def block_to_df(block: Block):
-            if isinstance(block, (ray.ObjectRef, ClientObjectRef)):
-                raise ValueError(
-                    "Dataset.to_dask() must be used with Dask-on-Ray, please "
-                    "set the Dask scheduler to ray_dask_get (located in "
-                    "ray.util.dask)."
-                )
-            block = BlockAccessor.for_block(block)
-            return block.to_pandas()
+            @dask.delayed
+            def block_to_df(block: Block):
+                block = BlockAccessor.for_block(block)
+                if isinstance(block, (ray.ObjectRef, ClientObjectRef)):
+                    raise ValueError(
+                        "Dataset.to_dask() must be used with Dask-on-Ray, please "
+                        "set the Dask scheduler to ray_dask_get (located in "
+                        "ray.util.dask)."
+                    )
+                return block.to_pandas()
+
+        else:
+
+            @dask.delayed
+            def block_to_df(block: Block):
+                if isinstance(block, (ray.ObjectRef, ClientObjectRef)):
+                    raise ValueError(
+                        "Dataset.to_dask() must be used with Dask-on-Ray, please "
+                        "set the Dask scheduler to ray_dask_get (located in "
+                        "ray.util.dask)."
+                    )
+                block = BlockAccessor.for_block(block)
+                return block.to_pandas()
 
         # Infer Dask metadata from Datasets schema.
         schema = dataset.schema()
@@ -305,6 +317,9 @@ class DaskEngine(DataFrameEngine):
                 )
             else:
                 meta = schema.empty_table().to_pandas()
+
+        if meta is None and schema is None:
+            return dd.DataFrame.from_dict({}, npartitions=1)
 
         ddf = dd.from_delayed(
             [block_to_df(block) for block in dataset.get_internal_block_refs()],

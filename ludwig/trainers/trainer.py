@@ -1196,7 +1196,7 @@ class Trainer(BaseTrainer):
         return self.distributed.local_rank()
 
     def barrier(self):
-        self.distributed.allreduce(torch.as_tensor([0], dtype=torch.int))
+        self.distributed.barrier()
 
     def callback(self, fn, coordinator_only=True):
         if not coordinator_only or self.is_coordinator():

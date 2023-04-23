@@ -5,6 +5,7 @@ import pytest
 
 # Skip these tests if Ray is not installed
 ray = pytest.importorskip("ray")  # noqa
+horovod = pytest.importorskip("horovod")  # noqa
 
 from ray.train.horovod import HorovodConfig  # noqa
 from ray.train.torch import TorchConfig  # noqa
@@ -21,24 +22,8 @@ pytestmark = pytest.mark.distributed
     "trainer_config,cluster_resources,num_nodes,expected_kwargs",
     [
         # Prioritize using the GPU when available over multi-node
-        (
+        pytest.param(
             {},
-            {"CPU": 4, "GPU": 1},
-            2,
-            dict(
-                backend=HorovodConfig(),
-                strategy="horovod",
-                num_workers=1,
-                use_gpu=True,
-                resources_per_worker={
-                    "CPU": 0,
-                    "GPU": 1,
-                },
-            ),
-        ),
-        # Test DDP
-        (
-            {"strategy": "ddp"},
             {"CPU": 4, "GPU": 1},
             2,
             dict(
@@ -51,10 +36,30 @@ pytestmark = pytest.mark.distributed
                     "GPU": 1,
                 },
             ),
+            id="ddp",
+            marks=pytest.mark.distributed,
+        ),
+        # Test Horovod
+        pytest.param(
+            {"strategy": "horovod"},
+            {"CPU": 4, "GPU": 1},
+            2,
+            dict(
+                backend=HorovodConfig(),
+                strategy="horovod",
+                num_workers=1,
+                use_gpu=True,
+                resources_per_worker={
+                    "CPU": 0,
+                    "GPU": 1,
+                },
+            ),
+            id="prioritize-gpu-when-available-over-multinode",
+            marks=[pytest.mark.distributed, pytest.mark.horovod],
         ),
         # Use one worker per node for CPU, chck NIC override
-        (
-            {"nics": [""]},
+        pytest.param(
+            {"strategy": "horovod", "nics": [""]},
             {"CPU": 4, "GPU": 0},
             2,
             dict(
@@ -67,10 +72,12 @@ pytestmark = pytest.mark.distributed
                     "GPU": 0,
                 },
             ),
+            id="one-worker-per-node-nic-override",
+            marks=[pytest.mark.distributed, pytest.mark.horovod],
         ),
         # Allow explicitly setting GPU usage for autoscaling clusters
-        (
-            {"use_gpu": True, "num_workers": 2},
+        pytest.param(
+            {"strategy": "horovod", "use_gpu": True, "num_workers": 2},
             {"CPU": 4, "GPU": 0},
             1,
             dict(
@@ -83,10 +90,12 @@ pytestmark = pytest.mark.distributed
                     "GPU": 1,
                 },
             ),
+            id="set-gpu-usage-autoscaling-clusters",
+            marks=[pytest.mark.distributed, pytest.mark.horovod],
         ),
         # Allow overriding resources_per_worker
-        (
-            {"resources_per_worker": {"CPU": 2, "GPU": 1}},
+        pytest.param(
+            {"strategy": "horovod", "resources_per_worker": {"CPU": 2, "GPU": 1}},
             {"CPU": 4, "GPU": 2},
             2,
             dict(
@@ -99,6 +108,8 @@ pytestmark = pytest.mark.distributed
                     "GPU": 1,
                 },
             ),
+            id="override-resources-per-worker",
+            marks=[pytest.mark.distributed, pytest.mark.horovod],
         ),
     ],
 )

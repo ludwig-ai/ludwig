@@ -16,6 +16,7 @@ from ludwig.constants import (
     IMAGE,
     MODEL_ECD,
     MODEL_GBM,
+    MODEL_LLM,
     NUMBER,
     SEQUENCE,
     SET,
@@ -32,6 +33,8 @@ from ludwig.schema.features.utils import (
     gbm_output_config_registry,
     get_input_feature_jsonschema,
     get_output_feature_jsonschema,
+    llm_input_config_registry,
+    llm_output_config_registry,
 )
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY, ParameterMetadata
 from ludwig.schema.utils import ludwig_dataclass
@@ -287,6 +290,14 @@ class GBMInputFeatureSelection(FeaturesTypeSelection):
         return get_input_feature_jsonschema(MODEL_GBM)
 
 
+class LLMInputFeatureSelection(FeaturesTypeSelection):
+    def __init__(self):
+        super().__init__(registry=llm_input_config_registry, description="Type of the input feature")
+
+    def _jsonschema_type_mapping(self):
+        return get_input_feature_jsonschema(MODEL_LLM)
+
+
 class ECDOutputFeatureSelection(FeaturesTypeSelection):
     def __init__(self):
         super().__init__(registry=ecd_output_config_registry, description="Type of the output feature")
@@ -301,3 +312,12 @@ class GBMOutputFeatureSelection(FeaturesTypeSelection):
 
     def _jsonschema_type_mapping(self):
         return get_output_feature_jsonschema(MODEL_GBM)
+
+
+class LLMOutputFeatureSelection(FeaturesTypeSelection):
+    def __init__(self):
+        # TODO(Arnav): Remove the hard check on max_length once we support multiple output features.
+        super().__init__(max_length=1, registry=llm_output_config_registry, description="Type of the output feature")
+
+    def _jsonschema_type_mapping(self):
+        return get_output_feature_jsonschema(MODEL_LLM)

@@ -11,6 +11,7 @@
     (base implementation -- # CPU, # GPU)
 """
 
+import logging
 import os
 from dataclasses import dataclass
 from typing import Any, Dict, List, Set, Union
@@ -20,6 +21,7 @@ import numpy as np
 import pandas as pd
 import yaml
 from dataclasses_json import dataclass_json, LetterCase
+from tqdm import tqdm
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend import Backend
@@ -37,8 +39,6 @@ from ludwig.constants import (
     TEXT,
     TYPE,
 )
-from ludwig.profiling import dataset_profile_pb2
-from ludwig.profiling.dataset_profile import get_dataset_profile_proto, get_dataset_profile_view
 from ludwig.types import ModelConfigDict
 from ludwig.utils.automl.data_source import DataSource, wrap_data_source
 from ludwig.utils.automl.field_info import FieldConfig, FieldInfo, FieldMetadata
@@ -46,6 +46,8 @@ from ludwig.utils.automl.type_inference import infer_type, should_exclude
 from ludwig.utils.data_utils import load_yaml
 from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.system_utils import Resources
+
+logger = logging.getLogger(__name__)
 
 PATH_HERE = os.path.abspath(os.path.dirname(__file__))
 CONFIG_DIR = os.path.join(PATH_HERE, "defaults")
@@ -290,11 +292,6 @@ def is_field_boolean(source: DataSource, field: str) -> bool:
 
 
 @DeveloperAPI
-def get_dataset_profile_from_source(source: DataSource) -> dataset_profile_pb2.DatasetProfile:
-    return get_dataset_profile_proto(get_dataset_profile_view(source.df))
-
-
-@DeveloperAPI
 def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
     """Constructs FieldInfo objects for each feature in dataset. These objects are used for downstream type
     inference.
@@ -307,7 +304,8 @@ def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
     """
     row_count = len(source)
     fields = []
-    for field in source.columns:
+    for field in tqdm(source.columns, desc="Analyzing fields", total=len(source.columns)):
+        logger.info(f"Analyzing field: {field}")
         dtype = source.get_dtype(field)
         num_distinct_values, distinct_values, distinct_values_balance = source.get_distinct_values(
             field, MAX_DISTINCT_VALUES_TO_RETURN

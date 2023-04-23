@@ -14,8 +14,9 @@ trainer:
 hyperopt:
   parameters:
     trainer.learning_rate:
-      space: choice
-      categories: [0.005, 0.01, 0.02, 0.025]
+      space: loguniform
+      lower: 0.00002
+      upper: 0.001
     trainer.learning_rate_scheduler.decay_rate:
       space: choice
       categories: [0.8, 0.9, 0.95]
