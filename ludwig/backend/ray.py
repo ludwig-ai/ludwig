@@ -256,8 +256,9 @@ def tune_batch_size_fn(
         device = get_torch_device()
         model = model.to(device)
 
+        # No need to snapshot weights when using Ray, as the model will be re-created at train time anyway.
         trainer = RemoteTrainer(model=model, distributed=distributed, **executable_kwargs)
-        return trainer.tune_batch_size(ludwig_config, train_shard, **kwargs)
+        return trainer.tune_batch_size(ludwig_config, train_shard, snapshot_weights=False, **kwargs)
     finally:
         torch.cuda.empty_cache()
         distributed.shutdown()

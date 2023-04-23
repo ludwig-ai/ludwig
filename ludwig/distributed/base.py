@@ -144,6 +144,10 @@ class DistributedStrategy(ABC):
     def allow_clip_gradients(self) -> bool:
         return True
 
+    def prepare_before_load(self) -> bool:
+        """True if we need to call `prepare` again before loading a checkpoint."""
+        return False
+
 
 class LocalStrategy(DistributedStrategy):
     def prepare(

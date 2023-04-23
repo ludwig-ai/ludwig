@@ -179,29 +179,16 @@ class Trainer(BaseTrainer):
         self.model = model
         self.model = self.distributed.to_device(self.model)
 
-        compiled_model = self.model
+        self.compiled_model = self.model
         if config.compile:
-            compiled_model = torch.compile(self.model)
+            self.compiled_model = torch.compile(self.model)
             logger.info("Training with torchdynamo compiled model")
 
         # ================ Optimizer tuning ================
-        optimizer_config = config.optimizer
         self.gradient_clipping_config = create_clipper(config.gradient_clipping)
-        optimizer = create_optimizer(
-            compiled_model,
-            learning_rate=self.base_learning_rate,
-            distributed=self.distributed,
-            optimizer_config=optimizer_config,
-            gradient_accumulation_steps=self.gradient_accumulation_steps,
-        )
-        scheduler = LRScheduler(config.learning_rate_scheduler, optimizer)
 
-        self.dist_model, self.optimizer, self.scheduler = self.distributed.prepare(
-            compiled_model,
-            optimizer,
-            scheduler,
-            config,
-        )
+        self.config = config
+        self.prepare()
 
         # Setup for automatic mixed precision (AMP)
         self.use_amp = config.use_mixed_precision and self.distributed.allow_mixed_precision()
@@ -218,6 +205,24 @@ class Trainer(BaseTrainer):
         # the original sigint to restore at the end of training
         # and before set_steps_to_1_or_quit returns
         self.original_sigint_handler = None
+
+    def prepare(self):
+        optimizer_config = self.config.optimizer
+        optimizer = create_optimizer(
+            self.compiled_model,
+            learning_rate=self.base_learning_rate,
+            distributed=self.distributed,
+            optimizer_config=optimizer_config,
+            gradient_accumulation_steps=self.gradient_accumulation_steps,
+        )
+        scheduler = LRScheduler(self.config.learning_rate_scheduler, optimizer)
+
+        self.dist_model, self.optimizer, self.scheduler = self.distributed.prepare(
+            self.compiled_model,
+            optimizer,
+            scheduler,
+            self.config,
+        )
 
     def train_step(
         self, inputs: Dict[str, torch.Tensor], targets: Dict[str, torch.Tensor], should_step: bool = True
@@ -411,6 +416,8 @@ class Trainer(BaseTrainer):
                 self.skip_save_progress = skip_save_progress
                 self.skip_save_log = skip_save_log
                 if snapshot_weights:
+                    if self.distributed.prepare_before_load():
+                        self.prepare()
                     self.resume_weights_and_optimizer(str(tmpdir), checkpoint)
 
     def _create_batch_size_evaluator(self) -> BatchSizeEvaluator:

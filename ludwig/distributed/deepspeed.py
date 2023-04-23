@@ -116,3 +116,10 @@ class DeepSpeedStrategy(DDPStrategy):
     def allow_clip_gradients(self) -> bool:
         """DeepSpeed handles gradient clipping internally."""
         return False
+
+    def prepare_before_load(self) -> bool:
+        """DeepSpeed requires the engine to be re-initialized before loading.
+
+        https://deepspeed.readthedocs.io/en/latest/model-checkpointing.html#loading-training-checkpoints
+        """
+        return True
