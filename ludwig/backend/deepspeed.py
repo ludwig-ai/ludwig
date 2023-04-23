@@ -1,9 +1,11 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Type
 
 import deepspeed
 
 from ludwig.backend.base import DataParallelBackend
+from ludwig.constants import FALLBACK_BATCH_SIZE
 from ludwig.distributed import init_dist_strategy
+from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
 
 
 class DeepSpeedBackend(DataParallelBackend):
@@ -15,4 +17,11 @@ class DeepSpeedBackend(DataParallelBackend):
 
     def initialize(self):
         deepspeed.init_distributed()
-        self._distributed = init_dist_strategy("deepspeed", zero_optimization=self.zero_optimization)
+        self._distributed = init_dist_strategy(self.BACKEND_TYPE, zero_optimization=self.zero_optimization)
+
+    def supports_batch_size_tuning(self) -> bool:
+        # TODO(travis): figure out why this causes: https://github.com/microsoft/DeepSpeed/issues/3068
+        return False
+
+    def tune_batch_size(self, evaluator_cls: Type[BatchSizeEvaluator], dataset_len: int) -> int:
+        return FALLBACK_BATCH_SIZE

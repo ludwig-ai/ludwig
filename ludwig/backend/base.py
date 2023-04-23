@@ -138,6 +138,9 @@ class Backend(ABC):
         """Applies `transform_fn` to every `batch_size` length batch of `df` and returns the result."""
         raise NotImplementedError()
 
+    def supports_batch_size_tuning(self) -> bool:
+        return True
+
 
 class LocalPreprocessingMixin:
     @property

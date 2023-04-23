@@ -43,6 +43,7 @@ from ludwig.constants import (
     AUTO,
     BATCH_SIZE,
     EVAL_BATCH_SIZE,
+    FALLBACK_BATCH_SIZE,
     FULL,
     HYPEROPT,
     HYPEROPT_WARNING,
@@ -802,7 +803,14 @@ class LudwigModel:
     def _tune_batch_size(self, trainer, dataset, random_seed: int = default_random_seed):
         # TODO (ASN): add support for substitute_with_max parameter
         # TODO(travis): detect train and eval batch sizes separately (enable / disable gradients)
-        tuned_batch_size = trainer.tune_batch_size(self.config_obj.to_dict(), dataset, random_seed=random_seed)
+        if self.backend.supports_batch_size_tuning():
+            tuned_batch_size = trainer.tune_batch_size(self.config_obj.to_dict(), dataset, random_seed=random_seed)
+        else:
+            logger.warning(
+                f"Backend {self.backend.BACKEND_TYPE} does not support batch size tuning, "
+                f"using fallback batch size {FALLBACK_BATCH_SIZE}."
+            )
+            tuned_batch_size = FALLBACK_BATCH_SIZE
 
         # TODO(travis): pass these in as args to trainer when we call train,
         #  to avoid setting state on possibly remote trainer
