@@ -937,7 +937,10 @@ class Trainer(BaseTrainer):
 
     def evaluation(self, dataset, dataset_name, metrics_log, batch_size, progress_tracker):
         predictor = Predictor(
-            self.model, batch_size=batch_size, distributed=self.distributed, report_tqdm_to_ray=self.report_tqdm_to_ray
+            self.dist_model,
+            batch_size=batch_size,
+            distributed=self.distributed,
+            report_tqdm_to_ray=self.report_tqdm_to_ray,
         )
         metrics, _ = predictor.batch_evaluation(dataset, collect_predictions=False, dataset_name=dataset_name)
 

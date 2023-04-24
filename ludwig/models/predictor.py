@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 import psutil
 import torch
+from torch import nn
 
 from ludwig.constants import COMBINED, LAST_HIDDEN, LOGITS, MODEL_GBM
 from ludwig.data.dataset.base import Dataset
@@ -65,7 +66,7 @@ class Predictor(BasePredictor):
 
     def __init__(
         self,
-        model: BaseModel,
+        model: nn.Module,
         batch_size: int = 128,
         distributed: DistributedStrategy = None,
         report_tqdm_to_ray: bool = False,
@@ -75,13 +76,18 @@ class Predictor(BasePredictor):
         self._distributed = distributed if distributed is not None else LocalStrategy()
         self.report_tqdm_to_ray = report_tqdm_to_ray
 
-        # TODO (jeffkinnison): revert to using the requested device for GBMs when device usage is fixed
-        self.device = get_torch_device() if not model.type() == MODEL_GBM else "cpu"
-        self.model = model.to(self.device)
+        device = get_torch_device()
+        if isinstance(model, BaseModel) and model.type() == MODEL_GBM:
+            # TODO (jeffkinnison): revert to using the requested device for GBMs when device usage is fixed
+            device = "cpu"
+            model = model.to(device)
+
+        self.device = device
+        self.model = model
 
     def batch_predict(self, dataset: Dataset, dataset_name: str = None, collect_logits: bool = False):
         prev_model_training_mode = self.model.training  # store previous model training mode
-        self.model.eval()  # set model to eval mode
+        self._distributed.eval(self.model)  # set model to eval mode
 
         with torch.no_grad():
             with dataset.initialize_batcher(self._batch_size, should_shuffle=False) as batcher:
@@ -112,7 +118,7 @@ class Predictor(BasePredictor):
 
     def predict_single(self, batch, collect_logits: bool = False):
         prev_model_training_mode = self.model.training  # store previous model training mode
-        self.model.eval()  # set model to eval mode
+        self._distributed.eval(self.model)  # set model to eval mode
 
         with torch.no_grad():
             predictions = defaultdict(list)
@@ -171,7 +177,7 @@ class Predictor(BasePredictor):
             collect_predictions, collect_logits.
         """
         prev_model_training_mode = self.model.training  # store previous model training mode
-        # self.model.eval()  # set model to eval mode
+        self._distributed.eval(self.model)  # set model to eval mode
 
         with torch.no_grad():
             with dataset.initialize_batcher(
@@ -240,7 +246,7 @@ class Predictor(BasePredictor):
             raise ValueError("BucketedBatcher is not supported yet")
 
         prev_model_training_mode = self.model.training  # store previous model training mode
-        self.model.eval()  # set model to eval mode
+        self._distributed.eval(self.model)  # set model to eval mode
 
         with torch.no_grad():
             with dataset.initialize_batcher(

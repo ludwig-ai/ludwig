@@ -148,6 +148,9 @@ class DistributedStrategy(ABC):
         """True if we need to call `prepare` again before loading a checkpoint."""
         return False
 
+    def eval(self, model: nn.Module):
+        model.eval()
+
 
 class LocalStrategy(DistributedStrategy):
     def prepare(

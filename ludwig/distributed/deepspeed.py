@@ -123,3 +123,8 @@ class DeepSpeedStrategy(DDPStrategy):
         https://deepspeed.readthedocs.io/en/latest/model-checkpointing.html#loading-training-checkpoints
         """
         return True
+
+    def eval(self, model: nn.Module):
+        # TODO(travis): remove this when DeepSpeed resolves issue:
+        # https://github.com/microsoft/DeepSpeed/issues/3068
+        pass
