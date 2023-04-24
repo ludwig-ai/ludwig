@@ -78,6 +78,7 @@ try:
     import dask
     import modin
     import ray
+    import ray.exceptions
     from ray.air.config import DatasetConfig
     from ray.data import Dataset, DatasetPipeline
     from ray.train._internal.dataset_spec import DataParallelIngestSpec
@@ -117,6 +118,7 @@ def run_api_experiment(
     dataset,
     backend_config,
     predict=False,
+    evaluate=True,
     skip_save_processed_input=True,
     skip_save_predictions=True,
     required_metrics=None,
@@ -135,7 +137,7 @@ def run_api_experiment(
         backend_config,
         config,
         dataset=dataset,
-        evaluate=True,
+        evaluate=evaluate,
         predict=predict,
         skip_save_processed_input=skip_save_processed_input,
         skip_save_predictions=skip_save_predictions,
@@ -852,7 +854,7 @@ def test_tune_batch_size_lr_cpu(tmpdir, ray_cluster_2cpu, max_batch_size, expect
         },
     }
 
-    backend_config = {**RAY_BACKEND_CONFIG}
+    backend_config = copy.deepcopy(RAY_BACKEND_CONFIG)
 
     num_samples = 200
     csv_filename = os.path.join(tmpdir, "dataset.csv")
@@ -860,7 +862,7 @@ def test_tune_batch_size_lr_cpu(tmpdir, ray_cluster_2cpu, max_batch_size, expect
         config["input_features"], config["output_features"], csv_filename, num_examples=num_samples
     )
     dataset_parquet = create_data_set_to_use("parquet", dataset_csv)
-    model = run_api_experiment(config, dataset=dataset_parquet, backend_config=backend_config)
+    model = run_api_experiment(config, dataset=dataset_parquet, backend_config=backend_config, evaluate=False)
 
     num_train_samples = num_samples * DEFAULT_PROBABILITIES[0]
     max_batch_size_by_train_examples = MAX_BATCH_SIZE_DATASET_FRACTION * num_train_samples

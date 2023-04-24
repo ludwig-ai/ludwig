@@ -32,7 +32,11 @@ from ray import ObjectRef
 from ray.air import session
 from ray.air.checkpoint import Checkpoint
 from ray.air.config import DatasetConfig, RunConfig, ScalingConfig
+from ray.air.result import Result
+from ray.train.base_trainer import TrainingFailedError
 from ray.train.torch import TorchCheckpoint
+from ray.train.trainer import BaseTrainer as RayBaseTrainer
+from ray.tune.tuner import Tuner
 from ray.util.dask import ray_dask_get
 from ray.util.placement_group import placement_group, remove_placement_group
 
@@ -50,11 +54,10 @@ from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataframe.dask import tensor_extension_casting
 from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetShard
 from ludwig.models.base import BaseModel
-from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.trainers.registry import ray_trainers_registry, register_ray_trainer
-from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer
+from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer, Trainer
 from ludwig.types import HyperoptConfigDict, ModelConfigDict, TrainerConfigDict, TrainingSetMetadataDict
 from ludwig.utils.dataframe_utils import set_index_name
 from ludwig.utils.fs_utils import get_fs_and_path
@@ -63,8 +66,11 @@ from ludwig.utils.system_utils import Resources
 from ludwig.utils.torch_utils import get_torch_device, initialize_pytorch
 from ludwig.utils.types import DataFrame, Series
 
+_ray220 = version.parse(ray.__version__) >= version.parse("2.2.0")
 _ray230 = version.parse(ray.__version__) >= version.parse("2.3.0")
 
+if not _ray220:
+    from ludwig.backend._ray210_compat import TunerRay210
 
 logger = logging.getLogger(__name__)
 
@@ -227,25 +233,20 @@ def train_fn(
         distributed.shutdown()
 
 
-@ray.remote(max_calls=1)
 def tune_batch_size_fn(
+    distributed_strategy: str,
     dataset: RayDataset = None,
-    data_loader_kwargs: Dict[str, Any] = None,
     executable_kwargs: Dict[str, Any] = None,
-    model: ECD = None,  # noqa: F821
+    model_ref: ObjectRef = None,
     ludwig_config: ModelConfigDict = None,
     training_set_metadata: TrainingSetMetadataDict = None,
     features: Dict[str, Dict] = None,
+    trainer_cls: Callable[[], Trainer] = RemoteTrainer,
     **kwargs,
-) -> int:
+):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
-    #
-    # As of Ray >= 2.1, to use ray.air.session.get_local_rank(), you need to be inside a train session
-    # or a tune session. In Ludwig's current code implementation, batch size tuning doesn't get instantiated
-    # inside of a RayTrainer class, so we manually set the local_rank to 0 so that it picks up the right
-    # device to tune batch size on.
-    initialize_pytorch(local_rank=0, local_size=_local_size())
-    distributed = init_dist_strategy("local")
+    initialize_pytorch(local_rank=session.get_local_rank(), local_size=_local_size())
+    distributed = init_dist_strategy(distributed_strategy)
     try:
         train_shard = RayDatasetShard(
             dataset.ds,
@@ -253,11 +254,22 @@ def tune_batch_size_fn(
             training_set_metadata,
         )
 
+        model = ray.get(model_ref)
         device = get_torch_device()
         model = model.to(device)
 
-        trainer = RemoteTrainer(model=model, distributed=distributed, **executable_kwargs)
-        return trainer.tune_batch_size(ludwig_config, train_shard, **kwargs)
+        def on_best_batch_size_updated(best_batch_size: int, best_samples_per_sec: float, count: int):
+            session.report(
+                metrics=dict(best_batch_size=best_batch_size),
+            )
+
+        trainer: Trainer = trainer_cls(model=model, distributed=distributed, **executable_kwargs)
+        best_batch_size = trainer.tune_batch_size(
+            ludwig_config, train_shard, on_best_batch_size_updated=on_best_batch_size_updated, **kwargs
+        )
+        session.report(
+            metrics=dict(best_batch_size=best_batch_size),
+        )
     finally:
         torch.cuda.empty_cache()
         distributed.shutdown()
@@ -297,6 +309,27 @@ class TqdmCallback(ray.tune.callback.Callback):
 def create_runner(**kwargs):
     trainer_kwargs = get_trainer_kwargs(**kwargs)
     yield RayAirRunner(trainer_kwargs)
+
+
+def fit_no_exception(trainer: RayBaseTrainer) -> Result:
+    trainable = trainer.as_trainable()
+
+    kwargs = dict(trainable=trainable, run_config=trainer.run_config)
+    tuner = Tuner(**kwargs) if _ray220 else TunerRay210(**kwargs)
+    result_grid = tuner.fit()
+    assert len(result_grid) == 1
+
+    result = result_grid[0]
+    return result
+
+
+def raise_result_error(result: Result):
+    from ray.tune.error import TuneError
+
+    try:
+        raise result.error
+    except TuneError as e:
+        raise TrainingFailedError from e
 
 
 class RayAirRunner:
@@ -359,11 +392,20 @@ class RayAirRunner:
         self,
         train_loop_per_worker: Callable,
         config: Dict[str, Any],
-        dataset: Dict[str, Any],
-        data_loader_kwargs: Dict[str, Any],
-        stream_window_size: Dict[str, Union[None, float]],
-        callbacks: List[Any] = [],
-    ) -> Tuple[Dict, TorchCheckpoint]:
+        dataset: Dict[str, Any] = None,
+        data_loader_kwargs: Dict[str, Any] = None,
+        stream_window_size: Dict[str, Union[None, float]] = None,
+        callbacks: List[Any] = None,
+        exception_on_error: bool = True,
+    ) -> Result:
+        dataset_config = None
+        if dataset is not None:
+            data_loader_kwargs = data_loader_kwargs or {}
+            stream_window_size = stream_window_size or {}
+            dataset_config = self._get_dataset_configs(dataset, stream_window_size, data_loader_kwargs)
+
+        callbacks = callbacks or []
+
         trainer_cls, kwargs = get_dist_strategy(self.strategy).get_trainer_cls(self.backend_config)
         train_loop_config = {**config, "distributed_strategy": self.strategy}
         trainer = trainer_cls(
@@ -371,11 +413,15 @@ class RayAirRunner:
             train_loop_config=train_loop_config,
             datasets=dataset,
             scaling_config=self.scaling_config,
-            dataset_config=self._get_dataset_configs(dataset, stream_window_size, data_loader_kwargs),
+            dataset_config=dataset_config,
             run_config=RunConfig(callbacks=callbacks, verbose=0),
             **kwargs,
         )
-        return trainer.fit()
+
+        if exception_on_error:
+            return trainer.fit()
+        else:
+            return fit_no_exception(trainer)
 
 
 @register_ray_trainer(MODEL_ECD, default=True)
@@ -460,20 +506,31 @@ class RayTrainerV2(BaseTrainer):
         self,
         config: ModelConfigDict,
         training_set: RayDataset,
+        trainer_cls: Callable[[], Trainer] = RemoteTrainer,
         **kwargs,
     ) -> int:
-        return ray.get(
-            tune_batch_size_fn.options(num_cpus=self.num_cpus, num_gpus=self.num_gpus).remote(
-                dataset=training_set,
-                data_loader_kwargs=self.data_loader_kwargs,
-                executable_kwargs=self.executable_kwargs,
-                model=ray.put(self.model),
-                ludwig_config=config,
-                training_set_metadata=training_set.training_set_metadata,
-                features=training_set.features,
-                **kwargs,
+        with create_runner(**self.trainer_kwargs) as runner:
+            result = runner.run(
+                lambda config: tune_batch_size_fn(**config),
+                config=dict(
+                    dataset=training_set,
+                    executable_kwargs=self.executable_kwargs,
+                    model_ref=ray.put(self.model),
+                    ludwig_config=config,
+                    training_set_metadata=training_set.training_set_metadata,
+                    features=training_set.features,
+                    trainer_cls=trainer_cls,
+                    **kwargs,
+                ),
+                exception_on_error=False,
             )
-        )
+
+        best_batch_size = result.metrics.get("best_batch_size")
+        if best_batch_size is None:
+            raise_result_error(result)
+        elif result.error:
+            logger.warning(f"Exception raised during batch size tuning. Error: {str(result.error)}")
+        return best_batch_size
 
     @property
     def validation_field(self):
