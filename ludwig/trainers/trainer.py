@@ -24,14 +24,14 @@ import sys
 import tempfile
 import threading
 import time
-from typing import Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 import numpy as np
 import psutil
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from ludwig.constants import LOSS, MINIMIZE, MODEL_ECD, TEST, TRAIN, TRAINING, VALIDATION
+from ludwig.constants import LOSS, MAX_CPU_BATCH_SIZE, MINIMIZE, MODEL_ECD, TEST, TRAIN, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.globals import (
@@ -69,8 +69,6 @@ from ludwig.utils.trainer_utils import (
     get_total_steps,
     ProgressTracker,
 )
-
-MAX_CPU_BATCH_SIZE = 128
 
 logger = logging.getLogger(__name__)
 
@@ -381,13 +379,12 @@ class Trainer(BaseTrainer):
         max_trials: int = 20,
         halving_limit: int = 3,
         snapshot_weights: bool = True,
+        on_best_batch_size_updated: Optional[Callable[[int, float, int], None]] = None,
     ) -> int:
         logger.info("Tuning batch size...")
-
         skip_save_model = self.skip_save_model
         skip_save_progress = self.skip_save_progress
         skip_save_log = self.skip_save_log
-
         # Set temporary values
         self.skip_save_model = True
         self.skip_save_progress = True
@@ -399,9 +396,7 @@ class Trainer(BaseTrainer):
         max_batch_size = (
             self.max_batch_size if torch.cuda.is_available() else min(self.max_batch_size, MAX_CPU_BATCH_SIZE)
         )
-
         self.dist_model.train()  # Sets model training mode.
-
         evaluator = self._create_batch_size_evaluator()
         with tempfile.TemporaryDirectory() as tmpdir:
             if snapshot_weights:
