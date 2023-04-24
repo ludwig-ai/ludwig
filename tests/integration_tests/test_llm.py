@@ -2,10 +2,9 @@ import os
 
 import pandas as pd
 import pytest
-import yaml
 
 from ludwig.api import LudwigModel
-from ludwig.constants import INPUT_FEATURES, MODEL_LLM, MODEL_NAME, MODEL_TYPE, OUTPUT_FEATURES
+from ludwig.constants import INPUT_FEATURES, MODEL_LLM, MODEL_NAME, MODEL_TYPE, OUTPUT_FEATURES, PREPROCESSING
 from ludwig.utils.types import DataFrame
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
 
@@ -183,145 +182,65 @@ def test_llm_zero_shot_classification(tmpdir, backend, ray_cluster_4cpu):
 @pytest.mark.parametrize(
     "backend",
     [
-        pytest.param(RAY_BACKEND, id="ray"),
-        # pytest.param(RAY_BACKEND, id="ray", marks=pytest.mark.distributed),
+        pytest.param(LOCAL_BACKEND, id="local"),
+        pytest.param(RAY_BACKEND, id="ray", marks=pytest.mark.distributed),
     ],
 )
-def test_llm_few_shot_classification(tmpdir, backend):
-    df = pd.DataFrame(
-        [
-            {
-                "reviews_text": "I liked the look and location of the",
-                "reviews_rating_floor": 3,
+def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_4cpu):
+    input_features = [text_feature(
+        output_feature=False, 
+        name="body",
+        encoder={"type": "passthrough"},  # need to use the default encoder for LLMTextInputFeatureConfig
+        preprocessing={
+            "prompt": {
+                "retrieval": {
+                    "type": "semantic",
+                    "index_name": None,
+                    "model_name": "multi-qa-MiniLM-L6-cos-v1",
+                    "k": 5
+                },
+                "task": (
+                    "Given the sample input, complete this sentence by replacing XXXX: The review rating is XXXX. "
+                    "Choose one value in this list: [1, 2, 3, 4, 5].")
+            }
+        }
+    )]
+    output_features = [category_feature(
+        output_feature=True, 
+        name="label", 
+        preprocessing={
+            "vocab": ["1", "2", "3", "4", "5"],
+            "fallback_label": "3",
+        },
+        decoder={
+            "type": "category_parser",
+            "match": {
+                "1": {"type": "contains", "value": "1"},
+                "2": {"type": "contains", "value": "2"},
+                "3": {"type": "contains", "value": "3"},
+                "4": {"type": "contains", "value": "4"},
+                "5": {"type": "contains", "value": "5"},
             },
-            {
-                "reviews_text": "My wife and I have not stayed in",
-                "reviews_rating_floor": 5,
-            },
-            {
-                "reviews_text": "This was the hotel our son and daughter",
-                "reviews_rating_floor": 5,
-            },
-            {
-                "reviews_text": "great hotel right on the ocean with a",
-                "reviews_rating_floor": 4,
-            },
-            {
-                "reviews_text": "The hotel was great from the start.",
-                "reviews_rating_floor": 5,
-            },
-            {
-                "reviews_text": "We stayed here pre and post cruise.",
-                "reviews_rating_floor": 4,
-            },
-            {
-                "reviews_text": "This place was just ok, sketchy looking",
-                "reviews_rating_floor": 2,
-            },
-            {
-                "reviews_text": "Stayed here for a business trip. Very",
-                "reviews_rating_floor": 4,
-            },
-            {
-                "reviews_text": "We went on a trip to new orleans it was fun",
-                "reviews_rating_floor": 3,
-            },
-            {
-                "reviews_text": "My wife and I have stayed at Ascend brand ",
-                "reviews_rating_floor": 5,
-            },
-        ]
-    )
-    df["split"] = 0
+        },
+    )]
 
-    prediction_df = pd.DataFrame(
-        [
-            {
-                "reviews_text": "I really liked this hotel. I stayed in",
-                "reviews_rating_floor": 4,
+    config = {
+        MODEL_TYPE: MODEL_LLM,
+        MODEL_NAME: TEST_MODEL_NAME,
+        GENERATION_CONFIG: get_generation_config(),
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        PREPROCESSING: {
+            "split": {
+                "type": "fixed"
             },
-            {
-                "reviews_text": "Stayed for One night but really enjoyed our stay",
-                "reviews_rating_floor": 4,
-            },
-            {
-                "reviews_text": "Very conveniently located near the airport and Ft.",
-                "reviews_rating_floor": 5,
-            },
-            {
-                "reviews_text": "We stayed at the Del Sol Inn again over",
-                "reviews_rating_floor": 5,
-            },
-            {
-                "reviews_text": "We had a wonderful time staying at Eden Roc",
-                "reviews_rating_floor": 5,
-            },
-        ]
-    )
-    prediction_df["split"] = 2
-
-    config = """
-model_type: llm
-model_name: hf-internal-testing/tiny-random-GPTJForCausalLM
-generation:
-    temperature: 0.1
-    top_p: 0.75
-    top_k: 40
-    num_beams: 4
-    max_new_tokens: 5
-preprocessing:
-    split:
-        type: fixed
-        column: split
-input_features:
--
-    name: reviews_text
-    type: text
-    preprocessing:
-        prompt:
-            retrieval:
-                type: "semantic"
-                index_name: null
-                model_name: multi-qa-MiniLM-L6-cos-v1
-                k: 5
-            task: "Given the sample input, complete this sentence by
-                replacing XXXX: The review rating is XXXX. Choose one value
-                in this list: [1, 2, 3, 4, 5]."
-output_features:
--
-    name: reviews_rating_floor
-    type: category
-    preprocessing:
-        vocab:
-            - "1"
-            - "2"
-            - "3"
-            - "4"
-            - "5"
-        fallback_label: "3"
-    decoder:
-        type: category_parser
-        match:
-            "1":
-                type: contains
-                value: "1"
-            "2":
-                type: contains
-                value: "2"
-            "3":
-                type: contains
-                value: "3"
-            "4":
-                type: contains
-                value: "4"
-            "5":
-                type: contains
-                value: "5"
-"""
-    config = yaml.safe_load(config)
+        },
+    }
+    
+    dataset_path = generate_data(input_features, output_features, filename=csv_filename, num_examples=25, nan_percent=0.1, with_split=True)
 
     model = LudwigModel(config, backend={**backend, "cache_dir": str(tmpdir)})
-    model.train(dataset=df, output_directory=str(tmpdir), skip_save_processed_input=True)
+    model.train(dataset=dataset_path, output_directory=str(tmpdir), skip_save_processed_input=True)
 
-    preds, _ = model.predict(dataset=prediction_df, output_directory=str(tmpdir))
+    preds, _ = model.predict(dataset=dataset_path, output_directory=str(tmpdir))
     preds = convert_preds(backend, preds)

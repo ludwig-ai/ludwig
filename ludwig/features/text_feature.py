@@ -240,7 +240,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         feature_config.encoder.str2idf = feature_metadata["str2idf"]
         feature_config.encoder.skip = feature_metadata[PREPROCESSING].get("cache_encoder_embeddings", False)
         # TODO(geoffrey): use dot notation once everything is schemafied
-        if feature_config.preprocessing.prompt["retrieval"]:
+        if feature_config.preprocessing.prompt.get("retrieval"):
             feature_config.preprocessing.prompt["retrieval"]["index_name"] = feature_metadata["index_name"]
 
     @staticmethod

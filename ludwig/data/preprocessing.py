@@ -1190,7 +1190,11 @@ def build_dataset(
 
     split_col = None
     if global_preprocessing_parameters["split"]["type"] == "fixed":
-        split_col = dataset_df[global_preprocessing_parameters["split"]["column"]]
+        if global_preprocessing_parameters["split"]["column"] in dataset_df.columns:
+            split_col = dataset_df[global_preprocessing_parameters["split"]["column"]]
+        else:
+            logger.warning(f"Specified split column {global_preprocessing_parameters['split']['column']} for fixed "
+                           f"split strategy was not found in dataset.")
 
     logger.debug("build preprocessing parameters")
     feature_name_to_preprocessing_parameters = build_preprocessing_parameters(
@@ -1703,7 +1707,7 @@ def handle_features_with_prompt_config(
             input_and_output_col_names = [input_col_name] + output_feature_col_names
             input_and_output_cols = {k: v for k, v in dataset_cols.items() if k in input_and_output_col_names}
 
-            if prompt_config["retrieval"] is not None:
+            if prompt_config.get("retrieval") is not None:
                 index_cache_directory = get_default_cache_location()
                 retrieval_model, index_name = index_input_col(
                     prompt_config["retrieval"],
@@ -1744,7 +1748,10 @@ def index_input_col(
     df_engine: DataFrameEngine,
     split_col: Optional[Series] = None,
 ):
-    retrieval_model = get_retrieval_model(retrieval_config["type"])
+    retrieval_model = get_retrieval_model(
+        retrieval_config["type"], 
+        model_name=retrieval_config["model_name"],
+    )
     index_name = retrieval_config["index_name"]
     if index_name is None:
         if split_col is None:

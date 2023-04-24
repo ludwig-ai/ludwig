@@ -10,10 +10,9 @@ import pandas as pd
 import ray
 from sentence_transformers import SentenceTransformer
 
+from ludwig.utils.torch_utils import get_torch_device
+
 logger = logging.getLogger(__name__)
-
-
-SENTENCE_TRANSFORMER_MODEL_NAME = "multi-qa-MiniLM-L6-cos-v1"
 
 
 def df_checksum(df: pd.DataFrame) -> str:
@@ -72,8 +71,11 @@ class RandomRetrieval(RetrievalModel):
 
 
 class SemanticRetrieval(RetrievalModel):
-    def __init__(self, model_name: str = SENTENCE_TRANSFORMER_MODEL_NAME):
-        self.model = SentenceTransformer(model_name, device="cuda:3")
+    def __init__(self, model_name, device: Optional[str] = None, **kwargs):
+        if device is None:
+            device = get_torch_device()
+
+        self.model = SentenceTransformer(model_name, device=device)
         self.index: faiss.Index = None
         self.index_data: pd.DataFrame = None
         self.checksum = None

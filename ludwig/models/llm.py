@@ -40,13 +40,21 @@ class LLM(BaseModel):
         self.config_obj = config_obj
         self._random_seed = random_seed
 
+        model_kwargs = {}
+        device = get_torch_device()
+        if device == "cuda":
+            num_gpus = torch.cuda.device_count()
+            model_kwargs.update(dict(
+                low_cpu_mem_usage=True,
+                torch_dtype=torch.float16,
+                device_map="auto",
+                max_memory={i: "13GiB" for i in range(num_gpus)},
+            ))
+
         print("Loading large language model...")
         self.model = AutoModelForCausalLM.from_pretrained(
             self.config_obj.model_name,
-            low_cpu_mem_usage=True,
-            torch_dtype=torch.float16,
-            device_map="auto",
-            max_memory={i: "13GiB" for i in range(3)},
+            **model_kwargs
         )
         print("Done.")
 
@@ -140,6 +148,7 @@ class LLM(BaseModel):
 
         with torch.no_grad():
             input_ids = self.get_input_ids(inputs)
+            input_ids = input_ids[:, -2048:]
 
             input_lengths = []
             sequences_list = []
@@ -159,6 +168,8 @@ class LLM(BaseModel):
                     input_ids_sample_no_padding = input_ids_sample_no_padding[:, -self.max_input_length :]
 
                 input_lengths.append(input_ids_sample_no_padding.shape[1])
+                
+                breakpoint()
 
                 # Generate text using the model
                 model_outputs = self.model.generate(

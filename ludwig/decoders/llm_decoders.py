@@ -178,6 +178,8 @@ class CategoryParserDecoder(Decoder):
         probabilities = []
         logits = []
         for output in decoded_outputs:
+            output = output.lower()  # Convert to lowercase for matching
+
             matched_label = self.matcher(output)
             idx = self.str2idx[matched_label] if matched_label in self.str2idx else self.str2idx[self.fallback_label]
 
