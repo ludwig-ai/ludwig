@@ -26,7 +26,8 @@ output_features:
       type: category
 
 trainer:
-    batch_size: 32
+    batch_size: 128
+    eval_batch_size: 128
     epochs: 10
 
 backend:

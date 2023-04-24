@@ -171,7 +171,7 @@ class Predictor(BasePredictor):
             collect_predictions, collect_logits.
         """
         prev_model_training_mode = self.model.training  # store previous model training mode
-        self.model.eval()  # set model to eval mode
+        # self.model.eval()  # set model to eval mode
 
         with torch.no_grad():
             with dataset.initialize_batcher(
