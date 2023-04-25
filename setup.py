@@ -29,7 +29,7 @@ with open(path.join(here, "requirements_hyperopt.txt"), encoding="utf-8") as f:
 
 with open(path.join(here, "requirements_tree.txt"), encoding="utf-8") as f:
     extra_requirements["tree"] = [line.strip() for line in f if line]
-    
+
 with open(path.join(here, "requirements_llm.txt"), encoding="utf-8") as f:
     extra_requirements["llm"] = [line.strip() for line in f if line]
 
