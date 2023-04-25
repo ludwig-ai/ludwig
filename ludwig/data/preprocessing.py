@@ -1207,6 +1207,8 @@ def build_dataset(
         preprocessing_parameters = feature_name_to_preprocessing_parameters[feature_config[NAME]]
         handle_missing_values(dataset_cols, feature_config, preprocessing_parameters, backend)
 
+    # update input features with prompt configs during preprocessing (as opposed to during the model forward pass) 
+    # so that we can compute metadata and build the dataset correctly.
     logger.debug("handle text features with prompt parameters")
     handle_features_with_prompt_config(
         dataset_cols, feature_name_to_preprocessing_parameters, features, split_col=split_col, df_engine=df_engine
@@ -1686,7 +1688,9 @@ def handle_features_with_prompt_config(
     split_col: Optional[Series] = None,
 ):
     """Updates (in-place) dataset columns with prompt configurations containing a non-None task parameter.
-    
+
+    Dataset columns that are updated here are enriched to have prompts as specified by the prompt configuration.
+
     Args:
         dataset_cols (Dict[str, Series]): Dataset columns.
         feature_name_to_preprocessing_parameters (Dict[str, PreprocessingConfigDict]): Mapping from feature name to
@@ -1695,21 +1699,20 @@ def handle_features_with_prompt_config(
         df_engine (DataFrameEngine): Dataframe engine.
         split_col (Optional[Series], optional): Split column. Defaults to None.
     """
-    
-    
     input_features, output_features = get_input_and_output_features(features)
-    output_feature_col_names = [output_feature_config[COLUMN] for output_feature_config in output_features]
     for input_feature_config in input_features:
-        # If we're using LLMs for zero-shot/few-shot learning, update text input features with the prompt
-        # ahead of time so that we can compute metadata and build the preprocessed data correctly.
         input_feature_preprocessing_parameters = feature_name_to_preprocessing_parameters[input_feature_config[NAME]]
+
         if input_feature_preprocessing_parameters["prompt"]["task"] is not None:
             prompt_config = input_feature_preprocessing_parameters["prompt"]
             input_col_name = input_feature_config[COLUMN]
-            input_and_output_col_names = [input_col_name] + output_feature_col_names
-            input_and_output_cols = {k: v for k, v in dataset_cols.items() if k in input_and_output_col_names}
 
             if prompt_config["retrieval"]["type"] is not None:
+                # Ensure that the output features are in the dataset columns saved as part of the index 
+                # so that they can be retrieved later at lookup time.
+                output_feature_col_names = [output_feature_config[COLUMN] for output_feature_config in output_features]
+                input_and_output_col_names = [input_col_name] + output_feature_col_names
+                input_and_output_cols = {k: v for k, v in dataset_cols.items() if k in input_and_output_col_names}
                 retrieval_model, index_name = index_column(
                     prompt_config["retrieval"],
                     col_name=input_col_name,
@@ -1717,6 +1720,7 @@ def handle_features_with_prompt_config(
                     df_engine=df_engine,
                     split_col=split_col,
                 )
+
                 # NOTE: after indexing the input column, we update the index_name in the prompt config IN PLACE.
                 # This ensures that the preprocessing parameters for this feature have an up-to-date index_name
                 # when the training set metadata is saved.
