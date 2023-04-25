@@ -6,6 +6,7 @@ import torch
 from torch import nn
 from torch.optim import Optimizer
 
+from ludwig.utils.checkpoint_utils import Checkpoint, CoordinatorCheckpoint
 from ludwig.utils.torch_utils import get_torch_device
 
 if TYPE_CHECKING:
