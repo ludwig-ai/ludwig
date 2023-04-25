@@ -304,7 +304,7 @@ class LLM(BaseModel):
             0,
         )
         return _targets
-    
+
     def _remove_left_padding(self, input_ids_sample: torch.Tensor):
         bos_idxs = torch.where(input_ids_sample == self.tokenizer.bos_token_id)[0]  # all BOS token locations
         if len(bos_idxs) != 0:

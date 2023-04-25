@@ -43,20 +43,20 @@ def index_column(
     split_col: Optional[Series] = None,
 ) -> Tuple[RetrievalModel, str]:
     """Indexes a column for sample retrieval via embedding index lookup.
-    
+
     This function indexes a column and saves the index artifact to disk. If an index name is provided as part of the
-    `retrieval_config`, then the index in the ludwig cache with the corresponding name will be loaded instead of being 
+    `retrieval_config`, then the index in the ludwig cache with the corresponding name will be loaded instead of being
     built from scratch.
-    
+
     To prevent data leakage, a split column must be provided. This ensures that the retrieval model only ever fetches
     samples from the training set.
-    
+
     To ensure that the index is usable even if the original DataFrame is not available, the columns used to build the
     index are stored as part of the index.
-    
+
     All operations in this function are performed on pandas objects, which means that you may run out of memory if your
     dataset is large.
-    
+
     Args:
         retrieval_config (Dict[str, Any]): The retrieval config from the config object.
         col_name (str): The name of the column to index.
@@ -110,7 +110,7 @@ def format_input_with_prompt(
         - sample_input: The input sample.
         - task: The task to be completed given the input.
         - context: The context retrieved by the `search_fn` function. Only required if `search_fn` is provided.
-    
+
     Args:
         input_col_name (str): The name of the input column.
         input_col (Series): The input column.
@@ -178,8 +178,8 @@ def generate_prompt(
     # TODO(geoffrey): figure out how to inject feature information into the prompt
     # TODO(geoffrey): figure out how to use {{x}} notation in the YAML file (probably needs regex)
     prompt = template.format(
-        context=context_fn(entry), 
-        ample_input=sample_input_fn(entry), 
+        context=context_fn(entry),
+        ample_input=sample_input_fn(entry),
         task=task_fn(entry),
     )
     return prompt
