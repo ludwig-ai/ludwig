@@ -214,7 +214,6 @@ class Predictor(BasePredictor):
                     }
 
                     preds = self.model.evaluation_step(inputs, targets)
-                    idx += 1
 
                     # accumulate predictions from batch for each output feature
                     if collect_predictions:

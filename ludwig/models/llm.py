@@ -160,7 +160,7 @@ class LLM(BaseModel):
 
                 input_ids_sample_no_padding = input_ids_sample[bos_idx:].unsqueeze(0)
                 if input_ids_sample_no_padding.shape[1] > self.max_input_length:
-                    print(
+                    logger.warning(
                         f"Input length {input_ids_sample_no_padding.shape[1]} is "
                         f"greater than max input length {self.max_input_length}. Truncating."
                     )

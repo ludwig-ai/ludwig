@@ -821,7 +821,7 @@ def test_prompt_template(backend, tmpdir):
     train_set, _, _, training_set_metadata = model.preprocess(
         training_set=data_csv,
         skip_save_processed_input=True,
-        outpput_directory=os.path.join(tmpdir, "processed"),
+        output_directory=os.path.join(tmpdir, "processed"),
     )
 
     data_df = pd.read_csv(data_csv)
@@ -836,7 +836,6 @@ def test_prompt_template(backend, tmpdir):
     for raw_text, encoded in zip(raw_text_values, encoded_values):
         raw_text = raw_text.lower()
         decoded = " ".join(idx2str[t] for t in encoded)
-
         assert decoded.startswith(
             "<SOS> instruction : predict the output feature . return only values in { true , false } # # # examples : "
             "# # # input : foo bar output : true # # # input : baz quc output : false # # # input : "
