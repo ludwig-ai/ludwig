@@ -3,14 +3,14 @@
 https://gist.github.com/kevinzakka/5d345421f7abefd5dbaf6a77f829e70a.
 """
 
-from abc import ABC, abstractmethod
 import logging
 import os
 import re
 import signal
 import tempfile
+from abc import ABC, abstractmethod
 from glob import glob
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import Any, Dict, Optional, TYPE_CHECKING
 
 import torch
 from torch import nn
