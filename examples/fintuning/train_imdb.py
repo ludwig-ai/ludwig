@@ -41,7 +41,7 @@ backend:
             zero_optimization:
                 stage: 3
         num_workers: 2
-        use_gpu: True
+        use_gpu: true
         resources_per_worker:
             CPU: 1
             GPU: 1

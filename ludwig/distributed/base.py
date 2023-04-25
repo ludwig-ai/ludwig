@@ -5,7 +5,6 @@ from typing import Any, Callable, Dict, Optional, Tuple, Type, TYPE_CHECKING
 import torch
 from torch import nn
 from torch.optim import Optimizer
-from ludwig.utils.checkpoint_utils import Checkpoint, CoordinatorCheckpoint
 
 from ludwig.utils.torch_utils import get_torch_device
 
@@ -15,6 +14,7 @@ if TYPE_CHECKING:
 
     from ludwig.modules.lr_scheduler import LRScheduler
     from ludwig.schema.trainer import ECDTrainerConfig
+    from ludwig.utils.checkpoint_utils import Checkpoint
 
 
 class DistributedStrategy(ABC):
@@ -156,8 +156,10 @@ class DistributedStrategy(ABC):
         model.eval()
 
     def create_checkpoint_handle(
-        self, model: nn.Module, optimizer: Optional[Optimizer] = None, scheduler: Optional[LRScheduler] = None
-    ) -> Checkpoint:
+        self, model: nn.Module, optimizer: Optional[Optimizer] = None, scheduler: Optional["LRScheduler"] = None
+    ) -> "Checkpoint":
+        from ludwig.utils.checkpoint_utils import CoordinatorCheckpoint
+
         return CoordinatorCheckpoint(model, optimizer, scheduler)
 
 

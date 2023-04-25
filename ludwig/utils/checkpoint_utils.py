@@ -17,12 +17,11 @@ from torch import nn
 from torch.optim import Optimizer
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.models.base import BaseModel
 from ludwig.modules.lr_scheduler import LRScheduler
 from ludwig.utils.fs_utils import safe_move_file
 
 if TYPE_CHECKING:
-    from ludwig.distributed.base import DistributedStrategy
+    from ludwig.models.base import BaseModel
 
 
 logger = logging.getLogger(__name__)
@@ -77,13 +76,11 @@ class Checkpoint(ABC):
 
     def __init__(
         self,
-        distributed: "DistributedStrategy",
-        model: BaseModel,
+        model: "BaseModel",
         optimizer: Optional[Optimizer] = None,
         scheduler: Optional[LRScheduler] = None,
     ):
         """Constructor."""
-        self.distributed = distributed
         self.model = model
         self.optimizer = optimizer
         self.scheduler = scheduler

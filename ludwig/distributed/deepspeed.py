@@ -132,12 +132,16 @@ class DeepSpeedStrategy(DDPStrategy):
         pass
 
     def create_checkpoint_handle(
-        self, model: nn.Module, optimizer: Optional[Optimizer] = None, scheduler: Optional[LRScheduler] = None
+        self, model: nn.Module, optimizer: Optional[Optimizer] = None, scheduler: Optional["LRScheduler"] = None
     ) -> Checkpoint:
-        return DeepSpeedCheckpoint(model, optimizer, scheduler)
+        return DeepSpeedCheckpoint(self, model, optimizer, scheduler)
 
 
 class DeepSpeedCheckpoint(Checkpoint):
+    def __init__(self, distributed: DeepSpeedStrategy, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.distributed = distributed
+
     def load(self, save_path: str, device: Optional[torch.device] = None) -> bool:
         _, client_state = self.model.load_checkpoint(save_path, load_lr_scheduler_states=False)
         self.global_step = self._get_global_step(client_state, save_path)
@@ -151,6 +155,7 @@ class DeepSpeedCheckpoint(Checkpoint):
         }
         if self.scheduler is not None:
             client_state["scheduler_state"] = self.scheduler.state_dict()
+
         self.model.save_checkpoint(save_path, client_state=client_state)
 
     def load_for_inference(self, save_path: str, model: nn.Module, device: Optional[torch.device] = None) -> nn.Module:
