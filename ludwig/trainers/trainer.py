@@ -1079,14 +1079,13 @@ class Trainer(BaseTrainer):
         training_checkpoint_path: str,
     ) -> bool:
         missing_files = []
-        if self.is_coordinator():
-            # training_progress.json
-            if not path_exists(training_progress_tracker_path):
-                missing_files.append(training_progress_tracker_path)
-            # latest.ckpt in training_checkpoints/
-            latest_ckpt = os.path.join(training_checkpoint_path, "latest.ckpt")
-            if not path_exists(latest_ckpt):
-                missing_files.append(latest_ckpt)
+        # training_progress.json
+        if not path_exists(training_progress_tracker_path):
+            missing_files.append(training_progress_tracker_path)
+        # latest.ckpt in training_checkpoints/
+        latest_ckpt = os.path.join(training_checkpoint_path, "latest.ckpt")
+        if not path_exists(latest_ckpt):
+            missing_files.append(latest_ckpt)
         if missing_files:
             logger.warning(f"Could not find {missing_files} while trying to resume model training.")
             return False
