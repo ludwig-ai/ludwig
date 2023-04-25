@@ -82,7 +82,7 @@ class Predictor(BasePredictor):
             self.device = None  # do not place LLMs on a device; expected to already be placed
         else:
             self.device = get_torch_device()
-            
+
         if self.device is not None:
             self.model = model.to(self.device)
 
