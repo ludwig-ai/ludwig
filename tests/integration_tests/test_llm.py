@@ -109,7 +109,7 @@ def test_llm_zero_shot_classification(tmpdir, backend):
                 "task": "This is a review of a restaurant. Classify the sentiment."
             }
         }
-    }]  # TODO: insert prompt
+    }]
     output_features = [
         category_feature(
             name="label",

@@ -53,7 +53,7 @@ class ZeroShotTrainer(BaseTrainer):
         report_tqdm_to_ray=False,
         random_seed: float = default_random_seed,
         distributed: Optional[DistributedStrategy] = None,
-        device: Optional[str] = None,
+        device: Optional[str] = None,  # unused. The model is expected to be placed on the correct device
         **kwargs,
     ):
         """
@@ -97,15 +97,10 @@ class ZeroShotTrainer(BaseTrainer):
         self.skip_save_model = skip_save_model
         self.skip_save_progress = skip_save_progress
         self.random_seed = random_seed
-        self.device = device
         self.callbacks = callbacks or []
         self.report_tqdm_to_ray = report_tqdm_to_ray
 
-        if self.device is None:
-            self.device = get_torch_device()
-
         self.model = model
-        # self.model = self.model.to(self.device)  # Model should already be on device due to model parallel load-in
 
         self.batch_size = self.config.batch_size
         self.eval_batch_size = self.config.eval_batch_size
@@ -427,7 +422,7 @@ class ZeroShotTrainer(BaseTrainer):
 
         # Run a separate pass over the training data to compute metrics
         # Appends results to progress_tracker.train_metrics.
-        # self.evaluation(training_set, "train", progress_tracker.train_metrics, self.eval_batch_size, progress_tracker)
+        self.evaluation(training_set, "train", progress_tracker.train_metrics, self.eval_batch_size, progress_tracker)
 
         # eval metrics on the train set
         printed_table.add_metrics_to_printed_table(progress_tracker.train_metrics, TRAIN)

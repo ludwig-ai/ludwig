@@ -79,6 +79,8 @@ def format_input_with_prompt(
     template: Optional[str] = None,
 ) -> Series:
     """Returns a new Series with the input column data formatted with the prompt."""
+    # determine if this is a few-shot or zero-shot prompt
+    # few-shot prompts require a search function that returns samples from some dataset
     is_few_shot = search_fn is not None
     
     # function for retrieving the context for a given sample.
