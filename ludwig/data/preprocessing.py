@@ -1685,6 +1685,18 @@ def handle_features_with_prompt_config(
     df_engine: DataFrameEngine,
     split_col: Optional[Series] = None,
 ):
+    """Updates (in-place) dataset columns with prompt configurations containing a non-None task parameter.
+    
+    Args:
+        dataset_cols (Dict[str, Series]): Dataset columns.
+        feature_name_to_preprocessing_parameters (Dict[str, PreprocessingConfigDict]): Mapping from feature name to
+            preprocessing parameters.
+        features (List[FeatureConfigDict]): List of feature configurations.
+        df_engine (DataFrameEngine): Dataframe engine.
+        split_col (Optional[Series], optional): Split column. Defaults to None.
+    """
+    
+    
     input_features, output_features = get_input_and_output_features(features)
     output_feature_col_names = [output_feature_config[COLUMN] for output_feature_config in output_features]
     for input_feature_config in input_features:

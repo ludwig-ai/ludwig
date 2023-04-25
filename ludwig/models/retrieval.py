@@ -7,7 +7,6 @@ from typing import Any, Dict, List, Optional, Union
 import faiss
 import numpy as np
 import pandas as pd
-import ray
 from sentence_transformers import SentenceTransformer
 
 from ludwig.utils.torch_utils import get_torch_device
@@ -19,25 +18,34 @@ def df_checksum(df: pd.DataFrame) -> str:
     return hashlib.sha1(pd.util.hash_pandas_object(df).values).hexdigest()
 
 
-# TODO: support Ray backend
 class RetrievalModel:
     def create_dataset_index(self, df: pd.DataFrame, columns_to_index: Optional[List[str]] = None):
+        """Creates an index for the dataset. 
+        
+        If `columns_to_index` is None, all columns are indexed. Otherwise, only the columns in `columns_to_index` are
+        used for indexing, but all columns in `df` are returned in the search results.
+        """
         raise NotImplementedError
 
     def search(self, query: str, k: int = 10, return_data: bool = False) -> Union[List[int], List[Dict[str, Any]]]:
+        """Retrieve the top k results for the given query.
+        
+        If `return_data` is True, returns the data associated with the indices. Otherwise, returns the indices.
+        """
         raise NotImplementedError
 
     def save_index(self, name: str, cache_directory: str):
+        """Saves the index to the cache directory."""
         raise NotImplementedError
 
     def load_index(self, name: str, cache_directory: str):
+        """Loads the index from the cache directory."""
         raise NotImplementedError
-
-    def ping(self) -> bool:
-        return True
 
 
 class RandomRetrieval(RetrievalModel):
+    """Random retrieval model. Gets k random indices from the dataset regardless of the query."""
+
     def __init__(self, **kwargs):
         self.index = None
         self.index_data = None
@@ -71,6 +79,11 @@ class RandomRetrieval(RetrievalModel):
 
 
 class SemanticRetrieval(RetrievalModel):
+    """Semantic retrieval model. 
+    
+    Uses a sentence transformer model to encode the dataset and retrieve the top k most similar results to the query.
+    """
+    
     def __init__(self, model_name, device: Optional[str] = None, **kwargs):
         if device is None:
             device = get_torch_device()

@@ -147,18 +147,12 @@ class LLM(BaseModel):
 
         with torch.no_grad():
             input_ids = self.get_input_ids(inputs)
-            input_ids = input_ids[:, -2048:]
 
             input_lengths = []
             sequences_list = []
             for input_ids_sample in input_ids:
-                bos_idxs = torch.where(input_ids_sample == self.tokenizer.bos_token_id)[0]  # all BOS token locations
-                if len(bos_idxs) != 0:
-                    bos_idx = bos_idxs[0]  # get first BOS token location
-                else:
-                    bos_idx = 0
+                input_ids_sample_no_padding = self._remove_left_padding(input_ids_sample)
 
-                input_ids_sample_no_padding = input_ids_sample[bos_idx:].unsqueeze(0)
                 if input_ids_sample_no_padding.shape[1] > self.max_input_length:
                     logger.warning(
                         f"Input length {input_ids_sample_no_padding.shape[1]} is "
@@ -310,6 +304,16 @@ class LLM(BaseModel):
             0,
         )
         return _targets
+    
+    def _remove_left_padding(self, input_ids_sample: torch.Tensor):
+        bos_idxs = torch.where(input_ids_sample == self.tokenizer.bos_token_id)[0]  # all BOS token locations
+        if len(bos_idxs) != 0:
+            bos_idx = bos_idxs[0]  # get first BOS token location
+        else:
+            bos_idx = 0
+
+        input_ids_sample_no_padding = input_ids_sample[bos_idx:].unsqueeze(0)
+        return input_ids_sample_no_padding
 
     def get_augmentation_pipelines(self) -> AugmentationPipelines:
         """Returns the augmentation pipeline for this model."""
