@@ -1,14 +1,13 @@
 sentence-transformers
 faiss-cpu
 
-# copied from https://github.com/tloen/alpaca-lora/blob/main/requirements.txt
 accelerate
 appdirs
 loralib
 bitsandbytes
 datasets
 fire
-git+https://github.com/huggingface/peft.git
+peft
 transformers>=4.28.0
 sentencepiece
 gradio
