@@ -1,8 +1,8 @@
 import os
 
+import numpy as np
 import pandas as pd
 import pytest
-import numpy as np
 
 from ludwig.api import LudwigModel
 from ludwig.constants import INPUT_FEATURES, MODEL_LLM, MODEL_NAME, MODEL_TYPE, OUTPUT_FEATURES, PREPROCESSING
@@ -101,15 +101,13 @@ def test_llm_text_to_text(tmpdir, backend, ray_cluster_4cpu):
     ],
 )
 def test_llm_zero_shot_classification(tmpdir, backend):
-    input_features = [{
-        "name": "review", 
-        "type": "text", 
-        "preprocessing": {
-            "prompt": {
-                "task": "This is a review of a restaurant. Classify the sentiment."
-            }
+    input_features = [
+        {
+            "name": "review",
+            "type": "text",
+            "preprocessing": {"prompt": {"task": "This is a review of a restaurant. Classify the sentiment."}},
         }
-    }]  # TODO: insert prompt
+    ]  # TODO: insert prompt
     output_features = [
         category_feature(
             name="label",
@@ -189,40 +187,41 @@ def test_llm_zero_shot_classification(tmpdir, backend):
     ],
 )
 def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_4cpu):
-    input_features = [text_feature(
-        output_feature=False, 
-        name="body",
-        encoder={"type": "passthrough"},  # need to use the default encoder for LLMTextInputFeatureConfig
-        preprocessing={
-            "prompt": {
-                "retrieval": {
-                    "type": "semantic",
-                    "model_name": "multi-qa-MiniLM-L6-cos-v1",
-                    "k": 5
-                },
-                "task": (
-                    "Given the sample input, complete this sentence by replacing XXXX: The review rating is XXXX. "
-                    "Choose one value in this list: [1, 2, 3, 4, 5].")
-            }
-        }
-    )]
-    output_features = [category_feature(
-        output_feature=True, 
-        name="label", 
-        preprocessing={
-            "fallback_label": "3",
-        },
-        decoder={
-            "type": "category_parser",
-            "match": {
-                "1": {"type": "contains", "value": "1"},
-                "2": {"type": "contains", "value": "2"},
-                "3": {"type": "contains", "value": "3"},
-                "4": {"type": "contains", "value": "4"},
-                "5": {"type": "contains", "value": "5"},
+    input_features = [
+        text_feature(
+            output_feature=False,
+            name="body",
+            encoder={"type": "passthrough"},  # need to use the default encoder for LLMTextInputFeatureConfig
+            preprocessing={
+                "prompt": {
+                    "retrieval": {"type": "semantic", "model_name": "multi-qa-MiniLM-L6-cos-v1", "k": 5},
+                    "task": (
+                        "Given the sample input, complete this sentence by replacing XXXX: The review rating is XXXX. "
+                        "Choose one value in this list: [1, 2, 3, 4, 5]."
+                    ),
+                }
             },
-        },
-    )]
+        )
+    ]
+    output_features = [
+        category_feature(
+            output_feature=True,
+            name="label",
+            preprocessing={
+                "fallback_label": "3",
+            },
+            decoder={
+                "type": "category_parser",
+                "match": {
+                    "1": {"type": "contains", "value": "1"},
+                    "2": {"type": "contains", "value": "2"},
+                    "3": {"type": "contains", "value": "3"},
+                    "4": {"type": "contains", "value": "4"},
+                    "5": {"type": "contains", "value": "5"},
+                },
+            },
+        )
+    ]
 
     config = {
         MODEL_TYPE: MODEL_LLM,
@@ -231,23 +230,21 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
         PREPROCESSING: {
-            "split": {
-                "type": "fixed"
-            },
+            "split": {"type": "fixed"},
         },
     }
-    
+
     dataset_path = generate_data(
-        input_features, 
-        output_features, 
-        filename=csv_filename, 
-        num_examples=25, 
-        nan_percent=0.1, 
+        input_features,
+        output_features,
+        filename=csv_filename,
+        num_examples=25,
+        nan_percent=0.1,
         with_split=True,
     )
     # ensure that the sample labels match the output feature
     df = pd.read_csv(dataset_path)
-    df['label'] = np.random.choice([1, 2, 3, 4, 5], size=len(df)).astype(str)
+    df["label"] = np.random.choice([1, 2, 3, 4, 5], size=len(df)).astype(str)
     df.to_csv(dataset_path, index=False)
 
     model = LudwigModel(config, backend={**backend, "cache_dir": str(tmpdir)})

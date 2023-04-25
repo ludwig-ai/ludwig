@@ -1,34 +1,30 @@
 import json
-import uuid
 import string
+import uuid
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional
 
 import pandas as pd
 
 from ludwig.data.dataframe.base import DataFrameEngine
-from ludwig.models.retrieval import RetrievalModel, get_retrieval_model
+from ludwig.models.retrieval import get_retrieval_model, RetrievalModel
 from ludwig.utils.fs_utils import get_default_cache_location
 from ludwig.utils.types import Series
 
-
-DEFAULT_ZERO_SHOT_PROMPT_TEMPLATE = (
-"""SAMPLE INPUT: {sample_input}
+DEFAULT_ZERO_SHOT_PROMPT_TEMPLATE = """SAMPLE INPUT: {sample_input}
 
 USER: Complete the following task: {task}
 
 ASSISTANT:
 """
-)
 
 
-DEFAULT_FEW_SHOT_PROMPT_TEMPLATE = (
-"""Below is relevant context:
+DEFAULT_FEW_SHOT_PROMPT_TEMPLATE = """Below is relevant context:
 
 CONTEXT: {context}
 
-The context is comprised of labeled samples whose embeddings were similar to that of the sample input. The labels in 
-these samples could aid you in your final prediction. Given this context and no prior knowledge, follow the instructions 
+The context is comprised of labeled samples whose embeddings were similar to that of the sample input. The labels in
+these samples could aid you in your final prediction. Given this context and no prior knowledge, follow the instructions
 below.
 
 SAMPLE INPUT: {sample_input}
@@ -37,7 +33,6 @@ USER: Complete the following task: {task}
 
 ASSISTANT:
 """
-)
 
 
 def index_column(
@@ -48,11 +43,11 @@ def index_column(
     split_col: Optional[Series] = None,
 ):
     retrieval_model = get_retrieval_model(
-        retrieval_config['type'], 
-        model_name=retrieval_config['model_name'],
+        retrieval_config["type"],
+        model_name=retrieval_config["model_name"],
     )
 
-    index_name = retrieval_config['index_name']
+    index_name = retrieval_config["index_name"]
     index_cache_directory = get_default_cache_location()
     if index_name is None:
         if split_col is None:
@@ -80,7 +75,7 @@ def format_input_with_prompt(
 ) -> Series:
     """Returns a new Series with the input column data formatted with the prompt."""
     is_few_shot = search_fn is not None
-    
+
     # function for retrieving the context for a given sample.
     # If `search_fn` is not provided, context is omitted.
     if is_few_shot:
@@ -131,11 +126,7 @@ def generate_prompt(
 ):
     # TODO(geoffrey): figure out how to inject feature information into the prompt
     # TODO(geoffrey): figure out how to use {{x}} notation in the YAML file (probably needs regex)
-    prompt = template.format(
-        context=context_fn(entry), 
-        sample_input=sample_input_fn(entry), 
-        task=task_fn(entry)
-    )
+    prompt = template.format(context=context_fn(entry), sample_input=sample_input_fn(entry), task=task_fn(entry))
     return prompt
 
 

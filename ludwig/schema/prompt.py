@@ -13,7 +13,7 @@ class RetrievalConfig(schema_utils.BaseMarshmallowConfig):
         allow_none=True,
         description="The type of retrieval to use for the prompt.",
     )
-    
+
     index_name: str = schema_utils.String(
         default=None,
         allow_none=True,
@@ -53,7 +53,7 @@ class PromptConfig(schema_utils.BaseMarshmallowConfig):
         allow_none=True,
         description="The task to use for the prompt.",
     )
-    
+
     template: str = schema_utils.String(
         default=None,
         allow_none=True,
