@@ -1,14 +1,13 @@
 import pytest
 import torch
 
+from ludwig.distributed import init_dist_strategy
 from ludwig.modules import metric_modules
 from ludwig.schema.features.loss.loss import (
     BWCEWLossConfig,
     SigmoidCrossEntropyLossConfig,
     SoftmaxCrossEntropyLossConfig,
 )
-from ludwig.distributed import init_dist_strategy
-
 
 # Required for local testing.
 init_dist_strategy("local")
