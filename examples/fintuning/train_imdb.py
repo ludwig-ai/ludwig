@@ -26,9 +26,9 @@ output_features:
       type: category
 
 trainer:
-    batch_size: 128
-    eval_batch_size: 128
-    epochs: 10
+    batch_size: 1024
+    # eval_batch_size: 128
+    epochs: 1
 
 backend:
     # type: deepspeed

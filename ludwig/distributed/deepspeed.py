@@ -5,10 +5,12 @@ from typing import Any, Dict, Optional, Tuple, TYPE_CHECKING
 import deepspeed
 import deepspeed.comm
 import torch
+from deepspeed.utils.zero_to_fp32 import get_fp32_state_dict_from_zero_checkpoint
 from torch import nn
 from torch.optim.optimizer import Optimizer
 
 from ludwig.distributed.ddp import DDPStrategy
+from ludwig.utils.checkpoint_utils import Checkpoint
 
 if TYPE_CHECKING:
     from ludwig.modules.lr_scheduler import LRScheduler
@@ -128,3 +130,31 @@ class DeepSpeedStrategy(DDPStrategy):
         # TODO(travis): remove this when DeepSpeed resolves issue:
         # https://github.com/microsoft/DeepSpeed/issues/3068
         pass
+
+    def create_checkpoint_handle(
+        self, model: nn.Module, optimizer: Optional[Optimizer] = None, scheduler: Optional[LRScheduler] = None
+    ) -> Checkpoint:
+        return DeepSpeedCheckpoint(model, optimizer, scheduler)
+
+
+class DeepSpeedCheckpoint(Checkpoint):
+    def load(self, save_path: str, device: Optional[torch.device] = None) -> bool:
+        _, client_state = self.model.load_checkpoint(save_path, load_lr_scheduler_states=False)
+        self.global_step = self._get_global_step(client_state, save_path)
+        if self.scheduler is not None and "scheduler_state" in client_state:
+            self.scheduler.load_state_dict(client_state["scheduler_state"])
+        return True
+
+    def save(self, save_path: str, global_step: int):
+        client_state = {
+            "global_step": global_step,
+        }
+        if self.scheduler is not None:
+            client_state["scheduler_state"] = self.scheduler.state_dict()
+        self.model.save_checkpoint(save_path, client_state=client_state)
+
+    def load_for_inference(self, save_path: str, model: nn.Module, device: Optional[torch.device] = None) -> nn.Module:
+        state_dict = get_fp32_state_dict_from_zero_checkpoint(save_path)
+        model = model.cpu()
+        model.load_state_dict(state_dict)
+        return model

@@ -5,6 +5,7 @@ from typing import Any, Callable, Dict, Optional, Tuple, Type, TYPE_CHECKING
 import torch
 from torch import nn
 from torch.optim import Optimizer
+from ludwig.utils.checkpoint_utils import Checkpoint, CoordinatorCheckpoint
 
 from ludwig.utils.torch_utils import get_torch_device
 
@@ -60,6 +61,9 @@ class DistributedStrategy(ABC):
     @abstractmethod
     def local_rank(self) -> int:
         pass
+
+    def is_coordinator(self) -> bool:
+        return self.rank() == 0
 
     @abstractmethod
     def barrier(self):
@@ -150,6 +154,11 @@ class DistributedStrategy(ABC):
 
     def eval(self, model: nn.Module):
         model.eval()
+
+    def create_checkpoint_handle(
+        self, model: nn.Module, optimizer: Optional[Optimizer] = None, scheduler: Optional[LRScheduler] = None
+    ) -> Checkpoint:
+        return CoordinatorCheckpoint(model, optimizer, scheduler)
 
 
 class LocalStrategy(DistributedStrategy):

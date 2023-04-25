@@ -400,7 +400,9 @@ class Trainer(BaseTrainer):
         evaluator = self._create_batch_size_evaluator()
         with tempfile.TemporaryDirectory() as tmpdir:
             if snapshot_weights:
-                checkpoint = Checkpoint(model=self.dist_model, optimizer=self.optimizer, scheduler=self.scheduler)
+                checkpoint = self.distributed.create_checkpoint_handle(
+                    model=self.dist_model, optimizer=self.optimizer, scheduler=self.scheduler
+                )
                 checkpoint.save(os.path.join(tmpdir, "latest.ckpt"), global_step=0)
             try:
                 best_batch_size = evaluator.select_best_batch_size(len(training_set), max_batch_size, max_trials)
@@ -453,6 +455,7 @@ class Trainer(BaseTrainer):
         loss: torch.Tensor,
         all_losses: Dict[str, torch.Tensor],
         early_stopping_steps: int,
+        checkpoint_manager: CheckpointManager,
     ) -> bool:
         """Runs evaluation over training, validation, and test sets.
 
@@ -560,11 +563,13 @@ class Trainer(BaseTrainer):
                 self.increase_batch_size_eval_split,
                 early_stopping_steps,
                 self.skip_save_model,
+                checkpoint_manager,
             )
         else:
             # There's no validation, so we save the model.
-            if self.is_coordinator() and not self.skip_save_model:
-                self.model.save(save_path)
+            if not self.skip_save_model:
+                logger.info("Saving model.\n")
+                checkpoint_manager.save_best(progress_tracker.steps)
 
         # Trigger eval end callback after any model weights save for complete checkpoint
         self.callback(lambda c: c.on_eval_end(self, progress_tracker, save_path))
@@ -611,8 +616,10 @@ class Trainer(BaseTrainer):
 
         # ====== Setup session =======
         checkpoint_manager = None
-        checkpoint = Checkpoint(model=self.dist_model, optimizer=self.optimizer, scheduler=self.scheduler)
-        if self.is_coordinator() and not self.skip_save_progress:
+        checkpoint = self.distributed.create_checkpoint_handle(
+            model=self.dist_model, optimizer=self.optimizer, scheduler=self.scheduler
+        )
+        if not self.skip_save_progress:
             checkpoint_manager = CheckpointManager(checkpoint, training_checkpoints_path, device=self.device)
 
         # ====== Setup Tensorboard writers =======
@@ -745,8 +752,9 @@ class Trainer(BaseTrainer):
                             f"Epoch {progress_tracker.epoch} took: "
                             f"{time_utils.strdelta((time.time() - start_time) * 1000.0)}."
                         )
-                        if not self.skip_save_progress:
-                            checkpoint_manager.save(progress_tracker.steps)
+                    if not self.skip_save_progress:
+                        checkpoint_manager.save(progress_tracker.steps)
+                        if self.is_coordinator():
                             progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
 
                     # Early stop if needed.
@@ -766,12 +774,12 @@ class Trainer(BaseTrainer):
             if test_summary_writer is not None:
                 test_summary_writer.close()
 
-            if self.is_coordinator() and not self.skip_save_progress:
+            if not self.skip_save_progress:
                 checkpoint_manager.close()
 
         # Load the best weights from saved checkpoint
         if self.is_coordinator() and not self.skip_save_model:
-            self.model.load(save_path)
+            self.model = checkpoint_manager.load_best_checkpoint_for_inference(self.model)
 
         # restore original sigint signal handler
         if self.original_sigint_handler and threading.current_thread() == threading.main_thread():
@@ -800,7 +808,7 @@ class Trainer(BaseTrainer):
         model_hyperparameters_path,
         output_features,
         metrics_names,
-        checkpoint_manager,
+        checkpoint_manager: CheckpointManager,
         final_steps_per_checkpoint: int,
         early_stopping_steps: int,
     ) -> bool:
@@ -860,9 +868,10 @@ class Trainer(BaseTrainer):
 
             if progress_tracker.steps % final_steps_per_checkpoint == 0:
                 # Checkpoint the model.
-                if self.is_coordinator() and not self.skip_save_progress:
+                if not self.skip_save_progress:
                     checkpoint_manager.save(progress_tracker.steps)
-                    progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
+                    if self.is_coordinator():
+                        progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
 
                 should_break = self.run_evaluation(
                     training_set,
@@ -879,6 +888,7 @@ class Trainer(BaseTrainer):
                     loss,
                     all_losses,
                     early_stopping_steps,
+                    checkpoint_manager,
                 )
                 if should_break:
                     return should_break
@@ -961,6 +971,7 @@ class Trainer(BaseTrainer):
         increase_batch_size_eval_split,
         early_stopping_steps: int,
         skip_save_model,
+        checkpoint_manager: CheckpointManager,
     ) -> bool:
         """Checks the history of validation scores.
 
@@ -1021,7 +1032,7 @@ class Trainer(BaseTrainer):
                 # Save the model.
                 if not skip_save_model:
                     logger.info("New best model saved.\n")
-                    self.model.save(save_path)
+                    checkpoint_manager.save_best(progress_tracker.steps)
 
         last_improvement_in_steps = progress_tracker.steps - progress_tracker.best_eval_metric_steps
         progress_tracker.last_improvement_steps = last_improvement_in_steps

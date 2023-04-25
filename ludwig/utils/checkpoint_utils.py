@@ -3,15 +3,17 @@
 https://gist.github.com/kevinzakka/5d345421f7abefd5dbaf6a77f829e70a.
 """
 
+from abc import ABC, abstractmethod
 import logging
 import os
 import re
 import signal
 import tempfile
 from glob import glob
-from typing import Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 import torch
+from torch import nn
 from torch.optim import Optimizer
 
 from ludwig.api_annotations import DeveloperAPI
@@ -19,8 +21,13 @@ from ludwig.models.base import BaseModel
 from ludwig.modules.lr_scheduler import LRScheduler
 from ludwig.utils.fs_utils import safe_move_file
 
+if TYPE_CHECKING:
+    from ludwig.distributed.base import DistributedStrategy
+
+
 logger = logging.getLogger(__name__)
-LATEST_FNAME = "latest.ckpt"
+LATEST = "latest"
+BEST = "best"
 
 
 @DeveloperAPI
@@ -52,7 +59,7 @@ def get_files(d, pattern, sort=True):
 
 @DeveloperAPI
 def get_latest_checkpoint_path(directory: str) -> str:
-    latest_path = os.path.join(directory, LATEST_FNAME)
+    latest_path = os.path.join(directory, f"{LATEST}.ckpt")
     if os.path.exists(latest_path):
         return latest_path
 
@@ -65,28 +72,56 @@ def get_latest_checkpoint_path(directory: str) -> str:
 
 
 @DeveloperAPI
-class Checkpoint:
+class Checkpoint(ABC):
     """Save and restore model and optimizer states."""
 
     def __init__(
-        self, model: BaseModel, optimizer: Optional[Optimizer] = None, scheduler: Optional[LRScheduler] = None
+        self,
+        distributed: "DistributedStrategy",
+        model: BaseModel,
+        optimizer: Optional[Optimizer] = None,
+        scheduler: Optional[LRScheduler] = None,
     ):
         """Constructor."""
+        self.distributed = distributed
         self.model = model
         self.optimizer = optimizer
         self.scheduler = scheduler
         self.global_step = 0
 
-    def restore(self, save_path: str, device: Optional[torch.device] = None) -> bool:
-        """Restore a state from a saved checkpoint.
+    @abstractmethod
+    def load(self, save_path: str, device: Optional[torch.device] = None) -> bool:
+        pass
+
+    @abstractmethod
+    def load_for_inference(self, save_path: str, model: nn.Module) -> bool:
+        pass
+
+    @abstractmethod
+    def save(self, save_path: str, global_step: int):
+        pass
+
+    def _get_global_step(self, state: Dict[str, Any], save_path: str) -> int:
+        global_step = state.get("global_step")
+        if global_step is None:
+            # Legacy step detection for older checkpoint format which encoded the
+            # step number in the checkpoint filename.
+            return int(os.path.basename(save_path).split(".")[0])
+        return global_step
+
+
+@DeveloperAPI
+class CoordinatorCheckpoint(Checkpoint):
+    def load(self, save_path: str, device: Optional[torch.device] = None) -> bool:
+        """Load state from a saved checkpoint.
 
         Args:
           save_path (str): The filepath to the saved checkpoint.
           device (torch.device): The device on which to
-            restore the state.
+            load the state.
 
         Returns:
-          True if the checkpoint was sucessfully restored, False if the checkpoint file
+          True if the checkpoint was sucessfully loaded, False if the checkpoint file
             could not be found.
         """
         try:
@@ -112,6 +147,11 @@ class Checkpoint:
             logger.error(e)
             return False
 
+    def load_for_inference(self, save_path: str, model: nn.Module, device: Optional[torch.device] = None) -> nn.Module:
+        state = torch.load(save_path, map_location=device)
+        model.load_state_dict(state["model_weights"])
+        return model
+
     def save(self, save_path: str, global_step: int):
         """Save a state to disk.
 
@@ -122,6 +162,9 @@ class Checkpoint:
           global_step (int): The iteration number which will be used
              to name the checkpoint.
         """
+        if not self.distributed.is_coordinator():
+            return
+
         state = {
             "global_step": global_step,
             "model_weights": self.model.state_dict(),
@@ -156,14 +199,6 @@ class Checkpoint:
             if orig_handler is not None:
                 signal.signal(signal.SIGINT, orig_handler)
 
-    def _get_global_step(self, state: Dict[str, Any], save_path: str) -> int:
-        global_step = state.get("global_step")
-        if global_step is None:
-            # Legacy step detection for older checkpoint format which encoded the
-            # step number in the checkpoint filename.
-            return int(os.path.basename(save_path).split(".")[0])
-        return global_step
-
 
 @DeveloperAPI
 class CheckpointManager:
@@ -196,7 +231,7 @@ class CheckpointManager:
         """
         last_ckpt = get_latest_checkpoint_path(self.directory)
         if last_ckpt:
-            status = self.checkpoint.restore(last_ckpt, self.device)
+            status = self.checkpoint.load(last_ckpt, self.device)
             if not status:
                 logger.warning("Could not restore latest checkpoint file.")
                 return 0
@@ -204,16 +239,32 @@ class CheckpointManager:
             return self.checkpoint.global_step
         return 0
 
-    def save(self, global_step: int):
+    def save(self, global_step: int, tag: str = LATEST):
         """Create a new checkpoint.
 
         Args:
            global_step (int): The iteration number which will be used
              to name the checkpoint.
         """
-        save_path = os.path.join(self.directory, LATEST_FNAME)
+        save_path = os.path.join(self.directory, f"{tag}.ckpt")
         self.checkpoint.save(save_path, global_step)
         self.latest_checkpoint = save_path
+
+    def save_best(self, global_step: int):
+        self.save(global_step, BEST)
+
+    def load(self, tag: str = LATEST):
+        """Load a checkpoint.
+
+        Args:
+          tag (str): The tag of the checkpoint to load.
+        """
+        save_path = os.path.join(self.directory, f"{tag}.ckpt")
+        self.checkpoint.load(save_path, self.device)
+
+    def load_best_checkpoint_for_inference(self, model: nn.Module) -> nn.Module:
+        save_path = os.path.join(self.directory, f"{BEST}.ckpt")
+        return self.checkpoint.load_for_inference(save_path, model, self.device)
 
     def close(self):
         pass
@@ -222,6 +273,6 @@ class CheckpointManager:
     def load_latest_checkpoint(checkpoint: Checkpoint, directory: str, device: torch.device):
         last_ckpt = get_latest_checkpoint_path(directory)
         if last_ckpt:
-            checkpoint.restore(last_ckpt, device)
+            checkpoint.load(last_ckpt, device)
         else:
             logger.error(f"No checkpoints found in {directory}.")
