@@ -605,22 +605,19 @@ class Trainer(BaseTrainer):
                 test_summary_writer = SummaryWriter(os.path.join(tensorboard_log_dir, TEST))
 
         # ================ Resume logic ================
-        if self.is_coordinator():
-            if self.resume and self.resume_files_exist(training_progress_tracker_path, training_checkpoints_path):
-                logger.info("Resuming training from previous run.")
-                progress_tracker = self.resume_training_progress_tracker(training_progress_tracker_path)
-                self.resume_weights_and_optimizer(training_checkpoints_path, checkpoint)
-            else:
-                logger.info("Creating fresh model training run.")
-                progress_tracker = get_new_progress_tracker(
-                    batch_size=self.batch_size,
-                    learning_rate=self.base_learning_rate,
-                    best_eval_metric_value=get_initial_validation_value(self.validation_metric),
-                    best_increase_batch_size_eval_metric=get_initial_validation_value(
-                        self.increase_batch_size_eval_metric
-                    ),
-                    output_features=output_features,
-                )
+        if self.resume and self.resume_files_exist(training_progress_tracker_path, training_checkpoints_path):
+            logger.info("Resuming training from previous run.")
+            progress_tracker = self.resume_training_progress_tracker(training_progress_tracker_path)
+            self.resume_weights_and_optimizer(training_checkpoints_path, checkpoint)
+        else:
+            logger.info("Creating fresh model training run.")
+            progress_tracker = get_new_progress_tracker(
+                batch_size=self.batch_size,
+                learning_rate=self.base_learning_rate,
+                best_eval_metric_value=get_initial_validation_value(self.validation_metric),
+                best_increase_batch_size_eval_metric=get_initial_validation_value(self.increase_batch_size_eval_metric),
+                output_features=output_features,
+            )
 
         # Distributed: broadcast initial variable states from rank 0 to all other processes.
         # This is necessary to ensure consistent initialization of all workers when
@@ -1081,20 +1078,18 @@ class Trainer(BaseTrainer):
         training_progress_tracker_path: str,
         training_checkpoint_path: str,
     ) -> bool:
-        if self.is_coordinator():
-            missing_files = []
-            # training_progress.json
-            if not path_exists(training_progress_tracker_path):
-                missing_files.append(training_progress_tracker_path)
-            # latest.ckpt in training_checkpoints/
-            latest_ckpt = os.path.join(training_checkpoint_path, "latest.ckpt")
-            if not path_exists(latest_ckpt):
-                missing_files.append(latest_ckpt)
-            if missing_files:
-                logger.warning(f"Could not find {missing_files} while trying to resume model training.")
-                return False
-            return True
-        return False
+        missing_files = []
+        # training_progress.json
+        if not path_exists(training_progress_tracker_path):
+            missing_files.append(training_progress_tracker_path)
+        # latest.ckpt in training_checkpoints/
+        latest_ckpt = os.path.join(training_checkpoint_path, "latest.ckpt")
+        if not path_exists(latest_ckpt):
+            missing_files.append(latest_ckpt)
+        if missing_files:
+            logger.warning(f"Could not find {missing_files} while trying to resume model training.")
+            return False
+        return True
 
     def resume_training_progress_tracker(self, training_progress_tracker_path):
         progress_tracker_dict = None
