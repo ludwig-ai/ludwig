@@ -93,10 +93,6 @@ from ludwig.utils.torch_utils import sequence_length_2D
 logger = logging.getLogger(__name__)
 
 
-def _gather_all_tensors_fn() -> Optional[Callable]:
-    get_current_dist_strategy().gather_all_tensors_fn()
-
-
 class LudwigMetric(Metric, ABC):
     @classmethod
     def can_report(cls, feature: "OutputFeature") -> bool:  # noqa: F821
@@ -130,7 +126,7 @@ class RMSEMetric(MeanSquaredError, LudwigMetric):
     """Root mean squared error metric."""
 
     def __init__(self, **kwargs):
-        super().__init__(squared=False, dist_sync_fn=_gather_all_tensors_fn(), **kwargs)
+        super().__init__(squared=False, **kwargs)
 
 
 @register_metric(PRECISION, [BINARY], MAXIMIZE, PROBABILITIES)
@@ -138,7 +134,7 @@ class PrecisionMetric(BinaryPrecision, LudwigMetric):
     """Precision metric."""
 
     def __init__(self, **kwargs):
-        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
+        super().__init__()
 
 
 @register_metric(RECALL, [BINARY], MAXIMIZE, PROBABILITIES)
@@ -146,7 +142,7 @@ class RecallMetric(BinaryRecall, LudwigMetric):
     """Recall metric."""
 
     def __init__(self, **kwargs):
-        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
+        super().__init__()
 
 
 @register_metric(ROC_AUC, [BINARY], MAXIMIZE, PROBABILITIES)
@@ -154,7 +150,7 @@ class BinaryAUROCMetric(BinaryAUROC, LudwigMetric):
     """Area under the receiver operating curve."""
 
     def __init__(self, **kwargs):
-        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
+        super().__init__()
 
     def update(self, preds: Tensor, target: Tensor) -> None:
         super().update(preds, target.type(torch.int8))
@@ -165,7 +161,7 @@ class CategoryAUROCMetric(MulticlassAUROC, LudwigMetric):
     """Area under the receiver operating curve."""
 
     def __init__(self, num_classes: int, **kwargs):
-        super().__init__(num_classes=num_classes, dist_sync_fn=_gather_all_tensors_fn())
+        super().__init__(num_classes=num_classes)
 
     def update(self, preds: Tensor, target: Tensor) -> None:
         if len(target.shape) > 1:
@@ -178,14 +174,14 @@ class SpecificityMetric(BinarySpecificity, LudwigMetric):
     """Specificity metric."""
 
     def __init__(self, **kwargs):
-        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
+        super().__init__()
 
 
 class MeanMetric(LudwigMetric):
     """Abstract class for computing mean of metrics."""
 
     def __init__(self, **kwargs):
-        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
+        super().__init__()
         self.avg = _MeanMetric()
 
     def update(self, preds: Tensor, target: Tensor) -> None:
@@ -206,7 +202,7 @@ class MeanMetric(LudwigMetric):
 @register_metric(ROOT_MEAN_SQUARED_PERCENTAGE_ERROR, [NUMBER], MINIMIZE, PREDICTIONS)
 class RMSPEMetric(MeanMetric):
     def __init__(self, **kwargs):
-        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
+        super().__init__()
 
     """ Root mean squared percentage error metric. """
 
@@ -334,7 +330,7 @@ class SigmoidCrossEntropyMetric(LossMetric):
 @register_metric(TOKEN_ACCURACY, [SEQUENCE, TEXT], MAXIMIZE, PREDICTIONS)
 class TokenAccuracyMetric(MeanMetric):
     def __init__(self, **kwargs):
-        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
+        super().__init__()
 
     def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
         target = target.type(preds.dtype)
@@ -346,7 +342,7 @@ class TokenAccuracyMetric(MeanMetric):
 @register_metric(SEQUENCE_ACCURACY, [SEQUENCE, TEXT], MAXIMIZE, PREDICTIONS)
 class SequenceAccuracyMetric(MeanMetric):
     def __init__(self, **kwargs):
-        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
+        super().__init__()
 
     def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
         return torch.sum(torch.all(preds == target, dim=1)) / target.size()[0]
@@ -355,7 +351,7 @@ class SequenceAccuracyMetric(MeanMetric):
 @register_metric(PERPLEXITY, [SEQUENCE, TEXT], MINIMIZE, PROBABILITIES)
 class PerplexityMetric(Perplexity, LudwigMetric):
     def __init__(self, **kwargs):
-        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
+        super().__init__()
 
     def update(self, preds: Tensor, target: Tensor) -> None:
         super().update(preds, target.type(torch.int64))
@@ -364,7 +360,7 @@ class PerplexityMetric(Perplexity, LudwigMetric):
 @register_metric("char_error_rate", [SEQUENCE, TEXT], MINIMIZE, PREDICTIONS)
 class CharErrorRateMetric(CharErrorRate, LudwigMetric):
     def __init__(self, **kwargs):
-        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
+        super().__init__()
 
 
 @register_metric(ACCURACY, [BINARY], MAXIMIZE, PREDICTIONS)
@@ -372,13 +368,13 @@ class Accuracy(BinaryAccuracy, LudwigMetric):
     """R-squared metric."""
 
     def __init__(self, **kwargs):
-        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
+        super().__init__()
 
 
 @register_metric(ACCURACY, [CATEGORY, CATEGORY_DISTRIBUTION], MAXIMIZE, PREDICTIONS)
 class CategoryAccuracy(MulticlassAccuracy, LudwigMetric):
     def __init__(self, num_classes: int, **kwargs):
-        super().__init__(num_classes=num_classes, dist_sync_fn=_gather_all_tensors_fn(), average="micro")
+        super().__init__(num_classes=num_classes)
 
     def update(self, preds: Tensor, target: Tensor) -> None:
         if len(target.shape) > 1:
@@ -389,7 +385,7 @@ class CategoryAccuracy(MulticlassAccuracy, LudwigMetric):
 @register_metric(HITS_AT_K, [CATEGORY, CATEGORY_DISTRIBUTION], MAXIMIZE, LOGITS)
 class HitsAtKMetric(MulticlassAccuracy, LudwigMetric):
     def __init__(self, num_classes: int, top_k: int, **kwargs):
-        super().__init__(num_classes=num_classes, top_k=top_k, dist_sync_fn=_gather_all_tensors_fn(), **kwargs)
+        super().__init__(num_classes=num_classes, top_k=top_k, **kwargs)
 
     def update(self, preds: Tensor, target: Tensor) -> None:
         if len(target.shape) > 1:
@@ -404,7 +400,7 @@ class HitsAtKMetric(MulticlassAccuracy, LudwigMetric):
 @register_metric(MEAN_ABSOLUTE_ERROR, [NUMBER, VECTOR, TIMESERIES], MINIMIZE, PREDICTIONS)
 class MAEMetric(MeanAbsoluteError, LudwigMetric):
     def __init__(self, **kwargs):
-        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
+        super().__init__()
 
     def update(self, preds: Tensor, target: Tensor) -> None:
         super().update(preds.detach(), target)
@@ -413,7 +409,7 @@ class MAEMetric(MeanAbsoluteError, LudwigMetric):
 @register_metric(MEAN_SQUARED_ERROR, [NUMBER, VECTOR, TIMESERIES], MINIMIZE, PREDICTIONS)
 class MSEMetric(MeanSquaredError, LudwigMetric):
     def __init__(self, **kwargs):
-        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
+        super().__init__()
 
     def update(self, preds: Tensor, target: Tensor) -> None:
         super().update(preds, target)
@@ -422,7 +418,7 @@ class MSEMetric(MeanSquaredError, LudwigMetric):
 @register_metric(MEAN_ABSOLUTE_PERCENTAGE_ERROR, [NUMBER, VECTOR, TIMESERIES], MINIMIZE, PREDICTIONS)
 class MAPEMetric(MeanAbsolutePercentageError, LudwigMetric):
     def __init__(self, **kwargs):
-        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
+        super().__init__()
 
     def update(self, preds: Tensor, target: Tensor) -> None:
         super().update(preds, target)
@@ -431,7 +427,7 @@ class MAPEMetric(MeanAbsolutePercentageError, LudwigMetric):
 @register_metric(JACCARD, [SET], MAXIMIZE, PROBABILITIES)
 class JaccardMetric(MeanMetric):
     def __init__(self, threshold: float = 0.5, **kwargs):
-        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
+        super().__init__()
         self.threshold = threshold
 
     def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
