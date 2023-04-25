@@ -1207,7 +1207,7 @@ def build_dataset(
         preprocessing_parameters = feature_name_to_preprocessing_parameters[feature_config[NAME]]
         handle_missing_values(dataset_cols, feature_config, preprocessing_parameters, backend)
 
-    # update input features with prompt configs during preprocessing (as opposed to during the model forward pass) 
+    # update input features with prompt configs during preprocessing (as opposed to during the model forward pass)
     # so that we can compute metadata and build the dataset correctly.
     logger.debug("handle text features with prompt parameters")
     handle_features_with_prompt_config(
@@ -1708,7 +1708,7 @@ def handle_features_with_prompt_config(
             input_col_name = input_feature_config[COLUMN]
 
             if prompt_config["retrieval"]["type"] is not None:
-                # Ensure that the output features are in the dataset columns saved as part of the index 
+                # Ensure that the output features are in the dataset columns saved as part of the index
                 # so that they can be retrieved later at lookup time.
                 output_feature_col_names = [output_feature_config[COLUMN] for output_feature_config in output_features]
                 input_and_output_col_names = [input_col_name] + output_feature_col_names
