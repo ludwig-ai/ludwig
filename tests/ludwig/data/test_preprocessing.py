@@ -1,9 +1,10 @@
 import pytest
 
-from ludwig.constants import ASSISTANT, CONTEXT, NAME, SAMPLE_INPUT, USER
+from ludwig.constants import NAME
 from ludwig.data.dataframe.pandas import PandasEngine
 from ludwig.data.dataframe.dask import DaskEngine
 from ludwig.data.preprocessing import handle_features_with_prompt_config, is_input_feature
+from ludwig.schema.prompt import PromptConfig
 from tests.integration_tests.utils import category_feature, generate_data_as_dataframe, text_feature
 
 
@@ -21,19 +22,21 @@ def test_is_input_feature():
         DaskEngine(_use_ray=False),  # testing code path with partitioned data
     ],
 )
-def test_handle_features_with_prompt_config(df_engine):
-    prompt_config = {
+@pytest.mark.parametrize(
+    "retrieval_kwargs", 
+    [
+        {"type": "random", "k": 2},
+        {"type": "semantic", "model_name": "multi-qa-MiniLM-L6-cos-v1", "k": 2},  # TODO: find a smaller model for testing
+    ],
+)
+def test_handle_features_with_few_shot_prompt_config(df_engine, retrieval_kwargs):
+    prompt_config = PromptConfig.from_dict({
         "task": (
             "Given the sample input, complete this sentence by replacing XXXX: "
             "The label is XXXX. Choose one value in this list: [1, 2, 3]."
         ),
-        "retrieval": {
-            "type": "semantic",
-            "index_name": None,
-            "model_name": "multi-qa-MiniLM-L6-cos-v1",  # TODO(geoffrey): find a smaller model for testing
-            "k": 2,
-        },
-    }
+        "retrieval": retrieval_kwargs,
+    }).to_dict()  # convert back-and-forth to validate and add defaults
 
     input_features = [
         text_feature(
@@ -78,7 +81,3 @@ def test_handle_features_with_prompt_config(df_engine):
         # labeled samples are provided by the context
         assert input_feature_name in prompt
         assert output_feature_name in prompt
-        assert CONTEXT in prompt
-        assert SAMPLE_INPUT in prompt
-        assert USER in prompt
-        assert ASSISTANT in prompt

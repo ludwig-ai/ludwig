@@ -14,30 +14,21 @@
 # limitations under the License.
 # ==============================================================================
 import contextlib
-import json
 import logging
-import re
-import uuid
 import warnings
 from abc import ABC, abstractmethod
-from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
 import torch
-from tqdm import tqdm
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend import Backend, LOCAL_BACKEND
 from ludwig.constants import (
-    ASSISTANT,
     BFILL,
-    CATEGORY,
     CHECKSUM,
     COLUMN,
-    CONTEXT,
-    DECODER,
     DEFAULTS,
     DROP_ROW,
     ENCODER,
@@ -55,14 +46,11 @@ from ludwig.constants import (
     NUMBER,
     PREPROCESSING,
     PROC_COLUMN,
-    SAMPLE_INPUT,
     SPLIT,
     SRC,
     TEST,
-    TEXT,
     TRAINING,
     TYPE,
-    USER,
     VALIDATION,
 )
 from ludwig.data.cache.manager import DatasetCache
@@ -70,12 +58,12 @@ from ludwig.data.cache.types import wrap
 from ludwig.data.concatenate_datasets import concatenate_df, concatenate_files, concatenate_splits
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataset.base import Dataset
+from ludwig.data.prompt import format_input_with_prompt, get_search_fn, index_column
 from ludwig.data.split import get_splitter, split_dataset
-from ludwig.data.utils import set_fixed_split
+from ludwig.data.utils import set_fixed_split, get_input_and_output_features
 from ludwig.datasets import load_dataset_uris
 from ludwig.features.feature_registries import get_base_type_registry
 from ludwig.models.embedder import create_embed_batch_size_evaluator, create_embed_transform_fn
-from ludwig.models.retrieval import get_retrieval_model, RetrievalModel
 from ludwig.schema.encoders.utils import get_encoder_cls
 from ludwig.types import FeatureConfigDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils import data_utils, strings_utils
@@ -127,7 +115,7 @@ from ludwig.utils.defaults import (
     default_random_seed,
     default_training_preprocessing_parameters,
 )
-from ludwig.utils.fs_utils import file_lock, get_default_cache_location, path_exists
+from ludwig.utils.fs_utils import file_lock, path_exists
 from ludwig.utils.misc_utils import get_from_registry, merge_dict
 from ludwig.utils.types import DataFrame, Series
 
@@ -1701,32 +1689,26 @@ def handle_features_with_prompt_config(
         # If we're using LLMs for zero-shot/few-shot learning, update text input features with the prompt
         # ahead of time so that we can compute metadata and build the preprocessed data correctly.
         input_feature_preprocessing_parameters = feature_name_to_preprocessing_parameters[input_feature_config[NAME]]
-        if input_feature_preprocessing_parameters.get("prompt", False):
-            prompt_config = input_feature_preprocessing_parameters["prompt"]
+        if input_feature_preprocessing_parameters['prompt']['task'] is not None:
+            prompt_config = input_feature_preprocessing_parameters['prompt']
             input_col_name = input_feature_config[COLUMN]
             input_and_output_col_names = [input_col_name] + output_feature_col_names
             input_and_output_cols = {k: v for k, v in dataset_cols.items() if k in input_and_output_col_names}
 
-            if prompt_config.get("retrieval") is not None:
-                index_cache_directory = get_default_cache_location()
-                retrieval_model, index_name = index_input_col(
-                    prompt_config["retrieval"],
-                    input_col_name=input_col_name,
+            if prompt_config['retrieval']['type'] is not None:
+                retrieval_model, index_name = index_column(
+                    prompt_config['retrieval'],
+                    col_name=input_col_name,
                     dataset_cols=input_and_output_cols,
-                    cache_directory=index_cache_directory,
                     df_engine=df_engine,
                     split_col=split_col,
                 )
                 # NOTE: after indexing the input column, we update the index_name in the prompt config IN PLACE.
                 # This ensures that the preprocessing parameters for this feature have an up-to-date index_name
                 # when the training set metadata is saved.
-                prompt_config["retrieval"]["index_name"] = index_name
+                prompt_config['retrieval']['index_name'] = index_name
 
-                search_fn = partial(
-                    _search_fn,
-                    retrieval_model=retrieval_model,
-                    k=prompt_config["retrieval"]["k"],
-                )
+                search_fn = get_search_fn(retrieval_model, prompt_config['retrieval']['k'])
             else:
                 search_fn = None
 
@@ -1734,147 +1716,11 @@ def handle_features_with_prompt_config(
             dataset_cols[input_col_name] = format_input_with_prompt(
                 input_col_name,
                 input_col,
-                task_str=prompt_config["task"],
+                task_str=prompt_config['task'],
                 df_engine=df_engine,
                 search_fn=search_fn,
+                template=prompt_config['template'],
             )
-
-
-def index_input_col(
-    retrieval_config: Dict[str, Any],
-    input_col_name: str,
-    dataset_cols: Dict[str, Series],
-    cache_directory: str,
-    df_engine: DataFrameEngine,
-    split_col: Optional[Series] = None,
-):
-    retrieval_model = get_retrieval_model(
-        retrieval_config["type"], 
-        model_name=retrieval_config["model_name"],
-    )
-    index_name = retrieval_config["index_name"]
-    if index_name is None:
-        if split_col is None:
-            raise ValueError("split column must be provided if using retrieval")
-        split_col = df_engine.compute(split_col).astype(int)
-
-        df = pd.DataFrame({name: df_engine.compute(col) for name, col in dataset_cols.items()})
-        df = df[split_col == 0]  # Ensures that the index is only built on the training set
-        retrieval_model.create_dataset_index(df, columns_to_index=[input_col_name])
-        index_name = f"embedding_index_{uuid.uuid4()}"
-        retrieval_model.save_index(index_name, cache_directory=cache_directory)
-    else:
-        retrieval_model.load_index(index_name, cache_directory=cache_directory)
-    return retrieval_model, index_name
-
-
-def format_input_with_prompt(
-    input_col_name: str,
-    input_col: Series,
-    task_str: str,
-    df_engine: DataFrameEngine,
-    search_fn: Optional[Callable[[str], List[Dict[str, Any]]]] = None,
-) -> Series:
-    """Returns a new Series with the input column data formatted with the prompt."""
-    # function for retrieving the context for a given sample.
-    # If `search_fn` is not provided, context is omitted.
-    if search_fn is not None:
-        context_fn = partial(get_context, search_fn=search_fn)
-    else:
-        context_fn = lambda _: ""
-
-    # function for getting the sample input. This ensures that only the input_features of a sample are returned
-    sample_input_fn = partial(
-        get_sample_input,
-        input_col_name=input_col_name,
-    )
-
-    # function for getting the task.
-    task_fn = partial(get_task, task_str=task_str)
-
-    # function for generating the prompt (context + sample input + task) for a given sample
-    prompt_fn = partial(
-        generate_prompt,
-        context_fn=context_fn,
-        sample_input_fn=sample_input_fn,
-        task_fn=task_fn,
-    )
-
-    return df_engine.map_objects(input_col, prompt_fn)
-
-
-def get_context(
-    entry: str,
-    search_fn: Callable[[str], List[Dict[str, Any]]],
-):
-    """Returns a string representation of the context retrieved by `search_fn`."""
-    k_samples = search_fn(query=entry)
-    return (
-        f"{CONTEXT}: Below is relevant context. \n{json.dumps(k_samples, indent=2)}\n"
-        f"The context is comprised of labeled samples whose embeddings were "
-        f"similar to that of the sample input. The labels in these samples "
-        f"could aid you in your final prediction. Given this context and no "
-        f"prior knowledge, follow the instructions below.\n\n"
-    )
-
-
-def get_sample_input(
-    entry: str,
-    input_col_name: str,
-):
-    """Returns a string representation of the sample input for the prompt."""
-    return f"{SAMPLE_INPUT}: {json.dumps({input_col_name: entry}, indent=2)}\n\n"
-
-
-def get_task(entry: str, task_str: str):
-    """Returns a string representation of the task for the prompt."""
-    return f"{USER}: Complete the following task: {task_str}\n\n"
-
-
-def generate_prompt(
-    entry: str,
-    context_fn: Callable,
-    sample_input_fn: Callable,
-    task_fn: Callable,
-):
-    prompt = context_fn(entry)
-    # TODO(geoffrey): figure out how to inject feature information into the prompt
-    # TODO(geoffrey): figure out how to use {{x}} notation in the YAML file (probably needs regex)
-    prompt += sample_input_fn(entry)
-    prompt += task_fn(entry)
-    prompt += f"{ASSISTANT}:"
-    return prompt
-
-
-def get_input_and_output_features(feature_configs):
-    """Returns a tuple (input_features, output_features) where each element is a list of feature configs.
-
-    Determines whether a feature is an input or output feature by checking the presence of the encoder or decoder keys.
-    """
-    input_features = []
-    output_features = []
-    for feature in feature_configs:
-        if ENCODER in feature:
-            input_features.append(feature)
-        elif DECODER in feature:
-            output_features.append(feature)
-    return input_features, output_features
-
-
-def _search_fn(
-    query: str,
-    retrieval_model: RetrievalModel,
-    k: int,
-) -> List[Dict[str, Any]]:
-    return retrieval_model.search(query, k, return_data=True)
-
-
-def _extract_feature_names_from_prompt(prompt_template: str) -> List[str]:
-    """Extracts feature names from the prompt template whose data needs to be retrieved and injected into the input
-    text features."""
-    pattern = re.compile(r"{([^}]*)}")
-    matches = re.findall(pattern, prompt_template)
-    return matches
 
 
 def load_hdf5(hdf5_file_path, preprocessing_params, backend, split_data=True, shuffle_training=False):

@@ -103,10 +103,10 @@ class TextParserDecoder(Decoder):
     def get_prediction_set(self):
         return {LOGITS, PREDICTIONS, PROBABILITIES}
 
-    def forward(self, inputs, **kwargs):
+    def forward(self, inputs: List[torch.Tensor], **kwargs):
         # Extract the sequences tensor from the LLMs forward pass
         generated_outputs = extract_generated_tokens(
-            raw_generated_output_sequences=inputs.sequences,
+            raw_generated_output_sequences=inputs,
             llm_model_input_lengths=kwargs.get("llm_model_input_lengths", []),
             max_new_tokens=self.max_new_tokens,
             pad_sequence=True,

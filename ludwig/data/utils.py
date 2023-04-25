@@ -2,7 +2,7 @@ from typing import Dict, Optional
 
 import numpy as np
 
-from ludwig.constants import SPLIT
+from ludwig.constants import DECODER, ENCODER, SPLIT
 from ludwig.types import FeatureConfigDict, PreprocessingConfigDict
 from ludwig.utils.dataframe_utils import is_dask_series_or_df
 from ludwig.utils.types import DataFrame
@@ -47,3 +47,18 @@ def set_fixed_split(preprocessing_params: PreprocessingConfigDict) -> Preprocess
             "column": SPLIT,
         },
     }
+
+
+def get_input_and_output_features(feature_configs):
+    """Returns a tuple (input_features, output_features) where each element is a list of feature configs.
+
+    Determines whether a feature is an input or output feature by checking the presence of the encoder or decoder keys.
+    """
+    input_features = []
+    output_features = []
+    for feature in feature_configs:
+        if ENCODER in feature:
+            input_features.append(feature)
+        elif DECODER in feature:
+            output_features.append(feature)
+    return input_features, output_features

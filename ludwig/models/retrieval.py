@@ -62,7 +62,7 @@ class RandomRetrieval(RetrievalModel):
         self.index_data.to_csv(index_data_file_path, index=False)
 
     def load_index(self, name: str, cache_directory: str):
-        logger.info(f"Loading index to cache directory {cache_directory} with name {name}")
+        logger.info(f"Loading index from cache directory {cache_directory} with name {name}")
         index_file_path = os.path.join(cache_directory, name + ".index")
         self.index = np.load(index_file_path)
 
@@ -118,7 +118,7 @@ class SemanticRetrieval(RetrievalModel):
         self.index_data.to_csv(index_data_file_path, index=False)
 
     def load_index(self, name: str, cache_directory: str):
-        logger.info(f"Loading index to cache directory {cache_directory} with name {name}")
+        logger.info(f"Loading index from cache directory {cache_directory} with name {name}")
         index_file_path = os.path.join(cache_directory, name + ".index")
         self.index = faiss.read_index(index_file_path)
 

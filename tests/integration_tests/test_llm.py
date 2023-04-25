@@ -2,6 +2,7 @@ import os
 
 import pandas as pd
 import pytest
+import numpy as np
 
 from ludwig.api import LudwigModel
 from ludwig.constants import INPUT_FEATURES, MODEL_LLM, MODEL_NAME, MODEL_TYPE, OUTPUT_FEATURES, PREPROCESSING
@@ -58,10 +59,10 @@ def convert_preds(backend: dict, preds: DataFrame):
     "backend",
     [
         pytest.param(LOCAL_BACKEND, id="local"),
-        # pytest.param(RAY_BACKEND, id="ray", marks=pytest.mark.distributed),
+        pytest.param(RAY_BACKEND, id="ray", marks=pytest.mark.distributed),
     ],
 )
-def test_llm_text_to_text(tmpdir, backend):  # , ray_cluster_4cpu)
+def test_llm_text_to_text(tmpdir, backend, ray_cluster_4cpu):
     """Test that the LLM model can train and predict with text inputs and text outputs."""
     input_features = [{"name": "Question", "type": "text"}]
     output_features = [text_feature(output_feature=True, name="Answer", decoder={"type": "text_parser"})]
@@ -99,21 +100,22 @@ def test_llm_text_to_text(tmpdir, backend):  # , ray_cluster_4cpu)
         pytest.param(RAY_BACKEND, id="ray", marks=pytest.mark.distributed),
     ],
 )
-def test_llm_zero_shot_classification(tmpdir, backend, ray_cluster_4cpu):
-    input_features = [{"name": "review", "type": "text"}]
+def test_llm_zero_shot_classification(tmpdir, backend):
+    input_features = [{
+        "name": "review", 
+        "type": "text", 
+        "preprocessing": {
+            "prompt": {
+                "task": "This is a review of a restaurant. Classify the sentiment."
+            }
+        }
+    }]  # TODO: insert prompt
     output_features = [
         category_feature(
             name="label",
             preprocessing={
                 "vocab": ["positive", "neutral", "negative"],
                 "fallback_label": "neutral",
-                "prompt_template": """
-                    Context information is below.
-                    ###
-                    {review}
-                    ###
-                    Given the context information and not prior knowledge, classify the context as one of: {vocab}
-                """,
             },
             # How can we avoid using r here for regex, since it is technically an implementation detail?
             decoder={
@@ -195,7 +197,6 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
             "prompt": {
                 "retrieval": {
                     "type": "semantic",
-                    "index_name": None,
                     "model_name": "multi-qa-MiniLM-L6-cos-v1",
                     "k": 5
                 },
@@ -209,7 +210,6 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
         output_feature=True, 
         name="label", 
         preprocessing={
-            "vocab": ["1", "2", "3", "4", "5"],
             "fallback_label": "3",
         },
         decoder={
@@ -237,7 +237,18 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
         },
     }
     
-    dataset_path = generate_data(input_features, output_features, filename=csv_filename, num_examples=25, nan_percent=0.1, with_split=True)
+    dataset_path = generate_data(
+        input_features, 
+        output_features, 
+        filename=csv_filename, 
+        num_examples=25, 
+        nan_percent=0.1, 
+        with_split=True,
+    )
+    # ensure that the sample labels match the output feature
+    df = pd.read_csv(dataset_path)
+    df['label'] = np.random.choice([1, 2, 3, 4, 5], size=len(df)).astype(str)
+    df.to_csv(dataset_path, index=False)
 
     model = LudwigModel(config, backend={**backend, "cache_dir": str(tmpdir)})
     model.train(dataset=dataset_path, output_directory=str(tmpdir), skip_save_processed_input=True)

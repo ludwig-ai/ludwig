@@ -796,7 +796,7 @@ class HFTokenizer(BaseTokenizer):
         # HACK(geoffrey): `LlamaTokenizer` hangs on `use_fast=True`
         # TODO(geoffrey): use class inheritance to determine the tokenizer class instead
         pretrained_kwargs = {}
-        if self.pretrained_model_name_or_path == "eachadea/vicuna-13b-1.1":
+        if self.pretrained_model_name_or_path in {"eachadea/vicuna-13b-1.1"}:
             pretrained_kwargs["use_fast"] = False
 
         self.tokenizer = load_pretrained_hf_tokenizer(self.pretrained_model_name_or_path, **pretrained_kwargs)

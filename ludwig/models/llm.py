@@ -168,8 +168,6 @@ class LLM(BaseModel):
                     input_ids_sample_no_padding = input_ids_sample_no_padding[:, -self.max_input_length :]
 
                 input_lengths.append(input_ids_sample_no_padding.shape[1])
-                
-                breakpoint()
 
                 # Generate text using the model
                 model_outputs = self.model.generate(

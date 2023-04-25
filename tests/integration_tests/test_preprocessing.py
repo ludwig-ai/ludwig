@@ -789,10 +789,10 @@ def test_fill_with_mode_different_df_engine(tmpdir, csv_filename, df_engine, ray
         pytest.param("ray", id="ray", marks=pytest.mark.distributed),
     ],
 )
-def test_prompt_template(backend, tmpdir, ray_cluster_2cpu):
+def test_prompt_template(backend, tmpdir):
     """Tests that prompt template is correctly applied to inputs."""
-    prompt_template = """
-    Instruction: predict the output feature. Return only values in {{true, false}}
+    template = """
+    Instruction: {task}
     ###
     Examples:
     ###
@@ -802,11 +802,13 @@ def test_prompt_template(backend, tmpdir, ray_cluster_2cpu):
     Input: baz quc
     Output: false
     ###
-    Input: {input}
+    Input: {sample_input}
     Output:
     """
 
-    input_features = [text_feature(preprocessing={"prompt_template": prompt_template})]
+    task = "predict the output feature. Return only values in {true, false}"
+
+    input_features = [text_feature(preprocessing={"prompt": {"task": task, "template": template}})]
     output_features = [category_feature()]
     data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=25)
 
@@ -834,6 +836,7 @@ def test_prompt_template(backend, tmpdir, ray_cluster_2cpu):
     for raw_text, encoded in zip(raw_text_values, encoded_values):
         raw_text = raw_text.lower()
         decoded = " ".join(idx2str[t] for t in encoded)
+
         assert decoded.startswith(
             "<SOS> instruction : predict the output feature . return only values in { true , false } # # # examples : "
             "# # # input : foo bar output : true # # # input : baz quc output : false # # # input : "
