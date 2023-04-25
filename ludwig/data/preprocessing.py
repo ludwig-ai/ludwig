@@ -60,7 +60,7 @@ from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.prompt import format_input_with_prompt, get_search_fn, index_column
 from ludwig.data.split import get_splitter, split_dataset
-from ludwig.data.utils import set_fixed_split, get_input_and_output_features
+from ludwig.data.utils import get_input_and_output_features, set_fixed_split
 from ludwig.datasets import load_dataset_uris
 from ludwig.features.feature_registries import get_base_type_registry
 from ludwig.models.embedder import create_embed_batch_size_evaluator, create_embed_transform_fn
@@ -1181,8 +1181,10 @@ def build_dataset(
         if global_preprocessing_parameters["split"]["column"] in dataset_df.columns:
             split_col = dataset_df[global_preprocessing_parameters["split"]["column"]]
         else:
-            logger.warning(f"Specified split column {global_preprocessing_parameters['split']['column']} for fixed "
-                           f"split strategy was not found in dataset.")
+            logger.warning(
+                f"Specified split column {global_preprocessing_parameters['split']['column']} for fixed "
+                f"split strategy was not found in dataset."
+            )
 
     logger.debug("build preprocessing parameters")
     feature_name_to_preprocessing_parameters = build_preprocessing_parameters(
@@ -1689,15 +1691,15 @@ def handle_features_with_prompt_config(
         # If we're using LLMs for zero-shot/few-shot learning, update text input features with the prompt
         # ahead of time so that we can compute metadata and build the preprocessed data correctly.
         input_feature_preprocessing_parameters = feature_name_to_preprocessing_parameters[input_feature_config[NAME]]
-        if input_feature_preprocessing_parameters['prompt']['task'] is not None:
-            prompt_config = input_feature_preprocessing_parameters['prompt']
+        if input_feature_preprocessing_parameters["prompt"]["task"] is not None:
+            prompt_config = input_feature_preprocessing_parameters["prompt"]
             input_col_name = input_feature_config[COLUMN]
             input_and_output_col_names = [input_col_name] + output_feature_col_names
             input_and_output_cols = {k: v for k, v in dataset_cols.items() if k in input_and_output_col_names}
 
-            if prompt_config['retrieval']['type'] is not None:
+            if prompt_config["retrieval"]["type"] is not None:
                 retrieval_model, index_name = index_column(
-                    prompt_config['retrieval'],
+                    prompt_config["retrieval"],
                     col_name=input_col_name,
                     dataset_cols=input_and_output_cols,
                     df_engine=df_engine,
@@ -1706,9 +1708,9 @@ def handle_features_with_prompt_config(
                 # NOTE: after indexing the input column, we update the index_name in the prompt config IN PLACE.
                 # This ensures that the preprocessing parameters for this feature have an up-to-date index_name
                 # when the training set metadata is saved.
-                prompt_config['retrieval']['index_name'] = index_name
+                prompt_config["retrieval"]["index_name"] = index_name
 
-                search_fn = get_search_fn(retrieval_model, prompt_config['retrieval']['k'])
+                search_fn = get_search_fn(retrieval_model, prompt_config["retrieval"]["k"])
             else:
                 search_fn = None
 
@@ -1716,10 +1718,10 @@ def handle_features_with_prompt_config(
             dataset_cols[input_col_name] = format_input_with_prompt(
                 input_col_name,
                 input_col,
-                task_str=prompt_config['task'],
+                task_str=prompt_config["task"],
                 df_engine=df_engine,
                 search_fn=search_fn,
-                template=prompt_config['template'],
+                template=prompt_config["template"],
             )
 
 

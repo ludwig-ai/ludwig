@@ -1,8 +1,8 @@
 import pytest
 
 from ludwig.constants import NAME
-from ludwig.data.dataframe.pandas import PandasEngine
 from ludwig.data.dataframe.dask import DaskEngine
+from ludwig.data.dataframe.pandas import PandasEngine
 from ludwig.data.preprocessing import handle_features_with_prompt_config, is_input_feature
 from ludwig.schema.prompt import PromptConfig
 from tests.integration_tests.utils import category_feature, generate_data_as_dataframe, text_feature
@@ -23,20 +23,26 @@ def test_is_input_feature():
     ],
 )
 @pytest.mark.parametrize(
-    "retrieval_kwargs", 
+    "retrieval_kwargs",
     [
         {"type": "random", "k": 2},
-        {"type": "semantic", "model_name": "multi-qa-MiniLM-L6-cos-v1", "k": 2},  # TODO: find a smaller model for testing
+        {
+            "type": "semantic",
+            "model_name": "multi-qa-MiniLM-L6-cos-v1",
+            "k": 2,
+        },  # TODO: find a smaller model for testing
     ],
 )
 def test_handle_features_with_few_shot_prompt_config(df_engine, retrieval_kwargs):
-    prompt_config = PromptConfig.from_dict({
-        "task": (
-            "Given the sample input, complete this sentence by replacing XXXX: "
-            "The label is XXXX. Choose one value in this list: [1, 2, 3]."
-        ),
-        "retrieval": retrieval_kwargs,
-    }).to_dict()  # convert back-and-forth to validate and add defaults
+    prompt_config = PromptConfig.from_dict(
+        {
+            "task": (
+                "Given the sample input, complete this sentence by replacing XXXX: "
+                "The label is XXXX. Choose one value in this list: [1, 2, 3]."
+            ),
+            "retrieval": retrieval_kwargs,
+        }
+    ).to_dict()  # convert back-and-forth to validate and add defaults
 
     input_features = [
         text_feature(
@@ -59,7 +65,6 @@ def test_handle_features_with_few_shot_prompt_config(df_engine, retrieval_kwargs
 
         df = dd.from_pandas(df, npartitions=2)
 
-
     split_col = df["split"]
 
     dataset_cols = {k: df[k] for k in df.columns}
@@ -68,10 +73,10 @@ def test_handle_features_with_few_shot_prompt_config(df_engine, retrieval_kwargs
         feature_config[NAME]: feature_config.get("preprocessing", {}) for feature_config in feature_configs
     }
     handle_features_with_prompt_config(
-        dataset_cols, 
-        feature_names_to_preprocessing_parameters, 
-        feature_configs, 
-        df_engine=df_engine, 
+        dataset_cols,
+        feature_names_to_preprocessing_parameters,
+        feature_configs,
+        df_engine=df_engine,
         split_col=split_col,
     )
 

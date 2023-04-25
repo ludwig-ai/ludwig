@@ -44,18 +44,17 @@ class LLM(BaseModel):
         device = get_torch_device()
         if device == "cuda":
             num_gpus = torch.cuda.device_count()
-            model_kwargs.update(dict(
-                low_cpu_mem_usage=True,
-                torch_dtype=torch.float16,
-                device_map="auto",
-                max_memory={i: "13GiB" for i in range(num_gpus)},
-            ))
+            model_kwargs.update(
+                dict(
+                    low_cpu_mem_usage=True,
+                    torch_dtype=torch.float16,
+                    device_map="auto",
+                    max_memory={i: "13GiB" for i in range(num_gpus)},
+                )
+            )
 
         print("Loading large language model...")
-        self.model = AutoModelForCausalLM.from_pretrained(
-            self.config_obj.model_name,
-            **model_kwargs
-        )
+        self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.model_name, **model_kwargs)
         print("Done.")
 
         # Used only for its metadata about the vocabulary

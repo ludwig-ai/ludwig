@@ -207,9 +207,9 @@ def generate_data_as_dataframe(
     features = input_features + output_features
     df = build_synthetic_dataset(num_examples, features)
     data = [next(df) for _ in range(num_examples + 1)]
-    
+
     df = pd.DataFrame(data[1:], columns=data[0])
-    
+
     # Add "split" column to DataFrame
     if with_split:
         num_val_examples = max(2, int(num_examples * 0.1))

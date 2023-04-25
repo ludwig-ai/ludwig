@@ -117,7 +117,7 @@ class TextFeatureMixin(BaseFeatureMixin):
         logger.info(f"max sequence length is {max_sequence_length} for feature '{column.name}'")
 
         index_name = None
-        if preprocessing_parameters["prompt"]['retrieval']['type'] is not None:
+        if preprocessing_parameters["prompt"]["retrieval"]["type"] is not None:
             index_name = preprocessing_parameters["prompt"]["retrieval"]["index_name"]
         return {
             "idx2str": vocabulary.vocab,
