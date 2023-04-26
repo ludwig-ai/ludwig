@@ -26,7 +26,7 @@ class BaseLoaderConfig(schema_utils.BaseMarshmallowConfig):
         default=None,
         field_options=[
             schema_utils.PositiveInteger("Dataset window size in bytes.", default=None),
-            schema_utils.String(default="auto"),
+            schema_utils.ProtectedString("auto"),
         ],
         allow_none=True,
         description="Load and shuffle the preprocessed dataset in discrete windows of this size (defaults to null, "
