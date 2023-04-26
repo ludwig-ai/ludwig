@@ -235,98 +235,91 @@ class Trainer(BaseTrainer):
         Returns:
             A tuple of the loss tensor and a dictionary of loss for every output feature.
         """
-        model_outputs = self.dist_model((inputs, targets))
-        loss, all_losses = self.model.train_loss(
-            targets, model_outputs, self.regularization_type, self.regularization_lambda
-        )
-        self.dist_model.backward(loss)
-        self.dist_model.step()
+        if isinstance(self.optimizer, torch.optim.LBFGS):
+            # NOTE: Horovod is not supported for L-BFGS.
+            # NOTE: AMP is not supported for L-BFGS yet.
+            # NOTE: gradient accumulation is not supported for L-BFGS yet.
 
-        # if isinstance(self.optimizer, torch.optim.LBFGS):
-        #     # NOTE: Horovod is not supported for L-BFGS.
-        #     # NOTE: AMP is not supported for L-BFGS yet.
-        #     # NOTE: gradient accumulation is not supported for L-BFGS yet.
+            def closure():
+                # Allows L-BFGS to reevaluate the loss function
+                self.distributed.zero_grad(self.optimizer)
+                model_outputs = self.dist_model((inputs, targets))
+                loss, _ = self.model.train_loss(
+                    targets, model_outputs, self.regularization_type, self.regularization_lambda
+                )
+                loss.backward()
+                return loss
 
-        #     def closure():
-        #         # Allows L-BFGS to reevaluate the loss function
-        #         self.distributed.zero_grad(self.optimizer)
-        #         model_outputs = self.dist_model((inputs, targets))
-        #         loss, _ = self.model.train_loss(
-        #             targets, model_outputs, self.regularization_type, self.regularization_lambda
-        #         )
-        #         loss.backward()
-        #         return loss
+            self.distributed.step(self.optimizer, closure)
 
-        #     self.distributed.step(self.optimizer, closure)
+            # Obtain model predictions and loss
+            model_outputs = self.dist_model((inputs, targets))
+            loss, all_losses = self.model.train_loss(
+                targets, model_outputs, self.regularization_type, self.regularization_lambda
+            )
 
-        #     # Obtain model predictions and loss
-        #     model_outputs = self.dist_model((inputs, targets))
-        #     loss, all_losses = self.model.train_loss(
-        #         targets, model_outputs, self.regularization_type, self.regularization_lambda
-        #     )
+            if not self.evaluate_training_set:
+                # Update evaluation metrics with current model params:
+                # noisy but fast way to get metrics on the training set
+                predictions = self.model.outputs_to_predictions(model_outputs)
+                self.model.update_metrics(targets, predictions)
 
-        #     if not self.evaluate_training_set:
-        #         # Update evaluation metrics with current model params:
-        #         # noisy but fast way to get metrics on the training set
-        #         predictions = self.model.outputs_to_predictions(model_outputs)
-        #         self.model.update_metrics(targets, predictions)
+            return loss, all_losses
 
-        #     return loss, all_losses
+        with torch.cuda.amp.autocast() if self.use_amp else contextlib.nullcontext():
+            with self.distributed.prepare_model_update(self.dist_model, should_step=should_step):
+                # Obtain model predictions and loss
+                model_outputs = self.dist_model((inputs, targets))
+                loss, all_losses = self.model.train_loss(
+                    targets, model_outputs, self.regularization_type, self.regularization_lambda
+                )
+                loss = loss / self.gradient_accumulation_steps
 
-        # with torch.cuda.amp.autocast() if self.use_amp else contextlib.nullcontext():
-        #     with self.distributed.prepare_model_update(self.dist_model, should_step=should_step):
-        #         # Obtain model predictions and loss
-        #         model_outputs = self.dist_model((inputs, targets))
-        #         loss, all_losses = self.model.train_loss(
-        #             targets, model_outputs, self.regularization_type, self.regularization_lambda
-        #         )
-        #         loss = loss / self.gradient_accumulation_steps
+        # Begin the backward pass
+        variables = self.dist_model.parameters()
+        if self.use_amp:
+            self.scaler.scale(loss).backward()
+        else:
+            self.distributed.backward(loss, self.dist_model)
 
-        # # Begin the backward pass
-        # variables = self.dist_model.parameters()
-        # if self.use_amp:
-        #     self.scaler.scale(loss).backward()
-        # else:
-        #     self.distributed.backward(loss, self.dist_model)
+        if not should_step:
+            # Short-circuit the parameter updates if we are still accumulating gradients
+            return loss, all_losses
 
-        # if not should_step:
-        #     # Short-circuit the parameter updates if we are still accumulating gradients
-        #     return loss, all_losses
+        # Wait for gradient aggregation to complete before clipping the gradients
+        # When using AMP, we need to do this before unscaling.
+        # See: https://github.com/horovod/horovod/blob/master/examples/pytorch/pytorch_mnist.py
+        self.distributed.wait_optimizer_synced(self.optimizer)
 
-        # # Wait for gradient aggregation to complete before clipping the gradients
-        # # When using AMP, we need to do this before unscaling.
-        # # See: https://github.com/horovod/horovod/blob/master/examples/pytorch/pytorch_mnist.py
-        # self.distributed.wait_optimizer_synced(self.optimizer)
+        if self.use_amp:
+            # In-place unscaling of all gradients before weights update
+            # Do this before gradient clipping per docs:
+            # https://pytorch.org/docs/master/notes/amp_examples.html#gradient-clipping
+            self.scaler.unscale_(self.optimizer)
 
-        # if self.use_amp:
-        #     # In-place unscaling of all gradients before weights update
-        #     # Do this before gradient clipping per docs:
-        #     # https://pytorch.org/docs/master/notes/amp_examples.html#gradient-clipping
-        #     self.scaler.unscale_(self.optimizer)
+        if self.distributed.allow_clip_gradients():
+            # Clip gradients
+            self.clip_grads(variables)
 
-        # if self.distributed.allow_clip_gradients():
-        #     # Clip gradients
-        #     self.clip_grads(variables)
+        # Apply gradient updates
+        with self.distributed.prepare_optimizer_update(self.optimizer):
+            # Because we already synchronized above, we skip doing so here
+            if self.use_amp:
+                self.scaler.step(self.optimizer)
+            else:
+                self.distributed.step(self.optimizer)
 
-        # # Apply gradient updates
-        # with self.distributed.prepare_optimizer_update(self.optimizer):
-        #     # Because we already synchronized above, we skip doing so here
-        #     if self.use_amp:
-        #         self.scaler.step(self.optimizer)
-        #     else:
-        #         self.distributed.step(self.optimizer)
-
-        # if self.use_amp:
-        #     # Update scaler in case of overflow/underflow
-        #     self.scaler.update()
+        if self.use_amp:
+            # Update scaler in case of overflow/underflow
+            self.scaler.update()
 
         if not self.evaluate_training_set:
             # Update evaluation metrics with current model params:
             # noisy but fast way to get metrics on the training set
             predictions = self.model.outputs_to_predictions(model_outputs)
-            # self.model.update_metrics(targets, predictions)
+            self.model.update_metrics(targets, predictions)
 
-        # self.distributed.zero_grad(self.optimizer)
+        self.distributed.zero_grad(self.optimizer)
 
         return loss, all_losses
 
@@ -451,7 +444,7 @@ class Trainer(BaseTrainer):
         training_set,
         validation_set,
         test_set,
-        progress_tracker,
+        progress_tracker: ProgressTracker,
         train_summary_writer,
         validation_summary_writer,
         test_summary_writer,
@@ -493,14 +486,13 @@ class Trainer(BaseTrainer):
             )
         else:
             # Use metrics accumulated during training
-            # metrics = self.model.get_metrics()
-            # train_metrics_log = append_metrics(
-            #     self.model, "train", metrics, progress_tracker.train_metrics, progress_tracker
-            # )
-            # self.model.reset_metrics()
-            pass
+            metrics = self.model.get_metrics()
+            train_metrics_log = append_metrics(
+                self.model, "train", metrics, progress_tracker.train_metrics, progress_tracker
+            )
+            self.model.reset_metrics()
 
-        # printed_table.add_metrics_to_printed_table(train_metrics_log, TRAIN)
+        printed_table.add_metrics_to_printed_table(train_metrics_log, TRAIN)
 
         self.write_eval_summary(
             summary_writer=train_summary_writer,
@@ -822,7 +814,7 @@ class Trainer(BaseTrainer):
     def _train_loop(
         self,
         batcher,
-        progress_tracker,
+        progress_tracker: ProgressTracker,
         save_path,
         train_summary_writer,
         progress_bar,
@@ -894,12 +886,6 @@ class Trainer(BaseTrainer):
             self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path, sync_step=should_step))
 
             if progress_tracker.steps % final_steps_per_checkpoint == 0:
-                # Checkpoint the model.
-                if not self.skip_save_progress:
-                    checkpoint_manager.save(progress_tracker.steps)
-                    if self.is_coordinator():
-                        progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
-
                 should_break = self.run_evaluation(
                     training_set,
                     validation_set,
@@ -917,6 +903,15 @@ class Trainer(BaseTrainer):
                     early_stopping_steps,
                     checkpoint_manager,
                 )
+
+                # Checkpoint the model.
+                # NOTE: Ideally we would do this before evaluation, but for some reason DeepSpeed will complain
+                # about inflight params if we do that, which is why we checkpoint after eval instead.
+                if not self.skip_save_progress:
+                    checkpoint_manager.save(progress_tracker.steps)
+                    if self.is_coordinator():
+                        progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
+
                 if should_break:
                     return should_break
 
