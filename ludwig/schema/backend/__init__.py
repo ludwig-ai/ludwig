@@ -45,3 +45,24 @@ class RayBackendConfig(BaseBackendConfig):
     trainer: BaseBackendTrainerConfig = BackendTrainerDataclassField()
 
     loader: BaseLoaderConfig = LoaderDataclassField()
+
+
+@DeveloperAPI
+def get_backend_jsonschema():
+    props = schema_utils.unload_jsonschema_from_marshmallow_class(BaseBackendConfig)["properties"]
+
+    return {
+        "type": ["object", "null"],
+        "properties": props,
+        "title": "backend_options",
+        "description": "Settings for computational backend",
+    }
+
+
+@DeveloperAPI
+class BackendField(schema_utils.DictMarshmallowField):
+    def __init__(self):
+        super().__init__(BaseBackendConfig, default_missing=True)
+
+    def _jsonschema_type_mapping(self):
+        return get_backend_jsonschema()
