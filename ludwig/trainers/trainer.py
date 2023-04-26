@@ -790,7 +790,7 @@ class Trainer(BaseTrainer):
         # Load the best weights from saved checkpoint
         state_dict = None
         if not self.skip_save_model:
-            state_dict = checkpoint_manager.get_best_checkpoint_state_for_inference()
+            state_dict = checkpoint_manager.get_best_checkpoint_state_for_inference(self.return_device)
 
         return_value = state_dict
         if not return_state_dict:
@@ -1265,6 +1265,10 @@ class Trainer(BaseTrainer):
             for callback in self.callbacks:
                 fn(callback)
 
+    @property
+    def return_device(self):
+        return self.device
+
 
 class RemoteTrainer(Trainer):
     def __init__(self, gpus=None, gpu_memory_limit=None, allow_parallel_threads=True, **kwargs):
@@ -1273,6 +1277,12 @@ class RemoteTrainer(Trainer):
         # Only return results from rank 0 to reduce network overhead
         self.train = self.distributed.return_first(self.train)
         self.train_online = self.distributed.return_first(self.train_online)
+
+    @property
+    def return_device(self):
+        # When returning the model weights from remote to driver, place them on CPU,
+        # as the driver likely doesn't have a GPU.
+        return "cpu"
 
 
 learning_rate_scale_fns = {

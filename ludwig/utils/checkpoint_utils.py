@@ -257,9 +257,9 @@ class CheckpointManager:
         save_path = os.path.join(self.directory, f"{tag}.ckpt")
         self.checkpoint.load(save_path, self.device)
 
-    def get_best_checkpoint_state_for_inference(self) -> Mapping[str, Any]:
+    def get_best_checkpoint_state_for_inference(self, device: torch.device) -> Mapping[str, Any]:
         save_path = os.path.join(self.directory, f"{BEST}.ckpt")
-        return self.checkpoint.get_state_for_inference(save_path, self.device)
+        return self.checkpoint.get_state_for_inference(save_path, device)
 
     def close(self):
         pass
