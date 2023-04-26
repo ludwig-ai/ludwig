@@ -30,7 +30,7 @@ output_features:
 
 trainer:
     batch_size: 1024
-    # epochs: 1
+    # epochs: 10
     train_steps: 10
 
 backend:

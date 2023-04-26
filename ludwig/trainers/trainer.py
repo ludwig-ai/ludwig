@@ -791,14 +791,12 @@ class Trainer(BaseTrainer):
         state_dict = None
         if not self.skip_save_model:
             state_dict = checkpoint_manager.get_best_checkpoint_state_for_inference(self.return_device)
-
-        return_value = state_dict
-        if not return_state_dict:
-            if self.distributed.is_model_parallel():
-                # Assume the full weights cannot fit in memory on GPU
-                self.model = self.model.cpu()
-            self.model.load_state_dict(state_dict)
-            return_value = self.model
+            if not return_state_dict:
+                if self.distributed.is_model_parallel():
+                    # Assume the full weights cannot fit in memory on GPU
+                    self.model = self.model.cpu()
+                self.model.load_state_dict(state_dict)
+        return_value = self.model if not return_state_dict else state_dict
 
         # restore original sigint signal handler
         if self.original_sigint_handler and threading.current_thread() == threading.main_thread():
@@ -906,7 +904,9 @@ class Trainer(BaseTrainer):
 
                 # Checkpoint the model.
                 # NOTE: Ideally we would do this before evaluation, but for some reason DeepSpeed will complain
-                # about inflight params if we do that, which is why we checkpoint after eval instead.
+                # about inflight params if we do that, which is why we checkpoint after eval instead. In practice,
+                # this should not make a difference, xcept in the unlikely event an error occurs during eval and we
+                # want to resume from the last checkpoint, in which case we will lose slightly more progress this way.
                 if not self.skip_save_progress:
                     checkpoint_manager.save(progress_tracker.steps)
                     if self.is_coordinator():

@@ -20,6 +20,7 @@ from ludwig.modules.lr_scheduler import LRScheduler
 from ludwig.utils.fs_utils import safe_move_file
 
 if TYPE_CHECKING:
+    from ludwig.distributed.base import DistributedStrategy
     from ludwig.models.base import BaseModel
 
 
@@ -75,11 +76,13 @@ class Checkpoint(ABC):
 
     def __init__(
         self,
+        distributed: "DistributedStrategy",
         model: "BaseModel",
         optimizer: Optional[Optimizer] = None,
         scheduler: Optional[LRScheduler] = None,
     ):
         """Constructor."""
+        self.distributed = distributed
         self.model = model
         self.optimizer = optimizer
         self.scheduler = scheduler

@@ -164,7 +164,7 @@ class DistributedStrategy(ABC):
     ) -> "Checkpoint":
         from ludwig.utils.checkpoint_utils import CoordinatorCheckpoint
 
-        return CoordinatorCheckpoint(model, optimizer, scheduler)
+        return CoordinatorCheckpoint(self, model, optimizer, scheduler)
 
 
 class LocalStrategy(DistributedStrategy):
