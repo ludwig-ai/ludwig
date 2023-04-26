@@ -796,6 +796,8 @@ class Trainer(BaseTrainer):
                     # Assume the full weights cannot fit in memory on GPU
                     self.model = self.model.cpu()
                 self.model.load_state_dict(state_dict)
+        elif return_state_dict:
+            state_dict = self.model.cpu().state_dict()
         return_value = self.model if not return_state_dict else state_dict
 
         # restore original sigint signal handler
