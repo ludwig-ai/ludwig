@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+from dataclasses import dataclass
 import logging
 from abc import ABC, abstractmethod, abstractstaticmethod
 from typing import Any, Dict, Optional
@@ -97,7 +98,17 @@ class BaseFeatureMixin(ABC):
         raise NotImplementedError
 
 
-class PredictModule:
+@dataclass
+class ModuleWrapper:
+    """Used to prevent the PredictModule from showing up an attribute on the feature module.
+
+    This is necessary to avoid inflight errors from DeepSpeed.
+    """
+
+    module: torch.nn.Module
+
+
+class PredictModule(torch.nn.Module):
     """Base class for all modules that convert model outputs to predictions.
 
     Explicit member variables needed here for scripting, as Torchscript will not be able to recognize global variables
@@ -110,7 +121,7 @@ class PredictModule:
         self.probabilities_key = PROBABILITIES
         self.logits_key = LOGITS
 
-    def __call__(self, *args, **kwargs):
+    def forward(self, *args, **kwargs):
         return self.forward(*args, **kwargs)
 
 
@@ -219,7 +230,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             default_dropout=feature.decoder.fc_dropout,
         )
         self._calibration_module = self.create_calibration_module(feature)
-        self._prediction_module = self.create_predict_module()
+        self._prediction_module = ModuleWrapper(self.create_predict_module())
 
         # set up two sequence reducers, one for inputs and other for dependencies
         self.reduce_sequence_input = SequenceReducer(reduce_mode=self.reduce_input)
@@ -307,7 +318,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     @property
     def prediction_module(self) -> PredictModule:
         """Returns the PredictModule used to convert model outputs to predictions."""
-        return self._prediction_module
+        return self._prediction_module.module
 
     def predictions(self, all_decoder_outputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, torch.Tensor]:
         """Computes actual predictions from the outputs of feature decoders.
