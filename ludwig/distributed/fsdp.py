@@ -23,3 +23,7 @@ class FSDPStrategy(DDPStrategy):
 
     def to_device(self, model: nn.Module) -> nn.Module:
         return model
+
+    @classmethod
+    def is_model_parallel(cls) -> bool:
+        return True

@@ -10,10 +10,9 @@ import signal
 import tempfile
 from abc import ABC, abstractmethod
 from glob import glob
-from typing import Any, Dict, Optional, TYPE_CHECKING
+from typing import Any, Dict, Mapping, Optional, TYPE_CHECKING
 
 import torch
-from torch import nn
 from torch.optim import Optimizer
 
 from ludwig.api_annotations import DeveloperAPI
@@ -91,7 +90,7 @@ class Checkpoint(ABC):
         pass
 
     @abstractmethod
-    def load_for_inference(self, save_path: str, model: nn.Module) -> bool:
+    def get_state_for_inference(self, save_path: str, device: Optional[torch.device] = None) -> Mapping[str, Any]:
         pass
 
     @abstractmethod
@@ -144,10 +143,9 @@ class CoordinatorCheckpoint(Checkpoint):
             logger.error(e)
             return False
 
-    def load_for_inference(self, save_path: str, model: nn.Module, device: Optional[torch.device] = None) -> nn.Module:
+    def get_state_for_inference(self, save_path: str, device: Optional[torch.device] = None) -> Mapping[str, Any]:
         state = torch.load(save_path, map_location=device)
-        model.load_state_dict(state["model_weights"])
-        return model
+        return state["model_weights"]
 
     def save(self, save_path: str, global_step: int):
         """Save a state to disk.
@@ -259,9 +257,9 @@ class CheckpointManager:
         save_path = os.path.join(self.directory, f"{tag}.ckpt")
         self.checkpoint.load(save_path, self.device)
 
-    def load_best_checkpoint_for_inference(self, model: nn.Module) -> nn.Module:
+    def get_best_checkpoint_state_for_inference(self) -> Mapping[str, Any]:
         save_path = os.path.join(self.directory, f"{BEST}.ckpt")
-        return self.checkpoint.load_for_inference(save_path, model, self.device)
+        return self.checkpoint.get_state_for_inference(save_path, self.device)
 
     def close(self):
         pass

@@ -97,7 +97,7 @@ class BaseFeatureMixin(ABC):
         raise NotImplementedError
 
 
-class PredictModule(torch.nn.Module):
+class PredictModule:
     """Base class for all modules that convert model outputs to predictions.
 
     Explicit member variables needed here for scripting, as Torchscript will not be able to recognize global variables
@@ -109,6 +109,9 @@ class PredictModule(torch.nn.Module):
         self.predictions_key = PREDICTIONS
         self.probabilities_key = PROBABILITIES
         self.logits_key = LOGITS
+
+    def __call__(self, *args, **kwargs):
+        return self.forward(*args, **kwargs)
 
 
 class BaseFeature:

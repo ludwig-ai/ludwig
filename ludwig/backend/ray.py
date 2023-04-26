@@ -198,12 +198,12 @@ def train_fn(
         model = model.to(device)
 
         trainer = RemoteTrainer(model=model, distributed=distributed, report_tqdm_to_ray=True, **executable_kwargs)
-        results = trainer.train(train_shard, val_shard, test_shard, **kwargs)
+        results = trainer.train(train_shard, val_shard, test_shard, return_state_dict=True, **kwargs)
 
-        if results is not None:
-            # only return the model state dict back to the head node.
-            trained_model, *args = results
-            results = (trained_model.cpu().state_dict(), *args)
+        # if results is not None:
+        #     # only return the model state dict back to the head node.
+        #     trained_model, *args = results
+        #     results = (trained_model.cpu().state_dict(), *args)
 
         torch.cuda.empty_cache()
 

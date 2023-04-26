@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Any, Dict, Optional, Tuple, TYPE_CHECKING
+from typing import Any, Dict, Mapping, Optional, Tuple, TYPE_CHECKING
 
 import deepspeed
 import deepspeed.comm
@@ -126,6 +126,10 @@ class DeepSpeedStrategy(DDPStrategy):
         """
         return True
 
+    @classmethod
+    def is_model_parallel(cls) -> bool:
+        return True
+
     def eval(self, model: nn.Module):
         # TODO(travis): remove this when DeepSpeed resolves issue:
         # https://github.com/microsoft/DeepSpeed/issues/3068
@@ -158,8 +162,5 @@ class DeepSpeedCheckpoint(Checkpoint):
 
         self.model.save_checkpoint(save_path, client_state=client_state)
 
-    def load_for_inference(self, save_path: str, model: nn.Module, device: Optional[torch.device] = None) -> nn.Module:
-        state_dict = get_fp32_state_dict_from_zero_checkpoint(save_path)
-        model = model.cpu()
-        model.load_state_dict(state_dict)
-        return model
+    def get_state_for_inference(self, save_path: str, device: Optional[torch.device] = None) -> Mapping[str, Any]:
+        return get_fp32_state_dict_from_zero_checkpoint(save_path)

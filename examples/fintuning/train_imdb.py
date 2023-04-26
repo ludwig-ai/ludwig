@@ -20,6 +20,9 @@ config = yaml.safe_load(
 input_features:
     - name: review
       type: text
+    #   encoder:
+            # type: bert
+            # trainable: true
 
 output_features:
     - name: sentiment
@@ -27,14 +30,15 @@ output_features:
 
 trainer:
     batch_size: 1024
-    # eval_batch_size: 128
-    epochs: 1
+    # epochs: 1
+    train_steps: 10
 
 backend:
     # type: deepspeed
     # zero_optimization:
     #     stage: 3
     type: ray
+    cache_dir: /src/cache
     trainer:
         strategy:
             type: deepspeed
