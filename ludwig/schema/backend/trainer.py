@@ -1,5 +1,5 @@
 from dataclasses import field
-from typing import Dict
+from typing import Any, Dict, Optional
 
 from marshmallow import fields, ValidationError
 
@@ -19,7 +19,6 @@ class BaseBackendTrainerConfig(schema_utils.BaseMarshmallowConfig):
 
     use_gpu: bool = schema_utils.Boolean(
         default=True,
-        allow_none=True,
         description="Whether to use GPUs for training (defaults to true when the cluster has at least one GPU).",
     )
 
@@ -30,7 +29,7 @@ class BaseBackendTrainerConfig(schema_utils.BaseMarshmallowConfig):
         "are found).",
     )
 
-    resources_per_worker = schema_utils.Dict(
+    resources_per_worker: Optional[Dict[str, Any]] = schema_utils.Dict(
         default=None,
         allow_none=True,
         description="The Ray resources to assign to each Horovod worker (defaults to 1 CPU and 1 GPU if available).",
