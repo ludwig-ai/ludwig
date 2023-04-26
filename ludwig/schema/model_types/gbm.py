@@ -2,6 +2,7 @@ from typing import Optional
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.backend import BackendField, BaseBackendConfig
 from ludwig.schema.defaults.gbm import GBMDefaultsConfig, GBMDefaultsField
 from ludwig.schema.features.base import (
     BaseInputFeatureConfig,
@@ -31,4 +32,5 @@ class GBMModelConfig(ModelConfig):
     trainer: GBMTrainerConfig = GBMTrainerField().get_default_field()
     preprocessing: PreprocessingConfig = PreprocessingField().get_default_field()
     defaults: GBMDefaultsConfig = GBMDefaultsField().get_default_field()
+    backend: BaseBackendConfig = BackendField().get_default_field()
     hyperopt: Optional[HyperoptConfig] = HyperoptField().get_default_field()
