@@ -973,6 +973,7 @@ class Trainer(BaseTrainer):
             batch_size=batch_size,
             distributed=self.distributed,
             report_tqdm_to_ray=self.report_tqdm_to_ray,
+            model=self.model,
         )
         metrics, _ = predictor.batch_evaluation(dataset, collect_predictions=False, dataset_name=dataset_name)
 
