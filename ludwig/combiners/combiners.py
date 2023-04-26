@@ -13,9 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from dataclasses import dataclass
 import logging
 from abc import ABC
+from dataclasses import dataclass
 from functools import lru_cache
 from typing import Dict, Type
 
@@ -52,9 +52,9 @@ logger = logging.getLogger(__name__)
 class Handle:
     """This class provides an opaque handle to the input features, preventing them from being registered as state.
 
-    This is important because we already reference the `input_features` as an attribute of ECD, so we don't need it
-    to appear twice in the state_dict. Furthermore, DeepSpeed will get terribly confused if have the input features
-    set as an attribute of the combiner, and lead to shape mismatch errors when we go to load a saved checkpoint.
+    This is important because we already reference the `input_features` as an attribute of ECD, so we don't need it to
+    appear twice in the state_dict. Furthermore, DeepSpeed will get terribly confused if have the input features set as
+    an attribute of the combiner, and lead to shape mismatch errors when we go to load a saved checkpoint.
     """
 
     input_features: Dict[str, "InputFeature"]
