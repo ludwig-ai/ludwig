@@ -629,8 +629,7 @@ class Trainer(BaseTrainer):
         checkpoint = self.distributed.create_checkpoint_handle(
             model=self.dist_model, optimizer=self.optimizer, scheduler=self.scheduler
         )
-        if not self.skip_save_progress:
-            checkpoint_manager = CheckpointManager(checkpoint, training_checkpoints_path, device=self.device)
+        checkpoint_manager = CheckpointManager(checkpoint, training_checkpoints_path, device=self.device)
 
         # ====== Setup Tensorboard writers =======
         train_summary_writer = None
