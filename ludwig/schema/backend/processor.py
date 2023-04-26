@@ -37,7 +37,6 @@ class DaskProcessorConfig(BaseProcessorConfig):
 
     persist: bool = schema_utils.Boolean(
         default=True,
-        allow_none=True,
         description="(dask only) Whether intermediate stages of preprocessing should be cached in distributed memory.",
     )
 
