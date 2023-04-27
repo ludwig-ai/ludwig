@@ -593,7 +593,7 @@ class LightGBMTrainer(BaseTrainer):
         # ====== Setup session =======
         checkpoint = checkpoint_manager = None
         if self.is_coordinator() and not self.skip_save_progress:
-            checkpoint = self.distributed.create_checkpoint_handle(model=self.model)
+            checkpoint = self.distributed.create_checkpoint_handle(dist_model=self.model, model=self.model)
             checkpoint_manager = CheckpointManager(checkpoint, training_checkpoints_path, device=self.device)
 
         train_summary_writer = None

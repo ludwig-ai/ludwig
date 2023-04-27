@@ -114,11 +114,15 @@ class DDPStrategy(DistributedStrategy):
         pass
 
     def create_checkpoint_handle(
-        self, model: nn.Module, optimizer: Optional[Optimizer] = None, scheduler: Optional["LRScheduler"] = None
+        self,
+        dist_model: nn.Module,
+        model: nn.Module,
+        optimizer: Optional[Optimizer] = None,
+        scheduler: Optional["LRScheduler"] = None,
     ) -> "Checkpoint":
         from ludwig.utils.checkpoint_utils import CoordinatorCheckpoint
 
-        return CoordinatorCheckpoint(self, model.module, optimizer, scheduler)
+        return CoordinatorCheckpoint(self, model, optimizer, scheduler)
 
 
 def local_rank_and_size() -> Tuple[int, int]:

@@ -401,7 +401,7 @@ class Trainer(BaseTrainer):
         with tempfile.TemporaryDirectory() as tmpdir:
             if snapshot_weights:
                 checkpoint = self.distributed.create_checkpoint_handle(
-                    model=self.dist_model, optimizer=self.optimizer, scheduler=self.scheduler
+                    dist_model=self.dist_model, model=self.model, optimizer=self.optimizer, scheduler=self.scheduler
                 )
                 checkpoint.save(os.path.join(tmpdir, "latest.ckpt"), global_step=0)
             try:
@@ -628,7 +628,7 @@ class Trainer(BaseTrainer):
         # ====== Setup session =======
         checkpoint_manager = None
         checkpoint = self.distributed.create_checkpoint_handle(
-            model=self.dist_model, optimizer=self.optimizer, scheduler=self.scheduler
+            dist_model=self.dist_model, model=self.model, optimizer=self.optimizer, scheduler=self.scheduler
         )
         checkpoint_manager = CheckpointManager(checkpoint, training_checkpoints_path, device=self.device)
 

@@ -160,7 +160,11 @@ class DistributedStrategy(ABC):
         model.eval()
 
     def create_checkpoint_handle(
-        self, model: nn.Module, optimizer: Optional[Optimizer] = None, scheduler: Optional["LRScheduler"] = None
+        self,
+        dist_model: nn.Module,
+        model: nn.Module,
+        optimizer: Optional[Optimizer] = None,
+        scheduler: Optional["LRScheduler"] = None,
     ) -> "Checkpoint":
         from ludwig.utils.checkpoint_utils import CoordinatorCheckpoint
 

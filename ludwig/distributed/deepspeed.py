@@ -136,9 +136,13 @@ class DeepSpeedStrategy(DDPStrategy):
         pass
 
     def create_checkpoint_handle(
-        self, model: nn.Module, optimizer: Optional[Optimizer] = None, scheduler: Optional["LRScheduler"] = None
+        self,
+        dist_model: nn.Module,
+        model: nn.Module,
+        optimizer: Optional[Optimizer] = None,
+        scheduler: Optional["LRScheduler"] = None,
     ) -> Checkpoint:
-        return DeepSpeedCheckpoint(self, model, optimizer, scheduler)
+        return DeepSpeedCheckpoint(self, dist_model, optimizer, scheduler)
 
 
 class DeepSpeedCheckpoint(Checkpoint):
