@@ -45,7 +45,6 @@ default_training_preprocessing_parameters = copy.deepcopy(default_feature_specif
 default_training_preprocessing_parameters.update(PreprocessingConfig().to_dict())
 
 default_prediction_preprocessing_parameters = copy.deepcopy(default_feature_specific_preprocessing_parameters)
-default_prediction_preprocessing_parameters.update({"prompt": None})
 
 
 @DeveloperAPI

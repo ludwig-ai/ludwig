@@ -26,17 +26,10 @@ from ludwig.utils.metrics_printed_table import MetricsPrintedTable
 from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.trainer_utils import (
     append_metrics,
-    get_final_steps_per_checkpoint,
     get_new_progress_tracker,
-    get_total_steps,
     ProgressTracker,
 )
 from ludwig.utils.torch_utils import get_torch_device
-
-# try:
-#     import ray
-# except ImportError:
-#     ray = None
 
 logger = logging.getLogger(__name__)
 

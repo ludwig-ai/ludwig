@@ -757,16 +757,7 @@ class LLMTrainerConfig(BaseTrainerConfig):
 class ZeroShotTrainerConfig(LLMTrainerConfig):
     """Dataclass that configures most of the hyperparameters used for zero-shot LLM model training."""
 
-    epochs: int = schema_utils.PositiveInteger(
-        default=1,
-        description="Number of epochs to train in the LLM trainer.",
-    )
-
-    train_steps: int = schema_utils.PositiveInteger(
-        default=None,
-        allow_none=True,
-        description="Number of training steps to train in the LLM trainer.",
-    )
+    pass
 
 
 @DeveloperAPI
