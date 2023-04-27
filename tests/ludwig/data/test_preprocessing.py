@@ -33,7 +33,7 @@ def test_is_input_feature():
 @pytest.mark.parametrize(
     "backend_config",
     [
-        # pytest.param(LOCAL_BACKEND, id="local"),
+        pytest.param(LOCAL_BACKEND, id="local"),
         pytest.param(RAY_BACKEND, id="ray", marks=pytest.mark.distributed),
     ],
 )

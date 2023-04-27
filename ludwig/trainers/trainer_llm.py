@@ -244,7 +244,7 @@ class ZeroShotTrainer(BaseTrainer):
         progress_tracker: ProgressTracker,
     ):
         predictor = Predictor(
-            self.model, batch_size=1, distributed=self.distributed, report_tqdm_to_ray=self.report_tqdm_to_ray
+            self.model, batch_size=batch_size, distributed=self.distributed, report_tqdm_to_ray=self.report_tqdm_to_ray
         )
         metrics, _ = predictor.batch_evaluation(dataset, collect_predictions=False, dataset_name=dataset_name)
 

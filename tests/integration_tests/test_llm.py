@@ -182,7 +182,7 @@ def test_llm_zero_shot_classification(tmpdir, backend):
 @pytest.mark.parametrize(
     "backend",
     [
-        # pytest.param(LOCAL_BACKEND, id="local"),
+        pytest.param(LOCAL_BACKEND, id="local"),
         pytest.param(RAY_BACKEND, id="ray", marks=pytest.mark.distributed),
     ],
 )
