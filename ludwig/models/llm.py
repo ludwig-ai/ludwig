@@ -1,6 +1,7 @@
 import copy
 import logging
 import os
+import tempfile
 from typing import Dict, Tuple, Union
 
 import numpy as np
@@ -33,6 +34,7 @@ class LLM(BaseModel):
         self,
         config_obj: LLMModelConfig,
         random_seed=None,
+        device=None,
         **_kwargs,
     ):
         super().__init__(random_seed=random_seed)
@@ -40,26 +42,19 @@ class LLM(BaseModel):
         self.config_obj = config_obj
         self._random_seed = random_seed
 
-        model_kwargs = {}
-        device = get_torch_device()
-        if device == "cuda":
-            num_gpus = torch.cuda.device_count()
-            model_kwargs.update(
-                dict(
-                    low_cpu_mem_usage=True,
-                    torch_dtype=torch.float16,
-                    device_map="auto",
-                    max_memory={i: "13GiB" for i in range(num_gpus)},
-                )
-            )
+        self.model_name = self.config_obj.model_name
 
         print("Loading large language model...")
-        self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.model_name, **model_kwargs)
+        self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.model_name)
+        self.curr_device = torch.device("cpu")  # model initially loaded onto cpu
         print("Done.")
 
-        # Used only for its metadata about the vocabulary
-        self.tokenizer = AutoTokenizer.from_pretrained(self.config_obj.model_name, use_fast=False)
+        if device is None:
+            device = get_torch_device()
+        self.to_device(device)
 
+        self.max_new_tokens = self.config_obj.generation.max_new_tokens
+        
         # Determines the maximum length of the context (input + output tokens)
         if hasattr(self.model.config, "max_sequence_length"):
             self.context_len = self.model.config.max_sequence_length
@@ -67,10 +62,12 @@ class LLM(BaseModel):
             self.context_len = self.model.config.max_position_embeddings
         else:
             self.context_len = 2048
+        self.max_input_length = self.context_len - self.max_new_tokens - 8
+
+        # Used only for its metadata about the vocabulary
+        self.tokenizer = AutoTokenizer.from_pretrained(self.config_obj.model_name, use_fast=False)
 
         self.generation = GenerationConfig(**self.config_obj.generation.to_dict())
-        self.max_new_tokens = self.config_obj.generation.max_new_tokens
-        self.max_input_length = self.context_len - self.max_new_tokens - 8
 
         # ================ Inputs ================
         try:
@@ -93,6 +90,33 @@ class LLM(BaseModel):
         self.eval_additional_losses_metrics = torchmetrics.MeanMetric()
 
         clear_data_cache()
+    
+    def to_device(self, device):
+        device = torch.device(device)
+        if device == self.curr_device:
+            logger.warning(f"LLM already on device '{device}'. Skipping device placement step.")
+            return self
+        else:
+            logger.info(f"Moving LLM from '{self.curr_device}' to '{device}'.")
+
+        model_kwargs = {}
+        if device == torch.device("cuda"):
+            num_gpus = torch.cuda.device_count()
+            model_kwargs.update(
+                dict(
+                    low_cpu_mem_usage=True,
+                    torch_dtype=torch.float16,
+                    device_map="auto",
+                    max_memory={i: "13GiB" for i in range(num_gpus)},
+                )
+            )
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            self.model.save_pretrained(tmpdir)
+            self.model = AutoModelForCausalLM.from_pretrained(tmpdir, **model_kwargs)
+
+        self.curr_device = device
+        return self
 
     @classmethod
     def build_outputs(
@@ -191,24 +215,6 @@ class LLM(BaseModel):
         """Extracts predictions and probabilities from the model outputs."""
         return {self.config_obj.output_features[0].name: outputs}
 
-    # def extract_logits(self, scores):
-    #     """Extracts the logits from the scores.
-
-    #     Args:
-    #         scores: A tuple containing one entry for each generated token. Each tuple member
-    #             is a tensor containing the log probabilities from the model, for all words in the vocabulary.
-
-    #     Returns:
-    #         A list of tensors, each containing the normalized probabilities for each word in the vocabulary.
-
-    #     (TODO): Assumes num_beams = 1 from the generation config. Need to understand how to modify this for
-    #     num_beams > 1 since a probability distribution is returned for each beam. Also need to adapt this
-    #     for the batch size > 1.
-    #     """
-    #     probs = []
-    #     for log_prob in list(scores):
-    #         probs.append(torch.nn.functional.exp(log_prob, dim=-1))
-    #     return probs
 
     def update_metrics(self, targets, predictions):
         """Updates the model's metrics given targets and predictions."""

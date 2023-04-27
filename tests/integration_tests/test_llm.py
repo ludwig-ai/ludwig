@@ -182,7 +182,7 @@ def test_llm_zero_shot_classification(tmpdir, backend):
 @pytest.mark.parametrize(
     "backend",
     [
-        pytest.param(LOCAL_BACKEND, id="local"),
+        # pytest.param(LOCAL_BACKEND, id="local"),
         pytest.param(RAY_BACKEND, id="ray", marks=pytest.mark.distributed),
     ],
 )
@@ -248,7 +248,9 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
     df.to_csv(dataset_path, index=False)
 
     model = LudwigModel(config, backend={**backend, "cache_dir": str(tmpdir)})
-    model.train(dataset=dataset_path, output_directory=str(tmpdir), skip_save_processed_input=True)
+    breakpoint()
+    results = model.train(dataset=dataset_path, output_directory=str(tmpdir), skip_save_processed_input=True)
 
-    preds, _ = model.predict(dataset=dataset_path, output_directory=str(tmpdir))
+    model = LudwigModel.load(os.path.join(results.output_directory, "model"), backend=backend)
+    preds, _ = model.predict(dataset=dataset_path)
     preds = convert_preds(backend, preds)

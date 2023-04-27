@@ -56,9 +56,8 @@ from ludwig.constants import (
 from ludwig.data.cache.manager import DatasetCache
 from ludwig.data.cache.types import wrap
 from ludwig.data.concatenate_datasets import concatenate_df, concatenate_files, concatenate_splits
-from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataset.base import Dataset
-from ludwig.data.prompt import format_input_with_prompt, get_search_fn, index_column
+from ludwig.data.prompt import format_input_with_prompt, index_column
 from ludwig.data.split import get_splitter, split_dataset
 from ludwig.data.utils import get_input_and_output_features, set_fixed_split
 from ludwig.datasets import load_dataset_uris
@@ -1211,7 +1210,7 @@ def build_dataset(
     # so that we can compute metadata and build the dataset correctly.
     logger.debug("handle text features with prompt parameters")
     handle_features_with_prompt_config(
-        dataset_cols, feature_name_to_preprocessing_parameters, features, split_col=split_col, df_engine=df_engine
+        dataset_cols, feature_name_to_preprocessing_parameters, features, split_col=split_col, backend=backend
     )
 
     # Happens after missing values are handled to avoid NaN casting issues.
@@ -1684,7 +1683,7 @@ def handle_features_with_prompt_config(
     dataset_cols: Dict[str, Series],
     feature_name_to_preprocessing_parameters: Dict[str, PreprocessingConfigDict],
     features: List[FeatureConfigDict],
-    df_engine: DataFrameEngine,
+    backend: Backend,
     split_col: Optional[Series] = None,
 ):
     """Updates (in-place) dataset columns with prompt configurations containing a non-None task parameter.
@@ -1717,7 +1716,7 @@ def handle_features_with_prompt_config(
                     prompt_config["retrieval"],
                     col_name=input_col_name,
                     dataset_cols=input_and_output_cols,
-                    df_engine=df_engine,
+                    backend=backend,
                     split_col=split_col,
                 )
 
@@ -1725,18 +1724,16 @@ def handle_features_with_prompt_config(
                 # This ensures that the preprocessing parameters for this feature have an up-to-date index_name
                 # when the training set metadata is saved.
                 prompt_config["retrieval"]["index_name"] = index_name
-
-                search_fn = get_search_fn(retrieval_model, prompt_config["retrieval"]["k"])
             else:
-                search_fn = None
+                retrieval_model = None
 
             input_col = input_and_output_cols[input_col_name]
             dataset_cols[input_col_name] = format_input_with_prompt(
                 input_col_name,
                 input_col,
-                task_str=prompt_config["task"],
-                df_engine=df_engine,
-                search_fn=search_fn,
+                backend,
+                prompt_config["task"],
+                retrieval_model=retrieval_model,
                 template=prompt_config["template"],
             )
 

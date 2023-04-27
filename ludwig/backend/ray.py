@@ -49,7 +49,7 @@ if TYPE_CHECKING:
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.backend.datasource import BinaryIgnoreNoneTypeDatasource
-from ludwig.constants import CPU_RESOURCES_PER_TRIAL, EXECUTOR, MODEL_ECD, NAME, PROC_COLUMN
+from ludwig.constants import CPU_RESOURCES_PER_TRIAL, EXECUTOR, MODEL_ECD, MODEL_LLM, NAME, PROC_COLUMN
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataframe.dask import tensor_extension_casting
 from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetShard
@@ -58,6 +58,7 @@ from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.trainers.registry import ray_trainers_registry, register_ray_trainer
 from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer, Trainer
+from ludwig.trainers.trainer_llm import RemoteLLMTrainer
 from ludwig.types import HyperoptConfigDict, ModelConfigDict, TrainerConfigDict, TrainingSetMetadataDict
 from ludwig.utils.dataframe_utils import set_index_name
 from ludwig.utils.fs_utils import get_fs_and_path
@@ -163,6 +164,7 @@ def train_fn(
     distributed_strategy: str,
     executable_kwargs: Dict[str, Any] = None,
     model_ref: ObjectRef = None,  # noqa: F821
+    remote_trainer_cls: BaseTrainer = None, # noqa: F821
     training_set_metadata: TrainingSetMetadataDict = None,
     features: Dict[str, Dict] = None,
     **kwargs,
@@ -195,9 +197,9 @@ def train_fn(
 
         model = ray.get(model_ref)
         device = get_torch_device()
-        model = model.to(device)
+        model = model.to_device(device)
 
-        trainer = RemoteTrainer(model=model, distributed=distributed, report_tqdm_to_ray=True, **executable_kwargs)
+        trainer = remote_trainer_cls(model=model, distributed=distributed, report_tqdm_to_ray=True, **executable_kwargs)
         results = trainer.train(train_shard, val_shard, test_shard, **kwargs)
 
         if results is not None:
@@ -256,7 +258,7 @@ def tune_batch_size_fn(
 
         model = ray.get(model_ref)
         device = get_torch_device()
-        model = model.to(device)
+        model = model.to_device(device)
 
         def on_best_batch_size_updated(best_batch_size: int, best_samples_per_sec: float, count: int):
             session.report(
@@ -440,6 +442,10 @@ class RayTrainerV2(BaseTrainer):
         self.trainer_kwargs = trainer_kwargs
         self._validation_field = None
         self._validation_metric = None
+    
+    @property
+    def remote_trainer_cls(self):
+        return RemoteTrainer
 
     @staticmethod
     def get_schema_cls():
@@ -474,6 +480,7 @@ class RayTrainerV2(BaseTrainer):
                 config={
                     "executable_kwargs": executable_kwargs,
                     "model_ref": ray.put(self.model),
+                    "remote_trainer_cls": self.remote_trainer_cls,
                     **kwargs,
                 },
                 callbacks=[TqdmCallback()],
@@ -516,6 +523,7 @@ class RayTrainerV2(BaseTrainer):
                     dataset=training_set,
                     executable_kwargs=self.executable_kwargs,
                     model_ref=ray.put(self.model),
+                    remote_trainer_cls=self.remote_trainer_cls,
                     ludwig_config=config,
                     training_set_metadata=training_set.training_set_metadata,
                     features=training_set.features,
@@ -577,6 +585,14 @@ class RayTrainerV2(BaseTrainer):
         pass
 
 
+
+@register_ray_trainer(MODEL_LLM)
+class RayLLMTrainer(RayTrainerV2):
+
+    @property
+    def remote_trainer_cls(self):
+        return RemoteLLMTrainer
+
 def eval_fn(
     distributed_strategy: str,
     predictor_kwargs: Dict[str, Any] = None,
@@ -597,7 +613,7 @@ def eval_fn(
 
         model = ray.get(model_ref)
         device = get_torch_device()
-        model = model.to(device)
+        model = model.to_device(device)
 
         predictor = RemotePredictor(model=model, distributed=distributed, report_tqdm_to_ray=True, **predictor_kwargs)
         results = predictor.batch_evaluation(eval_shard, **kwargs)
@@ -722,7 +738,7 @@ class RayPredictor(BasePredictor):
 
     def get_batch_infer_model(
         self,
-        model: "LudwigModel",  # noqa: F821
+        model: "BaseModel",  # noqa: F821
         predictor_kwargs: Dict[str, Any],
         output_columns: List[str],
         features: Dict[str, Dict],
@@ -736,7 +752,7 @@ class RayPredictor(BasePredictor):
             def __init__(self):
                 model = ray.get(model_ref)
                 device = get_torch_device()
-                self.model = model.to(device)
+                self.model = model.to_device(device)
 
                 self.output_columns = output_columns
                 self.features = features

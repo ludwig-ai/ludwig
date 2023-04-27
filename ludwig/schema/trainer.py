@@ -717,6 +717,7 @@ class LLMTrainerConfig(BaseTrainerConfig):
 
     train_steps: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Number of training steps to train in the LLM trainer.",
     )
 
@@ -744,6 +745,11 @@ class LLMTrainerConfig(BaseTrainerConfig):
         description="Batch size used for evaluation in the LLM trainer.",
     )
 
+    evaluate_training_set: bool = schema_utils.Boolean(
+        default=False,
+        description="Whether to evaluate the training set in the LLM trainer. Note: this operation may be slow.",
+    )
+
 
 @DeveloperAPI
 @register_trainer_schema(MODEL_LLM)
@@ -751,7 +757,16 @@ class LLMTrainerConfig(BaseTrainerConfig):
 class ZeroShotTrainerConfig(LLMTrainerConfig):
     """Dataclass that configures most of the hyperparameters used for zero-shot LLM model training."""
 
-    pass
+    epochs: int = schema_utils.PositiveInteger(
+        default=1,
+        description="Number of epochs to train in the LLM trainer.",
+    )
+
+    train_steps: int = schema_utils.PositiveInteger(
+        default=None,
+        allow_none=True,
+        description="Number of training steps to train in the LLM trainer.",
+    )
 
 
 @DeveloperAPI

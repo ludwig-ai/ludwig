@@ -174,7 +174,7 @@ class DaskEngine(DataFrameEngine):
         with tensor_extension_casting(enable_tensor_extension_casting):
             ds = ray.data.from_dask(series)
             ds = ds.map_batches(map_fn, batch_format="pandas")
-            return self._to_dask(ds)
+            return ds.to_dask()
 
     def apply_objects(self, df, apply_fn, meta=None):
         meta = meta if meta is not None else ("data", "object")
@@ -248,84 +248,10 @@ class DaskEngine(DataFrameEngine):
         return from_dask(df)
 
     def from_ray_dataset(self, dataset) -> dd.DataFrame:
-        return self._to_dask(dataset)
+        return dataset.to_dask()
 
     def reset_index(self, df):
         return reset_index_across_all_partitions(df)
-
-    def _to_dask(
-        self,
-        dataset: Dataset,
-        meta: Union[
-            pd.DataFrame,
-            pd.Series,
-            Dict[str, Any],
-            Iterable[Any],
-            Tuple[Any],
-            None,
-        ] = None,
-    ) -> dd.DataFrame:
-        """Custom Ray to_dask() conversion implementation with meta inference added for compatibility with Ray 2.0
-        and Ray 2.1. Useful for Ray Datasets that have image and audio features.
-
-        TODO(Arnav): Remove in Ray 2.2
-        """
-        if _ray_230:
-
-            @dask.delayed
-            def block_to_df(block: Block):
-                block = BlockAccessor.for_block(block)
-                if isinstance(block, (ray.ObjectRef, ClientObjectRef)):
-                    raise ValueError(
-                        "Dataset.to_dask() must be used with Dask-on-Ray, please "
-                        "set the Dask scheduler to ray_dask_get (located in "
-                        "ray.util.dask)."
-                    )
-                return block.to_pandas()
-
-        else:
-
-            @dask.delayed
-            def block_to_df(block: Block):
-                if isinstance(block, (ray.ObjectRef, ClientObjectRef)):
-                    raise ValueError(
-                        "Dataset.to_dask() must be used with Dask-on-Ray, please "
-                        "set the Dask scheduler to ray_dask_get (located in "
-                        "ray.util.dask)."
-                    )
-                block = BlockAccessor.for_block(block)
-                return block.to_pandas()
-
-        # Infer Dask metadata from Datasets schema.
-        schema = dataset.schema()
-        if isinstance(schema, PandasBlockSchema):
-            meta = pd.DataFrame(
-                {
-                    col: pd.Series(dtype=(dtype if not isinstance(dtype, TensorDtype) else np.object_))
-                    for col, dtype in zip(schema.names, schema.types)
-                }
-            )
-        elif isinstance(schema, pa.Schema):
-            if any(isinstance(type_, ArrowTensorType) for type_ in schema.types):
-                meta = pd.DataFrame(
-                    {
-                        col: pd.Series(
-                            dtype=(dtype.to_pandas_dtype() if not isinstance(dtype, ArrowTensorType) else np.object_)
-                        )
-                        for col, dtype in zip(schema.names, schema.types)
-                    }
-                )
-            else:
-                meta = schema.empty_table().to_pandas()
-
-        if meta is None and schema is None:
-            return dd.DataFrame.from_dict({}, npartitions=1)
-
-        ddf = dd.from_delayed(
-            [block_to_df(block) for block in dataset.get_internal_block_refs()],
-            meta=meta,
-        )
-        return ddf
 
     @property
     def array_lib(self):

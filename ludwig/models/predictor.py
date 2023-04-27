@@ -74,17 +74,12 @@ class Predictor(BasePredictor):
         self._batch_size = batch_size
         self._distributed = distributed if distributed is not None else LocalStrategy()
         self.report_tqdm_to_ray = report_tqdm_to_ray
-
+        
         # TODO (jeffkinnison): revert to using the requested device for GBMs when device usage is fixed
-        if model.type() == MODEL_GBM:
-            self.device = "cpu"
-        elif model.type() == MODEL_LLM:
-            self.device = None  # do not place LLMs on a device; expected to already be placed
-        else:
-            self.device = get_torch_device()
+        self.device = get_torch_device() if not model.type() == MODEL_GBM else "cpu"
 
-        if self.device is not None:
-            self.model = model.to(self.device)
+        self.model = model
+        self.model = model.to_device(self.device)
 
     def batch_predict(self, dataset: Dataset, dataset_name: str = None, collect_logits: bool = False):
         prev_model_training_mode = self.model.training  # store previous model training mode
