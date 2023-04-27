@@ -691,6 +691,7 @@ class GBMTrainerConfig(BaseTrainerConfig):
 
 
 @DeveloperAPI
+@register_trainer_schema(MODEL_LLM)
 @ludwig_dataclass
 class LLMTrainerConfig(BaseTrainerConfig):
     """Base class for all LLM trainer configs."""
@@ -765,6 +766,8 @@ def get_model_type_jsonschema(model_type: str = MODEL_ECD):
     enum = [MODEL_ECD]
     if model_type == MODEL_GBM:
         enum = [MODEL_GBM]
+    elif model_type == MODEL_LLM:
+        enum = [MODEL_LLM]
 
     return {
         "type": "string",

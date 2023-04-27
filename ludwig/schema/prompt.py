@@ -11,7 +11,12 @@ class RetrievalConfig(schema_utils.BaseMarshmallowConfig):
     type: str = schema_utils.String(
         default=None,
         allow_none=True,
-        description="The type of retrieval to use for the prompt.",
+        description=(
+            "The type of retrieval to use for the prompt. If `None`, then no retrieval is used, and the task "
+            "is framed as a zero-shot learning problem. If not `None` (e.g. either "random" or "semantic"), then "
+            "samples are retrieved from an index of the training set and used to augment the input to the model "
+            "in a few-shot learning setting."
+        ),
     )
 
     index_name: str = schema_utils.String(
