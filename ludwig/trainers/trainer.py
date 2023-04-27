@@ -387,7 +387,9 @@ class Trainer(BaseTrainer):
         self.dist_model.train()  # Sets model training mode.
         evaluator = self._create_batch_size_evaluator()
         try:
-            return evaluator.select_best_batch_size(len(training_set), max_batch_size, max_trials)
+            return evaluator.select_best_batch_size(
+                len(training_set), max_batch_size, max_trials, self.is_coordinator()
+            )
         finally:
             # Restore original parameters to defaults
             self.skip_save_model = skip_save_model
