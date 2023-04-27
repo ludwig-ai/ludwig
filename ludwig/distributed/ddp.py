@@ -19,6 +19,7 @@ from ludwig.distributed.base import DistributedStrategy
 if TYPE_CHECKING:
     from ludwig.modules.lr_scheduler import LRScheduler
     from ludwig.schema.trainer import ECDTrainerConfig
+    from ludwig.utils.checkpoint_utils import Checkpoint
 
 
 class DDPStrategy(DistributedStrategy):
@@ -111,6 +112,13 @@ class DDPStrategy(DistributedStrategy):
         # https://discuss.ray.io/t/torchtrainer-hangs-when-only-1-worker-raises-error/7447/11
         # dist.destroy_process_group()
         pass
+
+    def create_checkpoint_handle(
+        self, model: nn.Module, optimizer: Optional[Optimizer] = None, scheduler: Optional["LRScheduler"] = None
+    ) -> "Checkpoint":
+        from ludwig.utils.checkpoint_utils import CoordinatorCheckpoint
+
+        return CoordinatorCheckpoint(self, model.module, optimizer, scheduler)
 
 
 def local_rank_and_size() -> Tuple[int, int]:
