@@ -570,6 +570,7 @@ class Trainer(BaseTrainer):
             if not self.skip_save_model:
                 logger.info("Saving model.\n")
                 checkpoint_manager.save_best(progress_tracker.steps)
+                self.callback(lambda c: c.on_save_best_checkpoint(self, progress_tracker, save_path))
 
         # Trigger eval end callback after any model weights save for complete checkpoint
         self.callback(lambda c: c.on_eval_end(self, progress_tracker, save_path))
@@ -1058,6 +1059,7 @@ class Trainer(BaseTrainer):
             if not skip_save_model:
                 logger.info("New best model saved.\n")
                 checkpoint_manager.save_best(progress_tracker.steps)
+                self.callback(lambda c: c.on_save_best_checkpoint(self, progress_tracker, save_path))
 
         last_improvement_in_steps = progress_tracker.steps - progress_tracker.best_eval_metric_steps
         progress_tracker.last_improvement_steps = last_improvement_in_steps
