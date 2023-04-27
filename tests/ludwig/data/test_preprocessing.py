@@ -6,7 +6,6 @@ from ludwig.data.preprocessing import handle_features_with_prompt_config, is_inp
 from ludwig.schema.prompt import PromptConfig
 from tests.integration_tests.utils import category_feature, generate_data_as_dataframe, text_feature
 
-
 LOCAL_BACKEND = {"type": "local"}
 RAY_BACKEND = {
     "type": "ray",
@@ -76,7 +75,7 @@ def test_handle_features_with_few_shot_prompt_config(backend_config, retrieval_k
     output_feature_name = output_features[0][NAME]
 
     df = generate_data_as_dataframe(input_features, output_features, 10, with_split=True)  # retrieval needs fixed split
-    
+
     backend = initialize_backend(backend_config)
     if backend_config["type"] == "ray":
         import dask.dataframe as dd

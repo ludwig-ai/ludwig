@@ -74,7 +74,7 @@ class Predictor(BasePredictor):
         self._batch_size = batch_size
         self._distributed = distributed if distributed is not None else LocalStrategy()
         self.report_tqdm_to_ray = report_tqdm_to_ray
-        
+
         # TODO (jeffkinnison): revert to using the requested device for GBMs when device usage is fixed
         self.device = get_torch_device() if not model.type() == MODEL_GBM else "cpu"
 

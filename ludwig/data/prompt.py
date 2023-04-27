@@ -137,15 +137,15 @@ def format_input_with_prompt(
 
     def generate_prompt(series: pd.Series):
         df = series.to_frame(name=input_col_name)
-        df['context'] = retrieval_model.search(df, backend, k=3, return_data=True)
-        df['sample_input'] = df[input_col_name].map(lambda entry: json.dumps(entry, indent=2))
-        df['task'] = task_str
+        df["context"] = retrieval_model.search(df, backend, k=3, return_data=True)
+        df["sample_input"] = df[input_col_name].map(lambda entry: json.dumps(entry, indent=2))
+        df["task"] = task_str
         df[input_col_name] = df.apply(
             lambda row: template.format(
-                context=row['context'],
-                sample_input=row['sample_input'], 
-                task=row['task'], 
-            ), 
+                context=row["context"],
+                sample_input=row["sample_input"],
+                task=row["task"],
+            ),
             axis=1,
         )
         return df[input_col_name]
@@ -153,8 +153,6 @@ def format_input_with_prompt(
     result = backend.df_engine.map_partitions(input_col, generate_prompt, meta=input_col)
     result = backend.df_engine.persist(result)  # persist to prevent re-computation
     return result
-    
-    
 
 
 def _validate_prompt_template(template: str, is_few_shot: bool):

@@ -13,8 +13,8 @@ from tqdm import tqdm
 if TYPE_CHECKING:
     from ludwig.backend.base import Backend
 
-from ludwig.utils.torch_utils import get_torch_device
 from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
+from ludwig.utils.torch_utils import get_torch_device
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,9 @@ class RetrievalModel:
         """
         raise NotImplementedError
 
-    def search(self, df, backend: "Backend", k: int = 10, return_data: bool = False) -> Union[List[int], List[Dict[str, Any]]]:
+    def search(
+        self, df, backend: "Backend", k: int = 10, return_data: bool = False
+    ) -> Union[List[int], List[Dict[str, Any]]]:
         """Retrieve the top k results for the given query.
 
         If `return_data` is True, returns the data associated with the indices. Otherwise, returns the indices.
@@ -62,7 +64,9 @@ class RandomRetrieval(RetrievalModel):
         self.index = np.array(range(len(df)))
         self.index_data = df
 
-    def search(self, df, backend: "Backend", k: int = 10, return_data: bool = False) -> Union[List[int], List[Dict[str, Any]]]:
+    def search(
+        self, df, backend: "Backend", k: int = 10, return_data: bool = False
+    ) -> Union[List[int], List[Dict[str, Any]]]:
         indices = np.random.choice(self.index, k, replace=False).tolist()
 
         if return_data:
@@ -97,7 +101,7 @@ class SemanticRetrieval(RetrievalModel):
         self.index: faiss.Index = None
         self.index_data: pd.DataFrame = None
         self.checksum = None
-        
+
         # best batch size computed during the encoding step
         self.best_batch_size = None
 
@@ -121,7 +125,7 @@ class SemanticRetrieval(RetrievalModel):
         self.index.add(embeddings)
         # Save the entire df so we can return the full row when searching
         self.index_data = df
-        
+
     def _encode(self, row_strs: List[str], backend: "Backend") -> np.ndarray:
         # only do this step once
         if self.best_batch_size is None:
@@ -135,11 +139,13 @@ class SemanticRetrieval(RetrievalModel):
         df = backend.df_engine.compute(df)
         embeddings = np.stack(df["data"].values).astype(np.float32)
         return embeddings
-    
-    def search(self, df: pd.DataFrame, backend: "Backend", k: int = 10, return_data: bool = False) -> Union[List[int], List[Dict[str, Any]]]:
+
+    def search(
+        self, df: pd.DataFrame, backend: "Backend", k: int = 10, return_data: bool = False
+    ) -> Union[List[int], List[Dict[str, Any]]]:
         rows = df.to_dict(orient="records")
         row_strs = [json.dumps(r) for r in rows]
-        
+
         query_vectors = self._encode(row_strs, backend)
         results = []
         # TODO(geoffrey): figure out why self.index.search segfaults with larger batch sizes
@@ -169,8 +175,8 @@ class SemanticRetrieval(RetrievalModel):
 
         index_data_file_path = os.path.join(cache_directory, name + "_data.csv")
         self.index_data = pd.read_csv(index_data_file_path)
-        
-        
+
+
 def create_retrieval_model_evaluator(model_name, samples):
     class _RetrievalModelEvaluator(BatchSizeEvaluator):
         def __init__(self):
@@ -188,14 +194,15 @@ def create_retrieval_model_fn(model_name, batch_size):
         def __init__(self):
             self.model = SentenceTransformer(model_name, device=get_torch_device())
             self.batch_size = batch_size
-        
+
         def __call__(self, df: pd.DataFrame) -> np.ndarray:
             row_strs = df["data"].tolist()
             result = self.model.encode(row_strs, batch_size=self.batch_size, show_progress_bar=False)
             df["data"] = result.tolist()
             return df
-    
+
     return _RetrievalModelFn
+
 
 def get_retrieval_model(type: str, **kwargs) -> RetrievalModel:
     if type == "random":
