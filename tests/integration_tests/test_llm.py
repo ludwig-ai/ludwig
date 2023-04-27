@@ -1,4 +1,5 @@
 import os
+from unittest import mock
 
 import numpy as np
 import pandas as pd
@@ -100,7 +101,7 @@ def test_llm_text_to_text(tmpdir, backend, ray_cluster_4cpu):
         pytest.param(RAY_BACKEND, id="ray", marks=pytest.mark.distributed),
     ],
 )
-def test_llm_zero_shot_classification(tmpdir, backend):
+def test_llm_zero_shot_classification(tmpdir, backend, ray_cluster_4cpu):
     input_features = [
         {
             "name": "review",
@@ -194,7 +195,7 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
             encoder={"type": "passthrough"},  # need to use the default encoder for LLMTextInputFeatureConfig
             preprocessing={
                 "prompt": {
-                    "retrieval": {"type": "semantic", "model_name": "multi-qa-MiniLM-L6-cos-v1", "k": 5},
+                    "retrieval": {"type": "random", "k": 3},
                     "task": (
                         "Given the sample input, complete this sentence by replacing XXXX: The review rating is XXXX. "
                         "Choose one value in this list: [1, 2, 3, 4, 5]."
@@ -242,9 +243,8 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
         nan_percent=0.1,
         with_split=True,
     )
-    # ensure that the sample labels match the output feature
     df = pd.read_csv(dataset_path)
-    df["label"] = np.random.choice([1, 2, 3, 4, 5], size=len(df)).astype(str)
+    df["label"] = np.random.choice([1, 2, 3, 4, 5], size=len(df)).astype(str)  # ensure labels match the feature config 
     df.to_csv(dataset_path, index=False)
 
     model = LudwigModel(config, backend={**backend, "cache_dir": str(tmpdir)})

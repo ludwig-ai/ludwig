@@ -90,7 +90,7 @@ class TextParserDecoder(Decoder):
         self.tokenizer_vocab_size = self.tokenizer.tokenizer.vocab_size
 
         # Maximum number of new tokens that will be generated
-        self.max_new_tokens = self.config.max_new_tokens
+        self.max_sequence_length = self.max_new_tokens = self.config.max_new_tokens
 
     @staticmethod
     def get_schema_cls():

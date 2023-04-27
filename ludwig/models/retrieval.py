@@ -19,8 +19,6 @@ if TYPE_CHECKING:
 from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
 from ludwig.utils.torch_utils import get_torch_device
 
-logger = logging.getLogger(__name__)
-
 
 def df_checksum(df: pd.DataFrame) -> str:
     return hashlib.sha1(pd.util.hash_pandas_object(df).values).hexdigest()
@@ -70,22 +68,29 @@ class RandomRetrieval(RetrievalModel):
     def search(
         self, df, backend: "Backend", k: int = 10, return_data: bool = False
     ) -> Union[List[int], List[Dict[str, Any]]]:
-        indices = np.random.choice(self.index, k, replace=False).tolist()
+        
+        results = []
+        for _ in tqdm(range(len(df))):
+            indices = np.random.choice(self.index, k, replace=False)
 
-        if return_data:
-            return self.index_data.iloc[indices].to_dict(orient="records")
-        return indices
+            if return_data:
+                result = self.index_data.iloc[indices].to_dict(orient="records")
+            else:
+                result = indices
+            results.append(result)
+        return results
 
     def save_index(self, name: str, cache_directory: str):
-        logger.info(f"Saving index to cache directory {cache_directory} with name {name}")
         index_file_path = os.path.join(cache_directory, name + ".index")
-        np.save(index_file_path, self.index)
+        # open file to prevent using the .npy extension
+        # https://numpy.org/doc/stable/reference/generated/numpy.save.html
+        with open(index_file_path, "wb") as f:
+            np.save(f, self.index)
 
         index_data_file_path = os.path.join(cache_directory, name + "_data.csv")
         self.index_data.to_csv(index_data_file_path, index=False)
 
     def load_index(self, name: str, cache_directory: str):
-        logger.info(f"Loading index from cache directory {cache_directory} with name {name}")
         index_file_path = os.path.join(cache_directory, name + ".index")
         self.index = np.load(index_file_path)
 
@@ -164,7 +169,6 @@ class SemanticRetrieval(RetrievalModel):
         return results
 
     def save_index(self, name: str, cache_directory: str):
-        logger.info(f"Saving index to cache directory {cache_directory} with name {name}")
         index_file_path = os.path.join(cache_directory, name + ".index")
         faiss.write_index(self.index, index_file_path)
 
@@ -172,7 +176,6 @@ class SemanticRetrieval(RetrievalModel):
         self.index_data.to_csv(index_data_file_path, index=False)
 
     def load_index(self, name: str, cache_directory: str):
-        logger.info(f"Loading index from cache directory {cache_directory} with name {name}")
         index_file_path = os.path.join(cache_directory, name + ".index")
         self.index = faiss.read_index(index_file_path)
 

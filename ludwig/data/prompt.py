@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import string
 import uuid
@@ -14,6 +15,8 @@ from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.models.retrieval import get_retrieval_model, RetrievalModel
 from ludwig.utils.fs_utils import get_default_cache_location
 from ludwig.utils.types import Series
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_ZERO_SHOT_PROMPT_TEMPLATE = """SAMPLE INPUT: {sample_input}
 
@@ -93,8 +96,10 @@ def index_column(
         df = df[split_col == 0]  # Ensures that the index is only built on the training set
         retrieval_model.create_dataset_index(df, backend, columns_to_index=[col_name])
         index_name = f"embedding_index_{uuid.uuid4()}"
+        logger.info(f"Saving index to cache directory '{index_cache_directory}' with name '{index_name}'")
         retrieval_model.save_index(index_name, cache_directory=index_cache_directory)
     else:
+        logger.info(f"Loading index from cache directory '{index_cache_directory}' with name '{index_name}'")
         retrieval_model.load_index(index_name, cache_directory=index_cache_directory)
     return retrieval_model, index_name
 
@@ -137,17 +142,23 @@ def format_input_with_prompt(
 
     def generate_prompt(series: pd.Series):
         df = series.to_frame(name=input_col_name)
-        df["context"] = retrieval_model.search(df, backend, k=3, return_data=True)
+        
+        if is_few_shot:
+            df["context"] = retrieval_model.search(df, backend, k=3, return_data=True)
+            
         df["sample_input"] = df[input_col_name].map(lambda entry: json.dumps(entry, indent=2))
         df["task"] = task_str
-        df[input_col_name] = df.apply(
-            lambda row: template.format(
-                context=row["context"],
-                sample_input=row["sample_input"],
-                task=row["task"],
-            ),
-            axis=1,
-        )
+        
+        def generate_prompt_for_row(row):
+            format_kwargs = {
+                "sample_input": row["sample_input"],
+                "task": row["task"],
+            }
+            if is_few_shot:
+                format_kwargs["context"] = row["context"]
+            return template.format(**format_kwargs)
+        
+        df[input_col_name] = df.apply(generate_prompt_for_row, axis=1)
         return df[input_col_name]
 
     result = backend.df_engine.map_partitions(input_col, generate_prompt, meta=input_col)

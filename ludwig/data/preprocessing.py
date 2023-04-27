@@ -1730,10 +1730,9 @@ def handle_features_with_prompt_config(
             else:
                 retrieval_model = None
 
-            input_col = input_and_output_cols[input_col_name]
             dataset_cols[input_col_name] = format_input_with_prompt(
                 input_col_name,
-                input_col,
+                dataset_cols[input_col_name],
                 backend,
                 prompt_config["task"],
                 retrieval_model=retrieval_model,

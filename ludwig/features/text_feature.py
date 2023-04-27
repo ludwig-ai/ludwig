@@ -388,12 +388,12 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
 
     def flatten(self, df: DataFrame) -> DataFrame:
         probs_col = f"{self.feature_name}_{PROBABILITIES}"
-        df[probs_col] = df[probs_col].apply(lambda x: x.flatten())
+        df[probs_col] = df[probs_col].map(lambda x: x.flatten())
         return df
 
     def unflatten(self, df: DataFrame) -> DataFrame:
         probs_col = f"{self.feature_name}_{PROBABILITIES}"
-        df[probs_col] = df[probs_col].apply(
-            lambda x: x.reshape(-1, self.decoder_obj.config.max_sequence_length), meta=(probs_col, "object")
+        df[probs_col] = df[probs_col].map(
+            lambda x: x.reshape(-1, self.decoder_obj.max_sequence_length), meta=(probs_col, "object")
         )
         return df
