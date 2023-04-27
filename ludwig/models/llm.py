@@ -269,8 +269,10 @@ class LLM(BaseModel):
 
     def save(self, save_path):
         """Saves the model to the given path."""
-        weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
-        torch.save(self.state_dict(), weights_save_path)
+        # TODO: figure out what we want to do about weight saving for LLMs.
+        # weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
+        # torch.save(self.state_dict(), weights_save_path)
+        logger.warning("Saving LLMs is not yet supported.")
 
     def load(self, save_path):
         """Loads the model from the given path."""
