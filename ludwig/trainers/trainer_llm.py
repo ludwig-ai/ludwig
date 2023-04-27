@@ -25,11 +25,7 @@ from ludwig.utils.metric_utils import TrainerMetric
 from ludwig.utils.metrics_printed_table import MetricsPrintedTable
 from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.torch_utils import get_torch_device
-from ludwig.utils.trainer_utils import (
-    append_metrics,
-    get_new_progress_tracker,
-    ProgressTracker,
-)
+from ludwig.utils.trainer_utils import append_metrics, get_new_progress_tracker, ProgressTracker
 
 logger = logging.getLogger(__name__)
 
