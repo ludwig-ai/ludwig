@@ -142,6 +142,11 @@ class DeepSpeedStrategy(DDPStrategy):
 
 
 class DeepSpeedCheckpoint(Checkpoint):
+    def prepare(self, directory: str):
+        if self.distributed.local_rank() == 0:
+            # Checkpoints need to be written on every rank, but the directory only needs to be created once per node.
+            super().prepare(directory)
+
     def load(self, save_path: str, device: Optional[torch.device] = None) -> bool:
         _, client_state = self.model.load_checkpoint(save_path, load_lr_scheduler_states=False)
         self.global_step = self._get_global_step(client_state, save_path)

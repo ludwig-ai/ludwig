@@ -88,6 +88,11 @@ class Checkpoint(ABC):
         self.scheduler = scheduler
         self.global_step = 0
 
+    def prepare(self, directory: str):
+        # create checkpoint directory if it doesn't
+        # already exist
+        mkdir(directory)
+
     @abstractmethod
     def load(self, save_path: str, device: Optional[torch.device] = None) -> bool:
         pass
@@ -111,6 +116,10 @@ class Checkpoint(ABC):
 
 @DeveloperAPI
 class CoordinatorCheckpoint(Checkpoint):
+    def prepare(self, directory: str):
+        if self.distributed.is_coordinator():
+            super().prepare(directory)
+
     def load(self, save_path: str, device: Optional[torch.device] = None) -> bool:
         """Load state from a saved checkpoint.
 
@@ -215,10 +224,7 @@ class CheckpointManager:
         self.directory = directory
         self.device = device
         self.latest_checkpoint = None
-
-        # create checkpoint directory if it doesn't
-        # already exist
-        mkdir(self.directory)
+        self.checkpoint.prepare(self.directory)
 
     def restore_or_initialize(self) -> int:
         """Restore items in checkpoint from the latest checkpoint file.
