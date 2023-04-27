@@ -782,6 +782,7 @@ def test_experiment_model_resume_missing_file(tmpdir, missing_file):
     shutil.rmtree(output_dir, ignore_errors=True)
 
 
+@pytest.mark.distributed
 def test_experiment_model_resume_before_1st_epoch_distributed(tmpdir, ray_cluster_4cpu):
     # Single sequence input, single category output
     # Tests saving a model file, loading it to rerun training and predict
