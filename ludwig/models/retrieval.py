@@ -4,11 +4,14 @@ import logging
 import os
 from typing import Any, Dict, List, Optional, TYPE_CHECKING, Union
 
-import faiss
 import numpy as np
 import pandas as pd
-from sentence_transformers import SentenceTransformer
 from tqdm import tqdm
+
+try:
+    import faiss
+except ImportError:
+    faiss = None
 
 if TYPE_CHECKING:
     from ludwig.backend.base import Backend
@@ -130,10 +133,10 @@ class SemanticRetrieval(RetrievalModel):
         # only do this step once
         if self.best_batch_size is None:
             self.best_batch_size = backend.tune_batch_size(
-                create_retrieval_model_evaluator(self.model_name, row_strs), len(row_strs)
+                create_semantic_retrieval_model_evaluator(self.model_name, row_strs), len(row_strs)
             )
 
-        transform_fn = create_retrieval_model_fn(self.model_name, self.best_batch_size)
+        transform_fn = create_semantic_retrieval_model_fn(self.model_name, self.best_batch_size)
         df = backend.df_engine.from_pandas(pd.DataFrame({"data": row_strs}))
         df = backend.batch_transform(df, self.best_batch_size, transform_fn)
         df = backend.df_engine.compute(df)
@@ -177,9 +180,11 @@ class SemanticRetrieval(RetrievalModel):
         self.index_data = pd.read_csv(index_data_file_path)
 
 
-def create_retrieval_model_evaluator(model_name, samples):
+def create_semantic_retrieval_model_evaluator(model_name, samples):
     class _RetrievalModelEvaluator(BatchSizeEvaluator):
         def __init__(self):
+            from sentence_transformers import SentenceTransformer
+
             self.model = SentenceTransformer(model_name, device=get_torch_device())
             self.samples = samples
 
@@ -189,9 +194,11 @@ def create_retrieval_model_evaluator(model_name, samples):
     return _RetrievalModelEvaluator
 
 
-def create_retrieval_model_fn(model_name, batch_size):
+def create_semantic_retrieval_model_fn(model_name, batch_size):
     class _RetrievalModelFn:
         def __init__(self):
+            from sentence_transformers import SentenceTransformer
+
             self.model = SentenceTransformer(model_name, device=get_torch_device())
             self.batch_size = batch_size
 
