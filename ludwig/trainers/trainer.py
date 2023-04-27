@@ -619,6 +619,8 @@ class Trainer(BaseTrainer):
                 self.resume_weights_and_optimizer(training_checkpoints_path, checkpoint)
                 logger.info("Resuming training from previous run.")
             except Exception:
+                # This may happen if model training is interrupted after the progress tracker is initialized
+                # but before any real training progress is made.
                 progress_tracker = get_new_progress_tracker(
                     batch_size=self.batch_size,
                     learning_rate=self.base_learning_rate,
