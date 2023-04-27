@@ -26,6 +26,7 @@ import yaml
 
 from ludwig.api import LudwigModel
 from ludwig.backend import LOCAL_BACKEND
+from ludwig.callbacks import Callback
 from ludwig.constants import BATCH_SIZE, COLUMN, ENCODER, H3, NAME, PREPROCESSING, TRAINER, TYPE
 from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.data.preprocessing import preprocess_for_training
@@ -779,6 +780,55 @@ def test_experiment_model_resume_missing_file(tmpdir, missing_file):
 
     predict_cli(os.path.join(output_dir, "model"), dataset=rel_path)
     shutil.rmtree(output_dir, ignore_errors=True)
+
+
+@pytest.mark.distributed
+def test_experiment_model_resume_before_1st_epoch_distributed(tmpdir, ray_cluster_4cpu):
+    # Single sequence input, single category output
+    # Tests saving a model file, loading it to rerun training and predict
+    input_features = [number_feature()]
+    output_features = [category_feature(output_feature=True)]
+    # Generate test data
+    training_set = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "output_size": 8},
+        TRAINER: {"train_steps": 1, BATCH_SIZE: 128},
+        "backend": {"type": "ray", "trainer": {"strategy": "ddp", "num_workers": 2}},
+    }
+
+    class InducedFailureCallback(Callback):
+        """Class that defines the methods necessary to hook into process."""
+
+        def on_resume_training(self, is_coordinator):
+            if is_coordinator:
+                raise RuntimeError("Induced failure")
+
+    class NoFailureCallback(Callback):
+        """Class that defines the methods necessary to hook into process."""
+
+        def on_resume_training(self, is_coordinator):
+            pass
+
+    try:
+        # Define Ludwig model object that drive model training
+        model = LudwigModel(config=config, logging_level=logging.INFO, callbacks=[InducedFailureCallback()])
+        model.train(
+            dataset=training_set,
+            experiment_name="simple_experiment",
+            model_name="simple_model_incomplete",
+            skip_save_processed_input=True,
+            output_directory=os.path.join(tmpdir, "results1"),
+        )
+    except RuntimeError:
+        model = LudwigModel(config=config, logging_level=logging.INFO, callbacks=[NoFailureCallback()])
+        model.train(
+            dataset=training_set,
+            skip_save_processed_input=True,
+            model_resume_path=os.path.join(tmpdir, "results1"),
+        )
 
 
 def test_experiment_various_feature_types(csv_filename):

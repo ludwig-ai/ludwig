@@ -607,12 +607,33 @@ class Trainer(BaseTrainer):
                 test_summary_writer = SummaryWriter(os.path.join(tensorboard_log_dir, TEST))
 
         # ================ Resume logic ================
-        if self.resume and self.resume_files_exist(training_progress_tracker_path, training_checkpoints_path):
-            logger.info("Resuming training from previous run.")
-            progress_tracker = self.resume_training_progress_tracker(training_progress_tracker_path)
-            self.resume_weights_and_optimizer(training_checkpoints_path, checkpoint)
+        self.callback(lambda c: c.on_resume_training(self.is_coordinator()))
+
+        should_resume = self.resume and self.resume_files_exist(
+            training_progress_tracker_path, training_checkpoints_path
+        )
+        # make sure all workers are on the same page about resuming.
+        should_resume = self.distributed.broadcast_object(should_resume, name="should_resume")
+
+        if should_resume:
+            try:
+                progress_tracker = self.resume_training_progress_tracker(training_progress_tracker_path)
+                self.resume_weights_and_optimizer(training_checkpoints_path, checkpoint)
+                logger.info("Resuming training from previous run.")
+            except Exception:
+                # This may happen if model training is interrupted after the progress tracker is initialized
+                # but before any real training progress is made.
+                progress_tracker = get_new_progress_tracker(
+                    batch_size=self.batch_size,
+                    learning_rate=self.base_learning_rate,
+                    best_eval_metric_value=get_initial_validation_value(self.validation_metric),
+                    best_increase_batch_size_eval_metric=get_initial_validation_value(
+                        self.increase_batch_size_eval_metric
+                    ),
+                    output_features=output_features,
+                )
+                logger.info("Failed to resume training from previous run. Creating fresh model training run.")
         else:
-            logger.info("Creating fresh model training run.")
             progress_tracker = get_new_progress_tracker(
                 batch_size=self.batch_size,
                 learning_rate=self.base_learning_rate,
@@ -620,6 +641,7 @@ class Trainer(BaseTrainer):
                 best_increase_batch_size_eval_metric=get_initial_validation_value(self.increase_batch_size_eval_metric),
                 output_features=output_features,
             )
+            logger.info("Creating fresh model training run.")
 
         # Distributed: broadcast initial variable states from rank 0 to all other processes.
         # This is necessary to ensure consistent initialization of all workers when
