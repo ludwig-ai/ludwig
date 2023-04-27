@@ -1702,8 +1702,10 @@ def handle_features_with_prompt_config(
     for input_feature_config in input_features:
         input_feature_preprocessing_parameters = feature_name_to_preprocessing_parameters[input_feature_config[NAME]]
 
-        if ("prompt" in input_feature_preprocessing_parameters and
-            input_feature_preprocessing_parameters["prompt"]["task"] is not None):
+        if (
+            "prompt" in input_feature_preprocessing_parameters
+            and input_feature_preprocessing_parameters["prompt"]["task"] is not None
+        ):
             prompt_config = input_feature_preprocessing_parameters["prompt"]
             input_col_name = input_feature_config[COLUMN]
 
