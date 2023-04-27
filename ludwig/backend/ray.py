@@ -164,7 +164,7 @@ def train_fn(
     distributed_strategy: str,
     executable_kwargs: Dict[str, Any] = None,
     model_ref: ObjectRef = None,  # noqa: F821
-    remote_trainer_cls: BaseTrainer = None, # noqa: F821
+    remote_trainer_cls: BaseTrainer = None,  # noqa: F821
     training_set_metadata: TrainingSetMetadataDict = None,
     features: Dict[str, Dict] = None,
     **kwargs,
@@ -442,7 +442,7 @@ class RayTrainerV2(BaseTrainer):
         self.trainer_kwargs = trainer_kwargs
         self._validation_field = None
         self._validation_metric = None
-    
+
     @property
     def remote_trainer_cls(self):
         return RemoteTrainer
@@ -585,13 +585,12 @@ class RayTrainerV2(BaseTrainer):
         pass
 
 
-
 @register_ray_trainer(MODEL_LLM)
 class RayLLMTrainer(RayTrainerV2):
-
     @property
     def remote_trainer_cls(self):
         return RemoteLLMTrainer
+
 
 def eval_fn(
     distributed_strategy: str,

@@ -24,14 +24,15 @@ from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.metric_utils import TrainerMetric
 from ludwig.utils.metrics_printed_table import MetricsPrintedTable
 from ludwig.utils.misc_utils import set_random_seed
+from ludwig.utils.torch_utils import get_torch_device
 from ludwig.utils.trainer_utils import (
     append_metrics,
     get_new_progress_tracker,
     ProgressTracker,
 )
-from ludwig.utils.torch_utils import get_torch_device
 
 logger = logging.getLogger(__name__)
+
 
 @register_trainer(MODEL_LLM)
 class ZeroShotTrainer(BaseTrainer):
@@ -111,11 +112,11 @@ class ZeroShotTrainer(BaseTrainer):
         self.evaluate_training_set = self.config.evaluate_training_set
 
     def train(
-        self, 
-        training_set: Dataset, 
-        validation_set: Optional[Dataset] = None, 
-        test_set: Optional[Dataset] = None, 
-        save_path: str = "model", 
+        self,
+        training_set: Dataset,
+        validation_set: Optional[Dataset] = None,
+        test_set: Optional[Dataset] = None,
+        save_path: str = "model",
         **kwargs,
     ):
         logger.info("Starting Training")
@@ -305,7 +306,9 @@ class ZeroShotTrainer(BaseTrainer):
         # Run a separate pass over the training data to compute metrics
         # Appends results to progress_tracker.train_metrics.
         if self.evaluate_training_set:
-            self.evaluation(training_set, "train", progress_tracker.train_metrics, self.eval_batch_size, progress_tracker)
+            self.evaluation(
+                training_set, "train", progress_tracker.train_metrics, self.eval_batch_size, progress_tracker
+            )
 
         # eval metrics on the train set
         printed_table.add_metrics_to_printed_table(progress_tracker.train_metrics, TRAIN)
@@ -366,7 +369,8 @@ class ZeroShotTrainer(BaseTrainer):
         self.callback(lambda c: c.on_eval_end(self, progress_tracker, save_path))
 
         return False
-    
+
+
 class RemoteLLMTrainer(ZeroShotTrainer):
     def __init__(self, gpus=None, gpu_memory_limit=None, allow_parallel_threads=True, **kwargs):
         super().__init__(**kwargs)

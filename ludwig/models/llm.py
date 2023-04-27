@@ -54,7 +54,7 @@ class LLM(BaseModel):
         self.to_device(device)
 
         self.max_new_tokens = self.config_obj.generation.max_new_tokens
-        
+
         # Determines the maximum length of the context (input + output tokens)
         if hasattr(self.model.config, "max_sequence_length"):
             self.context_len = self.model.config.max_sequence_length
@@ -90,7 +90,7 @@ class LLM(BaseModel):
         self.eval_additional_losses_metrics = torchmetrics.MeanMetric()
 
         clear_data_cache()
-    
+
     def to_device(self, device):
         device = torch.device(device)
         if device == self.curr_device:
@@ -214,7 +214,6 @@ class LLM(BaseModel):
     ):
         """Extracts predictions and probabilities from the model outputs."""
         return {self.config_obj.output_features[0].name: outputs}
-
 
     def update_metrics(self, targets, predictions):
         """Updates the model's metrics given targets and predictions."""
