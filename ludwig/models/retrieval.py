@@ -68,7 +68,7 @@ class RandomRetrieval(RetrievalModel):
     def search(
         self, df, backend: "Backend", k: int = 10, return_data: bool = False
     ) -> Union[List[int], List[Dict[str, Any]]]:
-        
+
         results = []
         for _ in tqdm(range(len(df))):
             indices = np.random.choice(self.index, k, replace=False)

@@ -142,13 +142,13 @@ def format_input_with_prompt(
 
     def generate_prompt(series: pd.Series):
         df = series.to_frame(name=input_col_name)
-        
+
         if is_few_shot:
             df["context"] = retrieval_model.search(df, backend, k=3, return_data=True)
-            
+
         df["sample_input"] = df[input_col_name].map(lambda entry: json.dumps(entry, indent=2))
         df["task"] = task_str
-        
+
         def generate_prompt_for_row(row):
             format_kwargs = {
                 "sample_input": row["sample_input"],
@@ -157,7 +157,7 @@ def format_input_with_prompt(
             if is_few_shot:
                 format_kwargs["context"] = row["context"]
             return template.format(**format_kwargs)
-        
+
         df[input_col_name] = df.apply(generate_prompt_for_row, axis=1)
         return df[input_col_name]
 

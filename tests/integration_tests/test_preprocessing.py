@@ -16,7 +16,7 @@ from ludwig.backend import initialize_backend
 from ludwig.callbacks import Callback
 from ludwig.constants import BATCH_SIZE, COLUMN, DECODER, FULL, NAME, PROC_COLUMN, TRAINER
 from ludwig.data.concatenate_datasets import concatenate_df
-from ludwig.data.preprocessing import preprocess_for_prediction, handle_features_with_prompt_config
+from ludwig.data.preprocessing import handle_features_with_prompt_config, preprocess_for_prediction
 from ludwig.schema.prompt import PromptConfig
 from tests.integration_tests.utils import (
     assert_preprocessed_dataset_shape_and_dtype_for_feature,
@@ -858,11 +858,14 @@ def test_prompt_template(backend, tmpdir):
     "retrieval_kwargs",
     [
         pytest.param({"type": "random", "k": 2}, id="random_retrieval"),
-        pytest.param({
-            "type": "semantic",
-            "model_name": "paraphrase-MiniLM-L3-v2",
-            "k": 2,
-        }, id="semantic_retrieval"),  # TODO: find a smaller model for testing
+        pytest.param(
+            {
+                "type": "semantic",
+                "model_name": "paraphrase-MiniLM-L3-v2",
+                "k": 2,
+            },
+            id="semantic_retrieval",
+        ),  # TODO: find a smaller model for testing
     ],
 )
 def test_handle_features_with_few_shot_prompt_config(backend, retrieval_kwargs, ray_cluster_2cpu):
@@ -906,13 +909,13 @@ def test_handle_features_with_few_shot_prompt_config(backend, retrieval_kwargs, 
 
     if backend == "local":
         context = mock.patch(
-            "ludwig.models.retrieval.SemanticRetrieval._encode", 
-            side_effect=lambda row_strs, _: np.random.rand(len(row_strs), 16).astype(np.float32)
+            "ludwig.models.retrieval.SemanticRetrieval._encode",
+            side_effect=lambda row_strs, _: np.random.rand(len(row_strs), 16).astype(np.float32),
         )
     else:
         # TODO: figure out how to get mocks to work with Ray backend
         context = contextlib.nullcontext()
-        
+
     with context:
         backend = initialize_backend(backend)
         handle_features_with_prompt_config(
