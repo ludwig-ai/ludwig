@@ -13,15 +13,13 @@ import shutil
 import yaml
 
 from ludwig.api import LudwigModel
-
-# from ludwig.datasets import titanic
+from ludwig.datasets import titanic
 
 # clean out prior results
 shutil.rmtree("./results", ignore_errors=True)
-# model_dir = "/src/results/simple_experiment_simple_model/model"
 
 # Download and prepare the dataset
-# training_set, test_set, _ = titanic.load(split=True)
+training_set, test_set, _ = titanic.load(split=True)
 
 config = yaml.safe_load(
     """
@@ -49,26 +47,6 @@ output_features:
     - name: Survived
       type: binary
 
-trainer:
-    batch_size: 32
-    epochs: 10
-
-backend:
-    type: deepspeed
-    zero_optimization:
-        stage: 3
-    # type: ray
-    # trainer:
-    #     strategy:
-    #         type: deepspeed
-    #         zero_optimization:
-    #             stage: 3
-    #     num_workers: 2
-    #     use_gpu: True
-    #     resources_per_worker:
-    #         CPU: 1
-    #         GPU: 1
-
 """
 )
 
@@ -81,10 +59,7 @@ model = LudwigModel(config=config, logging_level=logging.INFO)
     preprocessed_data,  # tuple Ludwig Dataset objects of pre-processed training data
     output_directory,  # location of training results stored on disk
 ) = model.train(
-    dataset="/home/ray/titanic.csv",
-    experiment_name="simple_experiment",
-    model_name="simple_model",
-    # model_resume_path=model_dir,
+    dataset=training_set, experiment_name="simple_experiment", model_name="simple_model", skip_save_processed_input=True
 )
 
 # list contents of output directory
@@ -93,21 +68,4 @@ for item in os.listdir(output_directory):
     print("\t", item)
 
 # batch prediction
-# backend = {
-#     "type": "ray",
-#     "trainer": {
-#         "strategy": {"type": "deepspeed", "zero_optimization": {"stage": 3}},
-#         "num_workers": 2,
-#         "use_gpu": True,
-#         "resources_per_worker": {"CPU": 1, "GPU": 1},
-#     },
-# }
-# backend = {
-#     "type": "deepspeed",
-#     "zero_optimization": {"stage": 3},
-# }
-
-# print(model_dir)
-# model = LudwigModel.load(model_dir, backend=backend)
-# results, _ = model.predict("/home/ray/titanic.csv", skip_save_predictions=False)
-# print(results)
+model.predict(test_set, skip_save_predictions=False)
