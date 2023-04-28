@@ -12,6 +12,7 @@ import torch
 from torch.utils.tensorboard import SummaryWriter
 
 from ludwig.constants import BINARY, CATEGORY, MINIMIZE, MODEL_GBM, NUMBER, TEST, TRAIN, TRAINING, VALIDATION
+from ludwig.distributed import init_dist_strategy
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.globals import is_progressbar_disabled, TRAINING_CHECKPOINTS_DIR_PATH, TRAINING_PROGRESS_TRACKER_FILE_NAME
@@ -565,6 +566,7 @@ class LightGBMTrainer(BaseTrainer):
         save_path="model",
         **kwargs,
     ):
+        init_dist_strategy("local")
         # ====== General setup =======
         output_features = self.model.output_features
 
