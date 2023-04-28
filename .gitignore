@@ -136,3 +136,6 @@ tags
 # examples
 examples/*/data/
 examples/*/visualizations/
+
+# benchmarking configs
+ludwig/benchmarking/configs/
