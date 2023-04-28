@@ -151,15 +151,15 @@ jobs:
 
       - name: Unit Tests
         run: |
-          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow and not combinatorial and not horovod" --junitxml pytest.xml tests/ludwig
+          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow and not combinatorial and not horovod and not llm" --junitxml pytest.xml tests/ludwig
 
       - name: Integration Tests
         run: |
-          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow and not combinatorial and not horovod" --junitxml pytest.xml tests/integration_tests
+          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow and not combinatorial and not horovod and not llm" --junitxml pytest.xml tests/integration_tests
 
       - name: Regression Tests
         run: |
-          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow and not combinatorial and not horovod or benchmark" --junitxml pytest.xml tests/regression_tests
+          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow and not combinatorial and not horovod or benchmark and not llm" --junitxml pytest.xml tests/regression_tests
 
       - name: Install Horovod if necessary
         if: matrix.test-markers == 'distributed'
@@ -181,7 +181,7 @@ jobs:
       - name: Horovod Tests
         if: matrix.test-markers == 'distributed'
         run: |
-          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and horovod and not slow and not combinatorial" --junitxml pytest.xml tests/
+          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and horovod and not slow and not combinatorial and not llm" --junitxml pytest.xml tests/
 
       - name: Upload Unit Test Results
         if: ${{ always() && !env.ACT }}
@@ -217,20 +217,13 @@ jobs:
           python --version
           pip --version
           python -m pip install -U pip
-          pip install -r requirements.txt
-          pip install -r requirements_distributed.txt
-          pip install -r requirements_llm.txt
-          pip install -r requirements_test.txt
+          pip install '.[test]'
           pip list
         shell: bash
 
-      - name: Unit Tests
+      - name: LLM Tests
         run: |
-          pytest -vs --durations 100 -m "llm" --junitxml pytest.xml tests/ludwig
-
-      - name: Integration Tests
-        run: |
-          pytest -vs --durations 100 -m "llm" --junitxml pytest.xml tests/integration_tests
+          pytest -vs --durations 100 -m "llm" --junitxml pytest.xml tests
 
   combinatorial-tests:
     name: Combinatorial Tests
