@@ -13,16 +13,20 @@
 # limitations under the License.
 # ==============================================================================
 from dataclasses import asdict
-from typing import Dict, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Dict, Optional, Tuple, Type
 
 import torch
 
-from ludwig.schema.optimizers import BaseOptimizerConfig, GradientClippingConfig, optimizer_registry
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.torch_utils import LudwigModule
 
+if TYPE_CHECKING:
+    from ludwig.schema.optimizers import BaseOptimizerConfig, GradientClippingConfig
 
-def create_clipper(gradient_clipping_config: Optional[GradientClippingConfig]):
+
+def create_clipper(gradient_clipping_config: Optional["GradientClippingConfig"]):
+    from ludwig.schema.optimizers import GradientClippingConfig
+
     """Utility function that will convert a None-type gradient clipping config to the correct form."""
     if isinstance(gradient_clipping_config, GradientClippingConfig):
         return gradient_clipping_config
@@ -31,12 +35,14 @@ def create_clipper(gradient_clipping_config: Optional[GradientClippingConfig]):
 
 
 def get_optimizer_class_and_kwargs(
-    optimizer_config: BaseOptimizerConfig, learning_rate: float
+    optimizer_config: "BaseOptimizerConfig", learning_rate: float
 ) -> Tuple[Type[torch.optim.Optimizer], Dict]:
     """Returns the optimizer class and kwargs for the optimizer.
 
     :return: Tuple of optimizer class and kwargs for the optimizer.
     """
+    from ludwig.schema.optimizers import optimizer_registry
+
     # Get the corresponding torch optimizer class for the given config:
     optimizer_cls = get_from_registry(optimizer_config.type.lower(), optimizer_registry)[0]
 
@@ -50,7 +56,7 @@ def get_optimizer_class_and_kwargs(
 def create_optimizer(
     model: LudwigModule,
     learning_rate: float,
-    optimizer_config: BaseOptimizerConfig,
+    optimizer_config: "BaseOptimizerConfig",
 ) -> torch.optim.Optimizer:
     """Returns a ready-to-use torch optimizer instance based on the given optimizer config.
 

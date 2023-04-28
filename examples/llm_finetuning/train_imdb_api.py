@@ -20,10 +20,10 @@ config = yaml.safe_load(
 input_features:
     - name: review
       type: text
-      encoder:
-            type: auto_transformer
-            pretrained_model_name_or_path: bigscience/bloom-3b
-            trainable: true
+    #   encoder:
+    #         type: auto_transformer
+    #         pretrained_model_name_or_path: bigscience/bloom-3b
+    #         trainable: true
 
 output_features:
     - name: sentiment
@@ -32,7 +32,7 @@ output_features:
 trainer:
     batch_size: 1
     epochs: 3
-    gradient_accumulation_steps: 8
+    # gradient_accumulation_steps: 8
     # train_steps: 10
 
 backend:
