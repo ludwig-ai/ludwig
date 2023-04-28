@@ -4,7 +4,6 @@ import os
 import yaml
 
 from ludwig.api import LudwigModel
-
 from ludwig.datasets import imdb
 
 # Download and prepare the dataset
