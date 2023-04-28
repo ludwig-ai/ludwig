@@ -199,12 +199,6 @@ def train_fn(
 
         trainer = RemoteTrainer(model=model, distributed=distributed, report_tqdm_to_ray=True, **executable_kwargs)
         results = trainer.train(train_shard, val_shard, test_shard, return_state_dict=True, **kwargs)
-
-        # if results is not None:
-        #     # only return the model state dict back to the head node.
-        #     trained_model, *args = results
-        #     results = (trained_model.cpu().state_dict(), *args)
-
         torch.cuda.empty_cache()
 
         # Passing objects containing Torch tensors as metrics is not supported as it will throw an
