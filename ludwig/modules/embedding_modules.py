@@ -103,10 +103,10 @@ def embedding_matrix_on_device(
         force_embedding_size=force_embedding_size,
         embedding_initializer=embedding_initializer,
     )
-    # if embeddings_on_cpu:
-    #     embeddings.to("cpu")
-    # elif not embeddings_on_cpu and torch.cuda.is_available():
-    #     embeddings.to(device="cuda")
+    if embeddings_on_cpu:
+        embeddings.to("cpu")
+    elif not embeddings_on_cpu and torch.cuda.is_available():
+        embeddings.to(device="cuda")
 
     return embeddings, embedding_size
 
