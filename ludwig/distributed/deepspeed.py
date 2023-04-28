@@ -82,7 +82,7 @@ class DeepSpeedStrategy(DDPStrategy):
         )
         return model_engine, optimizer.optimizer
 
-    def to_device(self, model: nn.Module) -> nn.Module:
+    def to_device(self, model: nn.Module, device: Optional[torch.device] = None) -> nn.Module:
         return model
 
     def backward(self, loss: torch.Tensor, model: nn.Module):

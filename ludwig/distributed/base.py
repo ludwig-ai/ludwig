@@ -35,8 +35,8 @@ class DistributedStrategy(ABC):
     ) -> Tuple[nn.Module, Optimizer]:
         pass
 
-    def to_device(self, model: nn.Module) -> nn.Module:
-        return model.to(get_torch_device())
+    def to_device(self, model: nn.Module, device: Optional[torch.device] = None) -> nn.Module:
+        return model.to(device if device is not None else get_torch_device())
 
     def backward(self, loss: torch.Tensor, model: nn.Module):
         loss.backward()

@@ -1,7 +1,8 @@
 import logging
-from typing import Tuple, TYPE_CHECKING
+from typing import Optional, Tuple, TYPE_CHECKING
 
 from torch import nn
+import torch
 from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
 from torch.optim import Optimizer
 
@@ -24,7 +25,7 @@ class FSDPStrategy(DDPStrategy):
     ) -> Tuple[nn.Module, Optimizer]:
         return FSDP(model), create_optimizer(model, trainer_config.optimizer, base_learning_rate)
 
-    def to_device(self, model: nn.Module) -> nn.Module:
+    def to_device(self, model: nn.Module, device: Optional[torch.device] = None) -> nn.Module:
         return model
 
     @classmethod
