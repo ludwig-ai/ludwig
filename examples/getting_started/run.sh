@@ -18,3 +18,6 @@ ludwig train --config ${SCRIPT_DIR}/rotten_tomatoes.yaml --dataset rotten_tomato
 
 # Predict and Evaluate
 ludwig predict --model_path results/experiment_run/model --dataset rotten_tomatoes_test.csv
+
+# Train and evaluate a distributed GBM model
+ludwig benchmark --benchmarking_config benchmarking_config_titanic_gbm.yaml
