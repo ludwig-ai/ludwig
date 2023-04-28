@@ -30,8 +30,9 @@ output_features:
       type: category
 
 trainer:
-    batch_size: auto
+    batch_size: 1
     epochs: 3
+    gradient_accumulation_steps: 8
     # train_steps: 10
 
 backend:
@@ -45,9 +46,10 @@ backend:
             type: deepspeed
             zero_optimization:
                 stage: 3
-                # offload_optimizer:
-                #     device: cpu
-        num_workers: 2
+                offload_optimizer:
+                    device: cpu
+                    pin_memory: true
+        num_workers: 4
         use_gpu: true
         resources_per_worker:
             CPU: 1
