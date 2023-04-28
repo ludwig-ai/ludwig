@@ -72,6 +72,7 @@ from ludwig.constants import (
     VECTOR,
 )
 from ludwig.distributed import get_current_dist_strategy
+from ludwig.distributed.base import LocalStrategy
 from ludwig.modules.loss_modules import (
     BWCEWLoss,
     HuberLoss,
@@ -109,7 +110,11 @@ class LudwigMetric(Metric, ABC):
         distributed_available: Optional[Callable] = jit_distributed_available,
     ) -> Generator:
         """Override the behavior of this in the base class to support custom distributed strategies."""
-        dist_strategy = get_current_dist_strategy()
+        try:
+            dist_strategy = get_current_dist_strategy()
+        except RuntimeError:
+            # We don't initialize distributed strategy for GBM models. Default to LocalStrategy.
+            dist_strategy = LocalStrategy()
         self.sync(
             dist_sync_fn=dist_strategy.gather_all_tensors_fn(),
             process_group=process_group,
