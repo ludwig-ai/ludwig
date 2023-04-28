@@ -2,12 +2,6 @@ sentence-transformers
 faiss-cpu
 
 accelerate
-appdirs
 loralib
 bitsandbytes
-datasets
-fire
 peft
-transformers>=4.28.0
-sentencepiece
-gradio
