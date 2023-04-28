@@ -55,8 +55,8 @@ def get_optimizer_class_and_kwargs(
 
 def create_optimizer(
     model: LudwigModule,
-    learning_rate: float,
     optimizer_config: "BaseOptimizerConfig",
+    learning_rate: float,
 ) -> torch.optim.Optimizer:
     """Returns a ready-to-use torch optimizer instance based on the given optimizer config.
 
