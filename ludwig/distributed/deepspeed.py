@@ -10,6 +10,7 @@ from torch import nn
 from torch.optim.optimizer import Optimizer
 
 from ludwig.distributed.ddp import DDPStrategy
+from ludwig.modules.optimization_modules import get_optimizer_class_and_kwargs
 from ludwig.utils.checkpoint_utils import Checkpoint
 
 if TYPE_CHECKING:
@@ -45,14 +46,19 @@ class DeepSpeedStrategy(DDPStrategy):
         logging.info("Using DeepSpeed strategy")
 
     def prepare(
-        self, model: nn.Module, optimizer: Optimizer, lr_scheduler: "LRScheduler", trainer_config: "ECDTrainerConfig"
-    ) -> Tuple[nn.Module, Optimizer, "LRScheduler"]:
+        self,
+        model: nn.Module,
+        trainer_config: "ECDTrainerConfig",
+        base_learning_rate: float,
+    ) -> Tuple[nn.Module, Optimizer]:
         # If `batch_size=auto`, we set to 2 temporarily until auto-tuning adjusts it`
         batch_size = trainer_config.batch_size if isinstance(trainer_config.batch_size, int) else 2
+        optimizer_cls, optimizer_kwargs = get_optimizer_class_and_kwargs(trainer_config.optimizer, base_learning_rate)
         ds_config = {
             "amp": {
                 "enabled": trainer_config.use_mixed_precision,
             },
+            "optimizer": {"type": optimizer_cls.__name__, "params": optimizer_kwargs},
             "zero_optimization": self.zero_optimization,
             "gradient_clipping": trainer_config.gradient_clipping.clipglobalnorm,
             "train_micro_batch_size_per_gpu": batch_size,
@@ -62,12 +68,11 @@ class DeepSpeedStrategy(DDPStrategy):
         model_engine, optimizer, _, _ = deepspeed.initialize(
             model=model,
             model_parameters=model.parameters(),
-            optimizer=optimizer,
             lr_scheduler=None,  # Don't let DeepSpeed manage the learning rate scheduler
             config=ds_config,
             dist_init_required=False,
         )
-        return model_engine, optimizer, lr_scheduler
+        return model_engine, optimizer
 
     def to_device(self, model: nn.Module) -> nn.Module:
         return model

@@ -45,7 +45,7 @@ from ludwig.models.predictor import Predictor
 from ludwig.modules.lr_scheduler import LRScheduler
 from ludwig.modules.metric_modules import get_improved_fn, get_initial_validation_value
 from ludwig.modules.metric_registry import get_metric_objective
-from ludwig.modules.optimization_modules import create_clipper, create_optimizer
+from ludwig.modules.optimization_modules import create_clipper
 from ludwig.progress_bar import LudwigProgressBar
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.trainers.base import BaseTrainer
@@ -205,22 +205,12 @@ class Trainer(BaseTrainer):
         self.original_sigint_handler = None
 
     def prepare(self):
-        optimizer_config = self.config.optimizer
-        optimizer = create_optimizer(
+        self.dist_model, self.optimizer = self.distributed.prepare(
             self.compiled_model,
-            learning_rate=self.base_learning_rate,
-            distributed=self.distributed,
-            optimizer_config=optimizer_config,
-            gradient_accumulation_steps=self.gradient_accumulation_steps,
-        )
-        scheduler = LRScheduler(self.config.learning_rate_scheduler, optimizer)
-
-        self.dist_model, self.optimizer, self.scheduler = self.distributed.prepare(
-            self.compiled_model,
-            optimizer,
-            scheduler,
             self.config,
+            self.base_learning_rate,
         )
+        self.scheduler = LRScheduler(self.config.learning_rate_scheduler, self.optimizer)
 
     def train_step(
         self, inputs: Dict[str, torch.Tensor], targets: Dict[str, torch.Tensor], should_step: bool = True

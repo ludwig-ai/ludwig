@@ -5,6 +5,7 @@ from typing import Any, Callable, Dict, Optional, Tuple, Type, TYPE_CHECKING
 import torch
 from torch import nn
 from torch.optim import Optimizer
+from ludwig.modules.optimization_modules import create_optimizer
 
 from ludwig.utils.torch_utils import get_torch_device
 
@@ -27,8 +28,11 @@ class DistributedStrategy(ABC):
 
     @abstractmethod
     def prepare(
-        self, model: nn.Module, optimizer: Optimizer, lr_scheduler: "LRScheduler", trainer_config: "ECDTrainerConfig"
-    ) -> Tuple[nn.Module, Optimizer, "LRScheduler"]:
+        self,
+        model: nn.Module,
+        trainer_config: "ECDTrainerConfig",
+        base_learning_rate: float,
+    ) -> Tuple[nn.Module, Optimizer]:
         pass
 
     def to_device(self, model: nn.Module) -> nn.Module:
@@ -173,9 +177,12 @@ class DistributedStrategy(ABC):
 
 class LocalStrategy(DistributedStrategy):
     def prepare(
-        self, model: nn.Module, optimizer: Optimizer, lr_scheduler: "LRScheduler", trainer_config: "ECDTrainerConfig"
-    ) -> Tuple[nn.Module, Optimizer, "LRScheduler"]:
-        return model, optimizer, lr_scheduler
+        self,
+        model: nn.Module,
+        trainer_config: "ECDTrainerConfig",
+        base_learning_rate: float,
+    ) -> Tuple[nn.Module, Optimizer]:
+        return model, create_optimizer(model, trainer_config.optimizer, base_learning_rate)
 
     def size(self) -> int:
         return 1

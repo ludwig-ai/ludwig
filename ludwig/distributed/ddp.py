@@ -15,6 +15,7 @@ from torch.optim import Optimizer
 from torchmetrics.utilities.distributed import gather_all_tensors
 
 from ludwig.distributed.base import DistributedStrategy
+from ludwig.modules.optimization_modules import create_optimizer
 
 if TYPE_CHECKING:
     from ludwig.modules.lr_scheduler import LRScheduler
@@ -31,9 +32,12 @@ class DDPStrategy(DistributedStrategy):
         logging.info("Using DDP strategy")
 
     def prepare(
-        self, model: nn.Module, optimizer: Optimizer, lr_scheduler: "LRScheduler", trainer_config: "ECDTrainerConfig"
-    ) -> Tuple[nn.Module, Optimizer, "LRScheduler"]:
-        return DDP(model), optimizer, lr_scheduler
+        self,
+        model: nn.Module,
+        trainer_config: "ECDTrainerConfig",
+        base_learning_rate: float,
+    ) -> Tuple[nn.Module, Optimizer]:
+        return DDP(model), create_optimizer(model, trainer_config.optimizer, base_learning_rate)
 
     def size(self) -> int:
         return dist.get_world_size()
