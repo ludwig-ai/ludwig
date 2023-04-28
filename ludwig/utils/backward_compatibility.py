@@ -151,6 +151,8 @@ def upgrade_model_progress(model_progress: Dict) -> Dict:
         del ret["vali_metrics"]
 
     for metric_group in ("train_metrics", "test_metrics", "validation_metrics"):
+        if metric_group not in ret:
+            continue
         for tgt in ret[metric_group]:
             for metric in ret[metric_group][tgt]:
                 if len(ret[metric_group][tgt][metric]) == 0 or isinstance(
