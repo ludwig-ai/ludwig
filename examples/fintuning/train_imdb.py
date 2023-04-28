@@ -20,17 +20,18 @@ config = yaml.safe_load(
 input_features:
     - name: review
       type: text
-    #   encoder:
-            # type: bert
-            # trainable: true
+      encoder:
+            type: auto_transformer
+            pretrained_model_name_or_path: bigscience/bloom-3b
+            trainable: true
 
 output_features:
     - name: sentiment
       type: category
 
 trainer:
-    batch_size: 1024
-    epochs: 10
+    batch_size: auto
+    epochs: 3
     # train_steps: 10
 
 backend:
@@ -44,6 +45,8 @@ backend:
             type: deepspeed
             zero_optimization:
                 stage: 3
+                # offload_optimizer:
+                #     device: cpu
         num_workers: 2
         use_gpu: true
         resources_per_worker:

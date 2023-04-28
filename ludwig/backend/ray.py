@@ -194,8 +194,7 @@ def train_fn(
             test_shard = RayDatasetShard(test_shard, features, training_set_metadata)
 
         model = ray.get(model_ref)
-        device = get_torch_device()
-        model = model.to(device)
+        model = distributed.to_device(model)
 
         trainer = RemoteTrainer(model=model, distributed=distributed, report_tqdm_to_ray=True, **executable_kwargs)
         results = trainer.train(train_shard, val_shard, test_shard, return_state_dict=True, **kwargs)
@@ -249,8 +248,7 @@ def tune_batch_size_fn(
         )
 
         model = ray.get(model_ref)
-        device = get_torch_device()
-        model = model.to(device)
+        model = distributed.to_device(model)
 
         def on_best_batch_size_updated(best_batch_size: int, best_samples_per_sec: float, count: int):
             session.report(
