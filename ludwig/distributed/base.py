@@ -5,8 +5,8 @@ from typing import Any, Callable, Dict, Optional, Tuple, Type, TYPE_CHECKING
 import torch
 from torch import nn
 from torch.optim import Optimizer
-from ludwig.modules.optimization_modules import create_optimizer
 
+from ludwig.modules.optimization_modules import create_optimizer
 from ludwig.utils.torch_utils import get_torch_device
 
 if TYPE_CHECKING:
