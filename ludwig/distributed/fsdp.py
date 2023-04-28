@@ -1,8 +1,8 @@
 import logging
 from typing import Optional, Tuple, TYPE_CHECKING
 
-from torch import nn
 import torch
+from torch import nn
 from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
 from torch.optim import Optimizer
 
