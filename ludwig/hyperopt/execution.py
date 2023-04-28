@@ -867,7 +867,7 @@ class RayTuneExecutor:
                     ),
                     run_config=RunConfig(
                         name=experiment_name,
-                        local_dir=output_directory,
+                        local_dir=str(output_directory),
                         stop=CallbackStopper(callbacks),
                         callbacks=tune_callbacks,
                         failure_config=FailureConfig(
@@ -890,10 +890,10 @@ class RayTuneExecutor:
             result_grid = tuner.fit()
             # Get ExperimentAnalysis object from ResultGrid
             analysis = result_grid._experiment_analysis
-        except Exception as e:
+        except Exception:
             # Explicitly raise a RuntimeError if an error is encountered during a Ray trial.
             # NOTE: Cascading the exception with "raise _ from e" still results in hanging.
-            raise RuntimeError(f"Encountered Ray Tune error: {e}")
+            raise RuntimeError(f"Encountered Ray Tune error: {traceback.format_exc()}")
 
         if "metric_score" in analysis.results_df.columns:
             ordered_trials = analysis.results_df.sort_values("metric_score", ascending=self.goal != MAXIMIZE)
