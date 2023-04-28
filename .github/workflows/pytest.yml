@@ -122,9 +122,6 @@ jobs:
           if [ "$PYTORCH" == "nightly" ]; then
             extra_index_url=https://download.pytorch.org/whl/nightly/cpu
             pip install --pre torch torchtext torchvision torchaudio --index-url $extra_index_url
-
-            # temporary for: https://github.com/ludwig-ai/ludwig/issues/3365
-            pip install expecttest
           else
             extra_index_url=https://download.pytorch.org/whl/cpu
             pip install torch==$PYTORCH torchtext torchvision torchaudio --extra-index-url $extra_index_url
