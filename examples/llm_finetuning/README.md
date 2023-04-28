@@ -9,3 +9,29 @@ parameters.
 - Installed Ludwig with `ludwig[distributed]` dependencies
 - Have a CUDA-enabled version of PyTorch installed
 - Have access to a machine or cluster of machines with multiple GPUs
+
+## Running DeepSpeed on Ray
+
+This is the recommended way to use DeepSpeed, which supports auto-batch size tuning and distributed data processing. 
+There is some overhead from using Ray with small datasets (<100MB), but in most cases performance should be comparable
+to using native DeepSpeed.
+
+From the head node of your Ray cluster:
+
+```bash
+./run_train_dsz3_ray.sh
+```
+
+## Running DeepSpeed Native
+
+This mode is suitable for datasets small enough to fit in memory on a single machine, as it doesn't make use of
+distributed data processing (requires use of the Ray backend).
+
+The following example assumes you have 4 GPUs available, but can easily be modified to support your preferred
+setup.
+
+From a terminal on your machine:
+
+```bash
+./run_train_dsz3.sh
+```
