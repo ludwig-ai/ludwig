@@ -617,6 +617,9 @@ class Trainer(BaseTrainer):
             model_hyperparameters_path = os.path.join(save_path, MODEL_HYPERPARAMETERS_FILE_NAME)
             tensorboard_log_dir = os.path.join(save_path, "logs")
 
+        # Sync save_path across the workers
+        save_path = self.distributed.broadcast_object(save_path or "")
+
         training_progress_tracker_path = None
         training_checkpoints_path = None
         if save_path:
