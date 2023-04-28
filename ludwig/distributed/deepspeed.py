@@ -55,7 +55,6 @@ class DeepSpeedStrategy(DDPStrategy):
             },
             "zero_optimization": self.zero_optimization,
             "gradient_clipping": trainer_config.gradient_clipping.clipglobalnorm,
-            "train_batch_size": batch_size * self.size(),
             "train_micro_batch_size_per_gpu": batch_size,
             "gradient_accumulation_steps": trainer_config.gradient_accumulation_steps,
             "steps_per_print": trainer_config.steps_per_checkpoint or 10000,
