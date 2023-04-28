@@ -186,9 +186,7 @@ class SemanticRetrieval(RetrievalModel):
 def create_semantic_retrieval_model_evaluator(model_name, samples):
     class _RetrievalModelEvaluator(BatchSizeEvaluator):
         def __init__(self):
-            from sentence_transformers import SentenceTransformer
-
-            self.model = SentenceTransformer(model_name, device=get_torch_device())
+            self.model = get_semantic_retrieval_model(model_name)
             self.samples = samples
 
         def step(self, batch_size: int):
@@ -200,9 +198,7 @@ def create_semantic_retrieval_model_evaluator(model_name, samples):
 def create_semantic_retrieval_model_fn(model_name, batch_size):
     class _RetrievalModelFn:
         def __init__(self):
-            from sentence_transformers import SentenceTransformer
-
-            self.model = SentenceTransformer(model_name, device=get_torch_device())
+            self.model = get_semantic_retrieval_model(model_name)
             self.batch_size = batch_size
 
         def __call__(self, df: pd.DataFrame) -> np.ndarray:
@@ -212,6 +208,12 @@ def create_semantic_retrieval_model_fn(model_name, batch_size):
             return df
 
     return _RetrievalModelFn
+
+
+def get_semantic_retrieval_model(model_name):
+    from sentence_transformers import SentenceTransformer
+
+    return SentenceTransformer(model_name, device=get_torch_device())
 
 
 def get_retrieval_model(type: str, **kwargs) -> RetrievalModel:
