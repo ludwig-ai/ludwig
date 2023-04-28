@@ -190,6 +190,48 @@ jobs:
           name: Unit Test Results (Python ${{ matrix.python-version }} ${{ matrix.test-markers }})
           path: pytest.xml
 
+  llm-tests:
+    name: LLM Tests
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+
+      - name: Setup Linux
+        if: runner.os == 'linux'
+        run: |
+          sudo apt-get install -y cmake libsndfile1
+
+      - name: Setup macOS
+        if: runner.os == 'macOS'
+        run: |
+          brew install libuv
+
+      - name: Install dependencies
+        run: |
+          python --version
+          pip --version
+          python -m pip install -U pip
+          pip install -r requirements.txt
+          pip install -r requirements_distributed.txt
+          pip install -r requirements_llm.txt
+          pip install -r requirements_test.txt
+          pip list
+        shell: bash
+
+      - name: Unit Tests
+        run: |
+          pytest -vs --durations 100 -m "llm" --junitxml pytest.xml tests/ludwig
+
+      - name: Integration Tests
+        run: |
+          pytest -vs --durations 100 -m "llm" --junitxml pytest.xml tests/integration_tests
+
   combinatorial-tests:
     name: Combinatorial Tests
     runs-on: ubuntu-latest

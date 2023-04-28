@@ -786,13 +786,8 @@ def test_fill_with_mode_different_df_engine(tmpdir, csv_filename, df_engine, ray
     ludwig_model.preprocess(dataset=df)
 
 
-@pytest.mark.parametrize(
-    "backend",
-    [
-        pytest.param("local", id="local"),
-        pytest.param("ray", id="ray", marks=pytest.mark.distributed),
-    ],
-)
+@pytest.mark.llm
+@pytest.mark.parametrize("backend", ["local", "ray"])
 def test_prompt_template(backend, tmpdir):
     """Tests that prompt template is correctly applied to inputs."""
     template = """
@@ -847,13 +842,8 @@ def test_prompt_template(backend, tmpdir):
         assert raw_text in decoded, f"'{raw_text}' not in '{decoded}'"
 
 
-@pytest.mark.parametrize(
-    "backend",
-    [
-        pytest.param("local"),
-        pytest.param("ray", marks=pytest.mark.distributed),
-    ],
-)
+@pytest.mark.llm
+@pytest.mark.parametrize("backend", ["local", "ray"])
 @pytest.mark.parametrize(
     "retrieval_kwargs",
     [

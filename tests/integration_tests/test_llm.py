@@ -56,11 +56,12 @@ def convert_preds(backend: dict, preds: DataFrame):
     return preds.compute().to_dict()
 
 
+@pytest.mark.llm
 @pytest.mark.parametrize(
     "backend",
     [
         pytest.param(LOCAL_BACKEND, id="local"),
-        pytest.param(RAY_BACKEND, id="ray", marks=pytest.mark.distributed),
+        pytest.param(RAY_BACKEND, id="ray"),
     ],
 )
 def test_llm_text_to_text(tmpdir, backend, ray_cluster_4cpu):
@@ -94,11 +95,12 @@ def test_llm_text_to_text(tmpdir, backend, ray_cluster_4cpu):
     assert preds["Answer_probability"]
 
 
+@pytest.mark.llm
 @pytest.mark.parametrize(
     "backend",
     [
         pytest.param(LOCAL_BACKEND, id="local"),
-        pytest.param(RAY_BACKEND, id="ray", marks=pytest.mark.distributed),
+        pytest.param(RAY_BACKEND, id="ray"),
     ],
 )
 def test_llm_zero_shot_classification(tmpdir, backend, ray_cluster_4cpu):
@@ -180,11 +182,12 @@ def test_llm_zero_shot_classification(tmpdir, backend, ray_cluster_4cpu):
     assert preds["label_probabilities_negative"]
 
 
+@pytest.mark.llm
 @pytest.mark.parametrize(
     "backend",
     [
         pytest.param(LOCAL_BACKEND, id="local"),
-        pytest.param(RAY_BACKEND, id="ray", marks=pytest.mark.distributed),
+        pytest.param(RAY_BACKEND, id="ray"),
     ],
 )
 def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_4cpu):
