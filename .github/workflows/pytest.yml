@@ -230,8 +230,8 @@ jobs:
         run: |
           pytest -rx --durations 100 -m "combinatorial" --junitxml pytest.xml tests/training_success
 
-  test-minimal-install:
-    name: Test Minimal Install
+  test-distributed-minimal-install:
+    name: Test Distributed Minimal Install
     runs-on: ubuntu-latest
 
     timeout-minutes: 15
@@ -257,7 +257,7 @@ jobs:
           python --version
           pip --version
           python -m pip install -U pip
-          pip install '.'
+          pip install '.[full]'
           pip list
         shell: bash
 
