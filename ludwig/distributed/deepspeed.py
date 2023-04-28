@@ -1,6 +1,7 @@
 import logging
 import os
 from typing import Any, Dict, Mapping, Optional, Tuple, TYPE_CHECKING
+import warnings
 
 import deepspeed
 import deepspeed.comm
@@ -24,6 +25,13 @@ DEFAULT_ZERO_OPTIMIZATION = {
     "offload_optimizer": {"device": "auto"},
     "offload_param": {"device": "auto"},
 }
+
+# Filter out warnings about DeepSpeed use of deprecated methods. Can remove on upgrade to DeepSpeed 0.9.
+warnings.filterwarnings(
+    action="ignore",
+    category=UserWarning,
+    module="torch.distributed.distributed_c10d",
+)
 
 
 class DeepSpeedStrategy(DDPStrategy):
@@ -72,7 +80,7 @@ class DeepSpeedStrategy(DDPStrategy):
             config=ds_config,
             dist_init_required=False,
         )
-        return model_engine, optimizer
+        return model_engine, optimizer.optimizer
 
     def to_device(self, model: nn.Module) -> nn.Module:
         return model
