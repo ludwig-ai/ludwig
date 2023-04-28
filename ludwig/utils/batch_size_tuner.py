@@ -20,6 +20,7 @@ class BatchSizeEvaluator(ABC):
         dataset_len: int,
         max_batch_size: Optional[int] = None,
         max_trials: int = 20,
+        is_coordinator: Optional[bool] = True,
     ) -> int:
         """Returns optimal batch size as measured by throughput (samples / sec)."""
         logger.info("Tuning batch size...")
@@ -31,7 +32,7 @@ class BatchSizeEvaluator(ABC):
             is_smaller_than_training_set = batch_size <= MAX_BATCH_SIZE_DATASET_FRACTION * dataset_len
             is_under_max_batch_size = batch_size <= max_batch_size
             is_valid = is_smaller_than_training_set and is_under_max_batch_size
-            if not is_valid:
+            if not is_valid and is_coordinator:
                 logger.info(
                     f"Batch size {batch_size} is invalid, must be less than or equal to "
                     f"{MAX_BATCH_SIZE_DATASET_FRACTION * 100}% dataset size "
@@ -47,15 +48,18 @@ class BatchSizeEvaluator(ABC):
         best_batch_size = None
         count = 0
         while count < max_trials and _is_valid_batch_size(batch_size):
-            logger.info(f"Exploring batch_size={batch_size}")
+            if is_coordinator:
+                logger.info(f"Exploring batch_size={batch_size}")
             gc.collect()
 
             try:
                 samples_per_sec = self.evaluate(batch_size, total_steps=5)
-                logger.info(f"Throughput at batch_size={batch_size}: {samples_per_sec:.5f} samples/s")
+                if is_coordinator:
+                    logger.info(f"Throughput at batch_size={batch_size}: {samples_per_sec:.5f} samples/s")
                 if samples_per_sec < best_samples_per_sec:
                     # We assume that once the throughput starts degrading, it won't go up again
-                    logger.info(f"Throughput decrease at batch_size={batch_size}")
+                    if is_coordinator:
+                        logger.info(f"Throughput decrease at batch_size={batch_size}")
                     break
 
                 best_samples_per_sec = samples_per_sec
@@ -68,7 +72,8 @@ class BatchSizeEvaluator(ABC):
                 # PyTorch only generates Runtime errors for CUDA OOM.
                 gc.collect()
                 if "CUDA out of memory" in str(e) or isinstance(e, torch.cuda.OutOfMemoryError):
-                    logger.info(f"OOM at batch_size={batch_size}")
+                    if is_coordinator:
+                        logger.info(f"OOM at batch_size={batch_size}")
                 else:
                     # Not a CUDA error
                     raise
@@ -77,10 +82,12 @@ class BatchSizeEvaluator(ABC):
         # Ensure that some batch size is found.
         # `best_batch_size` can be None if the first batch size is invalid.
         if best_batch_size is None:
-            logger.info("Could not tune batch size, using minimum batch size of 2")
+            if is_coordinator:
+                logger.info("Could not tune batch size, using minimum batch size of 2")
             best_batch_size = MIN_POSSIBLE_BATCH_SIZE
 
-        logger.info(f"Selected batch_size={best_batch_size}")
+        if is_coordinator:
+            logger.info(f"Selected batch_size={best_batch_size}")
         return best_batch_size
 
     def evaluate(self, batch_size: int, total_steps: int = 5) -> float:

@@ -117,6 +117,9 @@ class Callback(ABC):
         """
         return False
 
+    def on_resume_training(self, is_coordinator: bool):
+        pass
+
     def on_train_init(
         self,
         base_config: ModelConfigDict,

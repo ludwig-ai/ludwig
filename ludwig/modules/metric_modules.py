@@ -37,6 +37,7 @@ from torchmetrics.text.perplexity import Perplexity
 
 from ludwig.constants import (
     ACCURACY,
+    ACCURACY_MICRO,
     BINARY,
     BINARY_WEIGHTED_CROSS_ENTROPY,
     CATEGORY,
@@ -375,6 +376,17 @@ class Accuracy(BinaryAccuracy, LudwigMetric):
 class CategoryAccuracy(MulticlassAccuracy, LudwigMetric):
     def __init__(self, num_classes: int, **kwargs):
         super().__init__(num_classes=num_classes)
+
+    def update(self, preds: Tensor, target: Tensor) -> None:
+        if len(target.shape) > 1:
+            target = torch.argmax(target, dim=1)
+        super().update(preds, target.type(torch.long))
+
+
+@register_metric(ACCURACY_MICRO, [CATEGORY, CATEGORY_DISTRIBUTION], MAXIMIZE, PREDICTIONS)
+class CategoryAccuracyMicro(MulticlassAccuracy, LudwigMetric):
+    def __init__(self, num_classes: int, **kwargs):
+        super().__init__(num_classes=num_classes, average="micro")
 
     def update(self, preds: Tensor, target: Tensor) -> None:
         if len(target.shape) > 1:
