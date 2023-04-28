@@ -9,6 +9,7 @@ parameters.
 - Installed Ludwig with `ludwig[distributed]` dependencies
 - Have a CUDA-enabled version of PyTorch installed
 - Have access to a machine or cluster of machines with multiple GPUs
+- The IMDB dataset used in these examples comes from Kaggle, so make sure you have your credentials set (e.g., `$HOME/.kaggle.kaggle.json`)
 
 ## Running DeepSpeed on Ray
 
@@ -20,6 +21,21 @@ From the head node of your Ray cluster:
 
 ```bash
 ./run_train_dsz3_ray.sh
+```
+
+### Python API
+
+If you want to run Ludwig programatically (from a notebook or as part of a larger workflow), you can run the following
+Python script using the Ray cluster launcher from your local machine.
+
+```bash
+ray submit cluster.yaml train_imdb_ray.py
+```
+
+If running directly on the Ray head node, you can omit the `ray submit` portion and run like an ordinary Python script:
+
+```bash
+python train_imdb_ray.py
 ```
 
 ## Running DeepSpeed Native

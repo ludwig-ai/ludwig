@@ -7,4 +7,4 @@ set -e
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 # Train
-deepspeed --num_gpus 4 ludwig train --config ${SCRIPT_DIR}/imdb_deepspeed_zero3.yaml --dataset ludwig://imdb
+deepspeed --no_python --no_local_rank --num_gpus 4 ludwig train --config ${SCRIPT_DIR}/imdb_deepspeed_zero3.yaml --dataset ludwig://imdb
