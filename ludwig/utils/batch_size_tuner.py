@@ -81,7 +81,7 @@ class BatchSizeEvaluator(ABC):
         # `best_batch_size` can be None if the first batch size is invalid.
         if best_batch_size is None:
             if is_coordinator:
-                logger.info("Could not tune batch size, using minimum batch size of 2")
+                logger.info(f"Could not tune batch size, using minimum batch size of {MIN_POSSIBLE_BATCH_SIZE}")
             best_batch_size = MIN_POSSIBLE_BATCH_SIZE
 
         if is_coordinator:
