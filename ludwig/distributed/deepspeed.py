@@ -9,8 +9,8 @@ import torch
 from deepspeed.utils.zero_to_fp32 import get_fp32_state_dict_from_zero_checkpoint
 from torch import nn
 from torch.optim.optimizer import Optimizer
-from ludwig.constants import MIN_POSSIBLE_BATCH_SIZE
 
+from ludwig.constants import MIN_POSSIBLE_BATCH_SIZE
 from ludwig.distributed.ddp import DDPStrategy
 from ludwig.modules.optimization_modules import get_optimizer_class_and_kwargs
 from ludwig.utils.checkpoint_utils import Checkpoint
