@@ -44,10 +44,10 @@ class LLM(BaseModel):
 
         self.model_name = self.config_obj.model_name
 
-        print("Loading large language model...")
+        logger.info("Loading large language model...")
         self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.model_name)
         self.curr_device = torch.device("cpu")  # model initially loaded onto cpu
-        print("Done.")
+        logger.info("Done.")
 
         if device is None:
             device = get_torch_device()
@@ -111,6 +111,7 @@ class LLM(BaseModel):
                 )
             )
 
+        # we save and reload the weights to ensure that they can be sharded across the GPUs using `from_pretrained`
         with tempfile.TemporaryDirectory() as tmpdir:
             self.model.save_pretrained(tmpdir)
             self.model = AutoModelForCausalLM.from_pretrained(tmpdir, **model_kwargs)

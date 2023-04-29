@@ -3,17 +3,15 @@ import logging
 import os
 import string
 import uuid
-from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Tuple, TYPE_CHECKING
+from typing import Any, Dict, Optional, Tuple, TYPE_CHECKING
 
 import pandas as pd
 
 if TYPE_CHECKING:
     from ludwig.backend.base import Backend
 
-from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.models.retrieval import get_retrieval_model, RetrievalModel
-from ludwig.utils.fs_utils import get_default_cache_location
+from ludwig.utils.fs_utils import get_default_cache_location, makedirs, path_exists
 from ludwig.utils.types import Series
 
 logger = logging.getLogger(__name__)
@@ -83,8 +81,8 @@ def index_column(
 
     index_name = retrieval_config["index_name"]
     index_cache_directory = os.path.join(get_default_cache_location(), "index")
-    if not os.path.exists(index_cache_directory):
-        os.makedirs(index_cache_directory, exist_ok=True)
+    if not path_exists(index_cache_directory):
+        makedirs(index_cache_directory, exist_ok=True)
 
     if index_name is None:
         if split_col is None:

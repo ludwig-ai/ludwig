@@ -28,7 +28,7 @@ class RetrievalConfig(schema_utils.BaseMarshmallowConfig):
     model_name: str = schema_utils.String(
         default=None,
         allow_none=True,
-        description="The model to use for the prompt.",
+        description="The model used to generate the embeddings used to retrieve samples to inject in the prompt.",
     )
 
     k: int = schema_utils.NonNegativeInteger(

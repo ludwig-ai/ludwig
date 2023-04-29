@@ -129,8 +129,6 @@ class CacheManager:
 
     def get_cache_key(self, dataset: CacheableDataset, config: dict) -> str:
         return calculate_checksum(dataset, config)
-        # import uuid
-        # return str(uuid.uuid4())
 
     def get_cache_path(self, dataset: Optional[CacheableDataset], key: str, tag: str, ext: Optional[str] = None) -> str:
         if self._cache_dir is None and dataset is not None:
