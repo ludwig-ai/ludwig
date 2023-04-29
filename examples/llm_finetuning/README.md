@@ -17,8 +17,8 @@ code, just configuration.
 
 ## Running DeepSpeed on Ray
 
-This is the recommended way to use DeepSpeed, which supports auto-batch size tuning and distributed data processing. 
-There is some overhead from using Ray with small datasets (<100MB), but in most cases performance should be comparable
+This is the recommended way to use DeepSpeed, which supports auto-batch size tuning and distributed data processing.
+There is some overhead from using Ray with small datasets (\<100MB), but in most cases performance should be comparable
 to using native DeepSpeed.
 
 From the head node of your Ray cluster:
