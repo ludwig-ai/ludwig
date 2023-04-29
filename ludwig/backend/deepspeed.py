@@ -16,6 +16,8 @@ class DeepSpeedBackend(DataParallelBackend):
         self.zero_optimization = zero_optimization
 
     def initialize(self):
+        # Unlike when we use the Ray backend, we need to initialize the `torch.distributed` context so we can
+        # broadcast, allgather, etc. before preparing the model within the trainer.
         deepspeed.init_distributed()
         self._distributed = init_dist_strategy(self.BACKEND_TYPE, zero_optimization=self.zero_optimization)
 

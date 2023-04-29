@@ -390,6 +390,9 @@ class Trainer(BaseTrainer):
         evaluator = self._create_batch_size_evaluator()
         with tempfile.TemporaryDirectory() as tmpdir:
             if snapshot_weights:
+                # Save a snapshot of the model and optimizer state to restore later, as they will be modified
+                # when we call the train step as part of the auto-tuning. This is undesirable, particularly for
+                # pretrained models.
                 checkpoint = self.distributed.create_checkpoint_handle(
                     dist_model=self.dist_model, model=self.model, optimizer=self.optimizer, scheduler=self.scheduler
                 )
@@ -405,7 +408,9 @@ class Trainer(BaseTrainer):
                 self.skip_save_progress = skip_save_progress
                 self.skip_save_log = skip_save_log
                 if snapshot_weights:
+                    # Restore the model weights prior to batch size tuning to undo any updates made to the weights
                     if self.distributed.prepare_before_load():
+                        # Some distributed strategies, like DeepSpeed, need to re-init before loading the model
                         self.prepare()
                     self.resume_weights_and_optimizer(str(tmpdir), checkpoint)
 
@@ -815,6 +820,10 @@ class Trainer(BaseTrainer):
                 self.model.load_state_dict(state_dict)
         elif return_state_dict:
             state_dict = self.model.cpu().state_dict()
+
+        # When running with Ray, we only need to return the state dict, as it's faster and cheaper to send the
+        # state dict over the network than to load the model state here, serialize it back to a state dict, then
+        # load it back on the head node.
         return_value = self.model if not return_state_dict else state_dict
 
         # restore original sigint signal handler

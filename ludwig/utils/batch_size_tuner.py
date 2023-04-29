@@ -41,9 +41,7 @@ class BatchSizeEvaluator(ABC):
                 )
             return is_valid
 
-        # Set 2 as the minimum batch size to account for batch norm.
         batch_size = MIN_POSSIBLE_BATCH_SIZE
-
         best_samples_per_sec = 0
         best_batch_size = None
         count = 0

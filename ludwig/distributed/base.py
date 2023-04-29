@@ -33,6 +33,16 @@ class DistributedStrategy(ABC):
         trainer_config: "ECDTrainerConfig",
         base_learning_rate: float,
     ) -> Tuple[nn.Module, Optimizer]:
+        """Modifies the model to support distributed training and creates the optimizer.
+
+        Args:
+            model: The model to wrap for distributed training.
+            trainer_config: The trainer configuration, which includes optimizer params.
+            base_learning_rate: The base learning rate to init the optimizer, which may be scaled by the strategy.
+
+        Returns:
+            A tuple of the wrapped model and the optimizer.
+        """
         pass
 
     def to_device(self, model: nn.Module, device: Optional[torch.device] = None) -> nn.Module:

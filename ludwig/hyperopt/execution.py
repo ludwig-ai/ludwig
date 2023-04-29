@@ -577,7 +577,8 @@ class RayTuneExecutor:
             def on_save_best_checkpoint(self, trainer, progress_tracker, save_path):
                 # Hyperopt may early stop before we save the best model at the end, so save it each time
                 # we checkpoint the best model.
-                trainer.model.save(save_path)
+                if trainer.is_coordinator():
+                    trainer.model.save(save_path)
 
             def on_trainer_train_teardown(self, trainer, progress_tracker, save_path, is_coordinator):
                 if is_coordinator and progress_tracker.steps > self.last_steps:

@@ -9,6 +9,7 @@ import torch
 from deepspeed.utils.zero_to_fp32 import get_fp32_state_dict_from_zero_checkpoint
 from torch import nn
 from torch.optim.optimizer import Optimizer
+from ludwig.constants import MIN_POSSIBLE_BATCH_SIZE
 
 from ludwig.distributed.ddp import DDPStrategy
 from ludwig.modules.optimization_modules import get_optimizer_class_and_kwargs
@@ -59,8 +60,11 @@ class DeepSpeedStrategy(DDPStrategy):
         trainer_config: "ECDTrainerConfig",
         base_learning_rate: float,
     ) -> Tuple[nn.Module, Optimizer]:
-        # If `batch_size=auto`, we set to 2 temporarily until auto-tuning adjusts it`
-        batch_size = trainer_config.batch_size if isinstance(trainer_config.batch_size, int) else 2
+        # If `batch_size=auto`, we set to MIN_POSSIBLE_BATCH_SIZE temporarily until auto-tuning adjusts it`
+        # We can really set it to be whatever we want, as it will be overridden by the auto-tuning.
+        batch_size = (
+            trainer_config.batch_size if isinstance(trainer_config.batch_size, int) else MIN_POSSIBLE_BATCH_SIZE
+        )
         optimizer_cls, optimizer_kwargs = get_optimizer_class_and_kwargs(trainer_config.optimizer, base_learning_rate)
         ds_config = {
             "amp": {
@@ -164,6 +168,13 @@ class DeepSpeedCheckpoint(Checkpoint):
             super().prepare(directory)
 
     def load(self, save_path: str, device: Optional[torch.device] = None) -> bool:
+        """Load a checkpoint.
+
+        For DeepSpeed, we need every worker to independently load back the model weights, as the checkpoints themselves
+        may be sharded (when using DeepSpeed Zero3).
+
+        https://deepspeed.readthedocs.io/en/latest/model-checkpointing.html#loading-training-checkpoints
+        """
         _, client_state = self.model.load_checkpoint(save_path, load_lr_scheduler_states=False)
         self.global_step = self._get_global_step(client_state, save_path)
         if self.scheduler is not None and "scheduler_state" in client_state:
