@@ -8,4 +8,6 @@ tensorboardX<2.3
 GPUtil
 tblib
 awscli
-modin[ray]
+
+# https://github.com/databrickslabs/dolly/issues/125
+deepspeed<0.9

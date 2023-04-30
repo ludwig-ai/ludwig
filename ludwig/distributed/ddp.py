@@ -1,7 +1,8 @@
 import contextlib
 import logging
+import os
 import socket
-from typing import Any, Callable, Dict, Optional, Tuple, Type
+from typing import Any, Callable, Dict, Optional, Tuple, Type, TYPE_CHECKING
 
 import torch
 import torch.distributed as dist
@@ -14,6 +15,12 @@ from torch.optim import Optimizer
 from torchmetrics.utilities.distributed import gather_all_tensors
 
 from ludwig.distributed.base import DistributedStrategy
+from ludwig.modules.optimization_modules import create_optimizer
+
+if TYPE_CHECKING:
+    from ludwig.modules.lr_scheduler import LRScheduler
+    from ludwig.schema.trainer import ECDTrainerConfig
+    from ludwig.utils.checkpoint_utils import Checkpoint
 
 
 class DDPStrategy(DistributedStrategy):
@@ -24,11 +31,13 @@ class DDPStrategy(DistributedStrategy):
     def _log_on_init(self):
         logging.info("Using DDP strategy")
 
-    def wrap_model(self, model: nn.Module) -> nn.Module:
-        return DDP(model)
-
-    def wrap_optimizer(self, optimizer: Optimizer, model: nn.Module, gradient_accumulation_steps: int) -> Optimizer:
-        return optimizer
+    def prepare(
+        self,
+        model: nn.Module,
+        trainer_config: "ECDTrainerConfig",
+        base_learning_rate: float,
+    ) -> Tuple[nn.Module, Optimizer]:
+        return DDP(model), create_optimizer(model, trainer_config.optimizer, base_learning_rate)
 
     def size(self) -> int:
         return dist.get_world_size()
@@ -108,8 +117,24 @@ class DDPStrategy(DistributedStrategy):
         # dist.destroy_process_group()
         pass
 
+    def create_checkpoint_handle(
+        self,
+        dist_model: nn.Module,
+        model: nn.Module,
+        optimizer: Optional[Optimizer] = None,
+        scheduler: Optional["LRScheduler"] = None,
+    ) -> "Checkpoint":
+        from ludwig.utils.checkpoint_utils import CoordinatorCheckpoint
+
+        return CoordinatorCheckpoint(self, model, optimizer, scheduler)
+
 
 def local_rank_and_size() -> Tuple[int, int]:
+    # DeepSpeed CLI and other tools may set these environment variables for us.
+    local_rank, local_size = os.environ.get("LOCAL_RANK"), os.environ.get("LOCAL_SIZE")
+    if local_rank is not None and local_size is not None:
+        return int(local_rank), int(local_size)
+
     # Gather the rank and hostnames from every worker so we can count up how many belong to the same host, which
     # constitutes the local group.
     rank = dist.get_rank()

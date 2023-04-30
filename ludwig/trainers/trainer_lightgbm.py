@@ -25,7 +25,7 @@ from ludwig.trainers.base import BaseTrainer
 from ludwig.trainers.registry import register_ray_trainer, register_trainer
 from ludwig.types import ModelConfigDict
 from ludwig.utils import time_utils
-from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
+from ludwig.utils.checkpoint_utils import CheckpointManager
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.gbm_utils import (
     get_single_output_feature,
@@ -593,7 +593,7 @@ class LightGBMTrainer(BaseTrainer):
         # ====== Setup session =======
         checkpoint = checkpoint_manager = None
         if self.is_coordinator() and not self.skip_save_progress:
-            checkpoint = Checkpoint(model=self.model)
+            checkpoint = self.distributed.create_checkpoint_handle(dist_model=self.model, model=self.model)
             checkpoint_manager = CheckpointManager(checkpoint, training_checkpoints_path, device=self.device)
 
         train_summary_writer = None

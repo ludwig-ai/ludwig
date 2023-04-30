@@ -41,9 +41,7 @@ class BatchSizeEvaluator(ABC):
                 )
             return is_valid
 
-        # Set 2 as the minimum batch size to account for batch norm.
         batch_size = MIN_POSSIBLE_BATCH_SIZE
-
         best_samples_per_sec = 0
         best_batch_size = None
         count = 0
@@ -83,7 +81,7 @@ class BatchSizeEvaluator(ABC):
         # `best_batch_size` can be None if the first batch size is invalid.
         if best_batch_size is None:
             if is_coordinator:
-                logger.info("Could not tune batch size, using minimum batch size of 2")
+                logger.info(f"Could not tune batch size, using minimum batch size of {MIN_POSSIBLE_BATCH_SIZE}")
             best_batch_size = MIN_POSSIBLE_BATCH_SIZE
 
         if is_coordinator:
