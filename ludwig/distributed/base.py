@@ -7,6 +7,7 @@ from torch import nn
 from torch.optim import Optimizer
 
 from ludwig.modules.optimization_modules import create_optimizer
+from ludwig.models.base import BaseModel
 from ludwig.utils.torch_utils import get_torch_device
 
 if TYPE_CHECKING:
@@ -45,8 +46,8 @@ class DistributedStrategy(ABC):
         """
         pass
 
-    def to_device(self, model: nn.Module, device: Optional[torch.device] = None) -> nn.Module:
-        return model.to(device if device is not None else get_torch_device())
+    def to_device(self, model: BaseModel, device: Optional[torch.device] = None) -> nn.Module:
+        return model.to_device(device if device is not None else get_torch_device())
 
     def backward(self, loss: torch.Tensor, model: nn.Module):
         loss.backward()
