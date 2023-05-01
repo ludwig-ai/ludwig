@@ -336,7 +336,7 @@ def set_retrieval_parameters(config: "ModelConfig") -> None:
     """Sets the retrieval parameters for the LLM model."""
     if config.model_type != "llm":
         return
-    
+
     for input_feature in config.input_features:
         if input_feature.type == TEXT:
             retrieval_config = input_feature.preprocessing.prompt.retrieval
