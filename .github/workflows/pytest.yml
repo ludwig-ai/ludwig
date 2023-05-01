@@ -271,7 +271,6 @@ jobs:
           pip install '${{ matrix.backend.extra }}'
           pip list
         shell: bash
-
       - name: Check Install
         run: |
           ludwig check_install
