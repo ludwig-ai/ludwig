@@ -299,6 +299,10 @@ class Callback(ABC):
         # Triggers early stopping if any callback on any worker returns True
         return False
 
+    def on_save_best_checkpoint(self, trainer, progress_tracker, save_path):
+        """Called on every worker immediately after a new best model is checkpointed."""
+        pass
+
     def on_build_metadata_start(self, df, mode: str):
         """Called before building metadata for dataset.
 

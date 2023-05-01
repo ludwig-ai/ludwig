@@ -21,6 +21,7 @@ from collections import namedtuple
 
 import pandas as pd
 import pytest
+import torch
 import torchvision
 import yaml
 
@@ -719,6 +720,22 @@ def test_experiment_model_resume(tmpdir):
     ],
 )
 def test_experiment_model_resume_distributed(tmpdir, dist_strategy, ray_cluster_4cpu):
+    _run_experiment_model_resume_distributed(tmpdir, dist_strategy)
+
+
+@pytest.mark.skipif(torch.cuda.device_count() == 0, reason="test requires at least 1 gpu")
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="test requires gpu support")
+@pytest.mark.parametrize(
+    "dist_strategy",
+    [
+        pytest.param("deepspeed", id="deepspeed", marks=pytest.mark.distributed),
+    ],
+)
+def test_experiemnt_model_resume_distributed_gpu(tmpdir, dist_strategy, ray_cluster_4cpu):
+    _run_experiment_model_resume_distributed(tmpdir, dist_strategy)
+
+
+def _run_experiment_model_resume_distributed(tmpdir, dist_strategy):
     # Single sequence input, single category output
     # Tests saving a model file, loading it to rerun training and predict
     input_features = [number_feature()]

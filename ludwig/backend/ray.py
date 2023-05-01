@@ -161,7 +161,7 @@ def _local_size() -> int:
 
 
 def train_fn(
-    distributed_strategy: str,
+    distributed_strategy: Union[str, Dict[str, Any]],
     executable_kwargs: Dict[str, Any] = None,
     model_ref: ObjectRef = None,  # noqa: F821
     remote_trainer_cls: BaseTrainer = None,  # noqa: F821
@@ -196,17 +196,10 @@ def train_fn(
             test_shard = RayDatasetShard(test_shard, features, training_set_metadata)
 
         model = ray.get(model_ref)
-        device = get_torch_device()
-        model = model.to_device(device)
+        model = distributed.to_device(model)
 
         trainer = remote_trainer_cls(model=model, distributed=distributed, report_tqdm_to_ray=True, **executable_kwargs)
         results = trainer.train(train_shard, val_shard, test_shard, **kwargs)
-
-        if results is not None:
-            # only return the model state dict back to the head node.
-            trained_model, *args = results
-            results = (trained_model.cpu().state_dict(), *args)
-
         torch.cuda.empty_cache()
 
         # Passing objects containing Torch tensors as metrics is not supported as it will throw an
@@ -257,8 +250,7 @@ def tune_batch_size_fn(
         )
 
         model = ray.get(model_ref)
-        device = get_torch_device()
-        model = model.to_device(device)
+        model = distributed.to_device(model)
 
         def on_best_batch_size_updated(best_batch_size: int, best_samples_per_sec: float, count: int):
             session.report(
@@ -267,7 +259,11 @@ def tune_batch_size_fn(
 
         trainer: Trainer = remote_trainer_cls(model=model, distributed=distributed, **executable_kwargs)
         best_batch_size = trainer.tune_batch_size(
-            ludwig_config, train_shard, on_best_batch_size_updated=on_best_batch_size_updated, **kwargs
+            ludwig_config,
+            train_shard,
+            snapshot_weights=False,
+            on_best_batch_size_updated=on_best_batch_size_updated,
+            **kwargs,
         )
         session.report(
             metrics=dict(best_batch_size=best_batch_size),
@@ -591,7 +587,7 @@ class RayLLMTrainer(RayTrainerV2):
 
 
 def eval_fn(
-    distributed_strategy: str,
+    distributed_strategy: Union[str, Dict[str, Any]],
     predictor_kwargs: Dict[str, Any] = None,
     model_ref: ObjectRef = None,  # noqa: F821
     training_set_metadata: TrainingSetMetadataDict = None,

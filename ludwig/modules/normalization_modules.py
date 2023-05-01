@@ -62,9 +62,41 @@ class GhostBatchNormalization(LudwigModule):
         return torch.Size([self.num_features])
 
 
+class BatchNorm1dOrIdentity(BatchNorm1d):
+    """BatchNorm1d or Identity layer if the batch_size is 1.
+
+    Workaround for: https://github.com/pytorch/pytorch/issues/4534
+    """
+
+    def forward(self, input: torch.Tensor) -> torch.Tensor:
+        if input.shape[0] == 1:
+            logger.warning(
+                "Batch size is 1, but batch normalization requires batch size >= 2. Skipping batch normalization."
+                "Make sure to set `batch_size` to a value greater than 1."
+            )
+            return input
+        return super().forward(input)
+
+
+class BatchNorm2dOrIdentity(BatchNorm2d):
+    """BatchNorm2d or Identity layer if the batch_size is 1.
+
+    Workaround for: https://github.com/pytorch/pytorch/issues/4534
+    """
+
+    def forward(self, input: torch.Tensor) -> torch.Tensor:
+        if input.shape[0] == 1:
+            logger.warning(
+                "Batch size is 1, but batch normalization requires batch size >= 2. Skipping batch normalization."
+                "Make sure to set `batch_size` to a value greater than 1."
+            )
+            return input
+        return super().forward(input)
+
+
 norm_registry = {
-    "batch_1d": BatchNorm1d,
-    "batch_2d": BatchNorm2d,
+    "batch_1d": BatchNorm1dOrIdentity,
+    "batch_2d": BatchNorm2dOrIdentity,
     "layer": LayerNorm,
     "ghost": GhostBatchNormalization,
 }
