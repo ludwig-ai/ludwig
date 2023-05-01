@@ -110,11 +110,12 @@ class LLM(BaseModel):
                     max_memory={i: "13GiB" for i in range(num_gpus)},
                 )
             )
-
-        # we save and reload the weights to ensure that they can be sharded across the GPUs using `from_pretrained`
-        with tempfile.TemporaryDirectory() as tmpdir:
-            self.model.save_pretrained(tmpdir)
-            self.model = AutoModelForCausalLM.from_pretrained(tmpdir, **model_kwargs)
+            # we save and reload the weights to ensure that they can be sharded across the GPUs using `from_pretrained`
+            with tempfile.TemporaryDirectory() as tmpdir:
+                self.model.save_pretrained(tmpdir)
+                self.model = AutoModelForCausalLM.from_pretrained(tmpdir, **model_kwargs)
+        else:
+            self.model = self.model.to(device)
 
         self.curr_device = device
         return self

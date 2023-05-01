@@ -1,8 +1,7 @@
 import hashlib
 import json
-import logging
 import os
-from typing import Any, Dict, List, Optional, TYPE_CHECKING, Union
+from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING, Union, Type
 
 import numpy as np
 import pandas as pd
@@ -22,6 +21,12 @@ from ludwig.utils.torch_utils import get_torch_device
 
 def df_checksum(df: pd.DataFrame) -> str:
     return hashlib.sha1(pd.util.hash_pandas_object(df).values).hexdigest()
+
+
+def df_to_row_strs(df: pd.DataFrame) -> List[str]:
+    rows = df.to_dict(orient="records")
+    row_strs = [json.dumps(r) for r in rows]
+    return row_strs
 
 
 class RetrievalModel:
@@ -125,8 +130,7 @@ class SemanticRetrieval(RetrievalModel):
             return
         self.checksum = new_checksum
 
-        rows = df_to_index.to_dict(orient="records")
-        row_strs = [json.dumps(r) for r in rows]
+        row_strs = df_to_row_strs(df_to_index)
 
         embeddings = self._encode(row_strs, backend)
         self.index = faiss.IndexFlatL2(embeddings.shape[1])
@@ -151,8 +155,7 @@ class SemanticRetrieval(RetrievalModel):
     def search(
         self, df: pd.DataFrame, backend: "Backend", k: int = 10, return_data: bool = False
     ) -> Union[List[int], List[Dict[str, Any]]]:
-        rows = df.to_dict(orient="records")
-        row_strs = [json.dumps(r) for r in rows]
+        row_strs = df_to_row_strs(df)
 
         query_vectors = self._encode(row_strs, backend)
         results = []
@@ -183,7 +186,7 @@ class SemanticRetrieval(RetrievalModel):
         self.index_data = pd.read_csv(index_data_file_path)
 
 
-def create_semantic_retrieval_model_evaluator(model_name, samples):
+def create_semantic_retrieval_model_evaluator(model_name: str, samples: List[str]) -> Type[BatchSizeEvaluator]:
     class _RetrievalModelEvaluator(BatchSizeEvaluator):
         def __init__(self):
             self.model = get_semantic_retrieval_model(model_name)
@@ -195,7 +198,7 @@ def create_semantic_retrieval_model_evaluator(model_name, samples):
     return _RetrievalModelEvaluator
 
 
-def create_semantic_retrieval_model_fn(model_name, batch_size):
+def create_semantic_retrieval_model_fn(model_name: str, batch_size: int) -> Callable[[pd.DataFrame], np.ndarray]:
     class _RetrievalModelFn:
         def __init__(self):
             self.model = get_semantic_retrieval_model(model_name)
@@ -210,7 +213,7 @@ def create_semantic_retrieval_model_fn(model_name, batch_size):
     return _RetrievalModelFn
 
 
-def get_semantic_retrieval_model(model_name):
+def get_semantic_retrieval_model(model_name: str) -> "SentenceTransformer":
     from sentence_transformers import SentenceTransformer
 
     return SentenceTransformer(model_name, device=get_torch_device())

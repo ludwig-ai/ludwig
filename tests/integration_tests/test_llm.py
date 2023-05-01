@@ -257,3 +257,5 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
     # model = LudwigModel.load(os.path.join(results.output_directory, "model"), backend=backend)
     preds, _ = model.predict(dataset=dataset_path)
     preds = convert_preds(backend, preds)
+
+    assert preds

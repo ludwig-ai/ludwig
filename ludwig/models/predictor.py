@@ -78,7 +78,6 @@ class Predictor(BasePredictor):
         # TODO (jeffkinnison): revert to using the requested device for GBMs when device usage is fixed
         self.device = get_torch_device() if not model.type() == MODEL_GBM else "cpu"
 
-        self.model = model
         self.model = model.to_device(self.device)
 
     def batch_predict(self, dataset: Dataset, dataset_name: str = None, collect_logits: bool = False):

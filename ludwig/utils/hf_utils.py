@@ -4,7 +4,7 @@ import tempfile
 from os import PathLike
 from typing import Optional, Tuple, Type, Union
 
-from transformers import AutoTokenizer, PreTrainedModel
+from transformers import AutoConfig, AutoTokenizer, PreTrainedModel, LlamaConfig
 from transformers.tokenization_utils import PreTrainedTokenizer
 
 from ludwig.api_annotations import DeveloperAPI
@@ -45,6 +45,12 @@ def load_pretrained_hf_tokenizer(
     Returns:
         The pretrained tokenizer object.
     """
+    
+    # HACK: Llama fast tokenizer takes about 2-4 minutes to load, so we disable it for now.
+    config = AutoConfig.from_pretrained(pretrained_model_name_or_path)
+    if isinstance(config, LlamaConfig):
+        pretrained_kwargs["use_fast"] = False
+    
     return AutoTokenizer.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
 
 
