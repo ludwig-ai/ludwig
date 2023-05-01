@@ -110,7 +110,8 @@ class SemanticRetrieval(RetrievalModel):
     """
 
     def __init__(self, model_name, **kwargs):
-        self.model_name = model_name
+        self.model_name = self.model_name
+        self.model = get_semantic_retrieval_model(self.model_name)
         self.index: faiss.Index = None
         self.index_data: pd.DataFrame = None
         self.checksum = None
@@ -142,10 +143,10 @@ class SemanticRetrieval(RetrievalModel):
         # only do this step once
         if self.best_batch_size is None:
             self.best_batch_size = backend.tune_batch_size(
-                create_semantic_retrieval_model_evaluator(self.model_name, row_strs), len(row_strs)
+                create_semantic_retrieval_model_evaluator(self.model, row_strs), len(row_strs)
             )
 
-        transform_fn = create_semantic_retrieval_model_fn(self.model_name, self.best_batch_size)
+        transform_fn = create_semantic_retrieval_model_fn(self.model, self.best_batch_size)
         df = backend.df_engine.from_pandas(pd.DataFrame({"data": row_strs}))
         df = backend.batch_transform(df, self.best_batch_size, transform_fn)
         df = backend.df_engine.compute(df)
@@ -186,10 +187,10 @@ class SemanticRetrieval(RetrievalModel):
         self.index_data = pd.read_csv(index_data_file_path)
 
 
-def create_semantic_retrieval_model_evaluator(model_name: str, samples: List[str]) -> Type[BatchSizeEvaluator]:
+def create_semantic_retrieval_model_evaluator(model: "SentenceTransformer", samples: List[str]) -> Type[BatchSizeEvaluator]:
     class _RetrievalModelEvaluator(BatchSizeEvaluator):
         def __init__(self):
-            self.model = get_semantic_retrieval_model(model_name)
+            self.model = model.to(get_torch_device())
             self.samples = samples
 
         def step(self, batch_size: int):
@@ -198,10 +199,10 @@ def create_semantic_retrieval_model_evaluator(model_name: str, samples: List[str
     return _RetrievalModelEvaluator
 
 
-def create_semantic_retrieval_model_fn(model_name: str, batch_size: int) -> Callable[[pd.DataFrame], np.ndarray]:
+def create_semantic_retrieval_model_fn(model: "SentenceTransformer", batch_size: int) -> Callable[[pd.DataFrame], np.ndarray]:
     class _RetrievalModelFn:
         def __init__(self):
-            self.model = get_semantic_retrieval_model(model_name)
+            self.model = model.to(get_torch_device())
             self.batch_size = batch_size
 
         def __call__(self, df: pd.DataFrame) -> np.ndarray:
