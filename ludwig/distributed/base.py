@@ -6,8 +6,8 @@ import torch
 from torch import nn
 from torch.optim import Optimizer
 
-from ludwig.modules.optimization_modules import create_optimizer
 from ludwig.models.base import BaseModel
+from ludwig.modules.optimization_modules import create_optimizer
 from ludwig.utils.torch_utils import get_torch_device
 
 if TYPE_CHECKING:
