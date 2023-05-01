@@ -47,7 +47,7 @@ review_label_pairs = [
 ]
 
 df = pd.DataFrame(review_label_pairs)
-df['split'] = [0] * 15 + [2] * 10
+df["split"] = [0] * 15 + [2] * 10
 
 config = yaml.safe_load(
     """
