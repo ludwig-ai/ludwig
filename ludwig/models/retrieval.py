@@ -114,7 +114,6 @@ class SemanticRetrieval(RetrievalModel):
         self.model = get_semantic_retrieval_model(self.model_name)
         self.index: faiss.Index = None
         self.index_data: pd.DataFrame = None
-        self.checksum = None
 
         # best batch size computed during the encoding step
         self.best_batch_size = None
@@ -123,14 +122,6 @@ class SemanticRetrieval(RetrievalModel):
         if columns_to_index is None:
             columns_to_index = df.columns
         df_to_index = df[columns_to_index]
-
-        new_checksum = df_checksum(df_to_index)
-        if self.checksum == new_checksum:
-            # Reuse existing index
-            # TODO(travis): could use an LRU cache to support multiple datasets concurrently
-            return
-        self.checksum = new_checksum
-
         row_strs = df_to_row_strs(df_to_index)
 
         embeddings = self._encode(row_strs, backend)
