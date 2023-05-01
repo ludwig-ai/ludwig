@@ -5,12 +5,12 @@
 #
 # License: MIT
 
-import torch.nn.functional as F
 import torch
+import torch.nn.functional as F
 
 
 def coral_loss(logits, levels, importance_weights=None, reduction="mean"):
-    """Computes the CORAL loss described in
+    """Computes the CORAL loss described in.
 
     Cao, Mirjalili, and Raschka (2020)
     *Rank Consistent Ordinal Regression for Neural Networks
@@ -61,7 +61,7 @@ def coral_loss(logits, levels, importance_weights=None, reduction="mean"):
 
     if not logits.shape == levels.shape:
         raise ValueError(
-            "Please ensure that logits (%s) has the same shape as levels (%s). " % (logits.shape, levels.shape)
+            "Please ensure that logits ({}) has the same shape as levels ({}). ".format(logits.shape, levels.shape)
         )
 
     term1 = F.logsigmoid(logits) * levels + (F.logsigmoid(logits) - logits) * (1 - levels)
@@ -85,10 +85,8 @@ def coral_loss(logits, levels, importance_weights=None, reduction="mean"):
 
 
 def corn_loss(logits, y_train, num_classes):
-    """Computes the CORN loss described in our forthcoming
-    'Deep Neural Networks for Rank Consistent Ordinal
-    Regression based on Conditional Probabilities'
-    manuscript.
+    """Computes the CORN loss described in our forthcoming 'Deep Neural Networks for Rank Consistent Ordinal
+    Regression based on Conditional Probabilities' manuscript.
 
     Parameters
     ----------

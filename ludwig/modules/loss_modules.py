@@ -22,10 +22,10 @@ from torch.nn import HuberLoss as _HuberLoss
 from torch.nn import L1Loss
 from torch.nn import MSELoss as _MSELoss
 from torchmetrics.functional import mean_absolute_percentage_error
-from ludwig.modules.loss_implementations.corn import corn_loss
 
 import ludwig.utils.loss_utils as utils
 from ludwig.constants import LOGITS
+from ludwig.modules.loss_implementations.corn import corn_loss
 from ludwig.schema.features.loss.loss import (
     BaseLossConfig,
     BWCEWLossConfig,
