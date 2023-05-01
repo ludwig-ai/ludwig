@@ -78,7 +78,7 @@ output_features:
             "negative":
                 type: contains
                 value: "positive"
-            "neural":
+            "neutral":
                 type: contains
                 value: "neutral"
             "positive":

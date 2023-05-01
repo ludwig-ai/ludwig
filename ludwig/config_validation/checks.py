@@ -14,6 +14,7 @@ from ludwig.constants import (
     MODEL_GBM,
     MODEL_LLM,
     NUMBER,
+    SEMANTIC,
     SEQUENCE,
     SET,
     TEXT,
@@ -233,11 +234,32 @@ def check_validation_metric_exists(config: "ModelConfig") -> None:  # noqa: F821
             f"Available metrics are: {all_valid_metrics}"
         )
 
-@register_config_check
-def check_k_nonzero_if_retrieval_type_nonnone(config: "ModelConfig") -> None:  # noqa: F821
-    """Checks that k is greater than zero if retrieval type is not None."""
-    
 
+@register_config_check
+def check_retrieval_config(config: "ModelConfig") -> None:
+    """Checks that the retrieval config is valid."""
+    for input_feature in config.input_features:
+        if input_feature.type == TEXT:
+            if input_feature.preprocessing.prompt.task is not None:
+
+                _check_k_retrieval_config(input_feature.preprocessing.prompt.retrieval)
+                _check_model_name_retrieval_config(input_feature.preprocessing.prompt.retrieval)
+
+
+def _check_k_retrieval_config(retrieval_config: "RetrievalConfig") -> None:
+    """Checks that k is greater than zero if retrieval type is not None."""
+    if retrieval_config.type is None and retrieval_config.k != 0:
+        raise ConfigValidationError("k must be 0 if retrieval type is None.")
+    elif retrieval_config.type is not None and retrieval_config.k <= 0:
+        raise ConfigValidationError("k must be greater than 0 if retrieval type is not None.")
+
+
+def _check_model_name_retrieval_config(retrieval_config: "RetrievalConfig") -> None:
+    """Checks that model_name is not None if retrieval type is not None."""
+    if retrieval_config.type is None and retrieval_config.model_name is not None:
+        raise ConfigValidationError("model_name must be None if retrieval type is None.")
+    elif retrieval_config.type == SEMANTIC and retrieval_config.model_name is None:
+        raise ConfigValidationError(f"model_name must not be None if retrieval type is '{SEMANTIC}'.")
 
 
 @register_config_check

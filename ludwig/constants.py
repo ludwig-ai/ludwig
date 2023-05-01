@@ -131,6 +131,8 @@ ENCODER_OUTPUT_STATE = "encoder_output_state"
 PROJECTION_INPUT = "projection_input"
 LEARNING_RATE_SCHEDULER = "learning_rate_scheduler"
 
+SEMANTIC = "semantic"
+
 RANDOM = "random"
 SUM = "sum"
 APPEND = "append"

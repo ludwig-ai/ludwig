@@ -281,3 +281,94 @@ model_type: ecd
     # Confirms that the choice of the combiner type is the only reason for the ConfigValidationError.
     config[COMBINER][TYPE] = "sequence_concat"
     ModelConfig.from_dict(config)
+
+def test_retrieval_config_none_type():
+    config = yaml.safe_load(
+        """
+model_type: llm
+model_name: facebook/opt-350m
+input_features:
+-
+    name: sample
+    type: text
+    preprocessing:
+        prompt:
+            retrieval:
+                type: null
+                k: 1
+            task: "Classify the sample input as either negative, neutral, or positive."
+output_features:
+-
+    name: label
+    type: text
+"""
+    )
+
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+        
+    # will not fail
+    config['input_features'][0]['preprocessing']['prompt']['retrieval']['k'] = 0
+    ModelConfig.from_dict(config)
+
+
+def test_retrieval_config_random_type():
+    config = yaml.safe_load(
+        """
+model_type: llm
+model_name: facebook/opt-350m
+input_features:
+-
+    name: sample
+    type: text
+    preprocessing:
+        prompt:
+            retrieval:
+                type: random
+            task: "Classify the sample input as either negative, neutral, or positive."
+output_features:
+-
+    name: label
+    type: text
+"""
+    )
+
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+        
+    # will not fail
+    config['input_features'][0]['preprocessing']['prompt']['retrieval']['k'] = 1
+    ModelConfig.from_dict(config)
+
+
+def test_retrieval_config_semantic_type():
+    config = yaml.safe_load(
+        """
+model_type: llm
+model_name: facebook/opt-350m
+input_features:
+-
+    name: sample
+    type: text
+    preprocessing:
+        prompt:
+            retrieval:
+                type: semantic
+            task: "Classify the sample input as either negative, neutral, or positive."
+output_features:
+-
+    name: label
+    type: text
+"""
+    )
+
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+        
+    # will still fail (model name is None)
+    config['input_features'][0]['preprocessing']['prompt']['retrieval']['k'] = 1
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+        
+    config['input_features'][0]['preprocessing']['prompt']['retrieval']['model_name'] = "some-huggingface-model"
+    ModelConfig.from_dict(config)
