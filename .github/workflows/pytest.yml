@@ -236,7 +236,7 @@ jobs:
       matrix:
         backend: [ {name: 'Distributed', extra: '.[full]', script-path: 'examples/benchmarking'}, {name: 'Local', extra: '.', script-path: 'examples/getting_started'} ]
 
-    name: Test ${{ backend.name }} Minimal Install
+    name: Test ${{ matrix.backend.name }} Minimal Install
     runs-on: ubuntu-latest
 
     env:
@@ -279,7 +279,7 @@ jobs:
 
       - name: Test Getting Started
         run: |
-          cd ${{ backend.script-path }} && sh ./run.sh
+          cd ${{ matrix.backend.script-path }} && sh ./run.sh
         shell: bash
 
   # start-runner:
