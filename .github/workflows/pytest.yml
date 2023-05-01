@@ -230,9 +230,15 @@ jobs:
         run: |
           pytest -rx --durations 100 -m "combinatorial" --junitxml pytest.xml tests/training_success
 
-  test-distributed-minimal-install:
-    name: Test Distributed Minimal Install
+  test-minimal-install:
+    strategy:
+      fail-fast: false
+      matrix:
+        backend: [ {name: 'Distributed', extra: '.[full]', script-path: 'examples/benchmarking'}, {name: 'Local', extra: '.', script-path: 'examples/getting_started'} ]
+
+    name: Test ${{ backend.name }} Minimal Install
     runs-on: ubuntu-latest
+
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.LUDWIG_TESTS_AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.LUDWIG_TESTS_AWS_SECRET_ACCESS_KEY }}
@@ -262,7 +268,7 @@ jobs:
           python --version
           pip --version
           python -m pip install -U pip
-          pip install '.[full]'
+          pip install '${{ matrix.backend.extra }}'
           pip list
         shell: bash
 
@@ -273,7 +279,7 @@ jobs:
 
       - name: Test Getting Started
         run: |
-          cd examples/getting_started && sh ./run.sh
+          cd ${{ backend.script-path }} && sh ./run.sh
         shell: bash
 
   # start-runner:
