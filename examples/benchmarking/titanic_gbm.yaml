@@ -29,6 +29,6 @@ preprocessing:
 backend:
   type: ray
   trainer:
-    num_workers: 2
+    num_workers: 1
     resources_per_worker:
       CPU: 1

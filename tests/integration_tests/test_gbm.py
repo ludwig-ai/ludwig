@@ -3,6 +3,7 @@ import re
 
 import numpy as np
 import pytest
+import ray
 
 from ludwig.api import LudwigModel
 from ludwig.constants import COLUMN, INPUT_FEATURES, MODEL_TYPE, NAME, OUTPUT_FEATURES, TRAINER
@@ -172,6 +173,11 @@ def run_test_gbm_number(tmpdir, backend_config):
 
 def test_local_gbm_number(tmpdir, local_backend):
     run_test_gbm_number(tmpdir, local_backend)
+
+
+@pytest.mark.distributed
+def test_ray_gbm_number_remote(tmpdir, ray_backend, ray_cluster_5cpu):
+    ray.get(ray.remote(run_test_gbm_number).remote(tmpdir, ray_backend))
 
 
 @pytest.mark.distributed
