@@ -1092,3 +1092,11 @@ def test_experiment_category_distribution_feature(csv_filename):
 
     # Check that predictions are category values drawn from the vocab, not distributions
     assert all(v in vocab for v in preds[f"{output_features[0][NAME]}_predictions"].values)
+
+
+def test_experiment_ordinal_category(csv_filename):
+    input_features = [category_feature(num_classes=5), number_feature()]
+    output_features = [category_feature(output_feature=True, loss={"type": "corn"})]
+
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    run_experiment(input_features, output_features, dataset=rel_path)
