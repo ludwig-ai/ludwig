@@ -332,6 +332,18 @@ def set_llm_tokenizers(config: "ModelConfig") -> None:
             output_feature.decoder.fallback_label = output_feature.preprocessing.fallback_label
 
 
+def set_retrieval_parameters(config: "ModelConfig") -> None:
+    """Sets the retrieval parameters for the LLM model."""
+    if config.model_type != "llm":
+        return
+    
+    if input_feature in config.input_features:
+        if input_feature.type == TEXT:
+            retrieval_config = input_feature.preprocessing.prompt.retrieval
+            if retrieval_config.type is not None and retrieval_config.k == 0:
+                retrieval_config.k = 1
+
+
 @DeveloperAPI
 def contains_grid_search_parameters(hyperopt_config: HyperoptConfigDict) -> bool:
     """Returns True if any hyperopt parameter in the config is using the grid_search space."""
