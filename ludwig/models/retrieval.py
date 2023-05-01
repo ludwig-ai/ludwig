@@ -1,7 +1,7 @@
 import hashlib
 import json
 import os
-from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING, Union, Type
+from typing import Any, Callable, Dict, List, Optional, Type, TYPE_CHECKING, Union
 
 import numpy as np
 import pandas as pd
@@ -187,7 +187,9 @@ class SemanticRetrieval(RetrievalModel):
         self.index_data = pd.read_csv(index_data_file_path)
 
 
-def create_semantic_retrieval_model_evaluator(model: "SentenceTransformer", samples: List[str]) -> Type[BatchSizeEvaluator]:
+def create_semantic_retrieval_model_evaluator(
+    model: "SentenceTransformer", samples: List[str]
+) -> Type[BatchSizeEvaluator]:
     class _RetrievalModelEvaluator(BatchSizeEvaluator):
         def __init__(self):
             self.model = model.to(get_torch_device())
@@ -199,7 +201,9 @@ def create_semantic_retrieval_model_evaluator(model: "SentenceTransformer", samp
     return _RetrievalModelEvaluator
 
 
-def create_semantic_retrieval_model_fn(model: "SentenceTransformer", batch_size: int) -> Callable[[pd.DataFrame], np.ndarray]:
+def create_semantic_retrieval_model_fn(
+    model: "SentenceTransformer", batch_size: int
+) -> Callable[[pd.DataFrame], np.ndarray]:
     class _RetrievalModelFn:
         def __init__(self):
             self.model = model.to(get_torch_device())

@@ -806,7 +806,7 @@ class HFTokenizer(BaseTokenizer):
 
     def get_unk_token(self) -> str:
         return self.tokenizer.unk_token
-    
+
     def _set_pad_token(self) -> None:
         """Sets the pad token and pad token ID for the tokenizer."""
 
@@ -815,7 +815,10 @@ class HFTokenizer(BaseTokenizer):
         # HACK(geoffrey): gpt2 has no pad token. Recommendation is to use eos token instead.
         # https://github.com/huggingface/transformers/issues/2630#issuecomment-1290809338
         # https://github.com/huggingface/transformers/issues/2648#issuecomment-616177044
-        if any(isinstance(self.tokenizer, t) for t in [GPT2Tokenizer, GPT2TokenizerFast, LlamaTokenizer, LlamaTokenizerFast]):
+        if any(
+            isinstance(self.tokenizer, t)
+            for t in [GPT2Tokenizer, GPT2TokenizerFast, LlamaTokenizer, LlamaTokenizerFast]
+        ):
             self.tokenizer.pad_token = self.tokenizer.eos_token
             self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
 
