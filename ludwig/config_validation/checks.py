@@ -248,6 +248,8 @@ def check_retrieval_config(config: "ModelConfig") -> None:
 
 def _check_k_retrieval_config(retrieval_config: "RetrievalConfig") -> None:
     """Checks that k is greater than zero if retrieval type is not None."""
+    # TODO: have a dynamically loaded schema based on the selection of the type param
+    # https://github.com/ludwig-ai/ludwig/pull/3351#discussion_r1181910954
     if retrieval_config.type is None and retrieval_config.k != 0:
         raise ConfigValidationError("k must be 0 if retrieval type is None.")
     elif retrieval_config.type is not None and retrieval_config.k <= 0:

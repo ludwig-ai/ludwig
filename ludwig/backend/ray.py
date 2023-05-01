@@ -164,7 +164,7 @@ def train_fn(
     distributed_strategy: Union[str, Dict[str, Any]],
     executable_kwargs: Dict[str, Any] = None,
     model_ref: ObjectRef = None,  # noqa: F821
-    remote_trainer_cls: BaseTrainer = None,  # noqa: F821
+    remote_trainer_cls: Type[BaseTrainer] = None,  # noqa: F821
     training_set_metadata: TrainingSetMetadataDict = None,
     features: Dict[str, Dict] = None,
     **kwargs,

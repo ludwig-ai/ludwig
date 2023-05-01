@@ -54,6 +54,7 @@ def load_trainer_with_kwargs(
     from ludwig.constants import MODEL_ECD, MODEL_GBM, MODEL_LLM
     from ludwig.schema.trainer import ECDTrainerConfig, GBMTrainerConfig, LLMTrainerConfig
 
+    # TODO: use registry pattern for trainers
     if model_type == MODEL_ECD:
         trainer_schema = ECDTrainerConfig
     elif model_type == MODEL_GBM:

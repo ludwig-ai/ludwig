@@ -1,6 +1,7 @@
 import hashlib
 import json
 import os
+from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Optional, Type, TYPE_CHECKING, Union
 
 import numpy as np
@@ -29,15 +30,17 @@ def df_to_row_strs(df: pd.DataFrame) -> List[str]:
     return row_strs
 
 
-class RetrievalModel:
+class RetrievalModel(ABC):
+    @abstractmethod
     def create_dataset_index(self, df: pd.DataFrame, backend: "Backend", columns_to_index: Optional[List[str]] = None):
         """Creates an index for the dataset.
 
         If `columns_to_index` is None, all columns are indexed. Otherwise, only the columns in `columns_to_index` are
         used for indexing, but all columns in `df` are returned in the search results.
         """
-        raise NotImplementedError
+        pass
 
+    @abstractmethod
     def search(
         self, df, backend: "Backend", k: int = 10, return_data: bool = False
     ) -> Union[List[int], List[Dict[str, Any]]]:
@@ -45,15 +48,17 @@ class RetrievalModel:
 
         If `return_data` is True, returns the data associated with the indices. Otherwise, returns the indices.
         """
-        raise NotImplementedError
+        pass
 
+    @abstractmethod
     def save_index(self, name: str, cache_directory: str):
         """Saves the index to the cache directory."""
-        raise NotImplementedError
+        pass
 
+    @abstractmethod
     def load_index(self, name: str, cache_directory: str):
         """Loads the index from the cache directory."""
-        raise NotImplementedError
+        pass
 
 
 class RandomRetrieval(RetrievalModel):

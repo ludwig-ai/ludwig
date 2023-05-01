@@ -49,10 +49,6 @@ class LLM(BaseModel):
         self.curr_device = torch.device("cpu")  # model initially loaded onto cpu
         logger.info("Done.")
 
-        if device is None:
-            device = get_torch_device()
-        self.to_device(device)
-
         self.max_new_tokens = self.config_obj.generation.max_new_tokens
 
         # Determines the maximum length of the context (input + output tokens)
@@ -62,6 +58,8 @@ class LLM(BaseModel):
             self.context_len = self.model.config.max_position_embeddings
         else:
             self.context_len = 2048
+        # max input length value copied from FastChat
+        # https://github.com/lm-sys/FastChat/blob/0e958b852a14f4bef5f0e9d7a5e7373477329cf2/fastchat/serve/inference.py#L183  # noqa
         self.max_input_length = self.context_len - self.max_new_tokens - 8
 
         # Used only for its metadata about the vocabulary
@@ -102,6 +100,8 @@ class LLM(BaseModel):
         model_kwargs = {}
         if device == torch.device("cuda"):
             num_gpus = torch.cuda.device_count()
+            # TODO: make this configurable in the future. These parameters are from FastChat:
+            # https://github.com/lm-sys/FastChat/blob/0e958b852a14f4bef5f0e9d7a5e7373477329cf2/fastchat/serve/inference.py#L90  # noqa
             model_kwargs.update(
                 dict(
                     low_cpu_mem_usage=True,
