@@ -2,7 +2,6 @@ import json
 import logging
 import os
 import string
-import uuid
 from typing import Any, Dict, Optional, Tuple, TYPE_CHECKING
 
 import pandas as pd
@@ -10,7 +9,7 @@ import pandas as pd
 if TYPE_CHECKING:
     from ludwig.backend.base import Backend
 
-from ludwig.models.retrieval import get_retrieval_model, RetrievalModel
+from ludwig.models.retrieval import get_retrieval_model, RetrievalModel, df_checksum
 from ludwig.utils.fs_utils import get_default_cache_location, makedirs, path_exists
 from ludwig.utils.types import Series
 
@@ -92,8 +91,19 @@ def index_column(
         # TODO(geoffrey): add support for Dask DataFrames
         df = pd.DataFrame({name: backend.df_engine.compute(col) for name, col in dataset_cols.items()})
         df = df[split_col == 0]  # Ensures that the index is only built on the training set
+        
+        # Even if index name is not provided, we still want to check if an index for this df already exists in cache
+        # If it does, load it and return immediately
+        index_hash = df_checksum(df)
+        index_name = f"embedding_index_{index_hash}"
+        if path_exists(os.path.join(index_cache_directory, index_name)):
+            logger.info(f"Index for this DataFrame with name '{index_name}' already exists. "
+                        f"Loading index from '{index_cache_directory}'")
+            retrieval_model.load_index(index_name, cache_directory=index_cache_directory)
+            return retrieval_model, index_name
+        
+        # Build index if index name is not provided and index for this df does not already exist in cache
         retrieval_model.create_dataset_index(df, backend, columns_to_index=[col_name])
-        index_name = f"embedding_index_{uuid.uuid4()}"
         logger.info(f"Saving index to cache directory '{index_cache_directory}' with name '{index_name}'")
         retrieval_model.save_index(index_name, cache_directory=index_cache_directory)
     else:
