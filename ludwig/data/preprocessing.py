@@ -1722,6 +1722,7 @@ def handle_features_with_prompt_config(
                     backend=backend,
                     split_col=split_col,
                 )
+                k = prompt_config["retrieval"]["k"]
 
                 # NOTE: after indexing the input column, we update the index_name in the prompt config IN PLACE.
                 # This ensures that the preprocessing parameters for this feature have an up-to-date index_name
@@ -1729,6 +1730,7 @@ def handle_features_with_prompt_config(
                 prompt_config["retrieval"]["index_name"] = index_name
             else:
                 retrieval_model = None
+                k = -1
 
             dataset_cols[input_col_name] = format_input_with_prompt(
                 input_col_name,
@@ -1736,6 +1738,7 @@ def handle_features_with_prompt_config(
                 backend,
                 prompt_config["task"],
                 retrieval_model=retrieval_model,
+                k=k,
                 template=prompt_config["template"],
             )
 

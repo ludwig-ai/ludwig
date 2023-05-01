@@ -28,8 +28,8 @@ DEFAULT_FEW_SHOT_PROMPT_TEMPLATE = """Below is relevant context:
 
 CONTEXT: {context}
 
-The context is comprised of labeled samples whose embeddings were similar to that of the sample input. The labels in
-these samples could aid you in your final prediction. Given this context and no prior knowledge, follow the instructions
+CONTEXT is comprised of labeled samples whose embeddings were similar to that of the sample input. The labels in
+these samples could aid you in your final prediction. Given this and no prior knowledge, follow the instructions
 below.
 
 SAMPLE INPUT: {sample_input}
@@ -108,6 +108,7 @@ def format_input_with_prompt(
     backend: "Backend",
     task_str: str,
     retrieval_model: Optional[RetrievalModel] = None,
+    k: int = -1,
     template: Optional[str] = None,
 ) -> Series:
     """Returns a new Series with the input column data formatted with the prompt.
@@ -120,6 +121,29 @@ def format_input_with_prompt(
         - sample_input: The input sample.
         - task: The task to be completed given the input.
         - context: The context retrieved by the `search_fn` function. Only required if `search_fn` is provided.
+
+    Zero-shot example:
+
+    Before formatting:
+
+        input_col = ["I am happy"]
+        task_str = "sentiment analysis"
+
+    After formatting:
+
+        input_col = ["SAMPLE INPUT: I am happy\n\nUSER: Complete the following task: sentiment analysis\n\nASSISTANT:"]
+
+    Args:
+        input_col_name (str): The name of the input column.
+        input_col (Series): The input column.
+        backend (Backend): The backend used for map operations.
+        task_str (str): The task to be completed given the input.
+        retrieval_model (Optional[RetrievalModel]): The retrieval model used to retrieve context. If provided, the
+            prompt will be few-shot. If not provided, the prompt will be zero-shot.
+        k (int): The number of samples to retrieve. Only required if `retrieval_model` is provided.
+        template (Optional[str]): The template to use for the prompt. If not provided, the default will be used.
+    Returns:
+        Series: A new Series with the input column data formatted with the prompt.
     """
     # determine if this is a few-shot or zero-shot prompt
     # few-shot prompts require a search function that returns samples from some dataset
@@ -142,7 +166,7 @@ def format_input_with_prompt(
         df = series.to_frame(name=input_col_name)
 
         if is_few_shot:
-            df["context"] = retrieval_model.search(df, backend, k=3, return_data=True)
+            df["context"] = retrieval_model.search(df, backend, k=k, return_data=True)
 
         df["sample_input"] = df[input_col_name].map(lambda entry: json.dumps(entry, indent=2))
         df["task"] = task_str
