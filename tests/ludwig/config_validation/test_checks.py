@@ -334,11 +334,7 @@ output_features:
 """
     )
 
-    with pytest.raises(ConfigValidationError):
-        ModelConfig.from_dict(config)
-
-    # will not fail
-    config["input_features"][0]["preprocessing"]["prompt"]["retrieval"]["k"] = 1
+    # should not fail because we auto-set k=1 if k=0 using set_retrieval_parameters
     ModelConfig.from_dict(config)
 
 
@@ -363,11 +359,6 @@ output_features:
 """
     )
 
-    with pytest.raises(ConfigValidationError):
-        ModelConfig.from_dict(config)
-
-    # will still fail (model name is None)
-    config["input_features"][0]["preprocessing"]["prompt"]["retrieval"]["k"] = 1
     with pytest.raises(ConfigValidationError):
         ModelConfig.from_dict(config)
 
