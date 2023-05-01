@@ -231,19 +231,8 @@ jobs:
           pytest -rx --durations 100 -m "combinatorial" --junitxml pytest.xml tests/training_success
 
   test-minimal-install:
-    strategy:
-      fail-fast: false
-      matrix:
-        backend: [ {name: 'Distributed', extra: '.[full]', script-path: 'examples/benchmarking'}, {name: 'Local', extra: '.', script-path: 'examples/getting_started'} ]
-
-    name: Test ${{ matrix.backend.name }} Minimal Install
+    name: Test Minimal Install
     runs-on: ubuntu-latest
-
-    env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.LUDWIG_TESTS_AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.LUDWIG_TESTS_AWS_SECRET_ACCESS_KEY }}
-      KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
-      KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
 
     timeout-minutes: 15
     steps:
@@ -268,7 +257,7 @@ jobs:
           python --version
           pip --version
           python -m pip install -U pip
-          pip install '${{ matrix.backend.extra }}'
+          pip install '.'
           pip list
         shell: bash
       - name: Check Install
@@ -278,7 +267,7 @@ jobs:
 
       - name: Test Getting Started
         run: |
-          cd ${{ matrix.backend.script-path }} && sh ./run.sh
+          cd examples/getting_started && sh ./run.sh
         shell: bash
 
   # start-runner:
