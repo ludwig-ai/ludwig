@@ -233,11 +233,10 @@ def check_validation_metric_exists(config: "ModelConfig") -> None:  # noqa: F821
             f"Available metrics are: {all_valid_metrics}"
         )
 
+
 @register_config_check
 def check_k_nonzero_if_retrieval_type_nonnone(config: "ModelConfig") -> None:  # noqa: F821
     """Checks that k is greater than zero if retrieval type is not None."""
-    
-
 
 
 @register_config_check
