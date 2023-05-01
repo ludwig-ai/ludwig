@@ -199,7 +199,7 @@ def train_fn(
         model = distributed.to_device(model)
 
         trainer = remote_trainer_cls(model=model, distributed=distributed, report_tqdm_to_ray=True, **executable_kwargs)
-        results = trainer.train(train_shard, val_shard, test_shard, **kwargs)
+        results = trainer.train(train_shard, val_shard, test_shard, return_state_dict=True, **kwargs)
         torch.cuda.empty_cache()
 
         # Passing objects containing Torch tensors as metrics is not supported as it will throw an

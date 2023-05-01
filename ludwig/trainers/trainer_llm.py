@@ -113,6 +113,7 @@ class ZeroShotTrainer(BaseTrainer):
         validation_set: Optional[Dataset] = None,
         test_set: Optional[Dataset] = None,
         save_path: str = "model",
+        return_state_dict: bool = False,
         **kwargs,
     ):
         logger.info("Starting Training")
@@ -174,12 +175,17 @@ class ZeroShotTrainer(BaseTrainer):
             if test_summary_writer is not None:
                 test_summary_writer.close()
 
-            return (
-                self.model,
-                progress_tracker.train_metrics,
-                progress_tracker.validation_metrics,
-                progress_tracker.test_metrics,
-            )
+        # When running with Ray, we only need to return the state dict, as it's faster and cheaper to send the
+        # state dict over the network than to load the model state here, serialize it back to a state dict, then
+        # load it back on the head node.
+        return_value = self.model if not return_state_dict else self.model.cpu().state_dict()
+
+        return (
+            return_value,
+            progress_tracker.train_metrics,
+            progress_tracker.validation_metrics,
+            progress_tracker.test_metrics,
+        )
 
     def train_online(
         self,
