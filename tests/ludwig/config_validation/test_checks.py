@@ -282,6 +282,7 @@ model_type: ecd
     config[COMBINER][TYPE] = "sequence_concat"
     ModelConfig.from_dict(config)
 
+
 def test_retrieval_config_none_type():
     config = yaml.safe_load(
         """
@@ -306,9 +307,9 @@ output_features:
 
     with pytest.raises(ConfigValidationError):
         ModelConfig.from_dict(config)
-        
+
     # will not fail
-    config['input_features'][0]['preprocessing']['prompt']['retrieval']['k'] = 0
+    config["input_features"][0]["preprocessing"]["prompt"]["retrieval"]["k"] = 0
     ModelConfig.from_dict(config)
 
 
@@ -335,9 +336,9 @@ output_features:
 
     with pytest.raises(ConfigValidationError):
         ModelConfig.from_dict(config)
-        
+
     # will not fail
-    config['input_features'][0]['preprocessing']['prompt']['retrieval']['k'] = 1
+    config["input_features"][0]["preprocessing"]["prompt"]["retrieval"]["k"] = 1
     ModelConfig.from_dict(config)
 
 
@@ -364,11 +365,11 @@ output_features:
 
     with pytest.raises(ConfigValidationError):
         ModelConfig.from_dict(config)
-        
+
     # will still fail (model name is None)
-    config['input_features'][0]['preprocessing']['prompt']['retrieval']['k'] = 1
+    config["input_features"][0]["preprocessing"]["prompt"]["retrieval"]["k"] = 1
     with pytest.raises(ConfigValidationError):
         ModelConfig.from_dict(config)
-        
-    config['input_features'][0]['preprocessing']['prompt']['retrieval']['model_name'] = "some-huggingface-model"
+
+    config["input_features"][0]["preprocessing"]["prompt"]["retrieval"]["model_name"] = "some-huggingface-model"
     ModelConfig.from_dict(config)
