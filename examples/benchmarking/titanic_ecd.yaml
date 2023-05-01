@@ -20,6 +20,8 @@ input_features:
 output_features:
 - name: Survived
   type: binary
+trainer:
+  train_steps: 1
 preprocessing:
   split:
     type: fixed

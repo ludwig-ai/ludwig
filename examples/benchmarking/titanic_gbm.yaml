@@ -21,6 +21,8 @@ model_type: gbm
 output_features:
 - name: Survived
   type: binary
+trainer:
+  num_boost_round: 2
 preprocessing:
   split:
     type: fixed
