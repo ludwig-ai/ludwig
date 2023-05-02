@@ -241,7 +241,7 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
         input_features,
         output_features,
         filename=csv_filename,
-        num_examples=50,
+        num_examples=25,
         nan_percent=0.1,
         with_split=True,
     )

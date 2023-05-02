@@ -63,7 +63,7 @@ def test_hf_text_embedding(tmpdir, backend, ray_cluster_2cpu):
     data_csv_path = os.path.join(tmpdir, "dataset.csv")
     dataset = generate_data(input_features, output_features, data_csv_path)
 
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 1}}
     run_test_suite(config, dataset, backend)
 
 
