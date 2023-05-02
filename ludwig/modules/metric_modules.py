@@ -42,6 +42,7 @@ from ludwig.constants import (
     BINARY_WEIGHTED_CROSS_ENTROPY,
     CATEGORY,
     CATEGORY_DISTRIBUTION,
+    CORN,
     HITS_AT_K,
     HUBER,
     JACCARD,
@@ -74,6 +75,7 @@ from ludwig.constants import (
 from ludwig.distributed import get_current_dist_strategy
 from ludwig.modules.loss_modules import (
     BWCEWLoss,
+    CORNLoss,
     HuberLoss,
     SequenceSoftmaxCrossEntropyLoss,
     SigmoidCrossEntropyLoss,
@@ -82,6 +84,7 @@ from ludwig.modules.loss_modules import (
 from ludwig.modules.metric_registry import get_metric_objective, get_metric_registry, register_metric
 from ludwig.schema.features.loss.loss import (
     BWCEWLossConfig,
+    CORNLossConfig,
     HuberLossConfig,
     SequenceSoftmaxCrossEntropyLossConfig,
     SigmoidCrossEntropyLossConfig,
@@ -464,6 +467,20 @@ class HuberMetric(LossMetric):
     ):
         super().__init__()
         self.loss_function = HuberLoss(config=config)
+
+    def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
+        return self.loss_function(preds, target)
+
+
+@register_metric(CORN, [CATEGORY], MINIMIZE, PREDICTIONS)
+class CORNMetric(LossMetric):
+    def __init__(
+        self,
+        config: CORNLossConfig,
+        **kwargs,
+    ):
+        super().__init__()
+        self.loss_function = CORNLoss(config=config)
 
     def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
         return self.loss_function(preds, target)

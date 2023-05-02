@@ -8,6 +8,7 @@ from marshmallow import ValidationError
 from ludwig.modules import loss_modules
 from ludwig.schema.features.loss.loss import (
     BWCEWLossConfig,
+    CORNLossConfig,
     HuberLossConfig,
     MAELossConfig,
     MAPELossConfig,
@@ -135,3 +136,11 @@ def test_huber_loss(
         loss = loss_modules.HuberLoss(HuberLossConfig.from_dict({"delta": delta}))
         value = loss(preds, target)
         assert value == output
+
+
+@pytest.mark.parametrize("preds", [torch.tensor([[0.25, 0.2, 0.55], [0.2, 0.35, 0.45], [0.8, 0.1, 0.1]])])
+@pytest.mark.parametrize("target", [torch.tensor([2, 1, 0])])
+@pytest.mark.parametrize("output", [torch.tensor(0.7653)])
+def test_corn_loss(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor):
+    loss = loss_modules.CORNLoss(CORNLossConfig())
+    assert torch.isclose(loss(preds, target), output, rtol=0.0001)
