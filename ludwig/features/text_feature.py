@@ -45,6 +45,7 @@ from ludwig.utils.math_utils import softmax
 from ludwig.utils.strings_utils import (
     build_sequence_matrix,
     create_vocabulary,
+    get_tokenizer,
     SpecialSymbol,
     UNKNOWN_SYMBOL,
     Vocabulary,
@@ -309,12 +310,24 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     ):
         # todo: refactor to reuse SequenceOutputFeature.postprocess_predictions
         predictions_col = f"{self.feature_name}_{PREDICTIONS}"
+
+        tokenizer = None
+        if metadata["preprocessing"]["tokenizer"] == "hf_tokenizer":
+            tokenizer = get_tokenizer(
+                metadata["preprocessing"]["tokenizer"],
+                metadata["preprocessing"]["vocab_file"],
+                metadata["preprocessing"]["pretrained_model_name_or_path"],
+            )
+
         if predictions_col in result:
 
             def idx2str(pred):
-                return [
-                    metadata["idx2str"][token] if token < len(metadata["idx2str"]) else UNKNOWN_SYMBOL for token in pred
-                ]
+                if tokenizer is None:
+                    return [
+                        metadata["idx2str"][token] if token < len(metadata["idx2str"]) else UNKNOWN_SYMBOL
+                        for token in pred
+                    ]
+                return tokenizer.tokenizer.batch_decode(pred, skip_special_tokens=True)
 
             result[predictions_col] = result[predictions_col].map(idx2str)
 

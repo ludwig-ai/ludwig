@@ -34,14 +34,6 @@ class FCLayer(LudwigModule):
     4. dropout
     """
 
-    @property
-    def input_shape(self) -> torch.Size:
-        return torch.Size([self.input_size])
-
-    @property
-    def output_shape(self) -> torch.Size:
-        return torch.Size([self.output_size])
-
     def __init__(
         self,
         input_size: int,
@@ -87,6 +79,14 @@ class FCLayer(LudwigModule):
             hidden = layer(hidden)
 
         return hidden
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.input_size])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([self.output_size])
 
 
 class FCStack(LudwigModule):

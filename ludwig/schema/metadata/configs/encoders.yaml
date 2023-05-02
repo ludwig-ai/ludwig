@@ -5202,6 +5202,7 @@ DeBERTa:
             In [DeBERTa V3](https://arxiv.org/abs/2111.09543), the authors further improved the efficiency of DeBERTa
             using ELECTRA-Style pre-training with Gradient Disentangled Embedding Sharing. Compared to DeBERTa,
             the V3 version significantly improves the model performance on downstream tasks.
+        compute_tier: 2
         literature_references:
             - https://arxiv.org/abs/2006.03654
             - https://arxiv.org/abs/2111.09543

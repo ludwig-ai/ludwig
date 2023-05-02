@@ -24,7 +24,7 @@ from ray.air.config import CheckpointConfig, FailureConfig, RunConfig
 from ray.tune import ExperimentAnalysis, register_trainable, Stopper, TuneConfig
 from ray.tune.execution.placement_groups import PlacementGroupFactory
 from ray.tune.schedulers.resource_changing_scheduler import DistributeResources, ResourceChangingScheduler
-from ray.tune.search import BasicVariantGenerator, ConcurrencyLimiter, SEARCH_ALG_IMPORT
+from ray.tune.search import BasicVariantGenerator, ConcurrencyLimiter
 from ray.tune.tuner import Tuner
 from ray.tune.utils import wait_for_gpu
 from ray.util.queue import Queue as RayQueue
@@ -35,11 +35,11 @@ from ludwig.backend import initialize_backend, RAY
 from ludwig.backend.ray import initialize_ray
 from ludwig.callbacks import Callback
 from ludwig.constants import MAXIMIZE, TEST, TRAINER, TRAINING, TYPE, VALIDATION
-from ludwig.hyperopt.registry import instantiate_search_algorithm
 from ludwig.hyperopt.results import HyperoptResults, TrialResults
 from ludwig.hyperopt.syncer import RemoteSyncer
 from ludwig.hyperopt.utils import load_json_values, substitute_parameters
 from ludwig.modules.metric_modules import get_best_function
+from ludwig.schema.hyperopt.utils import get_search_algorithm_cls
 from ludwig.schema.model_config import ModelConfig
 from ludwig.types import ModelConfigDict
 from ludwig.utils import fs_utils, metric_utils
@@ -158,7 +158,6 @@ class RayTuneExecutor:
         **kwargs,
     ) -> None:
         # Force-populate the search algorithm registry
-        import ludwig.hyperopt.search_algos  # noqa
 
         if ray is None:
             raise ImportError("ray module is not installed. To install it, try running pip install ray")
@@ -169,7 +168,7 @@ class RayTuneExecutor:
         self.search_space, self.decode_ctx = self._get_search_space(parameters)
         self.num_samples = num_samples
         self.goal = goal
-        self.search_algorithm = instantiate_search_algorithm(search_alg)
+        self.search_algorithm = get_search_algorithm_cls(search_alg[TYPE])(**search_alg)
         self.scheduler = None if scheduler is None else tune.create_scheduler(scheduler[TYPE], **scheduler)
         self.output_feature = output_feature
         self.metric = metric
@@ -575,6 +574,12 @@ class RayTuneExecutor:
                 if not is_using_ray_backend:
                     report(progress_tracker, self.eval_split)
 
+            def on_save_best_checkpoint(self, trainer, progress_tracker, save_path):
+                # Hyperopt may early stop before we save the best model at the end, so save it each time
+                # we checkpoint the best model.
+                if trainer.is_coordinator():
+                    trainer.model.save(save_path)
+
             def on_trainer_train_teardown(self, trainer, progress_tracker, save_path, is_coordinator):
                 if is_coordinator and progress_tracker.steps > self.last_steps:
                     # Note: Calling tune.report in both on_eval_end() and here can cause multiprocessing issues
@@ -746,22 +751,15 @@ class RayTuneExecutor:
         metric = "metric_score"
         use_gpu = bool(self._gpu_resources_per_trial_non_none)
 
-        # if random seed not set, use Ludwig seed
-        self.search_algorithm.check_for_random_seed(random_seed)
-        if self.search_algorithm.search_alg_dict is not None:
-            if TYPE not in self.search_algorithm.search_alg_dict:
-                candiate_search_algs = [search_alg for search_alg in SEARCH_ALG_IMPORT.keys()]
-                logger.warning(
-                    "WARNING: search_alg type parameter missing, using 'variant_generator' as default. "
-                    f"These are possible values for the type parameter: {candiate_search_algs}."
-                )
-                search_alg = None
-            else:
-                search_alg_type = self.search_algorithm.search_alg_dict[TYPE]
-                search_alg = tune.create_searcher(
-                    search_alg_type, metric=metric, mode=mode, **self.search_algorithm.search_alg_dict
-                )
+        if self.search_algorithm is not None:
+            self.search_algorithm.set_random_state(random_seed)
+            sa_kwargs = self.search_algorithm.to_dict()
+            del sa_kwargs[TYPE]
+            sa_kwargs["mode"] = mode
+            sa_kwargs["metric"] = metric
+            search_alg = tune.create_searcher(self.search_algorithm.type, **sa_kwargs)
         else:
+            logging.info("No hyperopt search algorithm specified, defaulting to `variant_generator`")
             search_alg = None
 
         if self.max_concurrent_trials:

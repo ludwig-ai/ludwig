@@ -56,6 +56,7 @@ class TimeseriesOutputFeatureConfigMixin(BaseMarshmallowConfig):
     the timeseries global defaults section of the Ludwig Config."""
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
+        MODEL_ECD,
         feature_type=TIMESERIES,
         default="projector",
     )

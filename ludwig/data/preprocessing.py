@@ -15,6 +15,7 @@
 # ==============================================================================
 import contextlib
 import logging
+import re
 import warnings
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Tuple
@@ -27,8 +28,10 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend import Backend, LOCAL_BACKEND
 from ludwig.constants import (
     BFILL,
+    CATEGORY,
     CHECKSUM,
     COLUMN,
+    DECODER,
     DEFAULTS,
     DROP_ROW,
     ENCODER,
@@ -49,6 +52,7 @@ from ludwig.constants import (
     SPLIT,
     SRC,
     TEST,
+    TEXT,
     TRAINING,
     TYPE,
     VALIDATION,
@@ -1195,6 +1199,12 @@ def build_dataset(
         preprocessing_parameters = feature_name_to_preprocessing_parameters[feature_config[NAME]]
         handle_missing_values(dataset_cols, feature_config, preprocessing_parameters, backend)
 
+    # If we're using LLMs for zero-shot/few-shot learning, update text input features with the prompt
+    # ahead of time so that we can compute metadata and build the preprocessed data correctly.
+    handle_data_augmentation_with_prompt(
+        dataset_cols, feature_configs, feature_name_to_preprocessing_parameters, backend
+    )
+
     # Happens after missing values are handled to avoid NaN casting issues.
     logger.debug("cast columns")
     cast_columns(dataset_cols, feature_configs, backend)
@@ -1659,6 +1669,90 @@ def _handle_missing_values(
             )
     else:
         raise ValueError(f"Invalid missing value strategy {missing_value_strategy}")
+
+
+def handle_data_augmentation_with_prompt(
+    dataset_cols: Dict[str, pd.Series],
+    feature_configs: List[FeatureConfigDict],
+    feature_name_to_preprocessing_parameters: Dict[str, PreprocessingConfigDict],
+    backend: Backend,
+) -> None:
+    """If output feature is a category feature and it's preprocessing has prompt_template, then we need to update
+    the input feature data with the prompt.
+
+    Example context:
+        In the example below, {review} is the input text feature, and {labels} are the labels that are passed
+        into the category output feature's preprocessing config.
+
+    Example input prompt:
+        Context information is below.
+        ###
+        {review}
+        ###
+        Given the context information and not prior knowledge, classify the context as one of: {labels}
+
+    Example output prompt:
+        Context information is below.
+        ###
+        The food at the restaurant was great!
+        ###
+        Given the context information and not prior knowledge, classify the context as one of: [positive, negative]
+    """
+
+    # Recover input and output features from combined list of feature configs
+    input_features = []
+    output_features = []
+    for feature in feature_configs:
+        if ENCODER in feature:
+            input_features.append(feature)
+        elif DECODER in feature:
+            output_features.append(feature)
+
+    # If output feature is a category feature and it's preprocessing has prompt_template, then we need to
+    # add the prompt in the input text feature(s). This step assumes only one output feature.
+    names_of_features_to_substitute = None
+    vocab = None
+    prompt = None
+    for output_feature in output_features:
+        if output_feature[TYPE] != CATEGORY:
+            continue
+        if "prompt_template" not in feature_name_to_preprocessing_parameters[output_feature[NAME]]:
+            continue
+
+        prompt: str = feature_name_to_preprocessing_parameters[output_feature[NAME]]["prompt_template"]
+        vocab: List = feature_name_to_preprocessing_parameters[output_feature[NAME]]["vocab"]
+        names_of_features_to_substitute: List = _extract_feature_names_from_prompt(prompt)
+
+    if not prompt:
+        return
+
+    # Substitute vocab specified in the category feature's preprocessing parameters
+    # into the prompt template.
+    if names_of_features_to_substitute and "vocab" in names_of_features_to_substitute:
+        # Replace {vocab} with the actual labels
+        prompt = prompt.replace("{vocab}", ", ".join(vocab))
+        names_of_features_to_substitute.pop(names_of_features_to_substitute.index("vocab"))
+
+    # Substitute values from the input features into the prompt template, and update the values in
+    # dataset_cols with the updated injected prompt. Assumes just text input features for now.
+    for input_feature in input_features:
+        if input_feature[COLUMN] in names_of_features_to_substitute and input_feature[TYPE] == TEXT:
+            # Ensure that any special characters in the value of input_feature[COLUMN] are properly escaped
+            # before being used in the regular expression pattern.
+            pattern = re.compile(r"\{" + re.escape(input_feature[COLUMN]) + r"\}")
+            dataset_cols[input_feature[COLUMN]] = dataset_cols[input_feature[COLUMN]].apply(
+                lambda x: re.sub(pattern, x, prompt)
+            )
+        # TODO(Arnav): Add log message showing an updated value with prompt
+        # substituion in dataset_cols
+
+
+def _extract_feature_names_from_prompt(prompt_template: str) -> List[str]:
+    """Extracts feature names from the prompt template whose data needs to be retrieved and injected into the input
+    text features."""
+    pattern = re.compile(r"{([^}]*)}")
+    matches = re.findall(pattern, prompt_template)
+    return matches
 
 
 def load_hdf5(hdf5_file_path, preprocessing_params, backend, split_data=True, shuffle_training=False):

@@ -29,15 +29,27 @@ class FeedForwardAttentionReducer(LudwigModule):
         self.fc_layer1 = nn.Linear(input_size, hidden_size)
         self.fc_layer1_activation = get_activation(activation)
         self.fc_layer2 = nn.Linear(hidden_size, 1, bias=False)
+        self.input_shape_var = None
+        self.output_shape_var = None
 
     def forward(self, inputs, mask=None):
         # current_inputs shape [b, s, h]
+        self.input_shape_var = inputs.size()[1:]
         hidden = self.fc_layer1(inputs)  # [b, s, h']
         hidden = self.fc_layer1_activation(hidden)
         hidden = self.fc_layer2(hidden)  # [b, s, 1]
         attention = F.softmax(hidden, dim=1)
         gated_inputs = torch.sum(attention * inputs, dim=1)
+        self.output_shape_var = gated_inputs.size()[1:]
         return gated_inputs  # [b, h]
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return self.input_shape_var
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.output_shape_var
 
 
 class MultiHeadSelfAttention(LudwigModule):

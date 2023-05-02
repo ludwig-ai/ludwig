@@ -35,6 +35,7 @@ from ludwig.utils.data_utils import (
     read_parquet,
     use_credentials,
 )
+from tests.integration_tests.utils import private_param
 
 try:
     import dask.dataframe as dd
@@ -82,6 +83,13 @@ def test_add_sequence_feature_column():
 def test_get_abs_path():
     assert get_abs_path("a", "b.jpg") == "a/b.jpg"
     assert get_abs_path(None, "b.jpg") == "b.jpg"
+
+
+@pytest.mark.parametrize(
+    "path, expected_format", [("s3://path/to.parquet ", "parquet"), ("/Users/path/to.csv \n", "csv")]
+)
+def test_figure_data_format_dataset_strip(path, expected_format):
+    assert figure_data_format_dataset(path) == expected_format
 
 
 @pytest.mark.distributed
@@ -176,7 +184,11 @@ def test_dataset_synthesizer_output_feature_decoder():
 
 
 @pytest.mark.parametrize(
-    "dataset_1k_url", ["s3://ludwig-tests/datasets/synthetic_1k.csv", "s3://ludwig-tests/datasets/synthetic_1k.parquet"]
+    "dataset_1k_url",
+    [
+        private_param(["s3://ludwig-tests/datasets/synthetic_1k.csv"]),
+        private_param(["s3://ludwig-tests/datasets/synthetic_1k.parquet"]),
+    ],
 )
 @pytest.mark.parametrize("nrows", [None, 100])
 def test_chunking(dataset_1k_url, nrows):

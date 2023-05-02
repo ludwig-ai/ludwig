@@ -1,8 +1,10 @@
 import ludwig.datasets
 from ludwig.datasets.dataset_config import DatasetConfig
 from ludwig.datasets.loaders.dataset_loader import DatasetLoader
+from tests.integration_tests.utils import private_test
 
 
+@private_test
 def test_get_config_and_load(tmpdir):
     yosemite_config = ludwig.datasets._get_dataset_config("yosemite")
     assert isinstance(yosemite_config, DatasetConfig)

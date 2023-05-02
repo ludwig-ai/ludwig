@@ -20,7 +20,7 @@ VALIDATION_LOCK = Lock()
 
 
 @DeveloperAPI
-@lru_cache(maxsize=2)
+@lru_cache(maxsize=3)
 def get_schema(model_type: str = MODEL_ECD):
     # Force populate combiner registry:
     import ludwig.combiners.combiners  # noqa: F401
@@ -65,4 +65,4 @@ def check_schema(updated_config):
             error = e
 
     if error is not None:
-        raise ConfigValidationError(f"Failed to validate JSON schema for config. Error: {error.message}")
+        raise ConfigValidationError(f"Failed to validate JSON schema for config. Error: {error.message}") from error
