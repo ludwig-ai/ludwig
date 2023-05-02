@@ -256,10 +256,10 @@ class LLM(BaseModel):
                 # To update eval-loss, we need "logits" but right now we're only producing "predictions"
                 # This is required by the SequenceSoftmaxCrossEntropyLoss function
                 # of_eval_loss = of_obj.eval_loss(targets[of_name], predictions[of_name])
-                
+
                 # HACK(geoffrey): we need a non-empty loss, so we just fill it with zeros
                 of_eval_loss = torch.tensor(0.0).to(predictions[of_name][LOGITS].device)
-                
+
             eval_loss += of_obj.loss.weight * of_eval_loss
 
         additional_loss = 0
