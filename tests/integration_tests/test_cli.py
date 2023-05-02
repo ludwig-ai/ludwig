@@ -413,7 +413,6 @@ def test_init_config(tmpdir):
     assert to_name_set(config[OUTPUT_FEATURES]) == to_name_set(output_features)
 
 
-
 @pytest.mark.skip(reason="https://github.com/ludwig-ai/ludwig/issues/3377")
 def test_render_config(tmpdir):
     """Test rendering a full config from a partial user config."""
