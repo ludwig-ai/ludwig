@@ -12,7 +12,7 @@ import psutil
 import torch
 from torch import nn
 
-from ludwig.constants import COMBINED, LAST_HIDDEN, LOGITS, MODEL_GBM, MODEL_LLM
+from ludwig.constants import COMBINED, LAST_HIDDEN, LOGITS, MODEL_GBM
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.utils import convert_to_dict
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy

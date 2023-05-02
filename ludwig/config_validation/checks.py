@@ -27,6 +27,7 @@ from ludwig.utils.misc_utils import merge_dict
 
 if TYPE_CHECKING:
     from ludwig.schema.model_config import ModelConfig
+    from ludwig.schema.prompt import RetrievalConfig
 
 # Set of all sequence feature types.
 SEQUENCE_OUTPUT_FEATURE_TYPES = {SEQUENCE, TEXT, SET, VECTOR}

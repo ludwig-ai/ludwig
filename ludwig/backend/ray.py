@@ -43,9 +43,6 @@ from ray.util.placement_group import placement_group, remove_placement_group
 from ludwig.distributed import get_default_strategy_name, get_dist_strategy, init_dist_strategy
 from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
 
-if TYPE_CHECKING:
-    from ludwig.api import LudwigModel
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.backend.datasource import BinaryIgnoreNoneTypeDatasource

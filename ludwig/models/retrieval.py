@@ -10,8 +10,10 @@ from tqdm import tqdm
 
 try:
     import faiss
+    from sentence_transformers import SentenceTransformer
 except ImportError:
     faiss = None
+    SentenceTransformer = None
 
 if TYPE_CHECKING:
     from ludwig.backend.base import Backend

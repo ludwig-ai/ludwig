@@ -1,6 +1,5 @@
 import logging
 import os
-import sys
 import time
 from typing import Dict, List, Optional, Union
 
@@ -10,14 +9,12 @@ from ludwig.constants import MODEL_LLM, TEST, TRAIN, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.features.feature_utils import LudwigFeatureDict
-from ludwig.globals import is_progressbar_disabled
 from ludwig.models.llm import LLM
 from ludwig.models.predictor import Predictor
 from ludwig.modules.metric_modules import get_initial_validation_value
-from ludwig.progress_bar import LudwigProgressBar
 from ludwig.schema.trainer import BaseTrainerConfig, ZeroShotTrainerConfig
 from ludwig.trainers.base import BaseTrainer
-from ludwig.trainers.registry import register_ray_trainer, register_trainer
+from ludwig.trainers.registry import register_trainer
 from ludwig.types import ModelConfigDict
 from ludwig.utils import time_utils
 from ludwig.utils.defaults import default_random_seed

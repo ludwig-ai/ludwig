@@ -1,5 +1,4 @@
 import os
-from unittest import mock
 
 import numpy as np
 import pandas as pd
@@ -251,7 +250,7 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
     df.to_csv(dataset_path, index=False)
 
     model = LudwigModel(config, backend={**backend, "cache_dir": str(tmpdir)})
-    results = model.train(dataset=dataset_path, output_directory=str(tmpdir), skip_save_processed_input=True)
+    model.train(dataset=dataset_path, output_directory=str(tmpdir), skip_save_processed_input=True)
 
     # TODO: fix LLM model loading
     # model = LudwigModel.load(os.path.join(results.output_directory, "model"), backend=backend)
