@@ -117,6 +117,7 @@ class LLM(BaseModel):
 
             self.eval_loss_metric = self.eval_loss_metric.to(device)
             self.eval_additional_losses_metrics = self.eval_additional_losses_metrics.to(device)
+            self.output_features.update({k: v.to(device) for k, v in self.output_features.items()})
         else:
             self.model = self.model.to(device)
 

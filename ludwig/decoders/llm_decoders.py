@@ -111,12 +111,13 @@ class TextParserDecoder(Decoder):
             max_new_tokens=self.max_new_tokens,
             pad_sequence=True,
         )
+        outputs_device = generated_outputs.device
 
         return {
             PREDICTIONS: generated_outputs,
             # TODO(Arnav): Add support for probabilities and logits
-            PROBABILITIES: torch.zeros((len(generated_outputs), self.max_new_tokens, self.tokenizer_vocab_size)),
-            LOGITS: torch.zeros((len(generated_outputs), self.max_new_tokens, self.tokenizer_vocab_size)),
+            PROBABILITIES: torch.zeros((len(generated_outputs), self.max_new_tokens, self.tokenizer_vocab_size)).to(outputs_device),
+            LOGITS: torch.zeros((len(generated_outputs), self.max_new_tokens, self.tokenizer_vocab_size)).to(outputs_device),
         }
 
 
