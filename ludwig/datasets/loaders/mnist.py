@@ -127,7 +127,7 @@ class MNISTLoader(DatasetLoader):
                 for file in os.listdir(img_dir):
                     if file.endswith(".png"):
                         labels.append(str(i))
-                        paths.append(os.path.join(label_dir, file))
+                        paths.append(os.path.join(img_dir, file))
                         splits.append(0 if name == "training" else 2)
             dataframes.append(pd.DataFrame({"image_path": paths, "label": labels, "split": splits}))
         return pd.concat(dataframes, ignore_index=True)
