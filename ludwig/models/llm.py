@@ -9,7 +9,7 @@ import torch
 import torchmetrics
 from transformers import AutoModelForCausalLM, AutoTokenizer, GenerationConfig
 
-from ludwig.constants import MODEL_LLM
+from ludwig.constants import LOGITS, MODEL_LLM
 from ludwig.features.base_feature import OutputFeature
 from ludwig.features.text_feature import TextOutputFeature
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
@@ -114,6 +114,9 @@ class LLM(BaseModel):
             with tempfile.TemporaryDirectory() as tmpdir:
                 self.model.save_pretrained(tmpdir)
                 self.model = AutoModelForCausalLM.from_pretrained(tmpdir, **model_kwargs)
+
+            self.eval_loss_metric = self.eval_loss_metric.to(device)
+            self.eval_additional_losses_metrics = self.eval_additional_losses_metrics.to(device)
         else:
             self.model = self.model.to(device)
 
@@ -227,12 +230,9 @@ class LLM(BaseModel):
                 continue
             of_obj.update_metrics(targets[of_name], predictions[of_name])
 
-        # TODO(Arnav): Figure out loss updates.
-        # To update eval-loss, we need "logits" but right now we're only producing "predictions"
-        # This is required by the SequenceSoftmaxCrossEntropyLoss function
-        # eval_loss, additional_losses = self.eval_loss(targets, predictions)
-        # self.eval_loss_metric.update(eval_loss)
-        # self.eval_additional_losses_metrics.update(additional_losses)
+        eval_loss, additional_losses = self.eval_loss(targets, predictions)
+        self.eval_loss_metric.update(eval_loss)
+        self.eval_additional_losses_metrics.update(additional_losses)
 
     def eval_loss(self, targets, predictions):
         """Computes all evaluation losses for the model given targets and predictions.
@@ -251,7 +251,14 @@ class LLM(BaseModel):
                 _targets = self._realign_target_tensor(targets, predictions, of_name)
                 of_eval_loss = of_obj.eval_loss(_targets[of_name], predictions[of_name])
             else:
-                of_eval_loss = of_obj.eval_loss(targets[of_name], predictions[of_name])
+                # TODO(Arnav): Figure out loss updates.
+                # To update eval-loss, we need "logits" but right now we're only producing "predictions"
+                # This is required by the SequenceSoftmaxCrossEntropyLoss function
+                # of_eval_loss = of_obj.eval_loss(targets[of_name], predictions[of_name])
+                
+                # HACK(geoffrey): we need a non-empty loss, so we just fill it with zeros
+                of_eval_loss = torch.tensor(0.0).to(predictions[of_name][LOGITS].device)
+                
             eval_loss += of_obj.loss.weight * of_eval_loss
 
         additional_loss = 0
