@@ -18,7 +18,7 @@ import contextlib
 import copy
 import logging
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TYPE_CHECKING, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 import dask
 import numpy as np
