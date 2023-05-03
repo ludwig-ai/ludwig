@@ -848,6 +848,31 @@ def test_experiment_model_resume_before_1st_epoch_distributed(tmpdir, ray_cluste
         )
 
 
+@pytest.mark.distributed
+def test_tabnet_with_batch_size_1(tmpdir):
+    input_features = [number_feature()]
+    output_features = [category_feature(output_feature=True)]
+    training_set = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "tabnet"},
+        TRAINER: {"train_steps": 1, BATCH_SIZE: 1},
+        "backend": {"type": "ray"},
+    }
+    model = LudwigModel(config=config, logging_level=logging.INFO)
+    model.train(
+        dataset=training_set,
+        skip_save_training_description=True,
+        skip_save_training_statistics=True,
+        skip_save_model=True,
+        skip_save_progress=True,
+        skip_save_log=True,
+        skip_save_processed_input=True,
+    )
+
+
 def test_experiment_various_feature_types(csv_filename):
     input_features = [binary_feature(), bag_feature()]
     output_features = [set_feature(decoder={"max_len": 3, "vocab_size": 5})]
