@@ -303,7 +303,6 @@ jobs:
           pip install '.'
           pip list
         shell: bash
-
       - name: Check Install
         run: |
           ludwig check_install

@@ -12,6 +12,7 @@ import torch
 from torch.utils.tensorboard import SummaryWriter
 
 from ludwig.constants import BINARY, CATEGORY, MINIMIZE, MODEL_GBM, NUMBER, TEST, TRAIN, TRAINING, VALIDATION
+from ludwig.distributed import init_dist_strategy
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.globals import is_progressbar_disabled, TRAINING_CHECKPOINTS_DIR_PATH, TRAINING_PROGRESS_TRACKER_FILE_NAME
@@ -945,6 +946,7 @@ class LightGBMRayTrainer(LightGBMTrainer):
         self.ray_params = _map_to_lgb_ray_params(trainer_kwargs)
         self.data_loader_kwargs = data_loader_kwargs or {}
         self.executable_kwargs = executable_kwargs or {}
+        init_dist_strategy("local")
 
     @staticmethod
     def get_schema_cls() -> BaseTrainerConfig:
