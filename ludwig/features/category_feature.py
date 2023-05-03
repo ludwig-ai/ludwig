@@ -140,7 +140,7 @@ class CategoryFeatureMixin(BaseFeatureMixin):
         print("ASDFASDF idx2str", idx2str)
         print("ASDFASDF str2idx", str2idx)
         print("ASDFASDF str2freq", str2freq)
-        print("ASDFASDF preprocessing_parameters," preprocessing_parameters)
+        print("ASDFASDF preprocessing_parameters,", preprocessing_parameters)
 
         if "vocab" in preprocessing_parameters:
             print("ASDFASDF vocab inside preprocessing_parameters")
