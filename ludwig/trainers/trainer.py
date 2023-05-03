@@ -812,7 +812,9 @@ class Trainer(BaseTrainer):
         # Load the best weights from saved checkpoint
         state_dict = None
         if not self.skip_save_model:
-            state_dict = checkpoint_manager.get_best_checkpoint_state_for_inference(self.return_device)
+            if self.is_coordinator():
+                state_dict = checkpoint_manager.get_best_checkpoint_state_for_inference(self.return_device)
+                state_dict = self.distributed.broadcast_object(state_dict, "state_dict")
             if not return_state_dict:
                 if self.distributed.is_model_parallel():
                     # Assume the full weights cannot fit in memory on GPU
