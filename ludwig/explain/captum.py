@@ -58,10 +58,12 @@ class ExplanationRunConfig:
 def retry_on_cuda_oom(run_config: ExplanationRunConfig):
     def retry_on_cuda_oom_fn(fn):
         def retry_on_cuda_oom_wrapper(*args, **kwargs):
-            while run_config.batch_size >= 2:
+            latest_error = None
+            while run_config.batch_size >= 1:
                 try:
                     return fn(*args, **kwargs)
                 except RuntimeError as e:
+                    latest_error = e
                     # PyTorch only generates Runtime errors for CUDA OOM.
                     gc.collect()
                     if "CUDA out of memory" in str(e) or isinstance(e, torch.cuda.OutOfMemoryError):
@@ -71,7 +73,9 @@ def retry_on_cuda_oom(run_config: ExplanationRunConfig):
                         # Not a CUDA error
                         raise
 
-            raise RuntimeError("CUDA OOM raised during explanation, but batch size cannot be reduced any further")
+            raise RuntimeError(
+                f"Ran into latest error {latest_error} during explanation. "
+                "If OOM, then the batch size could not be reduced any further.")
 
         return retry_on_cuda_oom_wrapper
 
