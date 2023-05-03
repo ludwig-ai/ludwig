@@ -731,7 +731,7 @@ def test_experiment_model_resume_distributed(tmpdir, dist_strategy, ray_cluster_
         pytest.param("deepspeed", id="deepspeed", marks=pytest.mark.distributed),
     ],
 )
-def test_experiemnt_model_resume_distributed_gpu(tmpdir, dist_strategy, ray_cluster_4cpu):
+def test_experiment_model_resume_distributed_gpu(tmpdir, dist_strategy, ray_cluster_4cpu):
     _run_experiment_model_resume_distributed(tmpdir, dist_strategy)
 
 

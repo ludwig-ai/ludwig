@@ -3,6 +3,7 @@ import logging
 import os
 import random
 import string
+from unittest import mock
 
 import numpy as np
 import pandas as pd
@@ -11,16 +12,19 @@ from PIL import Image
 
 import ludwig
 from ludwig.api import LudwigModel
+from ludwig.backend import initialize_backend
 from ludwig.callbacks import Callback
 from ludwig.constants import BATCH_SIZE, COLUMN, DECODER, FULL, NAME, PROC_COLUMN, TRAINER
 from ludwig.data.concatenate_datasets import concatenate_df
-from ludwig.data.preprocessing import preprocess_for_prediction
+from ludwig.data.preprocessing import handle_features_with_prompt_config, preprocess_for_prediction
+from ludwig.schema.prompt import PromptConfig
 from tests.integration_tests.utils import (
     assert_preprocessed_dataset_shape_and_dtype_for_feature,
     audio_feature,
     binary_feature,
     category_feature,
     generate_data,
+    generate_data_as_dataframe,
     image_feature,
     LocalTestBackend,
     number_feature,
@@ -782,17 +786,12 @@ def test_fill_with_mode_different_df_engine(tmpdir, csv_filename, df_engine, ray
     ludwig_model.preprocess(dataset=df)
 
 
-@pytest.mark.parametrize(
-    "backend",
-    [
-        pytest.param("local", id="local"),
-        pytest.param("ray", id="ray", marks=pytest.mark.distributed),
-    ],
-)
-def test_prompt_template(backend, tmpdir, ray_cluster_2cpu):
+@pytest.mark.llm
+@pytest.mark.parametrize("backend", ["local", "ray"])
+def test_prompt_template(backend, tmpdir):
     """Tests that prompt template is correctly applied to inputs."""
-    prompt_template = """
-    Instruction: predict the output feature. Return only values in {{true, false}}
+    template = """
+    Instruction: {task}
     ###
     Examples:
     ###
@@ -802,11 +801,13 @@ def test_prompt_template(backend, tmpdir, ray_cluster_2cpu):
     Input: baz quc
     Output: false
     ###
-    Input: {input}
+    Input: {sample_input}
     Output:
     """
 
-    input_features = [text_feature(preprocessing={"prompt_template": prompt_template})]
+    task = "predict the output feature. Return only values in {true, false}"
+
+    input_features = [text_feature(preprocessing={"prompt": {"task": task, "template": template}})]
     output_features = [category_feature()]
     data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=25)
 
@@ -819,7 +820,7 @@ def test_prompt_template(backend, tmpdir, ray_cluster_2cpu):
     train_set, _, _, training_set_metadata = model.preprocess(
         training_set=data_csv,
         skip_save_processed_input=True,
-        outpput_directory=os.path.join(tmpdir, "processed"),
+        output_directory=os.path.join(tmpdir, "processed"),
     )
 
     data_df = pd.read_csv(data_csv)
@@ -839,3 +840,79 @@ def test_prompt_template(backend, tmpdir, ray_cluster_2cpu):
             "# # # input : foo bar output : true # # # input : baz quc output : false # # # input : "
         ), decoded
         assert raw_text in decoded, f"'{raw_text}' not in '{decoded}'"
+
+
+@pytest.mark.llm
+@pytest.mark.parametrize("backend", ["local", "ray"])
+@pytest.mark.parametrize(
+    "retrieval_kwargs",
+    [
+        pytest.param({"type": "random", "k": 2}, id="random_retrieval"),
+        # TODO: find a smaller model for testing
+        pytest.param({"type": "semantic", "model_name": "paraphrase-MiniLM-L3-v2", "k": 2}, id="semantic_retrieval"),
+    ],
+)
+def test_handle_features_with_few_shot_prompt_config(backend, retrieval_kwargs, ray_cluster_2cpu):
+    prompt_config = PromptConfig.from_dict(
+        {
+            "task": (
+                "Given the sample input, complete this sentence by replacing XXXX: "
+                "The label is XXXX. Choose one value in this list: [1, 2, 3]."
+            ),
+            "retrieval": retrieval_kwargs,
+        }
+    ).to_dict()  # convert back-and-forth to validate and add defaults
+
+    input_features = [
+        text_feature(
+            encoder={"type": "passthrough"},
+            preprocessing={"prompt": prompt_config},
+        )
+    ]
+    output_features = [
+        category_feature(
+            output_feature=True,
+            decoder={"type": "category_parser"},
+        )
+    ]
+    input_feature_name = input_features[0][NAME]
+    output_feature_name = output_features[0][NAME]
+
+    df = generate_data_as_dataframe(input_features, output_features, 10, with_split=True)  # retrieval needs fixed split
+    if backend == "ray":
+        import dask.dataframe as dd
+
+        df = dd.from_pandas(df, npartitions=2)
+
+    split_col = df["split"]
+    dataset_cols = {k: df[k] for k in df.columns}
+    feature_configs = input_features + output_features
+    feature_names_to_preprocessing_parameters = {
+        feature_config[NAME]: feature_config.get("preprocessing", {}) for feature_config in feature_configs
+    }
+
+    if backend == "local":
+        context = mock.patch(
+            "ludwig.models.retrieval.SemanticRetrieval._encode",
+            side_effect=lambda row_strs, _: np.random.rand(len(row_strs), 16).astype(np.float32),
+        )
+    else:
+        # TODO: figure out how to get mocks to work with Ray backend
+        context = contextlib.nullcontext()
+
+    with context:
+        backend = initialize_backend(backend)
+        handle_features_with_prompt_config(
+            dataset_cols,
+            feature_names_to_preprocessing_parameters,
+            feature_configs,
+            backend=backend,
+            split_col=split_col,
+        )
+
+        # Inspect the generated prompts
+        for prompt in dataset_cols[input_feature_name]:
+            # input_feature_name and output_feature_name should be in the prompt because
+            # labeled samples are provided by the context
+            assert input_feature_name in prompt
+            assert output_feature_name in prompt

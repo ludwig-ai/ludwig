@@ -3,15 +3,18 @@ import os
 import pytest
 
 from ludwig.constants import (
+    BATCH_SIZE,
     COLUMN,
     DECODER,
     DEFAULTS,
     ENCODER,
+    EPOCHS,
     INPUT_FEATURES,
     NAME,
     OUTPUT_FEATURES,
     SEQUENCE,
     TEXT,
+    TRAINER,
     TYPE,
 )
 from tests.integration_tests.utils import (
@@ -45,7 +48,7 @@ def test_sequence_decoder_predictions(
     )
     dataset_path = create_data_set_to_use("csv", dataset_path)
 
-    config = {INPUT_FEATURES: [input_feature]}
+    config = {INPUT_FEATURES: [input_feature], TRAINER: {EPOCHS: 1, BATCH_SIZE: 4}}
 
     # Ensure that the decoder outputs the correct predictions through both the default and feature-specific configs.
     if use_defaults:
