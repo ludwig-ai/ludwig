@@ -146,7 +146,11 @@ class CategoryFeatureMixin(BaseFeatureMixin):
                 str2freq[preprocessing_parameters["fallback_label"]] = 0
 
         print("ASDFASDF backend.df_engine.compute(column)", backend.df_engine.compute(column))
+        print("ASDFASDF str2idx", str2idx)
         vocab_size = len(str2idx)
+        print("ASDFASDF vocab_size", vocab_size)
+        print("ASDFASDF is_input_feature", is_input_feature)
+        print("ASDFASDF idx2str", idx2str)
         if not is_input_feature and vocab_size <= 1:
             # Category output feature with vocab size 1
             raise InputDataError(
