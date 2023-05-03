@@ -152,35 +152,22 @@ class CategoryFeatureMixin(BaseFeatureMixin):
             num_most_frequent=preprocessing_parameters["most_common"],
             processor=backend.df_engine,
         )
-        print("ASDFASDF results of create_vocabulary_single_token")
-        print("ASDFASDF idx2str", idx2str)
-        print("ASDFASDF str2idx", str2idx)
-        print("ASDFASDF str2freq", str2freq)
-        print("ASDFASDF preprocessing_parameters,", preprocessing_parameters)
 
         if "vocab" in preprocessing_parameters and preprocessing_parameters["vocab"]:  # Check that vocab is non-empty
-            print("ASDFASDF vocab inside preprocessing_parameters")
             # If vocab was explciitly provided, override the inferred vocab
             idx2str = preprocessing_parameters["vocab"]
             str2idx = {s: i for i, s in enumerate(idx2str)}
             str2freq = {k: str2freq.get(k, 0) for k in idx2str}
 
         if "fallback_label" in preprocessing_parameters:
-            print("ASDFASDF fallback_label in preprocessing_parameters")
             # This is a category output feature for LLMs
             # Check if the fallback label is in the vocab, if not add it.
             if preprocessing_parameters["fallback_label"] not in str2idx:
-                print("ASDFASDF fallback_label not in str2idx")
                 str2idx[preprocessing_parameters["fallback_label"]] = len(str2idx)
                 idx2str.append(preprocessing_parameters["fallback_label"])
                 str2freq[preprocessing_parameters["fallback_label"]] = 0
 
-        print("ASDFASDF backend.df_engine.compute(column)", backend.df_engine.compute(column))
-        print("ASDFASDF str2idx", str2idx)
         vocab_size = len(str2idx)
-        print("ASDFASDF vocab_size", vocab_size)
-        print("ASDFASDF is_input_feature", is_input_feature)
-        print("ASDFASDF idx2str", idx2str)
         if not is_input_feature and vocab_size <= 1:
             # Category output feature with vocab size 1
             raise InputDataError(
