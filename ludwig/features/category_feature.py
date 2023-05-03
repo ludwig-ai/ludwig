@@ -136,11 +136,18 @@ class CategoryFeatureMixin(BaseFeatureMixin):
             num_most_frequent=preprocessing_parameters["most_common"],
             processor=backend.df_engine,
         )
+        print("ASDFASDF results of create_vocabulary_single_token")
+        print("ASDFASDF idx2str", idx2str)
+        print("ASDFASDF str2idx", str2idx)
+        print("ASDFASDF str2freq", str2freq)
+        print("ASDFASDF preprocessing_parameters," preprocessing_parameters)
 
         if "vocab" in preprocessing_parameters:
+            print("ASDFASDF vocab inside preprocessing_parameters")
             # This is a category output feature for LLMs
             # Check if the fallback label is in the vocab, if not add it.
             if preprocessing_parameters["fallback_label"] not in str2idx:
+                print("ASDFASDF adding fallback_label to vocab")
                 str2idx[preprocessing_parameters["fallback_label"]] = len(str2idx)
                 idx2str.append(preprocessing_parameters["fallback_label"])
                 str2freq[preprocessing_parameters["fallback_label"]] = 0
