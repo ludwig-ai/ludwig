@@ -37,9 +37,7 @@ class DDPStrategy(DistributedStrategy):
         trainer_config: "ECDTrainerConfig",
         base_learning_rate: float,
     ) -> Tuple[nn.Module, Optimizer]:
-        return DDP(model, find_unused_parameters=True), create_optimizer(
-            model, trainer_config.optimizer, base_learning_rate
-        )
+        return DDP(model), create_optimizer(model, trainer_config.optimizer, base_learning_rate)
 
     def size(self) -> int:
         return dist.get_world_size()
