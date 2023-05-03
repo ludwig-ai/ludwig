@@ -153,7 +153,7 @@ class CategoryFeatureMixin(BaseFeatureMixin):
             processor=backend.df_engine,
         )
 
-        if "vocab" in preprocessing_parameters:
+        if "vocab" in preprocessing_parameters and preprocessing_parameters["vocab"]:  # Check that vocab is non-empty
             # If vocab was explciitly provided, override the inferred vocab
             idx2str = preprocessing_parameters["vocab"]
             str2idx = {s: i for i, s in enumerate(idx2str)}

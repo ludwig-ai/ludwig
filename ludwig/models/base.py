@@ -48,6 +48,9 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         self.input_features = LudwigFeatureDict()
         self.output_features = LudwigFeatureDict()
 
+    def to_device(self, device):
+        return self.to(device)
+
     @classmethod
     def build_inputs(cls, input_feature_configs: FeatureCollection[BaseInputFeatureConfig]) -> Dict[str, InputFeature]:
         """Builds and returns input features in topological order."""

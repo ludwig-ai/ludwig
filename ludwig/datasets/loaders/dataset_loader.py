@@ -19,7 +19,6 @@ import os
 import shutil
 import urllib
 from enum import Enum
-from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple, Union
 from urllib.parse import urlparse
 
@@ -32,7 +31,7 @@ from ludwig.datasets.archives import extract_archive, is_archive, list_archive
 from ludwig.datasets.dataset_config import DatasetConfig, DatasetFallbackMirror
 from ludwig.datasets.kaggle import download_kaggle_dataset
 from ludwig.datasets.utils import model_configs_for_dataset
-from ludwig.utils.fs_utils import get_fs_and_path
+from ludwig.utils.fs_utils import get_default_cache_location, get_fs_and_path
 from ludwig.utils.strings_utils import make_safe_filename
 
 logger = logging.getLogger(__name__)
@@ -57,15 +56,6 @@ class TqdmUpTo(tqdm):
         if tsize is not None:
             self.total = tsize
         self.update(b * bsize - self.n)  # will also set self.n = b * bsize
-
-
-@DeveloperAPI
-def get_default_cache_location() -> str:
-    """Returns a path to the default LUDWIG_CACHE location, or $HOME/.ludwig_cache."""
-    if "LUDWIG_CACHE" in os.environ and os.environ["LUDWIG_CACHE"]:
-        return os.environ["LUDWIG_CACHE"]
-    else:
-        return str(Path.home().joinpath(".ludwig_cache"))
 
 
 def _list_of_strings(list_or_string: Union[str, List[str]]) -> List[str]:

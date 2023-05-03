@@ -257,7 +257,6 @@ def create_vocabulary(
     pretrained_model_name_or_path: str = None,
     ngram_size: Optional[int] = None,
     compute_idf: bool = False,
-    prompt_template: Optional[str] = None,
     processor: DataFrameEngine = PANDAS,
 ) -> Vocabulary:
     """Computes a vocabulary over the provided data frame.
@@ -288,7 +287,6 @@ def create_vocabulary(
         pretrained_model_name_or_path: Name/path to huggingface model.
         ngram_size: Size of the n-gram when using `ngram` tokenizer.
         compute_idf: If True, computes the inverse document frequency for each token.
-        prompt_template: Template to use for prompting pretrained models.
         processor: Which processor to use to process data.
 
     Returns:
@@ -349,8 +347,6 @@ def create_vocabulary(
         vocab = load_vocabulary(vocab_file)
 
     def process_line(line):
-        if prompt_template is not None:
-            line = prompt_template.format(input=line)
         return tokenizer(line.lower() if lowercase else line)
 
     processed_lines = processor.map_objects(data, process_line)

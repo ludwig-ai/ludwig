@@ -1,10 +1,11 @@
 import os
 
+import numpy as np
 import pandas as pd
 import pytest
 
 from ludwig.api import LudwigModel
-from ludwig.constants import INPUT_FEATURES, MODEL_LLM, MODEL_NAME, MODEL_TYPE, OUTPUT_FEATURES
+from ludwig.constants import INPUT_FEATURES, MODEL_LLM, MODEL_NAME, MODEL_TYPE, OUTPUT_FEATURES, PREPROCESSING
 from ludwig.utils.types import DataFrame
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
 
@@ -25,7 +26,7 @@ RAY_BACKEND = {
 }
 
 TEST_MODEL_NAME = "hf-internal-testing/tiny-random-GPTJForCausalLM"
-GENERATION_CONFIG = "generation_config"
+GENERATION_CONFIG = "generation"
 
 
 @pytest.fixture(scope="module")
@@ -49,19 +50,20 @@ def get_generation_config():
 
 
 def convert_preds(backend: dict, preds: DataFrame):
-    if backend["type"] == "ray":
-        return preds.compute().to_dict()
-    return preds.to_dict()
+    if isinstance(preds, pd.DataFrame):
+        return preds.to_dict()
+    return preds.compute().to_dict()
 
 
+@pytest.mark.llm
 @pytest.mark.parametrize(
     "backend",
     [
         pytest.param(LOCAL_BACKEND, id="local"),
-        # pytest.param(RAY_BACKEND, id="ray", marks=pytest.mark.distributed),
+        pytest.param(RAY_BACKEND, id="ray"),
     ],
 )
-def test_llm_text_to_text(tmpdir, backend):  # , ray_cluster_4cpu)
+def test_llm_text_to_text(tmpdir, backend, ray_cluster_4cpu):
     """Test that the LLM model can train and predict with text inputs and text outputs."""
     input_features = [{"name": "Question", "type": "text"}]
     output_features = [text_feature(output_feature=True, name="Answer", decoder={"type": "text_parser"})]
@@ -92,28 +94,28 @@ def test_llm_text_to_text(tmpdir, backend):  # , ray_cluster_4cpu)
     assert preds["Answer_probability"]
 
 
+@pytest.mark.llm
 @pytest.mark.parametrize(
     "backend",
     [
         pytest.param(LOCAL_BACKEND, id="local"),
-        pytest.param(RAY_BACKEND, id="ray", marks=pytest.mark.distributed),
+        pytest.param(RAY_BACKEND, id="ray"),
     ],
 )
 def test_llm_zero_shot_classification(tmpdir, backend, ray_cluster_4cpu):
-    input_features = [{"name": "review", "type": "text"}]
+    input_features = [
+        {
+            "name": "review",
+            "type": "text",
+            "preprocessing": {"prompt": {"task": "This is a review of a restaurant. Classify the sentiment."}},
+        }
+    ]
     output_features = [
         category_feature(
             name="label",
             preprocessing={
                 "vocab": ["positive", "neutral", "negative"],
                 "fallback_label": "neutral",
-                "prompt_template": """
-                    Context information is below.
-                    ###
-                    {review}
-                    ###
-                    Given the context information and not prior knowledge, classify the context as one of: {vocab}
-                """,
             },
             # How can we avoid using r here for regex, since it is technically an implementation detail?
             decoder={
@@ -177,3 +179,82 @@ def test_llm_zero_shot_classification(tmpdir, backend, ray_cluster_4cpu):
     assert preds["label_probabilities_positive"]
     assert preds["label_probabilities_neutral"]
     assert preds["label_probabilities_negative"]
+
+
+@pytest.mark.llm
+@pytest.mark.parametrize(
+    "backend",
+    [
+        pytest.param(LOCAL_BACKEND, id="local"),
+        pytest.param(RAY_BACKEND, id="ray"),
+    ],
+)
+def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_4cpu):
+    input_features = [
+        text_feature(
+            output_feature=False,
+            name="body",
+            encoder={"type": "passthrough"},  # need to use the default encoder for LLMTextInputFeatureConfig
+            preprocessing={
+                "prompt": {
+                    "retrieval": {"type": "random", "k": 3},
+                    "task": (
+                        "Given the sample input, complete this sentence by replacing XXXX: The review rating is XXXX. "
+                        "Choose one value in this list: [1, 2, 3, 4, 5]."
+                    ),
+                }
+            },
+        )
+    ]
+    output_features = [
+        category_feature(
+            output_feature=True,
+            name="label",
+            preprocessing={
+                "fallback_label": "3",
+            },
+            decoder={
+                "type": "category_parser",
+                "match": {
+                    "1": {"type": "contains", "value": "1"},
+                    "2": {"type": "contains", "value": "2"},
+                    "3": {"type": "contains", "value": "3"},
+                    "4": {"type": "contains", "value": "4"},
+                    "5": {"type": "contains", "value": "5"},
+                },
+            },
+        )
+    ]
+
+    config = {
+        MODEL_TYPE: MODEL_LLM,
+        MODEL_NAME: TEST_MODEL_NAME,
+        GENERATION_CONFIG: get_generation_config(),
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        PREPROCESSING: {
+            "split": {"type": "fixed"},
+        },
+    }
+
+    dataset_path = generate_data(
+        input_features,
+        output_features,
+        filename=csv_filename,
+        num_examples=25,
+        nan_percent=0.1,
+        with_split=True,
+    )
+    df = pd.read_csv(dataset_path)
+    df["label"] = np.random.choice([1, 2, 3, 4, 5], size=len(df)).astype(str)  # ensure labels match the feature config
+    df.to_csv(dataset_path, index=False)
+
+    model = LudwigModel(config, backend={**backend, "cache_dir": str(tmpdir)})
+    model.train(dataset=dataset_path, output_directory=str(tmpdir), skip_save_processed_input=True)
+
+    # TODO: fix LLM model loading
+    # model = LudwigModel.load(os.path.join(results.output_directory, "model"), backend=backend)
+    preds, _ = model.predict(dataset=dataset_path)
+    preds = convert_preds(backend, preds)
+
+    assert preds
