@@ -149,17 +149,17 @@ jobs:
           curl -L https://github.com/uber/neuropod/releases/download/v${{ env.NEUROPOD_VERISON }}/libneuropod-cpu-linux-v${{ env.NEUROPOD_VERISON }}-torchscript-${{ env.TORCHSCRIPT_VERISON }}-backend.tar.gz | sudo tar -xz -C "$NEUROPOD_BASE_DIR"
         shell: bash
 
-#      - name: Unit Tests
-#        run: |
-#          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow and not combinatorial and not horovod" --junitxml pytest.xml tests/ludwig
+      - name: Unit Tests
+        run: |
+          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow and not combinatorial and not horovod" --junitxml pytest.xml tests/ludwig
 
       - name: Integration Tests
         run: |
-          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=6000 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow and not combinatorial and not horovod" --junitxml pytest.xml tests/integration_tests/test_experiment.py::test_tabnet_with_batch_size_1
+          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=6000 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow and not combinatorial and not horovod" --junitxml pytest.xml tests/integration_tests
 
-#      - name: Regression Tests
-#        run: |
-#          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow and not combinatorial and not horovod or benchmark" --junitxml pytest.xml tests/regression_tests
+      - name: Regression Tests
+        run: |
+          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow and not combinatorial and not horovod or benchmark" --junitxml pytest.xml tests/regression_tests
 
       - name: Install Horovod if necessary
         if: matrix.test-markers == 'distributed'
