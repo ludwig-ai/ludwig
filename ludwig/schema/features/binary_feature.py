@@ -13,10 +13,11 @@ from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassFie
 from ludwig.schema.features.utils import (
     ecd_defaults_config_registry,
     ecd_input_config_registry,
+    ecd_output_config_registry,
     gbm_defaults_config_registry,
     gbm_input_config_registry,
+    gbm_output_config_registry,
     input_mixin_registry,
-    output_config_registry,
     output_mixin_registry,
 )
 from ludwig.schema.metadata import FEATURE_METADATA
@@ -84,10 +85,7 @@ class BinaryOutputFeatureConfigMixin(BaseMarshmallowConfig):
     """BinaryOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the binary output
     feature and the binary global defaults section of the Ludwig Config."""
 
-    decoder: BaseDecoderConfig = DecoderDataclassField(
-        feature_type=BINARY,
-        default="regressor",
-    )
+    decoder: BaseDecoderConfig = None
 
     loss: BaseLossConfig = LossDataclassField(
         feature_type=BINARY,
@@ -96,7 +94,6 @@ class BinaryOutputFeatureConfigMixin(BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-@output_config_registry.register(BINARY)
 @ludwig_dataclass
 class BinaryOutputFeatureConfig(BinaryOutputFeatureConfigMixin, BaseOutputFeatureConfig):
     """BinaryOutputFeatureConfig is a dataclass that configures the parameters used for a binary output feature."""
@@ -148,6 +145,28 @@ class BinaryOutputFeatureConfig(BinaryOutputFeatureConfigMixin, BaseOutputFeatur
 
 
 @DeveloperAPI
+@ecd_output_config_registry.register(BINARY)
+@ludwig_dataclass
+class ECDBinaryOutputFeatureConfig(BinaryOutputFeatureConfig):
+    decoder: BaseDecoderConfig = DecoderDataclassField(
+        MODEL_ECD,
+        feature_type=BINARY,
+        default="regressor",
+    )
+
+
+@DeveloperAPI
+@gbm_output_config_registry.register(BINARY)
+@ludwig_dataclass
+class GBMBinaryOutputFeatureConfig(BinaryOutputFeatureConfig):
+    decoder: BaseDecoderConfig = DecoderDataclassField(
+        MODEL_GBM,
+        feature_type=BINARY,
+        default="regressor",
+    )
+
+
+@DeveloperAPI
 @ecd_defaults_config_registry.register(BINARY)
 @ludwig_dataclass
 class BinaryDefaultsConfig(BinaryInputFeatureConfigMixin, BinaryOutputFeatureConfigMixin):
@@ -156,4 +175,10 @@ class BinaryDefaultsConfig(BinaryInputFeatureConfigMixin, BinaryOutputFeatureCon
         MODEL_ECD,
         feature_type=BINARY,
         default="passthrough",
+    )
+
+    decoder: BaseDecoderConfig = DecoderDataclassField(
+        MODEL_ECD,
+        feature_type=BINARY,
+        default="regressor",
     )

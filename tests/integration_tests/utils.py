@@ -32,6 +32,7 @@ import pandas as pd
 import pytest
 import torch
 from PIL import Image
+from transformers import file_utils
 
 from ludwig.api import LudwigModel
 from ludwig.backend import LocalBackend
@@ -41,12 +42,14 @@ from ludwig.constants import (
     BATCH_SIZE,
     BINARY,
     CATEGORY,
+    CATEGORY_DISTRIBUTION,
     COLUMN,
     DATE,
     DECODER,
     ENCODER,
     H3,
     IMAGE,
+    MODEL_ECD,
     NAME,
     NUMBER,
     PROC_COLUMN,
@@ -62,6 +65,8 @@ from ludwig.data.dataset_synthesizer import build_synthetic_dataset, DATETIME_FO
 from ludwig.experiment import experiment_cli
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.globals import PREDICTIONS_PARQUET_FILE_NAME
+from ludwig.schema.encoders.text_encoders import HFEncoderConfig
+from ludwig.schema.encoders.utils import get_encoder_classes
 from ludwig.trainers.trainer import Trainer
 from ludwig.utils import fs_utils
 from ludwig.utils.data_utils import read_csv, replace_file_extension, use_credentials
@@ -79,25 +84,7 @@ TEXT_ENCODERS = ENCODERS + ["tf_idf"]
 
 HF_ENCODERS_SHORT = ["distilbert"]
 
-HF_ENCODERS = [
-    "bert",
-    "gpt",
-    "gpt2",
-    "transformer_xl",
-    "xlnet",
-    # "xlm",  # disabled in the schema: https://github.com/ludwig-ai/ludwig/pull/3108
-    "roberta",
-    "distilbert",
-    # "ctrl",  # disabled in the schema: https://github.com/ludwig-ai/ludwig/pull/2976
-    "camembert",
-    "albert",
-    "t5",
-    "xlmroberta",
-    "longformer",
-    "flaubert",
-    "electra",
-    # "mt5",    # disabled in the schema: https://github.com/ludwig-ai/ludwig/pull/2982
-]
+HF_ENCODERS = [name for name, cls in get_encoder_classes(MODEL_ECD, TEXT).items() if issubclass(cls, HFEncoderConfig)]
 
 RAY_BACKEND_CONFIG = {
     "type": "ray",
@@ -146,6 +133,8 @@ def parse_flag_from_env(key, default=False):
     else:
         # KEY is set, convert it to True or False.
         try:
+            if isinstance(value, bool):
+                return 1 if value else 0
             _value = strtobool(value)
         except ValueError:
             # More values are supported, but let's keep the message simple.
@@ -154,6 +143,12 @@ def parse_flag_from_env(key, default=False):
 
 
 _run_private_tests = parse_flag_from_env("RUN_PRIVATE", default=False)
+
+
+private_test = pytest.mark.skipif(
+    not _run_private_tests,
+    reason="Skipping: this test is marked private, set RUN_PRIVATE=1 in your environment to run",
+)
 
 
 def private_param(param):
@@ -491,6 +486,21 @@ def vector_feature(**kwargs):
     return feature
 
 
+def category_distribution_feature(**kwargs):
+    feature = {
+        "name": f"{CATEGORY_DISTRIBUTION}_{random_string()}",
+        "type": CATEGORY_DISTRIBUTION,
+        "preprocessing": {
+            "vocab": ["a", "b", "c"],
+        },
+        DECODER: {"type": "classifier"},
+    }
+    recursive_update(feature, kwargs)
+    feature[COLUMN] = feature[NAME]
+    feature[PROC_COLUMN] = compute_feature_hash(feature)
+    return feature
+
+
 def run_experiment(
     input_features=None, output_features=None, config=None, skip_save_processed_input=True, backend=None, **kwargs
 ):
@@ -813,7 +823,7 @@ def create_data_set_to_use(data_format, raw_data, nan_percent=0.0):
         processed_df_rows = []
         for _, row in df.iterrows():
             processed_df_row = {}
-            for feature_name, raw_feature in row.iteritems():
+            for feature_name, raw_feature in row.items():
                 if "image" in feature_name and not (type(raw_feature) == float and np.isnan(raw_feature)):
                     feature = np.array(Image.open(raw_feature))
                 else:
@@ -1070,3 +1080,30 @@ def minio_test_creds():
             }
         }
     }
+
+
+def clear_huggingface_cache():
+    cache_path = os.environ.get("TRANSFORMERS_CACHE")
+
+    if cache_path is None:
+        cache_path = file_utils.default_cache_path.rstrip("/")
+        while not cache_path.endswith("huggingface") and cache_path:
+            cache_path = "/".join(cache_path.split("/")[:-1])
+
+    du = shutil.disk_usage(cache_path)
+
+    logger.info(f"Current disk usage {du} ({100 * du.free / du.total}% usage)")
+
+    # only clean up cache if less than 25% of disk space is used.
+    if du.free / du.total > 0.25:
+        return
+
+    logger.info(
+        f"Clearing HuggingFace cache under path: `{cache_path}`. "
+        f"Free disk space is {100 * du.free / du.total}% of total disk space."
+    )
+    for root, dirs, files in os.walk(cache_path):
+        for f in files:
+            os.unlink(os.path.join(root, f))
+        for d in dirs:
+            shutil.rmtree(os.path.join(root, d))

@@ -269,8 +269,15 @@ class DatetimeSplitter(Splitter):
         # In case the split column was preprocessed by Ludwig into a list, convert it back to a
         # datetime string for the sort and split
         def list_to_date_str(x):
-            if not isinstance(x, list) and len(x) != 9:
-                return x
+            if not isinstance(x, list):
+                if not isinstance(x, str):
+                    # Convert timestamps, etc. to strings and return so it can direct cast to epoch time
+                    return str(x)
+
+                if len(x) != 9:
+                    # Strings not in the expected format, so assume it's a formatted datetime and return
+                    return x
+
             return f"{x[0]}-{x[1]}-{x[2]} {x[5]}:{x[6]}:{x[7]}"
 
         df[TMP_SPLIT_COL] = backend.df_engine.map_objects(df[self.column], list_to_date_str)

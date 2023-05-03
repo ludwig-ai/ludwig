@@ -25,9 +25,11 @@ from torchmetrics.functional import mean_absolute_percentage_error
 
 import ludwig.utils.loss_utils as utils
 from ludwig.constants import LOGITS
+from ludwig.modules.loss_implementations.corn import corn_loss
 from ludwig.schema.features.loss.loss import (
     BaseLossConfig,
     BWCEWLossConfig,
+    CORNLossConfig,
     HuberLossConfig,
     MAELossConfig,
     MAPELossConfig,
@@ -167,7 +169,9 @@ class SoftmaxCrossEntropyLoss(nn.Module, LogitsInputsMixin):
             target: Tensor of shape [batch], where each element is integral
                 between 0 and num_classes.
         """
-        target = target.long()
+        if len(target.shape) == 1:
+            # Assumes we are providing the target as a single class, rather than a distribution
+            target = target.long()
         return self.loss_fn(preds, target)
 
 
@@ -217,3 +221,15 @@ class HuberLoss(_HuberLoss, LogitsInputsMixin):
 
     def __init__(self, config: HuberLossConfig):
         super().__init__(delta=config.delta)
+
+
+@register_loss(CORNLossConfig)
+class CORNLoss(nn.Module, LogitsInputsMixin):
+    """CORN loss."""
+
+    def __init__(self, config: CORNLossConfig):
+        super().__init__()
+
+    def forward(self, preds: Tensor, target: Tensor) -> Tensor:
+        num_classes = preds.shape[1]
+        return corn_loss(preds, target, num_classes=num_classes)

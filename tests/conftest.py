@@ -119,7 +119,7 @@ def hyperopt_results_multiple_parameters(ray_cluster_4cpu):
                 "lower": 0.0001,
                 "upper": 0.01,
             },
-            output_feature_name + ".decoder.output_size": {"space": "choice", "categories": [32, 64, 128, 256]},
+            output_feature_name + ".decoder.fc_output_size": {"space": "choice", "categories": [32, 64, 128, 256]},
             output_feature_name + ".decoder.num_fc_layers": {"space": "randint", "lower": 1, "upper": 6},
         },
         "goal": "minimize",

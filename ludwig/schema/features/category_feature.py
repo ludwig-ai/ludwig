@@ -1,5 +1,13 @@
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import ACCURACY, CATEGORY, MODEL_ECD, MODEL_GBM, SOFTMAX_CROSS_ENTROPY
+from ludwig.constants import (
+    ACCURACY,
+    CATEGORY,
+    CATEGORY_DISTRIBUTION,
+    MODEL_ECD,
+    MODEL_GBM,
+    MODEL_LLM,
+    SOFTMAX_CROSS_ENTROPY,
+)
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -13,10 +21,12 @@ from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassFie
 from ludwig.schema.features.utils import (
     ecd_defaults_config_registry,
     ecd_input_config_registry,
+    ecd_output_config_registry,
     gbm_defaults_config_registry,
     gbm_input_config_registry,
+    gbm_output_config_registry,
     input_mixin_registry,
-    output_config_registry,
+    llm_output_config_registry,
     output_mixin_registry,
 )
 from ludwig.schema.metadata import FEATURE_METADATA
@@ -85,10 +95,7 @@ class CategoryOutputFeatureConfigMixin(BaseMarshmallowConfig):
     """CategoryOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the category
     output feature and the category global defaults section of the Ludwig Config."""
 
-    decoder: BaseDecoderConfig = DecoderDataclassField(
-        feature_type=CATEGORY,
-        default="classifier",
-    )
+    decoder: BaseDecoderConfig = None
 
     loss: BaseLossConfig = LossDataclassField(
         feature_type=CATEGORY,
@@ -97,7 +104,6 @@ class CategoryOutputFeatureConfigMixin(BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-@output_config_registry.register(CATEGORY)
 @ludwig_dataclass
 class CategoryOutputFeatureConfig(CategoryOutputFeatureConfigMixin, BaseOutputFeatureConfig):
     """CategoryOutputFeatureConfig is a dataclass that configures the parameters used for a category output
@@ -149,6 +155,46 @@ class CategoryOutputFeatureConfig(CategoryOutputFeatureConfigMixin, BaseOutputFe
 
 
 @DeveloperAPI
+@ecd_output_config_registry.register(CATEGORY)
+@ludwig_dataclass
+class ECDCategoryOutputFeatureConfig(CategoryOutputFeatureConfig):
+    decoder: BaseDecoderConfig = DecoderDataclassField(
+        MODEL_ECD,
+        feature_type=CATEGORY,
+        default="classifier",
+    )
+
+
+@DeveloperAPI
+@gbm_output_config_registry.register(CATEGORY)
+@ludwig_dataclass
+class GBMCategoryOutputFeatureConfig(CategoryOutputFeatureConfig):
+    decoder: BaseDecoderConfig = DecoderDataclassField(
+        MODEL_GBM,
+        feature_type=CATEGORY,
+        default="classifier",
+    )
+
+
+@DeveloperAPI
+@ecd_output_config_registry.register(CATEGORY_DISTRIBUTION)
+@ludwig_dataclass
+class CategoryDistributionOutputFeatureConfig(CategoryOutputFeatureConfig):
+    """CategoryDistributionOutputFeatureConfig is a dataclass that configures the parameters used for a
+    category_distribution output feature."""
+
+    type: str = schema_utils.ProtectedString(CATEGORY_DISTRIBUTION)
+
+    decoder: BaseDecoderConfig = DecoderDataclassField(
+        MODEL_ECD,
+        feature_type=CATEGORY,
+        default="classifier",
+    )
+
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="category_distribution_output")
+
+
+@DeveloperAPI
 @ecd_defaults_config_registry.register(CATEGORY)
 @ludwig_dataclass
 class CategoryDefaultsConfig(CategoryInputFeatureConfigMixin, CategoryOutputFeatureConfigMixin):
@@ -156,4 +202,33 @@ class CategoryDefaultsConfig(CategoryInputFeatureConfigMixin, CategoryOutputFeat
         MODEL_ECD,
         feature_type=CATEGORY,
         default="dense",
+    )
+
+    decoder: BaseDecoderConfig = DecoderDataclassField(
+        MODEL_ECD,
+        feature_type=CATEGORY,
+        default="classifier",
+    )
+
+
+@DeveloperAPI
+@ecd_defaults_config_registry.register(CATEGORY_DISTRIBUTION)
+@ludwig_dataclass
+class CategoryDistributionDefaultsConfig(CategoryOutputFeatureConfigMixin):
+    pass
+
+
+@DeveloperAPI
+@llm_output_config_registry.register(CATEGORY)
+@ludwig_dataclass
+class LLMCategoryOutputFeatureConfig(CategoryOutputFeatureConfig):
+    """LLMCategoryOutputFeatureConfig is a dataclass that configures the parameters used for a category output
+    feature when using the Ludwig Light Model."""
+
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="category_llm")
+
+    decoder: BaseDecoderConfig = DecoderDataclassField(
+        MODEL_LLM,
+        feature_type=CATEGORY,
+        default="category_parser",
     )

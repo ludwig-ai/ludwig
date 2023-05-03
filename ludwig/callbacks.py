@@ -117,6 +117,9 @@ class Callback(ABC):
         """
         return False
 
+    def on_resume_training(self, is_coordinator: bool):
+        pass
+
     def on_train_init(
         self,
         base_config: ModelConfigDict,
@@ -192,7 +195,7 @@ class Callback(ABC):
         """
         pass
 
-    def on_batch_end(self, trainer, progress_tracker, save_path: str):
+    def on_batch_end(self, trainer, progress_tracker, save_path: str, sync_step: bool = True):
         """Called on coordinator only after each batch.
 
         :param trainer: The trainer instance.
@@ -200,6 +203,7 @@ class Callback(ABC):
         :param progress_tracker: An object which tracks training progress.
         :type progress_tracker: ludwig.utils.trainer_utils.ProgressTracker
         :param save_path: The path to the directory model is saved in.
+        :param sync_step: Whether the model params were updated and synced in this step.
         """
         pass
 
@@ -294,6 +298,10 @@ class Callback(ABC):
     def should_early_stop(self, trainer, progress_tracker, is_coordinator):
         # Triggers early stopping if any callback on any worker returns True
         return False
+
+    def on_save_best_checkpoint(self, trainer, progress_tracker, save_path):
+        """Called on every worker immediately after a new best model is checkpointed."""
+        pass
 
     def on_build_metadata_start(self, df, mode: str):
         """Called before building metadata for dataset.

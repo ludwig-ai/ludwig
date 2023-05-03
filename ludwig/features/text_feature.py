@@ -45,6 +45,7 @@ from ludwig.utils.math_utils import softmax
 from ludwig.utils.strings_utils import (
     build_sequence_matrix,
     create_vocabulary,
+    get_tokenizer,
     SpecialSymbol,
     UNKNOWN_SYMBOL,
     Vocabulary,
@@ -76,6 +77,7 @@ class TextFeatureMixin(BaseFeatureMixin):
             pretrained_model_name_or_path=preprocessing_parameters["pretrained_model_name_or_path"],
             ngram_size=preprocessing_parameters["ngram_size"],
             compute_idf=preprocessing_parameters["compute_idf"],
+            prompt_template=preprocessing_parameters.get("prompt_template"),
             processor=backend.df_engine,
         )
 
@@ -150,8 +152,13 @@ class TextFeatureMixin(BaseFeatureMixin):
         ):
             preprocessing_parameters["computed_fill_value"] = preprocessing_parameters["unknown_symbol"]
 
+        sequences = column
+        prompt_template = preprocessing_parameters.get("prompt_template")
+        if prompt_template is not None:
+            sequences = backend.df_engine.map_objects(sequences, lambda x: prompt_template.format(input=x))
+
         return build_sequence_matrix(
-            sequences=column,
+            sequences=sequences,
             inverse_vocabulary=metadata[f"{prefix}str2idx"],
             tokenizer_type=preprocessing_parameters[f"{prefix}tokenizer"],
             length_limit=metadata[f"{prefix}max_sequence_length"],
@@ -302,12 +309,24 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     ):
         # todo: refactor to reuse SequenceOutputFeature.postprocess_predictions
         predictions_col = f"{self.feature_name}_{PREDICTIONS}"
+
+        tokenizer = None
+        if metadata["preprocessing"]["tokenizer"] == "hf_tokenizer":
+            tokenizer = get_tokenizer(
+                metadata["preprocessing"]["tokenizer"],
+                metadata["preprocessing"]["vocab_file"],
+                metadata["preprocessing"]["pretrained_model_name_or_path"],
+            )
+
         if predictions_col in result:
 
             def idx2str(pred):
-                return [
-                    metadata["idx2str"][token] if token < len(metadata["idx2str"]) else UNKNOWN_SYMBOL for token in pred
-                ]
+                if tokenizer is None:
+                    return [
+                        metadata["idx2str"][token] if token < len(metadata["idx2str"]) else UNKNOWN_SYMBOL
+                        for token in pred
+                    ]
+                return tokenizer.tokenizer.batch_decode(pred, skip_special_tokens=True)
 
             result[predictions_col] = result[predictions_col].map(idx2str)
 
@@ -323,10 +342,24 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
 
         probs_col = f"{self.feature_name}_{PROBABILITIES}"
         prob_col = f"{self.feature_name}_{PROBABILITY}"
+
+        # "Summarizes" the `result`'s probability-related output:
+        # - result[probs_col]:
+        #       Each row is now a list of "max" probabilities. Each element is the probability of the argmax token for
+        #       the given time step.
+        #
+        #       Note that we intentionally do not return full list of probabilties for each time step because the output
+        #       of postprocess_predictions is saved to disk and the full probability distribution can be huge,
+        #       especially for large vocab sizes:
+        #           dataset_size x sequence_length x vocab_size
+        #
+        #       TODO: Add a mechanism that lets the user save the full probability distribution if they want.
+        # - result[prob_col]:
+        #       Each row is the overall probability of the sequence. This is the product of the max probabilities over
+        #       all time steps.
         if probs_col in result:
-            # currently does not return full probabilties because usually it is huge:
-            # dataset x length x classes
-            # TODO: add a mechanism for letting the user decide to save it
+            # result[probs_col]: From PredictModule, each row has a list of size (sequence_length) of a list of
+            # probabiltiies of (vocab_size). compute_token_probabilities gets the maximum probability per timestep.
             result[probs_col] = result[probs_col].map(compute_token_probabilities)
             result[prob_col] = result[probs_col].map(
                 partial(

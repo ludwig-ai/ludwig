@@ -43,6 +43,7 @@ from ludwig.constants import (
     AUTO,
     BATCH_SIZE,
     EVAL_BATCH_SIZE,
+    FALLBACK_BATCH_SIZE,
     FULL,
     HYPEROPT,
     HYPEROPT_WARNING,
@@ -448,6 +449,8 @@ class LudwigModel:
         if model_resume_path is not None:
             if path_exists(model_resume_path):
                 output_directory = model_resume_path
+                if self.backend.is_coordinator():
+                    logger.info(f"Model resume path '{model_resume_path}' exists, trying to resume training.")
             else:
                 if self.backend.is_coordinator():
                     logger.info(
@@ -594,7 +597,7 @@ class LudwigModel:
                 set_saved_weights_in_checkpoint_flag(self.config_obj)
 
             # auto tune learning rate
-            if self.config_obj.trainer.learning_rate == AUTO:
+            if hasattr(self.config_obj.trainer, "learning_rate") and self.config_obj.trainer.learning_rate == AUTO:
                 detected_learning_rate = get_auto_learning_rate(self.config_obj)
                 self.config_obj.trainer.learning_rate = detected_learning_rate
 
@@ -802,7 +805,14 @@ class LudwigModel:
     def _tune_batch_size(self, trainer, dataset, random_seed: int = default_random_seed):
         # TODO (ASN): add support for substitute_with_max parameter
         # TODO(travis): detect train and eval batch sizes separately (enable / disable gradients)
-        tuned_batch_size = trainer.tune_batch_size(self.config_obj.to_dict(), dataset, random_seed=random_seed)
+        if self.backend.supports_batch_size_tuning():
+            tuned_batch_size = trainer.tune_batch_size(self.config_obj.to_dict(), dataset, random_seed=random_seed)
+        else:
+            logger.warning(
+                f"Backend {self.backend.BACKEND_TYPE} does not support batch size tuning, "
+                f"using fallback batch size {FALLBACK_BATCH_SIZE}."
+            )
+            tuned_batch_size = FALLBACK_BATCH_SIZE
 
         # TODO(travis): pass these in as args to trainer when we call train,
         #  to avoid setting state on possibly remote trainer
@@ -1714,11 +1724,11 @@ class LudwigModel:
             raise ValueError("Model has not been trained or loaded")
 
     @staticmethod
-    def create_model(config_obj: ModelConfig, random_seed: int = default_random_seed) -> BaseModel:
+    def create_model(config_obj: Union[ModelConfig, dict], random_seed: int = default_random_seed) -> BaseModel:
         """Instantiates BaseModel object.
 
         # Inputs
-        :param config_obj: (Config) Ludwig config object
+        :param config_obj: (Union[Config, dict]) Ludwig config object
         :param random_seed: (int, default: ludwig default random seed) Random
             seed used for weights initialization,
             splits and any other random function.
@@ -1726,6 +1736,8 @@ class LudwigModel:
         # Return
         :return: (ludwig.models.BaseModel) Instance of the Ludwig model object.
         """
+        if isinstance(config_obj, dict):
+            config_obj = ModelConfig.from_dict(config_obj)
         model_type = get_from_registry(config_obj.model_type, model_type_registry)
         return model_type(config_obj, random_seed=random_seed)
 
@@ -1887,6 +1899,8 @@ def kfold_cross_validate(
     # prepare data for k-fold processing
     # use Ludwig's utility to facilitate creating a dataframe
     # that is used as the basis for creating folds
+
+    dataset, _, _, _ = load_dataset_uris(dataset, None, None, None, backend)
 
     # determine data format of provided dataset
     if not data_format or data_format == "auto":

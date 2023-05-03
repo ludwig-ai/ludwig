@@ -58,8 +58,8 @@ HYPEROPT_CONFIG = {
             "upper": 0.1,
         },
         "combiner.num_fc_layers": {"space": "randint", "lower": 0, "upper": 2},
-        "utterance.cell_type": {"space": "grid_search", "values": ["rnn", "gru"]},
-        "utterance.fc_layers": {
+        "utterance.encoder.norm": {"space": "grid_search", "values": ["layer", "batch"]},
+        "utterance.encoder.fc_layers": {
             "space": "choice",
             "categories": [
                 [{"output_size": 16}, {"output_size": 8}],
@@ -186,7 +186,7 @@ def run_hyperopt_executor(
     parameters = hyperopt_config["parameters"]
     if search_alg.get("type", "") == "bohb":
         # bohb does not support grid_search search space
-        del parameters["utterance.cell_type"]
+        del parameters["utterance.encoder.norm"]
         hyperopt_config["parameters"] = parameters
 
     split = hyperopt_config["split"]
@@ -258,8 +258,8 @@ def test_hyperopt_run_hyperopt(csv_filename, backend, tmpdir, ray_cluster_4cpu):
                 "lower": 0.001,
                 "upper": 0.1,
             },
-            output_feature_name + ".output_size": {"space": "randint", "lower": 8, "upper": 16},
-            output_feature_name + ".num_fc_layers": {"space": "randint", "lower": 0, "upper": 1},
+            output_feature_name + ".decoder.fc_output_size": {"space": "randint", "lower": 8, "upper": 16},
+            output_feature_name + ".decoder.num_fc_layers": {"space": "randint", "lower": 0, "upper": 1},
         },
         "goal": "minimize",
         "output_feature": output_feature_name,

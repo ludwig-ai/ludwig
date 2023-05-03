@@ -5,7 +5,7 @@ import pytest
 from ludwig.constants import BATCH_SIZE, COMBINED, LOSS
 from ludwig.features.category_feature import CategoryOutputFeature
 from ludwig.features.feature_utils import LudwigFeatureDict
-from ludwig.schema.features.category_feature import CategoryOutputFeatureConfig
+from ludwig.schema.features.category_feature import ECDCategoryOutputFeatureConfig
 from ludwig.schema.utils import load_config_with_kwargs
 from ludwig.utils import trainer_utils
 from ludwig.utils.metric_utils import TrainerMetric
@@ -68,7 +68,7 @@ def test_get_latest_metrics_dict_empty():
 def test_progress_tracker_empty():
     output_features = LudwigFeatureDict()
     category_feature, _ = load_config_with_kwargs(
-        CategoryOutputFeatureConfig,
+        ECDCategoryOutputFeatureConfig,
         {
             "name": "category_feature",
             "type": "category",
@@ -109,7 +109,7 @@ def test_progress_tracker_empty():
 def test_progress_tracker():
     output_features = LudwigFeatureDict()
     category_feature, _ = load_config_with_kwargs(
-        CategoryOutputFeatureConfig,
+        ECDCategoryOutputFeatureConfig,
         {
             "name": "category_feature",
             "type": "category",

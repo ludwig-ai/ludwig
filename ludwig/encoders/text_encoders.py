@@ -13,8 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import inspect
 import logging
-from typing import Any, Callable, Dict, List, Optional, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Type, TYPE_CHECKING, TypeVar, Union
 
 import numpy as np
 import torch
@@ -32,6 +33,7 @@ from ludwig.schema.encoders.text_encoders import (
     BERTConfig,
     CamemBERTConfig,
     CTRLConfig,
+    DebertaV2Config,
     DistilBERTConfig,
     ELECTRAConfig,
     FlauBERTConfig,
@@ -50,6 +52,11 @@ from ludwig.schema.encoders.text_encoders import (
 from ludwig.utils.hf_utils import load_pretrained_hf_model_with_hub_fallback
 from ludwig.utils.torch_utils import FreezeModule
 
+if TYPE_CHECKING:
+    from transformers import PretrainedConfig, PreTrainedModel
+
+    from ludwig.schema.encoders.text_encoders import HFEncoderConfig
+
 logger = logging.getLogger(__name__)
 
 
@@ -60,8 +67,6 @@ def _cls_pooled_error_message(encoder: str):
 
 
 class HFTextEncoder(Encoder):
-    DEFAULT_MODEL_NAME: str
-
     def _init_config(self, transformer, schema_keys: List[str], encoder_config: SequenceEncoderConfig):
         """Creates a config object for the encoder using the transformer model and the passed-in encoder config.
 
@@ -125,6 +130,90 @@ class HFTextEncoder(Encoder):
 
     def get_embedding_layer(self) -> nn.Module:
         return next(self.transformer.module.children())
+
+
+HFModelT = TypeVar("HFModelT", bound="PreTrainedModel")
+HFConfigT = TypeVar("HFConfigT", bound="PretrainedConfig")
+ConfigT = TypeVar("ConfigT", bound="HFEncoderConfig")
+
+
+class HFTextEncoderImpl(HFTextEncoder):
+    def __init__(
+        self,
+        model_cls: Type[HFModelT],
+        config_cls: Type[HFConfigT],
+        schema_cls: Type[ConfigT],
+        max_sequence_length: int,
+        use_pretrained: bool,
+        pretrained_model_name_or_path: str,
+        saved_weights_in_checkpoint: bool,
+        reduce_output: str,
+        trainable: bool,
+        pretrained_kwargs: Dict,
+        encoder_config: Optional[ConfigT],
+        **kwargs,
+    ):
+        super().__init__()
+
+        # TODO(travis): get_hf_config_param_names should be implemented as abstract in HFEncoderConfig
+        vocab_size = kwargs["vocab_size"]
+        hf_config_params = {k: v for k, v in kwargs.items() if k in schema_cls.get_hf_config_param_names()}
+        if use_pretrained and not saved_weights_in_checkpoint:
+            pretrained_kwargs = pretrained_kwargs or {}
+            transformer, _ = load_pretrained_hf_model_with_hub_fallback(
+                model_cls, pretrained_model_name_or_path, **pretrained_kwargs
+            )
+        else:
+            transformer = self._init_transformer_from_scratch(model_cls, config_cls, hf_config_params, vocab_size)
+
+        if encoder_config is not None:
+            self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
+        else:
+            self.config = None
+
+        self.reduce_output = reduce_output
+        if not self.reduce_output == "cls_pooled":
+            self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+        self.transformer = FreezeModule(transformer, frozen=not trainable)
+        self.max_sequence_length = max_sequence_length
+
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
+        if mask is not None:
+            mask = mask.to(torch.int32)
+        transformer_outputs = self.transformer.module(
+            input_ids=inputs,
+            attention_mask=mask,
+            token_type_ids=torch.zeros_like(inputs),
+        )
+        if self.reduce_output == "cls_pooled":
+            hidden = transformer_outputs["pooler_output"]
+        else:
+            hidden = transformer_outputs["last_hidden_state"][:, 1:-1, :]  # bos + [sent] + sep
+            hidden = self.reduce_sequence(hidden, self.reduce_output)
+        return {"encoder_output": hidden}
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.reduce_output is None:
+            return torch.Size([self.max_sequence_length - 2, self.transformer.module.config.hidden_size])
+        if self.reduce_output == "concat":
+            return torch.Size(
+                [
+                    (self.max_sequence_length - 2) * self.transformer.module.config.hidden_size,
+                ]
+            )
+        elif self.reduce_output == "concat":
+            # add the -2 to account of start and end tokens.
+            return torch.Size([self.transformer.module.config.hidden_size * (self.max_sequence_length - 2)])
+        return torch.Size([self.transformer.module.config.hidden_size])
+
+    @property
+    def input_dtype(self):
+        return torch.int32
 
 
 @DeveloperAPI
@@ -244,6 +333,9 @@ class ALBERTEncoder(HFTextEncoder):
                     self.transformer.module.config.hidden_size,
                 ]
             )
+        elif self.reduce_output == "concat":
+            # add the -2 to account of start and end tokens.
+            return torch.Size([self.transformer.module.config.hidden_size * (self.max_sequence_length - 2)])
         return torch.Size([self.transformer.module.config.hidden_size])
 
     @property
@@ -362,6 +454,9 @@ class MT5Encoder(HFTextEncoder):
                     self.transformer.module.config.hidden_size,
                 ]
             )
+        elif self.reduce_output == "concat":
+            # add the -2 to account of start and end tokens.
+            return torch.Size([self.transformer.module.config.hidden_size * (self.max_sequence_length - 2)])
         return torch.Size([self.transformer.module.config.hidden_size])
 
     @property
@@ -460,6 +555,9 @@ class XLMRoBERTaEncoder(HFTextEncoder):
                     self.transformer.module.config.hidden_size,
                 ]
             )
+        elif self.reduce_output == "concat":
+            # add the -2 to account of start and end tokens.
+            return torch.Size([self.transformer.module.config.hidden_size * (self.max_sequence_length - 2)])
         return torch.Size([self.transformer.module.config.hidden_size])
 
     @property
@@ -579,6 +677,9 @@ class BERTEncoder(HFTextEncoder):
                     self.transformer.module.config.hidden_size,
                 ]
             )
+        elif self.reduce_output == "concat":
+            # add the -2 to account of start and end tokens.
+            return torch.Size([self.transformer.module.config.hidden_size * (self.max_sequence_length - 2)])
         return torch.Size([self.transformer.module.config.hidden_size])
 
     @property
@@ -714,6 +815,9 @@ class XLMEncoder(HFTextEncoder):
                     self.transformer.module.config.hidden_size,
                 ]
             )
+        elif self.reduce_output == "concat":
+            # add the -2 to account of start and end tokens.
+            return torch.Size([self.transformer.module.config.hidden_size * (self.max_sequence_length - 2)])
         return torch.Size([self.transformer.module.config.hidden_size])
 
     @property
@@ -815,6 +919,8 @@ class GPTEncoder(HFTextEncoder):
     def output_shape(self) -> torch.Size:
         if self.reduce_output is None:
             return torch.Size([self.max_sequence_length, self.transformer.module.config.hidden_size])
+        elif self.reduce_output == "concat":
+            return torch.Size([self.transformer.module.config.hidden_size * self.max_sequence_length])
         return torch.Size([self.transformer.module.config.hidden_size])
 
     @property
@@ -917,11 +1023,27 @@ class GPT2Encoder(HFTextEncoder):
     def output_shape(self) -> torch.Size:
         if self.reduce_output is None:
             return torch.Size([self.max_sequence_length, self.transformer.module.config.hidden_size])
+        elif self.reduce_output == "concat":
+            return torch.Size([self.transformer.module.config.hidden_size * (self.max_sequence_length)])
         return torch.Size([self.transformer.module.config.hidden_size])
 
     @property
     def input_dtype(self):
         return torch.int32
+
+
+@DeveloperAPI
+@register_encoder("deberta", TEXT)
+class DeBERTaEncoder(HFTextEncoderImpl):
+    def __init__(self, *args, **kwargs):
+        from transformers import DebertaV2Config as _DebertaV2Config
+        from transformers import DebertaV2Model
+
+        super().__init__(DebertaV2Model, _DebertaV2Config, DebertaV2Config, *args, **kwargs)
+
+    @staticmethod
+    def get_schema_cls():
+        return DebertaV2Config
 
 
 @DeveloperAPI
@@ -1005,6 +1127,9 @@ class RoBERTaEncoder(HFTextEncoder):
     def output_shape(self) -> torch.Size:
         if self.reduce_output is None:
             return torch.Size([self.max_sequence_length - 2, self.transformer.module.config.hidden_size])
+        elif self.reduce_output == "concat":
+            # add the -2 to account of start and end tokens.
+            return torch.Size([self.transformer.module.config.hidden_size * (self.max_sequence_length - 2)])
         return torch.Size([self.transformer.module.config.hidden_size])
 
     @property
@@ -1127,8 +1252,10 @@ class TransformerXLEncoder(HFTextEncoder):
     def output_shape(self) -> torch.Size:
         if self.reduce_output is None:
             return torch.Size([self.max_sequence_length, self.transformer.module.config.d_model])
-        else:
-            return torch.Size([self.transformer.module.config.d_model])
+        elif self.reduce_output == "concat":
+            # add the -2 to account of start and end tokens.
+            return torch.Size([self.transformer.module.config.d_model * self.max_sequence_length])
+        return torch.Size([self.transformer.module.config.d_model])
 
     @property
     def input_dtype(self):
@@ -1257,8 +1384,9 @@ class XLNetEncoder(HFTextEncoder):
     def output_shape(self) -> torch.Size:
         if self.reduce_output is None:
             return torch.Size([self.max_sequence_length, self.transformer.module.config.d_model])
-        else:
-            return torch.Size([self.transformer.module.config.d_model])
+        elif self.reduce_output == "concat":
+            return torch.Size([self.transformer.module.config.d_model * self.max_sequence_length])
+        return torch.Size([self.transformer.module.config.d_model])
 
     @property
     def input_dtype(self):
@@ -1366,6 +1494,9 @@ class DistilBERTEncoder(HFTextEncoder):
         if self.reduce_output is None:
             # Subtract 2 to remove CLS and PAD tokens added by BERT tokenizer.
             return torch.Size([self.max_sequence_length - 2, self.transformer.module.config.dim])
+        elif self.reduce_output == "concat":
+            # add the -2 to account of start and end tokens.
+            return torch.Size([self.transformer.module.config.dim * (self.max_sequence_length - 2)])
         return torch.Size([self.transformer.module.config.dim])
 
     @property
@@ -1467,6 +1598,9 @@ class CTRLEncoder(HFTextEncoder):
     def output_shape(self) -> torch.Size:
         if self.reduce_output is None:
             return torch.Size([self.max_sequence_length, self.transformer.module.config.n_embd])
+        elif self.reduce_output == "concat":
+            # add the -2 to account of start and end tokens.
+            return torch.Size([self.transformer.module.config.n_embd * (self.max_sequence_length - 2)])
         return torch.Size([self.transformer.module.config.n_embd])
 
     @property
@@ -1585,6 +1719,9 @@ class CamemBERTEncoder(HFTextEncoder):
                     self.transformer.module.config.hidden_size,
                 ]
             )
+        elif self.reduce_output == "concat":
+            # add the -2 to account of start and end tokens.
+            return torch.Size([self.transformer.module.config.hidden_size * (self.max_sequence_length - 2)])
         return torch.Size([self.transformer.module.config.hidden_size])
 
     @property
@@ -1690,6 +1827,9 @@ class T5Encoder(HFTextEncoder):
                     self.transformer.module.config.hidden_size,
                 ]
             )
+        elif self.reduce_output == "concat":
+            # add the -1 to account of start and end tokens.
+            return torch.Size([self.transformer.module.config.hidden_size * (self.max_sequence_length - 1)])
         return torch.Size([self.transformer.module.config.d_model])
 
     @property
@@ -1825,6 +1965,9 @@ class FlauBERTEncoder(HFTextEncoder):
                     self.transformer.module.config.hidden_size,
                 ]
             )
+        elif self.reduce_output == "concat":
+            # add the -2 to account of start and end tokens.
+            return torch.Size([self.transformer.module.config.hidden_size * (self.max_sequence_length - 2)])
         return torch.Size([self.transformer.module.config.emb_dim])
 
     @property
@@ -1936,6 +2079,9 @@ class ELECTRAEncoder(HFTextEncoder):
                     self.transformer.module.config.hidden_size,
                 ]
             )
+        elif self.reduce_output == "concat":
+            # add the -2 to account of start and end tokens.
+            return torch.Size([self.transformer.module.config.hidden_size * (self.max_sequence_length - 2)])
         return torch.Size([self.transformer.module.config.hidden_size])
 
     @property
@@ -2029,6 +2175,9 @@ class LongformerEncoder(HFTextEncoder):
                     self.transformer.module.config.hidden_size,
                 ]
             )
+        elif self.reduce_output == "concat":
+            # add the -2 to account of start and end tokens.
+            return torch.Size([self.transformer.module.config.hidden_size * (self.max_sequence_length - 2)])
         return torch.Size([self.transformer.module.config.hidden_size])
 
     @property
@@ -2067,8 +2216,14 @@ class AutoTransformerEncoder(HFTextEncoder):
         self.transformer = FreezeModule(transformer, frozen=not trainable)
         self.reduce_output = reduce_output
         if self.reduce_output != "cls_pooled":
-            self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+            self.reduce_sequence = SequenceReducer(
+                reduce_mode=reduce_output, encoding_size=self.transformer.module.config.hidden_size
+            )
         self.max_sequence_length = max_sequence_length
+
+        # Precompute the set of params that are included in the forward signature of the AutoModel implementation so
+        # we can filter out unused params during the `forward` call.
+        self.forward_kwargs = set(inspect.signature(self.transformer.module.forward).parameters.keys())
 
     def _maybe_resize_token_embeddings(self, transformer, vocab_size: Optional[int] = None):
         """Overridden because AutoModel should use its own vocab size unless vocab size is explicitly specified."""
@@ -2081,11 +2236,17 @@ class AutoTransformerEncoder(HFTextEncoder):
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None):
         if mask is not None:
             mask = mask.to(torch.int32)
-        transformer_outputs = self.transformer.module(
+
+        # The forward signature of AutoModel is not consistent across implementations, so we need to make sure we're
+        # only passing in params included in the forward signature.
+        kwargs = dict(
             input_ids=inputs,
             attention_mask=mask,
             token_type_ids=torch.zeros_like(inputs),
         )
+        kwargs = {k: v for k, v in kwargs.items() if k in self.forward_kwargs}
+
+        transformer_outputs = self.transformer.module(**kwargs)
         if self.reduce_output == "cls_pooled":
             # this works only if the user know that the specific model
             # they want to use has the same outputs of
@@ -2109,6 +2270,15 @@ class AutoTransformerEncoder(HFTextEncoder):
         if self.reduce_output is None:
             # TODO(justin): This may need to be conditioned on which AutoModel gets chosen.
             return torch.Size([self.max_sequence_length, self.transformer.module.config.hidden_size])
+        if self.reduce_output == "concat":
+            return torch.Size(
+                [
+                    self.max_sequence_length * self.transformer.module.config.hidden_size,
+                ]
+            )
+        elif self.reduce_output == "concat":
+            # add the -2 to account of start and end tokens.
+            return torch.Size([self.transformer.module.config.hidden_size * (self.max_sequence_length - 2)])
         return torch.Size([self.transformer.module.config.hidden_size])
 
     @property

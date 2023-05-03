@@ -22,6 +22,7 @@ from enum import Enum
 from typing import Dict, List, Optional, Set, Union
 
 import numpy as np
+from dateutil.parser import parse as parse_datetime
 
 from ludwig.constants import PADDING_SYMBOL, START_SYMBOL, STOP_SYMBOL, UNKNOWN_SYMBOL
 from ludwig.data.dataframe.base import DataFrameEngine
@@ -125,6 +126,26 @@ def is_number(s: Union[str, int, float]):
         return True
     except ValueError:
         return False
+
+
+def is_datetime(s: Union[str, int, float]):
+    """Returns whether specified value is datetime."""
+    if is_number(s):
+        return False
+
+    try:
+        parse_datetime(s)
+        return True
+    except Exception:
+        return False
+
+
+def are_all_datetimes(values: List[Union[str, int, float]]):
+    """Returns whether all values are datetimes."""
+    for value in values:
+        if not is_datetime(value):
+            return False
+    return True
 
 
 def are_all_numbers(values: List[Union[str, int, float]]):
@@ -236,6 +257,7 @@ def create_vocabulary(
     pretrained_model_name_or_path: str = None,
     ngram_size: Optional[int] = None,
     compute_idf: bool = False,
+    prompt_template: Optional[str] = None,
     processor: DataFrameEngine = PANDAS,
 ) -> Vocabulary:
     """Computes a vocabulary over the provided data frame.
@@ -266,6 +288,7 @@ def create_vocabulary(
         pretrained_model_name_or_path: Name/path to huggingface model.
         ngram_size: Size of the n-gram when using `ngram` tokenizer.
         compute_idf: If True, computes the inverse document frequency for each token.
+        prompt_template: Template to use for prompting pretrained models.
         processor: Which processor to use to process data.
 
     Returns:
@@ -325,7 +348,12 @@ def create_vocabulary(
     elif vocab_file is not None:
         vocab = load_vocabulary(vocab_file)
 
-    processed_lines = data.map(lambda line: tokenizer(line.lower() if lowercase else line))
+    def process_line(line):
+        if prompt_template is not None:
+            line = prompt_template.format(input=line)
+        return tokenizer(line.lower() if lowercase else line)
+
+    processed_lines = processor.map_objects(data, process_line)
     processed_counts = processed_lines.explode().value_counts(sort=False)
     processed_counts = processor.compute(processed_counts)
     unit_counts = Counter(dict(processed_counts))
@@ -491,3 +519,11 @@ def build_sequence_matrix(
 
     padded = processor.map_objects(unit_vectors, pad)
     return padded
+
+
+def get_tokenizer(tokenizer_type: str, tokenizer_vocab_file: str, pretrained_model_name_or_path: str):
+    """Returns a tokenizer object based on the tokenizer type."""
+    return get_tokenizer_from_registry(tokenizer_type)(
+        vocab_file=tokenizer_vocab_file,
+        pretrained_model_name_or_path=pretrained_model_name_or_path,
+    )

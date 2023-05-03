@@ -12,6 +12,7 @@ from packaging.version import parse as parse_version
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
 from ludwig.constants import BATCH_SIZE, MAX_BATCH_SIZE_DATASET_FRACTION, TRAINER
+from ludwig.distributed import init_dist_strategy
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
@@ -25,12 +26,15 @@ from tests.integration_tests.utils import (
 )
 
 try:
+    from ludwig.backend.horovod import HorovodBackend
+except ImportError:
+    pass
+
+try:
     import dask
     import ray
 
-    from ludwig.backend.horovod import HorovodBackend
     from ludwig.data.dataset.ray import RayDataset
-    from ludwig.distributed.horovod import HorovodStrategy
     from ludwig.models.gbm import GBM
     from ludwig.schema.model_config import ModelConfig
     from ludwig.schema.trainer import GBMTrainerConfig
@@ -40,7 +44,7 @@ try:
     def run_scale_lr(config, data_csv, num_workers, outdir):
         class FakeHorovodBackend(HorovodBackend):
             def initialize(self):
-                distributed = HorovodStrategy()
+                distributed = init_dist_strategy("horovod")
                 self._distributed = mock.Mock(wraps=distributed)
                 self._distributed.size.return_value = num_workers
 
@@ -58,8 +62,7 @@ try:
         return callback.lr
 
 except ImportError:
-    dask = None
-    ray = None
+    logging.warn("Failed to import some modules")
 
 
 def test_tune_learning_rate(tmpdir):
@@ -159,6 +162,7 @@ def test_tune_batch_size_and_lr(tmpdir, eval_batch_size, is_cpu):
 
 @pytest.mark.parametrize("learning_rate_scaling, expected_lr", [("constant", 1), ("sqrt", 2), ("linear", 4)])
 @pytest.mark.distributed
+@pytest.mark.horovod
 def test_scale_lr(learning_rate_scaling, expected_lr, tmpdir, ray_cluster_2cpu):
     base_lr = 1.0
     num_workers = 4
@@ -314,6 +318,36 @@ def test_compile(tmpdir):
     trainer = {
         "epochs": 2,
         "compile": True,
+    }
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "output_size": 14},
+        TRAINER: trainer,
+    }
+
+    # Just test that training completes without error.
+    # TODO(travis): We may want to expand upon this in the future to include some checks on model
+    # convergence like gradient magnitudes, etc. Should also add distributed tests.
+    model = LudwigModel(config, backend=LocalTestBackend(), logging_level=logging.INFO)
+    model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv, output_directory=tmpdir)
+
+
+@pytest.mark.parametrize("gradient_accumulation_steps", [1, 2, 3])
+def test_gradient_accumulation(gradient_accumulation_steps: int, tmpdir):
+    input_features = [text_feature()]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
+
+    csv_filename = os.path.join(tmpdir, "training.csv")
+    data_csv = generate_data(input_features, output_features, csv_filename, num_examples=64)
+    val_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "validation.csv"))
+    test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "test.csv"))
+
+    trainer = {
+        "epochs": 2,
+        "batch_size": 8,
+        "gradient_accumulation_steps": gradient_accumulation_steps,
     }
 
     config = {

@@ -21,6 +21,7 @@ import torch
 
 from ludwig.constants import (
     CATEGORY,
+    CATEGORY_DISTRIBUTION,
     COLUMN,
     HIDDEN,
     LOGITS,
@@ -34,7 +35,13 @@ from ludwig.constants import (
 )
 from ludwig.error import InputDataError
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
-from ludwig.schema.features.category_feature import CategoryInputFeatureConfig, CategoryOutputFeatureConfig
+from ludwig.features.vector_feature import VectorFeatureMixin
+from ludwig.schema.features.category_feature import (
+    CategoryDistributionOutputFeatureConfig,
+    CategoryInputFeatureConfig,
+    CategoryOutputFeatureConfig,
+)
+from ludwig.schema.features.loss.loss import CORNLossConfig
 from ludwig.types import (
     FeatureMetadataDict,
     FeaturePostProcessingOutputDict,
@@ -90,19 +97,34 @@ class _CategoryPostprocessing(torch.nn.Module):
 
 
 class _CategoryPredict(PredictModule):
-    def __init__(self, calibration_module=None):
+    def __init__(self, calibration_module=None, use_cumulative_probs=False):
         super().__init__()
         self.calibration_module = calibration_module
+
+        # Derive the label from the cumulative probability distribution of the ordered category logits.
+        # Taken from CORN loss implementation:
+        # https://github.com/Raschka-research-group/coral-pytorch/blob/main/coral_pytorch/dataset.py#L123
+        self.use_cumulative_probs = use_cumulative_probs
 
     def forward(self, inputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, torch.Tensor]:
         logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, self.logits_key)
 
-        if self.calibration_module is not None:
-            probabilities = self.calibration_module(logits)
-        else:
-            probabilities = torch.softmax(logits, -1)
+        if self.use_cumulative_probs:
+            if self.calibration_module is not None:
+                probabilities = self.calibration_module(logits)
+            else:
+                probabilities = torch.sigmoid(logits)
+            probabilities = torch.cumprod(probabilities, dim=1)
 
-        predictions = torch.argmax(probabilities, -1)
+            predict_levels = probabilities > 0.5
+            predictions = torch.sum(predict_levels, dim=1)
+        else:
+            if self.calibration_module is not None:
+                probabilities = self.calibration_module(logits)
+            else:
+                probabilities = torch.softmax(logits, -1)
+            predictions = torch.argmax(probabilities, -1)
+
         predictions = predictions.long()
 
         # EXPECTED SHAPE OF RETURNED TENSORS
@@ -130,6 +152,21 @@ class CategoryFeatureMixin(BaseFeatureMixin):
             num_most_frequent=preprocessing_parameters["most_common"],
             processor=backend.df_engine,
         )
+
+        if "vocab" in preprocessing_parameters:
+            # If vocab was explciitly provided, override the inferred vocab
+            idx2str = preprocessing_parameters["vocab"]
+            str2idx = {s: i for i, s in enumerate(idx2str)}
+            str2freq = {k: str2freq.get(k, 0) for k in idx2str}
+
+        if "fallback_label" in preprocessing_parameters:
+            # This is a category output feature for LLMs
+            # Check if the fallback label is in the vocab, if not add it.
+            if preprocessing_parameters["fallback_label"] not in str2idx:
+                str2idx[preprocessing_parameters["fallback_label"]] = len(str2idx)
+                idx2str.append(preprocessing_parameters["fallback_label"])
+                str2freq[preprocessing_parameters["fallback_label"]] = 0
+
         vocab_size = len(str2idx)
         if not is_input_feature and vocab_size <= 1:
             # Category output feature with vocab size 1
@@ -211,6 +248,25 @@ class CategoryFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
+class CategoryDistributionFeatureMixin(VectorFeatureMixin):
+    @staticmethod
+    def type():
+        return CATEGORY_DISTRIBUTION
+
+    @staticmethod
+    def get_feature_meta(
+        column, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
+    ) -> FeatureMetadataDict:
+        idx2str = preprocessing_parameters["vocab"]
+        str2idx = {s: i for i, s in enumerate(idx2str)}
+        return {
+            "preprocessing": preprocessing_parameters,
+            "idx2str": idx2str,
+            "str2idx": str2idx,
+            "vocab_size": len(idx2str),
+        }
+
+
 class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
     def __init__(self, input_feature_config: CategoryInputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, **kwargs)
@@ -275,6 +331,10 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
     ):
         self.num_classes = output_feature_config.num_classes
         self.top_k = output_feature_config.top_k
+
+        # TODO(travis): make this more general to other cumulative loss functions
+        self.use_cumulative_probs = isinstance(output_feature_config.loss, CORNLossConfig)
+
         super().__init__(output_feature_config, output_features, **kwargs)
         if hasattr(output_feature_config.decoder, "num_classes"):
             output_feature_config.decoder.num_classes = output_feature_config.num_classes
@@ -302,7 +362,9 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         return None
 
     def create_predict_module(self) -> PredictModule:
-        return _CategoryPredict(calibration_module=self.calibration_module)
+        return _CategoryPredict(
+            calibration_module=self.calibration_module, use_cumulative_probs=self.use_cumulative_probs
+        )
 
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}
@@ -326,6 +388,11 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
     def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
         feature_config.num_classes = feature_metadata["vocab_size"]
         feature_config.top_k = min(feature_config.num_classes, feature_config.top_k)
+
+        # If labels are provided, then this is a classification task for LLMs
+        if hasattr(feature_config.preprocessing, "vocab"):
+            # Enrich the feature config's decoder with str2idx
+            feature_config.decoder.str2idx = feature_metadata["str2idx"]
 
         if isinstance(feature_config.loss.class_weights, (list, tuple)):
             if len(feature_config.loss.class_weights) != feature_config.num_classes:
@@ -471,3 +538,21 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
     @staticmethod
     def create_postproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
         return _CategoryPostprocessing(metadata)
+
+
+class CategoryDistributionOutputFeature(CategoryDistributionFeatureMixin, CategoryOutputFeature):
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.input_size])
+
+    @classmethod
+    def get_output_dtype(cls):
+        return torch.float32
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([self.num_classes])
+
+    @staticmethod
+    def get_schema_cls():
+        return CategoryDistributionOutputFeatureConfig

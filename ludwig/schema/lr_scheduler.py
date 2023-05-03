@@ -47,8 +47,8 @@ class LRSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     reduce_on_plateau: int = schema_utils.NonNegativeInteger(
         default=0,
         description=(
-            "How many times to reduce the learning rate when the algorithm hits a plateau (i.e. the performance on the"
-            "training set does not improve"
+            "How many times to reduce the learning rate when the algorithm hits a plateau (i.e. the performance on the "
+            "training set does not improve)"
         ),
         parameter_metadata=TRAINER_METADATA[MODEL_ECD]["learning_rate_scheduler"]["reduce_on_plateau"],
     )

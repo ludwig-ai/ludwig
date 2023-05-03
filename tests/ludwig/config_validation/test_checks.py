@@ -11,7 +11,9 @@ import contextlib
 from typing import Any, Dict, List, Optional
 
 import pytest
+import yaml
 
+from ludwig.constants import COMBINER, TYPE
 from ludwig.error import ConfigValidationError
 from ludwig.schema.model_types.base import ModelConfig
 from tests.integration_tests.utils import binary_feature, text_feature
@@ -233,3 +235,49 @@ def test_comparator_combiner_entities(entity_1: List[str], entity_2: List[str], 
         config_obj = ModelConfig.from_dict(config)
         assert config_obj.combiner.entity_1 == ["a1"]
         assert config_obj.combiner.entity_2 == ["b1", "b2"]
+
+
+def test_experiment_binary_fill_with_const():
+    """Test that the tagger decoder doesn't work with category input features."""
+    config = {
+        "defaults": {"binary": {"preprocessing": {"missing_value_strategy": "fill_with_const"}}},
+        "input_features": [{"name": "binary_1", "type": "binary"}],
+        "model_type": "ecd",
+        "output_features": [{"name": "category_output_1", "type": "category"}],
+        "trainer": {"train_steps": 1},
+    }
+
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+
+def test_check_concat_combiner_requirements():
+    config = yaml.safe_load(
+        """
+input_features:
+  - name: description
+    type: text
+    encoder:
+      type: embed
+      reduce_output: null
+    column: description
+  - name: required_experience
+    type: category
+    column: required_experience
+output_features:
+  - name: title
+    type: category
+combiner:
+    type: concat
+trainer:
+  train_steps: 2
+model_type: ecd
+"""
+    )
+
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+    # Confirms that the choice of the combiner type is the only reason for the ConfigValidationError.
+    config[COMBINER][TYPE] = "sequence_concat"
+    ModelConfig.from_dict(config)

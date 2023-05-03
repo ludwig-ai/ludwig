@@ -569,8 +569,19 @@ def test_in_memory_dataset_size(backend, tmpdir, ray_cluster_2cpu):
 
 
 @pytest.mark.parametrize(
-    "binary_as_input, expected_preprocessing",
+    "binary_as_input, expected_preprocessing, missing_value_strategy",
     [
+        pytest.param(
+            True,
+            {
+                "missing_value_strategy": "fill_with_true",
+                "fill_value": None,
+                "computed_fill_value": ">50K",
+                "fallback_true_label": ">50K",
+            },
+            "fill_with_true",
+            id="binary_as_input_1",
+        ),
         pytest.param(
             True,
             {
@@ -579,7 +590,8 @@ def test_in_memory_dataset_size(backend, tmpdir, ray_cluster_2cpu):
                 "computed_fill_value": "<=50K",
                 "fallback_true_label": ">50K",
             },
-            id="binary_as_input",
+            "fill_with_false",
+            id="binary_as_input_2",
         ),
         pytest.param(
             False,
@@ -589,13 +601,17 @@ def test_in_memory_dataset_size(backend, tmpdir, ray_cluster_2cpu):
                 "computed_fill_value": None,
                 "fallback_true_label": ">50K",
             },
+            "drop_row",
             id="binary_as_output",
         ),
     ],
 )
-def test_non_conventional_bool_with_fallback(binary_as_input, expected_preprocessing, tmpdir):
+def test_non_conventional_bool_with_fallback(binary_as_input, expected_preprocessing, missing_value_strategy, tmpdir):
     # Specify a non-conventional boolean feature with a fallback true label.
-    bin_feature = binary_feature(bool2str=["<=50K", ">50K"], preprocessing={"fallback_true_label": ">50K"})
+    bin_feature = binary_feature(
+        bool2str=["<=50K", ">50K"],
+        preprocessing={"fallback_true_label": ">50K", "missing_value_strategy": missing_value_strategy},
+    )
 
     # Generate data with the non-conventional boolean feature.
     if binary_as_input:
@@ -764,3 +780,62 @@ def test_fill_with_mode_different_df_engine(tmpdir, csv_filename, df_engine, ray
 
     ludwig_model = LudwigModel(config)
     ludwig_model.preprocess(dataset=df)
+
+
+@pytest.mark.parametrize(
+    "backend",
+    [
+        pytest.param("local", id="local"),
+        pytest.param("ray", id="ray", marks=pytest.mark.distributed),
+    ],
+)
+def test_prompt_template(backend, tmpdir, ray_cluster_2cpu):
+    """Tests that prompt template is correctly applied to inputs."""
+    prompt_template = """
+    Instruction: predict the output feature. Return only values in {{true, false}}
+    ###
+    Examples:
+    ###
+    Input: foo bar
+    Output: true
+    ###
+    Input: baz quc
+    Output: false
+    ###
+    Input: {input}
+    Output:
+    """
+
+    input_features = [text_feature(preprocessing={"prompt_template": prompt_template})]
+    output_features = [category_feature()]
+    data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=25)
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+    }
+
+    model = LudwigModel(config, backend=backend)
+    train_set, _, _, training_set_metadata = model.preprocess(
+        training_set=data_csv,
+        skip_save_processed_input=True,
+        outpput_directory=os.path.join(tmpdir, "processed"),
+    )
+
+    data_df = pd.read_csv(data_csv)
+    raw_text_values = data_df[input_features[0][COLUMN]].values.tolist()
+
+    train_df = model.backend.df_engine.compute(train_set.to_df())
+    encoded_values = train_df[input_features[0][PROC_COLUMN]].values.tolist()
+
+    assert len(raw_text_values) == len(encoded_values)
+
+    idx2str = training_set_metadata[input_features[0][NAME]]["idx2str"]
+    for raw_text, encoded in zip(raw_text_values, encoded_values):
+        raw_text = raw_text.lower()
+        decoded = " ".join(idx2str[t] for t in encoded)
+        assert decoded.startswith(
+            "<SOS> instruction : predict the output feature . return only values in { true , false } # # # examples : "
+            "# # # input : foo bar output : true # # # input : baz quc output : false # # # input : "
+        ), decoded
+        assert raw_text in decoded, f"'{raw_text}' not in '{decoded}'"

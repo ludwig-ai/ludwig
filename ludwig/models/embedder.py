@@ -5,7 +5,7 @@ import pandas as pd
 import torch
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import NAME, PROC_COLUMN, TYPE
+from ludwig.constants import MODEL_ECD, NAME, PROC_COLUMN, TYPE
 from ludwig.features.feature_registries import get_input_type_registry
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.models.base import BaseModel
@@ -35,7 +35,7 @@ class Embedder(LudwigModule):
             # diverge, so we should find a way to remove this. The best solution is to the change the input params from
             # FeatureConfigDict types to BaseInputFeatureConfig types, which will require a refactor of preprocessing to
             # use the schema, not the dict types.
-            feature_obj = get_input_feature_cls(feature[TYPE]).from_dict(feature)
+            feature_obj = get_input_feature_cls(MODEL_ECD, feature[TYPE]).from_dict(feature)
             feature_cls.update_config_with_metadata(feature_obj, metadata[feature[NAME]])
 
             # When running prediction or eval, we need the preprocessing to use the original pretrained
@@ -105,7 +105,7 @@ def create_embed_transform_fn(
             with torch.no_grad():
                 encoder_outputs = self.embedder(inputs)
 
-            encoded = {name_to_proc[k]: v.detach().cpu().numpy() for k, v in encoder_outputs.items()}
+            encoded = {name_to_proc[k]: v.detach().cpu().float().numpy() for k, v in encoder_outputs.items()}
             output_df = from_numpy_dataset(encoded)
 
             for c in output_df.columns:

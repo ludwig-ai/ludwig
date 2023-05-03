@@ -41,9 +41,12 @@ extra_requirements["full"] = [item for sublist in extra_requirements.values() fo
 with open(path.join(here, "requirements_test.txt"), encoding="utf-8") as f:
     extra_requirements["test"] = extra_requirements["full"] + [line.strip() for line in f if line]
 
+with open(path.join(here, "requirements_extra.txt"), encoding="utf-8") as f:
+    extra_requirements["extra"] = [line.strip() for line in f if line]
+
 setup(
     name="ludwig",
-    version="0.7.3",
+    version="0.8.dev",
     description="Declarative machine learning: End-to-end machine learning pipelines using data-driven configurations.",
     long_description=long_description,
     long_description_content_type="text/markdown",

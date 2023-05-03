@@ -54,7 +54,7 @@ def _run_ludwig_horovod(command, **ludwig_kwargs):
 def _prepare_data(csv_filename, config_filename):
     # Single sequence input, single category output
     input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
-    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
+    output_features = [category_feature(decoder={"vocab_size": 3}, reduce_input="sum")]
 
     # Generate test data
     dataset_filename = generate_data(input_features, output_features, csv_filename)
@@ -147,6 +147,7 @@ def test_train_cli_training_set(tmpdir, csv_filename):
 
 
 @pytest.mark.distributed
+@pytest.mark.horovod
 def test_train_cli_horovod(tmpdir, csv_filename):
     """Test training using `horovodrun -np 2 ludwig train --dataset`."""
     config_filename = os.path.join(tmpdir, "config.yaml")
@@ -309,7 +310,7 @@ def test_preprocess_cli(tmpdir, csv_filename):
     "backend",
     [
         pytest.param("local", id="local"),
-        pytest.param("horovod", id="horovod", marks=pytest.mark.distributed),
+        pytest.param("horovod", id="horovod", marks=[pytest.mark.distributed, pytest.mark.horovod]),
     ],
 )
 def test_reproducible_cli_runs(
