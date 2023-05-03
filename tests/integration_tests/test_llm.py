@@ -247,6 +247,7 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
     )
     df = pd.read_csv(dataset_path)
     df["label"] = np.random.choice([1, 2, 3, 4, 5], size=len(df)).astype(str)  # ensure labels match the feature config
+    print("ASDFASDF df['label']", df["label"])
     df.to_csv(dataset_path, index=False)
 
     model = LudwigModel(config, backend={**backend, "cache_dir": str(tmpdir)})
