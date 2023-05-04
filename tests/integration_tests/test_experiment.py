@@ -859,7 +859,7 @@ def test_tabnet_with_batch_size_1(tmpdir, ray_cluster_4cpu):
         "output_features": output_features,
         "combiner": {"type": "tabnet"},
         TRAINER: {"train_steps": 1, BATCH_SIZE: 1},
-        "backend": {"type": "ray"},
+        "backend": {"type": "ray", "trainer": {"strategy": "ddp", "num_workers": 2}},
     }
     model = LudwigModel(config=config, logging_level=logging.INFO)
     model.train(
