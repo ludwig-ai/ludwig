@@ -20,6 +20,7 @@ from typing import Any, Callable, Dict, List, Optional, Type, TYPE_CHECKING, Typ
 import numpy as np
 import torch
 from torch import nn
+from peft import LoraConfig, get_peft_model
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import TEXT
@@ -2212,6 +2213,9 @@ class AutoTransformerEncoder(HFTextEncoder):
         self._maybe_resize_token_embeddings(transformer, vocab_size)
 
         self.config = self._init_config(transformer, [], encoder_config)
+
+        peft_config = LoraConfig(inference_mode=False, r=8, lora_alpha=32, lora_dropout=0.1)
+        transformer = get_peft_model(transformer, peft_config)
 
         self.transformer = FreezeModule(transformer, frozen=not trainable)
         self.reduce_output = reduce_output
