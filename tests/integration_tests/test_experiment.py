@@ -849,7 +849,7 @@ def test_experiment_model_resume_before_1st_epoch_distributed(tmpdir, ray_cluste
 
 
 @pytest.mark.distributed
-def test_tabnet_with_batch_size_1(tmpdir, ray_cluster_5cpu):
+def test_tabnet_with_batch_size_1(tmpdir, ray_cluster_4cpu):
     input_features = [number_feature()]
     output_features = [category_feature(output_feature=True)]
     training_set = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
