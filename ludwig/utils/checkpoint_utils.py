@@ -115,10 +115,11 @@ class Checkpoint(ABC):
 
 
 @DeveloperAPI
-class CoordinatorCheckpoint(Checkpoint):
+class MultiNodeCheckpoint(Checkpoint):
     def prepare(self, directory: str):
-        if self.distributed.is_coordinator():
+        if self.is_local_rank_0():
             super().prepare(directory)
+        self.distributed.barrier()
 
     def load(self, save_path: str, device: Optional[torch.device] = None) -> bool:
         """Load state from a saved checkpoint.
@@ -169,42 +170,44 @@ class CoordinatorCheckpoint(Checkpoint):
           global_step (int): The iteration number which will be used
              to name the checkpoint.
         """
-        if not self.distributed.is_coordinator():
-            return
+        if self.is_local_rank_0():
+            state = {
+                "global_step": global_step,
+                "model_weights": self.model.state_dict(),
+            }
+            if self.optimizer is not None:
+                state["optim_state"] = self.optimizer.state_dict()
+            if self.scheduler is not None:
+                state["scheduler_state"] = self.scheduler.state_dict()
 
-        state = {
-            "global_step": global_step,
-            "model_weights": self.model.state_dict(),
-        }
-        if self.optimizer is not None:
-            state["optim_state"] = self.optimizer.state_dict()
-        if self.scheduler is not None:
-            state["scheduler_state"] = self.scheduler.state_dict()
+            # ignore ctrl+c while saving
+            try:
+                orig_handler = signal.getsignal(signal.SIGINT)
+                signal.signal(signal.SIGINT, lambda _sig, _frame: None)
+            except ValueError:
+                # signal throws a ValueError if we're not in the main thread
+                orig_handler = None
 
-        # ignore ctrl+c while saving
-        try:
-            orig_handler = signal.getsignal(signal.SIGINT)
-            signal.signal(signal.SIGINT, lambda _sig, _frame: None)
-        except ValueError:
-            # signal throws a ValueError if we're not in the main thread
-            orig_handler = None
+            try:
+                # atomic save
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    # Save to a temporary directory outside of the checkpoint dir so
+                    # async processes do not try and copy a partially-written checkpoint.
+                    # See Ray Tune and MLFlow for examples of background processes that
+                    # are affected by this.
+                    tmp_path = os.path.join(tmpdir, "temp.ckpt")
+                    torch.save(state, tmp_path)
 
-        try:
-            # atomic save
-            with tempfile.TemporaryDirectory() as tmpdir:
-                # Save to a temporary directory outside of the checkpoint dir so
-                # async processes do not try and copy a partially-written checkpoint.
-                # See Ray Tune and MLFlow for examples of background processes that
-                # are affected by this.
-                tmp_path = os.path.join(tmpdir, "temp.ckpt")
-                torch.save(state, tmp_path)
+                    safe_move_file(tmp_path, save_path)
+                    logger.debug(f"Saved checkpoint at {save_path}.")
+            finally:
+                # restore SIGINT handler
+                if orig_handler is not None:
+                    signal.signal(signal.SIGINT, orig_handler)
+        self.distributed.barrier()
 
-                safe_move_file(tmp_path, save_path)
-                logger.debug(f"Saved checkpoint at {save_path}.")
-        finally:
-            # restore SIGINT handler
-            if orig_handler is not None:
-                signal.signal(signal.SIGINT, orig_handler)
+    def is_local_rank_0(self) -> bool:
+        return self.distributed.local_rank() == 0
 
 
 @DeveloperAPI
