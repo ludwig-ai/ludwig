@@ -156,8 +156,11 @@ class CoordinatorCheckpoint(Checkpoint):
             return False
 
     def get_state_for_inference(self, save_path: str, device: Optional[torch.device] = None) -> Mapping[str, Any]:
-        state = torch.load(save_path, map_location=device)
-        return state["model_weights"]
+        state_dict = {}
+        if self.distributed.is_coordinator():
+            state_dict = torch.load(save_path, map_location=device)
+        state_dict = self.distributed.broadcast_object(state_dict, "state_dict")
+        return state_dict["model_weights"]
 
     def save(self, save_path: str, global_step: int):
         """Save a state to disk.
