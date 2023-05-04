@@ -212,6 +212,15 @@ class MultiNodeCheckpoint(Checkpoint):
         return self.distributed.local_rank() == 0
 
     def safe_move_file(self, src: str, dst: str):
+        """Move a file from one directory to another, possibly across filesystems.
+
+        This implementation specifically addresses the following issue with distributed training:
+
+        1. The `save_path` is a directory local to the node, in which case every node should write
+           checkpoints separately.
+        2. The `save_path` is a remote / global filesystem like NFS, in which case only the coordinator
+           should write checkpoints.
+        """
         try:
             os.replace(src, dst)
         except OSError as err:
@@ -226,7 +235,8 @@ class MultiNodeCheckpoint(Checkpoint):
 
                 # Generate a unique ID, and copy `<src>` to the target directory with a temporary name `<dst>.<ID>.tmp`.
                 # Because we're copying across a filesystem boundary, this initial copy may not be atomic.  We insert a
-                # random UUID so if different processes are copying into `<dst>`, they don't overlap in their tmp copies.
+                # random UUID so if different processes are copying into `<dst>`, they don't overlap in their tmp
+                # copies.
                 copy_id = uuid.uuid4()
                 tmp_dst = f"{dst}.{copy_id}.tmp"
                 shutil.copyfile(src, tmp_dst)
