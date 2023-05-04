@@ -1508,7 +1508,13 @@ class LudwigModel:
             raise RuntimeError(f"Caught exception during model preprocessing: {str(e)}") from e
         finally:
             for callback in self.callbacks:
-                callback.on_preprocess_end(proc_training_set, proc_validation_set, proc_test_set, training_set_metadata)
+                callback.on_preprocess_end(
+                    proc_training_set,
+                    proc_validation_set,
+                    proc_test_set,
+                    training_set_metadata,
+                    config_obj=self.config_obj,
+                )
 
     @staticmethod
     def load(

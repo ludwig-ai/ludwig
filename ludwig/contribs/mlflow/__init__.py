@@ -72,6 +72,7 @@ class MlflowCallback(Callback):
         validation_set: "Dataset",  # noqa
         test_set: "Dataset",  # noqa
         training_set_metadata: TrainingSetMetadataDict,
+        **kwargs,
     ):
         self.training_set_metadata = training_set_metadata
 

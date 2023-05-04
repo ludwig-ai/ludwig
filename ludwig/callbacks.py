@@ -38,7 +38,9 @@ class Callback(ABC):
         """
         pass
 
-    def on_preprocess_end(self, training_set, validation_set, test_set, training_set_metadata: TrainingSetMetadataDict):
+    def on_preprocess_end(
+        self, training_set, validation_set, test_set, training_set_metadata: TrainingSetMetadataDict, **kwargs
+    ):
         """Called after preprocessing ends.
 
         :param training_set: The training set.

@@ -427,7 +427,9 @@ def test_seq_features_max_sequence_length(
     df = pd.read_csv(training_data_csv_path)
 
     class CheckTrainingSetMetadataCallback(Callback):
-        def on_preprocess_end(self, proc_training_set, proc_validation_set, proc_test_set, training_set_metadata):
+        def on_preprocess_end(
+            self, proc_training_set, proc_validation_set, proc_test_set, training_set_metadata, **kwargs
+        ):
             assert training_set_metadata[feat[NAME]]["max_sequence_length"] == sequence_length_expected
 
     backend = LocalTestBackend()
