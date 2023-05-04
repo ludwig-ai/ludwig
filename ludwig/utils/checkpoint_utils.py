@@ -3,21 +3,23 @@
 https://gist.github.com/kevinzakka/5d345421f7abefd5dbaf6a77f829e70a.
 """
 
+import errno
 import logging
 import os
 import re
+import shutil
 import signal
 import tempfile
 from abc import ABC, abstractmethod
 from glob import glob
 from typing import Any, Dict, Mapping, Optional, TYPE_CHECKING
+import uuid
 
 import torch
 from torch.optim import Optimizer
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.modules.lr_scheduler import LRScheduler
-from ludwig.utils.fs_utils import safe_move_file
 
 if TYPE_CHECKING:
     from ludwig.distributed.base import DistributedStrategy
@@ -198,7 +200,7 @@ class MultiNodeCheckpoint(Checkpoint):
                     tmp_path = os.path.join(tmpdir, "temp.ckpt")
                     torch.save(state, tmp_path)
 
-                    safe_move_file(tmp_path, save_path)
+                    self.safe_move_file(tmp_path, save_path)
                     logger.debug(f"Saved checkpoint at {save_path}.")
             finally:
                 # restore SIGINT handler
@@ -208,6 +210,32 @@ class MultiNodeCheckpoint(Checkpoint):
 
     def is_local_rank_0(self) -> bool:
         return self.distributed.local_rank() == 0
+
+    def safe_move_file(self, src: str, dst: str):
+        try:
+            os.replace(src, dst)
+        except OSError as err:
+            if err.errno == errno.EXDEV:
+                # Tried to move to an external filesystem. This means we should only run this on the coordinator
+                if not self.distributed.is_coordinator():
+                    logger.info(
+                        f"Skipping writing checkpoint from rank {self.distributed.rank()} as it is not the coordinator "
+                        f"and the destination filesystem is remote."
+                    )
+                    return
+
+                # Generate a unique ID, and copy `<src>` to the target directory with a temporary name `<dst>.<ID>.tmp`.
+                # Because we're copying across a filesystem boundary, this initial copy may not be atomic.  We insert a
+                # random UUID so if different processes are copying into `<dst>`, they don't overlap in their tmp copies.
+                copy_id = uuid.uuid4()
+                tmp_dst = f"{dst}.{copy_id}.tmp"
+                shutil.copyfile(src, tmp_dst)
+
+                # Atomic replace file onto the new name, and clean up original source file.
+                os.replace(tmp_dst, dst)
+                os.unlink(src)
+            else:
+                raise
 
 
 @DeveloperAPI
