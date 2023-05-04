@@ -10,7 +10,7 @@ torch>=1.13.0
 torchaudio
 torchtext
 torchvision
-transformers>=4.10.1
+transformers>=4.28.1
 spacy>=2.3
 PyYAML>=3.12
 absl-py
@@ -28,7 +28,7 @@ torchmetrics>=0.11
 torchinfo
 filelock
 psutil==5.9.4
-protobuf
+protobuf==3.20.3
 py-cpuinfo==9.0.0
 gpustat
 rich~=12.4.4

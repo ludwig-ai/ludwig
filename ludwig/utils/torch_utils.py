@@ -176,7 +176,7 @@ class LudwigModule(Module):
     def __init__(self):
         super().__init__()
         self._losses = {}
-        self.register_buffer("device_tensor", torch.zeros(0))
+        self.register_buffer("device_tensor", torch.zeros(0), persistent=False)
 
     @property
     def device(self):

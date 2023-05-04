@@ -17,17 +17,21 @@ RANDOM_SEED = 1919
 @pytest.mark.parametrize("output_size", [3, 4])
 @pytest.mark.parametrize("activation", ["relu", "sigmoid", "tanh"])
 @pytest.mark.parametrize("dropout", [0.0, 0.6])
+@pytest.mark.parametrize("batch_size", [1, 2])
+@pytest.mark.parametrize("norm", [None, "layer", "batch", "ghost"])
 def test_fc_layer(
     input_size: int,
     output_size: int,
     activation: str,
     dropout: float,
+    batch_size: int,
+    norm: Optional[str],
 ):
     set_random_seed(RANDOM_SEED)  # make repeatable
-    fc_layer = FCLayer(input_size=input_size, output_size=output_size, activation=activation, dropout=dropout).to(
-        DEVICE
-    )
-    input_tensor = torch.randn(BATCH_SIZE, input_size, device=DEVICE)
+    fc_layer = FCLayer(
+        input_size=input_size, output_size=output_size, activation=activation, dropout=dropout, norm=norm
+    ).to(DEVICE)
+    input_tensor = torch.randn(batch_size, input_size, device=DEVICE)
     output_tensor = fc_layer(input_tensor)
     assert output_tensor.shape[1:] == fc_layer.output_shape
 

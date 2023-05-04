@@ -12,6 +12,7 @@ import torch
 from torch.utils.tensorboard import SummaryWriter
 
 from ludwig.constants import BINARY, CATEGORY, MINIMIZE, MODEL_GBM, NUMBER, TEST, TRAIN, TRAINING, VALIDATION
+from ludwig.distributed import init_dist_strategy
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.globals import is_progressbar_disabled, TRAINING_CHECKPOINTS_DIR_PATH, TRAINING_PROGRESS_TRACKER_FILE_NAME
@@ -25,7 +26,7 @@ from ludwig.trainers.base import BaseTrainer
 from ludwig.trainers.registry import register_ray_trainer, register_trainer
 from ludwig.types import ModelConfigDict
 from ludwig.utils import time_utils
-from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
+from ludwig.utils.checkpoint_utils import CheckpointManager
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.gbm_utils import (
     get_single_output_feature,
@@ -593,7 +594,7 @@ class LightGBMTrainer(BaseTrainer):
         # ====== Setup session =======
         checkpoint = checkpoint_manager = None
         if self.is_coordinator() and not self.skip_save_progress:
-            checkpoint = Checkpoint(model=self.model)
+            checkpoint = self.distributed.create_checkpoint_handle(dist_model=self.model, model=self.model)
             checkpoint_manager = CheckpointManager(checkpoint, training_checkpoints_path, device=self.device)
 
         train_summary_writer = None
@@ -945,6 +946,7 @@ class LightGBMRayTrainer(LightGBMTrainer):
         self.ray_params = _map_to_lgb_ray_params(trainer_kwargs)
         self.data_loader_kwargs = data_loader_kwargs or {}
         self.executable_kwargs = executable_kwargs or {}
+        init_dist_strategy("local")
 
     @staticmethod
     def get_schema_cls() -> BaseTrainerConfig:

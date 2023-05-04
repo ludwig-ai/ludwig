@@ -1,13 +1,14 @@
 import copy
 import logging
 import os
+import tempfile
 from typing import Dict, Tuple, Union
 
 import numpy as np
 import torch
 import torchmetrics
 from peft import get_peft_model, PeftConfig, PeftModel, PromptTuningConfig  # get_peft_config,
-from transformers import AutoModelForCausalLM, GenerationConfig
+from transformers import AutoModelForCausalLM, AutoTokenizer, GenerationConfig
 
 from ludwig.constants import LOGITS, MODEL_LLM
 from ludwig.features.base_feature import OutputFeature
@@ -19,7 +20,6 @@ from ludwig.schema.model_types.llm import LLMModelConfig
 from ludwig.utils.augmentation_utils import AugmentationPipelines
 from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.output_feature_utils import set_output_feature_tensor
-from ludwig.utils.strings_utils import get_tokenizer
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +33,7 @@ class LLM(BaseModel):
         self,
         config_obj: LLMModelConfig,
         random_seed=None,
+        device=None,
         **_kwargs,
     ):
         super().__init__(random_seed=random_seed)
@@ -40,19 +41,16 @@ class LLM(BaseModel):
         self.config_obj = config_obj
         self._random_seed = random_seed
 
-        self.adapter = copy.deepcopy(self.config_obj.adapter)
-
-        self.tokenizer = get_tokenizer(
-            tokenizer_type="hf_tokenizer",
-            tokenizer_vocab_file=None,
-            pretrained_model_name_or_path=self.config_obj.model_name,
-        )
-
         self.model_name = self.config_obj.model_name
-        self.model = AutoModelForCausalLM.from_pretrained(self.model_name)
+
+        logger.info("Loading large language model...")
+        self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.model_name)
+        self.curr_device = torch.device("cpu")  # model initially loaded onto cpu
+        logger.info("Done.")
 
         # If an adapter config is provided, we want to wrap the model with a PEFT model
         # for fine-tuning.
+        self.adapter = copy.deepcopy(self.config_obj.adapter)
         if self.config_obj.adapter:
             # TODO: Refactor once adapter is a config object instead of a dict
             self.adapter["peft_type"] = self.adapter.pop("type").upper()
@@ -62,9 +60,23 @@ class LLM(BaseModel):
             logger.info("Trainable Parameters For Fine-Tuning:")
             self.model.print_trainable_parameters()
 
-        # Initialize the generation config to use for generation calls.
-        self.generation_config = GenerationConfig(**self.config_obj.generation_config.to_dict())
-        self.max_new_tokens = self.config_obj.generation_config.max_new_tokens
+        self.max_new_tokens = self.config_obj.generation.max_new_tokens
+
+        # Determines the maximum length of the context (input + output tokens)
+        if hasattr(self.model.config, "max_sequence_length"):
+            self.context_len = self.model.config.max_sequence_length
+        elif hasattr(self.model.config, "max_position_embeddings"):
+            self.context_len = self.model.config.max_position_embeddings
+        else:
+            self.context_len = 2048
+        # max input length value copied from FastChat
+        # https://github.com/lm-sys/FastChat/blob/0e958b852a14f4bef5f0e9d7a5e7373477329cf2/fastchat/serve/inference.py#L183  # noqa
+        self.max_input_length = self.context_len - self.max_new_tokens - 8
+
+        # Used only for its metadata about the vocabulary
+        self.tokenizer = AutoTokenizer.from_pretrained(self.config_obj.model_name, use_fast=False)
+
+        self.generation = GenerationConfig(**self.config_obj.generation.to_dict())
 
         # ================ Inputs ================
         try:
@@ -94,6 +106,41 @@ class LLM(BaseModel):
         self.eval_additional_losses_metrics = torchmetrics.MeanMetric()
 
         clear_data_cache()
+
+    def to_device(self, device):
+        device = torch.device(device)
+        if device == self.curr_device:
+            logger.warning(f"LLM already on device '{device}'. Skipping device placement step.")
+            return self
+        else:
+            logger.info(f"Moving LLM from '{self.curr_device}' to '{device}'.")
+
+        model_kwargs = {}
+        if device == torch.device("cuda"):
+            num_gpus = torch.cuda.device_count()
+            # TODO: make this configurable in the future. These parameters are from FastChat:
+            # https://github.com/lm-sys/FastChat/blob/0e958b852a14f4bef5f0e9d7a5e7373477329cf2/fastchat/serve/inference.py#L90  # noqa
+            model_kwargs.update(
+                dict(
+                    low_cpu_mem_usage=True,
+                    torch_dtype=torch.float16,
+                    device_map="auto",
+                    max_memory={i: "13GiB" for i in range(num_gpus)},
+                )
+            )
+            # we save and reload the weights to ensure that they can be sharded across the GPUs using `from_pretrained`
+            with tempfile.TemporaryDirectory() as tmpdir:
+                self.model.save_pretrained(tmpdir)
+                self.model = AutoModelForCausalLM.from_pretrained(tmpdir, **model_kwargs)
+
+            self.eval_loss_metric = self.eval_loss_metric.to(device)
+            self.eval_additional_losses_metrics = self.eval_additional_losses_metrics.to(device)
+            self.output_features.update({k: v.to(device) for k, v in self.output_features.items()})
+        else:
+            self.model = self.model.to(device)
+
+        self.curr_device = device
+        return self
 
     @classmethod
     def build_outputs(
@@ -156,6 +203,7 @@ class LLM(BaseModel):
         assert list(inputs.keys()) == self.input_features.keys()
 
         input_ids = self.get_input_ids(inputs)
+
         if self.adapter:
             # Forward pass using PEFT model for fine-tuning
             model_outputs = self.model(input_ids)
@@ -166,23 +214,39 @@ class LLM(BaseModel):
             outputs = {}
             set_output_feature_tensor(outputs, self.config_obj.output_features[0].name, LOGITS, decoder_outputs)
             return outputs
-        else:
-            with torch.no_grad():
+
+        with torch.no_grad():
+            input_lengths = []
+            sequences_list = []
+            for input_ids_sample in input_ids:
+                input_ids_sample_no_padding = self._remove_left_padding(input_ids_sample)
+
+                if input_ids_sample_no_padding.shape[1] > self.max_input_length:
+                    logger.warning(
+                        f"Input length {input_ids_sample_no_padding.shape[1]} is "
+                        f"greater than max input length {self.max_input_length}. Truncating."
+                    )
+                    input_ids_sample_no_padding = input_ids_sample_no_padding[:, -self.max_input_length :]
+
+                input_lengths.append(input_ids_sample_no_padding.shape[1])
+
                 # Generate text using the model
-                outputs = self.model.generate(
-                    input_ids=input_ids,
+                model_outputs = self.model.generate(
+                    input_ids=input_ids_sample_no_padding,
                     attention_mask=mask,
-                    generation_config=self.generation_config,
+                    generation_config=self.generation,
                     return_dict_in_generate=True,
                     output_scores=True,
                 )
-                # Extract the predictions, probabilities and logits from the model outputs
-                # through the forward pass of the output feature
-                outputs = self.output_feature_decoder.decoder_obj(
-                    outputs,
-                    llm_model_inputs=input_ids,
-                )
-                return self.extract(outputs)
+                sequences_list.append(model_outputs.sequences[0])
+
+            # Extract the predictions, probabilities and logits from the model outputs
+            # through the forward pass of the output feature
+            outputs = self.output_feature_decoder.decoder_obj.forward(
+                sequences_list,
+                llm_model_input_lengths=input_lengths,
+            )
+        return self.extract(outputs)
 
     def extract(
         self,
@@ -201,11 +265,9 @@ class LLM(BaseModel):
                 continue
             of_obj.update_metrics(targets[of_name], predictions[of_name])
 
-        # Only update loss during fine-tuning since logits are computed during the LLMs forward pass.
-        if self.adapter:
-            eval_loss, additional_losses = self.eval_loss(targets, predictions)
-            self.eval_loss_metric.update(eval_loss)
-            self.eval_additional_losses_metrics.update(additional_losses)
+        eval_loss, additional_losses = self.eval_loss(targets, predictions)
+        self.eval_loss_metric.update(eval_loss)
+        self.eval_additional_losses_metrics.update(additional_losses)
 
     def eval_loss(self, targets, predictions):
         """Computes all evaluation losses for the model given targets and predictions.
@@ -224,7 +286,14 @@ class LLM(BaseModel):
                 _targets = self._realign_target_tensor(targets, predictions, of_name)
                 of_eval_loss = of_obj.eval_loss(_targets[of_name], predictions[of_name])
             else:
-                of_eval_loss = of_obj.eval_loss(targets[of_name], predictions[of_name])
+                # TODO(Arnav): Figure out loss updates.
+                # To update eval-loss, we need "logits" but right now we're only producing "predictions"
+                # This is required by the SequenceSoftmaxCrossEntropyLoss function
+                # of_eval_loss = of_obj.eval_loss(targets[of_name], predictions[of_name])
+
+                # HACK(geoffrey): we need a non-empty loss, so we just fill it with zeros
+                of_eval_loss = torch.tensor(0.0).to(predictions[of_name][LOGITS].device)
+
             eval_loss += of_obj.loss.weight * of_eval_loss
 
         additional_loss = 0
@@ -251,6 +320,8 @@ class LLM(BaseModel):
         if self.adapter:
             weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
             self.model.save_pretrained(weights_save_path)
+        else:
+            logger.info("Skipped saving LLM without weight adjustments.")
 
     def load(self, save_path):
         """Loads the model from the given path."""
@@ -290,6 +361,16 @@ class LLM(BaseModel):
             0,
         )
         return _targets
+
+    def _remove_left_padding(self, input_ids_sample: torch.Tensor):
+        bos_idxs = torch.where(input_ids_sample == self.tokenizer.bos_token_id)[0]  # all BOS token locations
+        if len(bos_idxs) != 0:
+            bos_idx = bos_idxs[0]  # get first BOS token location
+        else:
+            bos_idx = 0
+
+        input_ids_sample_no_padding = input_ids_sample[bos_idx:].unsqueeze(0)
+        return input_ids_sample_no_padding
 
     def get_augmentation_pipelines(self) -> AugmentationPipelines:
         """Returns the augmentation pipeline for this model."""

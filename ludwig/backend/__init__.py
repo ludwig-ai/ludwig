@@ -32,9 +32,10 @@ LOCAL_BACKEND = LocalBackend.shared_instance()
 LOCAL = "local"
 DASK = "dask"
 HOROVOD = "horovod"
+DEEPSPEED = "deepspeed"
 RAY = "ray"
 
-ALL_BACKENDS = [LOCAL, DASK, HOROVOD, RAY]
+ALL_BACKENDS = [LOCAL, DASK, HOROVOD, DEEPSPEED, RAY]
 
 
 def _has_ray():
@@ -68,6 +69,12 @@ def create_horovod_backend(**kwargs):
     return HorovodBackend(**kwargs)
 
 
+def create_deepspeed_backend(**kwargs):
+    from ludwig.backend.deepspeed import DeepSpeedBackend
+
+    return DeepSpeedBackend(**kwargs)
+
+
 def create_ray_backend(**kwargs):
     from ludwig.backend.ray import RayBackend
 
@@ -77,6 +84,7 @@ def create_ray_backend(**kwargs):
 backend_registry = {
     LOCAL: get_local_backend,
     HOROVOD: create_horovod_backend,
+    DEEPSPEED: create_deepspeed_backend,
     RAY: create_ray_backend,
     None: get_local_backend,
 }

@@ -12,7 +12,7 @@ from ludwig.schema.features.base import (
     LLMInputFeatureSelection,
     LLMOutputFeatureSelection,
 )
-from ludwig.schema.generation_config import LLMGenerationConfig, LLMGenerationConfigField
+from ludwig.schema.generation import LLMGenerationConfig, LLMGenerationConfigField
 from ludwig.schema.hyperopt import HyperoptConfig, HyperoptField
 from ludwig.schema.model_types.base import ModelConfig, register_model_type
 from ludwig.schema.preprocessing import PreprocessingConfig, PreprocessingField
@@ -40,7 +40,7 @@ class LLMModelConfig(ModelConfig):
         ),
     )
 
-    generation_config: LLMGenerationConfig = LLMGenerationConfigField().get_default_field()
+    generation: LLMGenerationConfig = LLMGenerationConfigField().get_default_field()
     adapter: Optional[Dict] = schema_utils.Dict()
     # adapter: Optional[BaseAdapterConfig] = AdapterDataclassField() #.get_default_field()
 

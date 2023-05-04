@@ -792,8 +792,8 @@ class HFTokenizer(BaseTokenizer):
     def __init__(self, pretrained_model_name_or_path, **kwargs):
         super().__init__()
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
-        self.tokenizer = load_pretrained_hf_tokenizer(self.pretrained_model_name_or_path)
-        self.set_pad_token_id()
+        self.tokenizer = load_pretrained_hf_tokenizer(self.pretrained_model_name_or_path, **kwargs)
+        self._set_pad_token()
 
     def __call__(self, text):
         return self.tokenizer.encode(text, truncation=True)
@@ -802,18 +802,24 @@ class HFTokenizer(BaseTokenizer):
         return self.tokenizer.get_vocab()
 
     def get_pad_token(self) -> str:
-        # HACK(geoffrey): gpt2 has no pad token. Recommendation is to use eos token instead.
-        # https://github.com/huggingface/transformers/issues/2630#issuecomment-1290809338
-        # https://github.com/huggingface/transformers/issues/2648#issuecomment-616177044
-        if self.pretrained_model_name_or_path == "gpt2":
-            self.tokenizer.pad_token = self.tokenizer.eos_token
         return self.tokenizer.pad_token
 
     def get_unk_token(self) -> str:
         return self.tokenizer.unk_token
 
-    def set_pad_token_id(self):
-        if hasattr(self.tokenizer, "pad_token_id") and self.tokenizer.pad_token_id is None:
+    def _set_pad_token(self) -> None:
+        """Sets the pad token and pad token ID for the tokenizer."""
+
+        from transformers import GPT2Tokenizer, GPT2TokenizerFast, LlamaTokenizer, LlamaTokenizerFast
+
+        # HACK(geoffrey): gpt2 has no pad token. Recommendation is to use eos token instead.
+        # https://github.com/huggingface/transformers/issues/2630#issuecomment-1290809338
+        # https://github.com/huggingface/transformers/issues/2648#issuecomment-616177044
+        if any(
+            isinstance(self.tokenizer, t)
+            for t in [GPT2Tokenizer, GPT2TokenizerFast, LlamaTokenizer, LlamaTokenizerFast]
+        ):
+            self.tokenizer.pad_token = self.tokenizer.eos_token
             self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
 
 

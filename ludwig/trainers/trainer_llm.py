@@ -1,6 +1,5 @@
 import logging
 import os
-import sys
 import time
 from typing import Dict, List, Optional, Union
 
@@ -10,11 +9,9 @@ from ludwig.constants import MODEL_LLM, TEST, TRAIN, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.features.feature_utils import LudwigFeatureDict
-from ludwig.globals import is_progressbar_disabled
 from ludwig.models.llm import LLM
 from ludwig.models.predictor import Predictor
 from ludwig.modules.metric_modules import get_initial_validation_value
-from ludwig.progress_bar import LudwigProgressBar
 from ludwig.schema.trainer import BaseTrainerConfig, FineTuneTrainerConfig, ZeroShotTrainerConfig
 from ludwig.trainers.base import BaseTrainer
 from ludwig.trainers.registry import register_ray_trainer, register_trainer
@@ -26,19 +23,12 @@ from ludwig.utils.metric_utils import TrainerMetric
 from ludwig.utils.metrics_printed_table import MetricsPrintedTable
 from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.torch_utils import get_torch_device
-from ludwig.utils.trainer_utils import (
-    append_metrics,
-    get_final_steps_per_checkpoint,
-    get_new_progress_tracker,
-    get_total_steps,
-    ProgressTracker,
-)
+from ludwig.utils.trainer_utils import append_metrics, get_new_progress_tracker, ProgressTracker
 
 logger = logging.getLogger(__name__)
 
 
-# @register_ray_trainer(MODEL_LLM)
-# @register_trainer(MODEL_LLM)
+@register_trainer(MODEL_LLM)
 class ZeroShotTrainer(BaseTrainer):
     """ZeroShotTrainer is a trainer that does not train a model."""
 
@@ -98,15 +88,11 @@ class ZeroShotTrainer(BaseTrainer):
         self.skip_save_model = skip_save_model
         self.skip_save_progress = skip_save_progress
         self.random_seed = random_seed
-        self.device = device
         self.callbacks = callbacks or []
         self.report_tqdm_to_ray = report_tqdm_to_ray
 
-        if self.device is None:
-            self.device = get_torch_device()
-
-        self.model = model
-        self.model = self.model.to(self.device)
+        self.device = device if device is not None else get_torch_device()
+        self.model = model.to_device(self.device)
 
         self.batch_size = self.config.batch_size
         self.eval_batch_size = self.config.eval_batch_size
@@ -117,8 +103,17 @@ class ZeroShotTrainer(BaseTrainer):
         self.steps_per_checkpoint = self.config.steps_per_checkpoint
         self.checkpoints_per_epoch = self.config.checkpoints_per_epoch
         self.early_stop = self.config.early_stop
+        self.evaluate_training_set = self.config.evaluate_training_set
 
-    def train(self, training_set, validation_set=None, test_set=None, save_path="model", **kwargs):
+    def train(
+        self,
+        training_set: Dataset,
+        validation_set: Optional[Dataset] = None,
+        test_set: Optional[Dataset] = None,
+        save_path: str = "model",
+        return_state_dict: bool = False,
+        **kwargs,
+    ):
         logger.info("Starting Training")
         output_features = self.model.output_features
 
@@ -153,95 +148,17 @@ class ZeroShotTrainer(BaseTrainer):
         )
 
         try:
-            with training_set.initialize_batcher(
-                batch_size=self.batch_size,
-                should_shuffle=self.should_shuffle,
-                random_seed=self.random_seed,
-                distributed=self.distributed,
-                ignore_last=True,
-                augmentation_pipeline=self.model.get_augmentation_pipelines(),
-            ) as batcher:
-                # ================ Training Loop ================
-                self.total_steps = get_total_steps(self.epochs, batcher.steps_per_epoch, self.train_steps)
-
-                # Get the terminal steps per checkpoint.
-                final_steps_per_checkpoint = get_final_steps_per_checkpoint(
-                    batcher.steps_per_epoch,
-                    self.steps_per_checkpoint,
-                    self.checkpoints_per_epoch,
-                    self.is_coordinator(),
-                )
-                final_steps_per_checkpoint = min(final_steps_per_checkpoint, self.total_steps)
-                early_stopping_steps = final_steps_per_checkpoint * self.early_stop
-
-                if self.is_coordinator():
-                    logger.info(
-                        f"Training for {self.total_steps} step(s), approximately "
-                        f"{int(self.total_steps / batcher.steps_per_epoch)} epoch(s)."
-                    )
-                    if self.early_stop < 0:
-                        logger.info("Early stopping policy: None")
-                    else:
-                        logger.info(
-                            f"Early stopping policy: {self.early_stop} round(s) of evaluation, or "
-                            f"{early_stopping_steps} step(s), approximately "
-                            f"{int(early_stopping_steps / batcher.steps_per_epoch)} epoch(s).\n"
-                        )
-                    logger.info(f"Starting with step {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
-
-                progress_bar_config = {
-                    "desc": "Training",
-                    "total": self.total_steps,
-                    "disable": is_progressbar_disabled(),
-                    "file": sys.stdout,
-                }
-                progress_bar = LudwigProgressBar(self.report_tqdm_to_ray, progress_bar_config, self.is_coordinator())
-
-                while progress_tracker.steps < self.total_steps:
-                    # note that batch size may change over epochs
-                    batcher.set_epoch(progress_tracker.epoch, progress_tracker.batch_size)
-
-                    # epoch init
-                    start_time = time.time()
-
-                    # Reset the metrics at the start of the next epoch
-                    self.model.reset_metrics()
-
-                    self.callback(lambda c: c.on_epoch_start(self, progress_tracker, save_path))
-
-                    # Trains over a full epoch of data.
-                    should_break = self._train_loop(
-                        batcher,
-                        progress_tracker,
-                        save_path,
-                        train_summary_writer,
-                        progress_bar,
-                        training_set,
-                        validation_set,
-                        test_set,
-                        start_time,
-                        validation_summary_writer,
-                        test_summary_writer,
-                        output_features,
-                        final_steps_per_checkpoint,
-                        early_stopping_steps,
-                    )
-
-                    # ================ Post Training Epoch ================
-                    progress_tracker.epoch += 1
-                    self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
-
-                    if self.is_coordinator():
-                        # ========== Save training progress ==========
-                        logger.debug(
-                            f"Epoch {progress_tracker.epoch} took: "
-                            f"{time_utils.strdelta((time.time() - start_time) * 1000.0)}."
-                        )
-
-                    # Early stop if needed.
-                    if should_break:
-                        break
-
+            self.run_evaluation(
+                training_set,
+                validation_set,
+                test_set,
+                progress_tracker,
+                train_summary_writer,
+                validation_summary_writer,
+                test_summary_writer,
+                output_features,
+                save_path,
+            )
         finally:
             # ================ Finished Training ================
             self.callback(
@@ -256,57 +173,17 @@ class ZeroShotTrainer(BaseTrainer):
             if test_summary_writer is not None:
                 test_summary_writer.close()
 
-            return (
-                self.model,
-                progress_tracker.train_metrics,
-                progress_tracker.validation_metrics,
-                progress_tracker.test_metrics,
-            )
+        # When running with Ray, we only need to return the state dict, as it's faster and cheaper to send the
+        # state dict over the network than to load the model state here, serialize it back to a state dict, then
+        # load it back on the head node.
+        return_value = self.model if not return_state_dict else self.model.cpu().state_dict()
 
-    def _train_loop(
-        self,
-        batcher,
-        progress_tracker,
-        save_path,
-        train_summary_writer,
-        progress_bar,
-        training_set,
-        validation_set,
-        test_set,
-        start_time,
-        validation_summary_writer,
-        test_summary_writer,
-        output_features,
-        final_steps_per_checkpoint: int,
-        early_stopping_steps: int,
-    ) -> bool:
-        """Completes up to one epoch through the data."""
-        while not batcher.last_batch() and progress_tracker.steps < self.total_steps:
-            self.callback(lambda c: c.on_batch_start(self, progress_tracker, save_path))
-
-            progress_tracker.steps += 1
-            progress_bar.update(1)
-
-            # Executing `on_batch_end` calls before `run_evaluation` enables more accurate
-            # batch duration measurements when using timer callbacks.
-            self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path, sync_step=False))
-
-            if progress_tracker.steps % final_steps_per_checkpoint == 0:
-                should_break = self.run_evaluation(
-                    training_set,
-                    validation_set,
-                    test_set,
-                    progress_tracker,
-                    train_summary_writer,
-                    validation_summary_writer,
-                    test_summary_writer,
-                    output_features,
-                    save_path,
-                )
-                if should_break:
-                    return should_break
-
-        return False
+        return (
+            return_value,
+            progress_tracker.train_metrics,
+            progress_tracker.validation_metrics,
+            progress_tracker.test_metrics,
+        )
 
     def train_online(
         self,
@@ -428,7 +305,10 @@ class ZeroShotTrainer(BaseTrainer):
 
         # Run a separate pass over the training data to compute metrics
         # Appends results to progress_tracker.train_metrics.
-        self.evaluation(training_set, "train", progress_tracker.train_metrics, self.eval_batch_size, progress_tracker)
+        if self.evaluate_training_set:
+            self.evaluation(
+                training_set, "train", progress_tracker.train_metrics, self.eval_batch_size, progress_tracker
+            )
 
         # eval metrics on the train set
         printed_table.add_metrics_to_printed_table(progress_tracker.train_metrics, TRAIN)
@@ -527,3 +407,12 @@ class FineTuneTrainer(Trainer):
             device,
             **kwargs,
         )
+
+
+class RemoteLLMTrainer(ZeroShotTrainer):
+    def __init__(self, gpus=None, gpu_memory_limit=None, allow_parallel_threads=True, **kwargs):
+        super().__init__(**kwargs)
+
+        # Only return results from rank 0 to reduce network overhead
+        self.train = self.distributed.return_first(self.train)
+        self.train_online = self.distributed.return_first(self.train_online)
