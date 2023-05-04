@@ -181,9 +181,9 @@ class DistributedStrategy(ABC):
         optimizer: Optional[Optimizer] = None,
         scheduler: Optional["LRScheduler"] = None,
     ) -> "Checkpoint":
-        from ludwig.utils.checkpoint_utils import CoordinatorCheckpoint
+        from ludwig.utils.checkpoint_utils import MultiNodeCheckpoint
 
-        return CoordinatorCheckpoint(self, model, optimizer, scheduler)
+        return MultiNodeCheckpoint(self, model, optimizer, scheduler)
 
 
 class LocalStrategy(DistributedStrategy):
