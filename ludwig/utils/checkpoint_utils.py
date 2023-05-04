@@ -10,10 +10,10 @@ import re
 import shutil
 import signal
 import tempfile
+import uuid
 from abc import ABC, abstractmethod
 from glob import glob
 from typing import Any, Dict, Mapping, Optional, TYPE_CHECKING
-import uuid
 
 import torch
 from torch.optim import Optimizer
