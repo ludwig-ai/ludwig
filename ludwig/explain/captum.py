@@ -84,7 +84,8 @@ def retry_with_halved_batch_size(run_config: ExplanationRunConfig):
 
             raise RuntimeError(
                 f"Ran into latest error {latest_error} during explanation. "
-                "If a CUDA out of memory error, then the batch size could not be reduced any further.")
+                "If a CUDA out of memory error, then the batch size could not be reduced any further."
+            )
 
         return retry_with_halved_batch_size_wrapper
 
