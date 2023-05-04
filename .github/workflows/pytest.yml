@@ -258,8 +258,7 @@ jobs:
           python --version
           pip --version
           python -m pip install -U pip
-          pip install -r requirements.txt
-          pip install -r requirements_test.txt
+          pip install '.[test]'
           pip list
         shell: bash
 

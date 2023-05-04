@@ -181,7 +181,7 @@ def test_tabnet(
 
     if batch_size == 1:
         # for single record batches, batchnorm layer is bypassed, only a subset of parameters are updated
-        assert upc == 15, (
+        assert upc == 17, (
             f"Updated parameter count not expected value. Parameters not updated: {not_updated}"
             f"\nModule structure:\n{tabnet}"
         )
