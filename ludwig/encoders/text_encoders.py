@@ -639,6 +639,9 @@ class BERTEncoder(HFTextEncoder):
         if not self.reduce_output == "cls_pooled":
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
 
+        peft_config = LoraConfig(inference_mode=False, r=8, lora_alpha=32, lora_dropout=0.1)
+        transformer = get_peft_model(transformer, peft_config)
+
         self.transformer = FreezeModule(transformer, frozen=not trainable)
 
         self.max_sequence_length = max_sequence_length
@@ -2214,6 +2217,10 @@ class AutoTransformerEncoder(HFTextEncoder):
 
         self.config = self._init_config(transformer, [], encoder_config)
 
+        # Precompute the set of params that are included in the forward signature of the AutoModel implementation so
+        # we can filter out unused params during the `forward` call.
+        self.forward_kwargs = set(inspect.signature(transformer.forward).parameters.keys())
+
         peft_config = LoraConfig(inference_mode=False, r=8, lora_alpha=32, lora_dropout=0.1)
         transformer = get_peft_model(transformer, peft_config)
 
@@ -2224,10 +2231,6 @@ class AutoTransformerEncoder(HFTextEncoder):
                 reduce_mode=reduce_output, encoding_size=self.transformer.module.config.hidden_size
             )
         self.max_sequence_length = max_sequence_length
-
-        # Precompute the set of params that are included in the forward signature of the AutoModel implementation so
-        # we can filter out unused params during the `forward` call.
-        self.forward_kwargs = set(inspect.signature(self.transformer.module.forward).parameters.keys())
 
     def _maybe_resize_token_embeddings(self, transformer, vocab_size: Optional[int] = None):
         """Overridden because AutoModel should use its own vocab size unless vocab size is explicitly specified."""

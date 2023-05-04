@@ -1,4 +1,4 @@
-from typing import Callable, Dict, List, TYPE_CHECKING, Union
+from typing import Callable, Dict, List, TYPE_CHECKING, Optional, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import MODEL_ECD, MODEL_GBM, TEXT
@@ -6,6 +6,7 @@ from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.sequence_encoders import SequenceEncoderConfig
 from ludwig.schema.encoders.text.hf_model_params import DebertaModelParams
+from ludwig.schema.encoders.text.peft import BaseTunerConfig, TunerDataclassField
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.metadata import ENCODER_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY, ParameterMetadata
@@ -59,6 +60,8 @@ class HFEncoderImplConfig(HFEncoderConfig):
         description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["HFEncoder"]["trainable"],
     )
+
+    tuner: Optional[BaseTunerConfig] = TunerDataclassField()
 
     pretrained_kwargs: dict = schema_utils.Dict(
         default=None,

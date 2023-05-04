@@ -1161,6 +1161,7 @@ class TypeSelection(fields.Field):
         description: str = "",
         parameter_metadata: ParameterMetadata = None,
         allow_str_value: bool = False,
+        allow_none: bool = False,
     ):
         self.registry = registry
         self.default_value = default_value
@@ -1178,7 +1179,7 @@ class TypeSelection(fields.Field):
             dump_default = cls.Schema().dump(default_obj)
 
         super().__init__(
-            allow_none=False,
+            allow_none=allow_none,
             dump_default=dump_default,
             load_default=load_default,
             metadata={"description": description, "parameter_metadata": convert_metadata_to_json(parameter_metadata)},
