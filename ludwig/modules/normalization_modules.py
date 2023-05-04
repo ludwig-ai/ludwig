@@ -44,7 +44,7 @@ class GhostBatchNormalization(LudwigModule):
                 splits_with_bn = [self.bn(x) if x.shape[0] >= 1 else x for x in splits]
                 self.bn.train()
             else:
-                splits_with_bn = [self.bn(x) if x.shape[0] >= 1 else x for x in splits]
+                splits_with_bn = [self.bn(x) if x.shape[0] > 1 else x for x in splits]
 
             return torch.cat(splits_with_bn, 0)
 
