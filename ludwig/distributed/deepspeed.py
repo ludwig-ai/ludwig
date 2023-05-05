@@ -36,7 +36,14 @@ warnings.filterwarnings(
 
 
 class DeepSpeedStrategy(DDPStrategy):
-    def __init__(self, zero_optimization: Optional[Dict[str, Any]] = None, **kwargs):
+    def __init__(
+        self,
+        zero_optimization: Optional[Dict[str, Any]] = None,
+        fp16: Optional[Dict[str, Any]] = None,
+        bf16: Optional[Dict[str, Any]] = None,
+        compression_training: Optional[Dict[str, Any]] = None,
+        **kwargs
+    ):
         # If we're initializing from a `deepspeed` CLI command, deepspeed will have already been initialized, as
         # indicated by the presence of the LOCAL_RANK var. Otherwise, we're initializing from Ray / torchrun, and will
         # need to set this var ourselves, then init DeepSpeed here.
@@ -45,6 +52,9 @@ class DeepSpeedStrategy(DDPStrategy):
 
         super().__init__(**kwargs)
         self.zero_optimization = zero_optimization or DEFAULT_ZERO_OPTIMIZATION
+        self.fp16 = fp16
+        self.bf16 = bf16
+        self.compression_training = compression_training
 
         if init_deepspeed:
             os.environ["LOCAL_RANK"] = str(self.local_rank())
@@ -72,6 +82,9 @@ class DeepSpeedStrategy(DDPStrategy):
             },
             "optimizer": {"type": optimizer_cls.__name__, "params": optimizer_kwargs},
             "zero_optimization": self.zero_optimization,
+            "fp16": self.fp16,
+            "bf16": self.bf16,
+            "compression_training": self.compression_training,
             "gradient_clipping": trainer_config.gradient_clipping.clipglobalnorm,
             "train_micro_batch_size_per_gpu": batch_size,
             "gradient_accumulation_steps": trainer_config.gradient_accumulation_steps,

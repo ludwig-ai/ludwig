@@ -1,9 +1,12 @@
 import logging
 import os
+import shutil
 
 import yaml
 
 from ludwig.api import LudwigModel
+
+shutil.rmtree("./results", ignore_errors=True)
 
 config = yaml.safe_load(
     """
@@ -13,9 +16,9 @@ input_features:
 
     encoder:
       type: auto_transformer
-      # pretrained_model_name_or_path: bigscience/bloom-3b
+      pretrained_model_name_or_path: bigscience/bloom-3b
       # pretrained_model_name_or_path: bigscience/bloom-560m
-      pretrained_model_name_or_path: bert-base-uncased
+      # pretrained_model_name_or_path: bert-base-uncased
       trainable: true
       tuner: lora
 
