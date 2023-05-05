@@ -242,8 +242,7 @@ class DaskEngine(DataFrameEngine):
         return from_dask(df)
 
     def from_ray_dataset(self, dataset) -> dd.DataFrame:
-        # When the dataset is empty, e.g. Dataset(num_blocks=1, num_rows=0, schema=Unknown schema), Ray's native
-        # .to_dask() raises an IndexError.
+        # NOTE: When the dataset is an empty MapBatches(BatchInferModel), Ray's native to_dask() raises an IndexError.
         try:
             return dataset.to_dask()
         except IndexError as e:
