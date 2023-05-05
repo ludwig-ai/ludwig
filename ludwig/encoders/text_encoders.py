@@ -19,7 +19,6 @@ from typing import Any, Callable, Dict, List, Optional, Type, TYPE_CHECKING, Typ
 
 import numpy as np
 import torch
-from peft import get_peft_model
 from torch import nn
 
 from ludwig.api_annotations import DeveloperAPI
@@ -132,8 +131,11 @@ class HFTextEncoder(Encoder):
 
     def _wrap_transformer(self, transformer: nn.Module, tuner: Optional[BaseTunerConfig], trainable: bool):
         if tuner is not None:
+            from peft import get_peft_model
+
             peft_config = tuner.to_config()
             transformer = get_peft_model(transformer, peft_config)
+            print("!!! WRAPPED WITH LORA !!!", peft_config)
         return FreezeModule(transformer, frozen=not trainable)
 
     def get_embedding_layer(self) -> nn.Module:
