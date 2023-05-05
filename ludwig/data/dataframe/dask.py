@@ -248,7 +248,9 @@ class DaskEngine(DataFrameEngine):
             return dataset.to_dask()
         except IndexError as e:
             logging.warning(
-                f"Encountered an empty Dataset, {dataset.show()}. Manually returning an empty dask DataFrame.")
+                f"Encountered an empty Dataset, {dataset.show()} with error {e}. Manually returning an empty dask "
+                "DataFrame."
+            )
             return dd.DataFrame.from_dict({}, npartitions=1)
 
     def reset_index(self, df):
