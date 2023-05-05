@@ -1,4 +1,3 @@
-import dask.dataframe as dd
 import pandas as pd
 import pytest
 
@@ -8,6 +7,8 @@ from tests.integration_tests.utils import generate_data_as_dataframe
 
 @pytest.mark.distributed
 def test_from_ray_dataset_empty(tmpdir, ray_cluster_2cpu):
+    import dask.dataframe as dd
+
     # Verifies that when the dataset is an empty MapBatches(BatchInferModel), we mitigate Ray's native to_dask()
     # IndexError.
     config = {
