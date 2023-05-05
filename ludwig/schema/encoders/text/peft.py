@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Optional, Type
-from ludwig.api_annotations import DeveloperAPI
+from typing import Optional, Type, TYPE_CHECKING
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
 from ludwig.schema.utils import ludwig_dataclass

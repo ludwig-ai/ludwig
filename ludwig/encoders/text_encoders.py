@@ -19,8 +19,8 @@ from typing import Any, Callable, Dict, List, Optional, Type, TYPE_CHECKING, Typ
 
 import numpy as np
 import torch
-from torch import nn
 from peft import get_peft_model
+from torch import nn
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import TEXT

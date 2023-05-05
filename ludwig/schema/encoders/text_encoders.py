@@ -1,4 +1,4 @@
-from typing import Callable, Dict, List, TYPE_CHECKING, Optional, Union
+from typing import Callable, Dict, List, Optional, TYPE_CHECKING, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import MODEL_ECD, MODEL_GBM, TEXT

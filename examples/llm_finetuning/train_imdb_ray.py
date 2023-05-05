@@ -10,7 +10,7 @@ config = yaml.safe_load(
 input_features:
   - name: review
     type: text
-    
+
     encoder:
       type: auto_transformer
       pretrained_model_name_or_path: bigscience/bloom-3b
