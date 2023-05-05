@@ -886,7 +886,6 @@ class RayBackend(RemoteTrainingMixin, Backend):
         sample_fname = fnames[0]
         if isinstance(sample_fname, str):
             import daft
-            from daft import col, DataFrame
 
             # Set the runner for executing Daft dataframes to a Ray cluster
             # Prevent re-initialization errors if the runner is already set
@@ -907,24 +906,19 @@ class RayBackend(RemoteTrainingMixin, Backend):
             with self.storage.cache.use_credentials():
                 # Requires initialization from a mapping of col_name -> list of items in the series
                 # Failed image reads return None automatically, so there's no post processing required.
-                df = DataFrame.from_pydict({column.name: fnames})
+                df = daft.from_pydict({column.name: fnames})
                 # This partitioning event doesn't involve shuffling and is very cheap because it splits
                 # the dataframe into n partitions by doing the minimal number of splits or merges. Preserves order.
                 # Very similar to re-aligning divisions in Dask to create partitions.
                 df = df.into_partitions(num_downloading_partitions)
                 # Download binary files in parallel
                 # Use 16 worker threads to maximize image read throughput over each partition
-                df = df.with_column(column.name, col(column.name).url.download(max_worker_threads=16))
+                df = df.with_column(column.name, df[column.name].url.download(max_worker_threads=16))
                 # Revert back to the original number of partitions in this column
                 df = df.into_partitions(n_col_partitions)
 
-            # As of getdaft 0.0.24, there is no support for conversion directly to Dask so convert to
-            # Ray and then convert to Dask. This also forces materialization of the dataset, so we can skip
-            # calls to .collect(). Daft -> Ray is a zero-copy op, so this has very minimal cost.
-            df = df.to_ray_dataset()
-            df = self.df_engine.from_ray_dataset(df)
-
             # Persist the dataframe
+            df = df.to_dask_dataframe()
             df = self.df_engine.persist(df)
         else:
             # Assume the path has already been read in, so just convert directly to a dataset
