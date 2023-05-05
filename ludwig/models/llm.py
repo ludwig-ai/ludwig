@@ -314,7 +314,6 @@ class LLM(BaseModel):
             if self.adapter:
                 predictions[of_name] = self.output_features.get(of_name).predictions(outputs, of_name)
             else:
-                # TODO: Format with the :: notation in the forward pass
                 generated_predictions = outputs[of_name]
                 predictions[of_name] = generated_predictions
         return predictions
