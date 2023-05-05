@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 
 from ludwig.api import LudwigModel
-from ludwig.constants import BATCH_SIZE, BINARY, CATEGORY, MODEL_ECD, MODEL_GBM
+from ludwig.constants import BATCH_SIZE, BINARY, CATEGORY, MINIMUM_BATCH_SIZE, MODEL_ECD, MODEL_GBM
 from ludwig.explain.captum import IntegratedGradientsExplainer
 from ludwig.explain.explainer import Explainer
 from ludwig.explain.explanation import Explanation
@@ -111,7 +111,7 @@ def test_explainer_api_ray_minimum_batch_size(tmpdir, ray_cluster_2cpu):
         tmpdir,
         resources_per_task={"num_cpus": 1},
         num_workers=1,
-        batch_size=1,
+        batch_size=MINIMUM_BATCH_SIZE,
     )
 
 
