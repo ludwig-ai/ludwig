@@ -74,7 +74,7 @@ class LoraConfig(BaseTunerConfig):
 @DeveloperAPI
 def get_tuner_conds():
     conds = []
-    for tuner_type, tuner_cls in tuner_registry:
+    for tuner_type, tuner_cls in tuner_registry.items():
         other_props = schema_utils.unload_jsonschema_from_marshmallow_class(tuner_cls)["properties"]
         schema_utils.remove_duplicate_fields(other_props)
         preproc_cond = schema_utils.create_cond(
