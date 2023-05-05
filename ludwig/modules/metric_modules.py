@@ -37,10 +37,12 @@ from torchmetrics.text.perplexity import Perplexity
 
 from ludwig.constants import (
     ACCURACY,
+    ACCURACY_MICRO,
     BINARY,
     BINARY_WEIGHTED_CROSS_ENTROPY,
     CATEGORY,
     CATEGORY_DISTRIBUTION,
+    CORN,
     HITS_AT_K,
     HUBER,
     JACCARD,
@@ -73,6 +75,7 @@ from ludwig.constants import (
 from ludwig.distributed import get_current_dist_strategy
 from ludwig.modules.loss_modules import (
     BWCEWLoss,
+    CORNLoss,
     HuberLoss,
     SequenceSoftmaxCrossEntropyLoss,
     SigmoidCrossEntropyLoss,
@@ -81,6 +84,7 @@ from ludwig.modules.loss_modules import (
 from ludwig.modules.metric_registry import get_metric_objective, get_metric_registry, register_metric
 from ludwig.schema.features.loss.loss import (
     BWCEWLossConfig,
+    CORNLossConfig,
     HuberLossConfig,
     SequenceSoftmaxCrossEntropyLossConfig,
     SigmoidCrossEntropyLossConfig,
@@ -382,6 +386,17 @@ class CategoryAccuracy(MulticlassAccuracy, LudwigMetric):
         super().update(preds, target.type(torch.long))
 
 
+@register_metric(ACCURACY_MICRO, [CATEGORY, CATEGORY_DISTRIBUTION], MAXIMIZE, PREDICTIONS)
+class CategoryAccuracyMicro(MulticlassAccuracy, LudwigMetric):
+    def __init__(self, num_classes: int, **kwargs):
+        super().__init__(num_classes=num_classes, average="micro")
+
+    def update(self, preds: Tensor, target: Tensor) -> None:
+        if len(target.shape) > 1:
+            target = torch.argmax(target, dim=1)
+        super().update(preds, target.type(torch.long))
+
+
 @register_metric(HITS_AT_K, [CATEGORY, CATEGORY_DISTRIBUTION], MAXIMIZE, LOGITS)
 class HitsAtKMetric(MulticlassAccuracy, LudwigMetric):
     def __init__(self, num_classes: int, top_k: int, **kwargs):
@@ -452,6 +467,20 @@ class HuberMetric(LossMetric):
     ):
         super().__init__()
         self.loss_function = HuberLoss(config=config)
+
+    def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
+        return self.loss_function(preds, target)
+
+
+@register_metric(CORN, [CATEGORY], MINIMIZE, PREDICTIONS)
+class CORNMetric(LossMetric):
+    def __init__(
+        self,
+        config: CORNLossConfig,
+        **kwargs,
+    ):
+        super().__init__()
+        self.loss_function = CORNLoss(config=config)
 
     def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
         return self.loss_function(preds, target)

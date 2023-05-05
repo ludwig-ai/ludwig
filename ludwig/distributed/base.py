@@ -6,9 +6,17 @@ import torch
 from torch import nn
 from torch.optim import Optimizer
 
+from ludwig.modules.optimization_modules import create_optimizer
+from ludwig.utils.torch_utils import get_torch_device
+
 if TYPE_CHECKING:
     from ray.train.backend import BackendConfig
     from ray.train.data_parallel_trainer import DataParallelTrainer
+
+    from ludwig.models.base import BaseModel
+    from ludwig.modules.lr_scheduler import LRScheduler
+    from ludwig.schema.trainer import ECDTrainerConfig
+    from ludwig.utils.checkpoint_utils import Checkpoint
 
 
 class DistributedStrategy(ABC):
@@ -20,11 +28,37 @@ class DistributedStrategy(ABC):
     """
 
     @abstractmethod
-    def wrap_model(self, model: nn.Module) -> nn.Module:
+    def prepare(
+        self,
+        model: nn.Module,
+        trainer_config: "ECDTrainerConfig",
+        base_learning_rate: float,
+    ) -> Tuple[nn.Module, Optimizer]:
+        """Modifies the model to support distributed training and creates the optimizer.
+
+        Args:
+            model: The model to wrap for distributed training.
+            trainer_config: The trainer configuration, which includes optimizer params.
+            base_learning_rate: The base learning rate to init the optimizer, which may be scaled by the strategy.
+
+        Returns:
+            A tuple of the wrapped model and the optimizer.
+        """
         pass
 
-    @abstractmethod
-    def wrap_optimizer(self, optimizer: Optimizer, model: nn.Module, gradient_accumulation_steps: int) -> Optimizer:
+    def to_device(self, model: "BaseModel", device: Optional[torch.device] = None) -> nn.Module:
+        return model.to_device(device if device is not None else get_torch_device())
+
+    def backward(self, loss: torch.Tensor, model: nn.Module):
+        loss.backward()
+
+    def step(self, optimizer: Optimizer, *args, **kwargs):
+        optimizer.step(*args, **kwargs)
+
+    def zero_grad(self, optimizer: Optimizer):
+        optimizer.zero_grad()
+
+    def set_batch_size(self, model: nn.Module, batch_size: int):
         pass
 
     @abstractmethod
@@ -42,6 +76,9 @@ class DistributedStrategy(ABC):
     @abstractmethod
     def local_rank(self) -> int:
         pass
+
+    def is_coordinator(self) -> bool:
+        return self.rank() == 0
 
     @abstractmethod
     def barrier(self):
@@ -117,13 +154,46 @@ class DistributedStrategy(ABC):
 
         return wrapped
 
+    def allow_gradient_accumulation(self) -> bool:
+        return True
+
+    def allow_mixed_precision(self) -> bool:
+        return True
+
+    def allow_clip_gradients(self) -> bool:
+        return True
+
+    def prepare_before_load(self) -> bool:
+        """True if we need to call `prepare` again before loading a checkpoint."""
+        return False
+
+    @classmethod
+    def is_model_parallel(cls) -> bool:
+        return False
+
+    def eval(self, model: nn.Module):
+        model.eval()
+
+    def create_checkpoint_handle(
+        self,
+        dist_model: nn.Module,
+        model: nn.Module,
+        optimizer: Optional[Optimizer] = None,
+        scheduler: Optional["LRScheduler"] = None,
+    ) -> "Checkpoint":
+        from ludwig.utils.checkpoint_utils import MultiNodeCheckpoint
+
+        return MultiNodeCheckpoint(self, model, optimizer, scheduler)
+
 
 class LocalStrategy(DistributedStrategy):
-    def wrap_model(self, model: nn.Module) -> nn.Module:
-        return model
-
-    def wrap_optimizer(self, optimizer: Optimizer, model: nn.Module, gradient_accumulation_steps: int) -> Optimizer:
-        return optimizer
+    def prepare(
+        self,
+        model: nn.Module,
+        trainer_config: "ECDTrainerConfig",
+        base_learning_rate: float,
+    ) -> Tuple[nn.Module, Optimizer]:
+        return model, create_optimizer(model, trainer_config.optimizer, base_learning_rate)
 
     def size(self) -> int:
         return 1

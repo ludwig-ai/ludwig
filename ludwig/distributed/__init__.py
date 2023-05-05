@@ -1,4 +1,4 @@
-from typing import Type
+from typing import Any, Dict, Type, Union
 
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 
@@ -15,6 +15,12 @@ def load_fsdp():
     return FSDPStrategy
 
 
+def load_deepspeed():
+    from ludwig.distributed.deepspeed import DeepSpeedStrategy
+
+    return DeepSpeedStrategy
+
+
 def load_horovod():
     from ludwig.distributed.horovod import HorovodStrategy
 
@@ -25,15 +31,25 @@ def load_local():
     return LocalStrategy
 
 
-STRATEGIES = {"ddp": load_ddp, "fsdp": load_fsdp, "horovod": load_horovod, "local": load_local}
+STRATEGIES = {
+    "ddp": load_ddp,
+    "fsdp": load_fsdp,
+    "deepspeed": load_deepspeed,
+    "horovod": load_horovod,
+    "local": load_local,
+}
 
 
 _current_strategy: DistributedStrategy = None
 
 
-def init_dist_strategy(stategy: str) -> DistributedStrategy:
+def init_dist_strategy(strategy: Union[str, Dict[str, Any]], **kwargs) -> DistributedStrategy:
     global _current_strategy
-    obj = get_dist_strategy(stategy)()
+    if isinstance(strategy, dict):
+        dtype = strategy.pop("type", None)
+        obj = get_dist_strategy(dtype)(**strategy)
+    else:
+        obj = get_dist_strategy(strategy)(**kwargs)
     _current_strategy = obj
     return obj
 
@@ -44,7 +60,10 @@ def get_current_dist_strategy() -> DistributedStrategy:
     return _current_strategy
 
 
-def get_dist_strategy(name: str) -> Type[DistributedStrategy]:
+def get_dist_strategy(strategy: Union[str, Dict[str, Any]]) -> Type[DistributedStrategy]:
+    name = strategy
+    if isinstance(strategy, dict):
+        name = strategy["type"]
     return STRATEGIES[name]()
 
 

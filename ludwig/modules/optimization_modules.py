@@ -13,17 +13,20 @@
 # limitations under the License.
 # ==============================================================================
 from dataclasses import asdict
-from typing import Optional
+from typing import Dict, Optional, Tuple, Type, TYPE_CHECKING
 
 import torch
 
-from ludwig.distributed.base import DistributedStrategy
-from ludwig.schema.optimizers import BaseOptimizerConfig, GradientClippingConfig, optimizer_registry
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.torch_utils import LudwigModule
 
+if TYPE_CHECKING:
+    from ludwig.schema.optimizers import BaseOptimizerConfig, GradientClippingConfig
 
-def create_clipper(gradient_clipping_config: Optional[GradientClippingConfig]):
+
+def create_clipper(gradient_clipping_config: Optional["GradientClippingConfig"]):
+    from ludwig.schema.optimizers import GradientClippingConfig
+
     """Utility function that will convert a None-type gradient clipping config to the correct form."""
     if isinstance(gradient_clipping_config, GradientClippingConfig):
         return gradient_clipping_config
@@ -31,22 +34,15 @@ def create_clipper(gradient_clipping_config: Optional[GradientClippingConfig]):
     return GradientClippingConfig()
 
 
-def create_optimizer(
-    model: LudwigModule,
-    learning_rate: float,
-    distributed: DistributedStrategy,
-    optimizer_config: BaseOptimizerConfig,
-    gradient_accumulation_steps: int,
-):
-    """Returns a ready-to-use torch optimizer instance based on the given optimizer config.
+def get_optimizer_class_and_kwargs(
+    optimizer_config: "BaseOptimizerConfig", learning_rate: float
+) -> Tuple[Type[torch.optim.Optimizer], Dict]:
+    """Returns the optimizer class and kwargs for the optimizer.
 
-    :param model: Underlying Ludwig model
-    :param learning_rate: Initial learning rate for the optimizer
-    :param distributed: Distributed strategy
-    :param optimizer_config: Instance of `ludwig.modules.optimization_modules.BaseOptimizerConfig`.
-    :param gradient_accumulation_steps: Number of gradient accumulation steps
-    :return: Initialized instance of a torch optimizer.
+    :return: Tuple of optimizer class and kwargs for the optimizer.
     """
+    from ludwig.schema.optimizers import optimizer_registry
+
     # Get the corresponding torch optimizer class for the given config:
     optimizer_cls = get_from_registry(optimizer_config.type.lower(), optimizer_registry)[0]
 
@@ -54,9 +50,20 @@ def create_optimizer(
     cls_kwargs = {field: value for field, value in asdict(optimizer_config).items() if field != "type"}
     cls_kwargs["lr"] = learning_rate
 
-    # Instantiate the optimizer:
-    torch_optimizer: torch.optim.Optimizer = optimizer_cls(params=model.parameters(), **cls_kwargs)
-    torch_optimizer = distributed.wrap_optimizer(
-        torch_optimizer, model, gradient_accumulation_steps=gradient_accumulation_steps
-    )
-    return torch_optimizer
+    return optimizer_cls, cls_kwargs
+
+
+def create_optimizer(
+    model: LudwigModule,
+    optimizer_config: "BaseOptimizerConfig",
+    learning_rate: float,
+) -> torch.optim.Optimizer:
+    """Returns a ready-to-use torch optimizer instance based on the given optimizer config.
+
+    :param model: Underlying Ludwig model
+    :param learning_rate: Initial learning rate for the optimizer
+    :param optimizer_config: Instance of `ludwig.modules.optimization_modules.BaseOptimizerConfig`.
+    :return: Initialized instance of a torch optimizer.
+    """
+    optimizer_cls, optimizer_kwargs = get_optimizer_class_and_kwargs(optimizer_config, learning_rate)
+    return optimizer_cls(model.parameters(), **optimizer_kwargs)

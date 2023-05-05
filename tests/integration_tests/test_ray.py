@@ -21,7 +21,6 @@ import numpy as np
 import pandas as pd
 import pytest
 import torch
-from packaging import version
 
 from ludwig.api import LudwigModel
 from ludwig.backend import create_ray_backend, initialize_backend, LOCAL_BACKEND
@@ -74,43 +73,38 @@ from tests.integration_tests.utils import (
     vector_feature,
 )
 
+ray = pytest.importorskip("ray")  # noqa
+
+# Mark the entire module as distributed
+pytestmark = pytest.mark.distributed
+
+import dask  # noqa: E402
+import ray  # noqa: E402
+import ray.exceptions  # noqa: E402
+from ray.air.config import DatasetConfig  # noqa: E402
+from ray.data import Dataset, DatasetPipeline  # noqa: E402
+from ray.train._internal.dataset_spec import DataParallelIngestSpec  # noqa: E402
+
+from ludwig.backend.ray import get_trainer_kwargs, RayBackend  # noqa: E402
+from ludwig.data.dataframe.dask import DaskEngine  # noqa: E402
+
 try:
-    import dask
-    import modin
-    import ray
-    import ray.exceptions
-    from ray.air.config import DatasetConfig
-    from ray.data import Dataset, DatasetPipeline
-    from ray.train._internal.dataset_spec import DataParallelIngestSpec
-
-    from ludwig.backend.ray import get_trainer_kwargs, RayBackend
-    from ludwig.data.dataframe.dask import DaskEngine
-
-    @ray.remote(num_cpus=1, num_gpus=1)
-    def train_gpu(config, dataset, output_directory):
-        model = LudwigModel(config, backend="local")
-        _, _, output_dir = model.train(dataset, output_directory=output_directory)
-        return os.path.join(output_dir, "model")
-
-    @ray.remote(num_cpus=1, num_gpus=0)
-    def predict_cpu(model_dir, dataset):
-        model = LudwigModel.load(model_dir, backend="local")
-        model.predict(dataset)
-
-    # Ray nightly version is always set to 3.0.0.dev0
-    _ray_nightly = version.parse(ray.__version__) >= version.parse("3.0.0.dev0")
-    _modin_ray_incompatible = version.parse(modin.__version__) <= version.parse("0.15.2") and version.parse(
-        ray.__version__
-    ) >= version.parse("1.13.0")
-
+    import modin  # noqa: E402
 except ImportError:
-    dask = None
     modin = None
-    ray = None
-    session = None
 
-    _ray_nightly = False
-    _modin_ray_incompatible = False
+
+@ray.remote(num_cpus=1, num_gpus=1)
+def train_gpu(config, dataset, output_directory):
+    model = LudwigModel(config, backend="local")
+    _, _, output_dir = model.train(dataset, output_directory=output_directory)
+    return os.path.join(output_dir, "model")
+
+
+@ray.remote(num_cpus=1, num_gpus=0)
+def predict_cpu(model_dir, dataset):
+    model = LudwigModel.load(model_dir, backend="local")
+    model.predict(dataset)
 
 
 def run_api_experiment(
@@ -469,7 +463,7 @@ def test_ray_set_and_vector_outputs(dataset_type, ray_cluster_2cpu):
         pytest.param(
             "modin",
             marks=[
-                pytest.mark.skipif(_modin_ray_incompatible, reason="modin<=0.15.2 does not support ray>=1.13.0"),
+                pytest.mark.skipif(modin is None, reason="modin not installed"),
                 pytest.mark.skip(reason="https://github.com/ludwig-ai/ludwig/issues/2643"),
             ],
         ),
@@ -659,7 +653,7 @@ def test_ray_image_with_fill_strategy_edge_cases(tmpdir, settings, ray_cluster_2
 
 # TODO(geoffrey): Fold modin tests into test_ray_image as @pytest.mark.parametrized once tests are optimized
 @pytest.mark.distributed
-@pytest.mark.skipif(_modin_ray_incompatible, reason="modin<=0.15.2 does not support ray>=1.13.0")
+@pytest.mark.skipif(modin is None, reason="modin not installed")
 @pytest.mark.skip(reason="https://github.com/ludwig-ai/ludwig/issues/2643")
 def test_ray_image_modin(tmpdir, ray_cluster_2cpu):
     image_dest_folder = os.path.join(tmpdir, "generated_images")

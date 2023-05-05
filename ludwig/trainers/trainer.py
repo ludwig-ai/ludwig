@@ -21,6 +21,7 @@ import os
 import os.path
 import signal
 import sys
+import tempfile
 import threading
 import time
 from typing import Callable, Dict, List, Optional, Tuple
@@ -44,7 +45,7 @@ from ludwig.models.predictor import Predictor
 from ludwig.modules.lr_scheduler import LRScheduler
 from ludwig.modules.metric_modules import get_improved_fn, get_initial_validation_value
 from ludwig.modules.metric_registry import get_metric_objective
-from ludwig.modules.optimization_modules import create_clipper, create_optimizer
+from ludwig.modules.optimization_modules import create_clipper
 from ludwig.progress_bar import LudwigProgressBar
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.trainers.base import BaseTrainer
@@ -129,6 +130,8 @@ class Trainer(BaseTrainer):
                 (default: `ludwig.schema.trainer.ECDTrainerConfig()`).
         """
 
+        self.distributed = distributed if distributed is not None else LocalStrategy()
+
         self.epochs = config.epochs
         self.train_steps = config.train_steps
         self.total_steps = 0  # Computed during training, after batcher has been initialized.
@@ -150,13 +153,14 @@ class Trainer(BaseTrainer):
         self.increase_batch_size_on_plateau_rate = config.increase_batch_size_on_plateau_rate
         self.increase_batch_size_eval_metric = config.increase_batch_size_eval_metric
         self.increase_batch_size_eval_split = config.increase_batch_size_eval_split
-        self.gradient_accumulation_steps = config.gradient_accumulation_steps
+        self.gradient_accumulation_steps = (
+            config.gradient_accumulation_steps if self.distributed.allow_gradient_accumulation() else 1
+        )
         self.resume = resume
         self.skip_save_model = skip_save_model
         self.skip_save_progress = skip_save_progress
         self.skip_save_log = skip_save_log
         self.random_seed = random_seed
-        self.distributed = distributed if distributed is not None else LocalStrategy()
         self.received_sigint = False
         self.report_tqdm_to_ray = report_tqdm_to_ray
         self.callbacks = callbacks or []
@@ -171,33 +175,21 @@ class Trainer(BaseTrainer):
         self.base_learning_rate = base_learning_rate
 
         self.model = model
-        self.model = self.model.to(self.device)
+        self.model = self.distributed.to_device(self.model)
 
-        compiled_model = self.model
+        self.compiled_model = self.model
         if config.compile:
-            compiled_model = torch.compile(self.model)
+            self.compiled_model = torch.compile(self.model)
             logger.info("Training with torchdynamo compiled model")
 
-        # Some frameworks like DDP will wrap the model in a new interface that loses the methods from ECD. To
-        # workaround this, we maintain a separate attribute for the wrapped model, which will be used for training
-        # steps, while other operations happen on the original ECD model. Parameters are shared between the two models
-        # so it is safe to train with the wrapped model and save the best model from the ECD model.
-        self.dist_model = self.distributed.wrap_model(compiled_model)
-
         # ================ Optimizer tuning ================
-        optimizer_config = config.optimizer
         self.gradient_clipping_config = create_clipper(config.gradient_clipping)
-        self.optimizer = create_optimizer(
-            self.dist_model,
-            learning_rate=self.base_learning_rate,
-            distributed=self.distributed,
-            optimizer_config=optimizer_config,
-            gradient_accumulation_steps=self.gradient_accumulation_steps,
-        )
-        self.scheduler = LRScheduler(config.learning_rate_scheduler, self.optimizer)
+
+        self.config = config
+        self.prepare()
 
         # Setup for automatic mixed precision (AMP)
-        self.use_amp = config.use_mixed_precision
+        self.use_amp = config.use_mixed_precision and self.distributed.allow_mixed_precision()
         if self.use_amp:
             if torch.cuda.is_available():
                 logger.info("Enabling automatic mixed precision (AMP)")
@@ -211,6 +203,14 @@ class Trainer(BaseTrainer):
         # the original sigint to restore at the end of training
         # and before set_steps_to_1_or_quit returns
         self.original_sigint_handler = None
+
+    def prepare(self):
+        self.dist_model, self.optimizer = self.distributed.prepare(
+            self.compiled_model,
+            self.config,
+            self.base_learning_rate,
+        )
+        self.scheduler = LRScheduler(self.config.learning_rate_scheduler, self.optimizer)
 
     def train_step(
         self, inputs: Dict[str, torch.Tensor], targets: Dict[str, torch.Tensor], should_step: bool = True
@@ -232,7 +232,7 @@ class Trainer(BaseTrainer):
 
             def closure():
                 # Allows L-BFGS to reevaluate the loss function
-                self.optimizer.zero_grad()
+                self.distributed.zero_grad(self.optimizer)
                 model_outputs = self.dist_model((inputs, targets))
                 loss, _ = self.model.train_loss(
                     targets, model_outputs, self.regularization_type, self.regularization_lambda
@@ -240,7 +240,7 @@ class Trainer(BaseTrainer):
                 loss.backward()
                 return loss
 
-            self.optimizer.step(closure)
+            self.distributed.step(self.optimizer, closure)
 
             # Obtain model predictions and loss
             model_outputs = self.dist_model((inputs, targets))
@@ -270,7 +270,7 @@ class Trainer(BaseTrainer):
         if self.use_amp:
             self.scaler.scale(loss).backward()
         else:
-            loss.backward()
+            self.distributed.backward(loss, self.dist_model)
 
         if not should_step:
             # Short-circuit the parameter updates if we are still accumulating gradients
@@ -287,8 +287,9 @@ class Trainer(BaseTrainer):
             # https://pytorch.org/docs/master/notes/amp_examples.html#gradient-clipping
             self.scaler.unscale_(self.optimizer)
 
-        # Clip gradients
-        self.clip_grads(variables)
+        if self.distributed.allow_clip_gradients():
+            # Clip gradients
+            self.clip_grads(variables)
 
         # Apply gradient updates
         with self.distributed.prepare_optimizer_update(self.optimizer):
@@ -296,7 +297,7 @@ class Trainer(BaseTrainer):
             if self.use_amp:
                 self.scaler.step(self.optimizer)
             else:
-                self.optimizer.step()
+                self.distributed.step(self.optimizer)
 
         if self.use_amp:
             # Update scaler in case of overflow/underflow
@@ -308,7 +309,7 @@ class Trainer(BaseTrainer):
             predictions = self.model.outputs_to_predictions(model_outputs)
             self.model.update_metrics(targets, predictions)
 
-        self.optimizer.zero_grad()
+        self.distributed.zero_grad(self.optimizer)
 
         return loss, all_losses
 
@@ -367,6 +368,7 @@ class Trainer(BaseTrainer):
         random_seed: int = default_random_seed,
         max_trials: int = 20,
         halving_limit: int = 3,
+        snapshot_weights: bool = True,
         on_best_batch_size_updated: Optional[Callable[[int, float, int], None]] = None,
     ) -> int:
         logger.info("Tuning batch size...")
@@ -386,13 +388,31 @@ class Trainer(BaseTrainer):
         )
         self.dist_model.train()  # Sets model training mode.
         evaluator = self._create_batch_size_evaluator()
-        try:
-            return evaluator.select_best_batch_size(len(training_set), max_batch_size, max_trials)
-        finally:
-            # Restore original parameters to defaults
-            self.skip_save_model = skip_save_model
-            self.skip_save_progress = skip_save_progress
-            self.skip_save_log = skip_save_log
+        with tempfile.TemporaryDirectory() as tmpdir:
+            if snapshot_weights:
+                # Save a snapshot of the model and optimizer state to restore later, as they will be modified
+                # when we call the train step as part of the auto-tuning. This is undesirable, particularly for
+                # pretrained models.
+                checkpoint = self.distributed.create_checkpoint_handle(
+                    dist_model=self.dist_model, model=self.model, optimizer=self.optimizer, scheduler=self.scheduler
+                )
+                checkpoint.save(os.path.join(tmpdir, "latest.ckpt"), global_step=0)
+            try:
+                best_batch_size = evaluator.select_best_batch_size(
+                    len(training_set), max_batch_size, max_trials, self.is_coordinator()
+                )
+                return self.distributed.broadcast_object(best_batch_size)
+            finally:
+                # Restore original parameters to defaults
+                self.skip_save_model = skip_save_model
+                self.skip_save_progress = skip_save_progress
+                self.skip_save_log = skip_save_log
+                if snapshot_weights:
+                    # Restore the model weights prior to batch size tuning to undo any updates made to the weights
+                    if self.distributed.prepare_before_load():
+                        # Some distributed strategies, like DeepSpeed, need to re-init before loading the model
+                        self.prepare()
+                    self.resume_weights_and_optimizer(str(tmpdir), checkpoint)
 
     def _create_batch_size_evaluator(self) -> BatchSizeEvaluator:
         trainer = self
@@ -403,6 +423,7 @@ class Trainer(BaseTrainer):
                 trainer.optimizer.zero_grad()
 
             def step(self, batch_size: int):
+                trainer.distributed.set_batch_size(trainer.dist_model, batch_size)
                 inputs = {
                     input_feature_name: input_feature.create_sample_input(batch_size=batch_size).to(trainer.device)
                     for input_feature_name, input_feature in trainer.model.input_features.items()
@@ -420,7 +441,7 @@ class Trainer(BaseTrainer):
         training_set,
         validation_set,
         test_set,
-        progress_tracker,
+        progress_tracker: ProgressTracker,
         train_summary_writer,
         validation_summary_writer,
         test_summary_writer,
@@ -431,6 +452,7 @@ class Trainer(BaseTrainer):
         loss: torch.Tensor,
         all_losses: Dict[str, torch.Tensor],
         early_stopping_steps: int,
+        checkpoint_manager: CheckpointManager,
     ) -> bool:
         """Runs evaluation over training, validation, and test sets.
 
@@ -538,23 +560,36 @@ class Trainer(BaseTrainer):
                 self.increase_batch_size_eval_split,
                 early_stopping_steps,
                 self.skip_save_model,
+                checkpoint_manager,
             )
         else:
             # There's no validation, so we save the model.
-            if self.is_coordinator() and not self.skip_save_model:
-                self.model.save(save_path)
+            if not self.skip_save_model:
+                logger.info("Saving model.\n")
+                checkpoint_manager.save_best(progress_tracker.steps)
+                self.callback(lambda c: c.on_save_best_checkpoint(self, progress_tracker, save_path))
 
         # Trigger eval end callback after any model weights save for complete checkpoint
         self.callback(lambda c: c.on_eval_end(self, progress_tracker, save_path))
 
         return should_break
 
-    def train(self, training_set, validation_set=None, test_set=None, save_path="model", **kwargs):
+    def train(
+        self,
+        training_set,
+        validation_set=None,
+        test_set=None,
+        save_path="model",
+        return_state_dict: bool = False,
+        **kwargs,
+    ):
         """Trains a model with a set of hyperparameters listed below. Customizable.
 
         :param training_set: The training set
         :param validation_set: The validation dataset
         :param test_set: The test dataset
+        :param save_path: The directory that will contain the saved model
+        :param return_state_dict: Whether to return the state dict of the model instead of the model itself
         """
         # ====== General setup =======
         output_features = self.model.output_features
@@ -577,6 +612,9 @@ class Trainer(BaseTrainer):
             model_hyperparameters_path = os.path.join(save_path, MODEL_HYPERPARAMETERS_FILE_NAME)
             tensorboard_log_dir = os.path.join(save_path, "logs")
 
+        # Sync save_path across the workers
+        save_path = self.distributed.broadcast_object(save_path or "")
+
         training_progress_tracker_path = None
         training_checkpoints_path = None
         if save_path:
@@ -589,9 +627,10 @@ class Trainer(BaseTrainer):
 
         # ====== Setup session =======
         checkpoint_manager = None
-        checkpoint = Checkpoint(model=self.dist_model, optimizer=self.optimizer, scheduler=self.scheduler)
-        if self.is_coordinator() and not self.skip_save_progress:
-            checkpoint_manager = CheckpointManager(checkpoint, training_checkpoints_path, device=self.device)
+        checkpoint = self.distributed.create_checkpoint_handle(
+            dist_model=self.dist_model, model=self.model, optimizer=self.optimizer, scheduler=self.scheduler
+        )
+        checkpoint_manager = CheckpointManager(checkpoint, training_checkpoints_path, device=self.device)
 
         # ====== Setup Tensorboard writers =======
         train_summary_writer = None
@@ -605,12 +644,33 @@ class Trainer(BaseTrainer):
                 test_summary_writer = SummaryWriter(os.path.join(tensorboard_log_dir, TEST))
 
         # ================ Resume logic ================
-        if self.resume and self.resume_files_exist(training_progress_tracker_path, training_checkpoints_path):
-            logger.info("Resuming training from previous run.")
-            progress_tracker = self.resume_training_progress_tracker(training_progress_tracker_path)
-            self.resume_weights_and_optimizer(training_checkpoints_path, checkpoint)
+        self.callback(lambda c: c.on_resume_training(self.is_coordinator()))
+
+        should_resume = self.resume and self.resume_files_exist(
+            training_progress_tracker_path, training_checkpoints_path
+        )
+        # make sure all workers are on the same page about resuming.
+        should_resume = self.distributed.broadcast_object(should_resume, name="should_resume")
+
+        if should_resume:
+            try:
+                progress_tracker = self.resume_training_progress_tracker(training_progress_tracker_path)
+                self.resume_weights_and_optimizer(training_checkpoints_path, checkpoint)
+                logger.info("Resuming training from previous run.")
+            except Exception:
+                # This may happen if model training is interrupted after the progress tracker is initialized
+                # but before any real training progress is made.
+                progress_tracker = get_new_progress_tracker(
+                    batch_size=self.batch_size,
+                    learning_rate=self.base_learning_rate,
+                    best_eval_metric_value=get_initial_validation_value(self.validation_metric),
+                    best_increase_batch_size_eval_metric=get_initial_validation_value(
+                        self.increase_batch_size_eval_metric
+                    ),
+                    output_features=output_features,
+                )
+                logger.info("Failed to resume training from previous run. Creating fresh model training run.")
         else:
-            logger.info("Creating fresh model training run.")
             progress_tracker = get_new_progress_tracker(
                 batch_size=self.batch_size,
                 learning_rate=self.base_learning_rate,
@@ -618,6 +678,7 @@ class Trainer(BaseTrainer):
                 best_increase_batch_size_eval_metric=get_initial_validation_value(self.increase_batch_size_eval_metric),
                 output_features=output_features,
             )
+            logger.info("Creating fresh model training run.")
 
         # Distributed: broadcast initial variable states from rank 0 to all other processes.
         # This is necessary to ensure consistent initialization of all workers when
@@ -625,6 +686,9 @@ class Trainer(BaseTrainer):
         self.distributed.sync_model(self.dist_model)
         self.distributed.sync_optimizer(self.optimizer)
         self.scheduler.load_state_dict(self.distributed.broadcast_object(self.scheduler.state_dict()))
+
+        # For DeepSpeed, we need to set the batch size here in case it was modfied during auto-tuning
+        self.distributed.set_batch_size(self.dist_model, self.batch_size)
 
         set_random_seed(self.random_seed)
 
@@ -720,8 +784,9 @@ class Trainer(BaseTrainer):
                             f"Epoch {progress_tracker.epoch} took: "
                             f"{time_utils.strdelta((time.time() - start_time) * 1000.0)}."
                         )
-                        if not self.skip_save_progress:
-                            checkpoint_manager.save(progress_tracker.steps)
+                    if not self.skip_save_progress:
+                        checkpoint_manager.save(progress_tracker.steps)
+                        if self.is_coordinator():
                             progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
 
                     # Early stop if needed.
@@ -741,19 +806,32 @@ class Trainer(BaseTrainer):
             if test_summary_writer is not None:
                 test_summary_writer.close()
 
-            if self.is_coordinator() and not self.skip_save_progress:
+            if not self.skip_save_progress:
                 checkpoint_manager.close()
 
         # Load the best weights from saved checkpoint
-        if self.is_coordinator() and not self.skip_save_model:
-            self.model.load(save_path)
+        state_dict = None
+        if not self.skip_save_model:
+            state_dict = checkpoint_manager.get_best_checkpoint_state_for_inference(self.return_device)
+            if not return_state_dict:
+                if self.distributed.is_model_parallel():
+                    # Assume the full weights cannot fit in memory on GPU
+                    self.model = self.model.cpu()
+                self.model.load_state_dict(state_dict)
+        elif return_state_dict:
+            state_dict = self.model.cpu().state_dict()
+
+        # When running with Ray, we only need to return the state dict, as it's faster and cheaper to send the
+        # state dict over the network than to load the model state here, serialize it back to a state dict, then
+        # load it back on the head node.
+        return_value = self.model if not return_state_dict else state_dict
 
         # restore original sigint signal handler
         if self.original_sigint_handler and threading.current_thread() == threading.main_thread():
             signal.signal(signal.SIGINT, self.original_sigint_handler)
 
         return (
-            self.model,
+            return_value,
             progress_tracker.train_metrics,
             progress_tracker.validation_metrics,
             progress_tracker.test_metrics,
@@ -762,7 +840,7 @@ class Trainer(BaseTrainer):
     def _train_loop(
         self,
         batcher,
-        progress_tracker,
+        progress_tracker: ProgressTracker,
         save_path,
         train_summary_writer,
         progress_bar,
@@ -775,12 +853,12 @@ class Trainer(BaseTrainer):
         model_hyperparameters_path,
         output_features,
         metrics_names,
-        checkpoint_manager,
+        checkpoint_manager: CheckpointManager,
         final_steps_per_checkpoint: int,
         early_stopping_steps: int,
     ) -> bool:
         """Completes up to one epoch through the data."""
-        self.optimizer.zero_grad()
+        self.distributed.zero_grad(self.optimizer)
         batch_idx = 0
         while not batcher.last_batch() and progress_tracker.steps < self.total_steps:
             progress_tracker.learning_rate = self.optimizer.param_groups[0]["lr"]
@@ -834,11 +912,6 @@ class Trainer(BaseTrainer):
             self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path, sync_step=should_step))
 
             if progress_tracker.steps % final_steps_per_checkpoint == 0:
-                # Checkpoint the model.
-                if self.is_coordinator() and not self.skip_save_progress:
-                    checkpoint_manager.save(progress_tracker.steps)
-                    progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
-
                 should_break = self.run_evaluation(
                     training_set,
                     validation_set,
@@ -854,7 +927,19 @@ class Trainer(BaseTrainer):
                     loss,
                     all_losses,
                     early_stopping_steps,
+                    checkpoint_manager,
                 )
+
+                # Checkpoint the model.
+                # NOTE: Ideally we would do this before evaluation, but for some reason DeepSpeed will complain
+                # about inflight params if we do that, which is why we checkpoint after eval instead. In practice,
+                # this should not make a difference, xcept in the unlikely event an error occurs during eval and we
+                # want to resume from the last checkpoint, in which case we will lose slightly more progress this way.
+                if not self.skip_save_progress:
+                    checkpoint_manager.save(progress_tracker.steps)
+                    if self.is_coordinator():
+                        progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
+
                 if should_break:
                     return should_break
 
@@ -912,7 +997,11 @@ class Trainer(BaseTrainer):
 
     def evaluation(self, dataset, dataset_name, metrics_log, batch_size, progress_tracker):
         predictor = Predictor(
-            self.model, batch_size=batch_size, distributed=self.distributed, report_tqdm_to_ray=self.report_tqdm_to_ray
+            self.dist_model,
+            batch_size=batch_size,
+            distributed=self.distributed,
+            report_tqdm_to_ray=self.report_tqdm_to_ray,
+            model=self.model,
         )
         metrics, _ = predictor.batch_evaluation(dataset, collect_predictions=False, dataset_name=dataset_name)
 
@@ -933,6 +1022,7 @@ class Trainer(BaseTrainer):
         increase_batch_size_eval_split,
         early_stopping_steps: int,
         skip_save_model,
+        checkpoint_manager: CheckpointManager,
     ) -> bool:
         """Checks the history of validation scores.
 
@@ -990,10 +1080,12 @@ class Trainer(BaseTrainer):
                         f"'{validation_output_feature_name}' '{validation_metric}' increased by "
                         f"{absolute_eval_metric_value_change}."
                     )
-                # Save the model.
-                if not skip_save_model:
-                    logger.info("New best model saved.\n")
-                    self.model.save(save_path)
+
+            # Save the model.
+            if not skip_save_model:
+                logger.info("New best model saved.\n")
+                checkpoint_manager.save_best(progress_tracker.steps)
+                self.callback(lambda c: c.on_save_best_checkpoint(self, progress_tracker, save_path))
 
         last_improvement_in_steps = progress_tracker.steps - progress_tracker.best_eval_metric_steps
         progress_tracker.last_improvement_steps = last_improvement_in_steps
@@ -1202,6 +1294,10 @@ class Trainer(BaseTrainer):
             for callback in self.callbacks:
                 fn(callback)
 
+    @property
+    def return_device(self):
+        return self.device
+
 
 class RemoteTrainer(Trainer):
     def __init__(self, gpus=None, gpu_memory_limit=None, allow_parallel_threads=True, **kwargs):
@@ -1210,6 +1306,12 @@ class RemoteTrainer(Trainer):
         # Only return results from rank 0 to reduce network overhead
         self.train = self.distributed.return_first(self.train)
         self.train_online = self.distributed.return_first(self.train_online)
+
+    @property
+    def return_device(self):
+        # When returning the model weights from remote to driver, place them on CPU,
+        # as the driver likely doesn't have a GPU.
+        return "cpu"
 
 
 learning_rate_scale_fns = {

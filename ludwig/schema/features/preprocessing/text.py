@@ -1,5 +1,3 @@
-from typing import Optional
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import DROP_ROW, FILL_WITH_CONST, MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING, TEXT
 from ludwig.schema import utils as schema_utils
@@ -7,6 +5,7 @@ from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor
 from ludwig.schema.metadata import FEATURE_METADATA, PREPROCESSING_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
+from ludwig.schema.prompt import PromptConfig, PromptConfigField
 from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils import strings_utils
 from ludwig.utils.tokenizers import tokenizer_registry
@@ -17,6 +16,8 @@ from ludwig.utils.tokenizers import tokenizer_registry
 @ludwig_dataclass
 class TextPreprocessingConfig(BasePreprocessingConfig):
     """TextPreprocessingConfig is a dataclass that configures the parameters used for a text input feature."""
+
+    prompt: PromptConfig = PromptConfigField().get_default_field()
 
     pretrained_model_name_or_path: str = schema_utils.String(
         default=None,
@@ -140,17 +141,6 @@ class TextPreprocessingConfig(BasePreprocessingConfig):
     compute_idf: bool = schema_utils.Boolean(
         default=False,
         parameter_metadata=INTERNAL_ONLY,
-    )
-
-    prompt_template: Optional[str] = schema_utils.String(
-        default=None,
-        allow_none=True,
-        description=(
-            "Template used to construct a prompt for the model given an input feature. If None, the input feature "
-            "will be passed to the model as-is. The prompt must be of the form `prefix {input} suffix` where `{input}` "
-            "is the placeholder for the input feature. Prompting is useful when fine-tuning pretrained large language "
-            "models, where providing a relevant prompt to the model can improve its performance."
-        ),
     )
 
 
