@@ -15,7 +15,7 @@ from ludwig.schema.generation import LLMGenerationConfig, LLMGenerationConfigFie
 from ludwig.schema.hyperopt import HyperoptConfig, HyperoptField
 from ludwig.schema.model_types.base import ModelConfig, register_model_type
 from ludwig.schema.preprocessing import PreprocessingConfig, PreprocessingField
-from ludwig.schema.trainer import LLMTrainerConfig, LLMTrainerField
+from ludwig.schema.trainer import LLMTrainerConfig, LLMTrainerDataclassField
 from ludwig.schema.utils import ludwig_dataclass
 
 
@@ -39,17 +39,22 @@ class LLMModelConfig(ModelConfig):
         ),
     )
 
+    input_features: FeatureCollection[BaseInputFeatureConfig] = LLMInputFeatureSelection().get_list_field()
+    output_features: FeatureCollection[BaseOutputFeatureConfig] = LLMOutputFeatureSelection().get_list_field()
+
+    preprocessing: PreprocessingConfig = PreprocessingField().get_default_field()
+    defaults: Optional[LLMDefaultsConfig] = LLMDefaultsField().get_default_field()
+    hyperopt: Optional[HyperoptConfig] = HyperoptField().get_default_field()
+
+    # trainer: LLMTrainerConfig = LLMTrainerField().get_default_field()
+    trainer: LLMTrainerConfig = LLMTrainerDataclassField(
+        default="zeroshot",
+        description="The trainer to use for the model",
+    )
+
     generation: LLMGenerationConfig = LLMGenerationConfigField().get_default_field()
 
     adapter: BaseAdapterConfig = AdapterDataclassField(
         default=None,
         description="The adapter to use for the model. This is used for PEFT based fine-tuning",
     )
-
-    input_features: FeatureCollection[BaseInputFeatureConfig] = LLMInputFeatureSelection().get_list_field()
-    output_features: FeatureCollection[BaseOutputFeatureConfig] = LLMOutputFeatureSelection().get_list_field()
-
-    trainer: LLMTrainerConfig = LLMTrainerField().get_default_field()
-    preprocessing: PreprocessingConfig = PreprocessingField().get_default_field()
-    defaults: Optional[LLMDefaultsConfig] = LLMDefaultsField().get_default_field()
-    hyperopt: Optional[HyperoptConfig] = HyperoptField().get_default_field()
