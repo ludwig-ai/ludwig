@@ -433,8 +433,12 @@ def test_deprecation_warning_raised_for_unknown_parameters():
         ({"type": "bert", "trainable": True, "tuner": "lora"}, LoraConfig()),
         ({"type": "bert", "trainable": True, "tuner": {"type": "lora"}}, LoraConfig()),
         (
-            {"type": "bert", "trainable": True, "tuner": {"type": "lora", "r": 16, "bias": "all"}},
-            LoraConfig(r=16, bias="all"),
+            {
+                "type": "bert",
+                "trainable": True,
+                "tuner": {"type": "lora", "r": 16, "alpha": 32, "dropout": 0.1, "bias_type": "all"},
+            },
+            LoraConfig(r=16, alpha=32, dropout=0.1, bias_type="all"),
         ),
     ],
 )

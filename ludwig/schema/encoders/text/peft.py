@@ -54,7 +54,8 @@ class LoraConfig(BaseTunerConfig):
         description="The dropout probability for Lora layers.",
     )
 
-    bias: str = schema_utils.StringOptions(
+    # TODO(travis): figure out why calling this `bias` doesn't work
+    bias_type: str = schema_utils.StringOptions(
         options=["none", "all", "lora_only"],
         default="none",
         description="Bias type for Lora.",
@@ -67,7 +68,7 @@ class LoraConfig(BaseTunerConfig):
             r=self.r,
             lora_alpha=self.alpha,
             lora_dropout=self.dropout,
-            bias=self.bias,
+            bias=self.bias_type,
         )
 
 
@@ -105,19 +106,27 @@ def TunerDataclassField(
 
         def _jsonschema_type_mapping(self):
             return {
-                "type": "object",
-                "properties": {
-                    "type": {
-                        "type": "string",
-                        "enum": list(tuner_registry.keys()),
-                        "default": default,
-                        "description": "The type of PEFT tuner to use during fine-tuning",
+                "oneOf": [
+                    {
+                        "type": "object",
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "enum": list(tuner_registry.keys()),
+                                "default": default,
+                                "description": "MISSING",
+                            },
+                        },
+                        "title": "tuner_object_options",
+                        "allOf": get_tuner_conds(),
+                        "required": ["type"],
+                        "description": description,
                     },
-                },
+                    {"type": "string", "title": "tuner_string_options", "description": "MISSING"},
+                    {"type": "null", "title": "tuner_null_option", "description": "MISSING"},
+                ],
                 "title": "tuner_options",
-                "allOf": get_tuner_conds(),
-                "required": ["type"],
-                "description": description,
+                "description": "The type of PEFT tuner to use during fine-tuning",
             }
 
     return TunerSelection().get_default_field()
