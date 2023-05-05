@@ -272,10 +272,10 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
 #     "backend",
 #     [
 #         pytest.param(LOCAL_BACKEND, id="local"),
-#         # pytest.param(RAY_BACKEND, id="ray"),
+#         pytest.param(RAY_BACKEND, id="ray"),
 #     ],
 # )
-# def test_llm_prompt_tuning(tmpdir, backend):  # , ray_cluster_4cpu):
+# def test_llm_prompt_tuning(tmpdir, backend, ray_cluster_4cpu):
 #     input_features = [{"name": "review", "type": "text"}]
 #     output_features = [
 #         category_feature(name="label", preprocessing={"fallback_label": "3"}, decoder={"type": "classifier"})
@@ -302,8 +302,6 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
 #         GENERATION: get_generation_config(),
 #         ADAPTER: {
 #             "type": "prompt_tuning",
-#             "task_type": "CAUSAL_LM",
-#             "prompt_tuning_init": "TEXT",
 #             "num_virtual_tokens": 8,
 #             "prompt_tuning_init_text": "Classify if the review is positive, negative, or neutral: ",
 #         },
@@ -321,6 +319,9 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
 #             {"review": "The food was okay.", "label": "neutral"},
 #         ]
 #     )
+
+#     # TODO(Arnav): Make sure we can load the saved model
+#     # and then use it for predictions
 
 #     preds, _ = model.predict(dataset=prediction_df, output_directory=str(tmpdir))
 #     preds = convert_preds(backend, preds)

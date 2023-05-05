@@ -59,11 +59,9 @@ config = yaml.safe_load(
               decoder:
                 type: classifier
         model_type: llm
-        model_name: bigscience/bloomz-560m
+        model_name: facebook/opt-1.3b
         adapter:
             type: prompt_tuning
-            task_type: CAUSAL_LM
-            prompt_tuning_init: TEXT
             num_virtual_tokens: 16
             prompt_tuning_init_text: "Classify the review sentiment as one positive, negative, neutral: "
         trainer:
