@@ -7,7 +7,6 @@ from typing import Dict, Tuple, Union
 import numpy as np
 import torch
 import torchmetrics
-from peft import get_peft_model, PeftConfig, PeftModel, PromptTuningConfig  # get_peft_config,
 from transformers import AutoModelForCausalLM, AutoTokenizer, GenerationConfig
 
 from ludwig.constants import LOGITS, MODEL_LLM
@@ -19,6 +18,7 @@ from ludwig.schema.features.base import BaseOutputFeatureConfig, FeatureCollecti
 from ludwig.schema.model_types.llm import LLMModelConfig
 from ludwig.utils.augmentation_utils import AugmentationPipelines
 from ludwig.utils.data_utils import clear_data_cache
+from ludwig.utils.logging_utils import log_once
 from ludwig.utils.output_feature_utils import set_output_feature_tensor
 
 logger = logging.getLogger(__name__)
@@ -52,6 +52,8 @@ class LLM(BaseModel):
         # for fine-tuning.
         self.adapter = copy.deepcopy(self.config_obj.adapter)
         if self.config_obj.adapter:
+            from peft import get_peft_model, PromptTuningConfig  # get_peft_config, # noqa
+
             # TODO: Refactor once adapter is a config object instead of a dict
             self.adapter["peft_type"] = self.adapter.pop("type").upper()
             self.adapter["tokenizer_name_or_path"] = self.model_name
@@ -60,8 +62,6 @@ class LLM(BaseModel):
             logger.info("Trainable Parameters For Fine-Tuning:")
             self.model.print_trainable_parameters()
 
-        self.max_new_tokens = self.config_obj.generation.max_new_tokens
-
         # Determines the maximum length of the context (input + output tokens)
         if hasattr(self.model.config, "max_sequence_length"):
             self.context_len = self.model.config.max_sequence_length
@@ -69,8 +69,10 @@ class LLM(BaseModel):
             self.context_len = self.model.config.max_position_embeddings
         else:
             self.context_len = 2048
+
         # max input length value copied from FastChat
         # https://github.com/lm-sys/FastChat/blob/0e958b852a14f4bef5f0e9d7a5e7373477329cf2/fastchat/serve/inference.py#L183  # noqa
+        self.max_new_tokens = self.config_obj.generation.max_new_tokens
         self.max_input_length = self.context_len - self.max_new_tokens - 8
 
         # Used only for its metadata about the vocabulary
@@ -110,10 +112,9 @@ class LLM(BaseModel):
     def to_device(self, device):
         device = torch.device(device)
         if device == self.curr_device:
-            logger.warning(f"LLM already on device '{device}'. Skipping device placement step.")
             return self
         else:
-            logger.info(f"Moving LLM from '{self.curr_device}' to '{device}'.")
+            log_once(f"Moving LLM from '{self.curr_device}' to '{device}'.")
 
         model_kwargs = {}
         if device == torch.device("cuda"):
@@ -246,6 +247,7 @@ class LLM(BaseModel):
                 sequences_list,
                 llm_model_input_lengths=input_lengths,
             )
+
         return self.extract(outputs)
 
     def extract(
@@ -253,7 +255,9 @@ class LLM(BaseModel):
         outputs,
     ):
         """Extracts predictions and probabilities from the model outputs."""
-        return {self.config_obj.output_features[0].name: outputs}
+        return {
+            self.config_obj.output_features[0].name: outputs,
+        }
 
     def update_metrics(self, targets, predictions):
         """Updates the model's metrics given targets and predictions."""
@@ -326,6 +330,8 @@ class LLM(BaseModel):
     def load(self, save_path):
         """Loads the model from the given path."""
         if self.adapter:
+            from peft import PeftConfig, PeftModel  # noqa
+
             weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
             config = PeftConfig.from_pretrained(weights_save_path)
             config.inference_mode = False

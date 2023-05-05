@@ -1,7 +1,7 @@
 import logging
 import os
 import time
-from typing import Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional, Union
 
 from torch.utils.tensorboard import SummaryWriter
 
@@ -28,6 +28,7 @@ from ludwig.utils.trainer_utils import append_metrics, get_new_progress_tracker,
 logger = logging.getLogger(__name__)
 
 
+@register_ray_trainer(MODEL_LLM)
 @register_trainer(MODEL_LLM)
 class ZeroShotTrainer(BaseTrainer):
     """ZeroShotTrainer is a trainer that does not train a model."""
@@ -114,7 +115,6 @@ class ZeroShotTrainer(BaseTrainer):
         return_state_dict: bool = False,
         **kwargs,
     ):
-        logger.info("Starting Training")
         output_features = self.model.output_features
 
         # ====== Setup file names =======
@@ -196,8 +196,10 @@ class ZeroShotTrainer(BaseTrainer):
         config: ModelConfigDict,
         training_set: Dataset,
         random_seed: int = default_random_seed,
-        max_trials: int = 10,
+        max_trials: int = 20,
         halving_limit: int = 3,
+        snapshot_weights: bool = True,
+        on_best_batch_size_updated: Optional[Callable[[int, float, int], None]] = None,
     ) -> int:
         return 1
 
@@ -371,8 +373,8 @@ class ZeroShotTrainer(BaseTrainer):
         return False
 
 
-@register_ray_trainer(MODEL_LLM)
-@register_trainer(MODEL_LLM)
+# @register_ray_trainer(MODEL_LLM)
+# @register_trainer(MODEL_LLM)
 class FineTuneTrainer(Trainer):
     @staticmethod
     def get_schema_cls():
