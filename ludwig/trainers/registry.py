@@ -1,9 +1,21 @@
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.utils.registry import DEFAULT_KEYS, Registry
 
-trainers_registry = Registry()
-ray_trainers_registry = Registry()
+_trainers_registry = Registry()
+_ray_trainers_registry = Registry()
 
 
+@DeveloperAPI
+def get_trainers_registry() -> Registry:
+    return _trainers_registry
+
+
+@DeveloperAPI
+def get_ray_trainers_registry() -> Registry:
+    return _ray_trainers_registry
+
+
+@DeveloperAPI
 def register_trainer(model_type: str, default=False):
     """Register a trainer class that supports training the given model types.
 
@@ -15,17 +27,18 @@ def register_trainer(model_type: str, default=False):
     """
 
     def wrap(cls):
-        trainers_registry[model_type] = cls
+        _trainers_registry[model_type] = cls
         if default:
-            if DEFAULT_KEYS[0] in trainers_registry:
+            if DEFAULT_KEYS[0] in _trainers_registry:
                 raise ValueError(f"Default trainer already registered for model type {model_type}")
             for key in DEFAULT_KEYS:
-                trainers_registry[key] = cls
+                _trainers_registry[key] = cls
         return cls
 
     return wrap
 
 
+@DeveloperAPI
 def register_ray_trainer(model_type: str, default=False):
     """Register a trainer class that supports training the given model types with Ray backend.
 
@@ -37,12 +50,12 @@ def register_ray_trainer(model_type: str, default=False):
     """
 
     def wrap(cls):
-        ray_trainers_registry[model_type] = cls
+        _ray_trainers_registry[model_type] = cls
         if default:
-            if DEFAULT_KEYS[0] in ray_trainers_registry:
+            if DEFAULT_KEYS[0] in _ray_trainers_registry:
                 raise ValueError(f"Default trainer already registered for model type {model_type}")
             for key in DEFAULT_KEYS:
-                ray_trainers_registry[key] = cls
+                _ray_trainers_registry[key] = cls
         return cls
 
     return wrap

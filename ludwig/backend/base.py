@@ -190,9 +190,9 @@ class LocalTrainingMixin:
     def create_trainer(
         self, config: Union[ECDTrainerConfig, GBMTrainerConfig], model: BaseModel, **kwargs
     ) -> "BaseTrainer":  # noqa: F821
-        from ludwig.trainers.registry import trainers_registry
+        from ludwig.trainers.registry import get_trainers_registry
 
-        trainer_cls = get_from_registry(model.type(), trainers_registry)
+        trainer_cls = get_from_registry(model.type(), get_trainers_registry())
 
         return trainer_cls(config=config, model=model, **kwargs)
 
