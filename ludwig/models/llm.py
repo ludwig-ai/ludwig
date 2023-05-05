@@ -50,17 +50,27 @@ class LLM(BaseModel):
 
         # If an adapter config is provided, we want to wrap the model with a PEFT model
         # for fine-tuning.
-        self.adapter = copy.deepcopy(self.config_obj.adapter)
         if self.config_obj.adapter:
-            from peft import get_peft_model, PromptTuningConfig  # get_peft_config, # noqa
+            from peft import get_peft_config, get_peft_model
 
-            # TODO: Refactor once adapter is a config object instead of a dict
-            self.adapter["peft_type"] = self.adapter.pop("type").upper()
-            self.adapter["tokenizer_name_or_path"] = self.model_name
-            # TODO: Figure out how to use peft_model_config properly
-            self.model = get_peft_model(self.model, PromptTuningConfig(**self.adapter))
+            # If the adapter config specifies a tokenizer name or path, it must match the model name
+            # Otherwise, we will set the tokenizer name or path to the model name
+            if (
+                self.config_obj.adapter.tokenizer_name_or_path
+                and self.config_obj.adapter.tokenizer_name_or_path != self.model_name
+            ):
+                raise ValueError(
+                    f"Tokenizer name or path {self.config_obj.adapter.tokenizer_name_or_path} specified in adapter "
+                    f"config must match the model name {self.model_name}."
+                )
+
+            self.config_obj.adapter.tokenizer_name_or_path = self.model_name
+            self.model = get_peft_model(self.model, get_peft_config(self.config_obj.adapter.to_dict()))
+
+            logger.info("==================================================")
             logger.info("Trainable Parameters For Fine-Tuning:")
             self.model.print_trainable_parameters()
+            logger.info("==================================================")
 
         # Determines the maximum length of the context (input + output tokens)
         if hasattr(self.model.config, "max_sequence_length"):
@@ -205,7 +215,7 @@ class LLM(BaseModel):
 
         input_ids = self.get_input_ids(inputs)
 
-        if self.adapter:
+        if self.config_obj.adapter:
             # Forward pass using PEFT model for fine-tuning
             model_outputs = self.model(input_ids)
             # Pass generated tokens through decoder after averaging the token probabilities
@@ -311,7 +321,7 @@ class LLM(BaseModel):
         """Returns the model's predictions for each output feature."""
         predictions = {}
         for of_name in self.output_features:
-            if self.adapter:
+            if self.config_obj.adapter:
                 predictions[of_name] = self.output_features.get(of_name).predictions(outputs, of_name)
             else:
                 generated_predictions = outputs[of_name]
@@ -320,7 +330,7 @@ class LLM(BaseModel):
 
     def save(self, save_path):
         """Saves the model to the given path."""
-        if self.adapter:
+        if self.config_obj.adapter:
             weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
             self.model.save_pretrained(weights_save_path)
         else:
@@ -328,7 +338,7 @@ class LLM(BaseModel):
 
     def load(self, save_path):
         """Loads the model from the given path."""
-        if self.adapter:
+        if self.config_obj.adapter:
             from peft import PeftConfig, PeftModel  # noqa
 
             weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
