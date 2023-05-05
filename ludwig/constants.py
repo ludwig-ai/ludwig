@@ -58,6 +58,7 @@ BINARY_WEIGHTED_CROSS_ENTROPY = "binary_weighted_cross_entropy"
 THRESHOLD = "threshold"
 VALIDATION_METRIC = "validation_metric"
 ACCURACY = "accuracy"
+ACCURACY_MICRO = "accuracy_micro"
 HITS_AT_K = "hits_at_k"
 MEAN_HITS_AT_K = "mean_hits_at_k"
 ERROR = "error"
@@ -69,6 +70,7 @@ ROOT_MEAN_SQUARED_PERCENTAGE_ERROR = "root_mean_squared_percentage_error"
 MEAN_ABSOLUTE_ERROR = "mean_absolute_error"
 MEAN_ABSOLUTE_PERCENTAGE_ERROR = "mean_absolute_percentage_error"
 HUBER = "huber"
+CORN = "corn"
 R2 = "r2"
 EDIT_DISTANCE = "edit_distance"
 PERPLEXITY = "perplexity"
@@ -130,6 +132,8 @@ ENCODER_OUTPUT_STATE = "encoder_output_state"
 PROJECTION_INPUT = "projection_input"
 LEARNING_RATE_SCHEDULER = "learning_rate_scheduler"
 
+SEMANTIC = "semantic"
+
 RANDOM = "random"
 SUM = "sum"
 APPEND = "append"
@@ -190,12 +194,16 @@ EPOCHS = "epochs"
 BATCH_SIZE = "batch_size"
 EVAL_BATCH_SIZE = "eval_batch_size"
 DEFAULT_BATCH_SIZE = "auto"
+FALLBACK_BATCH_SIZE = 128
+# The smallest batch size that is supported on Ludwig.
+MINIMUM_BATCH_SIZE = 1
 # 2^40. Used for `max_batch_size` config param. Not a hard constraint for `batch_size` config param.
 MAX_POSSIBLE_BATCH_SIZE = 1099511627776
-# min batch size. Used as a floor for batch size tuning. Not a hard constraint for `batch_size` config params.
-MIN_POSSIBLE_BATCH_SIZE = 2
+# min batch size. Used as a floor for batch size tuning.
+MIN_POSSIBLE_BATCH_SIZE = 1
 # max batch size for dataset is 20% of dataset size
 MAX_BATCH_SIZE_DATASET_FRACTION = 0.2
+MAX_CPU_BATCH_SIZE = 128
 LEARNING_RATE = "learning_rate"
 INPUT_SIZE = "input_size"
 USE_BIAS = "use_bias"

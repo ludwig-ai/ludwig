@@ -360,7 +360,7 @@ if you have any questions.
   ludwig serve --model_path=/path/to/model
   ```
 
-  Ludwig supports exporting models to efficient Torschscript bundles.
+  Ludwig supports exporting models to efficient Torchscript bundles.
 
   ```shell
   ludwig export_torchscript -–model_path=/path/to/model

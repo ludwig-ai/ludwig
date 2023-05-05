@@ -691,6 +691,7 @@ class GBMTrainerConfig(BaseTrainerConfig):
 
 
 @DeveloperAPI
+@register_trainer_schema(MODEL_LLM)
 @ludwig_dataclass
 class LLMTrainerConfig(BaseTrainerConfig):
     """Base class for all LLM trainer configs."""
@@ -717,6 +718,7 @@ class LLMTrainerConfig(BaseTrainerConfig):
 
     train_steps: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Number of training steps to train in the LLM trainer.",
     )
 
@@ -744,6 +746,11 @@ class LLMTrainerConfig(BaseTrainerConfig):
         description="Batch size used for evaluation in the LLM trainer.",
     )
 
+    evaluate_training_set: bool = schema_utils.Boolean(
+        default=False,
+        description="Whether to evaluate the training set in the LLM trainer. Note: this operation may be slow.",
+    )
+
 
 @DeveloperAPI
 @register_trainer_schema(MODEL_LLM)
@@ -759,6 +766,8 @@ def get_model_type_jsonschema(model_type: str = MODEL_ECD):
     enum = [MODEL_ECD]
     if model_type == MODEL_GBM:
         enum = [MODEL_GBM]
+    elif model_type == MODEL_LLM:
+        enum = [MODEL_LLM]
 
     return {
         "type": "string",

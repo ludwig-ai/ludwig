@@ -51,10 +51,16 @@ def load_trainer_with_kwargs(
     In particular, it chooses the correct default type for an incoming config (if it doesn't have one already), but
     otherwise passes all other parameters through without change.
     """
-    from ludwig.constants import MODEL_ECD
-    from ludwig.schema.trainer import ECDTrainerConfig, GBMTrainerConfig
+    from ludwig.constants import MODEL_ECD, MODEL_GBM, MODEL_LLM
+    from ludwig.schema.trainer import ECDTrainerConfig, GBMTrainerConfig, LLMTrainerConfig
 
-    trainer_schema = ECDTrainerConfig if model_type == MODEL_ECD else GBMTrainerConfig
+    # TODO: use registry pattern for trainers
+    if model_type == MODEL_ECD:
+        trainer_schema = ECDTrainerConfig
+    elif model_type == MODEL_GBM:
+        trainer_schema = GBMTrainerConfig
+    elif model_type == MODEL_LLM:
+        trainer_schema = LLMTrainerConfig
 
     return load_config_with_kwargs(trainer_schema, kwargs)
 

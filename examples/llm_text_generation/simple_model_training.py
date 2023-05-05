@@ -52,7 +52,7 @@ config = yaml.safe_load(
             - name: Answer
               type: text
         model_type: llm
-        generation_config:
+        generation:
             temperature: 0.1
             top_p: 0.75
             top_k: 40

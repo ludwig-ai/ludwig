@@ -174,6 +174,15 @@ def test_local_gbm_number(tmpdir, local_backend):
 
 
 @pytest.mark.distributed
+# This test runs in a Ray remote function to isolate the test in a separate process
+# that doesn't inherit the global state that is kept from each test.
+def test_ray_gbm_number_remote(tmpdir, ray_backend, ray_cluster_5cpu):
+    import ray
+
+    ray.get(ray.remote(run_test_gbm_number).remote(tmpdir, ray_backend))
+
+
+@pytest.mark.distributed
 def test_ray_gbm_number(tmpdir, ray_backend, ray_cluster_5cpu):
     run_test_gbm_number(tmpdir, ray_backend)
 
