@@ -49,6 +49,8 @@ backend:
     use_gpu: true
     strategy:
       type: deepspeed
+      fp16:
+        enabled: true
       zero_optimization:
         stage: 3
         offload_optimizer:

@@ -40,7 +40,6 @@ class DeepSpeedStrategy(DDPStrategy):
         self,
         zero_optimization: Optional[Dict[str, Any]] = None,
         fp16: Optional[Dict[str, Any]] = None,
-        bf16: Optional[Dict[str, Any]] = None,
         compression_training: Optional[Dict[str, Any]] = None,
         **kwargs
     ):
@@ -53,7 +52,6 @@ class DeepSpeedStrategy(DDPStrategy):
         super().__init__(**kwargs)
         self.zero_optimization = zero_optimization or DEFAULT_ZERO_OPTIMIZATION
         self.fp16 = fp16
-        self.bf16 = bf16
         self.compression_training = compression_training
 
         if init_deepspeed:
@@ -82,14 +80,19 @@ class DeepSpeedStrategy(DDPStrategy):
             },
             "optimizer": {"type": optimizer_cls.__name__, "params": optimizer_kwargs},
             "zero_optimization": self.zero_optimization,
-            "fp16": self.fp16,
-            "bf16": self.bf16,
-            "compression_training": self.compression_training,
             "gradient_clipping": trainer_config.gradient_clipping.clipglobalnorm,
             "train_micro_batch_size_per_gpu": batch_size,
             "gradient_accumulation_steps": trainer_config.gradient_accumulation_steps,
             "steps_per_print": trainer_config.steps_per_checkpoint or 10000,
         }
+
+        # DeepSpeed doesn't like passing these params as None values
+        # TODO(travis): bfloat16, which requires fixing numpy conversion on cpu
+        if self.fp16 is not None:
+            ds_config["fp16"] = self.fp16
+        if self.compression_training is not None:
+            ds_config["compression_training"] = self.compression_training
+
         model_engine, optimizer, _, _ = deepspeed.initialize(
             model=model,
             model_parameters=model.parameters(),

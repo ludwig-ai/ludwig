@@ -15,14 +15,12 @@ class DeepSpeedBackend(DataParallelBackend):
         self,
         zero_optimization: Optional[Dict[str, Any]] = None,
         fp16: Optional[Dict[str, Any]] = None,
-        bf16: Optional[Dict[str, Any]] = None,
         compression_training: Optional[Dict[str, Any]] = None,
         **kwargs
     ):
         super().__init__(**kwargs)
         self.zero_optimization = zero_optimization
         self.fp16 = fp16
-        self.bf16 = bf16
         self.compression_training = compression_training
 
     def initialize(self):
@@ -33,7 +31,6 @@ class DeepSpeedBackend(DataParallelBackend):
             self.BACKEND_TYPE,
             zero_optimization=self.zero_optimization,
             fp16=self.fp16,
-            bf16=self.bf16,
             compression_training=self.compression_training,
         )
 
