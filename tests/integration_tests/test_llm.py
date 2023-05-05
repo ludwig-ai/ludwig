@@ -272,10 +272,10 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
 #     "backend",
 #     [
 #         pytest.param(LOCAL_BACKEND, id="local"),
-#         pytest.param(RAY_BACKEND, id="ray"),
+#         # pytest.param(RAY_BACKEND, id="ray"),
 #     ],
 # )
-# def test_llm_prompt_tuning(tmpdir, backend, ray_cluster_4cpu):
+# def test_llm_prompt_tuning(tmpdir, backend):  # , ray_cluster_4cpu):
 #     input_features = [{"name": "review", "type": "text"}]
 #     output_features = [
 #         category_feature(name="label", preprocessing={"fallback_label": "3"}, decoder={"type": "classifier"})
@@ -309,9 +309,6 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
 #         },
 #         INPUT_FEATURES: input_features,
 #         OUTPUT_FEATURES: output_features,
-#         PREPROCESSING: {
-#             "split": {"type": "fixed"},
-#         },
 #     }
 
 #     model = LudwigModel(config, backend=backend)

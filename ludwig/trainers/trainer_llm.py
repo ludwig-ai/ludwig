@@ -28,8 +28,8 @@ from ludwig.utils.trainer_utils import append_metrics, get_new_progress_tracker,
 logger = logging.getLogger(__name__)
 
 
-@register_ray_trainer(MODEL_LLM)
-@register_trainer(MODEL_LLM)
+# @register_ray_trainer(MODEL_LLM)
+# @register_trainer(MODEL_LLM)
 class ZeroShotTrainer(BaseTrainer):
     """ZeroShotTrainer is a trainer that does not train a model."""
 
@@ -373,8 +373,8 @@ class ZeroShotTrainer(BaseTrainer):
         return False
 
 
-# @register_ray_trainer(MODEL_LLM)
-# @register_trainer(MODEL_LLM)
+@register_ray_trainer(MODEL_LLM)
+@register_trainer(MODEL_LLM)
 class FineTuneTrainer(Trainer):
     @staticmethod
     def get_schema_cls():
