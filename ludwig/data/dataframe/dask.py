@@ -242,7 +242,15 @@ class DaskEngine(DataFrameEngine):
         return from_dask(df)
 
     def from_ray_dataset(self, dataset) -> dd.DataFrame:
-        return dataset.to_dask()
+        # NOTE: When the dataset is an empty MapBatches(BatchInferModel), Ray's native to_dask() raises an IndexError.
+        try:
+            return dataset.to_dask()
+        except IndexError as e:
+            logging.warning(
+                f"Encountered an empty Dataset, {dataset.show()} with error {e}. Manually returning an empty dask "
+                "DataFrame."
+            )
+            return dd.DataFrame.from_dict({}, npartitions=1)
 
     def reset_index(self, df):
         return reset_index_across_all_partitions(df)
