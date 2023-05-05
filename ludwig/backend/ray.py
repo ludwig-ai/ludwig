@@ -490,8 +490,10 @@ class RayTrainerV2(BaseTrainer):
         results = ckpt.to_dict()["state_dict"]
 
         # load state dict back into the model
+        # use `strict=False` to account for PEFT training, where the saved state in the checkpoint
+        # might only contain the PEFT layers that were modified during training
         state_dict, *args = results
-        self.model.load_state_dict(state_dict)
+        self.model.load_state_dict(state_dict, strict=False)
         results = (self.model, *args)
 
         return results
