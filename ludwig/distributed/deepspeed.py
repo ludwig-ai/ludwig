@@ -84,7 +84,12 @@ class DeepSpeedStrategy(DDPStrategy):
             config=ds_config,
             dist_init_required=False,
         )
-        return model_engine, optimizer.optimizer
+
+        if hasattr(optimizer, "optimizer"):
+            # Zero-3 wraps the optimizer
+            optimizer = optimizer.optimizer
+
+        return model_engine, optimizer
 
     def to_device(self, model: nn.Module, device: Optional[torch.device] = None) -> nn.Module:
         return model
@@ -191,4 +196,10 @@ class DeepSpeedCheckpoint(Checkpoint):
         self.model.save_checkpoint(save_path, client_state=client_state)
 
     def get_state_for_inference(self, save_path: str, device: Optional[torch.device] = None) -> Mapping[str, Any]:
-        return get_fp32_state_dict_from_zero_checkpoint(save_path)
+        if self.model.zero_optimization_stage() == 3:
+            return get_fp32_state_dict_from_zero_checkpoint(save_path)
+
+        self.model.load_checkpoint(
+            save_path, load_optimizer_states=False, load_lr_scheduler_states=False, load_module_only=True
+        )
+        return self.model.module.cpu().state_dict()
