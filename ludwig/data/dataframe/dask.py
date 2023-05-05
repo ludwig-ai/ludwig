@@ -242,7 +242,14 @@ class DaskEngine(DataFrameEngine):
         return from_dask(df)
 
     def from_ray_dataset(self, dataset) -> dd.DataFrame:
-        return dataset.to_dask()
+        # When the dataset is empty, e.g. Dataset(num_blocks=1, num_rows=0, schema=Unknown schema), Ray's native
+        # .to_dask() raises an IndexError.
+        try:
+            return dataset.to_dask()
+        except IndexError as e:
+            logging.warning(
+                f"Encountered an empty Dataset, {dataset.show()}. Manually returning an empty dask DataFrame.")
+            return dd.DataFrame.from_dict({}, npartitions=1)
 
     def reset_index(self, df):
         return reset_index_across_all_partitions(df)
