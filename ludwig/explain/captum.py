@@ -22,6 +22,7 @@ from ludwig.constants import (
     DATE,
     IMAGE,
     INPUT_FEATURES,
+    MINIMUM_BATCH_SIZE,
     NAME,
     NUMBER,
     PREPROCESSING,
@@ -68,7 +69,7 @@ def retry_with_halved_batch_size(run_config: ExplanationRunConfig):
     def retry_with_halved_batch_size_fn(fn):
         def retry_with_halved_batch_size_wrapper(*args, **kwargs):
             latest_error = None
-            while run_config.batch_size >= 1:
+            while run_config.batch_size >= MINIMUM_BATCH_SIZE:
                 try:
                     return fn(*args, **kwargs)
                 except RuntimeError as e:
