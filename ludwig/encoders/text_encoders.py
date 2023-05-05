@@ -20,7 +20,7 @@ from typing import Any, Callable, Dict, List, Optional, Type, TYPE_CHECKING, Typ
 import numpy as np
 import torch
 from torch import nn
-from peft import LoraConfig, get_peft_model
+from peft import get_peft_model
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import TEXT
@@ -28,6 +28,7 @@ from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.schema.encoders.sequence_encoders import SequenceEncoderConfig
+from ludwig.schema.encoders.text.peft import BaseTunerConfig
 from ludwig.schema.encoders.text_encoders import (
     ALBERTConfig,
     AutoTransformerConfig,
@@ -129,6 +130,12 @@ class HFTextEncoder(Encoder):
         if vocab_size != transformer.config.vocab_size:
             transformer.resize_token_embeddings(vocab_size)
 
+    def _wrap_transformer(self, transformer: nn.Module, tuner: Optional[BaseTunerConfig], trainable: bool):
+        if tuner is not None:
+            peft_config = tuner.to_config()
+            transformer = get_peft_model(transformer, peft_config)
+        return FreezeModule(transformer, frozen=not trainable)
+
     def get_embedding_layer(self) -> nn.Module:
         return next(self.transformer.module.children())
 
@@ -150,6 +157,7 @@ class HFTextEncoderImpl(HFTextEncoder):
         saved_weights_in_checkpoint: bool,
         reduce_output: str,
         trainable: bool,
+        tuner: Optional[BaseTunerConfig],
         pretrained_kwargs: Dict,
         encoder_config: Optional[ConfigT],
         **kwargs,
@@ -175,7 +183,7 @@ class HFTextEncoderImpl(HFTextEncoder):
         self.reduce_output = reduce_output
         if not self.reduce_output == "cls_pooled":
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-        self.transformer = FreezeModule(transformer, frozen=not trainable)
+        self.transformer = self._wrap_transformer(transformer, tuner, trainable)
         self.max_sequence_length = max_sequence_length
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
@@ -229,6 +237,7 @@ class ALBERTEncoder(HFTextEncoder):
         pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         trainable: bool = False,
+        tuner: Optional[BaseTunerConfig] = None,
         reduce_output: str = "cls_pooled",
         vocab_size: int = 30000,
         embedding_size: int = 128,
@@ -297,7 +306,7 @@ class ALBERTEncoder(HFTextEncoder):
         self.reduce_output = reduce_output
         if not self.reduce_output == "cls_pooled":
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-        self.transformer = FreezeModule(transformer, frozen=not trainable)
+        self.transformer = self._wrap_transformer(transformer, tuner, trainable)
         self.max_sequence_length = max_sequence_length
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
@@ -356,6 +365,7 @@ class MT5Encoder(HFTextEncoder):
         pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         trainable: bool = False,
+        tuner: Optional[BaseTunerConfig] = None,
         reduce_output: str = "sum",
         vocab_size: int = 250112,
         d_model: int = 512,
@@ -423,7 +433,7 @@ class MT5Encoder(HFTextEncoder):
         if reduce_output == "cls_pooled":
             _cls_pooled_error_message(self.__class__.__name__)
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-        self.transformer = FreezeModule(transformer, frozen=not trainable)
+        self.transformer = self._wrap_transformer(transformer, tuner, trainable)
         self.max_sequence_length = max_sequence_length
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
@@ -478,6 +488,7 @@ class XLMRoBERTaEncoder(HFTextEncoder):
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "cls_pooled",
         trainable: bool = False,
+        tuner: Optional[BaseTunerConfig] = None,
         vocab_size: int = None,
         pad_token_id: int = 1,
         bos_token_id: int = 0,
@@ -519,7 +530,7 @@ class XLMRoBERTaEncoder(HFTextEncoder):
         self.reduce_output = reduce_output
         if not self.reduce_output == "cls_pooled":
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-        self.transformer = FreezeModule(transformer, frozen=not trainable)
+        self.transformer = self._wrap_transformer(transformer, tuner, trainable)
         self.max_sequence_length = max_sequence_length
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
@@ -578,6 +589,7 @@ class BERTEncoder(HFTextEncoder):
         pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         trainable: bool = False,
+        tuner: Optional[BaseTunerConfig] = None,
         reduce_output: str = "cls_pooled",
         vocab_size: int = 30522,
         hidden_size: int = 768,
@@ -639,10 +651,7 @@ class BERTEncoder(HFTextEncoder):
         if not self.reduce_output == "cls_pooled":
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
 
-        peft_config = LoraConfig(inference_mode=False, r=8, lora_alpha=32, lora_dropout=0.1)
-        transformer = get_peft_model(transformer, peft_config)
-
-        self.transformer = FreezeModule(transformer, frozen=not trainable)
+        self.transformer = self._wrap_transformer(transformer, tuner, trainable)
 
         self.max_sequence_length = max_sequence_length
 
@@ -703,6 +712,7 @@ class XLMEncoder(HFTextEncoder):
         pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         trainable: bool = False,
+        tuner: Optional[BaseTunerConfig] = None,
         reduce_output: str = "sum",
         vocab_size: int = 30145,
         emb_dim: int = 2048,
@@ -781,7 +791,7 @@ class XLMEncoder(HFTextEncoder):
 
         self.config = self._init_config(transformer, hf_config_params, encoder_config)
 
-        self.transformer = FreezeModule(transformer, frozen=not trainable)
+        self.transformer = self._wrap_transformer(transformer, tuner, trainable)
         self.reduce_output = reduce_output
         if self.reduce_output == "cls_pooled":
             _cls_pooled_error_message(self.__class__.__name__)
@@ -842,6 +852,7 @@ class GPTEncoder(HFTextEncoder):
         pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         trainable: bool = False,
+        tuner: Optional[BaseTunerConfig] = None,
         vocab_size: int = 30522,
         n_positions: int = 40478,
         n_ctx: int = 512,
@@ -896,7 +907,7 @@ class GPTEncoder(HFTextEncoder):
         if self.reduce_output == "cls_pooled":
             _cls_pooled_error_message(self.__class__.__name__)
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-        self.transformer = FreezeModule(transformer, frozen=not trainable)
+        self.transformer = self._wrap_transformer(transformer, tuner, trainable)
         self.max_sequence_length = max_sequence_length
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
@@ -944,6 +955,7 @@ class GPT2Encoder(HFTextEncoder):
         pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         reduce_output: str = "sum",
         trainable: bool = False,
+        tuner: Optional[BaseTunerConfig] = None,
         vocab_size: int = 50257,
         n_positions: int = 1024,
         n_ctx: int = 1024,
@@ -996,7 +1008,7 @@ class GPT2Encoder(HFTextEncoder):
         else:
             self.config = None
 
-        self.transformer = FreezeModule(transformer, frozen=not trainable)
+        self.transformer = self._wrap_transformer(transformer, tuner, trainable)
         self.max_sequence_length = max_sequence_length
         self.reduce_output = reduce_output
         if self.reduce_output == "cls_pooled":
@@ -1063,6 +1075,7 @@ class RoBERTaEncoder(HFTextEncoder):
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "cls_pooled",
         trainable: bool = False,
+        tuner: Optional[BaseTunerConfig] = None,
         vocab_size: int = None,
         pad_token_id: int = 1,
         bos_token_id: int = 0,
@@ -1098,7 +1111,7 @@ class RoBERTaEncoder(HFTextEncoder):
         else:
             self.config = None
 
-        self.transformer = FreezeModule(transformer, frozen=not trainable)
+        self.transformer = self._wrap_transformer(transformer, tuner, trainable)
         self.max_sequence_length = max_sequence_length
         self.reduce_output = reduce_output
         if not self.reduce_output == "cls_pooled":
@@ -1154,6 +1167,7 @@ class TransformerXLEncoder(HFTextEncoder):
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
         trainable: bool = False,
+        tuner: Optional[BaseTunerConfig] = None,
         vocab_size: int = 267735,
         cutoffs: List[int] = [20000, 40000, 200000],
         d_model: int = 1024,
@@ -1235,7 +1249,7 @@ class TransformerXLEncoder(HFTextEncoder):
         if self.reduce_output == "cls_pooled":
             _cls_pooled_error_message(self.__class__.__name__)
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-        self.transformer = FreezeModule(transformer, frozen=not trainable)
+        self.transformer = self._wrap_transformer(transformer, tuner, trainable)
         self.max_sequence_length = max_sequence_length
 
     def forward(self, inputs: torch.Tensor, mask: torch.Tensor = None) -> Dict[str, torch.Tensor]:
@@ -1279,6 +1293,7 @@ class XLNetEncoder(HFTextEncoder):
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
         trainable: bool = False,
+        tuner: Optional[BaseTunerConfig] = None,
         vocab_size: int = 32000,
         d_model: int = 1024,
         n_layer: int = 24,
@@ -1362,7 +1377,7 @@ class XLNetEncoder(HFTextEncoder):
         if self.reduce_output == "cls_pooled":
             _cls_pooled_error_message(self.__class__.__name__)
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-        self.transformer = FreezeModule(transformer, frozen=not trainable)
+        self.transformer = self._wrap_transformer(transformer, tuner, trainable)
 
     def forward(self, inputs: torch.Tensor, mask: torch.Tensor = None) -> Dict[str, torch.Tensor]:
         if mask is not None:
@@ -1409,6 +1424,7 @@ class DistilBERTEncoder(HFTextEncoder):
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
         trainable: bool = False,
+        tuner: Optional[BaseTunerConfig] = None,
         use_pretrained: bool = True,
         vocab_size: int = 30522,
         max_position_embeddings: int = 512,
@@ -1462,7 +1478,7 @@ class DistilBERTEncoder(HFTextEncoder):
         else:
             self.config = None
 
-        self.transformer = FreezeModule(transformer, frozen=not trainable)
+        self.transformer = self._wrap_transformer(transformer, tuner, trainable)
         self.reduce_output = reduce_output
         if self.reduce_output == "cls_pooled":
             _cls_pooled_error_message(self.__class__.__name__)
@@ -1521,6 +1537,7 @@ class CTRLEncoder(HFTextEncoder):
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
         trainable: bool = False,
+        tuner: Optional[BaseTunerConfig] = None,
         vocab_size: int = 246534,
         n_positions: int = 256,
         n_ctx: int = 256,
@@ -1572,7 +1589,7 @@ class CTRLEncoder(HFTextEncoder):
             self.config = None
 
         self.max_sequence_length = max_sequence_length
-        self.transformer = FreezeModule(transformer, frozen=not trainable)
+        self.transformer = self._wrap_transformer(transformer, tuner, trainable)
         self.reduce_output = reduce_output
         if self.reduce_output == "cls_pooled":
             _cls_pooled_error_message(self.__class__.__name__)
@@ -1625,6 +1642,7 @@ class CamemBERTEncoder(HFTextEncoder):
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "cls-pooled",
         trainable: bool = False,
+        tuner: Optional[BaseTunerConfig] = None,
         vocab_size: int = 30522,
         hidden_size: int = 768,
         num_hidden_layers: int = 12,
@@ -1683,7 +1701,7 @@ class CamemBERTEncoder(HFTextEncoder):
         else:
             self.config = None
 
-        self.transformer = FreezeModule(transformer, frozen=not trainable)
+        self.transformer = self._wrap_transformer(transformer, tuner, trainable)
         self.reduce_output = reduce_output
         if not self.reduce_output == "cls_pooled":
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
@@ -1746,6 +1764,7 @@ class T5Encoder(HFTextEncoder):
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
         trainable: bool = False,
+        tuner: Optional[BaseTunerConfig] = None,
         vocab_size: int = 32128,
         d_model: int = 512,
         d_kv: int = 64,
@@ -1799,7 +1818,7 @@ class T5Encoder(HFTextEncoder):
         if self.reduce_output == "cls_pooled":
             _cls_pooled_error_message(self.__class__.__name__)
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-        self.transformer = FreezeModule(transformer, frozen=not trainable)
+        self.transformer = self._wrap_transformer(transformer, tuner, trainable)
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
         if mask is not None:
@@ -1854,6 +1873,7 @@ class FlauBERTEncoder(HFTextEncoder):
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
         trainable: bool = False,
+        tuner: Optional[BaseTunerConfig] = None,
         vocab_size: int = 30145,
         pre_norm: bool = False,
         layerdrop: float = 0.0,
@@ -1937,7 +1957,7 @@ class FlauBERTEncoder(HFTextEncoder):
         if self.reduce_output == "cls_pooled":
             _cls_pooled_error_message(self.__class__.__name__)
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-        self.transformer = FreezeModule(transformer, frozen=not trainable)
+        self.transformer = self._wrap_transformer(transformer, tuner, trainable)
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
         if mask is not None:
@@ -1992,6 +2012,7 @@ class ELECTRAEncoder(HFTextEncoder):
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
         trainable: bool = False,
+        tuner: Optional[BaseTunerConfig] = None,
         vocab_size: int = 30522,
         embedding_size: int = 128,
         hidden_size: int = 256,
@@ -2051,7 +2072,7 @@ class ELECTRAEncoder(HFTextEncoder):
         if self.reduce_output == "cls_pooled":
             _cls_pooled_error_message(self.__class__.__name__)
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-        self.transformer = FreezeModule(transformer, frozen=not trainable)
+        self.transformer = self._wrap_transformer(transformer, tuner, trainable)
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
         if mask is not None:
@@ -2108,6 +2129,7 @@ class LongformerEncoder(HFTextEncoder):
         saved_weights_in_checkpoint: bool = False,
         reduce_output: Optional[str] = "cls_pooled",
         trainable: bool = False,
+        tuner: Optional[BaseTunerConfig] = None,
         vocab_size: int = 50265,
         num_tokens: Optional[int] = None,
         pretrained_kwargs: Dict = None,
@@ -2143,7 +2165,7 @@ class LongformerEncoder(HFTextEncoder):
         self.reduce_output = reduce_output
         if not self.reduce_output == "cls_pooled":
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-        self.transformer = FreezeModule(transformer, frozen=not trainable)
+        self.transformer = self._wrap_transformer(transformer, tuner, trainable)
         self.max_sequence_length = max_sequence_length
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None):
@@ -2200,6 +2222,7 @@ class AutoTransformerEncoder(HFTextEncoder):
         max_sequence_length: int,
         reduce_output: str = "sum",
         trainable: bool = False,
+        tuner: Optional[BaseTunerConfig] = None,
         vocab_size: Optional[int] = None,
         pretrained_kwargs: Dict = None,
         encoder_config=None,
@@ -2221,10 +2244,7 @@ class AutoTransformerEncoder(HFTextEncoder):
         # we can filter out unused params during the `forward` call.
         self.forward_kwargs = set(inspect.signature(transformer.forward).parameters.keys())
 
-        peft_config = LoraConfig(inference_mode=False, r=8, lora_alpha=32, lora_dropout=0.1)
-        transformer = get_peft_model(transformer, peft_config)
-
-        self.transformer = FreezeModule(transformer, frozen=not trainable)
+        self.transformer = self._wrap_transformer(transformer, tuner, trainable)
         self.reduce_output = reduce_output
         if self.reduce_output != "cls_pooled":
             self.reduce_sequence = SequenceReducer(
