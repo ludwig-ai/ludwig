@@ -2,9 +2,8 @@
 
 # # Simple Model Training Example
 #
-# This is a simple example of how to use the LLM model type to train
-# a zero shot classification model. It uses the facebook/opt-350m model
-# as the base LLM model.
+# This is a simple example of how to use the LLM model type with fine-tuning
+# using prompt tuning. It uses the facebook/opt-1.3b model as the base LLM model.
 
 # Import required libraries
 import logging
@@ -67,7 +66,7 @@ config = yaml.safe_load(
         trainer:
             type: finetune
             batch_size: 2
-            early_stop: 20
+            epochs: 10
     """
 )
 
