@@ -1,12 +1,9 @@
 import logging
 import os
-import shutil
 
 import yaml
 
 from ludwig.api import LudwigModel
-
-shutil.rmtree("./results", ignore_errors=True)
 
 config = yaml.safe_load(
     """
@@ -17,45 +14,31 @@ input_features:
     encoder:
       type: auto_transformer
       pretrained_model_name_or_path: bigscience/bloom-3b
-      # pretrained_model_name_or_path: bigscience/bloom-560m
-      # pretrained_model_name_or_path: bert-base-uncased
       trainable: true
       tuner: lora
-
-    # encoder:
-    #   type: bert
-    #   trainable: true
-    #   # tuner: lora
 
 output_features:
   - name: sentiment
     type: category
 
-preprocessing:
-  split:
-    type: random
-    probabilities: [0.99, 0.005, 0.005]
-
 trainer:
   batch_size: 8
-  # epochs: 3
-  train_steps: 3
+  epochs: 3
   gradient_accumulation_steps: 8
 
 backend:
   type: ray
-  cache_dir: /src/cache
   trainer:
     use_gpu: true
     strategy:
       type: deepspeed
-      fp16:
-        enabled: true
       zero_optimization:
         stage: 3
         offload_optimizer:
           device: cpu
           pin_memory: true
+      fp16:
+        enabled: true
 """
 )
 
