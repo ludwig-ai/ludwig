@@ -104,9 +104,6 @@ def test_llm_text_to_text(tmpdir, backend, ray_cluster_4cpu):
         GENERATION: get_generation_config(),
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
-        TRAINER: {
-            TYPE: "zeroshot",
-        },
     }
 
     model = LudwigModel(config, backend=backend)
@@ -167,9 +164,6 @@ def test_llm_zero_shot_classification(tmpdir, backend, ray_cluster_4cpu):
         GENERATION: get_generation_config(),
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
-        TRAINER: {
-            TYPE: "zeroshot",
-        },
     }
 
     model = LudwigModel(config, backend=backend)
@@ -254,9 +248,6 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
         OUTPUT_FEATURES: output_features,
         PREPROCESSING: {
             "split": {TYPE: "fixed"},
-        },
-        TRAINER: {
-            TYPE: "fewshot",
         },
     }
 

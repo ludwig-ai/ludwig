@@ -768,23 +768,13 @@ class LLMTrainerConfig(BaseTrainerConfig):
 
 
 @DeveloperAPI
-@register_llm_trainer_schema("zeroshot")
+@register_llm_trainer_schema("none")
 @ludwig_dataclass
-class ZeroShotTrainerConfig(LLMTrainerConfig):
-    """Dataclass that configures most of the hyperparameters used for zero-shot LLM model training."""
+class NoneTrainerConfig(LLMTrainerConfig):
+    """Dataclass that configures most of the hyperparameters used for zero-shot / few-shot LLM model training."""
 
     # Required for lookup during trainer initialization
-    type: str = schema_utils.ProtectedString("zeroshot")
-
-
-@DeveloperAPI
-@register_llm_trainer_schema("fewshot")
-@ludwig_dataclass
-class FewShotTrainerConfig(LLMTrainerConfig):
-    """Dataclass that configures most of the hyperparameters used for zero-shot LLM model training."""
-
-    # Required for lookup during trainer initialization
-    type: str = schema_utils.ProtectedString("fewshot")
+    type: str = schema_utils.ProtectedString("none")
 
 
 @DeveloperAPI
@@ -882,7 +872,7 @@ def get_llm_trainer_conds():
 
 
 @DeveloperAPI
-def LLMTrainerDataclassField(default="zeroshot", description=""):
+def LLMTrainerDataclassField(default="none", description=""):
     class LLMTrainerSelection(schema_utils.TypeSelection):
         def __init__(self):
             super().__init__(

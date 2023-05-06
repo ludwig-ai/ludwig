@@ -850,8 +850,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
 
         if model.type() == MODEL_LLM:
             trainer_config = kwargs.get("config")
-            trainer_type = trainer_config.type or "zeroshot"  # fallback to zeroshot
-            trainer_cls = get_from_registry(trainer_type, get_llm_ray_trainers_registry())
+            trainer_cls = get_from_registry(trainer_config.type, get_llm_ray_trainers_registry())
         else:
             trainer_cls = get_from_registry(model.type(), get_ray_trainers_registry())
 

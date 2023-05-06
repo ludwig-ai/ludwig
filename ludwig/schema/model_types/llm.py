@@ -48,7 +48,6 @@ class LLMModelConfig(ModelConfig):
 
     # trainer: LLMTrainerConfig = LLMTrainerField().get_default_field()
     trainer: LLMTrainerConfig = LLMTrainerDataclassField(
-        default="zeroshot",
         description="The trainer to use for the model",
     )
 

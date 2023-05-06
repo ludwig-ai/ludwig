@@ -12,7 +12,7 @@ from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.models.llm import LLM
 from ludwig.models.predictor import Predictor
 from ludwig.modules.metric_modules import get_initial_validation_value
-from ludwig.schema.trainer import BaseTrainerConfig, FineTuneTrainerConfig, ZeroShotTrainerConfig
+from ludwig.schema.trainer import BaseTrainerConfig, FineTuneTrainerConfig, NoneTrainerConfig
 from ludwig.trainers.base import BaseTrainer
 from ludwig.trainers.registry import register_llm_ray_trainer, register_llm_trainer
 from ludwig.trainers.trainer import Trainer
@@ -28,16 +28,14 @@ from ludwig.utils.trainer_utils import append_metrics, get_new_progress_tracker,
 logger = logging.getLogger(__name__)
 
 
-@register_llm_trainer("zeroshot")
-@register_llm_trainer("fewshot")
-@register_llm_ray_trainer("zeroshot")
-@register_llm_ray_trainer("fewshot")
-class ZeroShotTrainer(BaseTrainer):
-    """ZeroShotTrainer is a trainer that does not train a model."""
+@register_llm_trainer("none")
+@register_llm_ray_trainer("none")
+class NoneTrainer(BaseTrainer):
+    """NoneTrainer is a trainer that does not train a model, only runs evaluation."""
 
     def __init__(
         self,
-        config: ZeroShotTrainerConfig,
+        config: NoneTrainerConfig,
         model: LLM,
         resume: float = False,
         skip_save_model: bool = False,
@@ -51,8 +49,8 @@ class ZeroShotTrainer(BaseTrainer):
         **kwargs,
     ):
         """
-        :param config: `ludwig.schema.trainer.ZeroShotTrainerConfig` instance that specifies training hyperparameters
-        (default: `ludwig.schema.trainer.ZeroShotTrainerConfig()`).
+        :param config: `ludwig.schema.trainer.NoneTrainerConfig` instance that specifies training hyperparameters
+        (default: `ludwig.schema.trainer.NoneTrainerConfig()`).
         :param model: Underlying Ludwig model
         :type model: `ludwig.models.llm.LLM`
         :param resume: Resume training a model that was being trained. (default: False).
@@ -233,7 +231,7 @@ class ZeroShotTrainer(BaseTrainer):
 
     @staticmethod
     def get_schema_cls() -> BaseTrainerConfig:
-        return ZeroShotTrainerConfig
+        return NoneTrainerConfig
 
     def is_coordinator(self) -> bool:
         return self.distributed.rank() == 0
@@ -413,7 +411,7 @@ class FineTuneTrainer(Trainer):
         )
 
 
-class RemoteLLMTrainer(ZeroShotTrainer):
+class RemoteLLMTrainer(NoneTrainer):
     def __init__(self, gpus=None, gpu_memory_limit=None, allow_parallel_threads=True, **kwargs):
         super().__init__(**kwargs)
 
