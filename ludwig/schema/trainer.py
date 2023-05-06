@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Optional, Union
+from typing import Optional, Type, Union
 
 import torch
 from packaging.version import parse as parse_version
@@ -31,6 +31,7 @@ _torch_200 = parse_version(torch.__version__) >= parse_version("2.0")
 
 
 trainer_schema_registry = Registry()
+_llm_trainer_schema_registry = Registry()
 
 
 @DeveloperAPI
@@ -40,6 +41,21 @@ def register_trainer_schema(model_type: str):
         return trainer_config
 
     return wrap
+
+
+@DeveloperAPI
+def register_llm_trainer_schema(trainer_type: str):
+    def wrap(trainer_config: BaseTrainerConfig):
+        _llm_trainer_schema_registry[trainer_type] = trainer_config
+        return trainer_config
+
+    return wrap
+
+
+@DeveloperAPI
+def get_llm_trainer_cls(trainer_type: str):
+    """Returns the adapter config class registered with the given name."""
+    return _llm_trainer_schema_registry[trainer_type]
 
 
 @DeveloperAPI
@@ -691,7 +707,6 @@ class GBMTrainerConfig(BaseTrainerConfig):
 
 
 @DeveloperAPI
-@register_trainer_schema(MODEL_LLM)
 @ludwig_dataclass
 class LLMTrainerConfig(BaseTrainerConfig):
     """Base class for all LLM trainer configs."""
@@ -753,12 +768,38 @@ class LLMTrainerConfig(BaseTrainerConfig):
 
 
 @DeveloperAPI
-@register_trainer_schema(MODEL_LLM)
+@register_llm_trainer_schema("zeroshot")
 @ludwig_dataclass
 class ZeroShotTrainerConfig(LLMTrainerConfig):
     """Dataclass that configures most of the hyperparameters used for zero-shot LLM model training."""
 
-    pass
+    # Required for lookup during trainer initialization
+    type: str = schema_utils.ProtectedString("zeroshot")
+
+
+@DeveloperAPI
+@register_llm_trainer_schema("fewshot")
+@ludwig_dataclass
+class FewShotTrainerConfig(LLMTrainerConfig):
+    """Dataclass that configures most of the hyperparameters used for zero-shot LLM model training."""
+
+    # Required for lookup during trainer initialization
+    type: str = schema_utils.ProtectedString("fewshot")
+
+
+@DeveloperAPI
+@register_llm_trainer_schema("finetune")
+@ludwig_dataclass
+class FineTuneTrainerConfig(ECDTrainerConfig):
+    """Dataclass that configures most of the hyperparameters used for fine-tuning LLM model training."""
+
+    # Required for lookup during trainer initialization
+    type: str = schema_utils.ProtectedString("finetune")
+
+    base_learning_rate: float = schema_utils.NonNegativeFloat(
+        default=0.0,
+        description="Base learning rate used for training in the LLM trainer.",
+    )
 
 
 @DeveloperAPI
@@ -793,6 +834,20 @@ def get_trainer_jsonschema(model_type: str):
 
 
 @DeveloperAPI
+def get_llm_trainer_jsonschema(trainer_type: str):
+    trainer_cls = _llm_trainer_schema_registry[trainer_type]
+    props = schema_utils.unload_jsonschema_from_marshmallow_class(trainer_cls)["properties"]
+
+    return {
+        "type": "object",
+        "properties": props,
+        "title": "trainer_options",
+        "additionalProperties": False,
+        "description": "Schema for LLM trainer determined by trainer type",
+    }
+
+
+@DeveloperAPI
 class ECDTrainerField(schema_utils.DictMarshmallowField):
     def __init__(self):
         super().__init__(ECDTrainerConfig)
@@ -811,9 +866,49 @@ class GBMTrainerField(schema_utils.DictMarshmallowField):
 
 
 @DeveloperAPI
-class LLMTrainerField(schema_utils.DictMarshmallowField):
-    def __init__(self):
-        super().__init__(ZeroShotTrainerConfig)
+def get_llm_trainer_conds():
+    """Returns a JSON schema of conditionals to validate against adapter types."""
+    conds = []
+    for trainer in _llm_trainer_schema_registry:
+        trainer_cls = _llm_trainer_schema_registry[trainer]
+        other_props = schema_utils.unload_jsonschema_from_marshmallow_class(trainer_cls)["properties"]
+        schema_utils.remove_duplicate_fields(other_props)
+        preproc_cond = schema_utils.create_cond(
+            {"type": trainer},
+            other_props,
+        )
+        conds.append(preproc_cond)
+    return conds
 
-    def _jsonschema_type_mapping(self):
-        return get_trainer_jsonschema(MODEL_LLM)
+
+@DeveloperAPI
+def LLMTrainerDataclassField(default="zeroshot", description=""):
+    class LLMTrainerSelection(schema_utils.TypeSelection):
+        def __init__(self):
+            super().__init__(
+                registry=_llm_trainer_schema_registry,
+                default_value=default,
+                description=description,
+            )
+
+        def get_schema_from_registry(self, key: str) -> Type[schema_utils.BaseMarshmallowConfig]:
+            return get_llm_trainer_cls(key)
+
+        def _jsonschema_type_mapping(self):
+            return {
+                "type": "object",
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "enum": list(_llm_trainer_schema_registry.keys()),
+                        "default": default,
+                        "description": "The type of optimizer to use during the learning process",
+                    },
+                },
+                "title": "optimizer_options",
+                "allOf": get_llm_trainer_conds(),
+                "required": ["type"],
+                "description": description,
+            }
+
+    return LLMTrainerSelection().get_default_field()

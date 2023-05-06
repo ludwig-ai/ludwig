@@ -275,6 +275,9 @@ PREPROCESSOR = "preprocessor"
 PREDICTOR = "predictor"
 POSTPROCESSOR = "postprocessor"
 
+GENERATION = "generation"
+ADAPTER = "adapter"
+
 S3 = "s3"
 CACHE = "cache"
 
