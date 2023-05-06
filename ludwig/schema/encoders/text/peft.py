@@ -29,7 +29,7 @@ class BaseTunerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     type: str
 
     @abstractmethod
-    def to_config(self) -> "PeftConfig":
+    def to_config(self, **kwargs) -> "PeftConfig":
         pass
 
 
@@ -61,7 +61,7 @@ class LoraConfig(BaseTunerConfig):
         description="Bias type for Lora.",
     )
 
-    def to_config(self) -> "PeftConfig":
+    def to_config(self, **kwargs) -> "PeftConfig":
         from peft import LoraConfig as _LoraConfig
 
         return _LoraConfig(
@@ -69,6 +69,73 @@ class LoraConfig(BaseTunerConfig):
             lora_alpha=self.alpha,
             lora_dropout=self.dropout,
             bias=self.bias_type,
+        )
+
+
+@DeveloperAPI
+@register_tuner("prompt_tuning")
+@ludwig_dataclass
+class PromptTuningConfig(BaseTunerConfig):
+    type: str = schema_utils.ProtectedString("prompt_tuning")
+
+    peft_type: str = schema_utils.ProtectedString("PROMPT_TUNING")
+
+    num_virtual_tokens: Optional[int] = schema_utils.Integer(
+        default=None,
+        allow_none=True,
+        description="Number of virtual tokens to add to the prompt. Virtual tokens are used to control the behavior of "
+        " the model during inference. ",
+    )
+
+    token_dim: Optional[int] = schema_utils.Integer(
+        default=None,
+        allow_none=True,
+        description="The hidden embedding dimension of the base transformer model.",
+    )
+
+    num_transformer_submodules: Optional[int] = schema_utils.Integer(
+        default=None,
+        allow_none=True,
+        description="The number of transformer submodules in the base transformer model.",
+    )
+
+    num_attention_heads: Optional[int] = schema_utils.Integer(
+        default=None,
+        allow_none=True,
+        description="The number of attention heads in the base transformer model.",
+    )
+
+    num_layers: Optional[int] = schema_utils.Integer(
+        default=None,
+        allow_none=True,
+        description="The number of layers in the base transformer model.",
+    )
+
+    # TODO(Arnav): Refactor to allow both RANDOM and TEXT strategies
+    prompt_tuning_init: str = schema_utils.StringOptions(
+        options=["TEXT"],
+        default="TEXT",
+        description="The type of initialization to use for the prompt embedding.",
+    )
+
+    prompt_tuning_init_text: str = schema_utils.String(
+        default="",
+        allow_none=False,
+        description="The text to use to initialize the prompt embedding.",
+    )
+
+    def to_config(self, **kwargs) -> "PeftConfig":
+        from peft import PromptTuningConfig as _PromptTuningConfig
+
+        return _PromptTuningConfig(
+            num_virtual_tokens=self.num_virtual_tokens,
+            token_dim=self.token_dim,
+            num_transformer_submodules=self.num_transformer_submodules,
+            num_attention_heads=self.num_attention_heads,
+            num_layers=self.num_layers,
+            prompt_tuning_init=self.prompt_tuning_init,
+            prompt_tuning_init_text=self.prompt_tuning_init_text,
+            **kwargs
         )
 
 

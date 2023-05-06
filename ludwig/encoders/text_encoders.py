@@ -135,6 +135,11 @@ class HFTextEncoder(Encoder):
 
             peft_config = tuner.to_config()
             transformer = get_peft_model(transformer, peft_config)
+
+            logger.info("==================================================")
+            logger.info("Trainable Parameter Summary For Fine-Tuning:")
+            transformer.print_trainable_parameters()
+            logger.info("==================================================")
         return FreezeModule(transformer, frozen=not trainable)
 
     def get_embedding_layer(self) -> nn.Module:
