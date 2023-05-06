@@ -37,7 +37,7 @@ from ludwig.data.dataset.pandas import PandasDatasetManager
 from ludwig.distributed import init_dist_strategy
 from ludwig.distributed.base import DistributedStrategy
 from ludwig.models.base import BaseModel
-from ludwig.schema.trainer import BaseTrainerConfig, ECDTrainerConfig, GBMTrainerConfig
+from ludwig.schema.trainer import BaseTrainerConfig
 from ludwig.types import HyperoptConfigDict
 from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
 from ludwig.utils.dataframe_utils import from_batches, to_batches
