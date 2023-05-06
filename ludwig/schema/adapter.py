@@ -84,12 +84,6 @@ class PromptTuningAdapterConfig(BaseAdapterConfig):
         description="The text to use to initialize the prompt embedding.",
     )
 
-    tokenizer_name_or_path: str = schema_utils.String(
-        default="",
-        allow_none=False,
-        description="The name or path of the tokenizer to use.",
-    )
-
 
 @DeveloperAPI
 def get_adapter_conds():

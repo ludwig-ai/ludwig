@@ -53,22 +53,12 @@ class LLM(BaseModel):
         if self.config_obj.adapter:
             from peft import get_peft_config, get_peft_model
 
-            # If the adapter config specifies a tokenizer name or path, it must match the model name
-            # Otherwise, we will set the tokenizer name or path to the model name
-            if (
-                self.config_obj.adapter.tokenizer_name_or_path
-                and self.config_obj.adapter.tokenizer_name_or_path != self.model_name
-            ):
-                raise ValueError(
-                    f"Tokenizer name or path {self.config_obj.adapter.tokenizer_name_or_path} specified in adapter "
-                    f"config must match the model name {self.model_name}."
-                )
-
+            # Set tokenizer_name_or_path to the model name since it is required by all PEFT adapter config
             self.config_obj.adapter.tokenizer_name_or_path = self.model_name
             self.model = get_peft_model(self.model, get_peft_config(self.config_obj.adapter.to_dict()))
 
             logger.info("==================================================")
-            logger.info("Trainable Parameters For Fine-Tuning:")
+            logger.info("Trainable Parameter Summary For Fine-Tuning:")
             self.model.print_trainable_parameters()
             logger.info("==================================================")
 
