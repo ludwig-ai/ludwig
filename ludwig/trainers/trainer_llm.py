@@ -1,20 +1,21 @@
 import logging
 import os
 import time
-from typing import Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional, Union
 
 from torch.utils.tensorboard import SummaryWriter
 
-from ludwig.constants import MINIMUM_BATCH_SIZE, MODEL_LLM, TEST, TRAIN, TRAINING, VALIDATION
+from ludwig.constants import MINIMUM_BATCH_SIZE, TEST, TRAIN, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.models.llm import LLM
 from ludwig.models.predictor import Predictor
 from ludwig.modules.metric_modules import get_initial_validation_value
-from ludwig.schema.trainer import BaseTrainerConfig, ZeroShotTrainerConfig
+from ludwig.schema.trainer import BaseTrainerConfig, FineTuneTrainerConfig, ZeroShotTrainerConfig
 from ludwig.trainers.base import BaseTrainer
-from ludwig.trainers.registry import register_trainer
+from ludwig.trainers.registry import register_llm_ray_trainer, register_llm_trainer
+from ludwig.trainers.trainer import Trainer
 from ludwig.types import ModelConfigDict
 from ludwig.utils import time_utils
 from ludwig.utils.defaults import default_random_seed
@@ -27,7 +28,10 @@ from ludwig.utils.trainer_utils import append_metrics, get_new_progress_tracker,
 logger = logging.getLogger(__name__)
 
 
-@register_trainer(MODEL_LLM)
+@register_llm_trainer("zeroshot")
+@register_llm_trainer("fewshot")
+@register_llm_ray_trainer("zeroshot")
+@register_llm_ray_trainer("fewshot")
 class ZeroShotTrainer(BaseTrainer):
     """ZeroShotTrainer is a trainer that does not train a model."""
 
@@ -113,7 +117,6 @@ class ZeroShotTrainer(BaseTrainer):
         return_state_dict: bool = False,
         **kwargs,
     ):
-        logger.info("Starting Training")
         output_features = self.model.output_features
 
         # ====== Setup file names =======
@@ -195,8 +198,10 @@ class ZeroShotTrainer(BaseTrainer):
         config: ModelConfigDict,
         training_set: Dataset,
         random_seed: int = default_random_seed,
-        max_trials: int = 10,
+        max_trials: int = 20,
         halving_limit: int = 3,
+        snapshot_weights: bool = True,
+        on_best_batch_size_updated: Optional[Callable[[int, float, int], None]] = None,
     ) -> int:
         return MINIMUM_BATCH_SIZE
 
@@ -368,6 +373,44 @@ class ZeroShotTrainer(BaseTrainer):
         self.callback(lambda c: c.on_eval_end(self, progress_tracker, save_path))
 
         return False
+
+
+@register_llm_trainer("finetune")
+@register_llm_ray_trainer("finetune")
+class FineTuneTrainer(Trainer):
+    @staticmethod
+    def get_schema_cls():
+        return FineTuneTrainerConfig
+
+    def __init__(
+        self,
+        config: FineTuneTrainerConfig,
+        model: LLM,
+        resume: float = False,
+        skip_save_model: bool = False,
+        skip_save_progress: bool = False,
+        skip_save_log: bool = False,
+        callbacks: List = None,
+        report_tqdm_to_ray=False,
+        random_seed: float = default_random_seed,
+        distributed: Optional[DistributedStrategy] = None,
+        device: Optional[str] = None,
+        **kwargs,
+    ):
+        super().__init__(
+            config,
+            model,
+            resume,
+            skip_save_model,
+            skip_save_progress,
+            skip_save_log,
+            callbacks,
+            report_tqdm_to_ray,
+            random_seed,
+            distributed,
+            device,
+            **kwargs,
+        )
 
 
 class RemoteLLMTrainer(ZeroShotTrainer):

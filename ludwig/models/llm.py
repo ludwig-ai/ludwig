@@ -18,9 +18,8 @@ from ludwig.schema.features.base import BaseOutputFeatureConfig, FeatureCollecti
 from ludwig.schema.model_types.llm import LLMModelConfig
 from ludwig.utils.augmentation_utils import AugmentationPipelines
 from ludwig.utils.data_utils import clear_data_cache
-from ludwig.utils.fs_utils import open_file
-from ludwig.utils.state_dict_backward_compatibility import update_state_dict
-from ludwig.utils.torch_utils import get_torch_device
+from ludwig.utils.logging_utils import log_once
+from ludwig.utils.output_feature_utils import set_output_feature_tensor
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +45,12 @@ class LLM(BaseModel):
 
         self.model_name = self.config_obj.model_name
 
+        # Initialize the tokenizer. Used only for its metadata about the vocabulary.
+        if not tokenizer:
+            self.tokenizer = AutoTokenizer.from_pretrained(self.config_obj.model_name, use_fast=False)
+        else:
+            self.tokenizer = tokenizer
+
         logger.info("Loading large language model...")
         if not model:
             self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.model_name)
@@ -55,11 +60,24 @@ class LLM(BaseModel):
             self.curr_device = self.model.device.type
         logger.info("Done.")
 
-        # Used only for its metadata about the vocabulary
-        if not tokenizer:
-            self.tokenizer = AutoTokenizer.from_pretrained(self.config_obj.model_name, use_fast=False)
-        else:
-            self.tokenizer = tokenizer
+        # If an adapter config is provided, we want to wrap the model with a PEFT model
+        # for fine-tuning.
+        if self.config_obj.adapter:
+            from peft import get_peft_config, get_peft_model
+
+            # Set tokenizer_name_or_path to the model name since it is required by all PEFT adapter config
+            self.config_obj.adapter.tokenizer_name_or_path = self.model_name
+
+            # Deepcopy and remove type manually since it is not a valid argument for the adapter config
+            adapter_config = copy.deepcopy(self.config_obj.adapter.to_dict())
+            adapter_config.pop("type", None)
+
+            self.model = get_peft_model(self.model, get_peft_config(adapter_config))
+
+            logger.info("==================================================")
+            logger.info("Trainable Parameter Summary For Fine-Tuning:")
+            self.model.print_trainable_parameters()
+            logger.info("==================================================")
 
         # Determines the maximum length of the context (input + output tokens)
         if hasattr(self.model.config, "max_sequence_length"):
@@ -86,7 +104,14 @@ class LLM(BaseModel):
 
         # ================ Outputs ================
         self.output_features.update(
-            self.build_outputs(output_feature_configs=self.config_obj.output_features, input_size=self.input_shape[-1])
+            self.build_outputs(
+                output_feature_configs=self.config_obj.output_features,
+                # Set the input size to the model vocab size instead of the tokenizer vocab size
+                # because the model has additional "head" layers that are used to predict the next
+                # token in the sequence. These head layers can add additional dimensions to the
+                # logits tensor, beyond the vocab_size dimension.
+                input_size=self.model.config.vocab_size,
+            )
         )
 
         # Extract the decoder object for the forward pass
@@ -101,10 +126,9 @@ class LLM(BaseModel):
     def to_device(self, device):
         device = torch.device(device)
         if device == self.curr_device:
-            logger.warning(f"LLM already on device '{device}'. Skipping device placement step.")
             return self
         else:
-            logger.info(f"Moving LLM from '{self.curr_device}' to '{device}'.")
+            log_once(f"Moving LLM from '{self.curr_device}' to '{device}'.")
 
         model_kwargs = {}
         if device == torch.device("cuda"):
@@ -151,6 +175,15 @@ class LLM(BaseModel):
 
         return output_features
 
+    def get_input_ids(
+        self,
+        inputs: Union[
+            Dict[str, torch.Tensor], Dict[str, np.ndarray], Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
+        ],
+    ):
+        """Returns the input ids for the text feature input."""
+        return inputs[self.config_obj.input_features[0].name].type(torch.int32)
+
     def forward(
         self,
         inputs: Union[
@@ -184,9 +217,20 @@ class LLM(BaseModel):
 
         assert list(inputs.keys()) == self.input_features.keys()
 
-        with torch.no_grad():
-            input_ids = self.get_input_ids(inputs)
+        input_ids = self.get_input_ids(inputs)
 
+        if self.config_obj.adapter:
+            # Forward pass using PEFT model for fine-tuning
+            model_outputs = self.model(input_ids)
+            # Pass generated tokens through decoder after averaging the token probabilities
+            logits_with_averaged_token_probabilities = torch.mean(model_outputs[LOGITS], dim=1)
+            decoder_outputs = self.output_feature_decoder.decoder_obj(logits_with_averaged_token_probabilities)
+            # Set the output feature tensor to the decoder outputs (logits)
+            outputs = {}
+            set_output_feature_tensor(outputs, self.config_obj.output_features[0].name, LOGITS, decoder_outputs)
+            return outputs
+
+        with torch.no_grad():
             input_lengths = []
             sequences_list = []
             for input_ids_sample in input_ids:
@@ -217,18 +261,17 @@ class LLM(BaseModel):
                 sequences_list,
                 llm_model_input_lengths=input_lengths,
             )
-        return self.extract(outputs)
 
-    def get_input_ids(self, inputs):
-        """Returns the input ids for the text feature input."""
-        return inputs[self.config_obj.input_features[0].name].type(torch.int32)
+        return self.extract(outputs)
 
     def extract(
         self,
         outputs,
     ):
         """Extracts predictions and probabilities from the model outputs."""
-        return {self.config_obj.output_features[0].name: outputs}
+        return {
+            self.config_obj.output_features[0].name: outputs,
+        }
 
     def update_metrics(self, targets, predictions):
         """Updates the model's metrics given targets and predictions."""
@@ -282,24 +325,31 @@ class LLM(BaseModel):
         """Returns the model's predictions for each output feature."""
         predictions = {}
         for of_name in self.output_features:
-            generated_predictions = outputs[of_name]
-            predictions[of_name] = generated_predictions
+            if self.config_obj.adapter:
+                predictions[of_name] = self.output_features.get(of_name).predictions(outputs, of_name)
+            else:
+                generated_predictions = outputs[of_name]
+                predictions[of_name] = generated_predictions
         return predictions
 
     def save(self, save_path):
         """Saves the model to the given path."""
-        # TODO: figure out what we want to do about weight saving for LLMs.
-        # weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
-        # torch.save(self.state_dict(), weights_save_path)
-        logger.warning("Saving LLMs is not yet supported.")
+        if self.config_obj.adapter:
+            weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
+            self.model.save_pretrained(weights_save_path)
+        else:
+            logger.info("Skipped saving LLM without weight adjustments.")
 
     def load(self, save_path):
         """Loads the model from the given path."""
-        weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
-        device = torch.device(get_torch_device())
-        with open_file(weights_save_path, "rb") as f:
-            state_dict = torch.load(f, map_location=device)
-            self.load_state_dict(update_state_dict(state_dict))
+        if self.config_obj.adapter:
+            from peft import PeftConfig, PeftModel  # noqa
+
+            weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
+            config = PeftConfig.from_pretrained(weights_save_path)
+            config.inference_mode = False
+            self.model = AutoModelForCausalLM.from_pretrained(config.base_model_name_or_path)
+            self.model = PeftModel.from_pretrained(self.model, weights_save_path)
 
     def get_args(self):
         """Returns init arguments for constructing this model."""
