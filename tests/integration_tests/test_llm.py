@@ -249,10 +249,10 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
         PREPROCESSING: {
-            "split": {"type": "fixed"},
+            "split": {TYPE: "fixed"},
         },
         TRAINER: {
-            TYPE: "zeroshot",
+            TYPE: "fewshot",
         },
     }
 

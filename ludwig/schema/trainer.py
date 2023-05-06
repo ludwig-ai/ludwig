@@ -778,6 +778,16 @@ class ZeroShotTrainerConfig(LLMTrainerConfig):
 
 
 @DeveloperAPI
+@register_llm_trainer_schema("fewshot")
+@ludwig_dataclass
+class FewShotTrainerConfig(LLMTrainerConfig):
+    """Dataclass that configures most of the hyperparameters used for zero-shot LLM model training."""
+
+    # Required for lookup during trainer initialization
+    type: str = schema_utils.ProtectedString("fewshot")
+
+
+@DeveloperAPI
 @register_llm_trainer_schema("finetune")
 @ludwig_dataclass
 class FineTuneTrainerConfig(ECDTrainerConfig):

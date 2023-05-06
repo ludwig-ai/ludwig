@@ -29,7 +29,9 @@ logger = logging.getLogger(__name__)
 
 
 @register_llm_trainer("zeroshot")
+@register_llm_trainer("fewshot")
 @register_llm_ray_trainer("zeroshot")
+@register_llm_ray_trainer("fewshot")
 class ZeroShotTrainer(BaseTrainer):
     """ZeroShotTrainer is a trainer that does not train a model."""
 

@@ -93,7 +93,7 @@ preprocessing:
     split:
         type: fixed
 trainer:
-    type: zeroshot
+    type: fewshot
     """
 )
 
