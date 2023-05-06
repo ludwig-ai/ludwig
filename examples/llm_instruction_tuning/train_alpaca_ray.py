@@ -18,10 +18,10 @@ output_features:
   - name: output
     type: text
 
-trainer:
-  batch_size: 8
-  epochs: 2
-  gradient_accumulation_steps: 8
+# trainer:
+#   batch_size: 8
+#   epochs: 2
+#   gradient_accumulation_steps: 8
 
 backend:
   type: local

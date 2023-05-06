@@ -824,20 +824,6 @@ def get_trainer_jsonschema(model_type: str):
 
 
 @DeveloperAPI
-def get_llm_trainer_jsonschema(trainer_type: str):
-    trainer_cls = _llm_trainer_schema_registry[trainer_type]
-    props = schema_utils.unload_jsonschema_from_marshmallow_class(trainer_cls)["properties"]
-
-    return {
-        "type": "object",
-        "properties": props,
-        "title": "trainer_options",
-        "additionalProperties": False,
-        "description": "Schema for LLM trainer determined by trainer type",
-    }
-
-
-@DeveloperAPI
 class ECDTrainerField(schema_utils.DictMarshmallowField):
     def __init__(self):
         super().__init__(ECDTrainerConfig)
@@ -892,10 +878,10 @@ def LLMTrainerDataclassField(default="none", description=""):
                         "type": "string",
                         "enum": list(_llm_trainer_schema_registry.keys()),
                         "default": default,
-                        "description": "The type of optimizer to use during the learning process",
+                        "description": "The type of LLM trainer to use",
                     },
                 },
-                "title": "optimizer_options",
+                "title": "llm_trainer_options",
                 "allOf": get_llm_trainer_conds(),
                 "required": ["type"],
                 "description": description,
