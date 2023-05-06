@@ -55,7 +55,12 @@ class LLM(BaseModel):
 
             # Set tokenizer_name_or_path to the model name since it is required by all PEFT adapter config
             self.config_obj.adapter.tokenizer_name_or_path = self.model_name
-            self.model = get_peft_model(self.model, get_peft_config(self.config_obj.adapter.to_dict()))
+
+            # Deepcopy and remove type manually since it is not a valid argument for the adapter config
+            adapter_config = copy.deepcopy(self.config_obj.adapter.to_dict())
+            adapter_config.pop("type", None)
+
+            self.model = get_peft_model(self.model, get_peft_config(adapter_config))
 
             logger.info("==================================================")
             logger.info("Trainable Parameter Summary For Fine-Tuning:")

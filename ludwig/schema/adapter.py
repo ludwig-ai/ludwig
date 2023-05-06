@@ -40,6 +40,10 @@ class BaseAdapterConfig(schema_utils.BaseMarshmallowConfig, ABC):
 @register_adapter("prompt_tuning")
 @schema_utils.ludwig_dataclass
 class PromptTuningAdapterConfig(BaseAdapterConfig):
+    # Explicitly set type property in the config because it is needed when we
+    # load a saved PEFT model back into Ludwig.
+    type: str = schema_utils.ProtectedString("prompt_tuning")
+
     peft_type: str = schema_utils.ProtectedString("PROMPT_TUNING")
 
     num_virtual_tokens: Optional[int] = schema_utils.Integer(

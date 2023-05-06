@@ -49,6 +49,23 @@ def ray_backend():
     return RAY_BACKEND
 
 
+def get_dataset():
+    data = [
+        {"review": "I loved this movie!", "label": "positive"},
+        {"review": "The food was okay, but the service was terrible.", "label": "negative"},
+        {"review": "I can't believe how rude the staff was.", "label": "negative"},
+        {"review": "This book was a real page-turner.", "label": "positive"},
+        {"review": "The hotel room was dirty and smelled bad.", "label": "negative"},
+        {"review": "I had a great experience at this restaurant.", "label": "positive"},
+        {"review": "The concert was amazing!", "label": "positive"},
+        {"review": "The traffic was terrible on my way to work this morning.", "label": "negative"},
+        {"review": "The customer service was excellent.", "label": "positive"},
+        {"review": "I was disappointed with the quality of the product.", "label": "negative"},
+    ]
+    df = pd.DataFrame(data)
+    return df
+
+
 def get_generation_config():
     return {
         "temperature": 0.1,
@@ -142,20 +159,7 @@ def test_llm_zero_shot_classification(tmpdir, backend, ray_cluster_4cpu):
         )
     ]
 
-    data = [
-        {"review": "I loved this movie!", "label": "positive"},
-        {"review": "The food was okay, but the service was terrible.", "label": "negative"},
-        {"review": "I can't believe how rude the staff was.", "label": "negative"},
-        {"review": "This book was a real page-turner.", "label": "positive"},
-        {"review": "The hotel room was dirty and smelled bad.", "label": "negative"},
-        {"review": "I had a great experience at this restaurant.", "label": "positive"},
-        {"review": "The concert was amazing!", "label": "positive"},
-        {"review": "The traffic was terrible on my way to work this morning.", "label": "negative"},
-        {"review": "The customer service was excellent.", "label": "positive"},
-        {"review": "I was disappointed with the quality of the product.", "label": "negative"},
-    ]
-
-    df = pd.DataFrame(data)
+    df = get_dataset()
 
     config = {
         MODEL_TYPE: MODEL_LLM,
@@ -293,20 +297,7 @@ def test_llm_prompt_tuning(tmpdir, backend, ray_cluster_4cpu):
         category_feature(name="label", preprocessing={"fallback_label": "3"}, decoder={"type": "classifier"})
     ]
 
-    data = [
-        {"review": "I loved this movie!", "label": "positive"},
-        {"review": "The food was okay, but the service was terrible.", "label": "negative"},
-        {"review": "I can't believe how rude the staff was.", "label": "negative"},
-        {"review": "This book was a real page-turner.", "label": "positive"},
-        {"review": "The hotel room was dirty and smelled bad.", "label": "negative"},
-        {"review": "I had a great experience at this restaurant.", "label": "positive"},
-        {"review": "The concert was amazing!", "label": "positive"},
-        {"review": "The traffic was terrible on my way to work this morning.", "label": "negative"},
-        {"review": "The customer service was excellent.", "label": "positive"},
-        {"review": "I was disappointed with the quality of the product.", "label": "negative"},
-    ]
-
-    df = pd.DataFrame(data)
+    df = get_dataset()
 
     config = {
         MODEL_TYPE: MODEL_LLM,
@@ -335,8 +326,8 @@ def test_llm_prompt_tuning(tmpdir, backend, ray_cluster_4cpu):
         ]
     )
 
-    # TODO(Arnav): Make sure we can load the saved model
-    # and then use it for predictions
+    # Make sure we can load the saved model and then use it for predictions
+    model = LudwigModel.load(os.path.join(str(tmpdir), "api_experiment_run", "model"), backend=backend)
 
     preds, _ = model.predict(dataset=prediction_df, output_directory=str(tmpdir))
     preds = convert_preds(backend, preds)
