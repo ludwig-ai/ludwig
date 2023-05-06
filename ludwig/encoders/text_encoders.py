@@ -135,7 +135,6 @@ class HFTextEncoder(Encoder):
 
             peft_config = tuner.to_config()
             transformer = get_peft_model(transformer, peft_config)
-            print("!!! WRAPPED WITH LORA !!!", peft_config)
         return FreezeModule(transformer, frozen=not trainable)
 
     def get_embedding_layer(self) -> nn.Module:

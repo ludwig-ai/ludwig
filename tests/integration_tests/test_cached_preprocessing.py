@@ -1,5 +1,4 @@
 import os
-import tempfile
 
 import numpy as np
 import pytest
@@ -7,17 +6,7 @@ import pytest
 from ludwig.api import LudwigModel
 from ludwig.constants import MODEL_ECD, MODEL_GBM, PREPROCESSING, PROC_COLUMN, TRAINER
 from tests.integration_tests.test_gbm import category_feature
-from tests.integration_tests.utils import binary_feature, generate_data, number_feature, text_feature
-
-
-def run_test_suite(config, dataset, backend):
-    with tempfile.TemporaryDirectory() as tmpdir:
-        model = LudwigModel(config, backend=backend)
-        _, _, output_dir = model.train(dataset=dataset, output_directory=tmpdir)
-
-        model_dir = os.path.join(output_dir, "model")
-        loaded_model = LudwigModel.load(model_dir, backend=backend)
-        loaded_model.predict(dataset=dataset)
+from tests.integration_tests.utils import binary_feature, generate_data, number_feature, run_test_suite, text_feature
 
 
 @pytest.mark.parametrize(
