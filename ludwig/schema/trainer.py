@@ -773,7 +773,8 @@ class LLMTrainerConfig(BaseTrainerConfig):
 class ZeroShotTrainerConfig(LLMTrainerConfig):
     """Dataclass that configures most of the hyperparameters used for zero-shot LLM model training."""
 
-    pass
+    # Required for lookup during trainer initialization
+    type: str = schema_utils.ProtectedString("zeroshot")
 
 
 @DeveloperAPI
@@ -781,6 +782,9 @@ class ZeroShotTrainerConfig(LLMTrainerConfig):
 @ludwig_dataclass
 class FineTuneTrainerConfig(ECDTrainerConfig):
     """Dataclass that configures most of the hyperparameters used for fine-tuning LLM model training."""
+
+    # Required for lookup during trainer initialization
+    type: str = schema_utils.ProtectedString("finetune")
 
     base_learning_rate: float = schema_utils.NonNegativeFloat(
         default=0.0,

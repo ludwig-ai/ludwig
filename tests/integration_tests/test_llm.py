@@ -5,7 +5,8 @@ import pandas as pd
 import pytest
 
 from ludwig.api import LudwigModel
-from ludwig.constants import (  # ADAPTER,
+from ludwig.constants import (
+    ADAPTER,
     GENERATION,
     INPUT_FEATURES,
     MODEL_LLM,
@@ -13,6 +14,8 @@ from ludwig.constants import (  # ADAPTER,
     MODEL_TYPE,
     OUTPUT_FEATURES,
     PREPROCESSING,
+    TRAINER,
+    TYPE,
 )
 from ludwig.utils.types import DataFrame
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
@@ -84,6 +87,9 @@ def test_llm_text_to_text(tmpdir, backend, ray_cluster_4cpu):
         GENERATION: get_generation_config(),
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
+        TRAINER: {
+            TYPE: "zeroshot",
+        },
     }
 
     model = LudwigModel(config, backend=backend)
@@ -157,6 +163,9 @@ def test_llm_zero_shot_classification(tmpdir, backend, ray_cluster_4cpu):
         GENERATION: get_generation_config(),
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
+        TRAINER: {
+            TYPE: "zeroshot",
+        },
     }
 
     model = LudwigModel(config, backend=backend)
@@ -242,6 +251,9 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
         PREPROCESSING: {
             "split": {"type": "fixed"},
         },
+        TRAINER: {
+            TYPE: "zeroshot",
+        },
     }
 
     dataset_path = generate_data(
@@ -267,63 +279,66 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
     assert preds
 
 
-# @pytest.mark.llm
-# @pytest.mark.parametrize(
-#     "backend",
-#     [
-#         pytest.param(LOCAL_BACKEND, id="local"),
-#         pytest.param(RAY_BACKEND, id="ray"),
-#     ],
-# )
-# def test_llm_prompt_tuning(tmpdir, backend, ray_cluster_4cpu):
-#     input_features = [{"name": "review", "type": "text"}]
-#     output_features = [
-#         category_feature(name="label", preprocessing={"fallback_label": "3"}, decoder={"type": "classifier"})
-#     ]
+@pytest.mark.llm
+@pytest.mark.parametrize(
+    "backend",
+    [
+        pytest.param(LOCAL_BACKEND, id="local"),
+        pytest.param(RAY_BACKEND, id="ray"),
+    ],
+)
+def test_llm_prompt_tuning(tmpdir, backend, ray_cluster_4cpu):
+    input_features = [{"name": "review", "type": "text"}]
+    output_features = [
+        category_feature(name="label", preprocessing={"fallback_label": "3"}, decoder={"type": "classifier"})
+    ]
 
-#     data = [
-#         {"review": "I loved this movie!", "label": "positive"},
-#         {"review": "The food was okay, but the service was terrible.", "label": "negative"},
-#         {"review": "I can't believe how rude the staff was.", "label": "negative"},
-#         {"review": "This book was a real page-turner.", "label": "positive"},
-#         {"review": "The hotel room was dirty and smelled bad.", "label": "negative"},
-#         {"review": "I had a great experience at this restaurant.", "label": "positive"},
-#         {"review": "The concert was amazing!", "label": "positive"},
-#         {"review": "The traffic was terrible on my way to work this morning.", "label": "negative"},
-#         {"review": "The customer service was excellent.", "label": "positive"},
-#         {"review": "I was disappointed with the quality of the product.", "label": "negative"},
-#     ]
+    data = [
+        {"review": "I loved this movie!", "label": "positive"},
+        {"review": "The food was okay, but the service was terrible.", "label": "negative"},
+        {"review": "I can't believe how rude the staff was.", "label": "negative"},
+        {"review": "This book was a real page-turner.", "label": "positive"},
+        {"review": "The hotel room was dirty and smelled bad.", "label": "negative"},
+        {"review": "I had a great experience at this restaurant.", "label": "positive"},
+        {"review": "The concert was amazing!", "label": "positive"},
+        {"review": "The traffic was terrible on my way to work this morning.", "label": "negative"},
+        {"review": "The customer service was excellent.", "label": "positive"},
+        {"review": "I was disappointed with the quality of the product.", "label": "negative"},
+    ]
 
-#     df = pd.DataFrame(data)
+    df = pd.DataFrame(data)
 
-#     config = {
-#         MODEL_TYPE: MODEL_LLM,
-#         MODEL_NAME: TEST_MODEL_NAME,
-#         GENERATION: get_generation_config(),
-#         ADAPTER: {
-#             "type": "prompt_tuning",
-#             "num_virtual_tokens": 8,
-#             "prompt_tuning_init_text": "Classify if the review is positive, negative, or neutral: ",
-#         },
-#         INPUT_FEATURES: input_features,
-#         OUTPUT_FEATURES: output_features,
-#     }
+    config = {
+        MODEL_TYPE: MODEL_LLM,
+        MODEL_NAME: TEST_MODEL_NAME,
+        GENERATION: get_generation_config(),
+        ADAPTER: {
+            TYPE: "prompt_tuning",
+            "num_virtual_tokens": 8,
+            "prompt_tuning_init_text": "Classify if the review is positive, negative, or neutral: ",
+        },
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        TRAINER: {
+            TYPE: "finetune",
+        },
+    }
 
-#     model = LudwigModel(config, backend=backend)
-#     model.train(dataset=df, output_directory=str(tmpdir), skip_save_processed_input=True)
+    model = LudwigModel(config, backend=backend)
+    model.train(dataset=df, output_directory=str(tmpdir), skip_save_processed_input=True)
 
-#     prediction_df = pd.DataFrame(
-#         [
-#             {"review": "The food was amazing!", "label": "positive"},
-#             {"review": "The service was terrible.", "label": "negative"},
-#             {"review": "The food was okay.", "label": "neutral"},
-#         ]
-#     )
+    prediction_df = pd.DataFrame(
+        [
+            {"review": "The food was amazing!", "label": "positive"},
+            {"review": "The service was terrible.", "label": "negative"},
+            {"review": "The food was okay.", "label": "neutral"},
+        ]
+    )
 
-#     # TODO(Arnav): Make sure we can load the saved model
-#     # and then use it for predictions
+    # TODO(Arnav): Make sure we can load the saved model
+    # and then use it for predictions
 
-#     preds, _ = model.predict(dataset=prediction_df, output_directory=str(tmpdir))
-#     preds = convert_preds(backend, preds)
+    preds, _ = model.predict(dataset=prediction_df, output_directory=str(tmpdir))
+    preds = convert_preds(backend, preds)
 
-#     assert preds
+    assert preds
