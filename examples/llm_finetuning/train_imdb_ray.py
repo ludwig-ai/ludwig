@@ -37,10 +37,10 @@ preprocessing:
     probabilities: [0.99, 0.005, 0.005]
 
 trainer:
-  batch_size: 4
+  batch_size: 8
   # epochs: 3
   train_steps: 3
-  gradient_accumulation_steps: 1
+  gradient_accumulation_steps: 8
 
 backend:
   type: ray
