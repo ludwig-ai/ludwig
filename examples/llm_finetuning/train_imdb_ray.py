@@ -22,7 +22,7 @@ output_features:
     type: category
 
 trainer:
-  batch_size: 8
+  batch_size: 4
   epochs: 3
   gradient_accumulation_steps: 8
 
@@ -37,8 +37,6 @@ backend:
         offload_optimizer:
           device: cpu
           pin_memory: true
-      fp16:
-        enabled: true
 """
 )
 
