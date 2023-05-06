@@ -36,7 +36,13 @@ warnings.filterwarnings(
 
 
 class DeepSpeedStrategy(DDPStrategy):
-    def __init__(self, zero_optimization: Optional[Dict[str, Any]] = None, **kwargs):
+    def __init__(
+        self,
+        zero_optimization: Optional[Dict[str, Any]] = None,
+        fp16: Optional[Dict[str, Any]] = None,
+        compression_training: Optional[Dict[str, Any]] = None,
+        **kwargs
+    ):
         # If we're initializing from a `deepspeed` CLI command, deepspeed will have already been initialized, as
         # indicated by the presence of the LOCAL_RANK var. Otherwise, we're initializing from Ray / torchrun, and will
         # need to set this var ourselves, then init DeepSpeed here.
@@ -45,6 +51,8 @@ class DeepSpeedStrategy(DDPStrategy):
 
         super().__init__(**kwargs)
         self.zero_optimization = zero_optimization or DEFAULT_ZERO_OPTIMIZATION
+        self.fp16 = fp16
+        self.compression_training = compression_training
 
         if init_deepspeed:
             os.environ["LOCAL_RANK"] = str(self.local_rank())
@@ -77,6 +85,14 @@ class DeepSpeedStrategy(DDPStrategy):
             "gradient_accumulation_steps": trainer_config.gradient_accumulation_steps,
             "steps_per_print": trainer_config.steps_per_checkpoint or 10000,
         }
+
+        # DeepSpeed doesn't like passing these params as None values
+        # TODO(travis): bfloat16, which requires fixing numpy conversion on cpu
+        if self.fp16 is not None:
+            ds_config["fp16"] = self.fp16
+        if self.compression_training is not None:
+            ds_config["compression_training"] = self.compression_training
+
         model_engine, optimizer, _, _ = deepspeed.initialize(
             model=model,
             model_parameters=model.parameters(),
@@ -84,7 +100,12 @@ class DeepSpeedStrategy(DDPStrategy):
             config=ds_config,
             dist_init_required=False,
         )
-        return model_engine, optimizer.optimizer
+
+        if hasattr(optimizer, "optimizer"):
+            # Zero-3 wraps the optimizer
+            optimizer = optimizer.optimizer
+
+        return model_engine, optimizer
 
     def to_device(self, model: nn.Module, device: Optional[torch.device] = None) -> nn.Module:
         return model
@@ -191,4 +212,10 @@ class DeepSpeedCheckpoint(Checkpoint):
         self.model.save_checkpoint(save_path, client_state=client_state)
 
     def get_state_for_inference(self, save_path: str, device: Optional[torch.device] = None) -> Mapping[str, Any]:
-        return get_fp32_state_dict_from_zero_checkpoint(save_path)
+        if self.model.zero_optimization_stage() == 3:
+            return get_fp32_state_dict_from_zero_checkpoint(save_path)
+
+        self.model.load_checkpoint(
+            save_path, load_optimizer_states=False, load_lr_scheduler_states=False, load_module_only=True
+        )
+        return self.model.module.cpu().state_dict()
