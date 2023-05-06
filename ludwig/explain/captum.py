@@ -22,6 +22,7 @@ from ludwig.constants import (
     DATE,
     IMAGE,
     INPUT_FEATURES,
+    MINIMUM_BATCH_SIZE,
     NAME,
     NUMBER,
     PREPROCESSING,
@@ -55,13 +56,24 @@ class ExplanationRunConfig:
     batch_size: int
 
 
-def retry_on_cuda_oom(run_config: ExplanationRunConfig):
-    def retry_on_cuda_oom_fn(fn):
-        def retry_on_cuda_oom_wrapper(*args, **kwargs):
-            while run_config.batch_size >= 2:
+def retry_with_halved_batch_size(run_config: ExplanationRunConfig):
+    """Function wrapper that retries an fn with a halved batch size.
+
+    We want to maintain as large of a batch size as possible to maximize throughput. However, calculating explanations
+    requires significantly more memory, and the original batch sized used during training may be too large and cause a
+    CUDA OOM error, for example, if using GPUs.
+
+    Will raise an error if a non-OOM error is raised, or if the batch size is reduced below 1 and the fn still fails.
+    """
+
+    def retry_with_halved_batch_size_fn(fn):
+        def retry_with_halved_batch_size_wrapper(*args, **kwargs):
+            latest_error = None
+            while run_config.batch_size >= MINIMUM_BATCH_SIZE:
                 try:
                     return fn(*args, **kwargs)
                 except RuntimeError as e:
+                    latest_error = e
                     # PyTorch only generates Runtime errors for CUDA OOM.
                     gc.collect()
                     if "CUDA out of memory" in str(e) or isinstance(e, torch.cuda.OutOfMemoryError):
@@ -71,11 +83,14 @@ def retry_on_cuda_oom(run_config: ExplanationRunConfig):
                         # Not a CUDA error
                         raise
 
-            raise RuntimeError("CUDA OOM raised during explanation, but batch size cannot be reduced any further")
+            raise RuntimeError(
+                f"Ran into latest error {latest_error} during explanation. "
+                "If a CUDA out of memory error, then the batch size could not be reduced any further."
+            )
 
-        return retry_on_cuda_oom_wrapper
+        return retry_with_halved_batch_size_wrapper
 
-    return retry_on_cuda_oom_fn
+    return retry_with_halved_batch_size_fn
 
 
 class WrapperModule(torch.nn.Module):
@@ -160,8 +175,8 @@ class IntegratedGradientsExplainer(Explainer):
         input_features: LudwigFeatureDict = self.model.model.input_features
         run_config = ExplanationRunConfig(batch_size=self.model.config_obj.trainer.batch_size)
 
-        get_input_tensors_with_retry = retry_on_cuda_oom(run_config)(get_input_tensors)
-        get_total_attribution_with_retry = retry_on_cuda_oom(run_config)(get_total_attribution)
+        get_input_tensors_with_retry = retry_with_halved_batch_size(run_config)(get_input_tensors)
+        get_total_attribution_with_retry = retry_with_halved_batch_size(run_config)(get_total_attribution)
 
         # Convert input data into embedding tensors from the output of the model encoders.
         inputs_encoded = get_input_tensors_with_retry(self.model, self.inputs_df, run_config)

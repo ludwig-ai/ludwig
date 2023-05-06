@@ -5,7 +5,7 @@ from typing import Callable, Dict, List, Optional, Union
 
 from torch.utils.tensorboard import SummaryWriter
 
-from ludwig.constants import TEST, TRAIN, TRAINING, VALIDATION
+from ludwig.constants import MINIMUM_BATCH_SIZE, TEST, TRAIN, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.features.feature_utils import LudwigFeatureDict
@@ -201,7 +201,7 @@ class ZeroShotTrainer(BaseTrainer):
         snapshot_weights: bool = True,
         on_best_batch_size_updated: Optional[Callable[[int, float, int], None]] = None,
     ) -> int:
-        return 1
+        return MINIMUM_BATCH_SIZE
 
     @property
     def validation_field(self):

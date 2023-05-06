@@ -195,6 +195,8 @@ BATCH_SIZE = "batch_size"
 EVAL_BATCH_SIZE = "eval_batch_size"
 DEFAULT_BATCH_SIZE = "auto"
 FALLBACK_BATCH_SIZE = 128
+# The smallest batch size that is supported on Ludwig.
+MINIMUM_BATCH_SIZE = 1
 # 2^40. Used for `max_batch_size` config param. Not a hard constraint for `batch_size` config param.
 MAX_POSSIBLE_BATCH_SIZE = 1099511627776
 # min batch size. Used as a floor for batch size tuning.
