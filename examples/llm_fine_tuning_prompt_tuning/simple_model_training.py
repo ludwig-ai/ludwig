@@ -65,6 +65,7 @@ config = yaml.safe_load(
             num_virtual_tokens: 16
             prompt_tuning_init_text: "Classify the review sentiment as one positive, negative, neutral: "
         trainer:
+            type: finetune
             batch_size: 2
             early_stop: 20
     """
