@@ -522,6 +522,9 @@ def check_llm_prompt_tuning_adapter(config: "ModelConfig"):  # noqa: F821
     if config.model_type != MODEL_LLM:
         return
 
+    if not config.adapter:
+        return
+
     if config.adapter.type != "prompt_tuning":
         return
 
@@ -535,6 +538,9 @@ def check_llm_prompt_tuning_adapter(config: "ModelConfig"):  # noqa: F821
 def check_llm_finetuning_num_virtual_tokens_set(config: "ModelConfig"):
     """Checks that the num_virtual_tokens is set to a value greater than 0 when finetuning is enabled."""
     if config.model_type != MODEL_LLM:
+        return
+
+    if not config.adapter:
         return
 
     # num_virtual_tokens is only required by these 3 adapter types
@@ -557,6 +563,9 @@ def check_llm_finetuning_adalora_config(config: "ModelConfig"):
     neither is true, AdaloraModel will run into issues downstream.
     """
     if config.model_type != MODEL_LLM:
+        return
+
+    if not config.adapter:
         return
 
     if config.adapter.type != "adalora":
@@ -584,6 +593,9 @@ def check_llm_finetuning_adaption_prompt_parameters(config: "ModelConfig"):
     Adaption prompt is only supported for Llama models.
     """
     if config.model_type != MODEL_LLM:
+        return
+
+    if not config.adapter:
         return
 
     if config.adapter.type != "adaption_prompt":
