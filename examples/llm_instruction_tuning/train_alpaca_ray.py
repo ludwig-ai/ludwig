@@ -8,7 +8,7 @@ from ludwig.api import LudwigModel
 config = yaml.safe_load(
     """
 model_type: llm
-model_name: facebook/opt-350m
+model_name: bigscience/bloomz-560m
 
 input_features:
   - name: instruction
@@ -25,14 +25,15 @@ output_features:
 
 trainer:
     type: finetune
-    batch_size: 128
+    batch_size: 8
 
 backend:
-  type: local
-#   type: ray
-#   cache_dir: /src/cache
-#   trainer:
-#     use_gpu: true
+  # type: local
+  type: ray
+  cache_dir: /src/cache
+  trainer:
+    num_workers: 1
+    use_gpu: true
 #     strategy:
 #       type: deepspeed
 #       zero_optimization:

@@ -6,6 +6,7 @@ import pytest
 
 from ludwig.api import LudwigModel
 from ludwig.constants import (
+    BATCH_SIZE,
     EPOCHS,
     GENERATION,
     INPUT_FEATURES,
@@ -52,16 +53,16 @@ def ray_backend():
 
 def get_dataset():
     data = [
-        {"review": "I loved this movie!", "label": "positive"},
-        {"review": "The food was okay, but the service was terrible.", "label": "negative"},
-        {"review": "I can't believe how rude the staff was.", "label": "negative"},
-        {"review": "This book was a real page-turner.", "label": "positive"},
-        {"review": "The hotel room was dirty and smelled bad.", "label": "negative"},
-        {"review": "I had a great experience at this restaurant.", "label": "positive"},
-        {"review": "The concert was amazing!", "label": "positive"},
-        {"review": "The traffic was terrible on my way to work this morning.", "label": "negative"},
-        {"review": "The customer service was excellent.", "label": "positive"},
-        {"review": "I was disappointed with the quality of the product.", "label": "negative"},
+        {"review": "I loved this movie!", "output": "positive"},
+        {"review": "The food was okay, but the service was terrible.", "output": "negative"},
+        {"review": "I can't believe how rude the staff was.", "output": "negative"},
+        {"review": "This book was a real page-turner.", "output": "positive"},
+        {"review": "The hotel room was dirty and smelled bad.", "output": "negative"},
+        {"review": "I had a great experience at this restaurant.", "output": "positive"},
+        {"review": "The concert was amazing!", "output": "positive"},
+        {"review": "The traffic was terrible on my way to work this morning.", "output": "negative"},
+        {"review": "The customer service was excellent.", "output": "positive"},
+        {"review": "I was disappointed with the quality of the product.", "output": "negative"},
     ]
     df = pd.DataFrame(data)
     return df
@@ -337,13 +338,11 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
         "adaption_prompt",
     ],
 )
-def test_llm_finetuning_strategies(tmpdir, backend, finetune_strategy, adapter_args, ray_cluster_4cpu):
-    input_features = [{"name": "review", "type": "text"}]
-    output_features = [
-        category_feature(name="label", preprocessing={"fallback_label": "3"}, decoder={"type": "classifier"})
-    ]
+def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strategy, adapter_args, ray_cluster_4cpu):
+    input_features = [text_feature(name="input", encoder={"type": "passthrough"})]
+    output_features = [text_feature(name="output")]
 
-    df = get_dataset()
+    df = generate_data(input_features, output_features, filename=csv_filename, num_examples=25)
 
     model_name = TEST_MODEL_NAME
     if finetune_strategy == "adalora":
@@ -353,10 +352,12 @@ def test_llm_finetuning_strategies(tmpdir, backend, finetune_strategy, adapter_a
         # At the time of writing this test, Adaption Prompt fine-tuning is only supported for Llama models
         model_name = "HuggingFaceM4/tiny-random-LlamaForCausalLM"
 
+    model_name = "facebook/opt-350m"
+
     config = {
         MODEL_TYPE: MODEL_LLM,
         MODEL_NAME: model_name,
-        GENERATION: get_generation_config(),
+        # GENERATION: get_generation_config(),
         TUNER: {
             TYPE: finetune_strategy,
             **adapter_args,
@@ -365,12 +366,13 @@ def test_llm_finetuning_strategies(tmpdir, backend, finetune_strategy, adapter_a
         OUTPUT_FEATURES: output_features,
         TRAINER: {
             TYPE: "finetune",
+            BATCH_SIZE: 8,
             EPOCHS: 2,
         },
     }
 
     model = LudwigModel(config, backend=backend)
-    model.train(dataset=df, output_directory=str(tmpdir), skip_save_processed_input=True)
+    model.train(dataset=df, output_directory=str(tmpdir), skip_save_processed_input=False)
 
     prediction_df = pd.DataFrame(
         [
