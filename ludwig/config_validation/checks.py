@@ -242,7 +242,6 @@ def check_retrieval_config(config: "ModelConfig") -> None:
     for input_feature in config.input_features:
         if input_feature.type == TEXT:
             if input_feature.preprocessing.prompt.task is not None:
-
                 _check_k_retrieval_config(input_feature.preprocessing.prompt.retrieval)
                 _check_model_name_retrieval_config(input_feature.preprocessing.prompt.retrieval)
 
@@ -499,3 +498,35 @@ def check_llm_atleast_one_input_text_feature(config: "ModelConfig"):  # noqa: F8
             return
 
     raise ConfigValidationError("LLM requires at least one text input feature.")
+
+
+@register_config_check
+def check_llm_prompt_tuning_adapter(config: "ModelConfig"):  # noqa: F821
+    """Checks that the prompt tuning adapter is configured correctly based on prompt_tuning_init strategy."""
+    if config.model_type != MODEL_LLM:
+        return
+
+    if config.adapter.type != "prompt_tuning":
+        return
+
+    if config.adapter.prompt_tuning_init == "TEXT" and not config.adapter.prompt_tuning_init_text:
+        raise ConfigValidationError(
+            "`prompt_tuning_init_text` must be specified when `prompt_tuning_init` is set to `TEXT`."
+        )
+
+
+@register_config_check
+def check_llm_finetuning_num_virtual_tokens_set(config: "ModelConfig"):
+    """Checks that the num_virtual_tokens is set to a value greater than 0 when finetuning is enabled."""
+    if config.model_type != MODEL_LLM:
+        return
+
+    # num_virtual_tokens is only required by these 3 adapter types
+    if config.adapter.type not in {"prompt_tuning", "prefix_tuning", "p_tuning"}:
+        return
+
+    if not config.adapter.num_virtual_tokens:
+        raise ConfigValidationError(
+            "`num_virtual_tokens` must be set to a value greater than 0 when finetuning is enabled and the adapter"
+            "type is `prompt_tuning`, `prefix_tuning`, or `p_tuning`."
+        )
