@@ -344,15 +344,17 @@ class AdaptionPromptAdapterConfig(BasePeftConfig):
         description="Name of the attention submodules to insert adaption prompts into.",
     )
 
-    adapter_length: int = schema_utils.Integer(
+    adapter_len: int = schema_utils.Integer(
         default=None,
-        allow_none=True,
+        allow_none=False,
         description="Number of adapter tokens to insert.",
     )
 
+    # Set default to 1 even though the original PEFT dataclass sets this to None
+    # Otherwise, this runs into issues when initializating the AdaptionPromptModel
     adapter_layers: int = schema_utils.Integer(
         default=None,
-        allow_none=True,
+        allow_none=False,
         description="Number of adapter layers to insert (from the top).",
     )
 
