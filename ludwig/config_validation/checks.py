@@ -505,7 +505,7 @@ def check_llm_atleast_one_input_text_feature(config: "ModelConfig"):  # noqa: F8
 
 @register_config_check
 def check_llm_finetuning_adalora_config(config: "ModelConfig"):
-    """Checks that the adalora adapter is configured correctly.
+    """Checks that the adalora tuner is configured correctly.
 
     It requires a set of target_modules to be specified in the config for the model. If it isn't specified by the user,
     we also check against PEFT's predefined target module list for ADALORA to see if this key is present there. If
@@ -514,21 +514,21 @@ def check_llm_finetuning_adalora_config(config: "ModelConfig"):
     if config.model_type != MODEL_LLM:
         return
 
-    if not config.adapter:
+    if not config.tuner:
         return
 
-    if config.adapter.type != "adalora":
+    if config.tuner.type != "adalora":
         return
 
     from peft.utils import TRANSFORMERS_MODELS_TO_ADALORA_TARGET_MODULES_MAPPING
 
     model_config = _get_llm_model_config(config.model_name)
     if (
-        not config.adapter.target_modules
+        not config.tuner.target_modules
         and model_config.model_type not in TRANSFORMERS_MODELS_TO_ADALORA_TARGET_MODULES_MAPPING
     ):
         raise ConfigValidationError(
-            f"Adalora adapter is not supported for {model_config.model_type} model. "
+            f"Adalora tuner is not supported for {model_config.model_type} model. "
             f"Supported model types are: {list(TRANSFORMERS_MODELS_TO_ADALORA_TARGET_MODULES_MAPPING.keys())}. "
             "If you know the target modules for your model, please specify them in the config through the "
             "`target_modules` key."
@@ -537,17 +537,17 @@ def check_llm_finetuning_adalora_config(config: "ModelConfig"):
 
 @register_config_check
 def check_llm_finetuning_adaption_prompt_parameters(config: "ModelConfig"):
-    """Checks that the adaption_prompt adapter is configured correctly.
+    """Checks that the adaption_prompt tuner is configured correctly.
 
     Adaption prompt is only supported for Llama models.
     """
     if config.model_type != MODEL_LLM:
         return
 
-    if not config.adapter:
+    if not config.tuner:
         return
 
-    if config.adapter.type != "adaption_prompt":
+    if config.tuner.type != "adaption_prompt":
         return
 
     from peft.tuners.adaption_prompt import TRANSFORMERS_MODEL_CONFIG
@@ -556,7 +556,7 @@ def check_llm_finetuning_adaption_prompt_parameters(config: "ModelConfig"):
     model_config = _get_llm_model_config(config.model_name)
     if model_config.model_type not in TRANSFORMERS_MODEL_CONFIG:
         raise ConfigValidationError(
-            f"Adaption prompt adapter is not supported for {model_config.model_type} model. "
+            f"Adaption prompt tuner is not supported for {model_config.model_type} model. "
             f"Supported model types are: {list(TRANSFORMERS_MODEL_CONFIG.keys())}."
         )
 

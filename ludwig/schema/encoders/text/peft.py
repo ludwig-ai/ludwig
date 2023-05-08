@@ -119,8 +119,6 @@ class PromptTuningConfig(BasePromptLearningConfig):
     """Adapted from https://github.com/huggingface/peft/blob/main/src/peft/tuners/prompt_tuning.py."""
 
     def __post_init__(self):
-        super().__post_init__()
-
         if self.prompt_tuning_init == "TEXT" and not self.prompt_tuning_init_text:
             raise ConfigValidationError(
                 "Must provide `prompt_tuning_init_text` when `prompt_tuning_init` is set to `TEXT`."
