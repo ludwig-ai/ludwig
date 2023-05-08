@@ -12,7 +12,7 @@ _adapter_registry = Registry()
 def register_adapter(name: str):
     """Registers an adapter config class with the adapter config registry."""
 
-    def wrap(adapter_config: BaseAdapterConfig):
+    def wrap(adapter_config: BasePeftAdapterConfig):
         _adapter_registry[name] = adapter_config
         return adapter_config
 
@@ -27,24 +27,13 @@ def get_adapter_cls(name: str):
 
 @DeveloperAPI
 @schema_utils.ludwig_dataclass
-class BaseAdapterConfig(schema_utils.BaseMarshmallowConfig, ABC):
-    """Base class for adapter configs.
+class BasePeftAdapterConfig(schema_utils.BaseMarshmallowConfig, ABC):
+    """Config for prompt learning adapters.
 
     Not meant to be used directly.
     """
 
     task_type: str = schema_utils.ProtectedString("CAUSAL_LM")
-
-
-@DeveloperAPI
-@register_adapter("prompt_tuning")
-@schema_utils.ludwig_dataclass
-class PromptTuningAdapterConfig(BaseAdapterConfig):
-    # Explicitly set type property in the config because it is needed when we
-    # load a saved PEFT model back into Ludwig.
-    type: str = schema_utils.ProtectedString("prompt_tuning")
-
-    peft_type: str = schema_utils.ProtectedString("PROMPT_TUNING")
 
     num_virtual_tokens: Optional[int] = schema_utils.Integer(
         default=None,
@@ -77,6 +66,17 @@ class PromptTuningAdapterConfig(BaseAdapterConfig):
         description="The number of layers in the base transformer model.",
     )
 
+
+@DeveloperAPI
+@register_adapter("prompt_tuning")
+@schema_utils.ludwig_dataclass
+class PromptTuningAdapterConfig(BasePeftAdapterConfig):
+    # Explicitly set type property in the config because it is needed when we
+    # load a saved PEFT model back into Ludwig.
+    type: str = schema_utils.ProtectedString("prompt_tuning")
+
+    peft_type: str = schema_utils.ProtectedString("PROMPT_TUNING")
+
     # TODO(Arnav): Refactor to allow both RANDOM and TEXT strategies
     prompt_tuning_init: str = schema_utils.ProtectedString(
         "TEXT", description="The type of initialization to use for the prompt embedding. "
@@ -86,6 +86,84 @@ class PromptTuningAdapterConfig(BaseAdapterConfig):
         default="",
         allow_none=False,
         description="The text to use to initialize the prompt embedding.",
+    )
+
+
+@DeveloperAPI
+@register_adapter("prefix_tuning")
+@schema_utils.ludwig_dataclass
+class PrefixTuningAdapterconfig(BasePeftAdapterConfig):
+    # Explicitly set type property in the config because it is needed when we
+    # load a saved PEFT model back into Ludwig.
+    type: str = schema_utils.ProtectedString("prefix_tuning")
+
+    peft_type: str = schema_utils.ProtectedString("PREFIX_TUNING")
+
+    encoder_hidden_size: int = schema_utils.Integer(
+        default=None,
+        allow_none=True,
+        description="The hidden embedding dimension of the prompt encoder.",
+    )
+
+    prefix_projection: bool = schema_utils.Boolean(
+        default=False,
+        allow_none=True,
+        description="Whether to use a projection layer in the prompt encoder to project the prefix tokens",
+    )
+
+
+@DeveloperAPI
+@register_adapter("p_tuning")
+@schema_utils.ludwig_dataclass
+class PTuningAdapterConfig(BasePeftAdapterConfig):
+    # Explicitly set type property in the config because it is needed when we
+    # load a saved PEFT model back into Ludwig.
+    type: str = schema_utils.ProtectedString("p_tuning")
+
+    peft_type: str = schema_utils.ProtectedString("P_TUNING")
+
+    encoder_reparameterization_type: str = schema_utils.StringOptions(
+        ["MLP", "LSTM"],
+        default="MLP",
+        allow_none=True,
+        description="The type of reparameterization to use for the prompt encoder.",
+    )
+
+    encoder_hidden_size: int = schema_utils.Integer(
+        default=None,
+        allow_none=True,
+        description="The hidden embedding dimension of the prompt encoder.",
+    )
+
+    encoder_num_layers: int = schema_utils.Integer(
+        default=2,
+        allow_none=True,
+        description="The number of layers in the prompt encoder.",
+    )
+
+    encoder_dropout: float = schema_utils.FloatRange(
+        default=0.0,
+        min=0.0,
+        max=1.0,
+        allow_none=True,
+        description="The dropout probability for the prompt encoder.",
+    )
+
+
+@DeveloperAPI
+@register_adapter("lora")
+@schema_utils.ludwig_dataclass
+class LoRAAdapterConfig(BasePeftAdapterConfig):
+    # Explicitly set type property in the config because it is needed when we
+    # load a saved PEFT model back into Ludwig.
+    type: str = schema_utils.ProtectedString("lora")
+
+    peft_type: str = schema_utils.ProtectedString("LORA")
+
+    r: int = schema_utils.Integer(
+        default=8,
+        allow_none=True,
+        description="LoRA attention dimension",
     )
 
 

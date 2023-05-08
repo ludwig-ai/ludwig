@@ -2,7 +2,7 @@ from typing import Optional
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.adapter import AdapterDataclassField, BaseAdapterConfig
+from ludwig.schema.adapter import AdapterDataclassField, BasePeftAdapterConfig
 from ludwig.schema.defaults.llm import LLMDefaultsConfig, LLMDefaultsField
 from ludwig.schema.features.base import (
     BaseInputFeatureConfig,
@@ -54,7 +54,7 @@ class LLMModelConfig(ModelConfig):
 
     generation: LLMGenerationConfig = LLMGenerationConfigField().get_default_field()
 
-    adapter: BaseAdapterConfig = AdapterDataclassField(
+    adapter: BasePeftAdapterConfig = AdapterDataclassField(
         default=None,
         description="The adapter to use for the model. This is used for PEFT based fine-tuning",
     )

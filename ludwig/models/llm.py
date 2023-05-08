@@ -58,12 +58,13 @@ class LLM(BaseModel):
 
             # Deepcopy and remove type manually since it is not a valid argument for the adapter config
             adapter_config = copy.deepcopy(self.config_obj.adapter.to_dict())
-            adapter_config.pop("type", None)
+            adapter_type = adapter_config.pop("type", None)
 
             self.model = get_peft_model(self.model, get_peft_config(adapter_config))
 
             logger.info("==================================================")
             logger.info("Trainable Parameter Summary For Fine-Tuning:")
+            logger.info(f"Fine-tuning with adapter: {adapter_type}")
             self.model.print_trainable_parameters()
             logger.info("==================================================")
 
