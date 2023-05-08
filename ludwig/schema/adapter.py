@@ -324,6 +324,39 @@ class AdaLoRAAdapterConfig(LoRAAdapterConfig):
 
 
 @DeveloperAPI
+@register_adapter("adaption_prompt")
+@schema_utils.ludwig_dataclass
+class AdaptionPromptAdapterConfig(BasePeftConfig):
+    """Adapted from https://github.com/huggingface/peft/blob/main/src/peft/tuners/adaption_prompt.py."""
+
+    # Explicitly set type property in the config because it is needed when we
+    # load a saved PEFT model back into Ludwig.
+    type: str = schema_utils.ProtectedString("adaption_prompt")
+
+    peft_type: str = schema_utils.ProtectedString("ADAPTION_PROMPT")
+
+    # TODO(Arnav): Extended to support regex expression of the module names to replace.
+    target_modules: List[str] = schema_utils.List(
+        list_type=str,
+        default=None,
+        allow_none=True,
+        description="Name of the attention submodules to insert adaption prompts into.",
+    )
+
+    adapter_length: int = schema_utils.Integer(
+        default=None,
+        allow_none=True,
+        description="Number of adapter tokens to insert.",
+    )
+
+    adapter_layers: int = schema_utils.Integer(
+        default=None,
+        allow_none=True,
+        description="Number of adapter layers to insert (from the top).",
+    )
+
+
+@DeveloperAPI
 def get_adapter_conds():
     """Returns a JSON schema of conditionals to validate against adapter types."""
     conds = []
