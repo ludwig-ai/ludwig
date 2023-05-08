@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Optional, Type
+from typing import List, Optional, Type, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
@@ -12,7 +12,7 @@ _adapter_registry = Registry()
 def register_adapter(name: str):
     """Registers an adapter config class with the adapter config registry."""
 
-    def wrap(adapter_config: BasePeftAdapterConfig):
+    def wrap(adapter_config: Union[BasePeftConfig, BasePromptLearningConfig]):
         _adapter_registry[name] = adapter_config
         return adapter_config
 
@@ -27,13 +27,32 @@ def get_adapter_cls(name: str):
 
 @DeveloperAPI
 @schema_utils.ludwig_dataclass
-class BasePeftAdapterConfig(schema_utils.BaseMarshmallowConfig, ABC):
-    """Config for prompt learning adapters.
+class BasePeftConfig(schema_utils.BaseMarshmallowConfig, ABC):
+    """Config for prompt learning adapters. Not meant to be used directly.
 
-    Not meant to be used directly.
+    Adapted from https://github.com/huggingface/peft/blob/main/src/peft/utils/config.py (PeftConfig)
     """
 
+    peft_type: str
+
+    # Hard coded since we default to using AutoModelForCausalLM for LLM model types.
+    # TODO(Arnav): Remove this restriction when we support other AutoModel types like Seq2SeqLM, etc.
     task_type: str = schema_utils.ProtectedString("CAUSAL_LM")
+
+    inference_mode: bool = schema_utils.Boolean(
+        default=False,
+        allow_none=True,
+        description="Whether to use the model in inference mode. In inference mode, the model will not be trained.",
+    )
+
+
+@DeveloperAPI
+@schema_utils.ludwig_dataclass
+class BasePromptLearningConfig(BasePeftConfig):
+    """Config for prompt learning adapters. Not meant to be used directly.
+
+    Adapted from https://github.com/huggingface/peft/blob/main/src/peft/utils/config.py (PromptLearningConfig)
+    """
 
     num_virtual_tokens: Optional[int] = schema_utils.Integer(
         default=None,
@@ -70,7 +89,9 @@ class BasePeftAdapterConfig(schema_utils.BaseMarshmallowConfig, ABC):
 @DeveloperAPI
 @register_adapter("prompt_tuning")
 @schema_utils.ludwig_dataclass
-class PromptTuningAdapterConfig(BasePeftAdapterConfig):
+class PromptTuningAdapterConfig(BasePromptLearningConfig):
+    """Adapted from https://github.com/huggingface/peft/blob/main/src/peft/tuners/prompt_tuning.py."""
+
     # Explicitly set type property in the config because it is needed when we
     # load a saved PEFT model back into Ludwig.
     type: str = schema_utils.ProtectedString("prompt_tuning")
@@ -79,7 +100,8 @@ class PromptTuningAdapterConfig(BasePeftAdapterConfig):
 
     # TODO(Arnav): Refactor to allow both RANDOM and TEXT strategies
     prompt_tuning_init: str = schema_utils.ProtectedString(
-        "TEXT", description="The type of initialization to use for the prompt embedding. "
+        "TEXT",
+        description="The type of initialization to use for the prompt embedding. ",
     )
 
     prompt_tuning_init_text: str = schema_utils.String(
@@ -92,7 +114,9 @@ class PromptTuningAdapterConfig(BasePeftAdapterConfig):
 @DeveloperAPI
 @register_adapter("prefix_tuning")
 @schema_utils.ludwig_dataclass
-class PrefixTuningAdapterconfig(BasePeftAdapterConfig):
+class PrefixTuningAdapterconfig(BasePromptLearningConfig):
+    """Adapted from https://github.com/huggingface/peft/blob/main/src/peft/tuners/prefix_tuning.py."""
+
     # Explicitly set type property in the config because it is needed when we
     # load a saved PEFT model back into Ludwig.
     type: str = schema_utils.ProtectedString("prefix_tuning")
@@ -115,7 +139,7 @@ class PrefixTuningAdapterconfig(BasePeftAdapterConfig):
 @DeveloperAPI
 @register_adapter("p_tuning")
 @schema_utils.ludwig_dataclass
-class PTuningAdapterConfig(BasePeftAdapterConfig):
+class PTuningAdapterConfig(BasePromptLearningConfig):
     # Explicitly set type property in the config because it is needed when we
     # load a saved PEFT model back into Ludwig.
     type: str = schema_utils.ProtectedString("p_tuning")
@@ -153,7 +177,9 @@ class PTuningAdapterConfig(BasePeftAdapterConfig):
 @DeveloperAPI
 @register_adapter("lora")
 @schema_utils.ludwig_dataclass
-class LoRAAdapterConfig(BasePeftAdapterConfig):
+class LoRAAdapterConfig(BasePeftConfig):
+    """Adapted From https://github.com/huggingface/peft/blob/main/src/peft/tuners/lora.py."""
+
     # Explicitly set type property in the config because it is needed when we
     # load a saved PEFT model back into Ludwig.
     type: str = schema_utils.ProtectedString("lora")
@@ -164,6 +190,57 @@ class LoRAAdapterConfig(BasePeftAdapterConfig):
         default=8,
         allow_none=True,
         description="LoRA attention dimension",
+    )
+
+    # TODO(Arnav): Extended to support regex expression of the module names to replace.
+    target_modules: List[str] = schema_utils.List(
+        list_type=str,
+        default=None,
+        allow_none=True,
+        description="List of module names to replace with LoRA attention.",
+    )
+
+    lora_alpha: int = schema_utils.Integer(
+        default=None,
+        allow_none=True,
+        description="LoRA alpha parameter",
+    )
+
+    lora_dropout: float = schema_utils.FloatRange(
+        default=None,
+        min=0.0,
+        max=1.0,
+        allow_none=True,
+        description="LoRA dropout probability",
+    )
+
+    fan_in_fan_out: bool = schema_utils.Boolean(
+        default=False,
+        allow_none=True,
+        description="Whether to use fan-in/fan-out initialization for LoRA attention."
+        "Set this to True if the layer to replace stores weight like (fan_in, fan_out)",
+    )
+
+    bias: str = schema_utils.StringOptions(
+        ["none", "all", "lora_only"],
+        default="none",
+        allow_none=True,
+        description="This bias type for Lora. Can be `none`, `all` or `lora_only`",
+    )
+
+    modules_to_save: Optional[List[str]] = schema_utils.List(
+        list_type=str,
+        default=None,
+        allow_none=True,
+        description="List of modules apart from LoRA layers to be set as trainable and saved in the final checkpoint. "
+        "For example, in Sequence Classification or Token Classification tasks, "
+        "the final layer `classifier/score` are randomly initialized and as such need to be trainable and saved.",
+    )
+
+    init_lora_weights: bool = schema_utils.Boolean(
+        default=True,
+        allow_none=True,
+        description="Whether to initialize LoRA weights with the original weights of the layer to replace.",
     )
 
 

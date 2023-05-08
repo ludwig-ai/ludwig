@@ -1,8 +1,8 @@
-from typing import Optional
+from typing import Optional, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.adapter import AdapterDataclassField, BasePeftAdapterConfig
+from ludwig.schema.adapter import AdapterDataclassField, BasePeftConfig, BasePromptLearningConfig
 from ludwig.schema.defaults.llm import LLMDefaultsConfig, LLMDefaultsField
 from ludwig.schema.features.base import (
     BaseInputFeatureConfig,
@@ -46,7 +46,6 @@ class LLMModelConfig(ModelConfig):
     defaults: Optional[LLMDefaultsConfig] = LLMDefaultsField().get_default_field()
     hyperopt: Optional[HyperoptConfig] = HyperoptField().get_default_field()
 
-    # trainer: LLMTrainerConfig = LLMTrainerField().get_default_field()
     trainer: LLMTrainerConfig = LLMTrainerDataclassField(
         default="zeroshot",
         description="The trainer to use for the model",
@@ -54,7 +53,7 @@ class LLMModelConfig(ModelConfig):
 
     generation: LLMGenerationConfig = LLMGenerationConfigField().get_default_field()
 
-    adapter: BasePeftAdapterConfig = AdapterDataclassField(
+    adapter: Union[BasePeftConfig, BasePromptLearningConfig] = AdapterDataclassField(
         default=None,
         description="The adapter to use for the model. This is used for PEFT based fine-tuning",
     )
