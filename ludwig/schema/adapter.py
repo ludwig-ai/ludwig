@@ -53,9 +53,9 @@ class BasePromptLearningConfig(BasePeftConfig):
     Adapted from https://github.com/huggingface/peft/blob/main/src/peft/utils/config.py (PromptLearningConfig)
     """
 
-    num_virtual_tokens: Optional[int] = schema_utils.Integer(
+    num_virtual_tokens: int = schema_utils.Integer(
         default=None,
-        allow_none=True,
+        allow_none=False,
         description="Number of virtual tokens to add to the prompt. Virtual tokens are used to control the behavior of "
         " the model during inference. ",
     )
@@ -97,9 +97,10 @@ class PromptTuningAdapterConfig(BasePromptLearningConfig):
 
     peft_type: str = schema_utils.ProtectedString("PROMPT_TUNING")
 
-    # TODO(Arnav): Refactor to allow both RANDOM and TEXT strategies
-    prompt_tuning_init: str = schema_utils.ProtectedString(
-        "TEXT",
+    prompt_tuning_init: str = schema_utils.StringOptions(
+        ["RANDOM", "TEXT"],
+        default="RANDOM",
+        allow_none=True,
         description="The type of initialization to use for the prompt embedding. ",
     )
 
@@ -122,7 +123,7 @@ class PrefixTuningAdapterconfig(BasePromptLearningConfig):
 
     peft_type: str = schema_utils.ProtectedString("PREFIX_TUNING")
 
-    encoder_hidden_size: int = schema_utils.Integer(
+    encoder_hidden_size: Optional[int] = schema_utils.Integer(
         default=None,
         allow_none=True,
         description="The hidden embedding dimension of the prompt encoder.",
@@ -151,19 +152,19 @@ class PTuningAdapterConfig(BasePromptLearningConfig):
         description="The type of reparameterization to use for the prompt encoder.",
     )
 
-    encoder_hidden_size: int = schema_utils.Integer(
+    encoder_hidden_size: Optional[int] = schema_utils.Integer(
         default=None,
         allow_none=True,
         description="The hidden embedding dimension of the prompt encoder.",
     )
 
-    encoder_num_layers: int = schema_utils.Integer(
+    encoder_num_layers: Optional[int] = schema_utils.Integer(
         default=2,
         allow_none=True,
         description="The number of layers in the prompt encoder.",
     )
 
-    encoder_dropout: float = schema_utils.FloatRange(
+    encoder_dropout: Optional[float] = schema_utils.FloatRange(
         default=0.0,
         min=0.0,
         max=1.0,
