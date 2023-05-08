@@ -41,7 +41,6 @@ class BasePeftConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     inference_mode: bool = schema_utils.Boolean(
         default=False,
-        allow_none=True,
         description="Whether to use the model in inference mode. In inference mode, the model will not be trained.",
     )
 
@@ -131,7 +130,6 @@ class PrefixTuningAdapterconfig(BasePromptLearningConfig):
 
     prefix_projection: bool = schema_utils.Boolean(
         default=False,
-        allow_none=True,
         description="Whether to use a projection layer in the prompt encoder to project the prefix tokens",
     )
 
@@ -216,7 +214,6 @@ class LoRAAdapterConfig(BasePeftConfig):
 
     fan_in_fan_out: bool = schema_utils.Boolean(
         default=False,
-        allow_none=True,
         description="Whether to use fan-in/fan-out initialization for LoRA attention."
         "Set this to True if the layer to replace stores weight like (fan_in, fan_out)",
     )
@@ -239,7 +236,6 @@ class LoRAAdapterConfig(BasePeftConfig):
 
     init_lora_weights: bool = schema_utils.Boolean(
         default=True,
-        allow_none=True,
         description="Whether to initialize LoRA weights with the original weights of the layer to replace.",
     )
 

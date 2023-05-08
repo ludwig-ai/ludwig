@@ -312,6 +312,7 @@ def test_llm_prompt_tuning(tmpdir, backend, ray_cluster_4cpu):
         OUTPUT_FEATURES: output_features,
         TRAINER: {
             TYPE: "finetune",
+            "epochs": 10,
         },
     }
 
