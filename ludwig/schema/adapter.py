@@ -199,14 +199,18 @@ class LoRAAdapterConfig(BasePeftConfig):
         description="List of module names to replace with LoRA attention.",
     )
 
+    # Set default to 16 even thought the original PEFT dataclass sets this to None
+    # Otherwise, this runs into issues when initialization the LoraModel
     lora_alpha: int = schema_utils.Integer(
-        default=None,
+        default=16,
         allow_none=True,
         description="LoRA alpha parameter",
     )
 
+    # Set default to 0.05 even though the original PEFT dataclass sets this to None
+    # Otherwise, this runs into issues when initializating the LoraModel
     lora_dropout: float = schema_utils.FloatRange(
-        default=None,
+        default=0.05,
         min=0.0,
         max=1.0,
         allow_none=True,
