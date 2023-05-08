@@ -117,8 +117,8 @@ class LLM(BaseModel):
             log_once(f"Moving LLM from '{self.curr_device}' to '{device}'.")
 
         model_kwargs = {}
-        if device == torch.device("cuda"):
-            num_gpus = torch.cuda.device_count()
+        num_gpus = torch.cuda.device_count()
+        if device == torch.device("cuda") and num_gpus > 1:
             # TODO: make this configurable in the future. These parameters are from FastChat:
             # https://github.com/lm-sys/FastChat/blob/0e958b852a14f4bef5f0e9d7a5e7373477329cf2/fastchat/serve/inference.py#L90  # noqa
             model_kwargs.update(
