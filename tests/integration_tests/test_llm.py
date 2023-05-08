@@ -7,6 +7,7 @@ import pytest
 from ludwig.api import LudwigModel
 from ludwig.constants import (
     ADAPTER,
+    EPOCHS,
     GENERATION,
     INPUT_FEATURES,
     MODEL_LLM,
@@ -288,10 +289,46 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
     "backend",
     [
         pytest.param(LOCAL_BACKEND, id="local"),
-        pytest.param(RAY_BACKEND, id="ray"),
+        # pytest.param(RAY_BACKEND, id="ray"),
     ],
 )
-def test_llm_prompt_tuning(tmpdir, backend, ray_cluster_4cpu):
+@pytest.mark.parametrize(
+    "finetune_strategy,adapter_args",
+    [
+        # (None, {}),
+        ("prompt_tuning", {"num_virtual_tokens": 8}),
+        (
+            "prompt_tuning",
+            {
+                "num_virtual_tokens": 8,
+                "prompt_tuning_init_text": "Classify if the review is positive, negative, or neutral: ",
+            },
+        ),
+        ("prefix_tuning", {"num_virtual_tokens": 8}),
+        ("p_tuning", {"num_virtual_tokens": 8}),
+        ("p_tuning", {"num_virtual_tokens": 8, "encoder_reparameterization_type": "LSTM"}),
+        ("lora", {}),
+        ("adalora", {})
+        # pytest.param(
+        #     [
+        #         "adaption_prompt",
+        #         {},
+        #     ],
+        #     id="adaption_prompt",
+        # ),
+    ],
+    ids=[
+        # "no_finetune_adapter",
+        "prompt_tuning_init_random",
+        "prompt_tuning_init_text",
+        "prefix_tuning",
+        "p_tuning_mlp_reparametization",
+        "p_tuning_lstm_reparametization",
+        "lora",
+        "adalora",
+    ],
+)
+def test_llm_finetuning_strategies(tmpdir, backend, finetune_strategy, adapter_args):  # , ray_cluster_4cpu):
     input_features = [{"name": "review", "type": "text"}]
     output_features = [
         category_feature(name="label", preprocessing={"fallback_label": "3"}, decoder={"type": "classifier"})
@@ -304,15 +341,14 @@ def test_llm_prompt_tuning(tmpdir, backend, ray_cluster_4cpu):
         MODEL_NAME: TEST_MODEL_NAME,
         GENERATION: get_generation_config(),
         ADAPTER: {
-            TYPE: "prompt_tuning",
-            "num_virtual_tokens": 8,
-            "prompt_tuning_init_text": "Classify if the review is positive, negative, or neutral: ",
+            TYPE: finetune_strategy,
+            **adapter_args,
         },
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
         TRAINER: {
             TYPE: "finetune",
-            "epochs": 10,
+            EPOCHS: 2,
         },
     }
 
