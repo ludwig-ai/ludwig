@@ -318,7 +318,7 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
         ("p_tuning", {"num_virtual_tokens": 8, "encoder_reparameterization_type": "LSTM"}),
         ("lora", {}),
         # ("adalora", {}),
-        ("adaption_prompt", {"adapter_len": 8, "adapter_layers": 1}),
+        ("adaption_prompt", {"adapter_len": 6, "adapter_layers": 1}),
     ],
     ids=[
         # "no_finetune_adapter",
