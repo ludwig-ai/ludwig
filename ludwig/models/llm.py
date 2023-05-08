@@ -6,10 +6,11 @@ from typing import Dict, Tuple, Union
 
 import numpy as np
 import torch
+import torch.nn.functional as F
 import torchmetrics
 from transformers import AutoModelForCausalLM, AutoTokenizer, GenerationConfig
 
-from ludwig.constants import LOGITS, MODEL_LLM
+from ludwig.constants import LOGITS, MODEL_LLM, PREDICTIONS, PROBABILITIES
 from ludwig.features.base_feature import OutputFeature
 from ludwig.features.text_feature import TextOutputFeature
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
@@ -89,6 +90,8 @@ class LLM(BaseModel):
             )
 
         # ================ Outputs ================
+        output_feature_type = self.config_obj.output_features[0].type
+
         self.output_features.update(
             self.build_outputs(
                 output_feature_configs=self.config_obj.output_features,
@@ -96,7 +99,7 @@ class LLM(BaseModel):
                 # because the model has additional "head" layers that are used to predict the next
                 # token in the sequence. These head layers can add additional dimensions to the
                 # logits tensor, beyond the vocab_size dimension.
-                input_size=self.model.config.vocab_size,
+                input_size=self.input_shape[-1] if output_feature_type == "text" else self.model.config.vocab_size,
             )
         )
 
@@ -264,8 +267,8 @@ class LLM(BaseModel):
         for of_name, of_obj in self.output_features.items():
             if isinstance(of_obj, TextOutputFeature):
                 # Align the target length with the predictions length to enable text metric evaluation.
-                _targets = self._realign_target_tensor(targets, predictions, of_name)
-                of_obj.update_metrics(_targets[of_name], predictions[of_name])
+                _targets, _predictions = realign_target_and_prediction_tensors(targets, predictions, of_name)
+                of_obj.update_metrics(_targets[of_name], _predictions[of_name])
                 continue
             of_obj.update_metrics(targets[of_name], predictions[of_name])
 
@@ -287,8 +290,8 @@ class LLM(BaseModel):
         for of_name, of_obj in self.output_features.items():
             if isinstance(of_obj, TextOutputFeature):
                 # Align the target length with the predictions length to enable text metric evaluation.
-                _targets = self._realign_target_tensor(targets, predictions, of_name)
-                of_eval_loss = of_obj.eval_loss(_targets[of_name], predictions[of_name])
+                _targets, _predictions = realign_target_and_prediction_tensors(targets, predictions, of_name)
+                of_eval_loss = of_obj.eval_loss(_targets[of_name], _predictions[of_name])
             else:
                 # TODO(Arnav): Figure out loss updates.
                 # To update eval-loss, we need "logits" but right now we're only producing "predictions"
@@ -345,28 +348,6 @@ class LLM(BaseModel):
             self._random_seed,
         )
 
-    def _realign_target_tensor(self, targets, predictions, of_name: str):
-        """Realigns the target tensor with the predictions.
-
-        This is necessary for text metrics that require the target and prediction
-        to be of the same length.
-
-        Args:
-            targets: The target tensor.
-            predictions: The prediction tensor.
-
-        Returns:
-            The realigned target tensor.
-        """
-        _targets = copy.deepcopy(targets)
-        _targets[of_name] = torch.nn.functional.pad(
-            _targets.get(of_name),
-            (0, predictions[of_name].get("predictions").size()[1] - _targets.get(of_name).size()[1]),
-            "constant",
-            0,
-        )
-        return _targets
-
     def _remove_left_padding(self, input_ids_sample: torch.Tensor):
         bos_idxs = torch.where(input_ids_sample == self.tokenizer.bos_token_id)[0]  # all BOS token locations
         if len(bos_idxs) != 0:
@@ -380,3 +361,39 @@ class LLM(BaseModel):
     def get_augmentation_pipelines(self) -> AugmentationPipelines:
         """Returns the augmentation pipeline for this model."""
         return AugmentationPipelines({})
+
+
+def realign_target_and_prediction_tensors(
+    targets: Dict[str, torch.Tensor], predictions: Dict[str, torch.Tensor], of_name: str
+) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
+    """Realigns the target tensor with the predictions.
+
+    This is necessary for text metrics that require the target and prediction
+    to be of the same length.
+    Args:
+        targets: The target tensor.
+        predictions: The prediction tensor.
+    Returns:
+        The realigned target tensor.
+    """
+    target_length = targets.get(of_name).size()[1]
+    prediction_length = predictions[of_name].get(PREDICTIONS).size()[1]
+    if target_length == prediction_length:
+        return targets, predictions
+
+    _targets = copy.deepcopy(targets)
+    _predictions = copy.deepcopy(predictions)
+
+    # Align target and prediction tensors for text to text metric computation
+    if target_length > prediction_length:
+        # Pad the predictions.
+        zeros_to_add = target_length - prediction_length
+        _predictions[of_name][PREDICTIONS] = F.pad(_predictions[of_name][PREDICTIONS], (0, zeros_to_add))
+        # Pad probabilities with 0s. Pad the second last dimension with 0s.
+        _predictions[of_name][PROBABILITIES] = F.pad(_predictions[of_name][PROBABILITIES], (0, 0, 0, zeros_to_add))
+        # Pad logits with 0s. Pad the second last dimension with 0s.
+        _predictions[of_name][LOGITS] = F.pad(_predictions[of_name][LOGITS], (0, 0, 0, zeros_to_add))
+    elif prediction_length > target_length:
+        _targets[of_name] = F.pad(_targets[of_name], (0, prediction_length - target_length))
+
+    return _targets, _predictions
