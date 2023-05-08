@@ -23,6 +23,10 @@ output_features:
 #   epochs: 2
 #   gradient_accumulation_steps: 8
 
+trainer:
+    type: finetune
+    batch_size: auto
+
 backend:
   type: local
 #   type: ray
