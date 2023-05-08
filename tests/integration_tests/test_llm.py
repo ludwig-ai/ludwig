@@ -14,8 +14,8 @@ from ludwig.constants import (
     MODEL_TYPE,
     OUTPUT_FEATURES,
     PREPROCESSING,
-    TUNER,
     TRAINER,
+    TUNER,
     TYPE,
 )
 from ludwig.utils.types import DataFrame
