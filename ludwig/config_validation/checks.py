@@ -489,6 +489,15 @@ def check_hyperopt_nested_parameter_dicts(config: "ModelConfig") -> None:  # noq
 
 
 @register_config_check
+def check_llm_model_name_provided(config: "ModelConfig"):
+    if config.model_type != MODEL_LLM:
+        return
+
+    if not config.model_name:
+        raise ConfigValidationError("LLM requires a model name. This can be any pretrained CausalLM on huggingface.")
+
+
+@register_config_check
 def check_llm_atleast_one_input_text_feature(config: "ModelConfig"):  # noqa: F821
     if config.model_type != MODEL_LLM:
         return
@@ -529,4 +538,34 @@ def check_llm_finetuning_num_virtual_tokens_set(config: "ModelConfig"):
         raise ConfigValidationError(
             "`num_virtual_tokens` must be set to a value greater than 0 when finetuning is enabled and the adapter"
             "type is `prompt_tuning`, `prefix_tuning`, or `p_tuning`."
+        )
+
+
+@register_config_check
+def check_llm_finetuning_adalora_config(config: "ModelConfig"):
+    """Checks that the adalora adapter is configured correctly.
+
+    It requires a set of target_modules to be specified in the config for the model. If it isn't specified by the user,
+    we also check against PEFT's predefined target module list for ADALORA to see if this key is present there. If
+    neither is true, AdaloraModel will complain downstream.
+    """
+    if config.model_type != MODEL_LLM:
+        return
+
+    if config.adapter.type != "adalora":
+        return
+
+    from peft.utils import TRANSFORMERS_MODELS_TO_ADALORA_TARGET_MODULES_MAPPING
+    from transformers import AutoConfig
+
+    model_config = AutoConfig.from_pretrained(config.model_name)
+    if (
+        not config.adapter.target_modules
+        and model_config.model_type not in TRANSFORMERS_MODELS_TO_ADALORA_TARGET_MODULES_MAPPING
+    ):
+        raise ConfigValidationError(
+            f"Adalora adapter is not supported for {model_config.model_type} model. "
+            f"Supported model types are: {list(TRANSFORMERS_MODELS_TO_ADALORA_TARGET_MODULES_MAPPING.keys())}. "
+            "If you know the target modules for your model, please specify them in the config through the "
+            "`target_modules` key."
         )
