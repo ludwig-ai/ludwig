@@ -145,87 +145,88 @@ class PromptTuningConfig(BasePromptLearningConfig):
         )
 
 
-@DeveloperAPI
-@register_tuner("prefix_tuning")
-@schema_utils.ludwig_dataclass
-class PrefixTuningConfig(BasePromptLearningConfig):
-    """Adapted from https://github.com/huggingface/peft/blob/main/src/peft/tuners/prefix_tuning.py."""
+# TODO(travis): fix prefix tuning and p-tuning to work with DDP
+# @DeveloperAPI
+# @register_tuner("prefix_tuning")
+# @schema_utils.ludwig_dataclass
+# class PrefixTuningConfig(BasePromptLearningConfig):
+#     """Adapted from https://github.com/huggingface/peft/blob/main/src/peft/tuners/prefix_tuning.py."""
 
-    type: str = schema_utils.ProtectedString("prefix_tuning")
+#     type: str = schema_utils.ProtectedString("prefix_tuning")
 
-    encoder_hidden_size: Optional[int] = schema_utils.Integer(
-        default=None,
-        allow_none=True,
-        description="The hidden embedding dimension of the prompt encoder.",
-    )
+#     encoder_hidden_size: Optional[int] = schema_utils.Integer(
+#         default=None,
+#         allow_none=True,
+#         description="The hidden embedding dimension of the prompt encoder.",
+#     )
 
-    prefix_projection: bool = schema_utils.Boolean(
-        default=False,
-        description="Whether to use a projection layer in the prompt encoder to project the prefix tokens",
-    )
+#     prefix_projection: bool = schema_utils.Boolean(
+#         default=False,
+#         description="Whether to use a projection layer in the prompt encoder to project the prefix tokens",
+#     )
 
-    def to_config(self, task_type: str, **kwargs) -> "PeftConfig":
-        from peft import PrefixTuningConfig as _PrefixTuningConfig
+#     def to_config(self, task_type: str, **kwargs) -> "PeftConfig":
+#         from peft import PrefixTuningConfig as _PrefixTuningConfig
 
-        return _PrefixTuningConfig(
-            num_virtual_tokens=self.num_virtual_tokens,
-            token_dim=self.token_dim,
-            num_transformer_submodules=self.num_transformer_submodules,
-            num_attention_heads=self.num_attention_heads,
-            num_layers=self.num_layers,
-            encoder_hidden_size=self.encoder_hidden_size,
-            prefix_projection=self.prefix_projection,
-            task_type=task_type,
-        )
+#         return _PrefixTuningConfig(
+#             num_virtual_tokens=self.num_virtual_tokens,
+#             token_dim=self.token_dim,
+#             num_transformer_submodules=self.num_transformer_submodules,
+#             num_attention_heads=self.num_attention_heads,
+#             num_layers=self.num_layers,
+#             encoder_hidden_size=self.encoder_hidden_size,
+#             prefix_projection=self.prefix_projection,
+#             task_type=task_type,
+#         )
 
 
-@DeveloperAPI
-@register_tuner("p_tuning")
-@ludwig_dataclass
-class PTuningConfig(BasePromptLearningConfig):
-    type: str = schema_utils.ProtectedString("p_tuning")
+# @DeveloperAPI
+# @register_tuner("p_tuning")
+# @ludwig_dataclass
+# class PTuningConfig(BasePromptLearningConfig):
+#     type: str = schema_utils.ProtectedString("p_tuning")
 
-    encoder_reparameterization_type: str = schema_utils.StringOptions(
-        ["MLP", "LSTM"],
-        default="MLP",
-        allow_none=False,
-        description="The type of reparameterization to use for the prompt encoder.",
-    )
+#     encoder_reparameterization_type: str = schema_utils.StringOptions(
+#         ["MLP", "LSTM"],
+#         default="MLP",
+#         allow_none=False,
+#         description="The type of reparameterization to use for the prompt encoder.",
+#     )
 
-    encoder_hidden_size: Optional[int] = schema_utils.PositiveInteger(
-        default=None,
-        allow_none=True,
-        description="The hidden embedding dimension of the prompt encoder.",
-    )
+#     encoder_hidden_size: Optional[int] = schema_utils.PositiveInteger(
+#         default=None,
+#         allow_none=True,
+#         description="The hidden embedding dimension of the prompt encoder.",
+#     )
 
-    encoder_num_layers: Optional[int] = schema_utils.PositiveInteger(
-        default=2,
-        allow_none=True,
-        description="The number of layers in the prompt encoder.",
-    )
+#     encoder_num_layers: Optional[int] = schema_utils.PositiveInteger(
+#         default=2,
+#         allow_none=True,
+#         description="The number of layers in the prompt encoder.",
+#     )
 
-    encoder_dropout: Optional[float] = schema_utils.FloatRange(
-        default=0.0,
-        min=0.0,
-        max=1.0,
-        description="The dropout probability for the prompt encoder.",
-    )
+#     encoder_dropout: Optional[float] = schema_utils.FloatRange(
+#         default=0.0,
+#         min=0.0,
+#         max=1.0,
+#         description="The dropout probability for the prompt encoder.",
+#     )
 
-    def to_config(self, task_type: str, **kwargs) -> "PeftConfig":
-        from peft import PromptEncoderConfig as _PromptEncoderConfig
+#     def to_config(self, task_type: str, **kwargs) -> "PeftConfig":
+#         from peft import PromptEncoderConfig as _PromptEncoderConfig
 
-        return _PromptEncoderConfig(
-            num_virtual_tokens=self.num_virtual_tokens,
-            token_dim=self.token_dim,
-            num_transformer_submodules=self.num_transformer_submodules,
-            num_attention_heads=self.num_attention_heads,
-            num_layers=self.num_layers,
-            encoder_reparameterization_type=self.encoder_reparameterization_type,
-            encoder_hidden_size=self.encoder_hidden_size,
-            encoder_num_layers=self.encoder_num_layers,
-            encoder_dropout=self.encoder_dropout,
-            task_type=task_type,
-        )
+#         return _PromptEncoderConfig(
+#             num_virtual_tokens=self.num_virtual_tokens,
+#             token_dim=self.token_dim,
+#             num_transformer_submodules=self.num_transformer_submodules,
+#             num_attention_heads=self.num_attention_heads,
+#             num_layers=self.num_layers,
+#             encoder_reparameterization_type=self.encoder_reparameterization_type,
+#             encoder_hidden_size=self.encoder_hidden_size,
+#             encoder_num_layers=self.encoder_num_layers,
+#             encoder_dropout=self.encoder_dropout,
+#             task_type=task_type,
+#         )
 
 
 @DeveloperAPI
