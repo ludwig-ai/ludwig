@@ -1,6 +1,7 @@
 from typing import Optional
 
 from ludwig.api_annotations import DeveloperAPI
+from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.defaults.llm import LLMDefaultsConfig, LLMDefaultsField
 from ludwig.schema.encoders.text.peft import BaseTunerConfig, TunerDataclassField
@@ -24,6 +25,15 @@ from ludwig.schema.utils import ludwig_dataclass
 @ludwig_dataclass
 class LLMModelConfig(ModelConfig):
     """Parameters for LLM Model Type."""
+
+    def __post_init__(self):
+        super().__post_init__()
+
+        if not self.model_name:
+            raise ConfigValidationError(
+                "LLM requires `model_name` to be set. This can be any pretrained CausalLM on huggingface. "
+                "See: https://huggingface.co/models?pipeline_tag=text-generation&sort=downloads"
+            )
 
     model_type: str = schema_utils.ProtectedString("llm")
 

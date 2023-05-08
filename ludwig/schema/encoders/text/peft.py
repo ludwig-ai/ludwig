@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import List, Optional, Type, TYPE_CHECKING
 
 from ludwig.api_annotations import DeveloperAPI
+from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
 from ludwig.schema.utils import ludwig_dataclass
@@ -116,6 +117,14 @@ class BasePromptLearningConfig(BaseTunerConfig):
 @ludwig_dataclass
 class PromptTuningConfig(BasePromptLearningConfig):
     """Adapted from https://github.com/huggingface/peft/blob/main/src/peft/tuners/prompt_tuning.py."""
+
+    def __post_init__(self):
+        super().__post_init__()
+
+        if self.prompt_tuning_init == "TEXT" and not self.prompt_tuning_init_text:
+            raise ConfigValidationError(
+                "Must provide `prompt_tuning_init_text` when `prompt_tuning_init` is set to `TEXT`."
+            )
 
     type: str = schema_utils.ProtectedString("prompt_tuning")
 
@@ -324,17 +333,8 @@ class AdaptionPromptConfig(BaseTunerConfig):
 
     type: str = schema_utils.ProtectedString("adaption_prompt")
 
-    # TODO(Arnav): Extended to support regex expression of the module names to replace.
-    target_modules: List[str] = schema_utils.List(
-        list_type=str,
-        default=None,
-        allow_none=True,
-        description="Name of the attention submodules to insert adaption prompts into.",
-    )
-
-    adapter_len: Optional[int] = schema_utils.Integer(
-        default=None,
-        allow_none=False,
+    adapter_len: int = schema_utils.PositiveInteger(
+        default=4,
         description="Number of adapter tokens to insert.",
     )
 
@@ -348,7 +348,6 @@ class AdaptionPromptConfig(BaseTunerConfig):
         from peft import AdaptionPromptConfig as _AdaptionPromptConfig
 
         return _AdaptionPromptConfig(
-            target_modules=self.target_modules,
             adapter_len=self.adapter_len,
             adapter_layers=self.adapter_layers,
             task_type=task_type,
