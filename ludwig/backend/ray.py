@@ -913,7 +913,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
                 df = df.into_partitions(num_downloading_partitions)
                 # Download binary files in parallel
                 # Use 16 worker threads to maximize image read throughput over each partition
-                df = df.with_column(column.name, df[column.name].url.download(max_worker_threads=16))
+                df = df.with_column(column.name, df[column.name].url.download(max_worker_threads=16, on_error="null"))
                 # Revert back to the original number of partitions in this column
                 df = df.into_partitions(n_col_partitions)
 
