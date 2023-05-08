@@ -245,6 +245,85 @@ class LoRAAdapterConfig(BasePeftConfig):
 
 
 @DeveloperAPI
+@register_adapter("adalora")
+@schema_utils.ludwig_dataclass
+class AdaLoRAAdapterConfig(LoRAAdapterConfig):
+    """Adapted from https://github.com/huggingface/peft/blob/main/src/peft/tuners/adalora.py."""
+
+    # Explicitly set type property in the config because it is needed when we
+    # load a saved PEFT model back into Ludwig.
+    type: str = schema_utils.ProtectedString("adalora")
+
+    peft_type: str = schema_utils.ProtectedString("ADALORA")
+
+    target_r: int = schema_utils.Integer(
+        default=8,
+        allow_none=True,
+        description="Target Lora Matrix Dimension. The target average rank of incremental matrix.",
+    )
+
+    init_r: int = schema_utils.Integer(
+        default=12,
+        allow_none=True,
+        description="Initial Lora Matrix Dimension. The initial rank for each incremental matrix.",
+    )
+
+    tinit: int = schema_utils.Integer(
+        default=0,
+        allow_none=True,
+        description="The steps of initial fine-tuning warmup.",
+    )
+
+    tfinal: int = schema_utils.Integer(
+        default=0,
+        allow_none=True,
+        description="The steps of final fine-tuning warmup.",
+    )
+
+    deltaT: int = schema_utils.Integer(
+        default=1,
+        allow_none=True,
+        description="The time internval between two budget allocations. The step interval of rank allocation.",
+    )
+
+    beta1: float = schema_utils.FloatRange(
+        default=0.85,
+        min=0.0,
+        max=1.0,
+        allow_none=True,
+        description="The hyperparameter of EMA for sensitivity smoothing.",
+    )
+
+    beta2: float = schema_utils.FloatRange(
+        default=0.85,
+        min=0.0,
+        max=1.0,
+        allow_none=True,
+        description=" The hyperparameter of EMA for undertainty quantification.",
+    )
+
+    orth_reg_weight: float = schema_utils.FloatRange(
+        default=0.5,
+        min=0.0,
+        max=1.0,
+        allow_none=True,
+        description="The coefficient of orthogonality regularization.",
+    )
+
+    total_step: Optional[int] = schema_utils.Integer(
+        default=None,
+        allow_none=True,
+        description="The total training steps that should be specified before training.",
+    )
+
+    rank_pattern: Optional[dict] = schema_utils.Dict(
+        default=None,
+        allow_none=True,
+        description="The allocated rank for each weight matrix by RankAllocator.",
+    )
+
+
+@DeveloperAPI
 def get_adapter_conds():
     """Returns a JSON schema of conditionals to validate against adapter types."""
     conds = []
