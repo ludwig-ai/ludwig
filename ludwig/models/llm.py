@@ -53,8 +53,8 @@ class LLM(BaseModel):
         if self.config_obj.adapter:
             from peft import get_peft_config, get_peft_model
 
-            # Set tokenizer_name_or_path to the model name since it is required by some adapter configs
-            if self.config_obj.adapter.type not in {"lora", "adalora", "adaption_prompt"}:
+            # Set tokenizer_name_or_path to the model name only for prompt_tuning strategy
+            if self.config_obj.adapter.type == "prompt_tuning":
                 self.config_obj.adapter.tokenizer_name_or_path = self.model_name
 
             # Deepcopy and remove type manually since it is not a valid argument for the adapter config
