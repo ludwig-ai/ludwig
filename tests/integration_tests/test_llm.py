@@ -42,13 +42,11 @@ RAY_BACKEND = {
 
 @pytest.fixture(scope="module")
 def local_backend():
-    os.environ["TOKENIZERS_PARALLELISM"] = "false"  # Disable warning message
     return LOCAL_BACKEND
 
 
 @pytest.fixture(scope="module")
 def ray_backend():
-    os.environ["TOKENIZERS_PARALLELISM"] = "false"  # Disable warning message
     return RAY_BACKEND
 
 
