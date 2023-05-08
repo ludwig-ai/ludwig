@@ -6,7 +6,7 @@ import pytest
 
 from ludwig.api import LudwigModel
 from ludwig.constants import (
-    ADAPTER,
+    EPOCHS,
     GENERATION,
     INPUT_FEATURES,
     MODEL_LLM,
@@ -14,6 +14,7 @@ from ludwig.constants import (
     MODEL_TYPE,
     OUTPUT_FEATURES,
     PREPROCESSING,
+    TUNER,
     TRAINER,
     TYPE,
 )
@@ -76,7 +77,7 @@ def get_generation_config():
     }
 
 
-def convert_preds(backend: dict, preds: DataFrame):
+def convert_preds(preds: DataFrame):
     if isinstance(preds, pd.DataFrame):
         return preds.to_dict()
     return preds.compute().to_dict()
@@ -104,13 +105,16 @@ def test_llm_text_to_text(tmpdir, backend, ray_cluster_4cpu):
         GENERATION: get_generation_config(),
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
+        TRAINER: {
+            TYPE: "zeroshot",
+        },
     }
 
     model = LudwigModel(config, backend=backend)
     model.train(dataset=dataset_filename, output_directory=str(tmpdir), skip_save_processed_input=True)
 
     preds, _ = model.predict(dataset=dataset_filename, output_directory=str(tmpdir), split="test")
-    preds = convert_preds(backend, preds)
+    preds = convert_preds(preds)
 
     assert "Answer_predictions" in preds
     assert "Answer_probabilities" in preds
@@ -164,6 +168,9 @@ def test_llm_zero_shot_classification(tmpdir, backend, ray_cluster_4cpu):
         GENERATION: get_generation_config(),
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
+        TRAINER: {
+            TYPE: "zeroshot",
+        },
     }
 
     model = LudwigModel(config, backend=backend)
@@ -178,7 +185,7 @@ def test_llm_zero_shot_classification(tmpdir, backend, ray_cluster_4cpu):
     )
 
     preds, _ = model.predict(dataset=prediction_df, output_directory=str(tmpdir))
-    preds = convert_preds(backend, preds)
+    preds = convert_preds(preds)
 
     assert "label_predictions" in preds
     assert "label_probabilities" in preds
@@ -249,6 +256,9 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
         PREPROCESSING: {
             "split": {TYPE: "fixed"},
         },
+        TRAINER: {
+            TYPE: "fewshot",
+        },
     }
 
     dataset_path = generate_data(
@@ -269,7 +279,7 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
     # TODO: fix LLM model loading
     # model = LudwigModel.load(os.path.join(results.output_directory, "model"), backend=backend)
     preds, _ = model.predict(dataset=dataset_path)
-    preds = convert_preds(backend, preds)
+    preds = convert_preds(preds)
 
     assert preds
 
@@ -282,7 +292,45 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
         pytest.param(RAY_BACKEND, id="ray"),
     ],
 )
-def test_llm_prompt_tuning(tmpdir, backend, ray_cluster_4cpu):
+@pytest.mark.parametrize(
+    "finetune_strategy,adapter_args",
+    [
+        # (None, {}),
+        (
+            "prompt_tuning",
+            {
+                "num_virtual_tokens": 8,
+                "prompt_tuning_init": "RANDOM",
+            },
+        ),
+        (
+            "prompt_tuning",
+            {
+                "num_virtual_tokens": 8,
+                "prompt_tuning_init": "TEXT",
+                "prompt_tuning_init_text": "Classify if the review is positive, negative, or neutral: ",
+            },
+        ),
+        ("prefix_tuning", {"num_virtual_tokens": 8}),
+        ("p_tuning", {"num_virtual_tokens": 8, "encoder_reparameterization_type": "MLP"}),
+        ("p_tuning", {"num_virtual_tokens": 8, "encoder_reparameterization_type": "LSTM"}),
+        ("lora", {}),
+        # ("adalora", {}),
+        ("adaption_prompt", {"adapter_len": 6, "adapter_layers": 1}),
+    ],
+    ids=[
+        # "no_finetune_adapter",
+        "prompt_tuning_init_random",
+        "prompt_tuning_init_text",
+        "prefix_tuning",
+        "p_tuning_mlp_reparameterization",
+        "p_tuning_lstm_reparameterization",
+        "lora",
+        # "adalora",
+        "adaption_prompt",
+    ],
+)
+def test_llm_finetuning_strategies(tmpdir, backend, finetune_strategy, adapter_args, ray_cluster_4cpu):
     input_features = [{"name": "review", "type": "text"}]
     output_features = [
         category_feature(name="label", preprocessing={"fallback_label": "3"}, decoder={"type": "classifier"})
@@ -290,19 +338,27 @@ def test_llm_prompt_tuning(tmpdir, backend, ray_cluster_4cpu):
 
     df = get_dataset()
 
+    model_name = TEST_MODEL_NAME
+    if finetune_strategy == "adalora":
+        # Adalora isn't supported for GPT-J model types, so use tiny bart
+        model_name = "hf-internal-testing/tiny-random-BartModel"
+    elif finetune_strategy == "adaption_prompt":
+        # At the time of writing this test, Adaption Prompt fine-tuning is only supported for Llama models
+        model_name = "HuggingFaceM4/tiny-random-LlamaForCausalLM"
+
     config = {
         MODEL_TYPE: MODEL_LLM,
-        MODEL_NAME: TEST_MODEL_NAME,
+        MODEL_NAME: model_name,
         GENERATION: get_generation_config(),
-        ADAPTER: {
-            TYPE: "prompt_tuning",
-            "num_virtual_tokens": 8,
-            "prompt_tuning_init_text": "Classify if the review is positive, negative, or neutral: ",
+        TUNER: {
+            TYPE: finetune_strategy,
+            **adapter_args,
         },
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
         TRAINER: {
             TYPE: "finetune",
+            EPOCHS: 2,
         },
     }
 
@@ -321,6 +377,6 @@ def test_llm_prompt_tuning(tmpdir, backend, ray_cluster_4cpu):
     model = LudwigModel.load(os.path.join(str(tmpdir), "api_experiment_run", "model"), backend=backend)
 
     preds, _ = model.predict(dataset=prediction_df, output_directory=str(tmpdir))
-    preds = convert_preds(backend, preds)
+    preds = convert_preds(preds)
 
     assert preds

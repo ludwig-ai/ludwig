@@ -58,6 +58,7 @@ class LLM(BaseModel):
 
             logger.info("==================================================")
             logger.info("Trainable Parameter Summary For Fine-Tuning:")
+            logger.info(f"Fine-tuning with tuner: {self.config_obj.tuner.type}")
             self.model.print_trainable_parameters()
             logger.info("==================================================")
 

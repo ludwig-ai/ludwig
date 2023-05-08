@@ -25,7 +25,7 @@ output_features:
 
 trainer:
     type: finetune
-    batch_size: auto
+    batch_size: 128
 
 backend:
   type: local
