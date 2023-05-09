@@ -90,7 +90,7 @@ class LLM(BaseModel):
             )
 
         # ================ Outputs ================
-        output_feature_type = self.config_obj.output_features[0].type
+        self.output_feature_type = self.config_obj.output_features[0].type
 
         self.output_features.update(
             self.build_outputs(
@@ -99,7 +99,7 @@ class LLM(BaseModel):
                 # because the model has additional "head" layers that are used to predict the next
                 # token in the sequence. These head layers can add additional dimensions to the
                 # logits tensor, beyond the vocab_size dimension.
-                input_size=self.input_shape[-1] if output_feature_type == "text" else self.model.config.vocab_size,
+                input_size=self.input_shape[-1] if self.output_feature_type == "text" else self.model.config.vocab_size,
             )
         )
 
@@ -209,14 +209,25 @@ class LLM(BaseModel):
         input_ids = self.get_input_ids(inputs)
 
         if self.config_obj.tuner:
-            # Forward pass using PEFT model for fine-tuning
-            model_outputs = self.model(input_ids)
-            # Pass generated tokens through decoder after averaging the token probabilities
-            logits_with_averaged_token_probabilities = torch.mean(model_outputs[LOGITS], dim=1)
-            decoder_outputs = self.output_feature_decoder.decoder_obj(logits_with_averaged_token_probabilities)
+            # Forward pass using PEFT wrapped model for fine-tuning
+            model_outputs = self.model(input_ids)[LOGITS]
+
+            if self.output_feature_type != "text":
+                # Pass generated tokens through decoder after averaging the token probabilities
+                # This is required for the classification head for the CategoryParserDecoder
+                model_outputs = torch.mean(model_outputs[LOGITS], dim=1)
+
+            if self.output_feature_type == "text":
+                decoder_outputs = model_outputs
+            else:
+                decoder_outputs = self.output_feature_decoder.decoder_obj(
+                    model_outputs,
+                )
+
             # Set the output feature tensor to the decoder outputs (logits)
             outputs = {}
             set_output_feature_tensor(outputs, self.config_obj.output_features[0].name, LOGITS, decoder_outputs)
+
             return outputs
 
         with torch.no_grad():
@@ -376,13 +387,17 @@ def realign_target_and_prediction_tensors(
     Returns:
         The realigned target tensor.
     """
-    target_length = targets.get(of_name).size()[1]
-    prediction_length = predictions[of_name].get(PREDICTIONS).size()[1]
+    target_length = targets.get(of_name).detach().size()[1]
+    prediction_length = predictions[of_name].get(PREDICTIONS).detach().size()[1]
     if target_length == prediction_length:
         return targets, predictions
 
-    _targets = copy.deepcopy(targets)
-    _predictions = copy.deepcopy(predictions)
+    _targets = copy.deepcopy({k: v.detach() for k, v in targets.items()})
+    _predictions = {
+        of_name: copy.deepcopy(
+            {k: v.detach() for k, v in predictions[of_name].items()},
+        )
+    }
 
     # Align target and prediction tensors for text to text metric computation
     if target_length > prediction_length:
