@@ -244,7 +244,6 @@ def check_retrieval_config(config: "ModelConfig") -> None:
     for input_feature in config.input_features:
         if input_feature.type == TEXT:
             if input_feature.preprocessing.prompt.task is not None:
-
                 _check_k_retrieval_config(input_feature.preprocessing.prompt.retrieval)
                 _check_model_name_retrieval_config(input_feature.preprocessing.prompt.retrieval)
 
