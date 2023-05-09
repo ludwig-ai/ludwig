@@ -877,7 +877,6 @@ class RayBackend(RemoteTrainingMixin, Backend):
     ) -> Series:
         # normalize NaNs to None
         column = column.fillna(np.nan).replace([np.nan], [None])
-        n_col_partitions = 1 if not is_dask_series_or_df(column, self) else column.npartitions
 
         pd_column = self.df_engine.compute(column)
         fnames = pd_column.values.tolist()
@@ -895,6 +894,10 @@ class RayBackend(RemoteTrainingMixin, Backend):
 
             with self.storage.cache.use_credentials():
                 df = daft.from_dask_dataframe(column.to_frame(name=column.name))
+
+                # Rename "__index_level_0__" column to "idx", which is a tag-along column
+                # that is later used to ensure the join with the metadata dataframe is successful
+                df = df.select(column.name, df["__index_level_0__"].alias("idx"))
 
                 # Download binary files in parallel
                 df = df.with_column(
