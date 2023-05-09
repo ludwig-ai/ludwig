@@ -24,13 +24,6 @@ def register_tuner(name: str):
     return wrap
 
 
-def get_llm_model_config(model_name: str):
-    """Returns the LLM model config."""
-    from transformers import AutoConfig
-
-    return AutoConfig.from_pretrained(model_name)
-
-
 @DeveloperAPI
 @ludwig_dataclass
 class BaseTunerConfig(schema_utils.BaseMarshmallowConfig, ABC):
