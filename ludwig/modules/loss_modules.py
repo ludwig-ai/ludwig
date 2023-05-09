@@ -183,9 +183,12 @@ class SequenceSoftmaxCrossEntropyLoss(nn.Module, LogitsInputsMixin):
             class_weights: List or 1D tensor of length equal to number of classes.
         """
         super().__init__()
-        self.loss_fn = nn.CrossEntropyLoss(
-            weight=torch.Tensor(config.class_weights), ignore_index=strings_utils.SpecialSymbol.PADDING.value
-        )
+        if config.class_weights:
+            self.loss_fn = nn.CrossEntropyLoss(
+                weight=torch.Tensor(config.class_weights), ignore_index=strings_utils.SpecialSymbol.PADDING.value
+            )
+        else:
+            self.loss_fn = nn.CrossEntropyLoss(ignore_index=strings_utils.SpecialSymbol.PADDING.value)
 
     def forward(self, preds: Tensor, target: Tensor) -> Tensor:
         """

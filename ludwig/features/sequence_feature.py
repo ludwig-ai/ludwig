@@ -382,6 +382,25 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                     )
                 )
 
+        if isinstance(feature_config.loss.class_weights, dict):
+            if feature_metadata["str2idx"].keys() != feature_config.loss.class_weights.keys():
+                raise ValueError(
+                    "The class_weights keys ({}) are not compatible with "
+                    "the classes ({}) of feature {}. "
+                    "Check the metadata JSON file to see the classes "
+                    "and consider there needs to be a weight "
+                    "for the <UNK> class too.".format(
+                        feature_config.loss.class_weights.keys(),
+                        feature_metadata["str2idx"].keys(),
+                        feature_config.column,
+                    )
+                )
+            else:
+                class_weights = feature_config.loss.class_weights
+                idx2str = feature_metadata["idx2str"]
+                class_weights_list = [class_weights[s] for s in idx2str]
+                feature_config.loss.class_weights = class_weights_list
+
         if feature_config.loss.class_similarities_temperature > 0:
             if "class_similarities" in feature_config.loss:
                 similarities = feature_config.loss.class_similarities
