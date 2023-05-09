@@ -5,11 +5,9 @@ import pytest
 import torch
 from marshmallow import ValidationError
 
-from ludwig.schema.model_config import ModelConfig
-from tests.integration_tests.utils import category_feature, text_feature, set_feature
 from ludwig.features.category_feature import CategoryOutputFeature
-from ludwig.features.text_feature import TextOutputFeature
 from ludwig.features.set_feature import SetOutputFeature
+from ludwig.features.text_feature import TextOutputFeature
 from ludwig.modules import loss_modules
 from ludwig.schema.features.loss.loss import (
     BWCEWLossConfig,
@@ -23,6 +21,8 @@ from ludwig.schema.features.loss.loss import (
     SigmoidCrossEntropyLossConfig,
     SoftmaxCrossEntropyLossConfig,
 )
+from ludwig.schema.model_config import ModelConfig
+from tests.integration_tests.utils import category_feature, set_feature, text_feature
 
 
 def from_float(v: float) -> torch.Tensor:
@@ -165,18 +165,18 @@ def test_dict_class_weights_category():
 
     # Mock feature metadata
     feature_metadata = {
-        'idx2str': ['token_1', 'token_2', 'token_3'],
-        'str2idx': {'token_1': 0, 'token_2': 1, 'token_3': 2},
-        'str2freq': {'token_1': 300, 'token_2': 200, 'token_3': 100},
-        'vocab_size': 3,
-        'preprocessing': {
-            'missing_value_strategy': 'drop_row',
-            'fill_value': '<UNK>',
-            'computed_fill_value': '<UNK>',
-            'lowercase': False,
-            'most_common': 10000,
-            'cache_encoder_embeddings': False
-        }
+        "idx2str": ["token_1", "token_2", "token_3"],
+        "str2idx": {"token_1": 0, "token_2": 1, "token_3": 2},
+        "str2freq": {"token_1": 300, "token_2": 200, "token_3": 100},
+        "vocab_size": 3,
+        "preprocessing": {
+            "missing_value_strategy": "drop_row",
+            "fill_value": "<UNK>",
+            "computed_fill_value": "<UNK>",
+            "lowercase": False,
+            "most_common": 10000,
+            "cache_encoder_embeddings": False,
+        },
     }
 
     model_config = ModelConfig.from_dict(config)
@@ -198,48 +198,56 @@ def test_dict_class_weights_text():
     }
 
     # Set class weights as dictionary on config
-    class_weights_dict = {'<EOS>': 0, '<SOS>': 0, '<PAD>': 0, '<UNK>': 0, 'token_1': 0.5, 'token_2': 0.4, 'token_3': 0.1}
+    class_weights_dict = {
+        "<EOS>": 0,
+        "<SOS>": 0,
+        "<PAD>": 0,
+        "<UNK>": 0,
+        "token_1": 0.5,
+        "token_2": 0.4,
+        "token_3": 0.1,
+    }
     config["output_features"][0]["loss"] = {
         "type": "sequence_softmax_cross_entropy",
-        "class_weights": class_weights_dict
+        "class_weights": class_weights_dict,
     }
 
     # Mock feature metadata
     feature_metadata = {
-        'idx2str': ['<EOS>', '<SOS>', '<PAD>', '<UNK>', 'token_1', 'token_2', 'token_3'],
-        'str2idx': {'<EOS>': 0, '<SOS>': 1, '<PAD>': 2, '<UNK>': 3, 'token_1': 4, 'token_2': 5, 'token_3': 6},
-        'str2freq': {'<EOS>': 0, '<SOS>': 0, '<PAD>': 0, '<UNK>': 0, 'token_1': 300, 'token_2': 200, 'token_3': 100},
-        'str2idf': None,
-        'vocab_size': 7,
-        'max_sequence_length': 9,
-        'max_sequence_length_99ptile': 9.0,
-        'pad_idx': 2,
-        'padding_symbol': '<PAD>',
-        'unknown_symbol': '<UNK>',
-        'index_name': None,
-        'preprocessing': {
-            'prompt': {
-                'retrieval': {'type': None, 'index_name': None, 'model_name': None, 'k': 0},
-                'task': None,
-                'template': None
+        "idx2str": ["<EOS>", "<SOS>", "<PAD>", "<UNK>", "token_1", "token_2", "token_3"],
+        "str2idx": {"<EOS>": 0, "<SOS>": 1, "<PAD>": 2, "<UNK>": 3, "token_1": 4, "token_2": 5, "token_3": 6},
+        "str2freq": {"<EOS>": 0, "<SOS>": 0, "<PAD>": 0, "<UNK>": 0, "token_1": 300, "token_2": 200, "token_3": 100},
+        "str2idf": None,
+        "vocab_size": 7,
+        "max_sequence_length": 9,
+        "max_sequence_length_99ptile": 9.0,
+        "pad_idx": 2,
+        "padding_symbol": "<PAD>",
+        "unknown_symbol": "<UNK>",
+        "index_name": None,
+        "preprocessing": {
+            "prompt": {
+                "retrieval": {"type": None, "index_name": None, "model_name": None, "k": 0},
+                "task": None,
+                "template": None,
             },
-            'pretrained_model_name_or_path': None,
-            'tokenizer': 'space_punct',
-            'vocab_file': None,
-            'sequence_length': None,
-            'max_sequence_length': 256,
-            'most_common': 20000,
-            'padding_symbol': '<PAD>',
-            'unknown_symbol': '<UNK>',
-            'padding': 'right',
-            'lowercase': True,
-            'missing_value_strategy': 'drop_row',
-            'fill_value': '<UNK>',
-            'computed_fill_value': '<UNK>',
-            'ngram_size': 2,
-            'cache_encoder_embeddings': False,
-            'compute_idf': False
-        }
+            "pretrained_model_name_or_path": None,
+            "tokenizer": "space_punct",
+            "vocab_file": None,
+            "sequence_length": None,
+            "max_sequence_length": 256,
+            "most_common": 20000,
+            "padding_symbol": "<PAD>",
+            "unknown_symbol": "<UNK>",
+            "padding": "right",
+            "lowercase": True,
+            "missing_value_strategy": "drop_row",
+            "fill_value": "<UNK>",
+            "computed_fill_value": "<UNK>",
+            "ngram_size": 2,
+            "cache_encoder_embeddings": False,
+            "compute_idf": False,
+        },
     }
 
     model_config = ModelConfig.from_dict(config)
@@ -266,19 +274,19 @@ def test_dict_class_weights_set():
 
     # Mock feature metadata
     feature_metadata = {
-        'idx2str': ['token_1', 'token_2', 'token_3', '<UNK>'],
-        'str2idx': {'token_1': 0, 'token_2': 1, 'token_3': 2, '<UNK>': 3},
-        'str2freq': {'token_1': 300, 'token_2': 200, 'token_3': 100, '<UNK>': 0},
-        'vocab_size': 4,
-        'max_set_size': 3,
-        'preprocessing': {
-            'tokenizer': 'space',
-            'missing_value_strategy': 'drop_row',
-            'fill_value': '<UNK>',
-            'computed_fill_value': '<UNK>',
-            'lowercase': False,
-            'most_common': 10000
-        }
+        "idx2str": ["token_1", "token_2", "token_3", "<UNK>"],
+        "str2idx": {"token_1": 0, "token_2": 1, "token_3": 2, "<UNK>": 3},
+        "str2freq": {"token_1": 300, "token_2": 200, "token_3": 100, "<UNK>": 0},
+        "vocab_size": 4,
+        "max_set_size": 3,
+        "preprocessing": {
+            "tokenizer": "space",
+            "missing_value_strategy": "drop_row",
+            "fill_value": "<UNK>",
+            "computed_fill_value": "<UNK>",
+            "lowercase": False,
+            "most_common": 10000,
+        },
     }
 
     model_config = ModelConfig.from_dict(config)
