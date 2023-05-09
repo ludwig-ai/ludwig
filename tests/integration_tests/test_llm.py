@@ -94,7 +94,13 @@ def convert_preds(preds: DataFrame):
 )
 def test_llm_text_to_text(tmpdir, backend, ray_cluster_4cpu):
     """Test that the LLM model can train and predict with text inputs and text outputs."""
-    input_features = [{"name": "Question", "type": "text"}]
+    input_features = [
+        {
+            "name": "Question",
+            "type": "text",
+            "encoder": {"type": "passthrough"},
+        }
+    ]
     output_features = [text_feature(output_feature=True, name="Answer", decoder={"type": "text_parser"})]
 
     csv_filename = os.path.join(tmpdir, "training.csv")
@@ -140,6 +146,9 @@ def test_llm_zero_shot_classification(tmpdir, backend, ray_cluster_4cpu):
                 "prompt": {
                     "task": "This is a review of a restaurant. Classify the sentiment.",
                 }
+            },
+            "encoder": {
+                "type": "passthrough",
             },
         }
     ]
@@ -337,7 +346,6 @@ def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strat
     config = {
         MODEL_TYPE: MODEL_LLM,
         MODEL_NAME: model_name,
-        # GENERATION: get_generation_config(),
         TUNER: {
             TYPE: finetune_strategy,
             **adapter_args,
@@ -356,9 +364,9 @@ def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strat
 
     prediction_df = pd.DataFrame(
         [
-            {"review": "The food was amazing!", "label": "positive"},
-            {"review": "The service was terrible.", "label": "negative"},
-            {"review": "The food was okay.", "label": "neutral"},
+            {"input": "The food was amazing!", "output": "positive"},
+            {"input": "The service was terrible.", "output": "negative"},
+            {"input": "The food was okay.", "output": "neutral"},
         ]
     )
 

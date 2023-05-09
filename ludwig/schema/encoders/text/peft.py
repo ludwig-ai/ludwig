@@ -330,8 +330,6 @@ class AdaptionPromptConfig(BaseTunerConfig):
     """Adapted from https://github.com/huggingface/peft/blob/main/src/peft/tuners/adaption_prompt.py."""
 
     def __post_init__(self):
-        super().__post_init__()
-
         if not self.adapter_len:
             raise ConfigValidationError(
                 "`adapter_len` must be set to a value greater than 0 when finetuning is enabled and the adapter"

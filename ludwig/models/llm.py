@@ -1,8 +1,7 @@
-import copy
 import logging
 import os
 import tempfile
-from typing import Dict, Tuple, Union
+from typing import Dict, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -10,7 +9,7 @@ import torch.nn.functional as F
 import torchmetrics
 from transformers import AutoModelForCausalLM, AutoTokenizer, GenerationConfig
 
-from ludwig.constants import LOGITS, MODEL_LLM, PREDICTIONS, PROBABILITIES
+from ludwig.constants import LOGITS, MODEL_LLM, PREDICTIONS, PROBABILITIES, TEXT
 from ludwig.features.base_feature import OutputFeature
 from ludwig.features.text_feature import TextOutputFeature
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
@@ -21,6 +20,7 @@ from ludwig.utils.augmentation_utils import AugmentationPipelines
 from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.logging_utils import log_once
 from ludwig.utils.output_feature_utils import set_output_feature_tensor
+from ludwig.utils.torch_utils import reg_loss
 
 logger = logging.getLogger(__name__)
 
@@ -99,7 +99,7 @@ class LLM(BaseModel):
                 # because the model has additional "head" layers that are used to predict the next
                 # token in the sequence. These head layers can add additional dimensions to the
                 # logits tensor, beyond the vocab_size dimension.
-                input_size=self.input_shape[-1] if self.output_feature_type == "text" else self.model.config.vocab_size,
+                input_size=self.input_shape[-1] if self.output_feature_type == TEXT else self.model.config.vocab_size,
             )
         )
 
@@ -210,23 +210,25 @@ class LLM(BaseModel):
 
         if self.config_obj.tuner:
             # Forward pass using PEFT wrapped model for fine-tuning
-            model_outputs = self.model(input_ids)[LOGITS]
+            model_outputs = self.model(input_ids).get(LOGITS)
 
-            if self.output_feature_type != "text":
+            if self.output_feature_type != TEXT:
                 # Pass generated tokens through decoder after averaging the token probabilities
-                # This is required for the classification head for the CategoryParserDecoder
-                model_outputs = torch.mean(model_outputs[LOGITS], dim=1)
+                # This is required for the classification head for the classifier decoder
+                model_outputs = torch.mean(model_outputs, dim=1)
 
-            if self.output_feature_type == "text":
+            if self.output_feature_type == TEXT:
                 decoder_outputs = model_outputs
             else:
-                decoder_outputs = self.output_feature_decoder.decoder_obj(
-                    model_outputs,
-                )
+                decoder_outputs = self.output_feature_decoder.decoder_obj(model_outputs)
 
             # Set the output feature tensor to the decoder outputs (logits)
             outputs = {}
-            set_output_feature_tensor(outputs, self.config_obj.output_features[0].name, LOGITS, decoder_outputs)
+            of_name = self.config_obj.output_features[0].name
+            set_output_feature_tensor(outputs, of_name, LOGITS, decoder_outputs)
+
+            # Get predictions, probabilities and logits tensor from the output feature's predictions function
+            outputs = self.output_features.get(of_name).predictions(outputs, of_name)
 
             return outputs
 
@@ -287,6 +289,58 @@ class LLM(BaseModel):
         self.eval_loss_metric.update(eval_loss)
         self.eval_additional_losses_metrics.update(additional_losses)
 
+    def train_loss(
+        self,
+        targets,
+        predictions,
+        regularization_type: Optional[str] = None,
+        regularization_lambda: Optional[float] = None,
+    ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+        """Computes the training loss for the model.
+
+        Args:
+            targets: A dictionary of target names to target tensors.
+            predictions: A dictionary of output names to output tensors.
+            regularization_type: One of 'l1', 'l2', 'l1_l2', or None.
+            regularization_lambda: The regularization lambda.
+
+        Returns:
+            A tuple of the loss tensor and a dictionary of loss for every
+            output feature.
+        """
+        train_loss = 0
+        of_train_losses = {}
+        for of_name, of_obj in self.output_features.items():
+            _targets, _predictions = targets, predictions
+            if isinstance(of_obj, TextOutputFeature):
+                # Align the target length with the predictions length to enable text metric evaluation.
+                _predictions = {of_name: _predictions}
+                _targets, _predictions = realign_target_and_prediction_tensors(_targets, _predictions, of_name)
+
+            # TODO(Arnav): Seems like doing this again and going between these format types in unnecessary, but
+            # refactor so that we don't have to do this at a later point.
+            predictions = {}
+            for key, _ in _predictions[of_name].items():
+                set_output_feature_tensor(predictions, of_name, key, _predictions[of_name][key])
+            _predictions = predictions
+
+            # TODO(Arnav): Verify if this works for category output features during fine-tuning if that is something
+            # we want to support.
+            # Compute output feature train loss
+            of_train_loss = of_obj.train_loss(_targets[of_name], _predictions, of_name)
+            train_loss += of_obj.loss.weight * of_train_loss
+            of_train_losses[of_name] = of_train_loss
+
+        additional_losses = self.losses()
+        if additional_losses:
+            train_loss += torch.sum(torch.stack(additional_losses))  # other losses
+
+        # Add regularization loss
+        if regularization_type is not None and regularization_lambda != 0:
+            train_loss += reg_loss(self, regularization_type, l1=regularization_lambda, l2=regularization_lambda)
+
+        return train_loss, of_train_losses
+
     def eval_loss(self, targets, predictions):
         """Computes all evaluation losses for the model given targets and predictions.
 
@@ -326,7 +380,7 @@ class LLM(BaseModel):
         predictions = {}
         for of_name in self.output_features:
             if self.config_obj.tuner:
-                predictions[of_name] = self.output_features.get(of_name).predictions(outputs, of_name)
+                predictions[of_name] = outputs
             else:
                 generated_predictions = outputs[of_name]
                 predictions[of_name] = generated_predictions
@@ -387,28 +441,22 @@ def realign_target_and_prediction_tensors(
     Returns:
         The realigned target tensor.
     """
-    target_length = targets.get(of_name).detach().size()[1]
-    prediction_length = predictions[of_name].get(PREDICTIONS).detach().size()[1]
+    target_length = targets.get(of_name).size()[1]
+    prediction_length = predictions[of_name].get(PREDICTIONS).size()[1]
+
     if target_length == prediction_length:
         return targets, predictions
-
-    _targets = copy.deepcopy({k: v.detach() for k, v in targets.items()})
-    _predictions = {
-        of_name: copy.deepcopy(
-            {k: v.detach() for k, v in predictions[of_name].items()},
-        )
-    }
 
     # Align target and prediction tensors for text to text metric computation
     if target_length > prediction_length:
         # Pad the predictions.
         zeros_to_add = target_length - prediction_length
-        _predictions[of_name][PREDICTIONS] = F.pad(_predictions[of_name][PREDICTIONS], (0, zeros_to_add))
+        predictions[of_name][PREDICTIONS] = F.pad(predictions[of_name][PREDICTIONS], (0, zeros_to_add))
         # Pad probabilities with 0s. Pad the second last dimension with 0s.
-        _predictions[of_name][PROBABILITIES] = F.pad(_predictions[of_name][PROBABILITIES], (0, 0, 0, zeros_to_add))
+        predictions[of_name][PROBABILITIES] = F.pad(predictions[of_name][PROBABILITIES], (0, 0, 0, zeros_to_add))
         # Pad logits with 0s. Pad the second last dimension with 0s.
-        _predictions[of_name][LOGITS] = F.pad(_predictions[of_name][LOGITS], (0, 0, 0, zeros_to_add))
-    elif prediction_length > target_length:
-        _targets[of_name] = F.pad(_targets[of_name], (0, prediction_length - target_length))
+        predictions[of_name][LOGITS] = F.pad(predictions[of_name][LOGITS], (0, 0, 0, zeros_to_add))
+    else:
+        targets[of_name] = F.pad(targets[of_name], (0, prediction_length - target_length))
 
-    return _targets, _predictions
+    return targets, predictions
