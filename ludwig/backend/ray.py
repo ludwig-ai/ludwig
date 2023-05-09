@@ -915,6 +915,10 @@ class RayBackend(RemoteTrainingMixin, Backend):
                 # Download binary files in parallel
                 # Use 16 worker threads to maximize image read throughput over each partition
                 df = df.with_column(column.name, df[column.name].url.download(max_worker_threads=16, on_error="null"))
+
+                if map_fn is not None:
+                    df = df.with_column(column.name, df[column.name].apply(map_fn, return_dtype=daft.DataType.python()))
+
                 # Revert back to the original number of partitions in this column
                 df = df.into_partitions(n_col_partitions)
 
@@ -927,8 +931,8 @@ class RayBackend(RemoteTrainingMixin, Backend):
             df = column.to_frame(name=column.name)
             df["idx"] = df.index
 
-        if map_fn is not None:
-            df[column.name] = self.df_engine.map_objects(df[column.name], map_fn)
+            if map_fn is not None:
+                df[column.name] = self.df_engine.map_objects(df[column.name], map_fn)
 
         if "idx" in df.columns:
             df = df.set_index("idx", drop=True)
