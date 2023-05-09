@@ -890,7 +890,8 @@ class RayBackend(RemoteTrainingMixin, Backend):
             # Set the runner for executing Daft dataframes to a Ray cluster
             # Prevent re-initialization errors if the runner is already set
             # This can happen if there are 2 or more audio/image columns
-            daft.context.set_runner_ray(address=ray.util.get_node_ip_address(), noop_if_initialized=True)
+            assert ray.is_initialized(), "Ray should be initialized by Ludwig already at application start"
+            daft.context.set_runner_ray(address="auto", noop_if_initialized=True)
 
             # Create 1 partition for each available CPU in the Ray cluster
             # Fall back to distributing this over 1 GPU if no CPUs are available
