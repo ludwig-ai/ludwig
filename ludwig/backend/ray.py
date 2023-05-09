@@ -50,8 +50,13 @@ from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetSha
 from ludwig.distributed import get_default_strategy_name, get_dist_strategy, init_dist_strategy
 from ludwig.models.base import BaseModel
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
-from ludwig.schema.trainer import ECDTrainerConfig
-from ludwig.trainers.registry import get_llm_ray_trainers_registry, get_ray_trainers_registry, register_ray_trainer
+from ludwig.schema.trainer import ECDTrainerConfig, FineTuneTrainerConfig
+from ludwig.trainers.registry import (
+    get_llm_ray_trainers_registry,
+    get_ray_trainers_registry,
+    register_llm_ray_trainer,
+    register_ray_trainer,
+)
 from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer, Trainer
 from ludwig.trainers.trainer_llm import RemoteLLMTrainer
 from ludwig.types import HyperoptConfigDict, ModelConfigDict, TrainerConfigDict, TrainingSetMetadataDict
@@ -582,6 +587,13 @@ class RayLLMTrainer(RayTrainerV2):
     @property
     def remote_trainer_cls(self):
         return RemoteLLMTrainer
+
+
+@register_llm_ray_trainer("finetune")
+class RayLLMFinetuneTrainer(RayLLMTrainer):
+    @property
+    def get_schema_cls():
+        return FineTuneTrainerConfig
 
 
 def eval_fn(

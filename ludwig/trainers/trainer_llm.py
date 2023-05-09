@@ -374,7 +374,6 @@ class NoneTrainer(BaseTrainer):
 
 
 @register_llm_trainer("finetune")
-@register_llm_ray_trainer("finetune")
 class FineTuneTrainer(Trainer):
     @staticmethod
     def get_schema_cls():
