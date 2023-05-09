@@ -27,6 +27,7 @@ from tests.integration_tests.utils import (
 )
 
 
+@pytest.mark.integration_tests_a
 @pytest.mark.parametrize("feature_type,feature_gen", [(TEXT, text_feature), (SEQUENCE, sequence_feature)])
 @pytest.mark.parametrize("decoder_type", ["generator", "tagger"])
 @pytest.mark.parametrize("use_defaults", [True, False])
@@ -38,7 +39,7 @@ def test_sequence_decoder_predictions(
     input_feature = feature_gen()
     output_feature = feature_gen(output_feature=True)
 
-    input_feature[ENCODER] = {TYPE: "parallel_cnn", "reduce_output": None}
+    input_feature[ENCODER] = {TYPE: "embed"}
     output_feature[DECODER] = {TYPE: decoder_type}
 
     dataset_path = generate_data(
