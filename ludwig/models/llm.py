@@ -452,10 +452,13 @@ def realign_target_and_prediction_tensors(
         # Pad the predictions.
         zeros_to_add = target_length - prediction_length
         predictions[of_name][PREDICTIONS] = F.pad(predictions[of_name][PREDICTIONS], (0, zeros_to_add))
+        predictions[of_name][PREDICTIONS] = predictions[of_name][PREDICTIONS].type(torch.float32)
         # Pad probabilities with 0s. Pad the second last dimension with 0s.
         predictions[of_name][PROBABILITIES] = F.pad(predictions[of_name][PROBABILITIES], (0, 0, 0, zeros_to_add))
+        predictions[of_name][PROBABILITIES] = predictions[of_name][PROBABILITIES].type(torch.float32)
         # Pad logits with 0s. Pad the second last dimension with 0s.
         predictions[of_name][LOGITS] = F.pad(predictions[of_name][LOGITS], (0, 0, 0, zeros_to_add))
+        predictions[of_name][LOGITS] = predictions[of_name][LOGITS].type(torch.float32)
     else:
         targets[of_name] = F.pad(targets[of_name], (0, prediction_length - target_length))
 
