@@ -64,7 +64,7 @@ ray = pytest.importorskip("ray")
 
 from ludwig.hyperopt.execution import get_build_hyperopt_executor, RayTuneExecutor  # noqa
 
-pytestmark = pytest.mark.distributed
+pytestmark = [pytest.mark.distributed, pytest.mark.integration_tests_a]
 
 RANDOM_SEARCH_SIZE = 2
 
@@ -136,7 +136,6 @@ def _setup_ludwig_config(dataset_fp: str, model_type: str = MODEL_ECD) -> Tuple[
     return config, rel_path
 
 
-@pytest.mark.integration_tests_a
 @pytest.mark.parametrize("search_alg", SEARCH_ALGS_FOR_TESTING)
 @pytest.mark.parametrize("model_type", [MODEL_ECD, MODEL_GBM])
 def test_hyperopt_search_alg(
@@ -198,7 +197,6 @@ def test_hyperopt_search_alg(
         assert isinstance(path, str)
 
 
-@pytest.mark.integration_tests_a
 @pytest.mark.parametrize("model_type", [MODEL_ECD, MODEL_GBM])
 def test_hyperopt_executor_with_metric(model_type, csv_filename, tmpdir, ray_cluster_7cpu):
     test_hyperopt_search_alg(
@@ -212,7 +210,6 @@ def test_hyperopt_executor_with_metric(model_type, csv_filename, tmpdir, ray_clu
     )
 
 
-@pytest.mark.integration_tests_a
 @pytest.mark.parametrize("split", [TRAINING, VALIDATION, TEST])
 def test_hyperopt_with_split(split, csv_filename, tmpdir, ray_cluster_7cpu):
     test_hyperopt_search_alg(
@@ -225,7 +222,6 @@ def test_hyperopt_with_split(split, csv_filename, tmpdir, ray_cluster_7cpu):
     )
 
 
-@pytest.mark.integration_tests_a
 @pytest.mark.parametrize("scheduler", SCHEDULERS_FOR_TESTING)
 @pytest.mark.parametrize("model_type", [MODEL_ECD, MODEL_GBM])
 def test_hyperopt_scheduler(
@@ -372,13 +368,11 @@ def _run_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, backend, ray_
         assert "model" in os.listdir(path)
 
 
-@pytest.mark.integration_tests_a
 @pytest.mark.parametrize("search_space", ["random", "grid"])
 def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, ray_cluster_7cpu):
     _run_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, "local", ray_cluster_7cpu)
 
 
-@pytest.mark.integration_tests_a
 @pytest.mark.parametrize("fs_protocol,bucket", [private_param(("s3", "ludwig-tests"))], ids=["s3"])
 def test_hyperopt_sync_remote(fs_protocol, bucket, csv_filename, ray_cluster_7cpu):
     backend = {
@@ -398,7 +392,6 @@ def test_hyperopt_sync_remote(fs_protocol, bucket, csv_filename, ray_cluster_7cp
         )
 
 
-@pytest.mark.integration_tests_a
 def test_hyperopt_with_feature_specific_parameters(csv_filename, tmpdir, ray_cluster_7cpu):
     input_features = [
         text_feature(name="utterance", reduce_output="sum"),
@@ -450,7 +443,6 @@ def test_hyperopt_with_feature_specific_parameters(csv_filename, tmpdir, ray_clu
             assert input_feature["encoder"]["embedding_size"] in embedding_size_search_space
 
 
-@pytest.mark.integration_tests_a
 def test_hyperopt_old_config(csv_filename, tmpdir, ray_cluster_7cpu):
     old_config = {
         "ludwig_version": "0.4",
@@ -504,7 +496,6 @@ def test_hyperopt_old_config(csv_filename, tmpdir, ray_cluster_7cpu):
     hyperopt(old_config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")
 
 
-@pytest.mark.integration_tests_a
 def test_hyperopt_nested_parameters(csv_filename, tmpdir, ray_cluster_7cpu):
     config = {
         INPUT_FEATURES: [
@@ -591,7 +582,6 @@ def test_hyperopt_nested_parameters(csv_filename, tmpdir, ray_cluster_7cpu):
         assert trial_config[TRAINER]["learning_rate"] in {0.7, 0.42}
 
 
-@pytest.mark.integration_tests_a
 def test_hyperopt_without_config_defaults(csv_filename, tmpdir, ray_cluster_7cpu):
     input_features = [category_feature(encoder={"vocab_size": 3})]
     output_features = [category_feature(decoder={"vocab_size": 3})]
@@ -623,7 +613,6 @@ def test_hyperopt_without_config_defaults(csv_filename, tmpdir, ray_cluster_7cpu
     assert hyperopt_results.experiment_analysis.results_df.shape[0] == 10
 
 
-@pytest.mark.integration_tests_a
 def test_hyperopt_with_time_budget(csv_filename, tmpdir, ray_cluster_7cpu):
     """Tests that incomplete checkpoints created by RayTune when time budget is hit doesn't throw errors because of
     missing .tune_metadata files in the checkpoint directories."""
