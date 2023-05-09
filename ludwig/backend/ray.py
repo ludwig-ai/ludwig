@@ -910,9 +910,9 @@ class RayBackend(RemoteTrainingMixin, Backend):
                 if map_fn is not None:
                     df = df.with_column(column.name, df[column.name].apply(map_fn, return_dtype=daft.DataType.python()))
 
-            # Executes and convert Daft Dataframe to Dask DataFrame - note that this preserves partitioning
-            df = df.to_dask_dataframe()
-            df = self.df_engine.persist(df)
+                # Executes and convert Daft Dataframe to Dask DataFrame - note that this preserves partitioning
+                df = df.to_dask_dataframe()
+                df = self.df_engine.persist(df)
         else:
             # Assume the path has already been read in, so just convert directly to a dataset
             # Name the column "value" to match the behavior of the above
