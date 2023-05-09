@@ -236,17 +236,6 @@ def _update_backend_cache_credentials(backend: Dict[str, Any]) -> Dict[str, Any]
     return backend
 
 
-@register_config_transformation("0.6", ["output_features"])
-def update_class_weights_in_features(feature: FeatureConfigDict) -> FeatureConfigDict:
-    if LOSS in feature:
-        class_weights = feature[LOSS].get(CLASS_WEIGHTS, None)
-        if not isinstance(class_weights, list):
-            class_weights = None
-        feature[LOSS][CLASS_WEIGHTS] = class_weights
-
-    return feature
-
-
 @register_config_transformation("0.4")
 def _update_level_metadata(config: ModelConfigDict) -> ModelConfigDict:
     # Replace parameters represented as keys with params represented as values.

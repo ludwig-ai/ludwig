@@ -258,10 +258,13 @@ class SoftmaxCrossEntropyLossConfig(BaseLossConfig):
         description="Type of loss.",
     )
 
-    class_weights: Union[List[float], float, None] = schema_utils.List(
-        list_type=float,
+    class_weights: Union[List[float], float, dict, None] = schema_utils.OneOfOptionsField(
         default=None,
         description=CLASS_WEIGHTS_DESCRIPTION,
+        field_options=[
+            schema_utils.Dict(default=None, allow_none=True),
+            schema_utils.List(list_type=float, allow_none=False),
+        ],
         parameter_metadata=LOSS_METADATA["SoftmaxCrossEntropyLoss"]["class_weights"],
     )
 
@@ -310,10 +313,13 @@ class SequenceSoftmaxCrossEntropyLossConfig(BaseLossConfig):
         description="Type of loss.",
     )
 
-    class_weights: Union[List[float], float, None] = schema_utils.List(
-        list_type=float,
+    class_weights: Union[List[float], float, dict, None] = schema_utils.OneOfOptionsField(
         default=None,
         description=CLASS_WEIGHTS_DESCRIPTION,
+        field_options=[
+            schema_utils.Dict(default=None, allow_none=True),
+            schema_utils.List(list_type=float, allow_none=False),
+        ],
         parameter_metadata=LOSS_METADATA["SequenceSoftmaxCrossEntropyLoss"]["class_weights"],
     )
 
@@ -368,10 +374,13 @@ class SigmoidCrossEntropyLossConfig(BaseLossConfig):
         description="Type of loss.",
     )
 
-    class_weights: Union[List[float], float, None] = schema_utils.List(
-        list_type=float,
+    class_weights: Union[List[float], float, dict, None] = schema_utils.OneOfOptionsField(
         default=None,
         description=CLASS_WEIGHTS_DESCRIPTION,
+        field_options=[
+            schema_utils.Dict(default=None, allow_none=True),
+            schema_utils.List(list_type=float, allow_none=False),
+        ],
         parameter_metadata=LOSS_METADATA["SigmoidCrossEntropyLoss"]["class_weights"],
     )
 
