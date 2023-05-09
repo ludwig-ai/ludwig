@@ -24,6 +24,13 @@ def register_tuner(name: str):
     return wrap
 
 
+def get_llm_model_config(model_name: str):
+    """Returns the LLM model config."""
+    from transformers import AutoConfig
+
+    return AutoConfig.from_pretrained(model_name)
+
+
 @DeveloperAPI
 @ludwig_dataclass
 class BaseTunerConfig(schema_utils.BaseMarshmallowConfig, ABC):
@@ -328,6 +335,21 @@ class AdaloraConfig(LoraConfig):
 @ludwig_dataclass
 class AdaptionPromptConfig(BaseTunerConfig):
     """Adapted from https://github.com/huggingface/peft/blob/main/src/peft/tuners/adaption_prompt.py."""
+
+    def __post_init__(self):
+        super().__post_init__()
+
+        if not self.adapter_len:
+            raise ConfigValidationError(
+                "`adapter_len` must be set to a value greater than 0 when finetuning is enabled and the adapter"
+                "type is `adaption_prompt`. This is the length of the adaption prompt to insert."
+            )
+
+        if not self.adapter_layers:
+            raise ConfigValidationError(
+                "`adapter_layers` must be set to a value greater than 0 when finetuning is enabled and the adapter"
+                "type is `adaption_prompt`. This is the number of adapter layers to insert."
+            )
 
     type: str = schema_utils.ProtectedString("adaption_prompt")
 
