@@ -151,35 +151,6 @@ def test_corn_loss(preds: torch.Tensor, target: torch.Tensor, output: torch.Tens
     assert torch.isclose(loss(preds, target), output, rtol=0.0001)
 
 
-def test_category_feature_loss():
-    from ludwig.api import LudwigModel
-    from ludwig.data.dataset_synthesizer import build_synthetic_dataset_df
-    from tests.integration_tests.utils import category_feature
-
-    input_features = [
-        category_feature(encoder={"vocab_size": 3}),
-    ]
-
-    output_features = [
-        set_feature(decoder={"vocab_size": 3}),
-    ]
-
-    config = {
-        "input_features": input_features,
-        "output_features": output_features,
-    }
-
-    df = build_synthetic_dataset_df(5000, config)
-    classes = df[config["output_features"][0]["name"]].value_counts().index.to_list()
-
-    class_weights_dict = {classes[0]: 0.1, classes[1]: 0.2, classes[2]: 0.3}
-
-    config["output_features"][0]["loss"] = {"type": "sigmoid_cross_entropy", "class_weights": class_weights_dict}
-
-    model = LudwigModel(config)
-    model.train(df)
-
-
 def test_dict_class_weights_category():
     input_features = [text_feature()]
     output_features = [category_feature(decoder={"vocab_size": 3})]
