@@ -349,8 +349,6 @@ def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strat
         # At the time of writing this test, Adaption Prompt fine-tuning is only supported for Llama models
         model_name = "HuggingFaceM4/tiny-random-LlamaForCausalLM"
 
-    model_name = "facebook/opt-350m"
-
     config = {
         MODEL_TYPE: MODEL_LLM,
         MODEL_NAME: model_name,
