@@ -22,7 +22,6 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
     AUDIO,
     BIAS,
-    CLASS_WEIGHTS,
     COLUMN,
     CONV_BIAS,
     CONV_USE_BIAS,
@@ -38,7 +37,6 @@ from ludwig.constants import (
     HYPEROPT,
     IMAGE,
     INPUT_FEATURES,
-    LOSS,
     MISSING_VALUE_STRATEGY,
     MODEL_ECD,
     MODEL_GBM,
