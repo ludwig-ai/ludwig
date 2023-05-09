@@ -39,7 +39,7 @@ def test_sequence_decoder_predictions(
     input_feature = feature_gen()
     output_feature = feature_gen(output_feature=True)
 
-    input_feature[ENCODER] = {TYPE: "embed"}
+    input_feature[ENCODER] = {TYPE: "embed", "reduce_output": None}
     output_feature[DECODER] = {TYPE: decoder_type}
 
     dataset_path = generate_data(

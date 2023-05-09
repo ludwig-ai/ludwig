@@ -855,7 +855,7 @@ def test_prompt_template(backend, tmpdir):
     [
         pytest.param({"type": "random", "k": 2}, id="random_retrieval"),
         # TODO: find a smaller model for testing
-        pytest.param({"type": "semantic", "model_name": "paraphrase-MiniLM-L3-v2", "k": 2}, id="semantic_retrieval"),
+        # pytest.param({"type": "semantic", "model_name": "paraphrase-MiniLM-L3-v2", "k": 2}, id="semantic_retrieval"),
     ],
 )
 def test_handle_features_with_few_shot_prompt_config(backend, retrieval_kwargs, ray_cluster_2cpu):

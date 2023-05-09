@@ -197,6 +197,15 @@ jobs:
       KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
       IS_NOT_FORK: ${{ !(github.event.pull_request.base.repo.full_name == 'ludwig-ai/ludwig' && github.event.pull_request.head.repo.fork) }}
 
+    services:
+      minio:
+        image: fclairamb/minio-github-actions
+        env:
+          MINIO_ACCESS_KEY: minio
+          MINIO_SECRET_KEY: minio123
+        ports:
+          - 9000:9000
+
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v2
@@ -244,6 +253,15 @@ jobs:
       KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
       KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
       IS_NOT_FORK: ${{ !(github.event.pull_request.base.repo.full_name == 'ludwig-ai/ludwig' && github.event.pull_request.head.repo.fork) }}
+
+    services:
+      minio:
+        image: fclairamb/minio-github-actions
+        env:
+          MINIO_ACCESS_KEY: minio
+          MINIO_SECRET_KEY: minio123
+        ports:
+          - 9000:9000
 
     timeout-minutes: 60
     steps:
