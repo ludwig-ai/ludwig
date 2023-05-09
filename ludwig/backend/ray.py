@@ -893,36 +893,24 @@ class RayBackend(RemoteTrainingMixin, Backend):
             assert ray.is_initialized(), "Ray should be initialized by Ludwig already at application start"
             daft.context.set_runner_ray(address="auto", noop_if_initialized=True)
 
-            # Create 1 partition for each available CPU in the Ray cluster
-            # Fall back to distributing this over 1 GPU if no CPUs are available
-            # This is a heuristic to saturate network bandwidth while downloading images
-            # and also prevent large disk spillage to disk from the object store since we will
-            # only spill smaller individual partitions rather than 1 large partition
-            resources = self.get_available_resources()
-            if resources.cpus > 0:
-                num_downloading_partitions = int(resources.cpus)
-            else:
-                num_downloading_partitions = 1
-
             with self.storage.cache.use_credentials():
-                # Requires initialization from a mapping of col_name -> list of items in the series
-                # Failed image reads return None automatically, so there's no post processing required.
-                df = daft.from_pydict({column.name: fnames})
-                # This partitioning event doesn't involve shuffling and is very cheap because it splits
-                # the dataframe into n partitions by doing the minimal number of splits or merges. Preserves order.
-                # Very similar to re-aligning divisions in Dask to create partitions.
-                df = df.into_partitions(num_downloading_partitions)
+                df = daft.from_dask_dataframe(column.to_frame(name=column.name))
+
                 # Download binary files in parallel
-                # Use 16 worker threads to maximize image read throughput over each partition
-                df = df.with_column(column.name, df[column.name].url.download(max_worker_threads=16, on_error="null"))
+                df = df.with_column(
+                    column.name,
+                    df[column.name].url.download(
+                        # Use 16 worker threads to maximize image read throughput over each partition
+                        max_worker_threads=16,
+                        # On error, replace value with a Null and just log the error
+                        on_error="null",
+                    ),
+                )
 
                 if map_fn is not None:
                     df = df.with_column(column.name, df[column.name].apply(map_fn, return_dtype=daft.DataType.python()))
 
-                # Revert back to the original number of partitions in this column
-                df = df.into_partitions(n_col_partitions)
-
-            # Persist the dataframe
+            # Executes and convert Daft Dataframe to Dask DataFrame - note that this preserves partitioning
             df = df.to_dask_dataframe()
             df = self.df_engine.persist(df)
         else:
