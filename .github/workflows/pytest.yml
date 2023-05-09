@@ -190,6 +190,19 @@ jobs:
     name: Integration Tests (A)
     runs-on: ubuntu-latest
 
+    env:
+      PYTORCH: ${{ matrix.pytorch-version }}
+      MARKERS: ${{ matrix.test-markers }}
+      NEUROPOD_BASE_DIR: "/usr/local/lib/neuropod"
+      NEUROPOD_VERISON: "0.3.0-rc6"
+      TORCHSCRIPT_VERISON: ${{ matrix.torchscript-version }}
+      RAY_VERSION: ${{ matrix.ray-version }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.LUDWIG_TESTS_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.LUDWIG_TESTS_AWS_SECRET_ACCESS_KEY }}
+      KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+      KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+      IS_NOT_FORK: ${{ !(github.event.pull_request.base.repo.full_name == 'ludwig-ai/ludwig' && github.event.pull_request.head.repo.fork) }}
+
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v2
@@ -230,6 +243,19 @@ jobs:
   integration-tests-b:
     name: Integration Tests (B)
     runs-on: ubuntu-latest
+
+    env:
+      PYTORCH: ${{ matrix.pytorch-version }}
+      MARKERS: ${{ matrix.test-markers }}
+      NEUROPOD_BASE_DIR: "/usr/local/lib/neuropod"
+      NEUROPOD_VERISON: "0.3.0-rc6"
+      TORCHSCRIPT_VERISON: ${{ matrix.torchscript-version }}
+      RAY_VERSION: ${{ matrix.ray-version }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.LUDWIG_TESTS_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.LUDWIG_TESTS_AWS_SECRET_ACCESS_KEY }}
+      KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+      KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+      IS_NOT_FORK: ${{ !(github.event.pull_request.base.repo.full_name == 'ludwig-ai/ludwig' && github.event.pull_request.head.repo.fork) }}
 
     timeout-minutes: 60
     steps:
