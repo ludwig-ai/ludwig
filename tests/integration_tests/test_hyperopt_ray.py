@@ -45,6 +45,7 @@ except ImportError:
     Trial = None
     TuneCallback = object  # needed to set up HyperoptTestCallback when not distributed
 
+pytestmark = pytest.mark.integration_tests_b
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

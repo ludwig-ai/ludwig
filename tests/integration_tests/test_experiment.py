@@ -66,6 +66,8 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logging.getLogger("ludwig").setLevel(logging.INFO)
 
+pytestmark = pytest.mark.integration_tests_b
+
 
 @pytest.mark.parametrize("encoder", TEXT_ENCODERS)
 def test_experiment_text_feature_non_pretrained(encoder, csv_filename):
@@ -347,6 +349,8 @@ def test_experiment_image_inputs(image_params: ImageParams, tmpdir):
 
 # Primary focus of this test is to determine if exceptions are raised for different data set formats and in_memory
 # setting.
+
+
 @pytest.mark.parametrize("test_in_memory", [True, False])
 @pytest.mark.parametrize("test_format", ["csv", "df", "hdf5"])
 @pytest.mark.parametrize("train_in_memory", [True, False])
