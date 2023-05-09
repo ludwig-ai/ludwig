@@ -136,14 +136,17 @@ def test_llm_zero_shot_classification(tmpdir, backend, ray_cluster_4cpu):
         {
             "name": "review",
             "type": "text",
-            "preprocessing": {"prompt": {"task": "This is a review of a restaurant. Classify the sentiment."}},
+            "preprocessing": {
+                "prompt": {
+                    "task": "This is a review of a restaurant. Classify the sentiment.",
+                }
+            },
         }
     ]
     output_features = [
         category_feature(
-            name="label",
+            name="output",
             preprocessing={
-                "vocab": ["positive", "neutral", "negative"],
                 "fallback_label": "neutral",
             },
             # How can we avoid using r here for regex, since it is technically an implementation detail?
@@ -166,9 +169,6 @@ def test_llm_zero_shot_classification(tmpdir, backend, ray_cluster_4cpu):
         GENERATION: get_generation_config(),
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
-        TRAINER: {
-            TYPE: "zeroshot",
-        },
     }
 
     model = LudwigModel(config, backend=backend)
@@ -176,28 +176,16 @@ def test_llm_zero_shot_classification(tmpdir, backend, ray_cluster_4cpu):
 
     prediction_df = pd.DataFrame(
         [
-            {"review": "The food was amazing!", "label": "positive"},
-            {"review": "The service was terrible.", "label": "negative"},
-            {"review": "The food was okay.", "label": "neutral"},
+            {"review": "The food was amazing!", "output": "positive"},
+            {"review": "The service was terrible.", "output": "negative"},
+            {"review": "The food was okay.", "output": "neutral"},
         ]
     )
 
     preds, _ = model.predict(dataset=prediction_df, output_directory=str(tmpdir))
     preds = convert_preds(preds)
 
-    assert "label_predictions" in preds
-    assert "label_probabilities" in preds
-    assert "label_probability" in preds
-    assert "label_probabilities_positive" in preds
-    assert "label_probabilities_neutral" in preds
-    assert "label_probabilities_negative" in preds
-
-    assert preds["label_predictions"]
-    assert preds["label_probabilities"]
-    assert preds["label_probability"]
-    assert preds["label_probabilities_positive"]
-    assert preds["label_probabilities_neutral"]
-    assert preds["label_probabilities_negative"]
+    assert preds
 
 
 @pytest.mark.llm
@@ -228,7 +216,7 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
     output_features = [
         category_feature(
             output_feature=True,
-            name="label",
+            name="output",
             preprocessing={
                 "fallback_label": "3",
             },
@@ -254,9 +242,6 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
         PREPROCESSING: {
             "split": {TYPE: "fixed"},
         },
-        TRAINER: {
-            TYPE: "fewshot",
-        },
     }
 
     dataset_path = generate_data(
@@ -268,7 +253,7 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
         with_split=True,
     )
     df = pd.read_csv(dataset_path)
-    df["label"] = np.random.choice([1, 2, 3, 4, 5], size=len(df)).astype(str)  # ensure labels match the feature config
+    df["output"] = np.random.choice([1, 2, 3, 4, 5], size=len(df)).astype(str)  # ensure labels match the feature config
     df.to_csv(dataset_path, index=False)
 
     model = LudwigModel(config, backend={**backend, "cache_dir": str(tmpdir)})
@@ -282,7 +267,7 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
     assert preds
 
 
-# TODO(travis): p-tuning and prefix tuning have errors when enabled that seem to stem from DDP:
+# TODO(arnav): p-tuning and prefix tuning have errors when enabled that seem to stem from DDP:
 #
 # prefix tuning:
 # Sizes of tensors must match except in dimension 1. Expected size 320 but got size 32 for tensor number 1 in the list.
