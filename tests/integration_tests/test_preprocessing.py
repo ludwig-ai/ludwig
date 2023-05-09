@@ -855,6 +855,8 @@ def test_prompt_template(backend, tmpdir):
     [
         pytest.param({"type": "random", "k": 2}, id="random_retrieval"),
         # TODO: find a smaller model for testing
+        # Skipped: The model is no longer available:
+        # https://huggingface.co/api/models/sentence-transformers/paraphrase-MiniLM-L3-v2.
         # pytest.param({"type": "semantic", "model_name": "paraphrase-MiniLM-L3-v2", "k": 2}, id="semantic_retrieval"),
     ],
 )
