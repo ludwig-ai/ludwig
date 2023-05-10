@@ -43,6 +43,25 @@ docker-compose -f tests/docker-compose.yml up -d
 RUN_PRIVATE=1 act -j pytest
 ```
 
+## Tests that use ray clusters
+
+Use the distributed pytest decorator to make sure that the test runs on CI jobs with the right ray dependencies installed.
+
+```python
+@pytest.mark.distributed
+def test_something(ray_cluster_2_cpu):
+    pass
+```
+
+Use module-level pytest fixtures to share ray cluster startup and teardown overhead at the module level. List of fixtures are found in `conftest.py`, for example:
+
+```python
+@pytest.fixture(scope="module")
+def ray_cluster_2cpu(request):
+    with _ray_start(request, num_cpus=2):
+        yield
+```
+
 ## Grouped Integration Tests
 
 To leverage more runners to cut Ludwig CI time down, we partition `tests/integration_tests` into 3 groups (A, B, default). Each group should take on a roughly equal share of testing time, which at the time of writing is ~45 minutes each.
@@ -72,6 +91,14 @@ If there's already a `pytestmark` declaration, turn it into a list.
 import pytest
 
 pytestmark = [pytest.mark.distributed, pytest.mark.integration_tests_c]
+```
+
+If there's a specific test to include in the group, decorate the test function.
+
+```python
+@pytest.mark.integration_tests_c
+def test_something():
+    pass
 ```
 
 3. Create a new GHA to run pytest with that marker.
