@@ -49,20 +49,6 @@ class LLM(BaseModel):
         self.curr_device = torch.device("cpu")  # model initially loaded onto cpu
         logger.info("Done.")
 
-        # If a tuner config is provided, we want to wrap the model with a PEFT model
-        # for fine-tuning.
-        if self.config_obj.tuner:
-            from peft import get_peft_model
-
-            peft_config = self.config_obj.tuner.to_config(task_type="CAUSAL_LM", tokenizer_name_or_path=self.model_name)
-            self.model = get_peft_model(self.model, peft_config)
-
-            logger.info("==================================================")
-            logger.info("Trainable Parameter Summary For Fine-Tuning:")
-            logger.info(f"Fine-tuning with tuner: {self.config_obj.tuner.type}")
-            self.model.print_trainable_parameters()
-            logger.info("==================================================")
-
         # Determines the maximum length of the context (input + output tokens)
         if hasattr(self.model.config, "max_sequence_length"):
             self.context_len = self.model.config.max_sequence_length
@@ -112,9 +98,25 @@ class LLM(BaseModel):
 
         clear_data_cache()
 
+    def initialize_tuner(self):
+        """If a tuner config is provided, we want to wrap the model with a PEFT model for fine-tuning."""
+        if self.config_obj.tuner:
+            from peft import get_peft_model
+
+            peft_config = self.config_obj.tuner.to_config(task_type="CAUSAL_LM", tokenizer_name_or_path=self.model_name)
+            self.model = get_peft_model(self.model, peft_config)
+
+            logger.info("==================================================")
+            logger.info("Trainable Parameter Summary For Fine-Tuning:")
+            logger.info(f"Fine-tuning with tuner: {self.config_obj.tuner.type}")
+            self.model.print_trainable_parameters()
+            logger.info("==================================================")
+
     def to_device(self, device):
         device = torch.device(device)
+
         if device == self.curr_device:
+            self.initialize_tuner()
             return self
         else:
             log_once(f"Moving LLM from '{self.curr_device}' to '{device}'.")
@@ -127,7 +129,7 @@ class LLM(BaseModel):
             model_kwargs.update(
                 dict(
                     low_cpu_mem_usage=True,
-                    torch_dtype=torch.float16,
+                    # torch_dtype=torch.float16,
                     device_map="auto",
                     max_memory={i: "13GiB" for i in range(num_gpus)},
                 )
@@ -137,10 +139,14 @@ class LLM(BaseModel):
                 self.model.save_pretrained(tmpdir)
                 self.model = AutoModelForCausalLM.from_pretrained(tmpdir, **model_kwargs)
 
+            # Initialize the adapter after reloading the base model
+            self.initialize_tuner()
+
             self.eval_loss_metric = self.eval_loss_metric.to(device)
             self.eval_additional_losses_metrics = self.eval_additional_losses_metrics.to(device)
             self.output_features.update({k: v.to(device) for k, v in self.output_features.items()})
         else:
+            self.initialize_tuner()
             self.model = self.model.to(device)
 
         self.curr_device = device
