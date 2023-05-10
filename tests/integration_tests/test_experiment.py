@@ -66,8 +66,6 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logging.getLogger("ludwig").setLevel(logging.INFO)
 
-pytestmark = pytest.mark.integration_tests_b
-
 
 @pytest.mark.parametrize("encoder", TEXT_ENCODERS)
 def test_experiment_text_feature_non_pretrained(encoder, csv_filename):
