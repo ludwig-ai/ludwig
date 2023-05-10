@@ -417,3 +417,12 @@ class RemoteLLMTrainer(NoneTrainer):
         # Only return results from rank 0 to reduce network overhead
         self.train = self.distributed.return_first(self.train)
         self.train_online = self.distributed.return_first(self.train_online)
+
+
+class RemoteLLMFineTuneTrainer(FineTuneTrainer):
+    def __init__(self, gpus=None, gpu_memory_limit=None, allow_parallel_threads=True, **kwargs):
+        super().__init__(**kwargs)
+
+        # Only return results from rank 0 to reduce network overhead
+        self.train = self.distributed.return_first(self.train)
+        self.train_online = self.distributed.return_first(self.train_online)

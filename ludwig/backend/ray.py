@@ -58,7 +58,7 @@ from ludwig.trainers.registry import (
     register_ray_trainer,
 )
 from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer, Trainer
-from ludwig.trainers.trainer_llm import RemoteLLMTrainer
+from ludwig.trainers.trainer_llm import RemoteLLMFineTuneTrainer, RemoteLLMTrainer
 from ludwig.types import HyperoptConfigDict, ModelConfigDict, TrainerConfigDict, TrainingSetMetadataDict
 from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
 from ludwig.utils.dataframe_utils import set_index_name
@@ -590,10 +590,14 @@ class RayLLMTrainer(RayTrainerV2):
 
 
 @register_llm_ray_trainer("finetune")
-class RayLLMFinetuneTrainer(RayLLMTrainer):
+class RayLLMFineTuneTrainer(RayTrainerV2):
     @property
     def get_schema_cls():
         return FineTuneTrainerConfig
+
+    @property
+    def remote_trainer_cls(self):
+        return RemoteLLMFineTuneTrainer
 
 
 def eval_fn(
