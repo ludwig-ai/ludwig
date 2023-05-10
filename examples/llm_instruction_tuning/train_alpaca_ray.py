@@ -10,6 +10,8 @@ config = yaml.safe_load(
 model_type: llm
 model_name: bigscience/bloomz-560m
 
+tuner: lora
+
 input_features:
   - name: instruction
     type: text
@@ -18,29 +20,28 @@ output_features:
   - name: output
     type: text
 
-# trainer:
-#   batch_size: 8
-#   epochs: 2
-#   gradient_accumulation_steps: 8
-
 trainer:
     type: finetune
     batch_size: 8
+    train_steps: 5
+
+preprocessing:
+  split:
+    type: random
+    probabilities: [0.99, 0.005, 0.005]
 
 backend:
-  # type: local
   type: ray
   cache_dir: /src/cache
   trainer:
-    num_workers: 1
     use_gpu: true
-#     strategy:
-#       type: deepspeed
-#       zero_optimization:
-#         stage: 3
-#         offload_optimizer:
-#           device: cpu
-#           pin_memory: true
+    strategy:
+      type: deepspeed
+      zero_optimization:
+        stage: 3
+        offload_optimizer:
+          device: cpu
+          pin_memory: true
 """
 )
 
