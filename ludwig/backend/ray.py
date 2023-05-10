@@ -892,12 +892,12 @@ class RayBackend(RemoteTrainingMixin, Backend):
             assert ray.is_initialized(), "Ray should be initialized by Ludwig already at application start"
             daft.context.set_runner_ray(address="auto", noop_if_initialized=True)
 
-            with self.storage.cache.use_credentials():
-                df = daft.from_dask_dataframe(column.to_frame(name=column.name))
+            # Convert Dask Series to Dask Dataframe
+            df = column.to_frame(name=column.name)
+            df["idx"] = column.index
 
-                # Rename "__index_level_0__" column to "idx", which is a tag-along column
-                # that is later used to ensure the join with the metadata dataframe is successful
-                df = df.select(column.name, df["__index_level_0__"].alias("idx"))
+            with self.storage.cache.use_credentials():
+                df = daft.from_dask_dataframe(df).select("idx", column.name)
 
                 # Download binary files in parallel
                 df = df.with_column(
