@@ -239,13 +239,9 @@ jobs:
           pip list
         shell: bash
 
-      - name: Integration Tests (A), not distributed
+      - name: Integration Tests (A)
         run: |
-          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=7200 pytest -v --timeout 300 --durations 100 -m "not distributed and not slow and not combinatorial and not horovod and not llm and integration_tests_a" --junitxml pytest.xml tests/integration_tests
-
-      - name: Integration Tests (A), distributed
-        run: |
-          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=7200 pytest -v --timeout 300 --durations 100 -m "distributed and not slow and not combinatorial and not horovod and not llm and integration_tests_a" --junitxml pytest.xml tests/integration_tests
+          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=7200 pytest -v --timeout 300 --durations 100 -m "not slow and not combinatorial and not horovod and not llm and integration_tests_a" --junitxml pytest.xml tests/integration_tests
 
   integration-tests-b:
     name: Integration Tests (B)
@@ -300,13 +296,9 @@ jobs:
           pip list
         shell: bash
 
-      - name: Integration Tests (B), not distributed
+      - name: Integration Tests (B)
         run: |
-          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=7200 pytest -v --timeout 300 --durations 100 -m "not distributed and not slow and not combinatorial and not horovod and not llm and integration_tests_b" --junitxml pytest.xml tests/integration_tests
-
-      - name: Integration Tests (B), distributed
-        run: |
-          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=7200 pytest -v --timeout 300 --durations 100 -m "distributed and not slow and not combinatorial and not horovod and not llm and integration_tests_b" --junitxml pytest.xml tests/integration_tests
+          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=7200 pytest -v --timeout 300 --durations 100 -m "not slow and not combinatorial and not horovod and not llm and integration_tests_b" --junitxml pytest.xml tests/integration_tests
 
   integration-tests-c:
     name: Integration Tests (C)
@@ -361,13 +353,9 @@ jobs:
           pip list
         shell: bash
 
-      - name: Integration Tests (C), not distributed
+      - name: Integration Tests (C)
         run: |
           RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=7200 pytest -v --timeout 300 --durations 100 -m "not slow and not combinatorial and not horovod and not llm and not integration_tests_a and not integration_tests_b" --junitxml pytest.xml tests/integration_tests
-
-      - name: Integration Tests (C), distributed
-        run: |
-          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=7200 pytest -v --timeout 300 --durations 100 -m "distributed and not slow and not combinatorial and not horovod and not llm and not integration_tests_a and not integration_tests_b" --junitxml pytest.xml tests/integration_tests
 
   llm-tests:
     name: LLM Tests
