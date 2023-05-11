@@ -52,7 +52,7 @@ from ludwig.utils.strings_utils import (
     UNKNOWN_SYMBOL,
 )
 from ludwig.utils.tokenizers import get_tokenizer_from_registry
-from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
+from ludwig.utils.types import TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
 
@@ -524,15 +524,3 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     @staticmethod
     def get_schema_cls():
         return SequenceOutputFeatureConfig
-
-    def flatten(self, df: DataFrame) -> DataFrame:
-        probs_col = f"{self.feature_name}_{PROBABILITIES}"
-        df[probs_col] = df[probs_col].apply(lambda x: x.flatten())
-        return df
-
-    def unflatten(self, df: DataFrame) -> DataFrame:
-        probs_col = f"{self.feature_name}_{PROBABILITIES}"
-        df[probs_col] = df[probs_col].apply(
-            lambda x: x.reshape(-1, self.decoder_obj.config.vocab_size), meta=(probs_col, "object")
-        )
-        return df

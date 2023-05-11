@@ -30,6 +30,8 @@ try:
 except ImportError:
     RayIntegratedGradientsExplainer = None
 
+pytestmark = pytest.mark.integration_tests_b
+
 
 def test_explanation_dataclass():
     explanation = Explanation(target="target")

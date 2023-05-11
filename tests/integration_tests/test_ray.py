@@ -76,7 +76,7 @@ from tests.integration_tests.utils import (
 ray = pytest.importorskip("ray")  # noqa
 
 # Mark the entire module as distributed
-pytestmark = pytest.mark.distributed
+pytestmark = [pytest.mark.distributed, pytest.mark.integration_tests_a]
 
 import dask  # noqa: E402
 import ray  # noqa: E402
@@ -652,6 +652,8 @@ def test_ray_image_with_fill_strategy_edge_cases(tmpdir, settings, ray_cluster_2
 
 
 # TODO(geoffrey): Fold modin tests into test_ray_image as @pytest.mark.parametrized once tests are optimized
+
+
 @pytest.mark.distributed
 @pytest.mark.skipif(modin is None, reason="modin not installed")
 @pytest.mark.skip(reason="https://github.com/ludwig-ai/ludwig/issues/2643")
@@ -826,6 +828,8 @@ def _run_train_gpu_load_cpu(config, data_parquet):
 
 
 # TODO(geoffrey): add a GPU test for batch size tuning
+
+
 @pytest.mark.distributed
 @pytest.mark.parametrize(
     ("max_batch_size", "expected_final_learning_rate"),
