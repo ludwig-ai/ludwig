@@ -250,13 +250,19 @@ def read_excel(data_fp, df_lib, **kwargs):
 @DeveloperAPI
 @spread
 def read_parquet(data_fp, df_lib, nrows=None, **kwargs):
+    # Note: no DF library currently natively supports `nrows` or chunking for parquet files, so this is a roundabout
+    # implementation of the same functionality. Instead of reading the full parquet dataset into memory, we declare
+    # the location of it, pull the first fragment, and then take the `head` of that fragment table.
     if nrows is not None:
         import pyarrow.parquet as pq
 
-        from ludwig.utils.fs_utils import get_fs_and_path
-
-        fs, _ = get_fs_and_path(data_fp)
-        dataset = pq.ParquetDataset(data_fp, filesystem=fs, use_legacy_dataset=False).fragments[0]
+        # NOTE: For now, avoid passing a filesystem argument or split up url path to this constructor, as doing so seems
+        # to cause confusion in the pyarrow backend as to what the directory URI actually is. See this comment [1] and
+        # this issue (still ongoing) [2]. At the moment, directly passing the full URI works best.
+        #
+        # [1] https://github.com/apache/arrow/issues/26864#issuecomment-1377982991
+        # [2] https://issues.apache.org/jira/browse/ARROW-10937
+        dataset = pq.ParquetDataset(data_fp, use_legacy_dataset=False).fragments[0]
 
         preview = dataset.head(nrows).to_pandas()
 

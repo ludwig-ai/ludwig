@@ -40,6 +40,9 @@ except ImportError:
     RayTuneExecutor = object
 
 
+pytestmark = pytest.mark.integration_tests_a
+
+
 # Dummy sync templates
 LOCAL_SYNC_TEMPLATE = "echo {source}/ {target}/"
 LOCAL_DELETE_TEMPLATE = "echo {target}"
