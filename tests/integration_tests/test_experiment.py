@@ -62,6 +62,8 @@ from tests.integration_tests.utils import (
     vector_feature,
 )
 
+pytestmark = pytest.mark.integration_tests_b
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logging.getLogger("ludwig").setLevel(logging.INFO)
