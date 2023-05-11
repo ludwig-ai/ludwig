@@ -682,17 +682,21 @@ def _upgrade_max_batch_size(trainer: TrainerConfigDict) -> TrainerConfigDict:
     return trainer
 
 
-@register_config_transformation("0.6", ["trainer"])
-def remove_trainer_type(trainer: TrainerConfigDict) -> TrainerConfigDict:
-    if TYPE in trainer:
+@register_config_transformation("0.6")
+def remove_trainer_type(config: ModelConfigDict) -> ModelConfigDict:
+    # LLM Model types support different trainer types
+    if config.get("model_type", None) == "llm":
+        return config
+
+    if TYPE in config.get("trainer", {}):
         warnings.warn(
             "Config param `type` has been removed from the trainer. The trainer type is determined by the top level "
             " `model_type` parameter. Support for the `type` params in trainer will be removed in v0.8",
             DeprecationWarning,
         )
-        del trainer[TYPE]
+        del config["trainer"][TYPE]
 
-    return trainer
+    return config
 
 
 @register_config_transformation("0.7", ["trainer"])

@@ -92,6 +92,8 @@ output_features:
 preprocessing:
     split:
         type: fixed
+trainer:
+    type: fewshot
     """
 )
 

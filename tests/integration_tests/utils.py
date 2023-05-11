@@ -1118,3 +1118,14 @@ def clear_huggingface_cache():
             os.unlink(os.path.join(root, f))
         for d in dirs:
             shutil.rmtree(os.path.join(root, d))
+
+
+def run_test_suite(config, dataset, backend):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        model = LudwigModel(config, backend=backend)
+        _, _, output_dir = model.train(dataset=dataset, output_directory=tmpdir)
+
+        model_dir = os.path.join(output_dir, "model")
+        loaded_model = LudwigModel.load(model_dir, backend=backend)
+        loaded_model.predict(dataset=dataset)
+        return loaded_model

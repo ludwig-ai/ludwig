@@ -51,7 +51,7 @@ from ludwig.distributed import get_default_strategy_name, get_dist_strategy, ini
 from ludwig.models.base import BaseModel
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
 from ludwig.schema.trainer import ECDTrainerConfig
-from ludwig.trainers.registry import ray_trainers_registry, register_ray_trainer
+from ludwig.trainers.registry import get_llm_ray_trainers_registry, get_ray_trainers_registry, register_ray_trainer
 from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer, Trainer
 from ludwig.trainers.trainer_llm import RemoteLLMTrainer
 from ludwig.types import HyperoptConfigDict, ModelConfigDict, TrainerConfigDict, TrainingSetMetadataDict
@@ -490,8 +490,10 @@ class RayTrainerV2(BaseTrainer):
         results = ckpt.to_dict()["state_dict"]
 
         # load state dict back into the model
+        # use `strict=False` to account for PEFT training, where the saved state in the checkpoint
+        # might only contain the PEFT layers that were modified during training
         state_dict, *args = results
-        self.model.load_state_dict(state_dict)
+        self.model.load_state_dict(state_dict, strict=False)
         results = (self.model, *args)
 
         return results
@@ -846,7 +848,12 @@ class RayBackend(RemoteTrainingMixin, Backend):
     def create_trainer(self, model: BaseModel, **kwargs) -> "BaseTrainer":  # noqa: F821
         executable_kwargs = {**kwargs, **self._pytorch_kwargs}
 
-        trainer_cls = get_from_registry(model.type(), ray_trainers_registry)
+        if model.type() == MODEL_LLM:
+            trainer_config = kwargs.get("config")
+            trainer_type = trainer_config.type or "zeroshot"  # fallback to zeroshot
+            trainer_cls = get_from_registry(trainer_type, get_llm_ray_trainers_registry())
+        else:
+            trainer_cls = get_from_registry(model.type(), get_ray_trainers_registry())
 
         all_kwargs = {
             "model": model,
