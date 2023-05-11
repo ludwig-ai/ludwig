@@ -14,6 +14,7 @@
 # ==============================================================================
 import logging
 from abc import ABC, abstractmethod, abstractstaticmethod
+from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
 import torch
@@ -95,6 +96,17 @@ class BaseFeatureMixin(ABC):
             skip_save_processed_input: Whether to skip saving the processed input.
         """
         raise NotImplementedError
+
+
+@dataclass
+class ModuleWrapper:
+    """Used to prevent the PredictModule from showing up an attribute on the feature module.
+
+    This is necessary to avoid inflight errors from DeepSpeed. These errors occur when DeepSpeed believes that a param
+    is still in the process of being processed asynchronously (allgathered, etc.).
+    """
+
+    module: torch.nn.Module
 
 
 class PredictModule(torch.nn.Module):
@@ -216,7 +228,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             default_dropout=feature.decoder.fc_dropout,
         )
         self._calibration_module = self.create_calibration_module(feature)
-        self._prediction_module = self.create_predict_module()
+        self._prediction_module = ModuleWrapper(self.create_predict_module())
 
         # set up two sequence reducers, one for inputs and other for dependencies
         self.reduce_sequence_input = SequenceReducer(reduce_mode=self.reduce_input)
@@ -304,7 +316,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     @property
     def prediction_module(self) -> PredictModule:
         """Returns the PredictModule used to convert model outputs to predictions."""
-        return self._prediction_module
+        return self._prediction_module.module
 
     def predictions(self, all_decoder_outputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, torch.Tensor]:
         """Computes actual predictions from the outputs of feature decoders.

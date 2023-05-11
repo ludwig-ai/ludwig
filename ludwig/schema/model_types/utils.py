@@ -323,13 +323,25 @@ def set_llm_tokenizers(config: "ModelConfig") -> None:
 
             # Add tokenizer parameters to decoder so it can be used during the forward pass
             output_feature.decoder.pretrained_model_name_or_path = pretrained_model_name_or_path
-            output_feature.decoder.max_new_tokens = config.generation_config.max_new_tokens
+            output_feature.decoder.max_new_tokens = config.generation.max_new_tokens
         elif output_feature.type == CATEGORY:
             # Tokenizer parameters
             output_feature.decoder.tokenizer = "hf_tokenizer"
             output_feature.decoder.pretrained_model_name_or_path = pretrained_model_name_or_path
             # Parameters for building decoder vocabulary
             output_feature.decoder.fallback_label = output_feature.preprocessing.fallback_label
+
+
+def set_retrieval_parameters(config: "ModelConfig") -> None:
+    """Sets the retrieval parameters for the LLM model."""
+    if config.model_type != "llm":
+        return
+
+    for input_feature in config.input_features:
+        if input_feature.type == TEXT:
+            retrieval_config = input_feature.preprocessing.prompt.retrieval
+            if retrieval_config.type is not None and retrieval_config.k == 0:
+                retrieval_config.k = 1
 
 
 @DeveloperAPI

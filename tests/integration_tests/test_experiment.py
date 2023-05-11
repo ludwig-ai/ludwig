@@ -21,11 +21,13 @@ from collections import namedtuple
 
 import pandas as pd
 import pytest
+import torch
 import torchvision
 import yaml
 
 from ludwig.api import LudwigModel
 from ludwig.backend import LOCAL_BACKEND
+from ludwig.callbacks import Callback
 from ludwig.constants import BATCH_SIZE, COLUMN, ENCODER, H3, NAME, PREPROCESSING, TRAINER, TYPE
 from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.data.preprocessing import preprocess_for_training
@@ -59,6 +61,8 @@ from tests.integration_tests.utils import (
     timeseries_feature,
     vector_feature,
 )
+
+pytestmark = pytest.mark.integration_tests_b
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -345,6 +349,8 @@ def test_experiment_image_inputs(image_params: ImageParams, tmpdir):
 
 # Primary focus of this test is to determine if exceptions are raised for different data set formats and in_memory
 # setting.
+
+
 @pytest.mark.parametrize("test_in_memory", [True, False])
 @pytest.mark.parametrize("test_format", ["csv", "df", "hdf5"])
 @pytest.mark.parametrize("train_in_memory", [True, False])
@@ -718,6 +724,22 @@ def test_experiment_model_resume(tmpdir):
     ],
 )
 def test_experiment_model_resume_distributed(tmpdir, dist_strategy, ray_cluster_4cpu):
+    _run_experiment_model_resume_distributed(tmpdir, dist_strategy)
+
+
+@pytest.mark.skipif(torch.cuda.device_count() == 0, reason="test requires at least 1 gpu")
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="test requires gpu support")
+@pytest.mark.parametrize(
+    "dist_strategy",
+    [
+        pytest.param("deepspeed", id="deepspeed", marks=pytest.mark.distributed),
+    ],
+)
+def test_experiment_model_resume_distributed_gpu(tmpdir, dist_strategy, ray_cluster_4cpu):
+    _run_experiment_model_resume_distributed(tmpdir, dist_strategy)
+
+
+def _run_experiment_model_resume_distributed(tmpdir, dist_strategy):
     # Single sequence input, single category output
     # Tests saving a model file, loading it to rerun training and predict
     input_features = [number_feature()]
@@ -779,6 +801,80 @@ def test_experiment_model_resume_missing_file(tmpdir, missing_file):
 
     predict_cli(os.path.join(output_dir, "model"), dataset=rel_path)
     shutil.rmtree(output_dir, ignore_errors=True)
+
+
+@pytest.mark.distributed
+def test_experiment_model_resume_before_1st_epoch_distributed(tmpdir, ray_cluster_4cpu):
+    # Single sequence input, single category output
+    # Tests saving a model file, loading it to rerun training and predict
+    input_features = [number_feature()]
+    output_features = [category_feature(output_feature=True)]
+    # Generate test data
+    training_set = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "output_size": 8},
+        TRAINER: {"train_steps": 1, BATCH_SIZE: 128},
+        "backend": {"type": "ray", "trainer": {"strategy": "ddp", "num_workers": 2}},
+    }
+
+    class InducedFailureCallback(Callback):
+        """Class that defines the methods necessary to hook into process."""
+
+        def on_resume_training(self, is_coordinator):
+            if is_coordinator:
+                raise RuntimeError("Induced failure")
+
+    class NoFailureCallback(Callback):
+        """Class that defines the methods necessary to hook into process."""
+
+        def on_resume_training(self, is_coordinator):
+            pass
+
+    try:
+        # Define Ludwig model object that drive model training
+        model = LudwigModel(config=config, logging_level=logging.INFO, callbacks=[InducedFailureCallback()])
+        model.train(
+            dataset=training_set,
+            experiment_name="simple_experiment",
+            model_name="simple_model_incomplete",
+            skip_save_processed_input=True,
+            output_directory=os.path.join(tmpdir, "results1"),
+        )
+    except RuntimeError:
+        model = LudwigModel(config=config, logging_level=logging.INFO, callbacks=[NoFailureCallback()])
+        model.train(
+            dataset=training_set,
+            skip_save_processed_input=True,
+            model_resume_path=os.path.join(tmpdir, "results1"),
+        )
+
+
+@pytest.mark.distributed
+def test_tabnet_with_batch_size_1(tmpdir, ray_cluster_4cpu):
+    input_features = [number_feature()]
+    output_features = [category_feature(output_feature=True)]
+    training_set = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "tabnet"},
+        TRAINER: {"train_steps": 1, BATCH_SIZE: 1},
+        "backend": {"type": "ray", "trainer": {"strategy": "ddp", "num_workers": 2}},
+    }
+    model = LudwigModel(config=config, logging_level=logging.INFO)
+    model.train(
+        dataset=training_set,
+        skip_save_training_description=True,
+        skip_save_training_statistics=True,
+        skip_save_model=True,
+        skip_save_progress=True,
+        skip_save_log=True,
+        skip_save_processed_input=True,
+    )
 
 
 def test_experiment_various_feature_types(csv_filename):
@@ -1025,3 +1121,11 @@ def test_experiment_category_distribution_feature(csv_filename):
 
     # Check that predictions are category values drawn from the vocab, not distributions
     assert all(v in vocab for v in preds[f"{output_features[0][NAME]}_predictions"].values)
+
+
+def test_experiment_ordinal_category(csv_filename):
+    input_features = [category_feature(num_classes=5), number_feature()]
+    output_features = [category_feature(output_feature=True, loss={"type": "corn"})]
+
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    run_experiment(input_features, output_features, dataset=rel_path)

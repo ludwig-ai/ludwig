@@ -55,9 +55,9 @@ jobs:
         test-markers: ["slow"]
         include:
           - python-version: 3.8
-            pytorch-version: 1.13.1
+            pytorch-version: 2.0.0
             torchscript-version: 1.10.2
-            ray-version: 2.0.0
+            ray-version: 2.3.1
     env:
       PYTORCH: ${{ matrix.pytorch-version }}
       MARKERS: ${{ matrix.test-markers }}
@@ -68,13 +68,14 @@ jobs:
       AWS_ACCESS_KEY_ID: ${{ secrets.LUDWIG_TESTS_AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.LUDWIG_TESTS_AWS_SECRET_ACCESS_KEY }}
       EXCLUDED_MARKERS: "benchmark"
+      TOKENIZERS_PARALLELISM: false
 
     name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, ${{ matrix.test-markers }}, ${{ matrix.os }}, ray ${{ matrix.ray-version }}
     if: needs.start-runner.result != 'skipped'
     needs: start-runner # required to start the main job when the runner is ready
     runs-on: ${{ needs.start-runner.outputs.label }} # run the job on the newly created runners
 
-    timeout-minutes: 90
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}
@@ -103,11 +104,6 @@ jobs:
             ${{ runner.os }}-pip-py${{ matrix.python-version }}-torch${{ matrix.pytorch-version }}-${{ matrix.test-markers }}-
 
       - name: Install dependencies
-        env:
-          HOROVOD_WITH_PYTORCH: 1
-          HOROVOD_WITHOUT_MPI: 1
-          HOROVOD_WITHOUT_TENSORFLOW: 1
-          HOROVOD_WITHOUT_MXNET: 1
         run: |
           python --version
           pip --version
@@ -150,24 +146,11 @@ jobs:
           curl -L https://github.com/uber/neuropod/releases/download/v${{ env.NEUROPOD_VERSION }}/libneuropod-cpu-linux-v${{ env.NEUROPOD_VERSION }}-torchscript-${{ env.TORCHSCRIPT_VERSION }}-backend.tar.gz | sudo tar -xz -C "$NEUROPOD_BASE_DIR"
         shell: bash
 
-      - name: Reinstall Horovod if necessary
-        env:
-          HOROVOD_WITH_PYTORCH: 1
-          HOROVOD_WITHOUT_MPI: 1
-          HOROVOD_WITHOUT_TENSORFLOW: 1
-          HOROVOD_WITHOUT_MXNET: 1
-        run: |
-          HOROVOD_BUILT=$(python -c "import horovod.torch; horovod.torch.nccl_built(); print('SUCCESS')" || true)
-          if [[ $HOROVOD_BUILT != "SUCCESS" ]]; then
-            pip uninstall -y horovod
-            pip install --no-cache-dir git+https://github.com/horovod/horovod.git@master
-          fi
-          horovodrun --check-build
-        shell: bash
-
       - name: Tests
+        env:
+          TRANSFORMERS_CACHE: "/root/huggingface_cache"
         run: |
-          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=4500 pytest -v --timeout 300 --durations 100 -m "($MARKERS) and (not $EXCLUDED_MARKERS)" --junitxml pytest_slow.xml tests
+          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=6000 pytest -vs --timeout 450 --durations 100 -m "($MARKERS) and (not $EXCLUDED_MARKERS)" --junitxml pytest_slow.xml tests
 
       - name: Upload Unit Test Results
         if: ${{ always() && !env.ACT }}

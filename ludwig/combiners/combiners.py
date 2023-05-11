@@ -15,6 +15,7 @@
 # ==============================================================================
 import logging
 from abc import ABC
+from dataclasses import dataclass
 from functools import lru_cache
 from typing import Dict, Type
 
@@ -47,6 +48,18 @@ from ludwig.utils.torch_utils import sequence_mask as torch_sequence_mask
 logger = logging.getLogger(__name__)
 
 
+@dataclass
+class Handle:
+    """This class provides an opaque handle to the input features, preventing them from being registered as state.
+
+    This is important because we already reference the `input_features` as an attribute of ECD, so we don't need it to
+    appear twice in the state_dict. Furthermore, DeepSpeed will get terribly confused if have the input features set as
+    an attribute of the combiner, and lead to shape mismatch errors when we go to load a saved checkpoint.
+    """
+
+    input_features: Dict[str, "InputFeature"]
+
+
 @DeveloperAPI
 class Combiner(LudwigModule, ABC):
     """Base class for combiners, which implements common properties.
@@ -58,13 +71,16 @@ class Combiner(LudwigModule, ABC):
 
     def __init__(self, input_features: Dict[str, "InputFeature"]):
         super().__init__()
-        self.input_features = input_features
+        self.handle = Handle(input_features)
 
     @property
     def concatenated_shape(self) -> torch.Size:
         # compute the size of the last dimension for the incoming encoder outputs
         # this is required to setup the fully connected layer
-        shapes = [torch.prod(torch.Tensor([*self.input_features.get(k).output_shape])) for k in self.input_features]
+        shapes = [
+            torch.prod(torch.Tensor([*self.handle.input_features.get(k).output_shape]))
+            for k in self.handle.input_features
+        ]
         return torch.Size([torch.sum(torch.Tensor(shapes)).type(torch.int32)])
 
     @property
@@ -72,16 +88,16 @@ class Combiner(LudwigModule, ABC):
         # input to combiner is a dictionary of the input features encoder
         # outputs, this property returns dictionary of output shapes for each
         # input feature's encoder output shapes.
-        return {k: self.input_features.get(k).output_shape for k in self.input_features}
+        return {k: self.handle.input_features.get(k).output_shape for k in self.handle.input_features}
 
     @property
     @lru_cache(maxsize=1)
     def output_shape(self) -> torch.Size:
         pseudo_input = {}
-        for k in self.input_features:
+        for k in self.handle.input_features:
             pseudo_input[k] = {
                 "encoder_output": torch.rand(
-                    2, *self.input_features.get(k).output_shape, dtype=self.input_dtype, device=self.device
+                    2, *self.handle.input_features.get(k).output_shape, dtype=self.input_dtype, device=self.device
                 )
             }
         output_tensor = self.forward(pseudo_input)
@@ -198,16 +214,16 @@ class SequenceConcatCombiner(Combiner):
         # assume all the sequences are of the same size, if not true
         # this will be caught during processing
         seq_size = None
-        for k in self.input_features:
+        for k in self.handle.input_features:
             # dim-2 output_shape implies a sequence [seq_size, hidden]
-            if len(self.input_features.get(k).output_shape) == 2:
-                seq_size = self.input_features.get(k).output_shape[0]
+            if len(self.handle.input_features.get(k).output_shape) == 2:
+                seq_size = self.handle.input_features.get(k).output_shape[0]
                 break
 
         # collect the size of the last dimension for all input feature
         # encoder outputs
         shapes = [
-            self.input_features.get(k).output_shape[-1] for k in self.input_features
+            self.handle.input_features.get(k).output_shape[-1] for k in self.handle.input_features
         ]  # output shape not input shape
         return torch.Size([seq_size, sum(shapes)])
 
@@ -347,16 +363,16 @@ class SequenceCombiner(Combiner):
         # assume all the sequences are of the same size, if not true
         # this will be caught during processing
         seq_size = None
-        for k in self.input_features:
+        for k in self.handle.input_features:
             # dim-2 output_shape implies a sequence [seq_size, hidden]
-            if len(self.input_features.get(k).output_shape) == 2:
-                seq_size = self.input_features.get(k).output_shape[0]
+            if len(self.handle.input_features.get(k).output_shape) == 2:
+                seq_size = self.handle.input_features.get(k).output_shape[0]
                 break
 
         # collect the size of the last dimension for all input feature
         # encoder outputs
         shapes = [
-            self.input_features.get(k).output_shape[-1] for k in self.input_features
+            self.handle.input_features.get(k).output_shape[-1] for k in self.handle.input_features
         ]  # output shape not input shape
         return torch.Size([seq_size, sum(shapes)])
 
@@ -409,7 +425,10 @@ class TabNetCombiner(Combiner):
     def concatenated_shape(self) -> torch.Size:
         # compute the size of the last dimension for the incoming encoder outputs
         # this is required to setup
-        shapes = [torch.prod(torch.Tensor([*self.input_features.get(k).output_shape])) for k in self.input_features]
+        shapes = [
+            torch.prod(torch.Tensor([*self.handle.input_features.get(k).output_shape]))
+            for k in self.handle.input_features
+        ]
         return torch.Size([torch.sum(torch.Tensor(shapes)).type(torch.int32)])
 
     def forward(
@@ -463,14 +482,14 @@ class TransformerCombiner(Combiner):
         self.reduce_output = config.reduce_output
         self.reduce_sequence = SequenceReducer(
             reduce_mode=config.reduce_output,
-            max_sequence_length=len(self.input_features),
+            max_sequence_length=len(input_features),
             encoding_size=config.hidden_size,
         )
         if self.reduce_output is None:
             self.supports_masking = True
 
         # max sequence length for Transformer layer is number of input features
-        self.max_sequence_length = len(self.input_features)
+        self.max_sequence_length = len(input_features)
 
         logger.debug("  Projectors")
         self.projectors = ModuleList(
@@ -809,7 +828,7 @@ class ComparatorCombiner(Combiner):
         )
 
     def get_entity_shape(self, entity: list) -> torch.Size:
-        sizes = [torch.prod(torch.Tensor([*self.input_features.get(k).output_shape])) for k in entity]
+        sizes = [torch.prod(torch.Tensor([*self.handle.input_features.get(k).output_shape])) for k in entity]
         return torch.Size([torch.sum(torch.Tensor(sizes)).type(torch.int32)])
 
     @property

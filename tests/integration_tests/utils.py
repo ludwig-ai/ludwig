@@ -32,6 +32,7 @@ import pandas as pd
 import pytest
 import torch
 from PIL import Image
+from transformers import file_utils
 
 from ludwig.api import LudwigModel
 from ludwig.backend import LocalBackend
@@ -170,6 +171,7 @@ def generate_data(
     filename="test_csv.csv",
     num_examples=25,
     nan_percent=0.0,
+    with_split=False,
 ):
     """Helper method to generate synthetic data based on input, output feature specs.
 
@@ -180,7 +182,7 @@ def generate_data(
     :param nan_percent: percent of values in a feature to be NaN
     :return:
     """
-    df = generate_data_as_dataframe(input_features, output_features, num_examples, nan_percent)
+    df = generate_data_as_dataframe(input_features, output_features, num_examples, nan_percent, with_split=with_split)
     df.to_csv(filename, index=False)
     return filename
 
@@ -190,6 +192,7 @@ def generate_data_as_dataframe(
     output_features,
     num_examples=25,
     nan_percent=0.0,
+    with_split=False,
 ) -> pd.DataFrame:
     """Helper method to generate synthetic data based on input, output feature specs.
 
@@ -205,7 +208,16 @@ def generate_data_as_dataframe(
     df = build_synthetic_dataset(num_examples, features)
     data = [next(df) for _ in range(num_examples + 1)]
 
-    return pd.DataFrame(data[1:], columns=data[0])
+    df = pd.DataFrame(data[1:], columns=data[0])
+
+    # Add "split" column to DataFrame
+    if with_split:
+        num_val_examples = max(2, int(num_examples * 0.1))
+        num_test_examples = max(2, int(num_examples * 0.1))
+        num_train_examples = num_examples - num_val_examples - num_test_examples
+        df["split"] = [0] * num_train_examples + [1] * num_val_examples + [2] * num_test_examples
+
+    return df
 
 
 def recursive_update(dictionary, values):
@@ -1079,3 +1091,41 @@ def minio_test_creds():
             }
         }
     }
+
+
+def clear_huggingface_cache():
+    cache_path = os.environ.get("TRANSFORMERS_CACHE")
+
+    if cache_path is None:
+        cache_path = file_utils.default_cache_path.rstrip("/")
+        while not cache_path.endswith("huggingface") and cache_path:
+            cache_path = "/".join(cache_path.split("/")[:-1])
+
+    du = shutil.disk_usage(cache_path)
+
+    logger.info(f"Current disk usage {du} ({100 * du.free / du.total}% usage)")
+
+    # only clean up cache if less than 25% of disk space is used.
+    if du.free / du.total > 0.25:
+        return
+
+    logger.info(
+        f"Clearing HuggingFace cache under path: `{cache_path}`. "
+        f"Free disk space is {100 * du.free / du.total}% of total disk space."
+    )
+    for root, dirs, files in os.walk(cache_path):
+        for f in files:
+            os.unlink(os.path.join(root, f))
+        for d in dirs:
+            shutil.rmtree(os.path.join(root, d))
+
+
+def run_test_suite(config, dataset, backend):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        model = LudwigModel(config, backend=backend)
+        _, _, output_dir = model.train(dataset=dataset, output_directory=tmpdir)
+
+        model_dir = os.path.join(output_dir, "model")
+        loaded_model = LudwigModel.load(model_dir, backend=backend)
+        loaded_model.predict(dataset=dataset)
+        return loaded_model

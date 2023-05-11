@@ -549,7 +549,7 @@ number:
             expected_impact: 3
             literature_references:
                 - https://developers.google.com/machine-learning/data-prep/transform/normalization
-            suggested_values: z-score
+            suggested_values: zscore
             suggested_values_reasoning:
                 "Z-score is a variation of scaling that represents\
                 \ the number of standard deviations away from the mean. You would\

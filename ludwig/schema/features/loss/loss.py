@@ -5,6 +5,7 @@ from ludwig.constants import (
     BINARY,
     BINARY_WEIGHTED_CROSS_ENTROPY,
     CATEGORY,
+    CORN,
     HUBER,
     MEAN_ABSOLUTE_ERROR,
     MEAN_ABSOLUTE_PERCENTAGE_ERROR,
@@ -414,3 +415,39 @@ class HuberLossConfig(BaseLossConfig):
     @classmethod
     def name(self) -> str:
         return "Huber Loss"
+
+
+@DeveloperAPI
+@register_loss([CATEGORY])
+@ludwig_dataclass
+class CORNLossConfig(BaseLossConfig):
+    """Conditional Ordinal Regression for Neural networks, used for ordered cateogry values.
+
+    Source:
+    Xintong Shi, Wenzhi Cao, and Sebastian Raschka (2021).
+    Deep Neural Networks for Rank-Consistent Ordinal Regression Based On Conditional Probabilities.
+    Arxiv preprint; https://arxiv.org/abs/2111.08851
+    """
+
+    type: str = schema_utils.ProtectedString(
+        CORN,
+        description="Type of loss.",
+    )
+
+    weight: float = schema_utils.NonNegativeFloat(
+        default=1.0,
+        description="Weight of the loss.",
+        parameter_metadata=LOSS_METADATA["MSELoss"]["weight"],
+    )
+
+    @classmethod
+    def name(self) -> str:
+        return "Conditional Ordinal Regression (CORN)"
+
+    @property
+    def class_weights(self) -> int:
+        return 1.0
+
+    @property
+    def class_similarities_temperature(self) -> int:
+        return 0
