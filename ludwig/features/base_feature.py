@@ -499,14 +499,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
         return feature_hidden
 
-    def flatten(self, df: DataFrame) -> DataFrame:
-        """Converts the output of batch_predict to a 1D array."""
-        return df
-
-    def unflatten(self, df: DataFrame) -> DataFrame:
-        """Reshapes a flattened 1D array into its original shape."""
-        return df
-
 
 class PassthroughPreprocModule(torch.nn.Module):
     """Combines preprocessing and encoding into a single module for TorchScript inference.
