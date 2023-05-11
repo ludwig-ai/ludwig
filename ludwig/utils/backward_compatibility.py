@@ -22,6 +22,7 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
     AUDIO,
     BIAS,
+    CLASS_WEIGHTS,
     COLUMN,
     CONV_BIAS,
     CONV_USE_BIAS,
@@ -37,6 +38,7 @@ from ludwig.constants import (
     HYPEROPT,
     IMAGE,
     INPUT_FEATURES,
+    LOSS,
     MISSING_VALUE_STRATEGY,
     MODEL_ECD,
     MODEL_GBM,
@@ -232,6 +234,17 @@ def _update_backend_cache_credentials(backend: Dict[str, Any]) -> Dict[str, Any]
             credentials["cache"] = backend.pop("cache_credentials")
         backend["credentials"] = credentials
     return backend
+
+
+@register_config_transformation("0.6", ["output_features"])
+def update_class_weights_in_features(feature: FeatureConfigDict) -> FeatureConfigDict:
+    if LOSS in feature:
+        class_weights = feature[LOSS].get(CLASS_WEIGHTS, None)
+        if not isinstance(class_weights, (list, dict)):
+            class_weights = None
+        feature[LOSS][CLASS_WEIGHTS] = class_weights
+
+    return feature
 
 
 @register_config_transformation("0.4")
