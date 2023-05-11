@@ -12,6 +12,8 @@ from tests.integration_tests.utils import binary_feature
 from tests.integration_tests.utils import category_feature as _category_feature
 from tests.integration_tests.utils import generate_data, number_feature, text_feature
 
+pytestmark = pytest.mark.integration_tests_b
+
 BOOSTING_TYPES = ["gbdt", "goss", "dart"]
 TREE_LEARNERS = ["serial", "feature", "data", "voting"]
 LOCAL_BACKEND = {"type": "local"}
