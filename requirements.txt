@@ -28,6 +28,7 @@ torchmetrics>=0.11
 torchinfo
 filelock
 psutil==5.9.4
+protobuf==3.20.3
 py-cpuinfo==9.0.0
 gpustat
 rich~=12.4.4
@@ -45,5 +46,3 @@ openpyxl>=3.0.7     # excel
 pyxlsb>=1.0.8       # excel
 pyarrow             # parquet
 lxml                # html
-
-whylogs>=1.1.9
