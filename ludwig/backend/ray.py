@@ -57,7 +57,7 @@ from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.trainers.registry import ray_trainers_registry, register_ray_trainer
 from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer, Trainer
 from ludwig.types import HyperoptConfigDict, ModelConfigDict, TrainerConfigDict, TrainingSetMetadataDict
-from ludwig.utils.dataframe_utils import is_dask_series_or_df, set_index_name
+from ludwig.utils.dataframe_utils import set_index_name
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.system_utils import Resources
 from ludwig.utils.torch_utils import get_torch_device, initialize_pytorch
