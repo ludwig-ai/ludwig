@@ -7,12 +7,14 @@ import pytest
 from ludwig.constants import (
     BATCH_SIZE,
     BFILL,
+    CLASS_WEIGHTS,
     DEFAULTS,
     EVAL_BATCH_SIZE,
     EXECUTOR,
     HYPEROPT,
     INPUT_FEATURES,
     LEARNING_RATE_SCHEDULER,
+    LOSS,
     NUMBER,
     OUTPUT_FEATURES,
     PREPROCESSING,
@@ -538,6 +540,43 @@ def test_update_increase_batch_size_on_plateau_max():
     expected_config["trainer"]["max_batch_size"] = 256
 
     assert updated_config == expected_config
+
+
+def test_old_class_weights_default():
+    old_config = {
+        "input_features": [
+            {
+                "name": "input_feature_1",
+                "type": "category",
+            }
+        ],
+        "output_features": [
+            {"name": "output_feature_1", "type": "category", "loss": {"class_weights": 1}},
+        ],
+    }
+
+    new_config = {
+        "input_features": [
+            {
+                "name": "input_feature_1",
+                "type": "category",
+            }
+        ],
+        "output_features": [
+            {"name": "output_feature_1", "type": "category", "loss": {"class_weights": None}},
+        ],
+    }
+
+    upgraded_config = upgrade_config_dict_to_latest_version(old_config)
+    del upgraded_config["ludwig_version"]
+    assert new_config == upgraded_config
+
+    old_config[OUTPUT_FEATURES][0][LOSS][CLASS_WEIGHTS] = [0.5, 0.8, 1]
+    new_config[OUTPUT_FEATURES][0][LOSS][CLASS_WEIGHTS] = [0.5, 0.8, 1]
+
+    upgraded_config = upgrade_config_dict_to_latest_version(old_config)
+    del upgraded_config["ludwig_version"]
+    assert new_config == upgraded_config
 
 
 def test_upgrade_model_progress():
