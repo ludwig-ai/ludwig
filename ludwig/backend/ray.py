@@ -82,7 +82,7 @@ from ludwig.types import (
     TrainingSetMetadataDict,
 )
 from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
-from ludwig.utils.dataframe_utils import is_dask_series_or_df, set_index_name
+from ludwig.utils.dataframe_utils import set_index_name
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.system_utils import Resources
 from ludwig.utils.torch_utils import get_torch_device, initialize_pytorch
@@ -990,9 +990,6 @@ class RayBackend(RemoteTrainingMixin, Backend):
     ) -> Series:
         # normalize NaNs to None
         column = column.fillna(np.nan).replace([np.nan], [None])
-        n_col_partitions = (
-            1 if not is_dask_series_or_df(column, self) else column.npartitions
-        )
 
         pd_column = self.df_engine.compute(column)
         fnames = pd_column.values.tolist()
@@ -1001,56 +998,45 @@ class RayBackend(RemoteTrainingMixin, Backend):
         sample_fname = fnames[0]
         if isinstance(sample_fname, str):
             import daft
-            from daft import col, DataFrame
 
             # Set the runner for executing Daft dataframes to a Ray cluster
             # Prevent re-initialization errors if the runner is already set
             # This can happen if there are 2 or more audio/image columns
-            daft.context.set_runner_ray(address=ray.util.get_node_ip_address(), noop_if_initialized=True)
+            assert ray.is_initialized(), "Ray should be initialized by Ludwig already at application start"
+            daft.context.set_runner_ray(address="auto", noop_if_initialized=True)
 
-            # Create 1 partition for each available CPU in the Ray cluster
-            # Fall back to distributing this over 1 GPU if no CPUs are available
-            # This is a heuristic to saturate network bandwidth while downloading images
-            # and also prevent large disk spillage to disk from the object store since we will
-            # only spill smaller individual partitions rather than 1 large partition
-            resources = self.get_available_resources()
-            if resources.cpus > 0:
-                num_downloading_partitions = int(resources.cpus)
-            else:
-                num_downloading_partitions = 1
+            # Convert Dask Series to Dask Dataframe
+            df = column.to_frame(name=column.name)
+            df["idx"] = column.index
 
             with self.storage.cache.use_credentials():
-                # Requires initialization from a mapping of col_name -> list of items in the series
-                # Failed image reads return None automatically, so there's no post processing required.
-                df = DataFrame.from_pydict({column.name: fnames})
-                # This partitioning event doesn't involve shuffling and is very cheap because it splits
-                # the dataframe into n partitions by doing the minimal number of splits or merges. Preserves order.
-                # Very similar to re-aligning divisions in Dask to create partitions.
-                df = df.into_partitions(num_downloading_partitions)
+                df = daft.from_dask_dataframe(df).select("idx", column.name)
+                
                 # Download binary files in parallel
-                # Use 16 worker threads to maximize image read throughput over each partition
                 df = df.with_column(
-                    column.name, col(column.name).url.download(max_worker_threads=16)
+                    column.name,
+                    df[column.name].url.download(
+                        # Use 16 worker threads to maximize image read throughput over each partition
+                        max_worker_threads=16,
+                        # On error, replace value with a Null and just log the error
+                        on_error="null",
+                    ),
                 )
-                # Revert back to the original number of partitions in this column
-                df = df.into_partitions(n_col_partitions)
 
-            # As of getdaft 0.0.24, there is no support for conversion directly to Dask so convert to
-            # Ray and then convert to Dask. This also forces materialization of the dataset, so we can skip
-            # calls to .collect(). Daft -> Ray is a zero-copy op, so this has very minimal cost.
-            df = df.to_ray_dataset()
-            df = self.df_engine.from_ray_dataset(df)
+                if map_fn is not None:
+                    df = df.with_column(column.name, df[column.name].apply(map_fn, return_dtype=daft.DataType.python()))
 
-            # Persist the dataframe
-            df = self.df_engine.persist(df)
+                # Executes and convert Daft Dataframe to Dask DataFrame - note that this preserves partitioning
+                df = df.to_dask_dataframe()
+                df = self.df_engine.persist(df)
         else:
             # Assume the path has already been read in, so just convert directly to a dataset
             # Name the column "value" to match the behavior of the above
             df = column.to_frame(name=column.name)
             df["idx"] = df.index
 
-        if map_fn is not None:
-            df[column.name] = self.df_engine.map_objects(df[column.name], map_fn)
+            if map_fn is not None:
+                df[column.name] = self.df_engine.map_objects(df[column.name], map_fn)
 
         if "idx" in df.columns:
             df = df.set_index("idx", drop=True)
