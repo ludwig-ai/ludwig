@@ -15,7 +15,6 @@
 # ==============================================================================
 import contextlib
 import logging
-import re
 import warnings
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Tuple
@@ -28,10 +27,8 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend import Backend, LOCAL_BACKEND
 from ludwig.constants import (
     BFILL,
-    CATEGORY,
     CHECKSUM,
     COLUMN,
-    DECODER,
     DEFAULTS,
     DROP_ROW,
     ENCODER,
@@ -52,7 +49,6 @@ from ludwig.constants import (
     SPLIT,
     SRC,
     TEST,
-    TEXT,
     TRAINING,
     TYPE,
     VALIDATION,
@@ -61,8 +57,9 @@ from ludwig.data.cache.manager import DatasetCache
 from ludwig.data.cache.types import wrap
 from ludwig.data.concatenate_datasets import concatenate_df, concatenate_files, concatenate_splits
 from ludwig.data.dataset.base import Dataset
+from ludwig.data.prompt import format_input_with_prompt, index_column
 from ludwig.data.split import get_splitter, split_dataset
-from ludwig.data.utils import set_fixed_split
+from ludwig.data.utils import get_input_and_output_features, set_fixed_split
 from ludwig.datasets import load_dataset_uris
 from ludwig.features.feature_registries import get_base_type_registry
 from ludwig.models.embedder import create_embed_batch_size_evaluator, create_embed_transform_fn
@@ -1178,6 +1175,16 @@ def build_dataset(
     for feature_config in feature_configs:
         dataset_cols[feature_config[COLUMN]] = dataset_df[feature_config[COLUMN]]
 
+    split_col = None
+    if global_preprocessing_parameters["split"]["type"] == "fixed":
+        if global_preprocessing_parameters["split"]["column"] in dataset_df.columns:
+            split_col = dataset_df[global_preprocessing_parameters["split"]["column"]]
+        else:
+            logger.warning(
+                f"Specified split column {global_preprocessing_parameters['split']['column']} for fixed "
+                f"split strategy was not found in dataset."
+            )
+
     logger.debug("build preprocessing parameters")
     feature_name_to_preprocessing_parameters = build_preprocessing_parameters(
         dataset_cols, feature_configs, global_preprocessing_parameters, backend, metadata=metadata
@@ -1199,10 +1206,11 @@ def build_dataset(
         preprocessing_parameters = feature_name_to_preprocessing_parameters[feature_config[NAME]]
         handle_missing_values(dataset_cols, feature_config, preprocessing_parameters, backend)
 
-    # If we're using LLMs for zero-shot/few-shot learning, update text input features with the prompt
-    # ahead of time so that we can compute metadata and build the preprocessed data correctly.
-    handle_data_augmentation_with_prompt(
-        dataset_cols, feature_configs, feature_name_to_preprocessing_parameters, backend
+    # update input features with prompt configs during preprocessing (as opposed to during the model forward pass)
+    # so that we can compute metadata and build the dataset correctly.
+    logger.debug("handle text features with prompt parameters")
+    handle_features_with_prompt_config(
+        dataset_cols, feature_name_to_preprocessing_parameters, features, split_col=split_col, backend=backend
     )
 
     # Happens after missing values are handled to avoid NaN casting issues.
@@ -1671,88 +1679,68 @@ def _handle_missing_values(
         raise ValueError(f"Invalid missing value strategy {missing_value_strategy}")
 
 
-def handle_data_augmentation_with_prompt(
-    dataset_cols: Dict[str, pd.Series],
-    feature_configs: List[FeatureConfigDict],
+def handle_features_with_prompt_config(
+    dataset_cols: Dict[str, Series],
     feature_name_to_preprocessing_parameters: Dict[str, PreprocessingConfigDict],
+    features: List[FeatureConfigDict],
     backend: Backend,
-) -> None:
-    """If output feature is a category feature and it's preprocessing has prompt_template, then we need to update
-    the input feature data with the prompt.
+    split_col: Optional[Series] = None,
+):
+    """Updates (in-place) dataset columns with prompt configurations containing a non-None task parameter.
 
-    Example context:
-        In the example below, {review} is the input text feature, and {labels} are the labels that are passed
-        into the category output feature's preprocessing config.
+    Dataset columns that are updated here are enriched to have prompts as specified by the prompt configuration.
 
-    Example input prompt:
-        Context information is below.
-        ###
-        {review}
-        ###
-        Given the context information and not prior knowledge, classify the context as one of: {labels}
-
-    Example output prompt:
-        Context information is below.
-        ###
-        The food at the restaurant was great!
-        ###
-        Given the context information and not prior knowledge, classify the context as one of: [positive, negative]
+    Args:
+        dataset_cols (Dict[str, Series]): Dataset columns.
+        feature_name_to_preprocessing_parameters (Dict[str, PreprocessingConfigDict]): Mapping from feature name to
+            preprocessing parameters.
+        features (List[FeatureConfigDict]): List of feature configurations.
+        df_engine (DataFrameEngine): Dataframe engine.
+        split_col (Optional[Series], optional): Split column. Defaults to None.
     """
+    input_features, output_features = get_input_and_output_features(features)
+    for input_feature_config in input_features:
+        input_feature_preprocessing_parameters = feature_name_to_preprocessing_parameters[input_feature_config[NAME]]
 
-    # Recover input and output features from combined list of feature configs
-    input_features = []
-    output_features = []
-    for feature in feature_configs:
-        if ENCODER in feature:
-            input_features.append(feature)
-        elif DECODER in feature:
-            output_features.append(feature)
+        if (
+            "prompt" in input_feature_preprocessing_parameters
+            and input_feature_preprocessing_parameters["prompt"]["task"] is not None
+        ):
+            prompt_config = input_feature_preprocessing_parameters["prompt"]
+            input_col_name = input_feature_config[COLUMN]
 
-    # If output feature is a category feature and it's preprocessing has prompt_template, then we need to
-    # add the prompt in the input text feature(s). This step assumes only one output feature.
-    names_of_features_to_substitute = None
-    vocab = None
-    prompt = None
-    for output_feature in output_features:
-        if output_feature[TYPE] != CATEGORY:
-            continue
-        if "prompt_template" not in feature_name_to_preprocessing_parameters[output_feature[NAME]]:
-            continue
+            if prompt_config["retrieval"]["type"] is not None:
+                # Ensure that the output features are in the dataset columns saved as part of the index
+                # so that they can be retrieved later at lookup time.
+                output_feature_col_names = [output_feature_config[COLUMN] for output_feature_config in output_features]
+                input_and_output_col_names = [input_col_name] + output_feature_col_names
+                input_and_output_cols = {k: v for k, v in dataset_cols.items() if k in input_and_output_col_names}
+                retrieval_model, index_name = index_column(
+                    prompt_config["retrieval"],
+                    col_name=input_col_name,
+                    dataset_cols=input_and_output_cols,
+                    backend=backend,
+                    split_col=split_col,
+                )
+                k = prompt_config["retrieval"]["k"]
 
-        prompt: str = feature_name_to_preprocessing_parameters[output_feature[NAME]]["prompt_template"]
-        vocab: List = feature_name_to_preprocessing_parameters[output_feature[NAME]]["vocab"]
-        names_of_features_to_substitute: List = _extract_feature_names_from_prompt(prompt)
+                # NOTE: after indexing the input column, we update the index_name in the prompt config IN PLACE.
+                # This ensures that the preprocessing parameters for this feature have an up-to-date index_name
+                # when the training set metadata is saved.
+                prompt_config["retrieval"]["index_name"] = index_name
+            else:
+                retrieval_model = None
+                k = -1
 
-    if not prompt:
-        return
-
-    # Substitute vocab specified in the category feature's preprocessing parameters
-    # into the prompt template.
-    if names_of_features_to_substitute and "vocab" in names_of_features_to_substitute:
-        # Replace {vocab} with the actual labels
-        prompt = prompt.replace("{vocab}", ", ".join(vocab))
-        names_of_features_to_substitute.pop(names_of_features_to_substitute.index("vocab"))
-
-    # Substitute values from the input features into the prompt template, and update the values in
-    # dataset_cols with the updated injected prompt. Assumes just text input features for now.
-    for input_feature in input_features:
-        if input_feature[COLUMN] in names_of_features_to_substitute and input_feature[TYPE] == TEXT:
-            # Ensure that any special characters in the value of input_feature[COLUMN] are properly escaped
-            # before being used in the regular expression pattern.
-            pattern = re.compile(r"\{" + re.escape(input_feature[COLUMN]) + r"\}")
-            dataset_cols[input_feature[COLUMN]] = dataset_cols[input_feature[COLUMN]].apply(
-                lambda x: re.sub(pattern, x, prompt)
+            dataset_cols[input_col_name] = format_input_with_prompt(
+                input_col_name,
+                dataset_cols[input_col_name],
+                backend,
+                prompt_config["task"],
+                retrieval_model=retrieval_model,
+                k=k,
+                template=prompt_config["template"],
             )
-        # TODO(Arnav): Add log message showing an updated value with prompt
-        # substituion in dataset_cols
-
-
-def _extract_feature_names_from_prompt(prompt_template: str) -> List[str]:
-    """Extracts feature names from the prompt template whose data needs to be retrieved and injected into the input
-    text features."""
-    pattern = re.compile(r"{([^}]*)}")
-    matches = re.findall(pattern, prompt_template)
-    return matches
 
 
 def load_hdf5(hdf5_file_path, preprocessing_params, backend, split_data=True, shuffle_training=False):
@@ -2179,6 +2167,9 @@ def preprocess_for_prediction(
     for feature_type in config_defaults:
         preprocessing_params[feature_type] = config_defaults[feature_type].get(PREPROCESSING, {})
     preprocessing_params[SPLIT] = config.get(PREPROCESSING, {}).get(SPLIT, {})
+
+    # Ensure that the prompt is passed to the preprocessing parameters
+    preprocessing_params["prompt"] = config.get(PREPROCESSING, {}).get("prompt", {})
 
     preprocessing_params = merge_dict(default_prediction_preprocessing_parameters, preprocessing_params)
 

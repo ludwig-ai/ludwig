@@ -1,0 +1,7 @@
+sentence-transformers
+faiss-cpu
+
+accelerate
+loralib
+bitsandbytes
+peft

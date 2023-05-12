@@ -51,10 +51,16 @@ def load_trainer_with_kwargs(
     In particular, it chooses the correct default type for an incoming config (if it doesn't have one already), but
     otherwise passes all other parameters through without change.
     """
-    from ludwig.constants import MODEL_ECD
-    from ludwig.schema.trainer import ECDTrainerConfig, GBMTrainerConfig
+    from ludwig.constants import MODEL_ECD, MODEL_GBM, MODEL_LLM
+    from ludwig.schema.trainer import ECDTrainerConfig, GBMTrainerConfig, LLMTrainerConfig
 
-    trainer_schema = ECDTrainerConfig if model_type == MODEL_ECD else GBMTrainerConfig
+    # TODO: use registry pattern for trainers
+    if model_type == MODEL_ECD:
+        trainer_schema = ECDTrainerConfig
+    elif model_type == MODEL_GBM:
+        trainer_schema = GBMTrainerConfig
+    elif model_type == MODEL_LLM:
+        trainer_schema = LLMTrainerConfig
 
     return load_config_with_kwargs(trainer_schema, kwargs)
 
@@ -1155,6 +1161,7 @@ class TypeSelection(fields.Field):
         description: str = "",
         parameter_metadata: ParameterMetadata = None,
         allow_str_value: bool = False,
+        allow_none: bool = False,
     ):
         self.registry = registry
         self.default_value = default_value
@@ -1172,7 +1179,7 @@ class TypeSelection(fields.Field):
             dump_default = cls.Schema().dump(default_obj)
 
         super().__init__(
-            allow_none=False,
+            allow_none=allow_none,
             dump_default=dump_default,
             load_default=load_default,
             metadata={"description": description, "parameter_metadata": convert_metadata_to_json(parameter_metadata)},

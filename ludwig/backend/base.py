@@ -28,6 +28,7 @@ from tqdm import tqdm
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend.utils.storage import StorageManager
+from ludwig.constants import MODEL_LLM
 from ludwig.data.cache.manager import CacheManager
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataframe.pandas import PANDAS
@@ -190,9 +191,13 @@ class LocalTrainingMixin:
     def create_trainer(
         self, config: Union[ECDTrainerConfig, GBMTrainerConfig], model: BaseModel, **kwargs
     ) -> "BaseTrainer":  # noqa: F821
-        from ludwig.trainers.registry import trainers_registry
+        from ludwig.trainers.registry import get_llm_trainers_registry, get_trainers_registry
 
-        trainer_cls = get_from_registry(model.type(), trainers_registry)
+        if model.type() == MODEL_LLM:
+            trainer_type = config.type or "zeroshot"  # fallback to zeroshot
+            trainer_cls = get_from_registry(trainer_type, get_llm_trainers_registry())
+        else:
+            trainer_cls = get_from_registry(model.type(), get_trainers_registry())
 
         return trainer_cls(config=config, model=model, **kwargs)
 

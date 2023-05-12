@@ -4,27 +4,25 @@ import os
 import yaml
 
 from ludwig.api import LudwigModel
-from ludwig.datasets import imdb
-
-# Download and prepare the dataset
-dataset = imdb.load()
 
 config = yaml.safe_load(
     """
 input_features:
   - name: review
     type: text
+
     encoder:
       type: auto_transformer
       pretrained_model_name_or_path: bigscience/bloom-3b
       trainable: true
+      tuner: lora
 
 output_features:
   - name: sentiment
     type: category
 
 trainer:
-  batch_size: 1
+  batch_size: 4
   epochs: 3
   gradient_accumulation_steps: 8
 
@@ -51,7 +49,7 @@ model = LudwigModel(config=config, logging_level=logging.INFO)
     preprocessed_data,  # tuple Ludwig Dataset objects of pre-processed training data
     output_directory,  # location of training results stored on disk
 ) = model.train(
-    dataset=dataset,
+    dataset="ludwig://imdb",
     experiment_name="imdb_sentiment",
     model_name="bloom3b",
 )

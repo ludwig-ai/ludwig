@@ -18,7 +18,7 @@ import contextlib
 import copy
 import logging
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TYPE_CHECKING, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 import dask
 import numpy as np
@@ -39,24 +39,21 @@ from ray.tune.tuner import Tuner
 from ray.util.dask import ray_dask_get
 from ray.util.placement_group import placement_group, remove_placement_group
 
-from ludwig.distributed import get_default_strategy_name, get_dist_strategy, init_dist_strategy
-from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
-
-if TYPE_CHECKING:
-    from ludwig.api import LudwigModel
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend.base import Backend, RemoteTrainingMixin
-from ludwig.constants import CPU_RESOURCES_PER_TRIAL, EXECUTOR, MODEL_ECD, NAME, PROC_COLUMN
+from ludwig.constants import CPU_RESOURCES_PER_TRIAL, EXECUTOR, MODEL_ECD, MODEL_LLM, NAME, PROC_COLUMN
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataframe.dask import tensor_extension_casting
 from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetShard
+from ludwig.distributed import get_default_strategy_name, get_dist_strategy, init_dist_strategy
 from ludwig.models.base import BaseModel
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
 from ludwig.schema.trainer import ECDTrainerConfig
-from ludwig.trainers.registry import ray_trainers_registry, register_ray_trainer
+from ludwig.trainers.registry import get_llm_ray_trainers_registry, get_ray_trainers_registry, register_ray_trainer
 from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer, Trainer
+from ludwig.trainers.trainer_llm import RemoteLLMTrainer
 from ludwig.types import HyperoptConfigDict, ModelConfigDict, TrainerConfigDict, TrainingSetMetadataDict
+from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
 from ludwig.utils.dataframe_utils import set_index_name
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.system_utils import Resources
@@ -160,6 +157,7 @@ def train_fn(
     distributed_strategy: Union[str, Dict[str, Any]],
     executable_kwargs: Dict[str, Any] = None,
     model_ref: ObjectRef = None,  # noqa: F821
+    remote_trainer_cls: Type[BaseTrainer] = None,  # noqa: F821
     training_set_metadata: TrainingSetMetadataDict = None,
     features: Dict[str, Dict] = None,
     **kwargs,
@@ -193,7 +191,7 @@ def train_fn(
         model = ray.get(model_ref)
         model = distributed.to_device(model)
 
-        trainer = RemoteTrainer(model=model, distributed=distributed, report_tqdm_to_ray=True, **executable_kwargs)
+        trainer = remote_trainer_cls(model=model, distributed=distributed, report_tqdm_to_ray=True, **executable_kwargs)
         results = trainer.train(train_shard, val_shard, test_shard, return_state_dict=True, **kwargs)
         torch.cuda.empty_cache()
 
@@ -231,7 +229,7 @@ def tune_batch_size_fn(
     ludwig_config: ModelConfigDict = None,
     training_set_metadata: TrainingSetMetadataDict = None,
     features: Dict[str, Dict] = None,
-    trainer_cls: Callable[[], Trainer] = RemoteTrainer,
+    remote_trainer_cls: Callable[[], Trainer] = None,
     **kwargs,
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
@@ -252,7 +250,7 @@ def tune_batch_size_fn(
                 metrics=dict(best_batch_size=best_batch_size),
             )
 
-        trainer: Trainer = trainer_cls(model=model, distributed=distributed, **executable_kwargs)
+        trainer: Trainer = remote_trainer_cls(model=model, distributed=distributed, **executable_kwargs)
         best_batch_size = trainer.tune_batch_size(
             ludwig_config,
             train_shard,
@@ -434,6 +432,10 @@ class RayTrainerV2(BaseTrainer):
         self._validation_field = None
         self._validation_metric = None
 
+    @property
+    def remote_trainer_cls(self):
+        return RemoteTrainer
+
     @staticmethod
     def get_schema_cls():
         return ECDTrainerConfig
@@ -467,6 +469,7 @@ class RayTrainerV2(BaseTrainer):
                 config={
                     "executable_kwargs": executable_kwargs,
                     "model_ref": ray.put(self.model),
+                    "remote_trainer_cls": self.remote_trainer_cls,
                     **kwargs,
                 },
                 callbacks=[TqdmCallback()],
@@ -484,8 +487,10 @@ class RayTrainerV2(BaseTrainer):
         results = ckpt.to_dict()["state_dict"]
 
         # load state dict back into the model
+        # use `strict=False` to account for PEFT training, where the saved state in the checkpoint
+        # might only contain the PEFT layers that were modified during training
         state_dict, *args = results
-        self.model.load_state_dict(state_dict)
+        self.model.load_state_dict(state_dict, strict=False)
         results = (self.model, *args)
 
         return results
@@ -499,7 +504,6 @@ class RayTrainerV2(BaseTrainer):
         self,
         config: ModelConfigDict,
         training_set: RayDataset,
-        trainer_cls: Callable[[], Trainer] = RemoteTrainer,
         **kwargs,
     ) -> int:
         with create_runner(**self.trainer_kwargs) as runner:
@@ -509,10 +513,10 @@ class RayTrainerV2(BaseTrainer):
                     dataset=training_set,
                     executable_kwargs=self.executable_kwargs,
                     model_ref=ray.put(self.model),
+                    remote_trainer_cls=self.remote_trainer_cls,
                     ludwig_config=config,
                     training_set_metadata=training_set.training_set_metadata,
                     features=training_set.features,
-                    trainer_cls=trainer_cls,
                     **kwargs,
                 ),
                 exception_on_error=False,
@@ -570,6 +574,13 @@ class RayTrainerV2(BaseTrainer):
         pass
 
 
+@register_ray_trainer(MODEL_LLM)
+class RayLLMTrainer(RayTrainerV2):
+    @property
+    def remote_trainer_cls(self):
+        return RemoteLLMTrainer
+
+
 def eval_fn(
     distributed_strategy: Union[str, Dict[str, Any]],
     predictor_kwargs: Dict[str, Any] = None,
@@ -590,7 +601,7 @@ def eval_fn(
 
         model = ray.get(model_ref)
         device = get_torch_device()
-        model = model.to(device)
+        model = model.to_device(device)
 
         predictor = RemotePredictor(model=model, distributed=distributed, report_tqdm_to_ray=True, **predictor_kwargs)
         results = predictor.batch_evaluation(eval_shard, **kwargs)
@@ -654,9 +665,6 @@ class RayPredictor(BasePredictor):
             )
             predictions = self.df_engine.from_ray_dataset(predictions)
 
-        for of_feature in self.model.output_features.values():
-            predictions = of_feature.unflatten(predictions)
-
         return predictions
 
     def predict_single(self, batch):
@@ -715,7 +723,7 @@ class RayPredictor(BasePredictor):
 
     def get_batch_infer_model(
         self,
-        model: "LudwigModel",  # noqa: F821
+        model: "BaseModel",  # noqa: F821
         predictor_kwargs: Dict[str, Any],
         output_columns: List[str],
         features: Dict[str, Dict],
@@ -729,7 +737,7 @@ class RayPredictor(BasePredictor):
             def __init__(self):
                 model = ray.get(model_ref)
                 device = get_torch_device()
-                self.model = model.to(device)
+                self.model = model.to_device(device)
 
                 self.output_columns = output_columns
                 self.features = features
@@ -743,8 +751,6 @@ class RayPredictor(BasePredictor):
             def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
                 dataset = self._prepare_batch(df)
                 predictions = self.predict(batch=dataset).set_index(df.index)
-                for output_feature in self.model.output_features.values():
-                    predictions = output_feature.flatten(predictions)
                 ordered_predictions = predictions[self.output_columns]
                 return ordered_predictions
 
@@ -834,7 +840,12 @@ class RayBackend(RemoteTrainingMixin, Backend):
     def create_trainer(self, model: BaseModel, **kwargs) -> "BaseTrainer":  # noqa: F821
         executable_kwargs = {**kwargs, **self._pytorch_kwargs}
 
-        trainer_cls = get_from_registry(model.type(), ray_trainers_registry)
+        if model.type() == MODEL_LLM:
+            trainer_config = kwargs.get("config")
+            trainer_type = trainer_config.type or "zeroshot"  # fallback to zeroshot
+            trainer_cls = get_from_registry(trainer_type, get_llm_ray_trainers_registry())
+        else:
+            trainer_cls = get_from_registry(model.type(), get_ray_trainers_registry())
 
         all_kwargs = {
             "model": model,

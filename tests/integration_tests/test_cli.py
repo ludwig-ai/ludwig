@@ -29,6 +29,8 @@ from ludwig.types import FeatureConfigDict
 from ludwig.utils.data_utils import load_yaml
 from tests.integration_tests.utils import category_feature, generate_data, number_feature, sequence_feature
 
+pytestmark = pytest.mark.integration_tests_b
+
 
 def _run_commands(commands, **ludwig_kwargs):
     for arg_name, value in ludwig_kwargs.items():
@@ -167,19 +169,6 @@ def test_train_cli_horovod(tmpdir, csv_filename):
         config=config_filename,
         output_directory=str(tmpdir),
         model_load_path=os.path.join(tmpdir, "horovod_experiment_run", "model"),
-    )
-
-
-@pytest.mark.skip(reason="Issue #1451: Use torchscript.")
-def test_export_neuropod_cli(tmpdir, csv_filename):
-    """Test exporting Ludwig model to neuropod format."""
-    config_filename = os.path.join(tmpdir, "config.yaml")
-    dataset_filename = _prepare_data(csv_filename, config_filename)
-    _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=tmpdir)
-    _run_ludwig(
-        "export_neuropod",
-        model=os.path.join(tmpdir, "experiment_run", "model"),
-        output_path=os.path.join(tmpdir, "neuropod"),
     )
 
 
@@ -413,6 +402,7 @@ def test_init_config(tmpdir):
     assert to_name_set(config[OUTPUT_FEATURES]) == to_name_set(output_features)
 
 
+@pytest.mark.skip(reason="https://github.com/ludwig-ai/ludwig/issues/3377")
 def test_render_config(tmpdir):
     """Test rendering a full config from a partial user config."""
     user_config_path = os.path.join(tmpdir, "config.yaml")

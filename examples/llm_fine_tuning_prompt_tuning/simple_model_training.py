@@ -2,9 +2,8 @@
 
 # # Simple Model Training Example
 #
-# This is a simple example of how to use the LLM model type to train
-# a zero shot classification model. It uses the facebook/opt-350m model
-# as the base LLM model.
+# This is a simple example of how to use the LLM model type with fine-tuning
+# using prompt tuning. It uses the facebook/opt-1.3b model as the base LLM model.
 
 # Import required libraries
 import logging
@@ -50,42 +49,24 @@ df = pd.DataFrame(review_label_pairs)
 
 config = yaml.safe_load(
     """
-model_type: llm
-model_name: facebook/opt-350m
-generation:
-    temperature: 0.1
-    top_p: 0.75
-    top_k: 40
-    num_beams: 4
-    max_new_tokens: 64
-input_features:
--
-    name: review
-    type: text
-    preprocessing:
-        lowercase: false
-        prompt:
-            task: "Classify the sample input as either negative, neutral, or positive."
-output_features:
--
-    name: label
-    type: category
-    preprocessing:
-        fallback_label: "neutral"
-    decoder:
-        type: category_parser
-        match:
-            "negative":
-                type: contains
-                value: "positive"
-            "neutral":
-                type: contains
-                value: "neutral"
-            "positive":
-                type: contains
-                value: "positive"
-trainer:
-    type: zeroshot
+        input_features:
+            - name: review
+              type: text
+        output_features:
+            - name: label
+              type: category
+              decoder:
+                type: classifier
+        model_type: llm
+        model_name: facebook/opt-1.3b
+        adapter:
+            type: prompt_tuning
+            num_virtual_tokens: 16
+            prompt_tuning_init_text: "Classify the review sentiment as one positive, negative, neutral: "
+        trainer:
+            type: finetune
+            batch_size: 2
+            epochs: 10
     """
 )
 

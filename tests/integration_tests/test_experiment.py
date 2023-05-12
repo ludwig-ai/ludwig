@@ -62,6 +62,8 @@ from tests.integration_tests.utils import (
     vector_feature,
 )
 
+pytestmark = pytest.mark.integration_tests_b
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logging.getLogger("ludwig").setLevel(logging.INFO)
@@ -347,6 +349,8 @@ def test_experiment_image_inputs(image_params: ImageParams, tmpdir):
 
 # Primary focus of this test is to determine if exceptions are raised for different data set formats and in_memory
 # setting.
+
+
 @pytest.mark.parametrize("test_in_memory", [True, False])
 @pytest.mark.parametrize("test_format", ["csv", "df", "hdf5"])
 @pytest.mark.parametrize("train_in_memory", [True, False])
@@ -731,7 +735,7 @@ def test_experiment_model_resume_distributed(tmpdir, dist_strategy, ray_cluster_
         pytest.param("deepspeed", id="deepspeed", marks=pytest.mark.distributed),
     ],
 )
-def test_experiemnt_model_resume_distributed_gpu(tmpdir, dist_strategy, ray_cluster_4cpu):
+def test_experiment_model_resume_distributed_gpu(tmpdir, dist_strategy, ray_cluster_4cpu):
     _run_experiment_model_resume_distributed(tmpdir, dist_strategy)
 
 
@@ -846,6 +850,31 @@ def test_experiment_model_resume_before_1st_epoch_distributed(tmpdir, ray_cluste
             skip_save_processed_input=True,
             model_resume_path=os.path.join(tmpdir, "results1"),
         )
+
+
+@pytest.mark.distributed
+def test_tabnet_with_batch_size_1(tmpdir, ray_cluster_4cpu):
+    input_features = [number_feature()]
+    output_features = [category_feature(output_feature=True)]
+    training_set = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "tabnet"},
+        TRAINER: {"train_steps": 1, BATCH_SIZE: 1},
+        "backend": {"type": "ray", "trainer": {"strategy": "ddp", "num_workers": 2}},
+    }
+    model = LudwigModel(config=config, logging_level=logging.INFO)
+    model.train(
+        dataset=training_set,
+        skip_save_training_description=True,
+        skip_save_training_statistics=True,
+        skip_save_model=True,
+        skip_save_progress=True,
+        skip_save_log=True,
+        skip_save_processed_input=True,
+    )
 
 
 def test_experiment_various_feature_types(csv_filename):

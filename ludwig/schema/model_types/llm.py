@@ -2,6 +2,7 @@ from typing import Optional
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.adapter import AdapterDataclassField, BaseAdapterConfig
 from ludwig.schema.defaults.llm import LLMDefaultsConfig, LLMDefaultsField
 from ludwig.schema.features.base import (
     BaseInputFeatureConfig,
@@ -10,11 +11,11 @@ from ludwig.schema.features.base import (
     LLMInputFeatureSelection,
     LLMOutputFeatureSelection,
 )
-from ludwig.schema.generation_config import LLMGenerationConfig, LLMGenerationConfigField
+from ludwig.schema.generation import LLMGenerationConfig, LLMGenerationConfigField
 from ludwig.schema.hyperopt import HyperoptConfig, HyperoptField
 from ludwig.schema.model_types.base import ModelConfig, register_model_type
 from ludwig.schema.preprocessing import PreprocessingConfig, PreprocessingField
-from ludwig.schema.trainer import LLMTrainerConfig, LLMTrainerField
+from ludwig.schema.trainer import LLMTrainerConfig, LLMTrainerDataclassField
 from ludwig.schema.utils import ludwig_dataclass
 
 
@@ -38,12 +39,22 @@ class LLMModelConfig(ModelConfig):
         ),
     )
 
-    generation_config: LLMGenerationConfig = LLMGenerationConfigField().get_default_field()
-
     input_features: FeatureCollection[BaseInputFeatureConfig] = LLMInputFeatureSelection().get_list_field()
     output_features: FeatureCollection[BaseOutputFeatureConfig] = LLMOutputFeatureSelection().get_list_field()
 
-    trainer: LLMTrainerConfig = LLMTrainerField().get_default_field()
     preprocessing: PreprocessingConfig = PreprocessingField().get_default_field()
     defaults: Optional[LLMDefaultsConfig] = LLMDefaultsField().get_default_field()
     hyperopt: Optional[HyperoptConfig] = HyperoptField().get_default_field()
+
+    # trainer: LLMTrainerConfig = LLMTrainerField().get_default_field()
+    trainer: LLMTrainerConfig = LLMTrainerDataclassField(
+        default="zeroshot",
+        description="The trainer to use for the model",
+    )
+
+    generation: LLMGenerationConfig = LLMGenerationConfigField().get_default_field()
+
+    adapter: BaseAdapterConfig = AdapterDataclassField(
+        default=None,
+        description="The adapter to use for the model. This is used for PEFT based fine-tuning",
+    )

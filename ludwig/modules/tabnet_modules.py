@@ -111,6 +111,12 @@ class TabNet(LudwigModule):
         if batch_size != 1 or not self.training:
             # Skip batch normalization training if the batch size is 1.
             features = self.batch_norm(features)  # [b_s, i_s]
+        elif batch_size == 1:
+            # We temporarily set the batch_norm module to eval mode as we can't compute the running statistics
+            # when the batch size is 1.
+            self.batch_norm.eval()
+            features = self.batch_norm(features)  # [b_s, i_s]
+            self.batch_norm.train()
         masked_features = features
 
         x = self.feature_transforms[0](masked_features)  # [b_s, s + o_s]

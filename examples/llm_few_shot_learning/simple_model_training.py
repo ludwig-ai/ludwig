@@ -47,6 +47,7 @@ review_label_pairs = [
 ]
 
 df = pd.DataFrame(review_label_pairs)
+df["split"] = [0] * 15 + [2] * 10
 
 config = yaml.safe_load(
     """
@@ -66,6 +67,10 @@ input_features:
         lowercase: false
         prompt:
             task: "Classify the sample input as either negative, neutral, or positive."
+            retrieval:
+                type: semantic
+                k: 3
+                model_name: paraphrase-MiniLM-L3-v2
 output_features:
 -
     name: label
@@ -78,14 +83,17 @@ output_features:
             "negative":
                 type: contains
                 value: "positive"
-            "neutral":
+            "neural":
                 type: contains
                 value: "neutral"
             "positive":
                 type: contains
                 value: "positive"
+preprocessing:
+    split:
+        type: fixed
 trainer:
-    type: zeroshot
+    type: fewshot
     """
 )
 
