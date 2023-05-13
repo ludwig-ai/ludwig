@@ -54,7 +54,7 @@ from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer, Trainer
 from ludwig.trainers.trainer_llm import RemoteLLMTrainer
 from ludwig.types import HyperoptConfigDict, ModelConfigDict, TrainerConfigDict, TrainingSetMetadataDict
 from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
-from ludwig.utils.dataframe_utils import set_index_name
+from ludwig.utils.dataframe_utils import is_dask_series_or_df, set_index_name
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.system_utils import Resources
 from ludwig.utils.torch_utils import get_torch_device, initialize_pytorch
@@ -907,8 +907,15 @@ class RayBackend(RemoteTrainingMixin, Backend):
             df = column.to_frame(name=column.name)
             df["idx"] = column.index
 
+            is_dask_df = is_dask_series_or_df(df, self)
+
             with self.storage.cache.use_credentials():
-                df = daft.from_dask_dataframe(df).select("idx", column.name)
+                if is_dask_df:
+                    df = daft.from_dask_dataframe(df)
+                else:
+                    df = daft.from_pandas(df)
+
+                df = df.select("idx", column.name)
 
                 # Download binary files in parallel
                 df = df.with_column(
@@ -925,8 +932,9 @@ class RayBackend(RemoteTrainingMixin, Backend):
                     df = df.with_column(column.name, df[column.name].apply(map_fn, return_dtype=daft.DataType.python()))
 
                 # Executes and convert Daft Dataframe to Dask DataFrame - note that this preserves partitioning
-                df = df.to_dask_dataframe()
-                df = self.df_engine.persist(df)
+                if is_dask_df:
+                    df = df.to_dask_dataframe()
+                    df = self.df_engine.persist(df)
         else:
             # Assume the path has already been read in, so just convert directly to a dataset
             # Name the column "value" to match the behavior of the above
