@@ -264,7 +264,7 @@ def test_explainer_api_text_outputs(tmpdir):
     "explainer_class,model_type",
     [
         pytest.param(IntegratedGradientsExplainer, MODEL_ECD, id="ecd_local"),
-        # pytest.param(RayIntegratedGradientsExplainer, MODEL_ECD, id="ecd_ray", marks=pytest.mark.distributed),
+        pytest.param(RayIntegratedGradientsExplainer, MODEL_ECD, id="ecd_ray", marks=pytest.mark.distributed),
     ],
 )
 @pytest.mark.parametrize(
