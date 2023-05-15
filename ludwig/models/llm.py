@@ -49,6 +49,8 @@ class LLM(BaseModel):
         self.curr_device = torch.device("cpu")  # model initially loaded onto cpu
         logger.info("Done.")
 
+        self.initialize_tuner()
+
         # Determines the maximum length of the context (input + output tokens)
         if hasattr(self.model.config, "max_sequence_length"):
             self.context_len = self.model.config.max_sequence_length
@@ -116,7 +118,6 @@ class LLM(BaseModel):
         device = torch.device(device)
 
         if device == self.curr_device:
-            self.initialize_tuner()
             return self
         else:
             log_once(f"Moving LLM from '{self.curr_device}' to '{device}'.")
@@ -139,14 +140,10 @@ class LLM(BaseModel):
                 self.model.save_pretrained(tmpdir)
                 self.model = AutoModelForCausalLM.from_pretrained(tmpdir, **model_kwargs)
 
-            # Initialize the adapter after reloading the base model
-            self.initialize_tuner()
-
             self.eval_loss_metric = self.eval_loss_metric.to(device)
             self.eval_additional_losses_metrics = self.eval_additional_losses_metrics.to(device)
             self.output_features.update({k: v.to(device) for k, v in self.output_features.items()})
         else:
-            self.initialize_tuner()
             self.model = self.model.to(device)
 
         self.curr_device = device

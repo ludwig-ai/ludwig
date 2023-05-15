@@ -56,7 +56,7 @@ model = LudwigModel(config=config, logging_level=logging.INFO)
 ) = model.train(
     dataset="ludwig://alpaca",
     experiment_name="alpaca_instruct",
-    model_name="bloom3b",
+    model_name="bloom560m",
 )
 
 # list contents of output directory
