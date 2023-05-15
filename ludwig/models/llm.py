@@ -132,7 +132,7 @@ class LLM(BaseModel):
             model_kwargs.update(
                 dict(
                     low_cpu_mem_usage=True,
-                    # torch_dtype=torch.float16,
+                    torch_dtype=torch.float16,
                     device_map="auto",
                     max_memory={i: "13GiB" for i in range(num_gpus)},
                 )
