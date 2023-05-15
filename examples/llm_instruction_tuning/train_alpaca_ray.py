@@ -8,7 +8,7 @@ from ludwig.api import LudwigModel
 config = yaml.safe_load(
     """
 model_type: llm
-model_name: bigscience/bloomz-560m
+model_name: bigscience/bloomz-3b
 
 adapter:
   type: lora
@@ -23,17 +23,11 @@ output_features:
 
 trainer:
     type: finetune
-    batch_size: 8
-    train_steps: 5
-
-preprocessing:
-  split:
-    type: random
-    probabilities: [0.99, 0.005, 0.005]
+    batch_size: 4
+    epochs: 3
 
 backend:
   type: ray
-  cache_dir: /src/cache
   trainer:
     use_gpu: true
     strategy:

@@ -13,7 +13,7 @@ input_features:
 
     encoder:
       type: auto_transformer
-      pretrained_model_name_or_path: bert-base-uncased
+      pretrained_model_name_or_path: bigscience/bloom-3b
       trainable: true
       adapter: lora
 
@@ -21,18 +21,12 @@ output_features:
   - name: sentiment
     type: category
 
-preprocessing:
-  type: random
-  probabilities: [0.99, 0.005, 0.005]
-
 trainer:
-  batch_size: 8
-  epochs: 2
-  gradient_accumulation_steps: 8
+  batch_size: 4
+  epochs: 3
 
 backend:
   type: ray
-  cache_dir: /src/cache
   trainer:
     use_gpu: true
     strategy:
