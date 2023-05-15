@@ -339,7 +339,7 @@ def set_retrieval_parameters(config: "ModelConfig") -> None:
 
     for input_feature in config.input_features:
         if input_feature.type == TEXT:
-            retrieval_config = input_feature.preprocessing.prompt.retrieval
+            retrieval_config = config.prompt.retrieval
             if retrieval_config.type is not None and retrieval_config.k == 0:
                 retrieval_config.k = 1
 

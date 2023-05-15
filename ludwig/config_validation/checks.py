@@ -239,12 +239,12 @@ def check_validation_metric_exists(config: "ModelConfig") -> None:  # noqa: F821
 @register_config_check
 def check_retrieval_config(config: "ModelConfig") -> None:
     """Checks that the retrieval config is valid."""
-    for input_feature in config.input_features:
-        if input_feature.type == TEXT:
-            if input_feature.preprocessing.prompt.task is not None:
+    if config.model_type != MODEL_LLM:
+        return
 
-                _check_k_retrieval_config(input_feature.preprocessing.prompt.retrieval)
-                _check_model_name_retrieval_config(input_feature.preprocessing.prompt.retrieval)
+    if config.prompt.task is not None:
+        _check_k_retrieval_config(config.prompt.retrieval)
+        _check_model_name_retrieval_config(config.prompt.retrieval)
 
 
 def _check_k_retrieval_config(retrieval_config: "RetrievalConfig") -> None:

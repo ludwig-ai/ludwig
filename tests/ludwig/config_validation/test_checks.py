@@ -308,7 +308,7 @@ output_features:
         ModelConfig.from_dict(config)
 
     # will not fail
-    config["input_features"][0]["preprocessing"]["prompt"]["retrieval"]["k"] = 0
+    config["prompt"]["retrieval"]["k"] = 0
     ModelConfig.from_dict(config)
 
 
@@ -359,5 +359,5 @@ output_features:
     with pytest.raises(ConfigValidationError):
         ModelConfig.from_dict(config)
 
-    config["input_features"][0]["preprocessing"]["prompt"]["retrieval"]["model_name"] = "some-huggingface-model"
+    config["prompt"]["retrieval"]["model_name"] = "some-huggingface-model"
     ModelConfig.from_dict(config)
