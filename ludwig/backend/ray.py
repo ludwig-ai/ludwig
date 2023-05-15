@@ -1048,13 +1048,13 @@ class RayBackend(RemoteTrainingMixin, Backend):
             if map_fn is not None:
                 df[column.name] = self.df_engine.map_objects(df[column.name], map_fn)
 
-        if "idx" in list(df.columns):
-            df = df.set_index("idx", drop=True)
-            df = self.df_engine.map_partitions(
-                df,
-                lambda pd_df: set_index_name(pd_df, column.index.name),
-                meta={column.name: "object"},
-            )
+        # if "idx" in list(df.columns):
+        df = df.set_index("idx", drop=True)
+        df = self.df_engine.map_partitions(
+            df,
+            lambda pd_df: set_index_name(pd_df, column.index.name),
+            meta={column.name: "object"},
+        )
 
         return df[column.name]
 
