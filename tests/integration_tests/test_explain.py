@@ -19,6 +19,7 @@ from tests.integration_tests.utils import (
     image_feature,
     LocalTestBackend,
     number_feature,
+    sequence_feature,
     set_feature,
     text_feature,
     timeseries_feature,
@@ -257,3 +258,20 @@ def test_explainer_api_text_outputs(tmpdir):
     run_test_explainer_api(
         IntegratedGradientsExplainer, MODEL_ECD, output_features, {}, tmpdir, input_features=input_features
     )
+
+
+@pytest.mark.parametrize(
+    "explainer_class,model_type",
+    [
+        pytest.param(IntegratedGradientsExplainer, MODEL_ECD, id="ecd_local"),
+        pytest.param(RayIntegratedGradientsExplainer, MODEL_ECD, id="ecd_ray", marks=pytest.mark.distributed),
+    ],
+)
+@pytest.mark.parametrize(
+    "encoder_type", ["embed", "parallel_cnn", "stacked_cnn", "stacked_parallel_cnn", "rnn", "cnnrnn", "transformer"]
+)
+def test_explainer_sequence_feature(explainer_class, model_type, encoder_type, tmpdir):
+    input_features = [sequence_feature()]
+    input_features[0]["encoder"] = {"type": encoder_type}
+    output_features = [binary_feature()]
+    run_test_explainer_api(explainer_class, model_type, output_features, {}, tmpdir, input_features=input_features)
