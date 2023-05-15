@@ -17,8 +17,6 @@ from ludwig.utils.tokenizers import tokenizer_registry
 class TextPreprocessingConfig(BasePreprocessingConfig):
     """TextPreprocessingConfig is a dataclass that configures the parameters used for a text input feature."""
 
-    prompt: PromptConfig = PromptConfigField().get_default_field()
-
     pretrained_model_name_or_path: str = schema_utils.String(
         default=None,
         allow_none=True,
@@ -202,3 +200,10 @@ class TextOutputPreprocessingConfig(TextPreprocessingConfig):
         description="The size of the ngram when using the `ngram` tokenizer (e.g, 2 = bigram, 3 = trigram, etc.).",
         parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["ngram_size"],
     )
+
+
+@DeveloperAPI
+@register_preprocessor("text_llm")
+@ludwig_dataclass
+class LLMTextPreprocessingConfig(TextPreprocessingConfig):
+    prompt: PromptConfig = PromptConfigField().get_default_field()
