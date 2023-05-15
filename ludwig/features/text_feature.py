@@ -50,7 +50,6 @@ from ludwig.utils.strings_utils import (
     UNKNOWN_SYMBOL,
     Vocabulary,
 )
-from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
 
@@ -283,6 +282,25 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
                     )
                 )
 
+        if isinstance(feature_config.loss.class_weights, dict):
+            if feature_metadata["str2idx"].keys() != feature_config.loss.class_weights.keys():
+                raise ValueError(
+                    "The class_weights keys ({}) are not compatible with "
+                    "the classes ({}) of feature {}. "
+                    "Check the metadata JSON file to see the classes "
+                    "and consider there needs to be a weight "
+                    "for the <UNK> class too.".format(
+                        feature_config.loss.class_weights.keys(),
+                        feature_metadata["str2idx"].keys(),
+                        feature_config.column,
+                    )
+                )
+            else:
+                class_weights = feature_config.loss.class_weights
+                idx2str = feature_metadata["idx2str"]
+                class_weights_list = [class_weights[s] for s in idx2str]
+                feature_config.loss.class_weights = class_weights_list
+
         if feature_config.loss.class_similarities_temperature > 0:
             if feature_config.class_similarities:
                 distances = feature_config.class_similarities
@@ -385,15 +403,3 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     @staticmethod
     def get_schema_cls():
         return TextOutputFeatureConfig
-
-    def flatten(self, df: DataFrame) -> DataFrame:
-        probs_col = f"{self.feature_name}_{PROBABILITIES}"
-        df[probs_col] = df[probs_col].map(lambda x: x.flatten())
-        return df
-
-    def unflatten(self, df: DataFrame) -> DataFrame:
-        probs_col = f"{self.feature_name}_{PROBABILITIES}"
-        df[probs_col] = df[probs_col].map(
-            lambda x: x.reshape(-1, self.decoder_obj.max_sequence_length), meta=(probs_col, "object")
-        )
-        return df

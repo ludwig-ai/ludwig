@@ -62,6 +62,8 @@ from tests.integration_tests.utils import (
     vector_feature,
 )
 
+pytestmark = pytest.mark.integration_tests_b
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logging.getLogger("ludwig").setLevel(logging.INFO)
@@ -347,6 +349,8 @@ def test_experiment_image_inputs(image_params: ImageParams, tmpdir):
 
 # Primary focus of this test is to determine if exceptions are raised for different data set formats and in_memory
 # setting.
+
+
 @pytest.mark.parametrize("test_in_memory", [True, False])
 @pytest.mark.parametrize("test_format", ["csv", "df", "hdf5"])
 @pytest.mark.parametrize("train_in_memory", [True, False])

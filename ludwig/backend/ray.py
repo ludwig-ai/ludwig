@@ -684,9 +684,6 @@ class RayPredictor(BasePredictor):
             )
             predictions = self.df_engine.from_ray_dataset(predictions)
 
-        for of_feature in self.model.output_features.values():
-            predictions = of_feature.unflatten(predictions)
-
         return predictions
 
     def predict_single(self, batch):
@@ -773,8 +770,6 @@ class RayPredictor(BasePredictor):
             def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
                 dataset = self._prepare_batch(df)
                 predictions = self.predict(batch=dataset).set_index(df.index)
-                for output_feature in self.model.output_features.values():
-                    predictions = output_feature.flatten(predictions)
                 ordered_predictions = predictions[self.output_columns]
                 return ordered_predictions
 

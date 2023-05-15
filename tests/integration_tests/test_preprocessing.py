@@ -728,6 +728,12 @@ def test_vit_encoder_different_dimension_image(tmpdir, csv_filename, use_pretrai
     model.train(dataset=data_csv)
 
 
+@pytest.mark.skip(
+    reason=(
+        "Broken against torch nightly: "
+        "https://github.com/ludwig-ai/ludwig/actions/runs/4918126111/jobs/8784071603?pr=3388."
+    )
+)
 def test_image_encoder_torchvision_different_num_channels(tmpdir, csv_filename):
     input_features = [
         image_feature(
