@@ -5,15 +5,15 @@ from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor
 from ludwig.schema.metadata import FEATURE_METADATA, PREPROCESSING_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
+from ludwig.schema.prompt import PromptConfig, PromptConfigField
 from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils import strings_utils
 from ludwig.utils.tokenizers import tokenizer_registry
 
 
 @DeveloperAPI
-@register_preprocessor(TEXT)
 @ludwig_dataclass
-class TextPreprocessingConfig(BasePreprocessingConfig):
+class BaseTextPreprocessingConfig(BasePreprocessingConfig):
     """TextPreprocessingConfig is a dataclass that configures the parameters used for a text input feature."""
 
     pretrained_model_name_or_path: str = schema_utils.String(
@@ -142,9 +142,27 @@ class TextPreprocessingConfig(BasePreprocessingConfig):
 
 
 @DeveloperAPI
+@register_preprocessor(TEXT)
+@ludwig_dataclass
+class TextPreprocessingConfig(BaseTextPreprocessingConfig):
+    """TextPreprocessingConfig is a dataclass that configures the parameters used for a text input feature."""
+
+    prompt: PromptConfig = PromptConfigField().get_default_field()
+
+
+@DeveloperAPI
+@register_preprocessor("text_llm")
+@ludwig_dataclass
+class LLMTextPreprocessingConfig(BaseTextPreprocessingConfig):
+    """LLMs require the prompt to be provided at the top-level, not preprocessing."""
+
+    pass
+
+
+@DeveloperAPI
 @register_preprocessor("text_output")
 @ludwig_dataclass
-class TextOutputPreprocessingConfig(TextPreprocessingConfig):
+class TextOutputPreprocessingConfig(BaseTextPreprocessingConfig):
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
         default=DROP_ROW,

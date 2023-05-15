@@ -332,7 +332,7 @@ output_features:
 """
     )
 
-    # should not fail because we auto-set k=1 if k=0 using set_retrieval_parameters
+    # should not fail because we auto-set k=1 if k=0 on __post_init__
     ModelConfig.from_dict(config)
 
 

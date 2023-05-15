@@ -1747,13 +1747,16 @@ def handle_features_with_prompt_config(
         df_engine (DataFrameEngine): Dataframe engine.
         split_col (Optional[Series], optional): Split column. Defaults to None.
     """
-    if "prompt" not in config or config["prompt"]["task"] is None:
-        return
-
-    prompt_config = config["prompt"]
+    print("!!! HERE", config)
 
     input_features, output_features = get_input_and_output_features(features)
     for input_feature_config in input_features:
+        prompt_config = _get_prompt_config(config, input_feature_config)
+        if prompt_config is None:
+            continue
+
+        print("Handling prompt configuration: ", prompt_config)
+
         input_col_name = input_feature_config[COLUMN]
         if prompt_config["retrieval"]["type"] is not None:
             # Ensure that the output features are in the dataset columns saved as part of the index
@@ -1787,6 +1790,17 @@ def handle_features_with_prompt_config(
             k=k,
             template=prompt_config["template"],
         )
+
+
+def _get_prompt_config(config: ModelConfigDict, input_feature_config: Dict) -> Dict:
+    if "prompt" in config and config["prompt"]["task"] is not None:
+        return config["prompt"]
+
+    preprocessing = input_feature_config["preprocessing"]
+    if "prompt" in preprocessing and preprocessing["task"] is not None:
+        return preprocessing["prompt"]
+
+    return None
 
 
 def load_hdf5(hdf5_file_path, preprocessing_params, backend, split_data=True, shuffle_training=False):

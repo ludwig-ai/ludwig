@@ -73,6 +73,8 @@ class GBMTextInputFeatureConfig(TextInputFeatureConfig):
 @llm_input_config_registry.register(TEXT)
 @ludwig_dataclass
 class LLMTextInputFeatureConfig(TextInputFeatureConfig):
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="text_llm")
+
     encoder: BaseEncoderConfig = EncoderDataclassField(
         MODEL_LLM,
         feature_type=TEXT,

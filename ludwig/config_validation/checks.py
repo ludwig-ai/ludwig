@@ -14,7 +14,6 @@ from ludwig.constants import (
     MODEL_GBM,
     MODEL_LLM,
     NUMBER,
-    SEMANTIC,
     SEQUENCE,
     SET,
     TEXT,
@@ -27,7 +26,6 @@ from ludwig.utils.misc_utils import merge_dict
 
 if TYPE_CHECKING:
     from ludwig.schema.model_config import ModelConfig
-    from ludwig.schema.prompt import RetrievalConfig
 
 # Set of all sequence feature types.
 SEQUENCE_OUTPUT_FEATURE_TYPES = {SEQUENCE, TEXT, SET, VECTOR}
@@ -234,35 +232,6 @@ def check_validation_metric_exists(config: "ModelConfig") -> None:  # noqa: F821
             f"User-specified trainer.validation_metric '{validation_metric_name}' is not valid. "
             f"Available metrics are: {all_valid_metrics}"
         )
-
-
-@register_config_check
-def check_retrieval_config(config: "ModelConfig") -> None:
-    """Checks that the retrieval config is valid."""
-    if config.model_type != MODEL_LLM:
-        return
-
-    if config.prompt.task is not None:
-        _check_k_retrieval_config(config.prompt.retrieval)
-        _check_model_name_retrieval_config(config.prompt.retrieval)
-
-
-def _check_k_retrieval_config(retrieval_config: "RetrievalConfig") -> None:
-    """Checks that k is greater than zero if retrieval type is not None."""
-    # TODO: have a dynamically loaded schema based on the selection of the type param
-    # https://github.com/ludwig-ai/ludwig/pull/3351#discussion_r1181910954
-    if retrieval_config.type is None and retrieval_config.k != 0:
-        raise ConfigValidationError("k must be 0 if retrieval type is None.")
-    elif retrieval_config.type is not None and retrieval_config.k <= 0:
-        raise ConfigValidationError("k must be greater than 0 if retrieval type is not None.")
-
-
-def _check_model_name_retrieval_config(retrieval_config: "RetrievalConfig") -> None:
-    """Checks that model_name is not None if retrieval type is not None."""
-    if retrieval_config.type is None and retrieval_config.model_name is not None:
-        raise ConfigValidationError("model_name must be None if retrieval type is None.")
-    elif retrieval_config.type == SEMANTIC and retrieval_config.model_name is None:
-        raise ConfigValidationError(f"model_name must not be None if retrieval type is '{SEMANTIC}'.")
 
 
 @register_config_check

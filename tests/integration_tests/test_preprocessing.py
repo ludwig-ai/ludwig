@@ -813,13 +813,14 @@ def test_prompt_template(backend, tmpdir):
 
     task = "predict the output feature. Return only values in {true, false}"
 
-    input_features = [text_feature(preprocessing={"prompt": {"task": task, "template": template}})]
+    input_features = [text_feature()]
     output_features = [category_feature()]
     data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=25)
 
     config = {
         "input_features": input_features,
         "output_features": output_features,
+        "prompt": {"task": task, "template": template}
     }
 
     model = LudwigModel(config, backend=backend)
@@ -841,6 +842,7 @@ def test_prompt_template(backend, tmpdir):
     for raw_text, encoded in zip(raw_text_values, encoded_values):
         raw_text = raw_text.lower()
         decoded = " ".join(idx2str[t] for t in encoded)
+        print(decoded)
         assert decoded.startswith(
             "<SOS> instruction : predict the output feature . return only values in { true , false } # # # examples : "
             "# # # input : foo bar output : true # # # input : baz quc output : false # # # input : "
