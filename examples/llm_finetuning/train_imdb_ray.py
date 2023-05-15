@@ -15,7 +15,7 @@ input_features:
       type: auto_transformer
       pretrained_model_name_or_path: bert-base-uncased
       trainable: true
-      tuner: lora
+      adapter: lora
 
 output_features:
   - name: sentiment

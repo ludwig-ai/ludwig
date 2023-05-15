@@ -10,7 +10,8 @@ config = yaml.safe_load(
 model_type: llm
 model_name: bigscience/bloomz-560m
 
-tuner: lora
+adapter:
+  type: lora
 
 input_features:
   - name: instruction

@@ -6,6 +6,7 @@ import pytest
 
 from ludwig.api import LudwigModel
 from ludwig.constants import (
+    ADAPTER,
     BATCH_SIZE,
     EPOCHS,
     GENERATION,
@@ -16,7 +17,6 @@ from ludwig.constants import (
     OUTPUT_FEATURES,
     PREPROCESSING,
     TRAINER,
-    TUNER,
     TYPE,
 )
 from ludwig.utils.types import DataFrame
@@ -349,7 +349,7 @@ def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strat
     config = {
         MODEL_TYPE: MODEL_LLM,
         MODEL_NAME: model_name,
-        TUNER: {
+        ADAPTER: {
             TYPE: finetune_strategy,
             **adapter_args,
         },

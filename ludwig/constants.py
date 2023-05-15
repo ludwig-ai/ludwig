@@ -277,7 +277,6 @@ POSTPROCESSOR = "postprocessor"
 
 GENERATION = "generation"
 ADAPTER = "adapter"
-TUNER = "tuner"
 
 S3 = "s3"
 CACHE = "cache"

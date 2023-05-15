@@ -4,7 +4,7 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.defaults.llm import LLMDefaultsConfig, LLMDefaultsField
-from ludwig.schema.encoders.text.peft import BaseTunerConfig, TunerDataclassField
+from ludwig.schema.encoders.text.peft import AdapterDataclassField, BaseAdapterConfig
 from ludwig.schema.features.base import (
     BaseInputFeatureConfig,
     BaseOutputFeatureConfig,
@@ -63,6 +63,6 @@ class LLMModelConfig(ModelConfig):
 
     generation: LLMGenerationConfig = LLMGenerationConfigField().get_default_field()
 
-    tuner: Optional[BaseTunerConfig] = TunerDataclassField(
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField(
         description="The parameter-efficient finetuning strategy to use for the model"
     )

@@ -12,13 +12,13 @@ if TYPE_CHECKING:
     from peft import PeftConfig
 
 
-tuner_registry = Registry()
+adapter_registry = Registry()
 
 
 @DeveloperAPI
-def register_tuner(name: str):
-    def wrap(config: BaseTunerConfig):
-        tuner_registry[name] = config
+def register_adapter(name: str):
+    def wrap(config: BaseAdapterConfig):
+        adapter_registry[name] = config
         return config
 
     return wrap
@@ -26,7 +26,7 @@ def register_tuner(name: str):
 
 @DeveloperAPI
 @ludwig_dataclass
-class BaseTunerConfig(schema_utils.BaseMarshmallowConfig, ABC):
+class BaseAdapterConfig(schema_utils.BaseMarshmallowConfig, ABC):
     type: str
 
     @abstractmethod
@@ -35,9 +35,9 @@ class BaseTunerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
 
 @DeveloperAPI
-@register_tuner(name="lora")
+@register_adapter(name="lora")
 @ludwig_dataclass
-class LoraConfig(BaseTunerConfig):
+class LoraConfig(BaseAdapterConfig):
     type: str = schema_utils.ProtectedString("lora")
 
     r: int = schema_utils.PositiveInteger(
@@ -75,7 +75,7 @@ class LoraConfig(BaseTunerConfig):
 
 @DeveloperAPI
 @ludwig_dataclass
-class BasePromptLearningConfig(BaseTunerConfig):
+class BasePromptLearningConfig(BaseAdapterConfig):
     """Config for prompt learning adapters. Not meant to be used directly.
 
     Adapted from https://github.com/huggingface/peft/blob/main/src/peft/utils/config.py (PromptLearningConfig)
@@ -113,7 +113,7 @@ class BasePromptLearningConfig(BaseTunerConfig):
 
 
 @DeveloperAPI
-@register_tuner("prompt_tuning")
+@register_adapter("prompt_tuning")
 @ludwig_dataclass
 class PromptTuningConfig(BasePromptLearningConfig):
     """Adapted from https://github.com/huggingface/peft/blob/main/src/peft/tuners/prompt_tuning.py."""
@@ -154,7 +154,7 @@ class PromptTuningConfig(BasePromptLearningConfig):
 
 # TODO(travis): fix prefix tuning and p-tuning to work with DDP
 # @DeveloperAPI
-# @register_tuner("prefix_tuning")
+# @register_adapter("prefix_tuning")
 # @schema_utils.ludwig_dataclass
 # class PrefixTuningConfig(BasePromptLearningConfig):
 #     """Adapted from https://github.com/huggingface/peft/blob/main/src/peft/tuners/prefix_tuning.py."""
@@ -188,7 +188,7 @@ class PromptTuningConfig(BasePromptLearningConfig):
 
 
 # @DeveloperAPI
-# @register_tuner("p_tuning")
+# @register_adapter("p_tuning")
 # @ludwig_dataclass
 # class PTuningConfig(BasePromptLearningConfig):
 #     type: str = schema_utils.ProtectedString("p_tuning")
@@ -237,7 +237,7 @@ class PromptTuningConfig(BasePromptLearningConfig):
 
 
 @DeveloperAPI
-@register_tuner("adalora")
+@register_adapter("adalora")
 @ludwig_dataclass
 class AdaloraConfig(LoraConfig):
     """Adapted from https://github.com/huggingface/peft/blob/main/src/peft/tuners/adalora.py."""
@@ -324,9 +324,9 @@ class AdaloraConfig(LoraConfig):
 
 
 @DeveloperAPI
-@register_tuner("adaption_prompt")
+@register_adapter("adaption_prompt")
 @ludwig_dataclass
-class AdaptionPromptConfig(BaseTunerConfig):
+class AdaptionPromptConfig(BaseAdapterConfig):
     """Adapted from https://github.com/huggingface/peft/blob/main/src/peft/tuners/adaption_prompt.py."""
 
     def __post_init__(self):
@@ -366,13 +366,13 @@ class AdaptionPromptConfig(BaseTunerConfig):
 
 
 @DeveloperAPI
-def get_tuner_conds():
+def get_adapter_conds():
     conds = []
-    for tuner_type, tuner_cls in tuner_registry.items():
-        other_props = schema_utils.unload_jsonschema_from_marshmallow_class(tuner_cls)["properties"]
+    for adapter_type, adapter_cls in adapter_registry.items():
+        other_props = schema_utils.unload_jsonschema_from_marshmallow_class(adapter_cls)["properties"]
         schema_utils.remove_duplicate_fields(other_props)
         preproc_cond = schema_utils.create_cond(
-            {"type": tuner_type},
+            {"type": adapter_type},
             other_props,
         )
         conds.append(preproc_cond)
@@ -380,13 +380,13 @@ def get_tuner_conds():
 
 
 @DeveloperAPI
-def TunerDataclassField(
+def AdapterDataclassField(
     default: Optional[str] = None, description: str = "", parameter_metadata: ParameterMetadata = None
 ):
-    class TunerSelection(schema_utils.TypeSelection):
+    class AdapterSelection(schema_utils.TypeSelection):
         def __init__(self):
             super().__init__(
-                registry=tuner_registry,
+                registry=adapter_registry,
                 default_value=default,
                 description=description,
                 parameter_metadata=parameter_metadata,
@@ -395,7 +395,7 @@ def TunerDataclassField(
             )
 
         def get_schema_from_registry(self, key: str) -> Type[schema_utils.BaseMarshmallowConfig]:
-            return tuner_registry[key]
+            return adapter_registry[key]
 
         def _jsonschema_type_mapping(self):
             return {
@@ -405,21 +405,21 @@ def TunerDataclassField(
                         "properties": {
                             "type": {
                                 "type": "string",
-                                "enum": list(tuner_registry.keys()),
+                                "enum": list(adapter_registry.keys()),
                                 "default": default,
                                 "description": "MISSING",
                             },
                         },
                         "title": "tuner_object_options",
-                        "allOf": get_tuner_conds(),
+                        "allOf": get_adapter_conds(),
                         "required": ["type"],
                         "description": description,
                     },
-                    {"type": "string", "title": "tuner_string_options", "description": "MISSING"},
-                    {"type": "null", "title": "tuner_null_option", "description": "MISSING"},
+                    {"type": "string", "title": "adapter_string_options", "description": "MISSING"},
+                    {"type": "null", "title": "adapter_null_option", "description": "MISSING"},
                 ],
-                "title": "tuner_options",
-                "description": "The type of PEFT tuner to use during fine-tuning",
+                "title": "adapter_options",
+                "description": "The type of PEFT adapter to use during fine-tuning",
             }
 
-    return TunerSelection().get_default_field()
+    return AdapterSelection().get_default_field()

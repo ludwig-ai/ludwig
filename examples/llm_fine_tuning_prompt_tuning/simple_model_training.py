@@ -59,7 +59,7 @@ config = yaml.safe_load(
                 type: classifier
         model_type: llm
         model_name: facebook/opt-1.3b
-        tuner:
+        adapter:
             type: prompt_tuning
             num_virtual_tokens: 16
             prompt_tuning_init_text: "Classify the review sentiment as one positive, negative, neutral: "

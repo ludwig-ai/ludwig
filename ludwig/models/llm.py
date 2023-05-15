@@ -49,7 +49,7 @@ class LLM(BaseModel):
         self.curr_device = torch.device("cpu")  # model initially loaded onto cpu
         logger.info("Done.")
 
-        self.initialize_tuner()
+        self.initialize_adapter()
 
         # Determines the maximum length of the context (input + output tokens)
         if hasattr(self.model.config, "max_sequence_length"):
@@ -100,17 +100,19 @@ class LLM(BaseModel):
 
         clear_data_cache()
 
-    def initialize_tuner(self):
-        """If a tuner config is provided, we want to wrap the model with a PEFT model for fine-tuning."""
-        if self.config_obj.tuner:
+    def initialize_adapter(self):
+        """If an adapter config is provided, we want to wrap the model with a PEFT model for fine-tuning."""
+        if self.config_obj.adapter:
             from peft import get_peft_model
 
-            peft_config = self.config_obj.tuner.to_config(task_type="CAUSAL_LM", tokenizer_name_or_path=self.model_name)
+            peft_config = self.config_obj.adapter.to_config(
+                task_type="CAUSAL_LM", tokenizer_name_or_path=self.model_name
+            )
             self.model = get_peft_model(self.model, peft_config)
 
             logger.info("==================================================")
             logger.info("Trainable Parameter Summary For Fine-Tuning:")
-            logger.info(f"Fine-tuning with tuner: {self.config_obj.tuner.type}")
+            logger.info(f"Fine-tuning with adapter: {self.config_obj.adapter.type}")
             self.model.print_trainable_parameters()
             logger.info("==================================================")
 
@@ -211,7 +213,7 @@ class LLM(BaseModel):
 
         input_ids = self.get_input_ids(inputs)
 
-        if self.config_obj.tuner:
+        if self.config_obj.adapter:
             # Forward pass using PEFT wrapped model for fine-tuning
             model_outputs = self.model(input_ids).get(LOGITS)
 
@@ -382,7 +384,7 @@ class LLM(BaseModel):
         """Returns the model's predictions for each output feature."""
         predictions = {}
         for of_name in self.output_features:
-            if self.config_obj.tuner:
+            if self.config_obj.adapter:
                 predictions[of_name] = outputs
             else:
                 generated_predictions = outputs[of_name]
@@ -391,7 +393,7 @@ class LLM(BaseModel):
 
     def save(self, save_path):
         """Saves the model to the given path."""
-        if self.config_obj.tuner:
+        if self.config_obj.adapter:
             weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
             self.model.save_pretrained(weights_save_path)
         else:
@@ -399,7 +401,7 @@ class LLM(BaseModel):
 
     def load(self, save_path):
         """Loads the model from the given path."""
-        if self.config_obj.tuner:
+        if self.config_obj.adapter:
             from peft import PeftConfig, PeftModel  # noqa
 
             weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
