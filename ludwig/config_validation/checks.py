@@ -503,6 +503,39 @@ def check_llm_atleast_one_input_text_feature(config: "ModelConfig"):  # noqa: F8
 
 
 @register_config_check
+def check_llm_finetuning_trainer_config(config: "ModelConfig"):  # noqa: F821
+    """Ensures that trainer type is finetune if tuner is not None."""
+    if config.model_type != MODEL_LLM:
+        return
+
+    if config.tuner is not None and config.trainer.type != "finetune":
+        raise ConfigValidationError("LLM finetuning requires trainer type to be finetune.")
+
+
+@register_config_check
+def check_llm_finetuning_backend_config(config: "ModelConfig"):  # noqa: F821
+    """Checks that the LLM finetuning using Ray is configured correctly.
+
+    DDP strategy is not supported for LLM finetuning because it leads to OOMs since the model is large and DDP strategy
+    requires a copy of the model on each GPU.
+    """
+    if config.model_type != MODEL_LLM:
+        return
+
+    # LLM finetuning is only supported by the finetune trainer type
+    if config.trainer.type != "finetune":
+        return
+
+    backend = config.backend
+    if backend.type == "ray" and backend.trainer.strategy != "deepspeed":
+        raise ConfigValidationError("LLM finetuning with Ray requires the DeepSpeed strategy.")
+
+    # Deepspeed requires GPU
+    if not backend.trainer.use_gpu or backend.trainer.resources_per_worker.GPU < 1:
+        raise ConfigValidationError("LLM finetuning with DeepSpeed requires GPU.")
+
+
+@register_config_check
 def check_llm_finetuning_adalora_config(config: "ModelConfig"):
     """Checks that the adalora tuner is configured correctly.
 
