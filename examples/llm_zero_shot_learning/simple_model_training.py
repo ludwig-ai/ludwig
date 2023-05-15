@@ -58,14 +58,12 @@ generation:
     top_k: 40
     num_beams: 4
     max_new_tokens: 64
+prompt:
+    task: "Classify the sample input as either negative, neutral, or positive."
 input_features:
 -
     name: review
     type: text
-    preprocessing:
-        lowercase: false
-        prompt:
-            task: "Classify the sample input as either negative, neutral, or positive."
 output_features:
 -
     name: label

@@ -288,16 +288,15 @@ def test_retrieval_config_none_type():
         """
 model_type: llm
 model_name: facebook/opt-350m
+prompt:
+    retrieval:
+        type: null
+        k: 1
+    task: "Classify the sample input as either negative, neutral, or positive."
 input_features:
 -
     name: sample
     type: text
-    preprocessing:
-        prompt:
-            retrieval:
-                type: null
-                k: 1
-            task: "Classify the sample input as either negative, neutral, or positive."
 output_features:
 -
     name: label
@@ -318,15 +317,14 @@ def test_retrieval_config_random_type():
         """
 model_type: llm
 model_name: facebook/opt-350m
+prompt:
+    retrieval:
+        type: random
+    task: "Classify the sample input as either negative, neutral, or positive."
 input_features:
 -
     name: sample
     type: text
-    preprocessing:
-        prompt:
-            retrieval:
-                type: random
-            task: "Classify the sample input as either negative, neutral, or positive."
 output_features:
 -
     name: label
@@ -343,15 +341,14 @@ def test_retrieval_config_semantic_type():
         """
 model_type: llm
 model_name: facebook/opt-350m
+prompt:
+    retrieval:
+        type: semantic
+    task: "Classify the sample input as either negative, neutral, or positive."
 input_features:
 -
     name: sample
     type: text
-    preprocessing:
-        prompt:
-            retrieval:
-                type: semantic
-            task: "Classify the sample input as either negative, neutral, or positive."
 output_features:
 -
     name: label

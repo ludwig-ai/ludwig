@@ -15,6 +15,7 @@ from ludwig.schema.generation import LLMGenerationConfig, LLMGenerationConfigFie
 from ludwig.schema.hyperopt import HyperoptConfig, HyperoptField
 from ludwig.schema.model_types.base import ModelConfig, register_model_type
 from ludwig.schema.preprocessing import PreprocessingConfig, PreprocessingField
+from ludwig.schema.prompt import PromptConfig, PromptConfigField
 from ludwig.schema.trainer import LLMTrainerConfig, LLMTrainerDataclassField
 from ludwig.schema.utils import ludwig_dataclass
 
@@ -45,6 +46,8 @@ class LLMModelConfig(ModelConfig):
     preprocessing: PreprocessingConfig = PreprocessingField().get_default_field()
     defaults: Optional[LLMDefaultsConfig] = LLMDefaultsField().get_default_field()
     hyperopt: Optional[HyperoptConfig] = HyperoptField().get_default_field()
+
+    prompt: PromptConfig = PromptConfigField().get_default_field()
 
     # trainer: LLMTrainerConfig = LLMTrainerField().get_default_field()
     trainer: LLMTrainerConfig = LLMTrainerDataclassField(
