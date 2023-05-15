@@ -115,9 +115,6 @@ class TextFeatureMixin(BaseFeatureMixin):
 
         logger.info(f"max sequence length is {max_sequence_length} for feature '{column.name}'")
 
-        index_name = None
-        if preprocessing_parameters["prompt"]["retrieval"]["type"] is not None:
-            index_name = preprocessing_parameters["prompt"]["retrieval"]["index_name"]
         return {
             "idx2str": vocabulary.vocab,
             "str2idx": vocabulary.str2idx,
@@ -129,7 +126,6 @@ class TextFeatureMixin(BaseFeatureMixin):
             "pad_idx": vocabulary.pad_idx,
             "padding_symbol": vocabulary.padding_symbol,
             "unknown_symbol": vocabulary.unknown_symbol,
-            "index_name": index_name,
         }
 
     @staticmethod
@@ -234,8 +230,6 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         feature_config.encoder.str2freq = feature_metadata["str2freq"]
         feature_config.encoder.str2idf = feature_metadata["str2idf"]
         feature_config.encoder.skip = feature_metadata[PREPROCESSING].get("cache_encoder_embeddings", False)
-        if feature_config.preprocessing.prompt.retrieval is not None:
-            feature_config.preprocessing.prompt.retrieval.index_name = feature_metadata["index_name"]
 
     @staticmethod
     def get_schema_cls():
