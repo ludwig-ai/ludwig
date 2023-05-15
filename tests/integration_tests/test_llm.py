@@ -288,7 +288,10 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
     "backend",
     [
         pytest.param(LOCAL_BACKEND, id="local"),
-        pytest.param(RAY_BACKEND, id="ray"),
+        # TODO(Arnav): Re-enable once we can run tests on GPUs
+        # This is because fine-tuning requires Ray with the deepspeed strategy, and deepspeed
+        # only works with GPUs
+        # pytest.param(RAY_BACKEND, id="ray"),
     ],
 )
 @pytest.mark.parametrize(

@@ -526,12 +526,12 @@ def check_llm_finetuning_backend_config(config: "ModelConfig"):  # noqa: F821
     if config.trainer.type != "finetune":
         return
 
-    # The checks below only apply to Ray backend
-    if config.backend.type != "ray":
+    # Using local backend, so skip the checks below
+    if not hasattr(config.backend, "type"):
         return
 
     backend = config.backend
-    if backend.trainer.strategy != "deepspeed":
+    if not hasattr(backend.trainer, "strategy") or backend.trainer.strategy != "deepspeed":
         raise ConfigValidationError("LLM finetuning with Ray requires the DeepSpeed strategy.")
 
     # Deepspeed requires GPU
