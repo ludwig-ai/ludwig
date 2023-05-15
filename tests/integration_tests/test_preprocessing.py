@@ -820,7 +820,7 @@ def test_prompt_template(backend, tmpdir):
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        "prompt": {"task": task, "template": template}
+        "prompt": {"task": task, "template": template},
     }
 
     model = LudwigModel(config, backend=backend)
