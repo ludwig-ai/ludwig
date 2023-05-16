@@ -2,6 +2,7 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import SEMANTIC
 from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.metadata import PROMPT_METADATA
 from ludwig.schema.utils import ludwig_dataclass
 
 
@@ -36,23 +37,27 @@ class RetrievalConfig(schema_utils.BaseMarshmallowConfig):
             "samples are retrieved from an index of the training set and used to augment the input to the model "
             "in a few-shot learning setting."
         ),
+        parameter_metadata=PROMPT_METADATA["retrieval"]["type"],
     )
 
     index_name: str = schema_utils.String(
         default=None,
         allow_none=True,
         description="The name of the index to use for the prompt. Indices are stored in the ludwig cache by default.",
+        parameter_metadata=PROMPT_METADATA["retrieval"]["index_name"],
     )
 
     model_name: str = schema_utils.String(
         default=None,
         allow_none=True,
         description="The model used to generate the embeddings used to retrieve samples to inject in the prompt.",
+        parameter_metadata=PROMPT_METADATA["retrieval"]["model_name"],
     )
 
     k: int = schema_utils.NonNegativeInteger(
         default=0,
         description="The number of samples to retrieve.",
+        parameter_metadata=PROMPT_METADATA["retrieval"]["k"],
     )
 
 
@@ -76,6 +81,7 @@ class PromptConfig(schema_utils.BaseMarshmallowConfig):
         default=None,
         allow_none=True,
         description="The task to use for the prompt.",
+        parameter_metadata=PROMPT_METADATA["prompt"]["task"],
     )
 
     template: str = schema_utils.String(
@@ -86,6 +92,7 @@ class PromptConfig(schema_utils.BaseMarshmallowConfig):
             "variables. `context` is the placeholder for labeled samples, `sample_input` is the placeholder for a "
             "single, unlabeled sample, and `task` is the placeholder for the user-specified task description."
         ),
+        parameter_metadata=PROMPT_METADATA["prompt"]["template"],
     )
 
 

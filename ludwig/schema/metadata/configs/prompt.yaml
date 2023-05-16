@@ -1,0 +1,14 @@
+retrieval:
+  type:
+    expected_impact: 3
+  index_name:
+    expected_impact: 2
+  model_name:
+    expected_impact: 2
+  k:
+    expected_impact: 2
+prompt:
+  task:
+    expected_impact: 3
+  template:
+    expected_impact: 3
