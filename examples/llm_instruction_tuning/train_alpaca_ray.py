@@ -7,23 +7,24 @@ from ludwig.api import LudwigModel
 
 config = yaml.safe_load(
     """
+model_type: llm
+model_name: bigscience/bloomz-3b
+
+adapter:
+  type: lora
+
 input_features:
-  - name: review
+  - name: instruction
     type: text
 
-    encoder:
-      type: auto_transformer
-      pretrained_model_name_or_path: bigscience/bloom-3b
-      trainable: true
-      adapter: lora
-
 output_features:
-  - name: sentiment
-    type: category
+  - name: output
+    type: text
 
 trainer:
-  batch_size: 4
-  epochs: 3
+    type: finetune
+    batch_size: 4
+    epochs: 3
 
 backend:
   type: ray
@@ -48,9 +49,9 @@ model = LudwigModel(config=config, logging_level=logging.INFO)
     preprocessed_data,  # tuple Ludwig Dataset objects of pre-processed training data
     output_directory,  # location of training results stored on disk
 ) = model.train(
-    dataset="ludwig://imdb",
-    experiment_name="imdb_sentiment",
-    model_name="bloom3b",
+    dataset="ludwig://alpaca",
+    experiment_name="alpaca_instruct",
+    model_name="bloom560m",
 )
 
 # list contents of output directory

@@ -6,7 +6,7 @@ from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.sequence_encoders import SequenceEncoderConfig
 from ludwig.schema.encoders.text.hf_model_params import DebertaModelParams
-from ludwig.schema.encoders.text.peft import BaseTunerConfig, TunerDataclassField
+from ludwig.schema.encoders.text.peft import AdapterDataclassField, BaseAdapterConfig
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.metadata import ENCODER_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY, ParameterMetadata
@@ -61,7 +61,7 @@ class HFEncoderImplConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["HFEncoder"]["trainable"],
     )
 
-    tuner: Optional[BaseTunerConfig] = TunerDataclassField()
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
 
     pretrained_kwargs: dict = schema_utils.Dict(
         default=None,
@@ -140,7 +140,7 @@ class ALBERTConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["ALBERT"]["trainable"],
     )
 
-    tuner: Optional[BaseTunerConfig] = TunerDataclassField()
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
 
     reduce_output: str = schema_utils.String(
         default="cls_pooled",
@@ -341,7 +341,7 @@ class MT5Config(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["MT5"]["trainable"],
     )
 
-    tuner: Optional[BaseTunerConfig] = TunerDataclassField()
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
 
     reduce_output: str = schema_utils.String(
         default="sum",
@@ -539,7 +539,7 @@ class XLMRoBERTaConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["XLMRoBERTa"]["trainable"],
     )
 
-    tuner: Optional[BaseTunerConfig] = TunerDataclassField()
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
 
     vocab: list = schema_utils.List(
         default=None,
@@ -646,7 +646,7 @@ class BERTConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["BERT"]["trainable"],
     )
 
-    tuner: Optional[BaseTunerConfig] = TunerDataclassField()
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
 
     reduce_output: str = schema_utils.String(
         default="cls_pooled",
@@ -852,7 +852,7 @@ class XLMConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["XLM"]["trainable"],
     )
 
-    tuner: Optional[BaseTunerConfig] = TunerDataclassField()
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
 
     reduce_output: str = schema_utils.String(
         default="sum",
@@ -1109,7 +1109,7 @@ class GPTConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["GPT"]["trainable"],
     )
 
-    tuner: Optional[BaseTunerConfig] = TunerDataclassField()
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
 
     vocab: list = schema_utils.List(
         default=None,
@@ -1246,7 +1246,7 @@ class GPT2Config(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["GPT2"]["trainable"],
     )
 
-    tuner: Optional[BaseTunerConfig] = TunerDataclassField()
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
 
     vocab: list = schema_utils.List(
         default=None,
@@ -1409,7 +1409,7 @@ class RoBERTaConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["RoBERTa"]["trainable"],
     )
 
-    tuner: Optional[BaseTunerConfig] = TunerDataclassField()
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
 
     vocab: list = schema_utils.List(
         default=None,
@@ -1503,7 +1503,7 @@ class TransformerXLConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["TransformerXL"]["trainable"],
     )
 
-    tuner: Optional[BaseTunerConfig] = TunerDataclassField()
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
 
     vocab: list = schema_utils.List(
         default=None,
@@ -1734,7 +1734,7 @@ class XLNetConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["XLNet"]["trainable"],
     )
 
-    tuner: Optional[BaseTunerConfig] = TunerDataclassField()
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
 
     vocab: list = schema_utils.List(
         default=None,
@@ -1977,7 +1977,7 @@ class DistilBERTConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["DistilBERT"]["trainable"],
     )
 
-    tuner: Optional[BaseTunerConfig] = TunerDataclassField()
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
 
     vocab: list = schema_utils.List(
         default=None,
@@ -2136,7 +2136,7 @@ class CTRLConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["CTRL"]["trainable"],
     )
 
-    tuner: Optional[BaseTunerConfig] = TunerDataclassField()
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
 
     vocab: list = schema_utils.List(
         default=None,
@@ -2281,7 +2281,7 @@ class CamemBERTConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["CamemBERT"]["trainable"],
     )
 
-    tuner: Optional[BaseTunerConfig] = TunerDataclassField()
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
 
     vocab: list = schema_utils.List(
         default=None,
@@ -2456,7 +2456,7 @@ class T5Config(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["T5"]["trainable"],
     )
 
-    tuner: Optional[BaseTunerConfig] = TunerDataclassField()
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
 
     vocab: list = schema_utils.List(
         default=None,
@@ -2605,7 +2605,7 @@ class FlauBERTConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["FlauBERT"]["trainable"],
     )
 
-    tuner: Optional[BaseTunerConfig] = TunerDataclassField()
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
 
     vocab: list = schema_utils.List(
         default=None,
@@ -2848,7 +2848,7 @@ class ELECTRAConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["ELECTRA"]["trainable"],
     )
 
-    tuner: Optional[BaseTunerConfig] = TunerDataclassField()
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
 
     vocab: list = schema_utils.List(
         default=None,
@@ -3037,7 +3037,7 @@ class LongformerConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["Longformer"]["trainable"],
     )
 
-    tuner: Optional[BaseTunerConfig] = TunerDataclassField()
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
 
     vocab: list = schema_utils.List(
         default=None,
@@ -3118,7 +3118,7 @@ class AutoTransformerConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["AutoTransformer"]["trainable"],
     )
 
-    tuner: Optional[BaseTunerConfig] = TunerDataclassField()
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
 
     vocab: list = schema_utils.List(
         default=None,
