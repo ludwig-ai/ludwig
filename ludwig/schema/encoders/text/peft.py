@@ -410,7 +410,7 @@ def AdapterDataclassField(
                                 "description": "MISSING",
                             },
                         },
-                        "title": "tuner_object_options",
+                        "title": "adapter_object_options",
                         "allOf": get_adapter_conds(),
                         "required": ["type"],
                         "description": description,
