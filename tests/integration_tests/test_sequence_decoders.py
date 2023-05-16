@@ -23,7 +23,7 @@ from tests.integration_tests.utils import (
     train_with_backend,
 )
 
-pytestmark = pytest.mark.integration_tests_b
+pytestmark = pytest.mark.integration_tests_c
 
 
 @pytest.mark.parametrize("feature_type,feature_gen", [(TEXT, text_feature), (SEQUENCE, sequence_feature)])
