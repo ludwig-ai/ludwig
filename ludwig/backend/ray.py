@@ -997,7 +997,14 @@ class RayBackend(RemoteTrainingMixin, Backend):
         # Sample a filename to extract the filesystem info
         sample_fname = fnames[0]
         if isinstance(sample_fname, str):
-            import daft
+            try:
+                import daft
+            except ImportError:
+                raise ImportError(
+                    " daft is not installed. "
+                    "In order to download binary files (like images/audio/..) please run "
+                    "pip install ludwig[distributed]"
+                )
 
             # Set the runner for executing Daft dataframes to a Ray cluster
             # Prevent re-initialization errors if the runner is already set
