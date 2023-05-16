@@ -36,3 +36,7 @@ PREPROCESSING_METADATA = _load("preprocessing.yaml")
 TRAINER_METADATA = _load("trainer.yaml")
 OPTIMIZER_METADATA = _load("optimizers.yaml")
 LOSS_METADATA = _load("loss.yaml")
+
+# For LLMs
+ADAPTER_METADATA = _load("adapters.yaml")
+GENERATION_METADATA = _load("generation.yaml")

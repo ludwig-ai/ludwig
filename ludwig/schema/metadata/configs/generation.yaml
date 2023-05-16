@@ -1,0 +1,28 @@
+# batch_size:
+#   commonly_used: true
+#   default_value_reasoning: Not too big, not too small.
+#   description_implications:
+#       There's conflicting evidence about what batch size to
+#       use. Using a higher batch size will achieve the highest throughput and training
+#       efficiency. However, there's also evidence that depending on other hyperparameters,
+#       a smaller batch size may produce a higher quality model.
+#       Batch size and learning rate are strongly intertwined,
+#       so a commonly adopted strategy to set them is to find a the largest batch size
+#       that allows the training process not to run out of memory,
+#       and then find the best learning rate that makes the training converge
+#       with that batch size.
+#   expected_impact: 3
+#   related_parameters:
+#       - eval_batch_size
+#       - learning_rate
+#   suggested_values: auto
+#   suggested_values_reasoning:
+#       Auto batch size will determine the largest batch size that allows
+#       the training process not to run out of memory.
+#       Alternatively, try at least a few different batch sizes to get a
+#       sense of whether and how batch size affects model performance.
+#   ui_display_name: Batch Size
+max_length:
+  expected_impact: 2
+max_new_tokens:
+  expected_impact: 3
