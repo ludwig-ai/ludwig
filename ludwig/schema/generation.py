@@ -2,6 +2,7 @@ from typing import List, Optional, Tuple, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.metadata import GENERATION_METADATA
 
 
 @DeveloperAPI
@@ -20,12 +21,14 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
         allow_none=True,
         description="The maximum length the generated tokens can have. Corresponds to the length of the input prompt "
         "+ max_new_tokens. Its effect is overridden by max_new_tokens, if also set.",
+        parameter_metadata=GENERATION_METADATA["max_length"],
     )
 
     max_new_tokens: Optional[int] = schema_utils.PositiveInteger(
         default=20,
         allow_none=True,
         description="The maximum number of new tokens to generate, ignoring the number of tokens in the input prompt.",
+        parameter_metadata=GENERATION_METADATA["max_new_tokens"],
     )
 
     min_length: int = schema_utils.NonNegativeInteger(
@@ -33,12 +36,14 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
         allow_none=True,
         description="The minimum length of the sequence to be generated. Corresponds to the length of the "
         "input prompt + min_new_tokens. Its effect is overridden by min_new_tokens, if also set.",
+        parameter_metadata=GENERATION_METADATA["min_length"],
     )
 
     min_new_tokens: Optional[int] = schema_utils.NonNegativeInteger(
         default=None,
         allow_none=True,
         description="The minimum number of new tokens to generate, ignoring the number of tokens in the input prompt.",
+        parameter_metadata=GENERATION_METADATA["min_new_tokens"],
     )
 
     early_stopping: Optional[Union[bool, str]] = schema_utils.Boolean(
@@ -48,6 +53,7 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
         "heuristic is applied and the generation stops when is it very unlikely to find better candidates; `never`, "
         "where the beam search procedure only stops when there cannot be better candidates (canonical beam search "
         "algorithm)",
+        parameter_metadata=GENERATION_METADATA["early_stopping"],
     )
 
     max_time: Optional[float] = schema_utils.FloatRange(
@@ -57,6 +63,7 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
         allow_none=True,
         description="The maximum amount of time you allow the computation to run for in seconds. generation will still"
         " finish the current pass after allocated time has been passed. ",
+        parameter_metadata=GENERATION_METADATA["max_time"],
     )
 
     # Parameters that control the generation strategy used
@@ -64,12 +71,14 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
     do_sample: Optional[bool] = schema_utils.Boolean(
         default=False,
         description="Whether or not to use sampling ; use greedy decoding otherwise.",
+        parameter_metadata=GENERATION_METADATA["do_sample"],
     )
 
     num_beams: Optional[int] = schema_utils.PositiveInteger(
         default=1,
         allow_none=True,
         description="Number of beams for beam search. 1 means no beam search.",
+        parameter_metadata=GENERATION_METADATA["num_beams"],
     )
 
     num_beam_groups: Optional[int] = schema_utils.PositiveInteger(
@@ -77,6 +86,7 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
         allow_none=True,
         description="Number of groups to divide num_beams into in order to ensure diversity among different groups of "
         "beams. 1 means no group beam search.",
+        parameter_metadata=GENERATION_METADATA["num_beam_groups"],
     )
 
     penalty_alpha: Optional[float] = schema_utils.NonNegativeFloat(
@@ -84,12 +94,14 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
         allow_none=True,
         description="The values balance the model confidence and the degeneration penalty in contrastive "
         " search decoding.",
+        parameter_metadata=GENERATION_METADATA["penalty_alpha"],
     )
 
     use_cache: Optional[bool] = schema_utils.Boolean(
         default=True,
         description="Whether or not the model should use the past last key/values attentions (if applicable to the "
         "model) to speed up decoding.",
+        parameter_metadata=GENERATION_METADATA["use_cache"],
     )
 
     # Parameters for manipulation of the model output logits
@@ -98,12 +110,14 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
         default=1.0,
         allow_none=True,
         description="The value used to module the next token probabilities.",
+        parameter_metadata=GENERATION_METADATA["temperature"],
     )
 
     top_k: Optional[int] = schema_utils.PositiveInteger(
         default=50,
         allow_none=True,
         description="The number of highest probability vocabulary tokens to keep for top-k-filtering.",
+        parameter_metadata=GENERATION_METADATA["top_k"],
     )
 
     top_p: Optional[float] = schema_utils.FloatRange(
@@ -113,6 +127,7 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
         allow_none=True,
         description="If set to float < 1, only the most probable tokens with probabilities that add up to "
         "top_p or higher are kept for generation.",
+        parameter_metadata=GENERATION_METADATA["top_p"],
     )
 
     typical_p: Optional[float] = schema_utils.FloatRange(
@@ -124,6 +139,7 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
         "next is to the expected conditional probability of predicting a random token next, given the partial text "
         "already generated. If set to float < 1, the smallest set of the most locally typical tokens with "
         "probabilities that add up to typical_p or higher are kept for generation.",
+        parameter_metadata=GENERATION_METADATA["typical_p"],
     )
 
     epsilon_cutoff: Optional[float] = schema_utils.FloatRange(
@@ -134,6 +150,7 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
         description="If set to float strictly between 0 and 1, only tokens with a conditional probability greater "
         "than epsilon_cutoff will be sampled. In the paper, suggested values range from 3e-4 to 9e-4, depending on the"
         " size of the model.",
+        parameter_metadata=GENERATION_METADATA["epsilon_cutoff"],
     )
 
     eta_cutoff: Optional[float] = schema_utils.FloatRange(
@@ -146,6 +163,7 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
         "sqrt(eta_cutoff) * exp(-entropy(softmax(next_token_logits))). The latter term is intuitively the expected next"
         " token probability, scaled by sqrt(eta_cutoff). In the paper, suggested values range from 3e-4 to 2e-3, "
         "depending on the size of the model.",
+        parameter_metadata=GENERATION_METADATA["eta_cutoff"],
     )
 
     diversity_penalty: Optional[float] = schema_utils.FloatRange(
@@ -157,6 +175,7 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
         "diverse the text will be. The value should be between 0 and 1.0. If set to 0, no diversity is enforced."
         "This value is subtracted from a beam(s) score if it generates a token same as any beam from other group at a"
         "particular time. Note that diversity_penalty is only effective if group beam search is enabled.",
+        parameter_metadata=GENERATION_METADATA["diversity_penalty"],
     )
 
     repetition_penalty: Optional[float] = schema_utils.FloatRange(
@@ -165,6 +184,7 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
         max=1.0,
         allow_none=True,
         description="The parameter for repetition penalty. 1.0 means no penalty.",
+        parameter_metadata=GENERATION_METADATA["repetition_penalty"],
     )
 
     encoder_repetition_penalty: Optional[float] = schema_utils.FloatRange(
@@ -173,6 +193,7 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
         max=1.0,
         allow_none=True,
         description="An exponential penalty on sequences that are not in the original input. 1.0 means no penalty.",
+        parameter_metadata=GENERATION_METADATA["encoder_repetition_penalty"],
     )
 
     length_penalty: Optional[float] = schema_utils.FloatRange(
@@ -184,12 +205,14 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
         "exponent to the sequence length, which in turn is used to divide the score of the sequence. Since the score is"
         " the log likelihood of the sequence (i.e. negative), length_penalty > 0.0 promotes longer sequences, while "
         "length_penalty < 0.0 encourages shorter sequences.",
+        parameter_metadata=GENERATION_METADATA["length_penalty"],
     )
 
     no_repeat_ngram_size: Optional[int] = schema_utils.NonNegativeInteger(
         default=0,
         allow_none=True,
         description="If set to int > 0, all ngrams of that size can only occur once.",
+        parameter_metadata=GENERATION_METADATA["no_repeat_ngram_size"],
     )
 
     bad_words_ids: Optional[List[List[int]]] = schema_utils.List(
@@ -197,6 +220,7 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
         allow_none=True,
         description="List of token ids that are not allowed to be generated. In order to get the tokens of the words "
         "that should not appear in the generated text, use tokenizer(bad_word, add_prefix_space=True).input_ids.",
+        parameter_metadata=GENERATION_METADATA["bad_words_ids"],
     )
 
     force_words_ids: Optional[List[List[int]]] = schema_utils.List(
@@ -204,11 +228,13 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
         allow_none=True,
         description="List of token ids that are forced to be generated by the model. In order to get the tokens of the"
         " words that should appear in the generated text, use tokenizer(force_word, add_prefix_space=True).input_ids.",
+        parameter_metadata=GENERATION_METADATA["force_words_ids"],
     )
 
     renormalize_logits: Optional[bool] = schema_utils.Boolean(
         default=False,
         description="Whether to renormalize the logits after temperature and top_k/top_p filtering.",
+        parameter_metadata=GENERATION_METADATA["renormalize_logits"],
     )
 
     # TODO(This needs to be defined based on the Constraint class)
@@ -220,6 +246,7 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
         description="The id of the token to force as the first generated token after the decoder_start_token_id."
         "Useful for multilingual models like mBART where the first generated token needs to be the target language"
         "token.",
+        parameter_metadata=GENERATION_METADATA["forced_bos_token_id"],
     )
 
     forced_eos_token_id: Optional[Union[int, List[int]]] = schema_utils.Integer(
@@ -227,12 +254,14 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
         allow_none=True,
         description="The id of the token to force as the last generated token when max_length is reached. Optionally, "
         "use a list to set multiple end-of-sequence tokens.",
+        parameter_metadata=GENERATION_METADATA["forced_eos_token_id"],
     )
 
     remove_invalid_values: Optional[bool] = schema_utils.Boolean(
         default=False,
         description="Whether to remove possible nan and inf outputs of the model to prevent the generation method to "
         "crash. Note that using remove_invalid_values can slow down generation.",
+        parameter_metadata=GENERATION_METADATA["remove_invalid_values"],
     )
 
     exponential_decay_length_penalty: Optional[Tuple[int, float]] = schema_utils.FloatRange(
@@ -243,6 +272,7 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
         description="This Tuple adds an exponentially increasing length penalty, after a certain amount of tokens have "
         "been generated. The tuple shall consist of: (start_index, decay_factor) where start_index indicates where "
         "penalty starts and decay_factor represents the factor of exponential decay",
+        parameter_metadata=GENERATION_METADATA["exponential_decay_length"],
     )
 
     suppress_tokens: Optional[List[int]] = schema_utils.List(
@@ -251,6 +281,7 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
         allow_none=True,
         description="A list of tokens that will be suppressed at generation. The SupressTokens logit processor will set"
         " their log probs to -inf so that they are not sampled.",
+        parameter_metadata=GENERATION_METADATA["suppress_tokens"],
     )
 
     begin_suppress_tokens: Optional[List[int]] = schema_utils.List(
@@ -259,6 +290,7 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
         allow_none=True,
         description="A list of tokens that will be suppressed at the beginning of the generation. The "
         "SupressBeginTokens logit processor will set their log probs to -inf so that they are not sampled.",
+        parameter_metadata=GENERATION_METADATA["begin_suppress_tokens"],
     )
 
     forced_decoder_ids: Optional[List[List[int]]] = schema_utils.List(
@@ -266,6 +298,7 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
         allow_none=True,
         description="A list of forced decoder ids. The ForcedDecoderIds logit processor will set the log probs of all "
         "tokens that are not in the list to -inf so that they are not sampled.",
+        parameter_metadata=GENERATION_METADATA["forced_decoder_ids"],
     )
 
     # Special tokens that can be used at generation time
@@ -273,18 +306,21 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
         default=None,
         allow_none=True,
         description="The id of the padding token.",
+        parameter_metadata=GENERATION_METADATA["pad_token_id"],
     )
 
     bos_token_id: Optional[int] = schema_utils.Integer(
         default=None,
         allow_none=True,
         description="The id of the beginning of sentence token.",
+        parameter_metadata=GENERATION_METADATA["bos_token_id"],
     )
 
     eos_token_id: Optional[Union[int, List[int]]] = schema_utils.Integer(
         default=None,
         allow_none=True,
         description="The id of the end of sentence token.",
+        parameter_metadata=GENERATION_METADATA["eos_token_id"],
     )
 
 

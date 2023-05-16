@@ -22,7 +22,73 @@
 #       Alternatively, try at least a few different batch sizes to get a
 #       sense of whether and how batch size affects model performance.
 #   ui_display_name: Batch Size
-max_length:
-  expected_impact: 2
 max_new_tokens:
   expected_impact: 3
+temperature:
+  expected_impact: 3
+top_k:
+  expected_impact: 2
+top_p:
+  expected_impact: 2
+max_length:
+  expected_impact: 2
+min_length:
+  expected_impact: 2
+min_new_tokens:
+  expected_impact: 2
+do_sample:
+  expected_impact: 2
+num_beams:
+  expected_impact: 2
+use_cache:
+  expected_impact: 2
+early_stopping:
+  expected_impact: 1
+max_time:
+  expected_impact: 1
+num_beam_groups:
+  expected_impact: 1
+penalty_alpha:
+  expected_impact: 1
+typical_p:
+  expected_impact: 1
+epsilon_cutoff:
+  expected_impact: 1
+eta_cutoff:
+  expected_impact: 1
+diversity_penalty:
+  expected_impact: 1
+repetition_penalty:
+  expected_impact: 1
+encoder_repetition_penalty:
+  expected_impact: 1
+length_penalty:
+  expected_impact: 1
+no_repeat_ngram_size:
+  expected_impact: 1
+bad_words_ids:
+  expected_impact: 1
+force_words_ids:
+  expected_impact: 1
+renormalize_logits:
+  expected_impact: 1
+forced_bos_token_id:
+  expected_impact: 1
+forced_eos_token_id:
+  expected_impact: 1
+remove_invalid_values:
+  expected_impact: 1
+exponential_decay_length_penalty:
+  expected_impact: 1
+suppress_tokens:
+  expected_impact: 1
+begin_suppress_tokens:
+  expected_impact: 1
+forced_decoder_ids:
+  expected_impact: 1
+pad_token_id:
+  expected_impact: 1
+bos_token_id:
+  expected_impact: 1
+eos_token_id:
+  expected_impact: 1
