@@ -412,7 +412,6 @@ def AdapterDataclassField(
                         },
                         "title": "adapter_object_options",
                         "allOf": get_adapter_conds(),
-                        "additionalProperties": False,
                         "required": ["type"],
                         "description": description,
                     },
