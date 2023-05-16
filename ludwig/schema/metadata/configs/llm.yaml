@@ -62,11 +62,12 @@ prompt:
   task:
     ui_display_name: Task
     expected_impact: 3
+    component_type: textarea
   template:
     ui_display_name: Template
     expected_impact: 3
     component_type: textarea
-adatper:
+adapter:
   lora:
     r:
       ui_display_name: R
