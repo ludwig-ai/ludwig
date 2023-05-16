@@ -351,7 +351,7 @@ class Trainer(BaseTrainer):
         # all other losses
         for feature_name, loss in all_losses.items():
             loss_tag = f"{feature_name}/step_training_loss"
-            train_summary_writer.add_scalar(loss_tag, loss, global_step=step)
+            train_summary_writer.add_scalar(loss_tag, loss.detach().float(), global_step=step)
 
         if learning_rate:
             train_summary_writer.add_scalar("combined/step_learning_rate", learning_rate, global_step=step)
@@ -892,7 +892,7 @@ class Trainer(BaseTrainer):
             if self.is_coordinator() and not self.skip_save_log:
                 self.write_step_summary(
                     train_summary_writer=train_summary_writer,
-                    combined_loss=loss,
+                    combined_loss=loss.detach().float(),
                     all_losses=all_losses,
                     step=progress_tracker.steps,
                     learning_rate=progress_tracker.learning_rate,
