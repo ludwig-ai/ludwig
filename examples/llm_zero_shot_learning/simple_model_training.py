@@ -82,8 +82,6 @@ output_features:
             "positive":
                 type: contains
                 value: "positive"
-trainer:
-    type: zeroshot
     """
 )
 

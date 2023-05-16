@@ -59,8 +59,6 @@ config = yaml.safe_load(
             num_beams: 4
             max_new_tokens: 5
         model_name: facebook/opt-350m
-        trainer:
-            type: zeroshot
     """
 )
 

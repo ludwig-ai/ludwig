@@ -426,27 +426,27 @@ def test_deprecation_warning_raised_for_unknown_parameters():
 
 
 @pytest.mark.parametrize(
-    "encoder_config,expected_tuner",
+    "encoder_config,expected_adapter",
     [
         ({"type": "bert", "trainable": True}, None),
-        ({"type": "bert", "trainable": True, "tuner": None}, None),
-        ({"type": "bert", "trainable": True, "tuner": "lora"}, LoraConfig()),
-        ({"type": "bert", "trainable": True, "tuner": {"type": "lora"}}, LoraConfig()),
+        ({"type": "bert", "trainable": True, "adapter": None}, None),
+        ({"type": "bert", "trainable": True, "adapter": "lora"}, LoraConfig()),
+        ({"type": "bert", "trainable": True, "adapter": {"type": "lora"}}, LoraConfig()),
         (
             {
                 "type": "bert",
                 "trainable": True,
-                "tuner": {"type": "lora", "r": 16, "alpha": 32, "dropout": 0.1, "bias_type": "all"},
+                "adapter": {"type": "lora", "r": 16, "alpha": 32, "dropout": 0.1, "bias_type": "all"},
             },
             LoraConfig(r=16, alpha=32, dropout=0.1, bias_type="all"),
         ),
     ],
 )
-def test_text_encoder_tuner(encoder_config, expected_tuner):
+def test_text_encoder_adapter(encoder_config, expected_adapter):
     config = {
         "input_features": [text_feature(encoder=encoder_config)],
         "output_features": [category_feature(decoder={"type": "classifier", "vocab_size": 2}, reduce_input="sum")],
     }
     config_obj = ModelConfig.from_dict(config)
 
-    assert config_obj.input_features[0].encoder.tuner == expected_tuner
+    assert config_obj.input_features[0].encoder.adapter == expected_adapter

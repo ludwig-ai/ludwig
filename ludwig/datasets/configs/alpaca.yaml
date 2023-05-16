@@ -1,0 +1,16 @@
+version: 1.0
+name: alpaca
+download_urls: https://raw.githubusercontent.com/tatsu-lab/stanford_alpaca/main/alpaca_data.json
+dataset_filenames: alpaca_data.json
+description: |
+  Stanford Alpaca instruction-tuning dataset (https://github.com/tatsu-lab/stanford_alpaca) for LLM fine-tuning.
+columns:
+  - name: instruction
+    type: text
+  - name: input
+    type: text
+  - name: output
+    type: text
+output_features:
+  - name: output
+    type: text

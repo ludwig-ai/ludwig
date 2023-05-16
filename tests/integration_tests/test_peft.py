@@ -13,14 +13,14 @@ from tests.integration_tests.utils import binary_feature, generate_data, run_tes
         pytest.param("ray", id="ray", marks=pytest.mark.distributed),
     ],
 )
-def test_text_tuner_lora(tmpdir, backend, ray_cluster_2cpu):
+def test_text_adapter_lora(tmpdir, backend, ray_cluster_2cpu):
     input_features = [
         text_feature(
             encoder={
                 "type": "auto_transformer",
                 "pretrained_model_name_or_path": "hf-internal-testing/tiny-bert-for-token-classification",
                 "trainable": True,
-                "tuner": "lora",
+                "adapter": "lora",
             },
         ),
     ]
