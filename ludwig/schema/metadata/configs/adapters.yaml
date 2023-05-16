@@ -1,0 +1,59 @@
+base_prompt_learning:
+  num_virtual_tokens:
+    expected_impact: 1
+  token_dim:
+    expected_impact: 1
+  num_transformer_submodules:
+    expected_impact: 1
+  num_attention_heads:
+    expected_impact: 1
+  num_layers:
+    expected_impact: 1
+prompt_tuning:
+  type:
+    expected_impact: 1
+  prompt_tuning_init:
+    expected_impact: 1
+  prompt_tuning_init_text:
+    expected_impact: 1
+lora:
+  type:
+    expected_impact: 1
+  r:
+    expected_impact: 1
+  alpha:
+    expected_impact: 1
+  dropout:
+    expected_impact: 1
+  bias_type:
+    expected_impact: 1
+adalora:
+  type:
+    expected_impact: 1
+  target_r:
+    expected_impact: 1
+  init_r:
+    expected_impact: 1
+  tinit:
+    expected_impact: 1
+  tfinal:
+    expected_impact: 1
+  delta_t:
+    expected_impact: 1
+  beta1:
+    expected_impact: 1
+  beta2:
+    expected_impact: 1
+  orth_reg_weight:
+    expected_impact: 1
+  total_step:
+    expected_impact: 1
+  rank_pattern:
+    expected_impact: 1
+adaption_prompt:
+  type:
+    expected_impact: 1
+  adapter_len:
+    expected_impact: 1
+  adapter_layers:
+    expected_impact: 1

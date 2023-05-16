@@ -4,6 +4,7 @@ from typing import Optional, Type, TYPE_CHECKING
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.metadata import ADAPTER_METADATA
 from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
 from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils.registry import Registry
@@ -38,21 +39,27 @@ class BaseAdapterConfig(schema_utils.BaseMarshmallowConfig, ABC):
 @register_adapter(name="lora")
 @ludwig_dataclass
 class LoraConfig(BaseAdapterConfig):
-    type: str = schema_utils.ProtectedString("lora")
+    type: str = schema_utils.ProtectedString(
+        "lora",
+        parameter_metadata=ADAPTER_METADATA["lora"]["type"],
+    )
 
     r: int = schema_utils.PositiveInteger(
         default=8,
         description="Lora attention dimension.",
+        parameter_metadata=ADAPTER_METADATA["lora"]["r"],
     )
 
     alpha: int = schema_utils.PositiveInteger(
         default=16,
         description="The alpha parameter for Lora scaling.",
+        parameter_metadata=ADAPTER_METADATA["lora"]["alpha"],
     )
 
     dropout: float = schema_utils.NonNegativeFloat(
         default=0.05,
         description="The dropout probability for Lora layers.",
+        parameter_metadata=ADAPTER_METADATA["lora"]["dropout"],
     )
 
     # TODO(travis): figure out why calling this `bias` doesn't work
@@ -60,6 +67,7 @@ class LoraConfig(BaseAdapterConfig):
         options=["none", "all", "lora_only"],
         default="none",
         description="Bias type for Lora.",
+        parameter_metadata=ADAPTER_METADATA["lora"]["bias_type"],
     )
 
     def to_config(self, **kwargs) -> "PeftConfig":
@@ -85,30 +93,35 @@ class BasePromptLearningConfig(BaseAdapterConfig):
         default=8,
         description="Number of virtual tokens to add to the prompt. Virtual tokens are used to control the behavior of "
         " the model during inference. ",
+        parameter_metadata=ADAPTER_METADATA["base_prompt_learning"]["num_virtual_tokens"],
     )
 
     token_dim: Optional[int] = schema_utils.PositiveInteger(
         default=None,
         allow_none=True,
         description="The hidden embedding dimension of the base transformer model.",
+        parameter_metadata=ADAPTER_METADATA["base_prompt_learning"]["token_dim"],
     )
 
     num_transformer_submodules: Optional[int] = schema_utils.PositiveInteger(
         default=None,
         allow_none=True,
         description="The number of transformer submodules in the base transformer model.",
+        parameter_metadata=ADAPTER_METADATA["base_prompt_learning"]["num_transformer_submodules"],
     )
 
     num_attention_heads: Optional[int] = schema_utils.PositiveInteger(
         default=None,
         allow_none=True,
         description="The number of attention heads in the base transformer model.",
+        parameter_metadata=ADAPTER_METADATA["base_prompt_learning"]["num_attention_heads"],
     )
 
     num_layers: Optional[int] = schema_utils.PositiveInteger(
         default=None,
         allow_none=True,
         description="The number of layers in the base transformer model.",
+        parameter_metadata=ADAPTER_METADATA["base_prompt_learning"]["num_layers"],
     )
 
 
@@ -124,17 +137,22 @@ class PromptTuningConfig(BasePromptLearningConfig):
                 "Must provide `prompt_tuning_init_text` when `prompt_tuning_init` is set to `TEXT`."
             )
 
-    type: str = schema_utils.ProtectedString("prompt_tuning")
+    type: str = schema_utils.ProtectedString(
+        "prompt_tuning",
+        parameter_metadata=ADAPTER_METADATA["prompt_tuning"]["type"],
+    )
 
     prompt_tuning_init: str = schema_utils.StringOptions(
         ["RANDOM", "TEXT"],
         default="RANDOM",
         description="The type of initialization to use for the prompt embedding. ",
+        parameter_metadata=ADAPTER_METADATA["prompt_tuning"]["prompt_tuning_init"],
     )
 
     prompt_tuning_init_text: str = schema_utils.String(
         default="",
         description="The text to use to initialize the prompt embedding.",
+        parameter_metadata=ADAPTER_METADATA["prompt_tuning"]["prompt_tuning_init_text"],
     )
 
     def to_config(self, **kwargs) -> "PeftConfig":
@@ -242,31 +260,39 @@ class PromptTuningConfig(BasePromptLearningConfig):
 class AdaloraConfig(LoraConfig):
     """Adapted from https://github.com/huggingface/peft/blob/main/src/peft/tuners/adalora.py."""
 
-    type: str = schema_utils.ProtectedString("adalora")
+    type: str = schema_utils.ProtectedString(
+        "adalora",
+        parameter_metadata=ADAPTER_METADATA["adalora"]["type"],
+    )
 
     target_r: int = schema_utils.PositiveInteger(
         default=8,
         description="Target Lora Matrix Dimension. The target average rank of incremental matrix.",
+        parameter_metadata=ADAPTER_METADATA["adalora"]["target_r"],
     )
 
     init_r: int = schema_utils.PositiveInteger(
         default=12,
         description="Initial Lora Matrix Dimension. The initial rank for each incremental matrix.",
+        parameter_metadata=ADAPTER_METADATA["adalora"]["init_r"],
     )
 
     tinit: int = schema_utils.NonNegativeInteger(
         default=0,
         description="The steps of initial fine-tuning warmup.",
+        parameter_metadata=ADAPTER_METADATA["adalora"]["tinit"],
     )
 
     tfinal: int = schema_utils.NonNegativeInteger(
         default=0,
         description="The steps of final fine-tuning warmup.",
+        parameter_metadata=ADAPTER_METADATA["adalora"]["tfinal"],
     )
 
     delta_t: int = schema_utils.NonNegativeInteger(
         default=1,
         description="The time internval between two budget allocations. The step interval of rank allocation.",
+        parameter_metadata=ADAPTER_METADATA["adalora"]["delta_t"],
     )
 
     beta1: float = schema_utils.FloatRange(
@@ -274,6 +300,7 @@ class AdaloraConfig(LoraConfig):
         min=0.0,
         max=1.0,
         description="The hyperparameter of EMA for sensitivity smoothing.",
+        parameter_metadata=ADAPTER_METADATA["adalora"]["beta1"],
     )
 
     beta2: float = schema_utils.FloatRange(
@@ -281,6 +308,7 @@ class AdaloraConfig(LoraConfig):
         min=0.0,
         max=1.0,
         description=" The hyperparameter of EMA for undertainty quantification.",
+        parameter_metadata=ADAPTER_METADATA["adalora"]["beta2"],
     )
 
     orth_reg_weight: float = schema_utils.FloatRange(
@@ -288,18 +316,21 @@ class AdaloraConfig(LoraConfig):
         min=0.0,
         max=1.0,
         description="The coefficient of orthogonality regularization.",
+        parameter_metadata=ADAPTER_METADATA["adalora"]["orth_reg_weight"],
     )
 
     total_step: Optional[int] = schema_utils.PositiveInteger(
         default=None,
         allow_none=True,
         description="The total training steps that should be specified before training.",
+        parameter_metadata=ADAPTER_METADATA["adalora"]["total_step"],
     )
 
     rank_pattern: Optional[dict] = schema_utils.Dict(
         default=None,
         allow_none=True,
         description="The allocated rank for each weight matrix by RankAllocator.",
+        parameter_metadata=ADAPTER_METADATA["adalora"]["rank_pattern"],
     )
 
     def to_config(self, **kwargs) -> "PeftConfig":
@@ -342,17 +373,22 @@ class AdaptionPromptConfig(BaseAdapterConfig):
                 "type is `adaption_prompt`. This is the number of adapter layers to insert."
             )
 
-    type: str = schema_utils.ProtectedString("adaption_prompt")
+    type: str = schema_utils.ProtectedString(
+        "adaption_prompt",
+        parameter_metadata=ADAPTER_METADATA["adaption_prompt"]["type"],
+    )
 
     adapter_len: int = schema_utils.PositiveInteger(
         default=4,
         description="Number of adapter tokens to insert.",
+        parameter_metadata=ADAPTER_METADATA["adaption_prompt"]["adapter_len"],
     )
 
     adapter_layers: int = schema_utils.PositiveInteger(
         default=1,
         allow_none=False,
         description="Number of adapter layers to insert (from the top).",
+        parameter_metadata=ADAPTER_METADATA["adaption_prompt"]["adapter_layers"],
     )
 
     def to_config(self, task_type: str, **kwargs) -> "PeftConfig":
