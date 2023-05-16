@@ -65,3 +65,33 @@ prompt:
   template:
     ui_display_name: Template
     expected_impact: 3
+    component_type: textarea
+adatper:
+  lora:
+    r:
+      ui_display_name: R
+      expected_impact: 2
+    alpha:
+      ui_display_name: Alpha
+      expected_impact: 2
+    dropout:
+      ui_display_name: Dropout
+      expected_impact: 2
+  prompt_learning:
+    num_virtual_tokens:
+      ui_display_name: Num Virtual Tokens
+      expected_impact: 2
+  prompt_tuning:
+    prompt_tuning_init:
+      ui_display_name: Prompt Tuning Init
+      expected_impact: 2
+    prompt_tuning_init_text:
+      ui_display_name: Prompt Tuning Init Text
+      expected_impact: 2
+  adaption_prompt:
+    adapter_len:
+      ui_display_name: Adapter Length
+      expected_impact: 3
+    adapter_layers:
+      ui_display_name: Adapter Layers
+      expected_impact: 3

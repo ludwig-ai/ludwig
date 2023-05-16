@@ -4,6 +4,7 @@ from typing import Optional, Type, TYPE_CHECKING
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.metadata import LLM_METADATA
 from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
 from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils.registry import Registry
@@ -43,16 +44,19 @@ class LoraConfig(BaseAdapterConfig):
     r: int = schema_utils.PositiveInteger(
         default=8,
         description="Lora attention dimension.",
+        parameter_metadata=LLM_METADATA["adapter"]["lora"]["r"],
     )
 
     alpha: int = schema_utils.PositiveInteger(
         default=16,
         description="The alpha parameter for Lora scaling.",
+        parameter_metadata=LLM_METADATA["adapter"]["lora"]["alpha"],
     )
 
     dropout: float = schema_utils.NonNegativeFloat(
         default=0.05,
         description="The dropout probability for Lora layers.",
+        parameter_metadata=LLM_METADATA["adapter"]["lora"]["dropout"],
     )
 
     # TODO(travis): figure out why calling this `bias` doesn't work
@@ -85,6 +89,7 @@ class BasePromptLearningConfig(BaseAdapterConfig):
         default=8,
         description="Number of virtual tokens to add to the prompt. Virtual tokens are used to control the behavior of "
         " the model during inference. ",
+        parameter_metadata=LLM_METADATA["adapter"]["prompt_learning"]["num_virtual_tokens"],
     )
 
     token_dim: Optional[int] = schema_utils.PositiveInteger(
@@ -130,11 +135,13 @@ class PromptTuningConfig(BasePromptLearningConfig):
         ["RANDOM", "TEXT"],
         default="RANDOM",
         description="The type of initialization to use for the prompt embedding. ",
+        parameter_metadata=LLM_METADATA["adapter"]["prompt_tuning"]["prompt_tuning_init"],
     )
 
     prompt_tuning_init_text: str = schema_utils.String(
         default="",
         description="The text to use to initialize the prompt embedding.",
+        parameter_metadata=LLM_METADATA["adapter"]["prompt_tuning"]["prompt_tuning_init_text"],
     )
 
     def to_config(self, **kwargs) -> "PeftConfig":
@@ -347,12 +354,14 @@ class AdaptionPromptConfig(BaseAdapterConfig):
     adapter_len: int = schema_utils.PositiveInteger(
         default=4,
         description="Number of adapter tokens to insert.",
+        parameter_metadata=LLM_METADATA["adapter"]["adaption_prompt"]["adapter_len"],
     )
 
     adapter_layers: int = schema_utils.PositiveInteger(
         default=1,
         allow_none=False,
         description="Number of adapter layers to insert (from the top).",
+        parameter_metadata=LLM_METADATA["adapter"]["adaption_prompt"]["adapter_layers"],
     )
 
     def to_config(self, task_type: str, **kwargs) -> "PeftConfig":
