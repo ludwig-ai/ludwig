@@ -89,7 +89,6 @@ class DeepSpeedStrategy(DDPStrategy):
         }
 
         # DeepSpeed doesn't like passing these params as None values
-        # TODO(travis): bfloat16, which requires fixing numpy conversion on cpu
         if self.fp16 is not None:
             ds_config["fp16"] = self.fp16
         if self.bf16 is not None:
