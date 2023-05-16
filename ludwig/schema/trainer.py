@@ -714,37 +714,38 @@ class LLMTrainerConfig(BaseTrainerConfig):
     batch_size: int = schema_utils.PositiveInteger(
         default=2,
         description="Batch size used for training in the LLM trainer.",
-    )
-
-    base_learning_rate: float = schema_utils.NonNegativeFloat(
-        default=0.0,
-        description="Base learning rate used for training in the LLM trainer.",
+        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["batch_size"],
     )
 
     should_shuffle: bool = schema_utils.Boolean(
         default=True,
         description="Whether to shuffle the training data in the LLM trainer.",
+        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["should_shuffle"],
     )
 
     epochs: int = schema_utils.PositiveInteger(
         default=1,
         description="Number of epochs to train in the LLM trainer.",
+        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["epochs"],
     )
 
     train_steps: int = schema_utils.PositiveInteger(
         default=None,
         allow_none=True,
         description="Number of training steps to train in the LLM trainer.",
+        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["train_steps"],
     )
 
     steps_per_checkpoint: int = schema_utils.NonNegativeInteger(
         default=0,
         description="Number of steps per checkpoint in the LLM trainer.",
+        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["steps_per_checkpoint"],
     )
 
     checkpoints_per_epoch: int = schema_utils.NonNegativeInteger(
         default=0,
         description="Number of checkpoints per epoch in the LLM trainer.",
+        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["checkpoints_per_epoch"],
     )
 
     early_stop: int = schema_utils.IntegerRange(
@@ -754,16 +755,25 @@ class LLMTrainerConfig(BaseTrainerConfig):
             "Number of consecutive rounds of evaluation without any improvement on the `validation_metric` that "
             "triggers training to stop. Can be set to -1, which disables early stopping entirely."
         ),
+        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["early_stop"],
     )
 
     eval_batch_size: int = schema_utils.PositiveInteger(
         default=1,
         description="Batch size used for evaluation in the LLM trainer.",
+        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["eval_batch_size"],
     )
 
     evaluate_training_set: bool = schema_utils.Boolean(
         default=False,
         description="Whether to evaluate the training set in the LLM trainer. Note: this operation may be slow.",
+        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["evaluate_training_set"],
+    )
+
+    base_learning_rate: float = schema_utils.NonNegativeFloat(
+        default=0.0,
+        description="Base learning rate used for training in the LLM trainer.",
+        parameter_metadata=TRAINER_METADATA[MODEL_LLM]["base_learning_rate"],
     )
 
 
@@ -774,7 +784,11 @@ class NoneTrainerConfig(LLMTrainerConfig):
     """Dataclass that configures most of the hyperparameters used for zero-shot / few-shot LLM model training."""
 
     # Required for lookup during trainer initialization
-    type: str = schema_utils.ProtectedString("none")
+    type: str = schema_utils.ProtectedString(
+        "none",
+        description="The type of trainer used to train the model. ",
+        parameter_metadata=TRAINER_METADATA[MODEL_LLM]["type"],
+    )
 
 
 @DeveloperAPI
@@ -784,11 +798,16 @@ class FineTuneTrainerConfig(ECDTrainerConfig):
     """Dataclass that configures most of the hyperparameters used for fine-tuning LLM model training."""
 
     # Required for lookup during trainer initialization
-    type: str = schema_utils.ProtectedString("finetune")
+    type: str = schema_utils.ProtectedString(
+        "finetune",
+        description="The type of trainer used to train the model. ",
+        parameter_metadata=TRAINER_METADATA[MODEL_LLM]["type"],
+    )
 
     base_learning_rate: float = schema_utils.NonNegativeFloat(
         default=0.0,
         description="Base learning rate used for training in the LLM trainer.",
+        parameter_metadata=TRAINER_METADATA[MODEL_LLM]["base_learning_rate"],
     )
 
 

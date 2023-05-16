@@ -794,3 +794,16 @@ gbm:
         expected_impact: 1
     feature_pre_filter:
         expected_impact: 1
+llm:
+    type:
+        commonly_used: true
+        default_value_reasoning: You usually want to perform zero shot learning or few shot learning.
+        suggested_values: none or `finetune`
+        suggested_values_reasoning:
+            If you want to perform zero shot learning or few shot learning, you should set this to `none`.
+            If you want to perform fine-tuning, you should set this to `finetune`.
+        ui_display_name: Trainer Type
+        expected_impact: 3
+    base_learning_rate:
+        commonly_used: false
+        expected_impact: 1
