@@ -1747,15 +1747,11 @@ def handle_features_with_prompt_config(
         df_engine (DataFrameEngine): Dataframe engine.
         split_col (Optional[Series], optional): Split column. Defaults to None.
     """
-    print("!!! HERE", config)
-
     input_features, output_features = get_input_and_output_features(features)
     for input_feature_config in input_features:
         prompt_config = _get_prompt_config(config, input_feature_config)
         if prompt_config is None:
             continue
-
-        print("Handling prompt configuration: ", prompt_config)
 
         input_col_name = input_feature_config[COLUMN]
         if prompt_config["retrieval"]["type"] is not None:
@@ -1797,7 +1793,7 @@ def _get_prompt_config(config: ModelConfigDict, input_feature_config: Dict) -> D
         return config["prompt"]
 
     preprocessing = input_feature_config["preprocessing"]
-    if "prompt" in preprocessing and preprocessing["task"] is not None:
+    if "prompt" in preprocessing and preprocessing["prompt"]["task"] is not None:
         return preprocessing["prompt"]
 
     return None

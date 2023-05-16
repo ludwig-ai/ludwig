@@ -813,14 +813,13 @@ def test_prompt_template(backend, tmpdir):
 
     task = "predict the output feature. Return only values in {true, false}"
 
-    input_features = [text_feature()]
+    input_features = [text_feature(preprocessing={"prompt": {"task": task, "template": template}})]
     output_features = [category_feature()]
     data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=25)
 
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        "prompt": {"task": task, "template": template}
     }
 
     model = LudwigModel(config, backend=backend)
@@ -842,7 +841,6 @@ def test_prompt_template(backend, tmpdir):
     for raw_text, encoded in zip(raw_text_values, encoded_values):
         raw_text = raw_text.lower()
         decoded = " ".join(idx2str[t] for t in encoded)
-        print(decoded)
         assert decoded.startswith(
             "<SOS> instruction : predict the output feature . return only values in { true , false } # # # examples : "
             "# # # input : foo bar output : true # # # input : baz quc output : false # # # input : "
@@ -874,7 +872,6 @@ def test_handle_features_with_few_shot_prompt_config(backend, retrieval_kwargs, 
     input_features = [
         text_feature(
             encoder={"type": "passthrough"},
-            preprocessing={"prompt": prompt_config},
         )
     ]
     output_features = [
@@ -886,6 +883,12 @@ def test_handle_features_with_few_shot_prompt_config(backend, retrieval_kwargs, 
     input_feature_name = input_features[0][NAME]
     output_feature_name = output_features[0][NAME]
 
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "prompt": prompt_config,
+    }
+
     df = generate_data_as_dataframe(input_features, output_features, 10, with_split=True)  # retrieval needs fixed split
     if backend == "ray":
         import dask.dataframe as dd
@@ -895,9 +898,6 @@ def test_handle_features_with_few_shot_prompt_config(backend, retrieval_kwargs, 
     split_col = df["split"]
     dataset_cols = {k: df[k] for k in df.columns}
     feature_configs = input_features + output_features
-    feature_names_to_preprocessing_parameters = {
-        feature_config[NAME]: feature_config.get("preprocessing", {}) for feature_config in feature_configs
-    }
 
     if backend == "local":
         context = mock.patch(
@@ -911,8 +911,8 @@ def test_handle_features_with_few_shot_prompt_config(backend, retrieval_kwargs, 
     with context:
         backend = initialize_backend(backend)
         handle_features_with_prompt_config(
+            config,
             dataset_cols,
-            feature_names_to_preprocessing_parameters,
             feature_configs,
             backend=backend,
             split_col=split_col,

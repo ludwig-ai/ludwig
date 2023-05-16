@@ -14,6 +14,7 @@ from ludwig.constants import (
     MODEL_TYPE,
     OUTPUT_FEATURES,
     PREPROCESSING,
+    PROMPT,
     TRAINER,
     TYPE,
 )
@@ -137,7 +138,6 @@ def test_llm_zero_shot_classification(tmpdir, backend, ray_cluster_4cpu):
         {
             "name": "review",
             "type": "text",
-            "preprocessing": {"prompt": {"task": "This is a review of a restaurant. Classify the sentiment."}},
         }
     ]
     output_features = [
@@ -165,6 +165,7 @@ def test_llm_zero_shot_classification(tmpdir, backend, ray_cluster_4cpu):
         MODEL_TYPE: MODEL_LLM,
         MODEL_NAME: TEST_MODEL_NAME,
         GENERATION: get_generation_config(),
+        PROMPT: {"task": "This is a review of a restaurant. Classify the sentiment."},
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
         TRAINER: {
@@ -215,15 +216,6 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
             output_feature=False,
             name="body",
             encoder={"type": "passthrough"},  # need to use the default encoder for LLMTextInputFeatureConfig
-            preprocessing={
-                "prompt": {
-                    "retrieval": {"type": "random", "k": 3},
-                    "task": (
-                        "Given the sample input, complete this sentence by replacing XXXX: The review rating is XXXX. "
-                        "Choose one value in this list: [1, 2, 3, 4, 5]."
-                    ),
-                }
-            },
         )
     ]
     output_features = [
@@ -250,6 +242,13 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
         MODEL_TYPE: MODEL_LLM,
         MODEL_NAME: TEST_MODEL_NAME,
         GENERATION: get_generation_config(),
+        PROMPT: {
+            "retrieval": {"type": "random", "k": 3},
+            "task": (
+                "Given the sample input, complete this sentence by replacing XXXX: The review rating is XXXX. "
+                "Choose one value in this list: [1, 2, 3, 4, 5]."
+            ),
+        },
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
         PREPROCESSING: {
