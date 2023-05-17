@@ -108,6 +108,8 @@ class LLM(BaseModel):
             peft_config = self.config_obj.adapter.to_config(
                 task_type="CAUSAL_LM", tokenizer_name_or_path=self.model_name
             )
+            # Incase inference_mode is True, set it to False
+            peft_config.inference_mode = False
             self.model = get_peft_model(self.model, peft_config)
 
             logger.info("==================================================")
@@ -412,6 +414,7 @@ class LLM(BaseModel):
 
             # Do this since we want to train the PEFT adapter and model. During inference,
             # we will explicitly override this to True.
+            # Note: default is the name of the adapter (always the case)
             self.model.peft_config["default"].inference_mode = False
 
     def get_args(self):
