@@ -893,9 +893,7 @@ class LudwigModel:
             callbacks=self.callbacks + (callbacks or []),
         )
 
-        # HACK(Arnav): To use the correct code path for inferennce for LLMs, we need to set the
-        # model's config_object adapter to None. This works because the model is already loaded with the
-        # adapter at this point and it overrides the finetuning related forwad pass.
+        # HACK(Arnav): Set the model to inference mode if we are using an adapter
         if self.config_obj.model_type == MODEL_LLM and self.model.config_obj.adapter:
             self.model.model.peft_config["default"].inference_mode = True
 
@@ -932,8 +930,8 @@ class LudwigModel:
 
                     logger.info(f"Saved to: {output_directory}")
 
-            # HACK(Arnav): Reset the model's adapter in the config object to the original value after inference is done.
-            if self.config_obj.model_type == MODEL_LLM:
+            # HACK(Arnav): Change back to training mode if we are using an adapter
+            if self.config_obj.model_type == MODEL_LLM and self.model.config_obj.adapter:
                 self.model.model.peft_config["default"].inference_mode = False
 
             return converted_postproc_predictions, output_directory
