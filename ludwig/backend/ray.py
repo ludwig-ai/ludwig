@@ -74,8 +74,6 @@ from ludwig.trainers.registry import (
 from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer, Trainer
 from ludwig.trainers.trainer_llm import RemoteLLMFineTuneTrainer, RemoteLLMTrainer
 from ludwig.types import (
-    DataFrame,
-    Series,
     HyperoptConfigDict,
     ModelConfigDict,
     TrainerConfigDict,
@@ -86,6 +84,7 @@ from ludwig.utils.dataframe_utils import is_dask_series_or_df, set_index_name
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.system_utils import Resources
 from ludwig.utils.torch_utils import get_torch_device, initialize_pytorch
+from ludwig.utils.types import DataFrame, Series
 
 _ray220 = version.parse(ray.__version__) >= version.parse("2.2.0")
 _ray230 = version.parse(ray.__version__) >= version.parse("2.3.0")
@@ -1021,7 +1020,12 @@ class RayBackend(RemoteTrainingMixin, Backend):
             is_dask_df = is_dask_series_or_df(df, self)
 
             with self.storage.cache.use_credentials():
-                df = daft.from_dask_dataframe(df).select("idx", column.name)
+                if is_dask_df:
+                    df = daft.from_dask_dataframe(df)
+                else:
+                    df = daft.from_pandas(df)
+
+                df = df.select("idx", column.name)
 
                 # Download binary files in parallel
                 df = df.with_column(
