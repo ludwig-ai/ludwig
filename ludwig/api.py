@@ -894,8 +894,13 @@ class LudwigModel:
         )
 
         # HACK(Arnav): Set the model to inference mode if we are using an adapter
+        # We also override the adapter temporarily to force the LLM forward pass to go through
+        # generation as opposed to fine-tuning.
+        _adapter = None
         if self.config_obj.model_type == MODEL_LLM and self.model.config_obj.adapter:
             self.model.model.peft_config["default"].inference_mode = True
+            _adapter = self.model.config_obj.adapter
+            self.model.config_obj.adapter = None
 
         logger.debug("Predicting")
         with self.backend.create_predictor(self.model, batch_size=batch_size) as predictor:
@@ -931,8 +936,10 @@ class LudwigModel:
                     logger.info(f"Saved to: {output_directory}")
 
             # HACK(Arnav): Change back to training mode if we are using an adapter
-            if self.config_obj.model_type == MODEL_LLM and self.model.config_obj.adapter:
+            # Also set the adapter back in the config object since we're done with inference
+            if self.config_obj.model_type == MODEL_LLM and _adapter:
                 self.model.model.peft_config["default"].inference_mode = False
+                self.model.config_obj.adapter = _adapter
 
             return converted_postproc_predictions, output_directory
 
