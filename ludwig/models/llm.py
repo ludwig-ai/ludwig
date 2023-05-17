@@ -46,12 +46,16 @@ class LLM(BaseModel):
 
         logger.info("Loading large language model...")
         self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.model_name)
+        ####SXK should we make this configurable ######
         self.curr_device = torch.device("cpu")  # model initially loaded onto cpu
         logger.info("Done.")
 
+        ####SXK why do we need this adapter and PEFT model, sorry about my ignorance here, how many types
+        ####of adapters can there be
         self.initialize_adapter()
 
         # Determines the maximum length of the context (input + output tokens)
+        ####SXK Is there any validation needed to be done here
         if hasattr(self.model.config, "max_sequence_length"):
             self.context_len = self.model.config.max_sequence_length
         elif hasattr(self.model.config, "max_position_embeddings"):
@@ -67,6 +71,7 @@ class LLM(BaseModel):
         # Used only for its metadata about the vocabulary
         self.tokenizer = AutoTokenizer.from_pretrained(self.config_obj.model_name, use_fast=False)
 
+        ####SXK what is the significance of the generation config, again just trying to understand high level context
         self.generation = GenerationConfig(**self.config_obj.generation.to_dict())
 
         # ================ Inputs ================
@@ -95,6 +100,7 @@ class LLM(BaseModel):
         _, self.output_feature_decoder = self.output_features.items()[0]
 
         # ================ Combined loss metric ================
+        ####SXK should we have a class to capture all the loss metrics and output to a dashboard during a run
         self.eval_loss_metric = torchmetrics.MeanMetric()
         self.eval_additional_losses_metrics = torchmetrics.MeanMetric()
 
@@ -102,6 +108,8 @@ class LLM(BaseModel):
 
     def initialize_adapter(self):
         """If an adapter config is provided, we want to wrap the model with a PEFT model for fine-tuning."""
+        ###SXK do we think we can extend the peft module but taylor it more towards ludwig
+        ###what would that look like or will this work out of the box
         if self.config_obj.adapter:
             from peft import get_peft_model
 
@@ -178,6 +186,9 @@ class LLM(BaseModel):
         """Returns the input ids for the text feature input."""
         return inputs[self.config_obj.input_features[0].name].type(torch.int32)
 
+    ###SXK just a thought here, based on the current use cases does it make sense to have a BaseLLM
+    ###class that we can build custom LLM classes, maybe the base LLM class contains a generic implementation
+    ###of the forward method, lets discuss this some more if it makes sense
     def forward(
         self,
         inputs: Union[
@@ -237,6 +248,7 @@ class LLM(BaseModel):
 
             return outputs
 
+        ####SXK why dont we need the calculation of gradients here
         with torch.no_grad():
             input_lengths = []
             sequences_list = []
@@ -317,6 +329,7 @@ class LLM(BaseModel):
         of_train_losses = {}
         for of_name, of_obj in self.output_features.items():
             _targets, _predictions = targets, predictions
+            ###SXK how can we extend this to other OutputFeature types
             if isinstance(of_obj, TextOutputFeature):
                 # Align the target length with the predictions length to enable text metric evaluation.
                 _predictions = {of_name: _predictions}
@@ -407,6 +420,8 @@ class LLM(BaseModel):
             weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
             config = PeftConfig.from_pretrained(weights_save_path)
             config.inference_mode = False
+            ###SXK I noticed we are tightly coupling to hugging face in places, I wonder
+            ###if we want to make this part configurable as well
             self.model = AutoModelForCausalLM.from_pretrained(config.base_model_name_or_path)
             self.model = PeftModel.from_pretrained(self.model, weights_save_path)
 

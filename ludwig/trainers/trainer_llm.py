@@ -28,6 +28,7 @@ from ludwig.utils.trainer_utils import append_metrics, get_new_progress_tracker,
 logger = logging.getLogger(__name__)
 
 
+###SXK do we want to have a spark trainer as well
 @register_llm_trainer("none")
 @register_llm_ray_trainer("none")
 class NoneTrainer(BaseTrainer):
@@ -373,6 +374,8 @@ class NoneTrainer(BaseTrainer):
         return False
 
 
+###SXK I'd like to help out in adding more use cases around this fine tuning workflow, lets talk more about this
+###as well,one thing I was wondering about is how tightly coupled are we to the trainer and the corresponding backend
 @register_llm_trainer("finetune")
 class FineTuneTrainer(Trainer):
     @staticmethod

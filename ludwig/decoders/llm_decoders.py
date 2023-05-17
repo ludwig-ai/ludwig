@@ -125,6 +125,9 @@ class TextParserDecoder(Decoder):
         }
 
 
+
+###SXK where is this being used, for the decoder how does one build a custom one, one idea here might
+###be for the user to get a list of already available decoders before they start to build one
 @DeveloperAPI
 @register_decoder("category_parser", [CATEGORY])
 class CategoryParserDecoder(Decoder):
