@@ -100,7 +100,7 @@ class ParameterMetadata:
     """The compute tier defines the type of compute resources that a model typically needs to get good
     throughput."""
 
-    ui_component_type: Optional[str] = ""
+    ui_component_type: Optional[str] = None
     """Override for HTML component type that should be used to render this field in UIs."""
 
     @memoized_method(maxsize=1)
