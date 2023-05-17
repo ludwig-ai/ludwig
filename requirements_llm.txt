@@ -1,6 +1,7 @@
 sentence-transformers
 faiss-cpu
 
+tokenizers>=0.13.3
 accelerate
 loralib
 bitsandbytes
