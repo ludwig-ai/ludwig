@@ -1021,7 +1021,12 @@ class RayBackend(RemoteTrainingMixin, Backend):
             is_dask_df = is_dask_series_or_df(df, self)
 
             with self.storage.cache.use_credentials():
-                df = daft.from_dask_dataframe(df).select("idx", column.name)
+                if is_dask_df:
+                    df = daft.from_dask_dataframe(df)
+                else:
+                    df = daft.from_pandas(df)
+
+                df = df.select("idx", column.name)
 
                 # Download binary files in parallel
                 df = df.with_column(
