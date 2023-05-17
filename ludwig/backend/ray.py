@@ -57,12 +57,7 @@ from ludwig.trainers.registry import (
 )
 from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer, Trainer
 from ludwig.trainers.trainer_llm import RemoteLLMFineTuneTrainer, RemoteLLMTrainer
-from ludwig.types import (
-    HyperoptConfigDict,
-    ModelConfigDict,
-    TrainerConfigDict,
-    TrainingSetMetadataDict,
-)
+from ludwig.types import HyperoptConfigDict, ModelConfigDict, TrainerConfigDict, TrainingSetMetadataDict
 from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
 from ludwig.utils.dataframe_utils import is_dask_series_or_df, set_index_name
 from ludwig.utils.misc_utils import get_from_registry
