@@ -49,6 +49,7 @@ from ludwig.constants import (
     HYPEROPT_WARNING,
     MIN_DATASET_SPLIT_ROWS,
     MODEL_ECD,
+    MODEL_LLM,
     TEST,
     TIMESERIES,
     TRAINING,
@@ -892,6 +893,12 @@ class LudwigModel:
             callbacks=self.callbacks + (callbacks or []),
         )
 
+        # HACK(Arnav): To use the correct code path for inferennce for LLMs, we need to set the
+        # model's config_object adapter to None. This works because the model is already loaded with the
+        # adapter at this point and it overrides the finetuning related forwad pass.
+        if self.config_obj.model_type == MODEL_LLM and self.model.config_obj.adapter:
+            self.model.model.peft_config["default"].inference_mode = True
+
         logger.debug("Predicting")
         with self.backend.create_predictor(self.model, batch_size=batch_size) as predictor:
             predictions = predictor.batch_predict(
@@ -924,6 +931,10 @@ class LudwigModel:
                     )
 
                     logger.info(f"Saved to: {output_directory}")
+
+            # HACK(Arnav): Reset the model's adapter in the config object to the original value after inference is done.
+            if self.config_obj.model_type == MODEL_LLM:
+                self.model.model.peft_config["default"].inference_mode = False
 
             return converted_postproc_predictions, output_directory
 

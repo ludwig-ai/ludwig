@@ -406,9 +406,13 @@ class LLM(BaseModel):
 
             weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
             config = PeftConfig.from_pretrained(weights_save_path)
-            config.inference_mode = False
+
             self.model = AutoModelForCausalLM.from_pretrained(config.base_model_name_or_path)
             self.model = PeftModel.from_pretrained(self.model, weights_save_path)
+
+            # Do this since we want to train the PEFT adapter and model. During inference,
+            # we will explicitly override this to True.
+            self.model.peft_config["default"].inference_mode = False
 
     def get_args(self):
         """Returns init arguments for constructing this model."""
