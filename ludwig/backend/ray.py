@@ -41,29 +41,13 @@ from ray.util.placement_group import placement_group, remove_placement_group
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend.base import Backend, RemoteTrainingMixin
-from ludwig.constants import (
-    CPU_RESOURCES_PER_TRIAL,
-    EXECUTOR,
-    MODEL_ECD,
-    MODEL_LLM,
-    NAME,
-    PROC_COLUMN,
-)
+from ludwig.constants import CPU_RESOURCES_PER_TRIAL, EXECUTOR, MODEL_ECD, MODEL_LLM, NAME, PROC_COLUMN
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataframe.dask import tensor_extension_casting
 from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetShard
-from ludwig.distributed import (
-    get_default_strategy_name,
-    get_dist_strategy,
-    init_dist_strategy,
-)
+from ludwig.distributed import get_default_strategy_name, get_dist_strategy, init_dist_strategy
 from ludwig.models.base import BaseModel
-from ludwig.models.predictor import (
-    BasePredictor,
-    get_output_columns,
-    Predictor,
-    RemotePredictor,
-)
+from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
 from ludwig.schema.trainer import ECDTrainerConfig, FineTuneTrainerConfig
 from ludwig.trainers.registry import (
     get_llm_ray_trainers_registry,
@@ -223,9 +207,7 @@ def train_fn(
             report_tqdm_to_ray=True,
             **executable_kwargs,
         )
-        results = trainer.train(
-            train_shard, val_shard, test_shard, return_state_dict=True, **kwargs
-        )
+        results = trainer.train(train_shard, val_shard, test_shard, return_state_dict=True, **kwargs)
         torch.cuda.empty_cache()
 
         # Passing objects containing Torch tensors as metrics is not supported as it will throw an
@@ -278,16 +260,12 @@ def tune_batch_size_fn(
         model = ray.get(model_ref)
         model = distributed.to_device(model)
 
-        def on_best_batch_size_updated(
-            best_batch_size: int, best_samples_per_sec: float, count: int
-        ):
+        def on_best_batch_size_updated(best_batch_size: int, best_samples_per_sec: float, count: int):
             session.report(
                 metrics=dict(best_batch_size=best_batch_size),
             )
 
-        trainer: Trainer = remote_trainer_cls(
-            model=model, distributed=distributed, **executable_kwargs
-        )
+        trainer: Trainer = remote_trainer_cls(model=model, distributed=distributed, **executable_kwargs)
         best_batch_size = trainer.tune_batch_size(
             ludwig_config,
             train_shard,
@@ -314,8 +292,7 @@ class TqdmCallback(ray.tune.callback.Callback):
 
     def on_trial_result(self, iteration, trials, trial, result, **info):
         """Called after receiving a result from a trial
-        https://docs.ray.io/en/latest/_modules/ray/tune/callback.html#Callback.on_trial_result.
-        """
+        https://docs.ray.io/en/latest/_modules/ray/tune/callback.html#Callback.on_trial_result."""
         progress_bar_opts = result.get("progress_bar")
         if not progress_bar_opts:
             return
@@ -368,9 +345,7 @@ class RayAirRunner:
         self.strategy = trainer_kwargs.pop("strategy", get_default_strategy_name())
 
         if "max_retries" in trainer_kwargs:
-            logger.warning(
-                "`max_retries` is no longer supported as a trainer argument in Ray backend. Ignoring it."
-            )
+            logger.warning("`max_retries` is no longer supported as a trainer argument in Ray backend. Ignoring it.")
             del trainer_kwargs["max_retries"]
 
         # When training on GPU, you want to pack workers together to limit network latency during
@@ -401,9 +376,7 @@ class RayAirRunner:
                 # https://docs.ray.io/en/master/ray-air/check-ingest.html?highlight=max_object_store_memory_fraction#enabling-streaming-ingest # noqa
                 dataset_conf = DatasetConfig(
                     split=True,
-                    max_object_store_memory_fraction=stream_window_size.get(
-                        dataset_name
-                    ),
+                    max_object_store_memory_fraction=stream_window_size.get(dataset_name),
                 )
             else:
                 dataset_conf = DatasetConfig(
@@ -435,15 +408,11 @@ class RayAirRunner:
         if dataset is not None:
             data_loader_kwargs = data_loader_kwargs or {}
             stream_window_size = stream_window_size or {}
-            dataset_config = self._get_dataset_configs(
-                dataset, stream_window_size, data_loader_kwargs
-            )
+            dataset_config = self._get_dataset_configs(dataset, stream_window_size, data_loader_kwargs)
 
         callbacks = callbacks or []
 
-        trainer_cls, kwargs = get_dist_strategy(self.strategy).get_trainer_cls(
-            self.backend_config
-        )
+        trainer_cls, kwargs = get_dist_strategy(self.strategy).get_trainer_cls(self.backend_config)
         train_loop_config = {**config, "distributed_strategy": self.strategy}
         trainer = trainer_cls(
             train_loop_per_worker=train_loop_per_worker,
@@ -572,9 +541,7 @@ class RayTrainerV2(BaseTrainer):
         if best_batch_size is None:
             raise_result_error(result)
         elif result.error:
-            logger.warning(
-                f"Exception raised during batch size tuning. Error: {str(result.error)}"
-            )
+            logger.warning(f"Exception raised during batch size tuning. Error: {str(result.error)}")
         return best_batch_size
 
     @property
@@ -599,11 +566,7 @@ class RayTrainerV2(BaseTrainer):
 
     @property
     def eval_batch_size(self) -> int:
-        return (
-            self.config.eval_batch_size
-            if self.config.eval_batch_size is not None
-            else self.config.batch_size
-        )
+        return self.config.eval_batch_size if self.config.eval_batch_size is not None else self.config.batch_size
 
     @eval_batch_size.setter
     def eval_batch_size(self, value: int):
@@ -709,15 +672,11 @@ class RayPredictor(BasePredictor):
         num_cpus = resources_per_worker.get("CPU", (1 if num_gpus == 0 else 0))
         return num_cpus, num_gpus
 
-    def batch_predict(
-        self, dataset: RayDataset, *args, collect_logits: bool = False, **kwargs
-    ):
+    def batch_predict(self, dataset: RayDataset, *args, collect_logits: bool = False, **kwargs):
         self._check_dataset(dataset)
 
         predictor_kwargs = self.predictor_kwargs
-        output_columns = get_output_columns(
-            self.model.output_features, include_logits=collect_logits
-        )
+        output_columns = get_output_columns(self.model.output_features, include_logits=collect_logits)
         batch_predictor = self.get_batch_infer_model(
             self.model,
             predictor_kwargs,
@@ -745,9 +704,7 @@ class RayPredictor(BasePredictor):
         return predictions
 
     def predict_single(self, batch):
-        raise NotImplementedError(
-            "predict_single can only be called on a local predictor"
-        )
+        raise NotImplementedError("predict_single can only be called on a local predictor")
 
     def batch_evaluation(
         self,
@@ -789,16 +746,11 @@ class RayPredictor(BasePredictor):
         return eval_stats, predictions
 
     def batch_collect_activations(self, model, *args, **kwargs):
-        raise NotImplementedError(
-            "Ray backend does not support collecting activations at this time."
-        )
+        raise NotImplementedError("Ray backend does not support collecting activations at this time.")
 
     def _check_dataset(self, dataset):
         if not isinstance(dataset, RayDataset):
-            raise RuntimeError(
-                f"Ray backend requires RayDataset for inference, "
-                f"found: {type(dataset)}"
-            )
+            raise RuntimeError(f"Ray backend requires RayDataset for inference, " f"found: {type(dataset)}")
 
     def shutdown(self):
         for handle in self.actor_handles:
@@ -827,8 +779,7 @@ class RayPredictor(BasePredictor):
                 self.features = features
                 self.training_set_metadata = training_set_metadata
                 self.reshape_map = {
-                    f[PROC_COLUMN]: training_set_metadata[f[NAME]].get("reshape")
-                    for f in features.values()
+                    f[PROC_COLUMN]: training_set_metadata[f[NAME]].get("reshape") for f in features.values()
                 }
                 predictor = Predictor(model, **predictor_kwargs)
                 self.predict = partial(predictor.predict_single, *args, **kwargs)
@@ -896,8 +847,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
         num_cpu = self._preprocessor_kwargs.get("num_cpu")
         if not num_cpu:
             logger.info(
-                "Backend config has num_cpu not set."
-                " provision_preprocessing_workers() is a no-op in this case."
+                "Backend config has num_cpu not set." " provision_preprocessing_workers() is a no-op in this case."
             )
             yield
         else:
@@ -915,11 +865,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
 
             logger.info("%s CPUs were requested and successfully provisioned", num_cpu)
             try:
-                with dask.config.set(
-                    annotations={
-                        "ray_remote_args": {"placement_group": self._preprocessor_pg}
-                    }
-                ):
+                with dask.config.set(annotations={"ray_remote_args": {"placement_group": self._preprocessor_pg}}):
                     yield
             finally:
                 self._release_preprocessing_workers()
@@ -939,9 +885,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
 
         if model.type() == MODEL_LLM:
             trainer_config = kwargs.get("config")
-            trainer_cls = get_from_registry(
-                trainer_config.type, get_llm_ray_trainers_registry()
-            )
+            trainer_cls = get_from_registry(trainer_config.type, get_llm_ray_trainers_registry())
         else:
             trainer_cls = get_from_registry(model.type(), get_ray_trainers_registry())
 
@@ -1008,9 +952,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
             # Set the runner for executing Daft dataframes to a Ray cluster
             # Prevent re-initialization errors if the runner is already set
             # This can happen if there are 2 or more audio/image columns
-            assert (
-                ray.is_initialized()
-            ), "Ray should be initialized by Ludwig already at application start"
+            assert ray.is_initialized(), "Ray should be initialized by Ludwig already at application start"
             daft.context.set_runner_ray(address="auto", noop_if_initialized=True)
 
             # Convert Dask Series to Dask Dataframe
@@ -1041,9 +983,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
                 if map_fn is not None:
                     df = df.with_column(
                         column.name,
-                        df[column.name].apply(
-                            map_fn, return_dtype=daft.DataType.python()
-                        ),
+                        df[column.name].apply(map_fn, return_dtype=daft.DataType.python()),
                     )
 
                 # Executes and convert Daft Dataframe to Dask DataFrame - note that this preserves partitioning
@@ -1080,9 +1020,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
         resources = ray.cluster_resources()
         return Resources(cpus=resources.get("CPU", 0), gpus=resources.get("GPU", 0))
 
-    def max_concurrent_trials(
-        self, hyperopt_config: HyperoptConfigDict
-    ) -> Union[int, None]:
+    def max_concurrent_trials(self, hyperopt_config: HyperoptConfigDict) -> Union[int, None]:
         cpus_per_trial = hyperopt_config[EXECUTOR].get(CPU_RESOURCES_PER_TRIAL, 1)
         num_cpus_available = self.get_available_resources().cpus
 
@@ -1111,9 +1049,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
 
         return max_possible_trials
 
-    def tune_batch_size(
-        self, evaluator_cls: Type[BatchSizeEvaluator], dataset_len: int
-    ) -> int:
+    def tune_batch_size(self, evaluator_cls: Type[BatchSizeEvaluator], dataset_len: int) -> int:
         return ray.get(
             _tune_batch_size_fn.options(**self._get_transform_kwargs()).remote(
                 evaluator_cls,
@@ -1121,9 +1057,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
             )
         )
 
-    def batch_transform(
-        self, df: DataFrame, batch_size: int, transform_fn: Callable, name: str = None
-    ) -> DataFrame:
+    def batch_transform(self, df: DataFrame, batch_size: int, transform_fn: Callable, name: str = None) -> DataFrame:
         ds = self.df_engine.to_ray_dataset(df)
         with tensor_extension_casting(False):
             ds = ds.map_batches(
@@ -1144,9 +1078,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
 
 
 @ray.remote(max_calls=1)
-def _tune_batch_size_fn(
-    evaluator_cls: Type[BatchSizeEvaluator], dataset_len: int
-) -> int:
+def _tune_batch_size_fn(evaluator_cls: Type[BatchSizeEvaluator], dataset_len: int) -> int:
     evaluator = evaluator_cls()
     return evaluator.select_best_batch_size(dataset_len)
 
