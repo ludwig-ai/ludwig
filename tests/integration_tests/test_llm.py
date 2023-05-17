@@ -372,3 +372,76 @@ def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strat
     preds = convert_preds(preds)
 
     assert preds
+
+
+def test_llm_lora_prediction(tmpdir, csv_filename):
+    import torch
+    from transformers import AutoTokenizer
+
+    from ludwig.utils.output_feature_utils import set_output_feature_tensor
+
+    input_features = [text_feature(name="input", encoder={"type": "passthrough"})]
+    output_features = [text_feature(name="output")]
+
+    df = generate_data(input_features, output_features, filename=csv_filename, num_examples=25)
+
+    config = {
+        MODEL_TYPE: MODEL_LLM,
+        MODEL_NAME: TEST_MODEL_NAME,
+        ADAPTER: {
+            TYPE: "lora",
+        },
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        TRAINER: {
+            TYPE: "finetune",
+            BATCH_SIZE: 8,
+            EPOCHS: 2,
+        },
+    }
+
+    model = LudwigModel(config, backend=LOCAL_BACKEND)
+    model.train(dataset=df, output_directory=str(tmpdir), skip_save_processed_input=False)
+
+    # Make sure we can load the saved model and then use it for predictions
+    model = LudwigModel.load(os.path.join(str(tmpdir), "api_experiment_run", "model"), backend=LOCAL_BACKEND)
+
+    print("Model loaded with PEFT")
+    print(model.model.model)
+
+    # Simulate the forward pass with the adapter
+    tokenizer = AutoTokenizer.from_pretrained(TEST_MODEL_NAME, use_fast=False)
+    input_ids = tokenizer(["Produce a list of things I should carry with me when I go camping."], return_tensors="pt")[
+        "input_ids"
+    ]
+
+    print("Tokenized Input IDs")
+    print(input_ids)
+
+    # THIS IS WRONG - This is the fine-tuning forward pass
+    model_outputs = model.model.model(input_ids).get("logits")
+    decoder_outputs = model_outputs
+
+    # Set the output feature tensor to the decoder outputs (logits)
+    outputs = {}
+    of_name = model.model.config_obj.output_features[0].name
+    set_output_feature_tensor(outputs, of_name, "logits", decoder_outputs)
+
+    # Get predictions, probabilities and logits tensor from the output feature's predictions function
+    outputs = model.model.output_features.get(of_name).predictions(outputs, of_name)
+
+    print("Fine-tuning based forward pass for prediction")
+    print(outputs["predictions"])
+
+    # Simulate the forward pass using model.generate()
+    # THIS IS CORRECT
+    with torch.no_grad():
+        outputs = model.model.model.generate(
+            input_ids=input_ids,
+            generation_config=model.model.generation,
+            return_dict_in_generate=True,
+            output_scores=True,
+        ).sequences[0]
+
+    print("ZS/FS forward pass using the fine-tuned LLM")
+    print(outputs)
