@@ -61,17 +61,17 @@ prompt:
       expected_impact: 2
   task:
     ui_display_name: Task
+    ui_component_type: textarea
     expected_impact: 3
-    component_type: textarea
   template:
     ui_display_name: Template
+    ui_component_type: textarea
     expected_impact: 3
-    component_type: textarea
 adapter:
   lora:
     r:
       ui_display_name: R
-      expected_impact: 2
+      expected_impact: 3
     alpha:
       ui_display_name: Alpha
       expected_impact: 2
@@ -81,7 +81,7 @@ adapter:
   prompt_learning:
     num_virtual_tokens:
       ui_display_name: Num Virtual Tokens
-      expected_impact: 2
+      expected_impact: 3
   prompt_tuning:
     prompt_tuning_init:
       ui_display_name: Prompt Tuning Init

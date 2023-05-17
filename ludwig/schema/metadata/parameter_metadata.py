@@ -1,7 +1,7 @@
 import json
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 from dataclasses_json import dataclass_json
 
@@ -99,6 +99,9 @@ class ParameterMetadata:
     compute_tier: ComputeTier = ComputeTier.CPU
     """The compute tier defines the type of compute resources that a model typically needs to get good
     throughput."""
+
+    ui_component_type: Optional[str] = ""
+    """Override for HTML component type that should be used to render this field in UIs."""
 
     @memoized_method(maxsize=1)
     def to_json_dict(self) -> Dict[str, Any]:
