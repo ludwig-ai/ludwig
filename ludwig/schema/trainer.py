@@ -774,7 +774,11 @@ class NoneTrainerConfig(LLMTrainerConfig):
     """Dataclass that configures most of the hyperparameters used for zero-shot / few-shot LLM model training."""
 
     # Required for lookup during trainer initialization
-    type: str = schema_utils.ProtectedString("none")
+    type: str = schema_utils.ProtectedString(
+        "none",
+        description="The type of trainer used to train the model. ",
+        parameter_metadata=TRAINER_METADATA[MODEL_LLM]["type"],
+    )
 
 
 @DeveloperAPI
