@@ -1,6 +1,6 @@
 import contextlib
 import logging
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TYPE_CHECKING
 
 import horovod.torch as hvd
 import ray
@@ -14,7 +14,11 @@ from torch import nn
 from torch.optim import Optimizer
 
 from ludwig.distributed.base import DistributedStrategy
+from ludwig.modules.optimization_modules import create_optimizer
 from ludwig.utils.horovod_utils import gather_all_tensors, is_distributed_available
+
+if TYPE_CHECKING:
+    from ludwig.schema.trainer import ECDTrainerConfig
 
 _ray220 = version.parse(ray.__version__) >= version.parse("2.2.0")
 
@@ -24,13 +28,19 @@ class HorovodStrategy(DistributedStrategy):
         hvd.init()
         logging.info("Using Horovod strategy")
 
-    def wrap_model(self, model: nn.Module) -> nn.Module:
-        return model
-
-    def wrap_optimizer(self, optimizer: Optimizer, model: nn.Module, gradient_accumulation_steps: int) -> Optimizer:
-        return hvd.DistributedOptimizer(
-            optimizer, named_parameters=model.named_parameters(), backward_passes_per_step=gradient_accumulation_steps
+    def prepare(
+        self,
+        model: nn.Module,
+        trainer_config: "ECDTrainerConfig",
+        base_learning_rate: float,
+    ) -> Tuple[nn.Module, Optimizer]:
+        optimizer = create_optimizer(model, trainer_config.optimizer, base_learning_rate)
+        dist_optimizer = hvd.DistributedOptimizer(
+            optimizer,
+            named_parameters=model.named_parameters(),
+            backward_passes_per_step=trainer_config.gradient_accumulation_steps,
         )
+        return model, dist_optimizer
 
     def size(self) -> int:
         return hvd.size()

@@ -171,6 +171,7 @@ def generate_data(
     filename="test_csv.csv",
     num_examples=25,
     nan_percent=0.0,
+    with_split=False,
 ):
     """Helper method to generate synthetic data based on input, output feature specs.
 
@@ -181,7 +182,7 @@ def generate_data(
     :param nan_percent: percent of values in a feature to be NaN
     :return:
     """
-    df = generate_data_as_dataframe(input_features, output_features, num_examples, nan_percent)
+    df = generate_data_as_dataframe(input_features, output_features, num_examples, nan_percent, with_split=with_split)
     df.to_csv(filename, index=False)
     return filename
 
@@ -191,6 +192,7 @@ def generate_data_as_dataframe(
     output_features,
     num_examples=25,
     nan_percent=0.0,
+    with_split=False,
 ) -> pd.DataFrame:
     """Helper method to generate synthetic data based on input, output feature specs.
 
@@ -206,7 +208,16 @@ def generate_data_as_dataframe(
     df = build_synthetic_dataset(num_examples, features)
     data = [next(df) for _ in range(num_examples + 1)]
 
-    return pd.DataFrame(data[1:], columns=data[0])
+    df = pd.DataFrame(data[1:], columns=data[0])
+
+    # Add "split" column to DataFrame
+    if with_split:
+        num_val_examples = max(2, int(num_examples * 0.1))
+        num_test_examples = max(2, int(num_examples * 0.1))
+        num_train_examples = num_examples - num_val_examples - num_test_examples
+        df["split"] = [0] * num_train_examples + [1] * num_val_examples + [2] * num_test_examples
+
+    return df
 
 
 def recursive_update(dictionary, values):
@@ -1107,3 +1118,14 @@ def clear_huggingface_cache():
             os.unlink(os.path.join(root, f))
         for d in dirs:
             shutil.rmtree(os.path.join(root, d))
+
+
+def run_test_suite(config, dataset, backend):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        model = LudwigModel(config, backend=backend)
+        _, _, output_dir = model.train(dataset=dataset, output_directory=tmpdir)
+
+        model_dir = os.path.join(output_dir, "model")
+        loaded_model = LudwigModel.load(model_dir, backend=backend)
+        loaded_model.predict(dataset=dataset)
+        return loaded_model

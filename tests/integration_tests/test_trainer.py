@@ -12,6 +12,7 @@ from packaging.version import parse as parse_version
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
 from ludwig.constants import BATCH_SIZE, MAX_BATCH_SIZE_DATASET_FRACTION, TRAINER
+from ludwig.distributed import init_dist_strategy
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
@@ -26,7 +27,6 @@ from tests.integration_tests.utils import (
 
 try:
     from ludwig.backend.horovod import HorovodBackend
-    from ludwig.distributed.horovod import HorovodStrategy
 except ImportError:
     pass
 
@@ -44,7 +44,7 @@ try:
     def run_scale_lr(config, data_csv, num_workers, outdir):
         class FakeHorovodBackend(HorovodBackend):
             def initialize(self):
-                distributed = HorovodStrategy()
+                distributed = init_dist_strategy("horovod")
                 self._distributed = mock.Mock(wraps=distributed)
                 self._distributed.size.return_value = num_workers
 

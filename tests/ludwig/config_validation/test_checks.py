@@ -281,3 +281,83 @@ model_type: ecd
     # Confirms that the choice of the combiner type is the only reason for the ConfigValidationError.
     config[COMBINER][TYPE] = "sequence_concat"
     ModelConfig.from_dict(config)
+
+
+def test_retrieval_config_none_type():
+    config = yaml.safe_load(
+        """
+model_type: llm
+model_name: facebook/opt-350m
+prompt:
+    retrieval:
+        type: null
+        k: 1
+    task: "Classify the sample input as either negative, neutral, or positive."
+input_features:
+-
+    name: sample
+    type: text
+output_features:
+-
+    name: label
+    type: text
+"""
+    )
+
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+    # will not fail
+    config["prompt"]["retrieval"]["k"] = 0
+    ModelConfig.from_dict(config)
+
+
+def test_retrieval_config_random_type():
+    config = yaml.safe_load(
+        """
+model_type: llm
+model_name: facebook/opt-350m
+prompt:
+    retrieval:
+        type: random
+    task: "Classify the sample input as either negative, neutral, or positive."
+input_features:
+-
+    name: sample
+    type: text
+output_features:
+-
+    name: label
+    type: text
+"""
+    )
+
+    # should not fail because we auto-set k=1 if k=0 on __post_init__
+    ModelConfig.from_dict(config)
+
+
+def test_retrieval_config_semantic_type():
+    config = yaml.safe_load(
+        """
+model_type: llm
+model_name: facebook/opt-350m
+prompt:
+    retrieval:
+        type: semantic
+    task: "Classify the sample input as either negative, neutral, or positive."
+input_features:
+-
+    name: sample
+    type: text
+output_features:
+-
+    name: label
+    type: text
+"""
+    )
+
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+    config["prompt"]["retrieval"]["model_name"] = "some-huggingface-model"
+    ModelConfig.from_dict(config)

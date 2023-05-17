@@ -18,6 +18,8 @@ from tests.integration_tests.utils import (
     sequence_feature,
 )
 
+pytestmark = pytest.mark.integration_tests_b
+
 
 @pytest.mark.parametrize(
     "backend",

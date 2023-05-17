@@ -25,6 +25,7 @@ from ludwig.features.feature_registries import get_output_type_registry
 from ludwig.schema.combiners.utils import get_combiner_jsonschema
 from ludwig.schema.defaults.ecd import ECDDefaultsConfig
 from ludwig.schema.defaults.gbm import GBMDefaultsConfig
+from ludwig.schema.encoders.text.peft import LoraConfig
 from ludwig.schema.features.preprocessing.audio import AudioPreprocessingConfig
 from ludwig.schema.features.preprocessing.bag import BagPreprocessingConfig
 from ludwig.schema.features.preprocessing.binary import BinaryPreprocessingConfig
@@ -422,3 +423,30 @@ def test_deprecation_warning_raised_for_unknown_parameters():
     }
     with pytest.warns(DeprecationWarning, match="not a valid parameter"):
         ModelConfig.from_dict(config)
+
+
+@pytest.mark.parametrize(
+    "encoder_config,expected_adapter",
+    [
+        ({"type": "bert", "trainable": True}, None),
+        ({"type": "bert", "trainable": True, "adapter": None}, None),
+        ({"type": "bert", "trainable": True, "adapter": "lora"}, LoraConfig()),
+        ({"type": "bert", "trainable": True, "adapter": {"type": "lora"}}, LoraConfig()),
+        (
+            {
+                "type": "bert",
+                "trainable": True,
+                "adapter": {"type": "lora", "r": 16, "alpha": 32, "dropout": 0.1, "bias_type": "all"},
+            },
+            LoraConfig(r=16, alpha=32, dropout=0.1, bias_type="all"),
+        ),
+    ],
+)
+def test_text_encoder_adapter(encoder_config, expected_adapter):
+    config = {
+        "input_features": [text_feature(encoder=encoder_config)],
+        "output_features": [category_feature(decoder={"type": "classifier", "vocab_size": 2}, reduce_input="sum")],
+    }
+    config_obj = ModelConfig.from_dict(config)
+
+    assert config_obj.input_features[0].encoder.adapter == expected_adapter

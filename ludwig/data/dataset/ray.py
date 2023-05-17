@@ -386,7 +386,7 @@ class RayDatasetBatcher(Batcher):
             self._next_batch = next(self.dataset_batch_iter)
             # If the batch has only one row and self.ignore_last, skip the batch
             # to prevent batchnorm / dropout related Torch errors
-            if self.ignore_last and len(self._next_batch[self._sample_feature_name]) == 1:
+            if self.batch_size > 1 and self.ignore_last and len(self._next_batch[self._sample_feature_name]) == 1:
                 raise StopIteration
         except StopIteration:
             self._last_batch = True

@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 
 from ludwig.api import LudwigModel
-from ludwig.constants import BATCH_SIZE, BINARY, CATEGORY, MODEL_ECD, MODEL_GBM
+from ludwig.constants import BATCH_SIZE, BINARY, CATEGORY, MINIMUM_BATCH_SIZE, MODEL_ECD, MODEL_GBM
 from ludwig.explain.captum import IntegratedGradientsExplainer
 from ludwig.explain.explainer import Explainer
 from ludwig.explain.explanation import Explanation
@@ -19,6 +19,7 @@ from tests.integration_tests.utils import (
     image_feature,
     LocalTestBackend,
     number_feature,
+    sequence_feature,
     set_feature,
     text_feature,
     timeseries_feature,
@@ -29,6 +30,8 @@ try:
     from ludwig.explain.captum_ray import RayIntegratedGradientsExplainer
 except ImportError:
     RayIntegratedGradientsExplainer = None
+
+pytestmark = pytest.mark.integration_tests_b
 
 
 def test_explanation_dataclass():
@@ -99,6 +102,22 @@ def test_explainer_api_ray(output_feature, tmpdir, ray_cluster_2cpu):
     )
 
 
+@pytest.mark.distributed
+def test_explainer_api_ray_minimum_batch_size(tmpdir, ray_cluster_2cpu):
+    from ludwig.explain.captum_ray import RayIntegratedGradientsExplainer
+
+    run_test_explainer_api(
+        RayIntegratedGradientsExplainer,
+        "ecd",
+        [binary_feature()],
+        {},
+        tmpdir,
+        resources_per_task={"num_cpus": 1},
+        num_workers=1,
+        batch_size=MINIMUM_BATCH_SIZE,
+    )
+
+
 @pytest.mark.parametrize("cache_encoder_embeddings", [True, False])
 @pytest.mark.parametrize(
     "explainer_class,model_type",
@@ -139,7 +158,14 @@ def test_explainer_text_tied_weights(explainer_class, model_type, tmpdir):
 
 
 def run_test_explainer_api(
-    explainer_class, model_type, output_features, additional_config, tmpdir, input_features=None, **kwargs
+    explainer_class,
+    model_type,
+    output_features,
+    additional_config,
+    tmpdir,
+    input_features=None,
+    batch_size=128,
+    **kwargs
 ):
     image_dest_folder = os.path.join(tmpdir, "generated_images")
 
@@ -179,7 +205,7 @@ def run_test_explainer_api(
     # Train model
     config = {"input_features": input_features, "output_features": output_features, "model_type": model_type}
     if model_type == MODEL_ECD:
-        config["trainer"] = {"epochs": 2, BATCH_SIZE: 128}
+        config["trainer"] = {"epochs": 2, BATCH_SIZE: batch_size}
     else:
         # Disable feature filtering to avoid having no features due to small test dataset,
         # see https://stackoverflow.com/a/66405983/5222402
@@ -232,3 +258,20 @@ def test_explainer_api_text_outputs(tmpdir):
     run_test_explainer_api(
         IntegratedGradientsExplainer, MODEL_ECD, output_features, {}, tmpdir, input_features=input_features
     )
+
+
+@pytest.mark.parametrize(
+    "explainer_class,model_type",
+    [
+        pytest.param(IntegratedGradientsExplainer, MODEL_ECD, id="ecd_local"),
+        pytest.param(RayIntegratedGradientsExplainer, MODEL_ECD, id="ecd_ray", marks=pytest.mark.distributed),
+    ],
+)
+@pytest.mark.parametrize(
+    "encoder_type", ["embed", "parallel_cnn", "stacked_cnn", "stacked_parallel_cnn", "rnn", "cnnrnn", "transformer"]
+)
+def test_explainer_sequence_feature(explainer_class, model_type, encoder_type, tmpdir):
+    input_features = [sequence_feature()]
+    input_features[0]["encoder"] = {"type": encoder_type}
+    output_features = [binary_feature()]
+    run_test_explainer_api(explainer_class, model_type, output_features, {}, tmpdir, input_features=input_features)

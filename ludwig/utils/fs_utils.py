@@ -40,6 +40,21 @@ logger = logging.getLogger(__name__)
 
 
 @DeveloperAPI
+def get_default_cache_location() -> str:
+    """Returns a path to the default LUDWIG_CACHE location, or $HOME/.ludwig_cache."""
+    cache_path = None
+    if "LUDWIG_CACHE" in os.environ and os.environ["LUDWIG_CACHE"]:
+        cache_path = os.environ["LUDWIG_CACHE"]
+    else:
+        cache_path = str(pathlib.Path.home().joinpath(".ludwig_cache"))
+
+    # Check if the cache path exists, if not create it
+    if not os.path.exists(cache_path):
+        os.makedirs(cache_path)
+    return cache_path
+
+
+@DeveloperAPI
 def get_fs_and_path(url):
     protocol, path = split_protocol(url)
     # Parse the url to get only the escaped url path

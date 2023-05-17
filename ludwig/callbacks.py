@@ -117,6 +117,9 @@ class Callback(ABC):
         """
         return False
 
+    def on_resume_training(self, is_coordinator: bool):
+        pass
+
     def on_train_init(
         self,
         base_config: ModelConfigDict,
@@ -295,6 +298,10 @@ class Callback(ABC):
     def should_early_stop(self, trainer, progress_tracker, is_coordinator):
         # Triggers early stopping if any callback on any worker returns True
         return False
+
+    def on_save_best_checkpoint(self, trainer, progress_tracker, save_path):
+        """Called on every worker immediately after a new best model is checkpointed."""
+        pass
 
     def on_build_metadata_start(self, df, mode: str):
         """Called before building metadata for dataset.

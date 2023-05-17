@@ -27,24 +27,6 @@ pytestmark = pytest.mark.distributed
             {"CPU": 4, "GPU": 1},
             2,
             dict(
-                backend=HorovodConfig(),
-                strategy="horovod",
-                num_workers=1,
-                use_gpu=True,
-                resources_per_worker={
-                    "CPU": 0,
-                    "GPU": 1,
-                },
-            ),
-            id="prioritize-gpu-when-available-over-multinode",
-            marks=[pytest.mark.distributed, pytest.mark.horovod],
-        ),
-        # Test DDP
-        pytest.param(
-            {"strategy": "ddp"},
-            {"CPU": 4, "GPU": 1},
-            2,
-            dict(
                 backend=TorchConfig(),
                 strategy="ddp",
                 num_workers=1,
@@ -57,9 +39,27 @@ pytestmark = pytest.mark.distributed
             id="ddp",
             marks=pytest.mark.distributed,
         ),
+        # Test Horovod
+        pytest.param(
+            {"strategy": "horovod"},
+            {"CPU": 4, "GPU": 1},
+            2,
+            dict(
+                backend=HorovodConfig(),
+                strategy="horovod",
+                num_workers=1,
+                use_gpu=True,
+                resources_per_worker={
+                    "CPU": 0,
+                    "GPU": 1,
+                },
+            ),
+            id="prioritize-gpu-when-available-over-multinode",
+            marks=[pytest.mark.distributed, pytest.mark.horovod],
+        ),
         # Use one worker per node for CPU, chck NIC override
         pytest.param(
-            {"nics": [""]},
+            {"strategy": "horovod", "nics": [""]},
             {"CPU": 4, "GPU": 0},
             2,
             dict(
@@ -77,7 +77,7 @@ pytestmark = pytest.mark.distributed
         ),
         # Allow explicitly setting GPU usage for autoscaling clusters
         pytest.param(
-            {"use_gpu": True, "num_workers": 2},
+            {"strategy": "horovod", "use_gpu": True, "num_workers": 2},
             {"CPU": 4, "GPU": 0},
             1,
             dict(
@@ -95,7 +95,7 @@ pytestmark = pytest.mark.distributed
         ),
         # Allow overriding resources_per_worker
         pytest.param(
-            {"resources_per_worker": {"CPU": 2, "GPU": 1}},
+            {"strategy": "horovod", "resources_per_worker": {"CPU": 2, "GPU": 1}},
             {"CPU": 4, "GPU": 2},
             2,
             dict(

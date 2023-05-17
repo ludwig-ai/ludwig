@@ -26,4 +26,9 @@ def calculate_checksum(original_dataset: CacheableDataset, config: ModelConfigDi
         "feature_types": [feature[TYPE] for feature in features],
         "feature_preprocessing": [feature.get(PREPROCESSING, {}) for feature in features],
     }
+
+    # LLM-specific params
+    if "prompt" in config:
+        info["prompt"] = config["prompt"]
+
     return hash_dict(info, max_length=None).decode("ascii")

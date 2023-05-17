@@ -22,6 +22,7 @@ from ludwig.constants import (
     AUTOML_SMALLER_TEXT_LENGTH,
     AUTOML_TEXT_ENCODER_MAX_TOKEN_LEN,
     HYPEROPT,
+    MINIMUM_BATCH_SIZE,
     PREPROCESSING,
     SPACE,
     TEXT,
@@ -123,7 +124,7 @@ def compute_memory_usage(config_obj, training_set_metadata, model_category) -> i
     batch_size = config_obj.trainer.batch_size
     if batch_size == AUTO:
         # Smallest valid batch size that will allow training to complete
-        batch_size = 2
+        batch_size = MINIMUM_BATCH_SIZE
     memory_usage = model_size * (BYTES_PER_WEIGHT + BYTES_OPTIMIZER_PER_WEIGHT) * batch_size
     if model_category == TEXT:
         return _get_text_model_memory_usage(config_obj.to_dict(), training_set_metadata, memory_usage)

@@ -25,20 +25,27 @@ class GhostBatchNormalization(LudwigModule):
 
         if self.training and self.virtual_batch_size:
             splits = inputs.chunk(int(np.ceil(batch_size / self.virtual_batch_size)), 0)
-            if batch_size == 1:
-                logger.warning(
-                    "Batch size is 1, but batch normalization requires batch size >= 2. Skipping batch normalization."
-                    "Make sure to set `batch_size` to a value greater than 1."
-                )
-                # Skip batch normalization if the batch size is 1.
-                return torch.cat(splits, 0)
+
             if batch_size % self.virtual_batch_size == 1:
                 # Skip batch normalization for the last chunk if it is size 1.
                 logger.warning(
                     f"Virtual batch size `{self.virtual_batch_size}` is not a factor of the batch size `{batch_size}`, "
                     "resulting in a chunk of size 1. Skipping batch normalization for the last chunk of size 1."
                 )
-            splits_with_bn = [self.bn(x) if x.shape[0] > 1 else x for x in splits]
+
+            if batch_size == 1:
+                logger.warning(
+                    "Batch size is 1, but batch normalization requires batch size >= 2. Skipping batch normalization."
+                    "Make sure to set `batch_size` to a value greater than 1."
+                )
+                # We temporarily set the batch_norm module to eval mode as we can't compute the running statistics
+                # when the batch size is 1.
+                self.bn.eval()
+                splits_with_bn = [self.bn(x) if x.shape[0] >= 1 else x for x in splits]
+                self.bn.train()
+            else:
+                splits_with_bn = [self.bn(x) if x.shape[0] > 1 else x for x in splits]
+
             return torch.cat(splits_with_bn, 0)
 
         if batch_size != 1 or not self.training:
@@ -62,9 +69,41 @@ class GhostBatchNormalization(LudwigModule):
         return torch.Size([self.num_features])
 
 
+class BatchNorm1dOrIdentity(BatchNorm1d):
+    """BatchNorm1d or Identity layer if the batch_size is 1.
+
+    Workaround for: https://github.com/pytorch/pytorch/issues/4534
+    """
+
+    def forward(self, input: torch.Tensor) -> torch.Tensor:
+        if input.shape[0] == 1:
+            logger.warning(
+                "Batch size is 1, but batch normalization requires batch size >= 2. Skipping batch normalization."
+                "Make sure to set `batch_size` to a value greater than 1."
+            )
+            return input
+        return super().forward(input)
+
+
+class BatchNorm2dOrIdentity(BatchNorm2d):
+    """BatchNorm2d or Identity layer if the batch_size is 1.
+
+    Workaround for: https://github.com/pytorch/pytorch/issues/4534
+    """
+
+    def forward(self, input: torch.Tensor) -> torch.Tensor:
+        if input.shape[0] == 1:
+            logger.warning(
+                "Batch size is 1, but batch normalization requires batch size >= 2. Skipping batch normalization."
+                "Make sure to set `batch_size` to a value greater than 1."
+            )
+            return input
+        return super().forward(input)
+
+
 norm_registry = {
-    "batch_1d": BatchNorm1d,
-    "batch_2d": BatchNorm2d,
+    "batch_1d": BatchNorm1dOrIdentity,
+    "batch_2d": BatchNorm2dOrIdentity,
     "layer": LayerNorm,
     "ghost": GhostBatchNormalization,
 }
