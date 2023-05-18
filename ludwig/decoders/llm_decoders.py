@@ -87,7 +87,12 @@ class TextParserDecoder(Decoder):
         # Load tokenizer required for decoding the output from the generate
         # function of the text input feature for LLMs.
         self.tokenizer = get_tokenizer(self.tokenizer_type, self.vocab_file, self.pretrained_model_name_or_path)
-        self.tokenizer_vocab_size = self.tokenizer.tokenizer.vocab_size
+        try:
+            # Transformer Tokenizers
+            self.tokenizer_vocab_size = self.tokenizer.tokenizer.vocab_size
+        except AttributeError:
+            # TorchText Tokenizers
+            self.tokenizer_vocab_size = len(self.tokenizer.vocab)
 
         # Maximum number of new tokens that will be generated
         self.max_sequence_length = self.max_new_tokens = self.config.max_new_tokens
