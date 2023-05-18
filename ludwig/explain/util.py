@@ -70,4 +70,4 @@ def replace_layer_with_copy(feat: BaseFeature, target_layer: torch.nn.Module):
         orig_encoder_obj = feat.encoder_obj
 
         # Deep copy the original encoder object and set the copy as this feature's encoder object.
-        feat.encoder_obj = copy_module_and_tie_weights(orig_encoder_obj, ignore_layers=[target_layer])
+        feat.encoder_obj = copy_module_and_tie_weights(orig_encoder_obj, keep_copy=[target_layer])
