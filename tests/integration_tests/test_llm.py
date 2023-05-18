@@ -324,7 +324,6 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
         "adaption_prompt",
     ],
 )
-# , ray_cluster_4cpu):
 def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strategy, adapter_args):
     input_features = [text_feature(name="input", encoder={"type": "passthrough"})]
     output_features = [text_feature(name="output")]
