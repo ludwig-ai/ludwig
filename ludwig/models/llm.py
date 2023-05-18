@@ -551,8 +551,8 @@ def realign_target_and_prediction_tensors(
             predictions[of_name][LOGITS] = F.pad(predictions[of_name][LOGITS], (0, 0, 0, zeros_to_add))
         elif pad_direction == "left":
             predictions[of_name][PREDICTIONS] = F.pad(predictions[of_name][PREDICTIONS], (zeros_to_add, 0))
-            predictions[of_name][PROBABILITIES] = F.pad(predictions[of_name][PROBABILITIES], (zeros_to_add, 0, 0, 0))
-            predictions[of_name][LOGITS] = F.pad(predictions[of_name][LOGITS], (zeros_to_add, 0, 0, 0))
+            predictions[of_name][PROBABILITIES] = F.pad(predictions[of_name][PROBABILITIES], (0, 0, zeros_to_add, 0))
+            predictions[of_name][LOGITS] = F.pad(predictions[of_name][LOGITS], (0, 0, zeros_to_add, 0))
 
         predictions[of_name][PREDICTIONS] = predictions[of_name][PREDICTIONS].type(torch.float32)
         predictions[of_name][PROBABILITIES] = predictions[of_name][PROBABILITIES].type(torch.float32)
