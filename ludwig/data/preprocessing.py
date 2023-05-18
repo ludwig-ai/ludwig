@@ -144,7 +144,9 @@ class DataFormatPreprocessor(ABC):
 
     @staticmethod
     @abstractmethod
-    def preprocess_for_prediction(dataset, features, preprocessing_params, training_set_metadata, backend, callbacks):
+    def preprocess_for_prediction(
+        config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
+    ):
         pass
 
     @staticmethod
@@ -1054,7 +1056,9 @@ class HDF5Preprocessor(DataFormatPreprocessor):
         )
 
     @staticmethod
-    def preprocess_for_prediction(dataset, features, preprocessing_params, training_set_metadata, backend, callbacks):
+    def preprocess_for_prediction(
+        config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
+    ):
         hdf5_fp = dataset
         dataset = load_hdf5(dataset, preprocessing_params, backend, split_data=False, shuffle_training=False)
         return dataset, training_set_metadata, hdf5_fp
