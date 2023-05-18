@@ -471,11 +471,14 @@ class LLM(BaseModel):
 
         merged_input_and_targets = []
         lengths = []
+        pad_tensor = torch.tensor([self.tokenizer.pad_token_id]).to(target_ids[0].device)
 
         # Merge input_ids and target_ids by concatenating them together.
         # We remove the left padding from the target_ids before concatenating them.
         for input_id_sample, target_id_sample in zip(input_ids, target_ids):
-            target_id_sample_no_padding = self._remove_left_padding(target_id_sample)[0]
+            target_id_sample_no_padding = torch.cat(
+                (self._remove_left_padding(target_id_sample)[0], pad_tensor), dim=-1
+            )
             merged_sample_ids = torch.cat((input_id_sample, target_id_sample_no_padding), dim=-1)
 
             merged_input_and_targets.append(merged_sample_ids)
@@ -505,7 +508,7 @@ class LLM(BaseModel):
         if len(bos_index) > 0:
             first_bos_index = bos_index[0][0]
             # Set attention mask to 0 for the part of the input that is padding
-            attention_mask[: first_bos_index + 1] = 0
+            attention_mask[:first_bos_index] = 0
 
         return attention_mask
 
