@@ -175,15 +175,6 @@ class LLM(BaseModel):
 
         return output_features
 
-    def get_input_ids(
-        self,
-        inputs: Union[
-            Dict[str, torch.Tensor], Dict[str, np.ndarray], Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
-        ],
-    ):
-        """Returns the input ids for the text feature input."""
-        return inputs[self.config_obj.input_features[0].name].type(torch.int32)
-
     def forward(
         self,
         inputs: Union[
@@ -219,30 +210,46 @@ class LLM(BaseModel):
 
         input_ids = self.get_input_ids(inputs)
 
-        if self.config_obj.adapter:
-            # Forward pass using PEFT wrapped model for fine-tuning
-            model_outputs = self.model(input_ids).get(LOGITS)
+        target_ids = None
+        if targets:
+            target_ids = self.get_target_ids(targets)
 
-            if self.output_feature_type != TEXT:
-                # Pass generated tokens through decoder after averaging the token probabilities
-                # This is required for the classification head for the classifier decoder
-                model_outputs = torch.mean(model_outputs, dim=1)
+        # TODO: Figure out how to get rid of using the additional self.config_obj.adapter check
+        # The issue is that when we run evaluation on the validation/test sets, we set the mode to eval
+        # and use the forward_generate path instead of the forward_train path.
+        if self.model.training or self.config_obj.adapter:
+            return self.forward_train(input_ids, target_ids)
+        else:
+            return self.forward_generate(input_ids, mask)
 
-            if self.output_feature_type == TEXT:
-                decoder_outputs = model_outputs
-            else:
-                decoder_outputs = self.output_feature_decoder.decoder_obj(model_outputs)
+    def forward_train(self, input_ids, target_ids) -> Dict[str, torch.Tensor]:
+        """Produces logits tensor for finetuning the model."""
+        # if self.config_obj.adapter:
+        # Forward pass using PEFT wrapped model for fine-tuning
+        model_outputs = self.model(input_ids).get(LOGITS)
 
-            # Set the output feature tensor to the decoder outputs (logits)
-            outputs = {}
-            of_name = self.config_obj.output_features[0].name
-            set_output_feature_tensor(outputs, of_name, LOGITS, decoder_outputs)
+        if self.output_feature_type != TEXT:
+            # Pass generated tokens through decoder after averaging the token probabilities
+            # This is required for the classification head for the classifier decoder
+            model_outputs = torch.mean(model_outputs, dim=1)
 
-            # Get predictions, probabilities and logits tensor from the output feature's predictions function
-            outputs = self.output_features.get(of_name).predictions(outputs, of_name)
+        if self.output_feature_type == TEXT:
+            decoder_outputs = model_outputs
+        else:
+            decoder_outputs = self.output_feature_decoder.decoder_obj(model_outputs)
 
-            return outputs
+        # Set the output feature tensor to the decoder outputs (logits)
+        outputs = {}
+        of_name = self.config_obj.output_features[0].name
+        set_output_feature_tensor(outputs, of_name, LOGITS, decoder_outputs)
 
+        # Get predictions, probabilities and logits tensor from the output feature's predictions function
+        outputs = self.output_features.get(of_name).predictions(outputs, of_name)
+
+        return outputs
+
+    def forward_generate(self, input_ids, mask) -> Dict[str, torch.Tensor]:
+        """Generates tokens using the model."""
         with torch.no_grad():
             input_lengths = []
             sequences_list = []
@@ -277,14 +284,24 @@ class LLM(BaseModel):
 
         return self.extract(outputs)
 
-    def extract(
-        self,
-        outputs,
-    ):
+    def extract(self, outputs: Dict[str, torch.Tensor]) -> Dict[str, Dict[str, torch.Tensor]]:
         """Extracts predictions and probabilities from the model outputs."""
         return {
             self.config_obj.output_features[0].name: outputs,
         }
+
+    def get_input_ids(
+        self,
+        inputs: Union[
+            Dict[str, torch.Tensor], Dict[str, np.ndarray], Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
+        ],
+    ) -> torch.Tensor:
+        """Returns the input ids for the text feature input."""
+        return inputs[self.config_obj.input_features[0].name].type(torch.int32)
+
+    def get_target_ids(self, outputs: Dict[str, torch.Tensor]) -> torch.Tensor:
+        """Returns the output ids for the text feature output."""
+        return outputs[self.config_obj.output_features[0].name].type(torch.int32)
 
     def update_metrics(self, targets, predictions):
         """Updates the model's metrics given targets and predictions."""
