@@ -224,9 +224,11 @@ class LLM(BaseModel):
 
     def forward_train(self, input_ids, target_ids) -> Dict[str, torch.Tensor]:
         """Produces logits tensor for finetuning the model."""
-        # if self.config_obj.adapter:
+        # Generate merged input_id, target_id pairs for the model, and create corresponding attention masks
+        model_inputs, attention_masks = self._generate_merged_ids(input_ids, target_ids)
+
         # Forward pass using PEFT wrapped model for fine-tuning
-        model_outputs = self.model(input_ids).get(LOGITS)
+        model_outputs = self.model(input_ids=model_inputs, attention_mask=attention_masks).get(LOGITS)
 
         if self.output_feature_type != TEXT:
             # Pass generated tokens through decoder after averaging the token probabilities
@@ -340,6 +342,10 @@ class LLM(BaseModel):
         of_train_losses = {}
         for of_name, of_obj in self.output_features.items():
             _targets, _predictions = targets, predictions
+            # TODO(Arnav): Open Question: At this point for fine-tuning, should we actually left pad the target tensor
+            # since it is smaller in length as opposed to right padding it? Left padding will shift the target tensor
+            # to the right which is probably more accurate for computing loss. We can dynamically set this based on the
+            # model's mode, i.e., training mode or eval mode.
             if isinstance(of_obj, TextOutputFeature):
                 # Align the target length with the predictions length to enable text metric evaluation.
                 _predictions = {of_name: _predictions}
@@ -442,6 +448,7 @@ class LLM(BaseModel):
         )
 
     def _remove_left_padding(self, input_ids_sample: torch.Tensor):
+        """Removes left padding from the input_ids tensor."""
         bos_idxs = torch.where(input_ids_sample == self.tokenizer.bos_token_id)[0]  # all BOS token locations
         if len(bos_idxs) != 0:
             bos_idx = bos_idxs[0]  # get first BOS token location
@@ -450,6 +457,61 @@ class LLM(BaseModel):
 
         input_ids_sample_no_padding = input_ids_sample[bos_idx:].unsqueeze(0)
         return input_ids_sample_no_padding
+
+    def _generate_merged_ids(self, input_ids, target_ids):
+        """This function merges the input_ids and target_ids together to create a unified tensor to pass into the
+        model.
+
+        This is required for PEFT based fine-tuning. It also returns attention masks for the merged tensors.
+        """
+
+        # target_ids is None during evaluation of the validation/test sets in the training loop.
+        if not torch.is_tensor(target_ids):
+            # Create attention masks for the input_ids.
+            attention_masks = []
+            for input_id_sample in input_ids:
+                attention_masks.append(self._create_attention_mask(input_id_sample))
+            return input_ids, torch.stack(attention_masks)
+
+        merged_input_and_targets = []
+        lengths = []
+
+        # Merge input_ids and target_ids by concatenating them together.
+        # We remove the left padding from the target_ids before concatenating them.
+        for input_id_sample, target_id_sample in zip(input_ids, target_ids):
+            target_id_sample_no_padding = self._remove_left_padding(target_id_sample)[0]
+            merged_sample_ids = torch.cat((input_id_sample, target_id_sample_no_padding), dim=-1)
+
+            merged_input_and_targets.append(merged_sample_ids)
+            lengths.append(merged_sample_ids.shape[0])
+
+        # Since we remove the left padding from the target_ids, the merged input_ids and target_ids
+        # may not have the same lengths. We need to align them to the same length by adding left padding
+        # and generate an attention mask for just the part of the input that is not padding.
+        max_length = max(lengths)
+        attention_masks = []
+        for i, merged_sample_ids in enumerate(merged_input_and_targets):
+            merged_input_and_targets[i] = self._add_left_padding(merged_sample_ids, max_length)
+            attention_masks.append(self._create_attention_mask(merged_input_and_targets[i]))
+
+        return torch.stack(merged_input_and_targets), torch.stack(attention_masks)
+
+    def _add_left_padding(self, input_ids, max_length):
+        """Adds left padding to the input_ids tensor."""
+        padding = torch.zeros((max_length - input_ids.shape[0]), dtype=torch.int32)
+        return torch.cat((padding, input_ids), dim=-1)
+
+    def _create_attention_mask(self, input_ids):
+        """Creates attention mask for the input_ids tensor."""
+        attention_mask = torch.ones_like(input_ids)
+        bos_index = (input_ids == self.tokenizer.bos_token_id).nonzero()
+
+        if len(bos_index) > 0:
+            first_bos_index = bos_index[0][0]
+            # Set attention mask to 0 for the part of the input that is padding
+            attention_mask[: first_bos_index + 1] = 0
+
+        return attention_mask
 
     def get_augmentation_pipelines(self) -> AugmentationPipelines:
         """Returns the augmentation pipeline for this model."""
