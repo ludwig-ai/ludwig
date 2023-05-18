@@ -59,18 +59,16 @@ generation:
     top_k: 40
     num_beams: 4
     max_new_tokens: 64
+prompt:
+    task: "Classify the sample input as either negative, neutral, or positive."
+    retrieval:
+        type: semantic
+        k: 3
+        model_name: paraphrase-MiniLM-L3-v2
 input_features:
 -
     name: review
     type: text
-    preprocessing:
-        lowercase: false
-        prompt:
-            task: "Classify the sample input as either negative, neutral, or positive."
-            retrieval:
-                type: semantic
-                k: 3
-                model_name: paraphrase-MiniLM-L3-v2
 output_features:
 -
     name: label
@@ -92,8 +90,6 @@ output_features:
 preprocessing:
     split:
         type: fixed
-trainer:
-    type: fewshot
     """
 )
 

@@ -26,6 +26,7 @@ from ludwig.constants import (
     NAME,
     NUMBER,
     PREPROCESSING,
+    SEQUENCE,
     SET,
     TEXT,
     UNKNOWN_SYMBOL,
@@ -42,7 +43,7 @@ logger = logging.getLogger(__name__)
 
 # These types as provided as integer values and passed through an embedding layer that breaks integrated gradients.
 # As such, we need to take care to encode them before handing them to the explainer.
-EMBEDDED_TYPES = {TEXT, CATEGORY, SET, DATE}
+EMBEDDED_TYPES = {SEQUENCE, TEXT, CATEGORY, SET, DATE}
 
 
 @dataclass

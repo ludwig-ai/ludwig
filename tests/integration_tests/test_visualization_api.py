@@ -38,6 +38,8 @@ from tests.integration_tests.utils import (
     text_feature,
 )
 
+pytestmark = pytest.mark.integration_tests_c
+
 
 def run_api_experiment(input_features, output_features):
     """Helper method to avoid code repetition in running an experiment.

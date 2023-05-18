@@ -288,16 +288,15 @@ def test_retrieval_config_none_type():
         """
 model_type: llm
 model_name: facebook/opt-350m
+prompt:
+    retrieval:
+        type: null
+        k: 1
+    task: "Classify the sample input as either negative, neutral, or positive."
 input_features:
 -
     name: sample
     type: text
-    preprocessing:
-        prompt:
-            retrieval:
-                type: null
-                k: 1
-            task: "Classify the sample input as either negative, neutral, or positive."
 output_features:
 -
     name: label
@@ -309,7 +308,7 @@ output_features:
         ModelConfig.from_dict(config)
 
     # will not fail
-    config["input_features"][0]["preprocessing"]["prompt"]["retrieval"]["k"] = 0
+    config["prompt"]["retrieval"]["k"] = 0
     ModelConfig.from_dict(config)
 
 
@@ -318,15 +317,14 @@ def test_retrieval_config_random_type():
         """
 model_type: llm
 model_name: facebook/opt-350m
+prompt:
+    retrieval:
+        type: random
+    task: "Classify the sample input as either negative, neutral, or positive."
 input_features:
 -
     name: sample
     type: text
-    preprocessing:
-        prompt:
-            retrieval:
-                type: random
-            task: "Classify the sample input as either negative, neutral, or positive."
 output_features:
 -
     name: label
@@ -334,7 +332,7 @@ output_features:
 """
     )
 
-    # should not fail because we auto-set k=1 if k=0 using set_retrieval_parameters
+    # should not fail because we auto-set k=1 if k=0 on __post_init__
     ModelConfig.from_dict(config)
 
 
@@ -343,15 +341,14 @@ def test_retrieval_config_semantic_type():
         """
 model_type: llm
 model_name: facebook/opt-350m
+prompt:
+    retrieval:
+        type: semantic
+    task: "Classify the sample input as either negative, neutral, or positive."
 input_features:
 -
     name: sample
     type: text
-    preprocessing:
-        prompt:
-            retrieval:
-                type: semantic
-            task: "Classify the sample input as either negative, neutral, or positive."
 output_features:
 -
     name: label
@@ -362,5 +359,5 @@ output_features:
     with pytest.raises(ConfigValidationError):
         ModelConfig.from_dict(config)
 
-    config["input_features"][0]["preprocessing"]["prompt"]["retrieval"]["model_name"] = "some-huggingface-model"
+    config["prompt"]["retrieval"]["model_name"] = "some-huggingface-model"
     ModelConfig.from_dict(config)

@@ -276,6 +276,7 @@ PREDICTOR = "predictor"
 POSTPROCESSOR = "postprocessor"
 
 GENERATION = "generation"
+PROMPT = "prompt"
 ADAPTER = "adapter"
 
 S3 = "s3"

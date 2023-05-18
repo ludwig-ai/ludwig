@@ -3,6 +3,8 @@
 from abc import ABC, abstractmethod
 from typing import Callable, TYPE_CHECKING
 
+from transformers import AutoConfig
+
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
     AUDIO,
@@ -14,7 +16,6 @@ from ludwig.constants import (
     MODEL_GBM,
     MODEL_LLM,
     NUMBER,
-    SEMANTIC,
     SEQUENCE,
     SET,
     TEXT,
@@ -27,7 +28,6 @@ from ludwig.utils.misc_utils import merge_dict
 
 if TYPE_CHECKING:
     from ludwig.schema.model_config import ModelConfig
-    from ludwig.schema.prompt import RetrievalConfig
 
 # Set of all sequence feature types.
 SEQUENCE_OUTPUT_FEATURE_TYPES = {SEQUENCE, TEXT, SET, VECTOR}
@@ -234,35 +234,6 @@ def check_validation_metric_exists(config: "ModelConfig") -> None:  # noqa: F821
             f"User-specified trainer.validation_metric '{validation_metric_name}' is not valid. "
             f"Available metrics are: {all_valid_metrics}"
         )
-
-
-@register_config_check
-def check_retrieval_config(config: "ModelConfig") -> None:
-    """Checks that the retrieval config is valid."""
-    for input_feature in config.input_features:
-        if input_feature.type == TEXT:
-            if input_feature.preprocessing.prompt.task is not None:
-
-                _check_k_retrieval_config(input_feature.preprocessing.prompt.retrieval)
-                _check_model_name_retrieval_config(input_feature.preprocessing.prompt.retrieval)
-
-
-def _check_k_retrieval_config(retrieval_config: "RetrievalConfig") -> None:
-    """Checks that k is greater than zero if retrieval type is not None."""
-    # TODO: have a dynamically loaded schema based on the selection of the type param
-    # https://github.com/ludwig-ai/ludwig/pull/3351#discussion_r1181910954
-    if retrieval_config.type is None and retrieval_config.k != 0:
-        raise ConfigValidationError("k must be 0 if retrieval type is None.")
-    elif retrieval_config.type is not None and retrieval_config.k <= 0:
-        raise ConfigValidationError("k must be greater than 0 if retrieval type is not None.")
-
-
-def _check_model_name_retrieval_config(retrieval_config: "RetrievalConfig") -> None:
-    """Checks that model_name is not None if retrieval type is not None."""
-    if retrieval_config.type is None and retrieval_config.model_name is not None:
-        raise ConfigValidationError("model_name must be None if retrieval type is None.")
-    elif retrieval_config.type == SEMANTIC and retrieval_config.model_name is None:
-        raise ConfigValidationError(f"model_name must not be None if retrieval type is '{SEMANTIC}'.")
 
 
 @register_config_check
@@ -499,3 +470,103 @@ def check_llm_atleast_one_input_text_feature(config: "ModelConfig"):  # noqa: F8
             return
 
     raise ConfigValidationError("LLM requires at least one text input feature.")
+
+
+@register_config_check
+def check_llm_finetuning_trainer_config(config: "ModelConfig"):  # noqa: F821
+    """Ensures that trainer type is finetune if adapter is not None."""
+    if config.model_type != MODEL_LLM:
+        return
+
+    if config.adapter is not None and config.trainer.type != "finetune":
+        raise ConfigValidationError("LLM finetuning requires trainer type to be finetune.")
+
+
+@register_config_check
+def check_llm_finetuning_backend_config(config: "ModelConfig"):  # noqa: F821
+    """Checks that the LLM finetuning using Ray is configured correctly.
+
+    DDP strategy is not supported for LLM finetuning because it leads to OOMs since the model is large and DDP strategy
+    requires a copy of the model on each GPU.
+    """
+    if config.model_type != MODEL_LLM:
+        return
+
+    # LLM finetuning is only supported by the finetune trainer type
+    if config.trainer.type != "finetune":
+        return
+
+    # Using local backend, so skip the checks below
+    if not hasattr(config.backend, "type"):
+        return
+
+    backend = config.backend
+    if not hasattr(backend.trainer, "strategy") or backend.trainer.strategy != "deepspeed":
+        raise ConfigValidationError("LLM finetuning with Ray requires the DeepSpeed strategy.")
+
+    # Deepspeed requires GPU
+    if not backend.trainer.use_gpu or backend.trainer.resources_per_worker.GPU < 1:
+        raise ConfigValidationError("LLM finetuning with DeepSpeed requires GPU.")
+
+
+@register_config_check
+def check_llm_finetuning_adalora_config(config: "ModelConfig"):
+    """Checks that the adalora adapter is configured correctly.
+
+    It requires a set of target_modules to be specified in the config for the model. If it isn't specified by the user,
+    we also check against PEFT's predefined target module list for ADALORA to see if this key is present there. If
+    neither is true, AdaloraModel will run into issues downstream.
+    """
+    if config.model_type != MODEL_LLM:
+        return
+
+    if not config.adapter:
+        return
+
+    if config.adapter.type != "adalora":
+        return
+
+    from peft.utils import TRANSFORMERS_MODELS_TO_ADALORA_TARGET_MODULES_MAPPING
+
+    model_config = _get_llm_model_config(config.model_name)
+    if (
+        not config.adapter.target_modules
+        and model_config.model_type not in TRANSFORMERS_MODELS_TO_ADALORA_TARGET_MODULES_MAPPING
+    ):
+        raise ConfigValidationError(
+            f"Adalora adapter is not supported for {model_config.model_type} model. "
+            f"Supported model types are: {list(TRANSFORMERS_MODELS_TO_ADALORA_TARGET_MODULES_MAPPING.keys())}. "
+            "If you know the target modules for your model, please specify them in the config through the "
+            "`target_modules` key."
+        )
+
+
+@register_config_check
+def check_llm_finetuning_adaption_prompt_parameters(config: "ModelConfig"):
+    """Checks that the adaption_prompt adapter is configured correctly.
+
+    Adaption prompt is only supported for Llama models.
+    """
+    if config.model_type != MODEL_LLM:
+        return
+
+    if not config.adapter:
+        return
+
+    if config.adapter.type != "adaption_prompt":
+        return
+
+    from peft.tuners.adaption_prompt import TRANSFORMERS_MODEL_CONFIG
+
+    # Adaption Config is currently only supported for Llama model types
+    model_config = _get_llm_model_config(config.model_name)
+    if model_config.model_type not in TRANSFORMERS_MODEL_CONFIG:
+        raise ConfigValidationError(
+            f"Adaption prompt adapter is not supported for {model_config.model_type} model. "
+            f"Supported model types are: {list(TRANSFORMERS_MODEL_CONFIG.keys())}."
+        )
+
+
+def _get_llm_model_config(model_name: str) -> AutoConfig:
+    """Returns the LLM model config."""
+    return AutoConfig.from_pretrained(model_name)
