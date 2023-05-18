@@ -471,6 +471,11 @@ class LLM(BaseModel):
 
         merged_input_and_targets = []
         lengths = []
+
+        # Some tokenizers like GPT and GPT2 don't have pad_token_id and relied on attention masks
+        # For now, just set this to eos_token_id as recommended here: https://github.com/huggingface/transformers/issues/2630  # noqa
+        if not self.tokenizer.pad_token_id:
+            self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
         pad_tensor = torch.tensor([self.tokenizer.pad_token_id]).to(target_ids[0].device)
 
         # Merge input_ids and target_ids by concatenating them together.
