@@ -199,9 +199,9 @@ class LocalTrainingMixin:
         return trainer_cls(config=config, model=model, **kwargs)
 
     def create_predictor(self, model: BaseModel, **kwargs):
-        from ludwig.models.predictor import Predictor
+        from ludwig.models.predictor import get_predictor_cls
 
-        return Predictor(model, **kwargs)
+        return get_predictor_cls(model.type())(model, **kwargs)
 
     def sync_model(self, model):
         pass
@@ -278,9 +278,9 @@ class DataParallelBackend(LocalPreprocessingMixin, Backend, ABC):
         return Trainer(distributed=self._distributed, **kwargs)
 
     def create_predictor(self, model: BaseModel, **kwargs):
-        from ludwig.models.predictor import Predictor
+        from ludwig.models.predictor import get_predictor_cls
 
-        return Predictor(model, distributed=self._distributed, **kwargs)
+        return get_predictor_cls(model.type())(model, distributed=self._distributed, **kwargs)
 
     def sync_model(self, model):
         # Model weights are only saved on the coordinator, so broadcast

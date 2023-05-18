@@ -213,29 +213,51 @@ class LLM(BaseModel):
 
         input_ids = self.get_input_ids(inputs)
 
-        if self.config_obj.adapter:
-            # Forward pass using PEFT wrapped model for fine-tuning
-            model_outputs = self.model(input_ids).get(LOGITS)
+        # Forward pass using PEFT wrapped model for fine-tuning
+        model_outputs = self.model(input_ids).get(LOGITS)
 
-            if self.output_feature_type != TEXT:
-                # Pass generated tokens through decoder after averaging the token probabilities
-                # This is required for the classification head for the classifier decoder
-                model_outputs = torch.mean(model_outputs, dim=1)
+        if self.output_feature_type != TEXT:
+            # Pass generated tokens through decoder after averaging the token probabilities
+            # This is required for the classification head for the classifier decoder
+            model_outputs = torch.mean(model_outputs, dim=1)
 
-            if self.output_feature_type == TEXT:
-                decoder_outputs = model_outputs
-            else:
-                decoder_outputs = self.output_feature_decoder.decoder_obj(model_outputs)
+        if self.output_feature_type == TEXT:
+            decoder_outputs = model_outputs
+        else:
+            decoder_outputs = self.output_feature_decoder.decoder_obj(model_outputs)
 
-            # Set the output feature tensor to the decoder outputs (logits)
-            outputs = {}
-            of_name = self.config_obj.output_features[0].name
-            set_output_feature_tensor(outputs, of_name, LOGITS, decoder_outputs)
+        # Set the output feature tensor to the decoder outputs (logits)
+        outputs = {}
+        of_name = self.config_obj.output_features[0].name
+        set_output_feature_tensor(outputs, of_name, LOGITS, decoder_outputs)
 
-            # Get predictions, probabilities and logits tensor from the output feature's predictions function
-            outputs = self.output_features.get(of_name).predictions(outputs, of_name)
+        # Get predictions, probabilities and logits tensor from the output feature's predictions function
+        outputs = self.output_features.get(of_name).predictions(outputs, of_name)
 
-            return outputs
+        return outputs
+
+    def generate(
+        self,
+        inputs: Union[
+            Dict[str, torch.Tensor], Dict[str, np.ndarray], Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
+        ],
+        mask=None,
+    ) -> Dict[str, torch.Tensor]:
+
+        if isinstance(inputs, tuple):
+            inputs, targets = inputs
+            # Convert targets to tensors.
+            for target_feature_name, target_value in targets.items():
+                if not isinstance(target_value, torch.Tensor):
+                    targets[target_feature_name] = torch.from_numpy(target_value)
+                else:
+                    targets[target_feature_name] = target_value
+        else:
+            targets = None
+
+        assert list(inputs.keys()) == self.input_features.keys()
+
+        input_ids = self.get_input_ids(inputs)
 
         with torch.no_grad():
             input_lengths = []
