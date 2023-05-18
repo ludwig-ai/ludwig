@@ -156,11 +156,7 @@ jobs:
 
       - name: Unit Tests
         run: |
-          RAY_DATA_STRICT_MODE=0 RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow and not combinatorial and not horovod" --junitxml pytest.xml tests/ludwig
-
-      - name: Integration Tests
-        run: |
-          RAY_DATA_STRICT_MODE=0 RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow and not combinatorial and not horovod and not llm" --junitxml pytest.xml tests/integration_tests
+          RAY_DATA_STRICT_MODE=0 RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow and not combinatorial and not horovod and not llm" --junitxml pytest.xml tests/ludwig
 
       - name: Regression Tests
         run: |
