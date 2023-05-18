@@ -34,6 +34,7 @@ from ludwig.schema.features.loss.loss import (
     MAELossConfig,
     MAPELossConfig,
     MSELossConfig,
+    NextTokenSoftmaxCrossEntropyLossConfig,
     RMSELossConfig,
     RMSPELossConfig,
     SequenceSoftmaxCrossEntropyLossConfig,
@@ -198,6 +199,22 @@ class SequenceSoftmaxCrossEntropyLoss(nn.Module, LogitsInputsMixin):
         """
         target = target.long()
         return self.loss_fn(preds[1:].view(-1, preds.size(-1)), target[1:].view(-1))
+
+
+@register_loss(NextTokenSoftmaxCrossEntropyLossConfig)
+class NextTokenSoftmaxCrossEntropyLoss(SequenceSoftmaxCrossEntropyLoss):
+    def __init__(self, config: NextTokenSoftmaxCrossEntropyLossConfig):
+        super().__init__(config)
+
+    def forward(self, preds: Tensor, target: Tensor) -> Tensor:
+        """
+        Params:
+            preds: Tensor of shape [batch x sequence_length x vocab_size]
+            target: Tensor of shape [batch x sequence_length], where each element is integral between 0 and vocab_size.
+        """
+        target = target.long()
+        _, _, vocab_size = preds.shape
+        return self.loss_fn(preds.reshape(-1, vocab_size), target.reshape(-1))
 
 
 @register_loss(SigmoidCrossEntropyLossConfig)
