@@ -342,14 +342,10 @@ class LLM(BaseModel):
         of_train_losses = {}
         for of_name, of_obj in self.output_features.items():
             _targets, _predictions = targets, predictions
-            # TODO(Arnav): Open Question: At this point for fine-tuning, should we actually left pad the target tensor
-            # since it is smaller in length as opposed to right padding it? Left padding will shift the target tensor
-            # to the right which is probably more accurate for computing loss. We can dynamically set this based on the
-            # model's mode, i.e., training mode or eval mode.
             if isinstance(of_obj, TextOutputFeature):
                 # Align the target length with the predictions length to enable text metric evaluation.
                 _predictions = {of_name: _predictions}
-                _targets, _predictions = realign_target_and_prediction_tensors(_targets, _predictions, of_name)
+                _targets, _predictions = realign_target_and_prediction_tensors(_targets, _predictions, of_name, "left")
 
             # TODO(Arnav): Seems like doing this again and going between these format types in unnecessary, but
             # refactor so that we don't have to do this at a later point.
@@ -498,7 +494,7 @@ class LLM(BaseModel):
 
     def _add_left_padding(self, input_ids, max_length):
         """Adds left padding to the input_ids tensor."""
-        padding = torch.zeros((max_length - input_ids.shape[0]), dtype=torch.int32)
+        padding = torch.zeros((max_length - input_ids.shape[0]), dtype=torch.int32, device=input_ids.device)
         return torch.cat((padding, input_ids), dim=-1)
 
     def _create_attention_mask(self, input_ids):
@@ -519,7 +515,7 @@ class LLM(BaseModel):
 
 
 def realign_target_and_prediction_tensors(
-    targets: Dict[str, torch.Tensor], predictions: Dict[str, torch.Tensor], of_name: str
+    targets: Dict[str, torch.Tensor], predictions: Dict[str, torch.Tensor], of_name: str, pad_direction: str = "right"
 ) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
     """Realigns the target tensor with the predictions.
 
@@ -528,6 +524,10 @@ def realign_target_and_prediction_tensors(
     Args:
         targets: The target tensor.
         predictions: The prediction tensor.
+        of_name: The output feature's name.
+        pad_direction: The direction to pad the tensors. Can be 'left' or 'right'.
+            Defaults to 'right'.
+
     Returns:
         The realigned target tensor.
     """
@@ -537,19 +537,32 @@ def realign_target_and_prediction_tensors(
     if target_length == prediction_length:
         return targets, predictions
 
+    if pad_direction not in {"left", "right"}:
+        raise ValueError(f'pad_direction must be either "left" or "right". Got {pad_direction}.')
+
     # Align target and prediction tensors for text to text metric computation
     if target_length > prediction_length:
         # Pad the predictions.
         zeros_to_add = target_length - prediction_length
-        predictions[of_name][PREDICTIONS] = F.pad(predictions[of_name][PREDICTIONS], (0, zeros_to_add))
+
+        if pad_direction == "right":
+            predictions[of_name][PREDICTIONS] = F.pad(predictions[of_name][PREDICTIONS], (0, zeros_to_add))
+            predictions[of_name][PROBABILITIES] = F.pad(predictions[of_name][PROBABILITIES], (0, 0, 0, zeros_to_add))
+            predictions[of_name][LOGITS] = F.pad(predictions[of_name][LOGITS], (0, 0, 0, zeros_to_add))
+        elif pad_direction == "left":
+            predictions[of_name][PREDICTIONS] = F.pad(predictions[of_name][PREDICTIONS], (zeros_to_add, 0))
+            predictions[of_name][PROBABILITIES] = F.pad(predictions[of_name][PROBABILITIES], (zeros_to_add, 0, 0, 0))
+            predictions[of_name][LOGITS] = F.pad(predictions[of_name][LOGITS], (zeros_to_add, 0, 0, 0))
+
         predictions[of_name][PREDICTIONS] = predictions[of_name][PREDICTIONS].type(torch.float32)
-        # Pad probabilities with 0s. Pad the second last dimension with 0s.
-        predictions[of_name][PROBABILITIES] = F.pad(predictions[of_name][PROBABILITIES], (0, 0, 0, zeros_to_add))
         predictions[of_name][PROBABILITIES] = predictions[of_name][PROBABILITIES].type(torch.float32)
-        # Pad logits with 0s. Pad the second last dimension with 0s.
-        predictions[of_name][LOGITS] = F.pad(predictions[of_name][LOGITS], (0, 0, 0, zeros_to_add))
         predictions[of_name][LOGITS] = predictions[of_name][LOGITS].type(torch.float32)
     else:
-        targets[of_name] = F.pad(targets[of_name], (0, prediction_length - target_length))
+        if pad_direction == "right":
+            targets[of_name] = F.pad(targets[of_name], (0, prediction_length - target_length))
+        elif pad_direction == "left":
+            targets[of_name] = F.pad(targets[of_name], (prediction_length - target_length, 0))
+
+        targets[of_name] = targets[of_name].type(torch.float32)
 
     return targets, predictions
