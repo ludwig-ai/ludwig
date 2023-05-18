@@ -129,6 +129,7 @@ class LLM(BaseModel):
         if device == torch.device("cuda") and num_gpus > 1:
             # TODO: make this configurable in the future. These parameters are from FastChat:
             # https://github.com/lm-sys/FastChat/blob/0e958b852a14f4bef5f0e9d7a5e7373477329cf2/fastchat/serve/inference.py#L90  # noqa
+            # TODO: Wrap device_map="auto" in a try-except block since it may not be supported for all models (E.g. BertLMHead)  # noqa
             model_kwargs.update(
                 dict(
                     low_cpu_mem_usage=True,
@@ -141,6 +142,11 @@ class LLM(BaseModel):
             with tempfile.TemporaryDirectory() as tmpdir:
                 self.model.save_pretrained(tmpdir)
                 self.model = AutoModelForCausalLM.from_pretrained(tmpdir, **model_kwargs)
+
+            # If loading from checkpoint did not place it on the desired device, forcefully place it on
+            # the desired device. On Cuda, this will place it on the device with the lowest index.
+            if self.model.device != device:
+                self.model = self.model.to(device)
 
             self.eval_loss_metric = self.eval_loss_metric.to(device)
             self.eval_additional_losses_metrics = self.eval_additional_losses_metrics.to(device)
