@@ -36,7 +36,7 @@ def get_schema(model_type: str = MODEL_ECD):
     }
 
 
-@lru_cache(maxsize=2)
+@lru_cache(maxsize=1)
 def get_validator():
     # Manually add support for tuples (pending upstream changes: https://github.com/Julian/jsonschema/issues/148):
     def custom_is_array(checker, instance):

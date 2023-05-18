@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
+import time
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
@@ -27,13 +28,16 @@ from tqdm import tqdm
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend.utils.storage import StorageManager
+from ludwig.constants import MODEL_LLM
 from ludwig.data.cache.manager import CacheManager
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataframe.pandas import PANDAS
 from ludwig.data.dataset.base import DatasetManager
 from ludwig.data.dataset.pandas import PandasDatasetManager
+from ludwig.distributed import init_dist_strategy
+from ludwig.distributed.base import DistributedStrategy
 from ludwig.models.base import BaseModel
-from ludwig.schema.trainer import ECDTrainerConfig, GBMTrainerConfig
+from ludwig.schema.trainer import BaseTrainerConfig
 from ludwig.types import HyperoptConfigDict
 from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
 from ludwig.utils.dataframe_utils import from_batches, to_batches
@@ -135,6 +139,9 @@ class Backend(ABC):
         """Applies `transform_fn` to every `batch_size` length batch of `df` and returns the result."""
         raise NotImplementedError()
 
+    def supports_batch_size_tuning(self) -> bool:
+        return True
+
 
 class LocalPreprocessingMixin:
     @property
@@ -175,15 +182,19 @@ class LocalPreprocessingMixin:
 
 
 class LocalTrainingMixin:
+    def initialize(self):
+        init_dist_strategy("local")
+
     def initialize_pytorch(self, *args, **kwargs):
         initialize_pytorch(*args, **kwargs)
 
-    def create_trainer(
-        self, config: Union[ECDTrainerConfig, GBMTrainerConfig], model: BaseModel, **kwargs
-    ) -> "BaseTrainer":  # noqa: F821
-        from ludwig.trainers.registry import trainers_registry
+    def create_trainer(self, config: BaseTrainerConfig, model: BaseModel, **kwargs) -> "BaseTrainer":  # noqa: F821
+        from ludwig.trainers.registry import get_llm_trainers_registry, get_trainers_registry
 
-        trainer_cls = get_from_registry(model.type(), trainers_registry)
+        if model.type() == MODEL_LLM:
+            trainer_cls = get_from_registry(config.type, get_llm_trainers_registry())
+        else:
+            trainer_cls = get_from_registry(model.type(), get_trainers_registry())
 
         return trainer_cls(config=config, model=model, **kwargs)
 
@@ -231,9 +242,6 @@ class LocalBackend(LocalPreprocessingMixin, LocalTrainingMixin, Backend):
     def __init__(self, **kwargs):
         super().__init__(dataset_manager=PandasDatasetManager(self), **kwargs)
 
-    def initialize(self):
-        pass
-
     @property
     def num_nodes(self) -> int:
         return 1
@@ -245,3 +253,73 @@ class LocalBackend(LocalPreprocessingMixin, LocalTrainingMixin, Backend):
         # Every trial will be run with Pandas and NO Ray Datasets. Allow Ray Tune to use all the
         # trial resources it wants, because there is no Ray Datasets process to compete with it for CPUs.
         return None
+
+
+@DeveloperAPI
+class DataParallelBackend(LocalPreprocessingMixin, Backend, ABC):
+    BACKEND_TYPE = "deepspeed"
+
+    def __init__(self, **kwargs):
+        super().__init__(dataset_manager=PandasDatasetManager(self), **kwargs)
+        self._distributed: DistributedStrategy = None
+
+    @abstractmethod
+    def initialize(self):
+        pass
+
+    def initialize_pytorch(self, *args, **kwargs):
+        initialize_pytorch(
+            *args, local_rank=self._distributed.local_rank(), local_size=self._distributed.local_size(), **kwargs
+        )
+
+    def create_trainer(self, **kwargs) -> "BaseTrainer":  # noqa: F821
+        from ludwig.trainers.trainer import Trainer
+
+        return Trainer(distributed=self._distributed, **kwargs)
+
+    def create_predictor(self, model: BaseModel, **kwargs):
+        from ludwig.models.predictor import Predictor
+
+        return Predictor(model, distributed=self._distributed, **kwargs)
+
+    def sync_model(self, model):
+        # Model weights are only saved on the coordinator, so broadcast
+        # to all other ranks
+        self._distributed.sync_model(model)
+
+    def broadcast_return(self, fn):
+        """Returns the result of calling `fn` on coordinator, broadcast to all other ranks.
+
+        Specifically, `fn` is only executed on coordinator, but its result is returned by every rank by broadcasting the
+        return value from coordinator.
+        """
+        result = fn() if self.is_coordinator() else None
+        if self._distributed:
+            name = f"broadcast_return_{int(time.time())}"
+            result = self._distributed.broadcast_object(result, name=name)
+        return result
+
+    def is_coordinator(self):
+        return self._distributed.rank() == 0
+
+    @property
+    def num_nodes(self) -> int:
+        return self._distributed.size()
+
+    def get_available_resources(self) -> Resources:
+        # TODO(travis): this double-counts on the same device, it should use a cross-communicator instead
+        cpus = torch.as_tensor([psutil.cpu_count()], dtype=torch.int)
+        cpus = self._distributed.allreduce(cpus).item()
+
+        gpus = torch.as_tensor([torch.cuda.device_count()], dtype=torch.int)
+        gpus = self._distributed.allreduce(gpus).item()
+
+        return Resources(cpus=cpus, gpus=gpus)
+
+    def max_concurrent_trials(self, hyperopt_config: HyperoptConfigDict) -> Union[int, None]:
+        # Return None since there is no Ray component
+        return None
+
+    def tune_batch_size(self, evaluator_cls: Type[BatchSizeEvaluator], dataset_len: int) -> int:
+        evaluator = evaluator_cls()
+        return evaluator.select_best_batch_size(dataset_len)

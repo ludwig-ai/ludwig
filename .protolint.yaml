@@ -8,7 +8,7 @@ lint:
     # The specific files to exclude.
     exclude:
       # NOTE: UNIX paths will be properly accepted by both UNIX and Windows.
-      - ludwig/profiling/proto/whylogs_messages.proto
+      - ../proto/invalidFileName.proto
 
   # Linter rules.
   # Run `protolint list` to see all available rules.

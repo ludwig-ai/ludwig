@@ -323,7 +323,7 @@ def set_llm_tokenizers(config: "ModelConfig") -> None:
 
             # Add tokenizer parameters to decoder so it can be used during the forward pass
             output_feature.decoder.pretrained_model_name_or_path = pretrained_model_name_or_path
-            output_feature.decoder.max_new_tokens = config.generation_config.max_new_tokens
+            output_feature.decoder.max_new_tokens = config.generation.max_new_tokens
         elif output_feature.type == CATEGORY:
             # Tokenizer parameters
             output_feature.decoder.tokenizer = "hf_tokenizer"

@@ -50,7 +50,6 @@ from ludwig.utils.strings_utils import (
     UNKNOWN_SYMBOL,
     Vocabulary,
 )
-from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +76,6 @@ class TextFeatureMixin(BaseFeatureMixin):
             pretrained_model_name_or_path=preprocessing_parameters["pretrained_model_name_or_path"],
             ngram_size=preprocessing_parameters["ngram_size"],
             compute_idf=preprocessing_parameters["compute_idf"],
-            prompt_template=preprocessing_parameters.get("prompt_template"),
             processor=backend.df_engine,
         )
 
@@ -116,6 +114,7 @@ class TextFeatureMixin(BaseFeatureMixin):
                 max_sequence_length_99ptile = min(vocabulary.line_length_99ptile, max_sequence_length)
 
         logger.info(f"max sequence length is {max_sequence_length} for feature '{column.name}'")
+
         return {
             "idx2str": vocabulary.vocab,
             "str2idx": vocabulary.str2idx,
@@ -153,9 +152,6 @@ class TextFeatureMixin(BaseFeatureMixin):
             preprocessing_parameters["computed_fill_value"] = preprocessing_parameters["unknown_symbol"]
 
         sequences = column
-        prompt_template = preprocessing_parameters.get("prompt_template")
-        if prompt_template is not None:
-            sequences = backend.df_engine.map_objects(sequences, lambda x: prompt_template.format(input=x))
 
         return build_sequence_matrix(
             sequences=sequences,
@@ -280,6 +276,25 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
                     )
                 )
 
+        if isinstance(feature_config.loss.class_weights, dict):
+            if feature_metadata["str2idx"].keys() != feature_config.loss.class_weights.keys():
+                raise ValueError(
+                    "The class_weights keys ({}) are not compatible with "
+                    "the classes ({}) of feature {}. "
+                    "Check the metadata JSON file to see the classes "
+                    "and consider there needs to be a weight "
+                    "for the <UNK> class too.".format(
+                        feature_config.loss.class_weights.keys(),
+                        feature_metadata["str2idx"].keys(),
+                        feature_config.column,
+                    )
+                )
+            else:
+                class_weights = feature_config.loss.class_weights
+                idx2str = feature_metadata["idx2str"]
+                class_weights_list = [class_weights[s] for s in idx2str]
+                feature_config.loss.class_weights = class_weights_list
+
         if feature_config.loss.class_similarities_temperature > 0:
             if feature_config.class_similarities:
                 distances = feature_config.class_similarities
@@ -382,15 +397,3 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     @staticmethod
     def get_schema_cls():
         return TextOutputFeatureConfig
-
-    def flatten(self, df: DataFrame) -> DataFrame:
-        probs_col = f"{self.feature_name}_{PROBABILITIES}"
-        df[probs_col] = df[probs_col].apply(lambda x: x.flatten())
-        return df
-
-    def unflatten(self, df: DataFrame) -> DataFrame:
-        probs_col = f"{self.feature_name}_{PROBABILITIES}"
-        df[probs_col] = df[probs_col].apply(
-            lambda x: x.reshape(-1, self.decoder_obj.config.max_sequence_length), meta=(probs_col, "object")
-        )
-        return df
