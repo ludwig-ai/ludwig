@@ -23,7 +23,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         python-version: ["3.8", "3.9", "3.10"]
-        test-markers: ["distributed"]
+        test-markers: ["not distributed", "distributed"]
         include:
           - python-version: "3.8"
             pytorch-version: 1.13.0
@@ -113,7 +113,7 @@ jobs:
           else
             if [ "$RAY_VERSION" == "nightly" ]; then
               # NOTE: hardcoded for python 3.10 on Linux
-              pip install "ray[default,data,serve,tune] @ https://s3-us-west-2.amazonaws.com/ray-wheels/fa4b59e5badb43633120359c912514bbbe59c019/ray-3.0.0.dev0-cp310-cp310-manylinux2014_x86_64.whl"
+              pip install "ray[default,data,serve,tune] @ https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-3.0.0.dev0-cp310-cp310-manylinux2014_x86_64.whl"
             else
               pip install "ray[default,data,serve,tune]==$RAY_VERSION"
             fi
