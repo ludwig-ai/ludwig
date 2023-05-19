@@ -504,8 +504,22 @@ def build_sequence_matrix(
         logger.debug(f"max length of {format}: {max_length} < limit: {length_limit}")
     max_length = length_limit
 
+    # Set padding token id based on tokenizer_type. Huggingface tokenizers typically have a pad_token_id attribute.
+    if tokenizer_type == "hf_tokenizer":
+        pad_token_id = (
+            tokenizer.tokenizer.pad_token_id
+            if hasattr(tokenizer.tokenizer, "pad_token_id")
+            else tokenizer.tokenizer.eos_token_id
+        )
+        # Some tokenizers may not have pad_token_id set. In this case, we use 0 as the padding token id.
+        if not pad_token_id:
+            logger.warning("No padding token id or eos token id found in tokenizer. Using 0 as padding token id.")
+            pad_token_id = 0
+    else:
+        pad_token_id = inverse_vocabulary[padding_symbol]
+
     def pad(vector):
-        sequence = np.full((int(max_length),), inverse_vocabulary[padding_symbol], dtype=format_dtype)
+        sequence = np.full((int(max_length),), pad_token_id, dtype=format_dtype)
         limit = min(vector.shape[0], max_length)
         if padding == "right":
             sequence[:limit] = vector[:limit]
