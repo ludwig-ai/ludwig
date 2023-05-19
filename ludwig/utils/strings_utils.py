@@ -28,6 +28,7 @@ from ludwig.constants import PADDING_SYMBOL, START_SYMBOL, STOP_SYMBOL, UNKNOWN_
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataframe.pandas import PANDAS
 from ludwig.utils.fs_utils import open_file
+from ludwig.utils.logging_utils import log_once
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.tokenizers import get_tokenizer_from_registry
 from ludwig.utils.types import Series
@@ -506,14 +507,13 @@ def build_sequence_matrix(
 
     # Set padding token id based on tokenizer_type. Huggingface tokenizers typically have a pad_token_id attribute.
     if tokenizer_type == "hf_tokenizer":
-        pad_token_id = (
-            tokenizer.tokenizer.pad_token_id
-            if hasattr(tokenizer.tokenizer, "pad_token_id")
-            else tokenizer.tokenizer.eos_token_id
-        )
-        # Some tokenizers may not have pad_token_id set. In this case, we use 0 as the padding token id.
-        if not pad_token_id:
-            logger.warning("No padding token id or eos token id found in tokenizer. Using 0 as padding token id.")
+        if hasattr(tokenizer.tokenizer, "pad_token_id"):
+            pad_token_id = tokenizer.tokenizer.pad_token_id
+        elif hasattr(tokenizer.tokenizer, "eos_token_id"):
+            pad_token_id = tokenizer.tokenizer.eos_token_id
+        # Some tokenizers may not have pad_token_id set or eos_token_id. In this case, we use 0 as the padding token id.
+        else:
+            log_once("No padding token id or eos token id found in tokenizer. Using 0 as padding token id.")
             pad_token_id = 0
     else:
         pad_token_id = inverse_vocabulary[padding_symbol]
