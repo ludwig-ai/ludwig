@@ -8,11 +8,13 @@ import torch
 import torch.nn.functional as F
 import torchmetrics
 from transformers import (
+    AutoConfig,
     AutoModelForCausalLM,
     AutoTokenizer,
     GenerationConfig,
     GPT2Tokenizer,
     GPT2TokenizerFast,
+    LlamaConfig,
     LlamaTokenizer,
     LlamaTokenizerFast,
 )
@@ -72,8 +74,13 @@ class LLM(BaseModel):
         self.max_new_tokens = self.config_obj.generation.max_new_tokens
         self.max_input_length = self.context_len - self.max_new_tokens - 8
 
-        # Used only for its metadata about the vocabulary
-        self.tokenizer = AutoTokenizer.from_pretrained(self.config_obj.model_name, use_fast=False)
+        # Initialize tokenizer
+        use_fast = True
+        if isinstance(AutoConfig.from_pretrained(self.config_obj.model_name), LlamaConfig):
+            # HACK: Llama fast tokenizer takes about 2-4 minutes to load, so we disable it for now.
+            use_fast = False
+        self.tokenizer = AutoTokenizer.from_pretrained(self.config_obj.model_name, use_fast=use_fast)
+        self._set_pad_token()
 
         self.generation = GenerationConfig(**self.config_obj.generation.to_dict())
 
@@ -457,16 +464,18 @@ class LLM(BaseModel):
             self._random_seed,
         )
 
-    def _remove_left_padding(self, input_ids_sample: torch.Tensor):
-        """Removes left padding from the input_ids tensor."""
-        bos_idxs = torch.where(input_ids_sample == self.tokenizer.bos_token_id)[0]  # all BOS token locations
-        if len(bos_idxs) != 0:
-            bos_idx = bos_idxs[0]  # get first BOS token location
-        else:
-            bos_idx = 0
-
-        input_ids_sample_no_padding = input_ids_sample[bos_idx:].unsqueeze(0)
-        return input_ids_sample_no_padding
+    def _set_pad_token(self):
+        """Sets the pad token for the tokenizer if it is not already set."""
+        # HACK(Arnav): gpt, gpt2 and llama tokenizers had no pad tokens.
+        # These recommend using eos tokens instead
+        # https://github.com/huggingface/transformers/issues/2648#issuecomment-616177044
+        # https://github.com/huggingface/transformers/issues/2630#issuecomment-1290809338
+        if any(
+            isinstance(self.tokenizer, t)
+            for t in [GPT2Tokenizer, GPT2TokenizerFast, LlamaTokenizer, LlamaTokenizerFast]
+        ):
+            self.tokenizer.pad_token = self.tokenizer.eos_token
+            self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
 
     def _generate_merged_ids(self, input_ids, target_ids):
         """This function merges the input_ids and target_ids together to create a unified tensor to pass into the
@@ -486,26 +495,17 @@ class LLM(BaseModel):
         merged_input_and_targets = []
         lengths = []
 
-        # HACK(Arnav): gpt, gpt2 and llama tokenizers had no pad tokens.
-        # These recommend using eos tokens instead
-        # https://github.com/huggingface/transformers/issues/2648#issuecomment-616177044
-        # https://github.com/huggingface/transformers/issues/2630#issuecomment-1290809338
-        if any(
-            isinstance(self.tokenizer, t)
-            for t in [GPT2Tokenizer, GPT2TokenizerFast, LlamaTokenizer, LlamaTokenizerFast]
-        ):
-            self.tokenizer.pad_token = self.tokenizer.eos_token
-            self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
-
         pad_tensor = torch.tensor([self.tokenizer.pad_token_id]).to(target_ids[0].device)
 
         # Merge input_ids and target_ids by concatenating them together.
-        # We remove the left padding from the target_ids before concatenating them.
+        # We remove the left padding from both input_ids and target_ids before concatenating them.
         for input_id_sample, target_id_sample in zip(input_ids, target_ids):
+            input_id_sample_no_padding = self._remove_left_padding(input_id_sample)[0]
             target_id_sample_no_padding = torch.cat(
                 (self._remove_left_padding(target_id_sample)[0], pad_tensor), dim=-1
             )
-            merged_sample_ids = torch.cat((input_id_sample, target_id_sample_no_padding), dim=-1)
+
+            merged_sample_ids = torch.cat((input_id_sample_no_padding, target_id_sample_no_padding), dim=-1)
 
             merged_input_and_targets.append(merged_sample_ids)
             lengths.append(merged_sample_ids.shape[0])
@@ -520,6 +520,26 @@ class LLM(BaseModel):
             attention_masks.append(self._create_attention_mask(merged_input_and_targets[i]))
 
         return torch.stack(merged_input_and_targets), torch.stack(attention_masks)
+
+    def _remove_left_padding(self, input_ids_sample: torch.Tensor):
+        """Removes left padding from the input_ids tensor."""
+        # Remove all PAD tokens
+        pad_idxs = torch.where(input_ids_sample == self.tokenizer.pad_token_id)[0]  # all PAD token locations
+        if len(pad_idxs) != 0:
+            pad_idx = pad_idxs[-1]  # get last PAD token location
+        else:
+            pad_idx = 0
+        input_ids_sample_no_padding = input_ids_sample[pad_idx + 1 :]
+
+        # Start from the first BOS token
+        bos_idxs = torch.where(input_ids_sample_no_padding == self.tokenizer.bos_token_id)[0]  # all BOS token locations
+        if len(bos_idxs) != 0:
+            bos_idx = bos_idxs[0]  # get first BOS token location
+        else:
+            bos_idx = 0
+
+        input_ids_sample_no_bos = input_ids_sample_no_padding[bos_idx:].unsqueeze(0)
+        return input_ids_sample_no_bos
 
     def _add_left_padding(self, input_ids, max_length):
         """Adds left padding to the input_ids tensor."""
