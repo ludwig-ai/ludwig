@@ -424,7 +424,9 @@ def copy_module_and_tie_weights(source_module: nn.Module, keep_copy: Optional[Li
         else:
             keys_to_keep_copy = []
 
-        # Get the tensors to keep from the copied encoder object. These are the tensors in the target layer.
+        # In some cases, we don't want parameters to share data pointers, for example during explanation. Modules
+        # passed to `keep_copies` will not point to the same parameter data but should have weights identical to the
+        # original module.
         for name, param in target_module.named_parameters():
             if name not in keys_to_keep_copy:
                 param.data = source_state_dict[name].data

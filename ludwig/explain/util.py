@@ -66,9 +66,8 @@ def replace_layer_with_copy(feat: BaseFeature, target_layer: torch.nn.Module):
     This approach ensures that at most 2 copies of the encoder object are in memory at any given time.
     """
     with torch.no_grad():
-        # Get the original encoder object and a mapping from param names to the params themselves.
+        # Get the original encoder object, then deep copy the original encoder object and set the copy as this
+        # feature's encoder object. We keep the copies of the `target_layer` parameters to enable explanations of
+        # individual input features.
         orig_encoder_obj = feat.encoder_obj
-        print(target_layer)
-
-        # Deep copy the original encoder object and set the copy as this feature's encoder object.
-        feat.encoder_obj = copy_module_and_tie_weights(orig_encoder_obj, keep_copy=[target_layer])
+        copy_module_and_tie_weights(orig_encoder_obj, keep_copy=[target_layer])
