@@ -211,10 +211,18 @@ class NextTokenSoftmaxCrossEntropyLoss(SequenceSoftmaxCrossEntropyLoss):
         Params:
             preds: Tensor of shape [batch x sequence_length x vocab_size]
             target: Tensor of shape [batch x sequence_length], where each element is integral between 0 and vocab_size.
+
+        Reference implementation:
+        https://github.com/huggingface/transformers/blob/v4.29.1/src/transformers/models/bert/modeling_bert.py#LL1253C1-L1260C1 # noqa
         """
         target = target.long()
         _, _, vocab_size = preds.shape
-        return self.loss_fn(preds.reshape(-1, vocab_size), target.reshape(-1))
+        # logits for all tensors except n+1 since each logit tensor at position i represents the log probabilities for
+        # the next token i+1 if we were to do argmax on the logits ensor at position i.
+        shifted_predictions = preds[:, :-1, :]
+        # Shift by 1 since the logits at position 0 in predictions represent the log likelihood of target token 1
+        shifted_targets = target[:, 1:]
+        return self.loss_fn(shifted_predictions.reshape(-1, vocab_size), shifted_targets.reshape(-1))
 
 
 @register_loss(SigmoidCrossEntropyLossConfig)
