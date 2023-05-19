@@ -310,7 +310,9 @@ class LLM(BaseModel):
         for of_name, of_obj in self.output_features.items():
             if isinstance(of_obj, TextOutputFeature):
                 # Align the target length with the predictions length to enable text metric evaluation.
-                _targets, _predictions = realign_target_and_prediction_tensors(targets, predictions, of_name)
+                _targets, _predictions = realign_target_and_prediction_tensors(
+                    targets, predictions, of_name, self.tokenizer
+                )
                 of_obj.update_metrics(_targets[of_name], _predictions[of_name])
                 continue
             of_obj.update_metrics(targets[of_name], predictions[of_name])
@@ -345,7 +347,9 @@ class LLM(BaseModel):
             if isinstance(of_obj, TextOutputFeature):
                 # Align the target length with the predictions length to enable text metric evaluation.
                 _predictions = {of_name: _predictions}
-                _targets, _predictions = realign_target_and_prediction_tensors(_targets, _predictions, of_name, "left")
+                _targets, _predictions = realign_target_and_prediction_tensors(
+                    _targets, _predictions, of_name, self.tokenizer, "left"
+                )
 
             # TODO(Arnav): Seems like doing this again and going between these format types in unnecessary, but
             # refactor so that we don't have to do this at a later point.
@@ -385,7 +389,9 @@ class LLM(BaseModel):
         for of_name, of_obj in self.output_features.items():
             if isinstance(of_obj, TextOutputFeature):
                 # Align the target length with the predictions length to enable text metric evaluation.
-                _targets, _predictions = realign_target_and_prediction_tensors(targets, predictions, of_name)
+                _targets, _predictions = realign_target_and_prediction_tensors(
+                    targets, predictions, of_name, self.tokenizer
+                )
                 of_eval_loss = of_obj.eval_loss(_targets[of_name], _predictions[of_name])
             else:
                 # TODO(Arnav): Figure out loss updates.
@@ -523,7 +529,11 @@ class LLM(BaseModel):
 
 
 def realign_target_and_prediction_tensors(
-    targets: Dict[str, torch.Tensor], predictions: Dict[str, torch.Tensor], of_name: str, pad_direction: str = "right"
+    targets: Dict[str, torch.Tensor],
+    predictions: Dict[str, torch.Tensor],
+    of_name: str,
+    tokenizer: AutoTokenizer,
+    pad_direction: str = "right",
 ) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
     """Realigns the target tensor with the predictions.
 
@@ -549,16 +559,21 @@ def realign_target_and_prediction_tensors(
         raise ValueError(f'pad_direction must be either "left" or "right". Got {pad_direction}.')
 
     # Align target and prediction tensors for text to text metric computation
+    pad_value = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else tokenizer.eos_token_id
     if target_length > prediction_length:
         # Pad the predictions.
         zeros_to_add = target_length - prediction_length
 
         if pad_direction == "right":
-            predictions[of_name][PREDICTIONS] = F.pad(predictions[of_name][PREDICTIONS], (0, zeros_to_add))
+            predictions[of_name][PREDICTIONS] = F.pad(
+                predictions[of_name][PREDICTIONS], (0, zeros_to_add), value=pad_value
+            )
             predictions[of_name][PROBABILITIES] = F.pad(predictions[of_name][PROBABILITIES], (0, 0, 0, zeros_to_add))
             predictions[of_name][LOGITS] = F.pad(predictions[of_name][LOGITS], (0, 0, 0, zeros_to_add))
         elif pad_direction == "left":
-            predictions[of_name][PREDICTIONS] = F.pad(predictions[of_name][PREDICTIONS], (zeros_to_add, 0))
+            predictions[of_name][PREDICTIONS] = F.pad(
+                predictions[of_name][PREDICTIONS], (zeros_to_add, 0), value=pad_value
+            )
             predictions[of_name][PROBABILITIES] = F.pad(predictions[of_name][PROBABILITIES], (0, 0, zeros_to_add, 0))
             predictions[of_name][LOGITS] = F.pad(predictions[of_name][LOGITS], (0, 0, zeros_to_add, 0))
 
@@ -567,9 +582,9 @@ def realign_target_and_prediction_tensors(
         predictions[of_name][LOGITS] = predictions[of_name][LOGITS].type(torch.float32)
     else:
         if pad_direction == "right":
-            targets[of_name] = F.pad(targets[of_name], (0, prediction_length - target_length))
+            targets[of_name] = F.pad(targets[of_name], (0, prediction_length - target_length), value=pad_value)
         elif pad_direction == "left":
-            targets[of_name] = F.pad(targets[of_name], (prediction_length - target_length, 0))
+            targets[of_name] = F.pad(targets[of_name], (prediction_length - target_length, 0), value=pad_value)
 
         targets[of_name] = targets[of_name].type(torch.float32)
 
