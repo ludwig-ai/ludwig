@@ -158,10 +158,12 @@ class LLM(BaseModel):
                 self.model.save_pretrained(tmpdir)
                 self.model = AutoModelForCausalLM.from_pretrained(tmpdir, **model_kwargs)
 
-            # If loading from checkpoint did not place it on the desired device, forcefully place it on
-            # the desired device. On Cuda, this will place it on the device with the lowest index.
-            if self.model.device != device:
-                self.model = self.model.to(device)
+            # TODO(Arnav): Looking into this later, but it specifically happens when using local backend on a setup
+            # with multiple GPUs
+            # # If loading from checkpoint did not place it on the desired device, forcefully place it on
+            # # the desired device. On Cuda, this will place it on the device with the lowest index.
+            # if self.model.device != device:
+            #     self.model = self.model.to(device)
 
             self.eval_loss_metric = self.eval_loss_metric.to(device)
             self.eval_additional_losses_metrics = self.eval_additional_losses_metrics.to(device)
@@ -362,8 +364,31 @@ class LLM(BaseModel):
             if isinstance(of_obj, TextOutputFeature):
                 # Align the target length with the predictions length to enable text metric evaluation.
                 _predictions = {of_name: _predictions}
+
+                # Remove left padding from target tensors since we also do this for the model's forward pass when we
+                # concatenate the input_ids with the target_ids
+                targets_without_padding = []
+                lengths = []
+                for target in _targets[of_name]:
+                    target = self._remove_left_padding(target)
+                    targets_without_padding.append(target)
+                    lengths.append(target.shape[1])
+
+                # Re-align target tensors without padding to have equal length before realigning with the prediction
+                # tensors. Padding left with -100 to match the length of the target tensor masks the input ids during
+                # softmax cross entropy loss computation. This ensures that the loss is computed only for the target
+                # token IDs. Examples:
+                # BERTLMHead: https://github.com/huggingface/transformers/blob/v4.29.1/src/transformers/models/bert/modeling_bert.py#L1216-L1219 # noqa
+                # GPTNeoForCausalLM: https://github.com/huggingface/transformers/blob/v4.29.1/src/transformers/models/gpt_neo/modeling_gpt_neo.py#L736 # noqa
+                max_length = max(lengths)
+                for i, target in enumerate(targets_without_padding):
+                    targets_without_padding[i] = self._add_left_padding(targets_without_padding[i][0], max_length, -100)
+                _targets[of_name] = torch.stack(targets_without_padding).to(
+                    dtype=_targets[of_name].dtype, device=_targets[of_name].device
+                )
+
                 _targets, _predictions = realign_target_and_prediction_tensors(
-                    _targets, _predictions, of_name, self.tokenizer, "left"
+                    _targets, _predictions, of_name, self.tokenizer, "left", -100
                 )
 
             # TODO(Arnav): Seems like doing this again and going between these format types in unnecessary, but
@@ -541,9 +566,14 @@ class LLM(BaseModel):
         input_ids_sample_no_bos = input_ids_sample_no_padding[bos_idx:].unsqueeze(0)
         return input_ids_sample_no_bos
 
-    def _add_left_padding(self, input_ids, max_length):
+    def _add_left_padding(self, input_ids, max_length, pad_value=0):
         """Adds left padding to the input_ids tensor."""
-        padding = torch.zeros((max_length - input_ids.shape[0]), dtype=torch.int32, device=input_ids.device)
+        if not pad_value:
+            padding = torch.zeros((max_length - input_ids.shape[0]), dtype=torch.int32, device=input_ids.device)
+        else:
+            padding = torch.tensor(
+                [pad_value] * (max_length - input_ids.shape[0]), dtype=torch.int32, device=input_ids.device
+            )
         return torch.cat((padding, input_ids), dim=-1)
 
     def _create_attention_mask(self, input_ids):
@@ -569,6 +599,7 @@ def realign_target_and_prediction_tensors(
     of_name: str,
     tokenizer: AutoTokenizer,
     pad_direction: str = "right",
+    pad_value: int = None,
 ) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
     """Realigns the target tensor with the predictions.
 
@@ -593,8 +624,10 @@ def realign_target_and_prediction_tensors(
     if pad_direction not in {"left", "right"}:
         raise ValueError(f'pad_direction must be either "left" or "right". Got {pad_direction}.')
 
+    if not pad_value:
+        pad_value = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else tokenizer.eos_token_id
+
     # Align target and prediction tensors for text to text metric computation
-    pad_value = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else tokenizer.eos_token_id
     if target_length > prediction_length:
         # Pad the predictions.
         zeros_to_add = target_length - prediction_length

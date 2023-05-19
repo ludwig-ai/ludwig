@@ -202,9 +202,10 @@ class SequenceSoftmaxCrossEntropyLoss(nn.Module, LogitsInputsMixin):
 
 
 @register_loss(NextTokenSoftmaxCrossEntropyLossConfig)
-class NextTokenSoftmaxCrossEntropyLoss(SequenceSoftmaxCrossEntropyLoss):
+class NextTokenSoftmaxCrossEntropyLoss(nn.Module, LogitsInputsMixin):
     def __init__(self, config: NextTokenSoftmaxCrossEntropyLossConfig):
-        super().__init__(config)
+        super().__init__()
+        self.loss_fn = nn.CrossEntropyLoss()
 
     def forward(self, preds: Tensor, target: Tensor) -> Tensor:
         """
