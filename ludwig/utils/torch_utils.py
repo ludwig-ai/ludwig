@@ -4,6 +4,7 @@ import warnings
 from abc import abstractmethod
 from copy import deepcopy
 from functools import lru_cache
+from itertools import chain
 from typing import List, Optional, Tuple, Union
 
 import torch
@@ -417,7 +418,9 @@ def copy_module_and_tie_weights(source_module: nn.Module, keep_copy: Optional[Li
         # for common layers i.e. "LayerNorm.weight" and "LayerNorm.bias". Getting the absolute module key ensures we
         # use values like "transformer.module.embedding.LayerNorm.weight" instead.
         if keep_copy is not None:
-            keys_to_keep_copy = [get_absolute_module_key_from_submodule(source_module, m) for m in keep_copy]
+            keys_to_keep_copy = list(
+                chain.from_iterable([get_absolute_module_key_from_submodule(source_module, m) for m in keep_copy])
+            )
         else:
             keys_to_keep_copy = []
 
