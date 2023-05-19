@@ -568,25 +568,14 @@ class LLM(BaseModel):
 
     def _add_left_padding(self, input_ids, max_length, pad_value=0):
         """Adds left padding to the input_ids tensor."""
-        if not pad_value:
-            padding = torch.zeros((max_length - input_ids.shape[0]), dtype=torch.int32, device=input_ids.device)
-        else:
-            padding = torch.tensor(
-                [pad_value] * (max_length - input_ids.shape[0]), dtype=torch.int32, device=input_ids.device
-            )
+        padding = torch.tensor(
+            [pad_value] * (max_length - input_ids.shape[0]), dtype=torch.int32, device=input_ids.device
+        )
         return torch.cat((padding, input_ids), dim=-1)
 
     def _create_attention_mask(self, input_ids):
         """Creates attention mask for the input_ids tensor."""
-        attention_mask = torch.ones_like(input_ids)
-        bos_index = (input_ids == self.tokenizer.bos_token_id).nonzero()
-
-        if len(bos_index) > 0:
-            first_bos_index = bos_index[0][0]
-            # Set attention mask to 0 for the part of the input that is padding
-            attention_mask[:first_bos_index] = 0
-
-        return attention_mask
+        return (input_ids != self.tokenizer.pad_token_id).float()
 
     def get_augmentation_pipelines(self) -> AugmentationPipelines:
         """Returns the augmentation pipeline for this model."""
