@@ -45,8 +45,12 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
 
         super().__init__()
 
-        self.input_features = LudwigFeatureDict()
-        self.output_features = LudwigFeatureDict()
+        self.input_features = self.create_feature_dict()
+        self.output_features = self.create_feature_dict()
+
+    def create_feature_dict() -> LudwigFeatureDict:
+        """Creates and returns a LudwigFeatureDict."""
+        return LudwigFeatureDict()
 
     def to_device(self, device):
         return self.to(device)
