@@ -1,7 +1,7 @@
 import logging
 import os
 import tempfile
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -38,18 +38,21 @@ logger = logging.getLogger(__name__)
 
 
 class DictWrapper:
-    """Wrapper for a dictionary module that allows for iteration over keys.
+    """Wrapper for a LudwigFeatureDict module that allows for iteration over keys.
 
     The purpose of this class is to avoid exposing input and output features as modules
     of the LLM. This is because we only wish to train the underlying model, and having
     these additional modules can confuse systems like DeepSpeed.
     """
 
-    def __init__(self, obj):
+    def __init__(self, obj: LudwigFeatureDict):
         self.obj = obj
 
-    def __getattr__(self, attr):
-        return self.obj.__getattribute__(attr)
+    def get(self, key) -> torch.nn.Module:
+        return self.obj.get(key)
+
+    def set(self, key: str, module: torch.nn.Module) -> None:
+        self.obj.set(key, module)
 
     def __len__(self) -> int:
         return len(self.obj)
@@ -59,6 +62,18 @@ class DictWrapper:
 
     def __iter__(self) -> None:
         return iter(self.obj.keys())
+
+    def keys(self) -> List[str]:
+        return self.obj.keys()
+
+    def values(self) -> List[torch.nn.Module]:
+        return self.obj.values()
+
+    def items(self) -> List[Tuple[str, torch.nn.Module]]:
+        return self.obj.items()
+
+    def update(self, modules: Dict[str, torch.nn.Module]) -> None:
+        self.obj.update(modules)
 
 
 class LLM(BaseModel):
@@ -356,13 +371,7 @@ class LLM(BaseModel):
                 llm_model_input_lengths=input_lengths,
             )
 
-        return self.extract(outputs)
-
-    def extract(self, outputs: Dict[str, torch.Tensor]) -> Dict[str, Dict[str, torch.Tensor]]:
-        """Extracts predictions and probabilities from the model outputs."""
-        return {
-            self.config_obj.output_features[0].name: outputs,
-        }
+        return outputs
 
     def get_input_ids(
         self,
