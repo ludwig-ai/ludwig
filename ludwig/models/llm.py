@@ -17,6 +17,7 @@ from transformers import (
     LlamaConfig,
     LlamaTokenizer,
     LlamaTokenizerFast,
+    PreTrainedTokenizer,
 )
 
 from ludwig.constants import LOGITS, MODEL_LLM, PREDICTIONS, PROBABILITIES, TEXT
@@ -158,6 +159,8 @@ class LLM(BaseModel):
                 self.model.save_pretrained(tmpdir)
                 self.model = AutoModelForCausalLM.from_pretrained(tmpdir, **model_kwargs)
 
+            self.initialize_adapter()
+
             # TODO(Arnav): Looking into this later, but it specifically happens when using local backend on a setup
             # with multiple GPUs
             # # If loading from checkpoint did not place it on the desired device, forcefully place it on
@@ -169,6 +172,7 @@ class LLM(BaseModel):
             self.eval_additional_losses_metrics = self.eval_additional_losses_metrics.to(device)
             self.output_features.update({k: v.to(device) for k, v in self.output_features.items()})
         else:
+            self.initialize_adapter()
             self.model = self.model.to(device)
 
         self.curr_device = device
@@ -374,12 +378,9 @@ class LLM(BaseModel):
                     targets_without_padding.append(target)
                     lengths.append(target.shape[1])
 
-                # Re-align target tensors without padding to have equal length before realigning with the prediction
-                # tensors. Padding left with -100 to match the length of the target tensor masks the input ids during
-                # softmax cross entropy loss computation. This ensures that the loss is computed only for the target
-                # token IDs. Examples:
-                # BERTLMHead: https://github.com/huggingface/transformers/blob/v4.29.1/src/transformers/models/bert/modeling_bert.py#L1216-L1219 # noqa
-                # GPTNeoForCausalLM: https://github.com/huggingface/transformers/blob/v4.29.1/src/transformers/models/gpt_neo/modeling_gpt_neo.py#L736 # noqa
+                # We need all target tensors to have the same length for the loss computation. We pad the target
+                # tensors with -100 since we want to negate all tokens that are not target_ids during the softmax
+                # cross entropy loss computation. This ensures that the loss is computed only for the target tokens.
                 max_length = max(lengths)
                 for i, target in enumerate(targets_without_padding):
                     targets_without_padding[i] = self._add_left_padding(targets_without_padding[i][0], max_length, -100)
@@ -387,6 +388,12 @@ class LLM(BaseModel):
                     dtype=_targets[of_name].dtype, device=_targets[of_name].device
                 )
 
+                # Re-align target tensors without padding to have equal length before realigning with the prediction
+                # tensors. Padding left with -100 to match the length of the target tensor masks the input ids during
+                # softmax cross entropy loss computation. This ensures that the loss is computed only for the target
+                # token IDs. Examples:
+                # BERTLMHead: https://github.com/huggingface/transformers/blob/v4.29.1/src/transformers/models/bert/modeling_bert.py#L1216-L1219 # noqa
+                # GPTNeoForCausalLM: https://github.com/huggingface/transformers/blob/v4.29.1/src/transformers/models/gpt_neo/modeling_gpt_neo.py#L736 # noqa
                 _targets, _predictions = realign_target_and_prediction_tensors(
                     _targets, _predictions, of_name, self.tokenizer, "left", -100
                 )
@@ -455,7 +462,9 @@ class LLM(BaseModel):
         """Returns the model's predictions for each output feature."""
         predictions = {}
         for of_name in self.output_features:
-            if self.config_obj.adapter:
+            # HACK(Arnav): Conditional for trainer type exists when trying to
+            # finetune without an adapter. Ideally, we get rid of these kinds of checks.
+            if self.config_obj.adapter or self.config_obj.trainer.type == "finetune":
                 predictions[of_name] = outputs
             else:
                 generated_predictions = outputs[of_name]
@@ -586,7 +595,7 @@ def realign_target_and_prediction_tensors(
     targets: Dict[str, torch.Tensor],
     predictions: Dict[str, torch.Tensor],
     of_name: str,
-    tokenizer: AutoTokenizer,
+    tokenizer: PreTrainedTokenizer,
     pad_direction: str = "right",
     pad_value: int = None,
 ) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
