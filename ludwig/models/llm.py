@@ -60,8 +60,6 @@ class LLM(BaseModel):
         self.curr_device = torch.device("cpu")  # model initially loaded onto cpu
         logger.info("Done.")
 
-        self.initialize_adapter()
-
         # Determines the maximum length of the context (input + output tokens)
         if hasattr(self.model.config, "max_sequence_length"):
             self.context_len = self.model.config.max_sequence_length
@@ -136,6 +134,7 @@ class LLM(BaseModel):
         device = torch.device(device)
 
         if device == self.curr_device:
+            self.initialize_adapter()
             return self
         else:
             log_once(f"Moving LLM from '{self.curr_device}' to '{device}'.")
@@ -643,15 +642,17 @@ def realign_target_and_prediction_tensors(
             predictions[of_name][PROBABILITIES] = F.pad(predictions[of_name][PROBABILITIES], (0, 0, zeros_to_add, 0))
             predictions[of_name][LOGITS] = F.pad(predictions[of_name][LOGITS], (0, 0, zeros_to_add, 0))
 
-        predictions[of_name][PREDICTIONS] = predictions[of_name][PREDICTIONS].type(torch.float32)
-        predictions[of_name][PROBABILITIES] = predictions[of_name][PROBABILITIES].type(torch.float32)
-        predictions[of_name][LOGITS] = predictions[of_name][LOGITS].type(torch.float32)
     else:
         if pad_direction == "right":
             targets[of_name] = F.pad(targets[of_name], (0, prediction_length - target_length), value=pad_value)
         elif pad_direction == "left":
             targets[of_name] = F.pad(targets[of_name], (prediction_length - target_length, 0), value=pad_value)
 
-        targets[of_name] = targets[of_name].type(torch.float32)
+    # This is important since we operate on float16/bfloat16 tensors when using deepspeed or when
+    # loading the model to GPU, and metric computation requires float32 tensors.
+    predictions[of_name][PREDICTIONS] = predictions[of_name][PREDICTIONS].type(torch.float32)
+    predictions[of_name][PROBABILITIES] = predictions[of_name][PROBABILITIES].type(torch.float32)
+    predictions[of_name][LOGITS] = predictions[of_name][LOGITS].type(torch.float32)
+    targets[of_name] = targets[of_name].type(torch.float32)
 
     return targets, predictions
