@@ -153,6 +153,12 @@ class LLM(BaseModel):
 
         clear_data_cache()
 
+    def to_device(self, device):
+        self._eval_loss_metric.module = self._eval_loss_metric.module.to(device)
+        self._eval_additional_losses_metrics.module = self._eval_additional_losses_metrics.module.to(device)
+        for feature in self.output_features.values():
+            feature.eval_loss_metric = feature.eval_loss_metric.to_device(device)
+
     def create_feature_dict(self) -> LudwigFeatureDict:
         return DictWrapper(LudwigFeatureDict())
 
