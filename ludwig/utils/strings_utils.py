@@ -507,9 +507,9 @@ def build_sequence_matrix(
 
     # Set padding token id based on tokenizer_type. Huggingface tokenizers typically have a pad_token_id attribute.
     if tokenizer_type == "hf_tokenizer":
-        if hasattr(tokenizer.tokenizer, "pad_token_id"):
+        if hasattr(tokenizer.tokenizer, "pad_token_id") and tokenizer.tokenizer.pad_token_id:
             pad_token_id = tokenizer.tokenizer.pad_token_id
-        elif hasattr(tokenizer.tokenizer, "eos_token_id"):
+        elif hasattr(tokenizer.tokenizer, "eos_token_id") and tokenizer.tokenizer.eos_token_id:
             pad_token_id = tokenizer.tokenizer.eos_token_id
         # Some tokenizers may not have pad_token_id set or eos_token_id. In this case, we use 0 as the padding token id.
         else:
