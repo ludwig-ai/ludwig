@@ -147,6 +147,7 @@ class Predictor(BasePredictor):
                 progress_bar.close()
 
         # consolidate predictions from each batch to a single tensor
+        # print(predictions)
         self._concat_preds(predictions)
 
         self.dist_model.train(prev_model_training_mode)
@@ -330,7 +331,8 @@ class Predictor(BasePredictor):
 @register_predictor([MODEL_LLM])
 class LlmPredictor(Predictor):
     def _predict_on_inputs(self, inputs: Dict) -> Dict:
-        return self.dist_model.generate(inputs)
+        # return self.dist_model.generate(inputs)
+        return self.dist_model(inputs)
 
 
 def calculate_overall_stats(output_features, predictions, dataset, training_set_metadata):

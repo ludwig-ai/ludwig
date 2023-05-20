@@ -157,7 +157,7 @@ def get_name_from_module_dict_key(key: str, feature_name_suffix_length: int = FE
     return name[:-feature_name_suffix_length]
 
 
-class LudwigFeatureDict(torch.nn.Module):
+class LudwigFeatureDict:
     """Torch ModuleDict wrapper that permits keys with any name.
 
     Torch's ModuleDict implementation doesn't allow certain keys to be used if they conflict with existing class

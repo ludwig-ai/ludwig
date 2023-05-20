@@ -356,6 +356,7 @@ def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strat
 
     model = LudwigModel(config, backend=backend)
     model.train(dataset=df, output_directory=str(tmpdir), skip_save_processed_input=False)
+    print("MODEL", model.model)
 
     prediction_df = pd.DataFrame(
         [

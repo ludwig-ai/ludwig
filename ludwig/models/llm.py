@@ -21,7 +21,7 @@ from transformers import (
 )
 
 from ludwig.constants import LOGITS, MODEL_LLM, PREDICTIONS, PROBABILITIES, TEXT
-from ludwig.features.base_feature import OutputFeature
+from ludwig.features.base_feature import ModuleWrapper, OutputFeature
 from ludwig.features.text_feature import TextOutputFeature
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
@@ -106,13 +106,25 @@ class LLM(BaseModel):
         )
 
         # Extract the decoder object for the forward pass
-        _, self.output_feature_decoder = self.output_features.items()[0]
+        self._output_feature_decoder = ModuleWrapper(self.output_features.items()[0][1])
 
         # ================ Combined loss metric ================
-        self.eval_loss_metric = torchmetrics.MeanMetric()
-        self.eval_additional_losses_metrics = torchmetrics.MeanMetric()
+        self._eval_loss_metric = ModuleWrapper(torchmetrics.MeanMetric())
+        self._eval_additional_losses_metrics = ModuleWrapper(torchmetrics.MeanMetric())
 
         clear_data_cache()
+
+    @property
+    def eval_loss_metric(self) -> torchmetrics.MeanMetric:
+        return self._eval_loss_metric.module
+
+    @property
+    def eval_additional_losses_metrics(self) -> torchmetrics.MeanMetric:
+        return self._eval_additional_losses_metrics.module
+
+    @property
+    def output_feature_decoder(self) -> OutputFeature:
+        return self._output_feature_decoder.module
 
     def initialize_adapter(self):
         """If an adapter config is provided, we want to wrap the model with a PEFT model for fine-tuning."""
