@@ -40,9 +40,8 @@ logger = logging.getLogger(__name__)
 class DictWrapper:
     """Wrapper for a dictionary module that allows for iteration over keys.
 
-    The purpose of this class is to avoid exposing input and output features as modules
-    of the LLM. This is because we only wish to train the underlying model, and having
-    these additional modules can confuse systems like DeepSpeed.
+    The purpose of this class is to avoid exposing input and output features as modules of the LLM. This is because we
+    only wish to train the underlying model, and having these additional modules can confuse systems like DeepSpeed.
     """
 
     def __init__(self, obj):
