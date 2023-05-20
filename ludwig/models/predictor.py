@@ -147,8 +147,6 @@ class Predictor(BasePredictor):
                 progress_bar.close()
 
         # consolidate predictions from each batch to a single tensor
-        print(predictions)
-        print(predictions.keys())
         self._concat_preds(predictions)
 
         self.dist_model.train(prev_model_training_mode)
