@@ -7,7 +7,18 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import torchmetrics
-from transformers import AutoModelForCausalLM, AutoTokenizer, GenerationConfig
+from transformers import (
+    AutoConfig,
+    AutoModelForCausalLM,
+    AutoTokenizer,
+    GenerationConfig,
+    GPT2Tokenizer,
+    GPT2TokenizerFast,
+    LlamaConfig,
+    LlamaTokenizer,
+    LlamaTokenizerFast,
+    PreTrainedTokenizer,
+)
 
 from ludwig.constants import LOGITS, MODEL_LLM, PREDICTIONS, PROBABILITIES, TEXT
 from ludwig.features.base_feature import OutputFeature
@@ -49,8 +60,6 @@ class LLM(BaseModel):
         self.curr_device = torch.device("cpu")  # model initially loaded onto cpu
         logger.info("Done.")
 
-        self.initialize_adapter()
-
         # Determines the maximum length of the context (input + output tokens)
         if hasattr(self.model.config, "max_sequence_length"):
             self.context_len = self.model.config.max_sequence_length
@@ -64,8 +73,13 @@ class LLM(BaseModel):
         self.max_new_tokens = self.config_obj.generation.max_new_tokens
         self.max_input_length = self.context_len - self.max_new_tokens - 8
 
-        # Used only for its metadata about the vocabulary
-        self.tokenizer = AutoTokenizer.from_pretrained(self.config_obj.model_name, use_fast=False)
+        # Initialize tokenizer
+        use_fast = True
+        if isinstance(AutoConfig.from_pretrained(self.config_obj.model_name), LlamaConfig):
+            # HACK: Llama fast tokenizer takes about 2-4 minutes to load, so we disable it for now.
+            use_fast = False
+        self.tokenizer = AutoTokenizer.from_pretrained(self.config_obj.model_name, use_fast=use_fast)
+        self._set_pad_token()
 
         self.generation = GenerationConfig(**self.config_obj.generation.to_dict())
 
@@ -120,6 +134,7 @@ class LLM(BaseModel):
         device = torch.device(device)
 
         if device == self.curr_device:
+            self.initialize_adapter()
             return self
         else:
             log_once(f"Moving LLM from '{self.curr_device}' to '{device}'.")
@@ -129,6 +144,7 @@ class LLM(BaseModel):
         if device == torch.device("cuda") and num_gpus > 1:
             # TODO: make this configurable in the future. These parameters are from FastChat:
             # https://github.com/lm-sys/FastChat/blob/0e958b852a14f4bef5f0e9d7a5e7373477329cf2/fastchat/serve/inference.py#L90  # noqa
+            # TODO: Wrap device_map="auto" in a try-except block since it may not be supported for all models (E.g. BertLMHead)  # noqa
             model_kwargs.update(
                 dict(
                     low_cpu_mem_usage=True,
@@ -142,10 +158,20 @@ class LLM(BaseModel):
                 self.model.save_pretrained(tmpdir)
                 self.model = AutoModelForCausalLM.from_pretrained(tmpdir, **model_kwargs)
 
+            self.initialize_adapter()
+
+            # TODO(Arnav): Looking into this later, but it specifically happens when using local backend on a setup
+            # with multiple GPUs
+            # # If loading from checkpoint did not place it on the desired device, forcefully place it on
+            # # the desired device. On Cuda, this will place it on the device with the lowest index.
+            # if self.model.device != device:
+            #     self.model = self.model.to(device)
+
             self.eval_loss_metric = self.eval_loss_metric.to(device)
             self.eval_additional_losses_metrics = self.eval_additional_losses_metrics.to(device)
             self.output_features.update({k: v.to(device) for k, v in self.output_features.items()})
         else:
+            self.initialize_adapter()
             self.model = self.model.to(device)
 
         self.curr_device = device
@@ -169,15 +195,6 @@ class LLM(BaseModel):
 
         return output_features
 
-    def get_input_ids(
-        self,
-        inputs: Union[
-            Dict[str, torch.Tensor], Dict[str, np.ndarray], Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
-        ],
-    ):
-        """Returns the input ids for the text feature input."""
-        return inputs[self.config_obj.input_features[0].name].type(torch.int32)
-
     def forward(
         self,
         inputs: Union[
@@ -185,7 +202,7 @@ class LLM(BaseModel):
         ],
         mask=None,
     ) -> Dict[str, torch.Tensor]:
-        """Forward pass of the model.
+        """Produces logits tensor for finetuning the model.
 
         Args:
             inputs: Inputs to the model. Can be a dictionary of input names to
@@ -213,8 +230,15 @@ class LLM(BaseModel):
 
         input_ids = self.get_input_ids(inputs)
 
+        target_ids = None
+        if targets:
+            target_ids = self.get_target_ids(targets)
+
+        # Generate merged input_id, target_id pairs for the model, and create corresponding attention masks
+        model_inputs, attention_masks = self._generate_merged_ids(input_ids, target_ids)
+
         # Forward pass using PEFT wrapped model for fine-tuning
-        model_outputs = self.model(input_ids).get(LOGITS)
+        model_outputs = self.model(input_ids=model_inputs, attention_mask=attention_masks).get(LOGITS)
 
         if self.output_feature_type != TEXT:
             # Pass generated tokens through decoder after averaging the token probabilities
@@ -243,6 +267,7 @@ class LLM(BaseModel):
         ],
         mask=None,
     ) -> Dict[str, torch.Tensor]:
+        """Generates tokens using the model."""
 
         if isinstance(inputs, tuple):
             inputs, targets = inputs
@@ -293,21 +318,33 @@ class LLM(BaseModel):
 
         return self.extract(outputs)
 
-    def extract(
-        self,
-        outputs,
-    ):
+    def extract(self, outputs: Dict[str, torch.Tensor]) -> Dict[str, Dict[str, torch.Tensor]]:
         """Extracts predictions and probabilities from the model outputs."""
         return {
             self.config_obj.output_features[0].name: outputs,
         }
+
+    def get_input_ids(
+        self,
+        inputs: Union[
+            Dict[str, torch.Tensor], Dict[str, np.ndarray], Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
+        ],
+    ) -> torch.Tensor:
+        """Returns the input ids for the text feature input."""
+        return inputs[self.config_obj.input_features[0].name].type(torch.int32)
+
+    def get_target_ids(self, outputs: Dict[str, torch.Tensor]) -> torch.Tensor:
+        """Returns the output ids for the text feature output."""
+        return outputs[self.config_obj.output_features[0].name].type(torch.int32)
 
     def update_metrics(self, targets, predictions):
         """Updates the model's metrics given targets and predictions."""
         for of_name, of_obj in self.output_features.items():
             if isinstance(of_obj, TextOutputFeature):
                 # Align the target length with the predictions length to enable text metric evaluation.
-                _targets, _predictions = realign_target_and_prediction_tensors(targets, predictions, of_name)
+                _targets, _predictions = realign_target_and_prediction_tensors(
+                    targets, predictions, of_name, self.tokenizer
+                )
                 of_obj.update_metrics(_targets[of_name], _predictions[of_name])
                 continue
             of_obj.update_metrics(targets[of_name], predictions[of_name])
@@ -342,7 +379,35 @@ class LLM(BaseModel):
             if isinstance(of_obj, TextOutputFeature):
                 # Align the target length with the predictions length to enable text metric evaluation.
                 _predictions = {of_name: _predictions}
-                _targets, _predictions = realign_target_and_prediction_tensors(_targets, _predictions, of_name)
+
+                # Remove left padding from target tensors since we also do this for the model's forward pass when we
+                # concatenate the input_ids with the target_ids
+                targets_without_padding = []
+                lengths = []
+                for target in _targets[of_name]:
+                    target = self._remove_left_padding(target)
+                    targets_without_padding.append(target)
+                    lengths.append(target.shape[1])
+
+                # We need all target tensors to have the same length for the loss computation. We pad the target
+                # tensors with -100 since we want to negate all tokens that are not target_ids during the softmax
+                # cross entropy loss computation. This ensures that the loss is computed only for the target tokens.
+                max_length = max(lengths)
+                for i, target in enumerate(targets_without_padding):
+                    targets_without_padding[i] = self._add_left_padding(targets_without_padding[i][0], max_length, -100)
+                _targets[of_name] = torch.stack(targets_without_padding).to(
+                    dtype=_targets[of_name].dtype, device=_targets[of_name].device
+                )
+
+                # Re-align target tensors without padding to have equal length before realigning with the prediction
+                # tensors. Padding left with -100 to match the length of the target tensor masks the input ids during
+                # softmax cross entropy loss computation. This ensures that the loss is computed only for the target
+                # token IDs. Examples:
+                # BERTLMHead: https://github.com/huggingface/transformers/blob/v4.29.1/src/transformers/models/bert/modeling_bert.py#L1216-L1219 # noqa
+                # GPTNeoForCausalLM: https://github.com/huggingface/transformers/blob/v4.29.1/src/transformers/models/gpt_neo/modeling_gpt_neo.py#L736 # noqa
+                _targets, _predictions = realign_target_and_prediction_tensors(
+                    _targets, _predictions, of_name, self.tokenizer, "left", -100
+                )
 
             # TODO(Arnav): Seems like doing this again and going between these format types in unnecessary, but
             # refactor so that we don't have to do this at a later point.
@@ -382,7 +447,9 @@ class LLM(BaseModel):
         for of_name, of_obj in self.output_features.items():
             if isinstance(of_obj, TextOutputFeature):
                 # Align the target length with the predictions length to enable text metric evaluation.
-                _targets, _predictions = realign_target_and_prediction_tensors(targets, predictions, of_name)
+                _targets, _predictions = realign_target_and_prediction_tensors(
+                    targets, predictions, of_name, self.tokenizer
+                )
                 of_eval_loss = of_obj.eval_loss(_targets[of_name], _predictions[of_name])
             else:
                 # TODO(Arnav): Figure out loss updates.
@@ -406,7 +473,9 @@ class LLM(BaseModel):
         """Returns the model's predictions for each output feature."""
         predictions = {}
         for of_name in self.output_features:
-            if self.config_obj.adapter:
+            # HACK(Arnav): Conditional for trainer type exists when trying to
+            # finetune without an adapter. Ideally, we get rid of these kinds of checks.
+            if self.config_obj.adapter or self.config_obj.trainer.type == "finetune":
                 predictions[of_name] = outputs
             else:
                 generated_predictions = outputs[of_name]
@@ -440,15 +509,93 @@ class LLM(BaseModel):
             self._random_seed,
         )
 
+    def _set_pad_token(self):
+        """Sets the pad token for the tokenizer if it is not already set."""
+        # HACK(Arnav): gpt, gpt2 and llama tokenizers had no pad tokens.
+        # These recommend using eos tokens instead
+        # https://github.com/huggingface/transformers/issues/2648#issuecomment-616177044
+        # https://github.com/huggingface/transformers/issues/2630#issuecomment-1290809338
+        if any(
+            isinstance(self.tokenizer, t)
+            for t in [GPT2Tokenizer, GPT2TokenizerFast, LlamaTokenizer, LlamaTokenizerFast]
+        ):
+            self.tokenizer.pad_token = self.tokenizer.eos_token
+            self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
+
+    def _generate_merged_ids(self, input_ids, target_ids):
+        """This function merges the input_ids and target_ids together to create a unified tensor to pass into the
+        model.
+
+        This is required for PEFT based fine-tuning. It also returns attention masks for the merged tensors.
+        """
+
+        # target_ids is None during evaluation of the validation/test sets in the training loop.
+        if not torch.is_tensor(target_ids):
+            # Create attention masks for the input_ids.
+            attention_masks = []
+            for input_id_sample in input_ids:
+                attention_masks.append(self._create_attention_mask(input_id_sample))
+            return input_ids, torch.stack(attention_masks)
+
+        merged_input_and_targets = []
+        lengths = []
+
+        pad_tensor = torch.tensor([self.tokenizer.pad_token_id]).to(target_ids[0].device)
+
+        # Merge input_ids and target_ids by concatenating them together.
+        # We remove the left padding from both input_ids and target_ids before concatenating them.
+        for input_id_sample, target_id_sample in zip(input_ids, target_ids):
+            input_id_sample_no_padding = self._remove_left_padding(input_id_sample)[0]
+            target_id_sample_no_padding = torch.cat(
+                (self._remove_left_padding(target_id_sample)[0], pad_tensor), dim=-1
+            )
+
+            merged_sample_ids = torch.cat((input_id_sample_no_padding, target_id_sample_no_padding), dim=-1)
+
+            merged_input_and_targets.append(merged_sample_ids)
+            lengths.append(merged_sample_ids.shape[0])
+
+        # Since we remove the left padding from the target_ids, the merged input_ids and target_ids
+        # may not have the same lengths. We need to align them to the same length by adding left padding
+        # and generate an attention mask for just the part of the input that is not padding.
+        max_length = max(lengths)
+        attention_masks = []
+        for i, merged_sample_ids in enumerate(merged_input_and_targets):
+            merged_input_and_targets[i] = self._add_left_padding(merged_sample_ids, max_length)
+            attention_masks.append(self._create_attention_mask(merged_input_and_targets[i]))
+
+        return torch.stack(merged_input_and_targets), torch.stack(attention_masks)
+
     def _remove_left_padding(self, input_ids_sample: torch.Tensor):
-        bos_idxs = torch.where(input_ids_sample == self.tokenizer.bos_token_id)[0]  # all BOS token locations
+        """Removes left padding from the input_ids tensor."""
+        # Remove all PAD tokens
+        pad_idxs = torch.where(input_ids_sample == self.tokenizer.pad_token_id)[0]  # all PAD token locations
+        if len(pad_idxs) != 0:
+            pad_idx = pad_idxs[-1]  # get last PAD token location
+        else:
+            pad_idx = 0
+        input_ids_sample_no_padding = input_ids_sample[pad_idx + 1 :]
+
+        # Start from the first BOS token
+        bos_idxs = torch.where(input_ids_sample_no_padding == self.tokenizer.bos_token_id)[0]  # all BOS token locations
         if len(bos_idxs) != 0:
             bos_idx = bos_idxs[0]  # get first BOS token location
         else:
             bos_idx = 0
 
-        input_ids_sample_no_padding = input_ids_sample[bos_idx:].unsqueeze(0)
-        return input_ids_sample_no_padding
+        input_ids_sample_no_bos = input_ids_sample_no_padding[bos_idx:].unsqueeze(0)
+        return input_ids_sample_no_bos
+
+    def _add_left_padding(self, input_ids, max_length, pad_value=0):
+        """Adds left padding to the input_ids tensor."""
+        padding = torch.tensor(
+            [pad_value] * (max_length - input_ids.shape[0]), dtype=torch.int32, device=input_ids.device
+        )
+        return torch.cat((padding, input_ids), dim=-1)
+
+    def _create_attention_mask(self, input_ids):
+        """Creates attention mask for the input_ids tensor."""
+        return (input_ids != self.tokenizer.pad_token_id).float()
 
     def get_augmentation_pipelines(self) -> AugmentationPipelines:
         """Returns the augmentation pipeline for this model."""
@@ -456,7 +603,12 @@ class LLM(BaseModel):
 
 
 def realign_target_and_prediction_tensors(
-    targets: Dict[str, torch.Tensor], predictions: Dict[str, torch.Tensor], of_name: str
+    targets: Dict[str, torch.Tensor],
+    predictions: Dict[str, torch.Tensor],
+    of_name: str,
+    tokenizer: PreTrainedTokenizer,
+    pad_direction: str = "right",
+    pad_value: int = None,
 ) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
     """Realigns the target tensor with the predictions.
 
@@ -465,6 +617,10 @@ def realign_target_and_prediction_tensors(
     Args:
         targets: The target tensor.
         predictions: The prediction tensor.
+        of_name: The output feature's name.
+        pad_direction: The direction to pad the tensors. Can be 'left' or 'right'.
+            Defaults to 'right'.
+
     Returns:
         The realigned target tensor.
     """
@@ -474,19 +630,41 @@ def realign_target_and_prediction_tensors(
     if target_length == prediction_length:
         return targets, predictions
 
+    if pad_direction not in {"left", "right"}:
+        raise ValueError(f'pad_direction must be either "left" or "right". Got {pad_direction}.')
+
+    if not pad_value:
+        pad_value = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else tokenizer.eos_token_id
+
     # Align target and prediction tensors for text to text metric computation
     if target_length > prediction_length:
         # Pad the predictions.
         zeros_to_add = target_length - prediction_length
-        predictions[of_name][PREDICTIONS] = F.pad(predictions[of_name][PREDICTIONS], (0, zeros_to_add))
-        predictions[of_name][PREDICTIONS] = predictions[of_name][PREDICTIONS].type(torch.float32)
-        # Pad probabilities with 0s. Pad the second last dimension with 0s.
-        predictions[of_name][PROBABILITIES] = F.pad(predictions[of_name][PROBABILITIES], (0, 0, 0, zeros_to_add))
-        predictions[of_name][PROBABILITIES] = predictions[of_name][PROBABILITIES].type(torch.float32)
-        # Pad logits with 0s. Pad the second last dimension with 0s.
-        predictions[of_name][LOGITS] = F.pad(predictions[of_name][LOGITS], (0, 0, 0, zeros_to_add))
-        predictions[of_name][LOGITS] = predictions[of_name][LOGITS].type(torch.float32)
+
+        if pad_direction == "right":
+            predictions[of_name][PREDICTIONS] = F.pad(
+                predictions[of_name][PREDICTIONS], (0, zeros_to_add), value=pad_value
+            )
+            predictions[of_name][PROBABILITIES] = F.pad(predictions[of_name][PROBABILITIES], (0, 0, 0, zeros_to_add))
+            predictions[of_name][LOGITS] = F.pad(predictions[of_name][LOGITS], (0, 0, 0, zeros_to_add))
+        elif pad_direction == "left":
+            predictions[of_name][PREDICTIONS] = F.pad(
+                predictions[of_name][PREDICTIONS], (zeros_to_add, 0), value=pad_value
+            )
+            predictions[of_name][PROBABILITIES] = F.pad(predictions[of_name][PROBABILITIES], (0, 0, zeros_to_add, 0))
+            predictions[of_name][LOGITS] = F.pad(predictions[of_name][LOGITS], (0, 0, zeros_to_add, 0))
+
     else:
-        targets[of_name] = F.pad(targets[of_name], (0, prediction_length - target_length))
+        if pad_direction == "right":
+            targets[of_name] = F.pad(targets[of_name], (0, prediction_length - target_length), value=pad_value)
+        elif pad_direction == "left":
+            targets[of_name] = F.pad(targets[of_name], (prediction_length - target_length, 0), value=pad_value)
+
+    # This is important since we operate on float16/bfloat16 tensors when using deepspeed or when
+    # loading the model to GPU, and metric computation requires float32 tensors.
+    predictions[of_name][PREDICTIONS] = predictions[of_name][PREDICTIONS].type(torch.float32)
+    predictions[of_name][PROBABILITIES] = predictions[of_name][PROBABILITIES].type(torch.float32)
+    predictions[of_name][LOGITS] = predictions[of_name][LOGITS].type(torch.float32)
+    targets[of_name] = targets[of_name].type(torch.float32)
 
     return targets, predictions

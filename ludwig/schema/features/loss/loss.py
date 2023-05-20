@@ -10,6 +10,7 @@ from ludwig.constants import (
     MEAN_ABSOLUTE_ERROR,
     MEAN_ABSOLUTE_PERCENTAGE_ERROR,
     MEAN_SQUARED_ERROR,
+    NEXT_TOKEN_SOFTMAX_CROSS_ENTROPY,
     NUMBER,
     ROOT_MEAN_SQUARED_ERROR,
     ROOT_MEAN_SQUARED_PERCENTAGE_ERROR,
@@ -363,6 +364,20 @@ class SequenceSoftmaxCrossEntropyLossConfig(BaseLossConfig):
     @classmethod
     def name(self) -> str:
         return "Sequence Softmax Cross Entropy"
+
+
+@DeveloperAPI
+@register_loss([SEQUENCE, TEXT])
+@ludwig_dataclass
+class NextTokenSoftmaxCrossEntropyLossConfig(SequenceSoftmaxCrossEntropyLossConfig):
+    type: str = schema_utils.ProtectedString(
+        NEXT_TOKEN_SOFTMAX_CROSS_ENTROPY,
+        description="Type of loss.",
+    )
+
+    @classmethod
+    def name(self) -> str:
+        return "Next Token Softmax Cross Entropy"
 
 
 @DeveloperAPI

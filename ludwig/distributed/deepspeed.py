@@ -59,6 +59,8 @@ class DeepSpeedStrategy(DDPStrategy):
         if init_deepspeed:
             os.environ["LOCAL_RANK"] = str(self.local_rank())
             os.environ["LOCAL_SIZE"] = str(self.local_size())
+            os.environ["RANK"] = str(self.rank())
+            os.environ["WORLD_SIZE"] = str(self.size())
             deepspeed.init_distributed()
 
     def _log_on_init(self):

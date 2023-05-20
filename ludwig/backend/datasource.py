@@ -163,10 +163,14 @@ class _BinaryIgnoreNoneTypeDatasourceReader:
                 file_size = None  # unknown file size is None
             else:
                 resolved_path, filesystem = _resolve_paths_and_filesystem([raw_path], filesystem)
-                read_path, file_size = meta_provider.expand_paths(resolved_path, filesystem)
-                # expand_paths returns two lists, so get the first element of each
-                read_path = read_path[0]
-                file_size = file_size[0]
+                try:
+                    # Ray >= 2.4: expand_paths returns `Iterator[Tuple[str, int]]`, so unpack the first tuple
+                    read_path, file_size = next(meta_provider.expand_paths(resolved_path, filesystem))
+                except (TypeError, ValueError):
+                    # Ray < 2.4: expand_paths returns two lists, so get the first element of each
+                    read_path, file_size = meta_provider.expand_paths(resolved_path, filesystem)
+                    read_path = read_path[0]
+                    file_size = file_size[0]
 
             self._paths.append((read_path, idx))
             self._file_sizes.append(file_size)
