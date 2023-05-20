@@ -77,6 +77,7 @@ from ludwig.modules.loss_modules import (
     BWCEWLoss,
     CORNLoss,
     HuberLoss,
+    NextTokenSoftmaxCrossEntropyLoss,
     SequenceSoftmaxCrossEntropyLoss,
     SigmoidCrossEntropyLoss,
     SoftmaxCrossEntropyLoss,
@@ -319,6 +320,16 @@ class SequenceSoftmaxCrossEntropyMetric(LossMetric):
 
     def get_current_value(self, preds: Tensor, target: Tensor):
         return self.sequence_softmax_cross_entropy_function(preds, target)
+
+
+@register_metric("next_token_softmax_cross_entropy", [SEQUENCE, TEXT], MINIMIZE, LOGITS)
+class NextTokenSoftmaxCrossEntropyMetric(LossMetric):
+    def __init__(self, config: SequenceSoftmaxCrossEntropyLossConfig, **kwargs):
+        super().__init__()
+        self.next_token_softmax_cross_entropy_function = NextTokenSoftmaxCrossEntropyLoss(config)
+
+    def get_current_value(self, preds: Tensor, target: Tensor):
+        return self.next_token_softmax_cross_entropy_function(preds, target)
 
 
 @register_metric("sigmoid_cross_entropy", [SET], MINIMIZE, LOGITS)

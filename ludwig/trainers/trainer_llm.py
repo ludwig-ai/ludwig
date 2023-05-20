@@ -95,6 +95,9 @@ class NoneTrainer(BaseTrainer):
         self.device = device if device is not None else get_torch_device()
         self.model = model.to_device(self.device)
 
+        # Since we are only running evaluation without training, set the model to evaluation mode.
+        self.model.eval()
+
         self.batch_size = self.config.batch_size
         self.eval_batch_size = self.config.eval_batch_size
         self.base_learning_rate = self.config.base_learning_rate
