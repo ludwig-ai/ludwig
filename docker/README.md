@@ -20,9 +20,9 @@ from the project's `master` branch.
 - `ludwigai/ludwig` Ludwig packaged with PyTorch
 - `ludwigai/ludwig-gpu` Ludwig packaged with gpu-enabled version of PyTorch
 - `ludwigai/ludwig-ray` Ludwig packaged with PyTorch
-  and Ray 2.2.0 (https://github.com/ray-project/ray)
+  and Ray 2.4.0 (<https://github.com/ray-project/ray>)
 - `ludwigai/ludwig-ray-gpu` Ludwig packaged with gpu-enabled versions of PyTorch
-  and Ray 2.2.0 (https://github.com/ray-project/ray)
+  and Ray 2.4.0 (<https://github.com/ray-project/ray>)
 
 ## Image Tags
 
@@ -116,6 +116,6 @@ Point browser to `http://localhost:6006` to see Tensorboard dashboard.
 
 If you want to contribute to Ludwig, you can setup a Docker container with all the dependencies
 installed as a full featured development environment. This can be done using devcontainers with VS Code:
-https://code.visualstudio.com/docs/devcontainers/containers
+<https://code.visualstudio.com/docs/devcontainers/containers>
 
 You can find the `devcontainer.json` file within the top level `.devcontainer` folder.
