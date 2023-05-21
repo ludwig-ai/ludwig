@@ -124,7 +124,7 @@ class Predictor(BasePredictor):
 
     def batch_predict(self, dataset: Dataset, dataset_name: str = None, collect_logits: bool = False):
         prev_model_training_mode = self.dist_model.training  # store previous model training mode
-        self._distributed.eval(self.dist_model)  # set model to eval mode
+        self.dist_model.eval()  # set model to eval mode
 
         with torch.no_grad():
             with dataset.initialize_batcher(self._batch_size, should_shuffle=False) as batcher:
@@ -155,7 +155,7 @@ class Predictor(BasePredictor):
 
     def predict_single(self, batch, collect_logits: bool = False):
         prev_model_training_mode = self.dist_model.training  # store previous model training mode
-        self._distributed.eval(self.dist_model)  # set model to eval mode
+        self.dist_model.eval()  # set model to eval mode
 
         with torch.no_grad():
             predictions = defaultdict(list)
@@ -215,7 +215,7 @@ class Predictor(BasePredictor):
             collect_predictions, collect_logits.
         """
         prev_model_training_mode = self.dist_model.training  # store previous model training mode
-        self._distributed.eval(self.dist_model)  # set model to eval mode
+        self.dist_model.eval()  # set model to eval mode
 
         with torch.no_grad():
             with dataset.initialize_batcher(
@@ -286,7 +286,7 @@ class Predictor(BasePredictor):
             raise ValueError("BucketedBatcher is not supported yet")
 
         prev_model_training_mode = self.dist_model.training  # store previous model training mode
-        self._distributed.eval(self.dist_model)  # set model to eval mode
+        self.dist_model.eval()  # set model to eval mode
 
         with torch.no_grad():
             with dataset.initialize_batcher(
