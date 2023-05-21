@@ -5,7 +5,7 @@ metadata:
     controller-tools.k8s.io: "1.0"
   name: ludwig-ray-gpu-cluster
 spec:
-  rayVersion: "2.3.1"
+  rayVersion: "2.4.0"
   headGroupSpec:
     serviceType: ClusterIP
     replicas: 1
