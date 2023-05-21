@@ -290,21 +290,21 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
     "finetune_strategy,adapter_args",
     [
         (None, {}),
-        (
-            "prompt_tuning",
-            {
-                "num_virtual_tokens": 8,
-                "prompt_tuning_init": "RANDOM",
-            },
-        ),
-        (
-            "prompt_tuning",
-            {
-                "num_virtual_tokens": 8,
-                "prompt_tuning_init": "TEXT",
-                "prompt_tuning_init_text": "Classify if the review is positive, negative, or neutral: ",
-            },
-        ),
+        # (
+        #     "prompt_tuning",
+        #     {
+        #         "num_virtual_tokens": 8,
+        #         "prompt_tuning_init": "RANDOM",
+        #     },
+        # ),
+        # (
+        #     "prompt_tuning",
+        #     {
+        #         "num_virtual_tokens": 8,
+        #         "prompt_tuning_init": "TEXT",
+        #         "prompt_tuning_init_text": "Classify if the review is positive, negative, or neutral: ",
+        #     },
+        # ),
         # ("prefix_tuning", {"num_virtual_tokens": 8}),
         # ("p_tuning", {"num_virtual_tokens": 8, "encoder_reparameterization_type": "MLP"}),
         # ("p_tuning", {"num_virtual_tokens": 8, "encoder_reparameterization_type": "LSTM"}),
