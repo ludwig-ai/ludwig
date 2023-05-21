@@ -522,13 +522,8 @@ class LLM(BaseModel):
         """Returns the model's predictions for each output feature."""
         predictions = {}
         for of_name in self.output_features:
-            # HACK(Arnav): Conditional for trainer type exists when trying to
-            # finetune without an adapter. Ideally, we get rid of these kinds of checks.
-            if self.config_obj.adapter or self.config_obj.trainer.type == "finetune":
-                predictions[of_name] = outputs
-            else:
-                generated_predictions = outputs[of_name]
-                predictions[of_name] = generated_predictions
+            # TODO(travis): this will need to change when we support multiple output features
+            predictions[of_name] = outputs
         return predictions
 
     def save(self, save_path):

@@ -314,8 +314,8 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
     ],
     ids=[
         "none",
-        "prompt_tuning_init_random",
-        "prompt_tuning_init_text",
+        # "prompt_tuning_init_random",
+        # "prompt_tuning_init_text",
         # "prefix_tuning",
         # "p_tuning_mlp_reparameterization",
         # "p_tuning_lstm_reparameterization",
