@@ -623,7 +623,7 @@ def eval_fn(
         model = model.to_device(device)
 
         predictor = get_predictor_cls(model.type())(
-            model=model, distributed=distributed, report_tqdm_to_ray=True, remote=True, **predictor_kwargs
+            dist_model=model, distributed=distributed, report_tqdm_to_ray=True, remote=True, **predictor_kwargs
         )
         results = predictor.batch_evaluation(eval_shard, **kwargs)
 

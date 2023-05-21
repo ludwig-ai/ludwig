@@ -309,7 +309,7 @@ class LLM(BaseModel):
         outputs = self.output_features.get(of_name).predictions(outputs, of_name)
 
         # Cast to float32 for metric computation incase we're using deespeed with
-        # quantization such as bfloat16.
+        # reduced precision such as bfloat16.
         for prediction_key, prediction_tensor in outputs.items():
             outputs[prediction_key] = prediction_tensor.type(torch.float32)
 
