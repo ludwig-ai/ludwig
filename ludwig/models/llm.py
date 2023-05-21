@@ -147,17 +147,7 @@ class LLM(BaseModel):
         # Extract the decoder object for the forward pass
         self._output_feature_decoder = ModuleWrapper(self.output_features.items()[0][1])
 
-        # ================ Combined loss metric ================
-        self._eval_loss_metric = ModuleWrapper(torchmetrics.MeanMetric())
-        self._eval_additional_losses_metrics = ModuleWrapper(torchmetrics.MeanMetric())
-
         clear_data_cache()
-
-    def do_placement(self, device):
-        self._eval_loss_metric.module = self._eval_loss_metric.module.to(device)
-        self._eval_additional_losses_metrics.module = self._eval_additional_losses_metrics.module.to(device)
-        for feature in self.output_features.values():
-            feature.eval_loss_metric = feature.eval_loss_metric.to(device)
 
     def create_feature_dict(self) -> LudwigFeatureDict:
         return DictWrapper(LudwigFeatureDict())
@@ -227,9 +217,9 @@ class LLM(BaseModel):
             # if self.model.device != device:
             #     self.model = self.model.to(device)
 
-            self.eval_loss_metric = self.eval_loss_metric.to(device)
-            self.eval_additional_losses_metrics = self.eval_additional_losses_metrics.to(device)
-            self.output_features.update({k: v.to(device) for k, v in self.output_features.items()})
+            # self.eval_loss_metric = self.eval_loss_metric.to(device)
+            # self.eval_additional_losses_metrics = self.eval_additional_losses_metrics.to(device)
+            # self.output_features.update({k: v.to(device) for k, v in self.output_features.items()})
         else:
             self.initialize_adapter()
             self.model = self.model.to(device)

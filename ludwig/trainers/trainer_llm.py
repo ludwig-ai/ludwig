@@ -94,6 +94,7 @@ class NoneTrainer(BaseTrainer):
 
         self.device = device if device is not None else get_torch_device()
         self.model = model.to_device(self.device)
+        self.model.metrics_to_device(self.device)
 
         # Since we are only running evaluation without training, set the model to evaluation mode.
         self.model.eval()

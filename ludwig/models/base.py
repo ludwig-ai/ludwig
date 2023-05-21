@@ -5,11 +5,12 @@ from typing import Dict, Optional, Tuple, Union
 
 import numpy as np
 import torch
+import torchmetrics
 
 from ludwig.combiners.combiners import Combiner
 from ludwig.constants import COMBINED, LOSS, NAME
 from ludwig.encoders.base import Encoder
-from ludwig.features.base_feature import create_passthrough_input_feature, InputFeature, OutputFeature
+from ludwig.features.base_feature import ModuleWrapper, create_passthrough_input_feature, InputFeature, OutputFeature
 from ludwig.features.feature_registries import get_input_type_registry, get_output_type_registry
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig, FeatureCollection
@@ -48,12 +49,22 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         self.input_features = self.create_feature_dict()
         self.output_features = self.create_feature_dict()
 
-    def create_feature_dict() -> LudwigFeatureDict:
+        # ================ Combined loss metric ================
+        self._eval_loss_metric = ModuleWrapper(torchmetrics.MeanMetric())
+        self._eval_additional_losses_metrics = ModuleWrapper(torchmetrics.MeanMetric())
+
+    def create_feature_dict(self) -> LudwigFeatureDict:
         """Creates and returns a LudwigFeatureDict."""
         return LudwigFeatureDict()
 
     def to_device(self, device):
         return self.to(device)
+
+    def metrics_to_device(self, device: str):
+        self._eval_loss_metric.module = self._eval_loss_metric.module.to(device)
+        self._eval_additional_losses_metrics.module = self._eval_additional_losses_metrics.module.to(device)
+        for feature in self.output_features.values():
+            feature._eval_loss_metric.module = feature._eval_loss_metric.module.to(device)
 
     @classmethod
     def build_inputs(cls, input_feature_configs: FeatureCollection[BaseInputFeatureConfig]) -> Dict[str, InputFeature]:
