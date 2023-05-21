@@ -318,6 +318,11 @@ class LLM(BaseModel):
         # Get predictions, probabilities and logits tensor from the output feature's predictions function
         outputs = self.output_features.get(of_name).predictions(outputs, of_name)
 
+        # Cast to float32 for metric computation incase we're using deespeed with
+        # quantization such as bfloat16.
+        for prediction_key, prediction_tensor in outputs.items():
+            outputs[prediction_key] = prediction_tensor.type(torch.float32)
+
         return outputs
 
     def generate(
