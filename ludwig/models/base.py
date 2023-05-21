@@ -13,6 +13,7 @@ from ludwig.encoders.base import Encoder
 from ludwig.features.base_feature import ModuleWrapper, create_passthrough_input_feature, InputFeature, OutputFeature
 from ludwig.features.feature_registries import get_input_type_registry, get_output_type_registry
 from ludwig.features.feature_utils import LudwigFeatureDict
+from ludwig.modules.metric_modules import LudwigMetric
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig, FeatureCollection
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
 from ludwig.utils.metric_utils import get_scalar_from_ludwig_metric
@@ -271,6 +272,14 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         eval_loss, additional_losses = self.eval_loss(targets, predictions)
         self.eval_loss_metric.update(eval_loss)
         self.eval_additional_losses_metrics.update(additional_losses)
+
+    @property
+    def eval_loss_metric(self) -> LudwigMetric:
+        return self._eval_loss_metric.module
+
+    @property
+    def eval_additional_losses_metrics(self) -> LudwigMetric:
+        return self._eval_additional_losses_metrics.module
 
     def get_metrics(self) -> Dict[str, Dict[str, float]]:
         """Returns a dictionary of metrics for each output feature of the model."""
