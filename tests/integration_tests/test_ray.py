@@ -87,6 +87,7 @@ from ray.train._internal.dataset_spec import DataParallelIngestSpec  # noqa: E40
 
 from ludwig.backend.ray import get_trainer_kwargs, RayBackend  # noqa: E402
 from ludwig.data.dataframe.dask import DaskEngine  # noqa: E402
+from ludwig.data.dataset.ray import RayDatasetShard  # noqa: E402
 
 try:
     import modin  # noqa: E402
@@ -1118,3 +1119,21 @@ class TestDatasetWindowAutosizing:
             assert auto_window.num_blocks() < user_window.num_blocks()
             if i > 100:
                 break
+
+
+def test_ray_dataset_count(ray_cluster_2cpu):
+    ds_size = int(ray.cluster_resources()["object_store_memory"]) // 4
+    ds = ray.data.from_pandas(
+        [
+            pd.DataFrame(
+                {
+                    "in_feature": np.random.randint(0, high=100, size=ds_size, dtype=np.uint8),
+                    "out_feature": np.random.randint(0, high=100, size=ds_size, dtype=np.uint8),
+                }
+            )
+        ]
+    )
+
+    ds_shard = RayDatasetShard(ds.iterator(), {}, {})
+
+    assert len(ds_shard) == ds_size
