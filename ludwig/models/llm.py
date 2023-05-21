@@ -109,8 +109,8 @@ class LLM(BaseModel):
         self._output_feature_decoder = ModuleWrapper(self.output_features.items()[0][1])
 
         # ================ Combined loss metric ================
-        self._eval_loss_metric = torchmetrics.MeanMetric()
-        self._eval_additional_losses_metrics = torchmetrics.MeanMetric()
+        self.eval_loss_metric = torchmetrics.MeanMetric()
+        self.eval_additional_losses_metrics = torchmetrics.MeanMetric()
 
         clear_data_cache()
 
