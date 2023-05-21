@@ -84,6 +84,7 @@ def test_replace_layer_with_copy(tmpdir):
 
     # Check that the data pointers are different for the copied keys and that they are the same for the rest.
     for param_name, _ in input_feature_module.named_parameters():
+        # (Jeff K.) Disabling this check until further explainability tests can be conducted.
         # if param_name in keys_to_copy:
         #     assert (
         #         data_ptrs_before[param_name] != data_ptrs_after[param_name]
