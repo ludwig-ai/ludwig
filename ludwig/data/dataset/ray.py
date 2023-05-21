@@ -280,7 +280,8 @@ class RayDatasetShard(Dataset):
         try:
             count = next(self.epoch_iter).count()
         except TypeError:
-            count = next(self.epoch_iter.iter_batches()).count()
+            # Sum over all batches when using a DatasetIterator
+            count = sum(map(lambda b: b.count(), self.epoch_iter.iter_batches()))
         if not isinstance(count, int):
             count = count[0]
         return count
