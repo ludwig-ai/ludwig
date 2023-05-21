@@ -22,6 +22,7 @@ from transformers import (
 
 from ludwig.constants import LOGITS, MODEL_LLM, PREDICTIONS, PROBABILITIES, TEXT
 from ludwig.features.base_feature import ModuleWrapper, OutputFeature
+from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.features.text_feature import TextOutputFeature
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
@@ -34,6 +35,44 @@ from ludwig.utils.output_feature_utils import set_output_feature_tensor
 from ludwig.utils.torch_utils import reg_loss
 
 logger = logging.getLogger(__name__)
+
+
+class DictWrapper:
+    """Wrapper for a LudwigFeatureDict module that allows for iteration over keys.
+
+    The purpose of this class is to avoid exposing input and output features as modules of the LLM. This is because we
+    only wish to train the underlying model, and having these additional modules can confuse systems like DeepSpeed.
+    """
+
+    def __init__(self, obj: LudwigFeatureDict):
+        self.obj = obj
+
+    def get(self, key) -> torch.nn.Module:
+        return self.obj.get(key)
+
+    def set(self, key: str, module: torch.nn.Module) -> None:
+        self.obj.set(key, module)
+
+    def __len__(self) -> int:
+        return len(self.obj)
+
+    def __next__(self) -> None:
+        return next(iter(self.obj))
+
+    def __iter__(self) -> None:
+        return iter(self.obj.keys())
+
+    def keys(self) -> List[str]:
+        return self.obj.keys()
+
+    def values(self) -> List[torch.nn.Module]:
+        return self.obj.values()
+
+    def items(self) -> List[Tuple[str, torch.nn.Module]]:
+        return self.obj.items()
+
+    def update(self, modules: Dict[str, torch.nn.Module]) -> None:
+        self.obj.update(modules)
 
 
 class LLM(BaseModel):
@@ -109,10 +148,27 @@ class LLM(BaseModel):
         self._output_feature_decoder = ModuleWrapper(self.output_features.items()[0][1])
 
         # ================ Combined loss metric ================
-        self.eval_loss_metric = torchmetrics.MeanMetric()
-        self.eval_additional_losses_metrics = torchmetrics.MeanMetric()
+        self._eval_loss_metric = ModuleWrapper(torchmetrics.MeanMetric())
+        self._eval_additional_losses_metrics = ModuleWrapper(torchmetrics.MeanMetric())
 
         clear_data_cache()
+
+    def do_placement(self, device):
+        self._eval_loss_metric.module = self._eval_loss_metric.module.to(device)
+        self._eval_additional_losses_metrics.module = self._eval_additional_losses_metrics.module.to(device)
+        for feature in self.output_features.values():
+            feature.eval_loss_metric = feature.eval_loss_metric.to(device)
+
+    def create_feature_dict(self) -> LudwigFeatureDict:
+        return DictWrapper(LudwigFeatureDict())
+
+    @property
+    def eval_loss_metric(self) -> torchmetrics.MeanMetric:
+        return self._eval_loss_metric.module
+
+    @property
+    def eval_additional_losses_metrics(self) -> torchmetrics.MeanMetric:
+        return self._eval_additional_losses_metrics.module
 
     @property
     def output_feature_decoder(self) -> OutputFeature:

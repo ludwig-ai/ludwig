@@ -176,6 +176,7 @@ class Trainer(BaseTrainer):
 
         self.model = model
         self.model = self.distributed.to_device(self.model)
+        self.model.do_placement(self.device)
 
         self.compiled_model = self.model
         if config.compile:
