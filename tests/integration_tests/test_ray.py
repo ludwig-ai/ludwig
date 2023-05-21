@@ -1127,7 +1127,7 @@ def test_ray_dataset_count(ray_cluster_2cpu):
     Different versions of Ray Data have different means of determining dataset size from iterator/pipeline. This tests
     that we return the correct size regardless of underlying batching object.
     """
-    ds_size = int(ray.cluster_resources()["object_store_memory"]) // 16
+    ds_size = int(ray.cluster_resources()["object_store_memory"]) // 128
     ds = ray.data.from_pandas(
         [
             pd.DataFrame(
