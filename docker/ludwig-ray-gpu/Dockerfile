@@ -9,7 +9,7 @@
 #   model serving
 #
 
-FROM rayproject/ray:2.3.1-py38-cu118
+FROM rayproject/ray:2.4.0-py38-cu118
 
 # https://forums.developer.nvidia.com/t/notice-cuda-linux-repository-key-rotation/212771
 RUN sudo apt-key del 7fa2af80 && \
