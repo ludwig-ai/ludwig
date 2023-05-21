@@ -572,6 +572,9 @@ class Trainer(BaseTrainer):
         # Trigger eval end callback after any model weights save for complete checkpoint
         self.callback(lambda c: c.on_eval_end(self, progress_tracker, save_path))
 
+        # Clear the CUDA cache to free up memory
+        torch.cuda.empty_cache()
+
         return should_break
 
     def train(
