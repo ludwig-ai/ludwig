@@ -252,9 +252,9 @@ class LLM(BaseModel):
         model_inputs, attention_masks = self._generate_merged_ids(input_ids, target_ids)
 
         # Wrap with flash attention backend for faster generation
-        with torch.backends.cuda.sdp_kernel(
-            enable_flash=True, enable_math=False, enable_mem_efficient=False
-        ) if self.model.cuda() else contextlib.nullcontext():
+        with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=False, enable_mem_efficient=False) if (
+            torch.cuda.is_available() and next(self.model.parameters()).device.type == "cuda"
+        ) else contextlib.nullcontext():
             # Forward pass using PEFT wrapped model for fine-tuning
             model_outputs = self.model(input_ids=model_inputs, attention_mask=attention_masks).get(LOGITS)
 
@@ -312,7 +312,9 @@ class LLM(BaseModel):
                 # Wrap with flash attention backend for faster generation
                 with torch.backends.cuda.sdp_kernel(
                     enable_flash=True, enable_math=False, enable_mem_efficient=False
-                ) if self.model.cuda() else contextlib.nullcontext():
+                ) if (
+                    torch.cuda.is_available() and next(self.model.parameters()).device.type == "cuda"
+                ) else contextlib.nullcontext():
                     # Generate text using the model
                     model_outputs = self.model.generate(
                         input_ids=input_ids_sample_no_padding,
