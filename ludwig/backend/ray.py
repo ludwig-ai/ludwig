@@ -49,7 +49,7 @@ from ludwig.data.dataframe.dask import tensor_extension_casting
 from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetShard
 from ludwig.distributed import get_default_strategy_name, get_dist_strategy, init_dist_strategy
 from ludwig.models.base import BaseModel
-from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
+from ludwig.models.predictor import BasePredictor, get_output_columns, get_predictor_cls
 from ludwig.schema.trainer import ECDTrainerConfig, FineTuneTrainerConfig
 from ludwig.trainers.registry import (
     get_llm_ray_trainers_registry,
@@ -622,7 +622,9 @@ def eval_fn(
         device = get_torch_device()
         model = model.to_device(device)
 
-        predictor = RemotePredictor(model=model, distributed=distributed, report_tqdm_to_ray=True, **predictor_kwargs)
+        predictor = get_predictor_cls(model.type())(
+            dist_model=model, distributed=distributed, report_tqdm_to_ray=True, remote=True, **predictor_kwargs
+        )
         results = predictor.batch_evaluation(eval_shard, **kwargs)
 
         # The result object returned from trainer.fit() contains the metrics from the last session.report() call.
@@ -764,7 +766,7 @@ class RayPredictor(BasePredictor):
                 self.reshape_map = {
                     f[PROC_COLUMN]: training_set_metadata[f[NAME]].get("reshape") for f in features.values()
                 }
-                predictor = Predictor(model, **predictor_kwargs)
+                predictor = get_predictor_cls(model.type())(model, **predictor_kwargs)
                 self.predict = partial(predictor.predict_single, *args, **kwargs)
 
             def __call__(self, df: pd.DataFrame) -> pd.DataFrame:

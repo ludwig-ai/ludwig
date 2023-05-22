@@ -4,7 +4,6 @@ from typing import Dict, Tuple, Union
 
 import numpy as np
 import torch
-import torchmetrics
 
 from ludwig.combiners.combiners import create_combiner
 from ludwig.constants import MODEL_ECD
@@ -53,10 +52,6 @@ class ECD(BaseModel):
         self.output_features.update(
             self.build_outputs(output_feature_configs=self.config_obj.output_features, combiner=self.combiner)
         )
-
-        # ================ Combined loss metric ================
-        self.eval_loss_metric = torchmetrics.MeanMetric()
-        self.eval_additional_losses_metrics = torchmetrics.MeanMetric()
 
         # After constructing all layers, clear the cache to free up memory
         clear_data_cache()

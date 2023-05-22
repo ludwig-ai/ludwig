@@ -172,11 +172,6 @@ class DeepSpeedStrategy(DDPStrategy):
     def is_model_parallel(cls) -> bool:
         return True
 
-    def eval(self, model: nn.Module):
-        # TODO(travis): remove this when DeepSpeed resolves issue:
-        # https://github.com/microsoft/DeepSpeed/issues/3068
-        pass
-
     def create_checkpoint_handle(
         self,
         dist_model: nn.Module,

@@ -171,9 +171,6 @@ class DistributedStrategy(ABC):
     def is_model_parallel(cls) -> bool:
         return False
 
-    def eval(self, model: nn.Module):
-        model.eval()
-
     def create_checkpoint_handle(
         self,
         dist_model: nn.Module,

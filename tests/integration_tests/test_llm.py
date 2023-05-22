@@ -289,22 +289,22 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
 @pytest.mark.parametrize(
     "finetune_strategy,adapter_args",
     [
-        # (None, {}),
-        (
-            "prompt_tuning",
-            {
-                "num_virtual_tokens": 8,
-                "prompt_tuning_init": "RANDOM",
-            },
-        ),
-        (
-            "prompt_tuning",
-            {
-                "num_virtual_tokens": 8,
-                "prompt_tuning_init": "TEXT",
-                "prompt_tuning_init_text": "Classify if the review is positive, negative, or neutral: ",
-            },
-        ),
+        (None, {}),
+        # (
+        #     "prompt_tuning",
+        #     {
+        #         "num_virtual_tokens": 8,
+        #         "prompt_tuning_init": "RANDOM",
+        #     },
+        # ),
+        # (
+        #     "prompt_tuning",
+        #     {
+        #         "num_virtual_tokens": 8,
+        #         "prompt_tuning_init": "TEXT",
+        #         "prompt_tuning_init_text": "Classify if the review is positive, negative, or neutral: ",
+        #     },
+        # ),
         # ("prefix_tuning", {"num_virtual_tokens": 8}),
         # ("p_tuning", {"num_virtual_tokens": 8, "encoder_reparameterization_type": "MLP"}),
         # ("p_tuning", {"num_virtual_tokens": 8, "encoder_reparameterization_type": "LSTM"}),
@@ -313,9 +313,9 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
         ("adaption_prompt", {"adapter_len": 6, "adapter_layers": 1}),
     ],
     ids=[
-        # "no_finetune_adapter",
-        "prompt_tuning_init_random",
-        "prompt_tuning_init_text",
+        "none",
+        # "prompt_tuning_init_random",
+        # "prompt_tuning_init_text",
         # "prefix_tuning",
         # "p_tuning_mlp_reparameterization",
         # "p_tuning_lstm_reparameterization",
@@ -341,10 +341,6 @@ def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strat
     config = {
         MODEL_TYPE: MODEL_LLM,
         MODEL_NAME: model_name,
-        ADAPTER: {
-            TYPE: finetune_strategy,
-            **adapter_args,
-        },
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
         TRAINER: {
@@ -353,6 +349,12 @@ def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strat
             EPOCHS: 2,
         },
     }
+
+    if finetune_strategy is not None:
+        config[ADAPTER] = {
+            TYPE: finetune_strategy,
+            **adapter_args,
+        }
 
     model = LudwigModel(config, backend=backend)
     model.train(dataset=df, output_directory=str(tmpdir), skip_save_processed_input=False)

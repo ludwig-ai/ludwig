@@ -1,12 +1,12 @@
+import contextlib
 import logging
 import os
 import tempfile
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
 import torch.nn.functional as F
-import torchmetrics
 from transformers import (
     AutoConfig,
     AutoModelForCausalLM,
@@ -21,7 +21,8 @@ from transformers import (
 )
 
 from ludwig.constants import LOGITS, MODEL_LLM, PREDICTIONS, PROBABILITIES, TEXT
-from ludwig.features.base_feature import OutputFeature
+from ludwig.features.base_feature import ModuleWrapper, OutputFeature
+from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.features.text_feature import TextOutputFeature
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
@@ -34,6 +35,44 @@ from ludwig.utils.output_feature_utils import set_output_feature_tensor
 from ludwig.utils.torch_utils import reg_loss
 
 logger = logging.getLogger(__name__)
+
+
+class DictWrapper:
+    """Wrapper for a LudwigFeatureDict module that allows for iteration over keys.
+
+    The purpose of this class is to avoid exposing input and output features as modules of the LLM. This is because we
+    only wish to train the underlying model, and having these additional modules can confuse systems like DeepSpeed.
+    """
+
+    def __init__(self, obj: LudwigFeatureDict):
+        self.obj = obj
+
+    def get(self, key) -> torch.nn.Module:
+        return self.obj.get(key)
+
+    def set(self, key: str, module: torch.nn.Module) -> None:
+        self.obj.set(key, module)
+
+    def __len__(self) -> int:
+        return len(self.obj)
+
+    def __next__(self) -> None:
+        return next(iter(self.obj))
+
+    def __iter__(self) -> None:
+        return iter(self.obj.keys())
+
+    def keys(self) -> List[str]:
+        return self.obj.keys()
+
+    def values(self) -> List[torch.nn.Module]:
+        return self.obj.values()
+
+    def items(self) -> List[Tuple[str, torch.nn.Module]]:
+        return self.obj.items()
+
+    def update(self, modules: Dict[str, torch.nn.Module]) -> None:
+        self.obj.update(modules)
 
 
 class LLM(BaseModel):
@@ -106,13 +145,16 @@ class LLM(BaseModel):
         )
 
         # Extract the decoder object for the forward pass
-        _, self.output_feature_decoder = self.output_features.items()[0]
-
-        # ================ Combined loss metric ================
-        self.eval_loss_metric = torchmetrics.MeanMetric()
-        self.eval_additional_losses_metrics = torchmetrics.MeanMetric()
+        self._output_feature_decoder = ModuleWrapper(self.output_features.items()[0][1])
 
         clear_data_cache()
+
+    def create_feature_dict(self) -> LudwigFeatureDict:
+        return DictWrapper(LudwigFeatureDict())
+
+    @property
+    def output_feature_decoder(self) -> OutputFeature:
+        return self._output_feature_decoder.module
 
     def initialize_adapter(self):
         """If an adapter config is provided, we want to wrap the model with a PEFT model for fine-tuning."""
@@ -159,17 +201,6 @@ class LLM(BaseModel):
                 self.model = AutoModelForCausalLM.from_pretrained(tmpdir, **model_kwargs)
 
             self.initialize_adapter()
-
-            # TODO(Arnav): Looking into this later, but it specifically happens when using local backend on a setup
-            # with multiple GPUs
-            # # If loading from checkpoint did not place it on the desired device, forcefully place it on
-            # # the desired device. On Cuda, this will place it on the device with the lowest index.
-            # if self.model.device != device:
-            #     self.model = self.model.to(device)
-
-            self.eval_loss_metric = self.eval_loss_metric.to(device)
-            self.eval_additional_losses_metrics = self.eval_additional_losses_metrics.to(device)
-            self.output_features.update({k: v.to(device) for k, v in self.output_features.items()})
         else:
             self.initialize_adapter()
             self.model = self.model.to(device)
@@ -202,7 +233,7 @@ class LLM(BaseModel):
         ],
         mask=None,
     ) -> Dict[str, torch.Tensor]:
-        """Forward pass of the model.
+        """Produces logits tensor for finetuning the model.
 
         Args:
             inputs: Inputs to the model. Can be a dictionary of input names to
@@ -215,40 +246,17 @@ class LLM(BaseModel):
             A dictionary of output {feature name}::{tensor_name} -> output tensor.
         """
 
-        if isinstance(inputs, tuple):
-            inputs, targets = inputs
-            # Convert targets to tensors.
-            for target_feature_name, target_value in targets.items():
-                if not isinstance(target_value, torch.Tensor):
-                    targets[target_feature_name] = torch.from_numpy(target_value)
-                else:
-                    targets[target_feature_name] = target_value
-        else:
-            targets = None
+        input_ids, target_ids = self._unpack_inputs(inputs)
 
-        assert list(inputs.keys()) == self.input_features.keys()
-
-        input_ids = self.get_input_ids(inputs)
-
-        target_ids = None
-        if targets:
-            target_ids = self.get_target_ids(targets)
-
-        # TODO: Figure out how to get rid of using the additional self.config_obj.adapter check
-        # The issue is that when we run evaluation on the validation/test sets, we set the mode to eval
-        # and use the forward_generate path instead of the forward_train path.
-        if self.model.training or self.config_obj.adapter:
-            return self.forward_train(input_ids, target_ids)
-        else:
-            return self.forward_generate(input_ids, mask)
-
-    def forward_train(self, input_ids, target_ids) -> Dict[str, torch.Tensor]:
-        """Produces logits tensor for finetuning the model."""
         # Generate merged input_id, target_id pairs for the model, and create corresponding attention masks
         model_inputs, attention_masks = self._generate_merged_ids(input_ids, target_ids)
 
-        # Forward pass using PEFT wrapped model for fine-tuning
-        model_outputs = self.model(input_ids=model_inputs, attention_mask=attention_masks).get(LOGITS)
+        # Wrap with flash attention backend for faster generation
+        with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=False, enable_mem_efficient=False) if (
+            torch.cuda.is_available() and next(self.model.parameters()).device.type == "cuda"
+        ) else contextlib.nullcontext():
+            # Forward pass using PEFT wrapped model for fine-tuning
+            model_outputs = self.model(input_ids=model_inputs, attention_mask=attention_masks).get(LOGITS)
 
         if self.output_feature_type != TEXT:
             # Pass generated tokens through decoder after averaging the token probabilities
@@ -268,10 +276,24 @@ class LLM(BaseModel):
         # Get predictions, probabilities and logits tensor from the output feature's predictions function
         outputs = self.output_features.get(of_name).predictions(outputs, of_name)
 
+        # Cast to float32 for metric computation incase we're using deespeed with
+        # reduced precision such as bfloat16.
+        for prediction_key, prediction_tensor in outputs.items():
+            outputs[prediction_key] = prediction_tensor.type(torch.float32)
+
         return outputs
 
-    def forward_generate(self, input_ids, mask) -> Dict[str, torch.Tensor]:
+    def generate(
+        self,
+        inputs: Union[
+            Dict[str, torch.Tensor], Dict[str, np.ndarray], Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
+        ],
+        mask=None,
+    ) -> Dict[str, torch.Tensor]:
         """Generates tokens using the model."""
+
+        input_ids, _ = self._unpack_inputs(inputs)
+
         with torch.no_grad():
             input_lengths = []
             sequences_list = []
@@ -287,14 +309,21 @@ class LLM(BaseModel):
 
                 input_lengths.append(input_ids_sample_no_padding.shape[1])
 
-                # Generate text using the model
-                model_outputs = self.model.generate(
-                    input_ids=input_ids_sample_no_padding,
-                    attention_mask=mask,
-                    generation_config=self.generation,
-                    return_dict_in_generate=True,
-                    output_scores=True,
-                )
+                # Wrap with flash attention backend for faster generation
+                with torch.backends.cuda.sdp_kernel(
+                    enable_flash=True, enable_math=False, enable_mem_efficient=False
+                ) if (
+                    torch.cuda.is_available() and next(self.model.parameters()).device.type == "cuda"
+                ) else contextlib.nullcontext():
+                    # Generate text using the model
+                    model_outputs = self.model.generate(
+                        input_ids=input_ids_sample_no_padding,
+                        attention_mask=mask,
+                        generation_config=self.generation,
+                        return_dict_in_generate=True,
+                        output_scores=True,
+                    )
+
                 sequences_list.append(model_outputs.sequences[0])
 
             # Extract the predictions, probabilities and logits from the model outputs
@@ -304,13 +333,32 @@ class LLM(BaseModel):
                 llm_model_input_lengths=input_lengths,
             )
 
-        return self.extract(outputs)
+        return outputs
 
-    def extract(self, outputs: Dict[str, torch.Tensor]) -> Dict[str, Dict[str, torch.Tensor]]:
-        """Extracts predictions and probabilities from the model outputs."""
-        return {
-            self.config_obj.output_features[0].name: outputs,
-        }
+    def _unpack_inputs(
+        self,
+        inputs: Union[
+            Dict[str, torch.Tensor], Dict[str, np.ndarray], Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
+        ],
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        """Converts input tensors to input ids."""
+        if isinstance(inputs, tuple):
+            inputs, targets = inputs
+            # Convert targets to tensors.
+            for target_feature_name, target_value in targets.items():
+                if not isinstance(target_value, torch.Tensor):
+                    targets[target_feature_name] = torch.from_numpy(target_value)
+                else:
+                    targets[target_feature_name] = target_value
+        else:
+            targets = None
+
+        assert list(inputs.keys()) == self.input_features.keys()
+
+        input_ids = self.get_input_ids(inputs)
+        target_ids = self.get_target_ids(targets) if targets else None
+
+        return input_ids, target_ids
 
     def get_input_ids(
         self,
@@ -461,13 +509,8 @@ class LLM(BaseModel):
         """Returns the model's predictions for each output feature."""
         predictions = {}
         for of_name in self.output_features:
-            # HACK(Arnav): Conditional for trainer type exists when trying to
-            # finetune without an adapter. Ideally, we get rid of these kinds of checks.
-            if self.config_obj.adapter or self.config_obj.trainer.type == "finetune":
-                predictions[of_name] = outputs
-            else:
-                generated_predictions = outputs[of_name]
-                predictions[of_name] = generated_predictions
+            # TODO(travis): this will need to change when we support multiple output features
+            predictions[of_name] = outputs
         return predictions
 
     def save(self, save_path):

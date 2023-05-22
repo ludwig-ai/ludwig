@@ -117,46 +117,48 @@ class BasePromptLearningConfig(BaseAdapterConfig):
     )
 
 
-@DeveloperAPI
-@register_adapter("prompt_tuning")
-@ludwig_dataclass
-class PromptTuningConfig(BasePromptLearningConfig):
-    """Adapted from https://github.com/huggingface/peft/blob/main/src/peft/tuners/prompt_tuning.py."""
+# TODO(travis): fix text generation when using prompt tuning:
+#     RuntimeError: shape '[-1, 17]' is invalid for input of size 9
+# @DeveloperAPI
+# @register_adapter("prompt_tuning")
+# @ludwig_dataclass
+# class PromptTuningConfig(BasePromptLearningConfig):
+#     """Adapted from https://github.com/huggingface/peft/blob/main/src/peft/tuners/prompt_tuning.py."""
 
-    def __post_init__(self):
-        if self.prompt_tuning_init == "TEXT" and not self.prompt_tuning_init_text:
-            raise ConfigValidationError(
-                "Must provide `prompt_tuning_init_text` when `prompt_tuning_init` is set to `TEXT`."
-            )
+#     def __post_init__(self):
+#         if self.prompt_tuning_init == "TEXT" and not self.prompt_tuning_init_text:
+#             raise ConfigValidationError(
+#                 "Must provide `prompt_tuning_init_text` when `prompt_tuning_init` is set to `TEXT`."
+#             )
 
-    type: str = schema_utils.ProtectedString("prompt_tuning")
+#     type: str = schema_utils.ProtectedString("prompt_tuning")
 
-    prompt_tuning_init: str = schema_utils.StringOptions(
-        ["RANDOM", "TEXT"],
-        default="RANDOM",
-        description="The type of initialization to use for the prompt embedding. ",
-        parameter_metadata=LLM_METADATA["adapter"]["prompt_tuning"]["prompt_tuning_init"],
-    )
+#     prompt_tuning_init: str = schema_utils.StringOptions(
+#         ["RANDOM", "TEXT"],
+#         default="RANDOM",
+#         description="The type of initialization to use for the prompt embedding. ",
+#         parameter_metadata=LLM_METADATA["adapter"]["prompt_tuning"]["prompt_tuning_init"],
+#     )
 
-    prompt_tuning_init_text: str = schema_utils.String(
-        default="",
-        description="The text to use to initialize the prompt embedding.",
-        parameter_metadata=LLM_METADATA["adapter"]["prompt_tuning"]["prompt_tuning_init_text"],
-    )
+#     prompt_tuning_init_text: str = schema_utils.String(
+#         default="",
+#         description="The text to use to initialize the prompt embedding.",
+#         parameter_metadata=LLM_METADATA["adapter"]["prompt_tuning"]["prompt_tuning_init_text"],
+#     )
 
-    def to_config(self, **kwargs) -> "PeftConfig":
-        from peft import PromptTuningConfig as _PromptTuningConfig
+#     def to_config(self, **kwargs) -> "PeftConfig":
+#         from peft import PromptTuningConfig as _PromptTuningConfig
 
-        return _PromptTuningConfig(
-            num_virtual_tokens=self.num_virtual_tokens,
-            token_dim=self.token_dim,
-            num_transformer_submodules=self.num_transformer_submodules,
-            num_attention_heads=self.num_attention_heads,
-            num_layers=self.num_layers,
-            prompt_tuning_init=self.prompt_tuning_init,
-            prompt_tuning_init_text=self.prompt_tuning_init_text,
-            **kwargs
-        )
+#         return _PromptTuningConfig(
+#             num_virtual_tokens=self.num_virtual_tokens,
+#             token_dim=self.token_dim,
+#             num_transformer_submodules=self.num_transformer_submodules,
+#             num_attention_heads=self.num_attention_heads,
+#             num_layers=self.num_layers,
+#             prompt_tuning_init=self.prompt_tuning_init,
+#             prompt_tuning_init_text=self.prompt_tuning_init_text,
+#             **kwargs
+#         )
 
 
 # TODO(travis): fix prefix tuning and p-tuning to work with DDP
