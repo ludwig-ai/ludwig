@@ -147,6 +147,9 @@ class LLM(BaseModel):
         # Extract the decoder object for the forward pass
         self._output_feature_decoder = ModuleWrapper(self.output_features.items()[0][1])
 
+        # Initialize the PEFT adapter is one is provided
+        self.initialize_adapter()
+
         clear_data_cache()
 
     def create_feature_dict(self) -> LudwigFeatureDict:
@@ -176,7 +179,6 @@ class LLM(BaseModel):
         device = torch.device(device)
 
         if device == self.curr_device:
-            self.initialize_adapter()
             return self
         else:
             log_once(f"Moving LLM from '{self.curr_device}' to '{device}'.")
@@ -195,14 +197,29 @@ class LLM(BaseModel):
                     max_memory={i: "13GiB" for i in range(num_gpus)},
                 )
             )
+
             # we save and reload the weights to ensure that they can be sharded across the GPUs using `from_pretrained`
             with tempfile.TemporaryDirectory() as tmpdir:
                 self.model.save_pretrained(tmpdir)
-                self.model = AutoModelForCausalLM.from_pretrained(tmpdir, **model_kwargs)
 
-            self.initialize_adapter()
+                if self.config_obj.adapter:
+                    from peft import PeftModel
+
+                    self.model = AutoModelForCausalLM.from_pretrained(
+                        self.model_name,
+                        **model_kwargs,
+                    )
+                    self.model = PeftModel.from_pretrained(
+                        tmpdir,
+                        torch_dtype=torch.float16,
+                    )
+                else:
+                    self.model = AutoModelForCausalLM.from_pretrained(
+                        tmpdir,
+                        **model_kwargs,
+                    )
+
         else:
-            self.initialize_adapter()
             self.model = self.model.to(device)
 
         self.curr_device = device
