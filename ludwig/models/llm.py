@@ -6,7 +6,6 @@ from typing import Dict, List, Optional, Tuple, Union
 import numpy as np
 import torch
 import torch.nn.functional as F
-import torchmetrics
 from transformers import (
     AutoConfig,
     AutoModelForCausalLM,
@@ -153,14 +152,6 @@ class LLM(BaseModel):
         return DictWrapper(LudwigFeatureDict())
 
     @property
-    def eval_loss_metric(self) -> torchmetrics.MeanMetric:
-        return self._eval_loss_metric.module
-
-    @property
-    def eval_additional_losses_metrics(self) -> torchmetrics.MeanMetric:
-        return self._eval_additional_losses_metrics.module
-
-    @property
     def output_feature_decoder(self) -> OutputFeature:
         return self._output_feature_decoder.module
 
@@ -209,17 +200,6 @@ class LLM(BaseModel):
                 self.model = AutoModelForCausalLM.from_pretrained(tmpdir, **model_kwargs)
 
             self.initialize_adapter()
-
-            # TODO(Arnav): Looking into this later, but it specifically happens when using local backend on a setup
-            # with multiple GPUs
-            # # If loading from checkpoint did not place it on the desired device, forcefully place it on
-            # # the desired device. On Cuda, this will place it on the device with the lowest index.
-            # if self.model.device != device:
-            #     self.model = self.model.to(device)
-
-            # self.eval_loss_metric = self.eval_loss_metric.to(device)
-            # self.eval_additional_losses_metrics = self.eval_additional_losses_metrics.to(device)
-            # self.output_features.update({k: v.to(device) for k, v in self.output_features.items()})
         else:
             self.initialize_adapter()
             self.model = self.model.to(device)
@@ -265,24 +245,7 @@ class LLM(BaseModel):
             A dictionary of output {feature name}::{tensor_name} -> output tensor.
         """
 
-        if isinstance(inputs, tuple):
-            inputs, targets = inputs
-            # Convert targets to tensors.
-            for target_feature_name, target_value in targets.items():
-                if not isinstance(target_value, torch.Tensor):
-                    targets[target_feature_name] = torch.from_numpy(target_value)
-                else:
-                    targets[target_feature_name] = target_value
-        else:
-            targets = None
-
-        assert list(inputs.keys()) == self.input_features.keys()
-
-        input_ids = self.get_input_ids(inputs)
-
-        target_ids = None
-        if targets:
-            target_ids = self.get_target_ids(targets)
+        input_ids, target_ids = self._unpack_inputs(inputs)
 
         # Generate merged input_id, target_id pairs for the model, and create corresponding attention masks
         model_inputs, attention_masks = self._generate_merged_ids(input_ids, target_ids)
@@ -324,20 +287,7 @@ class LLM(BaseModel):
     ) -> Dict[str, torch.Tensor]:
         """Generates tokens using the model."""
 
-        if isinstance(inputs, tuple):
-            inputs, targets = inputs
-            # Convert targets to tensors.
-            for target_feature_name, target_value in targets.items():
-                if not isinstance(target_value, torch.Tensor):
-                    targets[target_feature_name] = torch.from_numpy(target_value)
-                else:
-                    targets[target_feature_name] = target_value
-        else:
-            targets = None
-
-        assert list(inputs.keys()) == self.input_features.keys()
-
-        input_ids = self.get_input_ids(inputs)
+        input_ids, _ = self._unpack_inputs(inputs)
 
         with torch.no_grad():
             input_lengths = []
@@ -372,6 +322,31 @@ class LLM(BaseModel):
             )
 
         return outputs
+
+    def _unpack_inputs(
+        self,
+        inputs: Union[
+            Dict[str, torch.Tensor], Dict[str, np.ndarray], Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
+        ],
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        """Converts input tensors to input ids."""
+        if isinstance(inputs, tuple):
+            inputs, targets = inputs
+            # Convert targets to tensors.
+            for target_feature_name, target_value in targets.items():
+                if not isinstance(target_value, torch.Tensor):
+                    targets[target_feature_name] = torch.from_numpy(target_value)
+                else:
+                    targets[target_feature_name] = target_value
+        else:
+            targets = None
+
+        assert list(inputs.keys()) == self.input_features.keys()
+
+        input_ids = self.get_input_ids(inputs)
+        target_ids = self.get_target_ids(targets) if targets else None
+
+        return input_ids, target_ids
 
     def get_input_ids(
         self,
