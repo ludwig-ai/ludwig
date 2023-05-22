@@ -20,6 +20,8 @@ from ludwig.constants import (
     TRAINER,
     TYPE,
 )
+from ludwig.models.llm import LLM
+from ludwig.schema.model_types.base import ModelConfig
 from ludwig.utils.types import DataFrame
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
 
@@ -374,3 +376,33 @@ def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strat
     preds = convert_preds(preds)
 
     assert preds
+
+
+def test_lora_wrap_on_init():
+    from peft import PeftModel
+    from transformers import PreTrainedModel
+
+    config = {
+        MODEL_TYPE: MODEL_LLM,
+        MODEL_NAME: TEST_MODEL_NAME,
+        INPUT_FEATURES: [text_feature(name="input", encoder={"type": "passthrough"})],
+        OUTPUT_FEATURES: [text_feature(name="output")],
+        TRAINER: {
+            TYPE: "finetune",
+            BATCH_SIZE: 8,
+            EPOCHS: 2,
+        },
+    }
+    config_obj = ModelConfig.from_dict(config)
+    model = LLM(config_obj)
+    assert isinstance(model.model, PreTrainedModel)
+    assert not isinstance(model.model, PeftModel)
+
+    # Now add adapter
+    config[ADAPTER] = {
+        TYPE: "lora",
+    }
+    config_obj = ModelConfig.from_dict(config)
+    model = LLM(config_obj)
+    assert not isinstance(model.model, PreTrainedModel)
+    assert isinstance(model.model, PeftModel)
