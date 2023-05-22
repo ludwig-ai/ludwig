@@ -110,10 +110,8 @@ def test_tied_micro_level(input_feature_options):
     input_features = BaseModel.build_inputs(input_feature_configs=config_obj.input_features)
 
     # Originally, we were aliasing encoder objects between two features and checking that the two features pointed to
-    # the same object. T
+    # the same object. Now, we create multiple encoder objects that point to the same underlying parameter data.
     if input_feature_options.tie_features:
-        # should be same encoder
-        # assert input_features["input_feature_1"].encoder_obj is input_features["input_feature_2"].encoder_obj
         if1_data_ptrs = {k: p.data_ptr() for k, p in input_features["input_feature_1"].named_parameters()}
         if2_data_ptrs = {k: p.data_ptr() for k, p in input_features["input_feature_2"].named_parameters()}
         for k in if1_data_ptrs.keys():
