@@ -36,7 +36,7 @@ jobs:
           - python-version: "3.10"
             pytorch-version: nightly
             torchscript-version: 1.10.2
-            ray-version: nightly
+            ray-version: 2.3.1
     env:
       PYTORCH: ${{ matrix.pytorch-version }}
       MARKERS: ${{ matrix.test-markers }}
@@ -101,7 +101,7 @@ jobs:
 
           # remove torch and ray from the dependencies so we can add them depending on the matrix args for the job.
           cat requirements.txt | sed '/^torch[>=<\b]/d' | sed '/^torchtext/d' | sed '/^torchvision/d' | sed '/^torchaudio/d' > requirements-temp && mv requirements-temp requirements.txt
-          cat requirements_distributed.txt | sed '/^ray[\[]/d' > requirements-temp && mv requirements-temp requirements_distributed.txt
+          cat requirements_distributed.txt | sed '/^ray[\[]/d'
 
           if [ "$MARKERS" != "distributed" ]; then
             # Skip distributed and hyperopt requirements to test optional imports
@@ -113,9 +113,9 @@ jobs:
           else
             if [ "$RAY_VERSION" == "nightly" ]; then
               # NOTE: hardcoded for python 3.10 on Linux
-              pip install "ray[default,data,serve,tune] @ https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-3.0.0.dev0-cp310-cp310-manylinux2014_x86_64.whl"
+              echo "ray[default,data,serve,tune] @ https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-3.0.0.dev0-cp310-cp310-manylinux2014_x86_64.whl" >> requirements_distributed.txt
             else
-              pip install "ray[default,data,serve,tune]==$RAY_VERSION"
+              echo "ray[default,data,serve,tune]==$RAY_VERSION" >> requirements_distributed.txt
             fi
           fi
 
@@ -138,11 +138,7 @@ jobs:
           fi
 
           if [ "$MARKERS" == "distributed" ]; then
-            if [ "$RAY_VERSION" == "nightly" ]; then
-              python -c "from packaging import version; import ray; version.parse(ray.__version__) == version.parse('3.0.0.dev0')"
-            else
-              python -c "from packaging import version; import ray; assert version.parse(ray.__version__).release == version.parse(\"$RAY_VERSION\").release, f\"ray {version.parse(ray.__version__).release} != version.parse(\'$RAY_VERSION\').release\""
-            fi
+            python -c "from packaging import version; import ray; assert version.parse(ray.__version__).release == version.parse(\"$RAY_VERSION\").release, f\"ray {version.parse(ray.__version__).release} != version.parse(\'$RAY_VERSION\').release\""
           else
             python -c "import importlib.util; assert importlib.util.find_spec('ray') is None, \"found ray but expected it to not be installed\""
           fi
@@ -156,11 +152,11 @@ jobs:
 
       - name: Unit Tests
         run: |
-          RAY_DATA_STRICT_MODE=0 RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow and not combinatorial and not horovod and not llm" --junitxml pytest.xml tests/ludwig
+          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow and not combinatorial and not horovod and not llm" --junitxml pytest.xml tests/ludwig
 
       - name: Regression Tests
         run: |
-          RAY_DATA_STRICT_MODE=0 RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow and not combinatorial and not horovod or benchmark and not llm" --junitxml pytest.xml tests/regression_tests
+          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow and not combinatorial and not horovod or benchmark and not llm" --junitxml pytest.xml tests/regression_tests
 
       - name: Install Horovod if necessary
         if: matrix.test-markers == 'distributed'
@@ -182,7 +178,7 @@ jobs:
       - name: Horovod Tests
         if: matrix.test-markers == 'distributed'
         run: |
-          RAY_DATA_STRICT_MODE=0 RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and horovod and not slow and not combinatorial and not llm" --junitxml pytest.xml tests/
+          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and horovod and not slow and not combinatorial and not llm" --junitxml pytest.xml tests/
 
       - name: Upload Unit Test Results
         if: ${{ always() && !env.ACT }}

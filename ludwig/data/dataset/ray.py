@@ -48,8 +48,7 @@ from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
 
-RAY_VERSION = version.parse(ray.__version__)
-_ray_230 = RAY_VERSION >= version.parse("2.3.0")
+_ray_230 = version.parse(ray.__version__) >= version.parse("2.3.0")
 
 
 @DeveloperAPI
@@ -232,28 +231,27 @@ class RayDatasetShard(Dataset):
 
     def create_epoch_iter(self) -> None:
         if _ray_230:
-            # In Ray 2.4.X, `iter_epochs` raises an exception. Instead of accessing the DatasetPipeline, we use the
-            # DatasetIterator directly.
+            # In Ray >= 2.3, session.get_dataset_shard() returns a DatasetIterator object.
             if isinstance(self.dataset_shard, ray.data.DatasetIterator):
-                self.epoch_iter = self.dataset_shard
-            else:
-                # Here, dataset shard is a RayDataset object during auto batch size tuning or learning rate tuning
-                # since it does not come from within the RayTrainer's train_fn.
-                # Convert Ray Dataset to a DatasetPipeline object before enabling epoch iteration
-                # In this scenario, there is no need to worry about windowing, shuffling etc.
-                self.epoch_iter = self.dataset_shard.iter_batches()
+                if hasattr(self.dataset_shard, "_base_dataset_pipeline"):
+                    # Dataset shard is a DatasetIterator that was created from a DatasetPipeline object.
+                    # Retrieve the base object that was used to create the DatasetIterator so that we can
+                    # create the iter_epochs() like in Ray <= 2.2.
+                    self.epoch_iter = self.dataset_shard._base_dataset_pipeline.iter_epochs()
+                    return
         else:
             # In Ray <= 2.2, session.get_dataset_shard() returns a DatasetPipeline object.
             if isinstance(self.dataset_shard, DatasetPipeline):
                 # Dataset shard is a DatasetPipeline during training. The Ray Dataset is converted to a
                 # DatasetPipeline by the DatasetConfig in the Trainer and is available in the train_fn
                 self.epoch_iter = self.dataset_shard.iter_epochs()
-            else:
-                # Here, dataset shard is a RayDataset object during auto batch size tuning or learning rate tuning
-                # since it does not come from within the RayTrainer's train_fn.
-                # Convert Ray Dataset to a DatasetPipeline object before enabling epoch iteration
-                # In this scenario, there is no need to worry about windowing, shuffling etc.
-                self.epoch_iter = self.dataset_shard.repeat().iter_epochs()
+                return
+
+        # Here, dataset shard is a RayDataset object during auto batch size tuning or learning rate tuning
+        # since it does not come from within the RayTrainer's train_fn.
+        # Convert Ray Dataset to a DatasetPipeline object before enabling epoch iteration
+        # In this scenario, there is no need to worry about windowing, shuffling etc.
+        self.epoch_iter = self.dataset_shard.repeat().iter_epochs()
 
     @contextlib.contextmanager
     def initialize_batcher(
@@ -359,10 +357,7 @@ class RayDatasetBatcher(Batcher):
         return math.ceil(self.samples_per_epoch / self.batch_size)
 
     def _fetch_next_epoch(self):
-        try:
-            pipeline = next(self.dataset_epoch_iterator)
-        except TypeError:
-            pipeline = self.dataset_epoch_iterator
+        pipeline = next(self.dataset_epoch_iterator)
 
         read_parallelism = 1
         if read_parallelism == 1:
@@ -446,12 +441,10 @@ class RayDatasetBatcher(Batcher):
 
             try:
                 # if augmentation is specified, setup prefetching batch of data
-                if not _ray_230 and self.augmentation_pipeline:
+                if self.augmentation_pipeline:
                     pipeline = pipeline.map_batches(augment_batch, batch_size=batch_size, batch_format="pandas")
 
                 for batch in pipeline.iter_batches(prefetch_blocks=0, batch_size=batch_size, batch_format="pandas"):
-                    if _ray_230:
-                        batch = augment_batch(batch)
                     res = self._prepare_batch(batch)
                     q.put(res)
                 q.put(None)
