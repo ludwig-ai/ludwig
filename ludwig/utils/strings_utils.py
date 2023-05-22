@@ -507,13 +507,13 @@ def build_sequence_matrix(
 
     # Set padding token id based on tokenizer_type. Huggingface tokenizers typically have a pad_token_id attribute.
     if tokenizer_type == "hf_tokenizer":
-        if hasattr(tokenizer.tokenizer, "pad_token_id"):
+        if hasattr(tokenizer.tokenizer, "pad_token_id") and tokenizer.tokenizer.pad_token_id is not None:
             pad_token_id = tokenizer.tokenizer.pad_token_id
-        elif hasattr(tokenizer.tokenizer, "eos_token_id"):
+        elif hasattr(tokenizer.tokenizer, "eos_token_id") and tokenizer.tokenizer.eos_token_id is not None:
             pad_token_id = tokenizer.tokenizer.eos_token_id
-        # Some tokenizers may not have pad_token_id set or eos_token_id. In this case, we use 0 as the padding token id.
         else:
-            log_once("No padding token id or eos token id found in tokenizer. Using 0 as padding token id.")
+            # This happens for torchtext tokenizers like BERTTokenizer. We set pad token to 0.
+            log_once("Could not find pad_token_id or eos_token_id. Setting pad_token_id to 0.")
             pad_token_id = 0
     else:
         pad_token_id = inverse_vocabulary[padding_symbol]
