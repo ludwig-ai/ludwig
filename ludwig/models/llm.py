@@ -1,3 +1,4 @@
+import contextlib
 import logging
 import os
 import tempfile
@@ -287,8 +288,12 @@ class LLM(BaseModel):
         # Generate merged input_id, target_id pairs for the model, and create corresponding attention masks
         model_inputs, attention_masks = self._generate_merged_ids(input_ids, target_ids)
 
-        # Forward pass using PEFT wrapped model for fine-tuning
-        model_outputs = self.model(input_ids=model_inputs, attention_mask=attention_masks).get(LOGITS)
+        # Wrap with flash attention backend for faster generation
+        with torch.backends.cuda.sdp_kernel(
+            enable_flash=True, enable_math=False, enable_mem_efficient=False
+        ) if self.model.cuda() else contextlib.nullcontext():
+            # Forward pass using PEFT wrapped model for fine-tuning
+            model_outputs = self.model(input_ids=model_inputs, attention_mask=attention_masks).get(LOGITS)
 
         if self.output_feature_type != TEXT:
             # Pass generated tokens through decoder after averaging the token probabilities
@@ -354,14 +359,19 @@ class LLM(BaseModel):
 
                 input_lengths.append(input_ids_sample_no_padding.shape[1])
 
-                # Generate text using the model
-                model_outputs = self.model.generate(
-                    input_ids=input_ids_sample_no_padding,
-                    attention_mask=mask,
-                    generation_config=self.generation,
-                    return_dict_in_generate=True,
-                    output_scores=True,
-                )
+                # Wrap with flash attention backend for faster generation
+                with torch.backends.cuda.sdp_kernel(
+                    enable_flash=True, enable_math=False, enable_mem_efficient=False
+                ) if self.model.cuda() else contextlib.nullcontext():
+                    # Generate text using the model
+                    model_outputs = self.model.generate(
+                        input_ids=input_ids_sample_no_padding,
+                        attention_mask=mask,
+                        generation_config=self.generation,
+                        return_dict_in_generate=True,
+                        output_scores=True,
+                    )
+
                 sequences_list.append(model_outputs.sequences[0])
 
             # Extract the predictions, probabilities and logits from the model outputs
