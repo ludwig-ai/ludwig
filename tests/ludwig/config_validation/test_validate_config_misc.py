@@ -26,6 +26,9 @@ from ludwig.schema.combiners.utils import get_combiner_jsonschema
 from ludwig.schema.defaults.ecd import ECDDefaultsConfig
 from ludwig.schema.defaults.gbm import GBMDefaultsConfig
 from ludwig.schema.encoders.text.peft import LoraConfig
+from ludwig.schema import utils as schema_utils
+from ludwig.schema.utils import ludwig_dataclass
+from ludwig.schema.utils import unload_jsonschema_from_marshmallow_class
 from ludwig.schema.features.preprocessing.audio import AudioPreprocessingConfig
 from ludwig.schema.features.preprocessing.bag import BagPreprocessingConfig
 from ludwig.schema.features.preprocessing.binary import BinaryPreprocessingConfig
@@ -450,3 +453,18 @@ def test_text_encoder_adapter(encoder_config, expected_adapter):
     config_obj = ModelConfig.from_dict(config)
 
     assert config_obj.input_features[0].encoder.adapter == expected_adapter
+
+
+def test_default_param_metadata():
+    @ludwig_dataclass
+    class TestClass:
+
+        test_schema_entry: str = schema_utils.StringOptions(
+            options=["test"],
+            default="test",
+            description="",
+        )
+
+    test_class = unload_jsonschema_from_marshmallow_class(TestClass)
+
+    assert test_class["properties"]["test_schema_entry"]["parameter_metadata"] is not None
