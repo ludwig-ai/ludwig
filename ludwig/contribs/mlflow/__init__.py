@@ -2,6 +2,9 @@ import logging
 import os
 import queue
 import threading
+from typing import Any, Callable, Dict
+
+from packaging import version
 
 from ludwig.api_annotations import DeveloperAPI, PublicAPI
 from ludwig.callbacks import Callback
@@ -171,16 +174,50 @@ class MlflowCallback(Callback):
         pass
 
     def prepare_ray_tune(self, train_fn, tune_config, tune_callbacks):
-        from ray.tune.integration.mlflow import mlflow_mixin
+        import ray
 
-        return mlflow_mixin(train_fn), {
-            **tune_config,
-            "mlflow": {
-                "experiment_id": self.experiment_id,
-                "experiment_name": self.experiment_name,
-                "tracking_uri": mlflow.get_tracking_uri(),
-            },
-        }
+        if version.parse(ray.__version__) >= version.parse("2.3.0"):
+
+            def mlflow_wrapper(func: Callable, tracking_uri: str, experiment_id: str) -> Callable:
+                """Set up MLflow tracking before running a hyperopt trial.
+
+                Args:
+                    func: The training function
+                    tracking_uri: The tracking URI obtained from `mlflow.get_tracking_uri` on callback init
+                    experiment_id: The experiment ID obtained from `mlflow.get_experiment_id` on hyperopt init
+                Returns:
+                    `func` wrapped in MLflow init logic.
+                """
+
+                def wrapped(config: Dict[str, Any], *args, **kwargs):
+                    """Initialize MLflow tracking before training.
+
+                    Args:
+                        config: The hyperopt parameters passed to the training function
+                    """
+                    from ray.air.integrations.mlflow import setup_mlflow
+
+                    setup_mlflow(config, tracking_uri=tracking_uri, experiment_id=experiment_id)
+                    return func(config, *args, **kwargs)
+
+                return wrapped
+
+            new_train_fn = mlflow_wrapper(train_fn, self.tracking_uri, self.experiment_id)
+            new_tune_config = {**tune_config}
+        else:
+            from ray.tune.integration.mlflow import mlflow_mixin
+
+            new_train_fn = mlflow_mixin(train_fn)
+            new_tune_config = {
+                **tune_config,
+                "mlflow": {
+                    "experiment_id": self.experiment_id,
+                    "experiment_name": self.experiment_name,
+                    "tracking_uri": mlflow.get_tracking_uri(),
+                },
+            }
+
+        return new_train_fn, new_tune_config
 
     def _log_params(self, params):
         flat_params = flatten_dict(params)
