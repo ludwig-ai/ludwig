@@ -22,13 +22,11 @@ from ludwig.constants import (
 )
 from ludwig.error import ConfigValidationError
 from ludwig.features.feature_registries import get_output_type_registry
+from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.utils import get_combiner_jsonschema
 from ludwig.schema.defaults.ecd import ECDDefaultsConfig
 from ludwig.schema.defaults.gbm import GBMDefaultsConfig
 from ludwig.schema.encoders.text.peft import LoraConfig
-from ludwig.schema import utils as schema_utils
-from ludwig.schema.utils import ludwig_dataclass
-from ludwig.schema.utils import unload_jsonschema_from_marshmallow_class
 from ludwig.schema.features.preprocessing.audio import AudioPreprocessingConfig
 from ludwig.schema.features.preprocessing.bag import BagPreprocessingConfig
 from ludwig.schema.features.preprocessing.binary import BinaryPreprocessingConfig
@@ -44,6 +42,7 @@ from ludwig.schema.features.preprocessing.timeseries import TimeseriesPreprocess
 from ludwig.schema.features.preprocessing.vector import VectorPreprocessingConfig
 from ludwig.schema.features.utils import get_input_feature_jsonschema, get_output_feature_jsonschema
 from ludwig.schema.model_types.base import ModelConfig
+from ludwig.schema.utils import ludwig_dataclass, unload_jsonschema_from_marshmallow_class
 from tests.integration_tests.utils import (
     audio_feature,
     bag_feature,
@@ -458,7 +457,6 @@ def test_text_encoder_adapter(encoder_config, expected_adapter):
 def test_default_param_metadata():
     @ludwig_dataclass
     class TestClass:
-
         test_schema_entry: str = schema_utils.StringOptions(
             options=["test"],
             default="test",

@@ -242,9 +242,7 @@ def unload_jsonschema_from_marshmallow_class(mclass, additional_properties: bool
 
 @DeveloperAPI
 def InitializerOptions(
-        default: str = "xavier_uniform",
-        description="",
-        parameter_metadata: ParameterMetadata = ParameterMetadata()
+    default: str = "xavier_uniform", description="", parameter_metadata: ParameterMetadata = ParameterMetadata()
 ):
     """Utility wrapper that returns a `StringOptions` field with keys from `initializer_registry`."""
     return StringOptions(
@@ -273,7 +271,9 @@ def ActivationOptions(
 
 
 @DeveloperAPI
-def ReductionOptions(default: Union[None, str] = None, description="", parameter_metadata: ParameterMetadata = ParameterMetadata()):
+def ReductionOptions(
+    default: Union[None, str] = None, description="", parameter_metadata: ParameterMetadata = ParameterMetadata()
+):
     """Utility wrapper that returns a `StringOptions` field with keys from `reduce_mode_registry`."""
     return StringOptions(
         list(reduce_mode_registry.keys()),
@@ -371,7 +371,7 @@ def StringOptions(
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": convert_metadata_to_json(parameter_metadata)
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata),
                 },
             )
         },
@@ -467,7 +467,12 @@ def Boolean(default: bool, description: str = "", parameter_metadata: ParameterM
 
 
 @DeveloperAPI
-def Integer(default: Union[None, int], allow_none=False, description="", parameter_metadata: ParameterMetadata = ParameterMetadata()):
+def Integer(
+    default: Union[None, int],
+    allow_none=False,
+    description="",
+    parameter_metadata: ParameterMetadata = ParameterMetadata(),
+):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs."""
     if default is not None:
         try:
@@ -493,7 +498,10 @@ def Integer(default: Union[None, int], allow_none=False, description="", paramet
 
 @DeveloperAPI
 def PositiveInteger(
-    description: str, default: Union[None, int], allow_none: bool = False, parameter_metadata: ParameterMetadata = ParameterMetadata()
+    description: str,
+    default: Union[None, int],
+    allow_none: bool = False,
+    parameter_metadata: ParameterMetadata = ParameterMetadata(),
 ):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be
     positive."""
