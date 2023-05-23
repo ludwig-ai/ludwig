@@ -48,9 +48,10 @@ class RetrievalConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     model_name: str = schema_utils.String(
-        default=None,
+        default="multi-qa-MiniLM-L6-cos-v1",
         allow_none=True,
-        description="The model used to generate the embeddings used to retrieve samples to inject in the prompt.",
+        description="The model used to generate the embeddings used to retrieve samples to inject in the prompt."
+        " Defaults to `multi-qa-MiniLM-L6-cos-v1`",
         parameter_metadata=LLM_METADATA["prompt"]["retrieval"]["model_name"],
     )
 
