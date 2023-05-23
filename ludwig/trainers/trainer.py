@@ -815,15 +815,16 @@ class Trainer(BaseTrainer):
 
         # Load the best weights from saved checkpoint
         state_dict = None
-        if not self.skip_save_model:
-            state_dict = checkpoint_manager.get_best_checkpoint_state_for_inference(self.return_device)
-            if not return_state_dict:
-                if self.distributed.is_model_parallel():
-                    # Assume the full weights cannot fit in memory on GPU
-                    self.model = self.model.cpu()
-                self.model.load_state_dict(state_dict)
-        elif return_state_dict:
-            state_dict = self.model.cpu().state_dict()
+        if self.distributed.is_coordinator():
+            if not self.skip_save_model:
+                state_dict = checkpoint_manager.get_best_checkpoint_state_for_inference(self.return_device)
+                if not return_state_dict:
+                    if self.distributed.is_model_parallel():
+                        # Assume the full weights cannot fit in memory on GPU
+                        self.model = self.model.cpu()
+                    self.model.load_state_dict(state_dict)
+            elif return_state_dict:
+                state_dict = self.model.cpu().state_dict()
 
         # When running with Ray, we only need to return the state dict, as it's faster and cheaper to send the
         # state dict over the network than to load the model state here, serialize it back to a state dict, then
