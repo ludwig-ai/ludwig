@@ -1,4 +1,5 @@
 import os
+import sys
 
 import pytest
 import torch
@@ -73,6 +74,9 @@ def test_ngram_tokenizer():
     assert tokens == tokens_expected
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 10), reason="Test fails with pydantic error when python version is 3.8 or 3.9."
+)
 def test_english_lemmatize_filter_tokenizer():
     inputs = "Hello, I'm a single sentence!"
     tokenizer = EnglishLemmatizeFilterTokenizer()
