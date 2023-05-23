@@ -26,7 +26,7 @@ from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_utils import get_input_size_with_dependencies
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.loss_modules import create_loss
-from ludwig.modules.metric_modules import MeanMetric
+from ludwig.modules.metric_modules import LudwigMetric, MeanMetric
 from ludwig.modules.metric_registry import get_metric_classes, get_metric_cls, get_metric_tensor_input
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.schema.features.base import BaseFeatureConfig, BaseOutputFeatureConfig
@@ -283,7 +283,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
     def _setup_loss(self):
         self.train_loss_function = create_loss(self.loss)
-        self.eval_loss_metric = get_metric_cls(self.type(), self.loss.type)(config=self.loss)
+        self._eval_loss_metric = ModuleWrapper(get_metric_cls(self.type(), self.loss.type)(config=self.loss))
 
     def _setup_metrics(self):
         self._metric_functions = {
@@ -299,6 +299,10 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     def create_calibration_module(self, feature: BaseOutputFeatureConfig) -> CalibrationModule:
         """Creates and returns a CalibrationModule that converts logits to a probability distribution."""
         return None
+
+    @property
+    def eval_loss_metric(self) -> LudwigMetric:
+        return self._eval_loss_metric.module
 
     @property
     def calibration_module(self) -> torch.nn.Module:

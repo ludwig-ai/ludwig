@@ -10,7 +10,7 @@ from ludwig.data.dataset.base import Dataset
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.models.llm import LLM
-from ludwig.models.predictor import Predictor
+from ludwig.models.predictor import LlmPredictor
 from ludwig.modules.metric_modules import get_initial_validation_value
 from ludwig.schema.trainer import BaseTrainerConfig, FineTuneTrainerConfig, NoneTrainerConfig
 from ludwig.trainers.base import BaseTrainer
@@ -94,6 +94,7 @@ class NoneTrainer(BaseTrainer):
 
         self.device = device if device is not None else get_torch_device()
         self.model = model.to_device(self.device)
+        self.model.metrics_to_device(self.device)
 
         # Since we are only running evaluation without training, set the model to evaluation mode.
         self.model.eval()
@@ -252,7 +253,7 @@ class NoneTrainer(BaseTrainer):
         batch_size: int,
         progress_tracker: ProgressTracker,
     ):
-        predictor = Predictor(
+        predictor = LlmPredictor(
             self.model, batch_size=batch_size, distributed=self.distributed, report_tqdm_to_ray=self.report_tqdm_to_ray
         )
         metrics, _ = predictor.batch_evaluation(dataset, collect_predictions=False, dataset_name=dataset_name)

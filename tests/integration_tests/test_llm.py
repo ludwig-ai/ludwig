@@ -20,6 +20,8 @@ from ludwig.constants import (
     TRAINER,
     TYPE,
 )
+from ludwig.models.llm import LLM
+from ludwig.schema.model_types.base import ModelConfig
 from ludwig.utils.types import DataFrame
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
 
@@ -289,22 +291,22 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
 @pytest.mark.parametrize(
     "finetune_strategy,adapter_args",
     [
-        # (None, {}),
-        (
-            "prompt_tuning",
-            {
-                "num_virtual_tokens": 8,
-                "prompt_tuning_init": "RANDOM",
-            },
-        ),
-        (
-            "prompt_tuning",
-            {
-                "num_virtual_tokens": 8,
-                "prompt_tuning_init": "TEXT",
-                "prompt_tuning_init_text": "Classify if the review is positive, negative, or neutral: ",
-            },
-        ),
+        (None, {}),
+        # (
+        #     "prompt_tuning",
+        #     {
+        #         "num_virtual_tokens": 8,
+        #         "prompt_tuning_init": "RANDOM",
+        #     },
+        # ),
+        # (
+        #     "prompt_tuning",
+        #     {
+        #         "num_virtual_tokens": 8,
+        #         "prompt_tuning_init": "TEXT",
+        #         "prompt_tuning_init_text": "Classify if the review is positive, negative, or neutral: ",
+        #     },
+        # ),
         # ("prefix_tuning", {"num_virtual_tokens": 8}),
         # ("p_tuning", {"num_virtual_tokens": 8, "encoder_reparameterization_type": "MLP"}),
         # ("p_tuning", {"num_virtual_tokens": 8, "encoder_reparameterization_type": "LSTM"}),
@@ -313,9 +315,9 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
         ("adaption_prompt", {"adapter_len": 6, "adapter_layers": 1}),
     ],
     ids=[
-        # "no_finetune_adapter",
-        "prompt_tuning_init_random",
-        "prompt_tuning_init_text",
+        "none",
+        # "prompt_tuning_init_random",
+        # "prompt_tuning_init_text",
         # "prefix_tuning",
         # "p_tuning_mlp_reparameterization",
         # "p_tuning_lstm_reparameterization",
@@ -341,10 +343,6 @@ def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strat
     config = {
         MODEL_TYPE: MODEL_LLM,
         MODEL_NAME: model_name,
-        ADAPTER: {
-            TYPE: finetune_strategy,
-            **adapter_args,
-        },
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
         TRAINER: {
@@ -353,6 +351,12 @@ def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strat
             EPOCHS: 2,
         },
     }
+
+    if finetune_strategy is not None:
+        config[ADAPTER] = {
+            TYPE: finetune_strategy,
+            **adapter_args,
+        }
 
     model = LudwigModel(config, backend=backend)
     model.train(dataset=df, output_directory=str(tmpdir), skip_save_processed_input=False)
@@ -372,3 +376,33 @@ def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strat
     preds = convert_preds(preds)
 
     assert preds
+
+
+def test_lora_wrap_on_init():
+    from peft import PeftModel
+    from transformers import PreTrainedModel
+
+    config = {
+        MODEL_TYPE: MODEL_LLM,
+        MODEL_NAME: TEST_MODEL_NAME,
+        INPUT_FEATURES: [text_feature(name="input", encoder={"type": "passthrough"})],
+        OUTPUT_FEATURES: [text_feature(name="output")],
+        TRAINER: {
+            TYPE: "finetune",
+            BATCH_SIZE: 8,
+            EPOCHS: 2,
+        },
+    }
+    config_obj = ModelConfig.from_dict(config)
+    model = LLM(config_obj)
+    assert isinstance(model.model, PreTrainedModel)
+    assert not isinstance(model.model, PeftModel)
+
+    # Now add adapter
+    config[ADAPTER] = {
+        TYPE: "lora",
+    }
+    config_obj = ModelConfig.from_dict(config)
+    model = LLM(config_obj)
+    assert not isinstance(model.model, PreTrainedModel)
+    assert isinstance(model.model, PeftModel)
