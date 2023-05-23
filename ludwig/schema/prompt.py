@@ -67,15 +67,13 @@ class RetrievalConfigField(schema_utils.DictMarshmallowField):
         super().__init__(RetrievalConfig)
 
     def _jsonschema_type_mapping(self):
-        return schema_utils.unload_jsonschema_from_marshmallow_class(RetrievalConfig)
+        return schema_utils.unload_jsonschema_from_marshmallow_class(RetrievalConfig, title="Retrieval")
 
 
 @DeveloperAPI
 @ludwig_dataclass
 class PromptConfig(schema_utils.BaseMarshmallowConfig):
     """This Dataclass is a schema for the nested prompt config under preprocessing."""
-
-    retrieval: RetrievalConfig = RetrievalConfigField().get_default_field()
 
     task: str = schema_utils.String(
         default=None,
@@ -94,6 +92,8 @@ class PromptConfig(schema_utils.BaseMarshmallowConfig):
         ),
         parameter_metadata=LLM_METADATA["prompt"]["template"],
     )
+
+    retrieval: RetrievalConfig = RetrievalConfigField().get_default_field()
 
 
 @DeveloperAPI
