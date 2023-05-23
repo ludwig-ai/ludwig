@@ -1138,7 +1138,6 @@ def test_ray_dataset_count(ray_cluster_2cpu):
             )
         ]
     )
-
-    ds_shard = RayDatasetShard(ds.iterator(), {}, {})
+    ds_shard = RayDatasetShard(ds.repeat(1).iterator(), {}, {})
 
     assert len(ds_shard) == ds_size

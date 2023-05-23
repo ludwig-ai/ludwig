@@ -279,7 +279,13 @@ class RayDatasetShard(Dataset):
     @lru_cache(1)
     def __len__(self):
         try:
-            count = next(self.epoch_iter).count()
+            # Try to count using a pipeline object if possible.
+            if isinstance(self.epoch_iter, ray.data.DatasetIterator) and hasattr(
+                self.epoch_iter, "_base_dataset_pipeline"
+            ):
+                count = next(self.epoch_iter._base_dataset_pipeline).count()
+            else:
+                count = next(self.epoch_iter).count()
         except TypeError:
             # Sum over all batches when using a DatasetIterator
             count = sum(map(lambda b: b.count(), self.epoch_iter.iter_batches()))
