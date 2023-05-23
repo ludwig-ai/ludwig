@@ -280,8 +280,10 @@ class RayDatasetShard(Dataset):
     def __len__(self):
         try:
             # Try to count using a pipeline object if possible.
-            if isinstance(self.epoch_iter, ray.data.DatasetIterator) and hasattr(
-                self.epoch_iter, "_base_dataset_pipeline"
+            if (
+                _ray_230
+                and isinstance(self.epoch_iter, ray.data.DatasetIterator)
+                and hasattr(self.epoch_iter, "_base_dataset_pipeline")
             ):
                 count = next(self.epoch_iter._base_dataset_pipeline).count()
             else:
