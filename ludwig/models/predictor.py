@@ -116,6 +116,7 @@ class Predictor(BasePredictor):
         self.device = device
         self.dist_model = dist_model
         self.model = model
+        self.model.metrics_to_device(device)
 
         if remote:
             # Only return results from rank 0 to reduce network overhead
