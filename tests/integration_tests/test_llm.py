@@ -104,7 +104,7 @@ def test_llm_text_to_text(tmpdir, backend, ray_cluster_4cpu):
             "encoder": {"type": "passthrough"},
         }
     ]
-    output_features = [text_feature(output_feature=True, name="Answer", decoder={"type": "text_parser"})]
+    output_features = [text_feature(output_feature=True, name="Answer", decoder={"type": "text_extractor"})]
 
     csv_filename = os.path.join(tmpdir, "training.csv")
     dataset_filename = generate_data(input_features, output_features, csv_filename, num_examples=100)
@@ -155,7 +155,7 @@ def test_llm_zero_shot_classification(tmpdir, backend, ray_cluster_4cpu):
             },
             # How can we avoid using r here for regex, since it is technically an implementation detail?
             decoder={
-                "type": "category_parser",
+                "type": "category_extractor",
                 "match": {
                     "positive": {"type": "contains", "value": "positive"},
                     "neutral": {"type": "regex", "value": r"\bneutral\b"},
@@ -217,7 +217,7 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
                 "fallback_label": "3",
             },
             decoder={
-                "type": "category_parser",
+                "type": "category_extractor",
                 "match": {
                     "1": {"type": "contains", "value": "1"},
                     "2": {"type": "contains", "value": "2"},

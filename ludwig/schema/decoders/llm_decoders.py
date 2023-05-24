@@ -10,7 +10,7 @@ from ludwig.schema.utils import BaseMarshmallowConfig, ludwig_dataclass
 
 @DeveloperAPI
 @ludwig_dataclass
-class BaseParserDecoderConfig(BaseMarshmallowConfig):
+class BaseExtractorDecoderConfig(BaseMarshmallowConfig):
     tokenizer: str = "hf_tokenizer"
 
     input_size: int = schema_utils.PositiveInteger(
@@ -39,25 +39,25 @@ class BaseParserDecoderConfig(BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-@register_decoder_config("text_parser", [TEXT], model_types=[MODEL_LLM])
+@register_decoder_config("text_extractor", [TEXT], model_types=[MODEL_LLM])
 @ludwig_dataclass
-class TextParserDecoderConfig(BaseParserDecoderConfig, BaseDecoderConfig):
+class TextExtractorDecoderConfig(BaseExtractorDecoderConfig, BaseDecoderConfig):
     @classmethod
     def module_name(cls):
-        return "TextParserDecoder"
+        return "TextExtractorDecoder"
 
-    type: str = schema_utils.ProtectedString("text_parser")
+    type: str = schema_utils.ProtectedString("text_extractor")
 
 
 @DeveloperAPI
-@register_decoder_config("category_parser", [CATEGORY], model_types=[MODEL_LLM])
+@register_decoder_config("category_extractor", [CATEGORY], model_types=[MODEL_LLM])
 @ludwig_dataclass
-class CategoryParserDecoderConfig(BaseParserDecoderConfig, BaseDecoderConfig):
+class CategoryExtractorDecoderConfig(BaseExtractorDecoderConfig, BaseDecoderConfig):
     @classmethod
     def module_name(cls):
-        return "CategoryParserDecoder"
+        return "CategoryExtractorDecoder"
 
-    type: str = schema_utils.ProtectedString("category_parser")
+    type: str = schema_utils.ProtectedString("category_extractor")
 
     # Match is a dict of label class
     match: Dict[str, Dict[str, Any]] = schema_utils.Dict(
