@@ -116,7 +116,7 @@ def convert_metadata_to_json(pm: ParameterMetadata) -> Dict[str, Any]:
     a string repr that is improperly parsed.
     """
     if not pm:
-        return None
+        return ParameterMetadata().to_json_dict()
     return pm.to_json_dict()
 
 
