@@ -26,7 +26,7 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.utils import get_combiner_jsonschema
 from ludwig.schema.defaults.ecd import ECDDefaultsConfig
 from ludwig.schema.defaults.gbm import GBMDefaultsConfig
-from ludwig.schema.encoders.text.peft import LoraConfig
+from ludwig.schema.llms.peft import LoraConfig
 from ludwig.schema.features.preprocessing.audio import AudioPreprocessingConfig
 from ludwig.schema.features.preprocessing.bag import BagPreprocessingConfig
 from ludwig.schema.features.preprocessing.binary import BinaryPreprocessingConfig

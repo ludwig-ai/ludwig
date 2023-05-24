@@ -17,7 +17,7 @@ from ludwig.callbacks import Callback
 from ludwig.constants import BATCH_SIZE, COLUMN, DECODER, FULL, NAME, PROC_COLUMN, TRAINER
 from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.data.preprocessing import handle_features_with_prompt_config, preprocess_for_prediction
-from ludwig.schema.prompt import PromptConfig
+from ludwig.schema.llms.prompt import PromptConfig
 from tests.integration_tests.utils import (
     assert_preprocessed_dataset_shape_and_dtype_for_feature,
     audio_feature,

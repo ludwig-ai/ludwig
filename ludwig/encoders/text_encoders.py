@@ -27,7 +27,7 @@ from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.schema.encoders.sequence_encoders import SequenceEncoderConfig
-from ludwig.schema.encoders.text.peft import BaseAdapterConfig
+from ludwig.schema.llms.peft import BaseAdapterConfig
 from ludwig.schema.encoders.text_encoders import (
     ALBERTConfig,
     AutoTransformerConfig,

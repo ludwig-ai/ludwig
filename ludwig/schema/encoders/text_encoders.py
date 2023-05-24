@@ -6,7 +6,7 @@ from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.sequence_encoders import SequenceEncoderConfig
 from ludwig.schema.encoders.text.hf_model_params import DebertaModelParams
-from ludwig.schema.encoders.text.peft import AdapterDataclassField, BaseAdapterConfig
+from ludwig.schema.llms.peft import AdapterDataclassField, BaseAdapterConfig
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.metadata import ENCODER_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY, ParameterMetadata
