@@ -30,6 +30,7 @@ from ludwig.schema.features.base import BaseOutputFeatureConfig, FeatureCollecti
 from ludwig.schema.model_types.llm import LLMModelConfig
 from ludwig.utils.augmentation_utils import AugmentationPipelines
 from ludwig.utils.data_utils import clear_data_cache
+from ludwig.utils.fs_utils import path_exists
 from ludwig.utils.logging_utils import log_once
 from ludwig.utils.output_feature_utils import set_output_feature_tensor
 from ludwig.utils.torch_utils import reg_loss
@@ -532,7 +533,9 @@ class LLM(BaseModel):
 
     def save(self, save_path):
         """Saves the model to the given path."""
-        if self.config_obj.adapter:
+        # TODO(travis): use the implementation of trainer itself to decide whether to save the model, to
+        # avoid this hack
+        if self.config_obj.trainer.type != "none":
             weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
             self.model.save_pretrained(weights_save_path)
         else:
@@ -540,14 +543,18 @@ class LLM(BaseModel):
 
     def load(self, save_path):
         """Loads the model from the given path."""
+        weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
         if self.config_obj.adapter:
             from peft import PeftConfig, PeftModel  # noqa
 
-            weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
             config = PeftConfig.from_pretrained(weights_save_path)
             config.inference_mode = False
             self.model = AutoModelForCausalLM.from_pretrained(config.base_model_name_or_path)
             self.model = PeftModel.from_pretrained(self.model, weights_save_path)
+        elif self.config_obj.trainer.type != "none":
+            self.model = AutoModelForCausalLM.from_pretrained(weights_save_path)
+        else:
+            logger.info("Skipped loading LLM without weight adjustments.")
 
     def get_args(self):
         """Returns init arguments for constructing this model."""
