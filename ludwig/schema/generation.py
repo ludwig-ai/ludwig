@@ -16,6 +16,20 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
 
     # Parameters that control the length of the output
 
+    max_new_tokens: Optional[int] = schema_utils.PositiveInteger(
+        default=20,
+        allow_none=True,
+        description="The maximum number of new tokens to generate, ignoring the number of tokens in the input prompt.",
+        parameter_metadata=LLM_METADATA["generation"]["max_new_tokens"],
+    )
+
+    min_new_tokens: Optional[int] = schema_utils.NonNegativeInteger(
+        default=None,
+        allow_none=True,
+        description="The minimum number of new tokens to generate, ignoring the number of tokens in the input prompt.",
+        parameter_metadata=LLM_METADATA["generation"]["min_new_tokens"],
+    )
+
     max_length: int = schema_utils.PositiveInteger(
         default=20,
         allow_none=True,
@@ -24,26 +38,12 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
         parameter_metadata=LLM_METADATA["generation"]["max_length"],
     )
 
-    max_new_tokens: Optional[int] = schema_utils.PositiveInteger(
-        default=20,
-        allow_none=True,
-        description="The maximum number of new tokens to generate, ignoring the number of tokens in the input prompt.",
-        parameter_metadata=LLM_METADATA["generation"]["max_new_tokens"],
-    )
-
     min_length: int = schema_utils.NonNegativeInteger(
         default=0,
         allow_none=True,
         description="The minimum length of the sequence to be generated. Corresponds to the length of the "
         "input prompt + min_new_tokens. Its effect is overridden by min_new_tokens, if also set.",
         parameter_metadata=LLM_METADATA["generation"]["min_length"],
-    )
-
-    min_new_tokens: Optional[int] = schema_utils.NonNegativeInteger(
-        default=None,
-        allow_none=True,
-        description="The minimum number of new tokens to generate, ignoring the number of tokens in the input prompt.",
-        parameter_metadata=LLM_METADATA["generation"]["min_new_tokens"],
     )
 
     early_stopping: Optional[Union[bool, str]] = schema_utils.Boolean(
