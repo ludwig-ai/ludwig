@@ -3,6 +3,7 @@ import os
 import numpy as np
 import pandas as pd
 import pytest
+import torch
 
 from ludwig.api import LudwigModel
 from ludwig.constants import (
@@ -372,6 +373,9 @@ def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strat
     # Make sure we can load the saved model and then use it for predictions
     model = LudwigModel.load(os.path.join(str(tmpdir), "api_experiment_run", "model"), backend=backend)
 
+    base_model = LLM(ModelConfig.from_dict(config))
+    assert not _compare_models(base_model, model.model)
+
     preds, _ = model.predict(dataset=prediction_df, output_directory=str(tmpdir))
     preds = convert_preds(preds)
 
@@ -406,3 +410,11 @@ def test_lora_wrap_on_init():
     model = LLM(config_obj)
     assert not isinstance(model.model, PreTrainedModel)
     assert isinstance(model.model, PeftModel)
+
+
+def _compare_models(model_1: torch.nn.Module, model_2: torch.nn.Module) -> bool:
+    # Source: https://discuss.pytorch.org/t/check-if-models-have-same-weights/4351/6
+    for key_item_1, key_item_2 in zip(model_1.state_dict().items(), model_2.state_dict().items()):
+        if not torch.equal(key_item_1[1], key_item_2[1]):
+            return False
+    return True
