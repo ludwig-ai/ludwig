@@ -175,7 +175,7 @@ class LLMTextOutputFeatureConfig(TextOutputFeatureConfig):
     decoder: BaseDecoderConfig = DecoderDataclassField(
         MODEL_LLM,
         feature_type=TEXT,
-        default="text_parser",
+        default="text_extractor",
     )
 
     loss: BaseLossConfig = LossDataclassField(
@@ -230,7 +230,7 @@ class LLMTextDefaultsConfig(TextInputFeatureConfigMixin, TextOutputFeatureConfig
     decoder: BaseDecoderConfig = DecoderDataclassField(
         MODEL_LLM,
         feature_type=TEXT,
-        default="text_parser",
+        default="text_extractor",
     )
 
     loss: BaseLossConfig = LossDataclassField(

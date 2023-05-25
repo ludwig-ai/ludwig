@@ -877,7 +877,7 @@ def test_handle_features_with_few_shot_prompt_config(backend, retrieval_kwargs, 
     output_features = [
         category_feature(
             output_feature=True,
-            decoder={"type": "category_parser"},
+            decoder={"type": "category_extractor"},
         )
     ]
     input_feature_name = input_features[0][NAME]
