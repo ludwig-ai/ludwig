@@ -3,9 +3,9 @@ from ludwig.constants import DROP_ROW, FILL_WITH_CONST, MISSING_VALUE_STRATEGY_O
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor
+from ludwig.schema.llms.prompt import PromptConfig, PromptConfigField
 from ludwig.schema.metadata import FEATURE_METADATA, PREPROCESSING_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
-from ludwig.schema.llms.prompt import PromptConfig, PromptConfigField
 from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils import strings_utils
 from ludwig.utils.tokenizers import tokenizer_registry

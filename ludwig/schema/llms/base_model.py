@@ -9,7 +9,6 @@ from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
 from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils.registry import Registry
 
-
 MODEL_PRESETS = {
     "opt-350m": "facebook/opt-350m",
     "opt-1.3b": "facebook/opt-1.3b",

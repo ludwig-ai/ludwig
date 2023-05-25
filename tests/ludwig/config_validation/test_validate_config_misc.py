@@ -26,7 +26,6 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.utils import get_combiner_jsonschema
 from ludwig.schema.defaults.ecd import ECDDefaultsConfig
 from ludwig.schema.defaults.gbm import GBMDefaultsConfig
-from ludwig.schema.llms.peft import LoraConfig
 from ludwig.schema.features.preprocessing.audio import AudioPreprocessingConfig
 from ludwig.schema.features.preprocessing.bag import BagPreprocessingConfig
 from ludwig.schema.features.preprocessing.binary import BinaryPreprocessingConfig
@@ -41,6 +40,7 @@ from ludwig.schema.features.preprocessing.text import TextPreprocessingConfig
 from ludwig.schema.features.preprocessing.timeseries import TimeseriesPreprocessingConfig
 from ludwig.schema.features.preprocessing.vector import VectorPreprocessingConfig
 from ludwig.schema.features.utils import get_input_feature_jsonschema, get_output_feature_jsonschema
+from ludwig.schema.llms.peft import LoraConfig
 from ludwig.schema.model_types.base import ModelConfig
 from ludwig.schema.utils import ludwig_dataclass, unload_jsonschema_from_marshmallow_class
 from tests.integration_tests.utils import (
