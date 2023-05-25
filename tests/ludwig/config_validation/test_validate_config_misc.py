@@ -13,6 +13,7 @@ from ludwig.constants import (
     LOSS,
     MODEL_ECD,
     MODEL_GBM,
+    MODEL_LLM,
     MODEL_TYPE,
     NAME,
     PREPROCESSING,
@@ -366,7 +367,7 @@ def test_schema_no_duplicates():
         )
 
 
-@pytest.mark.parametrize("model_type", [MODEL_ECD, MODEL_GBM])
+@pytest.mark.parametrize("model_type", [MODEL_ECD, MODEL_GBM, MODEL_LLM])
 def test_ludwig_schema_serialization(model_type):
     import json
 
