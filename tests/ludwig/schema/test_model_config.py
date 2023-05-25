@@ -789,9 +789,10 @@ def test_encoder_decoder_values_as_str():
 @pytest.mark.parametrize(
     "base_model_config,model_name",
     [
-        ("bigscience/bloom-3b", "bigscience/bloom-7b1"),
+        ("bigscience/bloom-3b", "bigscience/bloom-3b"),
         ("llama-7b", "huggyllama/llama-7b"),
         ({"preset": None, "name": "bigscience/bloom-3b"}, "bigscience/bloom-3b"),
+        ({"preset": "none", "name": "bigscience/bloom-3b"}, "bigscience/bloom-3b"),
         ({"preset": "llama-7b"}, "huggyllama/llama-7b"),
     ],
 )

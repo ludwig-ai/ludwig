@@ -49,6 +49,7 @@ class BaseModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
 @DeveloperAPI
 @register_base_model(name=None)
+@register_base_model(name="none")
 @ludwig_dataclass
 class NoPresetModelConfig(BaseModelConfig):
     def __post_init__(self):
@@ -99,7 +100,7 @@ def get_base_model_conds():
         other_props = schema_utils.unload_jsonschema_from_marshmallow_class(base_model_cls)["properties"]
         schema_utils.remove_duplicate_fields(other_props)
         preproc_cond = schema_utils.create_cond(
-            {"type": base_model_type},
+            {"preset": base_model_type},
             other_props,
         )
         conds.append(preproc_cond)
@@ -140,10 +141,15 @@ def BaseModelDataclassField(
                         "type": "object",
                         "properties": {
                             "preset": {
-                                "type": "string",
-                                "enum": list(base_model_registry.keys()),
-                                "default": default,
-                                "description": "MISSING",
+                                "oneOf": [
+                                    {
+                                        "type": "string",
+                                        "enum": list(base_model_registry.keys()),
+                                        "default": default,
+                                        "description": "MISSING",
+                                    },
+                                    {"type": "null", "description": "MISSING"},
+                                ]
                             },
                         },
                         "title": "base_model_object_options",
