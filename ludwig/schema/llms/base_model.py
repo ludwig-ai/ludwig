@@ -47,7 +47,6 @@ class BaseModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
 
 @DeveloperAPI
-@register_base_model(name=None)
 @register_base_model(name="none")
 @ludwig_dataclass
 class NoPresetModelConfig(BaseModelConfig):
@@ -58,11 +57,8 @@ class NoPresetModelConfig(BaseModelConfig):
                 "See: https://huggingface.co/models?pipeline_tag=text-generation&sort=downloads"
             )
 
-    preset: Optional[str] = schema_utils.StringOptions(
-        options=["none"],
-        default=None,
-        allow_none=True,
-        parameter_metadata=LLM_METADATA["base_model"]["default"]["preset"],
+    preset: Optional[str] = schema_utils.ProtectedString(
+        "none", parameter_metadata=LLM_METADATA["base_model"]["default"]["preset"]
     )
 
     name: str = schema_utils.String(
@@ -130,7 +126,7 @@ def BaseModelDataclassField(
                 return {self.key: value}
 
             # Otherwise, assume the user is providing a fully qualified model name
-            return {self.key: None, "name": value}
+            return {self.key: "none", "name": value}
 
         def get_schema_from_registry(self, key: Optional[str]) -> Type[schema_utils.BaseMarshmallowConfig]:
             return base_model_registry[key]
@@ -142,15 +138,10 @@ def BaseModelDataclassField(
                         "type": "object",
                         "properties": {
                             "preset": {
-                                "oneOf": [
-                                    {
-                                        "type": "string",
-                                        "enum": list(base_model_registry.keys()),
-                                        "default": default,
-                                        "description": "MISSING",
-                                    },
-                                    {"type": "null", "description": "MISSING"},
-                                ]
+                                "type": "string",
+                                "enum": list(base_model_registry.keys()),
+                                "default": default,
+                                "description": "MISSING",
                             },
                         },
                         "title": "base_model_object_options",
