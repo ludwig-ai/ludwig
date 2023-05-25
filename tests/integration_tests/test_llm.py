@@ -8,12 +8,12 @@ import torch
 from ludwig.api import LudwigModel
 from ludwig.constants import (
     ADAPTER,
+    BASE_MODEL,
     BATCH_SIZE,
     EPOCHS,
     GENERATION,
     INPUT_FEATURES,
     MODEL_LLM,
-    MODEL_NAME,
     MODEL_TYPE,
     OUTPUT_FEATURES,
     PREPROCESSING,
@@ -112,7 +112,7 @@ def test_llm_text_to_text(tmpdir, backend, ray_cluster_4cpu):
 
     config = {
         MODEL_TYPE: MODEL_LLM,
-        MODEL_NAME: TEST_MODEL_NAME,
+        BASE_MODEL: TEST_MODEL_NAME,
         GENERATION: get_generation_config(),
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
@@ -170,7 +170,7 @@ def test_llm_zero_shot_classification(tmpdir, backend, ray_cluster_4cpu):
 
     config = {
         MODEL_TYPE: MODEL_LLM,
-        MODEL_NAME: TEST_MODEL_NAME,
+        BASE_MODEL: TEST_MODEL_NAME,
         GENERATION: get_generation_config(),
         PROMPT: {"task": "This is a review of a restaurant. Classify the sentiment."},
         INPUT_FEATURES: input_features,
@@ -232,7 +232,7 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
 
     config = {
         MODEL_TYPE: MODEL_LLM,
-        MODEL_NAME: TEST_MODEL_NAME,
+        BASE_MODEL: TEST_MODEL_NAME,
         GENERATION: get_generation_config(),
         PROMPT: {
             "retrieval": {"type": "random", "k": 3},
@@ -343,7 +343,7 @@ def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strat
 
     config = {
         MODEL_TYPE: MODEL_LLM,
-        MODEL_NAME: model_name,
+        BASE_MODEL: model_name,
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
         TRAINER: {
@@ -388,7 +388,7 @@ def test_lora_wrap_on_init():
 
     config = {
         MODEL_TYPE: MODEL_LLM,
-        MODEL_NAME: TEST_MODEL_NAME,
+        BASE_MODEL: TEST_MODEL_NAME,
         INPUT_FEATURES: [text_feature(name="input", encoder={"type": "passthrough"})],
         OUTPUT_FEATURES: [text_feature(name="output")],
         TRAINER: {
