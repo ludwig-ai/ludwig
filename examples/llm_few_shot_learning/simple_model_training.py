@@ -76,7 +76,7 @@ output_features:
     preprocessing:
         fallback_label: "neutral"
     decoder:
-        type: category_parser
+        type: category_extractor
         match:
             "negative":
                 type: contains
