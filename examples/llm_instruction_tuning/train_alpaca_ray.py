@@ -8,7 +8,7 @@ from ludwig.api import LudwigModel
 config = yaml.safe_load(
     """
 model_type: llm
-model_name: bigscience/bloomz-3b
+base_model: bigscience/bloomz-3b
 
 adapter:
   type: lora

@@ -52,7 +52,7 @@ df["split"] = [0] * 15 + [2] * 10
 config = yaml.safe_load(
     """
 model_type: llm
-model_name: facebook/opt-350m
+base_model: facebook/opt-350m
 generation:
     temperature: 0.1
     top_p: 0.75

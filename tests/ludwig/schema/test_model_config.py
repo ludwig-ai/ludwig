@@ -32,6 +32,7 @@ from ludwig.constants import (
     TRAINER,
     TYPE,
 )
+from ludwig.error import ConfigValidationError
 from ludwig.schema.decoders.base import ClassifierConfig
 from ludwig.schema.encoders.text_encoders import BERTConfig
 from ludwig.schema.features.augmentation.image import RandomBlurConfig, RandomRotateConfig
@@ -807,3 +808,26 @@ def test_llm_base_model_config(base_model_config, model_name):
     config_obj = ModelConfig.from_dict(config)
 
     assert config_obj.base_model.name == model_name
+
+
+@pytest.mark.parametrize(
+    "base_model_config",
+    [
+        None,
+        {"preset": None, "name": None},
+        {"preset": "none", "name": None},
+    ],
+)
+def test_llm_base_model_config_error(base_model_config):
+    config = {
+        "model_type": "llm",
+        "base_model": base_model_config,
+        "input_features": [{"name": "text_input", "type": "text"}],
+        "output_features": [{"name": "text_output", "type": "text"}],
+    }
+
+    if base_model_config is None:
+        del config["base_model"]
+
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
