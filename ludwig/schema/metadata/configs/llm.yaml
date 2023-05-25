@@ -1,3 +1,10 @@
+base_model:
+  preset:
+    ui_display_name: Base Model Preset
+    expected_impact: 3
+  name:
+    ui_display_name: Base Model Name
+    expected_impact: 2
 generation:
   temperature:
     ui_display_name: Temperature

@@ -92,10 +92,10 @@ class LLM(BaseModel):
         self.config_obj = config_obj
         self._random_seed = random_seed
 
-        self.model_name = self.config_obj.model_name
+        self.model_name = self.config_obj.base_model.name
 
         logger.info("Loading large language model...")
-        self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.model_name)
+        self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.base_model.name)
         self.curr_device = torch.device("cpu")  # model initially loaded onto cpu
         logger.info("Done.")
 
@@ -114,10 +114,10 @@ class LLM(BaseModel):
 
         # Initialize tokenizer
         use_fast = True
-        if isinstance(AutoConfig.from_pretrained(self.config_obj.model_name), LlamaConfig):
+        if isinstance(AutoConfig.from_pretrained(self.config_obj.base_model.name), LlamaConfig):
             # HACK: Llama fast tokenizer takes about 2-4 minutes to load, so we disable it for now.
             use_fast = False
-        self.tokenizer = AutoTokenizer.from_pretrained(self.config_obj.model_name, use_fast=use_fast)
+        self.tokenizer = AutoTokenizer.from_pretrained(self.config_obj.base_model.name, use_fast=use_fast)
         self._set_pad_token()
 
         self.generation = GenerationConfig(**self.config_obj.generation.to_dict())

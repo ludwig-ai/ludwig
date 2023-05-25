@@ -1,7 +1,6 @@
 from typing import Optional
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.defaults.llm import LLMDefaultsConfig, LLMDefaultsField
 from ludwig.schema.features.base import (
@@ -12,6 +11,7 @@ from ludwig.schema.features.base import (
     LLMOutputFeatureSelection,
 )
 from ludwig.schema.hyperopt import HyperoptConfig, HyperoptField
+from ludwig.schema.llms.base_model import BaseModelConfig, BaseModelDataclassField
 from ludwig.schema.llms.generation import LLMGenerationConfig, LLMGenerationConfigField
 from ludwig.schema.llms.peft import AdapterDataclassField, BaseAdapterConfig
 from ludwig.schema.llms.prompt import PromptConfig, PromptConfigField
@@ -27,27 +27,12 @@ from ludwig.schema.utils import ludwig_dataclass
 class LLMModelConfig(ModelConfig):
     """Parameters for LLM Model Type."""
 
-    def __post_init__(self):
-        super().__post_init__()
-
-        if not self.model_name:
-            raise ConfigValidationError(
-                "LLM requires `model_name` to be set. This can be any pretrained CausalLM on huggingface. "
-                "See: https://huggingface.co/models?pipeline_tag=text-generation&sort=downloads"
-            )
-
     model_type: str = schema_utils.ProtectedString("llm")
 
-    model_name: str = schema_utils.String(
-        default="",
-        allow_none=False,
-        description=(
-            "The name of the model to use. This can be a local path or a "
-            "remote path. If it is a remote path, it must be a valid HuggingFace "
-            "model name. If it is a local path, it must be a valid HuggingFace "
-            "model name or a path to a local directory containing a valid "
-            "HuggingFace model."
-        ),
+    base_model: BaseModelConfig = BaseModelDataclassField(
+        "Base pretrained model to use. This can be one of the presets defined by Ludwig, a fully qualified "
+        "name of a pretrained model from the HuggingFace Hub, or a path to a directory containing a "
+        "pretrained model.",
     )
 
     input_features: FeatureCollection[BaseInputFeatureConfig] = LLMInputFeatureSelection().get_list_field()
