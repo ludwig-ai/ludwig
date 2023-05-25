@@ -59,7 +59,7 @@ class NoPresetModelConfig(BaseModelConfig):
             )
 
     preset: Optional[str] = schema_utils.StringOptions(
-        options=[],
+        options=["none"],
         default=None,
         allow_none=True,
         parameter_metadata=LLM_METADATA["base_model"]["preset"],
@@ -123,6 +123,7 @@ def BaseModelDataclassField(
             )
 
         def str_value_to_object(self, value: str) -> str:
+            print(value)
             if value in MODEL_PRESETS:
                 # User provided a model preset name, so use it
                 return {self.key: value}
@@ -131,6 +132,7 @@ def BaseModelDataclassField(
             return {self.key: None, "name": value}
 
         def get_schema_from_registry(self, key: Optional[str]) -> Type[schema_utils.BaseMarshmallowConfig]:
+            print(key)
             return base_model_registry[key]
 
         def _jsonschema_type_mapping(self):

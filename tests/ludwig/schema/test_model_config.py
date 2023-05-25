@@ -784,3 +784,25 @@ def test_encoder_decoder_values_as_str():
 
     assert isinstance(config_obj.input_features[0].encoder, BERTConfig)
     assert isinstance(config_obj.output_features[0].decoder, ClassifierConfig)
+
+
+@pytest.mark.parametrize(
+    "base_model_config,model_name",
+    [
+        ("bigscience/bloom-3b", "bigscience/bloom-7b1"),
+        ("llama-7b", "huggyllama/llama-7b"),
+        ({"preset": None, "name": "bigscience/bloom-3b"}, "bigscience/bloom-3b"),
+        ({"preset": "llama-7b"}, "huggyllama/llama-7b"),
+    ],
+)
+def test_llm_base_model_config(base_model_config, model_name):
+    config = {
+        "model_type": "llm",
+        "base_model": base_model_config,
+        "input_features": [{"name": "text_input", "type": "text"}],
+        "output_features": [{"name": "text_output", "type": "text"}],
+    }
+
+    config_obj = ModelConfig.from_dict(config)
+
+    assert config_obj.base_model.name == model_name
