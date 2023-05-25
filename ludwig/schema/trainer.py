@@ -711,6 +711,21 @@ class GBMTrainerConfig(BaseTrainerConfig):
 class LLMTrainerConfig(BaseTrainerConfig):
     """Base class for all LLM trainer configs."""
 
+    learning_rate: Union[float, str] = schema_utils.OneOfOptionsField(
+        default=0.0001,
+        allow_none=False,
+        description=(
+            "Controls how much to change the model in response to the estimated error each time the model weights are "
+            "updated. If 'auto', the optimal learning rate is estimated by choosing the learning rate that produces "
+            "the smallest non-diverging gradient update."
+        ),
+        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["learning_rate"],
+        field_options=[
+            schema_utils.FloatRange(default=0.001, allow_none=False, min=0, max=1),
+            schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
+        ],
+    )
+
     batch_size: int = schema_utils.PositiveInteger(
         default=2,
         description="Batch size used for training in the LLM trainer.",
