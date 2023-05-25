@@ -30,9 +30,12 @@ class LLMModelConfig(ModelConfig):
     model_type: str = schema_utils.ProtectedString("llm")
 
     base_model: BaseModelConfig = BaseModelDataclassField(
-        "Base pretrained model to use. This can be one of the presets defined by Ludwig, a fully qualified "
-        "name of a pretrained model from the HuggingFace Hub, or a path to a directory containing a "
-        "pretrained model.",
+        default=None,
+        description=(
+            "Base pretrained model to use. This can be one of the presets defined by Ludwig, a fully qualified "
+            "name of a pretrained model from the HuggingFace Hub, or a path to a directory containing a "
+            "pretrained model."
+        ),
     )
 
     input_features: FeatureCollection[BaseInputFeatureConfig] = LLMInputFeatureSelection().get_list_field()
