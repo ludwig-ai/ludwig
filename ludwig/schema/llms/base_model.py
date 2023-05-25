@@ -62,7 +62,7 @@ class NoPresetModelConfig(BaseModelConfig):
         options=["none"],
         default=None,
         allow_none=True,
-        parameter_metadata=LLM_METADATA["base_model"]["preset"],
+        parameter_metadata=LLM_METADATA["base_model"]["default"]["preset"],
     )
 
     name: str = schema_utils.String(
@@ -75,7 +75,7 @@ class NoPresetModelConfig(BaseModelConfig):
             "model name or a path to a local directory containing a valid "
             "HuggingFace model."
         ),
-        parameter_metadata=LLM_METADATA["base_model"]["name"],
+        parameter_metadata=LLM_METADATA["base_model"]["none"]["name"],
     )
 
 
@@ -86,10 +86,12 @@ for preset, model_name in MODEL_PRESETS.items():
     @ludwig_dataclass
     class PresetModelConfig(BaseModelConfig):
         preset: Optional[str] = schema_utils.ProtectedString(
-            preset, parameter_metadata=LLM_METADATA["base_model"]["preset"]
+            preset, parameter_metadata=LLM_METADATA["base_model"]["default"]["preset"]
         )
 
-        name: str = schema_utils.ProtectedString(model_name, parameter_metadata=LLM_METADATA["base_model"]["name"])
+        name: str = schema_utils.ProtectedString(
+            model_name, parameter_metadata=LLM_METADATA["base_model"]["default"]["name"]
+        )
 
 
 @DeveloperAPI
