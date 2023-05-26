@@ -95,7 +95,11 @@ def get_base_model_conds():
     conds = []
     for base_model_type, base_model_cls in base_model_registry.items():
         other_props = schema_utils.unload_jsonschema_from_marshmallow_class(base_model_cls)["properties"]
-        schema_utils.remove_duplicate_fields(other_props)
+        if base_model_type == "none":
+            del other_props["preset"]
+        else:
+            del other_props["preset"]
+            del other_props["name"]
         preproc_cond = schema_utils.create_cond(
             {"preset": base_model_type},
             other_props,
