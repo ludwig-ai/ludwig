@@ -14,12 +14,12 @@ from ludwig.schema.features.base import (
 )
 from ludwig.schema.generation import LLMGenerationConfig, LLMGenerationConfigField
 from ludwig.schema.hyperopt import HyperoptConfig, HyperoptField
+from ludwig.schema.metadata import LLM_METADATA
 from ludwig.schema.model_types.base import ModelConfig, register_model_type
 from ludwig.schema.preprocessing import PreprocessingConfig, PreprocessingField
 from ludwig.schema.prompt import PromptConfig, PromptConfigField
 from ludwig.schema.trainer import LLMTrainerConfig, LLMTrainerDataclassField
 from ludwig.schema.utils import ludwig_dataclass
-from ludwig.schema.metadata import LLM_METADATA
 
 
 @DeveloperAPI
