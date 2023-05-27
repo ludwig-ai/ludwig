@@ -19,6 +19,7 @@ from ludwig.schema.preprocessing import PreprocessingConfig, PreprocessingField
 from ludwig.schema.prompt import PromptConfig, PromptConfigField
 from ludwig.schema.trainer import LLMTrainerConfig, LLMTrainerDataclassField
 from ludwig.schema.utils import ludwig_dataclass
+from ludwig.schema.metadata import LLM_METADATA
 
 
 @DeveloperAPI
@@ -48,6 +49,7 @@ class LLMModelConfig(ModelConfig):
             "model name or a path to a local directory containing a valid "
             "HuggingFace model."
         ),
+        parameter_metadata=LLM_METADATA["model_name"],
     )
 
     input_features: FeatureCollection[BaseInputFeatureConfig] = LLMInputFeatureSelection().get_list_field()
