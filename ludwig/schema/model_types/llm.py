@@ -14,6 +14,7 @@ from ludwig.schema.features.base import (
 )
 from ludwig.schema.generation import LLMGenerationConfig, LLMGenerationConfigField
 from ludwig.schema.hyperopt import HyperoptConfig, HyperoptField
+from ludwig.schema.metadata import LLM_METADATA
 from ludwig.schema.model_types.base import ModelConfig, register_model_type
 from ludwig.schema.preprocessing import PreprocessingConfig, PreprocessingField
 from ludwig.schema.prompt import PromptConfig, PromptConfigField
@@ -48,6 +49,7 @@ class LLMModelConfig(ModelConfig):
             "model name or a path to a local directory containing a valid "
             "HuggingFace model."
         ),
+        parameter_metadata=LLM_METADATA["model_name"],
     )
 
     input_features: FeatureCollection[BaseInputFeatureConfig] = LLMInputFeatureSelection().get_list_field()
