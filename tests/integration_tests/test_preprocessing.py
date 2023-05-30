@@ -963,6 +963,7 @@ def test_handle_features_with_prompt_config_multi_col(backend):  # , ray_cluster
         },
     }
     config = ModelConfig.from_dict(config).to_dict()
+    print(config["prompt"])
 
     if backend == "ray":
         import dask.dataframe as dd

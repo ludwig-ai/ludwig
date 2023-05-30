@@ -2,7 +2,7 @@ import json
 import logging
 import os
 import string
-from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, Set, Tuple, TYPE_CHECKING
 
 import pandas as pd
 
@@ -14,6 +14,10 @@ from ludwig.utils.fs_utils import get_default_cache_location, makedirs, path_exi
 from ludwig.utils.types import DataFrame, Series
 
 logger = logging.getLogger(__name__)
+
+CONTEXT = "__context__"
+SAMPLE = "__sample__"
+TASK = "__task__"
 
 DEFAULT_ZERO_SHOT_PROMPT_TEMPLATE = """SAMPLE INPUT: {__sample__}
 
@@ -170,20 +174,23 @@ def format_input_with_prompt(
             template = DEFAULT_ZERO_SHOT_PROMPT_TEMPLATE
 
     # ensure that the prompt template has all required fields
+    template_fields = _get_template_fields(template)
     try:
-        _validate_prompt_template(template, task_str, is_few_shot, dataset_df.columns)
+        _validate_prompt_template(template_fields, task_str, is_few_shot, dataset_df.columns)
     except ValueError as e:
         raise ValueError(f"template invalid for {'few-shot' if is_few_shot else 'zero-shot'} prompt: {e}")
 
     def generate_prompt(df: pd.DataFrame):
-        if is_few_shot:
-            df["__context__"] = retrieval_model.search(df, backend, k=k, return_data=True)
-
-        df["__sample__"] = df[input_col_name].map(lambda entry: json.dumps(entry, indent=2))
-        df["__task__"] = task_str
+        if CONTEXT in template_fields:
+            df[CONTEXT] = retrieval_model.search(df, backend, k=k, return_data=True)
+        if SAMPLE in template_fields:
+            df[SAMPLE] = df[input_col_name].map(lambda entry: json.dumps(entry, indent=2))
+        if TASK in template_fields:
+            df[TASK] = task_str
 
         def generate_prompt_for_row(row):
-            return template.format(**row)
+            kwargs = {col: row[col] for col in template_fields}
+            return template.format(**kwargs)
 
         return df.apply(generate_prompt_for_row, axis=1)
 
@@ -192,17 +199,20 @@ def format_input_with_prompt(
     return result
 
 
-def _validate_prompt_template(template: str, task: Optional[str], is_few_shot: bool, columns: List[str]):
+def _validate_prompt_template(template_fields: Set[str], task: Optional[str], is_few_shot: bool, columns: List[str]):
     """Validates that the template contains the necessary fields for the prompt."""
-    template_fields = {field for _, field, _, _ in string.Formatter().parse(template) if field is not None}
+    if is_few_shot and CONTEXT not in template_fields:
+        raise ValueError(f"Prompt template must contain the '{CONTEXT}' field for few-shot learning")
 
-    if is_few_shot and "__context__" not in template_fields:
-        raise ValueError("Prompt template must contain the '__context__' field for few-shot learning")
+    if task is not None and TASK not in template_fields:
+        raise ValueError(f"Prompt template must contain the '{TASK}' field if a task is provided")
 
-    if task is not None and "__task__" not in template_fields:
-        raise ValueError("Prompt template must contain the '__task__' field if a task is provided")
-
-    if "__sample__" not in template_fields and not any(col in template_fields for col in columns):
+    if SAMPLE not in template_fields and not any(col in template_fields for col in columns):
         raise ValueError(
-            "Prompt template must contain either the '__sample__' field or one of the columns from the dataset"
+            f"Prompt template must contain either the '{SAMPLE}' field or one of the columns from the dataset"
         )
+
+
+def _get_template_fields(template: str) -> Set[str]:
+    """Returns the fields in the template."""
+    return {field for _, field, _, _ in string.Formatter().parse(template) if field is not None}

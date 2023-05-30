@@ -75,10 +75,6 @@ class RetrievalConfigField(schema_utils.DictMarshmallowField):
 class PromptConfig(schema_utils.BaseMarshmallowConfig):
     """This Dataclass is a schema for the nested prompt config under preprocessing."""
 
-    def __post_init__(self):
-        if self.template is None and self.task is None:
-            raise ConfigValidationError("Either `template` or `task` must be set.")
-
     template: str = schema_utils.String(
         default=None,
         allow_none=True,
