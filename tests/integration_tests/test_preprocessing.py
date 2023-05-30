@@ -929,7 +929,7 @@ def test_handle_features_with_few_shot_prompt_config(backend, retrieval_kwargs, 
 
 @pytest.mark.llm
 @pytest.mark.parametrize("backend", ["local", "ray"])
-def test_handle_features_with_prompt_config_multi_col(backend):  # , ray_cluster_2cpu):
+def test_handle_features_with_prompt_config_multi_col(backend, ray_cluster_2cpu):
     df = pd.DataFrame(
         [
             {
@@ -982,8 +982,10 @@ def test_handle_features_with_prompt_config_multi_col(backend):  # , ray_cluster
     )
 
     assert len(dataset_cols) == 1
-    assert "instruction" in dataset_cols
+    assert "question" in dataset_cols
 
-    # Inspect the generated prompts
-    for prompt in dataset_cols["instruction"]:
-        print(prompt)
+    col = backend.df_engine.compute(dataset_cols["question"])
+    assert len(col) == 3
+    assert col[0].startswith("You are a helpful chatbot. USER: Name this province: Canada, 1871 ASSISTANT:")
+    assert col[1].startswith("You are a helpful chatbot. USER: Name this city: France, 1789 ASSISTANT:")
+    assert col[2].startswith("You are a helpful chatbot. USER: Name this country: UK, 1057 ASSISTANT:")

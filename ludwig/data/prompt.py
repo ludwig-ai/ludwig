@@ -176,7 +176,7 @@ def format_input_with_prompt(
     # ensure that the prompt template has all required fields
     template_fields = _get_template_fields(template)
     try:
-        _validate_prompt_template(template_fields, task_str, is_few_shot, dataset_df.columns)
+        _validate_prompt_template(template_fields, task_str, is_few_shot, dataset_df.columns, input_col_name)
     except ValueError as e:
         raise ValueError(f"template invalid for {'few-shot' if is_few_shot else 'zero-shot'} prompt: {e}")
 
@@ -194,12 +194,14 @@ def format_input_with_prompt(
 
         return df.apply(generate_prompt_for_row, axis=1)
 
-    result = backend.df_engine.map_partitions(dataset_df, generate_prompt, meta=dataset_df[input_col_name].dtype)
+    result = backend.df_engine.map_partitions(dataset_df, generate_prompt, meta=(input_col_name, "object"))
     result = backend.df_engine.persist(result)  # persist to prevent re-computation
     return result
 
 
-def _validate_prompt_template(template_fields: Set[str], task: Optional[str], is_few_shot: bool, columns: List[str]):
+def _validate_prompt_template(
+    template_fields: Set[str], task: Optional[str], is_few_shot: bool, columns: List[str], input_col_name: str
+):
     """Validates that the template contains the necessary fields for the prompt."""
     if is_few_shot and CONTEXT not in template_fields:
         raise ValueError(f"Prompt template must contain the '{CONTEXT}' field for few-shot learning")
@@ -207,7 +209,13 @@ def _validate_prompt_template(template_fields: Set[str], task: Optional[str], is
     if task is not None and TASK not in template_fields:
         raise ValueError(f"Prompt template must contain the '{TASK}' field if a task is provided")
 
-    if SAMPLE not in template_fields and not any(col in template_fields for col in columns):
+    if SAMPLE in template_fields:
+        if input_col_name not in columns:
+            raise ValueError(
+                f"Prompt template contains the '{SAMPLE}' field, "
+                f"but the input column '{input_col_name}' is not in the dataset"
+            )
+    elif not any(col in template_fields for col in columns):
         raise ValueError(
             f"Prompt template must contain either the '{SAMPLE}' field or one of the columns from the dataset"
         )
