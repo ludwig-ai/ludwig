@@ -75,22 +75,30 @@ class RetrievalConfigField(schema_utils.DictMarshmallowField):
 class PromptConfig(schema_utils.BaseMarshmallowConfig):
     """This Dataclass is a schema for the nested prompt config under preprocessing."""
 
-    task: str = schema_utils.String(
-        default=None,
-        allow_none=True,
-        description="The task to use for the prompt.",
-        parameter_metadata=LLM_METADATA["prompt"]["task"],
-    )
+    def __post_init__(self):
+        if self.template is None and self.task is None:
+            raise ConfigValidationError("Either `template` or `task` must be set.")
 
     template: str = schema_utils.String(
         default=None,
         allow_none=True,
         description=(
-            "Advanced: the template to use for the prompt. Must contain `context`, `sample_input` and `task` "
-            "variables. `context` is the placeholder for labeled samples, `sample_input` is the placeholder for a "
-            "single, unlabeled sample, and `task` is the placeholder for the user-specified task description."
+            "The template to use for the prompt. Must contain at least one of the columns from the input dataset "
+            "or `__sample__` as a variable surrounded in curly brackets {} to indicate where to insert the "
+            "current feature. Multiple columns can be inserted, e.g.: `The {color} {animal} jumped over "
+            "the {size} {object}`, where every term in curly brackets is a column in the dataset. If a `task` "
+            "is specified, then the template must also contain the `__task__` variable. If `retrieval` is specified, "
+            "then the template must also contain the `__context__` variable. If no template is provided, then a "
+            "default will be used based on the retrieval settings, and a task must be set in the config."
         ),
         parameter_metadata=LLM_METADATA["prompt"]["template"],
+    )
+
+    task: str = schema_utils.String(
+        default=None,
+        allow_none=True,
+        description="The task to use for the prompt. Required if `template` is not set.",
+        parameter_metadata=LLM_METADATA["prompt"]["task"],
     )
 
     retrieval: RetrievalConfig = RetrievalConfigField().get_default_field()

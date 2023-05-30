@@ -17,6 +17,7 @@ from ludwig.callbacks import Callback
 from ludwig.constants import BATCH_SIZE, COLUMN, DECODER, FULL, NAME, PROC_COLUMN, TRAINER
 from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.data.preprocessing import handle_features_with_prompt_config, preprocess_for_prediction
+from ludwig.schema.model_types.base import ModelConfig
 from ludwig.schema.prompt import PromptConfig
 from tests.integration_tests.utils import (
     assert_preprocessed_dataset_shape_and_dtype_for_feature,
@@ -924,3 +925,64 @@ def test_handle_features_with_few_shot_prompt_config(backend, retrieval_kwargs, 
             # labeled samples are provided by the context
             assert input_feature_name in prompt
             assert output_feature_name in prompt
+
+
+@pytest.mark.llm
+@pytest.mark.parametrize("backend", ["local", "ray"])
+def test_handle_features_with_prompt_config_multi_col(backend):  # , ray_cluster_2cpu):
+    df = pd.DataFrame(
+        [
+            {
+                "instruction": "Name this province",
+                "country": "Canada",
+                "year": "1871",
+                "answer": "British Columbia",
+            },
+            {
+                "instruction": "Name this city",
+                "country": "France",
+                "year": "1789",
+                "answer": "Paris",
+            },
+            {
+                "instruction": "Name this country",
+                "country": "UK",
+                "year": "1057",
+                "answer": "Wales",
+            },
+        ]
+    )
+
+    config = {
+        "model_type": "llm",
+        "model_name": "gpt2",
+        "input_features": [text_feature(name="question", encoder={"type": "passthrough"})],
+        "output_features": [text_feature(name="answer")],
+        "prompt": {
+            "template": "You are a helpful chatbot. USER: {instruction}: {country}, {year} ASSISTANT:",
+        },
+    }
+    config = ModelConfig.from_dict(config).to_dict()
+
+    if backend == "ray":
+        import dask.dataframe as dd
+
+        df = dd.from_pandas(df, npartitions=2)
+
+    feature_configs = config["input_features"] + config["output_features"]
+
+    backend = initialize_backend(backend)
+    dataset_cols = handle_features_with_prompt_config(
+        config,
+        df,
+        feature_configs,
+        backend=backend,
+        split_col=None,
+    )
+
+    assert len(dataset_cols) == 1
+    assert "instruction" in dataset_cols
+
+    # Inspect the generated prompts
+    for prompt in dataset_cols["instruction"]:
+        print(prompt)

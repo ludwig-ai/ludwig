@@ -11,13 +11,13 @@ if TYPE_CHECKING:
 
 from ludwig.models.retrieval import df_checksum, get_retrieval_model, RetrievalModel
 from ludwig.utils.fs_utils import get_default_cache_location, makedirs, path_exists
-from ludwig.utils.types import Series
+from ludwig.utils.types import DataFrame, Series
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_ZERO_SHOT_PROMPT_TEMPLATE = """SAMPLE INPUT: {sample_input}
+DEFAULT_ZERO_SHOT_PROMPT_TEMPLATE = """SAMPLE INPUT: {__sample__}
 
-USER: Complete the following task: {task}
+USER: Complete the following task: {__task__}
 
 ASSISTANT:
 """
@@ -25,15 +25,15 @@ ASSISTANT:
 
 DEFAULT_FEW_SHOT_PROMPT_TEMPLATE = """Below is relevant context:
 
-CONTEXT: {context}
+CONTEXT: {__context__}
 
 CONTEXT is comprised of labeled samples whose embeddings were similar to that of the sample input. The labels in
 these samples could aid you in your final prediction. Given this and no prior knowledge, follow the instructions
 below.
 
-SAMPLE INPUT: {sample_input}
+SAMPLE INPUT: {__sample__}
 
-USER: Complete the following task: {task}
+USER: Complete the following task: {__task__}
 
 ASSISTANT:
 """
@@ -116,7 +116,7 @@ def index_column(
 
 def format_input_with_prompt(
     input_col_name: str,
-    input_col: Series,
+    dataset_df: DataFrame,
     backend: "Backend",
     task_str: str,
     retrieval_model: Optional[RetrievalModel] = None,
@@ -130,9 +130,9 @@ def format_input_with_prompt(
     is retrieved using the `retrieval_model.search` function.
 
     A template can be provided to customize the prompt. The template must be a string with the following fields:
-        - sample_input: The input sample.
-        - task: The task to be completed given the input.
-        - context: The context retrieved by the `search_fn` function. Only required if `search_fn` is provided.
+        - __sample__ or at least one column from the input dataset: The input sample.
+        - __context__: The context retrieved by the `search_fn` function. Only required if `search_fn` is provided.
+        - __task__: The task to be completed given the input. Only required if `task` is set in the prompt config.
 
     Zero-shot example:
 
@@ -147,13 +147,14 @@ def format_input_with_prompt(
 
     Args:
         input_col_name (str): The name of the input column.
-        input_col (Series): The input column.
+        dataset_df (DataFrame): The input dataset.
         backend (Backend): The backend used for map operations.
         task_str (str): The task to be completed given the input.
         retrieval_model (Optional[RetrievalModel]): The retrieval model used to retrieve context. If provided, the
             prompt will be few-shot. If not provided, the prompt will be zero-shot.
         k (int): The number of samples to retrieve. Only required if `retrieval_model` is provided.
         template (Optional[str]): The template to use for the prompt. If not provided, the default will be used.
+
     Returns:
         Series: A new Series with the input column data formatted with the prompt.
     """
@@ -174,36 +175,34 @@ def format_input_with_prompt(
     except ValueError as e:
         raise ValueError(f"template invalid for {'few-shot' if is_few_shot else 'zero-shot'} prompt: {e}")
 
-    def generate_prompt(series: pd.Series):
-        df = series.to_frame(name=input_col_name)
-
+    def generate_prompt(df: pd.DataFrame):
         if is_few_shot:
-            df["context"] = retrieval_model.search(df, backend, k=k, return_data=True)
+            df["__context__"] = retrieval_model.search(df, backend, k=k, return_data=True)
 
-        df["sample_input"] = df[input_col_name].map(lambda entry: json.dumps(entry, indent=2))
-        df["task"] = task_str
+        df["__sample__"] = df[input_col_name].map(lambda entry: json.dumps(entry, indent=2))
+        df["__task__"] = task_str
 
         def generate_prompt_for_row(row):
-            format_kwargs = {
-                "sample_input": row["sample_input"],
-                "task": row["task"],
-            }
-            if is_few_shot:
-                format_kwargs["context"] = row["context"]
-            return template.format(**format_kwargs)
+            return template.format(**row)
 
-        df[input_col_name] = df.apply(generate_prompt_for_row, axis=1)
-        return df[input_col_name]
+        return df.apply(generate_prompt_for_row, axis=1)
 
-    result = backend.df_engine.map_partitions(input_col, generate_prompt, meta=input_col)
+    result = backend.df_engine.map_partitions(dataset_df, generate_prompt, meta=dataset_df[input_col_name].dtype)
     result = backend.df_engine.persist(result)  # persist to prevent re-computation
     return result
 
 
-def _validate_prompt_template(template: str, is_few_shot: bool):
+def _validate_prompt_template(template: str, task: Optional[str], is_few_shot: bool):
     """Validates that the template contains the necessary fields for the prompt."""
+    required_fields = set()
+    
     if is_few_shot:
-        required_fields = {"context", "sample_input", "task"}
+        required_fields.add("__context__")
+    
+    if task is not None:
+        required_fields.add("__task__")
+
+    required_fields = {"context", "sample_input", "task"}
     else:
         required_fields = {"sample_input", "task"}
     template_fields = {field for _, field, _, _ in string.Formatter().parse(template) if field is not None}
