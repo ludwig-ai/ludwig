@@ -2,7 +2,7 @@ import json
 import logging
 import os
 import string
-from typing import Any, Dict, Optional, Tuple, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
 
 import pandas as pd
 
@@ -171,7 +171,7 @@ def format_input_with_prompt(
 
     # ensure that the prompt template has all required fields
     try:
-        _validate_prompt_template(template, is_few_shot=is_few_shot)
+        _validate_prompt_template(template, task_str, is_few_shot, dataset_df.columns)
     except ValueError as e:
         raise ValueError(f"template invalid for {'few-shot' if is_few_shot else 'zero-shot'} prompt: {e}")
 
@@ -192,20 +192,17 @@ def format_input_with_prompt(
     return result
 
 
-def _validate_prompt_template(template: str, task: Optional[str], is_few_shot: bool):
+def _validate_prompt_template(template: str, task: Optional[str], is_few_shot: bool, columns: List[str]):
     """Validates that the template contains the necessary fields for the prompt."""
-    required_fields = set()
-    
-    if is_few_shot:
-        required_fields.add("__context__")
-    
-    if task is not None:
-        required_fields.add("__task__")
-
-    required_fields = {"context", "sample_input", "task"}
-    else:
-        required_fields = {"sample_input", "task"}
     template_fields = {field for _, field, _, _ in string.Formatter().parse(template) if field is not None}
-    missing_fields = required_fields - template_fields
-    if missing_fields:
-        raise ValueError(f"template is missing the following formattable fields: {missing_fields}")
+
+    if is_few_shot and "__context__" not in template_fields:
+        raise ValueError("Prompt template must contain the '__context__' field for few-shot learning")
+
+    if task is not None and "__task__" not in template_fields:
+        raise ValueError("Prompt template must contain the '__task__' field if a task is provided")
+
+    if "__sample__" not in template_fields and not any(col in template_fields for col in columns):
+        raise ValueError(
+            "Prompt template must contain either the '__sample__' field or one of the columns from the dataset"
+        )
