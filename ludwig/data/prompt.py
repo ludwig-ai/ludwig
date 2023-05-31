@@ -2,7 +2,7 @@ import json
 import logging
 import os
 import string
-from typing import Any, Dict, List, Optional, Set, Tuple, TYPE_CHECKING, Type
+from typing import Any, Dict, List, Optional, Set, Tuple, Type, TYPE_CHECKING
 
 import pandas as pd
 
