@@ -14,7 +14,7 @@ import ludwig
 from ludwig.api import LudwigModel
 from ludwig.backend import initialize_backend
 from ludwig.callbacks import Callback
-from ludwig.constants import BATCH_SIZE, COLUMN, DECODER, FULL, NAME, PROC_COLUMN, TRAINER
+from ludwig.constants import BATCH_SIZE, COLUMN, DECODER, FULL, MODEL_LLM, NAME, PROC_COLUMN, TRAINER
 from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.data.preprocessing import handle_features_with_prompt_config, preprocess_for_prediction
 from ludwig.schema.model_types.base import ModelConfig
@@ -798,7 +798,7 @@ def test_fill_with_mode_different_df_engine(tmpdir, csv_filename, df_engine, ray
 def test_prompt_template(backend, tmpdir):
     """Tests that prompt template is correctly applied to inputs."""
     template = """
-    Instruction: {task}
+    Instruction: {__task__}
     ###
     Examples:
     ###
@@ -808,7 +808,7 @@ def test_prompt_template(backend, tmpdir):
     Input: baz quc
     Output: false
     ###
-    Input: {sample_input}
+    Input: {__sample__}
     Output:
     """
 
@@ -885,10 +885,13 @@ def test_handle_features_with_few_shot_prompt_config(backend, retrieval_kwargs, 
     output_feature_name = output_features[0][NAME]
 
     config = {
+        "model_type": MODEL_LLM,
+        "model_name": "gpt2",
         "input_features": input_features,
         "output_features": output_features,
         "prompt": prompt_config,
     }
+    config = ModelConfig.from_dict(config).to_dict()
 
     df = generate_data_as_dataframe(input_features, output_features, 10, with_split=True)  # retrieval needs fixed split
     if backend == "ray":
@@ -897,8 +900,7 @@ def test_handle_features_with_few_shot_prompt_config(backend, retrieval_kwargs, 
         df = dd.from_pandas(df, npartitions=2)
 
     split_col = df["split"]
-    dataset_cols = {k: df[k] for k in df.columns}
-    feature_configs = input_features + output_features
+    feature_configs = config["input_features"] + config["output_features"]
 
     if backend == "local":
         context = mock.patch(
@@ -911,16 +913,20 @@ def test_handle_features_with_few_shot_prompt_config(backend, retrieval_kwargs, 
 
     with context:
         backend = initialize_backend(backend)
-        handle_features_with_prompt_config(
+        dataset_cols = handle_features_with_prompt_config(
             config,
-            dataset_cols,
+            df,
             feature_configs,
             backend=backend,
             split_col=split_col,
         )
 
+        assert len(dataset_cols) == 1
+        assert input_feature_name in dataset_cols
+
         # Inspect the generated prompts
-        for prompt in dataset_cols[input_feature_name]:
+        col = backend.df_engine.compute(dataset_cols[input_feature_name])
+        for prompt in col:
             # input_feature_name and output_feature_name should be in the prompt because
             # labeled samples are provided by the context
             assert input_feature_name in prompt
@@ -954,7 +960,7 @@ def test_handle_features_with_prompt_config_multi_col(backend, ray_cluster_2cpu)
     )
 
     config = {
-        "model_type": "llm",
+        "model_type": MODEL_LLM,
         "model_name": "gpt2",
         "input_features": [text_feature(name="question", encoder={"type": "passthrough"})],
         "output_features": [text_feature(name="answer")],
@@ -963,7 +969,6 @@ def test_handle_features_with_prompt_config_multi_col(backend, ray_cluster_2cpu)
         },
     }
     config = ModelConfig.from_dict(config).to_dict()
-    print(config["prompt"])
 
     if backend == "ray":
         import dask.dataframe as dd
