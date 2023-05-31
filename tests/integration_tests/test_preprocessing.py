@@ -941,19 +941,19 @@ def test_handle_features_with_prompt_config_multi_col(backend, ray_cluster_2cpu)
             {
                 "instruction": "Name this province",
                 "country": "Canada",
-                "year": "1871",
+                "year": 1871,
                 "answer": "British Columbia",
             },
             {
                 "instruction": "Name this city",
                 "country": "France",
-                "year": "1789",
+                "year": 1789,
                 "answer": "Paris",
             },
             {
                 "instruction": "Name this country",
                 "country": "UK",
-                "year": "1057",
+                "year": 1057,
                 "answer": "Wales",
             },
         ]
@@ -965,7 +965,7 @@ def test_handle_features_with_prompt_config_multi_col(backend, ray_cluster_2cpu)
         "input_features": [text_feature(name="question", encoder={"type": "passthrough"})],
         "output_features": [text_feature(name="answer")],
         "prompt": {
-            "template": "You are a helpful chatbot. USER: {instruction}: {country}, {year} ASSISTANT:",
+            "template": "You are a helpful chatbot. USER: {instruction}: {country}, {year:.2f} ASSISTANT:",
         },
     }
     config = ModelConfig.from_dict(config).to_dict()
@@ -991,6 +991,6 @@ def test_handle_features_with_prompt_config_multi_col(backend, ray_cluster_2cpu)
 
     col = backend.df_engine.compute(dataset_cols["question"])
     assert len(col) == 3
-    assert col[0].startswith("You are a helpful chatbot. USER: Name this province: Canada, 1871 ASSISTANT:")
-    assert col[1].startswith("You are a helpful chatbot. USER: Name this city: France, 1789 ASSISTANT:")
-    assert col[2].startswith("You are a helpful chatbot. USER: Name this country: UK, 1057 ASSISTANT:")
+    assert col[0].startswith("You are a helpful chatbot. USER: Name this province: Canada, 1871.00 ASSISTANT:")
+    assert col[1].startswith("You are a helpful chatbot. USER: Name this city: France, 1789.00 ASSISTANT:")
+    assert col[2].startswith("You are a helpful chatbot. USER: Name this country: UK, 1057.00 ASSISTANT:")
