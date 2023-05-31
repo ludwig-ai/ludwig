@@ -9,12 +9,25 @@ import numpy as np
 import pandas as pd
 import pytest
 from PIL import Image
+from transformers import AutoTokenizer
 
 import ludwig
 from ludwig.api import LudwigModel
 from ludwig.backend import initialize_backend
 from ludwig.callbacks import Callback
-from ludwig.constants import BATCH_SIZE, COLUMN, DECODER, FULL, MODEL_LLM, NAME, PROC_COLUMN, TRAINER
+from ludwig.constants import (
+    BATCH_SIZE,
+    COLUMN,
+    DECODER,
+    FULL,
+    MODEL_ECD,
+    MODEL_LLM,
+    NAME,
+    PREPROCESSING,
+    PROC_COLUMN,
+    PROMPT,
+    TRAINER,
+)
 from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.data.preprocessing import handle_features_with_prompt_config, preprocess_for_prediction
 from ludwig.schema.model_types.base import ModelConfig
@@ -814,18 +827,35 @@ template_multi_col = """
 You are a helpful chatbot. USER: {__sample__}: {country}, {year:.2f} ASSISTANT:
 """
 
+expected_task_sample = """instruction: predict the output feature. return only values in {true, false}
+###
+examples:
+###
+input: foo bar
+output: true
+###
+input: baz quc
+output: false
+###
+input:"""
+
 
 @pytest.mark.llm
 @pytest.mark.parametrize("backend", ["local", "ray"])
+@pytest.mark.parametrize("model_type", [MODEL_ECD, MODEL_LLM])
 @pytest.mark.parametrize(
     "input_features,expected",
     [
         (
-            [text_feature(preprocessing={"prompt": {"task": task, "template": template_task_sample}})],
-            (
-                "<SOS> instruction : predict the output feature . return only values in { true , false } # # # "
-                "examples : # # # input : foo bar output : true # # # input : baz quc output : false # # # input : "
-            ),
+            [
+                text_feature(
+                    preprocessing={
+                        "prompt": {"task": task, "template": template_task_sample},
+                        "max_sequence_length": 512,
+                    }
+                )
+            ],
+            expected_task_sample,
         ),
         (
             [
@@ -833,12 +863,12 @@ You are a helpful chatbot. USER: {__sample__}: {country}, {year:.2f} ASSISTANT:
                 category_feature(name="country"),
                 number_feature(name="year"),
             ],
-            ("<SOS> you are a helpful chatbot . user : "),
+            ("you are a helpful chatbot. user: "),
         ),
     ],
     ids=["task_sample", "multi_col"],
 )
-def test_prompt_template(input_features, expected, backend, tmpdir):
+def test_prompt_template(input_features, expected, model_type, backend, tmpdir, ray_cluster_2cpu):
     """Tests that prompt template is correctly applied to inputs."""
     output_features = [category_feature()]
     data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=25)
@@ -849,12 +879,26 @@ def test_prompt_template(input_features, expected, backend, tmpdir):
     # Only use the first input featuere (text) and discard the others, which are only used for data gen
     input_features = input_features[:1]
     config = {
+        "model_type": model_type,
         "input_features": input_features,
         "output_features": output_features,
     }
 
+    model_name = "hf-internal-testing/tiny-random-OPTModel"
+    if model_type == MODEL_LLM:
+        # For LLMs, specify the prompt at the top level
+        config["model_name"] = model_name
+        config[PROMPT] = input_features[0][PREPROCESSING][PROMPT]
+        del config["input_features"][0][PREPROCESSING][PROMPT]
+        config["input_features"][0]["encoder"] = {"type": "passthrough"}
+    else:
+        config["input_features"][0]["encoder"] = {
+            "type": "auto_transformer",
+            "pretrained_model_name_or_path": model_name,
+        }
+
     model = LudwigModel(config, backend=backend)
-    train_set, _, _, training_set_metadata = model.preprocess(
+    train_set, _, _, _ = model.preprocess(
         training_set=data_csv,
         skip_save_processed_input=True,
         output_directory=os.path.join(tmpdir, "processed"),
@@ -865,16 +909,16 @@ def test_prompt_template(input_features, expected, backend, tmpdir):
 
     assert all(len(v) == len(encoded_values) for v in raw_values)
 
-    idx2str = training_set_metadata[input_features[0][NAME]]["idx2str"]
     for i, encoded in enumerate(encoded_values):
-        decoded = " ".join(idx2str[t] for t in encoded)
-        assert decoded.startswith(expected), f"decoded: '{decoded}' does not start with expected: {expected}"
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        decoded = tokenizer.decode(encoded)
+        assert expected in decoded, f"decoded: '{decoded}' does not contain expected: {expected}"
 
         for raw_col_values in raw_values:
             v = raw_col_values[i]
             if isinstance(v, float):
                 # Test formatting in parametrize uses 2 decimal places of precision
-                raw_text = " . ".join(f"{v:.2f}".split("."))
+                raw_text = f"{v:.2f}"
             else:
                 raw_text = str(v).lower()
             assert raw_text in decoded, f"'{raw_text}' not in '{decoded}'"

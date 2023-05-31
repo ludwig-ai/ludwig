@@ -230,6 +230,9 @@ def _get_template_fields(template: str) -> Tuple[Set[str], Dict[str, Type]]:
 
 
 def _get_dtype(format_spec: str) -> Type:
+    # We need to prepare data in the row for different formatting options.
+    # If you have a number like 0.1234 in the DF and you want to format it like {number:.2f} it will fail if the
+    # number is represented as a string in the DF. So we need to cast it to a float before formatting.
     if not format_spec:
         return str
     if "f" in format_spec:
