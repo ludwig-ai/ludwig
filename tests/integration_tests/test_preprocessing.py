@@ -793,31 +793,61 @@ def test_fill_with_mode_different_df_engine(tmpdir, csv_filename, df_engine, ray
     ludwig_model.preprocess(dataset=df)
 
 
+template_task_sample = """
+Instruction: {__task__}
+###
+Examples:
+###
+Input: foo bar
+Output: true
+###
+Input: baz quc
+Output: false
+###
+Input: {__sample__}
+Output:
+"""
+
+task = "predict the output feature. Return only values in {true, false}"
+
+template_multi_col = """
+You are a helpful chatbot. USER: {__sample__}: {country}, {year:.2f} ASSISTANT:
+"""
+
+
 @pytest.mark.llm
 @pytest.mark.parametrize("backend", ["local", "ray"])
-def test_prompt_template(backend, tmpdir):
+@pytest.mark.parametrize(
+    "input_features,expected",
+    [
+        (
+            [text_feature(preprocessing={"prompt": {"task": task, "template": template_task_sample}})],
+            (
+                "<SOS> instruction : predict the output feature . return only values in { true , false } # # # "
+                "examples : # # # input : foo bar output : true # # # input : baz quc output : false # # # input : "
+            ),
+        ),
+        (
+            [
+                text_feature(preprocessing={"prompt": {"template": template_multi_col}}),
+                category_feature(name="country"),
+                number_feature(name="year"),
+            ],
+            ("<SOS> you are a helpful chatbot . user : "),
+        ),
+    ],
+    ids=["task_sample", "multi_col"],
+)
+def test_prompt_template(input_features, expected, backend, tmpdir):
     """Tests that prompt template is correctly applied to inputs."""
-    template = """
-    Instruction: {__task__}
-    ###
-    Examples:
-    ###
-    Input: foo bar
-    Output: true
-    ###
-    Input: baz quc
-    Output: false
-    ###
-    Input: {__sample__}
-    Output:
-    """
-
-    task = "predict the output feature. Return only values in {true, false}"
-
-    input_features = [text_feature(preprocessing={"prompt": {"task": task, "template": template}})]
     output_features = [category_feature()]
     data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=25)
 
+    data_df = pd.read_csv(data_csv)
+    raw_values = [data_df[input_features[i][COLUMN]].values.tolist() for i in range(len(input_features))]
+
+    # Only use the first input featuere (text) and discard the others, which are only used for data gen
+    input_features = input_features[:1]
     config = {
         "input_features": input_features,
         "output_features": output_features,
@@ -830,23 +860,24 @@ def test_prompt_template(backend, tmpdir):
         output_directory=os.path.join(tmpdir, "processed"),
     )
 
-    data_df = pd.read_csv(data_csv)
-    raw_text_values = data_df[input_features[0][COLUMN]].values.tolist()
-
     train_df = model.backend.df_engine.compute(train_set.to_df())
     encoded_values = train_df[input_features[0][PROC_COLUMN]].values.tolist()
 
-    assert len(raw_text_values) == len(encoded_values)
+    assert all(len(v) == len(encoded_values) for v in raw_values)
 
     idx2str = training_set_metadata[input_features[0][NAME]]["idx2str"]
-    for raw_text, encoded in zip(raw_text_values, encoded_values):
-        raw_text = raw_text.lower()
+    for i, encoded in enumerate(encoded_values):
         decoded = " ".join(idx2str[t] for t in encoded)
-        assert decoded.startswith(
-            "<SOS> instruction : predict the output feature . return only values in { true , false } # # # examples : "
-            "# # # input : foo bar output : true # # # input : baz quc output : false # # # input : "
-        ), decoded
-        assert raw_text in decoded, f"'{raw_text}' not in '{decoded}'"
+        assert decoded.startswith(expected), f"decoded: '{decoded}' does not start with expected: {expected}"
+
+        for raw_col_values in raw_values:
+            v = raw_col_values[i]
+            if isinstance(v, float):
+                # Test formatting in parametrize uses 2 decimal places of precision
+                raw_text = " . ".join(f"{v:.2f}".split("."))
+            else:
+                raw_text = str(v).lower()
+            assert raw_text in decoded, f"'{raw_text}' not in '{decoded}'"
 
 
 @pytest.mark.llm

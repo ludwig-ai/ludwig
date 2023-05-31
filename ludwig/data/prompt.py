@@ -2,7 +2,7 @@ import json
 import logging
 import os
 import string
-from typing import Any, Dict, List, Optional, Set, Tuple, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, Set, Tuple, TYPE_CHECKING, Type
 
 import pandas as pd
 
@@ -174,7 +174,7 @@ def format_input_with_prompt(
             template = DEFAULT_ZERO_SHOT_PROMPT_TEMPLATE
 
     # ensure that the prompt template has all required fields
-    template_fields = _get_template_fields(template)
+    template_fields, field_to_dtype = _get_template_fields(template)
     try:
         _validate_prompt_template(template_fields, task_str, is_few_shot, dataset_df.columns, input_col_name)
     except ValueError as e:
@@ -189,7 +189,7 @@ def format_input_with_prompt(
             df[TASK] = task_str
 
         def generate_prompt_for_row(row):
-            kwargs = {col: row[col] for col in template_fields}
+            kwargs = {col: field_to_dtype[col](row[col]) for col in template_fields}
             return template.format(**kwargs)
 
         return df.apply(generate_prompt_for_row, axis=1)
@@ -221,6 +221,17 @@ def _validate_prompt_template(
         )
 
 
-def _get_template_fields(template: str) -> Set[str]:
+def _get_template_fields(template: str) -> Tuple[Set[str], Dict[str, Type]]:
     """Returns the fields in the template."""
-    return {field for _, field, _, _ in string.Formatter().parse(template) if field is not None}
+    parsed = [t for t in string.Formatter().parse(template) if t[1] is not None]
+    field_set = {field for _, field, _, _ in parsed}
+    dtype_map = {field: _get_dtype(format_spec) for _, field, format_spec, _ in parsed}
+    return field_set, dtype_map
+
+
+def _get_dtype(format_spec: str) -> Type:
+    if not format_spec:
+        return str
+    if "f" in format_spec:
+        return float
+    raise ValueError(f"Unsupported template format spec: {format_spec}")
