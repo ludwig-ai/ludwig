@@ -1,4 +1,5 @@
 import contextlib
+import copy
 import logging
 import os
 import random
@@ -870,6 +871,8 @@ input:"""
 )
 def test_prompt_template(input_features, expected, model_type, backend, tmpdir, ray_cluster_2cpu):
     """Tests that prompt template is correctly applied to inputs."""
+    input_features = copy.deepcopy(input_features)
+
     output_features = [category_feature()]
     data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=25)
 
