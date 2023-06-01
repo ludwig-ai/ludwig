@@ -60,6 +60,7 @@ from ludwig.trainers.trainer_llm import RemoteLLMFineTuneTrainer, RemoteLLMTrain
 from ludwig.types import HyperoptConfigDict, ModelConfigDict, TrainerConfigDict, TrainingSetMetadataDict
 from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
 from ludwig.utils.dataframe_utils import is_dask_series_or_df, set_index_name
+from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.system_utils import Resources
 from ludwig.utils.torch_utils import get_torch_device, initialize_pytorch
@@ -196,7 +197,12 @@ def train_fn(
         model = ray.get(model_ref)
         model = distributed.to_device(model)
 
-        trainer = remote_trainer_cls(model=model, distributed=distributed, report_tqdm_to_ray=True, **executable_kwargs)
+        trainer = remote_trainer_cls(
+            model=model,
+            distributed=distributed,
+            report_tqdm_to_ray=True,
+            **executable_kwargs,
+        )
         results = trainer.train(train_shard, val_shard, test_shard, return_state_dict=True, **kwargs)
         torch.cuda.empty_cache()
 
@@ -634,7 +640,12 @@ def eval_fn(
 
 class RayPredictor(BasePredictor):
     def __init__(
-        self, model: BaseModel, df_engine: DataFrameEngine, trainer_kwargs, data_loader_kwargs, **predictor_kwargs
+        self,
+        model: BaseModel,
+        df_engine: DataFrameEngine,
+        trainer_kwargs,
+        data_loader_kwargs,
+        **predictor_kwargs,
     ):
         self.batch_size = predictor_kwargs["batch_size"]
         self.trainer_kwargs = trainer_kwargs
@@ -795,7 +806,14 @@ class RayPredictor(BasePredictor):
 class RayBackend(RemoteTrainingMixin, Backend):
     BACKEND_TYPE = "ray"
 
-    def __init__(self, processor=None, trainer=None, loader=None, preprocessor_kwargs=None, **kwargs):
+    def __init__(
+        self,
+        processor=None,
+        trainer=None,
+        loader=None,
+        preprocessor_kwargs=None,
+        **kwargs,
+    ):
         super().__init__(dataset_manager=RayDatasetManager(self), **kwargs)
         self._preprocessor_kwargs = preprocessor_kwargs or {}
         self._df_engine = _get_df_engine(processor)
@@ -901,7 +919,10 @@ class RayBackend(RemoteTrainingMixin, Backend):
         return False
 
     def read_binary_files(
-        self, column: Series, map_fn: Optional[Callable] = None, file_size: Optional[int] = None
+        self,
+        column: Series,
+        map_fn: Optional[Callable] = None,
+        file_size: Optional[int] = None,
     ) -> Series:
         # normalize NaNs to None
         column = column.fillna(np.nan).replace([np.nan], [None])
@@ -912,7 +933,14 @@ class RayBackend(RemoteTrainingMixin, Backend):
         # Sample a filename to extract the filesystem info
         sample_fname = fnames[0]
         if isinstance(sample_fname, str):
-            import daft
+            try:
+                import daft
+            except ImportError:
+                raise ImportError(
+                    " daft is not installed. "
+                    "In order to download binary files (like images/audio/..) please run "
+                    "pip install ludwig[distributed]"
+                )
 
             # Set the runner for executing Daft dataframes to a Ray cluster
             # Prevent re-initialization errors if the runner is already set
@@ -935,6 +963,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
                 df = df.select("idx", column.name)
 
                 # Download binary files in parallel
+                fs, _ = get_fs_and_path(sample_fname)
                 df = df.with_column(
                     column.name,
                     df[column.name].url.download(
@@ -942,6 +971,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
                         max_worker_threads=16,
                         # On error, replace value with a Null and just log the error
                         on_error="null",
+                        fs=fs,
                     ),
                 )
 
@@ -952,6 +982,8 @@ class RayBackend(RemoteTrainingMixin, Backend):
                 if is_dask_df:
                     df = df.to_dask_dataframe()
                     df = self.df_engine.persist(df)
+                else:
+                    df = df.to_pandas()
         else:
             # Assume the path has already been read in, so just convert directly to a dataset
             # Name the column "value" to match the behavior of the above
