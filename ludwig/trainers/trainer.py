@@ -176,6 +176,7 @@ class Trainer(BaseTrainer):
 
         self.model = model
         self.model = self.distributed.to_device(self.model)
+        self.model.metrics_to_device(self.device)
 
         self.compiled_model = self.model
         if config.compile:
@@ -351,7 +352,7 @@ class Trainer(BaseTrainer):
         # all other losses
         for feature_name, loss in all_losses.items():
             loss_tag = f"{feature_name}/step_training_loss"
-            train_summary_writer.add_scalar(loss_tag, loss, global_step=step)
+            train_summary_writer.add_scalar(loss_tag, loss.detach().float(), global_step=step)
 
         if learning_rate:
             train_summary_writer.add_scalar("combined/step_learning_rate", learning_rate, global_step=step)
@@ -571,6 +572,9 @@ class Trainer(BaseTrainer):
 
         # Trigger eval end callback after any model weights save for complete checkpoint
         self.callback(lambda c: c.on_eval_end(self, progress_tracker, save_path))
+
+        # Clear the CUDA cache to free up memory
+        torch.cuda.empty_cache()
 
         return should_break
 
@@ -811,15 +815,16 @@ class Trainer(BaseTrainer):
 
         # Load the best weights from saved checkpoint
         state_dict = None
-        if not self.skip_save_model:
-            state_dict = checkpoint_manager.get_best_checkpoint_state_for_inference(self.return_device)
-            if not return_state_dict:
-                if self.distributed.is_model_parallel():
-                    # Assume the full weights cannot fit in memory on GPU
-                    self.model = self.model.cpu()
-                self.model.load_state_dict(state_dict)
-        elif return_state_dict:
-            state_dict = self.model.cpu().state_dict()
+        if self.distributed.is_coordinator():
+            if not self.skip_save_model:
+                state_dict = checkpoint_manager.get_best_checkpoint_state_for_inference(self.return_device)
+                if not return_state_dict:
+                    if self.distributed.is_model_parallel():
+                        # Assume the full weights cannot fit in memory on GPU
+                        self.model = self.model.cpu()
+                    self.model.load_state_dict(state_dict)
+            elif return_state_dict:
+                state_dict = self.model.cpu().state_dict()
 
         # When running with Ray, we only need to return the state dict, as it's faster and cheaper to send the
         # state dict over the network than to load the model state here, serialize it back to a state dict, then
@@ -892,7 +897,7 @@ class Trainer(BaseTrainer):
             if self.is_coordinator() and not self.skip_save_log:
                 self.write_step_summary(
                     train_summary_writer=train_summary_writer,
-                    combined_loss=loss,
+                    combined_loss=loss.detach().float(),
                     all_losses=all_losses,
                     step=progress_tracker.steps,
                     learning_rate=progress_tracker.learning_rate,

@@ -2,6 +2,7 @@ from typing import List, Optional, Tuple, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.metadata import LLM_METADATA
 
 
 @DeveloperAPI
@@ -15,17 +16,26 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
 
     # Parameters that control the length of the output
 
+    max_new_tokens: Optional[int] = schema_utils.PositiveInteger(
+        default=20,
+        allow_none=True,
+        description="The maximum number of new tokens to generate, ignoring the number of tokens in the input prompt.",
+        parameter_metadata=LLM_METADATA["generation"]["max_new_tokens"],
+    )
+
+    min_new_tokens: Optional[int] = schema_utils.NonNegativeInteger(
+        default=None,
+        allow_none=True,
+        description="The minimum number of new tokens to generate, ignoring the number of tokens in the input prompt.",
+        parameter_metadata=LLM_METADATA["generation"]["min_new_tokens"],
+    )
+
     max_length: int = schema_utils.PositiveInteger(
         default=20,
         allow_none=True,
         description="The maximum length the generated tokens can have. Corresponds to the length of the input prompt "
         "+ max_new_tokens. Its effect is overridden by max_new_tokens, if also set.",
-    )
-
-    max_new_tokens: Optional[int] = schema_utils.PositiveInteger(
-        default=20,
-        allow_none=True,
-        description="The maximum number of new tokens to generate, ignoring the number of tokens in the input prompt.",
+        parameter_metadata=LLM_METADATA["generation"]["max_length"],
     )
 
     min_length: int = schema_utils.NonNegativeInteger(
@@ -33,12 +43,7 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
         allow_none=True,
         description="The minimum length of the sequence to be generated. Corresponds to the length of the "
         "input prompt + min_new_tokens. Its effect is overridden by min_new_tokens, if also set.",
-    )
-
-    min_new_tokens: Optional[int] = schema_utils.NonNegativeInteger(
-        default=None,
-        allow_none=True,
-        description="The minimum number of new tokens to generate, ignoring the number of tokens in the input prompt.",
+        parameter_metadata=LLM_METADATA["generation"]["min_length"],
     )
 
     early_stopping: Optional[Union[bool, str]] = schema_utils.Boolean(
@@ -64,12 +69,14 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
     do_sample: Optional[bool] = schema_utils.Boolean(
         default=False,
         description="Whether or not to use sampling ; use greedy decoding otherwise.",
+        parameter_metadata=LLM_METADATA["generation"]["do_sample"],
     )
 
     num_beams: Optional[int] = schema_utils.PositiveInteger(
         default=1,
         allow_none=True,
         description="Number of beams for beam search. 1 means no beam search.",
+        parameter_metadata=LLM_METADATA["generation"]["num_beams"],
     )
 
     num_beam_groups: Optional[int] = schema_utils.PositiveInteger(
@@ -90,6 +97,7 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
         default=True,
         description="Whether or not the model should use the past last key/values attentions (if applicable to the "
         "model) to speed up decoding.",
+        parameter_metadata=LLM_METADATA["generation"]["use_cache"],
     )
 
     # Parameters for manipulation of the model output logits
@@ -98,12 +106,14 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
         default=1.0,
         allow_none=True,
         description="The value used to module the next token probabilities.",
+        parameter_metadata=LLM_METADATA["generation"]["temperature"],
     )
 
     top_k: Optional[int] = schema_utils.PositiveInteger(
         default=50,
         allow_none=True,
         description="The number of highest probability vocabulary tokens to keep for top-k-filtering.",
+        parameter_metadata=LLM_METADATA["generation"]["top_k"],
     )
 
     top_p: Optional[float] = schema_utils.FloatRange(
@@ -113,6 +123,7 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
         allow_none=True,
         description="If set to float < 1, only the most probable tokens with probabilities that add up to "
         "top_p or higher are kept for generation.",
+        parameter_metadata=LLM_METADATA["generation"]["top_p"],
     )
 
     typical_p: Optional[float] = schema_utils.FloatRange(

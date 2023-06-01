@@ -240,7 +240,7 @@ def _update_backend_cache_credentials(backend: Dict[str, Any]) -> Dict[str, Any]
 def update_class_weights_in_features(feature: FeatureConfigDict) -> FeatureConfigDict:
     if LOSS in feature:
         class_weights = feature[LOSS].get(CLASS_WEIGHTS, None)
-        if not isinstance(class_weights, list):
+        if not isinstance(class_weights, (list, dict)):
             class_weights = None
         feature[LOSS][CLASS_WEIGHTS] = class_weights
 

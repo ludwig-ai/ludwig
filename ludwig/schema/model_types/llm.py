@@ -1,9 +1,10 @@
 from typing import Optional
 
 from ludwig.api_annotations import DeveloperAPI
+from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.adapter import AdapterDataclassField, BaseAdapterConfig
 from ludwig.schema.defaults.llm import LLMDefaultsConfig, LLMDefaultsField
+from ludwig.schema.encoders.text.peft import AdapterDataclassField, BaseAdapterConfig
 from ludwig.schema.features.base import (
     BaseInputFeatureConfig,
     BaseOutputFeatureConfig,
@@ -13,8 +14,10 @@ from ludwig.schema.features.base import (
 )
 from ludwig.schema.generation import LLMGenerationConfig, LLMGenerationConfigField
 from ludwig.schema.hyperopt import HyperoptConfig, HyperoptField
+from ludwig.schema.metadata import LLM_METADATA
 from ludwig.schema.model_types.base import ModelConfig, register_model_type
 from ludwig.schema.preprocessing import PreprocessingConfig, PreprocessingField
+from ludwig.schema.prompt import PromptConfig, PromptConfigField
 from ludwig.schema.trainer import LLMTrainerConfig, LLMTrainerDataclassField
 from ludwig.schema.utils import ludwig_dataclass
 
@@ -24,6 +27,15 @@ from ludwig.schema.utils import ludwig_dataclass
 @ludwig_dataclass
 class LLMModelConfig(ModelConfig):
     """Parameters for LLM Model Type."""
+
+    def __post_init__(self):
+        super().__post_init__()
+
+        if not self.model_name:
+            raise ConfigValidationError(
+                "LLM requires `model_name` to be set. This can be any pretrained CausalLM on huggingface. "
+                "See: https://huggingface.co/models?pipeline_tag=text-generation&sort=downloads"
+            )
 
     model_type: str = schema_utils.ProtectedString("llm")
 
@@ -37,6 +49,7 @@ class LLMModelConfig(ModelConfig):
             "model name or a path to a local directory containing a valid "
             "HuggingFace model."
         ),
+        parameter_metadata=LLM_METADATA["model_name"],
     )
 
     input_features: FeatureCollection[BaseInputFeatureConfig] = LLMInputFeatureSelection().get_list_field()
@@ -46,15 +59,15 @@ class LLMModelConfig(ModelConfig):
     defaults: Optional[LLMDefaultsConfig] = LLMDefaultsField().get_default_field()
     hyperopt: Optional[HyperoptConfig] = HyperoptField().get_default_field()
 
+    prompt: PromptConfig = PromptConfigField().get_default_field()
+
     # trainer: LLMTrainerConfig = LLMTrainerField().get_default_field()
     trainer: LLMTrainerConfig = LLMTrainerDataclassField(
-        default="zeroshot",
         description="The trainer to use for the model",
     )
 
     generation: LLMGenerationConfig = LLMGenerationConfigField().get_default_field()
 
-    adapter: BaseAdapterConfig = AdapterDataclassField(
-        default=None,
-        description="The adapter to use for the model. This is used for PEFT based fine-tuning",
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField(
+        description="The parameter-efficient finetuning strategy to use for the model"
     )

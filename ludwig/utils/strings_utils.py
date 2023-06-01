@@ -28,6 +28,7 @@ from ludwig.constants import PADDING_SYMBOL, START_SYMBOL, STOP_SYMBOL, UNKNOWN_
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataframe.pandas import PANDAS
 from ludwig.utils.fs_utils import open_file
+from ludwig.utils.logging_utils import log_once
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.tokenizers import get_tokenizer_from_registry
 from ludwig.utils.types import Series
@@ -504,8 +505,21 @@ def build_sequence_matrix(
         logger.debug(f"max length of {format}: {max_length} < limit: {length_limit}")
     max_length = length_limit
 
+    # Set padding token id based on tokenizer_type. Huggingface tokenizers typically have a pad_token_id attribute.
+    if tokenizer_type == "hf_tokenizer":
+        if hasattr(tokenizer.tokenizer, "pad_token_id") and tokenizer.tokenizer.pad_token_id is not None:
+            pad_token_id = tokenizer.tokenizer.pad_token_id
+        elif hasattr(tokenizer.tokenizer, "eos_token_id") and tokenizer.tokenizer.eos_token_id is not None:
+            pad_token_id = tokenizer.tokenizer.eos_token_id
+        else:
+            # This happens for torchtext tokenizers like BERTTokenizer. We set pad token to 0.
+            log_once("Could not find pad_token_id or eos_token_id. Setting pad_token_id to 0.")
+            pad_token_id = 0
+    else:
+        pad_token_id = inverse_vocabulary[padding_symbol]
+
     def pad(vector):
-        sequence = np.full((int(max_length),), inverse_vocabulary[padding_symbol], dtype=format_dtype)
+        sequence = np.full((int(max_length),), pad_token_id, dtype=format_dtype)
         limit = min(vector.shape[0], max_length)
         if padding == "right":
             sequence[:limit] = vector[:limit]

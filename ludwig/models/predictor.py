@@ -4,7 +4,7 @@ import sys
 from abc import ABC, abstractmethod
 from collections import defaultdict, OrderedDict
 from pprint import pformat
-from typing import Dict, Optional
+from typing import Dict, List, Optional, Type
 
 import numpy as np
 import pandas as pd
@@ -12,7 +12,7 @@ import psutil
 import torch
 from torch import nn
 
-from ludwig.constants import COMBINED, LAST_HIDDEN, LOGITS, MODEL_GBM
+from ludwig.constants import COMBINED, LAST_HIDDEN, LOGITS, MODEL_ECD, MODEL_GBM, MODEL_LLM
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.utils import convert_to_dict
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
@@ -22,6 +22,7 @@ from ludwig.progress_bar import LudwigProgressBar
 from ludwig.utils.data_utils import save_csv, save_json
 from ludwig.utils.dataframe_utils import from_numpy_dataset
 from ludwig.utils.print_utils import repr_ordered_dict
+from ludwig.utils.registry import Registry
 from ludwig.utils.strings_utils import make_safe_filename
 from ludwig.utils.torch_utils import get_torch_device
 
@@ -61,6 +62,23 @@ class BasePredictor(ABC):
         self.shutdown()
 
 
+_predictor_registry = Registry[BasePredictor]()
+
+
+def register_predictor(model_types: List[str]):
+    def wrap(cls):
+        for model_type in model_types:
+            _predictor_registry[model_type] = cls
+        return cls
+
+    return wrap
+
+
+def get_predictor_cls(model_type: str) -> Type[BasePredictor]:
+    return _predictor_registry[model_type]
+
+
+@register_predictor([MODEL_ECD, MODEL_GBM])
 class Predictor(BasePredictor):
     """Predictor is a class that uses a model to predict and evaluate."""
 
@@ -71,6 +89,7 @@ class Predictor(BasePredictor):
         distributed: DistributedStrategy = None,
         report_tqdm_to_ray: bool = False,
         model: Optional[BaseModel] = None,
+        remote: bool = False,
         **kwargs,
     ):
         """
@@ -97,10 +116,16 @@ class Predictor(BasePredictor):
         self.device = device
         self.dist_model = dist_model
         self.model = model
+        self.model.metrics_to_device(device)
+
+        if remote:
+            # Only return results from rank 0 to reduce network overhead
+            self.batch_predict = self._distributed.return_first(self.batch_predict)
+            self.batch_evaluation = self._distributed.return_first(self.batch_evaluation)
 
     def batch_predict(self, dataset: Dataset, dataset_name: str = None, collect_logits: bool = False):
         prev_model_training_mode = self.dist_model.training  # store previous model training mode
-        self._distributed.eval(self.dist_model)  # set model to eval mode
+        self.dist_model.eval()  # set model to eval mode
 
         with torch.no_grad():
             with dataset.initialize_batcher(self._batch_size, should_shuffle=False) as batcher:
@@ -131,7 +156,7 @@ class Predictor(BasePredictor):
 
     def predict_single(self, batch, collect_logits: bool = False):
         prev_model_training_mode = self.dist_model.training  # store previous model training mode
-        self._distributed.eval(self.dist_model)  # set model to eval mode
+        self.dist_model.eval()  # set model to eval mode
 
         with torch.no_grad():
             predictions = defaultdict(list)
@@ -160,7 +185,7 @@ class Predictor(BasePredictor):
             for i_feat in self.model.input_features.values()
         }
 
-        outputs = self.dist_model(inputs)
+        outputs = self._predict_on_inputs(inputs)
         return self.model.outputs_to_predictions(outputs)
 
     def _accumulate_preds(self, preds, predictions, exclude_pred_set=EXCLUDE_PRED_SET):
@@ -191,7 +216,7 @@ class Predictor(BasePredictor):
             collect_predictions, collect_logits.
         """
         prev_model_training_mode = self.dist_model.training  # store previous model training mode
-        self._distributed.eval(self.dist_model)  # set model to eval mode
+        self.dist_model.eval()  # set model to eval mode
 
         with torch.no_grad():
             with dataset.initialize_batcher(
@@ -226,7 +251,7 @@ class Predictor(BasePredictor):
                         for o_feat in self.model.output_features.values()
                     }
 
-                    outputs = self.dist_model(inputs)
+                    outputs = self._predict_on_inputs(inputs)
                     preds = self.model.outputs_to_predictions(outputs)
                     self.model.update_metrics(targets, preds)
 
@@ -262,7 +287,7 @@ class Predictor(BasePredictor):
             raise ValueError("BucketedBatcher is not supported yet")
 
         prev_model_training_mode = self.dist_model.training  # store previous model training mode
-        self._distributed.eval(self.dist_model)  # set model to eval mode
+        self.dist_model.eval()  # set model to eval mode
 
         with torch.no_grad():
             with dataset.initialize_batcher(
@@ -286,7 +311,7 @@ class Predictor(BasePredictor):
                         )
                         for i_feat in self.model.input_features.values()
                     }
-                    outputs = self.dist_model(inputs)
+                    outputs = self._predict_on_inputs(inputs)
                     collected_tensors = [(concat_name, tensor) for concat_name, tensor in outputs.items()]
                     progress_bar.update(1)
 
@@ -296,17 +321,17 @@ class Predictor(BasePredictor):
 
         return collected_tensors
 
+    def _predict_on_inputs(self, inputs: Dict) -> Dict:
+        return self.dist_model(inputs)
+
     def is_coordinator(self):
         return self._distributed.rank() == 0
 
 
-class RemotePredictor(Predictor):
-    def __init__(self, model: BaseModel, gpus=None, gpu_memory_limit=None, allow_parallel_threads=True, **kwargs):
-        super().__init__(model, **kwargs)
-
-        # Only return results from rank 0 to reduce network overhead
-        self.batch_predict = self._distributed.return_first(self.batch_predict)
-        self.batch_evaluation = self._distributed.return_first(self.batch_evaluation)
+@register_predictor([MODEL_LLM])
+class LlmPredictor(Predictor):
+    def _predict_on_inputs(self, inputs: Dict) -> Dict:
+        return self.dist_model.generate(inputs)
 
 
 def calculate_overall_stats(output_features, predictions, dataset, training_set_metadata):

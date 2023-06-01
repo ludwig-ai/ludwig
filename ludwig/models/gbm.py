@@ -5,7 +5,6 @@ from typing import Dict, Optional, Tuple, Union
 import lightgbm as lgb
 import numpy as np
 import torch
-import torchmetrics
 from hummingbird.ml import convert
 
 from ludwig.constants import BINARY, LOGITS, MODEL_GBM, NUMBER
@@ -49,10 +48,6 @@ class GBM(BaseModel):
         self.output_features.update(
             self.build_outputs(output_feature_configs=self.config_obj.output_features, input_size=self.input_shape[-1])
         )
-
-        # ================ Combined loss metric ================
-        self.eval_loss_metric = torchmetrics.MeanMetric()
-        self.eval_additional_losses_metrics = torchmetrics.MeanMetric()
 
         self.lgbm_model: lgb.LGBMModel = None
         self.compiled_model: torch.nn.Module = None

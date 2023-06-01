@@ -9,7 +9,7 @@ from ludwig.constants import CATEGORY, LOGITS, PREDICTIONS, PROBABILITIES, TEXT
 from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
 from ludwig.decoders.utils import extract_generated_tokens
-from ludwig.schema.decoders.llm_decoders import CategoryParserDecoderConfig, TextParserDecoderConfig
+from ludwig.schema.decoders.llm_decoders import CategoryExtractorDecoderConfig, TextExtractorDecoderConfig
 from ludwig.utils.strings_utils import get_tokenizer
 
 logger = logging.getLogger(__name__)
@@ -67,8 +67,8 @@ class Matcher:
 
 
 @DeveloperAPI
-@register_decoder("text_parser", [TEXT])
-class TextParserDecoder(Decoder):
+@register_decoder("text_extractor", [TEXT])
+class TextExtractorDecoder(Decoder):
     def __init__(
         self,
         input_size: int,
@@ -87,14 +87,19 @@ class TextParserDecoder(Decoder):
         # Load tokenizer required for decoding the output from the generate
         # function of the text input feature for LLMs.
         self.tokenizer = get_tokenizer(self.tokenizer_type, self.vocab_file, self.pretrained_model_name_or_path)
-        self.tokenizer_vocab_size = self.tokenizer.tokenizer.vocab_size
+        if hasattr(self.tokenizer, "tokenizer"):
+            # Transformer Tokenizers
+            self.tokenizer_vocab_size = self.tokenizer.tokenizer.vocab_size
+        else:
+            # TorchText Tokenizers
+            self.tokenizer_vocab_size = len(self.tokenizer.vocab)
 
         # Maximum number of new tokens that will be generated
         self.max_sequence_length = self.max_new_tokens = self.config.max_new_tokens
 
     @staticmethod
     def get_schema_cls():
-        return TextParserDecoderConfig
+        return TextExtractorDecoderConfig
 
     @property
     def input_shape(self):
@@ -126,8 +131,8 @@ class TextParserDecoder(Decoder):
 
 
 @DeveloperAPI
-@register_decoder("category_parser", [CATEGORY])
-class CategoryParserDecoder(Decoder):
+@register_decoder("category_extractor", [CATEGORY])
+class CategoryExtractorDecoder(Decoder):
     def __init__(
         self,
         decoder_config=None,
@@ -155,7 +160,7 @@ class CategoryParserDecoder(Decoder):
 
     @staticmethod
     def get_schema_cls():
-        return CategoryParserDecoderConfig
+        return CategoryExtractorDecoderConfig
 
     @property
     def input_shape(self):

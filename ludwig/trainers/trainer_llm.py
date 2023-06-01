@@ -10,9 +10,9 @@ from ludwig.data.dataset.base import Dataset
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.models.llm import LLM
-from ludwig.models.predictor import Predictor
+from ludwig.models.predictor import LlmPredictor
 from ludwig.modules.metric_modules import get_initial_validation_value
-from ludwig.schema.trainer import BaseTrainerConfig, FineTuneTrainerConfig, ZeroShotTrainerConfig
+from ludwig.schema.trainer import BaseTrainerConfig, FineTuneTrainerConfig, NoneTrainerConfig
 from ludwig.trainers.base import BaseTrainer
 from ludwig.trainers.registry import register_llm_ray_trainer, register_llm_trainer
 from ludwig.trainers.trainer import Trainer
@@ -28,16 +28,14 @@ from ludwig.utils.trainer_utils import append_metrics, get_new_progress_tracker,
 logger = logging.getLogger(__name__)
 
 
-@register_llm_trainer("zeroshot")
-@register_llm_trainer("fewshot")
-@register_llm_ray_trainer("zeroshot")
-@register_llm_ray_trainer("fewshot")
-class ZeroShotTrainer(BaseTrainer):
-    """ZeroShotTrainer is a trainer that does not train a model."""
+@register_llm_trainer("none")
+@register_llm_ray_trainer("none")
+class NoneTrainer(BaseTrainer):
+    """NoneTrainer is a trainer that does not train a model, only runs evaluation."""
 
     def __init__(
         self,
-        config: ZeroShotTrainerConfig,
+        config: NoneTrainerConfig,
         model: LLM,
         resume: float = False,
         skip_save_model: bool = False,
@@ -51,8 +49,8 @@ class ZeroShotTrainer(BaseTrainer):
         **kwargs,
     ):
         """
-        :param config: `ludwig.schema.trainer.ZeroShotTrainerConfig` instance that specifies training hyperparameters
-        (default: `ludwig.schema.trainer.ZeroShotTrainerConfig()`).
+        :param config: `ludwig.schema.trainer.NoneTrainerConfig` instance that specifies training hyperparameters
+        (default: `ludwig.schema.trainer.NoneTrainerConfig()`).
         :param model: Underlying Ludwig model
         :type model: `ludwig.models.llm.LLM`
         :param resume: Resume training a model that was being trained. (default: False).
@@ -96,6 +94,10 @@ class ZeroShotTrainer(BaseTrainer):
 
         self.device = device if device is not None else get_torch_device()
         self.model = model.to_device(self.device)
+        self.model.metrics_to_device(self.device)
+
+        # Since we are only running evaluation without training, set the model to evaluation mode.
+        self.model.eval()
 
         self.batch_size = self.config.batch_size
         self.eval_batch_size = self.config.eval_batch_size
@@ -233,7 +235,7 @@ class ZeroShotTrainer(BaseTrainer):
 
     @staticmethod
     def get_schema_cls() -> BaseTrainerConfig:
-        return ZeroShotTrainerConfig
+        return NoneTrainerConfig
 
     def is_coordinator(self) -> bool:
         return self.distributed.rank() == 0
@@ -251,7 +253,7 @@ class ZeroShotTrainer(BaseTrainer):
         batch_size: int,
         progress_tracker: ProgressTracker,
     ):
-        predictor = Predictor(
+        predictor = LlmPredictor(
             self.model, batch_size=batch_size, distributed=self.distributed, report_tqdm_to_ray=self.report_tqdm_to_ray
         )
         metrics, _ = predictor.batch_evaluation(dataset, collect_predictions=False, dataset_name=dataset_name)
@@ -376,7 +378,6 @@ class ZeroShotTrainer(BaseTrainer):
 
 
 @register_llm_trainer("finetune")
-@register_llm_ray_trainer("finetune")
 class FineTuneTrainer(Trainer):
     @staticmethod
     def get_schema_cls():
@@ -413,7 +414,16 @@ class FineTuneTrainer(Trainer):
         )
 
 
-class RemoteLLMTrainer(ZeroShotTrainer):
+class RemoteLLMTrainer(NoneTrainer):
+    def __init__(self, gpus=None, gpu_memory_limit=None, allow_parallel_threads=True, **kwargs):
+        super().__init__(**kwargs)
+
+        # Only return results from rank 0 to reduce network overhead
+        self.train = self.distributed.return_first(self.train)
+        self.train_online = self.distributed.return_first(self.train_online)
+
+
+class RemoteLLMFineTuneTrainer(FineTuneTrainer):
     def __init__(self, gpus=None, gpu_memory_limit=None, allow_parallel_threads=True, **kwargs):
         super().__init__(**kwargs)
 

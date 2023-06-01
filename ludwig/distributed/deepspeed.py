@@ -40,6 +40,7 @@ class DeepSpeedStrategy(DDPStrategy):
         self,
         zero_optimization: Optional[Dict[str, Any]] = None,
         fp16: Optional[Dict[str, Any]] = None,
+        bf16: Optional[Dict[str, Any]] = None,
         compression_training: Optional[Dict[str, Any]] = None,
         **kwargs
     ):
@@ -52,11 +53,14 @@ class DeepSpeedStrategy(DDPStrategy):
         super().__init__(**kwargs)
         self.zero_optimization = zero_optimization or DEFAULT_ZERO_OPTIMIZATION
         self.fp16 = fp16
+        self.bf16 = bf16
         self.compression_training = compression_training
 
         if init_deepspeed:
             os.environ["LOCAL_RANK"] = str(self.local_rank())
             os.environ["LOCAL_SIZE"] = str(self.local_size())
+            os.environ["RANK"] = str(self.rank())
+            os.environ["WORLD_SIZE"] = str(self.size())
             deepspeed.init_distributed()
 
     def _log_on_init(self):
@@ -87,9 +91,10 @@ class DeepSpeedStrategy(DDPStrategy):
         }
 
         # DeepSpeed doesn't like passing these params as None values
-        # TODO(travis): bfloat16, which requires fixing numpy conversion on cpu
         if self.fp16 is not None:
             ds_config["fp16"] = self.fp16
+        if self.bf16 is not None:
+            ds_config["bf16"] = self.bf16
         if self.compression_training is not None:
             ds_config["compression_training"] = self.compression_training
 
@@ -166,11 +171,6 @@ class DeepSpeedStrategy(DDPStrategy):
     @classmethod
     def is_model_parallel(cls) -> bool:
         return True
-
-    def eval(self, model: nn.Module):
-        # TODO(travis): remove this when DeepSpeed resolves issue:
-        # https://github.com/microsoft/DeepSpeed/issues/3068
-        pass
 
     def create_checkpoint_handle(
         self,

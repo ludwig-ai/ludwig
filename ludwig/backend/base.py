@@ -37,7 +37,7 @@ from ludwig.data.dataset.pandas import PandasDatasetManager
 from ludwig.distributed import init_dist_strategy
 from ludwig.distributed.base import DistributedStrategy
 from ludwig.models.base import BaseModel
-from ludwig.schema.trainer import ECDTrainerConfig, GBMTrainerConfig
+from ludwig.schema.trainer import BaseTrainerConfig
 from ludwig.types import HyperoptConfigDict
 from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
 from ludwig.utils.dataframe_utils import from_batches, to_batches
@@ -188,23 +188,20 @@ class LocalTrainingMixin:
     def initialize_pytorch(self, *args, **kwargs):
         initialize_pytorch(*args, **kwargs)
 
-    def create_trainer(
-        self, config: Union[ECDTrainerConfig, GBMTrainerConfig], model: BaseModel, **kwargs
-    ) -> "BaseTrainer":  # noqa: F821
+    def create_trainer(self, config: BaseTrainerConfig, model: BaseModel, **kwargs) -> "BaseTrainer":  # noqa: F821
         from ludwig.trainers.registry import get_llm_trainers_registry, get_trainers_registry
 
         if model.type() == MODEL_LLM:
-            trainer_type = config.type or "zeroshot"  # fallback to zeroshot
-            trainer_cls = get_from_registry(trainer_type, get_llm_trainers_registry())
+            trainer_cls = get_from_registry(config.type, get_llm_trainers_registry())
         else:
             trainer_cls = get_from_registry(model.type(), get_trainers_registry())
 
         return trainer_cls(config=config, model=model, **kwargs)
 
     def create_predictor(self, model: BaseModel, **kwargs):
-        from ludwig.models.predictor import Predictor
+        from ludwig.models.predictor import get_predictor_cls
 
-        return Predictor(model, **kwargs)
+        return get_predictor_cls(model.type())(model, **kwargs)
 
     def sync_model(self, model):
         pass
@@ -281,9 +278,9 @@ class DataParallelBackend(LocalPreprocessingMixin, Backend, ABC):
         return Trainer(distributed=self._distributed, **kwargs)
 
     def create_predictor(self, model: BaseModel, **kwargs):
-        from ludwig.models.predictor import Predictor
+        from ludwig.models.predictor import get_predictor_cls
 
-        return Predictor(model, distributed=self._distributed, **kwargs)
+        return get_predictor_cls(model.type())(model, distributed=self._distributed, **kwargs)
 
     def sync_model(self, model):
         # Model weights are only saved on the coordinator, so broadcast

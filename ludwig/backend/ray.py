@@ -47,11 +47,16 @@ from ludwig.data.dataframe.dask import tensor_extension_casting
 from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetShard
 from ludwig.distributed import get_default_strategy_name, get_dist_strategy, init_dist_strategy
 from ludwig.models.base import BaseModel
-from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
-from ludwig.schema.trainer import ECDTrainerConfig
-from ludwig.trainers.registry import get_llm_ray_trainers_registry, get_ray_trainers_registry, register_ray_trainer
+from ludwig.models.predictor import BasePredictor, get_output_columns, get_predictor_cls
+from ludwig.schema.trainer import ECDTrainerConfig, FineTuneTrainerConfig
+from ludwig.trainers.registry import (
+    get_llm_ray_trainers_registry,
+    get_ray_trainers_registry,
+    register_llm_ray_trainer,
+    register_ray_trainer,
+)
 from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer, Trainer
-from ludwig.trainers.trainer_llm import RemoteLLMTrainer
+from ludwig.trainers.trainer_llm import RemoteLLMFineTuneTrainer, RemoteLLMTrainer
 from ludwig.types import HyperoptConfigDict, ModelConfigDict, TrainerConfigDict, TrainingSetMetadataDict
 from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
 from ludwig.utils.dataframe_utils import is_dask_series_or_df, set_index_name
@@ -581,6 +586,17 @@ class RayLLMTrainer(RayTrainerV2):
         return RemoteLLMTrainer
 
 
+@register_llm_ray_trainer("finetune")
+class RayLLMFineTuneTrainer(RayTrainerV2):
+    @property
+    def get_schema_cls():
+        return FineTuneTrainerConfig
+
+    @property
+    def remote_trainer_cls(self):
+        return RemoteLLMFineTuneTrainer
+
+
 def eval_fn(
     distributed_strategy: Union[str, Dict[str, Any]],
     predictor_kwargs: Dict[str, Any] = None,
@@ -603,7 +619,9 @@ def eval_fn(
         device = get_torch_device()
         model = model.to_device(device)
 
-        predictor = RemotePredictor(model=model, distributed=distributed, report_tqdm_to_ray=True, **predictor_kwargs)
+        predictor = get_predictor_cls(model.type())(
+            dist_model=model, distributed=distributed, report_tqdm_to_ray=True, remote=True, **predictor_kwargs
+        )
         results = predictor.batch_evaluation(eval_shard, **kwargs)
 
         # The result object returned from trainer.fit() contains the metrics from the last session.report() call.
@@ -745,7 +763,7 @@ class RayPredictor(BasePredictor):
                 self.reshape_map = {
                     f[PROC_COLUMN]: training_set_metadata[f[NAME]].get("reshape") for f in features.values()
                 }
-                predictor = Predictor(model, **predictor_kwargs)
+                predictor = get_predictor_cls(model.type())(model, **predictor_kwargs)
                 self.predict = partial(predictor.predict_single, *args, **kwargs)
 
             def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -842,8 +860,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
 
         if model.type() == MODEL_LLM:
             trainer_config = kwargs.get("config")
-            trainer_type = trainer_config.type or "zeroshot"  # fallback to zeroshot
-            trainer_cls = get_from_registry(trainer_type, get_llm_ray_trainers_registry())
+            trainer_cls = get_from_registry(trainer_config.type, get_llm_ray_trainers_registry())
         else:
             trainer_cls = get_from_registry(model.type(), get_ray_trainers_registry())
 

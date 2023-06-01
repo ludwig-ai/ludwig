@@ -10,6 +10,7 @@ from ludwig.constants import (
     MEAN_ABSOLUTE_ERROR,
     MEAN_ABSOLUTE_PERCENTAGE_ERROR,
     MEAN_SQUARED_ERROR,
+    NEXT_TOKEN_SOFTMAX_CROSS_ENTROPY,
     NUMBER,
     ROOT_MEAN_SQUARED_ERROR,
     ROOT_MEAN_SQUARED_PERCENTAGE_ERROR,
@@ -258,10 +259,13 @@ class SoftmaxCrossEntropyLossConfig(BaseLossConfig):
         description="Type of loss.",
     )
 
-    class_weights: Union[List[float], float, None] = schema_utils.List(
-        list_type=float,
+    class_weights: Union[List[float], dict, None] = schema_utils.OneOfOptionsField(
         default=None,
         description=CLASS_WEIGHTS_DESCRIPTION,
+        field_options=[
+            schema_utils.Dict(default=None, allow_none=True),
+            schema_utils.List(list_type=float, allow_none=False),
+        ],
         parameter_metadata=LOSS_METADATA["SoftmaxCrossEntropyLoss"]["class_weights"],
     )
 
@@ -310,10 +314,13 @@ class SequenceSoftmaxCrossEntropyLossConfig(BaseLossConfig):
         description="Type of loss.",
     )
 
-    class_weights: Union[List[float], float, None] = schema_utils.List(
-        list_type=float,
+    class_weights: Union[List[float], dict, None] = schema_utils.OneOfOptionsField(
         default=None,
         description=CLASS_WEIGHTS_DESCRIPTION,
+        field_options=[
+            schema_utils.Dict(default=None, allow_none=True),
+            schema_utils.List(list_type=float, allow_none=False),
+        ],
         parameter_metadata=LOSS_METADATA["SequenceSoftmaxCrossEntropyLoss"]["class_weights"],
     )
 
@@ -360,6 +367,20 @@ class SequenceSoftmaxCrossEntropyLossConfig(BaseLossConfig):
 
 
 @DeveloperAPI
+@register_loss([SEQUENCE, TEXT])
+@ludwig_dataclass
+class NextTokenSoftmaxCrossEntropyLossConfig(SequenceSoftmaxCrossEntropyLossConfig):
+    type: str = schema_utils.ProtectedString(
+        NEXT_TOKEN_SOFTMAX_CROSS_ENTROPY,
+        description="Type of loss.",
+    )
+
+    @classmethod
+    def name(self) -> str:
+        return "Next Token Softmax Cross Entropy"
+
+
+@DeveloperAPI
 @register_loss([SET])
 @ludwig_dataclass
 class SigmoidCrossEntropyLossConfig(BaseLossConfig):
@@ -368,10 +389,13 @@ class SigmoidCrossEntropyLossConfig(BaseLossConfig):
         description="Type of loss.",
     )
 
-    class_weights: Union[List[float], float, None] = schema_utils.List(
-        list_type=float,
+    class_weights: Union[List[float], dict, None] = schema_utils.OneOfOptionsField(
         default=None,
         description=CLASS_WEIGHTS_DESCRIPTION,
+        field_options=[
+            schema_utils.Dict(default=None, allow_none=True),
+            schema_utils.List(list_type=float, allow_none=False),
+        ],
         parameter_metadata=LOSS_METADATA["SigmoidCrossEntropyLoss"]["class_weights"],
     )
 
