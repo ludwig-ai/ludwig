@@ -1,4 +1,5 @@
 import contextlib
+import copy
 import logging
 import os
 import random
@@ -9,14 +10,28 @@ import numpy as np
 import pandas as pd
 import pytest
 from PIL import Image
+from transformers import AutoTokenizer
 
 import ludwig
 from ludwig.api import LudwigModel
 from ludwig.backend import initialize_backend
 from ludwig.callbacks import Callback
-from ludwig.constants import BATCH_SIZE, COLUMN, DECODER, FULL, NAME, PROC_COLUMN, TRAINER
+from ludwig.constants import (
+    BATCH_SIZE,
+    COLUMN,
+    DECODER,
+    FULL,
+    MODEL_ECD,
+    MODEL_LLM,
+    NAME,
+    PREPROCESSING,
+    PROC_COLUMN,
+    PROMPT,
+    TRAINER,
+)
 from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.data.preprocessing import handle_features_with_prompt_config, preprocess_for_prediction
+from ludwig.schema.model_types.base import ModelConfig
 from ludwig.schema.prompt import PromptConfig
 from tests.integration_tests.utils import (
     assert_preprocessed_dataset_shape_and_dtype_for_feature,
@@ -792,60 +807,124 @@ def test_fill_with_mode_different_df_engine(tmpdir, csv_filename, df_engine, ray
     ludwig_model.preprocess(dataset=df)
 
 
+template_task_sample = """
+Instruction: {__task__}
+###
+Examples:
+###
+Input: foo bar
+Output: true
+###
+Input: baz quc
+Output: false
+###
+Input: {__sample__}
+Output:
+"""
+
+task = "predict the output feature. Return only values in {true, false}"
+
+template_multi_col = """
+You are a helpful chatbot. USER: {__sample__}: {country}, {year:.2f} ASSISTANT:
+"""
+
+expected_task_sample = """instruction: predict the output feature. return only values in {true, false}
+###
+examples:
+###
+input: foo bar
+output: true
+###
+input: baz quc
+output: false
+###
+input:"""
+
+
 @pytest.mark.llm
 @pytest.mark.parametrize("backend", ["local", "ray"])
-def test_prompt_template(backend, tmpdir):
+@pytest.mark.parametrize("model_type", [MODEL_ECD, MODEL_LLM])
+@pytest.mark.parametrize(
+    "input_features,expected",
+    [
+        (
+            [
+                text_feature(
+                    preprocessing={
+                        "prompt": {"task": task, "template": template_task_sample},
+                        "max_sequence_length": 512,
+                    }
+                )
+            ],
+            expected_task_sample,
+        ),
+        (
+            [
+                text_feature(preprocessing={"prompt": {"template": template_multi_col}}),
+                category_feature(name="country"),
+                number_feature(name="year"),
+            ],
+            ("you are a helpful chatbot. user: "),
+        ),
+    ],
+    ids=["task_sample", "multi_col"],
+)
+def test_prompt_template(input_features, expected, model_type, backend, tmpdir, ray_cluster_2cpu):
     """Tests that prompt template is correctly applied to inputs."""
-    template = """
-    Instruction: {task}
-    ###
-    Examples:
-    ###
-    Input: foo bar
-    Output: true
-    ###
-    Input: baz quc
-    Output: false
-    ###
-    Input: {sample_input}
-    Output:
-    """
+    input_features = copy.deepcopy(input_features)
 
-    task = "predict the output feature. Return only values in {true, false}"
-
-    input_features = [text_feature(preprocessing={"prompt": {"task": task, "template": template}})]
     output_features = [category_feature()]
     data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=25)
 
+    data_df = pd.read_csv(data_csv)
+    raw_values = [data_df[input_features[i][COLUMN]].values.tolist() for i in range(len(input_features))]
+
+    # Only use the first input featuere (text) and discard the others, which are only used for data gen
+    input_features = input_features[:1]
     config = {
+        "model_type": model_type,
         "input_features": input_features,
         "output_features": output_features,
     }
 
+    model_name = "hf-internal-testing/tiny-random-OPTModel"
+    if model_type == MODEL_LLM:
+        # For LLMs, specify the prompt at the top level
+        config["model_name"] = model_name
+        config[PROMPT] = input_features[0][PREPROCESSING][PROMPT]
+        del config["input_features"][0][PREPROCESSING][PROMPT]
+        config["input_features"][0]["encoder"] = {"type": "passthrough"}
+    else:
+        config["input_features"][0]["encoder"] = {
+            "type": "auto_transformer",
+            "pretrained_model_name_or_path": model_name,
+        }
+
     model = LudwigModel(config, backend=backend)
-    train_set, _, _, training_set_metadata = model.preprocess(
+    train_set, _, _, _ = model.preprocess(
         training_set=data_csv,
         skip_save_processed_input=True,
         output_directory=os.path.join(tmpdir, "processed"),
     )
 
-    data_df = pd.read_csv(data_csv)
-    raw_text_values = data_df[input_features[0][COLUMN]].values.tolist()
-
     train_df = model.backend.df_engine.compute(train_set.to_df())
     encoded_values = train_df[input_features[0][PROC_COLUMN]].values.tolist()
 
-    assert len(raw_text_values) == len(encoded_values)
+    assert all(len(v) == len(encoded_values) for v in raw_values)
 
-    idx2str = training_set_metadata[input_features[0][NAME]]["idx2str"]
-    for raw_text, encoded in zip(raw_text_values, encoded_values):
-        raw_text = raw_text.lower()
-        decoded = " ".join(idx2str[t] for t in encoded)
-        assert decoded.startswith(
-            "<SOS> instruction : predict the output feature . return only values in { true , false } # # # examples : "
-            "# # # input : foo bar output : true # # # input : baz quc output : false # # # input : "
-        ), decoded
-        assert raw_text in decoded, f"'{raw_text}' not in '{decoded}'"
+    for i, encoded in enumerate(encoded_values):
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        decoded = tokenizer.decode(encoded)
+        assert expected in decoded, f"decoded: '{decoded}' does not contain expected: {expected}"
+
+        for raw_col_values in raw_values:
+            v = raw_col_values[i]
+            if isinstance(v, float):
+                # Test formatting in parametrize uses 2 decimal places of precision
+                raw_text = f"{v:.2f}"
+            else:
+                raw_text = str(v).lower()
+            assert raw_text in decoded, f"'{raw_text}' not in '{decoded}'"
 
 
 @pytest.mark.llm
@@ -884,10 +963,13 @@ def test_handle_features_with_few_shot_prompt_config(backend, retrieval_kwargs, 
     output_feature_name = output_features[0][NAME]
 
     config = {
+        "model_type": MODEL_LLM,
+        "model_name": "gpt2",
         "input_features": input_features,
         "output_features": output_features,
         "prompt": prompt_config,
     }
+    config = ModelConfig.from_dict(config).to_dict()
 
     df = generate_data_as_dataframe(input_features, output_features, 10, with_split=True)  # retrieval needs fixed split
     if backend == "ray":
@@ -896,8 +978,7 @@ def test_handle_features_with_few_shot_prompt_config(backend, retrieval_kwargs, 
         df = dd.from_pandas(df, npartitions=2)
 
     split_col = df["split"]
-    dataset_cols = {k: df[k] for k in df.columns}
-    feature_configs = input_features + output_features
+    feature_configs = config["input_features"] + config["output_features"]
 
     if backend == "local":
         context = mock.patch(
@@ -910,17 +991,84 @@ def test_handle_features_with_few_shot_prompt_config(backend, retrieval_kwargs, 
 
     with context:
         backend = initialize_backend(backend)
-        handle_features_with_prompt_config(
+        dataset_cols = handle_features_with_prompt_config(
             config,
-            dataset_cols,
+            df,
             feature_configs,
             backend=backend,
             split_col=split_col,
         )
 
+        assert len(dataset_cols) == 1
+        assert input_feature_name in dataset_cols
+
         # Inspect the generated prompts
-        for prompt in dataset_cols[input_feature_name]:
+        col = backend.df_engine.compute(dataset_cols[input_feature_name])
+        for prompt in col:
             # input_feature_name and output_feature_name should be in the prompt because
             # labeled samples are provided by the context
             assert input_feature_name in prompt
             assert output_feature_name in prompt
+
+
+@pytest.mark.llm
+@pytest.mark.parametrize("backend", ["local", "ray"])
+def test_handle_features_with_prompt_config_multi_col(backend, ray_cluster_2cpu):
+    df = pd.DataFrame(
+        [
+            {
+                "instruction": "Name this province",
+                "country": "Canada",
+                "year": 1871,
+                "answer": "British Columbia",
+            },
+            {
+                "instruction": "Name this city",
+                "country": "France",
+                "year": 1789,
+                "answer": "Paris",
+            },
+            {
+                "instruction": "Name this country",
+                "country": "UK",
+                "year": 1057,
+                "answer": "Wales",
+            },
+        ]
+    )
+
+    config = {
+        "model_type": MODEL_LLM,
+        "model_name": "gpt2",
+        "input_features": [text_feature(name="question", encoder={"type": "passthrough"})],
+        "output_features": [text_feature(name="answer")],
+        "prompt": {
+            "template": "You are a helpful chatbot. USER: {instruction}: {country}, {year:.2f} ASSISTANT:",
+        },
+    }
+    config = ModelConfig.from_dict(config).to_dict()
+
+    if backend == "ray":
+        import dask.dataframe as dd
+
+        df = dd.from_pandas(df, npartitions=2)
+
+    feature_configs = config["input_features"] + config["output_features"]
+
+    backend = initialize_backend(backend)
+    dataset_cols = handle_features_with_prompt_config(
+        config,
+        df,
+        feature_configs,
+        backend=backend,
+        split_col=None,
+    )
+
+    assert len(dataset_cols) == 1
+    assert "question" in dataset_cols
+
+    col = backend.df_engine.compute(dataset_cols["question"])
+    assert len(col) == 3
+    assert col[0].startswith("You are a helpful chatbot. USER: Name this province: Canada, 1871.00 ASSISTANT:")
+    assert col[1].startswith("You are a helpful chatbot. USER: Name this city: France, 1789.00 ASSISTANT:")
+    assert col[2].startswith("You are a helpful chatbot. USER: Name this country: UK, 1057.00 ASSISTANT:")

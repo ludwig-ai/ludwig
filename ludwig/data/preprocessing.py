@@ -49,6 +49,7 @@ from ludwig.constants import (
     SPLIT,
     SRC,
     TEST,
+    TEXT,
     TRAINING,
     TYPE,
     VALIDATION,
@@ -1217,6 +1218,23 @@ def build_dataset(
         raise ValueError(f"Invalid mode {mode}")
     global_preprocessing_parameters = merge_dict(default_preprocessing_parameters, global_preprocessing_parameters)
 
+    split_col = None
+    if global_preprocessing_parameters["split"]["type"] == "fixed":
+        if global_preprocessing_parameters["split"]["column"] in dataset_df.columns:
+            split_col = dataset_df[global_preprocessing_parameters["split"]["column"]]
+        else:
+            logger.warning(
+                f"Specified split column {global_preprocessing_parameters['split']['column']} for fixed "
+                f"split strategy was not found in dataset."
+            )
+
+    # update input features with prompt configs during preprocessing (as opposed to during the model forward pass)
+    # so that we can compute metadata and build the dataset correctly.
+    logger.debug("handle text features with prompt parameters")
+    synthesized_dataset_cols = handle_features_with_prompt_config(
+        config, dataset_df, features, split_col=split_col, backend=backend
+    )
+
     # Get all the unique preprocessing features to compute
     feature_configs = []
     feature_hashes = set()
@@ -1227,17 +1245,10 @@ def build_dataset(
 
     dataset_cols = {}
     for feature_config in feature_configs:
-        dataset_cols[feature_config[COLUMN]] = dataset_df[feature_config[COLUMN]]
-
-    split_col = None
-    if global_preprocessing_parameters["split"]["type"] == "fixed":
-        if global_preprocessing_parameters["split"]["column"] in dataset_df.columns:
-            split_col = dataset_df[global_preprocessing_parameters["split"]["column"]]
-        else:
-            logger.warning(
-                f"Specified split column {global_preprocessing_parameters['split']['column']} for fixed "
-                f"split strategy was not found in dataset."
-            )
+        col_name = feature_config[COLUMN]
+        dataset_cols[col_name] = (
+            synthesized_dataset_cols[col_name] if col_name in synthesized_dataset_cols else dataset_df[col_name]
+        )
 
     logger.debug("build preprocessing parameters")
     feature_name_to_preprocessing_parameters = build_preprocessing_parameters(
@@ -1259,11 +1270,6 @@ def build_dataset(
     for feature_config in feature_configs:
         preprocessing_parameters = feature_name_to_preprocessing_parameters[feature_config[NAME]]
         handle_missing_values(dataset_cols, feature_config, preprocessing_parameters, backend)
-
-    # update input features with prompt configs during preprocessing (as opposed to during the model forward pass)
-    # so that we can compute metadata and build the dataset correctly.
-    logger.debug("handle text features with prompt parameters")
-    handle_features_with_prompt_config(config, dataset_cols, features, split_col=split_col, backend=backend)
 
     # Happens after missing values are handled to avoid NaN casting issues.
     logger.debug("cast columns")
@@ -1733,24 +1739,26 @@ def _handle_missing_values(
 
 def handle_features_with_prompt_config(
     config: ModelConfigDict,
-    dataset_cols: Dict[str, Series],
+    dataset_df: DataFrame,
     features: List[FeatureConfigDict],
     backend: Backend,
     split_col: Optional[Series] = None,
-):
+) -> Dict[str, Series]:
     """Updates (in-place) dataset columns with prompt configurations containing a non-None task parameter.
 
     Dataset columns that are updated here are enriched to have prompts as specified by the prompt configuration.
 
     Args:
         config: Model configuration.
-        dataset_cols (Dict[str, Series]): Dataset columns.
-        feature_name_to_preprocessing_parameters (Dict[str, PreprocessingConfigDict]): Mapping from feature name to
-            preprocessing parameters.
+        dataset_df (DataFrame): Input dataset.
         features (List[FeatureConfigDict]): List of feature configurations.
         df_engine (DataFrameEngine): Dataframe engine.
         split_col (Optional[Series], optional): Split column. Defaults to None.
+
+    Returns:
+        Dict[str, Series]: Modified dataset columns.
     """
+    dataset_cols = {}
     input_features, output_features = get_input_and_output_features(features)
     for input_feature_config in input_features:
         prompt_config = _get_prompt_config(config, input_feature_config)
@@ -1762,8 +1770,12 @@ def handle_features_with_prompt_config(
             # Ensure that the output features are in the dataset columns saved as part of the index
             # so that they can be retrieved later at lookup time.
             output_feature_col_names = [output_feature_config[COLUMN] for output_feature_config in output_features]
-            input_and_output_col_names = [input_col_name] + output_feature_col_names
-            input_and_output_cols = {k: v for k, v in dataset_cols.items() if k in input_and_output_col_names}
+            input_and_output_col_names = set([input_col_name] + output_feature_col_names)
+            input_and_output_cols = {
+                feature[NAME]: dataset_df[feature[COLUMN]]
+                for feature in features
+                if feature[NAME] in input_and_output_col_names
+            }
             retrieval_model, index_name = index_column(
                 prompt_config["retrieval"],
                 col_name=input_col_name,
@@ -1783,7 +1795,7 @@ def handle_features_with_prompt_config(
 
         dataset_cols[input_col_name] = format_input_with_prompt(
             input_col_name,
-            dataset_cols[input_col_name],
+            dataset_df,
             backend,
             prompt_config["task"],
             retrieval_model=retrieval_model,
@@ -1791,16 +1803,26 @@ def handle_features_with_prompt_config(
             template=prompt_config["template"],
         )
 
+    return dataset_cols
+
 
 def _get_prompt_config(config: ModelConfigDict, input_feature_config: Dict) -> Dict:
-    if "prompt" in config and config["prompt"]["task"] is not None:
-        return config["prompt"]
+    if input_feature_config[TYPE] != TEXT:
+        # Prompt config is only applied to text features
+        return None
 
     preprocessing = input_feature_config["preprocessing"]
-    if "prompt" in preprocessing and preprocessing["prompt"]["task"] is not None:
+    if _has_prompt_section(preprocessing):
         return preprocessing["prompt"]
 
+    if _has_prompt_section(config):
+        return config["prompt"]
+
     return None
+
+
+def _has_prompt_section(config: Dict) -> bool:
+    return "prompt" in config and (config["prompt"]["template"] is not None or config["prompt"]["task"] is not None)
 
 
 def load_hdf5(hdf5_file_path, preprocessing_params, backend, split_data=True, shuffle_training=False):
