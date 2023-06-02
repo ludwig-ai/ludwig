@@ -46,3 +46,4 @@ openpyxl>=3.0.7     # excel
 pyxlsb>=1.0.8       # excel
 pyarrow             # parquet
 lxml                # html
+html5lib            # html
