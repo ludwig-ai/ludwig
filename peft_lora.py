@@ -1,26 +1,44 @@
+import pprint
+
 import torch
 from datasets import load_dataset
-from peft import get_peft_model, LoraConfig, TaskType
+
+# from peft import get_peft_model, LoraConfig, TaskType
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from transformers import AutoModelForCausalLM, AutoTokenizer, default_data_collator  # get_linear_schedule_with_warmup
+from transformers import (  # get_linear_schedule_with_warmup
+    AutoConfig,
+    AutoModelForCausalLM,
+    AutoTokenizer,
+    default_data_collator,
+)
 
 # device = "cuda"
 model_name_or_path = "hf-internal-testing/tiny-random-GPTJForCausalLM"
 tokenizer_name_or_path = "hf-internal-testing/tiny-random-GPTJForCausalLM"
-# peft_config = PromptTuningConfig(
-#     task_type=TaskType.CAUSAL_LM,
-#     prompt_tuning_init=PromptTuningInit.TEXT,
-#     num_virtual_tokens=8,
-#     prompt_tuning_init_text="Classify if the tweet is a complaint or not:",
-#     tokenizer_name_or_path=model_name_or_path,
-# )
-peft_config = LoraConfig(task_type=TaskType.CAUSAL_LM, r=8, lora_alpha=16, lora_dropout=0.05)
+
+# creating model
+# model = AutoModelForCausalLM.from_pretrained(model_name_or_path)
+config = AutoConfig.from_pretrained(model_name_or_path)
+config.attention_probs_dropout_prob = 0.0
+config.attn_pdrop = 0.0
+config.embd_pdrop = 0.0
+config.hidden_dropout_prob = 0.0
+config.resid_pdrop = 0.0
+
+# Use this breakpoint to investigate model weights
+torch.manual_seed(1)
+# breakpoint()
+model = AutoModelForCausalLM.from_config(config)
+
+layer_names_and_dtypes = {name: param.dtype for name, param in model.named_parameters()}
+pprint.pprint(layer_names_and_dtypes)
+
+# peft_config = LoraConfig(task_type=TaskType.CAUSAL_LM, r=8, lora_alpha=16, lora_dropout=0.05)
+# model = get_peft_model(model, peft_config)
+# model.print_trainable_parameters()
 
 dataset_name = "twitter_complaints"
-checkpoint_name = f"{dataset_name}_{model_name_or_path}_{peft_config.peft_type}_{peft_config.task_type}_v1.pt".replace(
-    "/", "_"
-)
 text_column = "Tweet text"
 label_column = "text_label"
 max_length = 64
@@ -95,7 +113,6 @@ eval_dataset = processed_datasets["train"]
 # Investigate train_dataset[0] and eval_dataset[0]
 # breakpoint()
 
-
 train_dataloader = DataLoader(
     train_dataset, shuffle=True, collate_fn=default_data_collator, batch_size=batch_size, pin_memory=True
 )
@@ -137,14 +154,6 @@ next(iter(train_dataloader))
 len(test_dataloader)
 
 next(iter(test_dataloader))
-
-# Use this breakpoint to investigate model weights
-torch.manual_seed(1)
-# breakpoint()
-# creating model
-model = AutoModelForCausalLM.from_pretrained(model_name_or_path)
-model = get_peft_model(model, peft_config)
-model.print_trainable_parameters()
 
 # model
 # optimizer and lr scheduler

@@ -1,6 +1,7 @@
 import contextlib
 import logging
 import os
+import pprint
 import tempfile
 from typing import Dict, List, Optional, Tuple, Union
 
@@ -95,7 +96,22 @@ class LLM(BaseModel):
         self.model_name = self.config_obj.model_name
 
         logger.info("Loading large language model...")
-        self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.model_name)
+
+        # self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.model_name)
+        model_config = AutoConfig.from_pretrained(self.config_obj.model_name)
+        model_config.attention_probs_dropout_prob = 0.0
+        model_config.attn_pdrop = 0.0
+        model_config.embd_pdrop = 0.0
+        model_config.hidden_dropout_prob = 0.0
+        model_config.resid_pdrop = 0.0
+
+        # breakpoint()
+        torch.manual_seed(1)
+        self.model = AutoModelForCausalLM.from_config(model_config)
+
+        layer_names_and_dtypes = {name: param.dtype for name, param in self.model.named_parameters()}
+        pprint.pprint(layer_names_and_dtypes)
+
         self.curr_device = torch.device("cpu")  # model initially loaded onto cpu
         logger.info("Done.")
 
@@ -148,6 +164,7 @@ class LLM(BaseModel):
         self._output_feature_decoder = ModuleWrapper(self.output_features.items()[0][1])
 
         # Initialize the PEFT adapter is one is provided
+        # breakpoint()
         self.initialize_adapter()
 
         clear_data_cache()
@@ -263,10 +280,12 @@ class LLM(BaseModel):
             A dictionary of output {feature name}::{tensor_name} -> output tensor.
         """
 
+        # breakpoint()
         input_ids, target_ids = self._unpack_inputs(inputs)
 
         # Generate merged input_id, target_id pairs for the model, and create corresponding attention masks
         model_inputs, attention_masks = self._generate_merged_ids(input_ids, target_ids)
+        # breakpoint()
 
         # Wrap with flash attention backend for faster generation
         with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=False, enable_mem_efficient=False) if (
@@ -596,15 +615,24 @@ class LLM(BaseModel):
 
         pad_tensor = torch.tensor([self.tokenizer.pad_token_id]).to(target_ids[0].device)
 
+        # When merging input IDs and target IDs, we want to make sure that the merged tensor is not longer than the
+        # maximum sequence length. We use the maximum sequence length of the input features to determine this.
+        for input_feature in self.config_obj.input_features:
+            if input_feature.type == TEXT:
+                max_sequence_length = input_feature.preprocessing.max_sequence_length
+                break
+
         # Merge input_ids and target_ids by concatenating them together.
         # We remove the left padding from both input_ids and target_ids before concatenating them.
         for input_id_sample, target_id_sample in zip(input_ids, target_ids):
             input_id_sample_no_padding = self._remove_left_padding(input_id_sample)[0]
-            target_id_sample_no_padding = torch.cat(
-                (self._remove_left_padding(target_id_sample)[0], pad_tensor), dim=-1
-            )
+            target_id_sample_no_padding = self._remove_left_padding(target_id_sample)[0]
+            target_id_sample_no_padding = torch.cat((target_id_sample_no_padding, pad_tensor), dim=-1)
 
             merged_sample_ids = torch.cat((input_id_sample_no_padding, target_id_sample_no_padding), dim=-1)
+            # If the merged tensor is longer than the maximum sequence length, we truncate it.
+            if max_sequence_length and merged_sample_ids.shape[0] > max_sequence_length:
+                merged_sample_ids = merged_sample_ids[:max_sequence_length]
 
             merged_input_and_targets.append(merged_sample_ids)
             lengths.append(merged_sample_ids.shape[0])
@@ -624,11 +652,10 @@ class LLM(BaseModel):
         """Removes left padding from the input_ids tensor."""
         # Remove all PAD tokens
         pad_idxs = torch.where(input_ids_sample == self.tokenizer.pad_token_id)[0]  # all PAD token locations
+        input_ids_sample_no_padding = input_ids_sample
         if len(pad_idxs) != 0:
             pad_idx = pad_idxs[-1]  # get last PAD token location
-        else:
-            pad_idx = 0
-        input_ids_sample_no_padding = input_ids_sample[pad_idx + 1 :]
+            input_ids_sample_no_padding = input_ids_sample[pad_idx + 1 :]
 
         # Start from the first BOS token
         bos_idxs = torch.where(input_ids_sample_no_padding == self.tokenizer.bos_token_id)[0]  # all BOS token locations
@@ -649,7 +676,13 @@ class LLM(BaseModel):
 
     def _create_attention_mask(self, input_ids):
         """Creates attention mask for the input_ids tensor."""
-        return (input_ids != self.tokenizer.pad_token_id).float()
+        attention_mask = input_ids != self.tokenizer.pad_token_id
+        # Last token may not be padding if we've already hit the max sequence length
+        if not attention_mask[-1]:
+            # last token is padding, always attended to even if it is padding
+            attention_mask[-1] = 1
+        attention_mask = attention_mask.to(torch.int64)
+        return attention_mask
 
     def get_augmentation_pipelines(self) -> AugmentationPipelines:
         """Returns the augmentation pipeline for this model."""

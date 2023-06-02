@@ -8,24 +8,28 @@ from ludwig.api import LudwigModel
 
 df = pd.read_csv("peft_twitter.csv")
 
+# tokenizer.batch_decode([dataset.to_numpy()[0][0]], skip_special_tokens=True)
+
 config = yaml.safe_load(
     """
         model_type: llm
         model_name: hf-internal-testing/tiny-random-GPTJForCausalLM
-        adapter:
-            type: lora
-            r: 8
-            alpha: 16
-            dropout: 0.05
+        # adapter:
+        #     type: lora
+        #     r: 8
+        #     alpha: 16
+        #     dropout: 0.05
         input_features:
             - name: Tweet text
               type: text
               preprocessing:
                 max_sequence_length: 64
+                lowercase: false
         output_features:
-            - name: Label
+            - name: text_label
               type: text
         prompt:
+            # Extra space after the Label : is important
             task: >-
                 Label :
             template: >-

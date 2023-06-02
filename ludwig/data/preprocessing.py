@@ -1362,6 +1362,8 @@ def build_dataset(
     # Embed features with fixed encoders
     dataset = embed_fixed_features(dataset, feature_configs, metadata, backend)
 
+    # breakpoint()
+
     return dataset, metadata
 
 

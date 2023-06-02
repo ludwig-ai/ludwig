@@ -184,7 +184,7 @@ def format_input_with_prompt(
         if CONTEXT in template_fields:
             df[CONTEXT] = retrieval_model.search(df, backend, k=k, return_data=True)
         if SAMPLE in template_fields:
-            df[SAMPLE] = df[input_col_name].map(lambda entry: json.dumps(entry, indent=2))
+            df[SAMPLE] = df[input_col_name].map(lambda entry: json.dumps(entry, indent=2).strip('"'))
         if TASK in template_fields:
             df[TASK] = task_str
 
