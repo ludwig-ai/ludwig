@@ -7,8 +7,8 @@ from typing import Any, Callable, Dict, List, Optional, Type, TYPE_CHECKING, Uni
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-from ludwig.vector_index import FAISS, get_vector_index_cls
 
+from ludwig.vector_index import FAISS, get_vector_index_cls
 from ludwig.vector_index.base import VectorIndex
 
 if TYPE_CHECKING:
