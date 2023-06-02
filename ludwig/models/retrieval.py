@@ -7,15 +7,12 @@ from typing import Any, Callable, Dict, List, Optional, Type, TYPE_CHECKING, Uni
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
+from ludwig.vector_index import FAISS, get_vector_index_cls
 
-try:
-    import faiss
-    from sentence_transformers import SentenceTransformer
-except ImportError:
-    faiss = None
-    SentenceTransformer = None
+from ludwig.vector_index.base import VectorIndex
 
 if TYPE_CHECKING:
+    from sentence_transformers import SentenceTransformer
     from ludwig.backend.base import Backend
 
 from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
@@ -118,7 +115,7 @@ class SemanticRetrieval(RetrievalModel):
     def __init__(self, model_name, **kwargs):
         self.model_name = model_name
         self.model = get_semantic_retrieval_model(self.model_name)
-        self.index: faiss.Index = None
+        self.index: VectorIndex = None
         self.index_data: pd.DataFrame = None
 
         # best batch size computed during the encoding step
@@ -131,8 +128,7 @@ class SemanticRetrieval(RetrievalModel):
         row_strs = df_to_row_strs(df_to_index)
 
         embeddings = self._encode(row_strs, backend)
-        self.index = faiss.IndexFlatL2(embeddings.shape[1])
-        self.index.add(embeddings)
+        self.index = get_vector_index_cls(FAISS).from_embeddings(embeddings)
         # Save the entire df so we can return the full row when searching
         self.index_data = df
 
@@ -159,9 +155,7 @@ class SemanticRetrieval(RetrievalModel):
         results = []
         # TODO(geoffrey): figure out why self.index.search segfaults with larger batch sizes
         for query_vector in tqdm(query_vectors, total=query_vectors.shape[0]):
-            top_k = self.index.search(query_vector.reshape(1, -1), k)
-            indices = top_k[1].tolist()[0]
-
+            indices = self.index.search(query_vector.reshape(1, -1), k)
             if return_data:
                 result = self.index_data.iloc[indices].to_dict(orient="records")
             else:
@@ -171,14 +165,14 @@ class SemanticRetrieval(RetrievalModel):
 
     def save_index(self, name: str, cache_directory: str):
         index_file_path = os.path.join(cache_directory, name + ".index")
-        faiss.write_index(self.index, index_file_path)
+        self.index.save(index_file_path)
 
         index_data_file_path = os.path.join(cache_directory, name + "_data.csv")
         self.index_data.to_csv(index_data_file_path, index=False)
 
     def load_index(self, name: str, cache_directory: str):
         index_file_path = os.path.join(cache_directory, name + ".index")
-        self.index = faiss.read_index(index_file_path)
+        self.index = get_vector_index_cls(FAISS).from_path(index_file_path)
 
         index_data_file_path = os.path.join(cache_directory, name + "_data.csv")
         self.index_data = pd.read_csv(index_data_file_path)
