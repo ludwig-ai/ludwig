@@ -44,7 +44,7 @@ label_column = "text_label"
 max_length = 64
 lr = 0.03
 num_epochs = 10
-batch_size = 8
+batch_size = 2
 
 dataset = load_dataset("ought/raft", dataset_name)
 
@@ -62,8 +62,6 @@ dataset["train"][0]
 tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
 if tokenizer.pad_token_id is None:
     tokenizer.pad_token_id = tokenizer.eos_token_id
-target_max_length = max([len(tokenizer(class_label)["input_ids"]) for class_label in classes])
-print(target_max_length)
 
 
 def preprocess_function(examples):
@@ -114,7 +112,7 @@ eval_dataset = processed_datasets["train"]
 # breakpoint()
 
 train_dataloader = DataLoader(
-    train_dataset, shuffle=True, collate_fn=default_data_collator, batch_size=batch_size, pin_memory=True
+    train_dataset, shuffle=False, collate_fn=default_data_collator, batch_size=batch_size, pin_memory=True
 )
 eval_dataloader = DataLoader(eval_dataset, collate_fn=default_data_collator, batch_size=batch_size, pin_memory=True)
 
@@ -171,6 +169,7 @@ for epoch in range(num_epochs):
     model.train()
     total_loss = 0
     for step, batch in enumerate(tqdm(train_dataloader)):
+        # breakpoint()
         # batch = {k: v.to(device) for k, v in batch.items()}
         #         print(batch)
         #         print(batch["input_ids"].shape)

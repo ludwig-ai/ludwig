@@ -267,7 +267,7 @@ class Trainer(BaseTrainer):
                 loss = loss / self.gradient_accumulation_steps
 
         # Begin the backward pass
-        variables = self.dist_model.parameters()
+        # variables = self.dist_model.parameters()
         if self.use_amp:
             self.scaler.scale(loss).backward()
         else:
@@ -288,9 +288,9 @@ class Trainer(BaseTrainer):
             # https://pytorch.org/docs/master/notes/amp_examples.html#gradient-clipping
             self.scaler.unscale_(self.optimizer)
 
-        if self.distributed.allow_clip_gradients():
-            # Clip gradients
-            self.clip_grads(variables)
+        # if self.distributed.allow_clip_gradients():
+        #     # Clip gradients
+        #     self.clip_grads(variables)
 
         # Apply gradient updates
         with self.distributed.prepare_optimizer_update(self.optimizer):

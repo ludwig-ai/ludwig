@@ -28,6 +28,8 @@ config = yaml.safe_load(
         output_features:
             - name: text_label
               type: text
+              preprocessing:
+                lowercase: false
         prompt:
             # Extra space after the Label : is important
             task: >-
@@ -40,8 +42,9 @@ config = yaml.safe_load(
                 column: split
         trainer:
             type: finetune
-            batch_size: 8
+            batch_size: 2
             learning_rate: 0.03
+            # steps_per_checkpoint: 1
             epochs: 10
             early_stop: -1
             optimizer:
