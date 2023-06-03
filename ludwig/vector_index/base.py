@@ -12,10 +12,12 @@ class VectorIndex(ABC):
     def save(self, path: str):
         pass
 
+    @classmethod
     @abstractmethod
     def from_path(cls, path: str) -> "VectorIndex":
         pass
 
+    @classmethod
     @abstractmethod
     def from_embeddings(cls, embeddings: np.ndarray) -> "VectorIndex":
         pass

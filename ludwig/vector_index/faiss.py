@@ -15,10 +15,12 @@ class FaissIndex(VectorIndex):
     def save(self, path: str):
         faiss.write_index(self.index, path)
 
+    @classmethod
     def from_path(cls, path: str) -> "VectorIndex":
         index = faiss.read_index(path)
         return cls(index)
 
+    @classmethod
     def from_embeddings(cls, embeddings: np.ndarray) -> "VectorIndex":
         index = faiss.IndexFlatL2(embeddings.shape[1])
         index.add(embeddings)

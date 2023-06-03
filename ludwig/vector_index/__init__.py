@@ -26,4 +26,4 @@ vector_index_registry = {
 
 @DeveloperAPI
 def get_vector_index_cls(type: str) -> Type[VectorIndex]:
-    return vector_index_registry[type]
+    return vector_index_registry[type]()
