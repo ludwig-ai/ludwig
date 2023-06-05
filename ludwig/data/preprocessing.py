@@ -1227,7 +1227,7 @@ def build_dataset(
 
             # Validate the input dataframe's columns
             dataset_columns_expected = sorted([id_column, outcome_column, transcript_column])
-            if not sorted(dataset_df.columns) == dataset_columns_expected:
+            if not all(sorted(dataset_df.columns) == dataset_columns_expected):
                 raise ValueError(f"Invalid reward training input dataset, expect columns {dataset_columns_expected}.")
 
             # Initialize the new refactored dataframe
