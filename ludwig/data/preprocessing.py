@@ -1205,6 +1205,53 @@ def build_dataset(
             logger.debug(f"sample {sample_ratio} of data")
             dataset_df = dataset_df.sample(frac=sample_ratio, random_state=random_seed)
 
+        # If training a reward model, perform grouping and joining on dataset
+        if "reward" in global_preprocessing_parameters:
+            reward_parameter_names = [
+                "id_column",
+                "outcome_column",
+                "chosen_value",
+                "rejected_value",
+            ]
+            if not all(
+                param_name in global_preprocessing_parameters["reward"] for param_name in reward_parameter_names
+            ):
+                raise ValueError(
+                    "Invalid reward training preprocessing parameters, expect " f"{reward_parameter_names}."
+                )
+
+            # Todo: add validation to input dataframe
+
+            # Obtain column names and other values
+            id_column = global_preprocessing_parameters["reward"]["id_column"]
+            outcome_column = global_preprocessing_parameters["reward"]["outcome_column"]
+            chosen_value = global_preprocessing_parameters["reward"]["chosen_value"]
+            rejected_value = global_preprocessing_parameters["reward"]["rejected_value"]
+            transcript_column = config["input_features"]["name"]
+
+            # Initialize the new refactored dataframe
+            dataset_df_refactored = dataset_df[0:0]
+            for column_name in dataset_df_refactored:
+                dataset_df_refactored.drop(column_name)
+            dataset_df_refactored[chosen_value] = []
+            dataset_df_refactored[rejected_value] = []
+
+            # Group original dataframe by ID, add group data
+            dataset_df_groups = dataset_df.groupby(id_column)
+            refactored_rows = {
+                chosen_value: [],
+                rejected_value: []}
+            for i, group_id in enumerate(dataset_df_groups.groups):
+                group_df = dataset_df_groups.get_group(group_id)
+                chosen_transcript = group_df.loc[group_df[outcome_column] == chosen_value][
+                    transcript_column][0]
+                rejected_transcript = group_df.loc[group_df[outcome_column] == rejected_value][
+                    transcript_column][0]
+                refactored_rows[chosen_value].append(chosen_transcript)
+                refactored_rows[rejected_value].append(rejected_transcript)
+            dataset_df_refactored.append(refactored_rows)
+            dataset_df = dataset_df_refactored
+
     # If persisting DataFrames in memory is enabled, we want to do this after
     # each batch of parallel ops in order to avoid redundant computation
     dataset_df = df_engine.persist(dataset_df)
