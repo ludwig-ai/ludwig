@@ -115,7 +115,7 @@ class LLM(BaseModel):
             # HACK: Llama fast tokenizer takes about 2-4 minutes to load, so we disable it for now.
             use_fast = False
         self.tokenizer = AutoTokenizer.from_pretrained(self.config_obj.model_name, use_fast=use_fast)
-        set_pad_token()
+        set_pad_token(self.tokenizer)
 
         self.generation = GenerationConfig(**self.config_obj.generation.to_dict())
 
