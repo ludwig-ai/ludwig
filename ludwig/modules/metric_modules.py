@@ -366,7 +366,7 @@ class SequenceAccuracyMetric(MeanMetric):
 @register_metric(PERPLEXITY, [SEQUENCE, TEXT], MINIMIZE, PROBABILITIES)
 class PerplexityMetric(Perplexity, LudwigMetric):
     def __init__(self, **kwargs):
-        super().__init__()
+        super().__init__(ignore_index=-100)
 
     def update(self, preds: Tensor, target: Tensor) -> None:
         super().update(preds, target.type(torch.int64))

@@ -42,7 +42,7 @@ config = yaml.safe_load(
                 column: split
         trainer:
             type: finetune
-            batch_size: 2
+            batch_size: 8
             learning_rate: 0.03
             # steps_per_checkpoint: 1
             epochs: 10

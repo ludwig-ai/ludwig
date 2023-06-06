@@ -334,6 +334,92 @@ class LlmPredictor(Predictor):
         return self.dist_model.generate(inputs)
 
 
+class LlmFineTunePredictor(Predictor):
+    def batch_evaluation(self, dataset, collect_predictions=False, collect_logits=False, dataset_name=None):
+        """Batch evaluate model on dataset.
+
+        Params:
+            dataset (Union[str, dict, pandas.DataFrame]): source containing the entire dataset to be evaluated.
+            collect_predictions: Return model predictions.
+            collect_logits: Return model logits and final layer activations.
+
+        Returns:
+            Tuple of dictionaries of (metrics, predictions). The keys of metrics are determined by the metrics in the
+            model config. The keys of the predictions dictionary depend on which values are requested by the caller:
+            collect_predictions, collect_logits.
+        """
+        prev_model_training_mode = self.dist_model.training  # store previous model training mode
+        self.dist_model.eval()  # set model to eval mode
+
+        with torch.no_grad():
+            with dataset.initialize_batcher(
+                self._batch_size, should_shuffle=False, distributed=self._distributed
+            ) as batcher:
+                progress_bar_config = {
+                    "desc": "Evaluation" if dataset_name is None else f"Evaluation {dataset_name: <5.5}",
+                    "total": batcher.steps_per_epoch,
+                    "file": sys.stdout,
+                    "disable": is_progressbar_disabled(),
+                    "position": 0,  # Necessary to disable extra new line artifacts in training logs.
+                }
+                progress_bar = LudwigProgressBar(self.report_tqdm_to_ray, progress_bar_config, self.is_coordinator())
+
+                predictions = defaultdict(list)
+                while not batcher.last_batch():
+                    batch = batcher.next_batch()
+                    logger.debug(
+                        f"evaluation for {dataset_name}: obtained next batch "
+                        f"memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
+                    )
+                    inputs = {
+                        i_feat.feature_name: torch.from_numpy(np.array(batch[i_feat.proc_column], copy=True)).to(
+                            self.device
+                        )
+                        for i_feat in self.model.input_features.values()
+                    }
+                    targets = {
+                        o_feat.feature_name: torch.from_numpy(np.array(batch[o_feat.proc_column], copy=True)).to(
+                            self.device
+                        )
+                        for o_feat in self.model.output_features.values()
+                    }
+
+                    outputs = self._predict_on_inputs((inputs, targets))
+                    preds = self.model.outputs_to_predictions(outputs)
+
+                    # Need to pass through a custom fine-tune metric function because we need to transform
+                    # the targets into the right format for loss calculation (requires padding with -100s to the left)
+                    # and other tensor alignment.
+                    self.model.update_metrics_finetune(targets, preds)
+
+                    # accumulate predictions from batch for each output feature
+                    if collect_predictions:
+                        self._accumulate_preds(
+                            preds, predictions, exclude_pred_set={LAST_HIDDEN} if collect_logits else EXCLUDE_PRED_SET
+                        )
+
+                    progress_bar.update(1)
+                    if self.is_coordinator():
+                        logger.debug(
+                            f"evaluation for {dataset_name}: completed batch {progress_bar.total_steps} "
+                            f"memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
+                        )
+
+                progress_bar.close()
+
+            # consolidate predictions from each batch to a single tensor
+            if collect_predictions:
+                for key, pred_value_list in predictions.items():
+                    predictions[key] = torch.cat(pred_value_list, dim=0).clone().detach().cpu().numpy()
+
+            metrics = self.model.get_metrics()
+            self.model.reset_metrics()
+
+            self.dist_model.train(prev_model_training_mode)  # Restores previous model training mode.
+
+            return metrics, from_numpy_dataset(predictions)
+
+
 def calculate_overall_stats(output_features, predictions, dataset, training_set_metadata):
     overall_stats = {}
     for of_name, output_feature in output_features.items():

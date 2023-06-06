@@ -432,6 +432,57 @@ class LLM(BaseModel):
         self.eval_loss_metric.update(eval_loss)
         self.eval_additional_losses_metrics.update(additional_losses)
 
+    def update_metrics_finetune(self, targets, predictions):
+        """Updates the model's metrics given targets and predictions for fine-tuning."""
+        # breakpoint()
+        _targets, _predictions = targets, predictions
+        for of_name, of_obj in self.output_features.items():
+            if isinstance(of_obj, TextOutputFeature):
+                # Remove left padding from target tensors since we also do this for the model's forward pass when we
+                # concatenate the input_ids with the target_ids. We also need to add the pad token to the end of the
+                # target tensors.
+                # breakpoint()
+                targets_without_padding = []
+                lengths = []
+                for target in _targets[of_name]:
+                    target = self._remove_left_padding(target)[0]
+                    target = torch.cat([target, torch.tensor([self.tokenizer.pad_token_id])], dim=-1).unsqueeze(0)
+                    targets_without_padding.append(target)
+                    lengths.append(target.shape[1])
+
+                # We need all target tensors to have the same length for the loss computation. We pad the target
+                # tensors with -100 since we want to negate all tokens that are not target_ids during the softmax
+                # cross entropy loss computation. This ensures that the loss is computed only for the target tokens.
+                # breakpoint()
+                max_length = max(lengths)
+                for i, target in enumerate(targets_without_padding):
+                    targets_without_padding[i] = self._add_left_padding(targets_without_padding[i][0], max_length, -100)
+                _targets[of_name] = torch.stack(targets_without_padding, dim=0).to(
+                    dtype=_targets[of_name].dtype,
+                    device=_targets[of_name].device,
+                )
+
+                # Re-align target tensors without padding to have equal length before realigning with the prediction
+                # tensors. Padding left with -100 to match the length of the target tensor masks the input ids during
+                # softmax cross entropy loss computation. This ensures that the loss is computed only for the target
+                # token IDs. Examples:
+                # BERTLMHead: https://github.com/huggingface/transformers/blob/v4.29.1/src/transformers/models/bert/modeling_bert.py#L1216-L1219 # noqa
+                # GPTNeoForCausalLM: https://github.com/huggingface/transformers/blob/v4.29.1/src/transformers/models/gpt_neo/modeling_gpt_neo.py#L736 # noqa
+                # breakpoint()
+                _targets, _predictions = realign_target_and_prediction_tensors(
+                    _targets, _predictions, self.model_inputs, of_name, self.tokenizer, "left", -100
+                )
+
+                # breakpoint()
+                of_obj.update_metrics(_targets[of_name], _predictions[of_name])
+                continue
+
+            of_obj.update_metrics(_targets[of_name], _predictions[of_name])
+
+        eval_loss, additional_losses = self.eval_loss(_targets, _predictions)
+        self.eval_loss_metric.update(eval_loss)
+        self.eval_additional_losses_metrics.update(additional_losses)
+
     def train_loss(
         self,
         targets,
@@ -506,6 +557,7 @@ class LLM(BaseModel):
             # Compute output feature train loss
             # breakpoint()
             of_train_loss = of_obj.train_loss(_targets[of_name], _predictions, of_name)
+            # print(of_train_loss)
             train_loss += of_obj.loss.weight * of_train_loss
             of_train_losses[of_name] = of_train_loss
 
@@ -612,6 +664,7 @@ class LLM(BaseModel):
         """
 
         # target_ids is None during evaluation of the validation/test sets in the training loop.
+        # breakpoint()
         if not torch.is_tensor(target_ids):
             # Create attention masks for the input_ids.
             attention_masks = []
@@ -672,7 +725,7 @@ class LLM(BaseModel):
     def _add_left_padding(self, input_ids, max_length, pad_value=0):
         """Adds left padding to the input_ids tensor."""
         padding = torch.tensor(
-            [pad_value] * (max_length - input_ids.shape[0]), dtype=torch.int32, device=input_ids.device
+            [pad_value] * (max_length - input_ids.shape[0]), dtype=torch.int64, device=input_ids.device
         )
         return torch.cat((padding, input_ids), dim=-1)
 
@@ -683,7 +736,7 @@ class LLM(BaseModel):
         if not attention_mask[-1]:
             # last token is padding, always attended to even if it is padding
             attention_mask[-1] = 1
-        attention_mask = attention_mask.to(torch.int32)
+        attention_mask = attention_mask.to(torch.int64)
         return attention_mask
 
     def get_augmentation_pipelines(self) -> AugmentationPipelines:
@@ -749,7 +802,7 @@ def realign_target_and_prediction_tensors(
         for idx, target in enumerate(targets[of_name]):
             if pad_direction == "right":
                 updated_targets.append(
-                    F.pad(target, (0, prediction_length - target_length), value=pad_value).to(torch.int32)
+                    F.pad(target, (0, prediction_length - target_length), value=pad_value).to(torch.int64)
                 )
 
             # This code path is traversed when we're fine-tuning a LLM.
@@ -765,15 +818,15 @@ def realign_target_and_prediction_tensors(
                 # and did not contain the target tensor. In this case, we need to truncate the target tensors as well
                 # and just set it to a tensor of -100 so that we don't compute loss on this target tensor.
                 if last_matching_index == -1:
-                    updated_targets.append(torch.full((prediction_length,), pad_value, dtype=torch.int32))
+                    updated_targets.append(torch.full((prediction_length,), pad_value, dtype=torch.int64))
 
                 # If the last matching index is not -1, it means that the input tensor passed into the model was not
                 # truncated and contained either a part of the target tensor or the entire target tensor. In this case,
                 # we need to set the target tensor to the part of the target tensor that was passed into the model while
                 # also padding it to the correct length with -100.
                 else:
-                    padding = torch.full((last_matching_index,), pad_value, dtype=torch.int32)
-                    updated_targets.append(torch.cat((padding, target), dim=-1)[:prediction_length])
+                    padding = torch.full((last_matching_index,), pad_value)
+                    updated_targets.append(torch.cat((padding, target), dim=-1).to(torch.int64)[:prediction_length])
 
         targets[of_name] = torch.stack(updated_targets)
 

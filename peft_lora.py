@@ -44,7 +44,7 @@ label_column = "text_label"
 max_length = 64
 lr = 0.03
 num_epochs = 10
-batch_size = 2
+batch_size = 8
 
 dataset = load_dataset("ought/raft", dataset_name)
 
@@ -56,7 +56,6 @@ dataset = dataset.map(
     num_proc=1,
 )
 print(dataset)
-dataset["train"][0]
 
 # data preprocessing
 tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
@@ -105,7 +104,7 @@ processed_datasets = dataset.map(
 )
 
 train_dataset = processed_datasets["train"]
-eval_dataset = processed_datasets["train"]
+eval_dataset = processed_datasets["test"]
 
 # This breakpoint helps to debug the data preprocessing after tokenization
 # Investigate train_dataset[0] and eval_dataset[0]
@@ -114,7 +113,9 @@ eval_dataset = processed_datasets["train"]
 train_dataloader = DataLoader(
     train_dataset, shuffle=False, collate_fn=default_data_collator, batch_size=batch_size, pin_memory=True
 )
-eval_dataloader = DataLoader(eval_dataset, collate_fn=default_data_collator, batch_size=batch_size, pin_memory=True)
+eval_dataloader = DataLoader(
+    eval_dataset, shuffle=False, collate_fn=default_data_collator, batch_size=batch_size, pin_memory=True
+)
 
 
 def test_preprocess_function(examples):
@@ -169,12 +170,12 @@ for epoch in range(num_epochs):
     model.train()
     total_loss = 0
     for step, batch in enumerate(tqdm(train_dataloader)):
-        # breakpoint()
         # batch = {k: v.to(device) for k, v in batch.items()}
         #         print(batch)
         #         print(batch["input_ids"].shape)
         outputs = model(**batch)
         loss = outputs.loss
+        print(loss)
         total_loss += loss.detach().float()
         loss.backward()
         optimizer.step()
@@ -184,6 +185,7 @@ for epoch in range(num_epochs):
     model.eval()
     eval_loss = 0
     eval_preds = []
+    # breakpoint()
     for step, batch in enumerate(tqdm(eval_dataloader)):
         # batch = {k: v.to(device) for k, v in batch.items()}
         with torch.no_grad():
