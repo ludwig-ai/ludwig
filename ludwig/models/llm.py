@@ -30,6 +30,7 @@ from ludwig.schema.features.base import BaseOutputFeatureConfig, FeatureCollecti
 from ludwig.schema.model_types.llm import LLMModelConfig
 from ludwig.utils.augmentation_utils import AugmentationPipelines
 from ludwig.utils.data_utils import clear_data_cache
+from ludwig.utils.llm_utils import remove_left_padding
 from ludwig.utils.logging_utils import log_once
 from ludwig.utils.output_feature_utils import set_output_feature_tensor
 from ludwig.utils.torch_utils import reg_loss
@@ -315,7 +316,7 @@ class LLM(BaseModel):
             input_lengths = []
             sequences_list = []
             for input_ids_sample in input_ids:
-                input_ids_sample_no_padding = self._remove_left_padding(input_ids_sample)
+                input_ids_sample_no_padding = remove_left_padding(input_ids_sample, self.tokenizer)
 
                 if input_ids_sample_no_padding.shape[1] > self.max_input_length:
                     logger.warning(
@@ -438,7 +439,7 @@ class LLM(BaseModel):
                 targets_without_padding = []
                 lengths = []
                 for target in _targets[of_name]:
-                    target = self._remove_left_padding(target)
+                    target = remove_left_padding(target, self.tokenizer)
                     targets_without_padding.append(target)
                     lengths.append(target.shape[1])
 
@@ -599,9 +600,9 @@ class LLM(BaseModel):
         # Merge input_ids and target_ids by concatenating them together.
         # We remove the left padding from both input_ids and target_ids before concatenating them.
         for input_id_sample, target_id_sample in zip(input_ids, target_ids):
-            input_id_sample_no_padding = self._remove_left_padding(input_id_sample)[0]
+            input_id_sample_no_padding = remove_left_padding(input_id_sample, self.tokenizer)[0]
             target_id_sample_no_padding = torch.cat(
-                (self._remove_left_padding(target_id_sample)[0], pad_tensor), dim=-1
+                (remove_left_padding(target_id_sample, self.tokenizer)[0], pad_tensor), dim=-1
             )
 
             merged_sample_ids = torch.cat((input_id_sample_no_padding, target_id_sample_no_padding), dim=-1)
@@ -619,26 +620,6 @@ class LLM(BaseModel):
             attention_masks.append(self._create_attention_mask(merged_input_and_targets[i]))
 
         return torch.stack(merged_input_and_targets), torch.stack(attention_masks)
-
-    def _remove_left_padding(self, input_ids_sample: torch.Tensor):
-        """Removes left padding from the input_ids tensor."""
-        # Remove all PAD tokens
-        pad_idxs = torch.where(input_ids_sample == self.tokenizer.pad_token_id)[0]  # all PAD token locations
-        if len(pad_idxs) != 0:
-            pad_idx = pad_idxs[-1]  # get last PAD token location
-        else:
-            pad_idx = 0
-        input_ids_sample_no_padding = input_ids_sample[pad_idx + 1 :]
-
-        # Start from the first BOS token
-        bos_idxs = torch.where(input_ids_sample_no_padding == self.tokenizer.bos_token_id)[0]  # all BOS token locations
-        if len(bos_idxs) != 0:
-            bos_idx = bos_idxs[0]  # get first BOS token location
-        else:
-            bos_idx = 0
-
-        input_ids_sample_no_bos = input_ids_sample_no_padding[bos_idx:].unsqueeze(0)
-        return input_ids_sample_no_bos
 
     def _add_left_padding(self, input_ids, max_length, pad_value=0):
         """Adds left padding to the input_ids tensor."""
