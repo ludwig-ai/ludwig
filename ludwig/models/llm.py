@@ -7,7 +7,6 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
-import torch.nn.functional as F
 from transformers import (
     AutoConfig,
     AutoModelForCausalLM,
@@ -18,10 +17,9 @@ from transformers import (
     LlamaConfig,
     LlamaTokenizer,
     LlamaTokenizerFast,
-    PreTrainedTokenizer,
 )
 
-from ludwig.constants import LOGITS, MODEL_LLM, PREDICTIONS, PROBABILITIES, TEXT
+from ludwig.constants import LOGITS, MODEL_LLM, PREDICTIONS, TEXT
 from ludwig.features.base_feature import ModuleWrapper, OutputFeature
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.features.text_feature import TextOutputFeature
@@ -31,7 +29,12 @@ from ludwig.schema.features.base import BaseOutputFeatureConfig, FeatureCollecti
 from ludwig.schema.model_types.llm import LLMModelConfig
 from ludwig.utils.augmentation_utils import AugmentationPipelines
 from ludwig.utils.data_utils import clear_data_cache
-from ludwig.utils.llm_utils import find_last_matching_index
+from ludwig.utils.llm_utils import (
+    add_left_padding,
+    create_attention_mask,
+    realign_target_and_prediction_tensors,
+    remove_left_padding,
+)
 from ludwig.utils.logging_utils import log_once
 from ludwig.utils.output_feature_utils import set_output_feature_tensor
 from ludwig.utils.torch_utils import reg_loss
@@ -341,7 +344,7 @@ class LLM(BaseModel):
             input_lengths = []
             sequences_list = []
             for input_ids_sample in input_ids:
-                input_ids_sample_no_padding = self._remove_left_padding(input_ids_sample)
+                input_ids_sample_no_padding = remove_left_padding(input_ids_sample, self.tokenizer)
 
                 if input_ids_sample_no_padding.shape[1] > self.max_input_length:
                     logger.warning(
@@ -445,7 +448,7 @@ class LLM(BaseModel):
                 targets_without_padding = []
                 lengths = []
                 for target in _targets[of_name]:
-                    target = self._remove_left_padding(target)[0]
+                    target = remove_left_padding(target, self.tokenizer)[0]
                     target = torch.cat([target, torch.tensor([self.tokenizer.pad_token_id])], dim=-1).unsqueeze(0)
                     targets_without_padding.append(target)
                     lengths.append(target.shape[1])
@@ -456,7 +459,7 @@ class LLM(BaseModel):
                 # breakpoint()
                 max_length = max(lengths)
                 for i, target in enumerate(targets_without_padding):
-                    targets_without_padding[i] = self._add_left_padding(targets_without_padding[i][0], max_length, -100)
+                    targets_without_padding[i] = add_left_padding(targets_without_padding[i][0], max_length, -100)
                 _targets[of_name] = torch.stack(targets_without_padding, dim=0).to(
                     dtype=_targets[of_name].dtype,
                     device=_targets[of_name].device,
@@ -517,7 +520,7 @@ class LLM(BaseModel):
                 targets_without_padding = []
                 lengths = []
                 for target in _targets[of_name]:
-                    target = self._remove_left_padding(target)[0]
+                    target = remove_left_padding(target, self.tokenizer)[0]
                     target = torch.cat([target, torch.tensor([self.tokenizer.pad_token_id])], dim=-1).unsqueeze(0)
                     targets_without_padding.append(target)
                     lengths.append(target.shape[1])
@@ -528,7 +531,7 @@ class LLM(BaseModel):
                 # breakpoint()
                 max_length = max(lengths)
                 for i, target in enumerate(targets_without_padding):
-                    targets_without_padding[i] = self._add_left_padding(targets_without_padding[i][0], max_length, -100)
+                    targets_without_padding[i] = add_left_padding(targets_without_padding[i][0], max_length, -100)
                 _targets[of_name] = torch.stack(targets_without_padding, dim=0).to(
                     dtype=_targets[of_name].dtype,
                     device=_targets[of_name].device,
@@ -557,7 +560,7 @@ class LLM(BaseModel):
             # Compute output feature train loss
             # breakpoint()
             of_train_loss = of_obj.train_loss(_targets[of_name], _predictions, of_name)
-            # print(of_train_loss)
+            print(of_train_loss)
             train_loss += of_obj.loss.weight * of_train_loss
             of_train_losses[of_name] = of_train_loss
 
@@ -664,12 +667,11 @@ class LLM(BaseModel):
         """
 
         # target_ids is None during evaluation of the validation/test sets in the training loop.
-        # breakpoint()
         if not torch.is_tensor(target_ids):
             # Create attention masks for the input_ids.
             attention_masks = []
             for input_id_sample in input_ids:
-                attention_masks.append(self._create_attention_mask(input_id_sample))
+                attention_masks.append(create_attention_mask(input_id_sample, self.tokenizer))
             return input_ids, torch.stack(attention_masks)
 
         merged_input_and_targets = []
@@ -680,8 +682,8 @@ class LLM(BaseModel):
         # Merge input_ids and target_ids by concatenating them together.
         # We remove the left padding from both input_ids and target_ids before concatenating them.
         for input_id_sample, target_id_sample in zip(input_ids, target_ids):
-            input_id_sample_no_padding = self._remove_left_padding(input_id_sample)[0]
-            target_id_sample_no_padding = self._remove_left_padding(target_id_sample)[0]
+            input_id_sample_no_padding = remove_left_padding(input_id_sample, self.tokenizer)[0]
+            target_id_sample_no_padding = remove_left_padding(target_id_sample, self.tokenizer)[0]
             target_id_sample_no_padding = torch.cat((target_id_sample_no_padding, pad_tensor), dim=-1)
 
             merged_sample_ids = torch.cat((input_id_sample_no_padding, target_id_sample_no_padding), dim=-1)
@@ -698,140 +700,11 @@ class LLM(BaseModel):
         max_length = max(lengths)
         attention_masks = []
         for i, merged_sample_ids in enumerate(merged_input_and_targets):
-            merged_input_and_targets[i] = self._add_left_padding(merged_sample_ids, max_length)
-            attention_masks.append(self._create_attention_mask(merged_input_and_targets[i]))
+            merged_input_and_targets[i] = add_left_padding(merged_sample_ids, max_length)
+            attention_masks.append(create_attention_mask(merged_input_and_targets[i], self.tokenizer))
 
         return torch.stack(merged_input_and_targets), torch.stack(attention_masks)
-
-    def _remove_left_padding(self, input_ids_sample: torch.Tensor):
-        """Removes left padding from the input_ids tensor."""
-        # Remove all PAD tokens
-        pad_idxs = torch.where(input_ids_sample == self.tokenizer.pad_token_id)[0]  # all PAD token locations
-        input_ids_sample_no_padding = input_ids_sample
-        if len(pad_idxs) != 0:
-            pad_idx = pad_idxs[-1]  # get last PAD token location
-            input_ids_sample_no_padding = input_ids_sample[pad_idx + 1 :]
-
-        # Start from the first BOS token
-        bos_idxs = torch.where(input_ids_sample_no_padding == self.tokenizer.bos_token_id)[0]  # all BOS token locations
-        if len(bos_idxs) != 0:
-            bos_idx = bos_idxs[0]  # get first BOS token location
-        else:
-            bos_idx = 0
-
-        input_ids_sample_no_bos = input_ids_sample_no_padding[bos_idx:].unsqueeze(0)
-        return input_ids_sample_no_bos
-
-    def _add_left_padding(self, input_ids, max_length, pad_value=0):
-        """Adds left padding to the input_ids tensor."""
-        padding = torch.tensor(
-            [pad_value] * (max_length - input_ids.shape[0]), dtype=torch.int64, device=input_ids.device
-        )
-        return torch.cat((padding, input_ids), dim=-1)
-
-    def _create_attention_mask(self, input_ids):
-        """Creates attention mask for the input_ids tensor."""
-        attention_mask = input_ids != self.tokenizer.pad_token_id
-        # Last token may not be padding if we've already hit the max sequence length
-        if not attention_mask[-1]:
-            # last token is padding, always attended to even if it is padding
-            attention_mask[-1] = 1
-        attention_mask = attention_mask.to(torch.int64)
-        return attention_mask
 
     def get_augmentation_pipelines(self) -> AugmentationPipelines:
         """Returns the augmentation pipeline for this model."""
         return AugmentationPipelines({})
-
-
-def realign_target_and_prediction_tensors(
-    targets: Dict[str, torch.Tensor],
-    predictions: Dict[str, torch.Tensor],
-    model_inputs: torch.Tensor,
-    of_name: str,
-    tokenizer: PreTrainedTokenizer,
-    pad_direction: str = "right",
-    pad_value: int = None,
-) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
-    """Realigns the target tensor with the predictions.
-
-    This is necessary for text metrics that require the target and prediction
-    to be of the same length.
-    Args:
-        targets: The target tensor.
-        predictions: The prediction tensor.
-        of_name: The output feature's name.
-        pad_direction: The direction to pad the tensors. Can be 'left' or 'right'.
-            Defaults to 'right'.
-
-    Returns:
-        The realigned target tensor.
-    """
-    target_length = targets.get(of_name).size()[1]
-    prediction_length = predictions[of_name].get(PREDICTIONS).size()[1]
-
-    if target_length == prediction_length:
-        return targets, predictions
-
-    if pad_direction not in {"left", "right"}:
-        raise ValueError(f'pad_direction must be either "left" or "right". Got {pad_direction}.')
-
-    if not pad_value:
-        pad_value = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else tokenizer.eos_token_id
-
-    # Align target and prediction tensors for text to text metric computation
-    if target_length > prediction_length:
-        # Pad the predictions.
-        zeros_to_add = target_length - prediction_length
-
-        if pad_direction == "right":
-            predictions[of_name][PREDICTIONS] = F.pad(
-                predictions[of_name][PREDICTIONS], (0, zeros_to_add), value=pad_value
-            )
-            predictions[of_name][PROBABILITIES] = F.pad(predictions[of_name][PROBABILITIES], (0, 0, 0, zeros_to_add))
-            predictions[of_name][LOGITS] = F.pad(predictions[of_name][LOGITS], (0, 0, 0, zeros_to_add))
-        elif pad_direction == "left":
-            predictions[of_name][PREDICTIONS] = F.pad(
-                predictions[of_name][PREDICTIONS], (zeros_to_add, 0), value=pad_value
-            )
-            predictions[of_name][PROBABILITIES] = F.pad(predictions[of_name][PROBABILITIES], (0, 0, zeros_to_add, 0))
-            predictions[of_name][LOGITS] = F.pad(predictions[of_name][LOGITS], (0, 0, zeros_to_add, 0))
-
-    else:
-        updated_targets = []
-        for idx, target in enumerate(targets[of_name]):
-            if pad_direction == "right":
-                updated_targets.append(
-                    F.pad(target, (0, prediction_length - target_length), value=pad_value).to(torch.int64)
-                )
-
-            # This code path is traversed when we're fine-tuning a LLM.
-            elif pad_direction == "left":
-                # Remove any leading -100s in the target that were temporarily added for alignment
-                end_index = (target != -100).nonzero()[0]
-                target = target[end_index:]
-
-                # See if target was in the tensor passed into the model's forward pass
-                last_matching_index = find_last_matching_index(model_inputs[idx], target)
-
-                # If the last matching index is -1, it means that the input tensor passed into the model was truncated
-                # and did not contain the target tensor. In this case, we need to truncate the target tensors as well
-                # and just set it to a tensor of -100 so that we don't compute loss on this target tensor.
-                if last_matching_index == -1:
-                    updated_targets.append(torch.full((prediction_length,), pad_value, dtype=torch.int64))
-
-                # If the last matching index is not -1, it means that the input tensor passed into the model was not
-                # truncated and contained either a part of the target tensor or the entire target tensor. In this case,
-                # we need to set the target tensor to the part of the target tensor that was passed into the model while
-                # also padding it to the correct length with -100.
-                else:
-                    padding = torch.full((last_matching_index,), pad_value)
-                    updated_targets.append(torch.cat((padding, target), dim=-1).to(torch.int64)[:prediction_length])
-
-        targets[of_name] = torch.stack(updated_targets)
-
-    # This is important since metric computation requires float32 tensors and we may use quantization during training.
-    predictions[of_name][PROBABILITIES] = predictions[of_name][PROBABILITIES].type(torch.float32)
-    predictions[of_name][LOGITS] = predictions[of_name][LOGITS].type(torch.float32)
-
-    return targets, predictions
