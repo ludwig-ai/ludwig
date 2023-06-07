@@ -1,11 +1,11 @@
 version: 1.0
 name: iris
-download_urls: https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data
+download_urls: https://archive.ics.uci.edu/static/public/53/iris.zip
 sha256:
-  iris.data: 6f608b71a7317216319b4d27b4d9bc84e6abd734eda7872b71a458569e2656c0
+  iris.zip: d11fe30213d36434a0879aab7cb00ce3c812eb7ba2495874438abff7b7b762e9
 description: |
   Iris Dataset
-  https://archive.ics.uci.edu/ml/datasets/Iris
+  https://archive.ics.uci.edu/dataset/53/iris.zip
 columns:
   - name: sepal_length_cm
     type: number

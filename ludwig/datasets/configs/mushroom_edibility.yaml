@@ -1,8 +1,8 @@
 version: 1.0
 name: mushroom_edibility
-download_urls: http://archive.ics.uci.edu/ml/machine-learning-databases/mushroom/agaricus-lepiota.data
+download_urls: https://archive.ics.uci.edu/static/public/73/mushroom.zip
 sha256:
-  agaricus-lepiota.data: e65d082030501a3ebcbcd7c9f7c71aa9d28fdfff463bf4cf4716a3fe13ac360e
+  mushroom.zip: face32f32647e0d939f6233f36dd30dd5d619ae9f3f9b8e10bea4ac7e1f60b1a
 train_filenames: agaricus-lepiota.data
 description: |
   This data set includes descriptions of hypothetical samples corresponding
