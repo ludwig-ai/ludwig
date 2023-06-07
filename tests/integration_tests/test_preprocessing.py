@@ -163,6 +163,43 @@ def test_strip_whitespace_category(csv_filename, tmpdir):
     assert len(np.unique(train_ds.dataset[cat_feat[PROC_COLUMN]])) == cat_feat[DECODER]["vocab_size"]
 
 
+def test_reward_model_dataset_refactor():
+    input_features = [text_feature()]
+    output_features = [number_feature(), category_feature(decoder={"vocab_size": 2})]
+    backend = LocalTestBackend()
+    config = {"input_features": input_features, "output_features": output_features}
+
+    # Generate random dataframe
+    dataframe = generate_data_as_dataframe(input_features, output_features, num_examples=20)
+
+    # Add reward model training pairs
+    id_column, outcome_column = "", ""
+    for column_name in dataframe.columns:
+        if "number" in column_name:
+            id_column = column_name
+        elif "category" in column_name:
+            outcome_column = column_name
+    dataframe[id_column] = dataframe.index // 2
+    dataframe[outcome_column] = np.where(dataframe.index % 2, "rejected", "chosen")
+
+    # Modify config with preprocessing
+    config["preprocessing"] = {
+        "reward": {
+            "id_column": id_column,
+            "outcome_column": outcome_column,
+            "chosen_value": "chosen",
+            "rejected_value": "rejected",
+        }
+    }
+
+    # Run preprocessing, get output dataset
+    ludwig_model = LudwigModel(config, backend=backend)
+    train_dataset, _, _, metadata = ludwig_model.preprocess(dataset=dataframe)
+
+    # expect values containing whitespaces to be properly mapped to vocab_size unique values
+    assert len(np.unique(train_ds.dataset[cat_feat[PROC_COLUMN]])) == cat_feat[DECODER]["vocab_size"]
+
+
 @pytest.mark.parametrize(
     "backend",
     [

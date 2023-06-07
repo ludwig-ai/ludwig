@@ -1205,50 +1205,6 @@ def build_dataset(
             logger.debug(f"sample {sample_ratio} of data")
             dataset_df = dataset_df.sample(frac=sample_ratio, random_state=random_seed)
 
-        # If training a reward model, perform grouping and joining on dataset
-        if "reward" in global_preprocessing_parameters:
-            reward_parameter_names = [
-                "id_column",
-                "outcome_column",
-                "chosen_value",
-                "rejected_value",
-            ]
-            if not all(
-                param_name in global_preprocessing_parameters["reward"] for param_name in reward_parameter_names
-            ):
-                raise ValueError(f"Invalid reward training preprocessing parameters, expect {reward_parameter_names}.")
-
-            # Obtain column names and other values
-            id_column = global_preprocessing_parameters["reward"]["id_column"]
-            outcome_column = global_preprocessing_parameters["reward"]["outcome_column"]
-            chosen_value = global_preprocessing_parameters["reward"]["chosen_value"]
-            rejected_value = global_preprocessing_parameters["reward"]["rejected_value"]
-            transcript_column = config["input_features"]["name"]
-
-            # Validate the input dataframe's columns
-            dataset_columns_expected = sorted([id_column, outcome_column, transcript_column])
-            if not all(sorted(dataset_df.columns) == dataset_columns_expected):
-                raise ValueError(f"Invalid reward training input dataset, expect columns {dataset_columns_expected}.")
-
-            # Initialize the new refactored dataframe
-            dataset_df_refactored = dataset_df[0:0]
-            for column_name in dataset_df_refactored:
-                dataset_df_refactored.drop(column_name)
-            dataset_df_refactored[chosen_value] = []
-            dataset_df_refactored[rejected_value] = []
-
-            # Group original dataframe by ID, add group data
-            dataset_df_groups = dataset_df.groupby(id_column)
-            refactored_rows = {chosen_value: [], rejected_value: []}
-            for group_id in dataset_df_groups.groups:
-                group_df = dataset_df_groups.get_group(group_id)
-                chosen_transcript = group_df.loc[group_df[outcome_column] == chosen_value][transcript_column][0]
-                rejected_transcript = group_df.loc[group_df[outcome_column] == rejected_value][transcript_column][0]
-                refactored_rows[chosen_value].append(chosen_transcript)
-                refactored_rows[rejected_value].append(rejected_transcript)
-            dataset_df_refactored.append(refactored_rows)
-            dataset_df = dataset_df_refactored
-
     # If persisting DataFrames in memory is enabled, we want to do this after
     # each batch of parallel ops in order to avoid redundant computation
     dataset_df = df_engine.persist(dataset_df)
@@ -1399,6 +1355,50 @@ def build_dataset(
 
     # Embed features with fixed encoders
     dataset = embed_fixed_features(dataset, feature_configs, metadata, backend)
+
+    # If training a reward model, perform grouping and joining on dataset
+    if mode == "training" and "reward" in global_preprocessing_parameters:
+        reward_parameter_names = [
+            "id_column",
+            "outcome_column",
+            "chosen_value",
+            "rejected_value",
+        ]
+        if not all(
+            param_name in global_preprocessing_parameters["reward"] for param_name in reward_parameter_names
+        ):
+            raise ValueError(f"Invalid reward training preprocessing parameters, expect {reward_parameter_names}.")
+
+        # Obtain column names and other values
+        id_column = global_preprocessing_parameters["reward"]["id_column"]
+        outcome_column = global_preprocessing_parameters["reward"]["outcome_column"]
+        chosen_value = global_preprocessing_parameters["reward"]["chosen_value"]
+        rejected_value = global_preprocessing_parameters["reward"]["rejected_value"]
+        transcript_column = config["input_features"]["name"]
+
+        # Validate the input dataframe's columns
+        dataset_columns_expected = sorted([id_column, outcome_column, transcript_column])
+        if not all(sorted(dataset.columns) == dataset_columns_expected):
+            raise ValueError(f"Invalid reward training input dataset, expect columns {dataset_columns_expected}.")
+
+        # Initialize the new refactored dataframe
+        dataset_refactored = dataset[0:0]
+        for column_name in dataset_refactored:
+            dataset_refactored.drop(column_name)
+        dataset_refactored[chosen_value] = []
+        dataset_refactored[rejected_value] = []
+
+        # Group original dataframe by ID, add group data
+        dataset_groups = dataset.groupby(id_column)
+        refactored_rows = {chosen_value: [], rejected_value: []}
+        for group_id in dataset_groups.groups:
+            group_df = dataset_groups.get_group(group_id)
+            chosen_transcript = group_df.loc[group_df[outcome_column] == chosen_value][transcript_column][0]
+            rejected_transcript = group_df.loc[group_df[outcome_column] == rejected_value][transcript_column][0]
+            refactored_rows[chosen_value].append(chosen_transcript)
+            refactored_rows[rejected_value].append(rejected_transcript)
+        dataset_refactored.append(refactored_rows)
+        dataset = dataset_refactored
 
     return dataset, metadata
 
