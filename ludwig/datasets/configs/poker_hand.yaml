@@ -1,13 +1,10 @@
 version: 1.0
 name: poker_hand
-download_urls:
-  - http://archive.ics.uci.edu/ml/machine-learning-databases/poker/poker-hand-training-true.data
-  - http://archive.ics.uci.edu/ml/machine-learning-databases/poker/poker-hand-testing.data
+download_urls: https://archive.ics.uci.edu/static/public/158/poker+hand.zip
 train_filenames: poker-hand-training-true.data
 test_filenames: poker-hand-testing.data
 sha256:
-  poker-hand-testing.data: 3cd75958e19dd321ed5ca3f7f154c0f6aad544aab9f37731ac545b5f66b232c7
-  poker-hand-training-true.data: 37becdf87d5f8cbf2b91d6471e965a25b86cb4a6d878c0f94a4025969fca464f
+  poker+hand.zip: c18333f541b344effb8f446c30f398634d1d045e7b991f3c3399e69af940c4c9
 description: |
   Each record is an example of a hand consisting of five playing cards
   drawn from a standard deck of 52. Each card is described using two
