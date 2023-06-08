@@ -35,6 +35,7 @@ from ludwig.schema.features.loss.loss import (
     MAPELossConfig,
     MSELossConfig,
     NextTokenSoftmaxCrossEntropyLossConfig,
+    RewardLossConfig,
     RMSELossConfig,
     RMSPELossConfig,
     SequenceSoftmaxCrossEntropyLossConfig,
@@ -264,3 +265,14 @@ class CORNLoss(nn.Module, LogitsInputsMixin):
     def forward(self, preds: Tensor, target: Tensor) -> Tensor:
         num_classes = preds.shape[1]
         return corn_loss(preds, target, num_classes=num_classes)
+
+
+@register_loss(RewardLossConfig)
+class RewardLoss(nn.Module, LogitsInputsMixin):
+    """Reward loss."""
+
+    def __init__(self, config: RewardLossConfig):
+        super().__init__()
+
+    def forward(self, chosen_reward: Tensor, rejected_reward: Tensor) -> Tensor:
+        return -1 * nn.functional.logsigmoid(chosen_reward - rejected_reward).mean()

@@ -12,6 +12,7 @@ from ludwig.constants import (
     MEAN_SQUARED_ERROR,
     NEXT_TOKEN_SOFTMAX_CROSS_ENTROPY,
     NUMBER,
+    REWARD,
     ROOT_MEAN_SQUARED_ERROR,
     ROOT_MEAN_SQUARED_PERCENTAGE_ERROR,
     SEQUENCE,
@@ -475,3 +476,30 @@ class CORNLossConfig(BaseLossConfig):
     @property
     def class_similarities_temperature(self) -> int:
         return 0
+
+
+@DeveloperAPI
+@register_loss([NUMBER])
+@ludwig_dataclass
+class RewardLossConfig(BaseLossConfig):
+    type: str = schema_utils.ProtectedString(
+        REWARD,
+        description=(
+            "This loss function is used to train reward models in Ludwig, for the purposes of RLHF. The "
+            "reward model will typically be an LLM or other large Transformer, with a single numerical output "
+            "feature. To train these models, data is provided in terms of pairs of responses (texts), one "
+            "of which is chosen and one of which is rejected, representing a human ranking assessment. The "
+            "model is trained using a contrastive loss procedure, maximizing the difference between the reward "
+            "score of the chosen text and the score of the rejected text."
+        ),
+    )
+
+    weight: float = schema_utils.NonNegativeFloat(
+        default=1.0,
+        description="Weight of the loss.",
+        parameter_metadata=LOSS_METADATA["RewardLoss"]["weight"],
+    )
+
+    @classmethod
+    def name(self) -> str:
+        return "Reward Model Loss"
