@@ -1364,9 +1364,7 @@ def build_dataset(
             "chosen_value",
             "rejected_value",
         ]
-        if not all(
-            param_name in global_preprocessing_parameters["reward"] for param_name in reward_parameter_names
-        ):
+        if not all(param_name in global_preprocessing_parameters["reward"] for param_name in reward_parameter_names):
             raise ValueError(f"Invalid reward training preprocessing parameters, expect {reward_parameter_names}.")
 
         # Obtain column names and other values
@@ -1378,26 +1376,25 @@ def build_dataset(
 
         # Validate the input dataframe's columns
         dataset_columns_expected = sorted([id_column, outcome_column, transcript_column])
-        if not all(sorted(dataset.columns) == dataset_columns_expected):
+        if not sorted(dataset.columns) == dataset_columns_expected:
             raise ValueError(f"Invalid reward training input dataset, expect columns {dataset_columns_expected}.")
 
         # Initialize the new refactored dataframe
         dataset_refactored = dataset[0:0]
-        for column_name in dataset_refactored:
-            dataset_refactored.drop(column_name)
         dataset_refactored[chosen_value] = []
         dataset_refactored[rejected_value] = []
+        dataset_refactored.drop([id_column, outcome_column, transcript_column], axis=1, inplace=True)
 
         # Group original dataframe by ID, add group data
         dataset_groups = dataset.groupby(id_column)
-        refactored_rows = {chosen_value: [], rejected_value: []}
         for group_id in dataset_groups.groups:
             group_df = dataset_groups.get_group(group_id)
-            chosen_transcript = group_df.loc[group_df[outcome_column] == chosen_value][transcript_column][0]
-            rejected_transcript = group_df.loc[group_df[outcome_column] == rejected_value][transcript_column][0]
-            refactored_rows[chosen_value].append(chosen_transcript)
-            refactored_rows[rejected_value].append(rejected_transcript)
-        dataset_refactored.append(refactored_rows)
+            chosen_transcript = group_df.loc[group_df[outcome_column] == chosen_value][transcript_column].iloc[0]
+            rejected_transcript = group_df.loc[group_df[outcome_column] == rejected_value][transcript_column].iloc[0]
+            dataset_refactored.loc[len(dataset_refactored.index)] = {
+                chosen_value: chosen_transcript,
+                rejected_value: rejected_transcript,
+            }
         dataset = dataset_refactored
 
     return dataset, metadata
