@@ -812,6 +812,21 @@ class FineTuneTrainerConfig(ECDTrainerConfig):
 
 
 @DeveloperAPI
+@register_llm_trainer_schema("reward_model")
+@ludwig_dataclass
+class RewardModelTrainerConfig(ECDTrainerConfig):
+    """Dataclass that configures most of the hyperparameters used for LLM RLHF reward model training."""
+
+    # Required for lookup during trainer initialization
+    type: str = schema_utils.ProtectedString("reward_model")
+
+    base_learning_rate: float = schema_utils.NonNegativeFloat(
+        default=0.0,
+        description="Base learning rate used for training in the RLHF reward model trainer.",
+    )
+
+
+@DeveloperAPI
 def get_model_type_jsonschema(model_type: str = MODEL_ECD):
     enum = [MODEL_ECD]
     if model_type == MODEL_GBM:
