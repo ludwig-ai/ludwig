@@ -146,3 +146,8 @@ cache_encoder_embeddings:
         it's not always the case that you would always want to enable it when possible.
     expected_impact: 1
     ui_display_name: Cache Encoder Embeddings
+reward_dataset:
+    id_column: The name of the reward model training dataset session ID column
+    outcome_column: The name of the reward model training dataset chosen/rejected outcome column
+    chosen_value: The value of the string in the outcome column corresponding to chosen samples
+    rejected_value: The value of the string in the outcome column corresponding to rejected samples

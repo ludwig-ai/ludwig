@@ -1,3 +1,4 @@
+from typing import Any, Dict
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import RANDOM
 from ludwig.schema import utils as schema_utils
@@ -36,6 +37,13 @@ class PreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
     split: BaseSplitConfig = SplitDataclassField(
         default=RANDOM,
+    )
+
+    reward_dataset: Dict[str, Any] = schema_utils.Dict(
+        default=None,
+        allow_none=True,
+        description="If not None, the input dataset will be preprocessed to train an RLHF reward model.",
+        parameter_metadata=PREPROCESSING_METADATA["reward_dataset"],
     )
 
 

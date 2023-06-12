@@ -183,12 +183,14 @@ def test_reward_model_dataset_refactor():
     dataframe[outcome_column] = np.where(dataframe.index % 2, "rejected", "chosen")
 
     # Modify config with preprocessing
+    chosen_value = "chosen"
+    rejected_value = "rejected"
     config["preprocessing"] = {
-        "reward": {
+        "reward_dataset": {
             "id_column": id_column,
             "outcome_column": outcome_column,
-            "chosen_value": "chosen",
-            "rejected_value": "rejected",
+            "chosen_value": chosen_value,
+            "rejected_value": rejected_value,
         }
     }
 
@@ -196,7 +198,29 @@ def test_reward_model_dataset_refactor():
     ludwig_model = LudwigModel(config, backend=backend)
     train_dataset, _, _, metadata = ludwig_model.preprocess(dataset=dataframe)
 
-    # Todo: validate the output training dataset
+    # Validate the processed dataset columns
+    dataset = train_dataset.dataset
+    transcript_column = config["input_features"][0]["name"]
+    dataset_columns_expected = sorted([id_column, outcome_column, transcript_column])
+    dataset_columns_actual = ["_".join(column_name.split("_")[:2]) for column_name in sorted(dataset.keys())]
+    assert dataset_columns_actual == dataset_columns_expected
+
+    # Augment column names to processed versions
+    for column_name in dataset.keys():
+        if id_column in column_name:
+            id_column = column_name
+        elif outcome_column in column_name:
+            outcome_column = column_name
+        elif transcript_column in column_name:
+            transcript_column = column_name
+
+    # Validate each row in the processed dataset
+    for row_id in range(len(dataset[id_column])):
+        assert len(dataset[outcome_column][row_id]) == 2
+        assert len(dataset[transcript_column][row_id]) == 2
+        assert dataset[outcome_column][row_id][0] in [chosen_value, rejected_value]
+        assert dataset[outcome_column][row_id][1] in [chosen_value, rejected_value]
+        assert dataset[outcome_column][row_id][0] != dataset[outcome_column][row_id][1]
 
 
 @pytest.mark.parametrize(
