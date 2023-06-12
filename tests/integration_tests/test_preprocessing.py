@@ -180,11 +180,11 @@ def test_reward_model_dataset_refactor():
         elif "category" in column_name:
             outcome_column = column_name
     dataframe[id_column] = dataframe.index // 2
-    dataframe[outcome_column] = np.where(dataframe.index % 2, "rejected", "chosen")
-
-    # Modify config with preprocessing
     chosen_value = "chosen"
     rejected_value = "rejected"
+    dataframe[outcome_column] = np.where(dataframe.index % 2, rejected_value, chosen_value)
+
+    # Modify config with preprocessing
     config["preprocessing"] = {
         "reward_dataset": {
             "id_column": id_column,
