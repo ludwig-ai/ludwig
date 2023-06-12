@@ -1358,7 +1358,7 @@ def build_dataset(
                 f"got columns {processed_column_names}."
             )
 
-        # Remove ID and outcome columns from processed
+        # Augment column names to processed versions
         for column_name in proc_cols.keys():
             if id_column in column_name:
                 proc_cols[column_name] = dataset_df[id_column]

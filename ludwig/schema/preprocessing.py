@@ -1,4 +1,5 @@
 from typing import Any, Dict
+
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import RANDOM
 from ludwig.schema import utils as schema_utils
