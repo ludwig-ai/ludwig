@@ -180,8 +180,8 @@ def test_reward_model_dataset_refactor():
         elif "category" in column_name:
             outcome_column = column_name
     dataframe[id_column] = dataframe.index // 2
-    chosen_value = "chosen"
-    rejected_value = "rejected"
+    chosen_value = "some_value_1"
+    rejected_value = "some_value_2"
     dataframe[outcome_column] = np.where(dataframe.index % 2, rejected_value, chosen_value)
 
     # Modify config with preprocessing
@@ -218,8 +218,8 @@ def test_reward_model_dataset_refactor():
     for row_id in range(len(dataset[id_column])):
         assert len(dataset[outcome_column][row_id]) == 2
         assert len(dataset[transcript_column][row_id]) == 2
-        assert dataset[outcome_column][row_id][0] in [chosen_value, rejected_value]
-        assert dataset[outcome_column][row_id][1] in [chosen_value, rejected_value]
+        assert dataset[outcome_column][row_id][0] in ["chosen", "rejected"]
+        assert dataset[outcome_column][row_id][1] in ["chosen", "rejected"]
         assert dataset[outcome_column][row_id][0] != dataset[outcome_column][row_id][1]
 
 
