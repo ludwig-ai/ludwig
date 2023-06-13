@@ -1,14 +1,15 @@
 import logging
-import torch
 from typing import Dict, List, Optional, Tuple
 
+import torch
+
+from ludwig.distributed.base import DistributedStrategy
 from ludwig.models.llm import LLM
 from ludwig.modules.loss_modules import RewardLoss
 from ludwig.schema.trainer import RewardModelTrainerConfig
 from ludwig.trainers.registry import register_llm_trainer
 from ludwig.trainers.trainer import Trainer
 from ludwig.utils.defaults import default_random_seed
-from ludwig.distributed.base import DistributedStrategy
 
 logger = logging.getLogger(__name__)
 
@@ -104,8 +105,8 @@ class RewardModelTrainer(Trainer):
         with self.distributed.prepare_model_update(self.dist_model, should_step=should_step):
             # Obtain model predictions and loss
             chosen_idx = inputs[outcome_column].index("chosen")
-            model_output_chosen = self.dist_model((inputs[transcript_column][chosen_idx]))
-            model_output_rejected = self.dist_model((inputs[transcript_column][1 - chosen_idx]))
+            model_output_chosen = self.dist_model(inputs[transcript_column][chosen_idx])
+            model_output_rejected = self.dist_model(inputs[transcript_column][1 - chosen_idx])
             loss = self.reward_loss_function(model_output_chosen, model_output_rejected)
             loss = loss / self.gradient_accumulation_steps
             all_losses = loss
