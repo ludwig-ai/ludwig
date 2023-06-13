@@ -1344,15 +1344,20 @@ def build_dataset(
 
         # Validate the input dataframe's columns
         dataset_columns_expected = sorted([id_column, outcome_column, transcript_column])
-        if not sorted(dataset_df.columns) == dataset_columns_expected:
+        dataset_columns_actual = sorted(dataset_df.columns)
+        if "split" in dataset_columns_actual:
+            dataset_columns_actual.remove("split")
+        if dataset_columns_actual != dataset_columns_expected:
             raise ValueError(
                 f"Invalid reward training input dataset, expect columns {dataset_columns_expected}, "
-                f"got columns {sorted(dataset_df.columns)}."
+                f"got columns {dataset_columns_actual}."
             )
 
         # Validate the processed dataset columns
-        processed_column_names = ["_".join(column_name.split("_")[:2]) for column_name in sorted(proc_cols.keys())]
-        if not processed_column_names == dataset_columns_expected:
+        processed_column_names = sorted(["_".join(column_name.split("_")[:2]) for column_name in proc_cols.keys()])
+        if "split" in processed_column_names:
+            processed_column_names.remove("split")
+        if processed_column_names != dataset_columns_expected:
             raise ValueError(
                 f"Invalid reward training processed dataset, expect columns {dataset_columns_expected}, "
                 f"got columns {processed_column_names}."
@@ -1406,8 +1411,8 @@ def build_dataset(
     # If training a reward model, perform grouping and joining on dataset
     if mode == "training" and "reward_dataset" in global_preprocessing_parameters:
         reward_sample_value_map = {
-            chosen_value: "chosen",
-            rejected_value: "rejected",
+            chosen_value: 0,
+            rejected_value: 1,
         }
 
         # Group dataset rows by ID, aggregate group data
@@ -1420,6 +1425,10 @@ def build_dataset(
         dataset_refactored[transcript_column] = (
             dataset_id_groups[transcript_column].apply(list).reset_index()[transcript_column]
         )
+        if "split" in dataset.columns:
+            dataset_refactored["split"] = (
+                dataset_id_groups["split"].apply(lambda x: list(x)[0]).reset_index()["split"]
+            )
         dataset = dataset_refactored
 
     return dataset, metadata

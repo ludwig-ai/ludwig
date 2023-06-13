@@ -104,7 +104,7 @@ class RewardModelTrainer(Trainer):
         # Run forward-propagation of the chosen and rejected inputs
         with self.distributed.prepare_model_update(self.dist_model, should_step=should_step):
             # Obtain model predictions and loss
-            chosen_idx = inputs[outcome_column].index("chosen")
+            chosen_idx = inputs[outcome_column].index(0)
             model_output_chosen = self.dist_model(inputs[transcript_column][chosen_idx])
             model_output_rejected = self.dist_model(inputs[transcript_column][1 - chosen_idx])
             loss = self.reward_loss_function(model_output_chosen, model_output_rejected)

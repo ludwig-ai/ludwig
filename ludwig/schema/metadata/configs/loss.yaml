@@ -52,3 +52,6 @@ SigmoidCrossEntropyLoss:
     expected_impact: 3
   weight:
     expected_impact: 2
+RewardLoss:
+  weight:
+    expected_impact: 2

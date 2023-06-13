@@ -17,6 +17,7 @@ from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
     generate_data,
+    generate_data_as_dataframe,
     LocalTestBackend,
     number_feature,
     RAY_BACKEND_CONFIG,
@@ -214,6 +215,43 @@ def test_changing_parameters_on_plateau(tmpdir):
     model = LudwigModel(config, backend=LocalTestBackend())
 
     model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv, output_directory=tmpdir)
+
+
+def test_reward_model_training(tmpdir):
+    input_features = [text_feature()]
+    output_features = [number_feature(), category_feature(decoder={"vocab_size": 2})]
+    backend = LocalTestBackend()
+    config = {"input_features": input_features, "output_features": output_features}
+
+    # Generate random dataframe
+    dataframe = generate_data_as_dataframe(input_features, output_features, num_examples=20)
+
+    # Add reward model training pairs
+    id_column, outcome_column = "", ""
+    for column_name in dataframe.columns:
+        if "number" in column_name:
+            id_column = column_name
+        elif "category" in column_name:
+            outcome_column = column_name
+    dataframe[id_column] = dataframe.index // 2
+    chosen_value = "some_value_1"
+    rejected_value = "some_value_2"
+    dataframe[outcome_column] = np.where(dataframe.index % 2, rejected_value, chosen_value)
+
+    # Modify config with preprocessing
+    config["preprocessing"] = {
+        "reward_dataset": {
+            "id_column": id_column,
+            "outcome_column": outcome_column,
+            "chosen_value": chosen_value,
+            "rejected_value": rejected_value,
+        }
+    }
+    config[TRAINER] = {"type": "reward_model"}
+
+    # Train Ludwig model with the dataset
+    ludwig_model = LudwigModel(config, backend=backend)
+    ludwig_model.train(training_set=dataframe, output_directory=tmpdir)
 
 
 @pytest.mark.distributed

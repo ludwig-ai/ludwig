@@ -202,7 +202,7 @@ def test_reward_model_dataset_refactor():
     dataset = train_dataset.dataset
     transcript_column = config["input_features"][0]["name"]
     dataset_columns_expected = sorted([id_column, outcome_column, transcript_column])
-    dataset_columns_actual = ["_".join(column_name.split("_")[:2]) for column_name in sorted(dataset.keys())]
+    dataset_columns_actual = sorted(["_".join(column_name.split("_")[:2]) for column_name in dataset.keys()])
     assert dataset_columns_actual == dataset_columns_expected
 
     # Augment column names to processed versions
@@ -218,8 +218,8 @@ def test_reward_model_dataset_refactor():
     for row_id in range(len(dataset[id_column])):
         assert len(dataset[outcome_column][row_id]) == 2
         assert len(dataset[transcript_column][row_id]) == 2
-        assert dataset[outcome_column][row_id][0] in ["chosen", "rejected"]
-        assert dataset[outcome_column][row_id][1] in ["chosen", "rejected"]
+        assert dataset[outcome_column][row_id][0] in [0, 1]
+        assert dataset[outcome_column][row_id][1] in [0, 1]
         assert dataset[outcome_column][row_id][0] != dataset[outcome_column][row_id][1]
 
 
