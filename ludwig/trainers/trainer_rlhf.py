@@ -53,9 +53,10 @@ class RewardModelTrainer(Trainer):
         self.reward_loss_function = RewardLoss({})
 
         # Save the reward model dataset parameters
-        if "preprocessing" not in config or "reward" not in config["preprocessing"]:
+        if "preprocessing" not in config or "reward_dataset" not in config["preprocessing"]:
             raise ValueError("Invalid reward model training config, expect preprocessing reward attributes.")
-        self.reward_model_dataset_params = config["preprocessing"]["reward"]
+        self.reward_model_dataset_params = config["preprocessing"]["reward_dataset"]
+        self.reward_model_dataset_params["transcript_column"] = config["input_features"][0]["name"]
 
     def train_step(
         self, inputs: Dict[str, torch.Tensor], targets: Dict[str, torch.Tensor], should_step: bool = True
@@ -70,10 +71,18 @@ class RewardModelTrainer(Trainer):
         Returns:
             A tuple of the loss tensor and a dictionary of loss for every output feature.
         """
-        chosen_value = self.reward_model_dataset_params["chosen_value"]
-        rejected_value = self.reward_model_dataset_params["rejected_value"]
-        if chosen_value not in inputs or rejected_value not in inputs:
-            raise ValueError("Reward model preprocessing error: should have chosen/rejected values as table columns")
+        id_column = self.reward_model_dataset_params["id_column"]
+        outcome_column = self.reward_model_dataset_params["outcome_column"]
+        transcript_column = self.reward_model_dataset_params["transcript_column"]
+
+        # Validate inputs
+        input_names_expected = sorted([id_column, outcome_column, transcript_column])
+        input_names_actual = sorted([input_name.split("_")[0] for input_name in inputs.keys()])
+        if not input_names_actual == input_names_expected:
+            raise ValueError(
+                f"Invalid reward model training data input, expect inputs {input_names_expected}, "
+                f"got inputs {input_names_actual}."
+            )
 
         # Other validations
         if not all(
@@ -82,11 +91,21 @@ class RewardModelTrainer(Trainer):
         ):
             raise ValueError("Invalid trainer arguments for RLHF reward model")
 
+        # Augment column names to processed versions
+        for input_name in inputs.keys():
+            if id_column in input_name:
+                id_column = input_name
+            elif outcome_column in input_name:
+                outcome_column = input_name
+            elif transcript_column in input_name:
+                transcript_column = input_name
+
         # Run forward-propagation of the chosen and rejected inputs
         with self.distributed.prepare_model_update(self.dist_model, should_step=should_step):
             # Obtain model predictions and loss
-            model_output_chosen = self.dist_model((inputs[chosen_value]))
-            model_output_rejected = self.dist_model((inputs[rejected_value]))
+            chosen_idx = inputs[outcome_column].index("chosen")
+            model_output_chosen = self.dist_model((inputs[transcript_column][chosen_idx]))
+            model_output_rejected = self.dist_model((inputs[transcript_column][1 - chosen_idx]))
             loss = self.reward_loss_function(model_output_chosen, model_output_rejected)
             loss = loss / self.gradient_accumulation_steps
             all_losses = loss
