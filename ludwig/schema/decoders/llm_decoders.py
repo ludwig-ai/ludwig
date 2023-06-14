@@ -1,7 +1,7 @@
 from typing import Any, Dict
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import CATEGORY, MODEL_LLM, TEXT
+from ludwig.constants import CATEGORY, MODEL_LLM, NUMBER, TEXT
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import register_decoder_config
@@ -47,6 +47,17 @@ class TextExtractorDecoderConfig(BaseExtractorDecoderConfig, BaseDecoderConfig):
         return "TextExtractorDecoder"
 
     type: str = schema_utils.ProtectedString("text_extractor")
+
+
+@DeveloperAPI
+@register_decoder_config("number_extractor", [NUMBER], model_types=[MODEL_LLM])
+@ludwig_dataclass
+class NumberExtractorDecoderConfig(BaseExtractorDecoderConfig, BaseDecoderConfig):
+    @classmethod
+    def module_name(cls):
+        return "NumberExtractorDecoder"
+
+    type: str = schema_utils.ProtectedString("number_extractor")
 
 
 @DeveloperAPI

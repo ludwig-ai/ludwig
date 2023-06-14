@@ -247,7 +247,11 @@ def test_reward_model_training(tmpdir):
             "rejected_value": rejected_value,
         }
     }
+    config["model_type"] = "llm"
+    config["model_name"] = "gpt2"
+    config["input_features"][0]["encoder"]["type"] = "passthrough"
     config[TRAINER] = {"type": "reward_model"}
+    config["output_features"] = config["output_features"][:1]
 
     # Train Ludwig model with the dataset
     ludwig_model = LudwigModel(config, backend=backend)
