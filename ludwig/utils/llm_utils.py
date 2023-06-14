@@ -186,13 +186,74 @@ def find_last_matching_index(tensor_a: torch.Tensor, tensor_b: torch.Tensor):
     return last_index
 
 
-def realign_target_and_prediction_tensors(
+def pad_target_tensor_for_fine_tuning(
     targets: Dict[str, torch.Tensor],
     predictions: Dict[str, torch.Tensor],
     model_inputs: torch.Tensor,
     of_name: str,
+) -> Dict[str, torch.Tensor]:
+    """Pad and adjust target tensors for fine-tuning LLMS models.
+
+    This function is used to pad and adjust the target tensors with -100 based on the model inputs and predictions
+    during the fine-tuning process of Language Models. Here's what this function does:
+        1. If none of the tokens from the target were in the model inputs, we create a tensor of the length of model
+            inputs with value -100s. This ignores this row from affecting loss.
+        2. If the target tokens were entirely inside the model inputs, we want to pad all the tokens in model_inputs
+            coming from the input with -100s and leave the target tokens as is. This ensures that all of the target
+            tokens are used during loss computation.
+        3. In the scenario that only some part of the target tokens were in the model inputs, we want to pad the model
+            inputs until that point and only leave the partial tokens of the target as is. This ensures that we will
+            only compute loss on the target tokens that were in the model inputs.
+
+    Args:
+        targets (Dict[str, torch.Tensor]): A dictionary containing the target tensors.
+        predictions (Dict[str, torch.Tensor]): A dictionary containing the predicted tensors.
+        model_inputs (torch.Tensor): The input tensor passed into the model's forward pass.
+        of_name (str): The name of the target tensor to be padded and adjusted.
+
+    Returns:
+        Dict[str, torch.Tensor]: A dictionary containing the updated target
+        dictionaries.
+    """
+    target_length = targets.get(of_name).size()[1]
+    prediction_length = predictions[of_name].get(PREDICTIONS).size()[1]
+
+    if target_length == prediction_length:
+        return targets
+
+    updated_targets = []
+    for idx, target in enumerate(targets[of_name]):
+        # Remove any leading -100s in the target that were temporarily added for alignment
+        end_index = (target != -100).nonzero()[0]
+        target = target[end_index:]
+
+        # See if any part of the target was in the tensor passed into the model's forward pass
+        last_matching_index = find_last_matching_index(model_inputs[idx], target)
+
+        # If the last matching index is -1, it means that the input tensor passed into the model was truncated
+        # and did not contain the target tensor. In this case, we need to truncate the target tensors as well
+        # and just set it to a tensor of -100 so that we don't compute loss on this target tensor.
+        if last_matching_index == -1:
+            updated_targets.append(torch.full((prediction_length,), -100))
+
+        # If the last matching index is not -1, it means that the input tensor passed into the model was not
+        # truncated and contained either a part of the target tensor or the entire target tensor. In this case,
+        # we need to set the target tensor to the part of the target tensor that was passed into the model while
+        # also padding it to the correct length with -100.
+        else:
+            padding = torch.full((last_matching_index,), -100)
+            updated_targets.append(torch.cat((padding, target), dim=-1)[:prediction_length])
+
+    targets[of_name] = torch.stack(updated_targets).to(torch.int64)
+
+    return targets
+
+
+def realign_target_and_prediction_tensors_for_inference(
+    targets: Dict[str, torch.Tensor],
+    predictions: Dict[str, torch.Tensor],
+    of_name: str,
     tokenizer: PreTrainedTokenizer,
-    pad_direction: str = "right",
     pad_value: int = None,
 ) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
     """Realigns the target tensor with the predictions.
@@ -215,9 +276,6 @@ def realign_target_and_prediction_tensors(
     if target_length == prediction_length:
         return targets, predictions
 
-    if pad_direction not in {"left", "right"}:
-        raise ValueError(f'pad_direction must be either "left" or "right". Got {pad_direction}.')
-
     if not pad_value:
         pad_value = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else tokenizer.eos_token_id
 
@@ -226,54 +284,25 @@ def realign_target_and_prediction_tensors(
         # Pad the predictions.
         zeros_to_add = target_length - prediction_length
 
-        if pad_direction == "right":
-            predictions[of_name][PREDICTIONS] = F.pad(
-                predictions[of_name][PREDICTIONS], (0, zeros_to_add), value=pad_value
-            )
-            predictions[of_name][PROBABILITIES] = F.pad(predictions[of_name][PROBABILITIES], (0, 0, 0, zeros_to_add))
-            predictions[of_name][LOGITS] = F.pad(predictions[of_name][LOGITS], (0, 0, 0, zeros_to_add))
-        elif pad_direction == "left":
-            predictions[of_name][PREDICTIONS] = F.pad(
-                predictions[of_name][PREDICTIONS], (zeros_to_add, 0), value=pad_value
-            )
-            predictions[of_name][PROBABILITIES] = F.pad(predictions[of_name][PROBABILITIES], (0, 0, zeros_to_add, 0))
-            predictions[of_name][LOGITS] = F.pad(predictions[of_name][LOGITS], (0, 0, zeros_to_add, 0))
+        predictions[of_name][PREDICTIONS] = F.pad(
+            predictions[of_name][PREDICTIONS], (0, zeros_to_add), value=pad_value
+        ).to(torch.int64)
 
+        predictions[of_name][PROBABILITIES] = F.pad(predictions[of_name][PROBABILITIES], (0, 0, 0, zeros_to_add)).to(
+            torch.float32
+        )
+
+        predictions[of_name][LOGITS] = F.pad(predictions[of_name][LOGITS], (0, 0, 0, zeros_to_add)).to(torch.float32)
     else:
-        updated_targets = []
-        for idx, target in enumerate(targets[of_name]):
-            if pad_direction == "right":
-                updated_targets.append(
-                    F.pad(target, (0, prediction_length - target_length), value=pad_value).to(torch.int64)
-                )
+        zeros_to_add = prediction_length - target_length
 
-            # This code path is traversed when we're fine-tuning a LLM.
-            elif pad_direction == "left":
-                # Remove any leading -100s in the target that were temporarily added for alignment
-                end_index = (target != -100).nonzero()[0]
-                target = target[end_index:]
+        targets[of_name] = F.pad(targets[of_name], (0, zeros_to_add), value=pad_value).to(torch.int64)
 
-                # See if target was in the tensor passed into the model's forward pass
-                last_matching_index = find_last_matching_index(model_inputs[idx], target)
-
-                # If the last matching index is -1, it means that the input tensor passed into the model was truncated
-                # and did not contain the target tensor. In this case, we need to truncate the target tensors as well
-                # and just set it to a tensor of -100 so that we don't compute loss on this target tensor.
-                if last_matching_index == -1:
-                    updated_targets.append(torch.full((prediction_length,), pad_value, dtype=torch.int64))
-
-                # If the last matching index is not -1, it means that the input tensor passed into the model was not
-                # truncated and contained either a part of the target tensor or the entire target tensor. In this case,
-                # we need to set the target tensor to the part of the target tensor that was passed into the model while
-                # also padding it to the correct length with -100.
-                else:
-                    padding = torch.full((last_matching_index,), pad_value)
-                    updated_targets.append(torch.cat((padding, target), dim=-1).to(torch.int64)[:prediction_length])
-
-        targets[of_name] = torch.stack(updated_targets)
-
-    # This is important since metric computation requires float32 tensors and we may use quantization during training.
-    predictions[of_name][PROBABILITIES] = predictions[of_name][PROBABILITIES].type(torch.float32)
-    predictions[of_name][LOGITS] = predictions[of_name][LOGITS].type(torch.float32)
+        # updated_targets = []
+        # for _, target in enumerate(targets[of_name]):
+        #     updated_targets.append(
+        #         F.pad(target, (0, prediction_length - target_length), value=pad_value).to(torch.int64)
+        #     )
+        # targets[of_name] = torch.stack(updated_targets)
 
     return targets, predictions

@@ -22,7 +22,8 @@ from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.llm_utils import (
     add_left_padding,
     create_attention_mask,
-    realign_target_and_prediction_tensors,
+    pad_target_tensor_for_fine_tuning,
+    realign_target_and_prediction_tensors_for_inference,
     remove_left_padding,
     set_pad_token,
 )
@@ -100,7 +101,6 @@ class LLM(BaseModel):
         model_config.hidden_dropout_prob = 0.0
         model_config.resid_pdrop = 0.0
 
-        # breakpoint()
         torch.manual_seed(1)
         self.model = AutoModelForCausalLM.from_config(model_config)
 
@@ -213,7 +213,6 @@ class LLM(BaseModel):
             model_kwargs.update(
                 dict(
                     low_cpu_mem_usage=True,
-                    torch_dtype=torch.float16,
                     device_map="auto",
                     max_memory={i: "13GiB" for i in range(num_gpus)},
                 )
@@ -417,8 +416,8 @@ class LLM(BaseModel):
         for of_name, of_obj in self.output_features.items():
             if isinstance(of_obj, TextOutputFeature):
                 # Align the target length with the predictions length to enable text metric evaluation.
-                _targets, _predictions = realign_target_and_prediction_tensors(
-                    targets, predictions, self.model_inputs, of_name, self.tokenizer
+                _targets, _predictions = realign_target_and_prediction_tensors_for_inference(
+                    targets, predictions, of_name, self.tokenizer
                 )
                 of_obj.update_metrics(_targets[of_name], _predictions[of_name])
                 continue
@@ -462,9 +461,9 @@ class LLM(BaseModel):
                 # token IDs. Examples:
                 # BERTLMHead: https://github.com/huggingface/transformers/blob/v4.29.1/src/transformers/models/bert/modeling_bert.py#L1216-L1219 # noqa
                 # GPTNeoForCausalLM: https://github.com/huggingface/transformers/blob/v4.29.1/src/transformers/models/gpt_neo/modeling_gpt_neo.py#L736 # noqa
-                _targets, _predictions = realign_target_and_prediction_tensors(
-                    _targets, _predictions, self.model_inputs, of_name, self.tokenizer, "left", -100
-                )
+                # breakpoint()
+                _targets = pad_target_tensor_for_fine_tuning(_targets, _predictions, self.model_inputs, of_name)
+                # breakpoint()
 
                 of_obj.update_metrics(_targets[of_name], _predictions[of_name])
                 continue
@@ -534,9 +533,8 @@ class LLM(BaseModel):
                 # BERTLMHead: https://github.com/huggingface/transformers/blob/v4.29.1/src/transformers/models/bert/modeling_bert.py#L1216-L1219 # noqa
                 # GPTNeoForCausalLM: https://github.com/huggingface/transformers/blob/v4.29.1/src/transformers/models/gpt_neo/modeling_gpt_neo.py#L736 # noqa
                 # breakpoint()
-                _targets, _predictions = realign_target_and_prediction_tensors(
-                    _targets, _predictions, self.model_inputs, of_name, self.tokenizer, "left", -100
-                )
+                _targets = pad_target_tensor_for_fine_tuning(_targets, _predictions, self.model_inputs, of_name)
+                # breakpoint()
 
             # TODO(Arnav): Seems like doing this again and going between these format types in unnecessary, but
             # refactor so that we don't have to do this at a later point.
@@ -578,8 +576,8 @@ class LLM(BaseModel):
         for of_name, of_obj in self.output_features.items():
             if isinstance(of_obj, TextOutputFeature):
                 # Align the target length with the predictions length to enable text metric evaluation.
-                _targets, _predictions = realign_target_and_prediction_tensors(
-                    targets, predictions, self.model_inputs, of_name, self.tokenizer
+                _targets, _predictions = realign_target_and_prediction_tensors_for_inference(
+                    targets, predictions, of_name, self.tokenizer
                 )
                 of_eval_loss = of_obj.eval_loss(_targets[of_name], _predictions[of_name])
             else:
