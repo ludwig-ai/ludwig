@@ -298,11 +298,4 @@ def realign_target_and_prediction_tensors_for_inference(
 
         targets[of_name] = F.pad(targets[of_name], (0, zeros_to_add), value=pad_value).to(torch.int64)
 
-        # updated_targets = []
-        # for _, target in enumerate(targets[of_name]):
-        #     updated_targets.append(
-        #         F.pad(target, (0, prediction_length - target_length), value=pad_value).to(torch.int64)
-        #     )
-        # targets[of_name] = torch.stack(updated_targets)
-
     return targets, predictions
