@@ -70,7 +70,11 @@ class LoraConfig(BaseAdapterConfig):
         from peft import LoraConfig as _LoraConfig
 
         return _LoraConfig(
-            r=self.r, lora_alpha=self.alpha, lora_dropout=self.dropout, bias=self.bias_type, task_type=task_type
+            r=self.r,
+            lora_alpha=self.alpha,
+            lora_dropout=self.dropout,
+            bias=self.bias_type,
+            task_type=task_type,
         )
 
 

@@ -8,21 +8,62 @@ from ludwig.constants import LOGITS, PREDICTIONS, PROBABILITIES
 
 
 def has_padding_token(input_tensor: torch.Tensor, tokenizer: PreTrainedTokenizer):
-    """Returns True if the input tensor has padding.
+    """Checks if the input tensor contains any padding tokens.
 
-    TODO(Arnav): Add example of both possible return values.
+    Args:
+        input_tensor (torch.Tensor): The input tensor.
+        tokenizer (PreTrainedTokenizer): The tokenizer used to encode the input.
+
+    Returns:
+        bool: True if the input tensor contains any padding tokens, False otherwise.
+
+    Example:
+        >>> import torch
+        >>> from transformers import PreTrainedTokenizer
+        >>> tokenizer = PreTrainedTokenizer.from_pretrained('bert-base-uncased')
+        >>> input_sentence = "This is an example sentence."
+        >>> input_ids = tokenizer.encode(input_sentence, add_special_tokens=True)
+        >>> padded_input_ids = torch.nn.functional.pad(input_ids, (0, 10 - len(input_ids)))
+        >>> has_padding = has_padding_token(padded_input_ids, tokenizer)
+        >>> has_padding
+        True
     """
     return torch.any(input_tensor == tokenizer.pad_token_id).item()
 
 
 def add_left_padding(input_ids, max_length, pad_value=0):
-    """Adds left padding to the input_ids tensor."""
+    """Adds left padding to the input_ids tensor.
+
+    Args:
+        input_ids (torch.Tensor): The input tensor.
+        max_length (int): The maximum length of the tensor after padding.
+        pad_value (int, optional): The value used for padding. Defaults to 0.
+
+    Returns:
+        torch.Tensor: The input_ids tensor with left padding.
+
+    Example:
+        >>> input_ids = torch.tensor([1, 2, 3])
+        >>> max_length = 5
+        >>> padded_tensor = add_left_padding(input_ids, max_length)
+        >>> padded_tensor
+        tensor([0, 0, 1, 2, 3])
+    """
     padding = torch.tensor([pad_value] * (max_length - input_ids.shape[0]), dtype=torch.int64, device=input_ids.device)
     return torch.cat((padding, input_ids), dim=-1)
 
 
 def set_pad_token(tokenizer: PreTrainedTokenizer):
-    """Sets the pad token for the tokenizer if it is not already set."""
+    """Sets the pad token for the tokenizer if it is not already set.
+
+    Args:
+        tokenizer (PreTrainedTokenizer): The tokenizer.
+
+    Example:
+        >>> from transformers import GPT2Tokenizer, GPT2TokenizerFast, LlamaTokenizer, LlamaTokenizerFast # noqa
+        >>> tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
+        >>> set_pad_token(tokenizer)
+    """
     # Tokenizers might have the pad token id attribute since they tend to use the same base class, but
     # it can be set to None so we check for this explicitly.
     if hasattr(tokenizer, "pad_token_id") and tokenizer.pad_token_id is not None:
@@ -38,7 +79,26 @@ def set_pad_token(tokenizer: PreTrainedTokenizer):
 
 
 def remove_left_padding(input_ids_sample: torch.Tensor, tokenizer: PreTrainedTokenizer):
-    """Removes left padding and other tokens until the first BOS token from the input_ids tensor."""
+    """Removes left padding and other tokens until the first BOS token from the input_ids tensor.
+
+    Args:
+        input_ids_sample (torch.Tensor): The input tensor with padding and other tokens.
+        tokenizer (PreTrainedTokenizer): The tokenizer used to encode the input.
+
+    Returns:
+        torch.Tensor: The input tensor without left padding and other tokens until the first BOS token.
+
+    Example:
+        >>> import torch
+        >>> from transformers import PreTrainedTokenizer
+        >>> tokenizer = PreTrainedTokenizer.from_pretrained('bert-base-uncased')
+        >>> input_sentence = "This is an example sentence."
+        >>> input_ids = tokenizer.encode(input_sentence, add_special_tokens=True)
+        >>> padded_input_ids = torch.nn.functional.pad(input_ids, (10 - len(input_ids), 0))
+        >>> input_ids_no_padding = remove_left_padding(padded_input_ids, tokenizer)
+        >>> input_ids_no_padding
+        tensor([[1, 2, 3]])
+    """
     # Remove all PAD tokens
     pad_idxs = torch.where(input_ids_sample == tokenizer.pad_token_id)[0]  # all PAD token locations
     input_ids_no_padding = input_ids_sample
@@ -58,7 +118,25 @@ def remove_left_padding(input_ids_sample: torch.Tensor, tokenizer: PreTrainedTok
 
 
 def create_attention_mask(input_ids: torch.Tensor, tokenizer: PreTrainedTokenizer):
-    """Creates attention mask for the input_ids tensor."""
+    """Creates an attention mask for the input_ids tensor.
+
+    Args:
+        input_ids (torch.Tensor): The input tensor.
+        tokenizer (PreTrainedTokenizer): The tokenizer used to encode the input.
+
+    Returns:
+        torch.Tensor: The attention mask tensor.
+
+    Example:
+        >>> import torch # noqa
+        >>> from transformers import PreTrainedTokenizer
+        >>> tokenizer = PreTrainedTokenizer.from_pretrained('bert-base-uncased')
+        >>> input_sentence = "This is an example sentence."
+        >>> input_ids = tokenizer.encode(input_sentence, add_special_tokens=True)
+        >>> attention_mask = create_attention_mask(input_ids, tokenizer)
+        >>> attention_mask
+        tensor([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
+    """
     attention_mask = input_ids != tokenizer.pad_token_id
     # Last token may not be padding if we've already hit the max sequence length
     if not attention_mask[-1]:
@@ -69,9 +147,22 @@ def create_attention_mask(input_ids: torch.Tensor, tokenizer: PreTrainedTokenize
 
 
 def find_last_matching_index(tensor_a: torch.Tensor, tensor_b: torch.Tensor):
-    """Returns the last index of tensor_a that matches tensor_b.
+    """Returns the last index of `tensor_a` that matches `tensor_b`.
 
-    TODO(Arnav): Add example of both possible return values.
+    Args:
+        tensor_a (torch.Tensor): The first tensor.
+        tensor_b (torch.Tensor): The second tensor.
+
+    Returns:
+        int: The last index of `tensor_a` that matches `tensor_b`. Returns -1 if there is no matching index.
+
+    Example:
+        >>> import torch
+        >>> tensor_a = torch.tensor([1, 2, 3, 4, 5, 6, 7, 8])
+        >>> tensor_b = torch.tensor([6, 7, 8])
+        >>> last_matching_index = find_last_matching_index(tensor_a, tensor_b)
+        >>> last_matching_index
+        5
     """
     last_index = -1
 
