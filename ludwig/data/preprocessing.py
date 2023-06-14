@@ -1344,14 +1344,16 @@ def build_dataset(
         transcript_column = global_preprocessing_parameters["reward_dataset"]["transcript_column"]
 
         # Validate the input configuration
-        if not all([
-            len(config["input_features"]) == 1,
-            len(config["output_features"]) == 1,
-            config["input_features"][0]["name"] == transcript_column,
-            config["input_features"][0]["type"] == "text",
-            config["output_features"][0]["name"] == id_column,
-            config["output_features"][0]["type"] == "number",
-        ]):
+        if not all(
+            [
+                len(config["input_features"]) == 1,
+                len(config["output_features"]) == 1,
+                config["input_features"][0]["name"] == transcript_column,
+                config["input_features"][0]["type"] == "text",
+                config["output_features"][0]["name"] == id_column,
+                config["output_features"][0]["type"] == "number",
+            ]
+        ):
             raise ValueError(f"Invalid reward model training configuration, received {config}.")
 
         # Validate the input dataframe's columns
@@ -1417,6 +1419,7 @@ def build_dataset(
 
     # If training a reward model, perform grouping and joining on dataset
     if mode == "training" and "reward_dataset" in global_preprocessing_parameters:
+
         def parse_id_rows_group(rows_group):
             rows_idxs = rows_group.index
 
@@ -1428,10 +1431,12 @@ def build_dataset(
                 )
             outcome_first = dataset.loc[rows_idxs[0]][outcome_column]
             outcome_second = dataset.loc[rows_idxs[1]][outcome_column]
-            if not any([
-                outcome_first == chosen_value and outcome_second == rejected_value,
-                outcome_first == rejected_value and outcome_second == chosen_value,
-            ]):
+            if not any(
+                [
+                    outcome_first == chosen_value and outcome_second == rejected_value,
+                    outcome_first == rejected_value and outcome_second == chosen_value,
+                ]
+            ):
                 raise ValueError(
                     f"Incorrect labeling of the 2 text rows for session ID {rows_group.name} when processing "
                     f"the reward model training dataset: expect one row to be labeled as {chosen_value}, "
@@ -1446,9 +1451,7 @@ def build_dataset(
 
         # Group dataset rows by ID, aggregate group data
         dataset_id_groups = dataset.groupby(id_column)
-        dataset_refactored = (
-            dataset_id_groups[transcript_column].apply(parse_id_rows_group).reset_index()
-        )
+        dataset_refactored = dataset_id_groups[transcript_column].apply(parse_id_rows_group).reset_index()
         if "split" in dataset.columns:
             dataset_refactored["split"] = dataset_id_groups["split"].apply(lambda x: list(x)[0]).reset_index()["split"]
         dataset = dataset_refactored

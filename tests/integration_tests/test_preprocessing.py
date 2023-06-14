@@ -171,9 +171,12 @@ def test_rlhf_reward_model_data_preprocessor():
     transcript_column = "Transcript"
 
     # Define the features
-    input_features = [text_feature(
-        name=transcript_column,
-        encoder={"type": "auto_transformer", "pretrained_model_name_or_path": "gpt2"})]
+    input_features = [
+        text_feature(
+            name=transcript_column,
+            encoder={"type": "auto_transformer", "pretrained_model_name_or_path": "gpt2"}
+        )
+    ]
     output_features = [number_feature(name=id_column)]
     backend = LocalTestBackend()
     config = {"input_features": input_features, "output_features": output_features}
