@@ -141,6 +141,8 @@ class LLM(BaseModel):
                 f"An input feature has a name that conflicts with a class attribute of torch's ModuleDict: {e}"
             )
 
+        self.model_inputs = None
+
         # ================ Outputs ================
         self.output_feature_type = self.config_obj.output_features[0].type
 

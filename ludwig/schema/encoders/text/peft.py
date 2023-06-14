@@ -66,7 +66,7 @@ class LoraConfig(BaseAdapterConfig):
         description="Bias type for Lora.",
     )
 
-    def to_config(self, task_type: str, **kwargs) -> "PeftConfig":
+    def to_config(self, task_type: str = None, **kwargs) -> "PeftConfig":
         from peft import LoraConfig as _LoraConfig
 
         return _LoraConfig(
@@ -182,7 +182,7 @@ class BasePromptLearningConfig(BaseAdapterConfig):
 #         description="Whether to use a projection layer in the prompt encoder to project the prefix tokens",
 #     )
 
-#     def to_config(self, task_type: str, **kwargs) -> "PeftConfig":
+#     def to_config(self, task_type: str = None, **kwargs) -> "PeftConfig":
 #         from peft import PrefixTuningConfig as _PrefixTuningConfig
 
 #         return _PrefixTuningConfig(
@@ -229,7 +229,7 @@ class BasePromptLearningConfig(BaseAdapterConfig):
 #         description="The dropout probability for the prompt encoder.",
 #     )
 
-#     def to_config(self, task_type: str, **kwargs) -> "PeftConfig":
+#     def to_config(self, task_type: str = None, **kwargs) -> "PeftConfig":
 #         from peft import PromptEncoderConfig as _PromptEncoderConfig
 
 #         return _PromptEncoderConfig(
@@ -367,7 +367,7 @@ class AdaptionPromptConfig(BaseAdapterConfig):
         parameter_metadata=LLM_METADATA["adapter"]["adaption_prompt"]["adapter_layers"],
     )
 
-    def to_config(self, task_type: str, **kwargs) -> "PeftConfig":
+    def to_config(self, task_type: str = None, **kwargs) -> "PeftConfig":
         from peft import AdaptionPromptConfig as _AdaptionPromptConfig
 
         return _AdaptionPromptConfig(
