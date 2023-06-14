@@ -66,14 +66,11 @@ class LoraConfig(BaseAdapterConfig):
         description="Bias type for Lora.",
     )
 
-    def to_config(self, **kwargs) -> "PeftConfig":
+    def to_config(self, task_type: str, **kwargs) -> "PeftConfig":
         from peft import LoraConfig as _LoraConfig
 
         return _LoraConfig(
-            r=self.r,
-            lora_alpha=self.alpha,
-            lora_dropout=self.dropout,
-            bias=self.bias_type,
+            r=self.r, lora_alpha=self.alpha, lora_dropout=self.dropout, bias=self.bias_type, task_type=task_type
         )
 
 

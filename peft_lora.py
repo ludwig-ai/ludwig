@@ -2,8 +2,7 @@ import pprint
 
 import torch
 from datasets import load_dataset
-
-# from peft import get_peft_model, LoraConfig, TaskType
+from peft import get_peft_model, LoraConfig, TaskType
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from transformers import (  # get_linear_schedule_with_warmup
@@ -34,9 +33,10 @@ model = AutoModelForCausalLM.from_config(config)
 layer_names_and_dtypes = {name: param.dtype for name, param in model.named_parameters()}
 pprint.pprint(layer_names_and_dtypes)
 
-# peft_config = LoraConfig(task_type=TaskType.CAUSAL_LM, r=8, lora_alpha=16, lora_dropout=0.05)
-# model = get_peft_model(model, peft_config)
-# model.print_trainable_parameters()
+# breakpoint()
+peft_config = LoraConfig(task_type=TaskType.CAUSAL_LM, r=8, lora_alpha=16, lora_dropout=0)
+model = get_peft_model(model, peft_config)
+model.print_trainable_parameters()
 
 dataset_name = "twitter_complaints"
 text_column = "Tweet text"
@@ -44,7 +44,7 @@ label_column = "text_label"
 max_length = 64
 lr = 0.03
 num_epochs = 10
-batch_size = 8
+batch_size = 2
 
 dataset = load_dataset("ought/raft", dataset_name)
 
@@ -108,7 +108,6 @@ eval_dataset = processed_datasets["test"]
 
 # This breakpoint helps to debug the data preprocessing after tokenization
 # Investigate train_dataset[0] and eval_dataset[0]
-# breakpoint()
 
 train_dataloader = DataLoader(
     train_dataset, shuffle=False, collate_fn=default_data_collator, batch_size=batch_size, pin_memory=True
@@ -173,6 +172,7 @@ for epoch in range(num_epochs):
         # batch = {k: v.to(device) for k, v in batch.items()}
         #         print(batch)
         #         print(batch["input_ids"].shape)
+        # breakpoint()
         outputs = model(**batch)
         loss = outputs.loss
         print(loss)

@@ -14,11 +14,11 @@ config = yaml.safe_load(
     """
         model_type: llm
         model_name: hf-internal-testing/tiny-random-GPTJForCausalLM
-        # adapter:
-        #     type: lora
-        #     r: 8
-        #     alpha: 16
-        #     dropout: 0.05
+        adapter:
+            type: lora
+            r: 8
+            alpha: 16
+            dropout: 0
         input_features:
             - name: Tweet text
               type: text

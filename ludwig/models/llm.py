@@ -168,7 +168,6 @@ class LLM(BaseModel):
         self._output_feature_decoder = ModuleWrapper(self.output_features.items()[0][1])
 
         # Initialize the PEFT adapter is one is provided
-        # breakpoint()
         self.initialize_adapter()
 
         # When merging input IDs and target IDs, we want to make sure that the merged tensor is not longer than the
@@ -189,16 +188,17 @@ class LLM(BaseModel):
 
     def initialize_adapter(self):
         """If an adapter config is provided, we want to wrap the model with a PEFT model for fine-tuning."""
+        # breakpoint()
         if self.config_obj.adapter:
-            from peft import get_peft_model
+            from peft import get_peft_model, TaskType
 
             peft_config = self.config_obj.adapter.to_config(
-                task_type="CAUSAL_LM", tokenizer_name_or_path=self.model_name
+                task_type=TaskType.CAUSAL_LM, tokenizer_name_or_path=self.model_name
             )
             self.model = get_peft_model(self.model, peft_config)
 
             logger.info("==================================================")
-            logger.info("Trainable Parameter Summary For Fine-Tuning:")
+            logger.info("Trainable Parameter Summary For Fine-Tuning")
             logger.info(f"Fine-tuning with adapter: {self.config_obj.adapter.type}")
             self.model.print_trainable_parameters()
             logger.info("==================================================")
@@ -444,7 +444,6 @@ class LLM(BaseModel):
                 # Remove left padding from target tensors since we also do this for the model's forward pass when we
                 # concatenate the input_ids with the target_ids. We also need to add the pad token to the end of the
                 # target tensors.
-                # breakpoint()
                 targets_without_padding = []
                 lengths = []
                 for target in _targets[of_name]:
@@ -456,7 +455,6 @@ class LLM(BaseModel):
                 # We need all target tensors to have the same length for the loss computation. We pad the target
                 # tensors with -100 since we want to negate all tokens that are not target_ids during the softmax
                 # cross entropy loss computation. This ensures that the loss is computed only for the target tokens.
-                # breakpoint()
                 max_length = max(lengths)
                 for i, target in enumerate(targets_without_padding):
                     targets_without_padding[i] = add_left_padding(targets_without_padding[i][0], max_length, -100)
@@ -471,17 +469,16 @@ class LLM(BaseModel):
                 # token IDs. Examples:
                 # BERTLMHead: https://github.com/huggingface/transformers/blob/v4.29.1/src/transformers/models/bert/modeling_bert.py#L1216-L1219 # noqa
                 # GPTNeoForCausalLM: https://github.com/huggingface/transformers/blob/v4.29.1/src/transformers/models/gpt_neo/modeling_gpt_neo.py#L736 # noqa
-                # breakpoint()
                 _targets, _predictions = realign_target_and_prediction_tensors(
                     _targets, _predictions, self.model_inputs, of_name, self.tokenizer, "left", -100
                 )
 
-                # breakpoint()
                 of_obj.update_metrics(_targets[of_name], _predictions[of_name])
                 continue
 
             of_obj.update_metrics(_targets[of_name], _predictions[of_name])
 
+        # breakpoint()
         eval_loss, additional_losses = self.eval_loss(_targets, _predictions)
         self.eval_loss_metric.update(eval_loss)
         self.eval_additional_losses_metrics.update(additional_losses)
@@ -630,7 +627,6 @@ class LLM(BaseModel):
             from peft import PeftConfig, PeftModel  # noqa
 
             config = PeftConfig.from_pretrained(weights_save_path)
-            config.inference_mode = False
             self.model = AutoModelForCausalLM.from_pretrained(config.base_model_name_or_path)
             self.model = PeftModel.from_pretrained(self.model, weights_save_path)
         elif self.config_obj.trainer.type != "none":
