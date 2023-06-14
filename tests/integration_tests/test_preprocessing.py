@@ -174,7 +174,7 @@ def test_rlhf_reward_model_data_preprocessor():
     input_features = [
         text_feature(
             name=transcript_column,
-            encoder={"type": "auto_transformer", "pretrained_model_name_or_path": "gpt2"}
+            encoder={"type": "auto_transformer", "pretrained_model_name_or_path": "bert-base-uncased"}
         )
     ]
     output_features = [number_feature(name=id_column)]
