@@ -50,7 +50,6 @@ def test_regularizers(
     input_features,
     output_features,
 ):
-
     np.random.seed(RANDOM_SEED)
     torch.manual_seed(RANDOM_SEED)
     random.seed(0)
@@ -60,7 +59,6 @@ def test_regularizers(
 
     regularizer_losses = []
     for regularization_type in [None, "l1", "l2", "l1_l2"]:
-
         config = {
             "input_features": input_features,
             "output_features": output_features,
