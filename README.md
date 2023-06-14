@@ -338,7 +338,7 @@ if you have any questions.
   training a BERT-based sentiment analysis model with Ludwig is as simple as:
 
   ```shell
-  ludwig train --dataset sst5 --config_str “{input_features: [{name: sentence, type: text, encoder: bert}], output_features: [{name: label, type: category}]}”
+  ludwig train --dataset sst5 --config_str "{input_features: [{name: sentence, type: text, encoder: bert}], output_features: [{name: label, type: category}]}"
   ```
 
 - **Low-code interface for AutoML**

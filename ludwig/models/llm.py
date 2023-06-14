@@ -7,17 +7,7 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
-from transformers import (
-    AutoConfig,
-    AutoModelForCausalLM,
-    AutoTokenizer,
-    GenerationConfig,
-    GPT2Tokenizer,
-    GPT2TokenizerFast,
-    LlamaConfig,
-    LlamaTokenizer,
-    LlamaTokenizerFast,
-)
+from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer, GenerationConfig, LlamaConfig
 
 from ludwig.constants import LOGITS, MODEL_LLM, PREDICTIONS, TEXT
 from ludwig.features.base_feature import ModuleWrapper, OutputFeature
@@ -34,6 +24,7 @@ from ludwig.utils.llm_utils import (
     create_attention_mask,
     realign_target_and_prediction_tensors,
     remove_left_padding,
+    set_pad_token,
 )
 from ludwig.utils.logging_utils import log_once
 from ludwig.utils.output_feature_utils import set_output_feature_tensor
@@ -138,7 +129,7 @@ class LLM(BaseModel):
             # HACK: Llama fast tokenizer takes about 2-4 minutes to load, so we disable it for now.
             use_fast = False
         self.tokenizer = AutoTokenizer.from_pretrained(self.config_obj.model_name, use_fast=use_fast)
-        self._set_pad_token()
+        set_pad_token(self.tokenizer)
 
         self.generation = GenerationConfig(**self.config_obj.generation.to_dict())
 
@@ -641,19 +632,6 @@ class LLM(BaseModel):
             self.config_obj.output_features.to_list(),
             self._random_seed,
         )
-
-    def _set_pad_token(self):
-        """Sets the pad token for the tokenizer if it is not already set."""
-        # HACK(Arnav): gpt, gpt2 and llama tokenizers had no pad tokens.
-        # These recommend using eos tokens instead
-        # https://github.com/huggingface/transformers/issues/2648#issuecomment-616177044
-        # https://github.com/huggingface/transformers/issues/2630#issuecomment-1290809338
-        if any(
-            isinstance(self.tokenizer, t)
-            for t in [GPT2Tokenizer, GPT2TokenizerFast, LlamaTokenizer, LlamaTokenizerFast]
-        ):
-            self.tokenizer.pad_token = self.tokenizer.eos_token
-            self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
 
     def _generate_merged_ids(self, input_ids, target_ids):
         """This function merges the input_ids and target_ids together to create a unified tensor to pass into the
