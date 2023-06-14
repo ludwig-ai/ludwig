@@ -812,10 +812,10 @@ class FineTuneTrainerConfig(ECDTrainerConfig):
 
 
 @DeveloperAPI
-@register_llm_trainer_schema("reward_model")
+@register_trainer_schema("reward_model")
 @ludwig_dataclass
 class RewardModelTrainerConfig(ECDTrainerConfig):
-    """Dataclass that configures most of the hyperparameters used for LLM RLHF reward model training."""
+    """Dataclass that configures most of the hyperparameters used for RLHF reward model training."""
 
     # Required for lookup during trainer initialization
     type: str = schema_utils.ProtectedString("reward_model")

@@ -7,14 +7,14 @@ from ludwig.distributed.base import DistributedStrategy
 from ludwig.models.llm import LLM
 from ludwig.modules.loss_modules import RewardLoss
 from ludwig.schema.trainer import RewardModelTrainerConfig
-from ludwig.trainers.registry import register_llm_trainer
+from ludwig.trainers.registry import register_trainer
 from ludwig.trainers.trainer import Trainer
 from ludwig.utils.defaults import default_random_seed
 
 logger = logging.getLogger(__name__)
 
 
-@register_llm_trainer("reward_model")
+@register_trainer("reward_model")
 class RewardModelTrainer(Trainer):
     @staticmethod
     def get_schema_cls():
@@ -54,10 +54,8 @@ class RewardModelTrainer(Trainer):
         self.reward_loss_function = RewardLoss({})
 
         # Save the reward model dataset parameters
-        if "preprocessing" not in config or "reward_dataset" not in config["preprocessing"]:
-            raise ValueError("Invalid reward model training config, expect preprocessing reward attributes.")
-        self.reward_model_dataset_params = config["preprocessing"]["reward_dataset"]
-        self.reward_model_dataset_params["transcript_column"] = config["input_features"][0]["name"]
+        self.id_column = config["output_features"][0]["proc_column"]
+        self.transcript_column = config["input_features"][0]["proc_column"]
 
     def train_step(
         self, inputs: Dict[str, torch.Tensor], targets: Dict[str, torch.Tensor], should_step: bool = True
@@ -72,41 +70,33 @@ class RewardModelTrainer(Trainer):
         Returns:
             A tuple of the loss tensor and a dictionary of loss for every output feature.
         """
-        id_column = self.reward_model_dataset_params["id_column"]
-        outcome_column = self.reward_model_dataset_params["outcome_column"]
-        transcript_column = self.reward_model_dataset_params["transcript_column"]
-
-        # Validate inputs
-        input_names_expected = sorted([id_column, outcome_column, transcript_column])
-        input_names_actual = sorted([input_name.split("_")[0] for input_name in inputs.keys()])
-        if not input_names_actual == input_names_expected:
-            raise ValueError(
-                f"Invalid reward model training data input, expect inputs {input_names_expected}, "
-                f"got inputs {input_names_actual}."
-            )
-
-        # Other validations
         if not all(
             self.use_amp is False,
             self.evaluate_training_set is True,
         ):
             raise ValueError("Invalid trainer arguments for RLHF reward model")
 
-        # Augment column names to processed versions
-        for input_name in inputs.keys():
-            if id_column in input_name:
-                id_column = input_name
-            elif outcome_column in input_name:
-                outcome_column = input_name
-            elif transcript_column in input_name:
-                transcript_column = input_name
+        # Validate inputs and targets
+        input_names_expected = [self.transcript_column]
+        input_names_actual = list(inputs.keys())
+        if not input_names_actual == input_names_expected:
+            raise ValueError(
+                f"Invalid reward model training data inputs, expect inputs {input_names_expected}, "
+                f"got inputs {input_names_actual}."
+            )
+        target_names_expected = [self.id_column]
+        target_names_actual = list(targets.keys())
+        if not target_names_actual == target_names_expected:
+            raise ValueError(
+                f"Invalid reward model training data targets, expect targets {target_names_expected}, "
+                f"got targets {target_names_actual}."
+            )
 
         # Run forward-propagation of the chosen and rejected inputs
         with self.distributed.prepare_model_update(self.dist_model, should_step=should_step):
             # Obtain model predictions and loss
-            chosen_idx = inputs[outcome_column].index(0)
-            model_output_chosen = self.dist_model(inputs[transcript_column][chosen_idx])
-            model_output_rejected = self.dist_model(inputs[transcript_column][1 - chosen_idx])
+            model_output_chosen = self.dist_model(inputs[self.transcript_column][0])
+            model_output_rejected = self.dist_model(inputs[self.transcript_column][1])
             loss = self.reward_loss_function(model_output_chosen, model_output_rejected)
             loss = loss / self.gradient_accumulation_steps
             all_losses = loss

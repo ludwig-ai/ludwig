@@ -217,9 +217,18 @@ def test_changing_parameters_on_plateau(tmpdir):
     model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv, output_directory=tmpdir)
 
 
-def test_reward_model_training(tmpdir):
-    input_features = [text_feature()]
-    output_features = [number_feature(), category_feature(decoder={"vocab_size": 2})]
+def test_rlhf_reward_model_trainer(tmpdir):
+    id_column = "Reward_Session_ID"
+    outcome_column = "Human_Feedback_Outcome"
+    chosen_value = "some_value_1"
+    rejected_value = "some_value_2"
+    transcript_column = "Transcript"
+
+    # Define the features
+    input_features = [text_feature(
+        name=transcript_column,
+        encoder={"type": "auto_transformer", "pretrained_model_name_or_path": "gpt2"})]
+    output_features = [number_feature(name=id_column)]
     backend = LocalTestBackend()
     config = {"input_features": input_features, "output_features": output_features}
 
@@ -227,15 +236,7 @@ def test_reward_model_training(tmpdir):
     dataframe = generate_data_as_dataframe(input_features, output_features, num_examples=20)
 
     # Add reward model training pairs
-    id_column, outcome_column = "", ""
-    for column_name in dataframe.columns:
-        if "number" in column_name:
-            id_column = column_name
-        elif "category" in column_name:
-            outcome_column = column_name
     dataframe[id_column] = dataframe.index // 2
-    chosen_value = "some_value_1"
-    rejected_value = "some_value_2"
     dataframe[outcome_column] = np.where(dataframe.index % 2, rejected_value, chosen_value)
 
     # Modify config with preprocessing
@@ -245,13 +246,10 @@ def test_reward_model_training(tmpdir):
             "outcome_column": outcome_column,
             "chosen_value": chosen_value,
             "rejected_value": rejected_value,
+            "transcript_column": transcript_column,
         }
     }
-    config["model_type"] = "llm"
-    config["model_name"] = "gpt2"
-    config["input_features"][0]["encoder"]["type"] = "passthrough"
     config[TRAINER] = {"type": "reward_model"}
-    config["output_features"] = config["output_features"][:1]
 
     # Train Ludwig model with the dataset
     ludwig_model = LudwigModel(config, backend=backend)

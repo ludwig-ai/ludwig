@@ -163,9 +163,18 @@ def test_strip_whitespace_category(csv_filename, tmpdir):
     assert len(np.unique(train_ds.dataset[cat_feat[PROC_COLUMN]])) == cat_feat[DECODER]["vocab_size"]
 
 
-def test_reward_model_dataset_refactor():
-    input_features = [text_feature()]
-    output_features = [number_feature(), category_feature(decoder={"vocab_size": 2})]
+def test_rlhf_reward_model_data_preprocessor():
+    id_column = "Reward_Session_ID"
+    outcome_column = "Human_Feedback_Outcome"
+    chosen_value = "some_value_1"
+    rejected_value = "some_value_2"
+    transcript_column = "Transcript"
+
+    # Define the features
+    input_features = [text_feature(
+        name=transcript_column,
+        encoder={"type": "auto_transformer", "pretrained_model_name_or_path": "gpt2"})]
+    output_features = [number_feature(name=id_column)]
     backend = LocalTestBackend()
     config = {"input_features": input_features, "output_features": output_features}
 
@@ -173,15 +182,7 @@ def test_reward_model_dataset_refactor():
     dataframe = generate_data_as_dataframe(input_features, output_features, num_examples=20)
 
     # Add reward model training pairs
-    id_column, outcome_column = "", ""
-    for column_name in dataframe.columns:
-        if "number" in column_name:
-            id_column = column_name
-        elif "category" in column_name:
-            outcome_column = column_name
     dataframe[id_column] = dataframe.index // 2
-    chosen_value = "some_value_1"
-    rejected_value = "some_value_2"
     dataframe[outcome_column] = np.where(dataframe.index % 2, rejected_value, chosen_value)
 
     # Modify config with preprocessing
@@ -191,8 +192,10 @@ def test_reward_model_dataset_refactor():
             "outcome_column": outcome_column,
             "chosen_value": chosen_value,
             "rejected_value": rejected_value,
+            "transcript_column": transcript_column,
         }
     }
+    config[TRAINER] = {"type": "reward_model"}
 
     # Run preprocessing, get output dataset
     ludwig_model = LudwigModel(config, backend=backend)
@@ -200,27 +203,15 @@ def test_reward_model_dataset_refactor():
 
     # Validate the processed dataset columns
     dataset = train_dataset.dataset
-    transcript_column = config["input_features"][0]["name"]
-    dataset_columns_expected = sorted([id_column, outcome_column, transcript_column])
-    dataset_columns_actual = sorted(["_".join(column_name.split("_")[:2]) for column_name in dataset.keys()])
+    id_column = config["output_features"][0]["proc_column"]
+    transcript_column = config["input_features"][0]["proc_column"]
+    dataset_columns_expected = sorted([id_column, transcript_column])
+    dataset_columns_actual = sorted(dataset.keys())
     assert dataset_columns_actual == dataset_columns_expected
-
-    # Augment column names to processed versions
-    for column_name in dataset.keys():
-        if id_column in column_name:
-            id_column = column_name
-        elif outcome_column in column_name:
-            outcome_column = column_name
-        elif transcript_column in column_name:
-            transcript_column = column_name
 
     # Validate each row in the processed dataset
     for row_id in range(len(dataset[id_column])):
-        assert len(dataset[outcome_column][row_id]) == 2
         assert len(dataset[transcript_column][row_id]) == 2
-        assert dataset[outcome_column][row_id][0] in [0, 1]
-        assert dataset[outcome_column][row_id][1] in [0, 1]
-        assert dataset[outcome_column][row_id][0] != dataset[outcome_column][row_id][1]
 
 
 @pytest.mark.parametrize(

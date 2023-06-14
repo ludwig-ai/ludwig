@@ -1329,6 +1329,7 @@ def build_dataset(
             "outcome_column",
             "chosen_value",
             "rejected_value",
+            "transcript_column",
         ]
         if not all(
             param_name in global_preprocessing_parameters["reward_dataset"] for param_name in reward_parameter_names
@@ -1340,7 +1341,18 @@ def build_dataset(
         outcome_column = global_preprocessing_parameters["reward_dataset"]["outcome_column"]
         chosen_value = global_preprocessing_parameters["reward_dataset"]["chosen_value"]
         rejected_value = global_preprocessing_parameters["reward_dataset"]["rejected_value"]
-        transcript_column = config["input_features"][0]["name"]
+        transcript_column = global_preprocessing_parameters["reward_dataset"]["transcript_column"]
+
+        # Validate the input configuration
+        if not all([
+            len(config["input_features"]) == 1,
+            len(config["output_features"]) == 1,
+            config["input_features"][0]["name"] == transcript_column,
+            config["input_features"][0]["type"] == "text",
+            config["output_features"][0]["name"] == id_column,
+            config["output_features"][0]["type"] == "number",
+        ]):
+            raise ValueError(f"Invalid reward model training configuration, received {config}.")
 
         # Validate the input dataframe's columns
         dataset_columns_expected = sorted([id_column, outcome_column, transcript_column])
@@ -1354,25 +1366,20 @@ def build_dataset(
             )
 
         # Validate the processed dataset columns
-        processed_column_names = sorted(["_".join(column_name.split("_")[:2]) for column_name in proc_cols.keys()])
-        if "split" in processed_column_names:
-            processed_column_names.remove("split")
-        if processed_column_names != dataset_columns_expected:
+        id_column = config["output_features"][0]["proc_column"]
+        transcript_column = config["input_features"][0]["proc_column"]
+        proc_columns_expected = sorted([id_column, transcript_column])
+        proc_columns_actual = sorted(proc_cols.keys())
+        if "split" in proc_columns_actual:
+            proc_columns_actual.remove("split")
+        if proc_columns_actual != proc_columns_expected:
             raise ValueError(
-                f"Invalid reward training processed dataset, expect columns {dataset_columns_expected}, "
-                f"got columns {processed_column_names}."
+                f"Invalid reward training processed dataset, expect columns {proc_columns_expected}, "
+                f"got columns {proc_columns_actual}."
             )
 
-        # Augment column names to processed versions
-        for column_name in proc_cols.keys():
-            if id_column in column_name:
-                proc_cols[column_name] = dataset_df[id_column]
-                id_column = column_name
-            elif outcome_column in column_name:
-                proc_cols[column_name] = dataset_df[outcome_column]
-                outcome_column = column_name
-            elif transcript_column in column_name:
-                transcript_column = column_name
+        # Add the outcome column to processed columns
+        proc_cols[outcome_column] = dataset_df[outcome_column]
 
     # Implements an outer join of proc_cols
     dataset = backend.df_engine.df_like(dataset_df, proc_cols)
@@ -1410,25 +1417,40 @@ def build_dataset(
 
     # If training a reward model, perform grouping and joining on dataset
     if mode == "training" and "reward_dataset" in global_preprocessing_parameters:
-        reward_sample_value_map = {
-            chosen_value: 0,
-            rejected_value: 1,
-        }
+        def parse_id_rows_group(rows_group):
+            rows_idxs = rows_group.index
+
+            # Retrieve the outcome of the rows in this group
+            if len(rows_idxs) != 2:
+                raise ValueError(
+                    f"Incorrect number of text rows for session ID {rows_group.name} when processing the "
+                    f"reward model training dataset: expect 2 rows per session ID, got {len(rows_idxs)} rows."
+                )
+            outcome_first = dataset.loc[rows_idxs[0]][outcome_column]
+            outcome_second = dataset.loc[rows_idxs[1]][outcome_column]
+            if not any([
+                outcome_first == chosen_value and outcome_second == rejected_value,
+                outcome_first == rejected_value and outcome_second == chosen_value,
+            ]):
+                raise ValueError(
+                    f"Incorrect labeling of the 2 text rows for session ID {rows_group.name} when processing "
+                    f"the reward model training dataset: expect one row to be labeled as {chosen_value}, "
+                    f"and one row to be labeled as {rejected_value}, but got {outcome_first} and {outcome_second}."
+                )
+
+            # Return the text transcripts for row in specific order
+            if outcome_first == chosen_value:
+                return [rows_group.loc[rows_idxs[0]], rows_group.loc[rows_idxs[1]]]
+            else:
+                return [rows_group.loc[rows_idxs[1]], rows_group.loc[rows_idxs[0]]]
 
         # Group dataset rows by ID, aggregate group data
         dataset_id_groups = dataset.groupby(id_column)
         dataset_refactored = (
-            dataset_id_groups[outcome_column]
-            .apply(lambda x: [reward_sample_value_map[value] for value in list(x)])
-            .reset_index()
-        )
-        dataset_refactored[transcript_column] = (
-            dataset_id_groups[transcript_column].apply(list).reset_index()[transcript_column]
+            dataset_id_groups[transcript_column].apply(parse_id_rows_group).reset_index()
         )
         if "split" in dataset.columns:
-            dataset_refactored["split"] = (
-                dataset_id_groups["split"].apply(lambda x: list(x)[0]).reset_index()["split"]
-            )
+            dataset_refactored["split"] = dataset_id_groups["split"].apply(lambda x: list(x)[0]).reset_index()["split"]
         dataset = dataset_refactored
 
     return dataset, metadata
