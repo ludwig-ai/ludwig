@@ -7,52 +7,6 @@ from transformers import GPT2Tokenizer, GPT2TokenizerFast, LlamaTokenizer, Llama
 from ludwig.constants import LOGITS, PREDICTIONS, PROBABILITIES
 
 
-def has_padding_token(input_tensor: torch.Tensor, tokenizer: PreTrainedTokenizer):
-    """Checks if the input tensor contains any padding tokens.
-
-    Args:
-        input_tensor (torch.Tensor): The input tensor.
-        tokenizer (PreTrainedTokenizer): The tokenizer used to encode the input.
-
-    Returns:
-        bool: True if the input tensor contains any padding tokens, False otherwise.
-
-    Example:
-        >>> import torch
-        >>> from transformers import PreTrainedTokenizer
-        >>> tokenizer = PreTrainedTokenizer.from_pretrained('bert-base-uncased')
-        >>> input_sentence = "This is an example sentence."
-        >>> input_ids = tokenizer.encode(input_sentence, add_special_tokens=True)
-        >>> padded_input_ids = torch.nn.functional.pad(input_ids, (0, 10 - len(input_ids)))
-        >>> has_padding = has_padding_token(padded_input_ids, tokenizer)
-        >>> has_padding
-        True
-    """
-    return torch.any(input_tensor == tokenizer.pad_token_id).item()
-
-
-def add_left_padding(input_ids, max_length, pad_value=0):
-    """Adds left padding to the input_ids tensor.
-
-    Args:
-        input_ids (torch.Tensor): The input tensor.
-        max_length (int): The maximum length of the tensor after padding.
-        pad_value (int, optional): The value used for padding. Defaults to 0.
-
-    Returns:
-        torch.Tensor: The input_ids tensor with left padding.
-
-    Example:
-        >>> input_ids = torch.tensor([1, 2, 3])
-        >>> max_length = 5
-        >>> padded_tensor = add_left_padding(input_ids, max_length)
-        >>> padded_tensor
-        tensor([0, 0, 1, 2, 3])
-    """
-    padding = torch.tensor([pad_value] * (max_length - input_ids.shape[0]), dtype=torch.int64, device=input_ids.device)
-    return torch.cat((padding, input_ids), dim=-1)
-
-
 def set_pad_token(tokenizer: PreTrainedTokenizer):
     """Sets the pad token for the tokenizer if it is not already set.
 
@@ -76,6 +30,33 @@ def set_pad_token(tokenizer: PreTrainedTokenizer):
     if any(isinstance(tokenizer, t) for t in [GPT2Tokenizer, GPT2TokenizerFast, LlamaTokenizer, LlamaTokenizerFast]):
         tokenizer.pad_token = tokenizer.eos_token
         tokenizer.pad_token_id = tokenizer.eos_token_id
+
+
+def has_padding_token(input_tensor: torch.Tensor, tokenizer: PreTrainedTokenizer):
+    """Checks if the input tensor contains any padding tokens.
+
+    Args:
+        input_tensor (torch.Tensor): The input tensor.
+        tokenizer (PreTrainedTokenizer): The tokenizer used to encode the input.
+
+    Returns:
+        bool: True if the input tensor contains any padding tokens, False otherwise.
+
+    Example:
+        >>> import torch
+        >>> from transformers import PreTrainedTokenizer
+        >>> tokenizer = PreTrainedTokenizer.from_pretrained('bert-base-uncased')
+        >>> input_sentence = "This is an example sentence."
+        >>> input_ids = tokenizer.encode(input_sentence, add_special_tokens=True)
+        >>> padded_input_ids = torch.nn.functional.pad(input_ids, (0, 10 - len(input_ids)))
+        >>> has_padding = has_padding_token(padded_input_ids, tokenizer)
+        >>> has_padding
+        True
+    """
+    if input_tensor.dim() == 1:
+        return torch.any(input_tensor == tokenizer.pad_token_id).item()
+    elif input_tensor.dim() == 2:
+        return torch.any(input_tensor == tokenizer.pad_token_id, dim=-1).item()
 
 
 def remove_left_padding(input_ids_sample: torch.Tensor, tokenizer: PreTrainedTokenizer):
@@ -117,8 +98,31 @@ def remove_left_padding(input_ids_sample: torch.Tensor, tokenizer: PreTrainedTok
     return input_ids_no_bos
 
 
+def add_left_padding(input_ids, max_length, pad_value=0):
+    """Adds left padding to the input_ids tensor.
+
+    Args:
+        input_ids (torch.Tensor): The input tensor.
+        max_length (int): The maximum length of the tensor after padding.
+        pad_value (int, optional): The value used for padding. Defaults to 0.
+
+    Returns:
+        torch.Tensor: The input_ids tensor with left padding.
+
+    Example:
+        >>> input_ids = torch.tensor([1, 2, 3])
+        >>> max_length = 5
+        >>> padded_tensor = add_left_padding(input_ids, max_length)
+        >>> padded_tensor
+        tensor([0, 0, 1, 2, 3])
+    """
+    padding = torch.tensor([pad_value] * (max_length - input_ids.shape[0]), dtype=torch.int64, device=input_ids.device)
+    return torch.cat((padding, input_ids), dim=-1)
+
+
 def create_attention_mask(input_ids: torch.Tensor, tokenizer: PreTrainedTokenizer):
-    """Creates an attention mask for the input_ids tensor.
+    """Creates an attention mask for the input_ids tensor. This also sets the last padding token ID to 1 if it
+    exists.
 
     Args:
         input_ids (torch.Tensor): The input tensor.
@@ -147,7 +151,8 @@ def create_attention_mask(input_ids: torch.Tensor, tokenizer: PreTrainedTokenize
 
 
 def find_last_matching_index(tensor_a: torch.Tensor, tensor_b: torch.Tensor):
-    """Returns the last index of `tensor_a` that matches `tensor_b`.
+    """Returns the last index of `tensor_a` that matches `tensor_b`. Specifically, this checks whether the tensor_b
+    is in the last tensor_b.shape[0] elements of tensor_a.
 
     Args:
         tensor_a (torch.Tensor): The first tensor.
