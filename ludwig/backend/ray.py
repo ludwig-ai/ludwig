@@ -949,6 +949,8 @@ class RayBackend(RemoteTrainingMixin, Backend):
             daft.context.set_runner_ray(address="auto", noop_if_initialized=True)
 
             # Convert Dask Series to Dask Dataframe
+            # This is needed because Daft only supports Dataframes, not Series
+            # See https://www.getdaft.io/projects/docs/en/latest/api_docs/doc_gen/dataframe_methods/daft.DataFrame.to_dask_dataframe.html # noqa: E501
             df = column.to_frame(name=column.name)
             df["idx"] = column.index
 
@@ -978,7 +980,8 @@ class RayBackend(RemoteTrainingMixin, Backend):
                 if map_fn is not None:
                     df = df.with_column(column.name, df[column.name].apply(map_fn, return_dtype=daft.DataType.python()))
 
-                # Executes and convert Daft Dataframe to Dask DataFrame - note that this preserves partitioning
+                # Executes and convert Daft Dataframe to Dask DataFrame or Pandas Dataframe
+                # Note: During conversion back to dask, this preserves partitioning
                 if is_dask_df:
                     df = df.to_dask_dataframe()
                     df = self.df_engine.persist(df)
