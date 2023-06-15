@@ -91,7 +91,6 @@ class LLM(BaseModel):
         self.model_name = self.config_obj.model_name
 
         logger.info("Loading large language model...")
-
         self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.model_name)
         self.curr_device = torch.device("cpu")  # model initially loaded onto cpu
         logger.info("Done.")
@@ -279,10 +278,10 @@ class LLM(BaseModel):
         )
 
         # Wrap with flash attention backend for faster generation
-        # with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=False, enable_mem_efficient=False) if (
-        #     torch.cuda.is_available() and next(self.model.parameters()).device.type == "cuda"
-        # ) else contextlib.nullcontext():
-        model_outputs = self.model(input_ids=self.model_inputs, attention_mask=self.attention_masks).get(LOGITS)
+        with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=False, enable_mem_efficient=False) if (
+            torch.cuda.is_available() and next(self.model.parameters()).device.type == "cuda"
+        ) else contextlib.nullcontext():
+            model_outputs = self.model(input_ids=self.model_inputs, attention_mask=self.attention_masks).get(LOGITS)
 
         if self.output_feature_type != TEXT:
             # Pass generated tokens through decoder after averaging the token probabilities

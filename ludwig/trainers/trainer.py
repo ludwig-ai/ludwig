@@ -267,7 +267,7 @@ class Trainer(BaseTrainer):
                 loss = loss / self.gradient_accumulation_steps
 
         # Begin the backward pass
-        # variables = self.dist_model.parameters()
+        variables = self.dist_model.parameters()
         if self.use_amp:
             self.scaler.scale(loss).backward()
         else:
@@ -288,9 +288,9 @@ class Trainer(BaseTrainer):
             # https://pytorch.org/docs/master/notes/amp_examples.html#gradient-clipping
             self.scaler.unscale_(self.optimizer)
 
-        # if self.distributed.allow_clip_gradients():
-        #     # Clip gradients
-        #     self.clip_grads(variables)
+        if self.distributed.allow_clip_gradients():
+            # Clip gradients
+            self.clip_grads(variables)
 
         # Apply gradient updates
         with self.distributed.prepare_optimizer_update(self.optimizer):
@@ -1097,8 +1097,8 @@ class Trainer(BaseTrainer):
 
         if last_improvement_in_steps != 0 and self.is_coordinator():
             logger.info(
-                f"Last improvement of {validation_output_feature_name} validation {validation_metric} happened "
-                + f"{last_improvement_in_steps} step(s) ago.\n"
+                f"Last improvement of {validation_output_feature_name} validation {validation_metric} happened " +
+                f"{last_improvement_in_steps} step(s) ago.\n"
             )
 
         # ========== Learning Rate Schedule evaluation updates ========
@@ -1120,10 +1120,10 @@ class Trainer(BaseTrainer):
                 progress_tracker.steps - progress_tracker.last_increase_batch_size_steps
             )
             if (
-                progress_tracker.last_increase_batch_size > 0
-                and progress_tracker.last_increase_batch_size_eval_metric_improvement > 0
-                and not progress_tracker.num_increases_batch_size >= increase_batch_size_on_plateau
-                and not progress_tracker.batch_size >= increase_batch_size_on_plateau_max
+                progress_tracker.last_increase_batch_size > 0 and
+                progress_tracker.last_increase_batch_size_eval_metric_improvement > 0 and
+                not progress_tracker.num_increases_batch_size >= increase_batch_size_on_plateau and
+                not progress_tracker.batch_size >= increase_batch_size_on_plateau_max
             ):
                 logger.info(
                     "Last batch size increase "
@@ -1222,8 +1222,8 @@ class Trainer(BaseTrainer):
     ):
         """Uses the progress tracker to determine if the batch size should be increased."""
         if (
-            not progress_tracker.num_increases_batch_size >= increase_batch_size_on_plateau
-            and not progress_tracker.batch_size == increase_batch_size_on_plateau_max
+            not progress_tracker.num_increases_batch_size >= increase_batch_size_on_plateau and
+            not progress_tracker.batch_size == increase_batch_size_on_plateau_max
         ):
             if increase_batch_size_eval_split == TRAINING:
                 split_metrics = progress_tracker.train_metrics
@@ -1247,11 +1247,11 @@ class Trainer(BaseTrainer):
                 progress_tracker.last_increase_batch_size_eval_metric_improvement += 1
                 if not is_improved and (
                     # Batch size increase happened more than N steps ago
-                    progress_tracker.last_increase_batch_size >= increase_batch_size_on_plateau_patience
-                    and (
+                    progress_tracker.last_increase_batch_size >= increase_batch_size_on_plateau_patience and
+                    (
                         # No improvement of the evaluation metric since more than N steps ago
-                        progress_tracker.last_increase_batch_size_eval_metric_improvement
-                        >= increase_batch_size_on_plateau_patience
+                        progress_tracker.last_increase_batch_size_eval_metric_improvement >=
+                        increase_batch_size_on_plateau_patience
                     )
                 ):
                     progress_tracker.batch_size = min(
