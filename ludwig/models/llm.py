@@ -123,6 +123,10 @@ class LLM(BaseModel):
         self.max_new_tokens = self.config_obj.generation.max_new_tokens
         self.max_input_length = self.context_len - self.max_new_tokens - 8
 
+        # When merging input IDs and target IDs for LLM fine-tuning, we want to make sure that the merged tensor is
+        # not longer than the global maximum sequence length. This is provided in the preprocessing config.
+        self.global_max_sequence_length = self.config_obj.preprocessing.global_max_sequence_length
+
         # Initialize tokenizer
         use_fast = True
         if isinstance(AutoConfig.from_pretrained(self.config_obj.model_name), LlamaConfig):
@@ -163,13 +167,6 @@ class LLM(BaseModel):
         # Initialize the PEFT adapter is one is provided
         self.initialize_adapter()
 
-        # When merging input IDs and target IDs, we want to make sure that the merged tensor is not longer than the
-        # maximum sequence length. We use the maximum sequence length of the input features to determine this.
-        for input_feature in self.config_obj.input_features:
-            if input_feature.type == TEXT:
-                self.max_sequence_length = input_feature.preprocessing.max_sequence_length
-                break
-
         clear_data_cache()
 
     def create_feature_dict(self) -> LudwigFeatureDict:
@@ -181,8 +178,13 @@ class LLM(BaseModel):
 
     def initialize_adapter(self):
         """If an adapter config is provided, we want to wrap the model with a PEFT model for fine-tuning."""
-        # breakpoint()
         if self.config_obj.adapter:
+            if self.config_obj.trainer.type != "finetune":
+                logger.warning(
+                    "Adapter config provided, but trainer is not set to finetune. Ignoring adapter initialization."
+                )
+                return
+
             from peft import get_peft_model, TaskType
 
             peft_config = self.config_obj.adapter.to_config(
@@ -287,14 +289,13 @@ class LLM(BaseModel):
         # Generate merged input_id, target_id pairs for the model, and create corresponding attention masks
         # We save them as class variables so that we can use them when realigning target and prediction tensors
         self.model_inputs, self.attention_masks = generate_merged_ids(
-            input_ids, target_ids, self.tokenizer, self.max_sequence_length
+            input_ids, target_ids, self.tokenizer, self.global_max_sequence_length
         )
 
         # Wrap with flash attention backend for faster generation
         # with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=False, enable_mem_efficient=False) if (
         #     torch.cuda.is_available() and next(self.model.parameters()).device.type == "cuda"
         # ) else contextlib.nullcontext():
-        # breakpoint()
         model_outputs = self.model(input_ids=self.model_inputs, attention_mask=self.attention_masks).get(LOGITS)
 
         if self.output_feature_type != TEXT:
