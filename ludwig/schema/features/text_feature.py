@@ -4,8 +4,8 @@ from ludwig.constants import (
     MODEL_ECD,
     MODEL_GBM,
     MODEL_LLM,
+    NEXT_TOKEN_PERPLEXITY,
     NEXT_TOKEN_SOFTMAX_CROSS_ENTROPY,
-    PERPLEXITY,
     SEQUENCE_SOFTMAX_CROSS_ENTROPY,
     TEXT,
 )
@@ -166,9 +166,9 @@ class ECDTextOutputFeatureConfig(TextOutputFeatureConfig):
 @ludwig_dataclass
 class LLMTextOutputFeatureConfig(TextOutputFeatureConfig):
     default_validation_metric: str = schema_utils.StringOptions(
-        [PERPLEXITY],
-        default=PERPLEXITY,
-        description="Internal only use parameter: default validation metric for text output feature.",
+        [NEXT_TOKEN_PERPLEXITY, NEXT_TOKEN_SOFTMAX_CROSS_ENTROPY],
+        default=NEXT_TOKEN_PERPLEXITY,
+        description="Internal only use parameter: default validation metric for text output feature for LLMs.",
         parameter_metadata=INTERNAL_ONLY,
     )
 

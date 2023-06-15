@@ -53,6 +53,7 @@ from ludwig.constants import (
     MEAN_ABSOLUTE_PERCENTAGE_ERROR,
     MEAN_SQUARED_ERROR,
     MINIMIZE,
+    NEXT_TOKEN_PERPLEXITY,
     NUMBER,
     PERPLEXITY,
     PRECISION,
@@ -329,7 +330,8 @@ class NextTokenSoftmaxCrossEntropyMetric(LossMetric):
         self.next_token_softmax_cross_entropy_function = NextTokenSoftmaxCrossEntropyLoss(config)
 
     def get_current_value(self, preds: Tensor, target: Tensor):
-        return self.next_token_softmax_cross_entropy_function(preds, target)
+        loss = self.next_token_softmax_cross_entropy_function(preds, target)
+        return loss
 
 
 @register_metric("sigmoid_cross_entropy", [SET], MINIMIZE, LOGITS)
@@ -370,6 +372,22 @@ class PerplexityMetric(Perplexity, LudwigMetric):
 
     def update(self, preds: Tensor, target: Tensor) -> None:
         super().update(preds, target.type(torch.int64))
+
+
+@register_metric(NEXT_TOKEN_PERPLEXITY, [SEQUENCE, TEXT], MINIMIZE, PROBABILITIES)
+class NextTokenPerplexityMetric(MeanMetric):
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.next_token_softmax_cross_entropy_function = NextTokenSoftmaxCrossEntropyLoss({})
+
+    def get_current_value(self, preds: Tensor, target: Tensor):
+        # Perplexity can be represented as the exponential of the cross-entropy loss.
+        # https://towardsdatascience.com/perplexity-in-language-models-87a196019a94
+        # We can't use torchmetrics perplexity because it calculates normal cross-entropy
+        # loss as opposed to shifted cross entropy loss.
+        shifted_loss = self.next_token_softmax_cross_entropy_function(preds, target)
+        perplexity = torch.exp(shifted_loss)
+        return perplexity
 
 
 @register_metric("char_error_rate", [SEQUENCE, TEXT], MINIMIZE, PREDICTIONS)
