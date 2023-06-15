@@ -252,7 +252,7 @@ def test_rlhf_reward_model_trainer(tmpdir):
             "transcript_column": transcript_column,
         }
     }
-    config["model_type"] = "reward_model"
+    config["model_type"] = "rwd"
 
     # Train Ludwig model with the dataset
     ludwig_model = LudwigModel(config, backend=backend)

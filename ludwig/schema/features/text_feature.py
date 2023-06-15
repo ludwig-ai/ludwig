@@ -100,7 +100,7 @@ class RWDTextInputFeatureConfig(TextInputFeatureConfig):
     encoder: BaseEncoderConfig = EncoderDataclassField(
         MODEL_RWD,
         feature_type=TEXT,
-        default="parallel_cnn",
+        default="bert",
     )
 
 

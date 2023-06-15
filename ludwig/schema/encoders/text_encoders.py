@@ -1,7 +1,7 @@
 from typing import Callable, Dict, List, Optional, TYPE_CHECKING, Union
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import MODEL_ECD, MODEL_GBM, TEXT
+from ludwig.constants import MODEL_ECD, MODEL_GBM, MODEL_RWD, TEXT
 from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.sequence_encoders import SequenceEncoderConfig
@@ -599,7 +599,7 @@ class XLMRoBERTaConfig(HFEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("bert", TEXT)
+@register_encoder_config("bert", TEXT, model_types=[MODEL_RWD])
 @ludwig_dataclass
 class BERTConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an BERT encoder."""
