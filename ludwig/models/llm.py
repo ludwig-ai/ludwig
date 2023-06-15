@@ -1,7 +1,6 @@
 import contextlib
 import logging
 import os
-import pprint
 import tempfile
 from typing import Dict, List, Optional, Tuple, Union
 
@@ -93,20 +92,7 @@ class LLM(BaseModel):
 
         logger.info("Loading large language model...")
 
-        # self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.model_name)
-        model_config = AutoConfig.from_pretrained(self.config_obj.model_name)
-        model_config.attention_probs_dropout_prob = 0.0
-        model_config.attn_pdrop = 0.0
-        model_config.embd_pdrop = 0.0
-        model_config.hidden_dropout_prob = 0.0
-        model_config.resid_pdrop = 0.0
-
-        torch.manual_seed(1)
-        self.model = AutoModelForCausalLM.from_config(model_config)
-
-        layer_names_and_dtypes = {name: param.dtype for name, param in self.model.named_parameters()}
-        pprint.pprint(layer_names_and_dtypes)
-
+        self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.model_name)
         self.curr_device = torch.device("cpu")  # model initially loaded onto cpu
         logger.info("Done.")
 
@@ -432,7 +418,6 @@ class LLM(BaseModel):
 
     def update_metrics_finetune(self, targets, predictions):
         """Updates the model's metrics given targets and predictions for fine-tuning."""
-        # breakpoint()
         _targets, _predictions = targets, predictions
         for of_name, of_obj in self.output_features.items():
             if isinstance(of_obj, TextOutputFeature):
@@ -488,7 +473,6 @@ class LLM(BaseModel):
             _predictions = predictions
 
             of_train_loss = of_obj.train_loss(_targets[of_name], _predictions, of_name)
-            print(of_train_loss)
             train_loss += of_obj.loss.weight * of_train_loss
             of_train_losses[of_name] = of_train_loss
 

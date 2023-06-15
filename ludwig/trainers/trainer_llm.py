@@ -417,7 +417,6 @@ class FineTuneTrainer(Trainer):
         predictor = LlmFineTunePredictor(
             self.model, batch_size=batch_size, distributed=self.distributed, report_tqdm_to_ray=self.report_tqdm_to_ray
         )
-        # breakpoint()
         metrics, _ = predictor.batch_evaluation(dataset, collect_predictions=False, dataset_name=dataset_name)
 
         return append_metrics(self.model, dataset_name, metrics, metrics_log, progress_tracker)
