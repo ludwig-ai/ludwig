@@ -7,12 +7,15 @@ from ludwig.utils.llm_utils import (
     add_left_padding,
     create_attention_mask,
     find_last_matching_index,
+    generate_merged_ids,
     has_padding_token,
     pad_target_tensor_for_fine_tuning,
     realign_target_and_prediction_tensors_for_inference,
     remove_left_padding,
     set_pad_token,
 )
+
+pytestmark = [pytest.mark.llm]
 
 # Pad token ID is 1 for OPT even though it uses the GPT2 tokenizer
 # BOS token ID is 2
@@ -27,7 +30,18 @@ def tokenizer():
     return tokenizer
 
 
-@pytest.mark.llm
+@pytest.fixture
+def input_ids():
+    # Provide sample input IDs tensor
+    return torch.tensor([[3, 4, 5], [6, 7, 8]])
+
+
+@pytest.fixture
+def target_ids():
+    # Provide sample target IDs tensor
+    return torch.tensor([[9, 10, 11], [12, 13, 14]])
+
+
 def test_set_pad_token_doesnt_exist():
     tokenizer = AutoTokenizer.from_pretrained("gpt2", use_fast=False)
     assert tokenizer.pad_token_id is None
@@ -36,7 +50,6 @@ def test_set_pad_token_doesnt_exist():
     assert tokenizer.pad_token_id == 50256
 
 
-@pytest.mark.llm
 def test_set_pad_token_already_exists():
     tokenizer = AutoTokenizer.from_pretrained(TEST_MODEL_NAME, use_fast=False)
     assert tokenizer.pad_token_id == 1
@@ -45,7 +58,6 @@ def test_set_pad_token_already_exists():
     assert tokenizer.pad_token_id == 1
 
 
-@pytest.mark.llm
 def test_has_padding_token_with_padding_tokens(tokenizer):
     input_sentence = "This is an example sentence."
     input_ids = tokenizer([input_sentence])
@@ -55,7 +67,6 @@ def test_has_padding_token_with_padding_tokens(tokenizer):
     assert has_padding_token(padded_input_ids, tokenizer)
 
 
-@pytest.mark.llm
 def test_has_padding_token_without_padding_tokens(tokenizer):
     input_sentence = "This is an example sentence."
     input_ids = tokenizer([input_sentence])
@@ -64,7 +75,6 @@ def test_has_padding_token_without_padding_tokens(tokenizer):
     assert not has_padding_token(input_ids["input_ids"], tokenizer)
 
 
-@pytest.mark.llm
 @pytest.mark.parametrize(
     "input_ids, expected",
     [
@@ -83,7 +93,6 @@ def test_remove_left_padding(input_ids, expected, tokenizer):
     assert torch.equal(remove_left_padding(input_ids, tokenizer).squeeze(0), expected)
 
 
-@pytest.mark.llm
 @pytest.mark.parametrize(
     "input_ids, max_length, pad_value, expected",
     [
@@ -99,14 +108,12 @@ def test_add_left_padding(input_ids, max_length, pad_value, expected):
     assert torch.equal(padded, expected)
 
 
-@pytest.mark.llm
 def test_create_attention_mask_last_token_padding(tokenizer):
     input_ids = torch.tensor([3, 4, tokenizer.pad_token_id])
     attention_mask = create_attention_mask(input_ids, tokenizer)
     assert attention_mask[-1] == 1
 
 
-@pytest.mark.llm
 @pytest.mark.parametrize(
     "input_ids, expected_output",
     [
@@ -123,7 +130,6 @@ def test_create_attention_mask(input_ids, expected_output, tokenizer):
     assert torch.equal(attention_mask, expected_output)
 
 
-@pytest.mark.llm
 @pytest.mark.parametrize(
     "tensor_a, tensor_b, expected_index",
     [
@@ -140,7 +146,51 @@ def test_find_last_matching_index(tensor_a, tensor_b, expected_index):
     assert last_matching_index == expected_index
 
 
-@pytest.mark.llm
+def test_generate_merged_ids_with_target(tokenizer, input_ids, target_ids):
+    # Test case when target_ids is not None
+    merged_ids, attention_masks = generate_merged_ids(input_ids, target_ids, tokenizer)
+    assert torch.equal(merged_ids, torch.tensor([[3, 4, 5, 9, 10, 11, 1], [6, 7, 8, 12, 13, 14, 1]]))
+    assert merged_ids.shape == (2, 7)  # Check the shape of merged_ids
+    assert attention_masks.shape == (2, 7)  # Check the shape of attention_masks
+
+
+def test_generate_merged_ids_with_max_sequence_length(tokenizer, input_ids, target_ids):
+    # Test case when max_sequence_length is provided
+    max_sequence_length = 5
+    merged_ids, attention_masks = generate_merged_ids(input_ids, target_ids, tokenizer, max_sequence_length)
+    assert merged_ids.shape == (2, 5)  # Check the shape of merged_ids with truncation
+    assert attention_masks.shape == (2, 5)  # Check the shape of attention_masks
+
+
+def test_generate_merged_ids_padding_removal(tokenizer, input_ids, target_ids):
+    # Test case to check removal of left padding from inputs and targets during merge
+    padding_tokens = torch.tensor([tokenizer.pad_token_id, tokenizer.pad_token_id])
+
+    # Adds 2 padding tokens to the left of input_ids and target_ids individually. Typically, if we just merged this
+    # naively, we would expect to see [1, 1, 3, 4, 5, 1, 1, 9, 10, 11, 1], but we shouldn't see the padding tokens
+    # except for the padding token at the end.
+    input_ids_with_padding = torch.cat((padding_tokens.unsqueeze(0).expand(input_ids.size(0), -1), input_ids), dim=1)
+    target_ids_with_padding = torch.cat((padding_tokens.unsqueeze(0).expand(target_ids.size(0), -1), target_ids), dim=1)
+
+    merged_ids, attention_masks = generate_merged_ids(input_ids_with_padding, target_ids_with_padding, tokenizer)
+
+    assert merged_ids.shape == (2, 7)  # Check the shape of merged_ids
+    assert attention_masks.shape == (2, 7)  # Check the shape of attention_masks
+
+    assert torch.equal(merged_ids[0][:3], input_ids[0])  # Check the input_ids part without padding
+    assert torch.equal(merged_ids[0][3:-1], target_ids[0])  # Check the target_ids part without padding
+    assert torch.equal(merged_ids[0][-1], torch.tensor(tokenizer.pad_token_id))  # Check the padding tokens
+
+    assert torch.all(attention_masks == 1)
+
+
+def test_generate_merged_ids_returns_tensor(tokenizer, input_ids, target_ids):
+    # Test that the function returns torch.Tensor objects
+    merged_ids, attention_masks = generate_merged_ids(input_ids, target_ids, tokenizer)
+    assert isinstance(merged_ids, torch.Tensor)
+    assert isinstance(attention_masks, torch.Tensor)
+
+
 def test_pad_target_tensor_for_fine_tuning():
     of_name = "out_1"
     prediction = {

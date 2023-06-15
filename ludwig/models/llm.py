@@ -21,7 +21,7 @@ from ludwig.utils.augmentation_utils import AugmentationPipelines
 from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.llm_utils import (
     add_left_padding,
-    create_attention_mask,
+    generate_merged_ids,
     pad_target_tensor_for_fine_tuning,
     realign_target_and_prediction_tensors_for_inference,
     remove_left_padding,
@@ -286,7 +286,9 @@ class LLM(BaseModel):
 
         # Generate merged input_id, target_id pairs for the model, and create corresponding attention masks
         # We save them as class variables so that we can use them when realigning target and prediction tensors
-        self.model_inputs, self.attention_masks = self._generate_merged_ids(input_ids, target_ids)
+        self.model_inputs, self.attention_masks = generate_merged_ids(
+            input_ids, target_ids, self.tokenizer, self.max_sequence_length
+        )
 
         # Wrap with flash attention backend for faster generation
         # with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=False, enable_mem_efficient=False) if (
@@ -619,59 +621,6 @@ class LLM(BaseModel):
         _targets = pad_target_tensor_for_fine_tuning(targets, predictions, self.model_inputs, of_name)
 
         return _targets
-
-    def _generate_merged_ids(self, input_ids, target_ids):
-        """Generate merged input and target IDs tensor.
-
-        This function merges the input_ids and target_ids together to create a unified tensor
-        to pass into the model. It also returns attention masks for the merged tensors.
-
-        Args:
-            input_ids (torch.Tensor): The input IDs tensor.
-            target_ids (torch.Tensor or None): The target IDs tensor or None.
-
-        Returns:
-            torch.Tensor: The merged input and target IDs tensor.
-            torch.Tensor: The attention masks for the merged tensor.
-        """
-        # target_ids is None during evaluation of the validation/test sets in the training loop.
-        if not torch.is_tensor(target_ids):
-            # Create attention masks for the input_ids.
-            attention_masks = []
-            for input_id_sample in input_ids:
-                attention_masks.append(create_attention_mask(input_id_sample, self.tokenizer))
-            return input_ids, torch.stack(attention_masks)
-
-        merged_input_and_targets = []
-        lengths = []
-
-        pad_tensor = torch.tensor([self.tokenizer.pad_token_id]).to(target_ids[0].device)
-
-        # Merge input_ids and target_ids by concatenating them together.
-        # We remove the left padding from both input_ids and target_ids before concatenating them.
-        for input_id_sample, target_id_sample in zip(input_ids, target_ids):
-            input_id_sample_no_padding = remove_left_padding(input_id_sample, self.tokenizer)[0]
-            target_id_sample_no_padding = remove_left_padding(target_id_sample, self.tokenizer)[0]
-            target_id_sample_no_padding = torch.cat((target_id_sample_no_padding, pad_tensor), dim=-1)
-
-            merged_sample_ids = torch.cat((input_id_sample_no_padding, target_id_sample_no_padding), dim=-1)
-            # If the merged tensor is longer than the maximum sequence length, we truncate it.
-            if self.max_sequence_length and merged_sample_ids.shape[0] > self.max_sequence_length:
-                merged_sample_ids = merged_sample_ids[: self.max_sequence_length]
-
-            merged_input_and_targets.append(merged_sample_ids)
-            lengths.append(merged_sample_ids.shape[0])
-
-        # Since we remove the left padding from the target_ids, the merged input_ids and target_ids
-        # may not have the same lengths. We need to align them to the same length by adding left padding
-        # and generate an attention mask for just the part of the input that is not padding.
-        max_length = max(lengths)
-        attention_masks = []
-        for i, merged_sample_ids in enumerate(merged_input_and_targets):
-            merged_input_and_targets[i] = add_left_padding(merged_sample_ids, max_length)
-            attention_masks.append(create_attention_mask(merged_input_and_targets[i], self.tokenizer))
-
-        return torch.stack(merged_input_and_targets), torch.stack(attention_masks)
 
     def get_augmentation_pipelines(self) -> AugmentationPipelines:
         """Returns the augmentation pipeline for this model."""

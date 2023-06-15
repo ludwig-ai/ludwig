@@ -249,6 +249,56 @@ def pad_target_tensor_for_fine_tuning(
     return targets
 
 
+def generate_merged_ids(
+    input_ids: torch.tensor, target_ids: torch.tensor, tokenizer: PreTrainedTokenizer, max_sequence_length: int = None
+):
+    """Generate merged input and target IDs tensor.
+
+    This function merges the input_ids and target_ids together to create a unified tensor
+    to pass into the model. It also returns attention masks for the merged tensors.
+
+    Args:
+        input_ids (torch.Tensor): The input IDs tensor.
+        target_ids (torch.Tensor or None): The target IDs tensor or None.
+        max_sequence_length (int or None): The maximum sequence length to pad or truncate to.
+        tokenizer (PreTrainedTokenizer): The tokenizer used to encode the input_ids and target_ids.
+
+    Returns:
+        torch.Tensor: The merged input and target IDs tensor.
+        torch.Tensor: The attention masks for the merged tensor.
+    """
+    merged_input_and_targets = []
+    lengths = []
+
+    pad_tensor = torch.tensor([tokenizer.pad_token_id]).to(target_ids[0].device)
+
+    # Merge input_ids and target_ids by concatenating them together.
+    # We remove the left padding from both input_ids and target_ids before concatenating them.
+    for input_id_sample, target_id_sample in zip(input_ids, target_ids):
+        input_id_sample_no_padding = remove_left_padding(input_id_sample, tokenizer)[0]
+        target_id_sample_no_padding = remove_left_padding(target_id_sample, tokenizer)[0]
+        target_id_sample_no_padding = torch.cat((target_id_sample_no_padding, pad_tensor), dim=-1)
+
+        merged_sample_ids = torch.cat((input_id_sample_no_padding, target_id_sample_no_padding), dim=-1)
+        # If the merged tensor is longer than the maximum sequence length, we truncate it.
+        if max_sequence_length and merged_sample_ids.shape[0] > max_sequence_length:
+            merged_sample_ids = merged_sample_ids[:max_sequence_length]
+
+        merged_input_and_targets.append(merged_sample_ids)
+        lengths.append(merged_sample_ids.shape[0])
+
+    # Since we remove the left padding from the target_ids, the merged input_ids and target_ids
+    # may not have the same lengths. We need to align them to the same length by adding left padding
+    # and generate an attention mask for just the part of the input that is not padding.
+    max_length = max(lengths)
+    attention_masks = []
+    for i, merged_sample_ids in enumerate(merged_input_and_targets):
+        merged_input_and_targets[i] = add_left_padding(merged_sample_ids, max_length)
+        attention_masks.append(create_attention_mask(merged_input_and_targets[i], tokenizer))
+
+    return torch.stack(merged_input_and_targets), torch.stack(attention_masks)
+
+
 def realign_target_and_prediction_tensors_for_inference(
     targets: Dict[str, torch.Tensor],
     predictions: Dict[str, torch.Tensor],
