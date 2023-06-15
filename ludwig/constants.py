@@ -270,6 +270,7 @@ MODEL_TYPE = "model_type"
 MODEL_ECD = "ecd"
 MODEL_GBM = "gbm"
 MODEL_LLM = "llm"
+MODEL_REWARD = "model_reward"
 DASK_MODULE_NAME = "dask.dataframe"
 LUDWIG_VERSION = "ludwig_version"
 

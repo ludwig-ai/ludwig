@@ -1,7 +1,7 @@
 import logging
 
-from ludwig.constants import MODEL_ECD, MODEL_GBM, MODEL_LLM
-from ludwig.models.ecd import ECD
+from ludwig.constants import MODEL_ECD, MODEL_GBM, MODEL_LLM, MODEL_REWARD
+from ludwig.models.ecd import ECD, RewardModel
 from ludwig.models.llm import LLM
 
 logger = logging.getLogger(__name__)
@@ -24,4 +24,5 @@ model_type_registry = {
     MODEL_ECD: ECD,
     MODEL_GBM: gbm,
     MODEL_LLM: LLM,
+    MODEL_REWARD: RewardModel,
 }

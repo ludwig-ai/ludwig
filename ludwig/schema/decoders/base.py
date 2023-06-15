@@ -2,7 +2,8 @@ from abc import ABC
 from typing import Dict, List, Tuple, Union
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import BINARY, CATEGORY, MODEL_ECD, MODEL_GBM, MODEL_LLM, NUMBER, SET, TIMESERIES, VECTOR
+from ludwig.constants import (
+    BINARY, CATEGORY, MODEL_ECD, MODEL_GBM, MODEL_LLM, MODEL_REWARD, NUMBER, SET, TIMESERIES, VECTOR)
 from ludwig.schema import common_fields
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.utils import register_decoder_config
@@ -108,7 +109,7 @@ class PassthroughDecoderConfig(BaseDecoderConfig):
 
 
 @DeveloperAPI
-@register_decoder_config("regressor", [BINARY, NUMBER], model_types=[MODEL_ECD, MODEL_GBM])
+@register_decoder_config("regressor", [BINARY, NUMBER], model_types=[MODEL_ECD, MODEL_GBM, MODEL_REWARD])
 @ludwig_dataclass
 class RegressorConfig(BaseDecoderConfig):
     """RegressorConfig is a dataclass that configures the parameters used for a regressor decoder."""

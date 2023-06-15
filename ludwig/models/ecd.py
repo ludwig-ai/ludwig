@@ -6,7 +6,7 @@ import numpy as np
 import torch
 
 from ludwig.combiners.combiners import create_combiner
-from ludwig.constants import MODEL_ECD
+from ludwig.constants import MODEL_ECD, MODEL_REWARD
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
 from ludwig.schema.model_types.ecd import ECDModelConfig
@@ -177,3 +177,9 @@ class ECD(BaseModel):
                 ).get_augmentation_pipeline()
 
         return AugmentationPipelines(augmentation_pipelines)
+
+
+class RewardModel(ECD):
+    @staticmethod
+    def type() -> str:
+        return MODEL_REWARD

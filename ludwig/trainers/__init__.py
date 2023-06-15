@@ -12,3 +12,9 @@ try:
     import ludwig.trainers.trainer_llm  # noqa: F401
 except ImportError:
     pass
+
+
+try:
+    import ludwig.trainers.trainer_rlhf  # noqa: F401
+except ImportError:
+    pass

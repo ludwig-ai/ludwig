@@ -53,10 +53,6 @@ class RewardModelTrainer(Trainer):
         # Save the reward model loss function
         self.reward_loss_function = RewardLoss({})
 
-        # Save the reward model dataset parameters
-        self.id_column = config["output_features"][0]["proc_column"]
-        self.transcript_column = config["input_features"][0]["proc_column"]
-
     def train_step(
         self, inputs: Dict[str, torch.Tensor], targets: Dict[str, torch.Tensor], should_step: bool = True
     ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
@@ -71,25 +67,21 @@ class RewardModelTrainer(Trainer):
             A tuple of the loss tensor and a dictionary of loss for every output feature.
         """
         if not all(
-            self.use_amp is False,
-            self.evaluate_training_set is True,
+            [
+                self.use_amp is False,
+                self.evaluate_training_set is True,
+            ]
         ):
             raise ValueError("Invalid trainer arguments for RLHF reward model")
 
         # Validate inputs and targets
-        input_names_expected = [self.transcript_column]
-        input_names_actual = list(inputs.keys())
-        if not input_names_actual == input_names_expected:
+        if not len(inputs) == 1:
             raise ValueError(
-                f"Invalid reward model training data inputs, expect inputs {input_names_expected}, "
-                f"got inputs {input_names_actual}."
+                f"Invalid reward model training data inputs, expect 1 input feature, got {len(inputs)}."
             )
-        target_names_expected = [self.id_column]
-        target_names_actual = list(targets.keys())
-        if not target_names_actual == target_names_expected:
+        if not len(targets) == 1:
             raise ValueError(
-                f"Invalid reward model training data targets, expect targets {target_names_expected}, "
-                f"got targets {target_names_actual}."
+                f"Invalid reward model training data targets, expect 1 target feature, got {len(targets)}."
             )
 
         # Run forward-propagation of the chosen and rejected inputs
