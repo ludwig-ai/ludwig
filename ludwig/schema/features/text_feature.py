@@ -4,6 +4,7 @@ from ludwig.constants import (
     MODEL_ECD,
     MODEL_GBM,
     MODEL_LLM,
+    MODEL_RWD,
     NEXT_TOKEN_SOFTMAX_CROSS_ENTROPY,
     PERPLEXITY,
     SEQUENCE_SOFTMAX_CROSS_ENTROPY,
@@ -30,6 +31,7 @@ from ludwig.schema.features.utils import (
     llm_input_config_registry,
     llm_output_config_registry,
     output_mixin_registry,
+    rwd_input_config_registry,
 )
 from ludwig.schema.metadata import FEATURE_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
@@ -88,6 +90,17 @@ class LLMTextInputFeatureConfig(TextInputFeatureConfig):
         MODEL_LLM,
         feature_type=TEXT,
         default="passthrough",
+    )
+
+
+@DeveloperAPI
+@rwd_input_config_registry.register(TEXT)
+@ludwig_dataclass
+class RWDTextInputFeatureConfig(TextInputFeatureConfig):
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_RWD,
+        feature_type=TEXT,
+        default="parallel_cnn",
     )
 
 

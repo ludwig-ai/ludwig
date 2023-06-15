@@ -186,6 +186,7 @@ class RWD(ECD):
     This model type is used for applications such as RLHF fine-tuning of LLMs. This model class is a subclass of ECD,
     and uses most of ECD's code and pathways.
     """
+
     @staticmethod
     def type() -> str:
         return MODEL_RWD

@@ -11,6 +11,7 @@ output_config_registries = defaultdict(Registry)
 ecd_input_config_registry = input_config_registries[MODEL_ECD]
 gbm_input_config_registry = input_config_registries[MODEL_GBM]
 llm_input_config_registry = input_config_registries[MODEL_LLM]
+rwd_input_config_registry = input_config_registries[MODEL_RWD]
 
 ecd_output_config_registry = output_config_registries[MODEL_ECD]
 gbm_output_config_registry = output_config_registries[MODEL_GBM]

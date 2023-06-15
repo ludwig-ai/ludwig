@@ -12,7 +12,8 @@ from ludwig.constants import (
     NUMBER,
     SET,
     TIMESERIES,
-    VECTOR)
+    VECTOR
+)
 from ludwig.schema import common_fields
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.utils import register_decoder_config
