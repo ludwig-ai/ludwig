@@ -218,17 +218,17 @@ def test_changing_parameters_on_plateau(tmpdir):
 
 
 def test_rlhf_reward_model_trainer(tmpdir):
-    id_column = "Reward_Session_ID"
-    outcome_column = "Human_Feedback_Outcome"
+    id_column = "reward_session_id"
+    outcome_column = "outcome"
     chosen_value = "some_value_1"
     rejected_value = "some_value_2"
-    transcript_column = "Transcript"
+    transcript_column = "transcript"
 
     # Define the features
     input_features = [
         text_feature(
             name=transcript_column,
-            encoder={"type": "auto_transformer", "pretrained_model_name_or_path": "bert-base-uncased"}
+            encoder={"type": "auto_transformer", "pretrained_model_name_or_path": "bert-base-uncased"},
         )
     ]
     output_features = [number_feature(name=id_column)]
