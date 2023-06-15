@@ -412,7 +412,7 @@ class LLM(BaseModel):
         return outputs[self.config_obj.output_features[0].name].type(torch.int32)
 
     def update_metrics(self, targets, predictions):
-        """Updates the model's metrics given targets and predictions."""
+        """Updates the model's metrics given targets and predictions for zero-shot/few-shot."""
         for of_name, of_obj in self.output_features.items():
             if isinstance(of_obj, TextOutputFeature):
                 # Align the target length with the predictions length to enable text metric evaluation.
@@ -433,44 +433,15 @@ class LLM(BaseModel):
         _targets, _predictions = targets, predictions
         for of_name, of_obj in self.output_features.items():
             if isinstance(of_obj, TextOutputFeature):
-                # Remove left padding from target tensors since we also do this for the model's forward pass when we
-                # concatenate the input_ids with the target_ids. We also need to add the pad token to the end of the
-                # target tensors.
-                targets_without_padding = []
-                lengths = []
-                for target in _targets[of_name]:
-                    target = remove_left_padding(target, self.tokenizer)[0]
-                    target = torch.cat([target, torch.tensor([self.tokenizer.pad_token_id])], dim=-1).unsqueeze(0)
-                    targets_without_padding.append(target)
-                    lengths.append(target.shape[1])
-
-                # We need all target tensors to have the same length for the loss computation. We pad the target
-                # tensors with -100 since we want to negate all tokens that are not target_ids during the softmax
-                # cross entropy loss computation. This ensures that the loss is computed only for the target tokens.
-                max_length = max(lengths)
-                for i, target in enumerate(targets_without_padding):
-                    targets_without_padding[i] = add_left_padding(targets_without_padding[i][0], max_length, -100)
-                _targets[of_name] = torch.stack(targets_without_padding, dim=0).to(
-                    dtype=_targets[of_name].dtype,
-                    device=_targets[of_name].device,
-                )
-
-                # Re-align target tensors without padding to have equal length before realigning with the prediction
-                # tensors. Padding left with -100 to match the length of the target tensor masks the input ids during
-                # softmax cross entropy loss computation. This ensures that the loss is computed only for the target
-                # token IDs. Examples:
-                # BERTLMHead: https://github.com/huggingface/transformers/blob/v4.29.1/src/transformers/models/bert/modeling_bert.py#L1216-L1219 # noqa
-                # GPTNeoForCausalLM: https://github.com/huggingface/transformers/blob/v4.29.1/src/transformers/models/gpt_neo/modeling_gpt_neo.py#L736 # noqa
-                # breakpoint()
-                _targets = pad_target_tensor_for_fine_tuning(_targets, _predictions, self.model_inputs, of_name)
-                # breakpoint()
-
+                # Update the target tensor to enable text metric evaluation. This pads the target tensor with -100s
+                # to match the prediction length and depends on how much of the target tensor was included in the
+                # forward pass.
+                _targets = self._update_target_tensor_for_finetuning(_targets, _predictions, of_name)
                 of_obj.update_metrics(_targets[of_name], _predictions[of_name])
                 continue
 
             of_obj.update_metrics(_targets[of_name], _predictions[of_name])
 
-        # breakpoint()
         eval_loss, additional_losses = self.eval_loss(_targets, _predictions)
         self.eval_loss_metric.update(eval_loss)
         self.eval_additional_losses_metrics.update(additional_losses)
@@ -499,42 +470,12 @@ class LLM(BaseModel):
         for of_name, of_obj in self.output_features.items():
             _targets, _predictions = targets, predictions
             if isinstance(of_obj, TextOutputFeature):
-                # Align the target length with the predictions length to enable text metric evaluation.
                 _predictions = {of_name: _predictions}
 
-                # Remove left padding from target tensors since we also do this for the model's forward pass when we
-                # concatenate the input_ids with the target_ids. We also need to add the pad token to the end of the
-                # target tensors.
-                # breakpoint()
-                targets_without_padding = []
-                lengths = []
-                for target in _targets[of_name]:
-                    target = remove_left_padding(target, self.tokenizer)[0]
-                    target = torch.cat([target, torch.tensor([self.tokenizer.pad_token_id])], dim=-1).unsqueeze(0)
-                    targets_without_padding.append(target)
-                    lengths.append(target.shape[1])
-
-                # We need all target tensors to have the same length for the loss computation. We pad the target
-                # tensors with -100 since we want to negate all tokens that are not target_ids during the softmax
-                # cross entropy loss computation. This ensures that the loss is computed only for the target tokens.
-                # breakpoint()
-                max_length = max(lengths)
-                for i, target in enumerate(targets_without_padding):
-                    targets_without_padding[i] = add_left_padding(targets_without_padding[i][0], max_length, -100)
-                _targets[of_name] = torch.stack(targets_without_padding, dim=0).to(
-                    dtype=_targets[of_name].dtype,
-                    device=_targets[of_name].device,
-                )
-
-                # Re-align target tensors without padding to have equal length before realigning with the prediction
-                # tensors. Padding left with -100 to match the length of the target tensor masks the input ids during
-                # softmax cross entropy loss computation. This ensures that the loss is computed only for the target
-                # token IDs. Examples:
-                # BERTLMHead: https://github.com/huggingface/transformers/blob/v4.29.1/src/transformers/models/bert/modeling_bert.py#L1216-L1219 # noqa
-                # GPTNeoForCausalLM: https://github.com/huggingface/transformers/blob/v4.29.1/src/transformers/models/gpt_neo/modeling_gpt_neo.py#L736 # noqa
-                # breakpoint()
-                _targets = pad_target_tensor_for_fine_tuning(_targets, _predictions, self.model_inputs, of_name)
-                # breakpoint()
+                # Update the target tensor to enable text metric evaluation. This pads the target tensor with -100s
+                # to match the prediction length and depends on how much of the target tensor was included in the
+                # forward pass.
+                _targets = self._update_target_tensor_for_finetuning(_targets, _predictions, of_name)
 
             # TODO(Arnav): Seems like doing this again and going between these format types in unnecessary, but
             # refactor so that we don't have to do this at a later point.
@@ -543,10 +484,6 @@ class LLM(BaseModel):
                 set_output_feature_tensor(predictions, of_name, key, _predictions[of_name][key])
             _predictions = predictions
 
-            # TODO(Arnav): Verify if this works for category output features during fine-tuning if that is something
-            # we want to support.
-            # Compute output feature train loss
-            # breakpoint()
             of_train_loss = of_obj.train_loss(_targets[of_name], _predictions, of_name)
             print(of_train_loss)
             train_loss += of_obj.loss.weight * of_train_loss
@@ -633,13 +570,70 @@ class LLM(BaseModel):
             self._random_seed,
         )
 
-    def _generate_merged_ids(self, input_ids, target_ids):
-        """This function merges the input_ids and target_ids together to create a unified tensor to pass into the
-        model.
+    def _update_target_tensor_for_finetuning(
+        self, targets: Dict[str, torch.Tensor], predictions: Dict[str, torch.Tensor], of_name: str
+    ):
+        """Update target tensor for fine-tuning.
 
-        This is required for PEFT based fine-tuning. It also returns attention masks for the merged tensors.
+        This method removes left padding from target tensors, adds a pad token to the end of the target tensors,
+        and pads the target tensors with -100 to ensure equal length for loss computation. It then realigns the
+        target tensors with the prediction tensors.
+
+        Args:
+            targets (Dict[str, torch.Tensor]): A dictionary containing the target tensors.
+            predictions (Dict[str, torch.Tensor]): A dictionary containing the predicted tensors.
+            of_name (str): The name of the target tensor.
+
+        Returns:
+            Dict[str, torch.Tensor]: A dictionary containing the updated target tensors aligned with predictions.
         """
+        # Remove left padding from target tensors since we also do this for the model's forward pass when we
+        # concatenate the input_ids with the target_ids. We also need to add the pad token to the end of the
+        # target tensors.
+        targets_without_padding = []
+        lengths = []
+        for target in targets[of_name]:
+            target = remove_left_padding(target, self.tokenizer)[0]
+            target = torch.cat([target, torch.tensor([self.tokenizer.pad_token_id])], dim=-1).unsqueeze(0)
+            targets_without_padding.append(target)
+            lengths.append(target.shape[1])
 
+        # We need all target tensors to have the same length for the loss computation. We pad the target
+        # tensors with -100 since we want to negate all tokens that are not target_ids during the softmax
+        # cross entropy loss computation. This ensures that the loss is computed only for the target tokens.
+        max_length = max(lengths)
+        for i, target in enumerate(targets_without_padding):
+            targets_without_padding[i] = add_left_padding(targets_without_padding[i][0], max_length, -100)
+
+        targets[of_name] = torch.stack(targets_without_padding, dim=0).to(
+            dtype=targets[of_name].dtype,
+            device=targets[of_name].device,
+        )
+
+        # Re-align target tensors without padding to have equal length before realigning with the prediction
+        # tensors. Padding left with -100 to match the length of the target tensor masks the input ids during
+        # softmax cross entropy loss computation. This ensures that the loss is computed only for the target
+        # token IDs. Examples:
+        # BERTLMHead: https://github.com/huggingface/transformers/blob/v4.29.1/src/transformers/models/bert/modeling_bert.py#L1216-L1219 # noqa
+        # GPTNeoForCausalLM: https://github.com/huggingface/transformers/blob/v4.29.1/src/transformers/models/gpt_neo/modeling_gpt_neo.py#L736 # noqa
+        _targets = pad_target_tensor_for_fine_tuning(targets, predictions, self.model_inputs, of_name)
+
+        return _targets
+
+    def _generate_merged_ids(self, input_ids, target_ids):
+        """Generate merged input and target IDs tensor.
+
+        This function merges the input_ids and target_ids together to create a unified tensor
+        to pass into the model. It also returns attention masks for the merged tensors.
+
+        Args:
+            input_ids (torch.Tensor): The input IDs tensor.
+            target_ids (torch.Tensor or None): The target IDs tensor or None.
+
+        Returns:
+            torch.Tensor: The merged input and target IDs tensor.
+            torch.Tensor: The attention masks for the merged tensor.
+        """
         # target_ids is None during evaluation of the validation/test sets in the training loop.
         if not torch.is_tensor(target_ids):
             # Create attention masks for the input_ids.
