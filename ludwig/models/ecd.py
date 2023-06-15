@@ -6,7 +6,7 @@ import numpy as np
 import torch
 
 from ludwig.combiners.combiners import create_combiner
-from ludwig.constants import MODEL_ECD, MODEL_REWARD
+from ludwig.constants import MODEL_ECD, MODEL_RWD
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
 from ludwig.schema.model_types.ecd import ECDModelConfig
@@ -179,7 +179,12 @@ class ECD(BaseModel):
         return AugmentationPipelines(augmentation_pipelines)
 
 
-class RewardModel(ECD):
+class RWD(ECD):
+    """
+    This class represents a Reward Model, a model that inputs some feature (i.e. text transcript) and predicts
+    a single scalar output representing the reward/preference of that input. This model type is used for applications
+    such as RLHF fine-tuning of LLMs. This model class is a subclass of ECD, and uses most of ECD's code and pathways.
+    """
     @staticmethod
     def type() -> str:
-        return MODEL_REWARD
+        return MODEL_RWD

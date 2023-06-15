@@ -3,10 +3,11 @@ from typing import Dict, List, Optional, Tuple
 
 import torch
 
+from ludwig.constants import MODEL_RWD
 from ludwig.distributed.base import DistributedStrategy
-from ludwig.models.llm import LLM
+from ludwig.models.ecd import RWD
 from ludwig.modules.loss_modules import RewardLoss
-from ludwig.schema.trainer import RewardModelTrainerConfig
+from ludwig.schema.trainer import RWDTrainerConfig
 from ludwig.trainers.registry import register_trainer
 from ludwig.trainers.trainer import Trainer
 from ludwig.utils.defaults import default_random_seed
@@ -14,16 +15,16 @@ from ludwig.utils.defaults import default_random_seed
 logger = logging.getLogger(__name__)
 
 
-@register_trainer("reward_model")
+@register_trainer(MODEL_RWD)
 class RewardModelTrainer(Trainer):
     @staticmethod
     def get_schema_cls():
-        return RewardModelTrainerConfig
+        return RWDTrainerConfig
 
     def __init__(
         self,
-        config: RewardModelTrainerConfig,
-        model: LLM,
+        config: RWDTrainerConfig,
+        model: RWD,
         resume: float = False,
         skip_save_model: bool = False,
         skip_save_progress: bool = False,

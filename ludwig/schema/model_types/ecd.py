@@ -39,7 +39,9 @@ class ECDModelConfig(ModelConfig):
 
 
 @DeveloperAPI
-@register_model_type(name="reward_model")
+@register_model_type(name="rwd")
 @ludwig_dataclass
-class RewardModelConfig(ECDModelConfig):
-    model_type: str = schema_utils.ProtectedString("reward_model")
+class RWDModelConfig(ECDModelConfig):
+    """Parameters for RWD (Reward Model)."""
+
+    model_type: str = schema_utils.ProtectedString("rwd")

@@ -12,6 +12,7 @@ from ludwig.constants import (
     MODEL_ECD,
     MODEL_GBM,
     MODEL_LLM,
+    MODEL_RWD,
     TRAINING,
 )
 from ludwig.error import ConfigValidationError
@@ -812,17 +813,14 @@ class FineTuneTrainerConfig(ECDTrainerConfig):
 
 
 @DeveloperAPI
-@register_trainer_schema("reward_model")
+@register_trainer_schema(MODEL_RWD)
 @ludwig_dataclass
-class RewardModelTrainerConfig(ECDTrainerConfig):
-    """Dataclass that configures most of the hyperparameters used for RLHF reward model training."""
-
-    # Required for lookup during trainer initialization
-    type: str = schema_utils.ProtectedString("reward_model")
+class RWDTrainerConfig(ECDTrainerConfig):
+    """Dataclass that configures most of the hyperparameters used for Reward Model training."""
 
     base_learning_rate: float = schema_utils.NonNegativeFloat(
         default=0.0,
-        description="Base learning rate used for training in the RLHF reward model trainer.",
+        description="Base learning rate used for training in the Reward Model trainer.",
     )
 
 

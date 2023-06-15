@@ -1,7 +1,7 @@
 from typing import List, Tuple, Union
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import MEAN_SQUARED_ERROR, MODEL_ECD, MODEL_GBM, MODEL_REWARD, NUMBER
+from ludwig.constants import MEAN_SQUARED_ERROR, MODEL_ECD, MODEL_GBM, MODEL_RWD, NUMBER
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -16,7 +16,7 @@ from ludwig.schema.features.utils import (
     ecd_defaults_config_registry,
     ecd_input_config_registry,
     ecd_output_config_registry,
-    reward_model_output_config_registry,
+    rwd_output_config_registry,
     gbm_defaults_config_registry,
     gbm_input_config_registry,
     gbm_output_config_registry,
@@ -155,11 +155,11 @@ class ECDNumberOutputFeatureConfig(NumberOutputFeatureConfig):
 
 
 @DeveloperAPI
-@reward_model_output_config_registry.register(NUMBER)
+@rwd_output_config_registry.register(NUMBER)
 @ludwig_dataclass
-class RewardModelNumberOutputFeatureConfig(NumberOutputFeatureConfig):
+class RWDNumberOutputFeatureConfig(NumberOutputFeatureConfig):
     decoder: BaseDecoderConfig = DecoderDataclassField(
-        MODEL_REWARD,
+        MODEL_RWD,
         feature_type=NUMBER,
         default="regressor",
     )
