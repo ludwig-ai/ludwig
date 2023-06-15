@@ -198,7 +198,7 @@ def test_rlhf_reward_model_data_preprocessor():
             "transcript_column": transcript_column,
         }
     }
-    config[TRAINER] = {"type": "reward_model"}
+    config["model_type"] = "rwd"
 
     # Run preprocessing, get output dataset
     ludwig_model = LudwigModel(config, backend=backend)

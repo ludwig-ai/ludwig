@@ -252,6 +252,11 @@ def test_rlhf_reward_model_trainer(tmpdir):
             "transcript_column": transcript_column,
         }
     }
+    config[TRAINER] = {
+        "epochs": 2,
+        BATCH_SIZE: 4,
+        "learning_rate": 1.0,
+    }
     config["model_type"] = "rwd"
 
     # Train Ludwig model with the dataset
