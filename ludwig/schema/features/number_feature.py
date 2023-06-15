@@ -16,12 +16,12 @@ from ludwig.schema.features.utils import (
     ecd_defaults_config_registry,
     ecd_input_config_registry,
     ecd_output_config_registry,
-    rwd_output_config_registry,
     gbm_defaults_config_registry,
     gbm_input_config_registry,
     gbm_output_config_registry,
     input_mixin_registry,
     output_mixin_registry,
+    rwd_output_config_registry,
 )
 from ludwig.schema.metadata import FEATURE_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY

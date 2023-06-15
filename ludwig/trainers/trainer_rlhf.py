@@ -16,7 +16,9 @@ logger = logging.getLogger(__name__)
 
 
 @register_trainer(MODEL_RWD)
-class RewardModelTrainer(Trainer):
+class RWDTrainer(Trainer):
+    """This class trains models of type Reward Model."""
+
     @staticmethod
     def get_schema_cls():
         return RWDTrainerConfig
@@ -77,9 +79,7 @@ class RewardModelTrainer(Trainer):
 
         # Validate inputs and targets
         if not len(inputs) == 1:
-            raise ValueError(
-                f"Invalid reward model training data inputs, expect 1 input feature, got {len(inputs)}."
-            )
+            raise ValueError(f"Invalid reward model training data inputs, expect 1 input feature, got {len(inputs)}.")
         if not len(targets) == 1:
             raise ValueError(
                 f"Invalid reward model training data targets, expect 1 target feature, got {len(targets)}."

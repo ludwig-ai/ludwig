@@ -180,10 +180,11 @@ class ECD(BaseModel):
 
 
 class RWD(ECD):
-    """
-    This class represents a Reward Model, a model that inputs some feature (i.e. text transcript) and predicts
-    a single scalar output representing the reward/preference of that input. This model type is used for applications
-    such as RLHF fine-tuning of LLMs. This model class is a subclass of ECD, and uses most of ECD's code and pathways.
+    """This class represents a Reward Model, a model type that takes as input some feature (i.e. text) and predicts
+    a single scalar output representing the reward/preference of that input.
+
+    This model type is used for applications such as RLHF fine-tuning of LLMs. This model class is a subclass of ECD,
+    and uses most of ECD's code and pathways.
     """
     @staticmethod
     def type() -> str:
