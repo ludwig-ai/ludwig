@@ -2,13 +2,14 @@ import pytest
 import torch
 from transformers import AutoTokenizer
 
-from ludwig.constants import PREDICTIONS
-from ludwig.utils.llm_utils import (  # realign_target_and_prediction_tensors_for_inference,
+from ludwig.constants import LOGITS, PREDICTIONS, PROBABILITIES
+from ludwig.utils.llm_utils import (
     add_left_padding,
     create_attention_mask,
     find_last_matching_index,
     has_padding_token,
     pad_target_tensor_for_fine_tuning,
+    realign_target_and_prediction_tensors_for_inference,
     remove_left_padding,
     set_pad_token,
 )
@@ -142,518 +143,98 @@ def test_find_last_matching_index(tensor_a, tensor_b, expected_index):
 @pytest.mark.llm
 def test_pad_target_tensor_for_fine_tuning():
     of_name = "out_1"
+    prediction = {
+        of_name: {PREDICTIONS: torch.tensor([[764, 764, 764, 764, 764, 764, 764, 578, 619, 841, 182, 905, 483, 764]])}
+    }
 
     # Scenario 1: Entire target tensor was passed into model inputs
-    model_input = torch.tensor(
-        [
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                52,
-                654,
-                332,
-                664,
-                88,
-                84,
-                529,
-                318,
-                40,
-                45,
-                50,
-                35,
-                67,
-                494,
-                312,
-                383,
-                381,
-                79,
-                589,
-                364,
-                293,
-                89,
-                518,
-                599,
-                769,
-                380,
-                435,
-                311,
-                529,
-                221,
-                78,
-                79,
-                504,
-                76,
-                397,
-                84,
-                0,
-            ]
-        ]
-    )
+    model_input = torch.tensor([[0, 0, 24, 52, 654, 529, 221, 78, 79, 504, 76, 397, 84, 0]])
     target = {of_name: torch.tensor([[78, 79, 504, 76, 397, 84, 0]])}
-    prediction = {
-        of_name: {
-            PREDICTIONS: torch.tensor(
-                [
-                    [
-                        764,
-                        764,
-                        764,
-                        764,
-                        764,
-                        764,
-                        764,
-                        764,
-                        764,
-                        764,
-                        764,
-                        764,
-                        764,
-                        764,
-                        764,
-                        764,
-                        764,
-                        764,
-                        764,
-                        764,
-                        764,
-                        764,
-                        764,
-                        764,
-                        764,
-                        764,
-                        764,
-                        600,
-                        332,
-                        686,
-                        717,
-                        869,
-                        325,
-                        91,
-                        166,
-                        153,
-                        686,
-                        285,
-                        622,
-                        869,
-                        139,
-                        621,
-                        376,
-                        622,
-                        622,
-                        1023,
-                        725,
-                        869,
-                        783,
-                        401,
-                        300,
-                        829,
-                        621,
-                        981,
-                        808,
-                        91,
-                        300,
-                        578,
-                        619,
-                        841,
-                        182,
-                        905,
-                        483,
-                        764,
-                    ]
-                ]
-            )
-        }
-    }
-    expected_target = {
-        of_name: torch.tensor(
-            [
-                [
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    78,
-                    79,
-                    504,
-                    76,
-                    397,
-                    84,
-                    0,
-                ]
-            ]
-        )
-    }
+    expected_target = {of_name: torch.tensor([[-100, -100, -100, -100, -100, -100, -100, 78, 79, 504, 76, 397, 84, 0]])}
     updated_targets = pad_target_tensor_for_fine_tuning(target, prediction, model_input, of_name)
     assert torch.equal(expected_target[of_name], updated_targets[of_name])
 
     # Scenario 2: Entire target tensor was not passed into model inputs
-    model_input = torch.tensor(
-        [
-            [
-                52,
-                654,
-                332,
-                664,
-                88,
-                84,
-                529,
-                318,
-                43,
-                82,
-                396,
-                65,
-                45,
-                280,
-                541,
-                48,
-                635,
-                563,
-                921,
-                470,
-                298,
-                337,
-                470,
-                481,
-                825,
-                391,
-                1,
-                329,
-                70,
-                470,
-                298,
-                734,
-                509,
-                290,
-                747,
-                67,
-                311,
-                12,
-                470,
-                298,
-                747,
-                861,
-                310,
-                494,
-                312,
-                262,
-                310,
-                594,
-                382,
-                308,
-                13,
-                24,
-                395,
-                13,
-                46,
-                57,
-                52,
-                41,
-                45,
-                37,
-                51,
-                14,
-                380,
-                435,
-            ]
-        ]
-    )
+    model_input = torch.tensor([[13, 24, 395, 13, 46, 57, 52, 41, 45, 37, 51, 14, 380, 435]])
     target = {of_name: torch.tensor([[78, 79, 504, 76, 397, 84, 0]])}
     expected_target = {
-        of_name: torch.tensor(
-            [
-                [
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                ]
-            ]
-        )
+        of_name: torch.tensor([[-100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100]])
     }
     updated_targets = pad_target_tensor_for_fine_tuning(target, prediction, model_input, of_name)
     assert torch.equal(expected_target[of_name], updated_targets[of_name])
 
     # Scenario 3: Partial target tensor was passed into model inputs
-    model_input = torch.tensor(
-        [
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                52,
-                654,
-                332,
-                664,
-                88,
-                84,
-                529,
-                318,
-                40,
-                45,
-                50,
-                35,
-                67,
-                494,
-                312,
-                383,
-                381,
-                79,
-                589,
-                364,
-                293,
-                89,
-                518,
-                599,
-                769,
-                380,
-                435,
-                311,
-                529,
-                221,
-                123,
-                664,
-                79,
-                23,
-                78,
-                79,
-                504,
-            ]
-        ]
-    )
+    model_input = torch.tensor([[0, 0, 24, 52, 654, 529, 221, 78, 79, 504, 76, 78, 79, 504]])
     target = {of_name: torch.tensor([[78, 79, 504, 76, 397, 84, 0]])}
     expected_target = {
-        of_name: torch.tensor(
-            [
-                [
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    -100,
-                    78,
-                    79,
-                    504,
-                ]
-            ]
-        )
+        of_name: torch.tensor([[-100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, 78, 79, 504]])
     }
     updated_targets = pad_target_tensor_for_fine_tuning(target, prediction, model_input, of_name)
     assert torch.equal(expected_target[of_name], updated_targets[of_name])
+
+
+def test_realign_target_and_prediction_tensors_for_inference(tokenizer):
+    of_name = "out_1"
+    vocab_size = 8
+
+    # Scenario 1: Prediction and target tensors have the same length, so nothing should change
+    targets = {of_name: torch.tensor([[78, 79, 504, 76, 397, 84, 0]])}
+    predictions = {
+        of_name: {
+            PREDICTIONS: torch.tensor([[78, 79, 504, 76, 397, 84, 0]], dtype=torch.int64),
+            PROBABILITIES: torch.randn(1, 7, vocab_size).to(torch.float32),
+            LOGITS: torch.randn(1, 7, vocab_size).to(torch.float32),
+        }
+    }
+    updated_targets, updated_predictions = realign_target_and_prediction_tensors_for_inference(
+        targets, predictions, of_name, tokenizer
+    )
+
+    assert targets == updated_targets
+    assert predictions == updated_predictions
+    assert predictions[of_name][PREDICTIONS].shape[1] == targets[of_name].shape[1]
+    assert predictions[of_name][PROBABILITIES].shape[1] == targets[of_name].shape[1]
+    assert predictions[of_name][LOGITS].shape[1] == targets[of_name].shape[1]
+
+    # Scenario 2: Prediction length is longer than the target tensor, so we need to realign the target tensor
+    targets = {of_name: torch.tensor([[78, 79, 504, 76, 397, 84, 0]])}
+    predictions = {
+        of_name: {
+            PREDICTIONS: torch.tensor([[98, 47, 78, 79, 504, 76, 397, 84, 0]], dtype=torch.int64),
+            PROBABILITIES: torch.randn(1, 9, vocab_size).to(torch.float32),
+            LOGITS: torch.randn(1, 9, vocab_size).to(torch.float32),
+        }
+    }
+    updated_targets, updated_predictions = realign_target_and_prediction_tensors_for_inference(
+        targets, predictions, of_name, tokenizer
+    )
+
+    assert predictions == updated_predictions
+    assert torch.equal(updated_targets[of_name], torch.tensor([[78, 79, 504, 76, 397, 84, 0, 1, 1]]))
+
+    # Scenario 3: Target length is longer than the prediction tensor, so we need to realign them
+    targets = {of_name: torch.tensor([[98, 47, 78, 79, 504, 76, 397, 84, 0]])}
+    predictions = {
+        of_name: {
+            PREDICTIONS: torch.tensor([[78, 79, 504, 76, 397, 84, 0]], dtype=torch.int64),
+            PROBABILITIES: torch.randn(1, 7, vocab_size).to(torch.float32),
+            LOGITS: torch.randn(1, 7, vocab_size).to(torch.float32),
+        }
+    }
+    updated_targets, updated_predictions = realign_target_and_prediction_tensors_for_inference(
+        targets, predictions, of_name, tokenizer
+    )
+
+    assert targets == updated_targets
+
+    assert torch.equal(updated_predictions[of_name][PREDICTIONS], torch.tensor([[78, 79, 504, 76, 397, 84, 0, 1, 1]]))
+    assert updated_predictions[of_name][PROBABILITIES].shape[1] == targets[of_name].shape[1]
+    assert updated_predictions[of_name][LOGITS].shape[1] == targets[of_name].shape[1]
+
+    assert torch.equal(updated_predictions[of_name][PROBABILITIES][0][-1], torch.zeros(vocab_size))
+    assert torch.equal(updated_predictions[of_name][PROBABILITIES][0][-2], torch.zeros(vocab_size))
+    assert not torch.equal(updated_predictions[of_name][PROBABILITIES][0][-3], torch.zeros(vocab_size))
+
+    assert torch.equal(updated_predictions[of_name][LOGITS][0][-1], torch.zeros(vocab_size))
+    assert torch.equal(updated_predictions[of_name][LOGITS][0][-2], torch.zeros(vocab_size))
+    assert not torch.equal(updated_predictions[of_name][LOGITS][0][-3], torch.zeros(vocab_size))
