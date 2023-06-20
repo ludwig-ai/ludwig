@@ -58,7 +58,9 @@ config = yaml.safe_load(
               decoder:
                 type: classifier
         model_type: llm
-        base_model: facebook/opt-1.3b
+        base_model:
+            type: preset
+            facebook/opt-1.3b
         adapter:
             type: prompt_tuning
             num_virtual_tokens: 16

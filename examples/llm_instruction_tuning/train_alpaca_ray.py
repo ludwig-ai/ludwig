@@ -8,7 +8,9 @@ from ludwig.api import LudwigModel
 config = yaml.safe_load(
     """
 model_type: llm
-base_model: bigscience/bloomz-3b
+base_model:
+  type: preset
+  bigscience/bloomz-3b
 
 adapter:
   type: lora

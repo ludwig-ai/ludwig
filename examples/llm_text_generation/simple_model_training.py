@@ -58,7 +58,9 @@ config = yaml.safe_load(
             top_k: 40
             num_beams: 4
             max_new_tokens: 5
-        base_model: facebook/opt-350m
+        base_model:
+            type: preset
+            facebook/opt-350m
     """
 )
 
