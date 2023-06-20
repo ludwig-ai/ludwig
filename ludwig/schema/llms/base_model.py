@@ -116,23 +116,21 @@ def BaseModelDataclassField(
             return base_model_registry[key]
 
         def _jsonschema_type_mapping(self):
-            return (
-                {
-                    "type": "object",
-                    "properties": {
-                        "type": {
-                            "type": "string",
-                            "enum": list(base_model_registry.keys()),
-                            "default": default,
-                            "description": "TODO",
-                        },
+            return {
+                "type": "object",
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "enum": list(base_model_registry.keys()),
+                        "default": default,
+                        "description": "TODO",
                     },
-                    "title": "base_model_options",
-                    "allOf": get_base_model_conds(),
-                    "required": ["type"],
-                    "description": description,
-                    "parameter_metadata": convert_metadata_to_json(pm),
                 },
-            )
+                "title": "base_model_options",
+                "allOf": get_base_model_conds(),
+                "required": ["type"],
+                "description": description,
+                "parameter_metadata": convert_metadata_to_json(pm),
+            }
 
     return BaseModelSelection().get_default_field()
