@@ -16,7 +16,8 @@ from ludwig.schema.llms.base_model import BaseModelConfig, BaseModelDataclassFie
 from ludwig.schema.llms.generation import LLMGenerationConfig, LLMGenerationConfigField
 from ludwig.schema.llms.peft import AdapterDataclassField, BaseAdapterConfig
 from ludwig.schema.llms.prompt import PromptConfig, PromptConfigField
-from ludwig.schema.metadata import LLM_METADATA
+
+# from ludwig.schema.metadata import LLM_METADATA
 from ludwig.schema.model_types.base import ModelConfig, register_model_type
 from ludwig.schema.preprocessing import PreprocessingConfig, PreprocessingField
 from ludwig.schema.trainer import LLMTrainerConfig, LLMTrainerDataclassField
@@ -47,7 +48,7 @@ class LLMModelConfig(ModelConfig):
             "name of a pretrained model from the HuggingFace Hub, or a path to a directory containing a "
             "pretrained model."
         ),
-        parameter_metadata=LLM_METADATA["model_name"],
+        parameter_metadata=None,  # TODO
     )
 
     input_features: FeatureCollection[BaseInputFeatureConfig] = LLMInputFeatureSelection().get_list_field()
