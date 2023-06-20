@@ -48,7 +48,7 @@ class LLMModelConfig(ModelConfig):
             "name of a pretrained model from the HuggingFace Hub, or a path to a directory containing a "
             "pretrained model."
         ),
-        parameter_metadata=None,  # TODO
+        # parameter_metadata=None,  # TODO
     )
 
     input_features: FeatureCollection[BaseInputFeatureConfig] = LLMInputFeatureSelection().get_list_field()
