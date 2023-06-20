@@ -599,7 +599,7 @@ class XLMRoBERTaConfig(HFEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("bert", TEXT, model_types=[MODEL_RWD])
+@register_encoder_config("bert", TEXT)
 @ludwig_dataclass
 class BERTConfig(HFEncoderConfig):
     """This dataclass configures the schema used for an BERT encoder."""
@@ -3144,7 +3144,7 @@ class AutoTransformerConfig(HFEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("tf_idf", TEXT, model_types=[MODEL_ECD, MODEL_GBM])
+@register_encoder_config("tf_idf", TEXT, model_types=[MODEL_ECD, MODEL_GBM, MODEL_RWD])
 @ludwig_dataclass
 class TfIdfEncoderConfig(SequenceEncoderConfig):
     type: str = schema_utils.ProtectedString("tf_idf")
