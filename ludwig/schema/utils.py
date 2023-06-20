@@ -1222,6 +1222,7 @@ class TypeSelection(fields.Field):
     def get_schema_from_registry(self, key: str) -> Type[BaseMarshmallowConfig]:
         return self.registry[key]
 
+    # TODO: Maybe need to plumb 'required' through here
     def get_default_field(self) -> Field:
         default_factory = lambda: None
         if self.default_factory is not None:

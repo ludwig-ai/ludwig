@@ -4,8 +4,9 @@ from typing import Optional, Type
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.metadata import LLM_METADATA
-from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
+
+# from ludwig.schema.metadata import LLM_METADATA
+from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, ParameterMetadata
 from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils.registry import Registry
 
@@ -42,52 +43,34 @@ def register_base_model(name: str):
 @DeveloperAPI
 @ludwig_dataclass
 class BaseModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
-    preset: Optional[str]
-    name: str
+    type: str = schema_utils.StringOptions(
+        ["preset", "custom"], default="preset", description="TODO", parameter_metadata=None
+    )  # TODO: should it include none?
 
 
 @DeveloperAPI
-@register_base_model(name="none")
+@base_model_registry.register("preset")
 @ludwig_dataclass
-class NoPresetModelConfig(BaseModelConfig):
+class BaseModelPresetConfig(BaseModelConfig):
+    type: str = schema_utils.ProtectedString("preset")
+
+    name: str = schema_utils.StringOptions(MODEL_PRESETS.keys(), default="vicuna-13b")
+
+
+@DeveloperAPI
+@base_model_registry.register("custom")
+@ludwig_dataclass
+class BaseModelCustomConfig(BaseModelConfig):
+    type: str = schema_utils.ProtectedString("custom")
+
+    name: str = schema_utils.String(description="TODO", default="TODO")
+
     def __post_init__(self):
         if not self.name:
             raise ConfigValidationError(
-                "LLM requires `base_model.name` to be set. This can be any pretrained CausalLM on huggingface. "
+                "Customized LLM requires `base_model.name` to set. This can be any pretrained CausalLM on huggingface. "
                 "See: https://huggingface.co/models?pipeline_tag=text-generation&sort=downloads"
             )
-
-    preset: Optional[str] = schema_utils.ProtectedString(
-        "none", parameter_metadata=LLM_METADATA["base_model"]["default"]["preset"]
-    )
-
-    name: str = schema_utils.String(
-        default=None,
-        allow_none=True,
-        description=(
-            "The name of the model to use. This can be a local path or a "
-            "remote path. If it is a remote path, it must be a valid HuggingFace "
-            "model name. If it is a local path, it must be a valid HuggingFace "
-            "model name or a path to a local directory containing a valid "
-            "HuggingFace model."
-        ),
-        parameter_metadata=LLM_METADATA["base_model"]["none"]["name"],
-    )
-
-
-for preset, model_name in MODEL_PRESETS.items():
-
-    @DeveloperAPI
-    @register_base_model(name=preset)
-    @ludwig_dataclass
-    class PresetModelConfig(BaseModelConfig):
-        preset: Optional[str] = schema_utils.ProtectedString(
-            preset, parameter_metadata=LLM_METADATA["base_model"]["default"]["preset"]
-        )
-
-        name: str = schema_utils.ProtectedString(
-            model_name, parameter_metadata=LLM_METADATA["base_model"]["default"]["name"]
-        )
 
 
 @DeveloperAPI
@@ -95,65 +78,61 @@ def get_base_model_conds():
     conds = []
     for base_model_type, base_model_cls in base_model_registry.items():
         other_props = schema_utils.unload_jsonschema_from_marshmallow_class(base_model_cls)["properties"]
-        schema_utils.remove_duplicate_fields(other_props, fields=["preset"])
+        schema_utils.remove_duplicate_fields(other_props, fields=["type"])  # do not remove 'name'
+        # TODO: probably can improve the deduplication logic
         preproc_cond = schema_utils.create_cond(
-            {"preset": base_model_type},
+            {"type": base_model_type},
             other_props,
         )
         conds.append(preproc_cond)
+
+    # Make `name` required for the custom case:
+    conds[1]["then"]["required"] = ["name"]
+    conds[1]["then"]["properties"].pop("default", None)
+
     return conds
 
 
 @DeveloperAPI
 def BaseModelDataclassField(
-    default: Optional[str] = None, description: str = "", parameter_metadata: ParameterMetadata = None
+    default: Optional[str] = None,
+    description: str = "",
 ):
+    pm = ParameterMetadata(ui_component_type="radio_string_combined")
+
     class BaseModelSelection(schema_utils.TypeSelection):
         def __init__(self):
             super().__init__(
                 registry=base_model_registry,
                 default_value=default,
-                key="preset",
+                key="type",
                 description=description,
-                parameter_metadata=parameter_metadata,
-                allow_str_value=True,
+                parameter_metadata=pm,
+                # allow_str_value=True,
                 allow_none=True,
             )
-
-        def str_value_to_object(self, value: str) -> str:
-            if value in MODEL_PRESETS:
-                # User provided a model preset name, so use it
-                return {self.key: value}
-
-            # Otherwise, assume the user is providing a fully qualified model name
-            return {self.key: "none", "name": value}
 
         def get_schema_from_registry(self, key: Optional[str]) -> Type[schema_utils.BaseMarshmallowConfig]:
             return base_model_registry[key]
 
         def _jsonschema_type_mapping(self):
-            return {
-                "oneOf": [
-                    {
-                        "type": "object",
-                        "properties": {
-                            "preset": {
-                                "type": "string",
-                                "enum": list(base_model_registry.keys()),
-                                "default": default,
-                                "description": "MISSING",
-                            },
+            return (
+                {
+                    "type": "object",
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "enum": list(base_model_registry.keys()),
+                            "default": default,
+                            "description": "TODO",
                         },
-                        "title": "base_model_object_options",
-                        "allOf": get_base_model_conds(),
-                        "required": ["preset"],
-                        "description": description,
                     },
-                    {"type": "string", "title": "base_model_string_options", "description": "MISSING"},
-                    {"type": "null", "title": "base_model_null_option", "description": "MISSING"},
-                ],
-                "title": "base_model_options",
-                "description": "The type of base models to use for the LLM",
-            }
+                    "title": "base_model_options",
+                    "allOf": get_base_model_conds(),
+                    "required": ["type"],
+                    "description": description,
+                    "parameter_metadata": convert_metadata_to_json(pm),
+                },
+            )
 
     return BaseModelSelection().get_default_field()

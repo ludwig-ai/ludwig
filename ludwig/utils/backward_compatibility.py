@@ -71,6 +71,7 @@ from ludwig.features.feature_registries import get_base_type_registry, get_input
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.schema.defaults.gbm import GBMDefaultsConfig
 from ludwig.schema.encoders.utils import get_encoder_cls
+from ludwig.schema.llms.base_model import MODEL_PRESETS
 from ludwig.types import (
     FeatureConfigDict,
     FeatureTypeDefaultsDict,
@@ -846,6 +847,21 @@ def remove_extra_type_param_in_defaults_config(defaults: FeatureTypeDefaultsDict
         if TYPE in feature_config:
             del defaults_copy[feature_type][TYPE]
     return defaults_copy
+
+
+@register_config_transformation("0.8")
+def upgrade_model_name_to_base_model_name_dict(config: ModelConfigDict) -> ModelConfigDict:
+    if config.get("model_type", None) == "llm":  # or model_name not in config?
+        return config
+
+    upgraded_config = copy.deepcopy(config)
+    if "model_name" in config.keys():
+        upgraded_config.pop("model_name", None)
+        model_name = config["model_name"]
+        bm_type = "preset" if model_name in MODEL_PRESETS else "custom"
+        upgraded_config["base_model"] = {"type": bm_type, "name": config["model_name"]}
+
+    return upgraded_config
 
 
 def upgrade_metadata(metadata: TrainingSetMetadataDict) -> TrainingSetMetadataDict:
