@@ -37,6 +37,7 @@ try:
 
     from ludwig.data.dataset.ray import RayDataset
     from ludwig.models.gbm import GBM
+    from ludwig.modules.loss_modules import RewardLoss
     from ludwig.schema.model_config import ModelConfig
     from ludwig.schema.trainer import GBMTrainerConfig
     from ludwig.trainers.trainer_lightgbm import LightGBMRayTrainer
@@ -262,6 +263,15 @@ def test_rlhf_reward_model_trainer(tmpdir):
     # Train Ludwig model with the dataset
     ludwig_model = LudwigModel(config, backend=backend)
     ludwig_model.train(training_set=dataframe, output_directory=tmpdir)
+
+
+def test_rlhf_reward_model_loss():
+    reward_loss_function = RewardLoss({})
+
+    # Test the reward loss function
+    assert reward_loss_function(torch.tensor(100.0), torch.tensor(50.0)) < torch.tensor(1e-15)
+    assert reward_loss_function(torch.tensor(50.0), torch.tensor(100.0)) > torch.tensor(10)
+    assert reward_loss_function(torch.tensor(100.0), torch.tensor(100.0)) > torch.tensor(0.4)
 
 
 @pytest.mark.distributed
