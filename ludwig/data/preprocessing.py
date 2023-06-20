@@ -1323,7 +1323,7 @@ def build_dataset(
                 proc_cols[proc_column] = backend.df_engine.map_objects(proc_cols[proc_column], lambda x: x.reshape(-1))
 
     # If training a reward model, prepare the processed columns
-    if mode == "training" and "reward_dataset" in global_preprocessing_parameters:
+    if mode == "training" and global_preprocessing_parameters["reward_dataset"] is not None:
         reward_parameter_names = [
             "id_column",
             "outcome_column",
@@ -1418,7 +1418,7 @@ def build_dataset(
     dataset = embed_fixed_features(dataset, feature_configs, metadata, backend)
 
     # If training a reward model, perform grouping and joining on dataset
-    if mode == "training" and "reward_dataset" in global_preprocessing_parameters:
+    if mode == "training" and global_preprocessing_parameters["reward_dataset"] is not None:
 
         def parse_id_rows_group(rows_group):
             rows_idxs = rows_group.index

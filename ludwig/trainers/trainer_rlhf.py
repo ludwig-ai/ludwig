@@ -71,7 +71,8 @@ class RWDTrainer(Trainer):
                     input_feature_name: [
                         input_feature.create_sample_input(batch_size=batch_size).to(trainer.device),
                         input_feature.create_sample_input(batch_size=batch_size).to(trainer.device),
-                    ] for input_feature_name, input_feature in trainer.model.input_features.items()
+                    ]
+                    for input_feature_name, input_feature in trainer.model.input_features.items()
                 }
                 targets = {
                     output_feature_name: output_feature.create_sample_output(batch_size=batch_size).to(trainer.device)
@@ -94,12 +95,7 @@ class RWDTrainer(Trainer):
         Returns:
             A tuple of the loss tensor and a dictionary of loss for every output feature.
         """
-        if not all(
-            [
-                self.use_amp is False,
-                self.evaluate_training_set is True,
-            ]
-        ):
+        if self.use_amp is True:
             raise ValueError("Invalid trainer arguments for RLHF reward model")
 
         # Validate inputs and targets
