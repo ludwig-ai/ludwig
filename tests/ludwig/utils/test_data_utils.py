@@ -29,12 +29,12 @@ from ludwig.utils.data_utils import (
     figure_data_format_dataset,
     get_abs_path,
     hash_dict,
-    make_column_names_safe,
     NumpyEncoder,
     PANDAS_DF,
     read_csv,
     read_html,
     read_parquet,
+    sanitize_column_names,
     use_credentials,
 )
 from tests.integration_tests.utils import private_param
@@ -226,9 +226,9 @@ def test_read_html(df_lib, nrows):
     read_html(HTML_DOCUMENT, df_lib, **kwargs)
 
 
-def test_make_column_names_safe():
+def test_sanitize_column_names():
     df = pd.DataFrame({"col.one": [1, 2, 3], "col(two)": [4, 5, 6], "col:three": [7, 8, 9]})
 
-    df = make_column_names_safe(df)
+    df = sanitize_column_names(df)
 
     assert list(df.columns) == ["col_one", "col_two_", "col_three"]

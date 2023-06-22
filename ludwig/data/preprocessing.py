@@ -86,7 +86,6 @@ from ludwig.utils.data_utils import (
     HTML_FORMATS,
     JSON_FORMATS,
     JSONL_FORMATS,
-    make_column_names_safe,
     ORC_FORMATS,
     override_in_memory_flag,
     PARQUET_FORMATS,
@@ -105,6 +104,7 @@ from ludwig.utils.data_utils import (
     read_spss,
     read_stata,
     read_tsv,
+    sanitize_column_names,
     SAS_FORMATS,
     SPSS_FORMATS,
     STATA_FORMATS,
@@ -1198,7 +1198,7 @@ def build_dataset(
     # Ensure that column names with non-word characters won't cause problems for downstream operations such as:
     # - LightGBM
     # - MLFlow logging
-    dataset_df = make_column_names_safe(dataset_df)
+    dataset_df = sanitize_column_names(dataset_df)
 
     if mode == "training":
         sample_ratio = global_preprocessing_parameters["sample_ratio"]

@@ -30,6 +30,7 @@ from ludwig.backend import LOCAL_BACKEND
 from ludwig.callbacks import Callback
 from ludwig.constants import BATCH_SIZE, COLUMN, ENCODER, H3, NAME, PREPROCESSING, TRAINER, TYPE
 from ludwig.data.concatenate_datasets import concatenate_df
+from ludwig.data.dataset_synthesizer import build_synthetic_dataset_df
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.encoders.registry import get_encoder_classes
 from ludwig.error import ConfigValidationError
@@ -1129,3 +1130,40 @@ def test_experiment_ordinal_category(csv_filename):
 
     rel_path = generate_data(input_features, output_features, csv_filename)
     run_experiment(input_features, output_features, dataset=rel_path)
+
+
+def test_experiment_feature_names_with_non_word_chars(tmpdir):
+    config = yaml.safe_load(
+        """
+input_features:
+    - name: Pclass (new)
+      type: category
+    - name: review.text
+      type: category
+    - name: other_feature
+      type: category
+      tied: review.text
+
+output_features:
+    - name: Survived (new)
+      type: binary
+    - name: Thrived
+      type: binary
+      dependencies:
+        - Survived (new)
+
+combiner:
+    type: comparator
+    entity_1:
+        - Pclass (new)
+        - other_feature
+    entity_2:
+        - review.text
+
+"""
+    )
+
+    df = build_synthetic_dataset_df(120, config)
+    model = LudwigModel(config, logging_level=logging.INFO)
+
+    model.train(dataset=df, output_directory=tmpdir)

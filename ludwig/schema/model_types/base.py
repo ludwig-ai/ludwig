@@ -7,7 +7,7 @@ from marshmallow import ValidationError
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.config_validation.checks import get_config_check_registry
 from ludwig.config_validation.validation import check_schema
-from ludwig.constants import BACKEND, ENCODER, INPUT_FEATURES, MODEL_ECD, NAME, OUTPUT_FEATURES
+from ludwig.constants import BACKEND, DEPENDENCIES, ENCODER, INPUT_FEATURES, MODEL_ECD, NAME, OUTPUT_FEATURES, TIED
 from ludwig.error import ConfigValidationError
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.schema import utils as schema_utils
@@ -15,9 +15,9 @@ from ludwig.schema.defaults.base import BaseDefaultsConfig
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig, FeatureCollection
 from ludwig.schema.hyperopt import HyperoptConfig
 from ludwig.schema.model_types.utils import (
-    filter_combiner_entities_,
     merge_fixed_preprocessing_params,
     merge_with_defaults,
+    sanitize_and_filter_combiner_entities_,
     set_derived_feature_columns_,
     set_hyperopt_defaults_,
     set_llm_tokenizers,
@@ -57,7 +57,7 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
         set_validation_parameters(self)
         set_hyperopt_defaults_(self)
         set_tagger_decoder_parameters(self)
-        filter_combiner_entities_(self)
+        sanitize_and_filter_combiner_entities_(self)
 
         # Set preprocessing parameters for text features for LLM model type
         set_llm_tokenizers(self)
@@ -83,7 +83,18 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
             input_feature[NAME] = get_sanitized_feature_name(input_feature[NAME])
         for output_feature in config[OUTPUT_FEATURES]:
             output_feature[NAME] = get_sanitized_feature_name(output_feature[NAME])
-        # TODO: Apply sanitization to feature names listed in tied, dependent, and entity lists in the config.
+
+        # Sanitize tied feature names.
+        for input_feature in config[INPUT_FEATURES]:
+            if TIED in input_feature:
+                input_feature[TIED] = get_sanitized_feature_name(input_feature[TIED])
+
+        # Sanitize dependent feature names.
+        for output_feature in config[OUTPUT_FEATURES]:
+            if DEPENDENCIES in output_feature:
+                output_feature[DEPENDENCIES] = [
+                    get_sanitized_feature_name(feature_name) for feature_name in output_feature[DEPENDENCIES]
+                ]
 
         config["model_type"] = config.get("model_type", MODEL_ECD)
         model_type = config["model_type"]
