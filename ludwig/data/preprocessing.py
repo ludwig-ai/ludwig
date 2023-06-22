@@ -86,6 +86,7 @@ from ludwig.utils.data_utils import (
     HTML_FORMATS,
     JSON_FORMATS,
     JSONL_FORMATS,
+    make_column_names_safe,
     ORC_FORMATS,
     override_in_memory_flag,
     PARQUET_FORMATS,
@@ -1193,6 +1194,12 @@ def build_dataset(
             dataset_df = df_engine.reset_index(dataset_df)
 
     dataset_df = df_engine.parallelize(dataset_df)
+
+    # Ensure that column names with non-word characters won't cause problems for downstream operations such as:
+    # - torch module dictionaries
+    # - MLFlow logging
+    # - Ray
+    dataset_df = make_column_names_safe(dataset_df)
 
     if mode == "training":
         sample_ratio = global_preprocessing_parameters["sample_ratio"]

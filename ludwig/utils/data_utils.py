@@ -1089,3 +1089,9 @@ def use_credentials(creds):
                     json.dump(old_conf, f)
                 conf.clear()
                 set_conf_files(tmpdir, conf)
+
+
+def make_column_names_safe(df: DataFrame):
+    """Replaces non-word characters (anything other than alphanumeric or _) with _."""
+    safe_column_names = [re.sub(r"\W", "_", col) for col in df.columns]
+    return df.rename(columns=dict(zip(df.columns, safe_column_names)))

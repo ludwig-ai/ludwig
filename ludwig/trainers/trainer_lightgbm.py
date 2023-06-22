@@ -910,7 +910,9 @@ class LightGBMTrainer(BaseTrainer):
         Returns:
             A copy of `df` with non-word characters removed from the column names.
         """
-        sanitizer = lambda k: re.sub(r"[\W]", "_", k)
+
+        def sanitizer(x):
+            lambda k: re.sub(r"[\W]", "_", k)
 
         if self.feature_names_map is None:
             self.feature_names_map = {k: sanitizer(k) for k in df.columns}
