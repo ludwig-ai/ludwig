@@ -1196,9 +1196,8 @@ def build_dataset(
     dataset_df = df_engine.parallelize(dataset_df)
 
     # Ensure that column names with non-word characters won't cause problems for downstream operations such as:
-    # - torch module dictionaries
+    # - LightGBM
     # - MLFlow logging
-    # - Ray
     dataset_df = make_column_names_safe(dataset_df)
 
     if mode == "training":

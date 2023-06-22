@@ -1091,7 +1091,15 @@ def use_credentials(creds):
                 set_conf_files(tmpdir, conf)
 
 
+def get_sanitized_feature_name(feature_name: str):
+    """Replaces non-word characters (anything other than alphanumeric or _) with _.
+
+    Used in model config initialization and make_column_names_safe(), which is called during dataset building.
+    """
+    return re.sub(r"[\W]", "_", feature_name)
+
+
 def make_column_names_safe(df: DataFrame):
-    """Replaces non-word characters (anything other than alphanumeric or _) with _."""
-    safe_column_names = [re.sub(r"\W", "_", col) for col in df.columns]
+    """Renames df columns with non-word characters (anything other than alphanumeric or _) to _."""
+    safe_column_names = [get_sanitized_feature_name(col) for col in df.columns]
     return df.rename(columns=dict(zip(df.columns, safe_column_names)))
