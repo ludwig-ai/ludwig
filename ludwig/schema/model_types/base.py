@@ -7,7 +7,17 @@ from marshmallow import ValidationError
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.config_validation.checks import get_config_check_registry
 from ludwig.config_validation.validation import check_schema
-from ludwig.constants import BACKEND, DEPENDENCIES, ENCODER, INPUT_FEATURES, MODEL_ECD, NAME, OUTPUT_FEATURES, TIED
+from ludwig.constants import (
+    BACKEND,
+    COLUMN,
+    DEPENDENCIES,
+    ENCODER,
+    INPUT_FEATURES,
+    MODEL_ECD,
+    NAME,
+    OUTPUT_FEATURES,
+    TIED,
+)
 from ludwig.error import ConfigValidationError
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.schema import utils as schema_utils
@@ -81,17 +91,21 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
         # NOTE: This must be kept consistent with build_dataset()
         for input_feature in config[INPUT_FEATURES]:
             input_feature[NAME] = get_sanitized_feature_name(input_feature[NAME])
+            if COLUMN in input_feature and input_feature[COLUMN]:
+                input_feature[COLUMN] = get_sanitized_feature_name(input_feature[COLUMN])
         for output_feature in config[OUTPUT_FEATURES]:
             output_feature[NAME] = get_sanitized_feature_name(output_feature[NAME])
+            if COLUMN in output_feature and output_feature[COLUMN]:
+                output_feature[COLUMN] = get_sanitized_feature_name(output_feature[COLUMN])
 
         # Sanitize tied feature names.
         for input_feature in config[INPUT_FEATURES]:
-            if TIED in input_feature:
+            if TIED in input_feature and input_feature[TIED]:
                 input_feature[TIED] = get_sanitized_feature_name(input_feature[TIED])
 
         # Sanitize dependent feature names.
         for output_feature in config[OUTPUT_FEATURES]:
-            if DEPENDENCIES in output_feature:
+            if DEPENDENCIES in output_feature and output_feature[DEPENDENCIES]:
                 output_feature[DEPENDENCIES] = [
                     get_sanitized_feature_name(feature_name) for feature_name in output_feature[DEPENDENCIES]
                 ]

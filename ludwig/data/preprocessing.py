@@ -1195,9 +1195,8 @@ def build_dataset(
 
     dataset_df = df_engine.parallelize(dataset_df)
 
-    # Ensure that column names with non-word characters won't cause problems for downstream operations such as:
-    # - LightGBM
-    # - MLFlow logging
+    # Ensure that column names with non-word characters won't cause problems for downstream operations.
+    # NOTE: Must be kept consistent with config sanitization in schema/model_types/base.py.
     dataset_df = sanitize_column_names(dataset_df)
 
     if mode == "training":

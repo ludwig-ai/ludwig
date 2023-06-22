@@ -6,6 +6,7 @@ import pytest
 from ludwig.api import LudwigModel
 from ludwig.constants import INPUT_FEATURES, MODEL_TYPE, OUTPUT_FEATURES, TRAINER
 from ludwig.error import ConfigValidationError
+from ludwig.schema.model_types.base import ModelConfig
 from tests.integration_tests import synthetic_test_data
 from tests.integration_tests.utils import binary_feature
 from tests.integration_tests.utils import category_feature as _category_feature
@@ -64,6 +65,8 @@ def _train_and_predict_gbm(input_features, output_features, tmpdir, backend_conf
 
     if trainer_config:
         config[TRAINER].update(trainer_config)
+
+    config = ModelConfig.from_dict(config).to_dict()
 
     model = LudwigModel(config, backend=backend_config)
     _, _, output_directory = model.train(
