@@ -227,8 +227,10 @@ def test_read_html(df_lib, nrows):
 
 
 def test_sanitize_column_names():
-    df = pd.DataFrame({"col.one": [1, 2, 3], "col(two)": [4, 5, 6], "col:three": [7, 8, 9]})
+    df = pd.DataFrame(
+        {"col.one": [1, 2, 3, 4], "col(two)": [4, 5, 6, 7], "col:three": [7, 8, 9, 10], "col one (new)": [1, 2, 3, 4]}
+    )
 
     df = sanitize_column_names(df)
 
-    assert list(df.columns) == ["col_one", "col_two_", "col_three"]
+    assert list(df.columns) == ["col_one", "col_two_", "col_three", "col one _new_"]
