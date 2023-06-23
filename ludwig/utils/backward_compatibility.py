@@ -71,7 +71,6 @@ from ludwig.features.feature_registries import get_base_type_registry, get_input
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.schema.defaults.gbm import GBMDefaultsConfig
 from ludwig.schema.encoders.utils import get_encoder_cls
-from ludwig.schema.llms.base_model import MODEL_PRESETS
 from ludwig.types import (
     FeatureConfigDict,
     FeatureTypeDefaultsDict,
@@ -857,9 +856,7 @@ def upgrade_model_name_to_base_model_name_dict(config: ModelConfigDict) -> Model
     upgraded_config = copy.deepcopy(config)
     if "model_name" in config.keys():
         upgraded_config.pop("model_name", None)
-        model_name = config["model_name"]
-        bm_type = "preset" if model_name in MODEL_PRESETS else "custom"
-        upgraded_config["base_model"] = {"type": bm_type, "name": config["model_name"]}
+        upgraded_config["base_model"] = config["model_name"]
 
     return upgraded_config
 
