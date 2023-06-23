@@ -34,9 +34,13 @@ gpustat
 rich~=12.4.4
 packaging
 retry
+
 # required for TransfoXLTokenizer when using transformer_xl
 sacremoses
 sentencepiece
+
+# requirements for daft
+getdaft
 
 # new data format support
 xlwt                # excel
