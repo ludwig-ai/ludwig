@@ -6,6 +6,7 @@ import yaml
 
 from ludwig.constants import (
     ACTIVE,
+    BASE_MODEL,
     CLIP,
     COLUMN,
     COMBINER,
@@ -20,6 +21,8 @@ from ludwig.constants import (
     LOSS,
     MODEL_ECD,
     MODEL_GBM,
+    MODEL_LLM,
+    MODEL_TYPE,
     NAME,
     NUM_CLASSES,
     OPTIMIZER,
@@ -796,10 +799,10 @@ def test_encoder_decoder_values_as_str():
 )
 def test_llm_base_model_config(base_model_config, model_name):
     config = {
-        "model_type": "llm",
-        "base_model": base_model_config,
-        "input_features": [{"name": "text_input", "type": "text"}],
-        "output_features": [{"name": "text_output", "type": "text"}],
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: base_model_config,
+        INPUT_FEATURES: [{NAME: "text_input", TYPE: "text"}],
+        OUTPUT_FEATURES: [{NAME: "text_output", TYPE: "text"}],
     }
 
     config_obj = ModelConfig.from_dict(config)
@@ -816,10 +819,10 @@ def test_llm_base_model_config(base_model_config, model_name):
 )
 def test_llm_base_model_config_error(base_model_config):
     config = {
-        "model_type": "llm",
+        MODEL_TYPE: MODEL_LLM,
         "base_model": base_model_config,
-        "input_features": [{"name": "text_input", "type": "text"}],
-        "output_features": [{"name": "text_output", "type": "text"}],
+        INPUT_FEATURES: [{NAME: "text_input", TYPE: "text"}],
+        OUTPUT_FEATURES: [{NAME: "text_output", TYPE: "text"}],
     }
 
     with pytest.raises(ConfigValidationError):

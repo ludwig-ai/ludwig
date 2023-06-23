@@ -21,6 +21,7 @@ from typing import Any, Callable, Dict, List, Union
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
     AUDIO,
+    BASE_MODEL,
     BIAS,
     CLASS_WEIGHTS,
     COLUMN,
@@ -856,7 +857,7 @@ def upgrade_model_name_to_base_model_name_dict(config: ModelConfigDict) -> Model
     upgraded_config = copy.deepcopy(config)
     if "model_name" in config.keys():
         upgraded_config.pop("model_name", None)
-        upgraded_config["base_model"] = config["model_name"]
+        upgraded_config[BASE_MODEL] = config["model_name"]
 
     return upgraded_config
 

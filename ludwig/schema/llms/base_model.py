@@ -3,8 +3,7 @@ from dataclasses import field
 from marshmallow import fields, ValidationError
 
 from ludwig.api_annotations import DeveloperAPI
-
-# TODO:
+from ludwig.constants import BASE_MODEL
 from ludwig.schema.metadata import LLM_METADATA
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json
 
@@ -50,18 +49,18 @@ def BaseModelDataclassField(
                         "enum": list(MODEL_PRESETS.keys()),
                         "description": "Pick an LLM with first-class Ludwig support.",
                         "title": "preset",
-                        "parameter_metadata": convert_metadata_to_json(LLM_METADATA["base_model"]),
+                        "parameter_metadata": convert_metadata_to_json(LLM_METADATA[BASE_MODEL]),
                     },
                     {
                         "type": "string",
                         "description": "Enter the full (slash-delimited) path to a huggingface LLM.",
                         "title": "custom",
-                        "parameter_metadata": convert_metadata_to_json(LLM_METADATA["base_model"]),
+                        "parameter_metadata": convert_metadata_to_json(LLM_METADATA[BASE_MODEL]),
                     },
                 ],
                 "description": description,
                 "title": "base_model_options",
-                "parameter_metadata": convert_metadata_to_json(LLM_METADATA["base_model"]),
+                "parameter_metadata": convert_metadata_to_json(LLM_METADATA[BASE_MODEL]),
             }
 
     return field(
@@ -72,7 +71,7 @@ def BaseModelDataclassField(
                 # validate=lambda x: isinstance(x, str),  # TODO: Could put huggingface validation here
                 metadata={
                     "description": description,
-                    "parameter_metadata": convert_metadata_to_json(LLM_METADATA["base_model"]),
+                    "parameter_metadata": convert_metadata_to_json(LLM_METADATA[BASE_MODEL]),
                 },  # TODO: extra metadata dict probably unnecessary, but keep it because it's a widespread pattern.
             ),
         },

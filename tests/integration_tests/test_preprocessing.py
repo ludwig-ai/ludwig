@@ -17,17 +17,24 @@ from ludwig.api import LudwigModel
 from ludwig.backend import initialize_backend
 from ludwig.callbacks import Callback
 from ludwig.constants import (
+    BASE_MODEL,
     BATCH_SIZE,
     COLUMN,
     DECODER,
+    EPOCHS,
     FULL,
+    INPUT_FEATURES,
     MODEL_ECD,
     MODEL_LLM,
+    MODEL_TYPE,
     NAME,
+    OUTPUT_FEATURES,
     PREPROCESSING,
     PROC_COLUMN,
     PROMPT,
+    SPLIT,
     TRAINER,
+    TYPE,
 )
 from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.data.preprocessing import handle_features_with_prompt_config, preprocess_for_prediction
@@ -67,12 +74,12 @@ def test_sample_ratio(backend, tmpdir, ray_cluster_2cpu):
         input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=num_examples
     )
     config = {
-        "input_features": input_features,
-        "output_features": output_features,
-        "trainer": {
-            "epochs": 2,
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        TRAINER: {
+            EPOCHS: 2,
         },
-        "preprocessing": {"sample_ratio": sample_ratio},
+        PREPROCESSING: {"sample_ratio": sample_ratio},
     }
 
     model = LudwigModel(config, backend=backend)
@@ -121,9 +128,9 @@ def test_sample_ratio_deterministic(backend, tmpdir, ray_cluster_2cpu):
     )
 
     config = {
-        "input_features": input_features,
-        "output_features": output_features,
-        "preprocessing": {"sample_ratio": sample_ratio},
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        PREPROCESSING: {"sample_ratio": sample_ratio},
     }
 
     model1 = LudwigModel(config, backend=backend)
@@ -162,7 +169,7 @@ def test_strip_whitespace_category(csv_filename, tmpdir):
     cat_feat = category_feature(decoder={"vocab_size": 3})
     output_features = [cat_feat]
     backend = LocalTestBackend()
-    config = {"input_features": input_features, "output_features": output_features}
+    config = {INPUT_FEATURES: input_features, OUTPUT_FEATURES: output_features}
 
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
     df = pd.read_csv(training_data_csv_path)
@@ -197,15 +204,15 @@ def test_with_split(backend, csv_filename, tmpdir, ray_cluster_2cpu):
         input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=num_examples
     )
     data_df = pd.read_csv(data_csv)
-    data_df["split"] = [0] * train_set_size + [1] * val_set_size + [2] * test_set_size
+    data_df[SPLIT] = [0] * train_set_size + [1] * val_set_size + [2] * test_set_size
     data_df.to_csv(data_csv, index=False)
     config = {
-        "input_features": input_features,
-        "output_features": output_features,
-        "trainer": {
-            "epochs": 2,
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        TRAINER: {
+            EPOCHS: 2,
         },
-        "preprocessing": {"split": {"type": "fixed", "column": "split"}},
+        PREPROCESSING: {SPLIT: {TYPE: "fixed", COLUMN: SPLIT}},
     }
 
     model = LudwigModel(config, backend=backend)
@@ -230,10 +237,10 @@ def test_dask_known_divisions(feature_fn, csv_filename, tmpdir, ray_cluster_2cpu
     assert data_df.known_divisions
 
     config = {
-        "input_features": input_features,
-        "output_features": output_features,
-        "trainer": {
-            "epochs": 2,
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        TRAINER: {
+            EPOCHS: 2,
         },
     }
 
@@ -257,10 +264,10 @@ def test_drop_empty_partitions(csv_filename, tmpdir, ray_cluster_2cpu):
     data_df = dd.from_pandas(pd.read_csv(data_csv), npartitions=10)
 
     config = {
-        "input_features": input_features,
-        "output_features": output_features,
-        "trainer": {
-            "epochs": 2,
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        TRAINER: {
+            EPOCHS: 2,
         },
     }
 
@@ -285,9 +292,9 @@ def test_read_image_from_path(tmpdir, csv_filename, generate_images_as_numpy):
     )
 
     config = {
-        "input_features": input_features,
-        "output_features": output_features,
-        "trainer": {"epochs": 2},
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        TRAINER: {EPOCHS: 2},
     }
 
     model = LudwigModel(config)
@@ -302,9 +309,9 @@ def test_read_image_from_numpy_array(tmpdir, csv_filename):
     output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
 
     config = {
-        "input_features": input_features,
-        "output_features": output_features,
-        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        TRAINER: {EPOCHS: 2, BATCH_SIZE: 128},
     }
 
     data_csv = generate_data(
@@ -345,9 +352,9 @@ def test_read_image_failure_default_image(monkeypatch, tmpdir, csv_filename):
     output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
 
     config = {
-        "input_features": input_features,
-        "output_features": output_features,
-        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        TRAINER: {EPOCHS: 2, BATCH_SIZE: 128},
     }
 
     data_csv = generate_data(
@@ -358,7 +365,7 @@ def test_read_image_failure_default_image(monkeypatch, tmpdir, csv_filename):
     preprocessed_dataset = model.preprocess(data_csv)
     training_set_metadata = preprocessed_dataset.training_set_metadata
 
-    preprocessing = training_set_metadata[input_features[0][NAME]]["preprocessing"]
+    preprocessing = training_set_metadata[input_features[0][NAME]][PREPROCESSING]
     expected_shape = (preprocessing["num_channels"], preprocessing["height"], preprocessing["width"])
     expected_dtype = np.float32
 
@@ -374,7 +381,7 @@ def test_number_feature_wrong_dtype(csv_filename, tmpdir):
     num_feat = number_feature()
     input_features = [num_feat]
     output_features = [binary_feature()]
-    config = {"input_features": input_features, "output_features": output_features}
+    config = {INPUT_FEATURES: input_features, OUTPUT_FEATURES: output_features}
 
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
     df = pd.read_csv(training_data_csv_path)
@@ -435,7 +442,7 @@ def test_seq_features_max_sequence_length(
     )
     input_features = [feat]
     output_features = [binary_feature()]
-    config = {"input_features": input_features, "output_features": output_features}
+    config = {INPUT_FEATURES: input_features, OUTPUT_FEATURES: output_features}
 
     data_csv_path = os.path.join(tmpdir, csv_filename)
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
@@ -461,7 +468,7 @@ def test_column_feature_type_mismatch_fill():
     bin_feat = binary_feature()
     input_features = [cat_feat]
     output_features = [bin_feat]
-    config = {"input_features": input_features, "output_features": output_features}
+    config = {INPUT_FEATURES: input_features, OUTPUT_FEATURES: output_features}
 
     # Construct dataframe with int-like column representing a categorical feature
     df = pd.DataFrame(
@@ -510,12 +517,12 @@ def test_presplit_override(format, tmpdir):
 
     data_df.to_csv(data_csv, index=False)
     config = {
-        "input_features": input_features,
-        "output_features": output_features,
-        "trainer": {
-            "epochs": 2,
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        TRAINER: {
+            EPOCHS: 2,
         },
-        "preprocessing": {"split": {"type": "random"}},
+        PREPROCESSING: {SPLIT: {TYPE: "random"}},
     }
 
     model = LudwigModel(config, backend=LocalTestBackend())
@@ -546,7 +553,7 @@ def test_empty_training_set_error(backend, tmpdir, ray_cluster_2cpu):
     out_feat = binary_feature()
     input_features = [number_feature()]
     output_features = [out_feat]
-    config = {"input_features": input_features, "output_features": output_features}
+    config = {INPUT_FEATURES: input_features, OUTPUT_FEATURES: output_features}
 
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
     df = pd.read_csv(training_data_csv_path)
@@ -574,7 +581,7 @@ def test_in_memory_dataset_size(backend, tmpdir, ray_cluster_2cpu):
     out_feat = binary_feature()
     input_features = [number_feature()]
     output_features = [out_feat]
-    config = {"input_features": input_features, "output_features": output_features}
+    config = {INPUT_FEATURES: input_features, OUTPUT_FEATURES: output_features}
 
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
     df = pd.read_csv(training_data_csv_path)
@@ -640,9 +647,9 @@ def test_non_conventional_bool_with_fallback(binary_as_input, expected_preproces
         input_features = [number_feature()]
         output_features = [bin_feature]
     config = {
-        "input_features": input_features,
-        "output_features": output_features,
-        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        TRAINER: {EPOCHS: 2, BATCH_SIZE: 128},
     }
 
     data_csv_path = os.path.join(tmpdir, "data.csv")
@@ -658,7 +665,7 @@ def test_non_conventional_bool_with_fallback(binary_as_input, expected_preproces
         "str2bool": {"<=50K": False, ">50K": True},
         "bool2str": ["<=50K", ">50K"],
         "fallback_true_label": ">50K",
-        "preprocessing": expected_preprocessing,
+        PREPROCESSING: expected_preprocessing,
     }
 
 
@@ -677,9 +684,9 @@ def test_non_conventional_bool_without_fallback_logs_warning(binary_as_input, ca
         input_features = [number_feature()]
         output_features = [bin_feature]
     config = {
-        "input_features": input_features,
-        "output_features": output_features,
-        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        TRAINER: {EPOCHS: 2, BATCH_SIZE: 128},
     }
 
     data_csv_path = os.path.join(tmpdir, "data.csv")
@@ -706,9 +713,9 @@ def test_category_feature_vocab_size_1(feature_type, tmpdir) -> None:
         input_feature = output_feature
         output_feature = [category_feature(decoder={"vocab_size": 1})]
 
-    config = {"input_features": input_feature, "output_features": output_feature, "training": {"epochs": 1}}
+    config = {INPUT_FEATURES: input_feature, OUTPUT_FEATURES: output_feature, "training": {EPOCHS: 1}}
 
-    training_data_csv_path = generate_data(config["input_features"], config["output_features"], data_csv_path)
+    training_data_csv_path = generate_data(config[INPUT_FEATURES], config[OUTPUT_FEATURES], data_csv_path)
 
     ludwig_model = LudwigModel(config)
     with pytest.raises(RuntimeError) if feature_type == "output_feature" else contextlib.nullcontext():
@@ -721,7 +728,7 @@ def test_vit_encoder_different_dimension_image(tmpdir, csv_filename, use_pretrai
         image_feature(
             os.path.join(tmpdir, "generated_output"),
             preprocessing={"in_memory": True, "height": 224, "width": 206, "num_channels": 3},
-            encoder={"type": "_vit_legacy", "use_pretrained": use_pretrained},
+            encoder={TYPE: "_vit_legacy", "use_pretrained": use_pretrained},
         )
     ]
     output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
@@ -731,9 +738,9 @@ def test_vit_encoder_different_dimension_image(tmpdir, csv_filename, use_pretrai
     )
 
     config = {
-        "input_features": input_features,
-        "output_features": output_features,
-        "trainer": {"train_steps": 1},
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        TRAINER: {"train_steps": 1},
     }
 
     model = LudwigModel(config)
@@ -754,7 +761,7 @@ def test_image_encoder_torchvision_different_num_channels(tmpdir, csv_filename):
         image_feature(
             os.path.join(tmpdir, "generated_output"),
             preprocessing={"in_memory": True, "height": 224, "width": 206, "num_channels": 1},
-            encoder={"type": "efficientnet"},
+            encoder={TYPE: "efficientnet"},
         )
     ]
     output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
@@ -764,9 +771,9 @@ def test_image_encoder_torchvision_different_num_channels(tmpdir, csv_filename):
     )
 
     config = {
-        "input_features": input_features,
-        "output_features": output_features,
-        "trainer": {"train_steps": 1},
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        TRAINER: {"train_steps": 1},
     }
 
     model = LudwigModel(config)
@@ -785,12 +792,12 @@ def test_image_encoder_torchvision_different_num_channels(tmpdir, csv_filename):
 )
 def test_fill_with_mode_different_df_engine(tmpdir, csv_filename, df_engine, ray_cluster_2cpu):
     config = {
-        "input_features": [category_feature(preprocessing={"missing_value_strategy": "fill_with_mode"})],
-        "output_features": [binary_feature()],
+        INPUT_FEATURES: [category_feature(preprocessing={"missing_value_strategy": "fill_with_mode"})],
+        OUTPUT_FEATURES: [binary_feature()],
     }
 
     training_data_csv_path = generate_data(
-        config["input_features"], config["output_features"], os.path.join(tmpdir, csv_filename)
+        config[INPUT_FEATURES], config[OUTPUT_FEATURES], os.path.join(tmpdir, csv_filename)
     )
 
     df = pd.read_csv(training_data_csv_path)
@@ -801,7 +808,7 @@ def test_fill_with_mode_different_df_engine(tmpdir, csv_filename, df_engine, ray
         df = dd.from_pandas(df, npartitions=1)
 
         # Only support Dask on Ray backend
-        config["backend"] = {"type": "ray"}
+        config["backend"] = {TYPE: "ray"}
 
     ludwig_model = LudwigModel(config)
     ludwig_model.preprocess(dataset=df)
@@ -851,7 +858,7 @@ input:"""
             [
                 text_feature(
                     preprocessing={
-                        "prompt": {"task": task, "template": template_task_sample},
+                        PROMPT: {"task": task, "template": template_task_sample},
                         "max_sequence_length": 512,
                     }
                 )
@@ -860,7 +867,7 @@ input:"""
         ),
         (
             [
-                text_feature(preprocessing={"prompt": {"template": template_multi_col}}),
+                text_feature(preprocessing={PROMPT: {"template": template_multi_col}}),
                 category_feature(name="country"),
                 number_feature(name="year"),
             ],
@@ -882,21 +889,21 @@ def test_prompt_template(input_features, expected, model_type, backend, tmpdir, 
     # Only use the first input featuere (text) and discard the others, which are only used for data gen
     input_features = input_features[:1]
     config = {
-        "model_type": model_type,
-        "input_features": input_features,
-        "output_features": output_features,
+        MODEL_TYPE: model_type,
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
     }
 
     model_name = "hf-internal-testing/tiny-random-OPTModel"
     if model_type == MODEL_LLM:
         # For LLMs, specify the prompt at the top level
-        config["base_model"] = model_name
+        config[BASE_MODEL] = model_name
         config[PROMPT] = input_features[0][PREPROCESSING][PROMPT]
-        del config["input_features"][0][PREPROCESSING][PROMPT]
-        config["input_features"][0]["encoder"] = {"type": "passthrough"}
+        del config[INPUT_FEATURES][0][PREPROCESSING][PROMPT]
+        config[INPUT_FEATURES][0]["encoder"] = {TYPE: "passthrough"}
     else:
-        config["input_features"][0]["encoder"] = {
-            "type": "auto_transformer",
+        config[INPUT_FEATURES][0]["encoder"] = {
+            TYPE: "auto_transformer",
             "pretrained_model_name_or_path": model_name,
         }
 
@@ -950,24 +957,24 @@ def test_handle_features_with_few_shot_prompt_config(backend, retrieval_kwargs, 
 
     input_features = [
         text_feature(
-            encoder={"type": "passthrough"},
+            encoder={TYPE: "passthrough"},
         )
     ]
     output_features = [
         category_feature(
             output_feature=True,
-            decoder={"type": "category_extractor"},
+            decoder={TYPE: "category_extractor"},
         )
     ]
     input_feature_name = input_features[0][NAME]
     output_feature_name = output_features[0][NAME]
 
     config = {
-        "model_type": MODEL_LLM,
-        "base_model": "gpt2",
-        "input_features": input_features,
-        "output_features": output_features,
-        "prompt": prompt_config,
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: "gpt2",
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        PROMPT: prompt_config,
     }
     config = ModelConfig.from_dict(config).to_dict()
 
@@ -977,8 +984,8 @@ def test_handle_features_with_few_shot_prompt_config(backend, retrieval_kwargs, 
 
         df = dd.from_pandas(df, npartitions=2)
 
-    split_col = df["split"]
-    feature_configs = config["input_features"] + config["output_features"]
+    split_col = df[SPLIT]
+    feature_configs = config[INPUT_FEATURES] + config[OUTPUT_FEATURES]
 
     if backend == "local":
         context = mock.patch(
@@ -1038,11 +1045,11 @@ def test_handle_features_with_prompt_config_multi_col(backend, ray_cluster_2cpu)
     )
 
     config = {
-        "model_type": MODEL_LLM,
-        "base_model": "gpt2",
-        "input_features": [text_feature(name="question", encoder={"type": "passthrough"})],
-        "output_features": [text_feature(name="answer")],
-        "prompt": {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: "gpt2",
+        INPUT_FEATURES: [text_feature(name="question", encoder={TYPE: "passthrough"})],
+        OUTPUT_FEATURES: [text_feature(name="answer")],
+        PROMPT: {
             "template": "You are a helpful chatbot. USER: {instruction}: {country}, {year:.2f} ASSISTANT:",
         },
     }
@@ -1053,7 +1060,7 @@ def test_handle_features_with_prompt_config_multi_col(backend, ray_cluster_2cpu)
 
         df = dd.from_pandas(df, npartitions=2)
 
-    feature_configs = config["input_features"] + config["output_features"]
+    feature_configs = config[INPUT_FEATURES] + config[OUTPUT_FEATURES]
 
     backend = initialize_backend(backend)
     dataset_cols = handle_features_with_prompt_config(
