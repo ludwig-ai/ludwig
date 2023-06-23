@@ -936,13 +936,20 @@ def train_with_backend(
 
                 # Filter out metrics that are not being aggregated correctly for now
                 # TODO(travis): https://github.com/ludwig-ai/ludwig/issues/1956
+                # Filter out next_token_perplexity since it is only relevant for LLMs
                 def filter(stats):
                     return {
                         k: {
                             metric_name: value
                             for metric_name, value in v.items()
                             if metric_name
-                            not in {"loss", "root_mean_squared_percentage_error", "jaccard", "token_accuracy"}
+                            not in {
+                                "loss",
+                                "root_mean_squared_percentage_error",
+                                "jaccard",
+                                "token_accuracy",
+                                "next_token_perplexity",
+                            }
                         }
                         for k, v in stats.items()
                     }
