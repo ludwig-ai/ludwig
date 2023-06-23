@@ -51,9 +51,7 @@ df = pd.DataFrame(review_label_pairs)
 config = yaml.safe_load(
     """
 model_type: llm
-base_model:
-    type: preset
-    facebook/opt-350m
+base_model: facebook/opt-350m
 generation:
     temperature: 0.1
     top_p: 0.75
