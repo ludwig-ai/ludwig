@@ -956,37 +956,36 @@ class RayBackend(RemoteTrainingMixin, Backend):
 
             is_dask_df = is_dask_series_or_df(df, self)
 
-            with self.storage.cache.use_credentials():
-                if is_dask_df:
-                    df = daft.from_dask_dataframe(df)
-                else:
-                    df = daft.from_pandas(df)
+            if is_dask_df:
+                df = daft.from_dask_dataframe(df)
+            else:
+                df = daft.from_pandas(df)
 
-                df = df.select("idx", column.name)
+            df = df.select("idx", column.name)
 
-                # Download binary files in parallel
-                fs, _ = get_fs_and_path(sample_fname)
-                df = df.with_column(
-                    column.name,
-                    df[column.name].url.download(
-                        # Use 16 worker threads to maximize image read throughput over each partition
-                        max_worker_threads=16,
-                        # On error, replace value with a Null and just log the error
-                        on_error="null",
-                        fs=fs,
-                    ),
-                )
+            # Download binary files in parallel
+            fs, _ = get_fs_and_path(sample_fname)
+            df = df.with_column(
+                column.name,
+                df[column.name].url.download(
+                    # Use 16 worker threads to maximize image read throughput over each partition
+                    max_worker_threads=16,
+                    # On error, replace value with a Null and just log the error
+                    on_error="null",
+                    fs=fs,
+                ),
+            )
 
-                if map_fn is not None:
-                    df = df.with_column(column.name, df[column.name].apply(map_fn, return_dtype=daft.DataType.python()))
+            if map_fn is not None:
+                df = df.with_column(column.name, df[column.name].apply(map_fn, return_dtype=daft.DataType.python()))
 
-                # Executes and convert Daft Dataframe to Dask DataFrame or Pandas Dataframe
-                # Note: During conversion back to dask, this preserves partitioning
-                if is_dask_df:
-                    df = df.to_dask_dataframe()
-                    df = self.df_engine.persist(df)
-                else:
-                    df = df.to_pandas()
+            # Executes and convert Daft Dataframe to Dask DataFrame or Pandas Dataframe
+            # Note: During conversion back to dask, this preserves partitioning
+            if is_dask_df:
+                df = df.to_dask_dataframe()
+                df = self.df_engine.persist(df)
+            else:
+                df = df.to_pandas()
         else:
             # Assume the path has already been read in, so just convert directly to a dataset
             # Name the column "value" to match the behavior of the above
