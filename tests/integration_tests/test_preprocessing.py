@@ -890,7 +890,7 @@ def test_prompt_template(input_features, expected, model_type, backend, tmpdir, 
     model_name = "hf-internal-testing/tiny-random-OPTModel"
     if model_type == MODEL_LLM:
         # For LLMs, specify the prompt at the top level
-        config["model_name"] = model_name
+        config["base_model"] = model_name
         config[PROMPT] = input_features[0][PREPROCESSING][PROMPT]
         del config["input_features"][0][PREPROCESSING][PROMPT]
         config["input_features"][0]["encoder"] = {"type": "passthrough"}
@@ -964,7 +964,7 @@ def test_handle_features_with_few_shot_prompt_config(backend, retrieval_kwargs, 
 
     config = {
         "model_type": MODEL_LLM,
-        "model_name": "gpt2",
+        "base_model": "gpt2",
         "input_features": input_features,
         "output_features": output_features,
         "prompt": prompt_config,
@@ -1039,7 +1039,7 @@ def test_handle_features_with_prompt_config_multi_col(backend, ray_cluster_2cpu)
 
     config = {
         "model_type": MODEL_LLM,
-        "model_name": "gpt2",
+        "base_model": "gpt2",
         "input_features": [text_feature(name="question", encoder={"type": "passthrough"})],
         "output_features": [text_feature(name="answer")],
         "prompt": {
