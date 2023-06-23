@@ -1,5 +1,7 @@
 from abc import ABC
-from typing import Optional, Type
+from dataclasses import field
+
+from marshmallow import fields, ValidationError
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.error import ConfigValidationError
@@ -9,6 +11,9 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, ParameterMetadata
 from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils.registry import Registry
+
+# from typing import Optional, Type
+
 
 MODEL_PRESETS = {
     "opt-350m": "facebook/opt-350m",
@@ -95,42 +100,55 @@ def get_base_model_conds():
 
 @DeveloperAPI
 def BaseModelDataclassField(
-    default: Optional[str] = None,
     description: str = "",
 ):
-    pm = ParameterMetadata(ui_component_type="radio_string_combined")
+    pm = ParameterMetadata(ui_component_type="radio_string_combined", expected_impact=3)
 
-    class BaseModelSelection(schema_utils.TypeSelection):
-        def __init__(self):
-            super().__init__(
-                registry=base_model_registry,
-                default_value=default,
-                key="type",
-                description=description,
-                parameter_metadata=pm,
-                # allow_str_value=True,
-                allow_none=True,
-            )
+    class BaseModelField(fields.Field):
+        def _serialize(self, value, attr, obj, **kwargs):
+            if isinstance(value, str):
+                return value
+            raise ValidationError(f"Value to serialize is not a string: {value}")
 
-        def get_schema_from_registry(self, key: Optional[str]) -> Type[schema_utils.BaseMarshmallowConfig]:
-            return base_model_registry[key]
+        def _deserialize(self, value, attr, obj, **kwargs):
+            # TODO: Could put huggingface validation here, then could also dovetail preset validation:
+            if isinstance(value, str):
+                return str
+            raise ValidationError(f"Value to deserialize is not a string: {value}")
 
         def _jsonschema_type_mapping(self):
             return {
-                "type": "object",
-                "properties": {
-                    "type": {
+                "anyOf": [
+                    {
                         "type": "string",
-                        "enum": list(base_model_registry.keys()),
-                        "default": default,
-                        "description": "TODO",
+                        "enum": list(MODEL_PRESETS.keys()),
+                        "description": "Pick an LLM with first-class Ludwig support.",
+                        "title": "preset",
                     },
-                },
-                "title": "base_model_options",
-                "allOf": get_base_model_conds(),
-                "required": ["type"],
+                    {
+                        "type": "string",
+                        "description": "Enter the full (slash-delimited) path to a huggingface LLM.",
+                        "title": "custom",
+                    },
+                ],
                 "description": description,
+                "title": "base_model_options",
                 "parameter_metadata": convert_metadata_to_json(pm),
             }
 
-    return BaseModelSelection().get_default_field()
+    return field(
+        metadata={
+            "marshmallow_field": BaseModelField(
+                required=True,
+                allow_none=False,
+                validate=lambda x: isinstance(x, str),  # TODO: Could put huggingface validation here
+                metadata={
+                    "description": description,
+                    "parameter_metadata": convert_metadata_to_json(pm),
+                    # "required": True,
+                },
+            ),
+            # "required": True,
+        },
+        default=None,  # TODO: Unfortunate side-effect of dataclass init order, super ugly
+    )

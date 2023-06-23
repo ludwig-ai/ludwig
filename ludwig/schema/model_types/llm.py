@@ -42,7 +42,7 @@ class LLMModelConfig(ModelConfig):
     model_type: str = schema_utils.ProtectedString("llm")
 
     base_model: BaseModelConfig = BaseModelDataclassField(
-        default=None,
+        # default=None,
         description=(
             "Base pretrained model to use. This can be one of the presets defined by Ludwig, a fully qualified "
             "name of a pretrained model from the HuggingFace Hub, or a path to a directory containing a "
