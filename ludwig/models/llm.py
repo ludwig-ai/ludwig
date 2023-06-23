@@ -175,10 +175,10 @@ class LLM(BaseModel):
         """If an adapter config is provided, we want to wrap the model with a PEFT model for fine-tuning."""
         if self.config_obj.adapter:
             if self.config_obj.trainer.type != "finetune":
-                logger.warning(
-                    "Adapter config provided, but trainer is not set to finetune. Ignoring adapter initialization."
+                raise ValueError(
+                    "Adapter config provided, but trainer is not set to `finetune`. Either set the trainer to "
+                    "`finetune` or remove the adapter config."
                 )
-                return
 
             from peft import get_peft_model, TaskType
 
