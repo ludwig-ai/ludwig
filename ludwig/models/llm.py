@@ -176,7 +176,7 @@ class LLM(BaseModel):
         if self.config_obj.adapter:
             if self.config_obj.trainer.type != "finetune":
                 raise ValueError(
-                    "Adapter config provided, but trainer is not set to `finetune`. Either set the trainer to "
+                    "Adapter config was provided, but trainer type is not set to `finetune`. Either set the trainer to "
                     "`finetune` or remove the adapter config."
                 )
 
