@@ -1,19 +1,12 @@
-from abc import ABC
 from dataclasses import field
 
 from marshmallow import fields, ValidationError
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.error import ConfigValidationError
-from ludwig.schema import utils as schema_utils
 
+# TODO:
 # from ludwig.schema.metadata import LLM_METADATA
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, ParameterMetadata
-from ludwig.schema.utils import ludwig_dataclass
-from ludwig.utils.registry import Registry
-
-# from typing import Optional, Type
-
 
 MODEL_PRESETS = {
     "opt-350m": "facebook/opt-350m",
@@ -31,71 +24,6 @@ MODEL_PRESETS = {
     "oasst-sft-1-pythia-12b": "OpenAssistant/oasst-sft-1-pythia-12b",
     "vicuna-13b": "eachadea/vicuna-13b-1.1",
 }
-
-
-base_model_registry = Registry()
-
-
-@DeveloperAPI
-def register_base_model(name: str):
-    def wrap(config: BaseModelConfig):
-        base_model_registry[name] = config
-        return config
-
-    return wrap
-
-
-@DeveloperAPI
-@ludwig_dataclass
-class BaseModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
-    type: str = schema_utils.StringOptions(
-        ["preset", "custom"], default="preset", description="TODO", parameter_metadata=None
-    )  # TODO: should it include none?
-
-
-@DeveloperAPI
-@base_model_registry.register("preset")
-@ludwig_dataclass
-class BaseModelPresetConfig(BaseModelConfig):
-    type: str = schema_utils.ProtectedString("preset")
-
-    name: str = schema_utils.StringOptions(MODEL_PRESETS.keys(), default="vicuna-13b")
-
-
-@DeveloperAPI
-@base_model_registry.register("custom")
-@ludwig_dataclass
-class BaseModelCustomConfig(BaseModelConfig):
-    type: str = schema_utils.ProtectedString("custom")
-
-    name: str = schema_utils.String(description="TODO", default="TODO")
-
-    def __post_init__(self):
-        if not self.name:
-            raise ConfigValidationError(
-                "Customized LLM requires `base_model.name` to set. This can be any pretrained CausalLM on huggingface. "
-                "See: https://huggingface.co/models?pipeline_tag=text-generation&sort=downloads"
-            )
-
-
-@DeveloperAPI
-def get_base_model_conds():
-    conds = []
-    for base_model_type, base_model_cls in base_model_registry.items():
-        other_props = schema_utils.unload_jsonschema_from_marshmallow_class(base_model_cls)["properties"]
-        schema_utils.remove_duplicate_fields(other_props, fields=["type"])  # do not remove 'name'
-        # TODO: probably can improve the deduplication logic
-        preproc_cond = schema_utils.create_cond(
-            {"type": base_model_type},
-            other_props,
-        )
-        conds.append(preproc_cond)
-
-    # Make `name` required for the custom case:
-    conds[1]["then"]["required"] = ["name"]
-    conds[1]["then"]["properties"].pop("default", None)
-
-    return conds
 
 
 @DeveloperAPI

@@ -806,7 +806,7 @@ def test_llm_base_model_config(base_model_config, model_name):
 
     config_obj = ModelConfig.from_dict(config)
 
-    assert config_obj.base_model.name == model_name
+    assert config_obj.base_model == model_name
 
 
 @pytest.mark.parametrize(

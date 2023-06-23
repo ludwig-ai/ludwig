@@ -528,7 +528,7 @@ def check_llm_finetuning_adalora_config(config: "ModelConfig"):
 
     from peft.utils import TRANSFORMERS_MODELS_TO_ADALORA_TARGET_MODULES_MAPPING
 
-    model_config = _get_llm_model_config(config.base_model.name)
+    model_config = _get_llm_model_config(config.base_model)
     if (
         not config.adapter.target_modules
         and model_config.model_type not in TRANSFORMERS_MODELS_TO_ADALORA_TARGET_MODULES_MAPPING
@@ -538,6 +538,28 @@ def check_llm_finetuning_adalora_config(config: "ModelConfig"):
             f"Supported model types are: {list(TRANSFORMERS_MODELS_TO_ADALORA_TARGET_MODULES_MAPPING.keys())}. "
             "If you know the target modules for your model, please specify them in the config through the "
             "`target_modules` key."
+        )
+
+
+# TODO: This check is essentially duplicated 3 times, see if I can reuse without causing a circular import
+# TODO: Can I restrict the argument to just base_model rather than full config?
+@register_config_check
+def check_llm_base_model_exists(config: "ModelConfig"):
+    """Checks that the specified base model is supported by Ludwig or Huggingface."""
+    if config.model_type != MODEL_LLM:
+        return
+
+    if config.base_model is None:
+        raise ConfigValidationError(
+            "LLM requires `base_model` to be set. This can be a preset or any pretrained CausalLM on huggingface. "
+            "See: https://huggingface.co/models?pipeline_tag=text-generation&sort=downloads"
+        )
+
+    try:
+        AutoConfig.from_pretrained(config.base_model)
+    except OSError:
+        raise ConfigValidationError(
+            "Specified base model is not a valid model identifier listed on 'https://huggingface.co/models'. "
         )
 
 
@@ -559,7 +581,7 @@ def check_llm_finetuning_adaption_prompt_parameters(config: "ModelConfig"):
     from peft.tuners.adaption_prompt import TRANSFORMERS_MODEL_CONFIG
 
     # Adaption Config is currently only supported for Llama model types
-    model_config = _get_llm_model_config(config.base_model.name)
+    model_config = _get_llm_model_config(config.base_model)
     if model_config.model_type not in TRANSFORMERS_MODEL_CONFIG:
         raise ConfigValidationError(
             f"Adaption prompt adapter is not supported for {model_config.model_type} model. "
