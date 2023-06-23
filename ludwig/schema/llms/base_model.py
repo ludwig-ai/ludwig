@@ -40,8 +40,9 @@ def BaseModelDataclassField(
 
         def _deserialize(self, value, attr, obj, **kwargs):
             # TODO: Could put huggingface validation here, then could also dovetail preset validation:
+            print("DESERIALIZE" * 10)
             if isinstance(value, str):
-                return str
+                return value
             raise ValidationError(f"Value to deserialize is not a string: {value}")
 
         def _jsonschema_type_mapping(self):
@@ -69,11 +70,11 @@ def BaseModelDataclassField(
             "marshmallow_field": BaseModelField(
                 required=True,
                 allow_none=False,
-                validate=lambda x: isinstance(x, str),  # TODO: Could put huggingface validation here
+                # validate=lambda x: isinstance(x, str),  # TODO: Could put huggingface validation here
                 metadata={
                     "description": description,
                     "parameter_metadata": convert_metadata_to_json(pm),
-                },
+                },  # TODO: Does this matter?
             ),
         },
         default=None,  # TODO: Unfortunate side-effect of dataclass init order, super ugly

@@ -38,7 +38,6 @@ class LLMModelConfig(ModelConfig):
                 "LLM requires `base_model` to be set. This can be a preset or any pretrained CausalLM on huggingface. "
                 "See: https://huggingface.co/models?pipeline_tag=text-generation&sort=downloads"
             )
-
         if self.base_model in MODEL_PRESETS:
             self.base_model = MODEL_PRESETS[self.base_model]
         else:
