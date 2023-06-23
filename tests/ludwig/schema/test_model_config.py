@@ -792,8 +792,6 @@ def test_encoder_decoder_values_as_str():
     [
         ("bigscience/bloom-3b", "bigscience/bloom-3b"),
         ("llama-7b", "huggyllama/llama-7b"),
-        ({"preset": "none", "name": "bigscience/bloom-3b"}, "bigscience/bloom-3b"),
-        ({"preset": "llama-7b"}, "huggyllama/llama-7b"),
     ],
 )
 def test_llm_base_model_config(base_model_config, model_name):
@@ -813,8 +811,7 @@ def test_llm_base_model_config(base_model_config, model_name):
     "base_model_config",
     [
         None,
-        {"preset": None, "name": None},
-        {"preset": "none", "name": None},
+        "invalid/model/name",
     ],
 )
 def test_llm_base_model_config_error(base_model_config):
@@ -825,8 +822,8 @@ def test_llm_base_model_config_error(base_model_config):
         "output_features": [{"name": "text_output", "type": "text"}],
     }
 
-    if base_model_config is None:
-        del config["base_model"]
+    # if base_model_config is None:
+    #     del config["base_model"]
 
     with pytest.raises(ConfigValidationError):
         ModelConfig.from_dict(config)
