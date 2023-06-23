@@ -10,7 +10,7 @@ from ludwig.data.dataset.base import Dataset
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.models.llm import LLM
-from ludwig.models.predictor import LlmPredictor
+from ludwig.models.predictor import LlmFineTunePredictor, LlmPredictor
 from ludwig.modules.metric_modules import get_initial_validation_value
 from ludwig.schema.trainer import BaseTrainerConfig, FineTuneTrainerConfig, NoneTrainerConfig
 from ludwig.trainers.base import BaseTrainer
@@ -412,6 +412,14 @@ class FineTuneTrainer(Trainer):
             device,
             **kwargs,
         )
+
+    def evaluation(self, dataset, dataset_name, metrics_log, batch_size, progress_tracker):
+        predictor = LlmFineTunePredictor(
+            self.model, batch_size=batch_size, distributed=self.distributed, report_tqdm_to_ray=self.report_tqdm_to_ray
+        )
+        metrics, _ = predictor.batch_evaluation(dataset, collect_predictions=False, dataset_name=dataset_name)
+
+        return append_metrics(self.model, dataset_name, metrics, metrics_log, progress_tracker)
 
 
 class RemoteLLMTrainer(NoneTrainer):

@@ -117,7 +117,6 @@ def test_sequence_decoders(
     output_features[0][DECODER]["cell_type"] = dec_cell_type
 
     with setup_model_scaffolding(raw_df, input_features, output_features) as (model, _):
-
         # generate synthetic encoder_output tensors and make it look like
         # it came out of the combiner
         encoder_output = torch.randn(combiner_output_shapes[0])

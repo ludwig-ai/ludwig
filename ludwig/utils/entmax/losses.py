@@ -2,12 +2,13 @@ import torch
 import torch.nn as nn
 from torch.autograd import Function
 
+from ludwig.constants import IGNORE_INDEX_TOKEN_ID
 from ludwig.utils.entmax.activations import entmax15, sparsemax
 from ludwig.utils.entmax.root_finding import entmax_bisect, sparsemax_bisect
 
 
 class _GenericLoss(nn.Module):
-    def __init__(self, ignore_index=-100, reduction="elementwise_mean"):
+    def __init__(self, ignore_index=IGNORE_INDEX_TOKEN_ID, reduction="elementwise_mean"):
         assert reduction in ["elementwise_mean", "sum", "none"]
         self.reduction = reduction
         self.ignore_index = ignore_index
@@ -235,7 +236,7 @@ def entmax_bisect_loss(X, target, alpha=1.5, n_iter=50):
 
 
 class SparsemaxBisectLoss(_GenericLoss):
-    def __init__(self, n_iter=50, ignore_index=-100, reduction="elementwise_mean"):
+    def __init__(self, n_iter=50, ignore_index=IGNORE_INDEX_TOKEN_ID, reduction="elementwise_mean"):
         self.n_iter = n_iter
         super().__init__(ignore_index, reduction)
 
@@ -244,7 +245,7 @@ class SparsemaxBisectLoss(_GenericLoss):
 
 
 class SparsemaxLoss(_GenericLoss):
-    def __init__(self, k=None, ignore_index=-100, reduction="elementwise_mean"):
+    def __init__(self, k=None, ignore_index=IGNORE_INDEX_TOKEN_ID, reduction="elementwise_mean"):
         self.k = k
         super().__init__(ignore_index, reduction)
 
@@ -257,7 +258,7 @@ class EntmaxBisectLoss(_GenericLoss):
         self,
         alpha=1.5,
         n_iter=50,
-        ignore_index=-100,
+        ignore_index=IGNORE_INDEX_TOKEN_ID,
         reduction="elementwise_mean",
     ):
         self.alpha = alpha
@@ -269,7 +270,7 @@ class EntmaxBisectLoss(_GenericLoss):
 
 
 class Entmax15Loss(_GenericLoss):
-    def __init__(self, k=100, ignore_index=-100, reduction="elementwise_mean"):
+    def __init__(self, k=100, ignore_index=IGNORE_INDEX_TOKEN_ID, reduction="elementwise_mean"):
         self.k = k
         super().__init__(ignore_index, reduction)
 

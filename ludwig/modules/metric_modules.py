@@ -45,6 +45,7 @@ from ludwig.constants import (
     CORN,
     HITS_AT_K,
     HUBER,
+    IGNORE_INDEX_TOKEN_ID,
     JACCARD,
     LOGITS,
     LOSS,
@@ -53,6 +54,7 @@ from ludwig.constants import (
     MEAN_ABSOLUTE_PERCENTAGE_ERROR,
     MEAN_SQUARED_ERROR,
     MINIMIZE,
+    NEXT_TOKEN_PERPLEXITY,
     NUMBER,
     PERPLEXITY,
     PRECISION,
@@ -366,10 +368,25 @@ class SequenceAccuracyMetric(MeanMetric):
 @register_metric(PERPLEXITY, [SEQUENCE, TEXT], MINIMIZE, PROBABILITIES)
 class PerplexityMetric(Perplexity, LudwigMetric):
     def __init__(self, **kwargs):
-        super().__init__()
+        super().__init__(ignore_index=IGNORE_INDEX_TOKEN_ID)
 
     def update(self, preds: Tensor, target: Tensor) -> None:
         super().update(preds, target.type(torch.int64))
+
+
+@register_metric(NEXT_TOKEN_PERPLEXITY, [SEQUENCE, TEXT], MINIMIZE, PROBABILITIES)
+class NextTokenPerplexityMetric(MeanMetric):
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.next_token_softmax_cross_entropy_function = NextTokenSoftmaxCrossEntropyLoss({})
+
+    def get_current_value(self, preds: Tensor, target: Tensor):
+        # Perplexity can be represented as the exponential of the cross-entropy loss.
+        # https://towardsdatascience.com/perplexity-in-language-models-87a196019a94
+        # We can't use torchmetrics perplexity because it calculates normal cross-entropy
+        # loss as opposed to shifted cross entropy loss.
+        shifted_loss = self.next_token_softmax_cross_entropy_function(preds, target)
+        return torch.exp(shifted_loss)
 
 
 @register_metric("char_error_rate", [SEQUENCE, TEXT], MINIMIZE, PREDICTIONS)

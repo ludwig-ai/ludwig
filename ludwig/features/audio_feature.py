@@ -144,7 +144,6 @@ class AudioFeatureMixin(BaseFeatureMixin):
         audio_file_length_limit_in_s,
         backend,
     ):
-
         df_engine = backend.df_engine
         raw_audio = backend.read_binary_files(column, map_fn=read_audio_from_bytes_obj)
 
