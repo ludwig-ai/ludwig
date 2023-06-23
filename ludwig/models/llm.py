@@ -8,7 +8,7 @@ import numpy as np
 import torch
 from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer, GenerationConfig, LlamaConfig
 
-from ludwig.constants import LOGITS, MODEL_LLM, PREDICTIONS, TEXT
+from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, MODEL_LLM, PREDICTIONS, TEXT
 from ludwig.features.base_feature import ModuleWrapper, OutputFeature
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.features.text_feature import TextOutputFeature
@@ -109,8 +109,15 @@ class LLM(BaseModel):
         self.max_input_length = self.context_len - self.max_new_tokens - 8
 
         # When merging input IDs and target IDs for LLM fine-tuning, we want to make sure that the merged tensor is
-        # not longer than the global maximum sequence length. This is provided in the preprocessing config.
-        self.global_max_sequence_length = self.config_obj.preprocessing.global_max_sequence_length
+        # not longer than the global maximum sequence length. This is provided in the preprocessing config. We never
+        # want to exceed the maximum possible context length so we also check for that.
+        if self.config_obj.preprocessing.global_max_sequence_length:
+            global_max_sequence_length = self.config_obj.preprocessing.global_max_sequence_length
+            self.global_max_sequence_length = (
+                global_max_sequence_length if global_max_sequence_length <= self.context_len else self.context_len
+            )
+        else:
+            self.global_max_sequence_length = self.context_len
 
         # Initialize tokenizer
         use_fast = True
@@ -130,6 +137,9 @@ class LLM(BaseModel):
                 f"An input feature has a name that conflicts with a class attribute of torch's ModuleDict: {e}"
             )
 
+        # This is used to store the model inputs during the forward pass when fine-tuning LLMs. This allows us to have
+        # access to the joint model inputs (input_ids and target_ids) when computing metrics. In particular, the target
+        # ids are needed to correctly compute next token softmax cross entropy loss.
         self.model_inputs = None
 
         # ================ Outputs ================
@@ -197,6 +207,8 @@ class LLM(BaseModel):
             # TODO: make this configurable in the future. These parameters are from FastChat:
             # https://github.com/lm-sys/FastChat/blob/0e958b852a14f4bef5f0e9d7a5e7373477329cf2/fastchat/serve/inference.py#L90  # noqa
             # TODO: Wrap device_map="auto" in a try-except block since it may not be supported for all models (E.g. BertLMHead)  # noqa
+            # We don't add quantization here (float16 or bfloat16) since we may not always want to quantize. We should
+            # make quantization configurable in the future via the trainer config.
             model_kwargs.update(
                 dict(
                     low_cpu_mem_usage=True,
@@ -305,6 +317,8 @@ class LLM(BaseModel):
         # reduced precision such as bfloat16.
         for prediction_key, prediction_tensor in outputs.items():
             if prediction_key != PREDICTIONS:
+                # Skipping casting it to float32 since the predictions are tokens and they should be int64
+                # (which is already the case)
                 outputs[prediction_key] = prediction_tensor.type(torch.float32)
 
         return outputs
@@ -415,7 +429,7 @@ class LLM(BaseModel):
         self.eval_loss_metric.update(eval_loss)
         self.eval_additional_losses_metrics.update(additional_losses)
 
-    def update_metrics_finetune(self, targets, predictions):
+    def update_metrics_finetune_llm(self, targets, predictions):
         """Updates the model's metrics given targets and predictions for fine-tuning."""
         _targets, _predictions = targets, predictions
         for of_name, of_obj in self.output_features.items():
@@ -589,7 +603,11 @@ class LLM(BaseModel):
         # cross entropy loss computation. This ensures that the loss is computed only for the target tokens.
         max_length = max(lengths)
         for i, target in enumerate(targets_without_padding):
-            targets_without_padding[i] = add_left_padding(targets_without_padding[i][0], max_length, -100)
+            targets_without_padding[i] = add_left_padding(
+                targets_without_padding[i][0],
+                max_length,
+                IGNORE_INDEX_TOKEN_ID,
+            )
 
         targets[of_name] = torch.stack(targets_without_padding, dim=0).to(
             dtype=targets[of_name].dtype,

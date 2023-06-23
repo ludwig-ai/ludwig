@@ -281,6 +281,9 @@ GENERATION = "generation"
 PROMPT = "prompt"
 ADAPTER = "adapter"
 
+# CrossEntropyLoss for LLMs
+IGNORE_INDEX_TOKEN_ID = -100
+
 S3 = "s3"
 CACHE = "cache"
 

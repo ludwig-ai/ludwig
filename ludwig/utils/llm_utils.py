@@ -4,7 +4,7 @@ import torch
 import torch.nn.functional as F
 from transformers import GPT2Tokenizer, GPT2TokenizerFast, LlamaTokenizer, LlamaTokenizerFast, PreTrainedTokenizer
 
-from ludwig.constants import LOGITS, PREDICTIONS, PROBABILITIES
+from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, PREDICTIONS, PROBABILITIES
 
 
 def set_pad_token(tokenizer: PreTrainedTokenizer):
@@ -57,6 +57,8 @@ def has_padding_token(input_tensor: torch.Tensor, tokenizer: PreTrainedTokenizer
         return torch.any(input_tensor == tokenizer.pad_token_id).item()
     elif input_tensor.dim() == 2:
         return torch.any(input_tensor == tokenizer.pad_token_id, dim=-1).item()
+    else:
+        raise ValueError("Input tensor must be 1D or 2D")
 
 
 def remove_left_padding(input_ids_sample: torch.Tensor, tokenizer: PreTrainedTokenizer):
@@ -224,7 +226,7 @@ def pad_target_tensor_for_fine_tuning(
     updated_targets = []
     for idx, target in enumerate(targets[of_name]):
         # Remove any leading -100s in the target that were temporarily added for alignment
-        end_index = (target != -100).nonzero()[0]
+        end_index = (target != IGNORE_INDEX_TOKEN_ID).nonzero()[0]
         target = target[end_index:]
 
         # See if any part of the target was in the tensor passed into the model's forward pass
@@ -234,14 +236,14 @@ def pad_target_tensor_for_fine_tuning(
         # and did not contain the target tensor. In this case, we need to truncate the target tensors as well
         # and just set it to a tensor of -100 so that we don't compute loss on this target tensor.
         if last_matching_index == -1:
-            updated_targets.append(torch.full((prediction_length,), -100))
+            updated_targets.append(torch.full((prediction_length,), IGNORE_INDEX_TOKEN_ID))
 
         # If the last matching index is not -1, it means that the input tensor passed into the model was not
         # truncated and contained either a part of the target tensor or the entire target tensor. In this case,
         # we need to set the target tensor to the part of the target tensor that was passed into the model while
         # also padding it to the correct length with -100.
         else:
-            padding = torch.full((last_matching_index,), -100)
+            padding = torch.full((last_matching_index,), IGNORE_INDEX_TOKEN_ID)
             updated_targets.append(torch.cat((padding, target), dim=-1)[:prediction_length])
 
     targets[of_name] = torch.stack(updated_targets).to(torch.int64)

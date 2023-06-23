@@ -232,6 +232,7 @@ class LLMTextDefaultsConfig(TextInputFeatureConfigMixin, TextOutputFeatureConfig
         default="text_extractor",
     )
 
+    # TODO(Arnav): Refactor LossDataclassField to only accept loss types that are valid for the model
     loss: BaseLossConfig = LossDataclassField(
         feature_type=TEXT,
         default=NEXT_TOKEN_SOFTMAX_CROSS_ENTROPY,

@@ -390,7 +390,7 @@ class LlmFineTunePredictor(Predictor):
                     # Need to pass through a custom fine-tune metric function because we need to transform
                     # the targets into the right format for loss calculation (requires padding with -100s to the left)
                     # and other tensor alignment.
-                    self.model.update_metrics_finetune(targets, preds)
+                    self.model.update_metrics_finetune_llm(targets, preds)
 
                     # accumulate predictions from batch for each output feature
                     if collect_predictions:
