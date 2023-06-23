@@ -1,15 +1,7 @@
 base_model:
-  default:
-    preset:
-      ui_display_name: Base Model Preset
-      expected_impact: 3
-    name:
-      ui_display_name: Base Model Name
-      expected_impact: 2
-  none:
-    name:
-      ui_display_name: Base Model Name
-      expected_impact: 3
+    ui_display_name: Base Model Options
+    expected_impact: 3
+    ui_component_type: radio_string_combined
 generation:
   temperature:
     ui_display_name: Temperature

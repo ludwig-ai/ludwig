@@ -822,8 +822,5 @@ def test_llm_base_model_config_error(base_model_config):
         "output_features": [{"name": "text_output", "type": "text"}],
     }
 
-    # if base_model_config is None:
-    #     del config["base_model"]
-
     with pytest.raises(ConfigValidationError):
         ModelConfig.from_dict(config)

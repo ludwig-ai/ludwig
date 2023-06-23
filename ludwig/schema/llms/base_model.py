@@ -5,8 +5,8 @@ from marshmallow import fields, ValidationError
 from ludwig.api_annotations import DeveloperAPI
 
 # TODO:
-# from ludwig.schema.metadata import LLM_METADATA
-from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, ParameterMetadata
+from ludwig.schema.metadata import LLM_METADATA
+from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json
 
 MODEL_PRESETS = {
     "opt-350m": "facebook/opt-350m",
@@ -30,8 +30,6 @@ MODEL_PRESETS = {
 def BaseModelDataclassField(
     description: str = "",
 ):
-    pm = ParameterMetadata(ui_component_type="radio_string_combined", expected_impact=3)
-
     class BaseModelField(fields.Field):
         def _serialize(self, value, attr, obj, **kwargs):
             if isinstance(value, str):
@@ -40,7 +38,6 @@ def BaseModelDataclassField(
 
         def _deserialize(self, value, attr, obj, **kwargs):
             # TODO: Could put huggingface validation here, then could also dovetail preset validation:
-            print("DESERIALIZE" * 10)
             if isinstance(value, str):
                 return value
             raise ValidationError(f"Value to deserialize is not a string: {value}")
@@ -53,16 +50,18 @@ def BaseModelDataclassField(
                         "enum": list(MODEL_PRESETS.keys()),
                         "description": "Pick an LLM with first-class Ludwig support.",
                         "title": "preset",
+                        "parameter_metadata": convert_metadata_to_json(LLM_METADATA["base_model"]),
                     },
                     {
                         "type": "string",
                         "description": "Enter the full (slash-delimited) path to a huggingface LLM.",
                         "title": "custom",
+                        "parameter_metadata": convert_metadata_to_json(LLM_METADATA["base_model"]),
                     },
                 ],
                 "description": description,
                 "title": "base_model_options",
-                "parameter_metadata": convert_metadata_to_json(pm),
+                "parameter_metadata": convert_metadata_to_json(LLM_METADATA["base_model"]),
             }
 
     return field(
@@ -73,8 +72,8 @@ def BaseModelDataclassField(
                 # validate=lambda x: isinstance(x, str),  # TODO: Could put huggingface validation here
                 metadata={
                     "description": description,
-                    "parameter_metadata": convert_metadata_to_json(pm),
-                },  # TODO: Does this matter?
+                    "parameter_metadata": convert_metadata_to_json(LLM_METADATA["base_model"]),
+                },  # TODO: extra metadata dict probably unnecessary, but keep it because it's a widespread pattern.
             ),
         },
         default=None,  # TODO: Unfortunate side-effect of dataclass init order, super ugly
