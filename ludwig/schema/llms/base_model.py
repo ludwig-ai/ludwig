@@ -73,10 +73,8 @@ def BaseModelDataclassField(
                 metadata={
                     "description": description,
                     "parameter_metadata": convert_metadata_to_json(pm),
-                    # "required": True,
                 },
             ),
-            # "required": True,
         },
         default=None,  # TODO: Unfortunate side-effect of dataclass init order, super ugly
     )

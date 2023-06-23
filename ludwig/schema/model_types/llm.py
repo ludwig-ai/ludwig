@@ -14,7 +14,7 @@ from ludwig.schema.features.base import (
     LLMOutputFeatureSelection,
 )
 from ludwig.schema.hyperopt import HyperoptConfig, HyperoptField
-from ludwig.schema.llms.base_model import BaseModelConfig, BaseModelDataclassField, MODEL_PRESETS
+from ludwig.schema.llms.base_model import BaseModelDataclassField, MODEL_PRESETS
 from ludwig.schema.llms.generation import LLMGenerationConfig, LLMGenerationConfigField
 from ludwig.schema.llms.peft import AdapterDataclassField, BaseAdapterConfig
 from ludwig.schema.llms.prompt import PromptConfig, PromptConfigField
@@ -53,7 +53,7 @@ class LLMModelConfig(ModelConfig):
 
     model_type: str = schema_utils.ProtectedString("llm")
 
-    base_model: BaseModelConfig = BaseModelDataclassField(
+    base_model: str = BaseModelDataclassField(
         # default=None,
         description=(
             "Base pretrained model to use. This can be one of the presets defined by Ludwig, a fully qualified "
