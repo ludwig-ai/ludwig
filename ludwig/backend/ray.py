@@ -27,7 +27,6 @@ import ray
 import torch
 import tqdm
 from packaging import version
-from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray import ObjectRef
 from ray.air import session
 from ray.air.checkpoint import Checkpoint
@@ -42,7 +41,6 @@ from ray.util.placement_group import placement_group, remove_placement_group
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend.base import Backend, RemoteTrainingMixin
-from ludwig.backend.datasource import BinaryIgnoreNoneTypeDatasource
 from ludwig.constants import CPU_RESOURCES_PER_TRIAL, EXECUTOR, MODEL_ECD, MODEL_LLM, NAME, PROC_COLUMN
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataframe.dask import tensor_extension_casting
@@ -61,7 +59,7 @@ from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer, Trainer
 from ludwig.trainers.trainer_llm import RemoteLLMFineTuneTrainer, RemoteLLMTrainer
 from ludwig.types import HyperoptConfigDict, ModelConfigDict, TrainerConfigDict, TrainingSetMetadataDict
 from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
-from ludwig.utils.dataframe_utils import set_index_name
+from ludwig.utils.dataframe_utils import is_dask_series_or_df, set_index_name
 from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.system_utils import Resources
@@ -199,7 +197,12 @@ def train_fn(
         model = ray.get(model_ref)
         model = distributed.to_device(model)
 
-        trainer = remote_trainer_cls(model=model, distributed=distributed, report_tqdm_to_ray=True, **executable_kwargs)
+        trainer = remote_trainer_cls(
+            model=model,
+            distributed=distributed,
+            report_tqdm_to_ray=True,
+            **executable_kwargs,
+        )
         results = trainer.train(train_shard, val_shard, test_shard, return_state_dict=True, **kwargs)
         torch.cuda.empty_cache()
 
@@ -637,7 +640,12 @@ def eval_fn(
 
 class RayPredictor(BasePredictor):
     def __init__(
-        self, model: BaseModel, df_engine: DataFrameEngine, trainer_kwargs, data_loader_kwargs, **predictor_kwargs
+        self,
+        model: BaseModel,
+        df_engine: DataFrameEngine,
+        trainer_kwargs,
+        data_loader_kwargs,
+        **predictor_kwargs,
     ):
         self.batch_size = predictor_kwargs["batch_size"]
         self.trainer_kwargs = trainer_kwargs
@@ -798,7 +806,14 @@ class RayPredictor(BasePredictor):
 class RayBackend(RemoteTrainingMixin, Backend):
     BACKEND_TYPE = "ray"
 
-    def __init__(self, processor=None, trainer=None, loader=None, preprocessor_kwargs=None, **kwargs):
+    def __init__(
+        self,
+        processor=None,
+        trainer=None,
+        loader=None,
+        preprocessor_kwargs=None,
+        **kwargs,
+    ):
         super().__init__(dataset_manager=RayDatasetManager(self), **kwargs)
         self._preprocessor_kwargs = preprocessor_kwargs or {}
         self._df_engine = _get_df_engine(processor)
@@ -904,61 +919,87 @@ class RayBackend(RemoteTrainingMixin, Backend):
         return False
 
     def read_binary_files(
-        self, column: Series, map_fn: Optional[Callable] = None, file_size: Optional[int] = None
+        self,
+        column: Series,
+        map_fn: Optional[Callable] = None,
+        file_size: Optional[int] = None,
     ) -> Series:
-        column = column.fillna(np.nan).replace([np.nan], [None])  # normalize NaNs to None
+        # normalize NaNs to None
+        column = column.fillna(np.nan).replace([np.nan], [None])
 
-        # Assume that the list of filenames is small enough to fit in memory. Should be true unless there
-        # are literally billions of filenames.
-        # TODO(travis): determine if there is a performance penalty to passing in individual files instead of
-        #  a directory. If so, we can do some preprocessing to determine if it makes sense to read the full directory
-        #  then filter out files as a postprocessing step (depending on the ratio of included to excluded files in
-        #  the directory). Based on a preliminary look at how Ray handles directory expansion to files, it looks like
-        #  there should not be any difference between providing a directory versus a list of files.
         pd_column = self.df_engine.compute(column)
         fnames = pd_column.values.tolist()
-        idxs = pd_column.index.tolist()
 
         # Sample a filename to extract the filesystem info
         sample_fname = fnames[0]
         if isinstance(sample_fname, str):
+            try:
+                import daft
+            except ImportError:
+                raise ImportError(
+                    " daft is not installed. "
+                    "In order to download binary files (like images/audio/..) please run "
+                    "pip install ludwig[distributed]"
+                )
+
+            # Set the runner for executing Daft dataframes to a Ray cluster
+            # Prevent re-initialization errors if the runner is already set
+            # This can happen if there are 2 or more audio/image columns
+            assert ray.is_initialized(), "Ray should be initialized by Ludwig already at application start"
+            daft.context.set_runner_ray(address="auto", noop_if_initialized=True)
+
+            # Convert Dask Series to Dask Dataframe
+            # This is needed because Daft only supports Dataframes, not Series
+            # See https://www.getdaft.io/projects/docs/en/latest/api_docs/doc_gen/dataframe_methods/daft.DataFrame.to_dask_dataframe.html # noqa: E501
+            df = column.to_frame(name=column.name)
+            df["idx"] = column.index
+
+            is_dask_df = is_dask_series_or_df(df, self)
+
+            if is_dask_df:
+                df = daft.from_dask_dataframe(df)
+            else:
+                df = daft.from_pandas(df)
+
+            df = df.select("idx", column.name)
+
+            # Download binary files in parallel
             fs, _ = get_fs_and_path(sample_fname)
+            df = df.with_column(
+                column.name,
+                df[column.name].url.download(
+                    # Use 16 worker threads to maximize image read throughput over each partition
+                    max_worker_threads=16,
+                    # On error, replace value with a Null and just log the error
+                    on_error="null",
+                    fs=fs,
+                ),
+            )
 
-            read_datasource_fn_kwargs = {
-                "path_and_idxs": list(zip(fnames, idxs)),
-                "filesystem": PyFileSystem(FSSpecHandler(fs)),
-            }
-            if self.df_engine.partitioned and file_size is not None:
-                # Heuristic to determine parallelism: if the average file size is known (in bytes), then we can
-                # extrapolate to determine the total file size. We aim to have ~50MB partitions (5e7 bytes), so we
-                # set parallelism to be the total size / 50MB.
-                total_size = file_size * len(fnames)
-                parallelism = int(total_size / 5e7)
-                # Only set parallelism if it matches or exceeds the Ray default kwarg for parallelism
-                read_datasource_fn_kwargs["parallelism"] = max(RAY_DEFAULT_PARALLELISM, parallelism)
+            if map_fn is not None:
+                df = df.with_column(column.name, df[column.name].apply(map_fn, return_dtype=daft.DataType.python()))
 
-            # The resulting column is named "value", which is a dict with two keys: "idx" and "data".
-            ds = ray.data.read_datasource(BinaryIgnoreNoneTypeDatasource(), **read_datasource_fn_kwargs)
-            df = self.df_engine.from_ray_dataset(ds)
-            # Persist the dataframe to prevent re-reading binary files on each subsequent map_objects call
-            df = self.df_engine.persist(df)
-            df["idx"] = self.df_engine.map_objects(df["value"], lambda row: int(row["idx"]))
-            df["value"] = self.df_engine.map_objects(df["value"], lambda row: row["data"])
-            df = df.rename(columns={"value": column.name})
+            # Executes and convert Daft Dataframe to Dask DataFrame or Pandas Dataframe
+            # Note: During conversion back to dask, this preserves partitioning
+            if is_dask_df:
+                df = df.to_dask_dataframe()
+                df = self.df_engine.persist(df)
+            else:
+                df = df.to_pandas()
         else:
             # Assume the path has already been read in, so just convert directly to a dataset
             # Name the column "value" to match the behavior of the above
             df = column.to_frame(name=column.name)
             df["idx"] = df.index
 
-        if map_fn is not None:
-            df[column.name] = self.df_engine.map_objects(df[column.name], map_fn)
+            if map_fn is not None:
+                df[column.name] = self.df_engine.map_objects(df[column.name], map_fn)
 
-        if "idx" in df.columns:
-            df = df.set_index("idx", drop=True)
-            df = self.df_engine.map_partitions(
-                df, lambda pd_df: set_index_name(pd_df, column.index.name), meta={column.name: "object"}
-            )
+        df = df.set_index("idx", drop=True)
+        df = self.df_engine.map_partitions(
+            df, lambda pd_df: set_index_name(pd_df, column.index.name), meta={column.name: "object"}
+        )
+
         return df[column.name]
 
     @property

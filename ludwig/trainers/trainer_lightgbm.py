@@ -1134,7 +1134,6 @@ def lightgbm_ray_train_step(
     evaluate_training_set: bool,
     device: Optional[str] = None,
 ) -> lgb.LGBMModel:
-
     # We need to add max_calls here to ensure that the Ray actors that get created by the LightGBM class
     # for each boosting round don't leave dangling resources in the object store memory.
     @ray.remote(max_calls=1)

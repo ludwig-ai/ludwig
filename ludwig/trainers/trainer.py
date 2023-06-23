@@ -1225,7 +1225,6 @@ class Trainer(BaseTrainer):
             not progress_tracker.num_increases_batch_size >= increase_batch_size_on_plateau
             and not progress_tracker.batch_size == increase_batch_size_on_plateau_max
         ):
-
             if increase_batch_size_eval_split == TRAINING:
                 split_metrics = progress_tracker.train_metrics
             elif increase_batch_size_eval_split == VALIDATION:

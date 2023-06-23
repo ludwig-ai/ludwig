@@ -184,7 +184,11 @@ def format_input_with_prompt(
         if CONTEXT in template_fields:
             df[CONTEXT] = retrieval_model.search(df, backend, k=k, return_data=True)
         if SAMPLE in template_fields:
-            df[SAMPLE] = df[input_col_name].map(lambda entry: json.dumps(entry, indent=2))
+            # During preprocessing, we're inserting quotes that change the token IDs completely if we
+            # don't remove the " from the string. For parity with expected user output, we need to get rid of them.
+            # TODO(Arnav): see if there's a way to only remove them if the entry does't have quotes. This currently
+            # removes all " from the string (even those not added by json.dumps), which is not ideal.
+            df[SAMPLE] = df[input_col_name].map(lambda entry: json.dumps(entry, indent=2).strip('"'))
         if TASK in template_fields:
             df[TASK] = task_str
 

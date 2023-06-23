@@ -46,7 +46,6 @@ class EntmaxBisectFunction(Function):
 
         d_alpha = None
         if ctx.needs_input_grad[1]:
-
             # alpha gradient computation
             # d_alpha = (partial_y / partial_alpha) * dY
             # NOTE: ensure alpha is not close to 1
@@ -89,7 +88,6 @@ def _entmax_bisect_forward(X, alpha, dim, n_iter, ensure_sum_one, cls=EntmaxBise
     dm = tau_hi - tau_lo
 
     for it in range(n_iter):
-
         dm /= 2
         tau_m = tau_lo + dm
         p_m = cls._p(X - tau_m, alpha)

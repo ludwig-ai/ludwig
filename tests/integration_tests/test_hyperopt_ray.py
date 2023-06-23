@@ -338,7 +338,6 @@ def run_hyperopt(
     experiment_name="ray_hyperopt",
     callbacks=None,
 ):
-
     tune_test_callback = HyperoptTestCallback(experiment_name, get_model_type(config))
 
     hyperopt_results = hyperopt(

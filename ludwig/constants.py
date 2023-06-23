@@ -75,6 +75,7 @@ CORN = "corn"
 R2 = "r2"
 EDIT_DISTANCE = "edit_distance"
 PERPLEXITY = "perplexity"
+NEXT_TOKEN_PERPLEXITY = "next_token_perplexity"
 JACCARD = "jaccard"
 PRECISION = "precision"
 RECALL = "recall"
@@ -279,6 +280,9 @@ POSTPROCESSOR = "postprocessor"
 GENERATION = "generation"
 PROMPT = "prompt"
 ADAPTER = "adapter"
+
+# CrossEntropyLoss for LLMs
+IGNORE_INDEX_TOKEN_ID = -100
 
 S3 = "s3"
 CACHE = "cache"

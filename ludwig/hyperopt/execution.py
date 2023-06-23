@@ -452,7 +452,6 @@ class RayTuneExecutor:
         decode_ctx,
         is_using_ray_backend=False,
     ):
-
         for gpu_id in ray.get_gpu_ids():
             # Previous trial may not have freed its memory yet, so wait to avoid OOM
             wait_for_gpu(gpu_id)
