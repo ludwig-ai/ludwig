@@ -31,7 +31,6 @@ def get_schema(model_type: str = MODEL_ECD):
     required = []
     if model_type == MODEL_LLM:
         required = [BASE_MODEL]
-    # TODO: Add required back for ECD/GBM too?
     return {
         "type": "object",
         "properties": props,

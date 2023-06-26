@@ -1,9 +1,6 @@
 from typing import Optional
 
-from transformers import AutoConfig
-
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.defaults.llm import LLMDefaultsConfig, LLMDefaultsField
 from ludwig.schema.features.base import (
@@ -14,12 +11,10 @@ from ludwig.schema.features.base import (
     LLMOutputFeatureSelection,
 )
 from ludwig.schema.hyperopt import HyperoptConfig, HyperoptField
-from ludwig.schema.llms.base_model import BaseModelDataclassField, MODEL_PRESETS
+from ludwig.schema.llms.base_model import BaseModelDataclassField
 from ludwig.schema.llms.generation import LLMGenerationConfig, LLMGenerationConfigField
 from ludwig.schema.llms.peft import AdapterDataclassField, BaseAdapterConfig
 from ludwig.schema.llms.prompt import PromptConfig, PromptConfigField
-
-# from ludwig.schema.metadata import LLM_METADATA
 from ludwig.schema.model_types.base import ModelConfig, register_model_type
 from ludwig.schema.preprocessing import PreprocessingConfig, PreprocessingField
 from ludwig.schema.trainer import LLMTrainerConfig, LLMTrainerDataclassField
@@ -31,24 +26,6 @@ from ludwig.schema.utils import ludwig_dataclass
 @ludwig_dataclass
 class LLMModelConfig(ModelConfig):
     """Parameters for LLM Model Type."""
-
-    def __post_init__(self):
-        if self.base_model is None:
-            raise ConfigValidationError(
-                "LLM requires `base_model` to be set. This can be a preset or any pretrained CausalLM on huggingface. "
-                "See: https://huggingface.co/models?pipeline_tag=text-generation&sort=downloads"
-            )
-        if self.base_model in MODEL_PRESETS:
-            self.base_model = MODEL_PRESETS[self.base_model]
-        else:
-            try:
-                AutoConfig.from_pretrained(self.base_model)
-            except OSError:
-                raise ConfigValidationError(
-                    "Specified base model is not a valid model identifier listed on 'https://huggingface.co/models'. "
-                )
-
-        super().__post_init__()
 
     model_type: str = schema_utils.ProtectedString("llm")
 

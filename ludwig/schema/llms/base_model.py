@@ -1,9 +1,11 @@
 from dataclasses import field
 
 from marshmallow import fields, ValidationError
+from transformers import AutoConfig
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BASE_MODEL
+from ludwig.error import ConfigValidationError
 from ludwig.schema.metadata import LLM_METADATA
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json
 
@@ -29,6 +31,28 @@ MODEL_PRESETS = {
 def BaseModelDataclassField(
     description: str = "",
 ):
+    def validate(model_name: str):
+        """Validates and upgrades the given model name to its full path, if applicable.
+
+        If the name exists in `MODEL_PRESETS`, returns the corresponding value from the dict; otherwise checks if the
+        given name (which should be a full path) exists in the transformers library.
+        """
+        if isinstance(model_name, str):
+            if model_name in MODEL_PRESETS:
+                return MODEL_PRESETS[model_name]
+            try:
+                AutoConfig.from_pretrained(model_name)
+                return model_name
+            except OSError:
+                raise ConfigValidationError(
+                    f"Specified base model `{model_name}` is not a valid pretrained CausalLM listed on huggingface. "
+                    "Please see: https://huggingface.co/models?pipeline_tag=text-generation&sort=downloads"
+                )
+        raise ValidationError(
+            f"`base_model` should be a string, instead given: {model_name}. This can be a preset or any pretrained "
+            "CausalLM on huggingface. See: https://huggingface.co/models?pipeline_tag=text-generation&sort=downloads"
+        )
+
     class BaseModelField(fields.Field):
         def _serialize(self, value, attr, obj, **kwargs):
             if isinstance(value, str):
@@ -36,10 +60,7 @@ def BaseModelDataclassField(
             raise ValidationError(f"Value to serialize is not a string: {value}")
 
         def _deserialize(self, value, attr, obj, **kwargs):
-            # TODO: Could put huggingface validation here, then could also dovetail preset validation:
-            if isinstance(value, str):
-                return value
-            raise ValidationError(f"Value to deserialize is not a string: {value}")
+            return validate(value)
 
         def _jsonschema_type_mapping(self):
             return {
@@ -68,12 +89,14 @@ def BaseModelDataclassField(
             "marshmallow_field": BaseModelField(
                 required=True,
                 allow_none=False,
-                # validate=lambda x: isinstance(x, str),  # TODO: Could put huggingface validation here
-                metadata={
+                validate=validate,
+                metadata={  # TODO: extra metadata dict probably unnecessary, but currently a widespread pattern
                     "description": description,
                     "parameter_metadata": convert_metadata_to_json(LLM_METADATA[BASE_MODEL]),
-                },  # TODO: extra metadata dict probably unnecessary, but keep it because it's a widespread pattern.
+                },
             ),
         },
-        default=None,  # TODO: Unfortunate side-effect of dataclass init order, super ugly
+        # TODO: This is an unfortunate side-effect of dataclass init order - you cannot have non-default fields follow
+        # default fields, so we have to give `base_model` a fake default of `None`.
+        default=None,
     )

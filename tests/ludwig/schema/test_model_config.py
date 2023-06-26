@@ -820,7 +820,7 @@ def test_llm_base_model_config(base_model_config, model_name):
 def test_llm_base_model_config_error(base_model_config):
     config = {
         MODEL_TYPE: MODEL_LLM,
-        "base_model": base_model_config,
+        BASE_MODEL: base_model_config,
         INPUT_FEATURES: [{NAME: "text_input", TYPE: "text"}],
         OUTPUT_FEATURES: [{NAME: "text_output", TYPE: "text"}],
     }
