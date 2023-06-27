@@ -1096,7 +1096,7 @@ def get_sanitized_feature_name(feature_name: str) -> str:
 
     Used in model config initialization and sanitize_column_names(), which is called during dataset building.
     """
-    return re.sub(r"[(){}.:]", "_", feature_name)
+    return re.sub(r"[(){}.:\"\"\'\'\[\]]", "_", feature_name)
 
 
 def sanitize_column_names(df: DataFrame) -> DataFrame:

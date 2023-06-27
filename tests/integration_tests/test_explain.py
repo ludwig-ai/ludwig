@@ -4,9 +4,10 @@ import os
 import numpy as np
 import pandas as pd
 import pytest
+import torch
 
 from ludwig.api import LudwigModel
-from ludwig.constants import BATCH_SIZE, BINARY, CATEGORY, MINIMUM_BATCH_SIZE, MODEL_ECD, MODEL_GBM
+from ludwig.constants import BATCH_SIZE, BINARY, CATEGORY, MINIMUM_BATCH_SIZE, MODEL_ECD, MODEL_GBM, NAME
 from ludwig.explain.captum import IntegratedGradientsExplainer
 from ludwig.explain.explainer import Explainer
 from ludwig.explain.explanation import Explanation
@@ -171,13 +172,15 @@ def run_test_explainer_api(
 
     if input_features is None:
         input_features = [
-            # Include a non-canonical name that's not a valid key for a vanilla pytorch ModuleDict:
-            # https://github.com/pytorch/pytorch/issues/71203
-            {"name": "__contains__", "type": "binary"},
             number_feature(),
             category_feature(encoder={"type": "onehot", "reduce_output": "sum"}),
             category_feature(encoder={"type": "passthrough", "reduce_output": "sum"}),
         ]
+        input_features.update(
+            # Include a non-canonical name that's not a valid key for a vanilla pytorch ModuleDict:
+            # https://github.com/pytorch/pytorch/issues/71203
+            {NAME: attribute_name for attribute_name in dir(torch.nn.ModuleDict())}
+        )
         if model_type == MODEL_ECD:
             # TODO(travis): need unit tests to test the get_embedding_layer() of every encoder to ensure it is
             #  compatible with the explainer
