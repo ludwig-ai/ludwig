@@ -40,7 +40,7 @@ sacremoses
 sentencepiece
 
 # requirements for daft
-getdaft
+getdaft==0.1.6
 
 # new data format support
 xlwt                # excel
