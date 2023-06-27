@@ -9,7 +9,7 @@
 #   model serving
 #
 
-FROM pytorch/pytorch:1.13.1-cuda11.6-cudnn8-devel
+FROM pytorch/pytorch:2.0.0-cuda11.7-cudnn8-devel
 
 # https://forums.developer.nvidia.com/t/notice-cuda-linux-repository-key-rotation/212771
 RUN sh -c 'echo "APT { Get { AllowUnauthenticated \"1\"; }; };" > /etc/apt/apt.conf.d/99allow_unauth' && \
@@ -31,6 +31,7 @@ WORKDIR /ludwig
 
 COPY . .
 RUN pip install --no-cache-dir '.[full]' --extra-index-url https://download.pytorch.org/whl/cu118
+RUN ludwig check_install
 
 WORKDIR /data
 
