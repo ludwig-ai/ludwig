@@ -28,11 +28,17 @@ def get_schema(model_type: str = MODEL_ECD):
 
     cls = model_type_schema_registry[model_type]
     props = unload_jsonschema_from_marshmallow_class(cls)["properties"]
+
+    # TODO: Replace with more robust required logic later.
+    required = ["input_features", "output_features"]
+
     return {
         "type": "object",
         "properties": props,
         "title": "model_options",
         "description": "Settings for Ludwig configuration",
+        "required": required,
+        "additionalProperties": True,  # TODO: Set to false after 0.8 releases.
     }
 
 
