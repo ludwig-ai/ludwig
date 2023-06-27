@@ -13,4 +13,4 @@ awscli
 deepspeed<0.9
 
 # requirements for daft
-getdaft[ray]
+getdaft[ray]==0.1.6
