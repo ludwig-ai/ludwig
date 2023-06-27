@@ -9,6 +9,9 @@ from ludwig.error import ConfigValidationError
 from ludwig.schema.metadata import LLM_METADATA
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json
 
+# Maps a preset LLM name to the full slash-delimited HF path. If the user chooses a preset LLM, the preset LLM name is
+# replaced with the full slash-delimited HF path using this map, after JSON validation but before config object
+# initialization.
 MODEL_PRESETS = {
     "opt-350m": "facebook/opt-350m",
     "opt-1.3b": "facebook/opt-1.3b",
