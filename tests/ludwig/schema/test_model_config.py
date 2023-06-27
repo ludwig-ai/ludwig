@@ -795,6 +795,7 @@ def test_encoder_decoder_values_as_str():
     [
         ("bloomz-3b", "bigscience/bloomz-3b"),
         ("llama-7b", "huggyllama/llama-7b"),
+        ("huggyllama/llama-7b", "huggyllama/llama-7b"),
     ],
 )
 def test_llm_base_model_config(base_model_config, model_name):

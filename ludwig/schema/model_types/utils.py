@@ -306,7 +306,7 @@ def set_llm_tokenizers(config: "ModelConfig") -> None:
 
     pretrained_model_name_or_path = config.base_model
     if not isinstance(pretrained_model_name_or_path, str) or pretrained_model_name_or_path is None:
-        raise ValueError("Must set model_name when using the LLM model.")
+        raise ValueError("Must set `base_model` when using the LLM model.")
 
     for input_feature in config.input_features:
         if input_feature.type == TEXT:

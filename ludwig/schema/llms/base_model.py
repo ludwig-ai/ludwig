@@ -77,7 +77,7 @@ def BaseModelDataclassField(
                     },
                     {
                         "type": "string",
-                        "description": "Enter the full (slash-delimited) path to a huggingface LLM.",
+                        "description": "Enter the full path to a huggingface LLM.",
                         "title": "custom",
                         "parameter_metadata": convert_metadata_to_json(LLM_METADATA[BASE_MODEL]),
                     },
