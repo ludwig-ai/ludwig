@@ -91,15 +91,7 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
         if isinstance(backend, str):
             config[BACKEND] = {"type": backend}
 
-        # JSON schema validation. Note that this is desireable on top of `schema.load(config)` below because marshmallow
-        # deserialization permits additional properties while JSON schema validation, for schema (e.g. `trainer`) that
-        # have `additionalProperties=False`, does not.
-        #
-        # Illustrative example: test_validate_config_misc.py::test_validate_no_trainer_type
-        #
-        # TODO: Set `additionalProperties=False` for all Ludwig schema, and look into passing in `unknown='RAISE'` to
-        # marshmallow.load(), which raises an error for unknown fields during deserialization.
-        # https://marshmallow.readthedocs.io/en/stable/marshmallow.schema.html#marshmallow.schema.Schema.load
+        # JSON schema validation:
         check_schema(config)
 
         cls = model_type_schema_registry[model_type]

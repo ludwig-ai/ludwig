@@ -1,6 +1,5 @@
 import copy
 import os
-import warnings
 from abc import ABC, abstractmethod
 from dataclasses import field, Field
 from functools import lru_cache
@@ -11,7 +10,7 @@ from typing import Optional, Set, Tuple, Type, TypeVar, Union
 
 import marshmallow_dataclass
 import yaml
-from marshmallow import EXCLUDE, fields, pre_load, schema, validate, ValidationError
+from marshmallow import fields, RAISE, schema, validate, ValidationError
 from marshmallow.utils import missing
 from marshmallow_dataclass import dataclass as m_dataclass
 from marshmallow_jsonschema import JSONSchema as js
@@ -151,8 +150,7 @@ class ListSerializable(ABC):
 ConfigT = TypeVar("ConfigT", bound="BaseMarshmallowConfig")
 
 
-# TODO: Change to RAISE and update descriptions once we want to enforce strict schemas.
-LUDWIG_SCHEMA_VALIDATION_POLICY_VAR = os.environ.get(LUDWIG_SCHEMA_VALIDATION_POLICY, EXCLUDE).lower()
+LUDWIG_SCHEMA_VALIDATION_POLICY_VAR = os.environ.get(LUDWIG_SCHEMA_VALIDATION_POLICY, RAISE).lower()
 
 
 @DeveloperAPI
@@ -160,14 +158,7 @@ class BaseMarshmallowConfig(ABC):
     """Base marshmallow class for common attributes and metadata."""
 
     class Meta:
-        """Sub-class specifying meta information for Marshmallow.
-
-        Currently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are
-        excluded from `load` calls so that the marshmallow_dataclass package can be used but
-        `unload_jsonschema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.
-        to True so that JSON objects with extra properties do not raise errors; as a result properties are picked and
-        filled in as necessary.
-        """
+        """Sub-class specifying meta information for Marshmallow."""
 
         unknown = LUDWIG_SCHEMA_VALIDATION_POLICY_VAR
         "Flag that sets marshmallow `load` calls to handle unknown properties passed as a parameter."
@@ -181,23 +172,6 @@ class BaseMarshmallowConfig(ABC):
         Returns: dict for this dataclass
         """
         return convert_submodules(self.__dict__)
-
-    @pre_load
-    def log_deprecation_warnings_for_any_invalid_parameters(self, data, **kwargs):
-        """Logs a warning for any unknown or invalid parameters passed to a schema.
-
-        Will be removed in Ludwig v0.8, when all such parameters will explicitly raise an error.
-        """
-        copy_data = copy.deepcopy(data)
-        for key in data.keys():
-            if key not in self.fields:
-                if key != "type":
-                    warnings.warn(
-                        f'"{key}" is not a valid parameter for the "{self.__class__.__name__}" schema, will be flagged '
-                        "as an error in v0.8",
-                        DeprecationWarning,
-                    )
-        return copy_data
 
     @classmethod
     def from_dict(cls: Type[ConfigT], d: TDict[str, Any]) -> ConfigT:
@@ -227,7 +201,7 @@ def assert_is_a_marshmallow_class(cls):
 
 
 @DeveloperAPI
-def unload_jsonschema_from_marshmallow_class(mclass, additional_properties: bool = True, title: str = None) -> TDict:
+def unload_jsonschema_from_marshmallow_class(mclass, additional_properties: bool = False, title: str = None) -> TDict:
     """Helper method to directly get a marshmallow class's JSON schema without extra wrapping props."""
     assert_is_a_marshmallow_class(mclass)
     schema = js(props_ordered=True).dump(mclass.Schema())["definitions"][mclass.__name__]
