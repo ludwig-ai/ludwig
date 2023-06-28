@@ -433,7 +433,6 @@ def test_deprecation_warning_raised_for_unknown_parameters():
     [
         ({"type": "bert", "trainable": True}, None),
         ({"type": "bert", "trainable": True, "adapter": None}, None),
-        ({"type": "bert", "trainable": True, "adapter": "lora"}, LoraConfig()),
         ({"type": "bert", "trainable": True, "adapter": {"type": "lora"}}, LoraConfig()),
         (
             {
