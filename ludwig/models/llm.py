@@ -592,9 +592,11 @@ class LLM(BaseModel):
         # target tensors.
         targets_without_padding = []
         lengths = []
+
+        pad_token_tensor = torch.tensor([self.tokenizer.pad_token_id])
         for target in targets[of_name]:
             target = remove_left_padding(target, self.tokenizer)[0]
-            target = torch.cat([target, torch.tensor([self.tokenizer.pad_token_id])], dim=-1).unsqueeze(0)
+            target = torch.cat([target, pad_token_tensor.to(device=target.device)], dim=-1).unsqueeze(0)
             targets_without_padding.append(target)
             lengths.append(target.shape[1])
 
