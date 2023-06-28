@@ -21,7 +21,6 @@ from typing import Any, Callable, Dict, List, Union
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
     AUDIO,
-    BASE_MODEL,
     BIAS,
     CLASS_WEIGHTS,
     COLUMN,
@@ -847,19 +846,6 @@ def remove_extra_type_param_in_defaults_config(defaults: FeatureTypeDefaultsDict
         if TYPE in feature_config:
             del defaults_copy[feature_type][TYPE]
     return defaults_copy
-
-
-@register_config_transformation("0.8")
-def upgrade_model_name_to_base_model_name_dict(config: ModelConfigDict) -> ModelConfigDict:
-    if config.get("model_type", None) == "llm":  # or model_name not in config?
-        return config
-
-    upgraded_config = copy.deepcopy(config)
-    if "model_name" in config.keys():
-        upgraded_config.pop("model_name", None)
-        upgraded_config[BASE_MODEL] = config["model_name"]
-
-    return upgraded_config
 
 
 def upgrade_metadata(metadata: TrainingSetMetadataDict) -> TrainingSetMetadataDict:
