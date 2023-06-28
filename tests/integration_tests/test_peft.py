@@ -20,7 +20,7 @@ def test_text_adapter_lora(tmpdir, backend, ray_cluster_2cpu):
                 "type": "auto_transformer",
                 "pretrained_model_name_or_path": "hf-internal-testing/tiny-bert-for-token-classification",
                 "trainable": True,
-                "adapter": "lora",
+                "adapter": {"type": "lora"},
             },
         ),
     ]
