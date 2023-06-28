@@ -31,9 +31,13 @@ MODEL_PRESETS = {
 
 
 @DeveloperAPI
-def BaseModelDataclassField(
-    description: str = "",
-):
+def BaseModelDataclassField():
+    description = (
+        "Base pretrained model to use. This can be one of the presets defined by Ludwig, a fully qualified "
+        "name of a pretrained model from the HuggingFace Hub, or a path to a directory containing a "
+        "pretrained model."
+    )
+
     def validate(model_name: str):
         """Validates and upgrades the given model name to its full path, if applicable.
 
@@ -71,20 +75,22 @@ def BaseModelDataclassField(
                     {
                         "type": "string",
                         "enum": list(MODEL_PRESETS.keys()),
-                        "description": "Pick an LLM with first-class Ludwig support.",
+                        "description": (
+                            "Pick from a set of popular LLMs of different sizes across a variety of architecture types."
+                        ),
                         "title": "preset",
-                        "parameter_metadata": convert_metadata_to_json(LLM_METADATA[BASE_MODEL]),
+                        "parameter_metadata": convert_metadata_to_json(LLM_METADATA[BASE_MODEL]["anyOf"]["preset"]),
                     },
                     {
                         "type": "string",
                         "description": "Enter the full path to a huggingface LLM.",
                         "title": "custom",
-                        "parameter_metadata": convert_metadata_to_json(LLM_METADATA[BASE_MODEL]),
+                        "parameter_metadata": convert_metadata_to_json(LLM_METADATA[BASE_MODEL]["anyOf"]["custom"]),
                     },
                 ],
                 "description": description,
                 "title": "base_model_options",
-                "parameter_metadata": convert_metadata_to_json(LLM_METADATA[BASE_MODEL]),
+                "parameter_metadata": convert_metadata_to_json(LLM_METADATA[BASE_MODEL]["_meta"]),
             }
 
     return field(
@@ -95,7 +101,7 @@ def BaseModelDataclassField(
                 validate=validate,
                 metadata={  # TODO: extra metadata dict probably unnecessary, but currently a widespread pattern
                     "description": description,
-                    "parameter_metadata": convert_metadata_to_json(LLM_METADATA[BASE_MODEL]),
+                    "parameter_metadata": convert_metadata_to_json(LLM_METADATA[BASE_MODEL]["_meta"]),
                 },
             ),
         },

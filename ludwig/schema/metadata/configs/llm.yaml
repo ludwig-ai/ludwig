@@ -1,7 +1,16 @@
 base_model:
-    ui_display_name: Base Model Options
+  anyOf:
+    preset:
+      ui_display_name: Preset
+      expected_impact: 3
+    custom:
+      ui_display_name: Custom
+      expected_impact: 3
+  _meta:
+    ui_display_name: Model Name
     expected_impact: 3
     ui_component_type: radio_string_combined
+    short_description: This can be one of the presets or a fully qualified name of a pretrained model from the HuggingFace Hub
 generation:
   temperature:
     ui_display_name: Temperature
