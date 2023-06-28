@@ -5,8 +5,7 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata import LLM_METADATA
-
-# from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
+from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json
 from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils.registry import Registry
 
@@ -419,27 +418,26 @@ def AdapterDataclassField(default: Optional[str] = None):
                             "type": {
                                 "type": "string",
                                 "enum": list(adapter_registry.keys()),
-                                "default": default,
-                                "description": "",
+                                "description": "The type of PEFT adapter to use during fine-tuning",
                             },
                         },
                         "title": "Perform parameter efficient fine-tuning",
                         "allOf": get_adapter_conds(),
                         "required": ["type"],
                         "description": "The type of PEFT adapter to use during fine-tuning",
-                        "parameter_metadata": {"ui_display_title": "True"},
+                        "parameter_metadata": convert_metadata_to_json(LLM_METADATA["adapter"]["_oneOf"]["allOf"]),
                     },
                     {
                         "type": "null",
-                        "title": "Disabled",
+                        "title": "adapter_null_option",
                         "description": "Disable the adapter.",
-                        "parameter_metadata": {"ui_display_title": "False"},
+                        "parameter_metadata": convert_metadata_to_json(LLM_METADATA["adapter"]["_oneOf"]["none"]),
                     },
                 ],
                 "title": "adapter_options",
                 "description": "Whether to use parameter-efficient fine-tuning",
-                "parameter_metadata": {"ui_display_title": ""},
-                "default": None,
+                "parameter_metadata": convert_metadata_to_json(LLM_METADATA["adapter"]["_meta"]),
+                "default": default,
             }
 
     return AdapterSelection().get_default_field()

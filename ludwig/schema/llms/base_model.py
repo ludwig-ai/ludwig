@@ -79,13 +79,13 @@ def BaseModelDataclassField():
                             "Pick from a set of popular LLMs of different sizes across a variety of architecture types."
                         ),
                         "title": "preset",
-                        "parameter_metadata": convert_metadata_to_json(LLM_METADATA[BASE_MODEL]["anyOf"]["preset"]),
+                        "parameter_metadata": convert_metadata_to_json(LLM_METADATA[BASE_MODEL]["_anyOf"]["preset"]),
                     },
                     {
                         "type": "string",
                         "description": "Enter the full path to a huggingface LLM.",
                         "title": "custom",
-                        "parameter_metadata": convert_metadata_to_json(LLM_METADATA[BASE_MODEL]["anyOf"]["custom"]),
+                        "parameter_metadata": convert_metadata_to_json(LLM_METADATA[BASE_MODEL]["_anyOf"]["custom"]),
                     },
                 ],
                 "description": description,

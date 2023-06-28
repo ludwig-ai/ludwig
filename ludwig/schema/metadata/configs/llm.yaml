@@ -1,5 +1,5 @@
 base_model:
-  anyOf:
+  _anyOf:
     preset:
       ui_display_name: Preset
       expected_impact: 3
@@ -81,6 +81,16 @@ prompt:
     ui_component_type: textarea
     expected_impact: 3
 adapter:
+  _oneOf:
+    allOf:
+      ui_display_name: Perform parameter efficient fine-tuning
+      expected_impact: 3
+    none:
+      ui_display_name: Disabled
+      expected_impact: 3
+  _meta:
+    expected_impact: 3
+    ui_component_type: radio_string_combined
   lora:
     r:
       ui_display_name: R
