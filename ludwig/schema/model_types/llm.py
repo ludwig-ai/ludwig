@@ -53,6 +53,4 @@ class LLMModelConfig(ModelConfig):
 
     generation: LLMGenerationConfig = LLMGenerationConfigField().get_default_field()
 
-    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField(
-        description="The parameter-efficient finetuning strategy to use for the model"
-    )
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()

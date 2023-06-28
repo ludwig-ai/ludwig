@@ -5,7 +5,8 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata import LLM_METADATA
-from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
+
+# from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
 from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils.registry import Registry
 
@@ -392,16 +393,16 @@ def get_adapter_conds():
 
 
 @DeveloperAPI
-def AdapterDataclassField(
-    default: Optional[str] = None, description: str = "", parameter_metadata: ParameterMetadata = None
-):
+def AdapterDataclassField(default: Optional[str] = None):
+    description = "Whether to use parameter-efficient fine-tuning"
+
     class AdapterSelection(schema_utils.TypeSelection):
         def __init__(self):
             super().__init__(
                 registry=adapter_registry,
                 default_value=default,
                 description=description,
-                parameter_metadata=parameter_metadata,
+                parameter_metadata=None,
                 allow_str_value=True,
                 allow_none=True,
             )
@@ -419,19 +420,26 @@ def AdapterDataclassField(
                                 "type": "string",
                                 "enum": list(adapter_registry.keys()),
                                 "default": default,
-                                "description": "MISSING",
+                                "description": "",
                             },
                         },
-                        "title": "adapter_object_options",
+                        "title": "Perform parameter efficient fine-tuning",
                         "allOf": get_adapter_conds(),
                         "required": ["type"],
-                        "description": description,
+                        "description": "The type of PEFT adapter to use during fine-tuning",
+                        "parameter_metadata": {"ui_display_title": "True"},
                     },
-                    {"type": "string", "title": "adapter_string_options", "description": "MISSING"},
-                    {"type": "null", "title": "adapter_null_option", "description": "MISSING"},
+                    {
+                        "type": "null",
+                        "title": "Disabled",
+                        "description": "Disable the adapter.",
+                        "parameter_metadata": {"ui_display_title": "False"},
+                    },
                 ],
                 "title": "adapter_options",
-                "description": "The type of PEFT adapter to use during fine-tuning",
+                "description": "Whether to use parameter-efficient fine-tuning",
+                "parameter_metadata": {"ui_display_title": ""},
+                "default": None,
             }
 
     return AdapterSelection().get_default_field()
