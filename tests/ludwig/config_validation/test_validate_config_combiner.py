@@ -122,26 +122,19 @@ def test_config_bad_combiner_types_enums():
     config["combiner"]["weights_initializer"] = {}
     with pytest.raises(ConfigValidationError):
         check_schema(config)
-    config["combiner"]["weights_initializer"] = {"type": "fail"}
-    with pytest.raises(ConfigValidationError):
-        check_schema(config)
-    config["combiner"]["weights_initializer"] = {"type": "normal", "stddev": 0}
+    config["combiner"]["weights_initializer"] = "normal"
     check_schema(config)
 
     # Test bias initializer:
     del config["combiner"]["weights_initializer"]
-    config["combiner"]["bias_initializer"] = "kaiming_uniform"
-    check_schema(config)
+
     config["combiner"]["bias_initializer"] = "fail"
     with pytest.raises(ConfigValidationError):
         check_schema(config)
     config["combiner"]["bias_initializer"] = {}
     with pytest.raises(ConfigValidationError):
         check_schema(config)
-    config["combiner"]["bias_initializer"] = {"type": "fail"}
-    with pytest.raises(ConfigValidationError):
-        check_schema(config)
-    config["combiner"]["bias_initializer"] = {"type": "zeros", "stddev": 0}
+    config["combiner"]["bias_initializer"] = "kaiming_uniform"
     check_schema(config)
 
     # Test norm:
