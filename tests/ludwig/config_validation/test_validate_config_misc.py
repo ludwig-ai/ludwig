@@ -13,6 +13,7 @@ from ludwig.constants import (
     LOSS,
     MODEL_ECD,
     MODEL_GBM,
+    MODEL_LLM,
     MODEL_TYPE,
     NAME,
     PREPROCESSING,
@@ -26,7 +27,6 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.utils import get_combiner_jsonschema
 from ludwig.schema.defaults.ecd import ECDDefaultsConfig
 from ludwig.schema.defaults.gbm import GBMDefaultsConfig
-from ludwig.schema.encoders.text.peft import LoraConfig
 from ludwig.schema.features.preprocessing.audio import AudioPreprocessingConfig
 from ludwig.schema.features.preprocessing.bag import BagPreprocessingConfig
 from ludwig.schema.features.preprocessing.binary import BinaryPreprocessingConfig
@@ -41,6 +41,7 @@ from ludwig.schema.features.preprocessing.text import TextPreprocessingConfig
 from ludwig.schema.features.preprocessing.timeseries import TimeseriesPreprocessingConfig
 from ludwig.schema.features.preprocessing.vector import VectorPreprocessingConfig
 from ludwig.schema.features.utils import get_input_feature_jsonschema, get_output_feature_jsonschema
+from ludwig.schema.llms.peft import LoraConfig
 from ludwig.schema.model_types.base import ModelConfig
 from ludwig.schema.utils import ludwig_dataclass, unload_jsonschema_from_marshmallow_class
 from tests.integration_tests.utils import (
@@ -366,7 +367,7 @@ def test_schema_no_duplicates():
         )
 
 
-@pytest.mark.parametrize("model_type", [MODEL_ECD, MODEL_GBM])
+@pytest.mark.parametrize("model_type", [MODEL_ECD, MODEL_GBM, MODEL_LLM])
 def test_ludwig_schema_serialization(model_type):
     import json
 
@@ -432,7 +433,6 @@ def test_deprecation_warning_raised_for_unknown_parameters():
     [
         ({"type": "bert", "trainable": True}, None),
         ({"type": "bert", "trainable": True, "adapter": None}, None),
-        ({"type": "bert", "trainable": True, "adapter": "lora"}, LoraConfig()),
         ({"type": "bert", "trainable": True, "adapter": {"type": "lora"}}, LoraConfig()),
         (
             {

@@ -6,6 +6,7 @@ import yaml
 
 from ludwig.constants import (
     ACTIVE,
+    BASE_MODEL,
     CLIP,
     COLUMN,
     COMBINER,
@@ -20,6 +21,8 @@ from ludwig.constants import (
     LOSS,
     MODEL_ECD,
     MODEL_GBM,
+    MODEL_LLM,
+    MODEL_TYPE,
     NAME,
     NUM_CLASSES,
     OPTIMIZER,
@@ -32,6 +35,7 @@ from ludwig.constants import (
     TRAINER,
     TYPE,
 )
+from ludwig.error import ConfigValidationError
 from ludwig.schema.decoders.base import ClassifierConfig
 from ludwig.schema.encoders.text_encoders import BERTConfig
 from ludwig.schema.features.augmentation.image import RandomBlurConfig, RandomRotateConfig
@@ -784,3 +788,43 @@ def test_encoder_decoder_values_as_str():
 
     assert isinstance(config_obj.input_features[0].encoder, BERTConfig)
     assert isinstance(config_obj.output_features[0].decoder, ClassifierConfig)
+
+
+@pytest.mark.parametrize(
+    "base_model_config,model_name",
+    [
+        ("bloomz-3b", "bigscience/bloomz-3b"),
+        ("llama-7b", "huggyllama/llama-7b"),
+        ("huggyllama/llama-7b", "huggyllama/llama-7b"),
+    ],
+)
+def test_llm_base_model_config(base_model_config, model_name):
+    config = {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: base_model_config,
+        INPUT_FEATURES: [{NAME: "text_input", TYPE: "text"}],
+        OUTPUT_FEATURES: [{NAME: "text_output", TYPE: "text"}],
+    }
+
+    config_obj = ModelConfig.from_dict(config)
+
+    assert config_obj.base_model == model_name
+
+
+@pytest.mark.parametrize(
+    "base_model_config",
+    [
+        None,
+        "invalid/model/name",
+    ],
+)
+def test_llm_base_model_config_error(base_model_config):
+    config = {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: base_model_config,
+        INPUT_FEATURES: [{NAME: "text_input", TYPE: "text"}],
+        OUTPUT_FEATURES: [{NAME: "text_output", TYPE: "text"}],
+    }
+
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)

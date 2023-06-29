@@ -1200,7 +1200,7 @@ class TypeSelection(fields.Field):
 
         if self.allow_str_value and isinstance(value, str):
             # If user provided the value as a string, assume they were providing the type
-            value = {self.key: value}
+            value = self.str_value_to_object(value)
 
         if isinstance(value, dict):
             cls_type = value.get(self.key)
@@ -1216,9 +1216,13 @@ class TypeSelection(fields.Field):
         maybe_str = ", `str`," if self.allow_str_value else ""
         raise ValidationError(f"Invalid param {value}, expected `None`{maybe_str} or `dict`")
 
+    def str_value_to_object(self, value: str) -> str:
+        return {self.key: value}
+
     def get_schema_from_registry(self, key: str) -> Type[BaseMarshmallowConfig]:
         return self.registry[key]
 
+    # TODO: Maybe need to plumb 'required' through here
     def get_default_field(self) -> Field:
         default_factory = lambda: None
         if self.default_factory is not None:

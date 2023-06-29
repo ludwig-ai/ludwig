@@ -528,7 +528,7 @@ def check_llm_finetuning_adalora_config(config: "ModelConfig"):
 
     from peft.utils import TRANSFORMERS_MODELS_TO_ADALORA_TARGET_MODULES_MAPPING
 
-    model_config = _get_llm_model_config(config.model_name)
+    model_config = _get_llm_model_config(config.base_model)
     if (
         not config.adapter.target_modules
         and model_config.model_type not in TRANSFORMERS_MODELS_TO_ADALORA_TARGET_MODULES_MAPPING
@@ -559,7 +559,7 @@ def check_llm_finetuning_adaption_prompt_parameters(config: "ModelConfig"):
     from peft.tuners.adaption_prompt import TRANSFORMERS_MODEL_CONFIG
 
     # Adaption Config is currently only supported for Llama model types
-    model_config = _get_llm_model_config(config.model_name)
+    model_config = _get_llm_model_config(config.base_model)
     if model_config.model_type not in TRANSFORMERS_MODEL_CONFIG:
         raise ConfigValidationError(
             f"Adaption prompt adapter is not supported for {model_config.model_type} model. "

@@ -287,7 +287,7 @@ def test_retrieval_config_none_type():
     config = yaml.safe_load(
         """
 model_type: llm
-model_name: facebook/opt-350m
+base_model: facebook/opt-350m
 prompt:
     retrieval:
         type: null
@@ -316,7 +316,7 @@ def test_retrieval_config_random_type():
     config = yaml.safe_load(
         """
 model_type: llm
-model_name: facebook/opt-350m
+base_model: facebook/opt-350m
 prompt:
     retrieval:
         type: random
@@ -340,7 +340,7 @@ def test_retrieval_config_semantic_type():
     config = yaml.safe_load(
         """
 model_type: llm
-model_name: facebook/opt-350m
+base_model: facebook/opt-350m
 prompt:
     retrieval:
         type: semantic

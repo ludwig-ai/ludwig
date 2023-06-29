@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from ludwig.constants import TRAINER
+from ludwig.constants import COMBINER, EPOCHS, INPUT_FEATURES, OUTPUT_FEATURES, TRAINER, TYPE
 from tests.integration_tests.utils import binary_feature, generate_data, run_test_suite, text_feature
 
 
@@ -20,7 +20,7 @@ def test_text_adapter_lora(tmpdir, backend, ray_cluster_2cpu):
                 "type": "auto_transformer",
                 "pretrained_model_name_or_path": "hf-internal-testing/tiny-bert-for-token-classification",
                 "trainable": True,
-                "adapter": "lora",
+                "adapter": {"type": "lora"},
             },
         ),
     ]
@@ -30,10 +30,10 @@ def test_text_adapter_lora(tmpdir, backend, ray_cluster_2cpu):
     dataset = generate_data(input_features, output_features, data_csv_path)
 
     config = {
-        "input_features": input_features,
-        "output_features": output_features,
-        "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": 1},
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        COMBINER: {TYPE: "concat", "output_size": 14},
+        TRAINER: {EPOCHS: 1},
     }
     model = run_test_suite(config, dataset, backend)
 

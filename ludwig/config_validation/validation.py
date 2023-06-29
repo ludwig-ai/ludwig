@@ -6,7 +6,7 @@ from jsonschema import Draft7Validator, validate
 from jsonschema.validators import extend
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import MODEL_ECD, MODEL_TYPE
+from ludwig.constants import BASE_MODEL, MODEL_ECD, MODEL_LLM, MODEL_TYPE
 from ludwig.error import ConfigValidationError
 
 # TODO(travis): figure out why we need these imports to avoid circular import error
@@ -31,6 +31,8 @@ def get_schema(model_type: str = MODEL_ECD):
 
     # TODO: Replace with more robust required logic later.
     required = ["input_features", "output_features"]
+    if model_type == MODEL_LLM:
+        required += [BASE_MODEL]
 
     return {
         "type": "object",

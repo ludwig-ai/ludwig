@@ -1,6 +1,16 @@
-model_name:
+base_model:
+  _anyOf:
+    preset:
+      ui_display_name: Preset
+      expected_impact: 3
+    custom:
+      ui_display_name: Custom
+      expected_impact: 3
+  _meta:
     ui_display_name: Model Name
     expected_impact: 3
+    ui_component_type: radio_string_combined
+    short_description: This can be one of the presets or a fully qualified name of a pretrained model from the HuggingFace Hub
 generation:
   temperature:
     ui_display_name: Temperature
@@ -71,6 +81,16 @@ prompt:
     ui_component_type: textarea
     expected_impact: 3
 adapter:
+  _oneOf:
+    allOf:
+      ui_display_name: Perform parameter efficient fine-tuning
+      expected_impact: 3
+    none:
+      ui_display_name: Disabled
+      expected_impact: 3
+  _meta:
+    expected_impact: 3
+    ui_component_type: radio_string_combined
   lora:
     r:
       ui_display_name: R
