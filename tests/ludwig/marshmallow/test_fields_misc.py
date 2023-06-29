@@ -1,4 +1,4 @@
-from typing import Dict, Tuple, Union
+from typing import Tuple, Union
 
 import pytest
 from marshmallow.exceptions import ValidationError as MarshmallowValidationError
@@ -60,46 +60,6 @@ def test_Embed():
 
     assert CustomTestSchema.Schema().load({"foo": "add"}).foo == "add"
     assert CustomTestSchema.Schema().load({"foo": 1}).foo == 1
-
-
-def test_InitializerOrDict():
-    # Test metadata matches expected defaults after field creation (null allowed):
-    default_initializerordict = get_marshmallow_from_dataclass_field(schema_utils.InitializerOrDict())
-    assert default_initializerordict.default == "xavier_uniform"
-
-    initializerordict = get_marshmallow_from_dataclass_field(schema_utils.InitializerOrDict("zeros"))
-    assert initializerordict.default == "zeros"
-
-    # Test default value validation:
-    with pytest.raises(MarshmallowValidationError):
-        schema_utils.InitializerOrDict("test")
-
-    # Test simple schema creation:
-    @dataclass
-    class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
-        foo: Union[None, str, Dict] = schema_utils.InitializerOrDict()
-
-    # Test invalid non-dict loads:
-    with pytest.raises(MarshmallowValidationError):
-        CustomTestSchema.Schema().load({"foo": 1})
-
-    with pytest.raises(MarshmallowValidationError):
-        CustomTestSchema.Schema().load({"foo": "test"})
-
-    # Test valid loads:
-    assert CustomTestSchema.Schema().load({}).foo == "xavier_uniform"
-    assert CustomTestSchema.Schema().load({"foo": "zeros"}).foo == "zeros"
-
-    # Test invalid dict loads:
-    with pytest.raises(MarshmallowValidationError):
-        CustomTestSchema.Schema().load({"foo": None})
-    with pytest.raises(MarshmallowValidationError):
-        CustomTestSchema.Schema().load({"foo": {"a": "b"}})
-    with pytest.raises(MarshmallowValidationError):
-        CustomTestSchema.Schema().load({"foo": {"type": "invalid"}})
-
-    # Test valid dict loads:
-    assert CustomTestSchema.Schema().load({"foo": {"type": "zeros"}}).foo == {"type": "zeros"}
 
 
 def test_FloatRangeTupleDataclassField():

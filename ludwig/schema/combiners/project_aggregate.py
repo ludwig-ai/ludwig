@@ -79,13 +79,13 @@ class ProjectAggregateCombinerConfig(BaseCombinerConfig):
         parameter_metadata=COMBINER_METADATA["project_aggregate"]["use_bias"],
     )
 
-    bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
+    bias_initializer: Union[str, Dict] = schema_utils.InitializerOptions(
         default="zeros",
         description="Initializer to use for the bias of the projection and for the fully connected layers.",
         parameter_metadata=COMBINER_METADATA["project_aggregate"]["bias_initializer"],
     )
 
-    weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
+    weights_initializer: Union[str, Dict] = schema_utils.InitializerOptions(
         default="xavier_uniform",
         description="Initializer to use for the weights of the projection and for the fully connected layers.",
         parameter_metadata=COMBINER_METADATA["project_aggregate"]["weights_initializer"],

@@ -115,7 +115,7 @@ def BiasInitializerField(
     description = description or "Initializer for the bias vector."
     full_description = f"{description} Options: {initializers_str}. {INITIALIZER_SUFFIX}"
     parameter_metadata = parameter_metadata or COMMON_METADATA["bias_initializer"]
-    return schema_utils.InitializerOrDict(
+    return schema_utils.InitializerOptions(
         default=default,
         description=full_description,
         parameter_metadata=parameter_metadata,
@@ -129,7 +129,7 @@ def WeightsInitializerField(
     description = description or "Initializer for the weight matrix."
     full_description = f"{description} Options: {initializers_str}. {INITIALIZER_SUFFIX}"
     parameter_metadata = parameter_metadata or COMMON_METADATA["weights_initializer"]
-    return schema_utils.InitializerOrDict(
+    return schema_utils.InitializerOptions(
         default=default,
         description=full_description,
         parameter_metadata=parameter_metadata,
