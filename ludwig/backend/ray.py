@@ -969,7 +969,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
                 column.name,
                 df[column.name].url.download(
                     # Use 16 worker threads to maximize image read throughput over each partition
-                    max_worker_threads=16,
+                    max_connections=16,
                     # On error, replace value with a Null and just log the error
                     on_error="null",
                     fs=fs,
