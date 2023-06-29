@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+from typing import Optional, Type
 
 import torch
 
@@ -21,8 +22,9 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BINARY, NUMBER, TEXT, TIMESERIES, VECTOR
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
+from ludwig.encoders.types import EncoderOutputDict
 from ludwig.modules.fully_connected_modules import FCStack
-from ludwig.schema.encoders.base import DenseEncoderConfig, PassthroughEncoderConfig
+from ludwig.schema.encoders.base import BaseEncoderConfig, DenseEncoderConfig, PassthroughEncoderConfig
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +39,7 @@ class PassthroughEncoder(Encoder):
         logger.debug(f" {self.name}")
         self.input_size = input_size
 
-    def forward(self, inputs, mask=None):
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
         """
         :param inputs: The inputs fed into the encoder.
                Shape: [batch x 1], type tf.float32
@@ -45,7 +47,7 @@ class PassthroughEncoder(Encoder):
         return {"encoder_output": inputs}
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return PassthroughEncoderConfig
 
     @property
@@ -97,7 +99,7 @@ class DenseEncoder(Encoder):
             default_dropout=dropout,
         )
 
-    def forward(self, inputs, training=None, mask=None):
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
         """
         :param inputs: The inputs fed into the encoder.
                Shape: [batch x 1], type tf.float32
@@ -105,7 +107,7 @@ class DenseEncoder(Encoder):
         return {"encoder_output": self.fc_stack(inputs)}
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return DenseEncoderConfig
 
     @property

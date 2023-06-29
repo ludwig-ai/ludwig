@@ -1,7 +1,7 @@
 import logging
 import os
 from abc import abstractmethod
-from typing import Dict, Optional, Union
+from typing import Optional, Type, Union
 
 import torch
 import torchvision.models as tvm
@@ -10,6 +10,8 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import IMAGE
 from ludwig.encoders.image.base import ImageEncoder
 from ludwig.encoders.registry import register_encoder
+from ludwig.encoders.types import EncoderOutputDict
+from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.image.torchvision import (
     TVAlexNetEncoderConfig,
     TVConvNeXtEncoderConfig,
@@ -114,7 +116,7 @@ class TVBaseEncoder(ImageEncoder):
         for p in self.model.parameters():
             p.requires_grad_(trainable)
 
-    def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor) -> EncoderOutputDict:
         return {"encoder_output": self.model(inputs)}
 
     @abstractmethod
@@ -171,7 +173,7 @@ class TVAlexNetEncoder(TVBaseEncoder):
         self.model.classifier[-1] = torch.nn.Identity()
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return TVAlexNetEncoderConfig
 
 
@@ -204,11 +206,11 @@ class TVConvNeXtEncoder(TVBaseEncoder):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
 
-    def _remove_softmax_layer(self):
+    def _remove_softmax_layer(self) -> None:
         self.model.classifier[-1] = torch.nn.Identity()
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return TVConvNeXtEncoderConfig
 
 
@@ -233,11 +235,11 @@ class TVDenseNetEncoder(TVBaseEncoder):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
 
-    def _remove_softmax_layer(self):
+    def _remove_softmax_layer(self) -> None:
         self.model.classifier = torch.nn.Identity()
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return TVDenseNetEncoderConfig
 
 
@@ -269,11 +271,11 @@ class TVEfficientNetEncoder(TVBaseEncoder):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
 
-    def _remove_softmax_layer(self):
+    def _remove_softmax_layer(self) -> None:
         self.model.classifier[-1] = torch.nn.Identity()
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return TVEfficientNetEncoderConfig
 
 
@@ -303,11 +305,11 @@ class TVGoogLeNetEncoder(TVBaseEncoder):
             self.model.aux1 = None
             self.model.aux2 = None
 
-    def _remove_softmax_layer(self):
+    def _remove_softmax_layer(self) -> None:
         self.model.fc = torch.nn.Identity()
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return TVGoogLeNetEncoderConfig
 
 
@@ -336,11 +338,11 @@ class TVInceptionV3Encoder(TVBaseEncoder):
             self.model.aux_logits = False
             self.model.AuxLogits = None
 
-    def _remove_softmax_layer(self):
+    def _remove_softmax_layer(self) -> None:
         self.model.fc = torch.nn.Identity()
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return TVInceptionV3EncoderConfig
 
 
@@ -362,11 +364,11 @@ class TVMaxVitEncoder(TVBaseEncoder):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
 
-    def _remove_softmax_layer(self):
+    def _remove_softmax_layer(self) -> None:
         self.model.classifier[-1] = torch.nn.Identity()
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return TVMaxVitEncoderConfig
 
 
@@ -391,11 +393,11 @@ class TVMNASNetEncoder(TVBaseEncoder):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
 
-    def _remove_softmax_layer(self):
+    def _remove_softmax_layer(self) -> None:
         self.model.classifier[-1] = torch.nn.Identity()
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return TVMNASNetEncoderConfig
 
 
@@ -417,11 +419,11 @@ class TVMobileNetV2Encoder(TVBaseEncoder):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
 
-    def _remove_softmax_layer(self):
+    def _remove_softmax_layer(self) -> None:
         self.model.classifier[-1] = torch.nn.Identity()
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return TVMobileNetV2EncoderConfig
 
 
@@ -444,11 +446,11 @@ class TVMobileNetV3Encoder(TVBaseEncoder):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
 
-    def _remove_softmax_layer(self):
+    def _remove_softmax_layer(self) -> None:
         self.model.classifier[-1] = torch.nn.Identity()
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return TVMobileNetV3EncoderConfig
 
 
@@ -484,11 +486,11 @@ class TVRegNetEncoder(TVBaseEncoder):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
 
-    def _remove_softmax_layer(self):
+    def _remove_softmax_layer(self) -> None:
         self.model.fc = torch.nn.Identity()
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return TVRegNetEncoderConfig
 
 
@@ -514,11 +516,11 @@ class TVResNetEncoder(TVBaseEncoder):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
 
-    def _remove_softmax_layer(self):
+    def _remove_softmax_layer(self) -> None:
         self.model.fc = torch.nn.Identity()
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return TVResNetEncoderConfig
 
 
@@ -542,11 +544,11 @@ class TVResNeXtEncoder(TVBaseEncoder):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
 
-    def _remove_softmax_layer(self):
+    def _remove_softmax_layer(self) -> None:
         self.model.fc = torch.nn.Identity()
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return TVResNeXtEncoderConfig
 
 
@@ -571,11 +573,11 @@ class TVShuffleNetV2Encoder(TVBaseEncoder):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
 
-    def _remove_softmax_layer(self):
+    def _remove_softmax_layer(self) -> None:
         self.model.fc = torch.nn.Identity()
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return TVShuffleNetV2EncoderConfig
 
 
@@ -598,14 +600,14 @@ class TVSqueezeNetEncoder(TVBaseEncoder):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
 
-    def _remove_softmax_layer(self):
+    def _remove_softmax_layer(self) -> None:
         # SqueezeNet does not have a final nn.Linear() layer
         # Use flatten output from last AdaptiveAvgPool2d layer
         # as encoder output.
         pass
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return TVSqueezeNetEncoderConfig
 
 
@@ -629,11 +631,11 @@ class TVSwinTransformerEncoder(TVBaseEncoder):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
 
-    def _remove_softmax_layer(self):
+    def _remove_softmax_layer(self) -> None:
         self.model.head = torch.nn.Identity()
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return TVSwinTransformerEncoderConfig
 
 
@@ -662,11 +664,11 @@ class TVVGGEncoder(TVBaseEncoder):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
 
-    def _remove_softmax_layer(self):
+    def _remove_softmax_layer(self) -> None:
         self.model.classifier[-1] = torch.nn.Identity()
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return TVVGGEncoderConfig
 
 
@@ -704,11 +706,11 @@ class TVViTEncoder(TVBaseEncoder):
 
         super().__init__(**kwargs)
 
-    def _remove_softmax_layer(self):
+    def _remove_softmax_layer(self) -> None:
         self.model.heads[-1] = torch.nn.Identity()
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return TVViTEncoderConfig
 
 
@@ -731,9 +733,9 @@ class TVWideResNetEncoder(TVBaseEncoder):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
 
-    def _remove_softmax_layer(self):
+    def _remove_softmax_layer(self) -> None:
         self.model.fc = torch.nn.Identity()
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return TVWideResNetEncoderConfig

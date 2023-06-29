@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type
 
 import torch
 
@@ -25,6 +25,7 @@ from ludwig.encoders.registry import register_encoder
 from ludwig.modules.embedding_modules import EmbedWeighted
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.schema.encoders.bag_encoders import BagEmbedWeightedConfig
+from ludwig.schema.encoders.base import BaseEncoderConfig
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +88,7 @@ class BagEmbedWeightedEncoder(Encoder):
         )
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return BagEmbedWeightedConfig
 
     @property

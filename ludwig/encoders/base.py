@@ -33,5 +33,5 @@ class Encoder(LudwigModule, ABC):
         return next(self.children())
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.__class__.__name__

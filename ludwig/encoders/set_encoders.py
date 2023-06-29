@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type
 
 import torch
 
@@ -24,6 +24,7 @@ from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.modules.embedding_modules import EmbedSet
 from ludwig.modules.fully_connected_modules import FCStack
+from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.set_encoders import SetSparseEncoderConfig
 
 logger = logging.getLogger(__name__)
@@ -103,7 +104,7 @@ class SetSparseEncoder(Encoder):
         return hidden
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return SetSparseEncoderConfig
 
     @property

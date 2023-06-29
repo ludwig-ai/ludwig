@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Type, Union
 
 import torch
 from torch import nn
@@ -24,6 +24,7 @@ from ludwig.constants import CATEGORY
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.modules.embedding_modules import Embed
+from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.category_encoders import (
     CategoricalEmbedConfig,
     CategoricalOneHotEncoderConfig,
@@ -44,7 +45,7 @@ class CategoricalPassthroughEncoder(Encoder):
         logger.debug(f" {self.name}")
         self.input_size = input_size
 
-    def forward(self, inputs, mask=None):
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> torch.Tensor:
         """
         :param inputs: The inputs fed into the encoder.
                Shape: [batch x 1]
@@ -52,7 +53,7 @@ class CategoricalPassthroughEncoder(Encoder):
         return inputs.float()
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return CategoricalPassthroughEncoderConfig
 
     @property
@@ -111,7 +112,7 @@ class CategoricalEmbedEncoder(Encoder):
         return embedded
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return CategoricalEmbedConfig
 
     @property
@@ -166,7 +167,7 @@ class CategoricalSparseEncoder(Encoder):
         return embedded
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return CategoricalSparseConfig
 
     @property
@@ -193,7 +194,7 @@ class CategoricalOneHotEncoder(Encoder):
         logger.debug(f" {self.name}")
         self.vocab_size = len(vocab)
 
-    def forward(self, inputs, mask=None):
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> torch.Tensor:
         """
         :param inputs: The inputs fed into the encoder.
                Shape: [batch, 1] or [batch]
@@ -204,7 +205,7 @@ class CategoricalOneHotEncoder(Encoder):
         return torch.nn.functional.one_hot(t, num_classes=self.vocab_size).float()
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return CategoricalOneHotEncoderConfig
 
     @property

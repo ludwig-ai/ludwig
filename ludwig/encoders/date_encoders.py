@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Type
 
 import torch
 
@@ -22,8 +22,10 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import DATE
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
+from ludwig.encoders.types import EncoderOutputDict
 from ludwig.modules.embedding_modules import Embed
 from ludwig.modules.fully_connected_modules import FCStack
+from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.date_encoders import DateEmbedConfig, DateWaveConfig
 from ludwig.utils import torch_utils
 
@@ -224,7 +226,7 @@ class DateEmbed(Encoder):
             default_dropout=dropout,
         )
 
-    def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor) -> EncoderOutputDict:
         """
         :param inputs: The input vector fed into the encoder.
             Shape: [batch x DATE_INPUT_SIZE], type torch.int8
@@ -265,7 +267,7 @@ class DateEmbed(Encoder):
         return {"encoder_output": hidden}
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return DateEmbedConfig
 
     @property
@@ -358,7 +360,7 @@ class DateWave(Encoder):
             default_dropout=dropout,
         )
 
-    def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor) -> EncoderOutputDict:
         """
         :param inputs: The input vector fed into the encoder.
             Shape: [batch x DATE_INPUT_SIZE], type torch.int8
@@ -398,7 +400,7 @@ class DateWave(Encoder):
         return {"encoder_output": hidden}
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return DateWaveConfig
 
     @property
