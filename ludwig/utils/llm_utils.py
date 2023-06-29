@@ -228,6 +228,7 @@ def pad_target_tensor_for_fine_tuning(
         # Remove any leading -100s in the target that were temporarily added for alignment
         end_index = (target != IGNORE_INDEX_TOKEN_ID).nonzero()[0]
         target = target[end_index:]
+        target_device = target.device
 
         # See if any part of the target was in the tensor passed into the model's forward pass
         last_matching_index = find_last_matching_index(model_inputs[idx], target)
@@ -236,17 +237,17 @@ def pad_target_tensor_for_fine_tuning(
         # and did not contain the target tensor. In this case, we need to truncate the target tensors as well
         # and just set it to a tensor of -100 so that we don't compute loss on this target tensor.
         if last_matching_index == -1:
-            updated_targets.append(torch.full((prediction_length,), IGNORE_INDEX_TOKEN_ID))
+            updated_targets.append(torch.full((prediction_length,), IGNORE_INDEX_TOKEN_ID).to(device=target_device))
 
         # If the last matching index is not -1, it means that the input tensor passed into the model was not
         # truncated and contained either a part of the target tensor or the entire target tensor. In this case,
         # we need to set the target tensor to the part of the target tensor that was passed into the model while
         # also padding it to the correct length with -100.
         else:
-            padding = torch.full((last_matching_index,), IGNORE_INDEX_TOKEN_ID)
+            padding = torch.full((last_matching_index,), IGNORE_INDEX_TOKEN_ID).to(device=target_device)
             updated_targets.append(torch.cat((padding, target), dim=-1)[:prediction_length])
 
-    targets[of_name] = torch.stack(updated_targets).to(torch.int64)
+    targets[of_name] = torch.stack(updated_targets).to(device=targets.get(of_name).device, dtype=torch.int64)
 
     return targets
 
