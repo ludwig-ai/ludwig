@@ -60,6 +60,7 @@ class FixedSplitConfig(BaseSplitConfig):
         default=SPLIT,
         allow_none=False,
         description="The column name to use for fixed splitting.",
+        parameter_metadata=PREPROCESSING_METADATA["column"],
     )
 
 
@@ -78,6 +79,7 @@ class StratifySplitConfig(BaseSplitConfig):
         default=None,
         allow_none=True,
         description="The column name to base the stratified splitting on.",
+        parameter_metadata=PREPROCESSING_METADATA["column"],
     )
 
     probabilities: list = schema_utils.List(
@@ -103,6 +105,7 @@ class DateTimeSplitConfig(BaseSplitConfig):
         default=None,
         allow_none=True,
         description="The column name to perform datetime splitting on.",
+        parameter_metadata=PREPROCESSING_METADATA["column"],
     )
 
     probabilities: list = schema_utils.List(
@@ -137,6 +140,7 @@ class HashSplitConfig(BaseSplitConfig):
         default=None,
         allow_none=True,
         description="The column name to perform hash splitting on.",
+        parameter_metadata=PREPROCESSING_METADATA["column"],
     )
 
     probabilities: list = schema_utils.List(
