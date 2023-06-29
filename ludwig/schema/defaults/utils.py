@@ -37,7 +37,7 @@ def DefaultsDataclassField(feature_type: str, defaults_registry: Registry = ecd_
             return {
                 "type": "object",
                 "properties": props,
-                "additionalProperties": False,
+                # "additionalProperties": False,
                 "title": "defaults_options",
             }
 
