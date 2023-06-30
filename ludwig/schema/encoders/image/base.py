@@ -7,7 +7,6 @@ from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.metadata import ENCODER_METADATA
 from ludwig.schema.utils import ludwig_dataclass
-from ludwig.utils.torch_utils import initializer_registry
 
 if TYPE_CHECKING:
     from ludwig.schema.features.preprocessing.image import ImagePreprocessingConfig
@@ -259,15 +258,13 @@ class Stacked2DCNNConfig(ImageEncoderConfig):
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["fc_use_bias"],
     )
 
-    fc_bias_initializer: Optional[str] = schema_utils.StringOptions(
-        sorted(list(initializer_registry.keys())),
+    fc_bias_initializer: str = schema_utils.InitializerOptions(
         default="zeros",
         description="Initializer for the bias vector.",
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["fc_bias_initializer"],
     )
 
-    fc_weights_initializer: Optional[str] = schema_utils.StringOptions(
-        sorted(list(initializer_registry.keys())),
+    fc_weights_initializer: str = schema_utils.InitializerOptions(
         default="xavier_uniform",
         description="Initializer for the weights matrix.",
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["fc_weights_initializer"],
@@ -435,15 +432,13 @@ class ResNetConfig(ImageEncoderConfig):
         parameter_metadata=ENCODER_METADATA["ResNet"]["use_bias"],
     )
 
-    bias_initializer: Optional[str] = schema_utils.StringOptions(
-        sorted(list(initializer_registry.keys())),
+    bias_initializer: str = schema_utils.InitializerOptions(
         default="zeros",
         description="initializer for the bias vector.",
         parameter_metadata=ENCODER_METADATA["ResNet"]["bias_initializer"],
     )
 
-    weights_initializer: Optional[str] = schema_utils.StringOptions(
-        sorted(list(initializer_registry.keys())),
+    weights_initializer: str = schema_utils.InitializerOptions(
         default="xavier_uniform",
         description="Initializer for the weights matrix.",
         parameter_metadata=ENCODER_METADATA["ResNet"]["weights_initializer"],

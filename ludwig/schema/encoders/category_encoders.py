@@ -1,4 +1,4 @@
-from typing import List, TYPE_CHECKING
+from typing import List, Optional, TYPE_CHECKING
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import CATEGORY, MODEL_ECD, MODEL_GBM
@@ -47,7 +47,7 @@ class CategoricalEmbedConfig(BaseEncoderConfig):
 
     vocab: List[str] = common_fields.VocabField()
 
-    embedding_initializer: str = common_fields.EmbeddingInitializerField()
+    embedding_initializer: Optional[str] = common_fields.EmbeddingInitializerField()
 
     embedding_size: int = common_fields.EmbeddingSizeField(
         default=50,
@@ -83,7 +83,7 @@ class CategoricalSparseConfig(BaseEncoderConfig):
 
     vocab: List[str] = common_fields.VocabField()
 
-    embedding_initializer: str = common_fields.EmbeddingInitializerField()
+    embedding_initializer: Optional[str] = common_fields.EmbeddingInitializerField()
 
     embeddings_on_cpu: bool = common_fields.EmbeddingsOnCPUField()
 

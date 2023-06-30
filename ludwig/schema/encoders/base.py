@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import List, TYPE_CHECKING, Union
+from typing import List, TYPE_CHECKING
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BINARY, MODEL_ECD, MODEL_GBM, MODEL_LLM, NUMBER, TEXT, TIMESERIES, VECTOR
@@ -91,9 +91,9 @@ class DenseEncoderConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["DenseEncoder"]["use_bias"],
     )
 
-    bias_initializer: Union[str, dict] = common_fields.BiasInitializerField()
+    bias_initializer: str = common_fields.BiasInitializerField()
 
-    weights_initializer: Union[str, dict] = common_fields.WeightsInitializerField()
+    weights_initializer: str = common_fields.WeightsInitializerField()
 
     norm: str = common_fields.NormField()
 

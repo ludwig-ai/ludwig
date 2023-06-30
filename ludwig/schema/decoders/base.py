@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Dict, List, Tuple, Union
+from typing import List, Tuple, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BINARY, CATEGORY, MODEL_ECD, MODEL_GBM, MODEL_LLM, NUMBER, SET, TIMESERIES, VECTOR
@@ -41,37 +41,17 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
         parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_use_bias"],
     )
 
-    fc_weights_initializer: Union[str, Dict] = schema_utils.OneOfOptionsField(
+    fc_weights_initializer: str = schema_utils.InitializerOptions(
         default="xavier_uniform",
         allow_none=True,
         description="The weights initializer to use for the layers in the fc_stack",
-        field_options=[
-            schema_utils.InitializerOptions(
-                description="Preconfigured initializer to use for the layers in the fc_stack.",
-                parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_weights_initializer"],
-            ),
-            schema_utils.Dict(
-                description="Custom initializer to use for the layers in the fc_stack.",
-                parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_weights_initializer"],
-            ),
-        ],
         parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_weights_initializer"],
     )
 
-    fc_bias_initializer: Union[str, Dict] = schema_utils.OneOfOptionsField(
+    fc_bias_initializer: str = schema_utils.InitializerOptions(
         default="zeros",
         allow_none=True,
         description="The bias initializer to use for the layers in the fc_stack",
-        field_options=[
-            schema_utils.InitializerOptions(
-                description="Preconfigured bias initializer to use for the layers in the fc_stack.",
-                parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_bias_initializer"],
-            ),
-            schema_utils.Dict(
-                description="Custom bias initializer to use for the layers in the fc_stack.",
-                parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_bias_initializer"],
-            ),
-        ],
         parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_bias_initializer"],
     )
 
