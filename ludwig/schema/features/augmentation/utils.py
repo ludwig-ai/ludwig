@@ -156,14 +156,12 @@ def get_augmentation_list_jsonschema(feature_type: str, default: List[Dict[str, 
                     "additionalProperties": True,
                     "allOf": get_augmentation_list_conds(feature_type),
                     "required": ["type"],
-                    "title": "augmentation",
                 },
+                "title": "array_option",
             },
-            {
-                "type": "boolean",
-                "description": "Apply standard augmentation pipeline.",
-            },
+            {"type": "boolean", "description": "Apply standard augmentation pipeline.", "title": "boolean_option"},
         ],
+        "title": "augmentation",
     }
 
     return schema
