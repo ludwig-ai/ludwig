@@ -1,25 +1,14 @@
-import collections
 import logging
 from typing import Dict, List
 
 import daft
 import pandas as pd
-import ray
-from packaging import version
 from ray.data import Dataset
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.data.dataframe.base import DataFrameEngine
 
-TMP_COLUMN = "__TMP_COLUMN__"
-
-# This is to be compatible with pyarrow.lib.schema
-PandasBlockSchema = collections.namedtuple("PandasBlockSchema", ["names", "types"])
-
 logger = logging.getLogger(__name__)
-
-
-_ray_230 = version.parse(ray.__version__) >= version.parse("2.3.0")
 
 
 @DeveloperAPI
@@ -28,7 +17,9 @@ class DaftEngine(DataFrameEngine):
         self._parallelism = parallelism
 
     def set_parallelism(self, parallelism):
-        raise NotImplementedError("Not implemented for DaftEngine - this does not appear to be called anywhere")
+        raise NotImplementedError(
+            "Not implemented for DaftEngine - this does not appear to be called anywhere in Ludwig"
+        )
 
     def df_like(self, df: daft.DataFrame, proc_cols: Dict[str, daft.Expression]) -> daft.DataFrame:
         for col_name, expr in proc_cols.items():
