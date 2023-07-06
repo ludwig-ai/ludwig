@@ -58,44 +58,34 @@ class DaftEngine(DataFrameEngine):
         )
 
     def map_objects(self, series, map_fn, meta=None):
-        # TODO(jay): Implement
-        pass
+        raise NotImplementedError("TODO: Needs implementation!")
 
     def map_partitions(self, series, map_fn, meta=None):
-        # TODO(jay): Implement
-        pass
+        raise NotImplementedError("TODO: Needs implementation!")
 
     def map_batches(self, series, map_fn, enable_tensor_extension_casting=True):
-        # TODO(jay): Implement
-        pass
+        raise NotImplementedError("TODO: Needs implementation!")
 
     def apply_objects(self, df, apply_fn, meta=None):
-        # TODO(jay): Implement
-        pass
+        raise NotImplementedError("TODO: Needs implementation!")
 
     def reduce_objects(self, series, reduce_fn):
-        # TODO(jay): Implement
-        pass
+        raise NotImplementedError("TODO: Needs implementation!")
 
     def split(self, df, probabilities):
-        # TODO(jay): Implement
-        pass
+        raise NotImplementedError("TODO: Needs implementation!")
 
     def remove_empty_partitions(self, df):
-        # TODO(jay): Implement
-        pass
+        raise NotImplementedError("TODO: Needs implementation!")
 
     def to_parquet(self, df, path, index=False):
-        # TODO(jay): Implement
-        pass
+        raise NotImplementedError("TODO: Needs implementation!")
 
     def write_predictions(self, df: daft.DataFrame, path: str):
-        # TODO(jay): Implement
-        pass
+        raise NotImplementedError("TODO: Needs implementation!")
 
     def read_predictions(self, path: str) -> daft.DataFrame:
-        # TODO(jay): Implement
-        pass
+        raise NotImplementedError("TODO: Needs implementation!")
 
     def to_ray_dataset(self, df: daft.DataFrame) -> Dataset:
         return df.to_ray_dataset()
