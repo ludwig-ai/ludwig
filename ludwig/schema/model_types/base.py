@@ -7,7 +7,17 @@ from marshmallow import ValidationError
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.config_validation.checks import get_config_check_registry
 from ludwig.config_validation.validation import check_schema
-from ludwig.constants import BACKEND, ENCODER, MODEL_ECD
+from ludwig.constants import (
+    BACKEND,
+    COLUMN,
+    DEPENDENCIES,
+    ENCODER,
+    INPUT_FEATURES,
+    MODEL_ECD,
+    NAME,
+    OUTPUT_FEATURES,
+    TIED,
+)
 from ludwig.error import ConfigValidationError
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.schema import utils as schema_utils
@@ -15,9 +25,9 @@ from ludwig.schema.defaults.base import BaseDefaultsConfig
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig, FeatureCollection
 from ludwig.schema.hyperopt import HyperoptConfig
 from ludwig.schema.model_types.utils import (
-    filter_combiner_entities_,
     merge_fixed_preprocessing_params,
     merge_with_defaults,
+    sanitize_and_filter_combiner_entities_,
     set_derived_feature_columns_,
     set_hyperopt_defaults_,
     set_llm_tokenizers,
@@ -30,7 +40,7 @@ from ludwig.schema.trainer import BaseTrainerConfig
 from ludwig.schema.utils import ludwig_dataclass
 from ludwig.types import ModelConfigDict
 from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
-from ludwig.utils.data_utils import load_yaml
+from ludwig.utils.data_utils import get_sanitized_feature_name, load_yaml
 from ludwig.utils.registry import Registry
 
 model_type_schema_registry = Registry()
@@ -57,7 +67,7 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
         set_validation_parameters(self)
         set_hyperopt_defaults_(self)
         set_tagger_decoder_parameters(self)
-        filter_combiner_entities_(self)
+        sanitize_and_filter_combiner_entities_(self)
 
         # Set preprocessing parameters for text features for LLM model type
         set_llm_tokenizers(self)
@@ -76,6 +86,29 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
     def from_dict(config: ModelConfigDict) -> "ModelConfig":
         config = copy.deepcopy(config)
         config = upgrade_config_dict_to_latest_version(config)
+
+        # Use sanitized feature names.
+        # NOTE: This must be kept consistent with build_dataset()
+        for input_feature in config[INPUT_FEATURES]:
+            input_feature[NAME] = get_sanitized_feature_name(input_feature[NAME])
+            if COLUMN in input_feature and input_feature[COLUMN]:
+                input_feature[COLUMN] = get_sanitized_feature_name(input_feature[COLUMN])
+        for output_feature in config[OUTPUT_FEATURES]:
+            output_feature[NAME] = get_sanitized_feature_name(output_feature[NAME])
+            if COLUMN in output_feature and output_feature[COLUMN]:
+                output_feature[COLUMN] = get_sanitized_feature_name(output_feature[COLUMN])
+
+        # Sanitize tied feature names.
+        for input_feature in config[INPUT_FEATURES]:
+            if TIED in input_feature and input_feature[TIED]:
+                input_feature[TIED] = get_sanitized_feature_name(input_feature[TIED])
+
+        # Sanitize dependent feature names.
+        for output_feature in config[OUTPUT_FEATURES]:
+            if DEPENDENCIES in output_feature and output_feature[DEPENDENCIES]:
+                output_feature[DEPENDENCIES] = [
+                    get_sanitized_feature_name(feature_name) for feature_name in output_feature[DEPENDENCIES]
+                ]
 
         config["model_type"] = config.get("model_type", MODEL_ECD)
         model_type = config["model_type"]
