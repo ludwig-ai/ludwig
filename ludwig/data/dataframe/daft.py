@@ -25,23 +25,18 @@ class DaftDataframeShim:
         self._df = self._df.with_column(key, val.expr)
 
     def __getitem__(self, key) -> "DaftSeriesShim":
-        return DaftSeriesShim(self, self.inner[key])
+        return DaftSeriesShim(self.inner[key])
 
 
 class DaftSeriesShim:
     """Shim layer on top of a daft.Expression to make it behave like a Pandas Series object."""
 
-    def __init__(self, src: DaftDataframeShim, expr: daft.Expression):
+    def __init__(self, expr: daft.Expression):
         self._expr = expr
-        self._src = src
 
     @property
     def expr(self):
         return self._expr
-
-    @property
-    def source_dataframe(self) -> daft.DataFrame:
-        return self._src.inner
 
 
 @DeveloperAPI
@@ -66,10 +61,7 @@ class DaftEngine(DataFrameEngine):
         return data
 
     def persist(self, data: DaftDataframeShim) -> DaftDataframeShim:
-        # TODO(jay): Currently just a no-op. Let's see how far we can take it without persisting the dataframe at all
-        # It seems like the Dask implementation defaults to (and is likely always just) persist=True, but it is unclear
-        # why we need to persist.
-        return data
+        return DaftDataframeShim(data.inner.collect())
 
     def concat(self, dfs: List[DaftDataframeShim]) -> DaftDataframeShim:
         if len(dfs) == 0:
@@ -94,16 +86,17 @@ class DaftEngine(DataFrameEngine):
         )
 
     def map_objects(self, series: DaftSeriesShim, map_fn: Callable[[object], object], meta=None) -> DaftSeriesShim:
-        # TODO(jay): If the user can supply the return dtype (e.g. daft.DataType.string()), this operation
+        # NOTE: If the user can supply the return dtype (e.g. daft.DataType.string()), this operation
         # can be much more optimized in terms of memory usage
-        return DaftSeriesShim(series.source_dataframe, series.expr.apply(map_fn, return_dtype=daft.DataType.python()))
+        return DaftSeriesShim(series.expr.apply(map_fn, return_dtype=daft.DataType.python()))
 
     def map_partitions(self, obj: DaftSeriesShim, map_fn: Callable[[pd.Series], pd.Series], meta=None):
+        # NOTE: Although the function signature indicates that this function takes in a Series, in practice
+        # it appears that this function is often used interchangeably to run on both Series and DataFrames
         if isinstance(obj, DaftDataframeShim):
-            raise NotImplementedError("map_partitions not implemented for Daft Dataframes, only on Daft Series")
+            raise NotImplementedError("TODO: Implementation")
         elif isinstance(obj, DaftSeriesShim):
-            # TODO(jay): IMPLEMENT.
-            pass
+            raise NotImplementedError("TODO: Implementation")
         else:
             raise NotImplementedError(f"map_partitions not implemented for object of type: {type(obj)}")
 
@@ -113,15 +106,17 @@ class DaftEngine(DataFrameEngine):
         map_fn: Callable[[pd.DataFrame], pd.DataFrame],
         enable_tensor_extension_casting=True,
     ):
-        if isinstance(obj, DaftDataframeShim):
-            # TODO(jay): IMPLEMENT.
-            pass
-        elif isinstance(obj, DaftSeriesShim):
-            # TODO(jay): It appears that even though this API is annotated as taking the Series as input, it is actually
-            # used on DataFrames, not Series. This branch should never be hit and is not used anywhere in Ludwig.
-            raise NotImplementedError("map_batches not implemented for Daft Series")
-        else:
-            raise NotImplementedError(f"map_batches not implemented for object of type: {type(obj)}")
+        # NOTE: This is only used in preprocessing code to run "postprocess_batch", which is a specific function
+        # per feature type that is defined in the config
+        #
+        # NOTE: This is fairly inefficient in Daft because when calling a black-box map_fn function, Daft
+        # cannot understand which columns are actually being used in `map_fn`, and cannot perform optimizations
+        # using that information.
+        #
+        # Instead, if each postprocessing step can define what columns it needs to run, then we can supply
+        # that to Daft and Daft will provide just those columns that it needs.
+        assert isinstance(obj, DaftDataframeShim), "map_batches should only be called on DataFrames, not Series"
+        raise NotImplementedError("TODO: Implementation")
 
     def apply_objects(self, df, apply_fn, meta=None):
         raise NotImplementedError(
@@ -131,23 +126,34 @@ class DaftEngine(DataFrameEngine):
     def reduce_objects(self, series, reduce_fn):
         raise NotImplementedError(
             "Not implemented for DaftEngine - this is only used in audio_feature.py and is much better "
-            "expressed as a DataFrame aggregation using the provided dataframe APIs for mean/max/min/stddev etc"
+            "expressed as a DataFrame aggregation using the provided dataframe APIs for mean/max/min/stddev etc. "
+            "As a workaround, users can run .map_partitions() and then just .to_pandas() to perform reductions locally."
         )
 
     def split(self, df, probabilities):
-        raise NotImplementedError("TODO: Needs implementation!")
+        raise NotImplementedError("Requires some new APIs in Daft to support")
 
-    def remove_empty_partitions(self, df):
-        raise NotImplementedError("TODO: Needs implementation!")
+    def remove_empty_partitions(self, df: DaftDataframeShim):
+        # This is a no-op in the DaftEngine - we stick to the specified parallelism and users can
+        # call a df.into_partitions(self._parallelism) instead to rebalance the data.
+        logger.warning(
+            "Ignoring `.remove_empty_partitions()`: DaftEngine has a fixed number of partitions. "
+            "You may wish to rebalance the dataframe instead with `.into_partitions(parallelism)`"
+        )
+        return df
 
     def to_parquet(self, df, path, index=False):
-        raise NotImplementedError("TODO: Needs implementation!")
+        if index:
+            logger.warning(
+                "Ignoring `index=True`: DaftEngine has no concept of an index and cannot write indices to Parquet"
+            )
+        df.inner.write_parquet(path)
 
     def write_predictions(self, df: DaftDataframeShim, path: str):
-        raise NotImplementedError("TODO: Needs implementation!")
+        self.to_parquet(df, path)
 
     def read_predictions(self, path: str) -> DaftDataframeShim:
-        raise NotImplementedError("TODO: Needs implementation!")
+        return DaftDataframeShim(daft.read_parquet(path))
 
     def to_ray_dataset(self, df: DaftDataframeShim) -> Dataset:
         return df.inner.to_ray_dataset()
@@ -157,6 +163,7 @@ class DaftEngine(DataFrameEngine):
 
     def reset_index(self, df):
         # Daft has no concept of indices so this is a no-op
+        logger.warning("Ignoring `.reset_index()`: DaftEngine has no concept indices")
         return df
 
     @property
