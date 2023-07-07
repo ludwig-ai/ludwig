@@ -11,32 +11,71 @@ from ludwig.data.dataframe.base import DataFrameEngine
 logger = logging.getLogger(__name__)
 
 
-class DaftDataframeShim:
-    """Shim layer on top of a daft.Dataframe to make it behave like a Pandas Dataframe object."""
+class LudwigDaftDataframe:
+    """Shim layer on top of a daft.Dataframe to make it behave more like a Pandas Dataframe object.
+
+    Example:
+
+    ```
+    df = df_engine.map_partitions(df, lambda df: df[["foo", "bar"]])  # use functionality exposed by the DataFrameEngine
+    df = LudwigDaftDataframe(df.inner.select("foo", "bar"))  # use daft.DataFrame directly (faster, runs in Rust)
+    ```
+    """
 
     def __init__(self, df: daft.DataFrame):
         self._df = df
 
     @property
     def inner(self) -> daft.DataFrame:
+        """Access the underlying daft.Dataframe."""
         return self._df
 
-    def __setitem__(self, key: str, val: "DaftSeriesShim") -> None:
+    def __setitem__(self, key: str, val: "LudwigDaftSeries") -> None:
+        """Sets a column on the underlying daft.DataFrame."""
         self._df = self._df.with_column(key, val.expr)
 
-    def __getitem__(self, key) -> "DaftSeriesShim":
-        return DaftSeriesShim(self.inner[key])
+    def __getitem__(self, key) -> "LudwigDaftSeries":
+        """Retrieves a LudwigDaftSeries using the specified column name."""
+        return LudwigDaftSeries(self.inner[key])
+
+    def __getattr__(self, name: str):
+        """__getattr__ is called only as a "last resort" when no attribute with `name` was found."""
+        raise AttributeError(
+            f"'LudwigDaftDataframe' object has no attribute '{name}': Note that this is not a Pandas Dataframe! To "
+            "perform work on this object, you should try to:\n\n"
+            "\t 1. Use the generic functionality exposed by the DaftDataEngine such as `.map_partitions`\n"
+            "\t 2. Access the underlying daft.DataFrame with `.inner` and use the daft.DataFrame API."
+        )
 
 
-class DaftSeriesShim:
-    """Shim layer on top of a daft.Expression to make it behave like a Pandas Series object."""
+class LudwigDaftSeries:
+    """Shim layer on top of a daft.Expression to make it behave more like a Pandas Series object.
+
+    Example:
+
+    ```
+    series = df["foo"]  # Retrieve a LudwigDaftSeries from a LudwigDaftDataframe
+    df["bar"] = df_engine.map_objects(series, lambda x: x + 1)  # use functionality exposed by the DataFrameEngine
+    df["bar"] = LudwigDaftSeries(series.inner + 1)  # use daft.Expression directly (faster, runs in Rust)
+    ```
+    """
 
     def __init__(self, expr: daft.Expression):
         self._expr = expr
 
     @property
     def expr(self):
+        """Access the underlying daft.Expression."""
         return self._expr
+
+    def __getattr__(self, name: str):
+        """__getattr__ is called only as a "last resort" when no attribute with `name` was found."""
+        raise AttributeError(
+            f"'LudwigDaftSeries' object has no attribute '{name}': Note that this is not a Pandas Series! To "
+            "perform work on this object, you should try to:\n\n"
+            "\t 1. Use the generic functionality exposed by the DaftDataEngine such as `.map_objects`\n"
+            "\t 2. Access the underlying daft.Expression with `.expr` and use the daft.Expression API."
+        )
 
 
 @DeveloperAPI
@@ -49,21 +88,21 @@ class DaftEngine(DataFrameEngine):
             "Not implemented for DaftEngine - this does not appear to be called anywhere in Ludwig"
         )
 
-    def df_like(self, df: DaftDataframeShim, proc_cols: Dict[str, DaftSeriesShim]) -> DaftDataframeShim:
+    def df_like(self, df: LudwigDaftDataframe, proc_cols: Dict[str, LudwigDaftSeries]) -> LudwigDaftDataframe:
         df = df.inner
         for col_name, series in proc_cols.items():
             df = df.with_column(col_name, series.expr)
-        return DaftDataframeShim(df)
+        return LudwigDaftDataframe(df)
 
-    def parallelize(self, data: DaftDataframeShim) -> DaftDataframeShim:
+    def parallelize(self, data: LudwigDaftDataframe) -> LudwigDaftDataframe:
         if self._parallelism:
-            return DaftDataframeShim(data.inner.into_partitions(self._parallelism))
+            return LudwigDaftDataframe(data.inner.into_partitions(self._parallelism))
         return data
 
-    def persist(self, data: DaftDataframeShim) -> DaftDataframeShim:
-        return DaftDataframeShim(data.inner.collect())
+    def persist(self, data: LudwigDaftDataframe) -> LudwigDaftDataframe:
+        return LudwigDaftDataframe(data.inner.collect())
 
-    def concat(self, dfs: List[DaftDataframeShim]) -> DaftDataframeShim:
+    def concat(self, dfs: List[LudwigDaftDataframe]) -> LudwigDaftDataframe:
         if len(dfs) == 0:
             raise ValueError("Cannot concat a list of empty dataframes")
         elif len(dfs) == 1:
@@ -72,37 +111,37 @@ class DaftEngine(DataFrameEngine):
             df = dfs[0].inner
             for i in range(1, len(dfs)):
                 df = df.concat(dfs[i].inner)
-            return DaftDataframeShim(df)
+            return LudwigDaftDataframe(df)
 
-    def compute(self, data: DaftDataframeShim) -> pd.DataFrame:
+    def compute(self, data: LudwigDaftDataframe) -> pd.DataFrame:
         return data.inner.to_pandas()
 
-    def from_pandas(self, df: pd.DataFrame) -> DaftDataframeShim:
+    def from_pandas(self, df: pd.DataFrame) -> LudwigDaftDataframe:
         parallelism = self._parallelism or 1
-        return DaftDataframeShim(
+        return LudwigDaftDataframe(
             daft.from_pydict({column: daft.Series.from_pandas(df[column]) for column in df.columns}).into_partitions(
                 parallelism
             )
         )
 
-    def map_objects(self, series: DaftSeriesShim, map_fn: Callable[[object], object], meta=None) -> DaftSeriesShim:
+    def map_objects(self, series: LudwigDaftSeries, map_fn: Callable[[object], object], meta=None) -> LudwigDaftSeries:
         # NOTE: If the user can supply the return dtype (e.g. daft.DataType.string()), this operation
         # can be much more optimized in terms of memory usage
-        return DaftSeriesShim(series.expr.apply(map_fn, return_dtype=daft.DataType.python()))
+        return LudwigDaftSeries(series.expr.apply(map_fn, return_dtype=daft.DataType.python()))
 
-    def map_partitions(self, obj: DaftSeriesShim, map_fn: Callable[[pd.Series], pd.Series], meta=None):
+    def map_partitions(self, obj: LudwigDaftSeries, map_fn: Callable[[pd.Series], pd.Series], meta=None):
         # NOTE: Although the function signature indicates that this function takes in a Series, in practice
         # it appears that this function is often used interchangeably to run on both Series and DataFrames
-        if isinstance(obj, DaftDataframeShim):
+        if isinstance(obj, LudwigDaftDataframe):
             raise NotImplementedError("TODO: Implementation")
-        elif isinstance(obj, DaftSeriesShim):
+        elif isinstance(obj, LudwigDaftSeries):
             raise NotImplementedError("TODO: Implementation")
         else:
             raise NotImplementedError(f"map_partitions not implemented for object of type: {type(obj)}")
 
     def map_batches(
         self,
-        obj: DaftDataframeShim,
+        obj: LudwigDaftDataframe,
         map_fn: Callable[[pd.DataFrame], pd.DataFrame],
         enable_tensor_extension_casting=True,
     ):
@@ -115,7 +154,7 @@ class DaftEngine(DataFrameEngine):
         #
         # Instead, if each postprocessing step can define what columns it needs to run, then we can supply
         # that to Daft and Daft will provide just those columns that it needs.
-        assert isinstance(obj, DaftDataframeShim), "map_batches should only be called on DataFrames, not Series"
+        assert isinstance(obj, LudwigDaftDataframe), "map_batches should only be called on DataFrames, not Series"
         raise NotImplementedError("TODO: Implementation")
 
     def apply_objects(self, df, apply_fn, meta=None):
@@ -133,7 +172,7 @@ class DaftEngine(DataFrameEngine):
     def split(self, df, probabilities):
         raise NotImplementedError("Requires some new APIs in Daft to support")
 
-    def remove_empty_partitions(self, df: DaftDataframeShim):
+    def remove_empty_partitions(self, df: LudwigDaftDataframe):
         # This is a no-op in the DaftEngine - we stick to the specified parallelism and users can
         # call a df.into_partitions(self._parallelism) instead to rebalance the data.
         logger.warning(
@@ -149,17 +188,17 @@ class DaftEngine(DataFrameEngine):
             )
         df.inner.write_parquet(path)
 
-    def write_predictions(self, df: DaftDataframeShim, path: str):
+    def write_predictions(self, df: LudwigDaftDataframe, path: str):
         self.to_parquet(df, path)
 
-    def read_predictions(self, path: str) -> DaftDataframeShim:
-        return DaftDataframeShim(daft.read_parquet(path))
+    def read_predictions(self, path: str) -> LudwigDaftDataframe:
+        return LudwigDaftDataframe(daft.read_parquet(path))
 
-    def to_ray_dataset(self, df: DaftDataframeShim) -> Dataset:
+    def to_ray_dataset(self, df: LudwigDaftDataframe) -> Dataset:
         return df.inner.to_ray_dataset()
 
-    def from_ray_dataset(self, dataset: Dataset) -> DaftDataframeShim:
-        return DaftDataframeShim(daft.from_ray_dataset(dataset))
+    def from_ray_dataset(self, dataset: Dataset) -> LudwigDaftDataframe:
+        return LudwigDaftDataframe(daft.from_ray_dataset(dataset))
 
     def reset_index(self, df):
         # Daft has no concept of indices so this is a no-op
