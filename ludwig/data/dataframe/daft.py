@@ -1,5 +1,5 @@
 import logging
-from typing import Callable, Dict, List
+from typing import Callable, Dict, List, overload, Union
 
 import daft
 import pandas as pd
@@ -9,6 +9,10 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.data.dataframe.base import DataFrameEngine
 
 logger = logging.getLogger(__name__)
+
+
+DataFrameMapFn = Callable[[pd.DataFrame], pd.DataFrame]
+SeriesMapFn = Callable[[pd.Series], pd.Series]
 
 
 class LudwigDaftDataframe:
@@ -129,9 +133,22 @@ class DaftEngine(DataFrameEngine):
         # can be much more optimized in terms of memory usage
         return LudwigDaftSeries(series.expr.apply(map_fn, return_dtype=daft.DataType.python()))
 
-    def map_partitions(self, obj: LudwigDaftSeries, map_fn: Callable[[pd.Series], pd.Series], meta=None):
-        # NOTE: Although the function signature indicates that this function takes in a Series, in practice
-        # it appears that this function is often used interchangeably to run on both Series and DataFrames
+    # NOTE: Although the base class' function signature indicates that this function takes in a Series, in practice
+    # it appears that this function is often used interchangeably to run functions on both Series and DataFrames
+    @overload
+    def map_partitions(self, obj: LudwigDaftDataframe, map_fn: DataFrameMapFn) -> LudwigDaftDataframe:
+        ...
+
+    @overload
+    def map_partitions(self, obj: LudwigDaftSeries, map_fn: SeriesMapFn, meta=None) -> LudwigDaftSeries:
+        ...
+
+    def map_partitions(
+        self,
+        obj: Union[LudwigDaftSeries, LudwigDaftDataframe],
+        map_fn: Union[DataFrameMapFn, SeriesMapFn],
+        meta=None,
+    ) -> Union[LudwigDaftDataframe, LudwigDaftSeries]:
         if isinstance(obj, LudwigDaftDataframe):
             raise NotImplementedError("TODO: Implementation")
         elif isinstance(obj, LudwigDaftSeries):
