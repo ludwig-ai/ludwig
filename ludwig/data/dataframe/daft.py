@@ -129,7 +129,10 @@ class DaftEngine(DataFrameEngine):
         )
 
     def reduce_objects(self, series, reduce_fn):
-        raise NotImplementedError("TODO: Needs implementation!")
+        raise NotImplementedError(
+            "Not implemented for DaftEngine - this is only used in audio_feature.py and is much better "
+            "expressed as a DataFrame aggregation using the provided dataframe APIs for mean/max/min/stddev etc"
+        )
 
     def split(self, df, probabilities):
         raise NotImplementedError("TODO: Needs implementation!")
