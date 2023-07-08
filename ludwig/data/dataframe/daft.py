@@ -64,7 +64,7 @@ class LudwigDaftSeries:
     ```
     """
 
-    def __init__(self, expr: daft.Expression):
+    def __init__(self, expr: daft.expressions.Expression):
         self._expr = expr
 
     @property
