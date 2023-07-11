@@ -25,7 +25,7 @@ def test_categorical_dense_encoder(vocab: List[str], embedding_size: int, traina
     ).to(DEVICE)
     inputs = torch.randint(len(vocab), (10,)).to(DEVICE)  # Chooses 10 items from vocab with replacement.
     inputs = torch.unsqueeze(inputs, 1)
-    outputs = dense_encoder(inputs)
+    outputs = dense_encoder(inputs)["encoder_output"]
     # In dense mode, the embedding size should be less than or equal to vocab size.
     assert outputs.shape[-1] == min(embedding_size, len(vocab))
     # Ensures output shape matches encoder expected output shape.
@@ -52,7 +52,7 @@ def test_categorical_sparse_encoder(vocab: List[str], trainable: bool):
     sparse_encoder = CategoricalSparseEncoder(vocab=vocab, embeddings_trainable=trainable).to(DEVICE)
     inputs = torch.randint(len(vocab), (10,)).to(DEVICE)  # Chooses 10 items from vocab with replacement.
     inputs = torch.unsqueeze(inputs, 1)
-    outputs = sparse_encoder(inputs)
+    outputs = sparse_encoder(inputs)["encoder_output"]
     # In sparse mode, embedding_size will always be equal to vocab size.
     assert outputs.shape[-1] == len(vocab)
     # Ensures output shape matches encoder expected output shape.

@@ -23,6 +23,7 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import CATEGORY
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
+from ludwig.encoders.types import EncoderOutputDict
 from ludwig.modules.embedding_modules import Embed
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.category_encoders import (
@@ -45,12 +46,12 @@ class CategoricalPassthroughEncoder(Encoder):
         logger.debug(f" {self.name}")
         self.input_size = input_size
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
         """
         :param inputs: The inputs fed into the encoder.
                Shape: [batch x 1]
         """
-        return inputs.float()
+        return {"encoder_output": inputs.float()}
 
     @staticmethod
     def get_schema_cls() -> Type[BaseEncoderConfig]:
@@ -101,7 +102,7 @@ class CategoricalEmbedEncoder(Encoder):
         )
         self.embedding_size = self.embed.embedding_size
 
-    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+    def forward(self, inputs: torch.Tensor) -> EncoderOutputDict:
         """
         :param inputs: The inputs fed into the encoder.
                Shape: [batch x 1], type torch.int32
@@ -109,7 +110,7 @@ class CategoricalEmbedEncoder(Encoder):
         :param return: embeddings of shape [batch x embed size], type torch.float32
         """
         embedded = self.embed(inputs)
-        return embedded
+        return {"encoder_output": embedded}
 
     @staticmethod
     def get_schema_cls() -> Type[BaseEncoderConfig]:
@@ -156,7 +157,7 @@ class CategoricalSparseEncoder(Encoder):
         )
         self.embedding_size = self.embed.embedding_size
 
-    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+    def forward(self, inputs: torch.Tensor) -> EncoderOutputDict:
         """
         :param inputs: The inputs fed into the encoder.
                Shape: [batch x 1], type torch.int32
@@ -164,7 +165,7 @@ class CategoricalSparseEncoder(Encoder):
         :param return: embeddings of shape [batch x embed size], type torch.float32
         """
         embedded = self.embed(inputs)
-        return embedded
+        return {"encoder_output": embedded}
 
     @staticmethod
     def get_schema_cls() -> Type[BaseEncoderConfig]:
@@ -194,7 +195,7 @@ class CategoricalOneHotEncoder(Encoder):
         logger.debug(f" {self.name}")
         self.vocab_size = len(vocab)
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
         """
         :param inputs: The inputs fed into the encoder.
                Shape: [batch, 1] or [batch]
@@ -202,7 +203,8 @@ class CategoricalOneHotEncoder(Encoder):
         t = inputs.reshape(-1).long()
         # the output of this must be a float so that it can be concatenated with other
         # encoder outputs and passed to dense layers in the combiner, decoder, etc.
-        return torch.nn.functional.one_hot(t, num_classes=self.vocab_size).float()
+        outputs = torch.nn.functional.one_hot(t, num_classes=self.vocab_size).float()
+        return {"encoder_output": outputs}
 
     @staticmethod
     def get_schema_cls() -> Type[BaseEncoderConfig]:

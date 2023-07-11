@@ -22,6 +22,7 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BAG
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
+from ludwig.encoders.types import EncoderOutputDict
 from ludwig.modules.embedding_modules import EmbedWeighted
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.schema.encoders.bag_encoders import BagEmbedWeightedConfig
@@ -99,7 +100,7 @@ class BagEmbedWeightedEncoder(Encoder):
     def output_shape(self) -> torch.Size:
         return self.fc_stack.output_shape
 
-    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+    def forward(self, inputs: torch.Tensor) -> EncoderOutputDict:
         """
         :param inputs: The inputs fed into the encoder.
                Shape: [batch x vocab size], type torch.int32
@@ -109,4 +110,4 @@ class BagEmbedWeightedEncoder(Encoder):
         hidden = self.embed_weighted(inputs)
         hidden = self.fc_stack(hidden)
 
-        return hidden
+        return {"encoder_output": hidden}

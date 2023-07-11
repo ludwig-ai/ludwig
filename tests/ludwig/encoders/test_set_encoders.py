@@ -33,7 +33,7 @@ def test_set_encoder(
         num_fc_layers=num_fc_layers,
     ).to(DEVICE)
     inputs = torch.randint(0, 2, size=(2, len(vocab))).bool().to(DEVICE)
-    outputs = set_encoder(inputs)
+    outputs = set_encoder(inputs)["encoder_output"]
     assert outputs.shape[1:] == set_encoder.output_shape
 
     # check for parameter updating
