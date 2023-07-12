@@ -45,13 +45,14 @@ class CategoricalPassthroughEncoder(Encoder):
 
         logger.debug(f" {self.name}")
         self.input_size = input_size
+        self.identity = nn.Identity()
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
         """
         :param inputs: The inputs fed into the encoder.
                Shape: [batch x 1]
         """
-        return {"encoder_output": inputs.float()}
+        return {"encoder_output": self.identity(inputs.float())}
 
     @staticmethod
     def get_schema_cls() -> Type[BaseEncoderConfig]:
@@ -66,7 +67,7 @@ class CategoricalPassthroughEncoder(Encoder):
         return self.input_shape
 
     def get_embedding_layer(self) -> nn.Module:
-        return self
+        return self.identity
 
 
 @DeveloperAPI
@@ -194,6 +195,7 @@ class CategoricalOneHotEncoder(Encoder):
 
         logger.debug(f" {self.name}")
         self.vocab_size = len(vocab)
+        self.identity = nn.Identity()
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
         """
@@ -203,7 +205,7 @@ class CategoricalOneHotEncoder(Encoder):
         t = inputs.reshape(-1).long()
         # the output of this must be a float so that it can be concatenated with other
         # encoder outputs and passed to dense layers in the combiner, decoder, etc.
-        outputs = torch.nn.functional.one_hot(t, num_classes=self.vocab_size).float()
+        outputs = self.identity(torch.nn.functional.one_hot(t, num_classes=self.vocab_size).float())
         return {"encoder_output": outputs}
 
     @staticmethod
@@ -219,4 +221,4 @@ class CategoricalOneHotEncoder(Encoder):
         return torch.Size([self.vocab_size])
 
     def get_embedding_layer(self) -> nn.Module:
-        return self
+        return self.identity
