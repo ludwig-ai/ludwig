@@ -20,7 +20,7 @@ import torch
 from torch import nn
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import CATEGORY
+from ludwig.constants import CATEGORY, ENCODER_OUTPUT
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.encoders.types import EncoderOutputDict
@@ -52,7 +52,7 @@ class CategoricalPassthroughEncoder(Encoder):
         :param inputs: The inputs fed into the encoder.
                Shape: [batch x 1]
         """
-        return {"encoder_output": self.identity(inputs.float())}
+        return {ENCODER_OUTPUT: inputs.float()}
 
     @staticmethod
     def get_schema_cls() -> Type[BaseEncoderConfig]:
@@ -111,7 +111,7 @@ class CategoricalEmbedEncoder(Encoder):
         :param return: embeddings of shape [batch x embed size], type torch.float32
         """
         embedded = self.embed(inputs)
-        return {"encoder_output": embedded}
+        return {ENCODER_OUTPUT: embedded}
 
     @staticmethod
     def get_schema_cls() -> Type[BaseEncoderConfig]:
@@ -166,7 +166,7 @@ class CategoricalSparseEncoder(Encoder):
         :param return: embeddings of shape [batch x embed size], type torch.float32
         """
         embedded = self.embed(inputs)
-        return {"encoder_output": embedded}
+        return {ENCODER_OUTPUT: embedded}
 
     @staticmethod
     def get_schema_cls() -> Type[BaseEncoderConfig]:
@@ -205,8 +205,8 @@ class CategoricalOneHotEncoder(Encoder):
         t = inputs.reshape(-1).long()
         # the output of this must be a float so that it can be concatenated with other
         # encoder outputs and passed to dense layers in the combiner, decoder, etc.
-        outputs = self.identity(torch.nn.functional.one_hot(t, num_classes=self.vocab_size).float())
-        return {"encoder_output": outputs}
+        outputs = torch.nn.functional.one_hot(t, num_classes=self.vocab_size).float()
+        return {ENCODER_OUTPUT: outputs}
 
     @staticmethod
     def get_schema_cls() -> Type[BaseEncoderConfig]:

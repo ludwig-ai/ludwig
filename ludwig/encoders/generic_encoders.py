@@ -19,7 +19,7 @@ from typing import Optional, Type
 import torch
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import BINARY, NUMBER, TEXT, TIMESERIES, VECTOR
+from ludwig.constants import BINARY, ENCODER_OUTPUT, NUMBER, TEXT, TIMESERIES, VECTOR
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.encoders.types import EncoderOutputDict
@@ -44,7 +44,7 @@ class PassthroughEncoder(Encoder):
         :param inputs: The inputs fed into the encoder.
                Shape: [batch x 1], type tf.float32
         """
-        return {"encoder_output": inputs}
+        return {ENCODER_OUTPUT: inputs}
 
     @staticmethod
     def get_schema_cls() -> Type[BaseEncoderConfig]:
@@ -104,7 +104,7 @@ class DenseEncoder(Encoder):
         :param inputs: The inputs fed into the encoder.
                Shape: [batch x 1], type tf.float32
         """
-        return {"encoder_output": self.fc_stack(inputs)}
+        return {ENCODER_OUTPUT: self.fc_stack(inputs)}
 
     @staticmethod
     def get_schema_cls() -> Type[BaseEncoderConfig]:

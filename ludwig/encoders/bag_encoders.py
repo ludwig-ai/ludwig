@@ -19,7 +19,7 @@ from typing import Any, Dict, List, Optional, Type
 import torch
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import BAG
+from ludwig.constants import BAG, ENCODER_OUTPUT
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.encoders.types import EncoderOutputDict
@@ -110,4 +110,4 @@ class BagEmbedWeightedEncoder(Encoder):
         hidden = self.embed_weighted(inputs)
         hidden = self.fc_stack(hidden)
 
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}

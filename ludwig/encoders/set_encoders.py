@@ -19,7 +19,7 @@ from typing import Any, Dict, List, Optional, Type
 import torch
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import SET
+from ludwig.constants import ENCODER_OUTPUT, SET
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.encoders.types import EncoderOutputDict
@@ -102,7 +102,7 @@ class SetSparseEncoder(Encoder):
         hidden = self.embed(inputs)
         hidden = self.fc_stack(hidden)
 
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
     def get_schema_cls() -> Type[BaseEncoderConfig]:

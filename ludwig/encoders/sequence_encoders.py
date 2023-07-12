@@ -20,7 +20,7 @@ import torch
 from torch import nn
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import AUDIO, SEQUENCE, TEXT, TIMESERIES
+from ludwig.constants import AUDIO, ENCODER_OUTPUT, ENCODER_OUTPUT_STATE, SEQUENCE, TEXT, TIMESERIES
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder, register_sequence_encoder
 from ludwig.encoders.types import EncoderOutputDict
@@ -99,7 +99,7 @@ class SequencePassthroughEncoder(SequenceEncoder):
             input_sequence = input_sequence.unsqueeze(-1)
         hidden = self.reduce_sequence(input_sequence)
 
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
     def get_schema_cls() -> Type[SequenceEncoderConfig]:
@@ -237,7 +237,7 @@ class SequenceEmbedEncoder(SequenceEncoder):
         """
         embedded_sequence = self.embed_sequence(inputs, mask=mask)
         hidden = self.reduce_sequence(embedded_sequence)
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
     def get_schema_cls() -> Type[SequenceEncoderConfig]:
@@ -536,7 +536,7 @@ class ParallelCNN(SequenceEncoder):
             # ================ FC Layers ================
             hidden = self.fc_stack(hidden, mask=mask)
 
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
     def get_schema_cls() -> Type[SequenceEncoderConfig]:
@@ -888,7 +888,7 @@ class StackedCNN(SequenceEncoder):
 
         # no reduction: hidden [batch_size, seq_size, num_filters]
         # with reduction: hidden [batch_size, output_size]
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
 
 @DeveloperAPI
@@ -1201,7 +1201,7 @@ class StackedParallelCNN(SequenceEncoder):
 
         # no reduction: hidden [batch_size, seq_size, num_filter]
         # with reduction: hidden [batch_size, output_size]
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
 
 @DeveloperAPI
@@ -1472,7 +1472,7 @@ class StackedRNN(SequenceEncoder):
             # ================ FC Layers ================
             hidden = self.fc_stack(hidden, mask=mask)
 
-        return {"encoder_output": hidden, "encoder_output_state": final_state}
+        return {ENCODER_OUTPUT: hidden, ENCODER_OUTPUT_STATE: final_state}
 
 
 @DeveloperAPI
@@ -1759,7 +1759,7 @@ class StackedCNNRNN(SequenceEncoder):
         # with reduction: hidden [batch_size, seq_size, output_size]
         # final_state: if rnn/gru [batch_size, state_size]
         #              lstm ([batch_size, state_size], [batch_size, state_size])
-        return {"encoder_output": hidden, "encoder_output_state": final_state}
+        return {ENCODER_OUTPUT: hidden, ENCODER_OUTPUT_STATE: final_state}
 
 
 @DeveloperAPI
@@ -2028,4 +2028,4 @@ class StackedTransformer(SequenceEncoder):
             # ================ FC Layers ================
             hidden = self.fc_stack(hidden, mask=mask)
 
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
