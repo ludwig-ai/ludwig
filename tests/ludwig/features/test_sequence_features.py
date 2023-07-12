@@ -5,7 +5,7 @@ import pytest
 import torch
 import torchtext
 
-from ludwig.constants import LAST_HIDDEN, LOGITS, SEQUENCE, TEXT, TYPE
+from ludwig.constants import ENCODER_OUTPUT, LAST_HIDDEN, LOGITS, SEQUENCE, TEXT, TYPE
 from ludwig.features.sequence_feature import _SequencePreprocessing, SequenceInputFeature, SequenceOutputFeature
 from ludwig.features.text_feature import TextInputFeature, TextOutputFeature
 from ludwig.schema.features.sequence_feature import SequenceInputFeatureConfig, SequenceOutputFeatureConfig
@@ -83,7 +83,7 @@ def test_sequence_input_feature(input_sequence: tuple, encoder: str, sequence_ty
     # confirm output_shape property default output shape
     # from sequence_feature() function
     encoder_output = input_feature_obj(input_sequence)
-    assert encoder_output["encoder_output"].shape == (BATCH_SIZE, *input_feature_obj.output_shape)
+    assert encoder_output[ENCODER_OUTPUT].shape == (BATCH_SIZE, *input_feature_obj.output_shape)
 
 
 @pytest.mark.parametrize("sequence_type", [SEQUENCE, TEXT])

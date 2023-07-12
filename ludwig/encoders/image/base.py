@@ -19,7 +19,7 @@ from typing import Any, Dict, List, Optional, Tuple, Type, Union
 import torch
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import IMAGE
+from ludwig.constants import ENCODER_OUTPUT, IMAGE
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.encoders.types import EncoderOutputDict
@@ -153,7 +153,7 @@ class Stacked2DCNN(ImageEncoder):
         hidden = self.flatten(hidden)
         outputs = self.fc_stack(hidden)
 
-        return {"encoder_output": outputs}
+        return {ENCODER_OUTPUT: outputs}
 
     @staticmethod
     def get_schema_cls() -> Type[ImageEncoderConfig]:
@@ -244,7 +244,7 @@ class ResNetEncoder(ImageEncoder):
         axes = [2, 3]
         hidden = torch.mean(hidden, axes)
         hidden = self.fc_stack(hidden)
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
     def get_schema_cls() -> Type[ImageEncoderConfig]:
@@ -309,7 +309,7 @@ class MLPMixerEncoder(ImageEncoder):
 
     def forward(self, inputs: torch.Tensor) -> EncoderOutputDict:
         hidden = self.mlp_mixer(inputs)
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
     def get_schema_cls() -> Type[ImageEncoderConfig]:
@@ -408,7 +408,7 @@ class ViTEncoder(ImageEncoder):
 
     def forward(self, inputs: torch.Tensor, head_mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
         output = self.transformer.module(inputs, head_mask=head_mask, output_attentions=self.output_attentions)
-        return_dict: EncoderOutputDict = {"encoder_output": output.pooler_output}
+        return_dict: EncoderOutputDict = {ENCODER_OUTPUT: output.pooler_output}
         if self.output_attentions:
             return_dict["attentions"] = output.attentions
         return return_dict

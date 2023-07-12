@@ -4,7 +4,7 @@ from typing import Dict
 import pytest
 import torch
 
-from ludwig.constants import BFILL, CROP_OR_PAD, ENCODER, INTERPOLATE, TYPE
+from ludwig.constants import BFILL, CROP_OR_PAD, ENCODER, ENCODER_OUTPUT, INTERPOLATE, TYPE
 from ludwig.features.image_feature import _ImagePreprocessing, ImageInputFeature
 from ludwig.schema.features.image_feature import ImageInputFeatureConfig
 from ludwig.schema.utils import load_config_with_kwargs
@@ -88,7 +88,7 @@ def test_image_input_feature(image_config: Dict, encoder: str, height: int, widt
     input_tensor = torch.rand(size=(BATCH_SIZE, num_channels, height, width), dtype=torch.float32).to(DEVICE)
 
     encoder_output = input_feature_obj(input_tensor)
-    assert encoder_output["encoder_output"].shape == (BATCH_SIZE, *input_feature_obj.output_shape)
+    assert encoder_output[ENCODER_OUTPUT].shape == (BATCH_SIZE, *input_feature_obj.output_shape)
 
     # todo: remove code
     # # test for parameter updates

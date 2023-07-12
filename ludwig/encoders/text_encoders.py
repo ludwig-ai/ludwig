@@ -22,7 +22,7 @@ import torch
 from torch import nn
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import TEXT
+from ludwig.constants import ENCODER_OUTPUT, TEXT
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.encoders.types import EncoderOutputDict
@@ -209,7 +209,7 @@ class HFTextEncoderImpl(HFTextEncoder):
         else:
             hidden = transformer_outputs["last_hidden_state"][:, 1:-1, :]  # bos + [sent] + sep
             hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @property
     def input_shape(self) -> torch.Size:
@@ -333,7 +333,7 @@ class ALBERTEncoder(HFTextEncoder):
             hidden = transformer_outputs[0][:, 1:-1, :]
             hidden = self.reduce_sequence(hidden, self.reduce_output)
 
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
     def get_schema_cls() -> Type[BaseEncoderConfig]:
@@ -455,7 +455,7 @@ class MT5Encoder(HFTextEncoder):
         )
         hidden = transformer_outputs[0][:, 1:-1, :]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
     def get_schema_cls() -> Type[BaseEncoderConfig]:
@@ -557,7 +557,7 @@ class XLMRoBERTaEncoder(HFTextEncoder):
             hidden = transformer_outputs[0][:, 1:-1, :]
             hidden = self.reduce_sequence(hidden, self.reduce_output)
 
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
     def get_schema_cls() -> Type[BaseEncoderConfig]:
@@ -679,7 +679,7 @@ class BERTEncoder(HFTextEncoder):
             hidden = transformer_outputs[0][:, 1:-1, :]
             hidden = self.reduce_sequence(hidden, self.reduce_output)
 
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
     def get_schema_cls() -> Type[BaseEncoderConfig]:
@@ -818,7 +818,7 @@ class XLMEncoder(HFTextEncoder):
         )
         hidden = transformer_outputs[0]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
     def get_schema_cls() -> Type[BaseEncoderConfig]:
@@ -930,7 +930,7 @@ class GPTEncoder(HFTextEncoder):
         )
         hidden = transformer_outputs[0]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
     def get_schema_cls() -> Type[BaseEncoderConfig]:
@@ -1035,7 +1035,7 @@ class GPT2Encoder(HFTextEncoder):
         )
         hidden = transformer_outputs[0]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
     def get_schema_cls() -> Type[BaseEncoderConfig]:
@@ -1140,7 +1140,7 @@ class RoBERTaEncoder(HFTextEncoder):
         else:
             hidden = transformer_outputs[0][:, 1:-1, :]  # bos + [sent] + sep
             hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
     def get_schema_cls() -> Type[BaseEncoderConfig]:
@@ -1266,7 +1266,7 @@ class TransformerXLEncoder(HFTextEncoder):
         transformer_outputs = self.transformer.module(inputs)
         hidden = transformer_outputs[0]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
     def get_schema_cls() -> Type[BaseEncoderConfig]:
@@ -1399,7 +1399,7 @@ class XLNetEncoder(HFTextEncoder):
         )
         hidden = transformer_outputs[0]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
     def get_schema_cls() -> Type[BaseEncoderConfig]:
@@ -1509,7 +1509,7 @@ class DistilBERTEncoder(HFTextEncoder):
         self.last_inputs = inputs
         self.last_hidden = hidden
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
     def get_schema_cls() -> Type[BaseEncoderConfig]:
@@ -1615,7 +1615,7 @@ class CTRLEncoder(HFTextEncoder):
         )
         hidden = transformer_outputs[0]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
     def get_schema_cls():
@@ -1731,7 +1731,7 @@ class CamemBERTEncoder(HFTextEncoder):
             hidden = transformer_outputs[0][:, 1:-1, :]
             hidden = self.reduce_sequence(hidden, self.reduce_output)
 
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
     def get_schema_cls() -> Type[BaseEncoderConfig]:
@@ -1840,7 +1840,7 @@ class T5Encoder(HFTextEncoder):
         )
         hidden = transformer_outputs[0][:, 0:-1, :]  # [eos token]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
     def get_schema_cls() -> Type[BaseEncoderConfig]:
@@ -1979,7 +1979,7 @@ class FlauBERTEncoder(HFTextEncoder):
         )
         hidden = transformer_outputs[0][:, 1:-1, :]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
     def get_schema_cls() -> Type[BaseEncoderConfig]:
@@ -2094,7 +2094,7 @@ class ELECTRAEncoder(HFTextEncoder):
         )
         hidden = transformer_outputs[0][:, 1:-1, :]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
     def get_schema_cls() -> Type[BaseEncoderConfig]:
@@ -2191,7 +2191,7 @@ class LongformerEncoder(HFTextEncoder):
         else:
             hidden = transformer_outputs[0][:, 1:-1, :]  # bos + [sent] + sep
             hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
     def get_schema_cls() -> Type[BaseEncoderConfig]:
@@ -2292,7 +2292,7 @@ class AutoTransformerEncoder(HFTextEncoder):
         else:
             hidden = transformer_outputs["last_hidden_state"]
             hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
     def get_schema_cls() -> Type[BaseEncoderConfig]:
@@ -2358,7 +2358,7 @@ class TfIdfEncoder(Encoder):
         # Multiply the term frequency by the inverse document frequency
         tfidf = tf * self.idf
 
-        return {"encoder_output": tfidf}
+        return {ENCODER_OUTPUT: tfidf}
 
     @staticmethod
     def get_schema_cls() -> Type[BaseEncoderConfig]:

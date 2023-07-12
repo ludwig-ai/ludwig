@@ -7,7 +7,7 @@ import torch
 import torchvision.models as tvm
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import IMAGE
+from ludwig.constants import ENCODER_OUTPUT, IMAGE
 from ludwig.encoders.image.base import ImageEncoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.encoders.types import EncoderOutputDict
@@ -117,7 +117,7 @@ class TVBaseEncoder(ImageEncoder):
             p.requires_grad_(trainable)
 
     def forward(self, inputs: torch.Tensor) -> EncoderOutputDict:
-        return {"encoder_output": self.model(inputs)}
+        return {ENCODER_OUTPUT: self.model(inputs)}
 
     @abstractmethod
     def _remove_softmax_layer(self):

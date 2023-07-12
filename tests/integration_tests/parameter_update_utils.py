@@ -3,6 +3,7 @@ from typing import Callable, Tuple, Union
 
 import torch
 
+from ludwig.constants import ENCODER_OUTPUT
 from ludwig.utils.torch_utils import LudwigModule
 
 logger = logging.getLogger(__name__)
@@ -72,8 +73,8 @@ def check_module_parameters_updated(
             elif isinstance(module_output, dict):
                 if "logits" in module_output:
                     loss = loss_function(module_output["logits"], target_tensor)
-                elif "encoder_output" in module_output:
-                    loss = loss_function(module_output["encoder_output"], target_tensor)
+                elif ENCODER_OUTPUT in module_output:
+                    loss = loss_function(module_output[ENCODER_OUTPUT], target_tensor)
                 elif "combiner_output" in module_output:
                     loss = loss_function(module_output["combiner_output"], target_tensor)
             elif isinstance(module_output, (list, tuple)):

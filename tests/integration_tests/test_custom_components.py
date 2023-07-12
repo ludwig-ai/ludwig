@@ -8,7 +8,7 @@ from torch import nn, Tensor
 
 from ludwig.api import LudwigModel
 from ludwig.combiners.combiners import Combiner, register_combiner
-from ludwig.constants import BATCH_SIZE, LOGITS, MINIMIZE, NUMBER, TRAINER
+from ludwig.constants import BATCH_SIZE, ENCODER_OUTPUT, LOGITS, MINIMIZE, NUMBER, TRAINER
 from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
 from ludwig.encoders.base import Encoder
@@ -74,7 +74,7 @@ class CustomTestCombiner(Combiner):
             raise ValueError("expected foo to be True")
 
         # minimal transformation from inputs to outputs
-        encoder_outputs = [inputs[k]["encoder_output"] for k in inputs]
+        encoder_outputs = [inputs[k][ENCODER_OUTPUT] for k in inputs]
         hidden = torch.cat(encoder_outputs, 1)
         return_data = {"combiner_output": hidden}
 
@@ -88,7 +88,7 @@ class CustomNumberEncoder(Encoder):
         self.input_size = input_size
 
     def forward(self, inputs, **kwargs):
-        return {"encoder_output": inputs}
+        return {ENCODER_OUTPUT: inputs}
 
     @property
     def input_shape(self) -> torch.Size:

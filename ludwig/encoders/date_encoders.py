@@ -19,7 +19,7 @@ from typing import Dict, List, Optional, Type
 import torch
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import DATE
+from ludwig.constants import DATE, ENCODER_OUTPUT
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.encoders.types import EncoderOutputDict
@@ -264,7 +264,7 @@ class DateEmbed(Encoder):
         # logger.debug('  flatten hidden: {0}'.format(hidden))
 
         hidden = self.fc_stack(hidden)
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
     def get_schema_cls() -> Type[BaseEncoderConfig]:
@@ -397,7 +397,7 @@ class DateWave(Encoder):
         # logger.debug('  flatten hidden: {0}'.format(hidden))
 
         hidden = self.fc_stack(hidden)
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
     def get_schema_cls() -> Type[BaseEncoderConfig]:

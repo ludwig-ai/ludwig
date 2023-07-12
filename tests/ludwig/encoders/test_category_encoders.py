@@ -3,6 +3,7 @@ from typing import List
 import pytest
 import torch
 
+from ludwig.constants import ENCODER_OUTPUT
 from ludwig.encoders.category_encoders import CategoricalEmbedEncoder, CategoricalSparseEncoder
 from ludwig.utils.torch_utils import get_torch_device
 from tests.integration_tests.parameter_update_utils import check_module_parameters_updated
@@ -25,7 +26,7 @@ def test_categorical_dense_encoder(vocab: List[str], embedding_size: int, traina
     ).to(DEVICE)
     inputs = torch.randint(len(vocab), (10,)).to(DEVICE)  # Chooses 10 items from vocab with replacement.
     inputs = torch.unsqueeze(inputs, 1)
-    outputs = dense_encoder(inputs)["encoder_output"]
+    outputs = dense_encoder(inputs)[ENCODER_OUTPUT]
     # In dense mode, the embedding size should be less than or equal to vocab size.
     assert outputs.shape[-1] == min(embedding_size, len(vocab))
     # Ensures output shape matches encoder expected output shape.
@@ -52,7 +53,7 @@ def test_categorical_sparse_encoder(vocab: List[str], trainable: bool):
     sparse_encoder = CategoricalSparseEncoder(vocab=vocab, embeddings_trainable=trainable).to(DEVICE)
     inputs = torch.randint(len(vocab), (10,)).to(DEVICE)  # Chooses 10 items from vocab with replacement.
     inputs = torch.unsqueeze(inputs, 1)
-    outputs = sparse_encoder(inputs)["encoder_output"]
+    outputs = sparse_encoder(inputs)[ENCODER_OUTPUT]
     # In sparse mode, embedding_size will always be equal to vocab size.
     assert outputs.shape[-1] == len(vocab)
     # Ensures output shape matches encoder expected output shape.

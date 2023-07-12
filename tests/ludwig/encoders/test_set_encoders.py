@@ -3,6 +3,7 @@ from typing import List
 import pytest
 import torch
 
+from ludwig.constants import ENCODER_OUTPUT
 from ludwig.encoders.set_encoders import SetSparseEncoder
 from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.torch_utils import get_torch_device
@@ -33,7 +34,7 @@ def test_set_encoder(
         num_fc_layers=num_fc_layers,
     ).to(DEVICE)
     inputs = torch.randint(0, 2, size=(2, len(vocab))).bool().to(DEVICE)
-    outputs = set_encoder(inputs)["encoder_output"]
+    outputs = set_encoder(inputs)[ENCODER_OUTPUT]
     assert outputs.shape[1:] == set_encoder.output_shape
 
     # check for parameter updating

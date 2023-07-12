@@ -16,7 +16,7 @@ from ludwig.combiners.combiners import (
     TabTransformerCombiner,
     TransformerCombiner,
 )
-from ludwig.constants import CATEGORY, TYPE
+from ludwig.constants import CATEGORY, ENCODER_OUTPUT, ENCODER_OUTPUT_STATE, TYPE
 from ludwig.encoders.registry import get_sequence_encoder_registry
 from ludwig.schema.combiners.comparator import ComparatorCombinerConfig
 from ludwig.schema.combiners.concat import ConcatCombinerConfig
@@ -93,7 +93,7 @@ def features_to_test(feature_list: List[Tuple[str, list]]) -> Tuple[dict, dict]:
     for i in range(len(feature_list)):
         feature_name = f"feature_{i:02d}"
         encoder_outputs[feature_name] = {
-            "encoder_output": torch.randn(feature_list[i][1], dtype=torch.float32, device=DEVICE)
+            ENCODER_OUTPUT: torch.randn(feature_list[i][1], dtype=torch.float32, device=DEVICE)
         }
         input_features[feature_name] = PseudoInputFeature(feature_name, feature_list[i][1], feature_list[i][0])
 
@@ -124,9 +124,9 @@ def encoder_outputs():
     feature_names = ["feature_" + str(i + 1) for i in range(len(shapes_list))]
 
     for feature_name, batch_shape in zip(feature_names, shapes_list):
-        encoder_outputs[feature_name] = {"encoder_output": torch.randn(batch_shape, dtype=torch.float32, device=DEVICE)}
+        encoder_outputs[feature_name] = {ENCODER_OUTPUT: torch.randn(batch_shape, dtype=torch.float32, device=DEVICE)}
         if len(batch_shape) > 2:
-            encoder_outputs[feature_name]["encoder_output_state"] = torch.randn(
+            encoder_outputs[feature_name][ENCODER_OUTPUT_STATE] = torch.randn(
                 [batch_shape[0], batch_shape[2]], dtype=torch.float32, device=DEVICE
             )
 
@@ -160,12 +160,12 @@ def encoder_comparator_outputs():
         if i == 0 or i == 3:
             dot_product_shape = [batch_shape[0], BASE_OUTPUT_SIZE]
             encoder_outputs[feature_name] = {
-                "encoder_output": torch.randn(dot_product_shape, dtype=torch.float32, device=DEVICE)
+                ENCODER_OUTPUT: torch.randn(dot_product_shape, dtype=torch.float32, device=DEVICE)
             }
             input_features[feature_name] = PseudoInputFeature(feature_name, dot_product_shape)
         else:
             encoder_outputs[feature_name] = {
-                "encoder_output": torch.randn(batch_shape, dtype=torch.float32, device=DEVICE)
+                ENCODER_OUTPUT: torch.randn(batch_shape, dtype=torch.float32, device=DEVICE)
             }
             input_features[feature_name] = PseudoInputFeature(feature_name, batch_shape)
 
@@ -173,12 +173,12 @@ def encoder_comparator_outputs():
         if i == 0 or i == 3:
             dot_product_shape = [batch_shape[0], BASE_OUTPUT_SIZE]
             encoder_outputs[feature_name] = {
-                "encoder_output": torch.randn(dot_product_shape, dtype=torch.float32, device=DEVICE)
+                ENCODER_OUTPUT: torch.randn(dot_product_shape, dtype=torch.float32, device=DEVICE)
             }
             input_features[feature_name] = PseudoInputFeature(feature_name, dot_product_shape)
         else:
             encoder_outputs[feature_name] = {
-                "encoder_output": torch.randn(batch_shape, dtype=torch.float32, device=DEVICE)
+                ENCODER_OUTPUT: torch.randn(batch_shape, dtype=torch.float32, device=DEVICE)
             }
             input_features[feature_name] = PseudoInputFeature(feature_name, batch_shape)
 
@@ -228,7 +228,7 @@ def test_concat_combiner(
     assert isinstance(combiner.input_shape, dict)
     for k in encoder_outputs_dict:
         assert k in combiner.input_shape
-        assert encoder_outputs_dict[k]["encoder_output"].shape[1:] == combiner.input_shape[k]
+        assert encoder_outputs_dict[k][ENCODER_OUTPUT].shape[1:] == combiner.input_shape[k]
 
     # combine encoder outputs
     combiner_output = combiner(encoder_outputs_dict)
@@ -264,12 +264,12 @@ def test_sequence_concat_combiner(
     assert isinstance(combiner.input_shape, dict)
     for k in encoder_outputs_dict:
         assert k in combiner.input_shape
-        assert encoder_outputs_dict[k]["encoder_output"].shape[1:] == combiner.input_shape[k]
+        assert encoder_outputs_dict[k][ENCODER_OUTPUT].shape[1:] == combiner.input_shape[k]
 
     # calculate expected hidden size for concatenated tensors
     hidden_size = 0
     for k in encoder_outputs_dict:
-        hidden_size += encoder_outputs_dict[k]["encoder_output"].shape[-1]
+        hidden_size += encoder_outputs_dict[k][ENCODER_OUTPUT].shape[-1]
 
     # confirm correctness of concatenated_shape
     assert combiner.concatenated_shape[-1] == hidden_size
@@ -312,12 +312,12 @@ def test_sequence_combiner(
     assert isinstance(combiner.input_shape, dict)
     for k in encoder_outputs_dict:
         assert k in combiner.input_shape
-        assert encoder_outputs_dict[k]["encoder_output"].shape[1:] == combiner.input_shape[k]
+        assert encoder_outputs_dict[k][ENCODER_OUTPUT].shape[1:] == combiner.input_shape[k]
 
     # calculate expected hidden size for concatenated tensors
     hidden_size = 0
     for k in encoder_outputs_dict:
-        hidden_size += encoder_outputs_dict[k]["encoder_output"].shape[-1]
+        hidden_size += encoder_outputs_dict[k][ENCODER_OUTPUT].shape[-1]
 
     # confirm correctness of concatenated_shape
     assert combiner.concatenated_shape[-1] == hidden_size
@@ -446,12 +446,12 @@ def test_transformer_combiner(encoder_outputs: tuple, transformer_output_size: i
     assert isinstance(combiner.input_shape, dict)
     for k in encoder_outputs_dict:
         assert k in combiner.input_shape
-        assert encoder_outputs_dict[k]["encoder_output"].shape[1:] == combiner.input_shape[k]
+        assert encoder_outputs_dict[k][ENCODER_OUTPUT].shape[1:] == combiner.input_shape[k]
 
     # calculate expected hidden size for concatenated tensors
     hidden_size = 0
     for k in encoder_outputs_dict:
-        hidden_size += np.prod(encoder_outputs_dict[k]["encoder_output"].shape[1:])
+        hidden_size += np.prod(encoder_outputs_dict[k][ENCODER_OUTPUT].shape[1:])
 
     # confirm correctness of effective_input_shape
     assert combiner.concatenated_shape[-1] == hidden_size
@@ -490,12 +490,12 @@ def test_project_aggregate_combiner(encoder_outputs: tuple, projection_size: int
     assert isinstance(combiner.input_shape, dict)
     for k in encoder_outputs_dict:
         assert k in combiner.input_shape
-        assert encoder_outputs_dict[k]["encoder_output"].shape[1:] == combiner.input_shape[k]
+        assert encoder_outputs_dict[k][ENCODER_OUTPUT].shape[1:] == combiner.input_shape[k]
 
     # calculate expected hidden size for concatenated tensors
     hidden_size = 0
     for k in encoder_outputs_dict:
-        hidden_size += np.prod(encoder_outputs_dict[k]["encoder_output"].shape[1:])
+        hidden_size += np.prod(encoder_outputs_dict[k][ENCODER_OUTPUT].shape[1:])
 
     # confirm correctness of effective_input_shape
     assert combiner.concatenated_shape[-1] == hidden_size
