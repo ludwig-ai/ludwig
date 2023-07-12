@@ -90,8 +90,12 @@ class LLM(BaseModel):
 
         self.model_name = self.config_obj.base_model
 
-        logger.info("Loading large language model...")
-        self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.base_model)
+        logger.info(f"Loading large language model {self.config_obj.base_model} ...")
+        self.model = AutoModelForCausalLM.from_pretrained(
+            self.config_obj.base_model,
+            torch_dtype=torch.float16,
+            low_cpu_mem_usage=True,
+        )
         self.curr_device = torch.device("cpu")  # model initially loaded onto cpu
         logger.info("Done.")
 
