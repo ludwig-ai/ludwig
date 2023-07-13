@@ -52,7 +52,7 @@ class CategoricalPassthroughEncoder(Encoder):
         :param inputs: The inputs fed into the encoder.
                Shape: [batch x 1]
         """
-        return {ENCODER_OUTPUT: inputs.float()}
+        return {"encoder_output": self.identity(inputs.float())}
 
     @staticmethod
     def get_schema_cls() -> Type[BaseEncoderConfig]:
@@ -205,8 +205,8 @@ class CategoricalOneHotEncoder(Encoder):
         t = inputs.reshape(-1).long()
         # the output of this must be a float so that it can be concatenated with other
         # encoder outputs and passed to dense layers in the combiner, decoder, etc.
-        outputs = torch.nn.functional.one_hot(t, num_classes=self.vocab_size).float()
-        return {ENCODER_OUTPUT: outputs}
+        outputs = self.identity(torch.nn.functional.one_hot(t, num_classes=self.vocab_size).float())
+        return {"encoder_output": outputs}
 
     @staticmethod
     def get_schema_cls() -> Type[BaseEncoderConfig]:
