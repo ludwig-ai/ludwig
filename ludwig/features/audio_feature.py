@@ -38,7 +38,7 @@ from ludwig.utils.audio_utils import (
     get_phase_stft_magnitude,
     get_stft_magnitude,
     is_torch_audio_tuple,
-    read_audio_from_bytes_obj,
+    read_audio_from_path,
 )
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.fs_utils import has_remote_protocol
@@ -145,7 +145,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
         backend,
     ):
         df_engine = backend.df_engine
-        raw_audio = backend.read_binary_files(column, map_fn=read_audio_from_bytes_obj)
+        raw_audio = backend.read_binary_files(column, map_fn=read_audio_from_path)
 
         try:
             default_audio = get_default_audio([audio for audio in raw_audio if is_torch_audio_tuple(audio)])
