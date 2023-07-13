@@ -39,6 +39,7 @@ from ludwig.distributed.base import DistributedStrategy
 from ludwig.models.base import BaseModel
 from ludwig.schema.trainer import BaseTrainerConfig
 from ludwig.types import HyperoptConfigDict
+from ludwig.utils.audio_utils import read_audio_from_path
 from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
 from ludwig.utils.dataframe_utils import from_batches, to_batches
 from ludwig.utils.fs_utils import get_bytes_obj_from_path
@@ -160,14 +161,17 @@ class LocalPreprocessingMixin:
         sample_fname = column.head(1).values[0]
         with ThreadPoolExecutor() as executor:  # number of threads is inferred
             if isinstance(sample_fname, str):
-                result = executor.map(
-                    lambda path: get_bytes_obj_from_path(path) if path is not None else path, column.values
-                )
+                if map_fn is read_audio_from_path:  # bypass torchaudio issue that no longer takes in file-like objects
+                    result = executor.map(lambda path: map_fn(path) if path is not None else path, column.values)
+                else:
+                    result = executor.map(
+                        lambda path: get_bytes_obj_from_path(path) if path is not None else path, column.values
+                    )
             else:
                 # If the sample path is not a string, assume the paths has already been read in
                 result = column.values
 
-            if map_fn is not None:
+            if map_fn is not None and map_fn is not read_audio_from_path:
                 result = executor.map(map_fn, result)
 
         return pd.Series(result, index=column.index, name=column.name)
