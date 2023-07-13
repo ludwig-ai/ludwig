@@ -15,7 +15,8 @@ input_features:
       type: auto_transformer
       pretrained_model_name_or_path: bigscience/bloom-3b
       trainable: true
-      adapter: lora
+      adapter:
+        type: lora
 
 output_features:
   - name: sentiment
