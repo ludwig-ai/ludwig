@@ -9,8 +9,7 @@ GPUtil
 tblib
 awscli
 
-# https://github.com/databrickslabs/dolly/issues/125
-deepspeed==0.9.2
+deepspeed
 
 # requirements for daft
 getdaft[ray]
