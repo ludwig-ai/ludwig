@@ -14,16 +14,18 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Type, Union
 
 import torch
 from torch import nn
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import CATEGORY
+from ludwig.constants import CATEGORY, ENCODER_OUTPUT
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
+from ludwig.encoders.types import EncoderOutputDict
 from ludwig.modules.embedding_modules import Embed
+from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.category_encoders import (
     CategoricalEmbedConfig,
     CategoricalOneHotEncoderConfig,
@@ -43,16 +45,17 @@ class CategoricalPassthroughEncoder(Encoder):
 
         logger.debug(f" {self.name}")
         self.input_size = input_size
+        self.identity = nn.Identity()
 
-    def forward(self, inputs, mask=None):
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
         """
         :param inputs: The inputs fed into the encoder.
                Shape: [batch x 1]
         """
-        return inputs.float()
+        return {"encoder_output": self.identity(inputs.float())}
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return CategoricalPassthroughEncoderConfig
 
     @property
@@ -64,7 +67,7 @@ class CategoricalPassthroughEncoder(Encoder):
         return self.input_shape
 
     def get_embedding_layer(self) -> nn.Module:
-        return self
+        return self.identity
 
 
 @DeveloperAPI
@@ -100,7 +103,7 @@ class CategoricalEmbedEncoder(Encoder):
         )
         self.embedding_size = self.embed.embedding_size
 
-    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+    def forward(self, inputs: torch.Tensor) -> EncoderOutputDict:
         """
         :param inputs: The inputs fed into the encoder.
                Shape: [batch x 1], type torch.int32
@@ -108,10 +111,10 @@ class CategoricalEmbedEncoder(Encoder):
         :param return: embeddings of shape [batch x embed size], type torch.float32
         """
         embedded = self.embed(inputs)
-        return embedded
+        return {ENCODER_OUTPUT: embedded}
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return CategoricalEmbedConfig
 
     @property
@@ -155,7 +158,7 @@ class CategoricalSparseEncoder(Encoder):
         )
         self.embedding_size = self.embed.embedding_size
 
-    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+    def forward(self, inputs: torch.Tensor) -> EncoderOutputDict:
         """
         :param inputs: The inputs fed into the encoder.
                Shape: [batch x 1], type torch.int32
@@ -163,10 +166,10 @@ class CategoricalSparseEncoder(Encoder):
         :param return: embeddings of shape [batch x embed size], type torch.float32
         """
         embedded = self.embed(inputs)
-        return embedded
+        return {ENCODER_OUTPUT: embedded}
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return CategoricalSparseConfig
 
     @property
@@ -192,8 +195,9 @@ class CategoricalOneHotEncoder(Encoder):
 
         logger.debug(f" {self.name}")
         self.vocab_size = len(vocab)
+        self.identity = nn.Identity()
 
-    def forward(self, inputs, mask=None):
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
         """
         :param inputs: The inputs fed into the encoder.
                Shape: [batch, 1] or [batch]
@@ -201,10 +205,11 @@ class CategoricalOneHotEncoder(Encoder):
         t = inputs.reshape(-1).long()
         # the output of this must be a float so that it can be concatenated with other
         # encoder outputs and passed to dense layers in the combiner, decoder, etc.
-        return torch.nn.functional.one_hot(t, num_classes=self.vocab_size).float()
+        outputs = self.identity(torch.nn.functional.one_hot(t, num_classes=self.vocab_size).float())
+        return {"encoder_output": outputs}
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return CategoricalOneHotEncoderConfig
 
     @property
@@ -216,4 +221,4 @@ class CategoricalOneHotEncoder(Encoder):
         return torch.Size([self.vocab_size])
 
     def get_embedding_layer(self) -> nn.Module:
-        return self
+        return self.identity

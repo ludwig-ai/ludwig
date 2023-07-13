@@ -18,6 +18,7 @@ import numpy as np
 import pytest
 import torch
 
+from ludwig.constants import ENCODER_OUTPUT
 from ludwig.data.dataset_synthesizer import build_vocab
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.image.base import MLPMixerEncoder, Stacked2DCNN
@@ -88,7 +89,7 @@ def encoder_test(
     # Run the encoder
     input_data = torch.from_numpy(input_data).to(DEVICE)
 
-    hidden = encoder(input_data)["encoder_output"]
+    hidden = encoder(input_data)[ENCODER_OUTPUT]
 
     # Check output shape and type
     assert hidden.dtype == output_dtype

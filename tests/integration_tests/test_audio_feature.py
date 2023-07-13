@@ -1,6 +1,7 @@
 import pytest
 import torch
 
+from ludwig.constants import ENCODER_OUTPUT
 from ludwig.features.audio_feature import AudioInputFeature
 from ludwig.schema.features.audio_feature import AudioInputFeatureConfig
 from ludwig.schema.utils import load_config_with_kwargs
@@ -31,9 +32,9 @@ def test_audio_feature(enc_encoder):
 
     # confirm correctness of the the audio encoder output
     assert isinstance(encoder_output, dict)
-    assert "encoder_output" in encoder_output
-    assert isinstance(encoder_output["encoder_output"], torch.Tensor)
+    assert ENCODER_OUTPUT in encoder_output
+    assert isinstance(encoder_output[ENCODER_OUTPUT], torch.Tensor)
     if enc_encoder == "passthrough":
-        assert encoder_output["encoder_output"].shape == (BATCH_SIZE, SEQ_SIZE, AUDIO_W_SIZE)
+        assert encoder_output[ENCODER_OUTPUT].shape == (BATCH_SIZE, SEQ_SIZE, AUDIO_W_SIZE)
     else:
-        assert encoder_output["encoder_output"].shape == (BATCH_SIZE, DEFAULT_OUTPUT_SIZE)
+        assert encoder_output[ENCODER_OUTPUT].shape == (BATCH_SIZE, DEFAULT_OUTPUT_SIZE)

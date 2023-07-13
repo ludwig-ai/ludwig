@@ -7,7 +7,7 @@ import pytest
 import torch
 
 from ludwig.api import LudwigModel
-from ludwig.constants import DECODER, LOGITS
+from ludwig.constants import DECODER, ENCODER_OUTPUT_STATE, LOGITS
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.features.feature_registries import update_config_with_metadata
@@ -131,7 +131,7 @@ def test_sequence_decoders(
             else:
                 encoder_output_state = torch.randn(combiner_output_shapes[1][0])
 
-            combiner_outputs["encoder_output_state"] = encoder_output_state
+            combiner_outputs[ENCODER_OUTPUT_STATE] = encoder_output_state
 
         decoder = model.model.output_features.get(output_feature_name).decoder_obj
         decoder_out = decoder(combiner_outputs)

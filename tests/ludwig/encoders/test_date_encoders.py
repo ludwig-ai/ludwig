@@ -2,6 +2,7 @@ import logging
 
 import torch
 
+from ludwig.constants import ENCODER_OUTPUT
 from ludwig.encoders.date_encoders import DateEmbed, DateWave
 from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.torch_utils import get_torch_device
@@ -23,10 +24,10 @@ def test_date_embed():
         [[2022, 6, 25, 5, 176, 9, 30, 59, 34259], [2022, 6, 25, 5, 176, 9, 30, 59, 34259]], dtype=torch.int32
     ).to(DEVICE)
     outputs = date_embed(inputs)
-    assert outputs["encoder_output"].size()[1:] == date_embed.output_shape
+    assert outputs[ENCODER_OUTPUT].size()[1:] == date_embed.output_shape
 
     # check for parameter updating
-    target = torch.randn(outputs["encoder_output"].shape)
+    target = torch.randn(outputs[ENCODER_OUTPUT].shape)
     fpc, tpc, upc, not_updated = check_module_parameters_updated(date_embed, (inputs,), target)
     assert tpc == upc, f"Failed to update parameters. Parameters not updated: {not_updated}"
 
@@ -41,9 +42,9 @@ def test_date_wave():
         [[2022, 6, 25, 5, 176, 9, 30, 59, 34259], [2022, 6, 25, 5, 176, 9, 30, 59, 34259]], dtype=torch.int32
     ).to(DEVICE)
     outputs = date_embed(inputs)
-    assert outputs["encoder_output"].size()[1:] == date_embed.output_shape
+    assert outputs[ENCODER_OUTPUT].size()[1:] == date_embed.output_shape
 
     # check for parameter updating
-    target = torch.randn(outputs["encoder_output"].shape)
+    target = torch.randn(outputs[ENCODER_OUTPUT].shape)
     fpc, tpc, upc, not_updated = check_module_parameters_updated(date_embed, (inputs,), target)
     assert tpc == upc, f"Failed to update parameters. Parameters not updated: {not_updated}"

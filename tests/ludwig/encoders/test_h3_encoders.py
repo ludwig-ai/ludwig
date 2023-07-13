@@ -2,6 +2,7 @@ import logging
 
 import torch
 
+from ludwig.constants import ENCODER_OUTPUT
 from ludwig.encoders import h3_encoders
 from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.torch_utils import get_torch_device
@@ -27,10 +28,10 @@ def test_h3_embed():
         dtype=torch.int32,
     ).to(DEVICE)
     outputs = embed(inputs)
-    assert outputs["encoder_output"].size()[1:] == embed.output_shape
+    assert outputs[ENCODER_OUTPUT].size()[1:] == embed.output_shape
 
     # check for parameter updating
-    target = torch.randn(outputs["encoder_output"].shape)
+    target = torch.randn(outputs[ENCODER_OUTPUT].shape)
     fpc, tpc, upc, not_updated = check_module_parameters_updated(embed, (inputs,), target)
     assert tpc == upc, f"Failed to update parameters. Parameters not updated: {not_updated}"
 
@@ -49,10 +50,10 @@ def test_h3_weighted_sum():
         dtype=torch.int32,
     ).to(DEVICE)
     outputs = embed(inputs)
-    assert outputs["encoder_output"].size()[1:] == embed.output_shape
+    assert outputs[ENCODER_OUTPUT].size()[1:] == embed.output_shape
 
     # check for parameter updating
-    target = torch.randn(outputs["encoder_output"].shape)
+    target = torch.randn(outputs[ENCODER_OUTPUT].shape)
     fpc, tpc, upc, not_updated = check_module_parameters_updated(embed, (inputs,), target)
     assert tpc == upc, f"Failed to update parameters. Parameters not updated: {not_updated}"
 
@@ -71,9 +72,9 @@ def test_h3_rnn_embed():
         dtype=torch.int32,
     ).to(DEVICE)
     outputs = embed(inputs)
-    assert outputs["encoder_output"].size()[1:] == embed.output_shape
+    assert outputs[ENCODER_OUTPUT].size()[1:] == embed.output_shape
 
     # check for parameter updating
-    target = torch.randn(outputs["encoder_output"].shape)
+    target = torch.randn(outputs[ENCODER_OUTPUT].shape)
     fpc, tpc, upc, not_updated = check_module_parameters_updated(embed, (inputs,), target)
     assert tpc == upc, f"Failed to update parameters. Parameters not updated: {not_updated}"

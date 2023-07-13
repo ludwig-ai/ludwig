@@ -23,7 +23,7 @@ import torch
 from torch.nn import Linear, ModuleList
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import BINARY, NUMBER
+from ludwig.constants import BINARY, ENCODER_OUTPUT, NUMBER
 from ludwig.encoders.registry import get_sequence_encoder_registry
 from ludwig.features.base_feature import InputFeature
 from ludwig.modules.attention_modules import TransformerStack
@@ -96,7 +96,7 @@ class Combiner(LudwigModule, ABC):
         pseudo_input = {}
         for k in self.handle.input_features:
             pseudo_input[k] = {
-                "encoder_output": torch.rand(
+                ENCODER_OUTPUT: torch.rand(
                     2, *self.handle.input_features.get(k).output_shape, dtype=self.input_dtype, device=self.device
                 )
             }
@@ -157,7 +157,7 @@ class ConcatCombiner(Combiner):
             self.supports_masking = True
 
     def forward(self, inputs: Dict) -> Dict:  # encoder outputs
-        encoder_outputs = [inputs[k]["encoder_output"] for k in inputs]
+        encoder_outputs = [inputs[k][ENCODER_OUTPUT] for k in inputs]
 
         # ================ Flatten ================
         if self.flatten_inputs:
@@ -181,7 +181,7 @@ class ConcatCombiner(Combiner):
             # TODO(Justin): Think about how to make this communication work for multi-sequence
             # features. Other combiners.
             for key, value in [d for d in inputs.values()][0].items():
-                if key != "encoder_output":
+                if key != ENCODER_OUTPUT:
                     return_data[key] = value
 
         return return_data
@@ -233,7 +233,7 @@ class SequenceConcatCombiner(Combiner):
                 # todo: when https://github.com/ludwig-ai/ludwig/issues/810 is closed
                 #       convert following test from using shape to use explicit
                 #       if_outputs[TYPE] values for sequence features
-                if len(if_outputs["encoder_output"].shape) == 3:
+                if len(if_outputs[ENCODER_OUTPUT].shape) == 3:
                     self.main_sequence_feature = if_name
                     break
 
@@ -242,7 +242,7 @@ class SequenceConcatCombiner(Combiner):
 
         main_sequence_feature_encoding = inputs[self.main_sequence_feature]
 
-        representation = main_sequence_feature_encoding["encoder_output"]
+        representation = main_sequence_feature_encoding[ENCODER_OUTPUT]
         representations = [representation]
 
         sequence_max_length = representation.shape[1]
@@ -251,7 +251,7 @@ class SequenceConcatCombiner(Combiner):
         # ================ Concat ================
         for if_name, if_outputs in inputs.items():
             if if_name != self.main_sequence_feature:
-                if_representation = if_outputs["encoder_output"]
+                if_representation = if_outputs[ENCODER_OUTPUT]
                 if len(if_representation.shape) == 3:
                     # The following check makes sense when
                     # both representations have a specified
@@ -322,7 +322,7 @@ class SequenceConcatCombiner(Combiner):
 
         if len(inputs) == 1:
             for key, value in [d for d in inputs.values()][0].items():
-                if key != "encoder_output":
+                if key != ENCODER_OUTPUT:
                     return_data[key] = value
 
         return return_data
@@ -383,9 +383,9 @@ class SequenceCombiner(Combiner):
         # ================ Sequence encoding ================
         hidden = self.encoder_obj(hidden["combiner_output"])
 
-        return_data = {"combiner_output": hidden["encoder_output"]}
+        return_data = {"combiner_output": hidden[ENCODER_OUTPUT]}
         for key, value in hidden.items():
-            if key != "encoder_output":
+            if key != ENCODER_OUTPUT:
                 return_data[key] = value
 
         return return_data
@@ -435,7 +435,7 @@ class TabNetCombiner(Combiner):
         self,
         inputs: torch.Tensor,  # encoder outputs
     ) -> Dict:
-        encoder_outputs = [inputs[k]["encoder_output"] for k in inputs]
+        encoder_outputs = [inputs[k][ENCODER_OUTPUT] for k in inputs]
 
         # ================ Flatten ================
         batch_size = encoder_outputs[0].shape[0]
@@ -460,7 +460,7 @@ class TabNetCombiner(Combiner):
 
         if len(inputs) == 1:
             for key, value in [d for d in inputs.values()][0].items():
-                if key != "encoder_output":
+                if key != ENCODER_OUTPUT:
                     return_data[key] = value
 
         return return_data
@@ -536,7 +536,7 @@ class TransformerCombiner(Combiner):
         self,
         inputs,  # encoder outputs
     ) -> Dict:
-        encoder_outputs = [inputs[k]["encoder_output"] for k in inputs]
+        encoder_outputs = [inputs[k][ENCODER_OUTPUT] for k in inputs]
 
         # ================ Flatten ================
         batch_size = encoder_outputs[0].shape[0]
@@ -561,7 +561,7 @@ class TransformerCombiner(Combiner):
 
         if len(inputs) == 1:
             for key, value in [d for d in inputs.values()][0].items():
-                if key != "encoder_output":
+                if key != ENCODER_OUTPUT:
                     return_data[key] = value
 
         return return_data
@@ -695,8 +695,8 @@ class TabTransformerCombiner(Combiner):
         self,
         inputs: Dict,  # encoder outputs
     ) -> Dict:
-        unembeddable_encoder_outputs = [inputs[k]["encoder_output"] for k in inputs if k in self.unembeddable_features]
-        embeddable_encoder_outputs = [inputs[k]["encoder_output"] for k in inputs if k in self.embeddable_features]
+        unembeddable_encoder_outputs = [inputs[k][ENCODER_OUTPUT] for k in inputs if k in self.unembeddable_features]
+        embeddable_encoder_outputs = [inputs[k][ENCODER_OUTPUT] for k in inputs if k in self.embeddable_features]
 
         batch_size = (
             embeddable_encoder_outputs[0].shape[0]
@@ -758,7 +758,7 @@ class TabTransformerCombiner(Combiner):
 
         if len(inputs) == 1:
             for key, value in [d for d in inputs.values()][0].items():
-                if key != "encoder_output":
+                if key != ENCODER_OUTPUT:
                     return_data[key] = value
 
         return return_data
@@ -845,7 +845,7 @@ class ComparatorCombiner(Combiner):
         ############
         # Entity 1 #
         ############
-        e1_enc_outputs = [inputs[k]["encoder_output"] for k in self.entity_1]
+        e1_enc_outputs = [inputs[k][ENCODER_OUTPUT] for k in self.entity_1]
 
         # ================ Flatten ================
         batch_size = e1_enc_outputs[0].shape[0]
@@ -863,7 +863,7 @@ class ComparatorCombiner(Combiner):
         ############
         # Entity 2 #
         ############
-        e2_enc_outputs = [inputs[k]["encoder_output"] for k in self.entity_2]
+        e2_enc_outputs = [inputs[k][ENCODER_OUTPUT] for k in self.entity_2]
 
         # ================ Flatten ================
         batch_size = e2_enc_outputs[0].shape[0]
@@ -960,7 +960,7 @@ class ProjectAggregateCombiner(Combiner):
             self.supports_masking = True
 
     def forward(self, inputs: Dict) -> Dict:  # encoder outputs
-        encoder_outputs = [inputs[k]["encoder_output"] for k in inputs]
+        encoder_outputs = [inputs[k][ENCODER_OUTPUT] for k in inputs]
 
         # ================ Flatten ================
         batch_size = encoder_outputs[0].shape[0]
@@ -986,7 +986,7 @@ class ProjectAggregateCombiner(Combiner):
             # TODO(Justin): Think about how to make this communication work for multi-sequence
             # features. Other combiners.
             for key, value in [d for d in inputs.values()][0].items():
-                if key != "encoder_output":
+                if key != ENCODER_OUTPUT:
                     return_data[key] = value
 
         return return_data

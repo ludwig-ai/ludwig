@@ -1,6 +1,7 @@
 import pytest
 import torch
 
+from ludwig.constants import ENCODER_OUTPUT
 from ludwig.encoders.generic_encoders import DenseEncoder, PassthroughEncoder
 
 
@@ -15,7 +16,7 @@ def test_generic_passthrough_encoder(input_size: int, categorical: bool):
         inputs = torch.rand((10, input_size))
     outputs = passthrough_encoder(inputs)
     # Ensures output shape matches encoder expected output shape.
-    assert outputs["encoder_output"].shape[1:] == passthrough_encoder.output_shape
+    assert outputs[ENCODER_OUTPUT].shape[1:] == passthrough_encoder.output_shape
 
 
 @pytest.mark.parametrize("input_size", [1, 2, 10])
@@ -26,4 +27,4 @@ def test_generic_dense_encoder(input_size: int, num_layers: int, output_size: in
     inputs = torch.rand((10, input_size))
     outputs = dense_encoder(inputs)
     # Ensures output shape matches encoder expected output shape.
-    assert outputs["encoder_output"].shape[1:] == dense_encoder.output_shape
+    assert outputs[ENCODER_OUTPUT].shape[1:] == dense_encoder.output_shape
