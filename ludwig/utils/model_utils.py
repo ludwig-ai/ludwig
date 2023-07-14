@@ -1,4 +1,3 @@
-import copy
 from typing import Dict, List, Tuple
 
 import torch
@@ -27,15 +26,14 @@ def extract_tensors(model: torch.nn.Module) -> Tuple[torch.nn.Module, List[Dict]
             del buf
         tensors.append({"params": params, "buffers": buffers})
 
-    # Make a copy of the original model and strip all tensors and buffers out of the copy.
-    m_copy = copy.deepcopy(model)
-    for _, module in m_copy.named_modules():
+    # Strip all tensors and buffers out of the original model.
+    for _, module in model.named_modules():
         for name in [name for name, _ in module.named_parameters(recurse=False)] + [
             name for name, _ in module.named_buffers(recurse=False)
         ]:
             setattr(module, name, None)
 
-    return m_copy, tensors
+    return model, tensors
 
 
 def replace_tensors(m: torch.nn.Module, tensors: List[Dict], device: torch.device):
