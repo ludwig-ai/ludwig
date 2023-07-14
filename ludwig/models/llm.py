@@ -5,7 +5,6 @@ import tempfile
 from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
-import ray
 import torch
 from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer, GenerationConfig, LlamaConfig
 
@@ -93,14 +92,21 @@ class LLM(BaseModel):
         self.model_name = self.config_obj.base_model
         self.model_config = AutoConfig.from_pretrained(self.config_obj.base_model)
 
+        backend = self.config_obj.backend
+        self.backend_type = backend.type if hasattr(backend, "type") else "local"
+
         logger.info("Loading large language model...")
-        # TODO: Only do this on Ray backend
-        # Extract weights as numpy tensors and place them in the Ray object store.
-        # If we store the weights of a model as NumPy arrays on Plasma, we can access those
-        # weights directly out of Plasma’s shared memory segments, without making any copies.
-        # This enables zero copy model loading on each training worker using shared
-        # memory from the Ray object store for model initialization.
-        self.model_ref = ray.put(extract_tensors(AutoModelForCausalLM.from_pretrained(self.config_obj.base_model)))
+        if self.backend_type == "ray":
+            # Extract weights as numpy tensors and place them in the Ray object store.
+            # If we store the weights of a model as NumPy arrays on Plasma, we can access those
+            # weights directly out of Plasma’s shared memory segments, without making any copies.
+            # This enables zero copy model loading on each training worker using shared
+            # memory from the Ray object store for model initialization.
+            import ray
+
+            self.model_ref = ray.put(extract_tensors(AutoModelForCausalLM.from_pretrained(self.config_obj.base_model)))
+        else:
+            self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.base_model)
         # Model initially loaded onto cpu
         self.curr_device = torch.device("cpu")
         logger.info("Done.")
@@ -206,11 +212,14 @@ class LLM(BaseModel):
     def to_device(self, device):
         device = torch.device(device)
 
-        # Deserialize the model (minus weights) from Plasma
-        # Extract the weights from Plasma (without copying data)
-        # Load the weights back into the model in-place on the current device (CPU)
-        self.model, model_weights = ray.get(self.model_ref)
-        replace_tensors(self.model, model_weights, self.curr_device)
+        if self.backend_type == "ray":
+            # Deserialize the model (minus weights) from Plasma
+            # Extract the weights from Plasma (without copying data)
+            # Load the weights back into the model in-place on the current device (CPU)
+            import ray
+
+            self.model, model_weights = ray.get(self.model_ref)
+            replace_tensors(self.model, model_weights, self.curr_device)
 
         if device == self.curr_device:
             return self
