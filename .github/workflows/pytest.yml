@@ -160,7 +160,7 @@ jobs:
       # Skip Horovod installation for torch nightly.
       # https://github.com/ludwig-ai/ludwig/issues/3468
       - name: Install Horovod if necessary
-        if: ${{ matrix.test-markers == 'distributed' && matrix.pytorch-version != "nightly" }}
+        if: matrix.test-markers == 'distributed' && matrix.pytorch-version != 'nightly'
         env:
           HOROVOD_WITH_PYTORCH: 1
           HOROVOD_WITHOUT_MPI: 1
@@ -179,7 +179,7 @@ jobs:
       # Skip Horovod tests for torch nightly.
       # https://github.com/ludwig-ai/ludwig/issues/3468
       - name: Horovod Tests
-        if: ${{ matrix.test-markers == 'distributed' && matrix.pytorch-version != "nightly" }}
+        if: matrix.test-markers == 'distributed' && matrix.pytorch-version != 'nightly'
         run: |
           RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and horovod and not slow and not combinatorial and not llm" --junitxml pytest.xml tests/
 
