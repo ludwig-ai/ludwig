@@ -76,7 +76,7 @@ def get_lstm_init_state(
     Returns:
         Tuple of 2 tensors (decoder hidden state, decoder cell state), each [num_layers, batch_size, hidden_size].
     """
-    if "encoder_output_state" not in combiner_outputs:
+    if ENCODER_OUTPUT_STATE not in combiner_outputs:
         # Use the combiner's hidden state.
         decoder_hidden_state = combiner_outputs[HIDDEN]
         decoder_cell_state = torch.clone(decoder_hidden_state)

@@ -5,7 +5,7 @@ import pandas as pd
 import torch
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import MODEL_ECD, NAME, PROC_COLUMN, TYPE
+from ludwig.constants import ENCODER_OUTPUT, MODEL_ECD, NAME, PROC_COLUMN, TYPE
 from ludwig.features.feature_registries import get_input_type_registry
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.models.base import BaseModel
@@ -58,7 +58,7 @@ class Embedder(LudwigModule):
         for input_feature_name, input_values in inputs.items():
             encoder = self.input_features.get(input_feature_name)
             encoder_output = encoder(input_values)
-            encoder_outputs[input_feature_name] = encoder_output["encoder_output"]
+            encoder_outputs[input_feature_name] = encoder_output[ENCODER_OUTPUT]
         return encoder_outputs
 
 

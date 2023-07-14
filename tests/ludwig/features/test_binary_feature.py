@@ -3,7 +3,7 @@ from typing import Dict
 import pytest
 import torch
 
-from ludwig.constants import ENCODER
+from ludwig.constants import ENCODER, ENCODER_OUTPUT
 from ludwig.features.binary_feature import BinaryInputFeature, BinaryOutputFeature
 from ludwig.schema.features.binary_feature import BinaryInputFeatureConfig, BinaryOutputFeatureConfig
 from ludwig.schema.utils import load_config_with_kwargs
@@ -34,7 +34,7 @@ def test_binary_input_feature(binary_config: Dict, encoder: str):
 
     encoder_output = binary_input_feature(binary_tensor)
 
-    assert encoder_output["encoder_output"].shape[1:] == binary_input_feature.output_shape
+    assert encoder_output[ENCODER_OUTPUT].shape[1:] == binary_input_feature.output_shape
 
 
 def test_binary_output_feature():

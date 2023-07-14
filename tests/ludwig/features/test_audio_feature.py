@@ -7,7 +7,7 @@ import pytest
 import torch
 
 from ludwig.backend import LOCAL_BACKEND
-from ludwig.constants import BFILL, PROC_COLUMN
+from ludwig.constants import BFILL, ENCODER_OUTPUT, PROC_COLUMN
 from ludwig.features.audio_feature import AudioFeatureMixin, AudioInputFeature
 from ludwig.schema.features.audio_feature import AudioInputFeatureConfig
 from ludwig.schema.utils import load_config_with_kwargs
@@ -49,7 +49,7 @@ def test_audio_input_feature(encoder: str) -> None:
 
     audio_tensor = torch.randn([BATCH_SIZE, SEQ_SIZE, AUDIO_W_SIZE], dtype=torch.float32).to(DEVICE)
     encoder_output = audio_input_feature(audio_tensor)
-    assert encoder_output["encoder_output"].shape[1:] == audio_input_feature.output_shape
+    assert encoder_output[ENCODER_OUTPUT].shape[1:] == audio_input_feature.output_shape
 
 
 @pytest.mark.parametrize("feature_type", ["raw", "stft", "stft_phase", "group_delay", "fbank"])

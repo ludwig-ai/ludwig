@@ -14,17 +14,19 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type
 
 import torch
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import BAG
+from ludwig.constants import BAG, ENCODER_OUTPUT
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
+from ludwig.encoders.types import EncoderOutputDict
 from ludwig.modules.embedding_modules import EmbedWeighted
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.schema.encoders.bag_encoders import BagEmbedWeightedConfig
+from ludwig.schema.encoders.base import BaseEncoderConfig
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +89,7 @@ class BagEmbedWeightedEncoder(Encoder):
         )
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return BagEmbedWeightedConfig
 
     @property
@@ -98,7 +100,7 @@ class BagEmbedWeightedEncoder(Encoder):
     def output_shape(self) -> torch.Size:
         return self.fc_stack.output_shape
 
-    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+    def forward(self, inputs: torch.Tensor) -> EncoderOutputDict:
         """
         :param inputs: The inputs fed into the encoder.
                Shape: [batch x vocab size], type torch.int32
@@ -108,4 +110,4 @@ class BagEmbedWeightedEncoder(Encoder):
         hidden = self.embed_weighted(inputs)
         hidden = self.fc_stack(hidden)
 
-        return hidden
+        return {ENCODER_OUTPUT: hidden}
