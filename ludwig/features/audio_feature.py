@@ -147,8 +147,8 @@ class AudioFeatureMixin(BaseFeatureMixin):
         backend,
     ):
         df_engine = backend.df_engine
-        if version.parse(torch.__version__) >= version.parse("2.1.0"):
-            # Read audio from path if the version of torch is >= 2.1.0.
+        if version.parse(torch.__version__) > version.parse("2.0.0"):
+            # Read audio from path if the version of torch is > 2.0.0.
             raw_audio = backend.read_binary_files(column, map_fn=read_audio_from_path)
         else:
             raw_audio = backend.read_binary_files(column, map_fn=read_audio_from_bytes_obj)
