@@ -34,6 +34,15 @@ from ludwig.utils.torch_utils import reg_loss
 logger = logging.getLogger(__name__)
 
 
+def is_ray_backend(backend) -> bool:
+    if isinstance(backend, str):
+        return backend == "ray"
+    elif isinstance(backend, dict):
+        return backend.get("type", "local") == "ray"
+    else:
+        return False
+
+
 class DictWrapper:
     """Wrapper for a LudwigFeatureDict module that allows for iteration over keys.
 
@@ -92,11 +101,10 @@ class LLM(BaseModel):
         self.model_name = self.config_obj.base_model
         self.model_config = AutoConfig.from_pretrained(self.config_obj.base_model)
 
-        backend = self.config_obj.backend
-        self.backend_type = backend.type if hasattr(backend, "type") else "local"
+        self.is_ray_backend = is_ray_backend(self.config_obj.backend)
 
         logger.info("Loading large language model...")
-        if self.backend_type == "ray":
+        if self.is_ray_backend:
             # Extract weights as numpy tensors and place them in the Ray object store.
             # If we store the weights of a model as NumPy arrays on Plasma, we can access those
             # weights directly out of Plasma’s shared memory segments, without making any copies.
@@ -104,7 +112,11 @@ class LLM(BaseModel):
             # memory from the Ray object store for model initialization.
             import ray
 
-            self.model_ref = ray.put(extract_tensors(AutoModelForCausalLM.from_pretrained(self.config_obj.base_model)))
+            self.model_ref = ray.put(
+                extract_tensors(
+                    AutoModelForCausalLM.from_pretrained(self.config_obj.base_model),
+                )
+            )
         else:
             self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.base_model)
         # Model initially loaded onto cpu
@@ -168,15 +180,16 @@ class LLM(BaseModel):
                 # because the model has additional "head" layers that are used to predict the next
                 # token in the sequence. These head layers can add additional dimensions to the
                 # logits tensor, beyond the vocab_size dimension.
-                input_size=self.input_shape[-1] if self.output_feature_type == TEXT else self.model.config.vocab_size,
+                input_size=self.input_shape[-1] if self.output_feature_type == TEXT else self.model_config.vocab_size,
             )
         )
 
         # Extract the decoder object for the forward pass
         self._output_feature_decoder = ModuleWrapper(self.output_features.items()[0][1])
 
-        # Initialize the PEFT adapter is one is provided
-        self.initialize_adapter()
+        # Defer adapter initialization until after serialization for Ray backend
+        if not is_ray_backend:
+            self.initialize_adapter()
 
         clear_data_cache()
 
@@ -209,10 +222,8 @@ class LLM(BaseModel):
             self.model.print_trainable_parameters()
             logger.info("==================================================")
 
-    def to_device(self, device):
-        device = torch.device(device)
-
-        if self.backend_type == "ray":
+    def serialize_model_weights(self) -> None:
+        if self.is_ray_backend:
             # Deserialize the model (minus weights) from Plasma
             # Extract the weights from Plasma (without copying data)
             # Load the weights back into the model in-place on the current device (CPU)
@@ -220,6 +231,15 @@ class LLM(BaseModel):
 
             self.model, model_weights = ray.get(self.model_ref)
             replace_tensors(self.model, model_weights, self.curr_device)
+
+            # Initialize adapter
+            self.initialize_adapter()
+
+    def to_device(self, device):
+        device = torch.device(device)
+
+        # Serialize model weights if they live in the object store.
+        self.serialize_model_weights()
 
         if device == self.curr_device:
             return self
