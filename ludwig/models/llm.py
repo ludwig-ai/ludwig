@@ -188,7 +188,7 @@ class LLM(BaseModel):
         self._output_feature_decoder = ModuleWrapper(self.output_features.items()[0][1])
 
         # Defer adapter initialization until after serialization for Ray backend
-        if not is_ray_backend:
+        if not self.is_ray_backend:
             self.initialize_adapter()
 
         clear_data_cache()
