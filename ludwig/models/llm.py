@@ -8,7 +8,6 @@ import numpy as np
 import torch
 from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer, GenerationConfig, LlamaConfig
 
-from ludwig.backend import is_ray_backend
 from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, MODEL_LLM, PREDICTIONS, TEXT
 from ludwig.features.base_feature import ModuleWrapper, OutputFeature
 from ludwig.features.feature_utils import LudwigFeatureDict
@@ -91,8 +90,6 @@ class LLM(BaseModel):
 
         self.model_name = self.config_obj.base_model
         self.model_config = AutoConfig.from_pretrained(self.config_obj.base_model)
-
-        self.is_ray_backend = is_ray_backend(self.config_obj.backend)
 
         logger.info("Loading large language model...")
         self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.base_model)
