@@ -59,6 +59,15 @@ def _has_ray():
         return False
 
 
+def is_ray_backend(backend) -> bool:
+    if isinstance(backend, str):
+        return backend == "ray"
+    elif isinstance(backend, dict):
+        return backend.get("type", "local") == "ray"
+    else:
+        return False
+
+
 def get_local_backend(**kwargs):
     return LocalBackend(**kwargs)
 

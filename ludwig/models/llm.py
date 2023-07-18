@@ -8,6 +8,7 @@ import numpy as np
 import torch
 from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer, GenerationConfig, LlamaConfig
 
+from ludwig.backend import is_ray_backend
 from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, MODEL_LLM, PREDICTIONS, TEXT
 from ludwig.features.base_feature import ModuleWrapper, OutputFeature
 from ludwig.features.feature_utils import LudwigFeatureDict
@@ -32,15 +33,6 @@ from ludwig.utils.output_feature_utils import set_output_feature_tensor
 from ludwig.utils.torch_utils import reg_loss
 
 logger = logging.getLogger(__name__)
-
-
-def is_ray_backend(backend) -> bool:
-    if isinstance(backend, str):
-        return backend == "ray"
-    elif isinstance(backend, dict):
-        return backend.get("type", "local") == "ray"
-    else:
-        return False
 
 
 class DictWrapper:
