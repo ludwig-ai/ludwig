@@ -62,6 +62,7 @@ from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
 from ludwig.utils.dataframe_utils import is_dask_series_or_df, set_index_name
 from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.misc_utils import get_from_registry
+from ludwig.utils.model_utils import extract_tensors, replace_tensors
 from ludwig.utils.system_utils import Resources
 from ludwig.utils.torch_utils import get_torch_device, initialize_pytorch
 from ludwig.utils.types import DataFrame, Series
@@ -194,7 +195,11 @@ def train_fn(
         if test_shard is not None:
             test_shard = RayDatasetShard(test_shard, features, training_set_metadata)
 
-        model = ray.get(model_ref)
+        # Deserialize the model (minus weights) from Plasma
+        # Extract the weights from Plasma (without copying data)
+        # Load the weights back into the model in-place on the current device (CPU)
+        model, model_weights = ray.get(model_ref)
+        replace_tensors(model, model_weights, torch.device("cpu"))
         model = distributed.to_device(model)
 
         trainer = remote_trainer_cls(
@@ -479,7 +484,12 @@ class RayTrainerV2(BaseTrainer):
                 lambda config: train_fn(**config),
                 config={
                     "executable_kwargs": executable_kwargs,
-                    "model_ref": ray.put(self.model),
+                    # Extract weights as numpy tensors and place them in the Ray object store.
+                    # If we store the weights of a model as NumPy arrays on Plasma, we can access those
+                    # weights directly out of Plasma’s shared memory segments, without making any copies.
+                    # This enables zero copy model loading on each training worker using shared
+                    # memory from the Ray object store for model initialization.
+                    "model_ref": ray.put(extract_tensors(self.model)),
                     "remote_trainer_cls": self.remote_trainer_cls,
                     **kwargs,
                 },

@@ -28,7 +28,6 @@ from ludwig.utils.llm_utils import (
     set_pad_token,
 )
 from ludwig.utils.logging_utils import log_once
-from ludwig.utils.model_utils import extract_tensors, replace_tensors
 from ludwig.utils.output_feature_utils import set_output_feature_tensor
 from ludwig.utils.torch_utils import reg_loss
 
@@ -98,15 +97,7 @@ class LLM(BaseModel):
         logger.info("Loading large language model...")
         self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.base_model)
         self.initialize_adapter()
-        if self.is_ray_backend:
-            # Extract weights as numpy tensors and place them in the Ray object store.
-            # If we store the weights of a model as NumPy arrays on Plasma, we can access those
-            # weights directly out of Plasma’s shared memory segments, without making any copies.
-            # This enables zero copy model loading on each training worker using shared
-            # memory from the Ray object store for model initialization.
-            import ray
 
-            self.model_ref = ray.put(extract_tensors(self.model))
         # Model initially loaded onto cpu
         self.curr_device = torch.device("cpu")
         logger.info("Done.")
@@ -206,21 +197,8 @@ class LLM(BaseModel):
             self.model.print_trainable_parameters()
             logger.info("==================================================")
 
-    def serialize_model_weights(self) -> None:
-        if self.is_ray_backend:
-            # Deserialize the model (minus weights) from Plasma
-            # Extract the weights from Plasma (without copying data)
-            # Load the weights back into the model in-place on the current device (CPU)
-            import ray
-
-            self.model, model_weights = ray.get(self.model_ref)
-            replace_tensors(self.model, model_weights, self.curr_device)
-
     def to_device(self, device):
         device = torch.device(device)
-
-        # Serialize model weights if they live in the object store.
-        self.serialize_model_weights()
 
         if device == self.curr_device:
             return self

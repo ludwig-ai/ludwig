@@ -61,14 +61,6 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
     def to_device(self, device):
         return self.to(device)
 
-    def serialize_model_weights(self) -> None:
-        """For some model types, the weights are deserialized, written to the Plasma store and serialized onto the
-        workers in zero-copy fashion.
-
-        This is a no-op otherwise.
-        """
-        return
-
     def metrics_to_device(self, device: str):
         self._eval_loss_metric.module = self._eval_loss_metric.module.to(device)
         self._eval_additional_losses_metrics.module = self._eval_additional_losses_metrics.module.to(device)
