@@ -97,6 +97,7 @@ class LLM(BaseModel):
 
         logger.info("Loading large language model...")
         self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.base_model)
+        self.initialize_adapter()
         if self.is_ray_backend:
             # Extract weights as numpy tensors and place them in the Ray object store.
             # If we store the weights of a model as NumPy arrays on Plasma, we can access those
@@ -174,10 +175,6 @@ class LLM(BaseModel):
         # Extract the decoder object for the forward pass
         self._output_feature_decoder = ModuleWrapper(self.output_features.items()[0][1])
 
-        # Defer adapter initialization until after serialization for Ray backend
-        if not self.is_ray_backend:
-            self.initialize_adapter()
-
         clear_data_cache()
 
     def create_feature_dict(self) -> LudwigFeatureDict:
@@ -218,9 +215,6 @@ class LLM(BaseModel):
 
             self.model, model_weights = ray.get(self.model_ref)
             replace_tensors(self.model, model_weights, self.curr_device)
-
-            # Initialize adapter
-            self.initialize_adapter()
 
     def to_device(self, device):
         device = torch.device(device)
