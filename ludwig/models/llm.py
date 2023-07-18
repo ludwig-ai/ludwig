@@ -96,6 +96,7 @@ class LLM(BaseModel):
         self.is_ray_backend = is_ray_backend(self.config_obj.backend)
 
         logger.info("Loading large language model...")
+        self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.base_model)
         if self.is_ray_backend:
             # Extract weights as numpy tensors and place them in the Ray object store.
             # If we store the weights of a model as NumPy arrays on Plasma, we can access those
@@ -104,13 +105,7 @@ class LLM(BaseModel):
             # memory from the Ray object store for model initialization.
             import ray
 
-            self.model_ref = ray.put(
-                extract_tensors(
-                    AutoModelForCausalLM.from_pretrained(self.config_obj.base_model),
-                )
-            )
-        else:
-            self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.base_model)
+            self.model_ref = ray.put(extract_tensors(self.model))
         # Model initially loaded onto cpu
         self.curr_device = torch.device("cpu")
         logger.info("Done.")

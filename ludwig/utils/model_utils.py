@@ -14,7 +14,7 @@ def extract_tensors(model: torch.nn.Module) -> Tuple[torch.nn.Module, List[Dict]
     tensors = []
     for _, module in model.named_modules():
         # Store the tensors as numpy arrays in Python dictionaries
-        # Move the same tensors to a meta device since we no longer need them and we want to reduce memory pressure.
+        # Delete the same tensors since we no longer need them and we want to reduce memory pressure.
         # This ensures that throughout this process, we keep memory nearly linear w.r.t model parameters.
         params = {}
         buffers = {}
