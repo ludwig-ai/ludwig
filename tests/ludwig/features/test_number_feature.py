@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 import torch
 
+from ludwig.constants import ENCODER_OUTPUT
 from ludwig.features.number_feature import _OutlierReplacer, NumberInputFeature
 from ludwig.schema.features.number_feature import ECDNumberInputFeatureConfig
 from ludwig.schema.utils import load_config_with_kwargs
@@ -40,7 +41,7 @@ def test_number_input_feature(
     assert input_tensor.dtype == torch.float32
 
     encoder_output = input_feature_obj(input_tensor)
-    assert encoder_output["encoder_output"].shape == (BATCH_SIZE, *input_feature_obj.output_shape)
+    assert encoder_output[ENCODER_OUTPUT].shape == (BATCH_SIZE, *input_feature_obj.output_shape)
 
 
 def test_outlier_replacer():

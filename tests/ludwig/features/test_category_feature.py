@@ -4,7 +4,7 @@ from typing import Dict
 import pytest
 import torch
 
-from ludwig.constants import ENCODER, TYPE
+from ludwig.constants import ENCODER, ENCODER_OUTPUT, TYPE
 from ludwig.features.category_feature import CategoryInputFeature
 from ludwig.schema.features.category_feature import ECDCategoryInputFeatureConfig
 from ludwig.schema.utils import load_config_with_kwargs
@@ -54,4 +54,4 @@ def test_category_input_feature(
     input_tensor = torch.randint(0, 3, size=(BATCH_SIZE,), dtype=torch.int32).to(DEVICE)
 
     encoder_output = input_feature_obj(input_tensor)
-    assert encoder_output["encoder_output"].shape == (BATCH_SIZE, *input_feature_obj.output_shape)
+    assert encoder_output[ENCODER_OUTPUT].shape == (BATCH_SIZE, *input_feature_obj.output_shape)

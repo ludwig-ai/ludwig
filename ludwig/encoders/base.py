@@ -29,9 +29,13 @@ class Encoder(LudwigModule, ABC):
         raise NotImplementedError
 
     def get_embedding_layer(self) -> nn.Module:
-        """Returns layer that embeds inputs, used for computing explanations."""
+        """Returns layer that embeds inputs, used for computing explanations.
+
+        Captum adds an evaluation hook to this module returned by this function. The hook copies the module's return
+        with .clone(). The module returned by this function must return a tensor, not a dictionary of tensors.
+        """
         return next(self.children())
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.__class__.__name__

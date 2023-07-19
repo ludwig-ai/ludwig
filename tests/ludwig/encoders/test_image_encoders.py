@@ -3,6 +3,7 @@ from typing import Union
 import pytest
 import torch
 
+from ludwig.constants import ENCODER_OUTPUT
 from ludwig.encoders.image.base import MLPMixerEncoder, ResNetEncoder, Stacked2DCNN, ViTEncoder
 from ludwig.encoders.image.torchvision import (
     TVAlexNetEncoder,
@@ -42,10 +43,10 @@ def test_stacked2d_cnn(height: int, width: int, num_conv_layers: int, num_channe
     )
     inputs = torch.rand(2, num_channels, height, width)
     outputs = stacked_2d_cnn(inputs)
-    assert outputs["encoder_output"].shape[1:] == stacked_2d_cnn.output_shape
+    assert outputs[ENCODER_OUTPUT].shape[1:] == stacked_2d_cnn.output_shape
 
     # check for parameter updating
-    target = torch.randn(outputs["encoder_output"].shape)
+    target = torch.randn(outputs[ENCODER_OUTPUT].shape)
     fpc, tpc, upc, not_updated = check_module_parameters_updated(stacked_2d_cnn, (inputs,), target)
 
     assert tpc == upc, f"Not all expected parameters updated.  Parameters not updated {not_updated}."
@@ -59,10 +60,10 @@ def test_resnet_encoder(height: int, width: int, num_channels: int):
     resnet = ResNetEncoder(height=height, width=width, num_channels=num_channels)
     inputs = torch.rand(2, num_channels, height, width)
     outputs = resnet(inputs)
-    assert outputs["encoder_output"].shape[1:] == resnet.output_shape
+    assert outputs[ENCODER_OUTPUT].shape[1:] == resnet.output_shape
 
     # check for parameter updating
-    target = torch.randn(outputs["encoder_output"].shape)
+    target = torch.randn(outputs[ENCODER_OUTPUT].shape)
     fpc, tpc, upc, not_updated = check_module_parameters_updated(resnet, (inputs,), target)
 
     assert tpc == upc, f"Not all expected parameters updated.  Parameters not updated {not_updated}."
@@ -76,10 +77,10 @@ def test_mlp_mixer_encoder(height: int, width: int, num_channels: int):
     mlp_mixer = MLPMixerEncoder(height=height, width=width, num_channels=num_channels)
     inputs = torch.rand(2, num_channels, height, width)
     outputs = mlp_mixer(inputs)
-    assert outputs["encoder_output"].shape[1:] == mlp_mixer.output_shape
+    assert outputs[ENCODER_OUTPUT].shape[1:] == mlp_mixer.output_shape
 
     # check for parameter updating
-    target = torch.randn(outputs["encoder_output"].shape)
+    target = torch.randn(outputs[ENCODER_OUTPUT].shape)
     fpc, tpc, upc, not_updated = check_module_parameters_updated(mlp_mixer, (inputs,), target)
 
     assert tpc == upc, f"Not all expected parameters updated.  Parameters not updated {not_updated}."
@@ -100,7 +101,7 @@ def test_vit_encoder(image_size: int, num_channels: int, use_pretrained: bool):
     )
     inputs = torch.rand(2, num_channels, image_size, image_size)
     outputs = vit(inputs)
-    assert outputs["encoder_output"].shape[1:] == vit.output_shape
+    assert outputs[ENCODER_OUTPUT].shape[1:] == vit.output_shape
     config = vit.transformer.module.config
     num_patches = (224 // config.patch_size) ** 2 + 1  # patches of the image + cls_token
     attentions = outputs["attentions"]
@@ -108,7 +109,7 @@ def test_vit_encoder(image_size: int, num_channels: int, use_pretrained: bool):
     assert attentions[0].shape == torch.Size([2, config.num_attention_heads, num_patches, num_patches])
 
     # check for parameter updating
-    target = torch.randn(outputs["encoder_output"].shape)
+    target = torch.randn(outputs[ENCODER_OUTPUT].shape)
     fpc, tpc, upc, not_updated = check_module_parameters_updated(vit, (inputs,), target)
 
     assert tpc == upc, f"Not all expected parameters updated.  Parameters not updated {not_updated}."
@@ -140,7 +141,7 @@ def test_tv_alexnet_encoder(
     )
     inputs = torch.rand(2, *pretrained_model.input_shape)
     outputs = pretrained_model(inputs)
-    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+    assert outputs[ENCODER_OUTPUT].shape[1:] == pretrained_model.output_shape
 
 
 @pytest.mark.parametrize("trainable", [True, False])
@@ -169,7 +170,7 @@ def test_tv_convnext_encoder(
     )
     inputs = torch.rand(2, *pretrained_model.input_shape)
     outputs = pretrained_model(inputs)
-    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+    assert outputs[ENCODER_OUTPUT].shape[1:] == pretrained_model.output_shape
 
 
 @pytest.mark.parametrize("trainable", [True, False])
@@ -198,7 +199,7 @@ def test_tv_densenet_encoder(
     )
     inputs = torch.rand(2, *pretrained_model.input_shape)
     outputs = pretrained_model(inputs)
-    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+    assert outputs[ENCODER_OUTPUT].shape[1:] == pretrained_model.output_shape
 
 
 # test only model variants that do not require large amount of memory
@@ -231,7 +232,7 @@ def test_tv_efficientnet_encoder(
     )
     inputs = torch.rand(2, *pretrained_model.input_shape)
     outputs = pretrained_model(inputs)
-    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+    assert outputs[ENCODER_OUTPUT].shape[1:] == pretrained_model.output_shape
 
 
 @pytest.mark.parametrize("trainable", [True, False])
@@ -260,7 +261,7 @@ def test_tv_googlenet_encoder(
     )
     inputs = torch.rand(2, *pretrained_model.input_shape)
     outputs = pretrained_model(inputs)
-    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+    assert outputs[ENCODER_OUTPUT].shape[1:] == pretrained_model.output_shape
 
 
 @pytest.mark.parametrize("trainable", [True, False])
@@ -289,7 +290,7 @@ def test_tv_inceptionv3_encoder(
     )
     inputs = torch.rand(2, *pretrained_model.input_shape)
     outputs = pretrained_model(inputs)
-    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+    assert outputs[ENCODER_OUTPUT].shape[1:] == pretrained_model.output_shape
 
 
 @pytest.mark.parametrize("trainable", [True, False])
@@ -318,7 +319,7 @@ def test_tv_maxvit_encoder(
     )
     inputs = torch.rand(2, *pretrained_model.input_shape)
     outputs = pretrained_model(inputs)
-    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+    assert outputs[ENCODER_OUTPUT].shape[1:] == pretrained_model.output_shape
 
 
 @pytest.mark.parametrize("trainable", [True, False])
@@ -347,7 +348,7 @@ def test_tv_mnasnet_encoder(
     )
     inputs = torch.rand(2, *pretrained_model.input_shape)
     outputs = pretrained_model(inputs)
-    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+    assert outputs[ENCODER_OUTPUT].shape[1:] == pretrained_model.output_shape
 
 
 @pytest.mark.parametrize("trainable", [True, False])
@@ -376,7 +377,7 @@ def test_tv_mobilenetv2_encoder(
     )
     inputs = torch.rand(2, *pretrained_model.input_shape)
     outputs = pretrained_model(inputs)
-    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+    assert outputs[ENCODER_OUTPUT].shape[1:] == pretrained_model.output_shape
 
 
 @pytest.mark.parametrize("trainable", [True, False])
@@ -405,7 +406,7 @@ def test_tv_mobilenetv3_encoder(
     )
     inputs = torch.rand(2, *pretrained_model.input_shape)
     outputs = pretrained_model(inputs)
-    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+    assert outputs[ENCODER_OUTPUT].shape[1:] == pretrained_model.output_shape
 
 
 # test only model variants that do not require large amount of memory
@@ -438,7 +439,7 @@ def test_tv_regnet_encoder(
     )
     inputs = torch.rand(2, *pretrained_model.input_shape)
     outputs = pretrained_model(inputs)
-    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+    assert outputs[ENCODER_OUTPUT].shape[1:] == pretrained_model.output_shape
 
 
 @pytest.mark.parametrize("trainable", [True, False])
@@ -467,7 +468,7 @@ def test_tv_resnet_torch_encoder(
     )
     inputs = torch.rand(2, *pretrained_model.input_shape)
     outputs = pretrained_model(inputs)
-    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+    assert outputs[ENCODER_OUTPUT].shape[1:] == pretrained_model.output_shape
 
 
 @pytest.mark.parametrize("trainable", [True, False])
@@ -496,7 +497,7 @@ def test_tv_resnext_encoder(
     )
     inputs = torch.rand(2, *pretrained_model.input_shape)
     outputs = pretrained_model(inputs)
-    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+    assert outputs[ENCODER_OUTPUT].shape[1:] == pretrained_model.output_shape
 
 
 @pytest.mark.parametrize("trainable", [True, False])
@@ -525,7 +526,7 @@ def test_tv_shufflenet_v2_encoder(
     )
     inputs = torch.rand(2, *pretrained_model.input_shape)
     outputs = pretrained_model(inputs)
-    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+    assert outputs[ENCODER_OUTPUT].shape[1:] == pretrained_model.output_shape
 
 
 @pytest.mark.parametrize("trainable", [True, False])
@@ -554,7 +555,7 @@ def test_tv_squeezenet_encoder(
     )
     inputs = torch.rand(2, *pretrained_model.input_shape)
     outputs = pretrained_model(inputs)
-    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+    assert outputs[ENCODER_OUTPUT].shape[1:] == pretrained_model.output_shape
 
 
 @pytest.mark.parametrize("trainable", [True, False])
@@ -585,7 +586,7 @@ def test_tv_swin_transformer_encoder(
     )
     inputs = torch.rand(2, *pretrained_model.input_shape)
     outputs = pretrained_model(inputs)
-    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+    assert outputs[ENCODER_OUTPUT].shape[1:] == pretrained_model.output_shape
 
 
 @pytest.mark.parametrize("trainable", [True, False])
@@ -614,7 +615,7 @@ def test_tv_vgg_encoder(
     )
     inputs = torch.rand(2, *pretrained_model.input_shape)
     outputs = pretrained_model(inputs)
-    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+    assert outputs[ENCODER_OUTPUT].shape[1:] == pretrained_model.output_shape
 
 
 # test only VIT model variants that do not require large amount of memory
@@ -647,7 +648,7 @@ def test_tv_vit_encoder(
     )
     inputs = torch.rand(2, *pretrained_model.input_shape)
     outputs = pretrained_model(inputs)
-    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+    assert outputs[ENCODER_OUTPUT].shape[1:] == pretrained_model.output_shape
 
 
 @pytest.mark.parametrize("trainable", [True, False])
@@ -676,4 +677,4 @@ def test_tv_wide_resnet_encoder(
     )
     inputs = torch.rand(2, *pretrained_model.input_shape)
     outputs = pretrained_model(inputs)
-    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+    assert outputs[ENCODER_OUTPUT].shape[1:] == pretrained_model.output_shape

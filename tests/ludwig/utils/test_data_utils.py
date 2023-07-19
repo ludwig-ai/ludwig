@@ -34,6 +34,7 @@ from ludwig.utils.data_utils import (
     read_csv,
     read_html,
     read_parquet,
+    sanitize_column_names,
     use_credentials,
 )
 from tests.integration_tests.utils import private_param
@@ -223,3 +224,18 @@ def test_read_html(df_lib, nrows):
         kwargs["nrows"] = nrows
 
     read_html(HTML_DOCUMENT, df_lib, **kwargs)
+
+
+def test_sanitize_column_names():
+    df = pd.DataFrame(
+        {
+            "col.one": [1, 2, 3, 4],
+            "col(two)": [4, 5, 6, 7],
+            "col[]:three": [7, 8, 9, 10],
+            "col 'one' (new)": [1, 2, 3, 4],
+        }
+    )
+
+    df = sanitize_column_names(df)
+
+    assert list(df.columns) == ["col_one", "col_two_", "col___three", "col _one_ _new_"]

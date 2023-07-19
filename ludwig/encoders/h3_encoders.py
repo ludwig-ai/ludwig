@@ -14,19 +14,21 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Type
 
 import torch
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import H3
+from ludwig.constants import ENCODER_OUTPUT, ENCODER_OUTPUT_STATE, H3
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
+from ludwig.encoders.types import EncoderOutputDict
 from ludwig.modules.embedding_modules import Embed, EmbedSequence
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.initializer_modules import get_initializer
 from ludwig.modules.recurrent_modules import RecurrentStack
 from ludwig.modules.reduction_modules import SequenceReducer
+from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.h3_encoders import H3EmbedConfig, H3RNNConfig, H3WeightedSumConfig
 from ludwig.utils import torch_utils
 
@@ -167,7 +169,7 @@ class H3Embed(Encoder):
             default_dropout=dropout,
         )
 
-    def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor) -> EncoderOutputDict:
         """
         :param inputs: The input vector fed into the encoder.
                Shape: [batch x H3_INPUT_SIZE], type torch.int8
@@ -201,10 +203,10 @@ class H3Embed(Encoder):
         # logger.debug('  flatten hidden: {0}'.format(hidden))
         hidden = self.fc_stack(hidden)
 
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return H3EmbedConfig
 
     @property
@@ -293,7 +295,7 @@ class H3WeightedSum(Encoder):
             default_dropout=dropout,
         )
 
-    def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor) -> EncoderOutputDict:
         """
         :param inputs: The input vector fed into the encoder.
                Shape: [batch x H3_INPUT_SIZE], type torch.int8
@@ -309,16 +311,16 @@ class H3WeightedSum(Encoder):
         else:
             weights = self.aggregation_weights
 
-        hidden = self.sum_sequence_reducer(embedded_h3["encoder_output"] * weights)
+        hidden = self.sum_sequence_reducer(embedded_h3[ENCODER_OUTPUT] * weights)
 
         # ================ FC Stack ================
         # logger.debug('  flatten hidden: {0}'.format(hidden))
         hidden = self.fc_stack(hidden)
 
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return H3WeightedSumConfig
 
     @property
@@ -438,7 +440,7 @@ class H3RNN(Encoder):
             dropout=recurrent_dropout,
         )
 
-    def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor) -> EncoderOutputDict:
         """
         :param inputs: The input vector fed into the encoder.
                Shape: [batch x H3_INPUT_SIZE], type torch.int8
@@ -449,12 +451,12 @@ class H3RNN(Encoder):
         embedded_h3 = self.h3_embed(inputs)
 
         # ================ RNN ================
-        hidden, final_state = self.recurrent_stack(embedded_h3["encoder_output"])
+        hidden, final_state = self.recurrent_stack(embedded_h3[ENCODER_OUTPUT])
 
-        return {"encoder_output": hidden, "encoder_output_state": final_state}
+        return {ENCODER_OUTPUT: hidden, ENCODER_OUTPUT_STATE: final_state}
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return H3RNNConfig
 
     @property

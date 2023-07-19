@@ -4,6 +4,7 @@ from datetime import datetime
 import pytest
 import torch
 
+from ludwig.constants import ENCODER_OUTPUT
 from ludwig.features import date_feature
 from ludwig.features.date_feature import DateInputFeature
 from ludwig.schema.features.date_feature import DateInputFeatureConfig
@@ -40,7 +41,7 @@ def test_date_input_feature(date_config: FeatureConfigDict):
     assert input_tensor.dtype == torch.int32
 
     encoder_output = input_feature_obj(input_tensor)
-    assert encoder_output["encoder_output"].shape == (BATCH_SIZE, *input_feature_obj.output_shape)
+    assert encoder_output[ENCODER_OUTPUT].shape == (BATCH_SIZE, *input_feature_obj.output_shape)
 
 
 @pytest.mark.parametrize(
