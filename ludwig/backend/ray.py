@@ -500,6 +500,11 @@ class RayTrainerV2(BaseTrainer):
                 stream_window_size=stream_window_size,
             )
 
+        # re-register the weights of the model object in the main process
+        self.model, model_weights = ray.get(model_ref)
+        replace_tensors(self.model, model_weights, torch.device("cpu"))        
+        self.model.prepare_for_training()  # ensure module is initialized exactly as it is in the trainer process
+
         # Set validation field and metric used by trainer
         self._validation_field = trainer_results.metrics["validation_field"]
         self._validation_metric = trainer_results.metrics["validation_metric"]
@@ -512,12 +517,6 @@ class RayTrainerV2(BaseTrainer):
         # use `strict=False` to account for PEFT training, where the saved state in the checkpoint
         # might only contain the PEFT layers that were modified during training
         state_dict, *args = results
-
-        # Re-add the model weights to the model
-        model, model_weights = ray.get(model_ref)
-        replace_tensors(model, model_weights, torch.device("cpu"))
-        self.model = model
-        self.model.initialize_adapter()
         self.model.load_state_dict(state_dict, strict=False)
         results = (self.model, *args)
 
