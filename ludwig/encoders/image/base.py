@@ -14,18 +14,25 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 import torch
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import IMAGE
+from ludwig.constants import ENCODER_OUTPUT, IMAGE
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
+from ludwig.encoders.types import EncoderOutputDict
 from ludwig.modules.convolutional_modules import Conv2DStack, ResNet
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.mlp_mixer_modules import MLPMixer
-from ludwig.schema.encoders.image.base import MLPMixerConfig, ResNetConfig, Stacked2DCNNConfig, ViTConfig
+from ludwig.schema.encoders.image.base import (
+    ImageEncoderConfig,
+    MLPMixerConfig,
+    ResNetConfig,
+    Stacked2DCNNConfig,
+    ViTConfig,
+)
 from ludwig.utils.torch_utils import FreezeModule
 
 logger = logging.getLogger(__name__)
@@ -136,7 +143,7 @@ class Stacked2DCNN(ImageEncoder):
             default_dropout=fc_dropout,
         )
 
-    def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor) -> EncoderOutputDict:
         """
         :param inputs: The inputs fed into the encoder.
                 Shape: [batch x channels x height x width], type torch.uint8
@@ -146,10 +153,10 @@ class Stacked2DCNN(ImageEncoder):
         hidden = self.flatten(hidden)
         outputs = self.fc_stack(hidden)
 
-        return {"encoder_output": outputs}
+        return {ENCODER_OUTPUT: outputs}
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[ImageEncoderConfig]:
         return Stacked2DCNNConfig
 
     @property
@@ -232,15 +239,15 @@ class ResNetEncoder(ImageEncoder):
             default_dropout=dropout,
         )
 
-    def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor) -> EncoderOutputDict:
         hidden = self.resnet(inputs)
         axes = [2, 3]
         hidden = torch.mean(hidden, axes)
         hidden = self.fc_stack(hidden)
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[ImageEncoderConfig]:
         return ResNetConfig
 
     @property
@@ -300,17 +307,17 @@ class MLPMixerEncoder(ImageEncoder):
 
         self._output_shape = self.mlp_mixer.output_shape
 
-    def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor) -> EncoderOutputDict:
         hidden = self.mlp_mixer(inputs)
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[ImageEncoderConfig]:
         return MLPMixerConfig
 
     @property
     def input_shape(self) -> torch.Size:
-        return self._input_shape
+        return torch.Size(self._input_shape)
 
     @property
     def output_shape(self) -> torch.Size:
@@ -399,15 +406,15 @@ class ViTEncoder(ImageEncoder):
         self._output_shape = (transformer.config.hidden_size,)
         self.output_attentions = output_attentions
 
-    def forward(self, inputs: torch.Tensor, head_mask: torch.Tensor = None) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor, head_mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
         output = self.transformer.module(inputs, head_mask=head_mask, output_attentions=self.output_attentions)
-        return_dict = {"encoder_output": output.pooler_output}
+        return_dict: EncoderOutputDict = {ENCODER_OUTPUT: output.pooler_output}
         if self.output_attentions:
             return_dict["attentions"] = output.attentions
         return return_dict
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[ImageEncoderConfig]:
         return ViTConfig
 
     @property

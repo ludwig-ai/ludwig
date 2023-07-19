@@ -10,6 +10,7 @@ from torch import nn
 from torch.nn import Module, ModuleDict
 
 from ludwig.api_annotations import DeveloperAPI
+from ludwig.constants import ENCODER_OUTPUT
 from ludwig.utils.strings_utils import SpecialSymbol
 
 _TORCH_INIT_PARAMS: Optional[Tuple] = None
@@ -228,8 +229,8 @@ class LudwigModule(Module):
 
         if isinstance(output_tensor, torch.Tensor):
             return output_tensor.size()[1:]
-        elif isinstance(output_tensor, dict) and "encoder_output" in output_tensor:
-            return output_tensor["encoder_output"].size()[1:]
+        elif isinstance(output_tensor, dict) and ENCODER_OUTPUT in output_tensor:
+            return output_tensor[ENCODER_OUTPUT].size()[1:]
         else:
             raise ValueError("Unknown output tensor type.")
 

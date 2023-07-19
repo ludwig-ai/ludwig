@@ -22,10 +22,12 @@ import torch
 from torch import nn
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import TEXT
+from ludwig.constants import ENCODER_OUTPUT, TEXT
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
+from ludwig.encoders.types import EncoderOutputDict
 from ludwig.modules.reduction_modules import SequenceReducer
+from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.sequence_encoders import SequenceEncoderConfig
 from ludwig.schema.encoders.text_encoders import (
     ALBERTConfig,
@@ -109,7 +111,7 @@ class HFTextEncoder(Encoder):
         self._maybe_resize_token_embeddings(transformer, vocab_size)
         return transformer
 
-    def _maybe_resize_token_embeddings(self, transformer, vocab_size: int):
+    def _maybe_resize_token_embeddings(self, transformer, vocab_size: int) -> None:
         """Resizes the token embeddings if the vocab size is different from the transformer's vocab size.
 
         This should only happen if we are instantiating a model from scratch (i.e. not loading from a pretrained model
@@ -129,7 +131,9 @@ class HFTextEncoder(Encoder):
         if vocab_size != transformer.config.vocab_size:
             transformer.resize_token_embeddings(vocab_size)
 
-    def _wrap_transformer(self, transformer: nn.Module, adapter: Optional[BaseAdapterConfig], trainable: bool):
+    def _wrap_transformer(
+        self, transformer: nn.Module, adapter: Optional[BaseAdapterConfig], trainable: bool
+    ) -> nn.Module:
         if adapter is not None:
             from peft import get_peft_model
 
@@ -192,7 +196,7 @@ class HFTextEncoderImpl(HFTextEncoder):
         self.transformer = self._wrap_transformer(transformer, adapter, trainable)
         self.max_sequence_length = max_sequence_length
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
         if mask is not None:
             mask = mask.to(torch.int32)
         transformer_outputs = self.transformer.module(
@@ -205,7 +209,7 @@ class HFTextEncoderImpl(HFTextEncoder):
         else:
             hidden = transformer_outputs["last_hidden_state"][:, 1:-1, :]  # bos + [sent] + sep
             hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @property
     def input_shape(self) -> torch.Size:
@@ -227,7 +231,7 @@ class HFTextEncoderImpl(HFTextEncoder):
         return torch.Size([self.transformer.module.config.hidden_size])
 
     @property
-    def input_dtype(self):
+    def input_dtype(self) -> torch.dtype:
         return torch.int32
 
 
@@ -315,7 +319,7 @@ class ALBERTEncoder(HFTextEncoder):
         self.transformer = self._wrap_transformer(transformer, adapter, trainable)
         self.max_sequence_length = max_sequence_length
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
         if mask is not None:
             mask = mask.to(torch.int32)
         transformer_outputs = self.transformer.module(
@@ -329,10 +333,10 @@ class ALBERTEncoder(HFTextEncoder):
             hidden = transformer_outputs[0][:, 1:-1, :]
             hidden = self.reduce_sequence(hidden, self.reduce_output)
 
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return ALBERTConfig
 
     @property
@@ -355,7 +359,7 @@ class ALBERTEncoder(HFTextEncoder):
         return torch.Size([self.transformer.module.config.hidden_size])
 
     @property
-    def input_dtype(self):
+    def input_dtype(self) -> torch.dtype:
         return torch.int32
 
 
@@ -442,7 +446,7 @@ class MT5Encoder(HFTextEncoder):
         self.transformer = self._wrap_transformer(transformer, adapter, trainable)
         self.max_sequence_length = max_sequence_length
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
         if mask is not None:
             mask = mask.to(torch.int32)
         transformer_outputs = self.transformer.module(
@@ -451,10 +455,10 @@ class MT5Encoder(HFTextEncoder):
         )
         hidden = transformer_outputs[0][:, 1:-1, :]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return MT5Config
 
     @property
@@ -477,7 +481,7 @@ class MT5Encoder(HFTextEncoder):
         return torch.Size([self.transformer.module.config.hidden_size])
 
     @property
-    def input_dtype(self):
+    def input_dtype(self) -> torch.dtype:
         return torch.int32
 
 
@@ -539,7 +543,7 @@ class XLMRoBERTaEncoder(HFTextEncoder):
         self.transformer = self._wrap_transformer(transformer, adapter, trainable)
         self.max_sequence_length = max_sequence_length
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
         if mask is not None:
             mask = mask.to(torch.int32)
         transformer_outputs = self.transformer.module(
@@ -553,10 +557,10 @@ class XLMRoBERTaEncoder(HFTextEncoder):
             hidden = transformer_outputs[0][:, 1:-1, :]
             hidden = self.reduce_sequence(hidden, self.reduce_output)
 
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return XLMRoBERTaConfig
 
     @property
@@ -579,7 +583,7 @@ class XLMRoBERTaEncoder(HFTextEncoder):
         return torch.Size([self.transformer.module.config.hidden_size])
 
     @property
-    def input_dtype(self):
+    def input_dtype(self) -> torch.dtype:
         return torch.int32
 
 
@@ -661,7 +665,7 @@ class BERTEncoder(HFTextEncoder):
 
         self.max_sequence_length = max_sequence_length
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
         if mask is not None:
             mask = mask.to(torch.int32)
         transformer_outputs = self.transformer.module(
@@ -675,10 +679,10 @@ class BERTEncoder(HFTextEncoder):
             hidden = transformer_outputs[0][:, 1:-1, :]
             hidden = self.reduce_sequence(hidden, self.reduce_output)
 
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return BERTConfig
 
     @property
@@ -702,7 +706,7 @@ class BERTEncoder(HFTextEncoder):
         return torch.Size([self.transformer.module.config.hidden_size])
 
     @property
-    def input_dtype(self):
+    def input_dtype(self) -> torch.dtype:
         return torch.int32
 
 
@@ -804,7 +808,7 @@ class XLMEncoder(HFTextEncoder):
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.max_sequence_length = max_sequence_length
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
         if mask is not None:
             mask = mask.to(torch.int32)
         transformer_outputs = self.transformer.module(
@@ -814,10 +818,10 @@ class XLMEncoder(HFTextEncoder):
         )
         hidden = transformer_outputs[0]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return XLMConfig
 
     @property
@@ -841,7 +845,7 @@ class XLMEncoder(HFTextEncoder):
         return torch.Size([self.transformer.module.config.hidden_size])
 
     @property
-    def input_dtype(self):
+    def input_dtype(self) -> torch.dtype:
         return torch.int32
 
 
@@ -916,7 +920,7 @@ class GPTEncoder(HFTextEncoder):
         self.transformer = self._wrap_transformer(transformer, adapter, trainable)
         self.max_sequence_length = max_sequence_length
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
         if mask is not None:
             mask = mask.to(torch.int32)
         transformer_outputs = self.transformer.module(
@@ -926,10 +930,10 @@ class GPTEncoder(HFTextEncoder):
         )
         hidden = transformer_outputs[0]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return GPTConfig
 
     @property
@@ -945,7 +949,7 @@ class GPTEncoder(HFTextEncoder):
         return torch.Size([self.transformer.module.config.hidden_size])
 
     @property
-    def input_dtype(self):
+    def input_dtype(self) -> torch.dtype:
         return torch.int32
 
 
@@ -1021,7 +1025,7 @@ class GPT2Encoder(HFTextEncoder):
             _cls_pooled_error_message(self.__class__.__name__)
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
         if mask is not None:
             mask = mask.to(torch.int32)
         transformer_outputs = self.transformer.module(
@@ -1031,10 +1035,10 @@ class GPT2Encoder(HFTextEncoder):
         )
         hidden = transformer_outputs[0]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return GPT2Config
 
     @property
@@ -1050,7 +1054,7 @@ class GPT2Encoder(HFTextEncoder):
         return torch.Size([self.transformer.module.config.hidden_size])
 
     @property
-    def input_dtype(self):
+    def input_dtype(self) -> torch.dtype:
         return torch.int32
 
 
@@ -1064,7 +1068,7 @@ class DeBERTaEncoder(HFTextEncoderImpl):
         super().__init__(DebertaV2Model, _DebertaV2Config, DebertaV2Config, *args, **kwargs)
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return DebertaV2Config
 
 
@@ -1123,7 +1127,7 @@ class RoBERTaEncoder(HFTextEncoder):
         if not self.reduce_output == "cls_pooled":
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
         if mask is not None:
             mask = mask.to(torch.int32)
         transformer_outputs = self.transformer.module(
@@ -1136,10 +1140,10 @@ class RoBERTaEncoder(HFTextEncoder):
         else:
             hidden = transformer_outputs[0][:, 1:-1, :]  # bos + [sent] + sep
             hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return RoBERTaConfig
 
     @property
@@ -1156,7 +1160,7 @@ class RoBERTaEncoder(HFTextEncoder):
         return torch.Size([self.transformer.module.config.hidden_size])
 
     @property
-    def input_dtype(self):
+    def input_dtype(self) -> torch.dtype:
         return torch.int32
 
 
@@ -1258,14 +1262,14 @@ class TransformerXLEncoder(HFTextEncoder):
         self.transformer = self._wrap_transformer(transformer, adapter, trainable)
         self.max_sequence_length = max_sequence_length
 
-    def forward(self, inputs: torch.Tensor, mask: torch.Tensor = None) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
         transformer_outputs = self.transformer.module(inputs)
         hidden = transformer_outputs[0]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return TransformerXLConfig
 
     @property
@@ -1282,7 +1286,7 @@ class TransformerXLEncoder(HFTextEncoder):
         return torch.Size([self.transformer.module.config.d_model])
 
     @property
-    def input_dtype(self):
+    def input_dtype(self) -> torch.dtype:
         return torch.int32
 
 
@@ -1385,7 +1389,7 @@ class XLNetEncoder(HFTextEncoder):
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer = self._wrap_transformer(transformer, adapter, trainable)
 
-    def forward(self, inputs: torch.Tensor, mask: torch.Tensor = None) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
         if mask is not None:
             mask = mask.to(torch.int32)
         transformer_outputs = self.transformer.module(
@@ -1395,10 +1399,10 @@ class XLNetEncoder(HFTextEncoder):
         )
         hidden = transformer_outputs[0]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return XLNetConfig
 
     @property
@@ -1414,7 +1418,7 @@ class XLNetEncoder(HFTextEncoder):
         return torch.Size([self.transformer.module.config.d_model])
 
     @property
-    def input_dtype(self):
+    def input_dtype(self) -> torch.dtype:
         return torch.int32
 
 
@@ -1493,7 +1497,7 @@ class DistilBERTEncoder(HFTextEncoder):
         self.last_inputs = None
         self.last_hidden = None
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
         if mask is not None:
             mask = mask.to(torch.int32)
 
@@ -1505,10 +1509,10 @@ class DistilBERTEncoder(HFTextEncoder):
         self.last_inputs = inputs
         self.last_hidden = hidden
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return DistilBERTConfig
 
     @property
@@ -1526,7 +1530,7 @@ class DistilBERTEncoder(HFTextEncoder):
         return torch.Size([self.transformer.module.config.dim])
 
     @property
-    def input_dtype(self):
+    def input_dtype(self) -> torch.dtype:
         return torch.int32
 
 
@@ -1601,7 +1605,7 @@ class CTRLEncoder(HFTextEncoder):
             _cls_pooled_error_message(self.__class__.__name__)
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
         if mask is not None:
             mask = mask.to(torch.int32)
         transformer_outputs = self.transformer.module(
@@ -1611,7 +1615,7 @@ class CTRLEncoder(HFTextEncoder):
         )
         hidden = transformer_outputs[0]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
     def get_schema_cls():
@@ -1631,7 +1635,7 @@ class CTRLEncoder(HFTextEncoder):
         return torch.Size([self.transformer.module.config.n_embd])
 
     @property
-    def input_dtype(self):
+    def input_dtype(self) -> torch.dtype:
         return torch.int32
 
 
@@ -1713,7 +1717,7 @@ class CamemBERTEncoder(HFTextEncoder):
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.max_sequence_length = max_sequence_length
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
         if mask is not None:
             mask = mask.to(torch.int32)
         transformer_outputs = self.transformer.module(
@@ -1727,10 +1731,10 @@ class CamemBERTEncoder(HFTextEncoder):
             hidden = transformer_outputs[0][:, 1:-1, :]
             hidden = self.reduce_sequence(hidden, self.reduce_output)
 
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return CamemBERTConfig
 
     @property
@@ -1753,7 +1757,7 @@ class CamemBERTEncoder(HFTextEncoder):
         return torch.Size([self.transformer.module.config.hidden_size])
 
     @property
-    def input_dtype(self):
+    def input_dtype(self) -> torch.dtype:
         return torch.int32
 
 
@@ -1826,7 +1830,7 @@ class T5Encoder(HFTextEncoder):
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer = self._wrap_transformer(transformer, adapter, trainable)
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
         if mask is not None:
             mask = mask.to(torch.int32)
         transformer_outputs = self.transformer.module(
@@ -1836,10 +1840,10 @@ class T5Encoder(HFTextEncoder):
         )
         hidden = transformer_outputs[0][:, 0:-1, :]  # [eos token]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return T5Config
 
     @property
@@ -1862,7 +1866,7 @@ class T5Encoder(HFTextEncoder):
         return torch.Size([self.transformer.module.config.d_model])
 
     @property
-    def input_dtype(self):
+    def input_dtype(self) -> torch.dtype:
         return torch.int32
 
 
@@ -1965,7 +1969,7 @@ class FlauBERTEncoder(HFTextEncoder):
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer = self._wrap_transformer(transformer, adapter, trainable)
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
         if mask is not None:
             mask = mask.to(torch.int32)
         transformer_outputs = self.transformer.module(
@@ -1975,10 +1979,10 @@ class FlauBERTEncoder(HFTextEncoder):
         )
         hidden = transformer_outputs[0][:, 1:-1, :]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return FlauBERTConfig
 
     @property
@@ -2001,7 +2005,7 @@ class FlauBERTEncoder(HFTextEncoder):
         return torch.Size([self.transformer.module.config.emb_dim])
 
     @property
-    def input_dtype(self):
+    def input_dtype(self) -> torch.dtype:
         return torch.int32
 
 
@@ -2080,7 +2084,7 @@ class ELECTRAEncoder(HFTextEncoder):
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer = self._wrap_transformer(transformer, adapter, trainable)
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
         if mask is not None:
             mask = mask.to(torch.int32)
         transformer_outputs = self.transformer.module(
@@ -2090,10 +2094,10 @@ class ELECTRAEncoder(HFTextEncoder):
         )
         hidden = transformer_outputs[0][:, 1:-1, :]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return ELECTRAConfig
 
     @property
@@ -2116,7 +2120,7 @@ class ELECTRAEncoder(HFTextEncoder):
         return torch.Size([self.transformer.module.config.hidden_size])
 
     @property
-    def input_dtype(self):
+    def input_dtype(self) -> torch.dtype:
         return torch.int32
 
 
@@ -2174,7 +2178,7 @@ class LongformerEncoder(HFTextEncoder):
         self.transformer = self._wrap_transformer(transformer, adapter, trainable)
         self.max_sequence_length = max_sequence_length
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None):
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
         if mask is not None:
             mask = mask.to(torch.int32)
         transformer_outputs = self.transformer.module(
@@ -2187,10 +2191,10 @@ class LongformerEncoder(HFTextEncoder):
         else:
             hidden = transformer_outputs[0][:, 1:-1, :]  # bos + [sent] + sep
             hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return LongformerConfig
 
     @property
@@ -2213,7 +2217,7 @@ class LongformerEncoder(HFTextEncoder):
         return torch.Size([self.transformer.module.config.hidden_size])
 
     @property
-    def input_dtype(self):
+    def input_dtype(self) -> torch.dtype:
         return torch.int32
 
 
@@ -2266,7 +2270,7 @@ class AutoTransformerEncoder(HFTextEncoder):
         else:
             self.vocab_size = transformer.config.vocab_size
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None):
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
         if mask is not None:
             mask = mask.to(torch.int32)
 
@@ -2288,10 +2292,10 @@ class AutoTransformerEncoder(HFTextEncoder):
         else:
             hidden = transformer_outputs["last_hidden_state"]
             hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return AutoTransformerConfig
 
     @property
@@ -2315,7 +2319,7 @@ class AutoTransformerEncoder(HFTextEncoder):
         return torch.Size([self.transformer.module.config.hidden_size])
 
     @property
-    def input_dtype(self):
+    def input_dtype(self) -> torch.dtype:
         return torch.int32
 
 
@@ -2344,7 +2348,7 @@ class TfIdfEncoder(Encoder):
             idf[i] = str2idf[s]
         self.idf = torch.from_numpy(idf).float().unsqueeze(0)
 
-    def forward(self, t: torch.Tensor, mask=None):
+    def forward(self, t: torch.Tensor, mask: Optional[torch.Tensor] = None) -> EncoderOutputDict:
         # Compute the term frequency within each row
         tf = torch.stack([t_i.bincount(minlength=self.vocab_size) for t_i in torch.unbind(t.long())])
 
@@ -2354,10 +2358,10 @@ class TfIdfEncoder(Encoder):
         # Multiply the term frequency by the inverse document frequency
         tfidf = tf * self.idf
 
-        return {"encoder_output": tfidf}
+        return {ENCODER_OUTPUT: tfidf}
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return TfIdfEncoderConfig
 
     @property

@@ -20,7 +20,16 @@ from typing import Any, Dict, Optional
 import torch
 from torch import Tensor
 
-from ludwig.constants import HIDDEN, LENGTHS, LOGITS, LOSS, PREDICTIONS, PROBABILITIES
+from ludwig.constants import (
+    ENCODER_OUTPUT,
+    ENCODER_OUTPUT_STATE,
+    HIDDEN,
+    LENGTHS,
+    LOGITS,
+    LOSS,
+    PREDICTIONS,
+    PROBABILITIES,
+)
 from ludwig.decoders.registry import get_decoder_cls
 from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_utils import get_input_size_with_dependencies
@@ -407,8 +416,8 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         # ================ Predictions ================
         logits_input = {HIDDEN: hidden}
         # pass supplemental data from encoders to decoder
-        if "encoder_output_state" in combiner_outputs:
-            logits_input["encoder_output_state"] = combiner_outputs["encoder_output_state"]
+        if ENCODER_OUTPUT_STATE in combiner_outputs:
+            logits_input[ENCODER_OUTPUT_STATE] = combiner_outputs[ENCODER_OUTPUT_STATE]
         if LENGTHS in combiner_outputs:
             logits_input[LENGTHS] = combiner_outputs[LENGTHS]
 
@@ -537,7 +546,7 @@ def create_passthrough_input_feature(feature: InputFeature, config: BaseFeatureC
 
         def forward(self, inputs, mask=None):
             assert isinstance(inputs, torch.Tensor)
-            return {"encoder_output": inputs}
+            return {ENCODER_OUTPUT: inputs}
 
         @property
         def input_dtype(self):

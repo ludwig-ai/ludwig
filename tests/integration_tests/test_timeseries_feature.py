@@ -4,7 +4,7 @@ import pytest
 import torch
 
 from ludwig.api import LudwigModel
-from ludwig.constants import COLUMN, INPUT_FEATURES, OUTPUT_FEATURES
+from ludwig.constants import COLUMN, ENCODER_OUTPUT, INPUT_FEATURES, OUTPUT_FEATURES
 from ludwig.features.timeseries_feature import TimeseriesInputFeature
 from ludwig.schema.features.timeseries_feature import TimeseriesInputFeatureConfig
 from ludwig.schema.utils import load_config_with_kwargs
@@ -42,12 +42,12 @@ def test_timeseries_feature(enc_encoder):
 
     # confirm correctness of the encoder output
     assert isinstance(encoder_output, dict)
-    assert "encoder_output" in encoder_output
-    assert isinstance(encoder_output["encoder_output"], torch.Tensor)
+    assert ENCODER_OUTPUT in encoder_output
+    assert isinstance(encoder_output[ENCODER_OUTPUT], torch.Tensor)
     if enc_encoder == "passthrough":
-        assert encoder_output["encoder_output"].shape == (BATCH_SIZE, SEQ_SIZE, 1)
+        assert encoder_output[ENCODER_OUTPUT].shape == (BATCH_SIZE, SEQ_SIZE, 1)
     else:
-        assert encoder_output["encoder_output"].shape == (BATCH_SIZE, DEFAULT_OUTPUT_SIZE)
+        assert encoder_output[ENCODER_OUTPUT].shape == (BATCH_SIZE, DEFAULT_OUTPUT_SIZE)
 
 
 def test_timeseries_preprocessing_with_nan():
