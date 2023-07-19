@@ -93,7 +93,6 @@ class LLM(BaseModel):
 
         logger.info("Loading large language model...")
         self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.base_model)
-        self.initialize_adapter()
 
         # Model initially loaded onto cpu
         self.curr_device = torch.device("cpu")
@@ -193,6 +192,9 @@ class LLM(BaseModel):
             logger.info(f"Fine-tuning with adapter: {self.config_obj.adapter.type}")
             self.model.print_trainable_parameters()
             logger.info("==================================================")
+            
+    def prepare_for_training(self):
+        self.initialize_adapter()
 
     def to_device(self, device):
         device = torch.device(device)

@@ -665,6 +665,7 @@ class LudwigModel:
                             else:
                                 calibrator.train_calibration(validation_set, VALIDATION)
                         if not skip_save_model:
+                            self.model = trainer.model
                             self.model.save(model_dir)
 
                     # Evaluation Frequency

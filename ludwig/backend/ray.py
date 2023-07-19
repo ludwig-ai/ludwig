@@ -480,6 +480,7 @@ class RayTrainerV2(BaseTrainer):
             stream_window_size["test"] = test_set.window_size_bytes
 
         with create_runner(**self.trainer_kwargs) as runner:
+            model_ref = ray.put(extract_tensors(self.model))
             trainer_results = runner.run(
                 lambda config: train_fn(**config),
                 config={
@@ -489,7 +490,7 @@ class RayTrainerV2(BaseTrainer):
                     # weights directly out of Plasma’s shared memory segments, without making any copies.
                     # This enables zero copy model loading on each training worker using shared
                     # memory from the Ray object store for model initialization.
-                    "model_ref": ray.put(extract_tensors(self.model)),
+                    "model_ref": model_ref,
                     "remote_trainer_cls": self.remote_trainer_cls,
                     **kwargs,
                 },
@@ -511,6 +512,12 @@ class RayTrainerV2(BaseTrainer):
         # use `strict=False` to account for PEFT training, where the saved state in the checkpoint
         # might only contain the PEFT layers that were modified during training
         state_dict, *args = results
+
+        # Re-add the model weights to the model
+        model, model_weights = ray.get(model_ref)
+        replace_tensors(model, model_weights, torch.device("cpu"))
+        self.model = model
+        self.model.initialize_adapter()
         self.model.load_state_dict(state_dict, strict=False)
         results = (self.model, *args)
 
