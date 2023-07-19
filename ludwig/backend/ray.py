@@ -502,7 +502,7 @@ class RayTrainerV2(BaseTrainer):
 
         # re-register the weights of the model object in the main process
         self.model, model_weights = ray.get(model_ref)
-        replace_tensors(self.model, model_weights, torch.device("cpu"))        
+        replace_tensors(self.model, model_weights, torch.device("cpu"))
         self.model.prepare_for_training()  # ensure module is initialized exactly as it is in the trainer process
 
         # Set validation field and metric used by trainer
