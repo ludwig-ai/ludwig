@@ -364,7 +364,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
         if SRC in metadata:
             if isinstance(first_audio_entry, str) and not has_remote_protocol(first_audio_entry):
                 src_path = os.path.dirname(os.path.abspath(metadata.get(SRC)))
-        abs_path_column = backend.df_engine.map_objects(
+        abs_path_column = backend.df_engine.map_objects(  # This gets the CSV file path
             column, lambda row: get_abs_path(src_path, row) if isinstance(row, str) else row
         )
 
