@@ -76,7 +76,7 @@ def parquet_filepath(parquet_file: str, request: "pytest.FixtureRequest") -> str
     return parquet_file if filepath_type == "absolute" else os.path.basename(parquet_file)
 
 
-def test_read_remote_parquet(parquet_filepath: str):
+def test_read_remote_parquet(parquet_filepath: str, ray_cluster_2cpu):
     """Test for the fix to https://github.com/ludwig-ai/ludwig/issues/3440.
 
     Parquet file reads will fail with `pyarrow.lib.ArrowInvalid` under the following conditions:
