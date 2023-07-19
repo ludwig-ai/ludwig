@@ -192,7 +192,7 @@ class LLM(BaseModel):
             logger.info(f"Fine-tuning with adapter: {self.config_obj.adapter.type}")
             self.model.print_trainable_parameters()
             logger.info("==================================================")
-            
+
     def prepare_for_training(self):
         self.initialize_adapter()
 

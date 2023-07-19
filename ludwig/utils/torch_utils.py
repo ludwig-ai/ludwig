@@ -182,7 +182,7 @@ class LudwigModule(Module):
     @property
     def device(self):
         return self.device_tensor.device
-    
+
     def prepare_for_training(self):
         """This is called from within the Trainer object to do any final instantiation before model training."""
         pass
