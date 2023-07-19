@@ -480,16 +480,16 @@ class RayTrainerV2(BaseTrainer):
             stream_window_size["test"] = test_set.window_size_bytes
 
         with create_runner(**self.trainer_kwargs) as runner:
+            # Extract weights as numpy tensors and place them in the Ray object store.
+            # If we store the weights of a model as NumPy arrays on Plasma, we can access those
+            # weights directly out of Plasma’s shared memory segments, without making any copies.
+            # This enables zero copy model loading on each training worker using shared
+            # memory from the Ray object store for model initialization.
             model_ref = ray.put(extract_tensors(self.model))
             trainer_results = runner.run(
                 lambda config: train_fn(**config),
                 config={
                     "executable_kwargs": executable_kwargs,
-                    # Extract weights as numpy tensors and place them in the Ray object store.
-                    # If we store the weights of a model as NumPy arrays on Plasma, we can access those
-                    # weights directly out of Plasma’s shared memory segments, without making any copies.
-                    # This enables zero copy model loading on each training worker using shared
-                    # memory from the Ray object store for model initialization.
                     "model_ref": model_ref,
                     "remote_trainer_cls": self.remote_trainer_cls,
                     **kwargs,
