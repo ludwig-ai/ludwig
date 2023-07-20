@@ -638,12 +638,13 @@ class LudwigModel:
                         test_set=test_set,
                         save_path=model_dir,
                     )
+                    (self.model, train_trainset_stats, train_valiset_stats, train_testset_stats) = train_stats
 
                     # Calibrates output feature probabilities on validation set if calibration is enabled.
                     # Must be done after training, and before final model parameters are saved.
                     if self.backend.is_coordinator():
                         calibrator = Calibrator(
-                            trainer.model,
+                            self.model,
                             self.backend,
                             batch_size=trainer.eval_batch_size,
                         )
@@ -667,7 +668,6 @@ class LudwigModel:
                         if not skip_save_model:
                             # ensure that any changes to the model object held by the
                             # trainer class are reflected in the model in this class.
-                            self.model = trainer.model
                             self.model.save(model_dir)
 
                     # Evaluation Frequency
@@ -687,7 +687,6 @@ class LudwigModel:
                     # List[TrainerMetric], with one entry per training checkpoint, according to steps_per_checkpoint.
                     # We reduce the dictionary of TrainerMetrics to a simple list of floats for interfacing with Ray
                     # Tune.
-                    (self.model, train_trainset_stats, train_valiset_stats, train_testset_stats) = train_stats
                     train_stats = TrainingStats(
                         metric_utils.reduce_trainer_metrics_dict(train_trainset_stats),
                         metric_utils.reduce_trainer_metrics_dict(train_valiset_stats),

@@ -194,6 +194,7 @@ class LLM(BaseModel):
             logger.info("==================================================")
 
     def prepare_for_training(self):
+        # TODO: this implementation will not work if resuming from a previous checkpoint. Need to fix this.
         self.initialize_adapter()
 
     def to_device(self, device):
