@@ -502,7 +502,7 @@ class RayTrainerV2(BaseTrainer):
 
         # re-register the weights of the model object in the main process
         self.model = dist_strategy.replace_model_from_serialization(ray.get(model_ref))
-        
+
         # ensure module is initialized exactly as it is in the trainer process
         # so that the state dict can be loaded back into the model correctly.
         self.model.prepare_for_training()
