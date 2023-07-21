@@ -413,6 +413,9 @@ def test_lora_wrap_on_init():
     }
     config_obj = ModelConfig.from_dict(config)
     model = LLM(config_obj)
+    # We need to explicitly make this call since we now load the adapter
+    # in the trainer as opposed to the point of LLM model initialization.
+    model.prepare_for_training()
     assert not isinstance(model.model, PreTrainedModel)
     assert isinstance(model.model, PeftModel)
 
