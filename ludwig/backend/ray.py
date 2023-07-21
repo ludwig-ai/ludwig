@@ -62,7 +62,6 @@ from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
 from ludwig.utils.dataframe_utils import is_dask_series_or_df, set_index_name
 from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.misc_utils import get_from_registry
-from ludwig.utils.model_utils import extract_tensors, replace_tensors
 from ludwig.utils.system_utils import Resources
 from ludwig.utils.torch_utils import get_torch_device, initialize_pytorch
 from ludwig.utils.types import DataFrame, Series
@@ -198,8 +197,7 @@ def train_fn(
         # Deserialize the model (minus weights) from Plasma
         # Extract the weights from Plasma (without copying data)
         # Load the weights back into the model in-place on the current device (CPU)
-        model, model_weights = ray.get(model_ref)
-        replace_tensors(model, model_weights, torch.device("cpu"))
+        model = distributed.replace_model_from_serialization(ray.get(model_ref))
         model = distributed.to_device(model)
 
         trainer = remote_trainer_cls(
@@ -344,6 +342,7 @@ class RayAirRunner:
         trainer_kwargs = copy.copy(trainer_kwargs)
         self.backend_config = trainer_kwargs.pop("backend", None)
         self.strategy = trainer_kwargs.pop("strategy", get_default_strategy_name())
+        self.dist_strategy = get_dist_strategy(self.strategy)
 
         if "max_retries" in trainer_kwargs:
             logger.warning("`max_retries` is no longer supported as a trainer argument in Ray backend. Ignoring it.")
@@ -413,7 +412,7 @@ class RayAirRunner:
 
         callbacks = callbacks or []
 
-        trainer_cls, kwargs = get_dist_strategy(self.strategy).get_trainer_cls(self.backend_config)
+        trainer_cls, kwargs = self.dist_strategy.get_trainer_cls(self.backend_config)
         train_loop_config = {**config, "distributed_strategy": self.strategy}
         trainer = trainer_cls(
             train_loop_per_worker=train_loop_per_worker,
@@ -485,7 +484,8 @@ class RayTrainerV2(BaseTrainer):
             # weights directly out of Plasma’s shared memory segments, without making any copies.
             # This enables zero copy model loading on each training worker using shared
             # memory from the Ray object store for model initialization.
-            model_ref = ray.put(extract_tensors(self.model))
+            dist_strategy = runner.dist_strategy
+            model_ref = ray.put(dist_strategy.extract_model_for_serialization(self.model))
             trainer_results = runner.run(
                 lambda config: train_fn(**config),
                 config={
@@ -501,8 +501,8 @@ class RayTrainerV2(BaseTrainer):
             )
 
         # re-register the weights of the model object in the main process
-        self.model, model_weights = ray.get(model_ref)
-        replace_tensors(self.model, model_weights, torch.device("cpu"))
+        self.model = dist_strategy.replace_model_from_serialization(ray.get(model_ref))
+        
         # ensure module is initialized exactly as it is in the trainer process
         # so that the state dict can be loaded back into the model correctly.
         self.model.prepare_for_training()
