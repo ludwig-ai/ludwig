@@ -220,11 +220,11 @@ class DeepSpeedCheckpoint(Checkpoint):
             save_path, load_optimizer_states=False, load_lr_scheduler_states=False, load_module_only=True
         )
         return self.model.module.cpu().state_dict()
-    
+
     @classmethod
     def extract_model_for_serialization(cls, model: nn.Module) -> Union[nn.Module, Tuple[nn.Module, List[Dict]]]:
         return extract_tensors(model)
-    
+
     @classmethod
     def replace_model_from_serialization(cls, state: Union[nn.Module, Tuple[nn.Module, List[Dict]]]) -> nn.Module:
         assert isinstance(state, tuple)

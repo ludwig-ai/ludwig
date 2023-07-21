@@ -181,11 +181,11 @@ class DistributedStrategy(ABC):
         from ludwig.utils.checkpoint_utils import MultiNodeCheckpoint
 
         return MultiNodeCheckpoint(self, model, optimizer, scheduler)
-    
+
     @classmethod
     def extract_model_for_serialization(cls, model: nn.Module) -> Union[nn.Module, Tuple[nn.Module, List[Dict]]]:
         return model
-    
+
     @classmethod
     def replace_model_from_serialization(cls, state: Union[nn.Module, Tuple[nn.Module, List[Dict]]]) -> nn.Module:
         assert isinstance(state, nn.Module)
