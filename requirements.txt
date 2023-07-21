@@ -16,7 +16,6 @@ PyYAML>=3.12
 absl-py
 kaggle
 requests
-tables
 fsspec[http]
 dataclasses-json
 jsonschema>=4.5.0,<4.7
