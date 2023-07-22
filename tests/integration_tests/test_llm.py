@@ -8,6 +8,7 @@ import torch
 from ludwig.api import LudwigModel
 from ludwig.constants import (
     ADAPTER,
+    BACKEND,
     BASE_MODEL,
     BATCH_SIZE,
     EPOCHS,
@@ -116,9 +117,10 @@ def test_llm_text_to_text(tmpdir, backend, ray_cluster_4cpu):
         GENERATION: get_generation_config(),
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
+        BACKEND: backend,
     }
 
-    model = LudwigModel(config, backend=backend)
+    model = LudwigModel(config)
     model.train(dataset=dataset_filename, output_directory=str(tmpdir), skip_save_processed_input=True)
 
     preds, _ = model.predict(dataset=dataset_filename, output_directory=str(tmpdir), split="test")
@@ -175,9 +177,10 @@ def test_llm_zero_shot_classification(tmpdir, backend, ray_cluster_4cpu):
         PROMPT: {"task": "This is a review of a restaurant. Classify the sentiment."},
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
+        BACKEND: backend,
     }
 
-    model = LudwigModel(config, backend=backend)
+    model = LudwigModel(config)
     model.train(dataset=df, output_directory=str(tmpdir), skip_save_processed_input=True)
 
     prediction_df = pd.DataFrame(
@@ -246,6 +249,7 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
         PREPROCESSING: {
             "split": {TYPE: "fixed"},
         },
+        BACKEND: {**backend, "cache_dir": str(tmpdir)},
     }
 
     dataset_path = generate_data(
@@ -260,7 +264,7 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
     df["output"] = np.random.choice([1, 2, 3, 4, 5], size=len(df)).astype(str)  # ensure labels match the feature config
     df.to_csv(dataset_path, index=False)
 
-    model = LudwigModel(config, backend={**backend, "cache_dir": str(tmpdir)})
+    model = LudwigModel(config)
     model.train(dataset=dataset_path, output_directory=str(tmpdir), skip_save_processed_input=True)
 
     # TODO: fix LLM model loading
@@ -351,6 +355,7 @@ def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strat
             BATCH_SIZE: 8,
             EPOCHS: 2,
         },
+        BACKEND: backend,
     }
 
     if finetune_strategy is not None:
@@ -359,7 +364,7 @@ def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strat
             **adapter_args,
         }
 
-    model = LudwigModel(config, backend=backend)
+    model = LudwigModel(config)
     model.train(dataset=df, output_directory=str(tmpdir), skip_save_processed_input=False)
 
     prediction_df = pd.DataFrame(
@@ -408,6 +413,9 @@ def test_lora_wrap_on_init():
     }
     config_obj = ModelConfig.from_dict(config)
     model = LLM(config_obj)
+    # We need to explicitly make this call since we now load the adapter
+    # in the trainer as opposed to the point of LLM model initialization.
+    model.prepare_for_training()
     assert not isinstance(model.model, PreTrainedModel)
     assert isinstance(model.model, PeftModel)
 

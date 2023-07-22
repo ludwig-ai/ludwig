@@ -175,6 +175,7 @@ class Trainer(BaseTrainer):
         self.base_learning_rate = base_learning_rate
 
         self.model = model
+        self.model.prepare_for_training()
         self.model = self.distributed.to_device(self.model)
         self.model.metrics_to_device(self.device)
 
