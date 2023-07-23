@@ -26,9 +26,12 @@ output_features:
 
 trainer:
     type: finetune
+    learning_rate: 0.0003
     batch_size: 2
-    gradient_accumulation_steps: 4
+    gradient_accumulation_steps: 8
     epochs: 3
+    learning_rate_scheduler:
+      warmup_fraction: 0.01
 
 backend:
   type: local
