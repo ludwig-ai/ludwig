@@ -832,11 +832,14 @@ def test_llm_base_model_config_error(base_model_config):
         ModelConfig.from_dict(config)
 
 
-@pytest.mark.parametrize("bits,expected_qconfig", [
-    (None, None),
-    (4, QuantizationConfig(bits=4)),
-    (8, QuantizationConfig(bits=8)),
-])
+@pytest.mark.parametrize(
+    "bits,expected_qconfig",
+    [
+        (None, None),
+        (4, QuantizationConfig(bits=4)),
+        (8, QuantizationConfig(bits=8)),
+    ],
+)
 def test_llm_quantization_config(bits: Optional[int], expected_qconfig: Optional[QuantizationConfig]):
     config = {
         MODEL_TYPE: MODEL_LLM,
