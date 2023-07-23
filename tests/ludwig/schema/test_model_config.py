@@ -1,5 +1,6 @@
 import os
 from tempfile import TemporaryDirectory
+from typing import Optional
 
 import pytest
 import yaml
@@ -42,6 +43,7 @@ from ludwig.schema.features.augmentation.image import RandomBlurConfig, RandomRo
 from ludwig.schema.features.image_feature import AUGMENTATION_DEFAULT_OPERATIONS
 from ludwig.schema.features.number_feature import NumberOutputFeatureConfig
 from ludwig.schema.features.text_feature import TextOutputFeatureConfig
+from ludwig.schema.llms.quantization import QuantizationConfig
 from ludwig.schema.model_config import ModelConfig
 from ludwig.schema.utils import BaseMarshmallowConfig, convert_submodules
 
@@ -828,3 +830,25 @@ def test_llm_base_model_config_error(base_model_config):
 
     with pytest.raises(ConfigValidationError):
         ModelConfig.from_dict(config)
+
+
+@pytest.mark.parametrize("bits,expected_qconfig", [
+    (None, None),
+    (4, QuantizationConfig(bits=4)),
+    (8, QuantizationConfig(bits=8)),
+])
+def test_llm_quantization_config(bits: Optional[int], expected_qconfig: Optional[QuantizationConfig]):
+    config = {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: "bigscience/bloomz-3b",
+        "quantization": {"bits": bits},
+        INPUT_FEATURES: [{NAME: "text_input", TYPE: "text"}],
+        OUTPUT_FEATURES: [{NAME: "text_output", TYPE: "text"}],
+    }
+
+    if bits is None:
+        del config["quantization"]
+
+    config_obj = ModelConfig.from_dict(config)
+
+    assert config_obj.quantization == expected_qconfig
