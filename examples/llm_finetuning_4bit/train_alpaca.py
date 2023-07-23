@@ -10,7 +10,9 @@ config = yaml.safe_load(
 model_type: llm
 base_model: bigscience/bloomz-3b
 
-quantization: 4bit
+quantization:
+  bits: 4
+
 adapter:
   type: lora
 

@@ -8,10 +8,10 @@ from ludwig.schema.utils import ludwig_dataclass
 @DeveloperAPI
 @ludwig_dataclass
 class QuantizationConfig(schema_utils.BaseMarshmallowConfig):
-    level = schema_utils.StringOptions(
-        options=["none", "4bit", "8bit"],
-        default="none",
-        description="The quantization level to apply to weights on load. Set `none` to disable quantization.",
+    bits: int = schema_utils.IntegerOptions(
+        options=[4, 8],
+        default=4,
+        description="The quantization level to apply to weights on load.",
     )
 
     llm_int8_threshold: float = schema_utils.NonNegativeFloat(
@@ -37,7 +37,7 @@ class QuantizationConfig(schema_utils.BaseMarshmallowConfig):
         )
     )
 
-    bnb_4bit_compute_dtype = schema_utils.StringOptions(
+    bnb_4bit_compute_dtype: str = schema_utils.StringOptions(
         options=["float32", "float16", "bfloat16"],
         default="float16",
         description=(
@@ -54,7 +54,7 @@ class QuantizationConfig(schema_utils.BaseMarshmallowConfig):
         )
     )
 
-    bnb_4bit_quant_type = schema_utils.StringOptions(
+    bnb_4bit_quant_type: str = schema_utils.StringOptions(
         options=["fp4", "nf4"],
         default="nf4",
         description="This sets the quantization data type in the bnb.nn.Linear4Bit layers."
@@ -62,8 +62,8 @@ class QuantizationConfig(schema_utils.BaseMarshmallowConfig):
 
     def to_bitsandbytes(self) -> BitsAndBytesConfig:
         return BitsAndBytesConfig(
-            load_in_4bit=self.level == "4bit",
-            load_in_8bit=self.level == "8bit",
+            load_in_4bit=self.bits == 4,
+            load_in_8bit=self.bits == 8,
             llm_int8_threshold=self.llm_int8_threshold,
             llm_int8_has_fp16_weight=self.llm_int8_has_fp16_weight,
             bnb_4bit_compute_dtype=self.bnb_4bit_compute_dtype,
@@ -76,11 +76,6 @@ class QuantizationConfig(schema_utils.BaseMarshmallowConfig):
 class QuantizationConfigField(schema_utils.DictMarshmallowField):
     def __init__(self):
         super().__init__(QuantizationConfig, default_missing=True)
-
-    def _deserialize(self, value, attr, data, **kwargs):
-        if isinstance(value, str):
-            value = {"level": value}
-        return super()._deserialize(value, attr, data, **kwargs)
 
     def _jsonschema_type_mapping(self):
         return schema_utils.unload_jsonschema_from_marshmallow_class(QuantizationConfig)
