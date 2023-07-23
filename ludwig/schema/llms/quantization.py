@@ -6,7 +6,6 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.utils import ludwig_dataclass
 
-
 warnings.filterwarnings(
     action="ignore",
     category=UserWarning,
@@ -35,7 +34,7 @@ class QuantizationConfig(schema_utils.BaseMarshmallowConfig):
             "quantization works well for values of magnitude ~5, but beyond that, there is a significant performance "
             "penalty. A good default threshold is 6, but a lower threshold might be needed for more unstable models "
             "(small models, fine-tuning)."
-        )
+        ),
     )
 
     llm_int8_has_fp16_weight: bool = schema_utils.Boolean(
@@ -43,7 +42,7 @@ class QuantizationConfig(schema_utils.BaseMarshmallowConfig):
         description=(
             "This flag runs LLM.int8() with 16-bit main weights. This is useful for fine-tuning as the weights do "
             "not have to be converted back and forth for the backward pass."
-        )
+        ),
     )
 
     bnb_4bit_compute_dtype: str = schema_utils.StringOptions(
@@ -52,7 +51,7 @@ class QuantizationConfig(schema_utils.BaseMarshmallowConfig):
         description=(
             "This sets the computational type which might be different than the input type. For example, inputs "
             "might be fp32, but computation can be set to bf16 for speedups."
-        )
+        ),
     )
 
     bnb_4bit_use_double_quant: bool = schema_utils.Boolean(
@@ -60,13 +59,13 @@ class QuantizationConfig(schema_utils.BaseMarshmallowConfig):
         description=(
             "This flag is used for nested quantization where the quantization constants from the first quantization "
             "are quantized again."
-        )
+        ),
     )
 
     bnb_4bit_quant_type: str = schema_utils.StringOptions(
         options=["fp4", "nf4"],
         default="nf4",
-        description="This sets the quantization data type in the bnb.nn.Linear4Bit layers."
+        description="This sets the quantization data type in the bnb.nn.Linear4Bit layers.",
     )
 
     def to_bitsandbytes(self) -> BitsAndBytesConfig:
