@@ -91,6 +91,11 @@ class LLM(BaseModel):
         self.model_name = self.config_obj.base_model
         self.model_config = AutoConfig.from_pretrained(self.config_obj.base_model)
 
+        self.load_kwargs = {}
+        if self.config_obj.quantization:
+            # Apply quanitzation configuration at model load time
+            self.load_kwargs["quantization_config"] = self.config_obj.quantization.to_bitsandbytes()
+
         logger.info("Loading large language model...")
         self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.base_model)
 
@@ -195,7 +200,24 @@ class LLM(BaseModel):
 
     def prepare_for_training(self):
         # TODO: this implementation will not work if resuming from a previous checkpoint. Need to fix this.
+        if self.config_obj.quantization:
+            self.prepare_for_quantized_training()
         self.initialize_adapter()
+
+    def prepare_for_quantized_training(self):
+        # Make adjustments to model for quantized fine-tuning. Taken from:
+        # https://github.com/huggingface/peft/blob/main/examples/fp4_finetuning/finetune_fp4_opt_bnb_peft.py
+        for param in self.model.parameters():
+            param.requires_grad = False  # freeze the model - train adapters later
+            if param.ndim == 1:
+                # cast the small parameters (e.g. layernorm) to fp32 for stability
+                param.data = param.data.to(torch.float32)
+
+        class CastOutputToFloat(torch.nn.Sequential):
+            def forward(self, x):
+                return super().forward(x).to(torch.float32)
+
+        self.model.lm_head = CastOutputToFloat(self.model.lm_head)
 
     def to_device(self, device):
         device = torch.device(device)
@@ -220,6 +242,9 @@ class LLM(BaseModel):
                     max_memory={i: "13GiB" for i in range(num_gpus)},
                 )
             )
+
+            if self.config_obj.quantization:
+                model_kwargs["quantization_config"] = self.config_obj.quantization.to_bitsandbytes()
 
             # we save and reload the weights to ensure that they can be sharded across the GPUs using `from_pretrained`
             with tempfile.TemporaryDirectory() as tmpdir:
