@@ -209,20 +209,6 @@ class LLM(BaseModel):
 
         self.model = prepare_model_for_kbit_training(self.model, use_gradient_checkpointing=False)
 
-        # # Make adjustments to model for quantized fine-tuning. Taken from:
-        # # https://github.com/huggingface/peft/blob/main/examples/fp4_finetuning/finetune_fp4_opt_bnb_peft.py
-        # for param in self.model.parameters():
-        #     param.requires_grad = False  # freeze the model - train adapters later
-        #     if param.ndim == 1:
-        #         # cast the small parameters (e.g. layernorm) to fp32 for stability
-        #         param.data = param.data.to(torch.float32)
-
-        # class CastOutputToFloat(torch.nn.Sequential):
-        #     def forward(self, x):
-        #         return super().forward(x).to(torch.float32)
-
-        # self.model.lm_head = CastOutputToFloat(self.model.lm_head)
-
     def to_device(self, device):
         device = torch.device(device)
 

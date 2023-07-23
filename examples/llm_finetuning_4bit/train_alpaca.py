@@ -8,8 +8,7 @@ from ludwig.api import LudwigModel
 config = yaml.safe_load(
     """
 model_type: llm
-# base_model: hf-internal-testing/tiny-random-OPTForCausalLM
-base_model: meta-llama/Llama-2-7b
+base_model: meta-llama/Llama-2-7b-hf
 
 quantization:
   bits: 4
@@ -27,7 +26,8 @@ output_features:
 
 trainer:
     type: finetune
-    batch_size: 4
+    batch_size: 2
+    gradient_accumulation_steps: 4
     epochs: 3
 
 backend:
