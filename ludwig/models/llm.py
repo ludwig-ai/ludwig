@@ -91,13 +91,13 @@ class LLM(BaseModel):
         self.model_name = self.config_obj.base_model
         self.model_config = AutoConfig.from_pretrained(self.config_obj.base_model)
 
-        self.load_kwargs = {}
+        self.load_kwargs = {"torch_dtype": torch.float16}
         if self.config_obj.quantization:
             # Apply quanitzation configuration at model load time
             self.load_kwargs["quantization_config"] = self.config_obj.quantization.to_bitsandbytes()
 
         logger.info("Loading large language model...")
-        self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.base_model)
+        self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.base_model, **self.load_kwargs)
 
         # Model initially loaded onto cpu
         self.curr_device = torch.device("cpu")
@@ -205,24 +205,29 @@ class LLM(BaseModel):
         self.initialize_adapter()
 
     def prepare_for_quantized_training(self):
-        # Make adjustments to model for quantized fine-tuning. Taken from:
-        # https://github.com/huggingface/peft/blob/main/examples/fp4_finetuning/finetune_fp4_opt_bnb_peft.py
-        for param in self.model.parameters():
-            param.requires_grad = False  # freeze the model - train adapters later
-            if param.ndim == 1:
-                # cast the small parameters (e.g. layernorm) to fp32 for stability
-                param.data = param.data.to(torch.float32)
+        from peft import prepare_model_for_kbit_training
 
-        class CastOutputToFloat(torch.nn.Sequential):
-            def forward(self, x):
-                return super().forward(x).to(torch.float32)
+        self.model = prepare_model_for_kbit_training(self.model, use_gradient_checkpointing=False)
 
-        self.model.lm_head = CastOutputToFloat(self.model.lm_head)
+        # # Make adjustments to model for quantized fine-tuning. Taken from:
+        # # https://github.com/huggingface/peft/blob/main/examples/fp4_finetuning/finetune_fp4_opt_bnb_peft.py
+        # for param in self.model.parameters():
+        #     param.requires_grad = False  # freeze the model - train adapters later
+        #     if param.ndim == 1:
+        #         # cast the small parameters (e.g. layernorm) to fp32 for stability
+        #         param.data = param.data.to(torch.float32)
+
+        # class CastOutputToFloat(torch.nn.Sequential):
+        #     def forward(self, x):
+        #         return super().forward(x).to(torch.float32)
+
+        # self.model.lm_head = CastOutputToFloat(self.model.lm_head)
 
     def to_device(self, device):
         device = torch.device(device)
 
         if device == self.curr_device:
+            log_once(f"Model already on device'{device}'.")
             return self
         else:
             log_once(f"Moving LLM from '{self.curr_device}' to '{device}'.")

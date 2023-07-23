@@ -1,8 +1,17 @@
+import warnings
+
 from transformers import BitsAndBytesConfig
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.utils import ludwig_dataclass
+
+
+warnings.filterwarnings(
+    action="ignore",
+    category=UserWarning,
+    module="bitsandbytes.cuda_setup.main",
+)
 
 
 @DeveloperAPI
@@ -15,7 +24,7 @@ class QuantizationConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     llm_int8_threshold: float = schema_utils.NonNegativeFloat(
-        default=6,
+        default=6.0,
         description=(
             "This corresponds to the outlier threshold for outlier detection as described in `LLM.int8() : 8-bit "
             "Matrix Multiplication for Transformers at Scale` paper: https://arxiv.org/abs/2208.07339. Any hidden "
@@ -41,7 +50,7 @@ class QuantizationConfig(schema_utils.BaseMarshmallowConfig):
         options=["float32", "float16", "bfloat16"],
         default="float16",
         description=(
-            "This sets the computational type which might be different than the input time. For example, inputs "
+            "This sets the computational type which might be different than the input type. For example, inputs "
             "might be fp32, but computation can be set to bf16 for speedups."
         )
     )

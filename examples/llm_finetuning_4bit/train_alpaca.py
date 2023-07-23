@@ -8,7 +8,8 @@ from ludwig.api import LudwigModel
 config = yaml.safe_load(
     """
 model_type: llm
-base_model: bigscience/bloomz-3b
+# base_model: hf-internal-testing/tiny-random-OPTForCausalLM
+base_model: meta-llama/Llama-2-7b
 
 quantization:
   bits: 4
