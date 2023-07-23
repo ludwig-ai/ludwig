@@ -91,9 +91,10 @@ class LLM(BaseModel):
         self.model_name = self.config_obj.base_model
         self.model_config = AutoConfig.from_pretrained(self.config_obj.base_model)
 
-        self.load_kwargs = {"torch_dtype": torch.float16}
+        self.load_kwargs = {}
         if self.config_obj.quantization:
             # Apply quanitzation configuration at model load time
+            self.load_kwargs["torch_dtype"] = self.config_obj.quantization.bnb_4bit_compute_dtype
             self.load_kwargs["quantization_config"] = self.config_obj.quantization.to_bitsandbytes()
 
         logger.info("Loading large language model...")
