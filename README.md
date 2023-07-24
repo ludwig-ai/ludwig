@@ -221,7 +221,7 @@ trainer:
   batch_size: 64
   optimizer:
     type: adamw
-    beat1: 0.9
+    bata1: 0.9
   learning_rate: 0.001
 
 backend:

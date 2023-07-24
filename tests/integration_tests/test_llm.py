@@ -294,9 +294,9 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
     ],
 )
 @pytest.mark.parametrize(
-    "finetune_strategy,adapter_args",
+    "finetune_strategy,adapter_args,quantization",
     [
-        (None, {}),
+        (None, {}, None),
         # (
         #     "prompt_tuning",
         #     {
@@ -315,9 +315,10 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
         # ("prefix_tuning", {"num_virtual_tokens": 8}),
         # ("p_tuning", {"num_virtual_tokens": 8, "encoder_reparameterization_type": "MLP"}),
         # ("p_tuning", {"num_virtual_tokens": 8, "encoder_reparameterization_type": "LSTM"}),
-        ("lora", {}),
+        ("lora", {}, None),
+        ("lora", {}, {"bits": 4}),  # qlora
         # ("adalora", {}),
-        ("adaption_prompt", {"adapter_len": 6, "adapter_layers": 1}),
+        ("adaption_prompt", {"adapter_len": 6, "adapter_layers": 1}, None),
     ],
     ids=[
         "none",
@@ -327,11 +328,15 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
         # "p_tuning_mlp_reparameterization",
         # "p_tuning_lstm_reparameterization",
         "lora",
+        "qlora",
         # "adalora",
         "adaption_prompt",
     ],
 )
-def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strategy, adapter_args):
+def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strategy, adapter_args, quantization):
+    if not torch.cuda.is_available() or torch.cuda.device_count() == 0:
+        pytest.skip("Skip: quantization requires GPU and none are available.")
+
     input_features = [text_feature(name="input", encoder={"type": "passthrough"})]
     output_features = [text_feature(name="output")]
 
@@ -363,6 +368,9 @@ def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strat
             TYPE: finetune_strategy,
             **adapter_args,
         }
+
+    if quantization is not None:
+        config["quantization"] = quantization
 
     model = LudwigModel(config)
     model.train(dataset=df, output_directory=str(tmpdir), skip_save_processed_input=False)
@@ -413,6 +421,9 @@ def test_lora_wrap_on_init():
     }
     config_obj = ModelConfig.from_dict(config)
     model = LLM(config_obj)
+    # We need to explicitly make this call since we now load the adapter
+    # in the trainer as opposed to the point of LLM model initialization.
+    model.prepare_for_training()
     assert not isinstance(model.model, PreTrainedModel)
     assert isinstance(model.model, PeftModel)
 

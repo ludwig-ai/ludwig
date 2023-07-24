@@ -91,8 +91,14 @@ class LLM(BaseModel):
         self.model_name = self.config_obj.base_model
         self.model_config = AutoConfig.from_pretrained(self.config_obj.base_model)
 
+        self.load_kwargs = {}
+        if self.config_obj.quantization:
+            # Apply quanitzation configuration at model load time
+            self.load_kwargs["torch_dtype"] = getattr(torch, self.config_obj.quantization.bnb_4bit_compute_dtype)
+            self.load_kwargs["quantization_config"] = self.config_obj.quantization.to_bitsandbytes()
+
         logger.info("Loading large language model...")
-        self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.base_model)
+        self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.base_model, **self.load_kwargs)
 
         # Model initially loaded onto cpu
         self.curr_device = torch.device("cpu")
@@ -195,12 +201,20 @@ class LLM(BaseModel):
 
     def prepare_for_training(self):
         # TODO: this implementation will not work if resuming from a previous checkpoint. Need to fix this.
+        if self.config_obj.quantization:
+            self.prepare_for_quantized_training()
         self.initialize_adapter()
+
+    def prepare_for_quantized_training(self):
+        from peft import prepare_model_for_kbit_training
+
+        self.model = prepare_model_for_kbit_training(self.model, use_gradient_checkpointing=False)
 
     def to_device(self, device):
         device = torch.device(device)
 
         if device == self.curr_device:
+            log_once(f"Model already on device'{device}'.")
             return self
         else:
             log_once(f"Moving LLM from '{self.curr_device}' to '{device}'.")
@@ -220,6 +234,9 @@ class LLM(BaseModel):
                     max_memory={i: "13GiB" for i in range(num_gpus)},
                 )
             )
+
+            if self.config_obj.quantization:
+                model_kwargs["quantization_config"] = self.config_obj.quantization.to_bitsandbytes()
 
             # we save and reload the weights to ensure that they can be sharded across the GPUs using `from_pretrained`
             with tempfile.TemporaryDirectory() as tmpdir:
