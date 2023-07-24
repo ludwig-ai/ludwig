@@ -441,8 +441,6 @@ class LudwigModel:
             `(training_set, validation_set, test_set)`.
             `output_directory` filepath to where training results are stored.
         """
-        # print("ASDFASDF at the top of LudwigModel.train")
-        # breakpoint()
         if self._user_config.get(HYPEROPT):
             print_boxed("WARNING")
             logger.warning(HYPEROPT_WARNING)
@@ -1556,8 +1554,6 @@ class LudwigModel:
         ludwig_model = LudwigModel.load(model_dir)
         ```
         """
-        # print("ASDFASDF at the top of LudwigModel.load")
-        # breakpoint()
         # Initialize Horovod and PyTorch before calling `broadcast()` to prevent initializing
         # Torch with default parameters
         backend_param = backend

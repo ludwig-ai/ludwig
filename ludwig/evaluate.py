@@ -103,8 +103,6 @@ def evaluate_cli(
 
      :return: (`None`)
     """
-    # print('ASDFASDF inside evaluate_cli')
-    # breakpoint()
     model = LudwigModel.load(
         model_path,
         logging_level=logging_level,
