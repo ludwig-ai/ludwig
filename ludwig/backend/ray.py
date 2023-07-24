@@ -441,8 +441,6 @@ class RayTrainerV2(BaseTrainer):
         executable_kwargs: Dict[str, Any],
         **kwargs,
     ):
-        print('ASDFASDF INSIDE RAY TRAINER V2')
-        breakpoint()
         self.model = model.cpu()
         self.data_loader_kwargs = data_loader_kwargs or {}
         self.executable_kwargs = executable_kwargs
@@ -693,10 +691,16 @@ class RayPredictor(BasePredictor):
     def batch_predict(self, dataset: RayDataset, *args, collect_logits: bool = False, **kwargs):
         self._check_dataset(dataset)
 
-        distributed_strategy = self.trainer_kwargs.get("strategy", get_default_strategy_name())
-
         predictor_kwargs = self.predictor_kwargs
         output_columns = get_output_columns(self.model.output_features, include_logits=collect_logits)
+        
+        num_cpus, num_gpus = self.get_resources_per_worker()
+        
+        distributed_strategy = self.trainer_kwargs.get("strategy", get_default_strategy_name())
+        if distributed_strategy == "deepspeed" or distributed_strategy.get("type", None) == "deepspeed":
+            # if deepspeed was used for training, do NOT use it for batch prediction step
+            num_gpus = torch.cuda.device_count()
+            distributed_strategy = "local"
 
         model_ref = ray.put(extract_tensors(self.model))
         batch_predictor = self.get_batch_infer_model(
@@ -710,9 +714,6 @@ class RayPredictor(BasePredictor):
             distributed_strategy=distributed_strategy,
             **kwargs,
         )
-
-        num_cpus, num_gpus = self.get_resources_per_worker()
-        num_gpus = 4
 
         with tensor_extension_casting(False):
             predictions = dataset.ds.map_batches(
@@ -762,8 +763,6 @@ class RayPredictor(BasePredictor):
             )
             del model_ref
 
-        print("ASDFASDF after eval_fn")
-        breakpoint()
         eval_stats = eval_results.metrics["eval_results"][0]
 
         predictions = None
@@ -798,15 +797,11 @@ class RayPredictor(BasePredictor):
     ):        
         class BatchInferModel:
             def __init__(self):
-                print("ASDFASDF inside BatchInferModel init")
-                breakpoint()
-                # initialize_pytorch(local_rank=session.get_local_rank(), local_size=_local_size())
-                # distributed = init_dist_strategy(distributed_strategy)
+                distributed = init_dist_strategy(distributed_strategy)
 
                 model, model_weights = ray.get(model_ref)
                 replace_tensors(model, model_weights, torch.device("cpu"))
-                # self.model = distributed.to_device(model)
-                self.model = self.model.to_device('cuda')
+                model = distributed.to_device(model)
 
                 self.output_columns = output_columns
                 self.features = features
@@ -814,7 +809,7 @@ class RayPredictor(BasePredictor):
                 self.reshape_map = {
                     f[PROC_COLUMN]: training_set_metadata[f[NAME]].get("reshape") for f in features.values()
                 }
-                predictor = get_predictor_cls(model.type())(model, **predictor_kwargs)
+                predictor = get_predictor_cls(model.type())(model, distributed=distributed, **predictor_kwargs)
                 self.predict = partial(predictor.predict_single, *args, **kwargs)
 
             def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -930,8 +925,6 @@ class RayBackend(RemoteTrainingMixin, Backend):
             "executable_kwargs": executable_kwargs,
         }
         all_kwargs.update(kwargs)
-        
-        breakpoint()
 
         return trainer_cls(**all_kwargs)
 
