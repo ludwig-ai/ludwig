@@ -643,8 +643,7 @@ def eval_fn(
         # Deserialize the model (minus weights) from Plasma
         # Extract the weights from Plasma (without copying data)
         # Load the weights back into the model in-place on the current device (CPU)
-        model, model_weights = ray.get(model_ref)
-        replace_tensors(model, model_weights, torch.device("cpu"))
+        model = distributed.replace_model_from_serialization(ray.get(model_ref))
         model = distributed.to_device(model)
 
         predictor = get_predictor_cls(model.type())(
@@ -700,8 +699,9 @@ class RayPredictor(BasePredictor):
             # if deepspeed was used for training, do NOT use it for batch prediction step
             num_gpus = torch.cuda.device_count()
             distributed_strategy = "local"
+        dist_strategy = get_dist_strategy(distributed_strategy)
 
-        model_ref = ray.put(extract_tensors(self.model))
+        model_ref = ray.put(dist_strategy.extract_model_for_serialization(self.model))
         batch_predictor = self.get_batch_infer_model(
             model_ref,
             predictor_kwargs,
@@ -742,7 +742,8 @@ class RayPredictor(BasePredictor):
         # we will use Ray Datasets. Therefore, we break this up into two separate steps, and two passes over the
         # dataset. In the future, we can explore ways to combine these into a single step to reduce IO.
         with create_runner(**self.trainer_kwargs) as runner:
-            model_ref = ray.put(extract_tensors(self.model))
+            dist_strategy = runner.dist_strategy
+            model_ref = ray.put(dist_strategy.extract_model_for_serialization(self.model))
             # Collect eval metrics by distributing work across nodes / gpus with Horovod
             datasets = {"eval": dataset.ds}
             stream_window_size = {"eval": dataset.window_size_bytes}
@@ -852,7 +853,6 @@ class RayBackend(RemoteTrainingMixin, Backend):
         self._preprocessor_kwargs = preprocessor_kwargs or {}
         self._df_engine = _get_df_engine(processor)
         self._horovod_kwargs = trainer or {}
-        print("ASDFASDF inside RayBackend init, self._horovod_kwargs = ", self._horovod_kwargs)
         self._pytorch_kwargs = {}
         self._data_loader_kwargs = loader or {}
         self._preprocessor_pg = None
