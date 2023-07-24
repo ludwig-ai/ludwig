@@ -668,8 +668,6 @@ class RayPredictor(BasePredictor):
         data_loader_kwargs,
         **predictor_kwargs,
     ):
-        # print('ASDFASDF INSIDE RAY PREDICTOR')
-        # breakpoint()
         self.batch_size = predictor_kwargs["batch_size"]
         self.trainer_kwargs = trainer_kwargs
         self.data_loader_kwargs = data_loader_kwargs
