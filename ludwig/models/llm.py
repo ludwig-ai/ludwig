@@ -96,6 +96,10 @@ class LLM(BaseModel):
             # Apply quanitzation configuration at model load time
             self.load_kwargs["torch_dtype"] = getattr(torch, self.config_obj.quantization.bnb_4bit_compute_dtype)
             self.load_kwargs["quantization_config"] = self.config_obj.quantization.to_bitsandbytes()
+        if self.config_obj.model_parameters:
+            # Apply RoPE scaling at model load time
+            if hasattr(self.config_obj.model_parameters, "rope_scaling"):
+                self.load_kwargs["rope_scaling"] = self.config_obj.model_parameters.rope_scaling.to_dict()
 
         logger.info("Loading large language model...")
         self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.base_model, **self.load_kwargs)
