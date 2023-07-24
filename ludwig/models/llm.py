@@ -102,7 +102,18 @@ class LLM(BaseModel):
                 self.load_kwargs["rope_scaling"] = self.config_obj.model_parameters.rope_scaling.to_dict()
 
         logger.info("Loading large language model...")
-        self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.base_model, **self.load_kwargs)
+        try:
+            self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.base_model, **self.load_kwargs)
+        except TypeError as e:
+            error_message = str(e)
+            # Rope Scaling isn't supported for all model types
+            if "unexpected keyword argument 'rope_scaling'" in error_message:
+                logger.warning(
+                    f"rope_scaling is not supported for {self.config_obj.base_model}."
+                    "Loading the model without rope_scaling."
+                )
+                self.load_kwargs.pop("rope_scaling")
+            self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.base_model, **self.load_kwargs)
 
         # Model initially loaded onto cpu
         self.curr_device = torch.device("cpu")
