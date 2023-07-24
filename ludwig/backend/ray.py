@@ -441,6 +441,8 @@ class RayTrainerV2(BaseTrainer):
         executable_kwargs: Dict[str, Any],
         **kwargs,
     ):
+        print('ASDFASDF INSIDE RAY TRAINER V2')
+        breakpoint()
         self.model = model.cpu()
         self.data_loader_kwargs = data_loader_kwargs or {}
         self.executable_kwargs = executable_kwargs
@@ -639,9 +641,12 @@ def eval_fn(
             training_set_metadata,
         )
 
-        model = ray.get(model_ref)
-        device = get_torch_device()
-        model = model.to_device(device)
+        # Deserialize the model (minus weights) from Plasma
+        # Extract the weights from Plasma (without copying data)
+        # Load the weights back into the model in-place on the current device (CPU)
+        model, model_weights = ray.get(model_ref)
+        replace_tensors(model, model_weights, torch.device("cpu"))
+        model = distributed.to_device(model)
 
         predictor = get_predictor_cls(model.type())(
             dist_model=model, distributed=distributed, report_tqdm_to_ray=True, remote=True, **predictor_kwargs
@@ -665,6 +670,8 @@ class RayPredictor(BasePredictor):
         data_loader_kwargs,
         **predictor_kwargs,
     ):
+        # print('ASDFASDF INSIDE RAY PREDICTOR')
+        # breakpoint()
         self.batch_size = predictor_kwargs["batch_size"]
         self.trainer_kwargs = trainer_kwargs
         self.data_loader_kwargs = data_loader_kwargs
@@ -686,20 +693,26 @@ class RayPredictor(BasePredictor):
     def batch_predict(self, dataset: RayDataset, *args, collect_logits: bool = False, **kwargs):
         self._check_dataset(dataset)
 
+        distributed_strategy = self.trainer_kwargs.get("strategy", get_default_strategy_name())
+
         predictor_kwargs = self.predictor_kwargs
         output_columns = get_output_columns(self.model.output_features, include_logits=collect_logits)
+
+        model_ref = ray.put(extract_tensors(self.model))
         batch_predictor = self.get_batch_infer_model(
-            self.model,
+            model_ref,
             predictor_kwargs,
             output_columns,
             dataset.features,
             dataset.training_set_metadata,
             *args,
             collect_logits=collect_logits,
+            distributed_strategy=distributed_strategy,
             **kwargs,
         )
 
         num_cpus, num_gpus = self.get_resources_per_worker()
+        num_gpus = 4
 
         with tensor_extension_casting(False):
             predictions = dataset.ds.map_batches(
@@ -729,6 +742,7 @@ class RayPredictor(BasePredictor):
         # we will use Ray Datasets. Therefore, we break this up into two separate steps, and two passes over the
         # dataset. In the future, we can explore ways to combine these into a single step to reduce IO.
         with create_runner(**self.trainer_kwargs) as runner:
+            model_ref = ray.put(extract_tensors(self.model))
             # Collect eval metrics by distributing work across nodes / gpus with Horovod
             datasets = {"eval": dataset.ds}
             stream_window_size = {"eval": dataset.window_size_bytes}
@@ -737,7 +751,7 @@ class RayPredictor(BasePredictor):
                 lambda config: eval_fn(**config),
                 config={
                     "predictor_kwargs": predictor_kwargs,
-                    "model_ref": ray.put(self.model),
+                    "model_ref": model_ref,
                     "training_set_metadata": dataset.training_set_metadata,
                     "features": dataset.features,
                     **kwargs,
@@ -746,7 +760,10 @@ class RayPredictor(BasePredictor):
                 data_loader_kwargs=self.data_loader_kwargs,
                 stream_window_size=stream_window_size,
             )
+            del model_ref
 
+        print("ASDFASDF after eval_fn")
+        breakpoint()
         eval_stats = eval_results.metrics["eval_results"][0]
 
         predictions = None
@@ -770,21 +787,26 @@ class RayPredictor(BasePredictor):
 
     def get_batch_infer_model(
         self,
-        model: "BaseModel",  # noqa: F821
+        model_ref: ObjectRef,  # noqa: F821
         predictor_kwargs: Dict[str, Any],
         output_columns: List[str],
         features: Dict[str, Dict],
         training_set_metadata: TrainingSetMetadataDict,
+        distributed_strategy: Union[str, Dict[str, Any]],
         *args,
         **kwargs,
-    ):
-        model_ref = ray.put(model)
-
+    ):        
         class BatchInferModel:
             def __init__(self):
-                model = ray.get(model_ref)
-                device = get_torch_device()
-                self.model = model.to_device(device)
+                print("ASDFASDF inside BatchInferModel init")
+                breakpoint()
+                # initialize_pytorch(local_rank=session.get_local_rank(), local_size=_local_size())
+                # distributed = init_dist_strategy(distributed_strategy)
+
+                model, model_weights = ray.get(model_ref)
+                replace_tensors(model, model_weights, torch.device("cpu"))
+                # self.model = distributed.to_device(model)
+                self.model = self.model.to_device('cuda')
 
                 self.output_columns = output_columns
                 self.features = features
@@ -836,6 +858,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
         self._preprocessor_kwargs = preprocessor_kwargs or {}
         self._df_engine = _get_df_engine(processor)
         self._horovod_kwargs = trainer or {}
+        print('ASDFASDF inside RayBackend init, self._horovod_kwargs = ', self._horovod_kwargs)
         self._pytorch_kwargs = {}
         self._data_loader_kwargs = loader or {}
         self._preprocessor_pg = None
@@ -907,6 +930,8 @@ class RayBackend(RemoteTrainingMixin, Backend):
             "executable_kwargs": executable_kwargs,
         }
         all_kwargs.update(kwargs)
+        
+        breakpoint()
 
         return trainer_cls(**all_kwargs)
 

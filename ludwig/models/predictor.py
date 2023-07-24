@@ -115,6 +115,9 @@ class Predictor(BasePredictor):
 
         self.device = device
         self.dist_model = dist_model
+        # print("ASDFASDF Predictor init before prepare_for_inference")
+        # breakpoint()
+        # self.dist_model = distributed.prepare_for_inference(dist_model)
         self.model = model
         self.model.metrics_to_device(device)
 

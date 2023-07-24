@@ -441,6 +441,8 @@ class LudwigModel:
             `(training_set, validation_set, test_set)`.
             `output_directory` filepath to where training results are stored.
         """
+        # print("ASDFASDF at the top of LudwigModel.train")
+        # breakpoint()
         if self._user_config.get(HYPEROPT):
             print_boxed("WARNING")
             logger.warning(HYPEROPT_WARNING)
@@ -1554,6 +1556,8 @@ class LudwigModel:
         ludwig_model = LudwigModel.load(model_dir)
         ```
         """
+        # print("ASDFASDF at the top of LudwigModel.load")
+        # breakpoint()
         # Initialize Horovod and PyTorch before calling `broadcast()` to prevent initializing
         # Torch with default parameters
         backend_param = backend
@@ -1566,8 +1570,9 @@ class LudwigModel:
 
         # Upgrades deprecated fields and adds new required fields in case the config loaded from disk is old.
         config_obj = ModelConfig.from_dict(config)
-
-        if backend_param is None and "backend" in config:
+        
+        # Ensure that the original backend is used if it was specified in the config
+        if "backend" in config:
             # Reset backend from config
             backend = initialize_backend(config.get("backend"))
 
