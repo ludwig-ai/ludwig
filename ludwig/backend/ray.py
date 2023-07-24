@@ -692,9 +692,9 @@ class RayPredictor(BasePredictor):
 
         predictor_kwargs = self.predictor_kwargs
         output_columns = get_output_columns(self.model.output_features, include_logits=collect_logits)
-        
+
         num_cpus, num_gpus = self.get_resources_per_worker()
-        
+
         distributed_strategy = self.trainer_kwargs.get("strategy", get_default_strategy_name())
         if distributed_strategy == "deepspeed" or distributed_strategy.get("type", None) == "deepspeed":
             # if deepspeed was used for training, do NOT use it for batch prediction step
@@ -793,7 +793,7 @@ class RayPredictor(BasePredictor):
         distributed_strategy: Union[str, Dict[str, Any]],
         *args,
         **kwargs,
-    ):        
+    ):
         class BatchInferModel:
             def __init__(self):
                 distributed = init_dist_strategy(distributed_strategy)
@@ -852,7 +852,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
         self._preprocessor_kwargs = preprocessor_kwargs or {}
         self._df_engine = _get_df_engine(processor)
         self._horovod_kwargs = trainer or {}
-        print('ASDFASDF inside RayBackend init, self._horovod_kwargs = ', self._horovod_kwargs)
+        print("ASDFASDF inside RayBackend init, self._horovod_kwargs = ", self._horovod_kwargs)
         self._pytorch_kwargs = {}
         self._data_loader_kwargs = loader or {}
         self._preprocessor_pg = None

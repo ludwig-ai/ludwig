@@ -117,7 +117,7 @@ class DeepSpeedStrategy(DDPStrategy):
         ds_config = {}
         model_engine = deepspeed.init_inference(model=model, config=ds_config)
         return model_engine
-    
+
     def to_device(self, model: nn.Module, device: Optional[torch.device] = None) -> nn.Module:
         return model
 
