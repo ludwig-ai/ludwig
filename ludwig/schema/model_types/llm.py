@@ -15,6 +15,7 @@ from ludwig.schema.llms.base_model import BaseModelDataclassField
 from ludwig.schema.llms.generation import LLMGenerationConfig, LLMGenerationConfigField
 from ludwig.schema.llms.peft import AdapterDataclassField, BaseAdapterConfig
 from ludwig.schema.llms.prompt import PromptConfig, PromptConfigField
+from ludwig.schema.llms.quantization import QuantizationConfig, QuantizationConfigField
 from ludwig.schema.model_types.base import ModelConfig, register_model_type
 from ludwig.schema.preprocessing import PreprocessingConfig, PreprocessingField
 from ludwig.schema.trainer import LLMTrainerConfig, LLMTrainerDataclassField
@@ -48,3 +49,4 @@ class LLMModelConfig(ModelConfig):
     generation: LLMGenerationConfig = LLMGenerationConfigField().get_default_field()
 
     adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
+    quantization: Optional[QuantizationConfig] = QuantizationConfigField().get_default_field()
