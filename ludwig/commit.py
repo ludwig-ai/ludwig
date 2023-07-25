@@ -63,14 +63,14 @@ def cli(sys_argv):
     # ---------------
     # Required parameters
     # ---------------
-    parser.add_argument("-m", "--model_path", help="model to push to huggingface", required=True)
-
     parser.add_argument(
         "-r",
         "--repo_id",
         help="ID of the repo on HF. This will be created if it doesn't exist. " "Format: username/repo_name",
         required=True,
     )
+
+    parser.add_argument("-m", "--model_path", help="model to push to huggingface", required=True)
 
     # ---------------
     # Optional parameters
