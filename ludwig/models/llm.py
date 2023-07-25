@@ -89,17 +89,26 @@ class LLM(BaseModel):
         self._random_seed = random_seed
 
         self.model_name = self.config_obj.base_model
+        self.model_config = AutoConfig.from_pretrained(self.config_obj.base_model)
+
+        self.load_kwargs = {}
+        if self.config_obj.quantization:
+            # Apply quanitzation configuration at model load time
+            self.load_kwargs["torch_dtype"] = getattr(torch, self.config_obj.quantization.bnb_4bit_compute_dtype)
+            self.load_kwargs["quantization_config"] = self.config_obj.quantization.to_bitsandbytes()
 
         logger.info("Loading large language model...")
-        self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.base_model)
-        self.curr_device = torch.device("cpu")  # model initially loaded onto cpu
+        self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.base_model, **self.load_kwargs)
+
+        # Model initially loaded onto cpu
+        self.curr_device = torch.device("cpu")
         logger.info("Done.")
 
         # Determines the maximum length of the context (input + output tokens)
-        if hasattr(self.model.config, "max_sequence_length"):
-            self.context_len = self.model.config.max_sequence_length
-        elif hasattr(self.model.config, "max_position_embeddings"):
-            self.context_len = self.model.config.max_position_embeddings
+        if hasattr(self.model_config, "max_sequence_length"):
+            self.context_len = self.model_config.max_sequence_length
+        elif hasattr(self.model_config, "max_position_embeddings"):
+            self.context_len = self.model_config.max_position_embeddings
         else:
             self.context_len = 2048
 
@@ -121,7 +130,7 @@ class LLM(BaseModel):
 
         # Initialize tokenizer
         use_fast = True
-        if isinstance(AutoConfig.from_pretrained(self.config_obj.base_model), LlamaConfig):
+        if isinstance(self.model_config, LlamaConfig):
             # HACK: Llama fast tokenizer takes about 2-4 minutes to load, so we disable it for now.
             use_fast = False
         self.tokenizer = AutoTokenizer.from_pretrained(self.config_obj.base_model, use_fast=use_fast)
@@ -152,15 +161,12 @@ class LLM(BaseModel):
                 # because the model has additional "head" layers that are used to predict the next
                 # token in the sequence. These head layers can add additional dimensions to the
                 # logits tensor, beyond the vocab_size dimension.
-                input_size=self.input_shape[-1] if self.output_feature_type == TEXT else self.model.config.vocab_size,
+                input_size=self.input_shape[-1] if self.output_feature_type == TEXT else self.model_config.vocab_size,
             )
         )
 
         # Extract the decoder object for the forward pass
         self._output_feature_decoder = ModuleWrapper(self.output_features.items()[0][1])
-
-        # Initialize the PEFT adapter is one is provided
-        self.initialize_adapter()
 
         clear_data_cache()
 
@@ -193,10 +199,22 @@ class LLM(BaseModel):
             self.model.print_trainable_parameters()
             logger.info("==================================================")
 
+    def prepare_for_training(self):
+        # TODO: this implementation will not work if resuming from a previous checkpoint. Need to fix this.
+        if self.config_obj.quantization:
+            self.prepare_for_quantized_training()
+        self.initialize_adapter()
+
+    def prepare_for_quantized_training(self):
+        from peft import prepare_model_for_kbit_training
+
+        self.model = prepare_model_for_kbit_training(self.model, use_gradient_checkpointing=False)
+
     def to_device(self, device):
         device = torch.device(device)
 
         if device == self.curr_device:
+            log_once(f"Model already on device'{device}'.")
             return self
         else:
             log_once(f"Moving LLM from '{self.curr_device}' to '{device}'.")
@@ -216,6 +234,9 @@ class LLM(BaseModel):
                     max_memory={i: "13GiB" for i in range(num_gpus)},
                 )
             )
+
+            if self.config_obj.quantization:
+                model_kwargs["quantization_config"] = self.config_obj.quantization.to_bitsandbytes()
 
             # we save and reload the weights to ensure that they can be sharded across the GPUs using `from_pretrained`
             with tempfile.TemporaryDirectory() as tmpdir:

@@ -183,6 +183,10 @@ class LudwigModule(Module):
     def device(self):
         return self.device_tensor.device
 
+    def prepare_for_training(self):
+        """This is called from within the Trainer object to do any final instantiation before model training."""
+        pass
+
     def losses(self):
         collected_losses = []
         for loss in self._losses.values():

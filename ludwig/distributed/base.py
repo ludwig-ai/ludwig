@@ -1,6 +1,6 @@
 import contextlib
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, Optional, Tuple, Type, TYPE_CHECKING
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TYPE_CHECKING, Union
 
 import torch
 from torch import nn
@@ -181,6 +181,15 @@ class DistributedStrategy(ABC):
         from ludwig.utils.checkpoint_utils import MultiNodeCheckpoint
 
         return MultiNodeCheckpoint(self, model, optimizer, scheduler)
+
+    @classmethod
+    def extract_model_for_serialization(cls, model: nn.Module) -> Union[nn.Module, Tuple[nn.Module, List[Dict]]]:
+        return model
+
+    @classmethod
+    def replace_model_from_serialization(cls, state: Union[nn.Module, Tuple[nn.Module, List[Dict]]]) -> nn.Module:
+        assert isinstance(state, nn.Module)
+        return state
 
 
 class LocalStrategy(DistributedStrategy):

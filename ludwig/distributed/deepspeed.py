@@ -1,7 +1,7 @@
 import logging
 import os
 import warnings
-from typing import Any, Dict, Mapping, Optional, Tuple, TYPE_CHECKING
+from typing import Any, Dict, List, Mapping, Optional, Tuple, TYPE_CHECKING, Union
 
 import deepspeed
 import deepspeed.comm
@@ -14,6 +14,7 @@ from ludwig.constants import MIN_POSSIBLE_BATCH_SIZE
 from ludwig.distributed.ddp import DDPStrategy
 from ludwig.modules.optimization_modules import get_optimizer_class_and_kwargs
 from ludwig.utils.checkpoint_utils import Checkpoint
+from ludwig.utils.model_utils import extract_tensors, replace_tensors
 
 if TYPE_CHECKING:
     from ludwig.modules.lr_scheduler import LRScheduler
@@ -219,3 +220,14 @@ class DeepSpeedCheckpoint(Checkpoint):
             save_path, load_optimizer_states=False, load_lr_scheduler_states=False, load_module_only=True
         )
         return self.model.module.cpu().state_dict()
+
+    @classmethod
+    def extract_model_for_serialization(cls, model: nn.Module) -> Union[nn.Module, Tuple[nn.Module, List[Dict]]]:
+        return extract_tensors(model)
+
+    @classmethod
+    def replace_model_from_serialization(cls, state: Union[nn.Module, Tuple[nn.Module, List[Dict]]]) -> nn.Module:
+        assert isinstance(state, tuple)
+        model, model_weights = state
+        replace_tensors(model, model_weights, torch.device("cpu"))
+        return model
