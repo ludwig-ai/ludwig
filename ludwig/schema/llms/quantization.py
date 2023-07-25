@@ -85,5 +85,21 @@ class QuantizationConfigField(schema_utils.DictMarshmallowField):
     def __init__(self):
         super().__init__(QuantizationConfig, default_missing=True)
 
+    def _deserialize(self, value, attr, data, **kwargs):
+        if value is None:
+            return None
+        return super()._deserialize(value, attr, data, **kwargs)
+
     def _jsonschema_type_mapping(self):
-        return schema_utils.unload_jsonschema_from_marshmallow_class(QuantizationConfig)
+        return {
+            "oneOf": [
+                {"type": "null", "title": "disabled", "description": "Disable quantization."},
+                {
+                    **schema_utils.unload_jsonschema_from_marshmallow_class(QuantizationConfig),
+                    "title": "enabled",
+                    "description": "Set quantization options.",
+                },
+            ],
+            "title": "quantization",
+            "description": "TODO",
+        }
