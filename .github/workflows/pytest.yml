@@ -92,6 +92,11 @@ jobs:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-py${{ matrix.python-version }}-torch${{ matrix.pytorch-version }}-${{ matrix.test-markers }}-${{ hashFiles('requirements*.txt', '.github/workflows/pytest.yml') }}
 
+      - name: Debug out of space
+        run: |
+          du -h -d 1 ~
+          df -h
+
       - name: Install dependencies
         run: |
           python --version
@@ -142,10 +147,6 @@ jobs:
             python -c "import importlib.util; assert importlib.util.find_spec('ray') is None, \"found ray but expected it to not be installed\""
           fi
         shell: bash
-
-      - name: Setup macOS
-        run: |
-          du -h -d 1 ~
 
       - name: Install Neuropod backend
         run: |
