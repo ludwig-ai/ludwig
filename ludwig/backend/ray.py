@@ -799,8 +799,7 @@ class RayPredictor(BasePredictor):
             def __init__(self):
                 distributed = init_dist_strategy(distributed_strategy)
 
-                model, model_weights = ray.get(model_ref)
-                replace_tensors(model, model_weights, torch.device("cpu"))
+                model = distributed.replace_model_from_serialization(ray.get(model_ref))
                 model = distributed.to_device(model)
 
                 self.output_columns = output_columns

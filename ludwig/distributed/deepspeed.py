@@ -187,6 +187,17 @@ class DeepSpeedStrategy(DDPStrategy):
     ) -> Checkpoint:
         return DeepSpeedCheckpoint(self, dist_model, optimizer, scheduler)
 
+    @classmethod
+    def extract_model_for_serialization(cls, model: nn.Module) -> Union[nn.Module, Tuple[nn.Module, List[Dict]]]:
+        return extract_tensors(model)
+
+    @classmethod
+    def replace_model_from_serialization(cls, state: Union[nn.Module, Tuple[nn.Module, List[Dict]]]) -> nn.Module:
+        assert isinstance(state, tuple)
+        model, model_weights = state
+        replace_tensors(model, model_weights, torch.device("cpu"))
+        return model
+
 
 class DeepSpeedCheckpoint(Checkpoint):
     def prepare(self, directory: str):
@@ -225,14 +236,3 @@ class DeepSpeedCheckpoint(Checkpoint):
             save_path, load_optimizer_states=False, load_lr_scheduler_states=False, load_module_only=True
         )
         return self.model.module.cpu().state_dict()
-
-    @classmethod
-    def extract_model_for_serialization(cls, model: nn.Module) -> Union[nn.Module, Tuple[nn.Module, List[Dict]]]:
-        return extract_tensors(model)
-
-    @classmethod
-    def replace_model_from_serialization(cls, state: Union[nn.Module, Tuple[nn.Module, List[Dict]]]) -> nn.Module:
-        assert isinstance(state, tuple)
-        model, model_weights = state
-        replace_tensors(model, model_weights, torch.device("cpu"))
-        return model
