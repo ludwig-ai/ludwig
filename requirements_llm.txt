@@ -4,4 +4,4 @@ faiss-cpu
 accelerate
 loralib
 bitsandbytes
-peft
+peft>=0.4.0

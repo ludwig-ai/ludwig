@@ -193,7 +193,10 @@ def train_fn(
         if test_shard is not None:
             test_shard = RayDatasetShard(test_shard, features, training_set_metadata)
 
-        model = ray.get(model_ref)
+        # Deserialize the model (minus weights) from Plasma
+        # Extract the weights from Plasma (without copying data)
+        # Load the weights back into the model in-place on the current device (CPU)
+        model = distributed.replace_model_from_serialization(ray.get(model_ref))
         model = distributed.to_device(model)
 
         trainer = remote_trainer_cls(
@@ -338,6 +341,7 @@ class RayAirRunner:
         trainer_kwargs = copy.copy(trainer_kwargs)
         self.backend_config = trainer_kwargs.pop("backend", None)
         self.strategy = trainer_kwargs.pop("strategy", get_default_strategy_name())
+        self.dist_strategy = get_dist_strategy(self.strategy)
 
         if "max_retries" in trainer_kwargs:
             logger.warning("`max_retries` is no longer supported as a trainer argument in Ray backend. Ignoring it.")
@@ -407,7 +411,7 @@ class RayAirRunner:
 
         callbacks = callbacks or []
 
-        trainer_cls, kwargs = get_dist_strategy(self.strategy).get_trainer_cls(self.backend_config)
+        trainer_cls, kwargs = self.dist_strategy.get_trainer_cls(self.backend_config)
         train_loop_config = {**config, "distributed_strategy": self.strategy}
         trainer = trainer_cls(
             train_loop_per_worker=train_loop_per_worker,
@@ -474,11 +478,18 @@ class RayTrainerV2(BaseTrainer):
             stream_window_size["test"] = test_set.window_size_bytes
 
         with create_runner(**self.trainer_kwargs) as runner:
+            # Extract weights as numpy tensors and place them in the Ray object store.
+            # If we store the weights of a model as NumPy arrays on Plasma, we can access those
+            # weights directly out of Plasma’s shared memory segments, without making any copies.
+            # This enables zero copy model loading on each training worker using shared
+            # memory from the Ray object store for model initialization.
+            dist_strategy = runner.dist_strategy
+            model_ref = ray.put(dist_strategy.extract_model_for_serialization(self.model))
             trainer_results = runner.run(
                 lambda config: train_fn(**config),
                 config={
                     "executable_kwargs": executable_kwargs,
-                    "model_ref": ray.put(self.model),
+                    "model_ref": model_ref,
                     "remote_trainer_cls": self.remote_trainer_cls,
                     **kwargs,
                 },
@@ -487,6 +498,13 @@ class RayTrainerV2(BaseTrainer):
                 dataset=dataset,
                 stream_window_size=stream_window_size,
             )
+
+        # re-register the weights of the model object in the main process
+        self.model = dist_strategy.replace_model_from_serialization(ray.get(model_ref))
+
+        # ensure module is initialized exactly as it is in the trainer process
+        # so that the state dict can be loaded back into the model correctly.
+        self.model.prepare_for_training()
 
         # Set validation field and metric used by trainer
         self._validation_field = trainer_results.metrics["validation_field"]
