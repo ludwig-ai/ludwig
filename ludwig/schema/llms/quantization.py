@@ -85,11 +85,6 @@ class QuantizationConfigField(schema_utils.DictMarshmallowField):
     def __init__(self):
         super().__init__(QuantizationConfig, default_missing=True)
 
-    def _deserialize(self, value, attr, data, **kwargs):
-        if value is None:
-            return None
-        return super()._deserialize(value, attr, data, **kwargs)
-
     def _jsonschema_type_mapping(self):
         return {
             "oneOf": [
