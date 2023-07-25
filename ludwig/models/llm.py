@@ -96,25 +96,21 @@ class LLM(BaseModel):
             # Apply quanitzation configuration at model load time
             self.load_kwargs["torch_dtype"] = getattr(torch, self.config_obj.quantization.bnb_4bit_compute_dtype)
             self.load_kwargs["quantization_config"] = self.config_obj.quantization.to_bitsandbytes()
+
         if self.config_obj.model_parameters:
-            # Apply RoPE scaling at model load time
-            if hasattr(self.config_obj.model_parameters, "rope_scaling"):
-                self.load_kwargs["rope_scaling"] = self.config_obj.model_parameters.rope_scaling.to_dict()
+            # Add any model specific parameters to the load kwargs
+            for param_name, param_value in self.config_obj.model_parameters.to_config().items():
+                # Not all parameters are supported by all models, so we only add the parameter to the load kwargs
+                # if it is supported by the model.
+                if hasattr(self.model_config, param_name):
+                    self.load_kwargs[param_name] = param_value
+                else:
+                    logger.warning(
+                        f"Parameter {param_name} is not supported by {self.config_obj.base_model}. Skipping."
+                    )
 
         logger.info("Loading large language model...")
-        try:
-            self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.base_model, **self.load_kwargs)
-        except TypeError as e:
-            error_message = str(e)
-            # Rope Scaling isn't supported for all model types
-            if "unexpected keyword argument 'rope_scaling'" in error_message:
-                logger.warning(
-                    f"rope_scaling is not supported for {self.config_obj.base_model}."
-                    "Loading the model without rope_scaling."
-                )
-                self.load_kwargs.pop("rope_scaling")
-            self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.base_model, **self.load_kwargs)
-
+        self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.base_model, **self.load_kwargs)
         # Model initially loaded onto cpu
         self.curr_device = torch.device("cpu")
         logger.info("Done.")
