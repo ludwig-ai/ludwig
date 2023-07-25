@@ -143,6 +143,10 @@ jobs:
           fi
         shell: bash
 
+      - name: Setup macOS
+        run: |
+          du -h -d 1 ~
+
       - name: Install Neuropod backend
         run: |
           sudo mkdir -p "$NEUROPOD_BASE_DIR"
