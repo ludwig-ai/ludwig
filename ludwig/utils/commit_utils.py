@@ -30,28 +30,28 @@ class HuggingFaceHub:
     def upload_to_hfhub(
         self,
         repo_id: str,
-        saved_model_path: str,
-        private: Optional[bool] = False,
+        model_path: str,
         repo_type: Optional[str] = None,
+        private: Optional[bool] = False,
         commit_message: Optional[str] = None,
         commit_description: Optional[str] = None,
     ):
-        """Create an empty repo on the HuggingFace Hub.
+        """Create an empty repo on the HuggingFace Hub and upload trained model artifacts to that repo.
 
         Args:
             repo_id (`str`):
                 A namespace (user or an organization) and a repo name separated
                 by a `/`.
-            saved_model_path (`str`):
+            model_path (`str`):
                 The path of the saved model. This is the top level directory where
                 the models weights as well as other associated training artifacts
                 are saved.
-            private (`bool`, *optional*, defaults to `False`):
-                Whether the model repo should be private.
             repo_type (`str`, *optional*):
                 Set to `"dataset"` or `"space"` if uploading to a dataset or
                 space, `None` or `"model"` if uploading to a model. Default is
                 `None`.
+            private (`bool`, *optional*, defaults to `False`):
+                Whether the model repo should be private.
             commit_message (`str`, *optional*):
                 The summary / title / first line of the generated commit. Defaults to:
                 `f"Upload {path_in_repo} with huggingface_hub"`
@@ -66,15 +66,15 @@ class HuggingFaceHub:
         )
 
         # Make sure the model's save path is actually a valid path
-        if not os.path.exists(saved_model_path):
-            raise FileNotFoundError(f"The path '{saved_model_path}' does not exist.")
+        if not os.path.exists(model_path):
+            raise FileNotFoundError(f"The path '{model_path}' does not exist.")
 
         # Make sure the model is actually trained
-        trained_model_artifacts_path = os.path.join(saved_model_path, "model", "model_weights")
+        trained_model_artifacts_path = os.path.join(model_path, "model", "model_weights")
         if not os.path.exists(trained_model_artifacts_path):
             raise Exception(
                 f"Model artifacts not found at {trained_model_artifacts_path}. "
-                f"It is possible that model at '{saved_model_path}' hasn't been trained yet, or something went"
+                f"It is possible that model at '{model_path}' hasn't been trained yet, or something went"
                 "wrong during training where the model's weights were not saved."
             )
 
@@ -98,7 +98,6 @@ class HuggingFaceHub:
         )
 
         # Upload all artifacts in model weights folder
-        commit_message = commit_message or "Upload trained [Ludwig](https://ludwig.ai/latest/) model weights"
         upload_path = self.api.upload_folder(
             folder_path=trained_model_artifacts_path,
             repo_id=repo_id,
