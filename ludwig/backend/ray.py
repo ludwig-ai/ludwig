@@ -60,6 +60,7 @@ from ludwig.trainers.trainer_llm import RemoteLLMFineTuneTrainer, RemoteLLMTrain
 from ludwig.types import HyperoptConfigDict, ModelConfigDict, TrainerConfigDict, TrainingSetMetadataDict
 from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
 from ludwig.utils.dataframe_utils import is_dask_series_or_df, set_index_name
+from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.system_utils import Resources
 from ludwig.utils.torch_utils import get_torch_device, initialize_pytorch
@@ -980,18 +981,19 @@ class RayBackend(RemoteTrainingMixin, Backend):
 
             df = df.select("idx", column.name)
 
-            # Download binary files in parallel
-            # fs, _ = get_fs_and_path(sample_fname)
-            # df = df.with_column(
-            #    column.name,
-            #    df[column.name].url.download(
-            #        # Use 16 worker threads to maximize image read throughput over each partition
-            #        max_connections=16,
-            # On error, replace value with a Null and just log the error
-            #        on_error="null",
-            #        fs=fs,
-            #    ),
-            # )
+            if map_fn is None:
+                # Download binary files in parallel
+                fs, _ = get_fs_and_path(sample_fname)
+                df = df.with_column(
+                    column.name,
+                    df[column.name].url.download(
+                        # Use 16 worker threads to maximize image read throughput over each partition
+                        max_connections=16,
+                        # On error, replace value with a Null and just log the error
+                        on_error="null",
+                        fs=fs,
+                    ),
+                )
 
             if map_fn is not None:
                 df = df.with_column(column.name, df[column.name].apply(map_fn, return_dtype=daft.DataType.python()))
