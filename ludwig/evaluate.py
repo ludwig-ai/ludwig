@@ -98,7 +98,7 @@ def evaluate_cli(
          Ludwig pipeline.
      :param backend: (Union[Backend, str]) `Backend` or string name
          of backend to use to execute preprocessing / training steps.
-     :param use_backend_from_config: (bool, default: `False`) use backend 
+     :param use_backend_from_config: (bool, default: `False`) use backend
         specified in config of model to load.
      :param logging_level: (int) Log level that will be sent to stderr.
 
@@ -242,7 +242,7 @@ def cli(sys_argv):
         action="store_true",
         help="use backend specified in config of model to load.",
     )
-    
+
     parser.add_argument(
         "-l",
         "--logging_level",

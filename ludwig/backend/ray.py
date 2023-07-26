@@ -45,7 +45,7 @@ from ludwig.constants import CPU_RESOURCES_PER_TRIAL, EXECUTOR, MODEL_ECD, MODEL
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataframe.dask import tensor_extension_casting
 from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetShard
-from ludwig.distributed import get_default_strategy_name, get_dist_strategy, init_dist_strategy, DistributedStrategy
+from ludwig.distributed import DistributedStrategy, get_default_strategy_name, get_dist_strategy, init_dist_strategy
 from ludwig.models.base import BaseModel
 from ludwig.models.predictor import BasePredictor, get_output_columns, get_predictor_cls
 from ludwig.schema.trainer import ECDTrainerConfig, FineTuneTrainerConfig
@@ -686,7 +686,9 @@ class RayPredictor(BasePredictor):
         num_cpus = resources_per_worker.get("CPU", (1 if num_gpus == 0 else 0))
         return num_cpus, num_gpus
 
-    def batch_predict(self, dataset: RayDataset, *args, collect_logits: bool = False, model_ref: ObjectRef = None, **kwargs):
+    def batch_predict(
+        self, dataset: RayDataset, *args, collect_logits: bool = False, model_ref: ObjectRef = None, **kwargs
+    ):
         self._check_dataset(dataset)
 
         predictor_kwargs = self.predictor_kwargs
