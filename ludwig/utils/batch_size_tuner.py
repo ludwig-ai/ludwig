@@ -100,7 +100,11 @@ class BatchSizeEvaluator(ABC):
             start_ts = time.time()
             self.step(batch_size)
             durations.append(time.time() - start_ts)
+
         med_duration_s = statistics.median(durations)
+        if med_duration_s == 0.0:
+            return float("inf")
+
         return batch_size / med_duration_s
 
     def reset(self):
