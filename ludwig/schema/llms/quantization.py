@@ -96,5 +96,5 @@ class QuantizationConfigField(schema_utils.DictMarshmallowField):
                 },
             ],
             "title": "quantization",
-            "description": "TODO",
+            "description": "",
         }
