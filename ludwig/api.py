@@ -1515,6 +1515,7 @@ class LudwigModel:
         model_dir: str,
         logging_level: int = logging.ERROR,
         backend: Union[Backend, str] = None,
+        use_backend_from_config: bool = False,
         gpus: Union[str, int, List[int]] = None,
         gpu_memory_limit: Optional[float] = None,
         allow_parallel_threads: bool = True,
@@ -1567,8 +1568,8 @@ class LudwigModel:
         # Upgrades deprecated fields and adds new required fields in case the config loaded from disk is old.
         config_obj = ModelConfig.from_dict(config)
 
-        # Ensure that the original backend is used if it was specified in the config
-        if "backend" in config:
+        # Ensure that the original backend is used if it was specified in the config and user requests it
+        if use_backend_from_config or (backend_param is None and "backend" in config):
             # Reset backend from config
             backend = initialize_backend(config.get("backend"))
 
