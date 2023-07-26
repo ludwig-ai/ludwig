@@ -13,7 +13,7 @@ torchvision
 transformers>=4.31.0
 tokenizers>=0.13.3
 spacy>=2.3
-pyyaml==6.0
+PyYAML>=3.12
 absl-py
 kaggle
 requests
