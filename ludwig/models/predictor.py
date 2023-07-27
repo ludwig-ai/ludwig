@@ -112,11 +112,9 @@ class Predictor(BasePredictor):
             # TODO (jeffkinnison): revert to using the requested device for GBMs when device usage is fixed
             device = "cpu"
             dist_model = dist_model.to(device)
-        else:
-            dist_model = self._distributed.to_device(dist_model, device)
 
         self.device = device
-        self.dist_model = self._distributed.prepare_for_inference(dist_model)
+        self.dist_model = dist_model
         self.model = model
         self.model.metrics_to_device(device)
 

@@ -645,9 +645,14 @@ def eval_fn(
         # Load the weights back into the model in-place on the current device (CPU)
         model = distributed.replace_model_from_serialization(ray.get(model_ref))
         model = distributed.to_device(model)
+        
+        # have to wrap here because we are passing into predictor directly. 
+        # This is in contrast creating the predictor in the trainer class and
+        # passing in the model post-wrap.
+        dist_model = distributed.prepare_for_inference(model)
 
         predictor = get_predictor_cls(model.type())(
-            dist_model=model, distributed=distributed, report_tqdm_to_ray=True, remote=True, **predictor_kwargs
+            dist_model=dist_model, distributed=distributed, report_tqdm_to_ray=True, remote=True, **predictor_kwargs
         )
         results = predictor.batch_evaluation(eval_shard, **kwargs)
 
