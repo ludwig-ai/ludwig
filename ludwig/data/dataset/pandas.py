@@ -80,6 +80,10 @@ class PandasDataset(Dataset):
         return self.size
 
     @property
+    def processed_data_fp(self) -> Optional[str]:
+        return self.data_hdf5_fp
+
+    @property
     def in_memory_size_bytes(self):
         df = self.to_df()
         return df.memory_usage(deep=True).sum() if df is not None else 0
