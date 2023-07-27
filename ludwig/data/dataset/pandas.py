@@ -25,7 +25,7 @@ from ludwig.data.dataset.base import Dataset, DatasetManager
 from ludwig.data.sampler import DistributedSampler
 from ludwig.distributed import DistributedStrategy
 from ludwig.features.base_feature import BaseFeature
-from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP, save_hdf5
+from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP, load_hdf5, save_hdf5
 from ludwig.utils.dataframe_utils import from_numpy_dataset, to_numpy_dataset, to_scalar_df
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import download_h5
@@ -37,6 +37,9 @@ class PandasDataset(Dataset):
         self.features = features
         self.data_hdf5_fp = data_hdf5_fp
         self.size = len(dataset)
+
+        if isinstance(dataset, str):
+            dataset = load_hdf5(dataset)
         self.dataset = to_numpy_dataset(dataset)
 
     def to_df(self, features: Optional[Iterable[BaseFeature]] = None) -> DataFrame:
