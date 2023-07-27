@@ -702,7 +702,8 @@ class RayPredictor(BasePredictor):
         num_cpus, num_gpus = self.get_resources_per_worker()
 
         distributed_strategy = self.trainer_kwargs.get("strategy", get_default_strategy_name())
-        if distributed_strategy == "deepspeed" or distributed_strategy.get("type", None) == "deepspeed":
+        if distributed_strategy == "deepspeed" or (
+            isinstance(distributed_strategy, dict) and distributed_strategy.get("type", None) == "deepspeed"):
             # make sure all gpus are used by a single Ray Datasets worker during batch predict
             num_gpus = self.trainer_kwargs.get("num_workers", 1) * num_gpus
         dist_strategy = get_dist_strategy(distributed_strategy)
