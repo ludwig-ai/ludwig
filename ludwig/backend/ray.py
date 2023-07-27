@@ -45,7 +45,7 @@ from ludwig.constants import CPU_RESOURCES_PER_TRIAL, EXECUTOR, MODEL_ECD, MODEL
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataframe.dask import tensor_extension_casting
 from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetShard
-from ludwig.distributed import DistributedStrategy, get_default_strategy_name, get_dist_strategy, init_dist_strategy
+from ludwig.distributed import DistributedStrategy, get_default_strategy_name, get_dist_strategy, init_dist_strategy, LocalStrategy
 from ludwig.models.base import BaseModel
 from ludwig.models.predictor import BasePredictor, get_output_columns, get_predictor_cls
 from ludwig.schema.trainer import ECDTrainerConfig, FineTuneTrainerConfig
@@ -652,7 +652,7 @@ def eval_fn(
         dist_model = distributed.prepare_for_inference(model)
 
         predictor = get_predictor_cls(model.type())(
-            dist_model=dist_model, distributed=distributed, report_tqdm_to_ray=True, remote=True, **predictor_kwargs
+            dist_model=dist_model, distributed=distributed, report_tqdm_to_ray=True, remote=True, model=model, **predictor_kwargs
         )
         results = predictor.batch_evaluation(eval_shard, **kwargs)
 
@@ -702,11 +702,9 @@ class RayPredictor(BasePredictor):
         num_cpus, num_gpus = self.get_resources_per_worker()
 
         distributed_strategy = self.trainer_kwargs.get("strategy", get_default_strategy_name())
-        if distributed_strategy == "deepspeed" or (
-            isinstance(distributed_strategy, dict) and distributed_strategy.get("type", None) == "deepspeed"
-        ):
-            # make sure all gpus are used by a single Ray Datasets worker during batch predict
-            num_gpus = self.trainer_kwargs.get("num_workers", 1) * num_gpus
+        if self.model.type() ==  MODEL_LLM:
+            # make sure all gpus available in a single node are used by a single Ray Datasets worker during batch predict
+            num_gpus = int(max(n["Resources"].get("GPU", 0) for n in ray.nodes()))
         dist_strategy = get_dist_strategy(distributed_strategy)
 
         # reuse model ref if provided
@@ -807,9 +805,14 @@ class RayPredictor(BasePredictor):
     ):
         class BatchInferModel:
             def __init__(self):
-                # only use distributed strategy for loading the model into the worker
+                # only use passed in distributed strategy for loading the model into the worker
                 model = dist_strategy.replace_model_from_serialization(ray.get(model_ref))
-
+                
+                # use local strategy for model sharding and batch inference
+                distributed = LocalStrategy()
+                model = distributed.to_device(model)
+                dist_model = distributed.prepare_for_inference(model)
+                
                 self.output_columns = output_columns
                 self.features = features
                 self.training_set_metadata = training_set_metadata
@@ -818,7 +821,7 @@ class RayPredictor(BasePredictor):
                 }
 
                 # do not use distributed strategy for batch inference
-                predictor = get_predictor_cls(model.type())(model, distributed=None, **predictor_kwargs)
+                predictor = get_predictor_cls(model.type())(dist_model, distributed=distributed, model=model, **predictor_kwargs)
                 self.predict = partial(predictor.predict_single, *args, **kwargs)
 
             def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
