@@ -68,9 +68,8 @@ from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
 from ludwig.utils.dataframe_utils import is_dask_series_or_df, set_index_name
 from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.misc_utils import get_from_registry
-from ludwig.utils.model_utils import extract_tensors, replace_tensors
 from ludwig.utils.system_utils import Resources
-from ludwig.utils.torch_utils import get_torch_device, initialize_pytorch
+from ludwig.utils.torch_utils import initialize_pytorch
 from ludwig.utils.types import DataFrame, Series
 
 _ray220 = version.parse(ray.__version__) >= version.parse("2.2.0")
@@ -714,7 +713,7 @@ class RayPredictor(BasePredictor):
 
         distributed_strategy = self.trainer_kwargs.get("strategy", get_default_strategy_name())
         if self.model.type() == MODEL_LLM:
-            # make sure all gpus available in a single node are used by a single Ray Datasets worker during batch predict
+            # make sure all gpus available in a single node are used by a single worker during batch predict
             num_gpus = int(max(n["Resources"].get("GPU", 0) for n in ray.nodes()))
         dist_strategy = get_dist_strategy(distributed_strategy)
 

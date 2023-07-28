@@ -226,7 +226,7 @@ class DeepSpeedCheckpoint(Checkpoint):
         if self.scheduler is not None:
             client_state["scheduler_state"] = self.scheduler.state_dict()
 
-        self.model.save_checkpoint(save_path, client_state=client_state)
+        self.model.save_checkpoint(save_path, client_state=client_state, exclude_frozen_parameters=True)
 
     def get_state_for_inference(self, save_path: str, device: Optional[torch.device] = None) -> Mapping[str, Any]:
         if self.model.zero_optimization_stage() == 3:
