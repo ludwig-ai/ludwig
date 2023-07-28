@@ -210,6 +210,7 @@ class DeepSpeedCheckpoint(Checkpoint):
         if self.scheduler is not None:
             client_state["scheduler_state"] = self.scheduler.state_dict()
 
+        # TODO: set exclude_frozen_parameters=True to only save PEFT weights
         self.model.save_checkpoint(save_path, client_state=client_state)
 
     def get_state_for_inference(self, save_path: str, device: Optional[torch.device] = None) -> Mapping[str, Any]:
