@@ -13,7 +13,7 @@ torchvision
 transformers>=4.31.0
 tokenizers>=0.13.3
 spacy>=2.3
-PyYAML>=3.12,<6.0.1,!=5.4.*
+PyYAML>=3.12,<6.0.1,!=5.4.* #Exlude PyYAML 5.4.* due to incompatibility with awscli
 absl-py
 kaggle
 requests

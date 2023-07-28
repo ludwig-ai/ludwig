@@ -562,7 +562,7 @@ def test_ray_vector(tmpdir, dataset_type, ray_cluster_2cpu):
 
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
 @pytest.mark.distributed
-def test_ray_audio(dataset_type, ray_cluster_2cpu):
+def test_ray_audio(tmp_path, dataset_type, ray_cluster_2cpu):
     preprocessing_params = {
         "audio_file_length_limit_in_s": 3.0,
         "missing_value_strategy": BFILL,
@@ -574,20 +574,19 @@ def test_ray_audio(dataset_type, ray_cluster_2cpu):
         "window_shift_in_s": 0.02,
         "num_filter_bands": 80,
     }
-    with tempfile.TemporaryDirectory() as tmpdir:
-        audio_dest_folder = os.path.join(tmpdir, "generated_audio")
-        input_features = [audio_feature(folder=audio_dest_folder, preprocessing=preprocessing_params)]
-        output_features = [
-            binary_feature(),
-        ]
-        run_preprocessing(
-            tmpdir,
-            "dask",
-            input_features,
-            output_features,
-            dataset_type=dataset_type,
-            nan_percent=0.1,
-        )
+    audio_dest_folder = os.path.join(tmp_path, "generated_audio")
+    input_features = [audio_feature(folder=audio_dest_folder, preprocessing=preprocessing_params)]
+    output_features = [
+        binary_feature(),
+    ]
+    run_preprocessing(
+        tmp_path,
+        "dask",
+        input_features,
+        output_features,
+        dataset_type=dataset_type,
+        nan_percent=0.1,
+    )
 
 
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet", "pandas+numpy_images"])
