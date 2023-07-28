@@ -20,6 +20,7 @@ from typing import Dict, List, Optional, Tuple, Union
 import numpy as np
 import torch
 import torchaudio
+from packaging import version
 
 from ludwig.constants import AUDIO, AUDIO_FEATURE_KEYS, COLUMN, NAME, PREPROCESSING, PROC_COLUMN, SRC, TYPE
 from ludwig.features.base_feature import BaseFeatureMixin
@@ -39,6 +40,7 @@ from ludwig.utils.audio_utils import (
     get_stft_magnitude,
     is_torch_audio_tuple,
     read_audio_from_bytes_obj,
+    read_audio_from_path,
 )
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.fs_utils import has_remote_protocol
@@ -145,7 +147,11 @@ class AudioFeatureMixin(BaseFeatureMixin):
         backend,
     ):
         df_engine = backend.df_engine
-        raw_audio = backend.read_binary_files(column, map_fn=read_audio_from_bytes_obj)
+        if version.parse(torch.__version__) > version.parse("2.0.0"):
+            # Read audio from path if the version of torch is > 2.0.0.
+            raw_audio = backend.read_binary_files(column, map_fn=read_audio_from_path)
+        else:
+            raw_audio = backend.read_binary_files(column, map_fn=read_audio_from_bytes_obj)
 
         try:
             default_audio = get_default_audio([audio for audio in raw_audio if is_torch_audio_tuple(audio)])
@@ -364,7 +370,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
         if SRC in metadata:
             if isinstance(first_audio_entry, str) and not has_remote_protocol(first_audio_entry):
                 src_path = os.path.dirname(os.path.abspath(metadata.get(SRC)))
-        abs_path_column = backend.df_engine.map_objects(
+        abs_path_column = backend.df_engine.map_objects(  # This gets the CSV file path
             column, lambda row: get_abs_path(src_path, row) if isinstance(row, str) else row
         )
 
