@@ -229,10 +229,10 @@ class DeepSpeedCheckpoint(Checkpoint):
         }
         if self.scheduler is not None:
             client_state["scheduler_state"] = self.scheduler.state_dict()
-            
+
         kwargs = {}
         if _deepspeed_0101:
-            kwargs['exclude_frozen_parameters'] = True
+            kwargs["exclude_frozen_parameters"] = True
 
         self.model.save_checkpoint(save_path, client_state=client_state, **kwargs)
 
