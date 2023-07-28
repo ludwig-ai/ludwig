@@ -73,8 +73,12 @@ def read_audio_from_path(path: str) -> Optional[TorchAudioTuple]:
 @DeveloperAPI
 @functools.lru_cache(maxsize=32)
 def read_audio_from_bytes_obj(bytes_obj: bytes) -> Optional[TorchAudioTuple]:
-    f = BytesIO(bytes_obj)
-    return torchaudio.backend.sox_io_backend.load(f)
+    try:
+        f = BytesIO(bytes_obj)
+        return torchaudio.backend.sox_io_backend.load(f)
+    except Exception as e:
+        logger.warning(e)
+        return None
 
 
 def _pre_emphasize_data(data: torch.Tensor, emphasize_value: float = 0.97):
