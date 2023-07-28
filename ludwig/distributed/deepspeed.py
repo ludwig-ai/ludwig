@@ -7,6 +7,7 @@ import deepspeed
 import deepspeed.comm
 import torch
 from deepspeed.utils.zero_to_fp32 import get_fp32_state_dict_from_zero_checkpoint
+from packaging import version
 from torch import nn
 from torch.optim.optimizer import Optimizer
 
@@ -15,6 +16,9 @@ from ludwig.distributed.ddp import DDPStrategy
 from ludwig.modules.optimization_modules import get_optimizer_class_and_kwargs
 from ludwig.utils.checkpoint_utils import Checkpoint
 from ludwig.utils.model_utils import extract_tensors, replace_tensors
+
+_deepspeed_0101 = version.parse(deepspeed.__version__) >= version.parse("0.10.1")
+
 
 if TYPE_CHECKING:
     from ludwig.modules.lr_scheduler import LRScheduler
@@ -225,8 +229,12 @@ class DeepSpeedCheckpoint(Checkpoint):
         }
         if self.scheduler is not None:
             client_state["scheduler_state"] = self.scheduler.state_dict()
+            
+        kwargs = {}
+        if _deepspeed_0101:
+            kwargs['exclude_frozen_parameters'] = True
 
-        self.model.save_checkpoint(save_path, client_state=client_state, exclude_frozen_parameters=True)
+        self.model.save_checkpoint(save_path, client_state=client_state, **kwargs)
 
     def get_state_for_inference(self, save_path: str, device: Optional[torch.device] = None) -> Mapping[str, Any]:
         if self.model.zero_optimization_stage() == 3:
