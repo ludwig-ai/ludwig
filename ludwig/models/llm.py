@@ -80,9 +80,7 @@ def load_pretrained_from_config(config_obj: LLMModelConfig, weights_save_path: O
 
     logger.info("Loading large language model...")
     pretrained_model_name_or_path = weights_save_path or config_obj.base_model
-    model: PreTrainedModel = AutoModelForCausalLM.from_pretrained(
-        pretrained_model_name_or_path, **load_kwargs
-    )
+    model: PreTrainedModel = AutoModelForCausalLM.from_pretrained(pretrained_model_name_or_path, **load_kwargs)
     return model
 
 
@@ -379,9 +377,7 @@ class LLM(BaseModel):
                 # Wrap with flash attention backend for faster generation
                 with torch.backends.cuda.sdp_kernel(
                     enable_flash=True, enable_math=False, enable_mem_efficient=False
-                ) if (
-                    torch.cuda.is_available() and self.curr_device.type == "cuda"
-                ) else contextlib.nullcontext():
+                ) if (torch.cuda.is_available() and self.curr_device.type == "cuda") else contextlib.nullcontext():
                     # Generate text using the model
                     model_outputs = self.model.generate(
                         input_ids=input_ids_sample_no_padding,
