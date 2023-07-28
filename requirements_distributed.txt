@@ -9,7 +9,8 @@ GPUtil
 tblib
 awscli
 
-deepspeed
+# TODO: replace with deepspeed 0.10.1 when released
+git+https://github.com/microsoft/DeepSpeed.git@8a63754
 
 # requirements for daft
 getdaft[ray]
