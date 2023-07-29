@@ -1567,6 +1567,7 @@ class LudwigModel:
         # Upgrades deprecated fields and adds new required fields in case the config loaded from disk is old.
         config_obj = ModelConfig.from_dict(config)
 
+        # Ensure that the original backend is used if it was specified in the config and user requests it
         if backend_param is None and "backend" in config:
             # Reset backend from config
             backend = initialize_backend(config.get("backend"))

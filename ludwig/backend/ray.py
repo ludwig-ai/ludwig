@@ -45,7 +45,13 @@ from ludwig.constants import CPU_RESOURCES_PER_TRIAL, EXECUTOR, MODEL_ECD, MODEL
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataframe.dask import tensor_extension_casting
 from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetShard
-from ludwig.distributed import get_default_strategy_name, get_dist_strategy, init_dist_strategy
+from ludwig.distributed import (
+    DistributedStrategy,
+    get_default_strategy_name,
+    get_dist_strategy,
+    init_dist_strategy,
+    LocalStrategy,
+)
 from ludwig.models.base import BaseModel
 from ludwig.models.predictor import BasePredictor, get_output_columns, get_predictor_cls
 from ludwig.schema.trainer import ECDTrainerConfig, FineTuneTrainerConfig
@@ -63,7 +69,7 @@ from ludwig.utils.dataframe_utils import is_dask_series_or_df, set_index_name
 from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.system_utils import Resources
-from ludwig.utils.torch_utils import get_torch_device, initialize_pytorch
+from ludwig.utils.torch_utils import initialize_pytorch
 from ludwig.utils.types import DataFrame, Series
 
 _ray220 = version.parse(ray.__version__) >= version.parse("2.2.0")
@@ -639,12 +645,24 @@ def eval_fn(
             training_set_metadata,
         )
 
-        model = ray.get(model_ref)
-        device = get_torch_device()
-        model = model.to_device(device)
+        # Deserialize the model (minus weights) from Plasma
+        # Extract the weights from Plasma (without copying data)
+        # Load the weights back into the model in-place on the current device (CPU)
+        model = distributed.replace_model_from_serialization(ray.get(model_ref))
+        model = distributed.to_device(model)
+
+        # have to wrap here because we are passing into predictor directly.
+        # This is in contrast creating the predictor in the trainer class and
+        # passing in the model post-wrap.
+        dist_model = distributed.prepare_for_inference(model)
 
         predictor = get_predictor_cls(model.type())(
-            dist_model=model, distributed=distributed, report_tqdm_to_ray=True, remote=True, **predictor_kwargs
+            dist_model=dist_model,
+            distributed=distributed,
+            report_tqdm_to_ray=True,
+            remote=True,
+            model=model,
+            **predictor_kwargs,
         )
         results = predictor.batch_evaluation(eval_shard, **kwargs)
 
@@ -683,23 +701,37 @@ class RayPredictor(BasePredictor):
         num_cpus = resources_per_worker.get("CPU", (1 if num_gpus == 0 else 0))
         return num_cpus, num_gpus
 
-    def batch_predict(self, dataset: RayDataset, *args, collect_logits: bool = False, **kwargs):
+    def batch_predict(
+        self, dataset: RayDataset, *args, collect_logits: bool = False, model_ref: ObjectRef = None, **kwargs
+    ):
         self._check_dataset(dataset)
 
         predictor_kwargs = self.predictor_kwargs
         output_columns = get_output_columns(self.model.output_features, include_logits=collect_logits)
+
+        num_cpus, num_gpus = self.get_resources_per_worker()
+
+        distributed_strategy = self.trainer_kwargs.get("strategy", get_default_strategy_name())
+        if self.model.type() == MODEL_LLM:
+            # make sure all gpus available in a single node are used by a single worker during batch predict
+            num_gpus = int(max(n["Resources"].get("GPU", 0) for n in ray.nodes()))
+        dist_strategy = get_dist_strategy(distributed_strategy)
+
+        # reuse model ref if provided
+        if model_ref is None:
+            model_ref = ray.put(dist_strategy.extract_model_for_serialization(self.model))
+
         batch_predictor = self.get_batch_infer_model(
-            self.model,
+            model_ref,
             predictor_kwargs,
             output_columns,
             dataset.features,
             dataset.training_set_metadata,
             *args,
             collect_logits=collect_logits,
+            dist_strategy=dist_strategy,
             **kwargs,
         )
-
-        num_cpus, num_gpus = self.get_resources_per_worker()
 
         with tensor_extension_casting(False):
             predictions = dataset.ds.map_batches(
@@ -729,6 +761,8 @@ class RayPredictor(BasePredictor):
         # we will use Ray Datasets. Therefore, we break this up into two separate steps, and two passes over the
         # dataset. In the future, we can explore ways to combine these into a single step to reduce IO.
         with create_runner(**self.trainer_kwargs) as runner:
+            dist_strategy = runner.dist_strategy
+            model_ref = ray.put(dist_strategy.extract_model_for_serialization(self.model))
             # Collect eval metrics by distributing work across nodes / gpus with Horovod
             datasets = {"eval": dataset.ds}
             stream_window_size = {"eval": dataset.window_size_bytes}
@@ -737,7 +771,7 @@ class RayPredictor(BasePredictor):
                 lambda config: eval_fn(**config),
                 config={
                     "predictor_kwargs": predictor_kwargs,
-                    "model_ref": ray.put(self.model),
+                    "model_ref": model_ref,
                     "training_set_metadata": dataset.training_set_metadata,
                     "features": dataset.features,
                     **kwargs,
@@ -752,7 +786,7 @@ class RayPredictor(BasePredictor):
         predictions = None
         if collect_predictions:
             # Collect eval predictions by using Ray Datasets to transform partitions of the data in parallel
-            predictions = self.batch_predict(dataset, collect_logits=collect_logits)
+            predictions = self.batch_predict(dataset, collect_logits=collect_logits, model_ref=model_ref)
 
         return eval_stats, predictions
 
@@ -770,21 +804,24 @@ class RayPredictor(BasePredictor):
 
     def get_batch_infer_model(
         self,
-        model: "BaseModel",  # noqa: F821
+        model_ref: ObjectRef,  # noqa: F821
         predictor_kwargs: Dict[str, Any],
         output_columns: List[str],
         features: Dict[str, Dict],
         training_set_metadata: TrainingSetMetadataDict,
+        dist_strategy: DistributedStrategy,
         *args,
         **kwargs,
     ):
-        model_ref = ray.put(model)
-
         class BatchInferModel:
             def __init__(self):
-                model = ray.get(model_ref)
-                device = get_torch_device()
-                self.model = model.to_device(device)
+                # only use passed in distributed strategy for loading the model into the worker
+                model = dist_strategy.replace_model_from_serialization(ray.get(model_ref))
+
+                # use local strategy for model sharding and batch inference
+                distributed = LocalStrategy()
+                model = distributed.to_device(model)
+                dist_model = distributed.prepare_for_inference(model)
 
                 self.output_columns = output_columns
                 self.features = features
@@ -792,7 +829,11 @@ class RayPredictor(BasePredictor):
                 self.reshape_map = {
                     f[PROC_COLUMN]: training_set_metadata[f[NAME]].get("reshape") for f in features.values()
                 }
-                predictor = get_predictor_cls(model.type())(model, **predictor_kwargs)
+
+                # do not use distributed strategy for batch inference
+                predictor = get_predictor_cls(model.type())(
+                    dist_model, distributed=distributed, model=model, **predictor_kwargs
+                )
                 self.predict = partial(predictor.predict_single, *args, **kwargs)
 
             def __call__(self, df: pd.DataFrame) -> pd.DataFrame:

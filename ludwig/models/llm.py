@@ -255,6 +255,7 @@ class LLM(BaseModel):
                         **model_kwargs,
                     )
                     self.model = PeftModel.from_pretrained(
+                        self.model,
                         tmpdir,
                         torch_dtype=torch.float16,
                     )
