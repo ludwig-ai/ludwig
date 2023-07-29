@@ -1661,7 +1661,6 @@ class LudwigModel:
         private: bool = False,
         commit_message: str = "Upload trained [Ludwig](https://ludwig.ai/latest/) model weights",
         commit_description: Optional[str] = None,
-        **kwargs,
     ) -> bool:
         """Uploads trained model artifacts to the HuggingFace Hub.
 
