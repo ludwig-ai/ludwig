@@ -78,6 +78,7 @@ from ludwig.models.predictor import (
 from ludwig.models.registry import model_type_registry
 from ludwig.schema.model_config import ModelConfig
 from ludwig.types import ModelConfigDict, TrainingSetMetadataDict
+from ludwig.upload import get_upload_registry
 from ludwig.utils import metric_utils
 from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
 from ludwig.utils.config_utils import get_preprocessing_params
@@ -1651,6 +1652,58 @@ class LudwigModel:
         # save training set metadata
         training_set_metadata_path = os.path.join(save_path, TRAIN_SET_METADATA_FILE_NAME)
         save_json(training_set_metadata_path, self.training_set_metadata)
+
+    def upload(
+        self,
+        service: str,
+        repo_id: str,
+        model_path: str,
+        repo_type: str = "model",
+        private: bool = False,
+        commit_message: str = "Upload trained [Ludwig](https://ludwig.ai/latest/) model weights",
+        commit_description: Optional[str] = None,
+        **kwargs,
+    ) -> bool:
+        """Uploads trained model artifacts to a hosted model service.
+
+        Args:
+            service (`str`):
+                Name of the hosted model service to push the trained artifacts to.
+                Currently, this only supports `hf_hub`.
+            repo_id (`str`):
+                A namespace (user or an organization) and a repo name separated
+                by a `/`.
+            model_path (`str`):
+                The path of the saved model. This is the top level directory where
+                the models weights as well as other associated training artifacts
+                are saved.
+            private (`bool`, *optional*, defaults to `False`):
+                Whether the model repo should be private.
+            repo_type (`str`, *optional*):
+                Set to `"dataset"` or `"space"` if uploading to a dataset or
+                space, `None` or `"model"` if uploading to a model. Default is
+                `None`.
+            commit_message (`str`, *optional*):
+                The summary / title / first line of the generated commit. Defaults to:
+                `f"Upload {path_in_repo} with huggingface_hub"`
+            commit_description (`str` *optional*):
+                The description of the generated commit
+
+        Returns:
+            bool: True for success, False for failure.
+        """
+        model_service = get_upload_registry().get(service, "hf_hub")
+        hub = model_service()
+        hub.login()
+        upload_status = hub.upload(
+            repo_id=repo_id,
+            model_path=model_path,
+            repo_type=repo_type,
+            private=private,
+            commit_message=commit_message,
+            commit_description=commit_description,
+        )
+        return upload_status
 
     def save_config(self, save_path: str) -> None:
         """Save config to specified location.

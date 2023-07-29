@@ -9,7 +9,10 @@ from ludwig.utils.upload_utils import HuggingFaceHub
 logger = logging.getLogger(__name__)
 
 
-_upload_registry = {"hf_hub": HuggingFaceHub}
+def get_upload_registry():
+    return {
+        "hf_hub": HuggingFaceHub,
+    }
 
 
 def upload_cli(
@@ -47,8 +50,8 @@ def upload_cli(
         commit_description (`str` *optional*):
             The description of the generated commit
     """
-    service = _upload_registry.get(service, "hf_hub")
-    hub = service()
+    model_service = get_upload_registry().get(service, "hf_hub")
+    hub = model_service()
     hub.login()
     hub.upload(
         repo_id=repo_id,
