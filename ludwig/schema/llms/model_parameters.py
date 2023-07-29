@@ -71,4 +71,15 @@ class ModelParametersConfigField(schema_utils.DictMarshmallowField):
         super().__init__(ModelParametersConfig, default_missing=True)
 
     def _jsonschema_type_mapping(self):
-        return schema_utils.unload_jsonschema_from_marshmallow_class(ModelParametersConfig)
+        return {
+            "oneOf": [
+                {"type": "null", "title": "disabled", "description": "Skip configurable model parameters."},
+                {
+                    **schema_utils.unload_jsonschema_from_marshmallow_class(ModelParametersConfig),
+                    "title": "enabled",
+                    "description": "Set model parameters options.",
+                },
+            ],
+            "title": "Model Parameters",
+            "description": "Configurable model parameters for LLMs.",
+        }
