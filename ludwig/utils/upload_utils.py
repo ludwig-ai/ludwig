@@ -37,13 +37,16 @@ class BaseModelUpload(ABC):
         private: Optional[bool] = False,
         commit_message: Optional[str] = None,
         commit_description: Optional[str] = None,
-    ):
+    ) -> bool:
         """Abstract method to upload trained model artifacts to the target repository.
 
         Subclasses must implement this method to define the process of pushing model
         artifacts to the respective repository. This may include creating a new model version,
         uploading model files, and any other specific steps required by the model repository
         service.
+
+        Returns:
+            bool: True if the model artifacts were successfully uploaded, False otherwise.
 
         Raises:
             NotImplementedError: If this method is not implemented in the subclass.
@@ -79,7 +82,7 @@ class HuggingFaceHub(BaseModelUpload):
         private: Optional[bool] = False,
         commit_message: Optional[str] = None,
         commit_description: Optional[str] = None,
-    ):
+    ) -> bool:
         """Create an empty repo on the HuggingFace Hub and upload trained model artifacts to that repo.
 
         Args:
@@ -150,4 +153,7 @@ class HuggingFaceHub(BaseModelUpload):
             commit_description=commit_description,
         )
 
-        logger.info(f"Model uploaded to `{upload_path}` with repository name `{repo_id}`")
+        if upload_path:
+            logger.info(f"Model uploaded to `{upload_path}` with repository name `{repo_id}`")
+            return True
+        return False
