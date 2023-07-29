@@ -46,6 +46,9 @@ class DistributedStrategy(ABC):
         """
         pass
 
+    def prepare_for_inference(self, model: nn.Module) -> nn.Module:
+        return model
+
     def to_device(self, model: "BaseModel", device: Optional[torch.device] = None) -> nn.Module:
         return model.to_device(device if device is not None else get_torch_device())
 
