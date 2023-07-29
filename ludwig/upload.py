@@ -74,12 +74,10 @@ def cli(sys_argv):
     # Required parameters
     # ---------------
     parser.add_argument(
-        "-s",
-        "--service",
+        "service",
         help="Name of the model repository service.",
         default="hf_hub",
         choices=["hf_hub"],
-        required=True,
     )
 
     parser.add_argument(

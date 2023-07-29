@@ -1653,9 +1653,8 @@ class LudwigModel:
         training_set_metadata_path = os.path.join(save_path, TRAIN_SET_METADATA_FILE_NAME)
         save_json(training_set_metadata_path, self.training_set_metadata)
 
-    def upload(
+    def upload_to_hf_hub(
         self,
-        service: str,
         repo_id: str,
         model_path: str,
         repo_type: str = "model",
@@ -1664,12 +1663,9 @@ class LudwigModel:
         commit_description: Optional[str] = None,
         **kwargs,
     ) -> bool:
-        """Uploads trained model artifacts to a hosted model service.
+        """Uploads trained model artifacts to the HuggingFace Hub.
 
         Args:
-            service (`str`):
-                Name of the hosted model service to push the trained artifacts to.
-                Currently, this only supports `hf_hub`.
             repo_id (`str`):
                 A namespace (user or an organization) and a repo name separated
                 by a `/`.
@@ -1692,7 +1688,7 @@ class LudwigModel:
         Returns:
             bool: True for success, False for failure.
         """
-        model_service = get_upload_registry().get(service, "hf_hub")
+        model_service = get_upload_registry()["hf_hub"]
         hub = model_service()
         hub.login()
         upload_status = hub.upload(
