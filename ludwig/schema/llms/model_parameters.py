@@ -19,14 +19,15 @@ class RoPEScalingConfig(schema_utils.BaseMarshmallowConfig):
     """
 
     def __post_init__(self):
-        if self.type and not self.factor:
-            raise ConfigValidationError(
-                "If a `type` is specified for `rope_scaling`, `factor` must also be " f"specified. Got {self.factor}."
-            )
-
-        if self.factor and not self.type:
+        # Both parameters must be set, or none.
+        if not self.type:
             raise ConfigValidationError(
                 f"`rope_scaling`'s `type` field must be one of ['linear', 'dynamic'], got {self.type}"
+            )
+
+        if not self.factor:
+            raise ConfigValidationError(
+                f"When using `rope_scaling`, `factor` must be specified and be > 1. Got {self.factor}."
             )
 
     type: Optional[str] = schema_utils.StringOptions(

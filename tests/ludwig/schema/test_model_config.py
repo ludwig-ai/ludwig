@@ -1,6 +1,6 @@
 import os
 from tempfile import TemporaryDirectory
-from typing import Optional
+from typing import Any, Dict, Optional, Union
 
 import pytest
 import yaml
@@ -855,3 +855,28 @@ def test_llm_quantization_config(bits: Optional[int], expected_qconfig: Optional
     config_obj = ModelConfig.from_dict(config)
 
     assert config_obj.quantization == expected_qconfig
+
+
+@pytest.mark.parametrize(
+    "rope_scaling_config",
+    [
+        ({"type": "linear"}),
+        ({"factor": 2.0}),
+        ({"type": "linear", "factor": 1.0}),
+    ],
+)
+def test_llm_rope_scaling_failure_modes(
+    rope_scaling_config: Union[None, Dict[str, Any]],
+):
+    config = {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: "HuggingFaceH4/tiny-random-LlamaForCausalLM",
+        INPUT_FEATURES: [{NAME: "text_input", TYPE: "text"}],
+        OUTPUT_FEATURES: [{NAME: "text_output", TYPE: "text"}],
+        "model_parameters": {
+            "rope_scaling": rope_scaling_config,
+        },
+    }
+
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
