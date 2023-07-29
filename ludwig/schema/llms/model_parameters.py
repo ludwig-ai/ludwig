@@ -1,3 +1,5 @@
+from typing import Optional
+
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
@@ -18,24 +20,23 @@ class RoPEScalingConfig(schema_utils.BaseMarshmallowConfig):
 
     def __post_init__(self):
         if self.type and not self.factor:
-            raise ConfigValidationError(f"`rope_scaling`'s `factor` field must be an float > 1, got {self.factor}")
+            raise ConfigValidationError(
+                "If a `type` is specified for `rope_scaling`, `factor` must also be " f"specified. Got {self.factor}."
+            )
 
         if self.factor and not self.type:
             raise ConfigValidationError(
                 f"`rope_scaling`'s `type` field must be one of ['linear', 'dynamic'], got {self.type}"
             )
 
-        if not isinstance(self.factor, float) or self.factor <= 1.0:
-            raise ConfigValidationError(f"`rope_scaling`'s `factor` field must be an float > 1, got {self.factor}")
-
-    type: str = schema_utils.StringOptions(
+    type: Optional[str] = schema_utils.StringOptions(
         options=["linear", "dynamic"],
         default=None,
         allow_none=True,
         description="Currently supports two strategies: linear and dynamic scaling.",
     )
 
-    factor: float = schema_utils.FloatRange(
+    factor: Optional[float] = schema_utils.FloatRange(
         default=None,
         allow_none=True,
         min=1.0,

@@ -87,6 +87,9 @@ def load_pretrained_from_config(
         for param_name, param_value in config_obj.model_parameters.to_config().items():
             # Not all parameters are supported by all models, so we only add the parameter to the load kwargs
             # if it is supported by the model.
+            if param_value is None:
+                continue
+
             if hasattr(model_config, param_name):
                 load_kwargs[param_name] = param_value
             else:
