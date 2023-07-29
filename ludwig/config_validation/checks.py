@@ -570,3 +570,14 @@ def check_llm_finetuning_adaption_prompt_parameters(config: "ModelConfig"):
 def _get_llm_model_config(model_name: str) -> AutoConfig:
     """Returns the LLM model config."""
     return AutoConfig.from_pretrained(model_name)
+
+
+@register_config_check
+def check_llm_quantization_backend_incompatibility(config: "ModelConfig") -> None:  # noqa: F821
+    """Checks that LLM model type with quantization uses the local backend."""
+    if config.backend is None:
+        return
+
+    backend_type = config.backend.get("type", "local")
+    if config.model_type == MODEL_LLM and config.quantization and backend_type != "local":
+        raise ConfigValidationError(f"LLM with quantization requires the 'local' backend, found: '{backend_type}'")

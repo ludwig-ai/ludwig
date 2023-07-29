@@ -139,7 +139,8 @@ class MultiNodeCheckpoint(Checkpoint):
             state = torch.load(save_path, map_location=device)
             try:
                 self.global_step = self._get_global_step(state, save_path)
-                self.model.load_state_dict(state["model_weights"])
+                _, unexpected_keys = self.model.load_state_dict(state["model_weights"], strict=False)
+                assert unexpected_keys == [], f"Unexpected keys found in state dict: {unexpected_keys}"
                 if self.optimizer is not None:
                     self.optimizer.load_state_dict(state["optim_state"])
                 if self.scheduler is not None and "scheduler_state" in state:
@@ -175,7 +176,7 @@ class MultiNodeCheckpoint(Checkpoint):
         if self.is_local_rank_0():
             state = {
                 "global_step": global_step,
-                "model_weights": self.model.state_dict(),
+                "model_weights": self.get_model_state_dict(),
             }
             if self.optimizer is not None:
                 state["optim_state"] = self.optimizer.state_dict()
@@ -207,6 +208,16 @@ class MultiNodeCheckpoint(Checkpoint):
                 if orig_handler is not None:
                     signal.signal(signal.SIGINT, orig_handler)
         self.distributed.barrier()
+
+    def get_model_state_dict(self) -> Dict[str, Any]:
+        state = self.model.state_dict()
+
+        # Remove frozen parameter weights from state_dict for adapters and pretrained models
+        for n, p in self.model.named_parameters():
+            if not p.requires_grad:
+                del state[n]
+
+        return state
 
     def is_local_rank_0(self) -> bool:
         return self.distributed.local_rank() == 0
