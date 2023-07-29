@@ -3,13 +3,17 @@ import logging
 import sys
 from typing import Optional
 
-from ludwig.utils.commit_utils import HuggingFaceHub
 from ludwig.utils.print_utils import get_logging_level_registry
+from ludwig.utils.upload_utils import HuggingFaceHub
 
 logger = logging.getLogger(__name__)
 
 
-def commit_cli(
+_upload_registry = {"hf_hub": HuggingFaceHub}
+
+
+def upload_cli(
+    service: str,
     repo_id: str,
     model_path: str,
     repo_type: str = "model",
@@ -21,6 +25,9 @@ def commit_cli(
     """Create an empty repo on the HuggingFace Hub and upload trained model artifacts to that repo.
 
     Args:
+        service (`str`):
+            Name of the hosted model service to push the trained artifacts to.
+            Currently, this only supports `hf_hub`.
         repo_id (`str`):
             A namespace (user or an organization) and a repo name separated
             by a `/`.
@@ -40,10 +47,10 @@ def commit_cli(
         commit_description (`str` *optional*):
             The description of the generated commit
     """
-
-    hf = HuggingFaceHub()
-    hf.login()
-    hf.upload_to_hfhub(
+    service = _upload_registry.get(service, "hf_hub")
+    hub = service()
+    hub.login()
+    hub.upload(
         repo_id=repo_id,
         model_path=model_path,
         repo_type=repo_type,
@@ -55,8 +62,8 @@ def commit_cli(
 
 def cli(sys_argv):
     parser = argparse.ArgumentParser(
-        description="This script pushes a trained model to huggingface hub",
-        prog="ludwig commit",
+        description="This script pushes a trained model to a hosted model repository service",
+        prog="ludwig upload",
         usage="%(prog)s [options]",
     )
 
@@ -64,21 +71,30 @@ def cli(sys_argv):
     # Required parameters
     # ---------------
     parser.add_argument(
-        "-r",
-        "--repo_id",
-        help="ID of the repo on HF. This will be created if it doesn't exist. " "Format: username/repo_name",
+        "-s",
+        "--service",
+        help="Name of the model repository service.",
+        default="hf_hub",
+        choices=["hf_hub"],
         required=True,
     )
 
-    parser.add_argument("-m", "--model_path", help="model to push to huggingface", required=True)
+    parser.add_argument(
+        "-r",
+        "--repo_id",
+        help="Name of the repo. This will be created if it doesn't exist. Format: username/repo_name",
+        required=True,
+    )
+
+    parser.add_argument("-m", "--model_path", help="Path of the trained model on disk", required=True)
 
     # ---------------
     # Optional parameters
     # ---------------
-    parser.add_argument("-p", "--private", help="make the repo private", default=False, choices=[True, False])
+    parser.add_argument("-p", "--private", help="Make the repo private", default=False, choices=[True, False])
 
     parser.add_argument(
-        "-t", "--repo_type", help="type of repo", default="model", choices=["model", "space", "dataset"]
+        "-t", "--repo_type", help="Type of repo", default="model", choices=["model", "space", "dataset"]
     )
 
     parser.add_argument(
@@ -94,7 +110,7 @@ def cli(sys_argv):
         "-l",
         "--logging_level",
         default="info",
-        help="the level of logging to use",
+        help="The level of logging to use",
         choices=["critical", "error", "warning", "info", "debug", "notset"],
     )
 
@@ -103,9 +119,9 @@ def cli(sys_argv):
     args.logging_level = get_logging_level_registry()[args.logging_level]
     logging.getLogger("ludwig").setLevel(args.logging_level)
     global logger
-    logger = logging.getLogger("ludwig.commit")
+    logger = logging.getLogger("ludwig.upload")
 
-    commit_cli(**vars(args))
+    upload_cli(**vars(args))
 
 
 if __name__ == "__main__":

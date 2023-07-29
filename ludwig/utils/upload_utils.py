@@ -1,5 +1,6 @@
 import logging
 import os
+from abc import ABC, abstractmethod
 from typing import Optional
 
 from huggingface_hub import HfApi, login
@@ -7,7 +8,50 @@ from huggingface_hub import HfApi, login
 logger = logging.getLogger(__name__)
 
 
-class HuggingFaceHub:
+class BaseModelUpload(ABC):
+    """Abstract base class for uploading trained model artifacts to different repositories.
+
+    This class defines the interface for uploading trained model artifacts to various repositories such as Huggingface
+    Hub, without specifying the concrete implementation for each repository. Subclasses of this base class must
+    implement the 'login' and 'upload' methods.
+    """
+
+    @abstractmethod
+    def login(self):
+        """Abstract method to handle authentication with the target repository.
+
+        Subclasses must implement this method to provide the necessary authentication
+        mechanisms required by the repository where the model artifacts will be uploaded.
+
+        Raises:
+            NotImplementedError: If this method is not implemented in the subclass.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def upload(
+        self,
+        repo_id: str,
+        model_path: str,
+        repo_type: Optional[str] = None,
+        private: Optional[bool] = False,
+        commit_message: Optional[str] = None,
+        commit_description: Optional[str] = None,
+    ):
+        """Abstract method to upload trained model artifacts to the target repository.
+
+        Subclasses must implement this method to define the process of pushing model
+        artifacts to the respective repository. This may include creating a new model version,
+        uploading model files, and any other specific steps required by the model repository
+        service.
+
+        Raises:
+            NotImplementedError: If this method is not implemented in the subclass.
+        """
+        raise NotImplementedError()
+
+
+class HuggingFaceHub(BaseModelUpload):
     def __init__(self):
         self.api = None
 
@@ -27,7 +71,7 @@ class HuggingFaceHub:
 
         self.api = hf_api
 
-    def upload_to_hfhub(
+    def upload(
         self,
         repo_id: str,
         model_path: str,

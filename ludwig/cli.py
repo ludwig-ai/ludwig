@@ -56,7 +56,7 @@ Available sub-commands:
    init_config           Initialize a user config from a dataset and targets
    render_config         Renders the fully populated config with all defaults set
    check_install         Runs a quick training run on synthetic data to verify installation status
-   commit                Push trained model artifacts to Huggingface Hub
+   upload                Push trained model artifacts to Huggingface Hub
 """,
         )
         parser.add_argument("command", help="Subcommand to run")
@@ -180,10 +180,10 @@ Available sub-commands:
 
         datasets.cli(sys.argv[2:])
 
-    def commit(self):
-        from ludwig import commit
+    def upload(self):
+        from ludwig import upload
 
-        commit.cli(sys.argv[2:])
+        upload.cli(sys.argv[2:])
 
 
 def main():
