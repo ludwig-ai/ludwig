@@ -48,7 +48,6 @@ def evaluate_cli(
     allow_parallel_threads: bool = True,
     callbacks: List[Callback] = None,
     backend: Union[Backend, str] = None,
-    use_backend_from_config: bool = False,
     logging_level: int = logging.INFO,
     **kwargs,
 ) -> None:
@@ -98,8 +97,6 @@ def evaluate_cli(
          Ludwig pipeline.
      :param backend: (Union[Backend, str]) `Backend` or string name
          of backend to use to execute preprocessing / training steps.
-     :param use_backend_from_config: (bool, default: `False`) use backend
-        specified in config of model to load.
      :param logging_level: (int) Log level that will be sent to stderr.
 
      # Returns
@@ -110,7 +107,6 @@ def evaluate_cli(
         model_path,
         logging_level=logging_level,
         backend=backend,
-        use_backend_from_config=use_backend_from_config,
         gpus=gpus,
         gpu_memory_limit=gpu_memory_limit,
         allow_parallel_threads=allow_parallel_threads,
@@ -236,13 +232,6 @@ def cli(sys_argv):
         "defaults to local execution or Horovod if called using horovodrun",
         choices=ALL_BACKENDS,
     )
-    parser.add_argument(
-        "-ubfc",
-        "--use_backend_from_config",
-        action="store_true",
-        help="use backend specified in config of model to load.",
-    )
-
     parser.add_argument(
         "-l",
         "--logging_level",
