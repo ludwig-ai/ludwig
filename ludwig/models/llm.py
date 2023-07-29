@@ -77,6 +77,7 @@ def load_pretrained_from_config(config_obj: LLMModelConfig, weights_save_path: O
         # Apply quanitzation configuration at model load time
         load_kwargs["torch_dtype"] = getattr(torch, config_obj.quantization.bnb_4bit_compute_dtype)
         load_kwargs["quantization_config"] = config_obj.quantization.to_bitsandbytes()
+        load_kwargs["device_map"] = "auto"
 
     logger.info("Loading large language model...")
     pretrained_model_name_or_path = weights_save_path or config_obj.base_model
@@ -217,7 +218,7 @@ class LLM(BaseModel):
     def to_device(self, device):
         device = torch.device(device)
 
-        if device == self.curr_device:
+        if device.type == self.curr_device.type:
             log_once(f"Model already on device'{device}'.")
             return self
         else:
