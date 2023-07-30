@@ -855,3 +855,29 @@ def test_llm_quantization_config(bits: Optional[int], expected_qconfig: Optional
     config_obj = ModelConfig.from_dict(config)
 
     assert config_obj.quantization == expected_qconfig
+
+
+def test_llm_multiple_input_features_missing_prompt():
+    config = {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: "bigscience/bloomz-3b",
+        INPUT_FEATURES: [{NAME: "text1", TYPE: "text"}, {NAME: "text2", TYPE: "text"}],
+        OUTPUT_FEATURES: [{NAME: "text_output", TYPE: "text"}],
+    }
+
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+
+def test_llm_multiple_input_features_with_prompt():
+    config = {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: "bigscience/bloomz-3b",
+        INPUT_FEATURES: [{NAME: "text1", TYPE: "text"}, {NAME: "text2", TYPE: "text"}],
+        OUTPUT_FEATURES: [{NAME: "text_output", TYPE: "text"}],
+        "prompt": {
+            "task": "dummy task",
+        },
+    }
+
+    ModelConfig.from_dict(config)

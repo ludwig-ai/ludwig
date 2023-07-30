@@ -473,6 +473,24 @@ def check_llm_atleast_one_input_text_feature(config: "ModelConfig"):  # noqa: F8
 
 
 @register_config_check
+def check_llm_multiple_features_has_prompt(config: "ModelConfig"):  # noqa: F821
+    """Checks that LLM has prompt when there are multiple input features."""
+    if config.model_type != MODEL_LLM:
+        return
+
+    if len(config.input_features) == 1:
+        return
+
+    # Check that prompt task and template are not empty
+    if not config.prompt.task and not config.prompt.template:
+        raise ConfigValidationError(
+            "LLM model type requires the `prompt` to be configured to combine all of the input features into "
+            "a single text feature that can be passed to the LLM. Specify either the task or the template to be "
+            "used to combine multiple input features in the `prompt` section of the Ludwig config."
+        )
+
+
+@register_config_check
 def check_llm_finetuning_trainer_config(config: "ModelConfig"):  # noqa: F821
     """Ensures that trainer type is finetune if adapter is not None."""
     if config.model_type != MODEL_LLM:
