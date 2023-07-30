@@ -85,7 +85,7 @@ def load_pretrained_from_config(
 
     if config_obj.model_parameters:
         # Add any model specific parameters to the load kwargs
-        for param_name, param_value in config_obj.model_parameters.to_config().items():
+        for param_name, param_value in config_obj.model_parameters.to_dict().items():
             # Not all parameters are supported by all models, so we only add the parameter to the load kwargs
             # if it is supported by the model.
             if param_value is None:

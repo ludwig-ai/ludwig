@@ -60,10 +60,11 @@ class RoPEScalingConfigField(schema_utils.DictMarshmallowField):
 class ModelParametersConfig(schema_utils.BaseMarshmallowConfig):
     rope_scaling: RoPEScalingConfig = RoPEScalingConfigField().get_default_field()
 
-    def to_config(self):
-        return {
-            "rope_scaling": self.rope_scaling.to_dict(),
-        }
+    def to_dict(self):
+        config = {}
+        if self.rope_scaling:
+            config["rope_scaling"] = self.rope_scaling.to_dict()
+        return config
 
 
 @DeveloperAPI

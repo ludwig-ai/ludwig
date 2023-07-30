@@ -893,4 +893,4 @@ def test_llm_model_parameters_no_rope_scaling():
 
     config_obj = ModelConfig.from_dict(config)
     assert config_obj.model_parameters.rope_scaling is None
-    assert config_obj.model_parameters.to_config() == {}
+    assert config_obj.model_parameters.to_dict() == {}
