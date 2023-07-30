@@ -13,6 +13,7 @@ from ludwig.schema.features.base import (
 from ludwig.schema.hyperopt import HyperoptConfig, HyperoptField
 from ludwig.schema.llms.base_model import BaseModelDataclassField
 from ludwig.schema.llms.generation import LLMGenerationConfig, LLMGenerationConfigField
+from ludwig.schema.llms.model_parameters import ModelParametersConfig, ModelParametersConfigField
 from ludwig.schema.llms.peft import AdapterDataclassField, BaseAdapterConfig
 from ludwig.schema.llms.prompt import PromptConfig, PromptConfigField
 from ludwig.schema.llms.quantization import QuantizationConfig, QuantizationConfigField
@@ -50,3 +51,4 @@ class LLMModelConfig(ModelConfig):
 
     adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
     quantization: Optional[QuantizationConfig] = QuantizationConfigField().get_default_field()
+    model_parameters: Optional[ModelParametersConfig] = ModelParametersConfigField().get_default_field()

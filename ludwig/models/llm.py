@@ -71,13 +71,30 @@ class DictWrapper:
         self.obj.update(modules)
 
 
-def load_pretrained_from_config(config_obj: LLMModelConfig, weights_save_path: Optional[str] = None) -> PreTrainedModel:
+def load_pretrained_from_config(
+    config_obj: LLMModelConfig,
+    model_config: Optional[AutoConfig] = None,
+    weights_save_path: Optional[str] = None,
+) -> PreTrainedModel:
     load_kwargs = {}
     if config_obj.quantization:
         # Apply quanitzation configuration at model load time
         load_kwargs["torch_dtype"] = getattr(torch, config_obj.quantization.bnb_4bit_compute_dtype)
         load_kwargs["quantization_config"] = config_obj.quantization.to_bitsandbytes()
         load_kwargs["device_map"] = "auto"
+
+    if config_obj.model_parameters:
+        # Add any model specific parameters to the load kwargs
+        for param_name, param_value in config_obj.model_parameters.to_dict().items():
+            # Not all parameters are supported by all models, so we only add the parameter to the load kwargs
+            # if it is supported by the model.
+            if param_value is None:
+                continue
+
+            if hasattr(model_config, param_name):
+                load_kwargs[param_name] = param_value
+            else:
+                logger.warning(f"Parameter {param_name} is not supported by {config_obj.base_model}. Skipping.")
 
     logger.info("Loading large language model...")
     pretrained_model_name_or_path = weights_save_path or config_obj.base_model
@@ -105,7 +122,7 @@ class LLM(BaseModel):
         self.model_name = self.config_obj.base_model
         self.model_config = AutoConfig.from_pretrained(self.config_obj.base_model)
 
-        self.model = load_pretrained_from_config(self.config_obj)
+        self.model = load_pretrained_from_config(self.config_obj, model_config=self.model_config)
         self.curr_device = next(self.model.parameters()).device
         logger.info("Done.")
 
@@ -585,7 +602,9 @@ class LLM(BaseModel):
 
             self.model = PeftModel.from_pretrained(self.model, weights_save_path)
         elif self.config_obj.trainer.type != "none":
-            self.model = load_pretrained_from_config(self.config_obj, weights_save_path)
+            self.model = load_pretrained_from_config(
+                self.config_obj, model_config=self.model_config, weights_save_path=weights_save_path
+            )
         else:
             logger.info("Skipped loading LLM without weight adjustments.")
 
