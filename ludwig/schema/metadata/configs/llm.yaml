@@ -119,3 +119,17 @@ adapter:
     adapter_layers:
       ui_display_name: Adapter Layers
       expected_impact: 3
+quantization:
+  _oneOf:
+    allOf:
+      ui_display_name: Quantization
+      expected_impact: 3
+    none:
+      ui_display_name: No Quantization
+      expected_impact: 3
+  _meta:
+    expected_impact: 3
+    ui_component_type: radio_string_combined
+  bits:
+    ui_display_name: Bits per parameter
+    expected_impact: 3

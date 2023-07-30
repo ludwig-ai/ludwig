@@ -4,6 +4,7 @@ from transformers import BitsAndBytesConfig
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.metadata import LLM_METADATA
 from ludwig.schema.utils import ludwig_dataclass
 
 warnings.filterwarnings(
@@ -20,6 +21,7 @@ class QuantizationConfig(schema_utils.BaseMarshmallowConfig):
         options=[4, 8],
         default=4,
         description="The quantization level to apply to weights on load.",
+        parameter_metadata=LLM_METADATA["quantization"]["bits"],
     )
 
     llm_int8_threshold: float = schema_utils.NonNegativeFloat(
