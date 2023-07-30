@@ -880,3 +880,17 @@ def test_llm_rope_scaling_failure_modes(
 
     with pytest.raises(ConfigValidationError):
         ModelConfig.from_dict(config)
+
+
+def test_llm_model_parameters_no_rope_scaling():
+    config = {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: "HuggingFaceH4/tiny-random-LlamaForCausalLM",
+        INPUT_FEATURES: [{NAME: "text_input", TYPE: "text"}],
+        OUTPUT_FEATURES: [{NAME: "text_output", TYPE: "text"}],
+        "model_parameters": {},
+    }
+
+    config_obj = ModelConfig.from_dict(config)
+    assert config_obj.model_parameters.rope_scaling is None
+    assert config_obj.model_parameters.to_config() == {}
