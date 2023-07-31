@@ -1,0 +1,28 @@
+model_type: llm
+base_model: meta-llama/Llama-2-7b-hf
+
+quantization:
+  bits: 4
+
+adapter:
+  type: lora
+
+input_features:
+  - name: instruction
+    type: text
+
+output_features:
+  - name: output
+    type: text
+
+trainer:
+  type: finetune
+  learning_rate: 0.0003
+  batch_size: 2
+  gradient_accumulation_steps: 8
+  epochs: 3
+  learning_rate_scheduler:
+    warmup_fraction: 0.01
+
+backend:
+  type: local

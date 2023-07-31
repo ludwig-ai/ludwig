@@ -12,11 +12,30 @@ with GPU availability.
 - Access approval to [Llama2-7b-hf](https://huggingface.co/meta-llama/Llama-2-7b-hf)
 - GPU with at least 12 GiB of VRAM (in our tests, we used an Nvidia T4)
 
-## Running the example
+## Running
+
+### Command Line
+
+Set your token environment variable from the terminal, then run the API script:
+
+```bash
+export HUGGING_FACE_HUB_TOKEN="<api_token>"
+./run_train.sh
+```
+
+### Python API
 
 Set your token environment variable from the terminal, then run the API script:
 
 ```bash
 export HUGGING_FACE_HUB_TOKEN="<api_token>"
 python train_alpaca.py
+```
+
+## Upload to HuggingFace
+
+You can upload to the HuggingFace Hub from the command line:
+
+```bash
+ludwig upload hf_hub -r <your_org>/<model_name> -m <path/to/model>
 ```
