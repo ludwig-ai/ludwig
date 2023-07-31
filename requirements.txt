@@ -10,13 +10,13 @@ torch>=1.13.0
 torchaudio
 torchtext
 torchvision
-transformers>=4.28.1
+transformers>=4.31.0
+tokenizers>=0.13.3
 spacy>=2.3
-PyYAML>=3.12
+PyYAML>=3.12,<6.0.1,!=5.4.* #Exlude PyYAML 5.4.* due to incompatibility with awscli
 absl-py
 kaggle
 requests
-tables
 fsspec[http]
 dataclasses-json
 jsonschema>=4.5.0,<4.7
@@ -24,7 +24,7 @@ marshmallow
 marshmallow-jsonschema
 marshmallow-dataclass==8.5.4
 tensorboard
-torchmetrics>=0.11
+torchmetrics>=0.11.0,<=0.11.4
 torchinfo
 filelock
 psutil==5.9.4

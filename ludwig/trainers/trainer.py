@@ -175,6 +175,7 @@ class Trainer(BaseTrainer):
         self.base_learning_rate = base_learning_rate
 
         self.model = model
+        self.model.prepare_for_training()
         self.model = self.distributed.to_device(self.model)
         self.model.metrics_to_device(self.device)
 
@@ -822,7 +823,8 @@ class Trainer(BaseTrainer):
                     if self.distributed.is_model_parallel():
                         # Assume the full weights cannot fit in memory on GPU
                         self.model = self.model.cpu()
-                    self.model.load_state_dict(state_dict)
+                    _, unexpected_keys = self.model.load_state_dict(state_dict, strict=False)
+                    assert unexpected_keys == [], f"Unexpected keys found in state dict: {unexpected_keys}"
             elif return_state_dict:
                 state_dict = self.model.cpu().state_dict()
 

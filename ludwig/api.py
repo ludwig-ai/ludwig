@@ -78,6 +78,7 @@ from ludwig.models.predictor import (
 from ludwig.models.registry import model_type_registry
 from ludwig.schema.model_config import ModelConfig
 from ludwig.types import ModelConfigDict, TrainingSetMetadataDict
+from ludwig.upload import get_upload_registry
 from ludwig.utils import metric_utils
 from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
 from ludwig.utils.config_utils import get_preprocessing_params
@@ -638,12 +639,13 @@ class LudwigModel:
                         test_set=test_set,
                         save_path=model_dir,
                     )
+                    (self.model, train_trainset_stats, train_valiset_stats, train_testset_stats) = train_stats
 
                     # Calibrates output feature probabilities on validation set if calibration is enabled.
                     # Must be done after training, and before final model parameters are saved.
                     if self.backend.is_coordinator():
                         calibrator = Calibrator(
-                            trainer.model,
+                            self.model,
                             self.backend,
                             batch_size=trainer.eval_batch_size,
                         )
@@ -684,7 +686,6 @@ class LudwigModel:
                     # List[TrainerMetric], with one entry per training checkpoint, according to steps_per_checkpoint.
                     # We reduce the dictionary of TrainerMetrics to a simple list of floats for interfacing with Ray
                     # Tune.
-                    (self.model, train_trainset_stats, train_valiset_stats, train_testset_stats) = train_stats
                     train_stats = TrainingStats(
                         metric_utils.reduce_trainer_metrics_dict(train_trainset_stats),
                         metric_utils.reduce_trainer_metrics_dict(train_valiset_stats),
@@ -1567,6 +1568,7 @@ class LudwigModel:
         # Upgrades deprecated fields and adds new required fields in case the config loaded from disk is old.
         config_obj = ModelConfig.from_dict(config)
 
+        # Ensure that the original backend is used if it was specified in the config and user requests it
         if backend_param is None and "backend" in config:
             # Reset backend from config
             backend = initialize_backend(config.get("backend"))
@@ -1651,6 +1653,53 @@ class LudwigModel:
         # save training set metadata
         training_set_metadata_path = os.path.join(save_path, TRAIN_SET_METADATA_FILE_NAME)
         save_json(training_set_metadata_path, self.training_set_metadata)
+
+    def upload_to_hf_hub(
+        self,
+        repo_id: str,
+        model_path: str,
+        repo_type: str = "model",
+        private: bool = False,
+        commit_message: str = "Upload trained [Ludwig](https://ludwig.ai/latest/) model weights",
+        commit_description: Optional[str] = None,
+    ) -> bool:
+        """Uploads trained model artifacts to the HuggingFace Hub.
+
+        Args:
+            repo_id (`str`):
+                A namespace (user or an organization) and a repo name separated
+                by a `/`.
+            model_path (`str`):
+                The path of the saved model. This is the top level directory where
+                the models weights as well as other associated training artifacts
+                are saved.
+            private (`bool`, *optional*, defaults to `False`):
+                Whether the model repo should be private.
+            repo_type (`str`, *optional*):
+                Set to `"dataset"` or `"space"` if uploading to a dataset or
+                space, `None` or `"model"` if uploading to a model. Default is
+                `None`.
+            commit_message (`str`, *optional*):
+                The summary / title / first line of the generated commit. Defaults to:
+                `f"Upload {path_in_repo} with huggingface_hub"`
+            commit_description (`str` *optional*):
+                The description of the generated commit
+
+        Returns:
+            bool: True for success, False for failure.
+        """
+        model_service = get_upload_registry()["hf_hub"]
+        hub = model_service()
+        hub.login()
+        upload_status = hub.upload(
+            repo_id=repo_id,
+            model_path=model_path,
+            repo_type=repo_type,
+            private=private,
+            commit_message=commit_message,
+            commit_description=commit_description,
+        )
+        return upload_status
 
     def save_config(self, save_path: str) -> None:
         """Save config to specified location.

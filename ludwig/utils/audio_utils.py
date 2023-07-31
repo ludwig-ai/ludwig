@@ -24,7 +24,6 @@ import torchaudio
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import DEFAULT_AUDIO_TENSOR_LENGTH
-from ludwig.utils.fs_utils import get_bytes_obj_from_path
 from ludwig.utils.types import TorchAudioTuple
 
 logger = logging.getLogger(__name__)
@@ -64,8 +63,11 @@ def read_audio_from_path(path: str) -> Optional[TorchAudioTuple]:
 
     Useful for reading from a small number of paths. For more intensive reads, use backend.read_binary_files instead.
     """
-    bytes_obj = get_bytes_obj_from_path(path)
-    return read_audio_from_bytes_obj(bytes_obj)
+    try:
+        return torchaudio.backend.sox_io_backend.load(path)
+    except Exception as e:
+        logger.warning(e)
+        return None
 
 
 @DeveloperAPI

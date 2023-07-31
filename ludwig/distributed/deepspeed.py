@@ -1,12 +1,13 @@
 import logging
 import os
 import warnings
-from typing import Any, Dict, Mapping, Optional, Tuple, TYPE_CHECKING
+from typing import Any, Dict, List, Mapping, Optional, Tuple, TYPE_CHECKING, Union
 
 import deepspeed
 import deepspeed.comm
 import torch
 from deepspeed.utils.zero_to_fp32 import get_fp32_state_dict_from_zero_checkpoint
+from packaging import version
 from torch import nn
 from torch.optim.optimizer import Optimizer
 
@@ -14,6 +15,10 @@ from ludwig.constants import MIN_POSSIBLE_BATCH_SIZE
 from ludwig.distributed.ddp import DDPStrategy
 from ludwig.modules.optimization_modules import get_optimizer_class_and_kwargs
 from ludwig.utils.checkpoint_utils import Checkpoint
+from ludwig.utils.model_utils import extract_tensors, replace_tensors
+
+_deepspeed_0101 = version.parse(deepspeed.__version__) >= version.parse("0.10.1")
+
 
 if TYPE_CHECKING:
     from ludwig.modules.lr_scheduler import LRScheduler
@@ -112,6 +117,11 @@ class DeepSpeedStrategy(DDPStrategy):
 
         return model_engine, optimizer
 
+    def prepare_for_inference(self, model: nn.Module) -> nn.Module:
+        ds_config = {}
+        model_engine = deepspeed.init_inference(model=model, config=ds_config)
+        return model_engine
+
     def to_device(self, model: nn.Module, device: Optional[torch.device] = None) -> nn.Module:
         return model
 
@@ -181,6 +191,17 @@ class DeepSpeedStrategy(DDPStrategy):
     ) -> Checkpoint:
         return DeepSpeedCheckpoint(self, dist_model, optimizer, scheduler)
 
+    @classmethod
+    def extract_model_for_serialization(cls, model: nn.Module) -> Union[nn.Module, Tuple[nn.Module, List[Dict]]]:
+        return extract_tensors(model)
+
+    @classmethod
+    def replace_model_from_serialization(cls, state: Union[nn.Module, Tuple[nn.Module, List[Dict]]]) -> nn.Module:
+        assert isinstance(state, tuple)
+        model, model_weights = state
+        replace_tensors(model, model_weights, torch.device("cpu"))
+        return model
+
 
 class DeepSpeedCheckpoint(Checkpoint):
     def prepare(self, directory: str):
@@ -209,7 +230,11 @@ class DeepSpeedCheckpoint(Checkpoint):
         if self.scheduler is not None:
             client_state["scheduler_state"] = self.scheduler.state_dict()
 
-        self.model.save_checkpoint(save_path, client_state=client_state)
+        kwargs = {}
+        if _deepspeed_0101:
+            kwargs["exclude_frozen_parameters"] = True
+
+        self.model.save_checkpoint(save_path, client_state=client_state, **kwargs)
 
     def get_state_for_inference(self, save_path: str, device: Optional[torch.device] = None) -> Mapping[str, Any]:
         if self.model.zero_optimization_stage() == 3:

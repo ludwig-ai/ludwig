@@ -5,7 +5,7 @@ from typing import Dict
 import pytest
 import torch
 
-from ludwig.constants import ENCODER
+from ludwig.constants import ENCODER, ENCODER_OUTPUT
 from ludwig.features.bag_feature import BagInputFeature
 from ludwig.schema.features.bag_feature import BagInputFeatureConfig
 from ludwig.schema.utils import load_config_with_kwargs
@@ -42,4 +42,4 @@ def test_bag_input_feature(bag_config: Dict, encoder: str) -> None:
     bag_input_feature = BagInputFeature(bag_config).to(DEVICE)
     bag_tensor = torch.randn([BATCH_SIZE, SEQ_SIZE, BAG_W_SIZE], dtype=torch.float32).to(DEVICE)
     encoder_output = bag_input_feature(bag_tensor)
-    assert encoder_output["encoder_output"].shape[1:][1:] == bag_input_feature.output_shape
+    assert encoder_output[ENCODER_OUTPUT].shape[1:][1:] == bag_input_feature.output_shape

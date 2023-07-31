@@ -4,7 +4,7 @@ from typing import Dict
 import pytest
 import torch
 
-from ludwig.constants import ENCODER
+from ludwig.constants import ENCODER, ENCODER_OUTPUT
 from ludwig.features.set_feature import SetInputFeature
 from ludwig.schema.features.set_feature import SetInputFeatureConfig
 from ludwig.schema.utils import load_config_with_kwargs
@@ -59,4 +59,4 @@ def test_set_input_feature(set_config: Dict) -> None:
     input_tensor = torch.randint(0, 2, size=(BATCH_SIZE, len(set_def[ENCODER]["vocab"])), dtype=torch.int64).to(DEVICE)
 
     encoder_output = input_feature_obj(input_tensor)
-    assert encoder_output["encoder_output"].shape == (BATCH_SIZE, *input_feature_obj.output_shape)
+    assert encoder_output[ENCODER_OUTPUT].shape == (BATCH_SIZE, *input_feature_obj.output_shape)

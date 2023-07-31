@@ -20,13 +20,22 @@ from typing import Any, Dict, Optional
 import torch
 from torch import Tensor
 
-from ludwig.constants import HIDDEN, LENGTHS, LOGITS, LOSS, PREDICTIONS, PROBABILITIES
+from ludwig.constants import (
+    ENCODER_OUTPUT,
+    ENCODER_OUTPUT_STATE,
+    HIDDEN,
+    LENGTHS,
+    LOGITS,
+    LOSS,
+    PREDICTIONS,
+    PROBABILITIES,
+)
 from ludwig.decoders.registry import get_decoder_cls
 from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_utils import get_input_size_with_dependencies
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.loss_modules import create_loss
-from ludwig.modules.metric_modules import LudwigMetric, MeanMetric
+from ludwig.modules.metric_modules import LossMetric, LudwigMetric, MeanMetric
 from ludwig.modules.metric_registry import get_metric_classes, get_metric_cls, get_metric_tensor_input
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.schema.features.base import BaseFeatureConfig, BaseOutputFeatureConfig
@@ -286,13 +295,15 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         self._eval_loss_metric = ModuleWrapper(get_metric_cls(self.type(), self.loss.type)(config=self.loss))
 
     def _setup_metrics(self):
+        kwargs = {}
+        for name, cls in get_metric_classes(self.type()).items():
+            if cls.can_report(self) and isinstance(cls, LossMetric):
+                kwargs[name] = cls(config=self.loss, **self.metric_kwargs())
+            elif cls.can_report(self):
+                kwargs[name] = cls(**self.metric_kwargs())
         self._metric_functions = {
             LOSS: self.eval_loss_metric,
-            **{
-                name: cls(config=self.loss, **self.metric_kwargs())
-                for name, cls in get_metric_classes(self.type()).items()
-                if cls.can_report(self)
-            },
+            **kwargs,
         }
         self.metric_names = sorted(list(self._metric_functions.keys()))
 
@@ -405,8 +416,8 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         # ================ Predictions ================
         logits_input = {HIDDEN: hidden}
         # pass supplemental data from encoders to decoder
-        if "encoder_output_state" in combiner_outputs:
-            logits_input["encoder_output_state"] = combiner_outputs["encoder_output_state"]
+        if ENCODER_OUTPUT_STATE in combiner_outputs:
+            logits_input[ENCODER_OUTPUT_STATE] = combiner_outputs[ENCODER_OUTPUT_STATE]
         if LENGTHS in combiner_outputs:
             logits_input[LENGTHS] = combiner_outputs[LENGTHS]
 
@@ -535,7 +546,7 @@ def create_passthrough_input_feature(feature: InputFeature, config: BaseFeatureC
 
         def forward(self, inputs, mask=None):
             assert isinstance(inputs, torch.Tensor)
-            return {"encoder_output": inputs}
+            return {ENCODER_OUTPUT: inputs}
 
         @property
         def input_dtype(self):

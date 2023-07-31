@@ -45,11 +45,9 @@ sample_ratio:
     suggested_values: Depends on data size
     ui_display_name: Sample Ratio
 column:
-    default_value_reasoning:
-        The default value is `split` because it is the column name that we traditionally reserve for indicating 
-        dataset splitting.
     expected_impact: 3
     ui_display_name: Split Column
+    ui_component_type: column_selector
 split_probabilities:
     default_value_reasoning:
         Most of the dataset should be used for training, with

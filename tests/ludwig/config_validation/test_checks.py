@@ -361,3 +361,35 @@ output_features:
 
     config["prompt"]["retrieval"]["model_name"] = "some-huggingface-model"
     ModelConfig.from_dict(config)
+
+
+def test_check_llm_quantization_backend_incompatibility():
+    config = yaml.safe_load(
+        """
+model_type: llm
+base_model: facebook/opt-350m
+quantization:
+  bits: 4
+input_features:
+  - name: sample
+    type: text
+output_features:
+  - name: label
+    type: text
+backend:
+  type: ray
+"""
+    )
+
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+    config["backend"]["type"] = "local"
+    ModelConfig.from_dict(config)
+
+    del config["backend"]
+    ModelConfig.from_dict(config)
+
+    del config["quantization"]
+    config["backend"] = {"type": "ray"}
+    ModelConfig.from_dict(config)

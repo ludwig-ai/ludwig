@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 
 from ludwig.api import LudwigModel
-from ludwig.constants import BATCH_SIZE, BINARY, CATEGORY, MINIMUM_BATCH_SIZE, MODEL_ECD, MODEL_GBM
+from ludwig.constants import BATCH_SIZE, BINARY, CATEGORY, MINIMUM_BATCH_SIZE, MODEL_ECD, MODEL_GBM, TYPE
 from ludwig.explain.captum import IntegratedGradientsExplainer
 from ludwig.explain.explainer import Explainer
 from ludwig.explain.explanation import Explanation
@@ -173,10 +173,10 @@ def run_test_explainer_api(
         input_features = [
             # Include a non-canonical name that's not a valid key for a vanilla pytorch ModuleDict:
             # https://github.com/pytorch/pytorch/issues/71203
-            {"name": "binary.1", "type": "binary"},
+            {"name": "type", "type": "binary"},
             number_feature(),
-            category_feature(encoder={"type": "onehot", "reduce_output": "sum"}),
-            category_feature(encoder={"type": "passthrough", "reduce_output": "sum"}),
+            category_feature(encoder={TYPE: "onehot", "reduce_output": "sum"}),
+            category_feature(encoder={TYPE: "passthrough", "reduce_output": "sum"}),
         ]
         if model_type == MODEL_ECD:
             # TODO(travis): need unit tests to test the get_embedding_layer() of every encoder to ensure it is

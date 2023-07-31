@@ -14,16 +14,18 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type
 
 import torch
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import SET
+from ludwig.constants import ENCODER_OUTPUT, SET
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
+from ludwig.encoders.types import EncoderOutputDict
 from ludwig.modules.embedding_modules import EmbedSet
 from ludwig.modules.fully_connected_modules import FCStack
+from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.set_encoders import SetSparseEncoderConfig
 
 logger = logging.getLogger(__name__)
@@ -88,7 +90,7 @@ class SetSparseEncoder(Encoder):
             default_dropout=dropout,
         )
 
-    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+    def forward(self, inputs: torch.Tensor) -> EncoderOutputDict:
         """
         Params:
             inputs: The inputs fed into the encoder.
@@ -100,10 +102,10 @@ class SetSparseEncoder(Encoder):
         hidden = self.embed(inputs)
         hidden = self.fc_stack(hidden)
 
-        return hidden
+        return {ENCODER_OUTPUT: hidden}
 
     @staticmethod
-    def get_schema_cls():
+    def get_schema_cls() -> Type[BaseEncoderConfig]:
         return SetSparseEncoderConfig
 
     @property

@@ -194,13 +194,13 @@ class Predictor(BasePredictor):
             for pred_name, pred_values in of_preds.items():
                 if pred_name not in exclude_pred_set:
                     key = f"{of_name}_{pred_name}"
-                    predictions[key].append(pred_values)
+                    predictions[key].append(pred_values.detach().cpu())
 
     def _concat_preds(self, predictions):
         for key, pred_value_list in predictions.items():
-            # Without cloning and detaching, a runtime error is raised since pred_value_list
+            # Without detaching, a runtime error is raised since pred_value_list
             # is a tensor that requires grad.
-            predictions[key] = torch.cat(pred_value_list, dim=0).clone().detach().cpu().numpy()
+            predictions[key] = torch.cat(pred_value_list, dim=0).numpy()
 
     def batch_evaluation(self, dataset, collect_predictions=False, collect_logits=False, dataset_name=None):
         """Batch evaluate model on dataset.
@@ -272,8 +272,7 @@ class Predictor(BasePredictor):
 
             # consolidate predictions from each batch to a single tensor
             if collect_predictions:
-                for key, pred_value_list in predictions.items():
-                    predictions[key] = torch.cat(pred_value_list, dim=0).clone().detach().cpu().numpy()
+                self._concat_preds(predictions)
 
             metrics = self.model.get_metrics()
             self.model.reset_metrics()
@@ -410,7 +409,7 @@ class LlmFineTunePredictor(Predictor):
             # consolidate predictions from each batch to a single tensor
             if collect_predictions:
                 for key, pred_value_list in predictions.items():
-                    predictions[key] = torch.cat(pred_value_list, dim=0).clone().detach().cpu().numpy()
+                    predictions[key] = torch.cat(pred_value_list, dim=0).detach().cpu().numpy()
 
             metrics = self.model.get_metrics()
             self.model.reset_metrics()
