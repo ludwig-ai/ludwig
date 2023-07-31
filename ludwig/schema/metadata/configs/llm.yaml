@@ -121,7 +121,7 @@ adapter:
       expected_impact: 3
 quantization:
   _oneOf:
-    allOf:
+    object:
       ui_display_name: Quantization
       expected_impact: 3
     none:

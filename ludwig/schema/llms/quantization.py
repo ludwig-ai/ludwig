@@ -5,6 +5,7 @@ from transformers import BitsAndBytesConfig
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata import LLM_METADATA
+from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json
 from ludwig.schema.utils import ludwig_dataclass
 
 warnings.filterwarnings(
@@ -90,13 +91,20 @@ class QuantizationConfigField(schema_utils.DictMarshmallowField):
     def _jsonschema_type_mapping(self):
         return {
             "oneOf": [
-                {"type": "null", "title": "disabled", "description": "Disable quantization."},
+                {
+                    "type": "null",
+                    "title": "disabled",
+                    "description": "Disable quantization.",
+                    "parameter_metadata": convert_metadata_to_json(LLM_METADATA["quantization"]["_oneOf"]["none"]),
+                },
                 {
                     **schema_utils.unload_jsonschema_from_marshmallow_class(QuantizationConfig),
                     "title": "enabled",
                     "description": "Set quantization options.",
+                    "parameter_metadata": convert_metadata_to_json(LLM_METADATA["quantization"]["_oneOf"]["object"]),
                 },
             ],
             "title": "quantization",
-            "description": "",
+            "description": "Set quantization options.",
+            "parameter_metadata": convert_metadata_to_json(LLM_METADATA["quantization"]["_meta"]),
         }
