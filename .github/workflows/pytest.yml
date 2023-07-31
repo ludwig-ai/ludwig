@@ -79,7 +79,7 @@ jobs:
         if: runner.os == 'linux'
         run: |
           sudo apt-get install -y cmake libsndfile1
-          sudo apt-get install -y ffmpeg sox
+          sudo apt-get install -y sox
 
       - name: Setup macOS
         if: runner.os == 'macOS'
