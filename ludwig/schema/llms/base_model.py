@@ -23,7 +23,7 @@ MODEL_PRESETS = {
     "falcon-40b": "tiiuae/falcon-40b",
     "falcon-7b-instruct": "tiiuae/falcon-7b-instruct",
     "falcon-40b-instruct": "tiiuae/falcon-40b-instruct",
-    "vicona-7b": "lmsys/vicuna-7b-v1.3",
+    "vicuna-7b": "lmsys/vicuna-7b-v1.3",
     "vicuna-13b": "lmsys/vicuna-13b-v1.3",
     "bloomz-3b": "bigscience/bloomz-3b",
     "bloomz-7b1": "bigscience/bloomz-7b1",
