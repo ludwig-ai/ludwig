@@ -6,7 +6,7 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
-from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer, GenerationConfig, LlamaConfig
+from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer, GenerationConfig, LlamaConfig, PreTrainedModel
 
 from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, MODEL_LLM, PREDICTIONS, TEXT
 from ludwig.features.base_feature import ModuleWrapper, OutputFeature
@@ -71,6 +71,37 @@ class DictWrapper:
         self.obj.update(modules)
 
 
+def load_pretrained_from_config(
+    config_obj: LLMModelConfig,
+    model_config: Optional[AutoConfig] = None,
+    weights_save_path: Optional[str] = None,
+) -> PreTrainedModel:
+    load_kwargs = {}
+    if config_obj.quantization:
+        # Apply quanitzation configuration at model load time
+        load_kwargs["torch_dtype"] = getattr(torch, config_obj.quantization.bnb_4bit_compute_dtype)
+        load_kwargs["quantization_config"] = config_obj.quantization.to_bitsandbytes()
+        load_kwargs["device_map"] = "auto"
+
+    if config_obj.model_parameters:
+        # Add any model specific parameters to the load kwargs
+        for param_name, param_value in config_obj.model_parameters.to_dict().items():
+            # Not all parameters are supported by all models, so we only add the parameter to the load kwargs
+            # if it is supported by the model.
+            if param_value is None:
+                continue
+
+            if hasattr(model_config, param_name):
+                load_kwargs[param_name] = param_value
+            else:
+                logger.warning(f"Parameter {param_name} is not supported by {config_obj.base_model}. Skipping.")
+
+    logger.info("Loading large language model...")
+    pretrained_model_name_or_path = weights_save_path or config_obj.base_model
+    model: PreTrainedModel = AutoModelForCausalLM.from_pretrained(pretrained_model_name_or_path, **load_kwargs)
+    return model
+
+
 class LLM(BaseModel):
     @staticmethod
     def type() -> str:
@@ -89,17 +120,17 @@ class LLM(BaseModel):
         self._random_seed = random_seed
 
         self.model_name = self.config_obj.base_model
+        self.model_config = AutoConfig.from_pretrained(self.config_obj.base_model)
 
-        logger.info("Loading large language model...")
-        self.model = AutoModelForCausalLM.from_pretrained(self.config_obj.base_model)
-        self.curr_device = torch.device("cpu")  # model initially loaded onto cpu
+        self.model = load_pretrained_from_config(self.config_obj, model_config=self.model_config)
+        self.curr_device = next(self.model.parameters()).device
         logger.info("Done.")
 
         # Determines the maximum length of the context (input + output tokens)
-        if hasattr(self.model.config, "max_sequence_length"):
-            self.context_len = self.model.config.max_sequence_length
-        elif hasattr(self.model.config, "max_position_embeddings"):
-            self.context_len = self.model.config.max_position_embeddings
+        if hasattr(self.model_config, "max_sequence_length"):
+            self.context_len = self.model_config.max_sequence_length
+        elif hasattr(self.model_config, "max_position_embeddings"):
+            self.context_len = self.model_config.max_position_embeddings
         else:
             self.context_len = 2048
 
@@ -121,7 +152,7 @@ class LLM(BaseModel):
 
         # Initialize tokenizer
         use_fast = True
-        if isinstance(AutoConfig.from_pretrained(self.config_obj.base_model), LlamaConfig):
+        if isinstance(self.model_config, LlamaConfig):
             # HACK: Llama fast tokenizer takes about 2-4 minutes to load, so we disable it for now.
             use_fast = False
         self.tokenizer = AutoTokenizer.from_pretrained(self.config_obj.base_model, use_fast=use_fast)
@@ -152,15 +183,12 @@ class LLM(BaseModel):
                 # because the model has additional "head" layers that are used to predict the next
                 # token in the sequence. These head layers can add additional dimensions to the
                 # logits tensor, beyond the vocab_size dimension.
-                input_size=self.input_shape[-1] if self.output_feature_type == TEXT else self.model.config.vocab_size,
+                input_size=self.input_shape[-1] if self.output_feature_type == TEXT else self.model_config.vocab_size,
             )
         )
 
         # Extract the decoder object for the forward pass
         self._output_feature_decoder = ModuleWrapper(self.output_features.items()[0][1])
-
-        # Initialize the PEFT adapter is one is provided
-        self.initialize_adapter()
 
         clear_data_cache()
 
@@ -193,10 +221,22 @@ class LLM(BaseModel):
             self.model.print_trainable_parameters()
             logger.info("==================================================")
 
+    def prepare_for_training(self):
+        # TODO: this implementation will not work if resuming from a previous checkpoint. Need to fix this.
+        if self.config_obj.quantization:
+            self.prepare_for_quantized_training()
+        self.initialize_adapter()
+
+    def prepare_for_quantized_training(self):
+        from peft import prepare_model_for_kbit_training
+
+        self.model = prepare_model_for_kbit_training(self.model, use_gradient_checkpointing=False)
+
     def to_device(self, device):
         device = torch.device(device)
 
-        if device == self.curr_device:
+        if device.type == self.curr_device.type:
+            log_once(f"Model already on device'{device}'.")
             return self
         else:
             log_once(f"Moving LLM from '{self.curr_device}' to '{device}'.")
@@ -217,6 +257,9 @@ class LLM(BaseModel):
                 )
             )
 
+            if self.config_obj.quantization:
+                model_kwargs["quantization_config"] = self.config_obj.quantization.to_bitsandbytes()
+
             # we save and reload the weights to ensure that they can be sharded across the GPUs using `from_pretrained`
             with tempfile.TemporaryDirectory() as tmpdir:
                 self.model.save_pretrained(tmpdir)
@@ -229,6 +272,7 @@ class LLM(BaseModel):
                         **model_kwargs,
                     )
                     self.model = PeftModel.from_pretrained(
+                        self.model,
                         tmpdir,
                         torch_dtype=torch.float16,
                     )
@@ -291,7 +335,7 @@ class LLM(BaseModel):
 
         # Wrap with flash attention backend for faster generation
         with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=False, enable_mem_efficient=False) if (
-            torch.cuda.is_available() and next(self.model.parameters()).device.type == "cuda"
+            torch.cuda.is_available() and self.curr_device.type == "cuda"
         ) else contextlib.nullcontext():
             model_outputs = self.model(input_ids=self.model_inputs, attention_mask=self.attention_masks).get(LOGITS)
 
@@ -352,9 +396,7 @@ class LLM(BaseModel):
                 # Wrap with flash attention backend for faster generation
                 with torch.backends.cuda.sdp_kernel(
                     enable_flash=True, enable_math=False, enable_mem_efficient=False
-                ) if (
-                    torch.cuda.is_available() and next(self.model.parameters()).device.type == "cuda"
-                ) else contextlib.nullcontext():
+                ) if (torch.cuda.is_available() and self.curr_device.type == "cuda") else contextlib.nullcontext():
                     # Generate text using the model
                     model_outputs = self.model.generate(
                         input_ids=input_ids_sample_no_padding,
@@ -552,13 +594,17 @@ class LLM(BaseModel):
         """Loads the model from the given path."""
         weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
         if self.config_obj.adapter:
-            from peft import PeftConfig, PeftModel  # noqa
+            from peft import PeftModel  # noqa
 
-            config = PeftConfig.from_pretrained(weights_save_path)
-            self.model = AutoModelForCausalLM.from_pretrained(config.base_model_name_or_path)
+            if isinstance(self.model, PeftModel):
+                # Unwrap and reload PeftModel
+                self.model = self.model.base_model
+
             self.model = PeftModel.from_pretrained(self.model, weights_save_path)
         elif self.config_obj.trainer.type != "none":
-            self.model = AutoModelForCausalLM.from_pretrained(weights_save_path)
+            self.model = load_pretrained_from_config(
+                self.config_obj, model_config=self.model_config, weights_save_path=weights_save_path
+            )
         else:
             logger.info("Skipped loading LLM without weight adjustments.")
 

@@ -253,8 +253,8 @@ def cli(sys_argv):
     global logger
     logger = logging.getLogger("ludwig.test_performance")
 
-    args.backend = initialize_backend(args.backend)
-    if args.backend.is_coordinator():
+    backend = initialize_backend(args.backend)
+    if backend.is_coordinator():
         print_ludwig("Evaluate", LUDWIG_VERSION)
         logger.info(f"Dataset path: {args.dataset}")
         logger.info(f"Model path: {args.model_path}")

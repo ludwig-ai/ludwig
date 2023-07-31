@@ -92,6 +92,11 @@ jobs:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-py${{ matrix.python-version }}-torch${{ matrix.pytorch-version }}-${{ matrix.test-markers }}-${{ hashFiles('requirements*.txt', '.github/workflows/pytest.yml') }}
 
+      - name: Debug out of space
+        run: |
+          du -h -d 1 ~
+          df -h
+
       - name: Install dependencies
         run: |
           python --version
