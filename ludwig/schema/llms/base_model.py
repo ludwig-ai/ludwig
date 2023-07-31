@@ -26,7 +26,7 @@ MODEL_PRESETS = {
     "vicona-7b": "lmsys/vicuna-7b-v1.3",
     "vicuna-13b": "lmsys/vicuna-13b-v1.3",
     "bloomz-3b": "bigscience/bloomz-3b",
-    "bloomz-7b1" : "bigscience/bloomz-7b1",
+    "bloomz-7b1": "bigscience/bloomz-7b1",
     "opt-350m": "facebook/opt-350m",
     "opt-1.3b": "facebook/opt-1.3b",
     "opt-6.7b": "facebook/opt-6.7b",
