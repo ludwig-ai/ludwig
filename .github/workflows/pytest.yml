@@ -79,13 +79,14 @@ jobs:
         if: runner.os == 'linux'
         run: |
           sudo apt-get install -y cmake libsndfile1
-          sudo apt-get install -y ffmpeg
+          sudo apt-get install -y ffmpeg sox
 
       - name: Setup macOS
         if: runner.os == 'macOS'
         run: |
           brew install libuv
           brew install ffmpeg
+          brew install sox
 
       - name: pip cache
         if: ${{ !env.ACT }}
