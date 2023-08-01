@@ -25,9 +25,9 @@ from typing import Dict, List, Optional, Union
 import numpy as np
 import pandas as pd
 import torch
+import torchaudio
 import yaml
 
-import torchaudio
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
     AUDIO,
