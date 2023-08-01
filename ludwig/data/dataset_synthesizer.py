@@ -355,7 +355,7 @@ def generate_audio(feature, outdir: str) -> str:
     audio_dest_path = os.path.join(destination_folder, audio_filename)
 
     try:
-        torchaudio.save(audio_dest_path, audio_tensor, sampling_rate, backend="sox")
+        torchaudio.save(audio_dest_path, audio_tensor, sampling_rate)
     except OSError as e:
         raise OSError(f"Unable to save audio to disk: {e}")
 
