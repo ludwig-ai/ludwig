@@ -37,7 +37,9 @@ RUN sudo apt-get update && sudo apt install -y software-properties-common && \
     tzdata \
     rsync \
     vim \
-    gcc-9
+    gcc-9 \
+    ffmpeg \
+    sox
 RUN pip install -U pip
 
 WORKDIR /ludwig

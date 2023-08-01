@@ -796,7 +796,7 @@ def test_encoder_decoder_values_as_str():
     "base_model_config,model_name",
     [
         ("bloomz-3b", "bigscience/bloomz-3b"),
-        ("llama-7b", "huggyllama/llama-7b"),
+        ("vicuna-7b", "lmsys/vicuna-7b-v1.3"),
         ("huggyllama/llama-7b", "huggyllama/llama-7b"),
     ],
 )
