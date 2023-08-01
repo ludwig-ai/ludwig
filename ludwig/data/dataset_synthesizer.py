@@ -25,9 +25,9 @@ from typing import Dict, List, Optional, Union
 import numpy as np
 import pandas as pd
 import torch
-import torchaudio
 import yaml
 
+import torchaudio
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
     AUDIO,
@@ -355,7 +355,7 @@ def generate_audio(feature, outdir: str) -> str:
     audio_dest_path = os.path.join(destination_folder, audio_filename)
 
     try:
-        torchaudio.save(audio_dest_path, audio_tensor, sampling_rate)
+        torchaudio.save(audio_dest_path, audio_tensor, sampling_rate, backend="sox")
     except OSError as e:
         raise OSError(f"Unable to save audio to disk: {e}")
 
