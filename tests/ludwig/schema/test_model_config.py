@@ -894,3 +894,21 @@ def test_llm_model_parameters_no_rope_scaling():
     config_obj = ModelConfig.from_dict(config)
     assert config_obj.model_parameters.rope_scaling is None
     assert config_obj.model_parameters.to_dict() == {}
+
+
+def test_llm_finetuning_output_feature_config():
+    config = {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: "HuggingFaceH4/tiny-random-LlamaForCausalLM",
+        INPUT_FEATURES: [{NAME: "text_input", TYPE: "text"}],
+        OUTPUT_FEATURES: [{NAME: "category_output", TYPE: "category"}],
+        "trainer": {
+            "type": "finetune",
+        },
+    }
+
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+    config[OUTPUT_FEATURES] = [{NAME: "text_output", TYPE: "text"}]
+    ModelConfig.from_dict(config)
