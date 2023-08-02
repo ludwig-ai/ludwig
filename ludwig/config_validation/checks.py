@@ -581,3 +581,13 @@ def check_llm_quantization_backend_incompatibility(config: "ModelConfig") -> Non
     backend_type = config.backend.get("type", "local")
     if config.model_type == MODEL_LLM and config.quantization and backend_type != "local":
         raise ConfigValidationError(f"LLM with quantization requires the 'local' backend, found: '{backend_type}'")
+
+
+@register_config_check
+def check_qlora_requirements(config: "ModelConfig") -> None:  # noqa: F821
+    """Checks that all the necessary settings are in place for QLoRA."""
+    if config.model_type != MODEL_LLM or config.trainer.type == "none":
+        return
+
+    if config.quantization and (not config.adapter or config.adapter.type != "lora"):
+        raise ConfigValidationError("Fine-tuning and LLM with quantization requires using the 'lora' adapter")
