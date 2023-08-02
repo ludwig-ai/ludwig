@@ -473,6 +473,22 @@ def check_llm_atleast_one_input_text_feature(config: "ModelConfig"):  # noqa: F8
 
 
 @register_config_check
+def check_llm_finetuning_output_feature_config(config: "ModelConfig"):  # noqa: F821
+    """Checks that the output feature config for LLM finetuning is valid."""
+    if config.model_type != MODEL_LLM:
+        return
+
+    if config.trainer.type != "finetune":
+        return
+
+    if config.output_features[0].type != TEXT:
+        raise ConfigValidationError(
+            "LLM finetuning requires the output feature to be a text feature. If you are trying to use a different "
+            "output feature type such as category or binary, please change the output feature type to text."
+        )
+
+
+@register_config_check
 def check_llm_finetuning_trainer_config(config: "ModelConfig"):  # noqa: F821
     """Ensures that trainer type is finetune if adapter is not None."""
     if config.model_type != MODEL_LLM:
