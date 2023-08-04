@@ -210,7 +210,6 @@ def test_hf_ludwig_model_auto_transformers(tmpdir, csv_filename, pretrained_mode
                 "min_len": 1,
                 "type": "auto_transformer",
                 "pretrained_model_name_or_path": pretrained_model_name_or_path,
-                "use_pretrained": True,
             },
         )
     ]
