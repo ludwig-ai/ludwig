@@ -3092,12 +3092,9 @@ class AutoTransformerConfig(HFEncoderConfig):
         description=ENCODER_METADATA["AutoTransformer"]["type"].long_description,
     )
 
-    use_pretrained: bool = schema_utils.Boolean(
-        default=True,
-        description="Whether to use the pretrained weights for the model. If false, the model will train from "
-        "scratch which is very computationally expensive.",
-        parameter_metadata=ENCODER_METADATA["AutoTransformer"]["use_pretrained"],
-    )
+    # Always set this to True since we always want to use the pretrained weights
+    # We don't currently support training from scratch for AutoTransformers
+    use_pretrained: bool = True
 
     pretrained_model_name_or_path: str = schema_utils.String(
         default=None,
