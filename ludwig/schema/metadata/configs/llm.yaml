@@ -130,7 +130,7 @@ adapter:
   adaption_prompt:
     type:
       long_description: |
-        Adaption prompt is taken from the 
+        Adaption Prompt is taken from the paper
         [LLaMA-Adapter: Efficient Fine-tuning of Language Models with Zero-init Attention](https://arxiv.org/pdf/2303.16199.pdf). 
         It adds a set of learnable adaption prompts and prepends them to the word tokens at higher transformer layers.
         Then, a zero-initialized attention mechanism with zero gating is introduced, which adaptively injects
