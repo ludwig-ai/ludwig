@@ -83,7 +83,6 @@ def test_hf_ludwig_model_e2e(tmpdir, csv_filename, encoder_name):
                 "vocab_size": 30,
                 "min_len": 1,
                 "type": encoder_name,
-                "use_pretrained": True,
             }
         )
     ]
@@ -138,7 +137,6 @@ def test_hf_ludwig_model_reduce_options(tmpdir, csv_filename, encoder_name, redu
                 "vocab_size": 30,
                 "min_len": 1,
                 "type": encoder_name,
-                "use_pretrained": True,
                 "reduce_output": reduce_output,
             },
         )
@@ -210,7 +208,6 @@ def test_hf_ludwig_model_auto_transformers(tmpdir, csv_filename, pretrained_mode
                 "min_len": 1,
                 "type": "auto_transformer",
                 "pretrained_model_name_or_path": pretrained_model_name_or_path,
-                "use_pretrained": True,
             },
         )
     ]
@@ -292,3 +289,23 @@ def test_tfidf_encoder(vocab_size: int):
     inputs = torch.randint(2, (batch_size, sequence_length)).to(DEVICE)
     outputs = text_encoder(inputs)
     assert outputs[ENCODER_OUTPUT].shape[1:] == text_encoder.output_shape
+
+
+def test_hf_auto_transformer_use_pretrained():
+    """This test ensures that use_pretrained is always True when using the auto_transformer text encoder even if a
+    user explicitly sets it to False."""
+    config = {
+        "input_features": [
+            text_feature(
+                encoder={
+                    "type": "auto_transformer",
+                    "use_pretrained": False,
+                    "pretrained_model_name_or_path": "hf-internal-testing/tiny-random-bloom",
+                },
+            )
+        ],
+        "output_features": [category_feature(decoder={"vocab_size": 2})],
+    }
+
+    model = LudwigModel(config=config, backend=LocalTestBackend())
+    assert model.config_obj.input_features[0].encoder.use_pretrained
