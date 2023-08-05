@@ -3083,23 +3083,20 @@ class AutoTransformerConfig(HFEncoderConfig):
                 "`pretrained_model_name_or_path` must be specified for encoder: `auto_transformer`."
             )
 
-        if not self.use_pretrained:
-            raise ConfigValidationError(
-                "Training `auto_transformer` from scratch is not supported. Set `use_pretrained` to `True`."
-            )
-
     @staticmethod
     def module_name():
         return "AutoTransformer"
+
+    @property
+    def use_pretrained(self) -> bool:
+        # Always set this to True since we always want to use the pretrained weights
+        # We don't currently support training from scratch for AutoTransformers
+        return True
 
     type: str = schema_utils.ProtectedString(
         "auto_transformer",
         description=ENCODER_METADATA["AutoTransformer"]["type"].long_description,
     )
-
-    # Always set this to True since we always want to use the pretrained weights
-    # We don't currently support training from scratch for AutoTransformers
-    use_pretrained: bool = True
 
     pretrained_model_name_or_path: str = schema_utils.String(
         default=None,

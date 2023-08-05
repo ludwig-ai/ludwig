@@ -291,40 +291,21 @@ def test_tfidf_encoder(vocab_size: int):
     assert outputs[ENCODER_OUTPUT].shape[1:] == text_encoder.output_shape
 
 
-def test_hf_auto_transformer_use_pretrained(tmpdir, csv_filename):
-    # Use Pretrained is true by default, explicitly set it to False
-    input_features = [
-        text_feature(
-            preprocessing={
-                "max_sequence_length": 10,
-            },
-            encoder={
-                "vocab_size": 30,
-                "min_len": 1,
-                "type": "auto_transformer",
-                "use_pretrained": False,
-                "pretrained_model_name_or_path": "hf-internal-testing/tiny-random-bloom",
-            },
-        )
-    ]
-    output_features = [category_feature(decoder={"vocab_size": 2})]
-    rel_path = generate_data(input_features, output_features, csv_filename)
-
+def test_hf_auto_transformer_use_pretrained():
+    """This test ensures that use_pretrained is always True when using the auto_transformer text encoder even if a
+    user explicitly sets it to False."""
     config = {
-        "input_features": input_features,
-        "output_features": output_features,
-        TRAINER: {"train_steps": 1},
+        "input_features": [
+            text_feature(
+                encoder={
+                    "type": "auto_transformer",
+                    "use_pretrained": False,
+                    "pretrained_model_name_or_path": "hf-internal-testing/tiny-random-bloom",
+                },
+            )
+        ],
+        "output_features": [category_feature(decoder={"vocab_size": 2})],
     }
-    with pytest.raises(ConfigValidationError):
-        model = LudwigModel(config=config, backend=LocalTestBackend())
 
-    # Now explicitly set to True (which is the default)
-    config["input_features"][0]["encoder"]["use_pretrained"] = True
     model = LudwigModel(config=config, backend=LocalTestBackend())
-
-    # Validates that the defaults associated with the encoder are compatible with Ludwig training.
-    with mock.patch(
-        "ludwig.encoders.text_encoders.load_pretrained_hf_model_with_hub_fallback",
-        side_effect=_load_pretrained_hf_model_no_weights,
-    ):
-        model.train(dataset=rel_path, output_directory=tmpdir)
+    assert model.config_obj.input_features[0].encoder.use_pretrained
