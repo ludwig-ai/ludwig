@@ -1,4 +1,4 @@
-![Ludwig logo](https://github.com/ludwig-ai/ludwig-docs/raw/master/docs/images/ludwig_hero.png "Ludwig logo")(https://ludwig.ai)
+[![Ludwig logo](https://github.com/ludwig-ai/ludwig-docs/raw/master/docs/images/ludwig_hero.png "Ludwig logo")](https://ludwig.ai)
 
 <div align="center">
 
