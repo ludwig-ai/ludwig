@@ -16,7 +16,21 @@ Full Documentation: [ludwig.ai](https://ludwig.ai)
 
 </div>
 
-# What is Ludwig?
+# 💡 What is Ludwig?
+
+Ludwig is a **low-code** framework for building **custom** AI models like **LLMs** and other deep neural networks.
+
+## Key Features
+
+🛠 **Build custom state-of-the-art models:**
+
+🔰 **Easy to use:**
+
+📐 **Expert level control:**
+
+⚡ **Optimized for scale and efficiency:**
+
+🧱 **Modular and extensible:**
 
 Ludwig is a [declarative machine learning framework](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/what_is_ludwig/#why-declarative-machine-learning-systems)
 that makes it easy to define machine learning pipelines using a simple and
