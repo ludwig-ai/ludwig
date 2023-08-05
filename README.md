@@ -1,18 +1,14 @@
-![Ludwig logo](https://github.com/ludwig-ai/ludwig-docs/raw/master/docs/images/ludwig_hero.png "Ludwig logo")
+![Ludwig logo](https://github.com/ludwig-ai/ludwig-docs/raw/master/docs/images/ludwig_hero.png "Ludwig logo")(https://ludwig.ai)
 
 <div align="center">
 
 [![PyPI version](https://badge.fury.io/py/ludwig.svg)](https://badge.fury.io/py/ludwig)
-[![Commit Activity](https://img.shields.io/github/commit-activity/m/ludwig-ai/ludwig)](https://img.shields.io/github/commit-activity/m/ludwig-ai/ludwig)
-[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/4210/badge)](https://bestpractices.coreinfrastructure.org/projects/4210)
+[![Docs](https://img.shields.io/docker/pulls/ludwigai/ludwig.svg)](https://hub.docker.com/r/ludwigai)
 [![Slack](https://img.shields.io/badge/slack-chat-green.svg?logo=slack)](https://join.slack.com/t/ludwig-ai/shared_invite/zt-mrxo87w6-DlX5~73T2B4v_g6jj0pJcQ)
-
 [![DockerHub](https://img.shields.io/docker/pulls/ludwigai/ludwig.svg)](https://hub.docker.com/r/ludwigai)
 [![Downloads](https://pepy.tech/badge/ludwig)](https://pepy.tech/project/ludwig)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/ludwig-ai/ludwig/blob/master/LICENSE)
 [![Twitter](https://img.shields.io/twitter/follow/ludwig_ai.svg?style=social&logo=twitter)](https://twitter.com/ludwig_ai)
-
-Full Documentation: [ludwig.ai](https://ludwig.ai)
 
 </div>
 
@@ -28,7 +24,8 @@ Ludwig is a **low-code** framework for building **custom** AI models like **LLMs
 
 📐 **Expert level control:**
 
-⚡ **Optimized for scale and efficiency:**
+⚡ **Optimized for scale and efficiency:** out-of-the-box distributed training (DDP, DeepSpeed), p
+arameter efficient fine-tuning (PEFT) including
 
 🧱 **Modular and extensible:**
 
