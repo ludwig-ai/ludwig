@@ -49,9 +49,19 @@ or take a look at end-to-end [Examples](https://ludwig-ai.github.io/ludwig-docs/
 
 ## Large Language Model Fine-Tuning
 
-Let's fine-tune a pretrained large language model to follow instructions like a chatbot ("instruction tuning").
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1c3AO8l_H6V_x37RwQ8V7M6A-RmcBf2tG?usp=sharing)
 
-Our dataset will be a table-like file that looks like this:
+Let's fine-tune a pretrained LLaMA-2-7b large language model to follow instructions like a chatbot ("instruction tuning").
+
+### Prerequisites
+
+- [HuggingFace API Token](https://huggingface.co/docs/hub/security-tokens)
+- Access approval to [Llama2-7b-hf](https://huggingface.co/meta-llama/Llama-2-7b-hf)
+- GPU with at least 12 GiB of VRAM (in our tests, we used an Nvidia T4)
+
+### Running
+
+We'll use the [Stanford Alpaca](https://crfm.stanford.edu/2023/03/13/alpaca.html) dataset, which will be formatted as a table-like file that looks like this:
 
 |               instruction            |  input   | output |
 | :----------------------------------: | :------: | :------: |
@@ -59,6 +69,52 @@ Our dataset will be a table-like file that looks like this:
 | Arrange the items given below in the order to ... |  cake, me, eating   | I eating cake. |
 |  Write an introductory paragraph about a famous... |  Michelle Obama   | Michelle Obama is an inspirational woman who r... |
 |                 ...                  |   ...    | ... |
+
+Create a YAML config file named `model.yaml` with the following:
+
+```yaml
+model_type: llm
+base_model: meta-llama/Llama-2-7b-hf
+
+quantization:
+  bits: 4
+
+adapter:
+  type: lora
+
+prompt:
+  template: |
+    ### Instruction:
+    {instruction}
+
+    ### Input:
+    {input}
+
+    ### Response:
+
+input_features:
+  - name: prompt
+    type: text
+
+output_features:
+  - name: output
+    type: text
+
+trainer:
+  type: finetune
+  learning_rate: 0.0001
+  batch_size: 1
+  gradient_accumulation_steps: 16
+  epochs: 3
+  learning_rate_scheduler:
+    warmup_fraction: 0.01
+```
+
+And now let's train the model:
+
+```bash
+ludwig train --config model.yaml --dataset "ludwig://alpaca"
+```
 
 ## Supervied ML
 
@@ -71,8 +127,7 @@ Our dataset will be a CSV file that looks like this:
 | Deliver Us from Evil |       R        |                        Action & Adventure, Horror                        |  117.0  | TRUE       | Director Scott Derrickson and his co-writer, Paul Harris Boardman, deliver a routine procedural with unremarkable frights.                                                                                       | 0           |
 |       Barbara        |     PG-13      |                     Art House & International, Drama                     |  105.0  | FALSE      | Somehow, in this stirring narrative, Barbara manages to keep hold of her principles, and her humanity and courage, and battles to save a dissident teenage girl whose life the Communists are trying to destroy. | 1           |
 |   Horrible Bosses    |       R        |                                  Comedy                                  |  98.0   | FALSE      | These bosses cannot justify either murder or lasting comic memories, fatally compromising a farce that could have been great but ends up merely mediocre.                                                        | 0           |
-|    Money Monster     |       R        |                                  Drama                                   |  98.0   | FALSE      | A satire about television that feels like it was made by the kind of people who claim they don't even watch TV.                                                                                                  | 0           |
-|    Battle Royale     |       NR       | Action & Adventure, Art House & International, Drama, Mystery & Suspense |  114.0  | FALSE      | Battle Royale is The Hunger Games not diluted for young audiences.                                                                                                                                               | 1           |
+| ... | ... | ... | ... | ... | ... | ... |
 
 Download a sample of the dataset from [here](https://ludwig.ai/latest/data/rotten_tomatoes.csv).
 
@@ -80,7 +135,7 @@ Download a sample of the dataset from [here](https://ludwig.ai/latest/data/rotte
 wget https://ludwig.ai/latest/data/rotten_tomatoes.csv
 ```
 
-Next create a YAML config named `model.yaml` with the following:
+Next create a YAML config file named `model.yaml` with the following:
 
 ```yaml
 input_features:
