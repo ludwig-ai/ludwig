@@ -108,6 +108,9 @@ trainer:
   epochs: 3
   learning_rate_scheduler:
     warmup_fraction: 0.01
+
+preprocessing:
+  sample_ratio: 0.1
 ```
 
 And now let's train the model:
@@ -252,14 +255,14 @@ if you have any questions.
   ludwig export_torchscript -–model_path=/path/to/model
   ```
 
-# Tutorials
+# 📚 Tutorials
 
 - [Text Classification](https://ludwig-ai.github.io/ludwig-docs/latest/examples/text_classification)
 - [Tabular Data Classification](https://ludwig-ai.github.io/ludwig-docs/latest/examples/adult_census_income)
 - [Image Classification](https://ludwig-ai.github.io/ludwig-docs/latest/examples/mnist)
 - [Multimodal Classification](https://ludwig-ai.github.io/ludwig-docs/latest/examples/multimodal_classification)
 
-# Example Use Cases
+# 🔬 Example Use Cases
 
 - [Named Entity Recognition Tagging](https://ludwig-ai.github.io/ludwig-docs/latest/examples/ner_tagging)
 - [Natural Language Understanding](https://ludwig-ai.github.io/ludwig-docs/latest/examples/nlu)
@@ -279,7 +282,7 @@ if you have any questions.
 - [Simple Regression: Fuel Efficiency Prediction](https://ludwig-ai.github.io/ludwig-docs/latest/examples/fuel_efficiency)
 - [Fraud Detection](https://ludwig-ai.github.io/ludwig-docs/latest/examples/fraud)
 
-# More Information
+# 💡 More Information
 
 Read our publications on [Ludwig](https://arxiv.org/pdf/1909.07930.pdf), [declarative ML](https://arxiv.org/pdf/2107.08148.pdf), and [Ludwig’s SoTA benchmarks](https://openreview.net/pdf?id=hwjnu6qW7E4).
 
@@ -288,7 +291,7 @@ Learn more about [how Ludwig works](https://ludwig-ai.github.io/ludwig-docs/late
 If you are interested in contributing, have questions, comments, or thoughts to share, or if you just want to be in the
 know, please consider [joining the Ludwig Slack](https://join.slack.com/t/ludwig-ai/shared_invite/zt-mrxo87w6-DlX5~73T2B4v_g6jj0pJcQ) and follow us on [Twitter](https://twitter.com/ludwig_ai)!
 
-# Join the community to build Ludwig with us
+# 🤝 Join the community to build Ludwig with us
 
 Ludwig is an actively managed open-source project that relies on contributions from folks just like
 you. Consider joining the active group of Ludwig contributors to make Ludwig an even
@@ -298,7 +301,7 @@ more accessible and feature rich framework for everyone to use!
   <img src="https://contrib.rocks/image?repo=ludwig-ai/ludwig" />
 </a><br/>
 
-# Getting Involved
+# 👋 Getting Involved
 
 - [Slack](https://join.slack.com/t/ludwig-ai/shared_invite/zt-mrxo87w6-DlX5~73T2B4v_g6jj0pJcQ)
 - [Twitter](https://twitter.com/ludwig_ai)
