@@ -2,7 +2,7 @@
 
 <div align="center">
 
-*Declarative machine learning: End-to-end machine learning pipelines using simple and flexible data-driven configurations.*
+*Build custom AI models with ease.*
 
 [![PyPI version](https://badge.fury.io/py/ludwig.svg)](https://badge.fury.io/py/ludwig)
 [![Docs](https://img.shields.io/docker/pulls/ludwigai/ludwig.svg)](https://hub.docker.com/r/ludwigai)
@@ -18,18 +18,13 @@
 
 Ludwig is a **low-code** framework for building **custom** AI models like **LLMs** and other deep neural networks.
 
-## Key Features
+Key features:
 
-🛠 **Build custom state-of-the-art models:**
-
-🔰 **Easy to use:**
-
-📐 **Expert level control:**
-
-⚡ **Optimized for scale and efficiency:** out-of-the-box distributed training (DDP, DeepSpeed), p
-arameter efficient fine-tuning (PEFT) including
-
-🧱 **Modular and extensible:**
+- 🛠 **Build custom models with ease:** a declarative YAML configuration file is all you need to train a state-of-the-art LLM on your data. Comprehensive config validation prevents invalid parameter combinations and runtime failures.
+- ⚡ **Optimized for scale and efficiency:** automatic batch size selection, distributed training ([DDP](https://pytorch.org/tutorials/beginner/ddp_series_theory.html), [DeepSpeed](https://github.com/microsoft/DeepSpeed)), parameter efficient fine-tuning ([PEFT](https://github.com/huggingface/peft)), 4-bit quantization (QLoRA), and larger-than-memory datasets.
+- 📐 **Expert level control:** retain full control of your models down to the activation functions. Support for hyperparameter optimization, explainability, and rich metric visualizations.
+- 🧱 **Modular and extensible:** experiment with different model architectures, tasks, features, and modalities with just a few parameter changes in the config. Think building blocks for deep learning.
+- 🚢 **Engineered for production:** prebuilt [Docker](https://hub.docker.com/u/ludwigai) containers, native support for running with [Ray](https://www.ray.io/) on [Kubernetes](https://github.com/ray-project/kuberay), export models to [Torchscript](https://pytorch.org/docs/stable/jit.html) and [Triton](https://developer.nvidia.com/triton-inference-server), upload to [HuggingFace](https://huggingface.co/models) with one command.
 
 Ludwig is a [declarative machine learning framework](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/what_is_ludwig/#why-declarative-machine-learning-systems)
 that makes it easy to define machine learning pipelines using a simple and
