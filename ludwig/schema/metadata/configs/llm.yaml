@@ -131,11 +131,11 @@ adapter:
     type:
       long_description: |
         Adaption Prompt is taken from the paper
-        [LLaMA-Adapter: Efficient Fine-tuning of Language Models with Zero-init Attention](https://arxiv.org/pdf/2303.16199.pdf). 
+        [LLaMA-Adapter: Efficient Fine-tuning of Language Models with Zero-init Attention](https://arxiv.org/pdf/2303.16199.pdf).
         It adds a set of learnable adaption prompts and prepends them to the word tokens at higher transformer layers.
         Then, a zero-initialized attention mechanism with zero gating is introduced, which adaptively injects
-        new instructional cues into LLaMA, while effectively preserving its pre-trained knowledge. According to 
-        the paper, LLaMA-Adapter can generate high-quality responses, comparable to Alpaca with fully fine-tuned 
+        new instructional cues into LLaMA, while effectively preserving its pre-trained knowledge. According to
+        the paper, LLaMA-Adapter can generate high-quality responses, comparable to Alpaca with fully fine-tuned
         7B parameters.
     adapter_len:
       ui_display_name: Adapter Length

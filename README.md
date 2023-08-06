@@ -65,12 +65,12 @@ Let's fine-tune a pretrained LLaMA-2-7b large language model to follow instructi
 
 We'll use the [Stanford Alpaca](https://crfm.stanford.edu/2023/03/13/alpaca.html) dataset, which will be formatted as a table-like file that looks like this:
 
-|               instruction            |  input   | output |
-| :----------------------------------: | :------: | :------: |
-|  Give three tips for staying healthy.|  | 1.Eat a balanced diet and make sure to include... |
-| Arrange the items given below in the order to ... |  cake, me, eating   | I eating cake. |
-|  Write an introductory paragraph about a famous... |  Michelle Obama   | Michelle Obama is an inspirational woman who r... |
-|                 ...                  |   ...    | ... |
+|                    instruction                    |      input       |                      output                       |
+| :-----------------------------------------------: | :--------------: | :-----------------------------------------------: |
+|       Give three tips for staying healthy.        |                  | 1.Eat a balanced diet and make sure to include... |
+| Arrange the items given below in the order to ... | cake, me, eating |                  I eating cake.                   |
+| Write an introductory paragraph about a famous... |  Michelle Obama  | Michelle Obama is an inspirational woman who r... |
+|                        ...                        |       ...        |                        ...                        |
 
 Create a YAML config file named `model.yaml` with the following:
 
@@ -123,16 +123,16 @@ ludwig train --config model.yaml --dataset "ludwig://alpaca"
 
 ## Supervied ML
 
-Let's build a neural network that predicts whether a given movie critic's review on [Rotten Tomatoes](https://www.kaggle.com/stefanoleone992/rotten-tomatoes-movies-and-critic-reviews-dataset) was positive or negative. 
+Let's build a neural network that predicts whether a given movie critic's review on [Rotten Tomatoes](https://www.kaggle.com/stefanoleone992/rotten-tomatoes-movies-and-critic-reviews-dataset) was positive or negative.
 
 Our dataset will be a CSV file that looks like this:
 
-|     movie_title      | content_rating |                                  genres                                  | runtime | top_critic | review_content                                                                                                                                                                                                   | recommended |
-| :------------------: | :------------: | :----------------------------------------------------------------------: | :-----: | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
-| Deliver Us from Evil |       R        |                        Action & Adventure, Horror                        |  117.0  | TRUE       | Director Scott Derrickson and his co-writer, Paul Harris Boardman, deliver a routine procedural with unremarkable frights.                                                                                       | 0           |
-|       Barbara        |     PG-13      |                     Art House & International, Drama                     |  105.0  | FALSE      | Somehow, in this stirring narrative, Barbara manages to keep hold of her principles, and her humanity and courage, and battles to save a dissident teenage girl whose life the Communists are trying to destroy. | 1           |
-|   Horrible Bosses    |       R        |                                  Comedy                                  |  98.0   | FALSE      | These bosses cannot justify either murder or lasting comic memories, fatally compromising a farce that could have been great but ends up merely mediocre.                                                        | 0           |
-| ... | ... | ... | ... | ... | ... | ... |
+|     movie_title      | content_rating |              genres              | runtime | top_critic | review_content                                                                                                                                                                                                   | recommended |
+| :------------------: | :------------: | :------------------------------: | :-----: | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| Deliver Us from Evil |       R        |    Action & Adventure, Horror    |  117.0  | TRUE       | Director Scott Derrickson and his co-writer, Paul Harris Boardman, deliver a routine procedural with unremarkable frights.                                                                                       | 0           |
+|       Barbara        |     PG-13      | Art House & International, Drama |  105.0  | FALSE      | Somehow, in this stirring narrative, Barbara manages to keep hold of her principles, and her humanity and courage, and battles to save a dissident teenage girl whose life the Communists are trying to destroy. | 1           |
+|   Horrible Bosses    |       R        |              Comedy              |  98.0   | FALSE      | These bosses cannot justify either murder or lasting comic memories, fatally compromising a farce that could have been great but ends up merely mediocre.                                                        | 0           |
+|         ...          |      ...       |               ...                |   ...   | ...        | ...                                                                                                                                                                                                              | ...         |
 
 Download a sample of the dataset from [here](https://ludwig.ai/latest/data/rotten_tomatoes.csv).
 
@@ -156,7 +156,7 @@ input_features:
       type: number
     - name: review_content
       type: text
-      encoder: 
+      encoder:
           type: embed
 output_features:
     - name: recommended
