@@ -13,7 +13,7 @@
 
 </div>
 
-# 📜 What is Ludwig?
+# 📖 What is Ludwig?
 
 Ludwig is a **low-code** framework for building **custom** AI models like **LLMs** and other deep neural networks.
 
