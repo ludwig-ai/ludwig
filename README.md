@@ -169,7 +169,7 @@ That's it! Now let's train the model:
 ludwig train --config model.yaml --dataset rotten_tomatoes.csv
 ```
 
-## Happy modeling
+**Happy modeling**
 
 Try applying Ludwig to your data. [Reach out](https://join.slack.com/t/ludwig-ai/shared_invite/zt-mrxo87w6-DlX5~73T2B4v_g6jj0pJcQ)
 if you have any questions.
