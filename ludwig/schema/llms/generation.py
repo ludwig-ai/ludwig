@@ -310,19 +310,19 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
     pad_token_id: Optional[int] = schema_utils.Integer(
         default=None,
         allow_none=True,
-        description="The id of the padding token.",
+        description="The id of the padding token. If not set, the padding token id of the tokenizer is used.",
     )
 
     bos_token_id: Optional[int] = schema_utils.Integer(
         default=None,
         allow_none=True,
-        description="The id of the beginning of sentence token.",
+        description="The id of the beginning of sentence token. If not set, the bos token id of the tokenizer is used.",
     )
 
     eos_token_id: Optional[Union[int, List[int]]] = schema_utils.Integer(
         default=None,
         allow_none=True,
-        description="The id of the end of sentence token.",
+        description="The id of the end of sentence token. If not set, the eos token id of the tokenizer is used.",
     )
 
 
