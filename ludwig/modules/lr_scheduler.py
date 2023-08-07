@@ -3,7 +3,7 @@ import math
 from typing import Any, Dict
 
 from torch.optim import Optimizer
-from torch.optim.lr_scheduler import LambdaLR, ReduceLROnPlateau
+from torch.optim.lr_scheduler import CosineAnnealingLR, LambdaLR, ReduceLROnPlateau
 
 from ludwig.constants import MINIMIZE, TRAINING, VALIDATION
 from ludwig.modules.metric_registry import get_metric_objective
@@ -173,7 +173,10 @@ def get_schedule_with_warmup(
             return float(current_step) / float(max(1, step_info.num_warmup_steps))
         return decay_fn(current_step, step_info.num_training_steps, step_info.num_warmup_steps, config)
 
-    return LambdaLR(optimizer, lr_lambda, last_epoch=-1)
+    if config.decay == "cosine":
+        return CosineAnnealingLR(optimizer, T_max=step_info.num_training_steps, eta_min=0, last_epoch=-1)
+    else:
+        return LambdaLR(optimizer, lr_lambda, last_epoch=-1)
 
 
 def no_decay(current_step: int, num_training_steps: int, num_warmup_steps: int, config: LRSchedulerConfig):
@@ -198,4 +201,5 @@ decay_registry = {
     None: no_decay,
     "linear": linear_decay,
     "exponential": exponential_decay,
+    "cosine": no_decay,
 }

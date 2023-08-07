@@ -17,7 +17,7 @@ class LRSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Configuration for learning rate scheduler parameters."""
 
     decay: str = schema_utils.StringOptions(
-        options=["linear", "exponential"],
+        options=["linear", "exponential", "cosine"],
         default=None,
         allow_none=True,
         description="Turn on decay of the learning rate.",
