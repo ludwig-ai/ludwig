@@ -412,26 +412,6 @@ AutoTransformer:
     trainable:
         expected_impact: 3
         ui_display_name: null
-    use_pretrained:
-        default_value_reasoning:
-            By default, the model is initialized as a pretrained
-            model.
-        description_implications:
-            Pretrained models have typically already learned
-            features that are difficult to learn from scratch. They are particularly
-            beneficial when training on small amounts of data.
-        expected_impact: 3
-        literature_references:
-            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
-        related_parameters:
-            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
-        suggested_values:
-            - false
-        suggested_values_reasoning:
-            If you have a large amount of data and/or you
-            have data that differs from the typical distribution, then it might be
-            worth training the model from scratch.
-        ui_display_name: Use Pretrained
     vocab:
         default_value_reasoning:
             Computed and passed along internally according to
