@@ -13,20 +13,6 @@ _Declarative deep learning framework built for scale and efficiency._
 
 </div>
 
-# 💾 Installation
-
-Install from PyPi. Be aware that Ludwig requires Python 3.8+.
-
-```shell
-pip install ludwig
-```
-
-Or install with all optional dependencies:
-
-```shell
-pip install ludwig[full]
-```
-
 # 📖 What is Ludwig?
 
 Ludwig is a **low-code** framework for building **custom** AI models like **LLMs** and other deep neural networks.
@@ -43,6 +29,20 @@ Ludwig is hosted by the
 [Linux Foundation AI & Data](https://lfaidata.foundation/).
 
 ![img](https://raw.githubusercontent.com/ludwig-ai/ludwig-docs/master/docs/images/ludwig_legos_unanimated.gif)
+
+# 💾 Installation
+
+Install from PyPi. Be aware that Ludwig requires Python 3.8+.
+
+```shell
+pip install ludwig
+```
+
+Or install with all optional dependencies:
+
+```shell
+pip install ludwig[full]
+```
 
 ## Large Language Model Fine-Tuning
 
