@@ -2,7 +2,7 @@
 
 <div align="center">
 
-*Declarative deep learning framework built for scale and efficiency.*
+_Declarative deep learning framework built for scale and efficiency._
 
 [![PyPI version](https://badge.fury.io/py/ludwig.svg)](https://badge.fury.io/py/ludwig)
 [![Slack](https://img.shields.io/badge/slack-chat-green.svg?logo=slack)](https://join.slack.com/t/ludwig-ai/shared_invite/zt-mrxo87w6-DlX5~73T2B4v_g6jj0pJcQ)
@@ -43,11 +43,6 @@ Or install with all optional dependencies:
 ```shell
 pip install ludwig[full]
 ```
-
-# 🚂 Getting Started
-
-For a full tutorial, check out the official [getting started guide](https://ludwig-ai.github.io/ludwig-docs/latest/getting_started/),
-or take a look at end-to-end [Examples](https://ludwig-ai.github.io/ludwig-docs/latest/examples).
 
 ## Large Language Model Fine-Tuning
 
@@ -121,7 +116,7 @@ And now let's train the model:
 ludwig train --config model.yaml --dataset "ludwig://alpaca"
 ```
 
-## Supervied ML
+## Supervised ML
 
 Let's build a neural network that predicts whether a given movie critic's review on [Rotten Tomatoes](https://www.kaggle.com/stefanoleone992/rotten-tomatoes-movies-and-critic-reviews-dataset) was positive or negative.
 
@@ -144,23 +139,23 @@ Next create a YAML config file named `model.yaml` with the following:
 
 ```yaml
 input_features:
-    - name: genres
-      type: set
-      preprocessing:
-          tokenizer: comma
-    - name: content_rating
-      type: category
-    - name: top_critic
-      type: binary
-    - name: runtime
-      type: number
-    - name: review_content
-      type: text
-      encoder:
-          type: embed
+  - name: genres
+    type: set
+    preprocessing:
+      tokenizer: comma
+  - name: content_rating
+    type: category
+  - name: top_critic
+    type: binary
+  - name: runtime
+    type: number
+  - name: review_content
+    type: text
+    encoder:
+      type: embed
 output_features:
-    - name: recommended
-      type: binary
+  - name: recommended
+    type: binary
 ```
 
 That's it! Now let's train the model:
