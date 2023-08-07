@@ -44,11 +44,6 @@ Ludwig is hosted by the
 
 ![img](https://raw.githubusercontent.com/ludwig-ai/ludwig-docs/master/docs/images/ludwig_legos_unanimated.gif)
 
-# 🚂 Getting Started
-
-For a full tutorial, check out the official [getting started guide](https://ludwig-ai.github.io/ludwig-docs/latest/getting_started/),
-or take a look at end-to-end [Examples](https://ludwig-ai.github.io/ludwig-docs/latest/examples).
-
 ## Large Language Model Fine-Tuning
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1c3AO8l_H6V_x37RwQ8V7M6A-RmcBf2tG?usp=sharing)
