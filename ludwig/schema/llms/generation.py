@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
@@ -17,7 +17,7 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
     # Parameters that control the length of the output
 
     max_new_tokens: Optional[int] = schema_utils.PositiveInteger(
-        default=20,
+        default=32,
         allow_none=True,
         description="The maximum number of new tokens to generate, ignoring the number of tokens in the input prompt.",
         parameter_metadata=LLM_METADATA["generation"]["max_new_tokens"],
@@ -31,7 +31,7 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     max_length: int = schema_utils.PositiveInteger(
-        default=20,
+        default=32,
         allow_none=True,
         description="The maximum length the generated tokens can have. Corresponds to the length of the input prompt "
         "+ max_new_tokens. Its effect is overridden by max_new_tokens, if also set.",
@@ -75,7 +75,10 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
     num_beams: Optional[int] = schema_utils.PositiveInteger(
         default=1,
         allow_none=True,
-        description="Number of beams for beam search. 1 means no beam search.",
+        description="Number of beams for beam search. 1 means no beam search and is the default value."
+        " The beam search strategy generates the translation word by word from left-to-right while keeping a fixed"
+        " number (beam) of active candidates at each time step during token generation. By increasing the beam size,"
+        " the translation performance can increase at the expense of significantly reducing the decoder speed.",
         parameter_metadata=LLM_METADATA["generation"]["num_beams"],
     )
 
@@ -103,9 +106,13 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
     # Parameters for manipulation of the model output logits
 
     temperature: Optional[float] = schema_utils.NonNegativeFloat(
-        default=1.0,
+        default=0.1,
         allow_none=True,
-        description="The value used to module the next token probabilities.",
+        description="Temperature is a parameter in algorithms used to control the randomness of predictions."
+        " A high temperature value (closer to 1) makes the output more diverse and random, while a lower temperature"
+        " (closer to 0) makes the model's responses more deterministic and focused on the most likely outcome."
+        " In other words, Temperature adjusts the probability distribution from which the AI model picks its"
+        " next action.",
         parameter_metadata=LLM_METADATA["generation"]["temperature"],
     )
 
@@ -175,7 +182,8 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
         min=0.0,
         max=1.0,
         allow_none=True,
-        description="The parameter for repetition penalty. 1.0 means no penalty.",
+        description="The parameter for repetition penalty. 1.0 means no penalty. "
+        "See [this paper](https://arxiv.org/pdf/1909.05858.pdf) for more details.",
     )
 
     encoder_repetition_penalty: Optional[float] = schema_utils.FloatRange(
@@ -183,7 +191,8 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
         min=0.0,
         max=1.0,
         allow_none=True,
-        description="An exponential penalty on sequences that are not in the original input. 1.0 means no penalty.",
+        description="The paramater for encoder_repetition_penalty. An exponential penalty on sequences that are not"
+        " in the original input. 1.0 means no penalty.",
     )
 
     length_penalty: Optional[float] = schema_utils.FloatRange(
@@ -279,7 +288,25 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
         "tokens that are not in the list to -inf so that they are not sampled.",
     )
 
+    sequence_bias: Optional[Dict[Tuple[int], float]] = schema_utils.Dict(
+        default=None,
+        allow_none=True,
+        description="A dictionary of token ids to bias the generation towards. The SequenceBias logit processor will "
+        "add the bias to the log probs of the tokens in the dictionary. Positive biases increase the odds of the "
+        "sequence being selected, while negative biases do the opposite. ",
+    )
+
+    guidance_scale: Optional[float] = schema_utils.FloatRange(
+        default=None,
+        min=0.0,
+        allow_none=True,
+        description="The guidance scale for classifier free guidance (CFG). CFG is enabled by setting guidance_scale >"
+        " 1. Higher guidance scale encourages the model to generate samples that are more closely linked to the input"
+        " prompt, usually at the expense of poorer quality.",
+    )
+
     # Special tokens that can be used at generation time
+
     pad_token_id: Optional[int] = schema_utils.Integer(
         default=None,
         allow_none=True,
