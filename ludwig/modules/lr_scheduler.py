@@ -198,7 +198,7 @@ def exponential_decay(current_step: int, num_training_steps: int, num_warmup_ste
 
 decay_registry = {
     None: no_decay,
+    "cosine": no_decay,
     "linear": linear_decay,
     "exponential": exponential_decay,
-    "cosine": no_decay,
 }
