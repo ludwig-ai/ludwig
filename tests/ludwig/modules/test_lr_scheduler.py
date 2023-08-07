@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 from torch.optim import SGD
 
@@ -117,6 +119,28 @@ def test_lr_scheduler_reduce_on_plateau():
 
     # 3 reductions that multiply by 0.1 each time
     assert np.isclose(lr, 0.001)
+
+
+def test_lr_scheduler_cosine_decay():
+    total_steps = 10000
+    base_lr = 1.0
+
+    module = NumberInputFeature(NumberInputFeatureConfig(name="num1", encoder=DenseEncoderConfig()))
+
+    optimizer = SGD(module.parameters(), lr=base_lr)
+    config = LRSchedulerConfig(decay="cosine", decay_rate=0, reduce_on_plateau=0)
+    scheduler = LRScheduler(config=config, optimizer=optimizer)
+
+    curr_lr = base_lr
+    for step in range(total_steps):
+        # Cosine annealing formula
+        expected_lr = base_lr * 0.5 * (1 + math.cos(math.pi * step / (total_steps)))
+        curr_lr = optimizer.param_groups[0]["lr"]
+
+        # Check if the current learning rate matches the expected learning rate
+        assert math.isclose(curr_lr, expected_lr, rel_tol=1e-8), f"step: {step}"
+
+        scheduler.step()
 
 
 def test_lr_scheduler_save_load():

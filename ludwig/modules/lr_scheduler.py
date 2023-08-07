@@ -175,8 +175,7 @@ def get_schedule_with_warmup(
 
     if config.decay == "cosine":
         return CosineAnnealingLR(optimizer, T_max=step_info.num_training_steps, eta_min=0, last_epoch=-1)
-    else:
-        return LambdaLR(optimizer, lr_lambda, last_epoch=-1)
+    return LambdaLR(optimizer, lr_lambda, last_epoch=-1)
 
 
 def no_decay(current_step: int, num_training_steps: int, num_warmup_steps: int, config: LRSchedulerConfig):
