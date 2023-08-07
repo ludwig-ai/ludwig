@@ -117,6 +117,8 @@ preprocessing:
 And now let's train the model:
 
 ```bash
+export HUGGING_FACE_HUB_TOKEN = "<api_token>"
+
 ludwig train --config model.yaml --dataset "ludwig://alpaca"
 ```
 
