@@ -2574,7 +2574,7 @@ class FlauBERTConfig(HFEncoderConfig):
     )
 
     use_pretrained: bool = schema_utils.Boolean(
-        default=False,
+        default=True,
         description="Whether to use the pretrained weights for the model. If false, the model will train from "
         "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["FlauBERT"]["use_pretrained"],
@@ -3086,6 +3086,12 @@ class AutoTransformerConfig(HFEncoderConfig):
     @staticmethod
     def module_name():
         return "AutoTransformer"
+
+    @property
+    def use_pretrained(self) -> bool:
+        # Always set this to True since we always want to use the pretrained weights
+        # We don't currently support training from scratch for AutoTransformers
+        return True
 
     type: str = schema_utils.ProtectedString(
         "auto_transformer",
