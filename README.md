@@ -2,7 +2,7 @@
 
 <div align="center">
 
-*Declarative deep learning framework built for scale and efficiency.*
+_Declarative deep learning framework built for scale and efficiency._
 
 [![PyPI version](https://badge.fury.io/py/ludwig.svg)](https://badge.fury.io/py/ludwig)
 [![Slack](https://img.shields.io/badge/slack-chat-green.svg?logo=slack)](https://join.slack.com/t/ludwig-ai/shared_invite/zt-mrxo87w6-DlX5~73T2B4v_g6jj0pJcQ)
@@ -12,6 +12,20 @@
 [![Twitter](https://img.shields.io/twitter/follow/ludwig_ai.svg?style=social&logo=twitter)](https://twitter.com/ludwig_ai)
 
 </div>
+
+# 💾 Installation
+
+Install from PyPi. Be aware that Ludwig requires Python 3.8+.
+
+```shell
+pip install ludwig
+```
+
+Or install with all optional dependencies:
+
+```shell
+pip install ludwig[full]
+```
 
 # 📖 What is Ludwig?
 
@@ -29,20 +43,6 @@ Ludwig is hosted by the
 [Linux Foundation AI & Data](https://lfaidata.foundation/).
 
 ![img](https://raw.githubusercontent.com/ludwig-ai/ludwig-docs/master/docs/images/ludwig_legos_unanimated.gif)
-
-# 💾 Installation
-
-Install from PyPi. Be aware that Ludwig requires Python 3.8+.
-
-```shell
-pip install ludwig
-```
-
-Or install with all optional dependencies:
-
-```shell
-pip install ludwig[full]
-```
 
 # 🚂 Getting Started
 
@@ -121,7 +121,7 @@ And now let's train the model:
 ludwig train --config model.yaml --dataset "ludwig://alpaca"
 ```
 
-## Supervied ML
+## Supervised ML
 
 Let's build a neural network that predicts whether a given movie critic's review on [Rotten Tomatoes](https://www.kaggle.com/stefanoleone992/rotten-tomatoes-movies-and-critic-reviews-dataset) was positive or negative.
 
@@ -144,23 +144,23 @@ Next create a YAML config file named `model.yaml` with the following:
 
 ```yaml
 input_features:
-    - name: genres
-      type: set
-      preprocessing:
-          tokenizer: comma
-    - name: content_rating
-      type: category
-    - name: top_critic
-      type: binary
-    - name: runtime
-      type: number
-    - name: review_content
-      type: text
-      encoder:
-          type: embed
+  - name: genres
+    type: set
+    preprocessing:
+      tokenizer: comma
+  - name: content_rating
+    type: category
+  - name: top_critic
+    type: binary
+  - name: runtime
+    type: number
+  - name: review_content
+    type: text
+    encoder:
+      type: embed
 output_features:
-    - name: recommended
-      type: binary
+  - name: recommended
+    type: binary
 ```
 
 That's it! Now let's train the model:
