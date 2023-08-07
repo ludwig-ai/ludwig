@@ -316,7 +316,6 @@ backend:
     ModelConfig.from_dict(config)
 
 
-
 def test_retrieval_config_none_type():
     config = yaml.safe_load(
         """
