@@ -121,7 +121,7 @@ def test_lr_scheduler_reduce_on_plateau():
     assert np.isclose(lr, 0.001)
 
 
-def test_lr_scheduler_cosine_decay():
+def test_lr_scheduler_cosine_decay_fixed_period():
     total_steps = 10000
     steps_per_checkpoint = 1000
     base_lr = 1.0
@@ -151,6 +151,41 @@ def test_lr_scheduler_cosine_decay():
         curr_lr = optimizer.param_groups[0]["lr"]
 
     assert num_restarts == 10, f"num_restarts: {num_restarts}"
+
+
+def test_lr_scheduler_cosine_decay_increasing_period():
+    total_steps = 20000
+    steps_per_checkpoint = 1000
+    base_lr = 1.0
+
+    module = NumberInputFeature(NumberInputFeatureConfig(name="num1", encoder=DenseEncoderConfig()))
+
+    optimizer = SGD(module.parameters(), lr=base_lr)
+    config = LRSchedulerConfig(
+        decay="cosine",
+        T_0=steps_per_checkpoint,
+        T_mult=2,
+        decay_rate=0,
+        reduce_on_plateau=0,
+    )
+    scheduler = LRScheduler(config=config, optimizer=optimizer)
+
+    curr_lr = base_lr
+    prev_lr = base_lr
+    num_restarts = 0
+    for _ in range(total_steps + 1):
+        if prev_lr < curr_lr:
+            # Since Cosine decay is periodic, we should see the learning rate
+            # decrease and then increase again.
+            num_restarts += 1
+
+        prev_lr = curr_lr
+        scheduler.step()
+
+        curr_lr = optimizer.param_groups[0]["lr"]
+
+    # 1000, 3000, 6000, 12000, 24000 (but we stop at 20000)
+    assert num_restarts == 4, f"num_restarts: {num_restarts}"
 
 
 def test_lr_scheduler_save_load():
