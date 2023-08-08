@@ -58,8 +58,6 @@ def test_lr_scheduler_warmup_decay():
         cosine_scheduler.step()
         cosine_lr = cosine_optimizer.param_groups[0]["lr"]
 
-        print(f"step: {step}, const_lr: {const_lr}, linear_lr: {linear_lr}, exp_lr: {exp_lr}, cosine_lr: {cosine_lr}")
-
         if step < warmup_steps:
             assert linear_lr == exp_lr, f"step: {step}"
             assert linear_lr == cosine_lr, f"step: {step}"
