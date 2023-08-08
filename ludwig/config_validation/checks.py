@@ -461,15 +461,14 @@ def check_hyperopt_nested_parameter_dicts(config: "ModelConfig") -> None:  # noq
 
 
 @register_config_check
-def check_llm_atleast_one_input_text_feature(config: "ModelConfig"):  # noqa: F821
+def check_llm_exactly_one_input_text_feature(config: "ModelConfig"):  # noqa: F821
     if config.model_type != MODEL_LLM:
         return
 
-    for input_feature in config.input_features:
-        if input_feature.type == TEXT:
-            return
-
-    raise ConfigValidationError("LLM requires at least one text input feature.")
+    if len(config.input_features) == 1 and config.input_features[0].type == TEXT:
+        return
+    else:
+        raise ConfigValidationError("LLM requires exactly one text input feature.")
 
 
 @register_config_check
