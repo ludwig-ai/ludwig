@@ -310,7 +310,7 @@ backend:
     config["input_features"][0]["type"] = "category"
     with pytest.raises(ConfigValidationError):
         ModelConfig.from_dict(config)
-        
+
     # allow exactly one text input feature
     config["input_features"][0]["type"] = "text"
     ModelConfig.from_dict(config)
