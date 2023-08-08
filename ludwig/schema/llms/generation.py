@@ -108,11 +108,10 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
     temperature: Optional[float] = schema_utils.NonNegativeFloat(
         default=0.1,
         allow_none=True,
-        description="Temperature is a parameter in algorithms used to control the randomness of predictions."
+        description="Temperature is used to control the randomness of predictions."
         " A high temperature value (closer to 1) makes the output more diverse and random, while a lower temperature"
         " (closer to 0) makes the model's responses more deterministic and focused on the most likely outcome."
-        " In other words, Temperature adjusts the probability distribution from which the AI model picks its"
-        " next action.",
+        " In other words, temperature adjusts the probability distribution from which the model picks the next token.",
         parameter_metadata=LLM_METADATA["generation"]["temperature"],
     )
 
