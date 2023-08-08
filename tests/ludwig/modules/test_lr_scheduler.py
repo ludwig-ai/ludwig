@@ -35,6 +35,11 @@ def test_lr_scheduler_warmup_decay():
     exp_scheduler = LRScheduler(config=exp_config, optimizer=exp_optimizer)
     exp_scheduler.reset(steps_per_checkpoint, total_steps)
 
+    cosine_optimizer = SGD(module.parameters(), lr=base_lr)
+    cosine_config = LRSchedulerConfig(warmup_fraction=warmup_fraction, decay="cosine", T_0=steps_per_checkpoint)
+    cosine_scheduler = LRScheduler(config=cosine_config, optimizer=cosine_optimizer)
+    cosine_scheduler.reset(steps_per_checkpoint, total_steps)
+
     warmup_steps = total_steps * warmup_fraction
     for i in range(total_steps):
         # Offset by 1
@@ -50,17 +55,27 @@ def test_lr_scheduler_warmup_decay():
         exp_scheduler.step()
         exp_lr = exp_optimizer.param_groups[0]["lr"]
 
+        cosine_scheduler.step()
+        cosine_lr = cosine_optimizer.param_groups[0]["lr"]
+
+        print(f"step: {step}, const_lr: {const_lr}, linear_lr: {linear_lr}, exp_lr: {exp_lr}, cosine_lr: {cosine_lr}")
+
         if step < warmup_steps:
             assert linear_lr == exp_lr, f"step: {step}"
+            assert linear_lr == cosine_lr, f"step: {step}"
             assert linear_lr < base_lr, f"step: {step}"
         elif step == warmup_steps:
             assert linear_lr == base_lr, f"step: {step}"
+            assert cosine_lr == base_lr, f"step: {step}"
             assert exp_lr < base_lr, f"step: {step}"
         else:
             assert linear_lr < base_lr, f"step: {step}"
             assert exp_lr < base_lr, f"step: {step}"
+            assert cosine_lr <= base_lr, f"step: {step}"
 
     assert linear_lr < exp_lr
+    assert exp_lr < cosine_lr
+    assert cosine_lr == base_lr
 
 
 def test_lr_scheduler_reduce_on_plateau():
@@ -131,6 +146,7 @@ def test_lr_scheduler_cosine_decay_fixed_period():
     optimizer = SGD(module.parameters(), lr=base_lr)
     config = LRSchedulerConfig(decay="cosine", T_0=steps_per_checkpoint, decay_rate=0, reduce_on_plateau=0)
     scheduler = LRScheduler(config=config, optimizer=optimizer)
+    scheduler.reset(steps_per_checkpoint, total_steps)
 
     curr_lr = base_lr
     prev_lr = base_lr
@@ -169,6 +185,7 @@ def test_lr_scheduler_cosine_decay_increasing_period():
         reduce_on_plateau=0,
     )
     scheduler = LRScheduler(config=config, optimizer=optimizer)
+    scheduler.reset(steps_per_checkpoint, total_steps)
 
     curr_lr = base_lr
     prev_lr = base_lr

@@ -213,7 +213,11 @@ def no_decay(current_step: int, num_training_steps: int, num_warmup_steps: int, 
 
 
 def linear_decay(current_step: int, num_training_steps: int, num_warmup_steps: int, config: LRSchedulerConfig):
-    return max(0.0, float(num_training_steps - current_step) / float(max(1, num_training_steps - num_warmup_steps)))
+    return max(
+        0.0,
+        float(num_training_steps - num_warmup_steps - current_step)
+        / float(max(1, num_training_steps - num_warmup_steps)),
+    )
 
 
 def exponential_decay(current_step: int, num_training_steps: int, num_warmup_steps: int, config: LRSchedulerConfig):
