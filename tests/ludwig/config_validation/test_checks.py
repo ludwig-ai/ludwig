@@ -283,6 +283,39 @@ model_type: ecd
     ModelConfig.from_dict(config)
 
 
+def test_check_llm_input_features():
+    config = yaml.safe_load(
+        """
+model_type: llm
+base_model: facebook/opt-350m
+input_features:
+  - name: sample_1
+    type: text
+  - name: sample_2
+    type: text
+output_features:
+  - name: label
+    type: text
+backend:
+  type: ray
+"""
+    )
+
+    # do not allow more than one input feature
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+    # do not allow one non-text input feature
+    config["input_features"].pop(-1)
+    config["input_features"][0]["type"] = "category"
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+    # allow exactly one text input feature
+    config["input_features"][0]["type"] = "text"
+    ModelConfig.from_dict(config)
+
+
 def test_retrieval_config_none_type():
     config = yaml.safe_load(
         """
