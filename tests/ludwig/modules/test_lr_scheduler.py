@@ -123,24 +123,34 @@ def test_lr_scheduler_reduce_on_plateau():
 
 def test_lr_scheduler_cosine_decay():
     total_steps = 10000
+    steps_per_checkpoint = 1000
     base_lr = 1.0
 
     module = NumberInputFeature(NumberInputFeatureConfig(name="num1", encoder=DenseEncoderConfig()))
 
     optimizer = SGD(module.parameters(), lr=base_lr)
-    config = LRSchedulerConfig(decay="cosine", decay_rate=0, reduce_on_plateau=0)
+    config = LRSchedulerConfig(decay="cosine", T_0=steps_per_checkpoint, decay_rate=0, reduce_on_plateau=0)
     scheduler = LRScheduler(config=config, optimizer=optimizer)
 
     curr_lr = base_lr
-    for step in range(total_steps):
+    prev_lr = base_lr
+    num_restarts = 0
+    for step in range(total_steps + 1):
         # Cosine annealing formula
-        expected_lr = base_lr * 0.5 * (1 + math.cos(math.pi * step / (total_steps)))
+        expected_lr = base_lr * 0.5 * (1 + math.cos(math.pi * (step % steps_per_checkpoint) / steps_per_checkpoint))
+        assert np.isclose(curr_lr, expected_lr), f"step: {step}"
+
+        if prev_lr < curr_lr:
+            # Since Cosine decay is periodic, we should see the learning rate
+            # decrease and then increase again.
+            num_restarts += 1
+
+        prev_lr = curr_lr
+        scheduler.step()
+
         curr_lr = optimizer.param_groups[0]["lr"]
 
-        # Check if the current learning rate matches the expected learning rate
-        assert math.isclose(curr_lr, expected_lr, rel_tol=1e-8), f"step: {step}"
-
-        scheduler.step()
+    assert num_restarts == 10, f"num_restarts: {num_restarts}"
 
 
 def test_lr_scheduler_save_load():

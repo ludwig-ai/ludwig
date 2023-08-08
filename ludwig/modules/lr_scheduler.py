@@ -3,7 +3,7 @@ import math
 from typing import Any, Dict
 
 from torch.optim import Optimizer
-from torch.optim.lr_scheduler import CosineAnnealingLR, LambdaLR, ReduceLROnPlateau
+from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts, LambdaLR, ReduceLROnPlateau, SequentialLR
 
 from ludwig.constants import MINIMIZE, TRAINING, VALIDATION
 from ludwig.modules.metric_registry import get_metric_objective
@@ -166,16 +166,46 @@ def get_schedule_with_warmup(
     step_info: StepInfo,
 ) -> LambdaLR:
     """Creates a learning rate scheduler that updates each training step."""
-    decay_fn = decay_registry[config.decay]
+    schedulers = []
 
-    def lr_lambda(current_step: int):
-        if current_step < step_info.num_warmup_steps:
-            return float(current_step) / float(max(1, step_info.num_warmup_steps))
-        return decay_fn(current_step, step_info.num_training_steps, step_info.num_warmup_steps, config)
+    # Warmup scheduler
+    if step_info.num_warmup_steps > 0:
+        warmup_scheduler = LambdaLR(
+            optimizer,
+            lambda current_step: float(current_step) / float(max(1, step_info.num_warmup_steps)),
+            last_epoch=-1,
+        )
+        schedulers.append(warmup_scheduler)
 
-    if config.decay == "cosine":
-        return CosineAnnealingLR(optimizer, T_max=step_info.num_training_steps, eta_min=0, last_epoch=-1)
-    return LambdaLR(optimizer, lr_lambda, last_epoch=-1)
+    # Decay scheduler - either cosine annealing or custom decay function (linear, exponential, etc.)
+    decay = config.decay
+    if decay == "cosine":
+        decay_scheduler = CosineAnnealingWarmRestarts(
+            optimizer,
+            T_0=config.T_0 or step_info.steps_per_checkpoint,
+            T_mult=config.T_mult or 1,
+            eta_min=config.eta_min or 0,
+            last_epoch=-1,
+        )
+        schedulers.append(decay_scheduler)
+    else:
+        decay_fn = decay_registry[decay]
+        decay_scheduler = LambdaLR(
+            optimizer,
+            lambda current_step: decay_fn(
+                current_step, step_info.num_training_steps, step_info.num_warmup_steps, config
+            ),
+            last_epoch=-1,
+        )
+        schedulers.append(decay_scheduler)
+
+    if len(schedulers) == 1:
+        # Only one scheduler, no need to wrap in a SequentialLR
+        return schedulers[0]
+
+    # Return a SequentialLR that applies the warmup and decay schedulers in order
+    # with the warmup scheduler only applied for the first num_warmup_steps steps.
+    return SequentialLR(optimizer, schedulers=schedulers, milestones=[step_info.num_warmup_steps], last_epoch=-1)
 
 
 def no_decay(current_step: int, num_training_steps: int, num_warmup_steps: int, config: LRSchedulerConfig):

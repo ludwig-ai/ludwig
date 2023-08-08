@@ -99,6 +99,32 @@ class LRSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
         parameter_metadata=TRAINER_METADATA[MODEL_ECD]["learning_rate_scheduler"]["reduce_eval_split"],
     )
 
+    # Parameters for CosineAnnealingWarmRestarts scheduler
+
+    T_0: int = schema_utils.PositiveInteger(
+        default=None,
+        allow_none=True,
+        description="Number of iterations for the first restart. If not specified, it will be set to "
+        "`steps_per_checkpoint`",
+        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["learning_rate_scheduler"]["T_0"],
+    )
+
+    T_mult: int = schema_utils.PositiveInteger(
+        default=1,
+        description="Period multiplier after each restart. Default: 1, i.e., restart at fixed period."
+        " If set to a value larger, the period between restarts increases by that multiplier. For e.g., if T_mult"
+        " is 2, then the periods would be: T_0, 2*T_0, 2^2*T_0, 2^3*T_0, etc.",
+        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["learning_rate_scheduler"]["T_mult"],
+    )
+
+    eta_min: float = schema_utils.FloatRange(
+        default=0,
+        min=0,
+        max=1,
+        description="Minimum learning rate. Default: 0.",
+        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["learning_rate_scheduler"]["eta_min"],
+    )
+
 
 # TODO(travis): too much boilerplate here, we should find a way to abstract all this and only require specifying the
 # minimal amount needed for the new config object.
