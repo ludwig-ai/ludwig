@@ -513,7 +513,10 @@ ecd:
             suggested_values_reasoning:
                 Starting with exponential decay is a safe place to start, as it is a "softer" decrease in the learning
                 rate over time, as compared with linear, which is more steep after the initial drop. Linear decay is
-                most useful when the risk of catastrophic forgetting is very high (e.g, for fine-tuning pretrained models).
+                most useful when the risk of catastrophic forgetting is very high (e.g, for fine-tuning pretrained
+                models). Cosine annealing is a type of learning rate schedule that has the effect of starting with a
+                large learning rate that is relatively rapidly decreased to a minimum value before being increased
+                rapidly again. The resetting of the learning rate acts like a simulated restart of the learning process.
                 If you observe your loss curves shooting up (even on the training set) in later epochs, increasing the
                 decay rate may help mitigate this effect.
             ui_display_name: Decay
@@ -593,6 +596,15 @@ ecd:
         reduce_eval_split:
             expected_impact: 1
             ui_display_name: Reduce Eval Split
+        t_0:
+            expected_impact: 1
+            ui_display_name: T_0
+        t_mult:
+            expected_impact: 1
+            ui_display_name: T_mult
+        eta_min:
+            expected_impact: 1
+            ui_display_name: Eta Min
 gbm:
     learning_rate:
         commonly_used: true
