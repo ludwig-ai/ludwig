@@ -45,7 +45,7 @@ from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.error_handling_utils import default_retry
 from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.misc_utils import get_proc_features
-from ludwig.utils.types import DataFrame
+from ludwig.utils.types import DataFrame, RayDatasetType
 
 logger = logging.getLogger(__name__)
 
@@ -87,14 +87,14 @@ class RayDataset(Dataset):
 
     def __init__(
         self,
-        df: Union[str, DataFrame],
+        ds: Union[str, RayDatasetType],
         features: Dict[str, FeatureConfigDict],
         training_set_metadata: TrainingSetMetadataDict,
         backend: Backend,
         window_size_bytes: Optional[Union[int, Literal["auto"]]] = None,
     ):
         self.df_engine = backend.df_engine
-        self.ds = self.df_engine.to_ray_dataset(df) if not isinstance(df, str) else read_remote_parquet(df)
+        self.ds = ds
         self.features = features
         self.training_set_metadata = training_set_metadata
         self.data_hdf5_fp = training_set_metadata.get(DATA_TRAIN_HDF5_FP)
