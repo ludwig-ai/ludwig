@@ -35,11 +35,13 @@ from typing import Any, Dict, List, Tuple, Union
 import numpy as np
 import pandas as pd
 import pyarrow as pa
+import ray
 import yaml
 from fsspec.config import conf, set_conf_files
 from pandas.errors import ParserError
 from sklearn.model_selection import KFold
 
+from ludwig.data.dataset.ray import RayDataset
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import PREPROCESSING, SPLIT
 from ludwig.data.cache.types import CacheableDataset
@@ -860,6 +862,8 @@ def clear_data_cache():
 
 @DeveloperAPI
 def figure_data_format_dataset(dataset):
+    if isinstance(dataset, ray.data.Dataset):
+        return ray.data.Dataset
     if isinstance(dataset, CacheableDataset):
         return figure_data_format_dataset(dataset.unwrap())
     elif isinstance(dataset, pd.DataFrame):
