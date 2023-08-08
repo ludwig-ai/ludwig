@@ -101,20 +101,20 @@ class LRSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     # Parameters for CosineAnnealingWarmRestarts scheduler
 
-    T_0: int = schema_utils.PositiveInteger(
+    t_0: int = schema_utils.PositiveInteger(
         default=None,
         allow_none=True,
         description="Number of steps before the first restart for cosine annealing decay. If not specified, it"
         " will be set to `steps_per_checkpoint`.",
-        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["learning_rate_scheduler"]["T_0"],
+        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["learning_rate_scheduler"]["t_0"],
     )
 
-    T_mult: int = schema_utils.PositiveInteger(
+    t_mult: int = schema_utils.PositiveInteger(
         default=1,
         description="Period multiplier after each restart for cosine annealing decay. Defaults to 1, i.e.,"
-        " restart every `T_0` steps. If set to a larger value, the period between restarts increases by that"
-        " multiplier. For e.g., if T_mult is 2, then the periods would be: T_0, 2*T_0, 2^2*T_0, 2^3*T_0, etc.",
-        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["learning_rate_scheduler"]["T_mult"],
+        " restart every `t_0` steps. If set to a larger value, the period between restarts increases by that"
+        " multiplier. For e.g., if t_mult is 2, then the periods would be: t_0, 2*t_0, 2^2*t_0, 2^3*t_0, etc.",
+        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["learning_rate_scheduler"]["t_mult"],
     )
 
     eta_min: float = schema_utils.FloatRange(

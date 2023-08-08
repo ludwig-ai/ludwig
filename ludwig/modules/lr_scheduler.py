@@ -1,6 +1,6 @@
 import logging
 import math
-from typing import Any, Dict
+from typing import Any, Callable, Dict
 
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts, LambdaLR, ReduceLROnPlateau, SequentialLR
@@ -177,27 +177,10 @@ def get_schedule_with_warmup(
         )
         schedulers.append(warmup_scheduler)
 
-    # Decay scheduler - either cosine annealing or custom decay function (linear, exponential, etc.)
+    # Decay scheduler
     decay = config.decay
-    if decay == "cosine":
-        decay_scheduler = CosineAnnealingWarmRestarts(
-            optimizer,
-            T_0=config.T_0 or step_info.steps_per_checkpoint,
-            T_mult=config.T_mult or 1,
-            eta_min=config.eta_min or 0,
-            last_epoch=-1,
-        )
-        schedulers.append(decay_scheduler)
-    else:
-        decay_fn = decay_registry[decay]
-        decay_scheduler = LambdaLR(
-            optimizer,
-            lambda current_step: decay_fn(
-                current_step, step_info.num_training_steps, step_info.num_warmup_steps, config
-            ),
-            last_epoch=-1,
-        )
-        schedulers.append(decay_scheduler)
+    decay_scheduler = decay_registry[decay](config, optimizer, step_info)
+    schedulers.append(decay_scheduler)
 
     if len(schedulers) == 1:
         # Only one scheduler, no need to wrap in a SequentialLR
@@ -230,9 +213,35 @@ def exponential_decay(current_step: int, num_training_steps: int, num_warmup_ste
     return math.pow(decay_rate, exponent)
 
 
+def wrao_decay_fn(decay_fn: Callable) -> Callable:
+    def init_fn(config: LRSchedulerConfig, optimizer: Optimizer, step_info: StepInfo) -> LambdaLR:
+        return LambdaLR(
+            optimizer,
+            lambda current_step: decay_fn(
+                current_step, step_info.num_training_steps, step_info.num_warmup_steps, config
+            ),
+            last_epoch=-1,
+        )
+    return init_fn
+
+
+def init_cosine_decay(
+    config: LRSchedulerConfig,
+    optimizer: Optimizer,
+    step_info: StepInfo,
+) -> CosineAnnealingWarmRestarts:
+    return CosineAnnealingWarmRestarts(
+        optimizer,
+        T_0=config.t_0 or step_info.steps_per_checkpoint,
+        T_mult=config.t_mult or 1,
+        eta_min=config.eta_min or 0,
+        last_epoch=-1,
+    )
+
+
 decay_registry = {
-    None: no_decay,
-    "cosine": no_decay,
-    "linear": linear_decay,
-    "exponential": exponential_decay,
+    None: wrao_decay_fn(no_decay),
+    "linear": wrao_decay_fn(linear_decay),
+    "exponential": wrao_decay_fn(exponential_decay),
+    "cosine": init_cosine_decay,
 }

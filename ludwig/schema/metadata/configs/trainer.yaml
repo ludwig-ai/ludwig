@@ -596,10 +596,10 @@ ecd:
         reduce_eval_split:
             expected_impact: 1
             ui_display_name: Reduce Eval Split
-        T_0:
+        t_0:
             expected_impact: 1
             ui_display_name: T_0
-        T_mult:
+        t_mult:
             expected_impact: 1
             ui_display_name: T_mult
         eta_min:

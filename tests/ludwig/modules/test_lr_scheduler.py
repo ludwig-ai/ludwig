@@ -36,7 +36,7 @@ def test_lr_scheduler_warmup_decay():
     exp_scheduler.reset(steps_per_checkpoint, total_steps)
 
     cosine_optimizer = SGD(module.parameters(), lr=base_lr)
-    cosine_config = LRSchedulerConfig(warmup_fraction=warmup_fraction, decay="cosine", T_0=steps_per_checkpoint)
+    cosine_config = LRSchedulerConfig(warmup_fraction=warmup_fraction, decay="cosine", t_0=steps_per_checkpoint)
     cosine_scheduler = LRScheduler(config=cosine_config, optimizer=cosine_optimizer)
     cosine_scheduler.reset(steps_per_checkpoint, total_steps)
 
@@ -142,7 +142,7 @@ def test_lr_scheduler_cosine_decay_fixed_period():
     module = NumberInputFeature(NumberInputFeatureConfig(name="num1", encoder=DenseEncoderConfig()))
 
     optimizer = SGD(module.parameters(), lr=base_lr)
-    config = LRSchedulerConfig(decay="cosine", T_0=steps_per_checkpoint, decay_rate=0, reduce_on_plateau=0)
+    config = LRSchedulerConfig(decay="cosine", t_0=steps_per_checkpoint, decay_rate=0, reduce_on_plateau=0)
     scheduler = LRScheduler(config=config, optimizer=optimizer)
     scheduler.reset(steps_per_checkpoint, total_steps)
 
@@ -177,8 +177,8 @@ def test_lr_scheduler_cosine_decay_increasing_period():
     optimizer = SGD(module.parameters(), lr=base_lr)
     config = LRSchedulerConfig(
         decay="cosine",
-        T_0=steps_per_checkpoint,
-        T_mult=2,
+        t_0=steps_per_checkpoint,
+        t_mult=2,
         decay_rate=0,
         reduce_on_plateau=0,
     )
