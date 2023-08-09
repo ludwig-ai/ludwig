@@ -18,6 +18,7 @@ from datetime import date, datetime
 from typing import Union
 
 import numpy as np
+from dateutil.parser import parse, ParserError
 
 from ludwig.api_annotations import DeveloperAPI
 
@@ -45,13 +46,31 @@ def create_vector_from_datetime_obj(datetime_obj):
 
 
 @DeveloperAPI
+def parse_datetime(timestamp: Union[float, int, str]) -> datetime:
+    """Parse a datetime from a string or a numeric timestamp.
+
+    Args:
+        timestamp: A datetime string or numeric timestamp.
+
+    Returns:
+        A datetime representation of `timestamp`.
+    """
+    try:
+        dt = parse(timestamp)
+    except (ParserError, TypeError):
+        dt = convert_number_to_datetime(timestamp)
+
+    return dt
+
+
+@DeveloperAPI
 def convert_number_to_datetime(timestamp: Union[float, int, str]) -> datetime:
     """Convert a numeric timestamp to a datetime object.
 
     `datetime` objects can be created from POSIX timestamps like those returned by `time.time()`.
 
     Args:
-        timestamp: A numeric timestamp, e.g. a POSIX timestamp
+        timestamp: A numeric timestamp.
 
     Returns:
         A datetime representation of `timestamp`.
