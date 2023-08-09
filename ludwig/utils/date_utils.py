@@ -13,9 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from datetime import date
+import time
+from datetime import date, datetime
+from typing import Union
+
+import numpy as np
 
 from ludwig.api_annotations import DeveloperAPI
+
+SCALE_S = np.floor(np.log10(time.time()))
 
 
 @DeveloperAPI
@@ -36,3 +42,37 @@ def create_vector_from_datetime_obj(datetime_obj):
         datetime_obj.second,
         second_of_day,
     ]
+
+
+@DeveloperAPI
+def convert_number_to_datetime(timestamp: Union[float, int, str]) -> datetime:
+    """Convert a numeric timestamp to a datetime object.
+
+    `datetime` objects can be created from POSIX timestamps like those returned by `time.time()`.
+
+    Args:
+        timestamp: A numeric timestamp, e.g. a POSIX timestamp
+
+    Returns:
+        A datetime representation of `timestamp`.
+
+    Raises:
+        ValueError: Raised if `timestamp` is not a number or not a valid datetime.
+    """
+    try:
+        timestamp = float(timestamp)
+    except TypeError:
+        raise ValueError(f"Provided value {timestamp} is not a valid numeric timestamp")
+
+    # Determine the unit of the timestamp
+    ts_scale = np.floor(np.log10(timestamp))
+
+    # `datetime.datetime.fromtimestamp` expects a timestamp in seconds. Rescale the timestamp if it is not in seconds.
+    if SCALE_S < ts_scale:
+        delta = ts_scale - SCALE_S
+        timestamp = timestamp / np.power(10, 3)
+        print(f"\n\n\n\n\n\n\n\n{SCALE_S}, {ts_scale}, {delta}, {timestamp}\n\n\n\n\n\n\n\n")
+
+    # Convert the timestamp to a datetime object. If it is not a valid timestamp, `ValueError` is raised.
+    dt = datetime.fromtimestamp(timestamp)
+    return dt
