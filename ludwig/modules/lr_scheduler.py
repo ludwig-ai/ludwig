@@ -213,7 +213,7 @@ def exponential_decay(current_step: int, num_training_steps: int, num_warmup_ste
     return math.pow(decay_rate, exponent)
 
 
-def wrao_decay_fn(decay_fn: Callable) -> Callable:
+def wrap_decay_fn(decay_fn: Callable) -> Callable:
     def init_fn(config: LRSchedulerConfig, optimizer: Optimizer, step_info: StepInfo) -> LambdaLR:
         return LambdaLR(
             optimizer,
@@ -241,8 +241,8 @@ def init_cosine_decay(
 
 
 decay_registry = {
-    None: wrao_decay_fn(no_decay),
-    "linear": wrao_decay_fn(linear_decay),
-    "exponential": wrao_decay_fn(exponential_decay),
+    None: wrap_decay_fn(no_decay),
+    "linear": wrap_decay_fn(linear_decay),
+    "exponential": wrap_decay_fn(exponential_decay),
     "cosine": init_cosine_decay,
 }
