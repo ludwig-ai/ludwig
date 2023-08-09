@@ -227,7 +227,7 @@ def assert_is_a_marshmallow_class(cls):
 
 
 @DeveloperAPI
-def unload_jsonschema_from_marshmallow_class(mclass, additional_properties: bool = True, title: str = None) -> TDict:
+def unload_jsonschema_from_marshmallow_class(mclass, additional_properties: bool = False, title: str = None) -> TDict:
     """Helper method to directly get a marshmallow class's JSON schema without extra wrapping props."""
     assert_is_a_marshmallow_class(mclass)
     schema = js(props_ordered=True).dump(mclass.Schema())["definitions"][mclass.__name__]
@@ -236,7 +236,7 @@ def unload_jsonschema_from_marshmallow_class(mclass, additional_properties: bool
         prop_schema = schema["properties"][prop]
         if "parameter_metadata" in prop_schema:
             prop_schema["parameter_metadata"] = copy.deepcopy(prop_schema["parameter_metadata"])
-    schema["additionalProperties"] = additional_properties
+    schema["additionalProperties"] = additional_properties  # TODO: May cause collision
     if title is not None:
         schema["title"] = title
     return schema
