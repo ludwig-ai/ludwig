@@ -72,6 +72,7 @@ from ludwig.constants import (
     TEXT,
     TIMESERIES,
     TOKEN_ACCURACY,
+    TOKENS,
     VECTOR,
 )
 from ludwig.distributed import get_current_dist_strategy
@@ -344,7 +345,7 @@ class SigmoidCrossEntropyMetric(LossMetric):
         return self.sigmoid_cross_entropy_function(preds, target)
 
 
-@register_metric(TOKEN_ACCURACY, [SEQUENCE, TEXT], MAXIMIZE, PREDICTIONS)
+@register_metric(TOKEN_ACCURACY, [SEQUENCE, TEXT], MAXIMIZE, TOKENS)
 class TokenAccuracyMetric(MeanMetric):
     def __init__(self, **kwargs):
         super().__init__()
@@ -356,7 +357,7 @@ class TokenAccuracyMetric(MeanMetric):
         return torch.mean(masked_correct_preds)
 
 
-@register_metric(SEQUENCE_ACCURACY, [SEQUENCE, TEXT], MAXIMIZE, PREDICTIONS)
+@register_metric(SEQUENCE_ACCURACY, [SEQUENCE, TEXT], MAXIMIZE, TOKENS)
 class SequenceAccuracyMetric(MeanMetric):
     def __init__(self, **kwargs):
         super().__init__()
@@ -389,7 +390,7 @@ class NextTokenPerplexityMetric(MeanMetric):
         return torch.exp(shifted_loss)
 
 
-@register_metric("char_error_rate", [SEQUENCE, TEXT], MINIMIZE, PREDICTIONS)
+@register_metric("char_error_rate", [SEQUENCE, TEXT], MINIMIZE, TOKENS)
 class CharErrorRateMetric(CharErrorRate, LudwigMetric):
     def __init__(self, **kwargs):
         super().__init__()

@@ -25,12 +25,13 @@ from ludwig.constants import (
     COLUMN,
     LAST_PREDICTIONS,
     LENGTHS,
+    LOGITS,
     NAME,
-    PREDICTIONS,
     PROBABILITIES,
     PROBABILITY,
     PROC_COLUMN,
     SEQUENCE,
+    TOKENS
 )
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.features.feature_utils import compute_sequence_probability, compute_token_probabilities
@@ -146,7 +147,7 @@ class _SequencePostprocessing(torch.nn.Module):
         self.max_sequence_length = int(metadata["max_sequence_length"])
         self.idx2str = metadata["idx2str"]
         self.unknown_symbol = UNKNOWN_SYMBOL
-        self.predictions_key = PREDICTIONS
+        self.predictions_key = TOKENS
         self.probabilities_key = PROBABILITIES
         self.probability_key = PROBABILITY
 
@@ -176,7 +177,21 @@ class _SequencePostprocessing(torch.nn.Module):
         }
 
 
-class _SequencePredict(PredictModule):
+class SequencePredictModule(PredictModule):
+    """Overrides PredictModule for sequence, text and timeseries features.
+
+    Explicit member variables needed here for scripting, as Torchscript will not be able to recognize global variables
+    during scripting.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.predictions_key = TOKENS
+        self.probabilities_key = PROBABILITIES
+        self.logits_key = LOGITS
+
+
+class _SequencePredict(SequencePredictModule):
     def forward(self, inputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, torch.Tensor]:
         logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, self.logits_key)
         probabilities = torch.softmax(logits, -1)
@@ -471,7 +486,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         result,
         metadata,
     ):
-        predictions_col = f"{self.feature_name}_{PREDICTIONS}"
+        predictions_col = f"{self.feature_name}_{TOKENS}"
         lengths_col = f"{self.feature_name}_{LENGTHS}"
         if predictions_col in result:
             if "idx2str" in metadata:

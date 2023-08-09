@@ -24,12 +24,12 @@ from ludwig.constants import (
     LAST_PREDICTIONS,
     LENGTHS,
     NAME,
-    PREDICTIONS,
     PREPROCESSING,
     PROBABILITIES,
     PROBABILITY,
     PROC_COLUMN,
     TEXT,
+    TOKENS,
 )
 from ludwig.features.base_feature import BaseFeatureMixin, OutputFeature
 from ludwig.features.feature_utils import compute_sequence_probability, compute_token_probabilities
@@ -323,7 +323,7 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
         metadata,
     ):
         # todo: refactor to reuse SequenceOutputFeature.postprocess_predictions
-        predictions_col = f"{self.feature_name}_{PREDICTIONS}"
+        tokens_col = f"{self.feature_name}_{TOKENS}"
 
         tokenizer = None
         if metadata["preprocessing"]["tokenizer"] == "hf_tokenizer":
@@ -333,19 +333,30 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
                 metadata["preprocessing"]["pretrained_model_name_or_path"],
             )
 
-        if predictions_col in result:
+        if tokens_col in result:
 
-            def idx2str(pred):
+            predicted_tokens = result[tokens_col]
+
+            def idx2token(pred):
                 if tokenizer is None:
-                    return " ".join(
-                        [
-                            metadata["idx2str"][token] if token < len(metadata["idx2str"]) else UNKNOWN_SYMBOL
-                            for token in pred
-                        ]
-                    )
+                    return [
+                        metadata["idx2str"][token] if token < len(metadata["idx2str"]) else UNKNOWN_SYMBOL for token in pred
+                    ]
+                return tokenizer.tokenizer.batch_decode(pred, skip_special_tokens=True)
+
+            result[tokens_col] = predicted_tokens.map(idx2token)
+
+            # Add concatenated tokens with spacing into a new column in the results dataframe
+
+            def idx2prediction(pred):
+                if tokenizer is None:
+                    return " ".join([
+                        metadata["idx2str"][token] if token < len(metadata["idx2str"]) else UNKNOWN_SYMBOL
+                        for token in pred
+                    ])
                 return tokenizer.tokenizer.batch_decode([pred], skip_special_tokens=True)
 
-            result[predictions_col] = result[predictions_col].map(idx2str)
+            result[f"{self.feature_name}_predictions"] = predicted_tokens.map(idx2prediction)
 
         last_preds_col = f"{self.feature_name}_{LAST_PREDICTIONS}"
         if last_preds_col in result:
