@@ -11,7 +11,7 @@ from typing import Optional, Set, Tuple, Type, TypeVar, Union
 
 import marshmallow_dataclass
 import yaml
-from marshmallow import EXCLUDE, RAISE, fields, pre_load, schema, validate, ValidationError
+from marshmallow import EXCLUDE, fields, pre_load, RAISE, schema, validate, ValidationError
 from marshmallow.utils import missing
 from marshmallow_dataclass import dataclass as m_dataclass
 from marshmallow_jsonschema import JSONSchema as js
