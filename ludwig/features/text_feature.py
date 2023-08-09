@@ -334,13 +334,13 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
             )
 
         if tokens_col in result:
-
             predicted_tokens = result[tokens_col]
 
             def idx2token(pred):
                 if tokenizer is None:
                     return [
-                        metadata["idx2str"][token] if token < len(metadata["idx2str"]) else UNKNOWN_SYMBOL for token in pred
+                        metadata["idx2str"][token] if token < len(metadata["idx2str"]) else UNKNOWN_SYMBOL
+                        for token in pred
                     ]
                 return tokenizer.tokenizer.batch_decode(pred, skip_special_tokens=True)
 
@@ -350,10 +350,12 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
 
             def idx2prediction(pred):
                 if tokenizer is None:
-                    return " ".join([
-                        metadata["idx2str"][token] if token < len(metadata["idx2str"]) else UNKNOWN_SYMBOL
-                        for token in pred
-                    ])
+                    return " ".join(
+                        [
+                            metadata["idx2str"][token] if token < len(metadata["idx2str"]) else UNKNOWN_SYMBOL
+                            for token in pred
+                        ]
+                    )
                 return tokenizer.tokenizer.batch_decode([pred], skip_special_tokens=True)
 
             result[f"{self.feature_name}_predictions"] = predicted_tokens.map(idx2prediction)
