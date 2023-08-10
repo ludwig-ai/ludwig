@@ -3,13 +3,13 @@ from typing import Any, Dict, List, Optional, Union
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
-from ludwig.schema.combiners.utils import register_combiner
+from ludwig.schema.combiners.utils import register_combiner_config
 from ludwig.schema.metadata import COMBINER_METADATA
 from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
-@register_combiner("project_aggregate")
+@register_combiner_config("project_aggregate")
 @ludwig_dataclass
 class ProjectAggregateCombinerConfig(BaseCombinerConfig):
     type: str = schema_utils.ProtectedString(
