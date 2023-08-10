@@ -6,7 +6,7 @@ from packaging.version import parse as parse_version
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
-    DEFAULT_BATCH_SIZE,
+    AUTO,
     LOSS,
     MAX_POSSIBLE_BATCH_SIZE,
     MODEL_ECD,
@@ -104,6 +104,38 @@ class ECDTrainerConfig(BaseTrainerConfig):
             raise ConfigValidationError(
                 "Trainer param `compile: true` requires PyTorch 2.0.0 or higher. Please upgrade PyTorch and try again."
             )
+        
+        if self.effective_batch_size != AUTO and self.batch_size != AUTO and self.gradient_accumulation_steps != AUTO:
+            raise ConfigValidationError(
+                "At most two of `effective_batch_size`, `batch_size`, and `gradient_accumulation_steps` can be set "
+                "explicitly. Set at least one of these values to 'auto'."
+            )
+        
+        if self.effective_batch_size != AUTO and self.batch_size != AUTO:
+            if self.effective_batch_size < self.batch_size:
+                raise ConfigValidationError(
+                    f"`effective_batch_size` ({self.effective_batch_size}) "
+                    f"must be greater than or equal to `batch_size` ({self.batch_size})."
+                )
+            
+            if self.effective_batch_size % self.batch_size != 0:
+                raise ConfigValidationError(
+                    f"`effective_batch_size` ({self.effective_batch_size}) "
+                    f"must be divisible by `batch_size` ({self.batch_size})."
+                )
+            
+        if self.effective_batch_size != AUTO and self.gradient_accumulation_steps != AUTO:
+            if self.effective_batch_size < self.gradient_accumulation_steps:
+                raise ConfigValidationError(
+                    f"`effective_batch_size` ({self.effective_batch_size}) must be greater than or equal to "
+                    f"`gradient_accumulation_steps` ({self.gradient_accumulation_steps})."
+                )
+            
+            if self.effective_batch_size % self.gradient_accumulation_steps != 0:
+                raise ConfigValidationError(
+                    f"`effective_batch_size` ({self.effective_batch_size}) "
+                    f"must be divisible by `gradient_accumulation_steps` ({self.gradient_accumulation_steps})."
+                )
 
     learning_rate: Union[float, str] = schema_utils.OneOfOptionsField(
         default=0.001,
@@ -159,8 +191,24 @@ class ECDTrainerConfig(BaseTrainerConfig):
         parameter_metadata=TRAINER_METADATA[MODEL_ECD]["steps_per_checkpoint"],
     )
 
+    effective_batch_size: Union[int, str] = schema_utils.OneOfOptionsField(
+        default=AUTO,
+        allow_none=False,
+        description=(
+            "The number of training examples utilized in one training step of the model. If ’auto’, the "
+            "batch size that maximized training throughput (samples / sec) will be used. For CPU training, the "
+            "tuned batch size is capped at 128 as throughput benefits of large batch sizes are less noticeable without "
+            "a GPU."
+        ),
+        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["effective_batch_size"],
+        field_options=[
+            schema_utils.PositiveInteger(default=128, description="", allow_none=False),
+            schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
+        ],
+    )
+
     batch_size: Union[int, str] = schema_utils.OneOfOptionsField(
-        default=DEFAULT_BATCH_SIZE,
+        default=AUTO,
         allow_none=False,
         description=(
             "The number of training examples utilized in one training step of the model. If ’auto’, the "
@@ -183,6 +231,12 @@ class ECDTrainerConfig(BaseTrainerConfig):
             "value is 2^40."
         ),
         parameter_metadata=TRAINER_METADATA[MODEL_ECD]["max_batch_size"],
+    )
+
+    gradient_accumulation_steps: int = schema_utils.PositiveInteger(
+        default=AUTO,
+        description="Number of steps to accumulate gradients over before performing a weight update.",
+        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["gradient_accumulation_steps"],
     )
 
     early_stop: int = schema_utils.IntegerRange(
@@ -341,12 +395,6 @@ class ECDTrainerConfig(BaseTrainerConfig):
         default=False,
         description="Whether to compile the model before training.",
         parameter_metadata=TRAINER_METADATA[MODEL_ECD]["compile"],
-    )
-
-    gradient_accumulation_steps: int = schema_utils.PositiveInteger(
-        default=1,
-        description="Number of steps to accumulate gradients over before performing a weight update.",
-        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["gradient_accumulation_steps"],
     )
 
 

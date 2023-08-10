@@ -197,6 +197,7 @@ EPOCHS = "epochs"
 BATCH_SIZE = "batch_size"
 EVAL_BATCH_SIZE = "eval_batch_size"
 DEFAULT_BATCH_SIZE = "auto"
+AUTO = "auto"
 FALLBACK_BATCH_SIZE = 128
 # The smallest batch size that is supported on Ludwig.
 MINIMUM_BATCH_SIZE = 1
