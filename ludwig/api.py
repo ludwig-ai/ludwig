@@ -316,7 +316,10 @@ class LudwigModel:
         self.set_logging_level(logging_level)
 
         # setup Backend
-        self.backend = initialize_backend(backend or self._user_config.get("backend"))
+        if self._user_config.get("quantization"):
+            self.backend = initialize_backend("local")
+        else:
+            self.backend = initialize_backend(backend or self._user_config.get("backend"))
         self.callbacks = callbacks if callbacks is not None else []
 
         # setup PyTorch env (GPU allocation, etc.)
