@@ -62,18 +62,20 @@ class DateFeatureMixin(BaseFeatureMixin):
         return {"preprocessing": preprocessing_parameters}
 
     @staticmethod
-    def date_to_list(date_str, datetime_format, preprocessing_parameters):
-        # print(f"DATE STR {date_str}")
+    def date_to_list(date_value, datetime_format, preprocessing_parameters):
         try:
-            if isinstance(date_str, datetime):
-                datetime_obj = date_str
-            elif datetime_format is not None:
-                datetime_obj = datetime.strptime(date_str, datetime_format)
+            if isinstance(date_value, datetime):
+                datetime_obj = date_value
+            elif isinstance(date_value, str) and datetime_format is not None:
+                try:
+                    datetime_obj = datetime.strptime(date_value, datetime_format)
+                except ValueError:
+                    datetime_obj = parse_datetime(date_value)
             else:
-                datetime_obj = parse_datetime(date_str)
+                datetime_obj = parse_datetime(date_value)
         except Exception as e:
             logger.error(
-                f"Error parsing date: '{date_str}' with error '{e}' "
+                f"Error parsing date: '{date_value}' with error '{e}' "
                 "Please provide a datetime format that parses it "
                 "in the preprocessing section of the date feature "
                 "in the config. "
@@ -99,7 +101,6 @@ class DateFeatureMixin(BaseFeatureMixin):
         backend,  # Union[Backend, str]
         skip_save_processed_input: bool,
     ) -> None:
-        # print(f"\n\n\n\n\n\n\nPREPROCESSING DATA {input_df}")
         datetime_format = preprocessing_parameters["datetime_format"]
         proc_df[feature_config[PROC_COLUMN]] = backend.df_engine.map_objects(
             input_df[feature_config[COLUMN]],
@@ -107,7 +108,6 @@ class DateFeatureMixin(BaseFeatureMixin):
                 DateFeatureMixin.date_to_list(x, datetime_format, preprocessing_parameters), dtype=np.int16
             ),
         )
-        # print("\n\n\n\n\n\n\n")
         return proc_df
 
 
