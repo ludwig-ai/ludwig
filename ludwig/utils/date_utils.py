@@ -57,7 +57,7 @@ def parse_datetime(timestamp: Union[float, int, str]) -> datetime:
     """
     try:
         dt = parse(timestamp)
-    except (ParserError, TypeError):
+    except (OverflowError, ParserError, TypeError):
         dt = convert_number_to_datetime(timestamp)
 
     return dt
@@ -89,8 +89,7 @@ def convert_number_to_datetime(timestamp: Union[float, int, str]) -> datetime:
     # `datetime.datetime.fromtimestamp` expects a timestamp in seconds. Rescale the timestamp if it is not in seconds.
     if SCALE_S < ts_scale:
         delta = ts_scale - SCALE_S
-        timestamp = timestamp / np.power(10, 3)
-        print(f"\n\n\n\n\n\n\n\n{SCALE_S}, {ts_scale}, {delta}, {timestamp}\n\n\n\n\n\n\n\n")
+        timestamp = timestamp / np.power(10, delta)
 
     # Convert the timestamp to a datetime object. If it is not a valid timestamp, `ValueError` is raised.
     dt = datetime.fromtimestamp(timestamp)
