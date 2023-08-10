@@ -64,7 +64,7 @@ def test_date_to_list(date_str, datetime_format, expected_list):
 
 @pytest.fixture(scope="module")
 def reference_date_list() -> List[int]:
-    return create_vector_from_datetime_obj(datetime(2023, 8, 9, 13, 9, 13, 443032))
+    return create_vector_from_datetime_obj(datetime.utcfromtimestamp(1691600953.443032))
 
 
 @pytest.fixture(scope="module")

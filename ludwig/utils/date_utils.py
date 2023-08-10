@@ -92,5 +92,5 @@ def convert_number_to_datetime(timestamp: Union[float, int, str]) -> datetime:
         timestamp = timestamp / np.power(10, delta)
 
     # Convert the timestamp to a datetime object. If it is not a valid timestamp, `ValueError` is raised.
-    dt = datetime.fromtimestamp(timestamp)
+    dt = datetime.utcfromtimestamp(timestamp)
     return dt

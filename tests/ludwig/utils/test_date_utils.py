@@ -9,7 +9,7 @@ from ludwig.utils.date_utils import convert_number_to_datetime
 
 @pytest.fixture(scope="module")
 def reference_datetime() -> datetime.datetime:
-    return datetime.datetime(2023, 8, 9, 13, 9, 13, 443032)
+    return datetime.datetime.utcfromtimestamp(1691600953.443032)
 
 
 @pytest.mark.parametrize(
