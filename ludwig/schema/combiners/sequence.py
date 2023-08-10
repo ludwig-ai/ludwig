@@ -5,7 +5,7 @@ from ludwig.constants import MODEL_ECD, SEQUENCE
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.combiners.sequence_concat import MAIN_SEQUENCE_FEATURE_DESCRIPTION
-from ludwig.schema.combiners.utils import register_combiner
+from ludwig.schema.combiners.utils import register_combiner_config
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.metadata import COMBINER_METADATA
@@ -19,7 +19,7 @@ _2D_SEQUENCE_ENCODERS = ["embed"]
 
 
 @DeveloperAPI
-@register_combiner("sequence")
+@register_combiner_config("sequence")
 @ludwig_dataclass
 class SequenceCombinerConfig(BaseCombinerConfig):
     """Parameters for sequence combiner."""
