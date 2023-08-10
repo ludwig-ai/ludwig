@@ -4,13 +4,13 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import common_fields
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
-from ludwig.schema.combiners.utils import register_combiner
+from ludwig.schema.combiners.utils import register_combiner_config
 from ludwig.schema.metadata import COMBINER_METADATA
 from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
-@register_combiner("concat")
+@register_combiner_config("concat")
 @ludwig_dataclass
 class ConcatCombinerConfig(BaseCombinerConfig):
     """Parameters for concat combiner."""
