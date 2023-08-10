@@ -428,6 +428,32 @@ def test_lora_wrap_on_init():
     assert isinstance(model.model, PeftModel)
 
 
+def test_llama_rope_scaling():
+    config = {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: "HuggingFaceH4/tiny-random-LlamaForCausalLM",
+        INPUT_FEATURES: [text_feature(name="input", encoder={"type": "passthrough"})],
+        OUTPUT_FEATURES: [text_feature(name="output")],
+        TRAINER: {
+            TYPE: "finetune",
+            BATCH_SIZE: 8,
+            EPOCHS: 2,
+        },
+        "model_parameters": {
+            "rope_scaling": {
+                "type": "dynamic",
+                "factor": 2.0,
+            }
+        },
+    }
+    config_obj = ModelConfig.from_dict(config)
+    model = LLM(config_obj)
+
+    assert model.model.config.rope_scaling
+    assert model.model.config.rope_scaling["type"] == "dynamic"
+    assert model.model.config.rope_scaling["factor"] == 2.0
+
+
 def _compare_models(model_1: torch.nn.Module, model_2: torch.nn.Module) -> bool:
     # Source: https://discuss.pytorch.org/t/check-if-models-have-same-weights/4351/6
     for key_item_1, key_item_2 in zip(model_1.state_dict().items(), model_2.state_dict().items()):

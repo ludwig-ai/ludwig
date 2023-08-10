@@ -13,20 +13,23 @@ from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json
 # replaced with the full slash-delimited HF path using this map, after JSON validation but before config object
 # initialization.
 MODEL_PRESETS = {
+    "llama-2-7b": "meta-llama/Llama-2-7b-hf",
+    "llama-2-13b": "meta-llama/Llama-2-13b-hf",
+    "llama-2-70b": "meta-llama/Llama-2-70b-hf",
+    "llama-2-7b-chat": "meta-llama/Llama-2-7b-chat-hf",
+    "llama-2-13b-chat": "meta-llama/Llama-2-13b-chat-hf",
+    "llama-2-70b-chat": "meta-llama/Llama-2-70b-chat-hf",
+    "vicuna-7b": "lmsys/vicuna-7b-v1.3",
+    "vicuna-13b": "lmsys/vicuna-13b-v1.3",
+    "bloomz-3b": "bigscience/bloomz-3b",
+    "bloomz-7b1": "bigscience/bloomz-7b1",
     "opt-350m": "facebook/opt-350m",
     "opt-1.3b": "facebook/opt-1.3b",
-    "pythia-2.8b": "EleutherAI/pythia-2.8b",
+    "opt-6.7b": "facebook/opt-6.7b",
     "gpt-neo-2.7B": "EleutherAI/gpt-neo-2.7B",
-    "bloomz-3b": "bigscience/bloomz-3b",
     "gpt-j-6b": "EleutherAI/gpt-j-6b",
-    "stablelm-base-alpha-3b": "stabilityai/stablelm-base-alpha-3b",
-    "llama-7b": "huggyllama/llama-7b",
-    "vicuna-7b": "eachadea/vicuna-7b-1.1",
-    "bloom-7b": "bigscience/bloom-7b1",
-    "stablelm-base-alpha-7b": "stabilityai/stablelm-base-alpha-7b",
+    "pythia-2.8b": "EleutherAI/pythia-2.8b",
     "pythia-12b": "EleutherAI/pythia-12b",
-    "oasst-sft-1-pythia-12b": "OpenAssistant/oasst-sft-1-pythia-12b",
-    "vicuna-13b": "eachadea/vicuna-13b-1.1",
 }
 
 

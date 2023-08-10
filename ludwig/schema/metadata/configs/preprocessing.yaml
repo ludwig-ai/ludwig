@@ -150,3 +150,10 @@ cache_encoder_embeddings:
         it's not always the case that you would always want to enable it when possible.
     expected_impact: 1
     ui_display_name: Cache Encoder Embeddings
+global_max_sequence_length:
+    expected_impact: 2
+    ui_display_name: Global Max Sequence Length
+    description_implications:
+        Specifically for LLMs. This is the maximum number of tokens going into the model's forward pass during training. Sequences will be truncated to this length after merging the tokens from the input with tokens from the target. If not set, the total length of the merged input and target token sequences will be used.
+    example_value:
+        - 512

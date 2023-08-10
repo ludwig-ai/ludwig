@@ -39,7 +39,10 @@ class BaseAdapterConfig(schema_utils.BaseMarshmallowConfig, ABC):
 @register_adapter(name="lora")
 @ludwig_dataclass
 class LoraConfig(BaseAdapterConfig):
-    type: str = schema_utils.ProtectedString("lora")
+    type: str = schema_utils.ProtectedString(
+        "lora",
+        description=LLM_METADATA["adapter"]["lora"]["type"].long_description,
+    )
 
     r: int = schema_utils.PositiveInteger(
         default=8,
@@ -76,6 +79,14 @@ class LoraConfig(BaseAdapterConfig):
             bias=self.bias_type,
             task_type=task_type,
         )
+
+    @classmethod
+    def name(cls) -> str:
+        return "LoRA"
+
+    @classmethod
+    def description(cls) -> str:
+        return LLM_METADATA["adapter"]["lora"]["type"].long_description
 
 
 @DeveloperAPI
@@ -252,7 +263,10 @@ class BasePromptLearningConfig(BaseAdapterConfig):
 class AdaloraConfig(LoraConfig):
     """Adapted from https://github.com/huggingface/peft/blob/main/src/peft/tuners/adalora.py."""
 
-    type: str = schema_utils.ProtectedString("adalora")
+    type: str = schema_utils.ProtectedString(
+        "adalora",
+        description=LLM_METADATA["adapter"]["adalora"]["type"].long_description,
+    )
 
     target_r: int = schema_utils.PositiveInteger(
         default=8,
@@ -332,6 +346,14 @@ class AdaloraConfig(LoraConfig):
             rank_pattern=self.rank_pattern,
         )
 
+    @classmethod
+    def name(cls) -> str:
+        return "AdaLoRA"
+
+    @classmethod
+    def description(cls) -> str:
+        return LLM_METADATA["adapter"]["adalora"]["type"].long_description
+
 
 @DeveloperAPI
 @register_adapter("adaption_prompt")
@@ -352,7 +374,10 @@ class AdaptionPromptConfig(BaseAdapterConfig):
                 "type is `adaption_prompt`. This is the number of adapter layers to insert."
             )
 
-    type: str = schema_utils.ProtectedString("adaption_prompt")
+    type: str = schema_utils.ProtectedString(
+        "adaption_prompt",
+        description=LLM_METADATA["adapter"]["adaption_prompt"]["type"].long_description,
+    )
 
     adapter_len: int = schema_utils.PositiveInteger(
         default=4,
@@ -375,6 +400,14 @@ class AdaptionPromptConfig(BaseAdapterConfig):
             adapter_layers=self.adapter_layers,
             task_type=task_type,
         )
+
+    @classmethod
+    def name(cls) -> str:
+        return "Adaption Prompt"
+
+    @classmethod
+    def description(cls) -> str:
+        return LLM_METADATA["adapter"]["adaption_prompt"]["type"].long_description
 
 
 @DeveloperAPI

@@ -16,7 +16,9 @@ RUN apt-get -y update && apt-get -y install \
     libsndfile1 \
     build-essential \
     g++ \
-    cmake
+    cmake \
+    ffmpeg \
+    sox
 RUN pip install -U pip
 
 WORKDIR /ludwig

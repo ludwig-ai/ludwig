@@ -24,7 +24,9 @@ RUN sudo apt-get update && DEBIAN_FRONTEND="noninteractive" sudo apt-get install
 	cmake \
 	tzdata \
 	rsync \
-	vim
+	vim \
+	ffmpeg \
+	sox
 RUN pip install -U pip
 
 WORKDIR /ludwig

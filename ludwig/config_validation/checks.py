@@ -461,15 +461,30 @@ def check_hyperopt_nested_parameter_dicts(config: "ModelConfig") -> None:  # noq
 
 
 @register_config_check
-def check_llm_atleast_one_input_text_feature(config: "ModelConfig"):  # noqa: F821
+def check_llm_exactly_one_input_text_feature(config: "ModelConfig"):  # noqa: F821
     if config.model_type != MODEL_LLM:
         return
 
-    for input_feature in config.input_features:
-        if input_feature.type == TEXT:
-            return
+    if len(config.input_features) == 1 and config.input_features[0].type == TEXT:
+        return
+    else:
+        raise ConfigValidationError("LLM requires exactly one text input feature.")
 
-    raise ConfigValidationError("LLM requires at least one text input feature.")
+
+@register_config_check
+def check_llm_finetuning_output_feature_config(config: "ModelConfig"):  # noqa: F821
+    """Checks that the output feature config for LLM finetuning is valid."""
+    if config.model_type != MODEL_LLM:
+        return
+
+    if config.trainer.type != "finetune":
+        return
+
+    if config.output_features[0].type != TEXT:
+        raise ConfigValidationError(
+            "LLM finetuning requires the output feature to be a text feature. If you are trying to use a different "
+            "output feature type such as category or binary, please change the output feature type to text."
+        )
 
 
 @register_config_check
@@ -570,3 +585,24 @@ def check_llm_finetuning_adaption_prompt_parameters(config: "ModelConfig"):
 def _get_llm_model_config(model_name: str) -> AutoConfig:
     """Returns the LLM model config."""
     return AutoConfig.from_pretrained(model_name)
+
+
+@register_config_check
+def check_llm_quantization_backend_incompatibility(config: "ModelConfig") -> None:  # noqa: F821
+    """Checks that LLM model type with quantization uses the local backend."""
+    if config.backend is None:
+        return
+
+    backend_type = config.backend.get("type", "local")
+    if config.model_type == MODEL_LLM and config.quantization and backend_type != "local":
+        raise ConfigValidationError(f"LLM with quantization requires the 'local' backend, found: '{backend_type}'")
+
+
+@register_config_check
+def check_qlora_requirements(config: "ModelConfig") -> None:  # noqa: F821
+    """Checks that all the necessary settings are in place for QLoRA."""
+    if config.model_type != MODEL_LLM or config.trainer.type == "none":
+        return
+
+    if config.quantization and (not config.adapter or config.adapter.type != "lora"):
+        raise ConfigValidationError("Fine-tuning and LLM with quantization requires using the 'lora' adapter")

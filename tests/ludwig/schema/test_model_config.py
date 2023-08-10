@@ -1,6 +1,6 @@
 import os
 from tempfile import TemporaryDirectory
-from typing import Optional
+from typing import Any, Dict, Optional, Union
 
 import pytest
 import yaml
@@ -796,7 +796,7 @@ def test_encoder_decoder_values_as_str():
     "base_model_config,model_name",
     [
         ("bloomz-3b", "bigscience/bloomz-3b"),
-        ("llama-7b", "huggyllama/llama-7b"),
+        ("vicuna-7b", "lmsys/vicuna-7b-v1.3"),
         ("huggyllama/llama-7b", "huggyllama/llama-7b"),
     ],
 )
@@ -855,3 +855,60 @@ def test_llm_quantization_config(bits: Optional[int], expected_qconfig: Optional
     config_obj = ModelConfig.from_dict(config)
 
     assert config_obj.quantization == expected_qconfig
+
+
+@pytest.mark.parametrize(
+    "rope_scaling_config",
+    [
+        ({"type": "linear"}),
+        ({"factor": 2.0}),
+        ({"type": "linear", "factor": 1.0}),
+    ],
+)
+def test_llm_rope_scaling_failure_modes(
+    rope_scaling_config: Union[None, Dict[str, Any]],
+):
+    config = {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: "HuggingFaceH4/tiny-random-LlamaForCausalLM",
+        INPUT_FEATURES: [{NAME: "text_input", TYPE: "text"}],
+        OUTPUT_FEATURES: [{NAME: "text_output", TYPE: "text"}],
+        "model_parameters": {
+            "rope_scaling": rope_scaling_config,
+        },
+    }
+
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+
+def test_llm_model_parameters_no_rope_scaling():
+    config = {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: "HuggingFaceH4/tiny-random-LlamaForCausalLM",
+        INPUT_FEATURES: [{NAME: "text_input", TYPE: "text"}],
+        OUTPUT_FEATURES: [{NAME: "text_output", TYPE: "text"}],
+        "model_parameters": {},
+    }
+
+    config_obj = ModelConfig.from_dict(config)
+    assert config_obj.model_parameters.rope_scaling is None
+    assert config_obj.model_parameters.to_dict() == {}
+
+
+def test_llm_finetuning_output_feature_config():
+    config = {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: "HuggingFaceH4/tiny-random-LlamaForCausalLM",
+        INPUT_FEATURES: [{NAME: "text_input", TYPE: "text"}],
+        OUTPUT_FEATURES: [{NAME: "category_output", TYPE: "category"}],
+        "trainer": {
+            "type": "finetune",
+        },
+    }
+
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+    config[OUTPUT_FEATURES] = [{NAME: "text_output", TYPE: "text"}]
+    ModelConfig.from_dict(config)

@@ -823,7 +823,8 @@ class Trainer(BaseTrainer):
                     if self.distributed.is_model_parallel():
                         # Assume the full weights cannot fit in memory on GPU
                         self.model = self.model.cpu()
-                    self.model.load_state_dict(state_dict)
+                    _, unexpected_keys = self.model.load_state_dict(state_dict, strict=False)
+                    assert unexpected_keys == [], f"Unexpected keys found in state dict: {unexpected_keys}"
             elif return_state_dict:
                 state_dict = self.model.cpu().state_dict()
 
