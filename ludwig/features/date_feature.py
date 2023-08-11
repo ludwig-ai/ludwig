@@ -19,13 +19,12 @@ from typing import Dict, List
 
 import numpy as np
 import torch
-from dateutil.parser import parse
 
 from ludwig.constants import COLUMN, DATE, PROC_COLUMN
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.schema.features.date_feature import DateInputFeatureConfig
 from ludwig.types import FeatureConfigDict, FeatureMetadataDict, PreprocessingConfigDict, TrainingSetMetadataDict
-from ludwig.utils.date_utils import create_vector_from_datetime_obj
+from ludwig.utils.date_utils import create_vector_from_datetime_obj, parse_datetime
 from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
@@ -63,17 +62,20 @@ class DateFeatureMixin(BaseFeatureMixin):
         return {"preprocessing": preprocessing_parameters}
 
     @staticmethod
-    def date_to_list(date_str, datetime_format, preprocessing_parameters):
+    def date_to_list(date_value, datetime_format, preprocessing_parameters):
         try:
-            if isinstance(date_str, datetime):
-                datetime_obj = date_str
-            elif datetime_format is not None:
-                datetime_obj = datetime.strptime(date_str, datetime_format)
+            if isinstance(date_value, datetime):
+                datetime_obj = date_value
+            elif isinstance(date_value, str) and datetime_format is not None:
+                try:
+                    datetime_obj = datetime.strptime(date_value, datetime_format)
+                except ValueError:
+                    datetime_obj = parse_datetime(date_value)
             else:
-                datetime_obj = parse(date_str)
+                datetime_obj = parse_datetime(date_value)
         except Exception as e:
             logger.error(
-                f"Error parsing date: '{date_str}' with error '{e}' "
+                f"Error parsing date: '{date_value}' with error '{e}' "
                 "Please provide a datetime format that parses it "
                 "in the preprocessing section of the date feature "
                 "in the config. "
@@ -83,7 +85,7 @@ class DateFeatureMixin(BaseFeatureMixin):
             )
             fill_value = preprocessing_parameters["fill_value"]
             if fill_value != "":
-                datetime_obj = parse(fill_value)
+                datetime_obj = parse_datetime(fill_value)
             else:
                 datetime_obj = datetime.now()
 
