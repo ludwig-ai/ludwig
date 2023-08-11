@@ -17,7 +17,7 @@ from ludwig.modules.loss_modules import LogitsInputsMixin, register_loss
 from ludwig.modules.metric_modules import LossMetric, register_metric
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
-from ludwig.schema.combiners.utils import register_combiner as register_combiner_schema
+from ludwig.schema.combiners.utils import register_combiner_config
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import register_decoder_config
 from ludwig.schema.encoders.base import BaseEncoderConfig
@@ -55,7 +55,7 @@ class CustomLossConfig(BaseLossConfig):
     type: str = "custom_loss"
 
 
-@register_combiner_schema("custom_combiner")
+@register_combiner_config("custom_combiner")
 @dataclass
 class CustomTestCombinerConfig(BaseCombinerConfig):
     type: str = "custom_combiner"

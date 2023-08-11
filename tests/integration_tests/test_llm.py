@@ -29,6 +29,7 @@ from tests.integration_tests.utils import category_feature, generate_data, text_
 
 LOCAL_BACKEND = {"type": "local"}
 TEST_MODEL_NAME = "hf-internal-testing/tiny-random-GPTJForCausalLM"
+MAX_NEW_TOKENS_TEST_DEFAULT = 5
 
 RAY_BACKEND = {
     "type": "ray",
@@ -44,6 +45,11 @@ RAY_BACKEND = {
         },
     },
 }
+
+
+def get_num_non_empty_tokens(iterable):
+    """Returns the number of non-empty tokens."""
+    return len(list(filter(bool, iterable)))
 
 
 @pytest.fixture(scope="module")
@@ -79,7 +85,7 @@ def get_generation_config():
         "top_p": 0.75,
         "top_k": 40,
         "num_beams": 4,
-        "max_new_tokens": 5,
+        "max_new_tokens": MAX_NEW_TOKENS_TEST_DEFAULT,
     }
 
 
@@ -129,10 +135,31 @@ def test_llm_text_to_text(tmpdir, backend, ray_cluster_4cpu):
     assert "Answer_predictions" in preds
     assert "Answer_probabilities" in preds
     assert "Answer_probability" in preds
+    assert "Answer_response" in preds
 
     assert preds["Answer_predictions"]
     assert preds["Answer_probabilities"]
     assert preds["Answer_probability"]
+    assert preds["Answer_response"]
+
+    # Check that in-line generation parameters are used. Original prediction uses max_new_tokens = 5.
+    assert get_num_non_empty_tokens(preds["Answer_predictions"][0]) <= MAX_NEW_TOKENS_TEST_DEFAULT
+    original_max_new_tokens = model.model.generation.max_new_tokens
+
+    # This prediction uses max_new_tokens = 2.
+    preds, _ = model.predict(
+        dataset=dataset_filename,
+        output_directory=str(tmpdir),
+        split="test",
+        generation_config={"min_new_tokens": 2, "max_new_tokens": 3},
+    )
+    preds = convert_preds(preds)
+    print(preds["Answer_predictions"][0])
+    num_non_empty_tokens = get_num_non_empty_tokens(preds["Answer_predictions"][0])
+    assert 2 <= num_non_empty_tokens <= 3
+
+    # Check that the state of the model is unchanged.
+    assert model.model.generation.max_new_tokens == original_max_new_tokens
 
 
 @pytest.mark.llm

@@ -421,7 +421,8 @@ backend:
     ModelConfig.from_dict(config)
 
     del config["backend"]
-    ModelConfig.from_dict(config)
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
 
     del config["quantization"]
     config["backend"] = {"type": "ray"}
@@ -443,6 +444,8 @@ output_features:
     type: text
 trainer:
   type: finetune
+backend:
+  type: local
 """
     )
 
