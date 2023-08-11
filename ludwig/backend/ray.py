@@ -884,7 +884,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
         super().__init__(dataset_manager=RayDatasetManager(self), **kwargs)
         self._preprocessor_kwargs = preprocessor_kwargs or {}
         self._df_engine = _get_df_engine(processor)
-        self._horovod_kwargs = trainer or {}
+        self._distributed_kwargs = trainer or {}
         self._pytorch_kwargs = {}
         self._data_loader_kwargs = loader or {}
         self._preprocessor_pg = None
@@ -951,7 +951,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
 
         all_kwargs = {
             "model": model,
-            "trainer_kwargs": self._horovod_kwargs,
+            "trainer_kwargs": self._distributed_kwargs,
             "data_loader_kwargs": self._data_loader_kwargs,
             "executable_kwargs": executable_kwargs,
         }
@@ -964,18 +964,18 @@ class RayBackend(RemoteTrainingMixin, Backend):
         return RayPredictor(
             model,
             self.df_engine,
-            self._horovod_kwargs,
+            self._distributed_kwargs,
             self._data_loader_kwargs,
             **executable_kwargs,
         )
 
     @property
     def distributed_kwargs(self):
-        return self._horovod_kwargs
+        return self._distributed_kwargs
 
     @distributed_kwargs.setter
     def distributed_kwargs(self, value):
-        self._horovod_kwargs = value
+        self._distributed_kwargs = value
 
     @property
     def df_engine(self):
@@ -1075,6 +1075,11 @@ class RayBackend(RemoteTrainingMixin, Backend):
         if not ray.is_initialized():
             return 1
         return len(ray.nodes())
+    
+    @property
+    def num_training_workers(self) -> int:
+        trainer_kwargs = get_trainer_kwargs(**self._distributed_kwargs)
+        return trainer_kwargs["num_workers"]
 
     def get_available_resources(self) -> Resources:
         resources = ray.cluster_resources()
@@ -1130,7 +1135,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
             return self.df_engine.from_ray_dataset(ds)
 
     def _get_transform_kwargs(self) -> Dict[str, Any]:
-        trainer_kwargs = get_trainer_kwargs(**self._horovod_kwargs)
+        trainer_kwargs = get_trainer_kwargs(**self._distributed_kwargs)
         resources_per_worker = trainer_kwargs.get("resources_per_worker", {})
         num_gpus = resources_per_worker.get("GPU", 0)
         num_cpus = resources_per_worker.get("CPU", (1 if num_gpus == 0 else 0))
