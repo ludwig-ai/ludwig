@@ -46,6 +46,11 @@ RAY_BACKEND = {
 }
 
 
+def get_num_non_empty_tokens(iterable):
+    """Returns the number of non-empty tokens."""
+    return len(list(filter(bool, iterable)))
+
+
 @pytest.fixture(scope="module")
 def local_backend():
     return LOCAL_BACKEND
@@ -133,6 +138,16 @@ def test_llm_text_to_text(tmpdir, backend, ray_cluster_4cpu):
     assert preds["Answer_predictions"]
     assert preds["Answer_probabilities"]
     assert preds["Answer_probability"]
+
+    # Check that in-line generation parameters are used. Original prediction uses max_new_tokens = 5.
+    assert get_num_non_empty_tokens(preds["Answer_predictions"][0]) > 3
+
+    # This prediction uses max_new_tokens = 2.
+    preds, _ = model.predict(
+        dataset=dataset_filename, output_directory=str(tmpdir), split="test", generation_config={"max_new_tokens": 2}
+    )
+    preds = convert_preds(preds)
+    assert get_num_non_empty_tokens(preds["Answer_predictions"][0]) < 3
 
 
 @pytest.mark.llm
