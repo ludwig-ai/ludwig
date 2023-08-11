@@ -484,7 +484,11 @@ class LLM(BaseModel):
                 continue
             of_obj.update_metrics(targets[of_name], predictions[of_name])
 
+        # HACK (Tim): get the device of the targets to transfer self.eval_loss_metric to the same device
+        target_device = list(targets.values())[0].device
+
         eval_loss, additional_losses = self.eval_loss(targets, predictions)
+        self.eval_loss_metric = self.eval_loss_metric.to(target_device)
         self.eval_loss_metric.update(eval_loss)
         self.eval_additional_losses_metrics.update(additional_losses)
 
