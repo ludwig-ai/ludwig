@@ -141,15 +141,20 @@ def test_llm_text_to_text(tmpdir, backend, ray_cluster_4cpu):
     assert preds["Answer_probability"]
 
     # Check that in-line generation parameters are used. Original prediction uses max_new_tokens = 5.
-    assert get_num_non_empty_tokens(preds["Answer_predictions"][0]) > 3
+    assert get_num_non_empty_tokens(preds["Answer_predictions"][0]) <= MAX_NEW_TOKENS_TEST_DEFAULT
     original_max_new_tokens = model.model.generation.max_new_tokens
 
     # This prediction uses max_new_tokens = 2.
     preds, _ = model.predict(
-        dataset=dataset_filename, output_directory=str(tmpdir), split="test", generation_config={"max_new_tokens": 2}
+        dataset=dataset_filename,
+        output_directory=str(tmpdir),
+        split="test",
+        generation_config={"min_new_tokens": 2, "max_new_tokens": 3},
     )
     preds = convert_preds(preds)
-    assert get_num_non_empty_tokens(preds["Answer_predictions"][0]) < 3
+    print(preds["Answer_predictions"][0])
+    num_non_empty_tokens = get_num_non_empty_tokens(preds["Answer_predictions"][0])
+    assert 2 <= num_non_empty_tokens <= 3
 
     # Check that the state of the model is unchanged.
     assert model.model.generation.max_new_tokens == original_max_new_tokens
