@@ -444,6 +444,8 @@ output_features:
     type: text
 trainer:
   type: finetune
+backend:
+  type: local
 """
     )
 
