@@ -872,11 +872,6 @@ class LudwigModel:
         """
         self._check_initialization()
 
-        # Set the generation config if it exists.
-        # model.reset_generation_config() is called after batch prediction.
-        if generation_config is not None:
-            self.model.set_generation_config(generation_config)
-
         # preprocessing
         logger.debug("Preprocessing")
         dataset, _ = preprocess_for_prediction(  # TODO (Connor): Refactor to use self.config_obj
@@ -890,13 +885,18 @@ class LudwigModel:
             callbacks=self.callbacks + (callbacks or []),
         )
 
+        # Set the generation config if it exists.
+        # model.reset_generation_config() is called after batch prediction.
+        if generation_config is not None:
+            self.model.set_generation_config(generation_config)
+
         logger.debug("Predicting")
         with self.backend.create_predictor(self.model, batch_size=batch_size) as predictor:
             predictions = predictor.batch_predict(
                 dataset,
             )
 
-            # If there was a generation config, reset it.
+            # If there was a generation config set prior to batch prediction, reset it.
             if generation_config is not None:
                 self.model.reset_generation_config()
 
