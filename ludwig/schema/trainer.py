@@ -105,6 +105,12 @@ class ECDTrainerConfig(BaseTrainerConfig):
                 "Trainer param `compile: true` requires PyTorch 2.0.0 or higher. Please upgrade PyTorch and try again."
             )
         
+        if self.effective_batch_size != AUTO and self.max_batch_size < self.effective_batch_size:
+            raise ConfigValidationError(
+                f"`max_batch_size` ({self.max_batch_size}) must be greater than or equal to "
+                f"`effective_batch_size` ({self.effective_batch_size})."
+            )
+        
         if self.effective_batch_size != AUTO and self.batch_size != AUTO and self.gradient_accumulation_steps != AUTO:
             raise ConfigValidationError(
                 "At most two of `effective_batch_size`, `batch_size`, and `gradient_accumulation_steps` can be set "
@@ -133,8 +139,8 @@ class ECDTrainerConfig(BaseTrainerConfig):
             
             if self.effective_batch_size % self.gradient_accumulation_steps != 0:
                 raise ConfigValidationError(
-                    f"`effective_batch_size` ({self.effective_batch_size}) "
-                    f"must be divisible by `gradient_accumulation_steps` ({self.gradient_accumulation_steps})."
+                    f"`effective_batch_size` ({self.effective_batch_size}) must be divisible by "
+                    f"`gradient_accumulation_steps` ({self.gradient_accumulation_steps})."
                 )
 
     learning_rate: Union[float, str] = schema_utils.OneOfOptionsField(

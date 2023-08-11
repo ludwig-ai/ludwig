@@ -31,7 +31,7 @@ import psutil
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from ludwig.constants import LOSS, MAX_CPU_BATCH_SIZE, MINIMIZE, MODEL_ECD, TEST, TRAIN, TRAINING, VALIDATION
+from ludwig.constants import AUTO, LOSS, MAX_CPU_BATCH_SIZE, MINIMIZE, MODEL_ECD, TEST, TRAIN, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.globals import (
@@ -139,6 +139,7 @@ class Trainer(BaseTrainer):
         self.regularization_lambda = config.regularization_lambda
         self.regularization_type = config.regularization_type
         self.batch_size = config.batch_size
+        self.effective_batch_size = config.effective_batch_size
         self.max_batch_size = config.max_batch_size
         self.eval_batch_size = config.batch_size if config.eval_batch_size is None else config.eval_batch_size
         self.should_shuffle = config.should_shuffle
@@ -388,6 +389,11 @@ class Trainer(BaseTrainer):
         max_batch_size = (
             self.max_batch_size if torch.cuda.is_available() else min(self.max_batch_size, MAX_CPU_BATCH_SIZE)
         )
+
+        if self.effective_batch_size != AUTO:
+            # If an effective batch size is set, we must ensure that batch size tuning doesn't exceed it
+            max_batch_size = min(self.effective_batch_size, max_batch_size)
+
         self.dist_model.train()  # Sets model training mode.
         evaluator = self._create_batch_size_evaluator()
         with tempfile.TemporaryDirectory() as tmpdir:

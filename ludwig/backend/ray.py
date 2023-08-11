@@ -593,6 +593,14 @@ class RayTrainerV2(BaseTrainer):
         self.config.eval_batch_size = value
 
     @property
+    def gradient_accumulation_steps(self) -> int:
+        return self.config.gradient_accumulation_steps
+
+    @gradient_accumulation_steps.setter
+    def gradient_accumulation_steps(self, value: int):
+        self.config.gradient_accumulation_steps = value
+
+    @property
     def resources_per_worker(self) -> Dict[str, Any]:
         trainer_kwargs = get_trainer_kwargs(**self.trainer_kwargs)
         return trainer_kwargs.get("resources_per_worker", {})
