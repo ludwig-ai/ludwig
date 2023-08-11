@@ -591,6 +591,8 @@ def _get_llm_model_config(model_name: str) -> AutoConfig:
 def check_llm_quantization_backend_incompatibility(config: "ModelConfig") -> None:  # noqa: F821
     """Checks that LLM model type with quantization uses the local backend."""
     if config.backend is None:
+        if config.model_type == MODEL_LLM and config.quantization:
+            raise ConfigValidationError("LLM with quantization requires the 'local' backend to be set in the config.")
         return
 
     backend_type = config.backend.get("type", "local")
