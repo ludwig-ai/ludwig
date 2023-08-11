@@ -129,10 +129,12 @@ def test_llm_text_to_text(tmpdir, backend, ray_cluster_4cpu):
     assert "Answer_predictions" in preds
     assert "Answer_probabilities" in preds
     assert "Answer_probability" in preds
+    assert "Answer_response" in preds
 
     assert preds["Answer_predictions"]
     assert preds["Answer_probabilities"]
     assert preds["Answer_probability"]
+    assert preds["Answer_response"]
 
 
 @pytest.mark.llm
