@@ -823,9 +823,12 @@ class LudwigModel:
 
         # Update gradient accumulation if necessary
         if self.config_obj.trainer.gradient_accumulation_steps == AUTO:
-            if self.config_obj.trainer.gradient_accumulation_steps == AUTO:
+            if self.config_obj.trainer.effective_batch_size == AUTO:
+                grad_accum_steps = self.config_obj.trainer.gradient_accumulation_steps
+                batch_size = self.config_obj.trainer.batch_size
+                num_workers = self.backend.num_training_workers
                 self.config_obj.trainer.gradient_accumulation_steps = max(
-                    int(self.config_obj.trainer.gradient_accumulation_steps / self.config_obj.trainer.batch_size), 1
+                    int(grad_accum_steps / batch_size / num_workers), 1
                 )
             else:
                 self.config_obj.trainer.gradient_accumulation_steps = 1
