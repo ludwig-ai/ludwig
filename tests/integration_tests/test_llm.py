@@ -29,6 +29,7 @@ from tests.integration_tests.utils import category_feature, generate_data, text_
 
 LOCAL_BACKEND = {"type": "local"}
 TEST_MODEL_NAME = "hf-internal-testing/tiny-random-GPTJForCausalLM"
+MAX_NEW_TOKENS_TEST_DEFAULT = 5
 
 RAY_BACKEND = {
     "type": "ray",
@@ -84,7 +85,7 @@ def get_generation_config():
         "top_p": 0.75,
         "top_k": 40,
         "num_beams": 4,
-        "max_new_tokens": 5,
+        "max_new_tokens": MAX_NEW_TOKENS_TEST_DEFAULT,
     }
 
 
@@ -141,6 +142,7 @@ def test_llm_text_to_text(tmpdir, backend, ray_cluster_4cpu):
 
     # Check that in-line generation parameters are used. Original prediction uses max_new_tokens = 5.
     assert get_num_non_empty_tokens(preds["Answer_predictions"][0]) > 3
+    original_max_new_tokens = model.model.generation.max_new_tokens
 
     # This prediction uses max_new_tokens = 2.
     preds, _ = model.predict(
@@ -148,6 +150,9 @@ def test_llm_text_to_text(tmpdir, backend, ray_cluster_4cpu):
     )
     preds = convert_preds(preds)
     assert get_num_non_empty_tokens(preds["Answer_predictions"][0]) < 3
+
+    # Check that the state of the model is unchanged.
+    assert model.model.generation.max_new_tokens == original_max_new_tokens
 
 
 @pytest.mark.llm
