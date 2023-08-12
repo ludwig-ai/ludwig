@@ -201,10 +201,13 @@ class ECDTrainerConfig(BaseTrainerConfig):
         default=AUTO,
         allow_none=False,
         description=(
-            "The number of training examples utilized in one training step of the model. If ’auto’, the "
-            "batch size that maximized training throughput (samples / sec) will be used. For CPU training, the "
-            "tuned batch size is capped at 128 as throughput benefits of large batch sizes are less noticeable without "
-            "a GPU."
+            "The effective batch size is the total number of samples used to compute a single gradient update "
+            "to the model weights. This differs from `batch_size` by taking `gradient_accumulation_steps` and number "
+            "of training worker processes into account. In practice, "
+            "`effective_batch_size = batch_size * gradient_accumulation_steps * num_workers`. "
+            "If 'auto', the effective batch size is derivied implicitly from `batch_size`, but if set explicitly, then "
+            "one of `batch_size` or `gradient_accumulation_steps` must be set to something other than 'auto', and "
+            "consequently will be set following the formula given above."
         ),
         parameter_metadata=TRAINER_METADATA[MODEL_ECD]["effective_batch_size"],
         field_options=[
@@ -239,10 +242,15 @@ class ECDTrainerConfig(BaseTrainerConfig):
         parameter_metadata=TRAINER_METADATA[MODEL_ECD]["max_batch_size"],
     )
 
-    gradient_accumulation_steps: int = schema_utils.PositiveInteger(
+    gradient_accumulation_steps: Union[int, str] = schema_utils.OneOfOptionsField(
         default=AUTO,
+        allow_none=False,
         description="Number of steps to accumulate gradients over before performing a weight update.",
         parameter_metadata=TRAINER_METADATA[MODEL_ECD]["gradient_accumulation_steps"],
+        field_options=[
+            schema_utils.PositiveInteger(default=1, description="", allow_none=False),
+            schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
+        ],
     )
 
     early_stop: int = schema_utils.IntegerRange(
