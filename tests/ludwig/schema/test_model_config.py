@@ -847,7 +847,6 @@ def test_llm_quantization_config(bits: Optional[int], expected_qconfig: Optional
         "quantization": {"bits": bits},
         INPUT_FEATURES: [{NAME: "text_input", TYPE: "text"}],
         OUTPUT_FEATURES: [{NAME: "text_output", TYPE: "text"}],
-        "backend": {"type": "local"},
     }
 
     if bits is None:
