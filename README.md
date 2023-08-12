@@ -90,6 +90,9 @@ adapter:
 
 prompt:
   template: |
+    Below is an instruction that describes a task, paired with an input that may provide further context.
+    Write a response that appropriately completes the request.
+
     ### Instruction:
     {instruction}
 
@@ -113,10 +116,14 @@ trainer:
   gradient_accumulation_steps: 16
   epochs: 3
   learning_rate_scheduler:
+    decay: cosine
     warmup_fraction: 0.01
 
 preprocessing:
   sample_ratio: 0.1
+
+backend:
+  type: local
 ```
 
 And now let's train the model:
