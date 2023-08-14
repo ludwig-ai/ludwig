@@ -1,6 +1,10 @@
 import logging
 from collections import defaultdict, OrderedDict
 from typing import Dict, List, Tuple
+from ludwig.backend.base import Backend
+
+from ludwig.schema.model_types.base import ModelConfig
+from ludwig.schema.trainer import BaseTrainerConfig
 
 try:
     from typing import Literal
@@ -8,7 +12,7 @@ except ImportError:
     from typing_extensions import Literal
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import COMBINED, LOSS
+from ludwig.constants import AUTO, COMBINED, LOSS
 from ludwig.features.base_feature import OutputFeature
 from ludwig.models.base import BaseModel
 from ludwig.modules.metric_modules import get_best_function
@@ -357,3 +361,25 @@ def get_training_report(
             ]
         )
     return training_report
+
+
+def get_rendered_batch_size_grad_accum(config: BaseTrainerConfig, backend: Backend) -> Tuple[int, int]:
+    effective_batch_size = config.effective_batch_size
+    batch_size = config.batch_size
+    gradient_accumulation_steps = config.gradient_accumulation_steps
+    num_workers = backend.num_training_workers
+    
+    if config.batch_size == AUTO:
+        if config.effective_batch_size != AUTO and config.gradient_accumulation_steps != AUTO:
+            batch_size = max(int(effective_batch_size / gradient_accumulation_steps / num_workers), 1)
+
+    if config.gradient_accumulation_steps == AUTO:
+        if config.batch_size != AUTO:
+            if config.effective_batch_size != AUTO:
+                gradient_accumulation_steps = max(
+                    int(effective_batch_size / batch_size / num_workers), 1
+                )
+            else:
+                gradient_accumulation_steps = 1
+
+    return batch_size, gradient_accumulation_steps

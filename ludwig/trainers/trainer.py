@@ -415,6 +415,9 @@ class Trainer(BaseTrainer):
                 self.skip_save_model = skip_save_model
                 self.skip_save_progress = skip_save_progress
                 self.skip_save_log = skip_save_log
+
+                # Update batch size
+
                 if snapshot_weights:
                     # Restore the model weights prior to batch size tuning to undo any updates made to the weights
                     if self.distributed.prepare_before_load():
