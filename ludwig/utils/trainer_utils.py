@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict, OrderedDict
-from typing import TYPE_CHECKING, Dict, List, Tuple
+from typing import Dict, List, Tuple, TYPE_CHECKING
 
 try:
     from typing import Literal

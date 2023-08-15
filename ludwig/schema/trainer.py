@@ -854,11 +854,11 @@ class NoneTrainerConfig(LLMTrainerConfig):
     @property
     def effective_batch_size(self) -> int:
         return self.batch_size
-    
+
     @property
     def gradient_accumulation_steps(self) -> int:
         return 1
-    
+
     def update_batch_size_grad_accum(self, num_workers: int):
         pass
 
