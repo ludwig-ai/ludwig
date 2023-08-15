@@ -1,9 +1,7 @@
 import logging
 from collections import defaultdict, OrderedDict
 from typing import Dict, List, Tuple
-from ludwig.backend.base import Backend
 
-from ludwig.schema.model_types.base import ModelConfig
 from ludwig.schema.trainer import BaseTrainerConfig
 
 try:
@@ -363,11 +361,10 @@ def get_training_report(
     return training_report
 
 
-def get_rendered_batch_size_grad_accum(config: BaseTrainerConfig, backend: Backend) -> Tuple[int, int]:
+def get_rendered_batch_size_grad_accum(config: BaseTrainerConfig, num_workers: int) -> Tuple[int, int]:
     effective_batch_size = config.effective_batch_size
     batch_size = config.batch_size
     gradient_accumulation_steps = config.gradient_accumulation_steps
-    num_workers = backend.num_training_workers
     
     if config.batch_size == AUTO:
         if config.effective_batch_size != AUTO and config.gradient_accumulation_steps != AUTO:
