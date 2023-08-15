@@ -103,7 +103,7 @@ from ludwig.utils.misc_utils import (
 )
 from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.torch_utils import DEVICE
-from ludwig.utils.trainer_utils import get_training_report
+from ludwig.utils.trainer_utils import get_rendered_batch_size_grad_accum, get_training_report
 from ludwig.utils.types import DataFrame, TorchDevice
 
 logger = logging.getLogger(__name__)
@@ -796,6 +796,12 @@ class LudwigModel:
         self.model = self._online_trainer.train_online(training_dataset)
 
     def _tune_batch_size(self, trainer, dataset, random_seed: int = default_random_seed):
+        # Render the batch size and gradient accumulation steps prior to batch size tuning. This is needed in the event
+        # the effective_batch_size and gradient_accumulation_steps are set explicitly, but batch_size is AUTO. In this
+        # case, we can infer the batch_size directly without tuning.
+        self.config_obj.trainer.batch_size, self.config_obj.trainer.gradient_accumulation_steps = \
+            get_rendered_batch_size_grad_accum(self.config_obj.trainer, self.backend)
+
         # TODO (ASN): add support for substitute_with_max parameter
         # TODO(travis): detect train and eval batch sizes separately (enable / disable gradients)
         if (
@@ -811,28 +817,22 @@ class LudwigModel:
                 )
                 tuned_batch_size = FALLBACK_BATCH_SIZE
 
-        # TODO(travis): pass these in as args to trainer when we call train,
-        #  to avoid setting state on possibly remote trainer
-        if self.config_obj.trainer.batch_size == AUTO:
-            self.config_obj.trainer.batch_size = tuned_batch_size
-            trainer.batch_size = tuned_batch_size
+            # TODO(travis): pass these in as args to trainer when we call train,
+            #  to avoid setting state on possibly remote trainer
+            if self.config_obj.trainer.batch_size == AUTO:
+                self.config_obj.trainer.batch_size = tuned_batch_size
 
-        if self.config_obj.trainer.eval_batch_size in {AUTO, None}:
-            self.config_obj.trainer.eval_batch_size = tuned_batch_size
-            trainer.eval_batch_size = tuned_batch_size
+            if self.config_obj.trainer.eval_batch_size in {AUTO, None}:
+                self.config_obj.trainer.eval_batch_size = tuned_batch_size
 
-        # Update gradient accumulation if necessary
-        if self.config_obj.trainer.gradient_accumulation_steps == AUTO:
-            if self.config_obj.trainer.effective_batch_size != AUTO:
-                effective_batch_size = self.config_obj.trainer.effective_batch_size
-                batch_size = self.config_obj.trainer.batch_size
-                num_workers = self.backend.num_training_workers
-                self.config_obj.trainer.gradient_accumulation_steps = max(
-                    int(effective_batch_size / batch_size / num_workers), 1
-                )
-            else:
-                self.config_obj.trainer.gradient_accumulation_steps = 1
-            trainer.gradient_accumulation_steps = self.config_obj.trainer.gradient_accumulation_steps
+            # Re-render the gradient_accumulation_steps to account for the explicit batch size.
+            self.config_obj.trainer.batch_size, self.config_obj.trainer.gradient_accumulation_steps = \
+                get_rendered_batch_size_grad_accum(self.config_obj.trainer, self.backend)
+        
+        # Update trainer params separate to config params for backends with stateful trainers
+        trainer.batch_size = self.config_obj.trainer.batch_size
+        trainer.eval_batch_size = self.config_obj.trainer.eval_batch_size
+        trainer.gradient_accumulation_steps = self.config_obj.trainer.gradient_accumulation_steps
 
     def predict(
         self,

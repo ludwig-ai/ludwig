@@ -66,6 +66,7 @@ from ludwig.utils.trainer_utils import (
     get_final_steps_per_checkpoint,
     get_latest_metrics_dict,
     get_new_progress_tracker,
+    get_rendered_batch_size_grad_accum,
     get_total_steps,
     ProgressTracker,
 )
@@ -169,12 +170,6 @@ class Trainer(BaseTrainer):
         if self.device is None:
             self.device = get_torch_device()
 
-        base_learning_rate = config.learning_rate
-        if self.distributed:
-            lr_scale_fn = learning_rate_scale_fns[config.learning_rate_scaling]
-            base_learning_rate *= lr_scale_fn(self.distributed.size() * self.gradient_accumulation_steps)
-        self.base_learning_rate = base_learning_rate
-
         self.model = model
         self.model.prepare_for_training()
         self.model = self.distributed.to_device(self.model)
@@ -208,6 +203,12 @@ class Trainer(BaseTrainer):
         self.original_sigint_handler = None
 
     def prepare(self):
+        base_learning_rate = self.config.learning_rate
+        if self.distributed:
+            lr_scale_fn = learning_rate_scale_fns[self.config.learning_rate_scaling]
+            base_learning_rate *= lr_scale_fn(self.distributed.size() * self.gradient_accumulation_steps)
+        self.base_learning_rate = base_learning_rate
+
         self.dist_model, self.optimizer = self.distributed.prepare(
             self.compiled_model,
             self.config,
@@ -416,7 +417,13 @@ class Trainer(BaseTrainer):
                 self.skip_save_progress = skip_save_progress
                 self.skip_save_log = skip_save_log
 
-                # Update batch size
+                # Update batch size / gradient accumulation before preparing the trainer. This is needed primarily
+                # for DeepSpeed, which needs to know the batch size and gradient accumulation steps before init
+                self.config.trainer.batch_size = best_batch_size
+                self.config_obj.trainer.batch_size, self.config_obj.trainer.gradient_accumulation_steps = \
+                    get_rendered_batch_size_grad_accum(self.config_obj.trainer, self.backend)
+                self.batch_size = self.config_obj.trainer.batch_size
+                self.gradient_accumulation_steps = self.config_obj.trainer.gradient_accumulation_steps
 
                 if snapshot_weights:
                     # Restore the model weights prior to batch size tuning to undo any updates made to the weights
