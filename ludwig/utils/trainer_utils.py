@@ -365,7 +365,7 @@ def get_rendered_batch_size_grad_accum(config: BaseTrainerConfig, num_workers: i
     effective_batch_size = config.effective_batch_size
     batch_size = config.batch_size
     gradient_accumulation_steps = config.gradient_accumulation_steps
-    
+
     if config.batch_size == AUTO:
         if config.effective_batch_size != AUTO and config.gradient_accumulation_steps != AUTO:
             batch_size = max(int(effective_batch_size / gradient_accumulation_steps / num_workers), 1)
@@ -373,9 +373,7 @@ def get_rendered_batch_size_grad_accum(config: BaseTrainerConfig, num_workers: i
     if config.gradient_accumulation_steps == AUTO:
         if config.batch_size != AUTO:
             if config.effective_batch_size != AUTO:
-                gradient_accumulation_steps = max(
-                    int(effective_batch_size / batch_size / num_workers), 1
-                )
+                gradient_accumulation_steps = max(int(effective_batch_size / batch_size / num_workers), 1)
             else:
                 gradient_accumulation_steps = 1
 

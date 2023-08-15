@@ -117,7 +117,7 @@ class Backend(ABC):
     @abstractmethod
     def num_nodes(self) -> int:
         raise NotImplementedError()
-    
+
     @property
     @abstractmethod
     def num_training_workers(self) -> int:
@@ -254,7 +254,7 @@ class LocalBackend(LocalPreprocessingMixin, LocalTrainingMixin, Backend):
     @property
     def num_nodes(self) -> int:
         return 1
-    
+
     @property
     def num_training_workers(self) -> int:
         return 1
@@ -318,7 +318,7 @@ class DataParallelBackend(LocalPreprocessingMixin, Backend, ABC):
     @property
     def num_nodes(self) -> int:
         return self._distributed.size() // self._distributed.local_size()
-    
+
     @property
     def num_training_workers(self) -> int:
         return self._distributed.size()

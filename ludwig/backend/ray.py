@@ -1075,7 +1075,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
         if not ray.is_initialized():
             return 1
         return len(ray.nodes())
-    
+
     @property
     def num_training_workers(self) -> int:
         trainer_kwargs = get_trainer_kwargs(**self._distributed_kwargs)

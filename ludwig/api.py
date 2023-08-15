@@ -800,15 +800,14 @@ class LudwigModel:
         # the effective_batch_size and gradient_accumulation_steps are set explicitly, but batch_size is AUTO. In this
         # case, we can infer the batch_size directly without tuning.
         num_workers = self.backend.num_training_workers
-        self.config_obj.trainer.batch_size, self.config_obj.trainer.gradient_accumulation_steps = \
-            get_rendered_batch_size_grad_accum(self.config_obj.trainer, num_workers)
+        (
+            self.config_obj.trainer.batch_size,
+            self.config_obj.trainer.gradient_accumulation_steps,
+        ) = get_rendered_batch_size_grad_accum(self.config_obj.trainer, num_workers)
 
         # TODO (ASN): add support for substitute_with_max parameter
         # TODO(travis): detect train and eval batch sizes separately (enable / disable gradients)
-        if (
-            self.config_obj.trainer.batch_size == AUTO
-            or self.config_obj.trainer.eval_batch_size in {AUTO, None}
-        ):
+        if self.config_obj.trainer.batch_size == AUTO or self.config_obj.trainer.eval_batch_size in {AUTO, None}:
             if self.backend.supports_batch_size_tuning():
                 tuned_batch_size = trainer.tune_batch_size(self.config_obj.to_dict(), dataset, random_seed=random_seed)
             else:
@@ -827,9 +826,11 @@ class LudwigModel:
                 self.config_obj.trainer.eval_batch_size = tuned_batch_size
 
             # Re-render the gradient_accumulation_steps to account for the explicit batch size.
-            self.config_obj.trainer.batch_size, self.config_obj.trainer.gradient_accumulation_steps = \
-                get_rendered_batch_size_grad_accum(self.config_obj.trainer, num_workers)
-        
+            (
+                self.config_obj.trainer.batch_size,
+                self.config_obj.trainer.gradient_accumulation_steps,
+            ) = get_rendered_batch_size_grad_accum(self.config_obj.trainer, num_workers)
+
         # Update trainer params separate to config params for backends with stateful trainers
         trainer.batch_size = self.config_obj.trainer.batch_size
         trainer.eval_batch_size = self.config_obj.trainer.eval_batch_size
