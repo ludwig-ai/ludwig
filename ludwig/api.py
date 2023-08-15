@@ -824,7 +824,7 @@ class LudwigModel:
 
             # Re-render the gradient_accumulation_steps to account for the explicit batch size.
             self.config_obj.trainer.update_batch_size_grad_accum(num_workers)
-        
+
         # Update trainer params separate to config params for backends with stateful trainers
         trainer.batch_size = self.config_obj.trainer.batch_size
         trainer.eval_batch_size = self.config_obj.trainer.eval_batch_size
