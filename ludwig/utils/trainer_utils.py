@@ -1,8 +1,6 @@
 import logging
 from collections import defaultdict, OrderedDict
-from typing import Dict, List, Tuple
-
-from ludwig.schema.trainer import BaseTrainerConfig
+from typing import TYPE_CHECKING, Dict, List, Tuple
 
 try:
     from typing import Literal
@@ -11,11 +9,14 @@ except ImportError:
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import AUTO, COMBINED, LOSS
-from ludwig.features.base_feature import OutputFeature
 from ludwig.models.base import BaseModel
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.utils.data_utils import save_json
 from ludwig.utils.metric_utils import TrainerMetric
+
+if TYPE_CHECKING:
+    from ludwig.features.base_feature import OutputFeature
+    from ludwig.schema.trainer import BaseTrainerConfig
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +55,7 @@ def get_new_progress_tracker(
     best_eval_metric_value: float,
     best_increase_batch_size_eval_metric: float,
     learning_rate: float,
-    output_features: Dict[str, OutputFeature],
+    output_features: Dict[str, "OutputFeature"],
 ):
     """Returns a new instance of a ProgressTracker with empty metrics."""
     return ProgressTracker(
@@ -361,7 +362,7 @@ def get_training_report(
     return training_report
 
 
-def get_rendered_batch_size_grad_accum(config: BaseTrainerConfig, num_workers: int) -> Tuple[int, int]:
+def get_rendered_batch_size_grad_accum(config: "BaseTrainerConfig", num_workers: int) -> Tuple[int, int]:
     effective_batch_size = config.effective_batch_size
     batch_size = config.batch_size
     gradient_accumulation_steps = config.gradient_accumulation_steps

@@ -66,7 +66,6 @@ from ludwig.utils.trainer_utils import (
     get_final_steps_per_checkpoint,
     get_latest_metrics_dict,
     get_new_progress_tracker,
-    get_rendered_batch_size_grad_accum,
     get_total_steps,
     ProgressTracker,
 )
@@ -422,8 +421,7 @@ class Trainer(BaseTrainer):
                 # Update batch size / gradient accumulation before preparing the trainer. This is needed primarily
                 # for DeepSpeed, which needs to know the batch size and gradient accumulation steps before init
                 self.config.batch_size = best_batch_size
-                self.config.batch_size, self.config.gradient_accumulation_steps = \
-                    get_rendered_batch_size_grad_accum(self.config, self.distributed.size())
+                self.config.update_batch_size_grad_accum(self.distributed.size())
                 self.batch_size = self.config.batch_size
                 self.gradient_accumulation_steps = self.config.gradient_accumulation_steps
 

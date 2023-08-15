@@ -405,6 +405,11 @@ class ECDTrainerConfig(BaseTrainerConfig):
         parameter_metadata=TRAINER_METADATA[MODEL_ECD]["compile"],
     )
 
+    def update_batch_size_grad_accum(self, num_workers: int):
+        from ludwig.utils.trainer_utils import get_rendered_batch_size_grad_accum
+
+        self.batch_size, self.gradient_accumulation_steps = get_rendered_batch_size_grad_accum(self, num_workers)
+
 
 @DeveloperAPI
 @register_trainer_schema(MODEL_GBM)
@@ -761,6 +766,9 @@ class GBMTrainerConfig(BaseTrainerConfig):
         parameter_metadata=TRAINER_METADATA[MODEL_GBM]["feature_pre_filter"],
     )
 
+    def update_batch_size_grad_accum(self, num_workers: int):
+        pass
+
 
 @DeveloperAPI
 @ludwig_dataclass
@@ -850,6 +858,17 @@ class NoneTrainerConfig(LLMTrainerConfig):
         description="The type of trainer used to train the model. ",
         parameter_metadata=TRAINER_METADATA[MODEL_LLM]["type"],
     )
+
+    @property
+    def effective_batch_size(self) -> int:
+        return self.batch_size
+    
+    @property
+    def gradient_accumulation_steps(self) -> int:
+        return 1
+    
+    def update_batch_size_grad_accum(self, num_workers: int):
+        pass
 
 
 @DeveloperAPI

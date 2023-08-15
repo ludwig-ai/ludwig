@@ -103,7 +103,7 @@ from ludwig.utils.misc_utils import (
 )
 from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.torch_utils import DEVICE
-from ludwig.utils.trainer_utils import get_rendered_batch_size_grad_accum, get_training_report
+from ludwig.utils.trainer_utils import get_training_report
 from ludwig.utils.types import DataFrame, TorchDevice
 
 logger = logging.getLogger(__name__)
@@ -800,8 +800,7 @@ class LudwigModel:
         # the effective_batch_size and gradient_accumulation_steps are set explicitly, but batch_size is AUTO. In this
         # case, we can infer the batch_size directly without tuning.
         num_workers = self.backend.num_training_workers
-        self.config_obj.trainer.batch_size, self.config_obj.trainer.gradient_accumulation_steps = \
-            get_rendered_batch_size_grad_accum(self.config_obj.trainer, num_workers)
+        self.config_obj.trainer.update_batch_size_grad_accum(num_workers)
 
         # TODO (ASN): add support for substitute_with_max parameter
         # TODO(travis): detect train and eval batch sizes separately (enable / disable gradients)
@@ -827,8 +826,7 @@ class LudwigModel:
                 self.config_obj.trainer.eval_batch_size = tuned_batch_size
 
             # Re-render the gradient_accumulation_steps to account for the explicit batch size.
-            self.config_obj.trainer.batch_size, self.config_obj.trainer.gradient_accumulation_steps = \
-                get_rendered_batch_size_grad_accum(self.config_obj.trainer, num_workers)
+            self.config_obj.trainer.update_batch_size_grad_accum(num_workers)
         
         # Update trainer params separate to config params for backends with stateful trainers
         trainer.batch_size = self.config_obj.trainer.batch_size
