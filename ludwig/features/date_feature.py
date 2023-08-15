@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from datetime import datetime
+from datetime import date, datetime
 from typing import Dict, List
 
 import numpy as np
@@ -66,6 +66,8 @@ class DateFeatureMixin(BaseFeatureMixin):
         try:
             if isinstance(date_value, datetime):
                 datetime_obj = date_value
+            elif isinstance(date_value, date):
+                datetime_obj = datetime.combine(date=date_value, time=datetime.min.time())
             elif isinstance(date_value, str) and datetime_format is not None:
                 try:
                     datetime_obj = datetime.strptime(date_value, datetime_format)
