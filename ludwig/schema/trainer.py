@@ -761,7 +761,7 @@ class GBMTrainerConfig(BaseTrainerConfig):
     @property
     def effective_batch_size(self) -> int:
         return self.batch_size
-    
+
     @property
     def gradient_accumulation_steps(self) -> int:
         return 1
