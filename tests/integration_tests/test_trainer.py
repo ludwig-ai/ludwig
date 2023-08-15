@@ -11,7 +11,7 @@ from packaging.version import parse as parse_version
 
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
-from ludwig.constants import AUTO, BATCH_SIZE, MAX_BATCH_SIZE_DATASET_FRACTION, TRAINER
+from ludwig.constants import BATCH_SIZE, MAX_BATCH_SIZE_DATASET_FRACTION, TRAINER
 from ludwig.distributed import init_dist_strategy
 from tests.integration_tests.utils import (
     binary_feature,
@@ -172,19 +172,6 @@ def test_tune_batch_size_and_lr(tmpdir, eval_batch_size, effective_batch_size, i
 
     # loaded model should retain the tuned params
     check_postconditions(model)
-
-
-# @pytest.mark.parametrize(
-#     "effective_batch_size,batch_size,gradient_accumulation_steps,num_workers,expected_effective_batch_size",
-#     [
-#         (128, 16, 4, 2, 128),
-#         (AUTO, 16, 4, 2, 128),
-#         (128, 16, AUTO, 2, 128),
-#         (128, AUTO, 4, 2, 128),
-#     ]
-# )
-# def test_effective_batch_size(tmpdir, eval_batch_size, is_cpu):
-#     pass
 
 
 @pytest.mark.parametrize("learning_rate_scaling, expected_lr", [("constant", 1), ("sqrt", 2), ("linear", 4)])
