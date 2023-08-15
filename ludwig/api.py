@@ -804,10 +804,7 @@ class LudwigModel:
 
         # TODO (ASN): add support for substitute_with_max parameter
         # TODO(travis): detect train and eval batch sizes separately (enable / disable gradients)
-        if (
-            self.config_obj.trainer.batch_size == AUTO
-            or self.config_obj.trainer.eval_batch_size in {AUTO, None}
-        ):
+        if self.config_obj.trainer.batch_size == AUTO or self.config_obj.trainer.eval_batch_size in {AUTO, None}:
             if self.backend.supports_batch_size_tuning():
                 tuned_batch_size = trainer.tune_batch_size(self.config_obj.to_dict(), dataset, random_seed=random_seed)
             else:

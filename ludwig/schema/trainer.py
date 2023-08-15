@@ -5,15 +5,7 @@ import torch
 from packaging.version import parse as parse_version
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import (
-    AUTO,
-    LOSS,
-    MAX_POSSIBLE_BATCH_SIZE,
-    MODEL_ECD,
-    MODEL_GBM,
-    MODEL_LLM,
-    TRAINING,
-)
+from ludwig.constants import AUTO, LOSS, MAX_POSSIBLE_BATCH_SIZE, MODEL_ECD, MODEL_GBM, MODEL_LLM, TRAINING
 from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.lr_scheduler import LRSchedulerConfig, LRSchedulerDataclassField
@@ -104,33 +96,33 @@ class ECDTrainerConfig(BaseTrainerConfig):
             raise ConfigValidationError(
                 "Trainer param `compile: true` requires PyTorch 2.0.0 or higher. Please upgrade PyTorch and try again."
             )
-        
+
         if self.effective_batch_size != AUTO and self.max_batch_size < self.effective_batch_size:
             raise ConfigValidationError(
                 f"`max_batch_size` ({self.max_batch_size}) must be greater than or equal to "
                 f"`effective_batch_size` ({self.effective_batch_size})."
             )
-        
+
         if self.effective_batch_size != AUTO and self.batch_size != AUTO:
             if self.effective_batch_size < self.batch_size:
                 raise ConfigValidationError(
                     f"`effective_batch_size` ({self.effective_batch_size}) "
                     f"must be greater than or equal to `batch_size` ({self.batch_size})."
                 )
-            
+
             if self.effective_batch_size % self.batch_size != 0:
                 raise ConfigValidationError(
                     f"`effective_batch_size` ({self.effective_batch_size}) "
                     f"must be divisible by `batch_size` ({self.batch_size})."
                 )
-            
+
         if self.effective_batch_size != AUTO and self.gradient_accumulation_steps != AUTO:
             if self.effective_batch_size < self.gradient_accumulation_steps:
                 raise ConfigValidationError(
                     f"`effective_batch_size` ({self.effective_batch_size}) must be greater than or equal to "
                     f"`gradient_accumulation_steps` ({self.gradient_accumulation_steps})."
                 )
-            
+
             if self.effective_batch_size % self.gradient_accumulation_steps != 0:
                 raise ConfigValidationError(
                     f"`effective_batch_size` ({self.effective_batch_size}) must be divisible by "

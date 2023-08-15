@@ -331,7 +331,7 @@ def test_get_final_steps_per_checkpoint():
         (AUTO, AUTO, AUTO, 2, AUTO, AUTO),
         (AUTO, 16, AUTO, 2, 16, 1),
         (AUTO, AUTO, 4, 2, AUTO, 4),
-    ]
+    ],
 )
 def test_get_rendered_batch_size_grad_accum(
     effective_batch_size: Union[str, int],
@@ -341,11 +341,13 @@ def test_get_rendered_batch_size_grad_accum(
     expected_batch_size: int,
     expected_grad_accum: int,
 ):
-    config = ECDTrainerConfig.from_dict({
-        "effective_batch_size": effective_batch_size,
-        "batch_size": batch_size,
-        "gradient_accumulation_steps": gradient_accumulation_steps,
-    })
+    config = ECDTrainerConfig.from_dict(
+        {
+            "effective_batch_size": effective_batch_size,
+            "batch_size": batch_size,
+            "gradient_accumulation_steps": gradient_accumulation_steps,
+        }
+    )
     rendered_batch_size, rendered_grad_accum = trainer_utils.get_rendered_batch_size_grad_accum(config, num_workers)
     assert rendered_batch_size == expected_batch_size
     assert rendered_grad_accum == expected_grad_accum
