@@ -111,12 +111,6 @@ class ECDTrainerConfig(BaseTrainerConfig):
                 f"`effective_batch_size` ({self.effective_batch_size})."
             )
         
-        if self.effective_batch_size != AUTO and self.batch_size != AUTO and self.gradient_accumulation_steps != AUTO:
-            raise ConfigValidationError(
-                "At most two of `effective_batch_size`, `batch_size`, and `gradient_accumulation_steps` can be set "
-                "explicitly. Set at least one of these values to 'auto'."
-            )
-        
         if self.effective_batch_size != AUTO and self.batch_size != AUTO:
             if self.effective_batch_size < self.batch_size:
                 raise ConfigValidationError(
