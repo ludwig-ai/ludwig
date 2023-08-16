@@ -84,6 +84,9 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
         ),
     )
 
+    def can_tune_batch_size(self) -> bool:
+        return True
+
 
 @DeveloperAPI
 @register_trainer_schema(MODEL_ECD)
@@ -758,16 +761,8 @@ class GBMTrainerConfig(BaseTrainerConfig):
         parameter_metadata=TRAINER_METADATA[MODEL_GBM]["feature_pre_filter"],
     )
 
-    @property
-    def effective_batch_size(self) -> int:
-        return self.batch_size
-    
-    @property
-    def gradient_accumulation_steps(self) -> int:
-        return 1
-
-    def update_batch_size_grad_accum(self, num_workers: int):
-        pass
+    def can_tune_batch_size(self) -> bool:
+        return False
 
 
 @DeveloperAPI
@@ -859,16 +854,8 @@ class NoneTrainerConfig(LLMTrainerConfig):
         parameter_metadata=TRAINER_METADATA[MODEL_LLM]["type"],
     )
 
-    @property
-    def effective_batch_size(self) -> int:
-        return self.batch_size
-
-    @property
-    def gradient_accumulation_steps(self) -> int:
-        return 1
-
-    def update_batch_size_grad_accum(self, num_workers: int):
-        pass
+    def can_tune_batch_size(self) -> bool:
+        return False
 
 
 @DeveloperAPI

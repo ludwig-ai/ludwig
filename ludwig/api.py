@@ -796,6 +796,10 @@ class LudwigModel:
         self.model = self._online_trainer.train_online(training_dataset)
 
     def _tune_batch_size(self, trainer, dataset, random_seed: int = default_random_seed):
+        if not self.config_obj.trainer.can_tune_batch_size():
+            # Models like GBMs don't have batch sizes to be tuned
+            return
+        
         # Render the batch size and gradient accumulation steps prior to batch size tuning. This is needed in the event
         # the effective_batch_size and gradient_accumulation_steps are set explicitly, but batch_size is AUTO. In this
         # case, we can infer the batch_size directly without tuning.
