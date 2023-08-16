@@ -334,6 +334,7 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
             )
 
         if predictions_col in result:
+            token_col = result[predictions_col]
 
             def idx2str(pred):
                 if tokenizer is None:
@@ -343,7 +344,22 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
                     ]
                 return tokenizer.tokenizer.batch_decode(pred, skip_special_tokens=True)
 
-            result[predictions_col] = result[predictions_col].map(idx2str)
+            result[predictions_col] = token_col.map(idx2str)
+
+            # Add additional response column that represents the predicted text output
+            # as a single string instead of a list of tokens.
+            def idx2response(pred):
+                if tokenizer is None:
+                    # This works because we treat each word as a token.
+                    return " ".join(
+                        [
+                            metadata["idx2str"][token] if token < len(metadata["idx2str"]) else UNKNOWN_SYMBOL
+                            for token in pred
+                        ]
+                    )
+                return tokenizer.tokenizer.batch_decode([pred], skip_special_tokens=True)
+
+            result[f"{self.feature_name}_response"] = token_col.map(idx2response)
 
         last_preds_col = f"{self.feature_name}_{LAST_PREDICTIONS}"
         if last_preds_col in result:

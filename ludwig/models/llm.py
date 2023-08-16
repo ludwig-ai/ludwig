@@ -1,4 +1,5 @@
 import contextlib
+import copy
 import logging
 import os
 import tempfile
@@ -160,6 +161,10 @@ class LLM(BaseModel):
 
         self.generation = GenerationConfig(**self.config_obj.generation.to_dict())
 
+        # Save the original generation config so that we can reset it if/when we change it when self.generation gets is
+        # dynamically mutated during 1-off predict calls after fine-tuning.
+        self.original_generation_config = copy.deepcopy(self.generation)
+
         # ================ Inputs ================
         try:
             self.input_features.update(self.build_inputs(input_feature_configs=self.config_obj.input_features))
@@ -194,6 +199,14 @@ class LLM(BaseModel):
 
     def create_feature_dict(self) -> LudwigFeatureDict:
         return DictWrapper(LudwigFeatureDict())
+
+    def set_generation_config(self, generation_config_dict):
+        """Sets the generation config for the model."""
+        self.generation = GenerationConfig(**generation_config_dict)
+
+    def reset_generation_config(self):
+        """Sets the generation config for th."""
+        self.generation = self.original_generation_config
 
     @property
     def output_feature_decoder(self) -> OutputFeature:
@@ -375,7 +388,7 @@ class LLM(BaseModel):
         mask=None,
     ) -> Dict[str, torch.Tensor]:
         """Generates tokens using the model."""
-
+        logger.info(f"For generating text, using: {self.generation}")
         input_ids, _ = self._unpack_inputs(inputs)
 
         with torch.no_grad():
@@ -383,6 +396,10 @@ class LLM(BaseModel):
             sequences_list = []
             for input_ids_sample in input_ids:
                 input_ids_sample_no_padding = remove_left_padding(input_ids_sample, self.tokenizer)
+                logger.info(
+                    "Decoded text inputs for the first example in batch: "
+                    f"{self.tokenizer.decode(input_ids_sample_no_padding[0], skip_special_tokens=True)}"
+                )
 
                 if input_ids_sample_no_padding.shape[1] > self.max_input_length:
                     logger.warning(
@@ -404,6 +421,10 @@ class LLM(BaseModel):
                         generation_config=self.generation,
                         return_dict_in_generate=True,
                         output_scores=True,
+                    )
+                    logger.info(
+                        "Decoded generated output for the first example in batch: "
+                        f"{self.tokenizer.batch_decode(model_outputs.sequences, skip_special_tokens=True)[0]}"
                     )
 
                 sequences_list.append(model_outputs.sequences[0])
@@ -467,7 +488,11 @@ class LLM(BaseModel):
                 continue
             of_obj.update_metrics(targets[of_name], predictions[of_name])
 
+        # HACK (Tim): get the device of the targets to transfer self.eval_loss_metric to the same device
+        target_device = list(targets.values())[0].device
+
         eval_loss, additional_losses = self.eval_loss(targets, predictions)
+        self.eval_loss_metric = self.eval_loss_metric.to(target_device)
         self.eval_loss_metric.update(eval_loss)
         self.eval_additional_losses_metrics.update(additional_losses)
 
