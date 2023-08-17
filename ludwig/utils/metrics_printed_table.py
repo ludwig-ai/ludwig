@@ -36,6 +36,8 @@ def print_table_for_single_output_feature(
     all_metric_names.update(test_metrics_log.keys())
     all_metric_names = sorted(list(all_metric_names))
 
+    # Assemble the printed table.
+    # Each item in the printed_table corresponds to a row in the printed table.
     printed_table = [["train", "validation", "test"]]
     for metric_name in all_metric_names:
         metrics_for_each_split = [
@@ -57,7 +59,28 @@ def print_metrics_table(
     validation_metrics_log: Dict[str, Dict[str, List[TrainerMetric]]],
     test_metrics_log: Dict[str, Dict[str, List[TrainerMetric]]],
 ):
-    """Prints a table of metrics table for each output feature, for each split."""
+    """Prints a table of metrics table for each output feature, for each split.
+
+    Example:
+    ╒═══════════════╤═════════╤══════════════╤════════╕
+    │               │   train │   validation │   test │
+    ╞═══════════════╪═════════╪══════════════╪════════╡
+    │ accuracy      │  0.8157 │       0.6966 │ 0.8090 │
+    ├───────────────┼─────────┼──────────────┼────────┤
+    │ loss          │  0.4619 │       0.5039 │ 0.4488 │
+    ├───────────────┼─────────┼──────────────┼────────┤
+    │ precision     │  0.8274 │       0.6250 │ 0.7818 │
+    ├───────────────┼─────────┼──────────────┼────────┤
+    │ recall        │  0.6680 │       0.4545 │ 0.6615 │
+    ├───────────────┼─────────┼──────────────┼────────┤
+    │ roc_auc       │  0.8471 │       0.7706 │ 0.8592 │
+    ├───────────────┼─────────┼──────────────┼────────┤
+    │ specificity   │  0.9105 │       0.8393 │ 0.8938 │
+    ├───────────────┼─────────┼──────────────┼────────┤
+    │ combined_loss │  0.4619 │       0.5039 │ 0.4488 │
+    ╘═══════════════╧═════════╧══════════════╧════════╛
+    """
+    # Obtain the combined loss, which is the same across all output features.
     combined_loss_for_each_split = [
         get_metric_value_or_empty(train_metrics_log[COMBINED], LOSS),
         get_metric_value_or_empty(validation_metrics_log[COMBINED], LOSS),
@@ -66,8 +89,7 @@ def print_metrics_table(
 
     for output_feature_name in sorted(output_features.keys()):
         if output_feature_name == COMBINED:
-            # Skip the combined output feature. The combined loss will be added to each output feature's individual
-            # table.
+            # Skip the combined output feature. The combined loss will be added to each output feature's table.
             continue
         print_table_for_single_output_feature(
             train_metrics_log[output_feature_name],

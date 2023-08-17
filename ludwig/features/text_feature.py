@@ -273,6 +273,9 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     ) -> None:
         """Updates metrics with the given targets and predictions.
 
+        If decoded_targets and decoded_predictions are provided, as through LLM model types, then additional
+        response-based metrics like BLEU and ROUGE are also computed.
+
         Args:
             targets: Tensor with target values for this output feature.
             predictions: Dict of tensors returned by predictions().
@@ -286,9 +289,8 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
                 continue
 
             if decoded_targets is not None and decoded_predictions is not None:
-                # Can't calculate RESPONSE metrics if decoded texts aren't provided.
-                # If the prediction_key from the registry is RESPONSE, the metric_fn is a torchmetrics.text metric
-                # module, which takes in decoded strings, one example at a time.
+                # RESPONSE metrics cannot be computed if decoded texts aren't provided.
+                # We assume that RESPONSE metrics can only be calculated one example at a time.
                 for i in range(len(decoded_predictions)):
                     metric_fn.update(decoded_predictions[i], decoded_targets[i])
 

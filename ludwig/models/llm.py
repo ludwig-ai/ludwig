@@ -480,9 +480,8 @@ class LLM(BaseModel):
         """Updates the model's metrics given targets and predictions for zero-shot/few-shot."""
         for of_name, of_obj in self.output_features.items():
             if isinstance(of_obj, TextOutputFeature):
-                # For text output features, additional preparation steps are required prior to calculating metrics.
                 # 1. Align the target length with the predictions length to enable text metric evaluation.
-                # 2. Decode both the target and predictions tokens to strings.
+                # 2. Decode both the target and predictions tokens to strings to calculate additional metrics.
                 (
                     _targets,
                     _decoded_targets,
@@ -511,9 +510,8 @@ class LLM(BaseModel):
                 # forward pass.
                 _targets = self._update_target_tensor_for_finetuning(_targets, _predictions, of_name)
                 if isinstance(of_obj, TextOutputFeature):
-                    # For text output features, additional preparation steps are required prior to calculating metrics.
-                    # 1. Align the target length with the predictions length to enable text metric evaluation.
-                    # 2. Decode both the target and predictions tokens to strings.
+                    # NOTE: Alignment is not technically necessary here, but we re-use the method used in
+                    # LLM.update_metrics() for decoding consistency.
                     (
                         _targets,
                         _decoded_targets,
