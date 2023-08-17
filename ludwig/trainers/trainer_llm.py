@@ -335,8 +335,6 @@ class NoneTrainer(BaseTrainer):
                 progress_tracker,
             )
 
-            # printed_table.add_metrics_to_printed_table(validation_metrics_log, VALIDATION)
-
             self.write_eval_summary(
                 summary_writer=validation_summary_writer,
                 metrics=progress_tracker.validation_metrics,
@@ -350,8 +348,6 @@ class NoneTrainer(BaseTrainer):
 
             # eval metrics on test set
             self.evaluation(test_set, TEST, progress_tracker.test_metrics, self.eval_batch_size, progress_tracker)
-
-            # printed_table.add_metrics_to_printed_table(test_metrics_log, TEST)
 
             self.write_eval_summary(
                 summary_writer=test_summary_writer,

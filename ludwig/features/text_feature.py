@@ -15,7 +15,7 @@
 # ==============================================================================
 import logging
 from functools import partial
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 
 import torch
 from torch import Tensor
@@ -30,6 +30,7 @@ from ludwig.constants import (
     PROBABILITIES,
     PROBABILITY,
     PROC_COLUMN,
+    RESPONSE,
     TEXT,
 )
 from ludwig.features.base_feature import BaseFeatureMixin, OutputFeature
@@ -266,9 +267,9 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     def update_metrics(
         self,
         targets: Tensor,
-        decoded_targets: List[str],
         predictions: Dict[str, Tensor],
-        decoded_predictions: List[str],
+        decoded_targets: Optional[List[str]] = None,
+        decoded_predictions: Optional[List[str]] = None,
     ) -> None:
         """Updates metrics with the given targets and predictions.
 
@@ -278,15 +279,18 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
         """
         for metric_name, metric_fn in self._metric_functions.items():
             prediction_key = get_metric_tensor_input(metric_name)
-            if prediction_key == "response":
-                # If the prediction_key from the registry is RESPONSE, the metric_fn is a torchmetrics.text metric
-                # module, which takes in decoded strings.
-                for i in range(len(decoded_predictions)):
-                    # BLEU score is calculated one example at a time.
-                    metric_fn.update(decoded_predictions[i], decoded_targets[i])
-            else:
+            if prediction_key != RESPONSE:
+                # Non-RESPONSE metrics don't use decoded texts.
                 metric_fn = metric_fn.to(predictions[prediction_key].device)
                 metric_fn.update(predictions[prediction_key].detach(), targets)
+                continue
+
+            if decoded_targets is not None and decoded_predictions is not None:
+                # Can't calculate RESPONSE metrics if decoded texts aren't provided.
+                # If the prediction_key from the registry is RESPONSE, the metric_fn is a torchmetrics.text metric
+                # module, which takes in decoded strings, one example at a time.
+                for i in range(len(decoded_predictions)):
+                    metric_fn.update(decoded_predictions[i], decoded_targets[i])
 
     @staticmethod
     def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):

@@ -489,7 +489,7 @@ class LLM(BaseModel):
                     _predictions,
                     _decoded_predictions,
                 ) = realign_target_and_prediction_tensors_for_inference(targets, predictions, of_name, self.tokenizer)
-                of_obj.update_metrics(_targets[of_name], _decoded_targets, _predictions[of_name], _decoded_predictions)
+                of_obj.update_metrics(_targets[of_name], _predictions[of_name], _decoded_targets, _decoded_predictions)
             else:
                 of_obj.update_metrics(targets[of_name], predictions[of_name])
 
@@ -510,7 +510,23 @@ class LLM(BaseModel):
                 # to match the prediction length and depends on how much of the target tensor was included in the
                 # forward pass.
                 _targets = self._update_target_tensor_for_finetuning(_targets, _predictions, of_name)
-                of_obj.update_metrics(_targets[of_name], _predictions[of_name])
+                if isinstance(of_obj, TextOutputFeature):
+                    # For text output features, additional preparation steps are required prior to calculating metrics.
+                    # 1. Align the target length with the predictions length to enable text metric evaluation.
+                    # 2. Decode both the target and predictions tokens to strings.
+                    (
+                        _targets,
+                        _decoded_targets,
+                        _predictions,
+                        _decoded_predictions,
+                    ) = realign_target_and_prediction_tensors_for_inference(
+                        _targets, _predictions, of_name, self.tokenizer
+                    )
+                    of_obj.update_metrics(
+                        _targets[of_name], _predictions[of_name], _decoded_targets, _decoded_predictions
+                    )
+                else:
+                    of_obj.update_metrics(_targets[of_name], _predictions[of_name])
                 continue
 
             of_obj.update_metrics(_targets[of_name], _predictions[of_name])
@@ -648,7 +664,7 @@ class LLM(BaseModel):
 
     def _update_target_tensor_for_finetuning(
         self, targets: Dict[str, torch.Tensor], predictions: Dict[str, torch.Tensor], of_name: str
-    ):
+    ) -> Dict[str, torch.Tensor]:
         """Update target tensor for fine-tuning.
 
         This method removes left padding from target tensors, adds a pad token to the end of the target tensors,
