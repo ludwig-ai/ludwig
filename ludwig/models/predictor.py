@@ -274,7 +274,9 @@ class Predictor(BasePredictor):
             if collect_predictions:
                 self._concat_preds(predictions)
 
+            # Uses LLM BaseModel.get_metrics() to calculate metrics.
             metrics = self.model.get_metrics()
+
             self.model.reset_metrics()
 
             self.dist_model.train(prev_model_training_mode)  # Restores previous model training mode.

@@ -1,6 +1,5 @@
 import logging
-from collections import OrderedDict
-from typing import Dict
+from typing import Dict, List
 
 from tabulate import tabulate
 
@@ -10,55 +9,69 @@ from ludwig.utils.metric_utils import TrainerMetric
 logger = logging.getLogger(__name__)
 
 
-class MetricsPrintedTable:
-    """Maintains a table data structure used for logging metrics.
+def get_metric_value_or_empty(metrics_log: Dict[str, List[TrainerMetric]], metric_name: str):
+    """Returns the metric value if it exists or empty."""
+    if metric_name not in metrics_log:
+        return ""
+    return metrics_log[metric_name][-1][-1]
 
-    ╒════════════╤════════════╤════════╤═════════════╤══════════╤═══════════╕
-    │ Survived   │   accuracy │   loss │   precision │   recall │   roc_auc │
-    ╞════════════╪════════════╪════════╪═════════════╪══════════╪═══════════╡
-    │ train      │     0.7420 │ 0.7351 │      0.7107 │   0.5738 │    0.7659 │
-    ├────────────┼────────────┼────────┼─────────────┼──────────┼───────────┤
-    │ validation │     0.7079 │ 0.9998 │      0.6061 │   0.6061 │    0.7354 │
-    ├────────────┼────────────┼────────┼─────────────┼──────────┼───────────┤
-    │ test       │     0.7360 │ 0.7620 │      0.6667 │   0.5538 │    0.7358 │
-    ╘════════════╧════════════╧════════╧═════════════╧══════════╧═══════════╛
-    ╒════════════╤════════╕
-    │ combined   │   loss │
-    ╞════════════╪════════╡
-    │ train      │ 0.7351 │
-    ├────────────┼────────┤
-    │ validation │ 0.9998 │
-    ├────────────┼────────┤
-    │ test       │ 0.7620 │
-    ╘════════════╧════════╛
+
+def print_table_for_single_output_feature(
+    train_metrics_log: Dict[str, List[TrainerMetric]],
+    validation_metrics_log: Dict[str, List[TrainerMetric]],
+    test_metrics_log: Dict[str, List[TrainerMetric]],
+    combined_loss_for_each_split: List[float],
+) -> None:
+    """Prints the metrics table for a single output feature.
+
+    Args:
+        train_metrics_log: Dict from metric name to list of TrainerMetric.
+        validation_metrics_log: Dict from metric name to list of TrainerMetric.
+        test_metrics_log: Dict from metric name to list of TrainerMetric.
     """
+    # Get the superset of metric names across all splits.
+    all_metric_names = set()
+    all_metric_names.update(train_metrics_log.keys())
+    all_metric_names.update(validation_metrics_log.keys())
+    all_metric_names.update(test_metrics_log.keys())
+    all_metric_names = sorted(list(all_metric_names))
 
-    def __init__(self, output_features: Dict[str, "OutputFeature"]):  # noqa
-        self.printed_table = OrderedDict()
-        for output_feature_name, output_feature in output_features.items():
-            self.printed_table[output_feature_name] = [[output_feature_name] + output_feature.metric_names]
-        self.printed_table[COMBINED] = [[COMBINED, LOSS]]
+    printed_table = [["train", "validation", "test"]]
+    for metric_name in all_metric_names:
+        metrics_for_each_split = [
+            get_metric_value_or_empty(train_metrics_log, metric_name),
+            get_metric_value_or_empty(validation_metrics_log, metric_name),
+            get_metric_value_or_empty(test_metrics_log, metric_name),
+        ]
+        printed_table.append([metric_name] + metrics_for_each_split)
 
-        # Establish the printed table's order of metrics (used for appending metrics in the right order).
-        self.metrics_headers = {}
-        for output_feature_name in output_features.keys():
-            # [0]: The header is the first row, which contains names of metrics.
-            # [1:]: Skip the first column as it's just the name of the output feature, not an actual metric name.
-            self.metrics_headers[output_feature_name] = self.printed_table[output_feature_name][0][1:]
-        self.metrics_headers[COMBINED] = [LOSS]
+    # Add combined loss.
+    printed_table.append(["combined_loss"] + combined_loss_for_each_split)
 
-    def add_metrics_to_printed_table(self, metrics_log: Dict[str, Dict[str, TrainerMetric]], split_name: str):
-        """Add metrics to tables by the order of the table's metric header."""
-        for output_feature_name, output_feature_metrics in metrics_log.items():
-            printed_metrics = []
-            for metric_name in self.metrics_headers[output_feature_name]:
-                # Metrics may be missing if should_evaluate_train is False.
-                if metric_name in output_feature_metrics and output_feature_metrics[metric_name]:
-                    printed_metrics.append(output_feature_metrics[metric_name][-1][-1])
-                else:
-                    printed_metrics.append("")
-            self.printed_table[output_feature_name].append([split_name] + printed_metrics)
+    logger.info(tabulate(printed_table, headers="firstrow", tablefmt="fancy_grid", floatfmt=".4f"))
 
-    def log_info(self):
-        for output_feature, table in self.printed_table.items():
-            logger.info(tabulate(table, headers="firstrow", tablefmt="fancy_grid", floatfmt=".4f"))
+
+def print_metrics_table(
+    output_features: Dict[str, "OutputFeature"],  # noqa
+    train_metrics_log: Dict[str, Dict[str, List[TrainerMetric]]],
+    validation_metrics_log: Dict[str, Dict[str, List[TrainerMetric]]],
+    test_metrics_log: Dict[str, Dict[str, List[TrainerMetric]]],
+):
+    """Prints a table of metrics table for each output feature, for each split."""
+    combined_loss_for_each_split = [
+        get_metric_value_or_empty(train_metrics_log[COMBINED], LOSS),
+        get_metric_value_or_empty(validation_metrics_log[COMBINED], LOSS),
+        get_metric_value_or_empty(test_metrics_log[COMBINED], LOSS),
+    ]
+
+    for output_feature_name in sorted(output_features.keys()):
+        if output_feature_name == COMBINED:
+            # Skip the combined output feature. The combined loss will be added to each output feature's individual
+            # table.
+            continue
+        print_table_for_single_output_feature(
+            train_metrics_log[output_feature_name],
+            validation_metrics_log[output_feature_name],
+            test_metrics_log[output_feature_name],
+            combined_loss_for_each_split,
+        )

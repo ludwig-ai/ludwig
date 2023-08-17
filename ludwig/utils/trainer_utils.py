@@ -1,5 +1,5 @@
 import logging
-from collections import defaultdict, OrderedDict
+from collections import defaultdict
 from typing import Dict, List, Tuple
 
 try:
@@ -21,14 +21,7 @@ logger = logging.getLogger(__name__)
 @DeveloperAPI
 def initialize_trainer_metric_dict(output_features) -> Dict[str, Dict[str, List[TrainerMetric]]]:
     """Returns a dict of dict of metrics, output_feature_name -> metric_name -> List[TrainerMetric]."""
-    metrics = OrderedDict()
-
-    for output_feature_name, output_feature in output_features.items():
-        metrics[output_feature_name] = OrderedDict()
-        for metric in output_feature.metric_names:
-            metrics[output_feature_name][metric] = []
-
-    metrics[COMBINED] = {LOSS: []}
+    metrics = defaultdict(lambda: defaultdict(list))
     return metrics
 
 
@@ -259,7 +252,8 @@ def append_metrics(
 
         # collect metric names based on output features metrics to
         # ensure consistent order of reporting metrics
-        metric_names = model.output_features.get(output_feature).metric_names
+        # metric_names = model.output_features.get(output_feature).metric_names
+        metric_names = sorted(results[output_feature].keys())
 
         for metric in metric_names:
             if metric in results[output_feature]:

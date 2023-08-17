@@ -15,9 +15,10 @@
 # ==============================================================================
 import logging
 from functools import partial
-from typing import Dict, Union
+from typing import Dict, List, Union
 
 import torch
+from torch import Tensor
 
 from ludwig.constants import (
     COLUMN,
@@ -39,6 +40,7 @@ from ludwig.features.sequence_feature import (
     SequenceInputFeature,
     SequenceOutputFeature,
 )
+from ludwig.modules.metric_registry import get_metric_tensor_input
 from ludwig.schema.features.text_feature import TextInputFeatureConfig, TextOutputFeatureConfig
 from ludwig.types import FeatureMetadataDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils.math_utils import softmax
@@ -260,6 +262,31 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     @property
     def output_shape(self) -> torch.Size:
         return torch.Size([self.decoder_obj.config.max_sequence_length])
+
+    def update_metrics(
+        self,
+        targets: Tensor,
+        decoded_targets: List[str],
+        predictions: Dict[str, Tensor],
+        decoded_predictions: List[str],
+    ) -> None:
+        """Updates metrics with the given targets and predictions.
+
+        Args:
+            targets: Tensor with target values for this output feature.
+            predictions: Dict of tensors returned by predictions().
+        """
+        for metric_name, metric_fn in self._metric_functions.items():
+            prediction_key = get_metric_tensor_input(metric_name)
+            if prediction_key == "response":
+                # If the prediction_key from the registry is RESPONSE, the metric_fn is a torchmetrics.text metric
+                # module, which takes in decoded strings.
+                for i in range(len(decoded_predictions)):
+                    # BLEU score is calculated one example at a time.
+                    metric_fn.update(decoded_predictions[i], decoded_targets[i])
+            else:
+                metric_fn = metric_fn.to(predictions[prediction_key].device)
+                metric_fn.update(predictions[prediction_key].detach(), targets)
 
     @staticmethod
     def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):

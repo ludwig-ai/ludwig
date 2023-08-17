@@ -480,13 +480,18 @@ class LLM(BaseModel):
         """Updates the model's metrics given targets and predictions for zero-shot/few-shot."""
         for of_name, of_obj in self.output_features.items():
             if isinstance(of_obj, TextOutputFeature):
-                # Align the target length with the predictions length to enable text metric evaluation.
-                _targets, _predictions = realign_target_and_prediction_tensors_for_inference(
-                    targets, predictions, of_name, self.tokenizer
-                )
-                of_obj.update_metrics(_targets[of_name], _predictions[of_name])
-                continue
-            of_obj.update_metrics(targets[of_name], predictions[of_name])
+                # For text output features, additional preparation steps are required prior to calculating metrics.
+                # 1. Align the target length with the predictions length to enable text metric evaluation.
+                # 2. Decode both the target and predictions tokens to strings.
+                (
+                    _targets,
+                    _decoded_targets,
+                    _predictions,
+                    _decoded_predictions,
+                ) = realign_target_and_prediction_tensors_for_inference(targets, predictions, of_name, self.tokenizer)
+                of_obj.update_metrics(_targets[of_name], _decoded_targets, _predictions[of_name], _decoded_predictions)
+            else:
+                of_obj.update_metrics(targets[of_name], predictions[of_name])
 
         # HACK (Tim): get the device of the targets to transfer self.eval_loss_metric to the same device
         target_device = list(targets.values())[0].device

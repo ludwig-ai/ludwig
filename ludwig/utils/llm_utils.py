@@ -1,4 +1,4 @@
-from typing import Dict, Tuple
+from typing import Dict, List, Tuple
 
 import torch
 import torch.nn.functional as F
@@ -308,20 +308,28 @@ def realign_target_and_prediction_tensors_for_inference(
     of_name: str,
     tokenizer: PreTrainedTokenizer,
     pad_value: int = None,
-) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
+) -> Tuple[Dict[str, torch.Tensor], List[str], Dict[str, torch.Tensor], List[str]]:
     """Realigns the target tensor with the predictions.
 
-    This is necessary for text metrics that require the target and prediction
-    to be of the same length.
+    This is necessary for text metrics that require the target and prediction to be of the same length.
+
     Args:
         targets: The target tensor.
         predictions: The prediction tensor.
         of_name: The output feature's name.
+        tokenizer: The HF tokenizer.
         pad_direction: The direction to pad the tensors. Can be 'left' or 'right'.
             Defaults to 'right'.
 
     Returns:
-        The realigned target tensor.
+        Tuple of realigned (targets, decoded_targets, predictions, decoded_predictions).
+        - targets is a map of feature name -> tensor of token ids.
+        - decoded_targets is a List of decoded strings.
+        - predictions is a map from output feature name -> map of tensors with the following items:
+            - "predictions": tensor of token ids.
+            - "probabilities": tensor of probabilities.
+            - "logits": tensor of logits.
+        - decoded_predictions is a List of decoded strings.
     """
     target_length = targets.get(of_name).size()[1]
     prediction_length = predictions[of_name].get(PREDICTIONS).size()[1]
@@ -351,4 +359,8 @@ def realign_target_and_prediction_tensors_for_inference(
 
         targets[of_name] = F.pad(targets[of_name], (0, zeros_to_add), value=pad_value).to(torch.int64)
 
-    return targets, predictions
+    # Once targets and predictions are aligned, decode them.
+    decoded_targets = tokenizer.batch_decode(targets[of_name], skip_special_tokens=True)
+    decoded_predictions = tokenizer.batch_decode(predictions[of_name][PREDICTIONS], skip_special_tokens=True)
+
+    return targets, decoded_targets, predictions, decoded_predictions
