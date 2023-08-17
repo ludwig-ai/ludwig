@@ -601,7 +601,7 @@ class LLM(BaseModel):
         for of_name, of_obj in self.output_features.items():
             if isinstance(of_obj, TextOutputFeature):
                 # Align the target length with the predictions length to enable text metric evaluation.
-                _targets, _predictions = realign_target_and_prediction_tensors_for_inference(
+                _targets, _, _predictions, _ = realign_target_and_prediction_tensors_for_inference(
                     targets, predictions, of_name, self.tokenizer
                 )
                 of_eval_loss = of_obj.eval_loss(_targets[of_name], _predictions[of_name])
