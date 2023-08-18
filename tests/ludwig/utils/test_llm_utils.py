@@ -11,7 +11,7 @@ from ludwig.utils.llm_utils import (
     has_padding_token,
     pad_target_tensor_for_fine_tuning,
     realign_target_and_prediction_tensors_for_inference,
-    remove_left_padding,
+    remove_left_padding_and_bos_token,
     set_pad_token,
 )
 
@@ -84,13 +84,13 @@ def test_has_padding_token_without_padding_tokens(tokenizer):
         # Padding
         (torch.tensor([1, 5, 5, 3]), torch.tensor([5, 5, 3])),
         # EOS token
-        (torch.tensor([2, 5, 5, 3]), torch.tensor([2, 5, 5, 3])),
+        (torch.tensor([2, 5, 5, 3]), torch.tensor([5, 5, 3])),
         # Padding + EOS token
-        (torch.tensor([1, 2, 5, 5, 3]), torch.tensor([2, 5, 5, 3])),
+        (torch.tensor([1, 2, 5, 5, 3]), torch.tensor([5, 5, 3])),
     ],
 )
-def test_remove_left_padding(input_ids, expected, tokenizer):
-    assert torch.equal(remove_left_padding(input_ids, tokenizer).squeeze(0), expected)
+def test_remove_left_padding_and_bos_token(input_ids, expected, tokenizer):
+    assert torch.equal(remove_left_padding_and_bos_token(input_ids, tokenizer).squeeze(0), expected)
 
 
 @pytest.mark.parametrize(

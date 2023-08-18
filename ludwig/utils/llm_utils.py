@@ -61,7 +61,7 @@ def has_padding_token(input_tensor: torch.Tensor, tokenizer: PreTrainedTokenizer
         raise ValueError("Input tensor must be 1D or 2D")
 
 
-def remove_left_padding(input_ids_sample: torch.Tensor, tokenizer: PreTrainedTokenizer):
+def remove_left_padding_and_bos_token(input_ids_sample: torch.Tensor, tokenizer: PreTrainedTokenizer):
     """Removes left padding and other tokens until the first BOS token from the input_ids tensor.
 
     Args:
@@ -78,7 +78,7 @@ def remove_left_padding(input_ids_sample: torch.Tensor, tokenizer: PreTrainedTok
         >>> input_sentence = "This is an example sentence."
         >>> input_ids = tokenizer.encode(input_sentence, add_special_tokens=True)
         >>> padded_input_ids = torch.nn.functional.pad(input_ids, (10 - len(input_ids), 0))
-        >>> input_ids_no_padding = remove_left_padding(padded_input_ids, tokenizer)
+        >>> input_ids_no_padding = remove_left_padding_and_bos_token(padded_input_ids, tokenizer)
         >>> input_ids_no_padding
         tensor([[1, 2, 3]])
     """
@@ -91,13 +91,11 @@ def remove_left_padding(input_ids_sample: torch.Tensor, tokenizer: PreTrainedTok
 
     # Start from the first BOS token
     bos_idxs = torch.where(input_ids_no_padding == tokenizer.bos_token_id)[0]  # all BOS token locations
+    # There will only ever be 1 BOS token.
     if len(bos_idxs) != 0:
-        bos_idx = bos_idxs[0]  # get first BOS token location
-    else:
-        bos_idx = 0
-
-    input_ids_no_bos = input_ids_no_padding[bos_idx:].unsqueeze(0)
-    return input_ids_no_bos
+        # Remove BOS token
+        return input_ids_no_padding[bos_idxs[0] + 1 :].unsqueeze(0)
+    return input_ids_no_padding.unsqueeze(0)
 
 
 def add_left_padding(input_ids, max_length, pad_value=0):
@@ -278,8 +276,8 @@ def generate_merged_ids(
     # Merge input_ids and target_ids by concatenating them together.
     # We remove the left padding from both input_ids and target_ids before concatenating them.
     for input_id_sample, target_id_sample in zip(input_ids, target_ids):
-        input_id_sample_no_padding = remove_left_padding(input_id_sample, tokenizer)[0]
-        target_id_sample_no_padding = remove_left_padding(target_id_sample, tokenizer)[0]
+        input_id_sample_no_padding = remove_left_padding_and_bos_token(input_id_sample, tokenizer)[0]
+        target_id_sample_no_padding = remove_left_padding_and_bos_token(target_id_sample, tokenizer)[0]
         target_id_sample_no_padding = torch.cat((target_id_sample_no_padding, pad_tensor), dim=-1)
 
         merged_sample_ids = torch.cat((input_id_sample_no_padding, target_id_sample_no_padding), dim=-1)

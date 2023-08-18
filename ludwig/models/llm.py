@@ -24,7 +24,7 @@ from ludwig.utils.llm_utils import (
     generate_merged_ids,
     pad_target_tensor_for_fine_tuning,
     realign_target_and_prediction_tensors_for_inference,
-    remove_left_padding,
+    remove_left_padding_and_bos_token,
     set_pad_token,
 )
 from ludwig.utils.logging_utils import log_once
@@ -395,7 +395,7 @@ class LLM(BaseModel):
             input_lengths = []
             sequences_list = []
             for input_ids_sample in input_ids:
-                input_ids_sample_no_padding = remove_left_padding(input_ids_sample, self.tokenizer)
+                input_ids_sample_no_padding = remove_left_padding_and_bos_token(input_ids_sample, self.tokenizer)
                 logger.info(
                     "Decoded text inputs for the first example in batch: "
                     f"{self.tokenizer.decode(input_ids_sample_no_padding[0], skip_special_tokens=True)}"
@@ -666,7 +666,7 @@ class LLM(BaseModel):
 
         pad_token_tensor = torch.tensor([self.tokenizer.pad_token_id])
         for target in targets[of_name]:
-            target = remove_left_padding(target, self.tokenizer)[0]
+            target = remove_left_padding_and_bos_token(target, self.tokenizer)[0]
             target = torch.cat([target, pad_token_tensor.to(device=target.device)], dim=-1).unsqueeze(0)
             targets_without_padding.append(target)
             lengths.append(target.shape[1])
