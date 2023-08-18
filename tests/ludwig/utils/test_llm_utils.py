@@ -42,12 +42,22 @@ def target_ids():
     return torch.tensor([[9, 10, 11], [12, 13, 14]])
 
 
-def test_set_pad_token_doesnt_exist():
+def test_set_pad_token_doesnt_exist_gpt2():
     tokenizer = AutoTokenizer.from_pretrained("gpt2", use_fast=False)
     assert tokenizer.pad_token_id is None
 
     set_pad_token(tokenizer)
+    # Gets set to EOS token
     assert tokenizer.pad_token_id == 50256
+
+
+def test_set_pad_token_doesnt_exist_llama():
+    tokenizer = AutoTokenizer.from_pretrained("HuggingFaceM4/tiny-random-LlamaForCausalLM", use_fast=False)
+    assert tokenizer.pad_token_id is None
+
+    set_pad_token(tokenizer)
+    # Gets set to UNK token
+    assert tokenizer.pad_token_id == 0
 
 
 def test_set_pad_token_already_exists():
@@ -288,3 +298,54 @@ def test_realign_target_and_prediction_tensors_for_inference(tokenizer):
     assert torch.equal(updated_predictions[of_name][LOGITS][0][-1], torch.zeros(vocab_size))
     assert torch.equal(updated_predictions[of_name][LOGITS][0][-2], torch.zeros(vocab_size))
     assert not torch.equal(updated_predictions[of_name][LOGITS][0][-3], torch.zeros(vocab_size))
+
+
+def test_llm_utils_e2e():
+    """Test that the LLM utils functions can be used in sequence."""
+    input_str = "The quick brown fox jumps"
+    target_str = "over the lazy dog."
+
+    tokenizer = AutoTokenizer.from_pretrained("huggyllama/llama-7b", use_fast=False)
+    set_pad_token(tokenizer)
+
+    # # Simulate Output From Ludwig preprocessing
+
+    input_ids = tokenizer([input_str])
+    input_ids["input_ids"] = torch.tensor(input_ids["input_ids"])
+    input_token_ids = input_ids["input_ids"]
+    # Prepend some padding tokens
+    input_ids["input_ids"] = torch.nn.functional.pad(
+        input_ids["input_ids"], (10 - len(input_ids["input_ids"]), 0), value=tokenizer.pad_token_id
+    )
+    assert has_padding_token(input_ids["input_ids"], tokenizer)
+
+    target_ids = tokenizer([target_str])
+    target_ids["input_ids"] = torch.tensor(target_ids["input_ids"])
+    target_token_ids = target_ids["input_ids"]
+    # Prepend some padding tokens
+    target_ids["input_ids"] = torch.nn.functional.pad(
+        target_ids["input_ids"], (10 - len(target_ids["input_ids"]), 0), value=tokenizer.pad_token_id
+    )
+    assert has_padding_token(target_ids["input_ids"], tokenizer)
+
+    # generate_merged_ids tests remove_left_padding_and_bos_token, add_left_padding and create_attention_mask
+    # all in one go
+    merged_ids, attention_masks = generate_merged_ids(input_ids["input_ids"], target_ids["input_ids"], tokenizer)
+
+    # Ensure merged_ids and attention_masks are tensors of the same shape
+    assert merged_ids.shape == attention_masks.shape
+
+    # Ensure the merged_ids is the correct length
+    # - 2 for the two BOS tokens in the input and target, + 1 for the PAD token added to the end
+    assert len(merged_ids[0]) == len(input_token_ids[0]) + len(target_token_ids[0]) - 2 + 1
+
+    # Ensure the merged_ids is the correct value
+    # This also ensures that there is no PAD or BOS token at the beginning of the merged_ids
+    expected_merged_ids = torch.cat(
+        (input_token_ids[0][1:], target_token_ids[0][1:], torch.tensor([tokenizer.pad_token_id])),
+        dim=0,
+    )
+    assert torch.equal(merged_ids[0], expected_merged_ids)
+
+    # Ensure attention mask is all 1s
+    assert torch.all(attention_masks == 1)
