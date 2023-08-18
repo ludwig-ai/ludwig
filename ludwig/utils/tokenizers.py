@@ -820,14 +820,22 @@ class HFTokenizer(BaseTokenizer):
         # HACK(geoffrey): gpt2 has no pad token. Recommendation is to use eos token instead.
         # https://github.com/huggingface/transformers/issues/2630#issuecomment-1290809338
         # https://github.com/huggingface/transformers/issues/2648#issuecomment-616177044
-        if any(
-            isinstance(self.tokenizer, t)
-            for t in [GPT2Tokenizer, GPT2TokenizerFast, LlamaTokenizer, LlamaTokenizerFast]
-        ):
+        if any(isinstance(self.tokenizer, t) for t in [GPT2Tokenizer, GPT2TokenizerFast]):
             if hasattr(self.tokenizer, "eos_token") and self.tokenizer.eos_token is not None:
                 logger.warning("No padding token id found. Using eos_token as pad_token.")
                 self.tokenizer.pad_token = self.tokenizer.eos_token
                 self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
+
+        # HACK(Arnav): LlamaTokenizer has no pad token. Recommendation is to use a custom pad token
+        # instead. https://huggingface.co/docs/transformers/model_doc/llama2
+        # The original model uses pad_id = -1 which means that there is not padding token. We can’t have the
+        # same logic, make sure to add a padding token using tokenizer.add_special_tokens({"pad_token":"<pad>"})
+        # and resize the token embedding accordingly.
+        if any(isinstance(self.tokenizer, t) for t in [LlamaTokenizer, LlamaTokenizerFast]):
+            # This adds <pad> as a new token in the vocabulary and sets the pad_token_id to the new token's id,
+            # which is the last token in the vocabulary (new). For both tokenizer variants, this adds <pad> as the
+            # 32001th token with token ID 32000.
+            self.tokenizer.add_special_tokens({"pad_token": "<pad>"})
 
         # Incase any HF tokenizer does not have pad token ID, just default to using 0
         # as the pad_token_id.

@@ -74,7 +74,8 @@ class DictWrapper:
 
 def load_pretrained_from_config(
     config_obj: LLMModelConfig,
-    model_config: Optional[AutoConfig] = None,
+    model_config: AutoConfig = None,
+    tokenizer: AutoTokenizer = None,
     weights_save_path: Optional[str] = None,
 ) -> PreTrainedModel:
     load_kwargs = {}
@@ -100,6 +101,14 @@ def load_pretrained_from_config(
     logger.info("Loading large language model...")
     pretrained_model_name_or_path = weights_save_path or config_obj.base_model
     model: PreTrainedModel = AutoModelForCausalLM.from_pretrained(pretrained_model_name_or_path, **load_kwargs)
+
+    # HACK(Arnav): The original Llama and Llama-2 models use pad_id = -1 which means that there is no padding token.
+    # During preprocessing, we add a padding token using tokenizer.add_special_tokens({"pad_token":"<pad>"}). To make
+    # sure this is reflected properly, we need to resize the model's token embeddings to include the new padding token.
+    if isinstance(model.config, LlamaConfig):
+        # Ensures that encoding the padding token will output zeros.
+        model.get_input_embeddings().padding_idx = tokenizer.pad_token_id
+
     return model
 
 
@@ -123,7 +132,17 @@ class LLM(BaseModel):
         self.model_name = self.config_obj.base_model
         self.model_config = AutoConfig.from_pretrained(self.config_obj.base_model)
 
-        self.model = load_pretrained_from_config(self.config_obj, model_config=self.model_config)
+        # Initialize tokenizer
+        use_fast = True
+        if isinstance(self.model_config, LlamaConfig):
+            # HACK: Llama fast tokenizer takes about 2-4 minutes to load, so we disable it for now.
+            use_fast = False
+        self.tokenizer = AutoTokenizer.from_pretrained(self.config_obj.base_model, use_fast=use_fast)
+        set_pad_token(self.tokenizer)
+
+        self.model = load_pretrained_from_config(
+            self.config_obj, model_config=self.model_config, tokenizer=self.tokenizer
+        )
         self.curr_device = next(self.model.parameters()).device
         logger.info("Done.")
 
@@ -150,14 +169,6 @@ class LLM(BaseModel):
             )
         else:
             self.global_max_sequence_length = self.context_len
-
-        # Initialize tokenizer
-        use_fast = True
-        if isinstance(self.model_config, LlamaConfig):
-            # HACK: Llama fast tokenizer takes about 2-4 minutes to load, so we disable it for now.
-            use_fast = False
-        self.tokenizer = AutoTokenizer.from_pretrained(self.config_obj.base_model, use_fast=use_fast)
-        set_pad_token(self.tokenizer)
 
         self.generation = GenerationConfig(**self.config_obj.generation.to_dict())
 
@@ -628,7 +639,10 @@ class LLM(BaseModel):
             self.model = PeftModel.from_pretrained(self.model, weights_save_path)
         elif self.config_obj.trainer.type != "none":
             self.model = load_pretrained_from_config(
-                self.config_obj, model_config=self.model_config, weights_save_path=weights_save_path
+                self.config_obj,
+                model_config=self.model_config,
+                tokenizer=self.tokenizer,
+                weights_save_path=weights_save_path,
             )
         else:
             logger.info("Skipped loading LLM without weight adjustments.")

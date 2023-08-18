@@ -27,9 +27,21 @@ def set_pad_token(tokenizer: PreTrainedTokenizer):
     # These recommend using eos tokens instead
     # https://github.com/huggingface/transformers/issues/2648#issuecomment-616177044
     # https://github.com/huggingface/transformers/issues/2630#issuecomment-1290809338
-    if any(isinstance(tokenizer, t) for t in [GPT2Tokenizer, GPT2TokenizerFast, LlamaTokenizer, LlamaTokenizerFast]):
+    if any(isinstance(tokenizer, t) for t in [GPT2Tokenizer, GPT2TokenizerFast]):
         tokenizer.pad_token = tokenizer.eos_token
         tokenizer.pad_token_id = tokenizer.eos_token_id
+        return
+
+    # HACK(Arnav): LlamaTokenizer has no pad token. Recommendation is to use a custom pad token
+    # instead. https://huggingface.co/docs/transformers/model_doc/llama2
+    # The original model uses pad_id = -1 which means that there is not padding token. We can’t have the
+    # same logic, make sure to add a padding token using tokenizer.add_special_tokens({"pad_token":"<pad>"})
+    # and resize the token embedding accordingly.
+    if any(isinstance(tokenizer, t) for t in [LlamaTokenizer, LlamaTokenizerFast]):
+        # This adds <pad> as a new token in the vocabulary and sets the pad_token_id to the new token's id,
+        # which is the last token in the vocabulary (new). For both tokenizer variants, this adds <pad> as the
+        # 32001th token with token ID 32000.
+        tokenizer.add_special_tokens({"pad_token": "<pad>"})
 
 
 def has_padding_token(input_tensor: torch.Tensor, tokenizer: PreTrainedTokenizer):
