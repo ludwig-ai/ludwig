@@ -808,26 +808,38 @@ class LudwigModel:
 
         # TODO (ASN): add support for substitute_with_max parameter
         # TODO(travis): detect train and eval batch sizes separately (enable / disable gradients)
-        if self.config_obj.trainer.batch_size == AUTO or self.config_obj.trainer.eval_batch_size in {AUTO, None}:
+        if self.config_obj.trainer.batch_size == AUTO:
             if self.backend.supports_batch_size_tuning():
-                tuned_batch_size = trainer.tune_batch_size(self.config_obj.to_dict(), dataset, random_seed=random_seed)
+                tuned_batch_size = trainer.tune_batch_size(
+                    self.config_obj.to_dict(), dataset, random_seed=random_seed, tune_for_training=True
+                )
             else:
                 logger.warning(
                     f"Backend {self.backend.BACKEND_TYPE} does not support batch size tuning, "
-                    f"using fallback batch size {FALLBACK_BATCH_SIZE}."
+                    f"using fallback training batch size {FALLBACK_BATCH_SIZE}."
                 )
                 tuned_batch_size = FALLBACK_BATCH_SIZE
 
             # TODO(travis): pass these in as args to trainer when we call train,
             #  to avoid setting state on possibly remote trainer
-            if self.config_obj.trainer.batch_size == AUTO:
-                self.config_obj.trainer.batch_size = tuned_batch_size
-
-            if self.config_obj.trainer.eval_batch_size in {AUTO, None}:
-                self.config_obj.trainer.eval_batch_size = tuned_batch_size
+            self.config_obj.trainer.batch_size = tuned_batch_size
 
             # Re-render the gradient_accumulation_steps to account for the explicit batch size.
             self.config_obj.trainer.update_batch_size_grad_accum(num_workers)
+
+        if self.config_obj.trainer.eval_batch_size in {AUTO, None}:
+            if self.backend.supports_batch_size_tuning():
+                tuned_batch_size = trainer.tune_batch_size(
+                    self.config_obj.to_dict(), dataset, random_seed=random_seed, tune_for_training=False
+                )
+            else:
+                logger.warning(
+                    f"Backend {self.backend.BACKEND_TYPE} does not support batch size tuning, "
+                    f"using fallback eval batch size {FALLBACK_BATCH_SIZE}."
+                )
+                tuned_batch_size = FALLBACK_BATCH_SIZE
+
+            self.config_obj.trainer.eval_batch_size = tuned_batch_size
 
         # Update trainer params separate to config params for backends with stateful trainers
         trainer.batch_size = self.config_obj.trainer.batch_size
