@@ -411,12 +411,7 @@ class Trainer(BaseTrainer):
                 best_batch_size = evaluator.select_best_batch_size(
                     len(training_set), max_batch_size, max_trials, self.is_coordinator()
                 )
-                return self.distributed.broadcast_object(best_batch_size)
-            finally:
-                # Restore original parameters to defaults
-                self.skip_save_model = skip_save_model
-                self.skip_save_progress = skip_save_progress
-                self.skip_save_log = skip_save_log
+                best_batch_size = self.distributed.broadcast_object(best_batch_size)
 
                 # Update batch size / gradient accumulation before preparing the trainer. This is needed primarily
                 # for DeepSpeed, which needs to know the batch size and gradient accumulation steps before init
@@ -424,6 +419,13 @@ class Trainer(BaseTrainer):
                 self.config.update_batch_size_grad_accum(self.distributed.size())
                 self.batch_size = self.config.batch_size
                 self.gradient_accumulation_steps = self.config.gradient_accumulation_steps
+
+                return best_batch_size
+            finally:
+                # Restore original parameters to defaults
+                self.skip_save_model = skip_save_model
+                self.skip_save_progress = skip_save_progress
+                self.skip_save_log = skip_save_log
 
                 if snapshot_weights:
                     # Restore the model weights prior to batch size tuning to undo any updates made to the weights
