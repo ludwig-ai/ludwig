@@ -33,15 +33,13 @@ def set_pad_token(tokenizer: PreTrainedTokenizer):
         return
 
     # HACK(Arnav): LlamaTokenizer has no pad token. Recommendation is to use a custom pad token
-    # instead. https://huggingface.co/docs/transformers/model_doc/llama2
-    # The original model uses pad_id = -1 which means that there is not padding token. We can’t have the
-    # same logic, make sure to add a padding token using tokenizer.add_special_tokens({"pad_token":"<pad>"})
-    # and resize the token embedding accordingly.
+    # instead. https://huggingface.co/docs/transformers/model_doc/llama2 but this is very hard to implement
+    # with embedding resizing. The other suggested approach is to set this to unk token. That is what
+    # is implemented here.
     if any(isinstance(tokenizer, t) for t in [LlamaTokenizer, LlamaTokenizerFast]):
-        # This adds <pad> as a new token in the vocabulary and sets the pad_token_id to the new token's id,
-        # which is the last token in the vocabulary (new). For both tokenizer variants, this adds <pad> as the
-        # 32001th token with token ID 32000.
-        tokenizer.add_special_tokens({"pad_token": "<pad>"})
+        tokenizer.pad_token = tokenizer.unk_token
+        tokenizer.pad_token_id = tokenizer.unk_token_id
+        return
 
 
 def has_padding_token(input_tensor: torch.Tensor, tokenizer: PreTrainedTokenizer):

@@ -101,14 +101,6 @@ def load_pretrained_from_config(
     logger.info("Loading large language model...")
     pretrained_model_name_or_path = weights_save_path or config_obj.base_model
     model: PreTrainedModel = AutoModelForCausalLM.from_pretrained(pretrained_model_name_or_path, **load_kwargs)
-
-    # HACK(Arnav): The original Llama and Llama-2 models use pad_id = -1 which means that there is no padding token.
-    # During preprocessing, we add a padding token using tokenizer.add_special_tokens({"pad_token":"<pad>"}). To make
-    # sure this is reflected properly, we need to resize the model's token embeddings to include the new padding token.
-    if isinstance(model.config, LlamaConfig):
-        # Ensures that encoding the padding token will output zeros.
-        model.get_input_embeddings().padding_idx = tokenizer.pad_token_id
-
     return model
 
 

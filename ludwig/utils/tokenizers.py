@@ -827,15 +827,13 @@ class HFTokenizer(BaseTokenizer):
                 self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
 
         # HACK(Arnav): LlamaTokenizer has no pad token. Recommendation is to use a custom pad token
-        # instead. https://huggingface.co/docs/transformers/model_doc/llama2
-        # The original model uses pad_id = -1 which means that there is not padding token. We can’t have the
-        # same logic, make sure to add a padding token using tokenizer.add_special_tokens({"pad_token":"<pad>"})
-        # and resize the token embedding accordingly.
+        # instead. https://huggingface.co/docs/transformers/model_doc/llama2 but this is very hard to implement
+        # with embedding resizing. The other suggested approach is to set this to unk token. That is what
+        # is implemented here.
         if any(isinstance(self.tokenizer, t) for t in [LlamaTokenizer, LlamaTokenizerFast]):
-            # This adds <pad> as a new token in the vocabulary and sets the pad_token_id to the new token's id,
-            # which is the last token in the vocabulary (new). For both tokenizer variants, this adds <pad> as the
-            # 32001th token with token ID 32000.
-            self.tokenizer.add_special_tokens({"pad_token": "<pad>"})
+            self.tokenizer.pad_token = self.tokenizer.unk_token
+            self.tokenizer.pad_token_id = self.tokenizer.unk_token_id
+            return
 
         # Incase any HF tokenizer does not have pad token ID, just default to using 0
         # as the pad_token_id.
