@@ -75,7 +75,6 @@ class DictWrapper:
 def load_pretrained_from_config(
     config_obj: LLMModelConfig,
     model_config: AutoConfig = None,
-    tokenizer: AutoTokenizer = None,
     weights_save_path: Optional[str] = None,
 ) -> PreTrainedModel:
     load_kwargs = {}
@@ -124,17 +123,7 @@ class LLM(BaseModel):
         self.model_name = self.config_obj.base_model
         self.model_config = AutoConfig.from_pretrained(self.config_obj.base_model)
 
-        # Initialize tokenizer
-        use_fast = True
-        if isinstance(self.model_config, LlamaConfig):
-            # HACK: Llama fast tokenizer takes about 2-4 minutes to load, so we disable it for now.
-            use_fast = False
-        self.tokenizer = AutoTokenizer.from_pretrained(self.config_obj.base_model, use_fast=use_fast)
-        set_pad_token(self.tokenizer)
-
-        self.model = load_pretrained_from_config(
-            self.config_obj, model_config=self.model_config, tokenizer=self.tokenizer
-        )
+        self.model = load_pretrained_from_config(self.config_obj, model_config=self.model_config)
         self.curr_device = next(self.model.parameters()).device
         logger.info("Done.")
 
@@ -161,6 +150,14 @@ class LLM(BaseModel):
             )
         else:
             self.global_max_sequence_length = self.context_len
+
+        # Initialize tokenizer
+        use_fast = True
+        if isinstance(self.model_config, LlamaConfig):
+            # HACK: Llama fast tokenizer takes about 2-4 minutes to load, so we disable it for now.
+            use_fast = False
+        self.tokenizer = AutoTokenizer.from_pretrained(self.config_obj.base_model, use_fast=use_fast)
+        set_pad_token(self.tokenizer)
 
         self.generation = GenerationConfig(**self.config_obj.generation.to_dict())
 
@@ -631,10 +628,7 @@ class LLM(BaseModel):
             self.model = PeftModel.from_pretrained(self.model, weights_save_path)
         elif self.config_obj.trainer.type != "none":
             self.model = load_pretrained_from_config(
-                self.config_obj,
-                model_config=self.model_config,
-                tokenizer=self.tokenizer,
-                weights_save_path=weights_save_path,
+                self.config_obj, model_config=self.model_config, weights_save_path=weights_save_path
             )
         else:
             logger.info("Skipped loading LLM without weight adjustments.")
