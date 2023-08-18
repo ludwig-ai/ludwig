@@ -250,6 +250,7 @@ def tune_batch_size_fn(
     training_set_metadata: TrainingSetMetadataDict = None,
     features: Dict[str, Dict] = None,
     remote_trainer_cls: Callable[[], Trainer] = None,
+    tune_for_training: bool = True,
     **kwargs,
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
@@ -276,6 +277,7 @@ def tune_batch_size_fn(
             train_shard,
             snapshot_weights=False,
             on_best_batch_size_updated=on_best_batch_size_updated,
+            tune_for_training=tune_for_training,
             **kwargs,
         )
         session.report(
@@ -539,6 +541,7 @@ class RayTrainerV2(BaseTrainer):
         self,
         config: ModelConfigDict,
         training_set: RayDataset,
+        tune_for_training: bool = True,
         **kwargs,
     ) -> int:
         with create_runner(**self.trainer_kwargs) as runner:
@@ -552,6 +555,7 @@ class RayTrainerV2(BaseTrainer):
                     ludwig_config=config,
                     training_set_metadata=training_set.training_set_metadata,
                     features=training_set.features,
+                    tune_for_training=tune_for_training,
                     **kwargs,
                 ),
                 exception_on_error=False,
