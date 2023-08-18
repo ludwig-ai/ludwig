@@ -375,6 +375,7 @@ class Trainer(BaseTrainer):
         halving_limit: int = 3,
         snapshot_weights: bool = True,
         on_best_batch_size_updated: Optional[Callable[[int, float, int], None]] = None,
+        tune_for_training: bool = True,
     ) -> int:
         logger.info("Tuning batch size...")
         skip_save_model = self.skip_save_model
@@ -396,8 +397,13 @@ class Trainer(BaseTrainer):
             # If an effective batch size is set, we must ensure that batch size tuning doesn't exceed it
             max_batch_size = min(self.effective_batch_size, max_batch_size)
 
+        if not tune_for_training:
+            # No need to save and restore model and optimizer states, as they aren't modified during predict
+            snapshot_weights = False
+
         self.dist_model.train()  # Sets model training mode.
-        evaluator = self._create_batch_size_evaluator()
+        evaluator = self._create_batch_size_evaluator() \
+            if tune_for_training else self._create_predict_batch_size_evaluator()
         with tempfile.TemporaryDirectory() as tmpdir:
             if snapshot_weights:
                 # Save a snapshot of the model and optimizer state to restore later, as they will be modified
@@ -413,12 +419,13 @@ class Trainer(BaseTrainer):
                 )
                 best_batch_size = self.distributed.broadcast_object(best_batch_size)
 
-                # Update batch size / gradient accumulation before preparing the trainer. This is needed primarily
-                # for DeepSpeed, which needs to know the batch size and gradient accumulation steps before init
-                self.config.batch_size = best_batch_size
-                self.config.update_batch_size_grad_accum(self.distributed.size())
-                self.batch_size = self.config.batch_size
-                self.gradient_accumulation_steps = self.config.gradient_accumulation_steps
+                if tune_for_training:
+                    # Update batch size / gradient accumulation before preparing the trainer. This is needed primarily
+                    # for DeepSpeed, which needs to know the batch size and gradient accumulation steps before init
+                    self.config.batch_size = best_batch_size
+                    self.config.update_batch_size_grad_accum(self.distributed.size())
+                    self.batch_size = self.config.batch_size
+                    self.gradient_accumulation_steps = self.config.gradient_accumulation_steps
 
                 return best_batch_size
             finally:
@@ -455,6 +462,29 @@ class Trainer(BaseTrainer):
                 trainer.train_step(inputs, targets)
 
         return _TrainerBatchSizeEvaluator()
+    
+    def _create_predict_batch_size_evaluator(self) -> BatchSizeEvaluator:
+        trainer = self
+
+        class _PredictBatchSizeEvaluator(BatchSizeEvaluator):
+            def reset(self):
+                trainer.model.reset_metrics()
+                trainer.optimizer.zero_grad()
+
+            def step(self, batch_size: int):
+                trainer.distributed.set_batch_size(trainer.dist_model, batch_size)
+                inputs = {
+                    input_feature_name: input_feature.create_sample_input(batch_size=batch_size).to(trainer.device)
+                    for input_feature_name, input_feature in trainer.model.input_features.items()
+                }
+                targets = {
+                    output_feature_name: output_feature.create_sample_output(batch_size=batch_size).to(trainer.device)
+                    for output_feature_name, output_feature in trainer.model.output_features.items()
+                }
+                with torch.no_grad():
+                    trainer.dist_model((inputs, targets))
+
+        return _PredictBatchSizeEvaluator()
 
     def run_evaluation(
         self,
