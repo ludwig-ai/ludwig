@@ -312,7 +312,7 @@ def test_llm_utils_e2e():
 
     input_ids = tokenizer([input_str])
     input_ids["input_ids"] = torch.tensor(input_ids["input_ids"])
-    input_token_ids = input_ids["input_ids"]
+    input_token_ids_without_padding = input_ids["input_ids"]
     # Prepend some padding tokens
     input_ids["input_ids"] = torch.nn.functional.pad(
         input_ids["input_ids"], (10 - len(input_ids["input_ids"]), 0), value=tokenizer.pad_token_id
@@ -321,7 +321,7 @@ def test_llm_utils_e2e():
 
     target_ids = tokenizer([target_str])
     target_ids["input_ids"] = torch.tensor(target_ids["input_ids"])
-    target_token_ids = target_ids["input_ids"]
+    target_token_ids_without_padding = target_ids["input_ids"]
     # Prepend some padding tokens
     target_ids["input_ids"] = torch.nn.functional.pad(
         target_ids["input_ids"], (10 - len(target_ids["input_ids"]), 0), value=tokenizer.pad_token_id
@@ -337,12 +337,18 @@ def test_llm_utils_e2e():
 
     # Ensure the merged_ids is the correct length
     # - 2 for the two BOS tokens in the input and target, + 1 for the PAD token added to the end
-    assert len(merged_ids[0]) == len(input_token_ids[0]) + len(target_token_ids[0]) - 2 + 1
+    assert (
+        len(merged_ids[0]) == len(input_token_ids_without_padding[0]) + len(target_token_ids_without_padding[0]) - 2 + 1
+    )
 
     # Ensure the merged_ids is the correct value
     # This also ensures that there is no PAD or BOS token at the beginning of the merged_ids
     expected_merged_ids = torch.cat(
-        (input_token_ids[0][1:], target_token_ids[0][1:], torch.tensor([tokenizer.pad_token_id])),
+        (
+            input_token_ids_without_padding[0][1:],
+            target_token_ids_without_padding[0][1:],
+            torch.tensor([tokenizer.pad_token_id]),
+        ),
         dim=0,
     )
     assert torch.equal(merged_ids[0], expected_merged_ids)
