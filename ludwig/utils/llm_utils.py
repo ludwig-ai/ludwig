@@ -292,6 +292,8 @@ def generate_merged_ids(
         target_id_sample_no_padding = torch.cat((target_id_sample_no_padding, eos_tensor), dim=-1)
 
         merged_sample_ids = torch.cat((input_id_sample_no_padding, target_id_sample_no_padding), dim=-1)
+        print(merged_sample_ids)
+
         # If the merged tensor is longer than the maximum sequence length, we truncate it.
         if max_sequence_length and merged_sample_ids.shape[0] > max_sequence_length:
             merged_sample_ids = merged_sample_ids[:max_sequence_length]
