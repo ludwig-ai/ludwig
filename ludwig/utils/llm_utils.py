@@ -282,7 +282,6 @@ def generate_merged_ids(
     lengths = []
 
     pad_tensor = torch.tensor([tokenizer.pad_token_id]).to(target_ids[0].device)
-    eos_tensor = torch.tensor([tokenizer.eos_token_id]).to(target_ids[0].device)
 
     # Merge input_ids and target_ids by concatenating them together.
     # We remove the left padding from both input_ids and target_ids before concatenating them.
@@ -290,10 +289,9 @@ def generate_merged_ids(
         input_id_sample_no_padding = remove_left_padding_and_bos_token(input_id_sample, tokenizer)[0]
 
         target_id_sample_no_padding = remove_left_padding_and_bos_token(target_id_sample, tokenizer)[0]
-        target_id_sample_no_padding = torch.cat((target_id_sample_no_padding, pad_tensor, eos_tensor), dim=-1)
+        target_id_sample_no_padding = torch.cat((target_id_sample_no_padding, pad_tensor), dim=-1)
 
         merged_sample_ids = torch.cat((input_id_sample_no_padding, target_id_sample_no_padding), dim=-1)
-        print(merged_sample_ids)
 
         # If the merged tensor is longer than the maximum sequence length, we truncate it.
         if max_sequence_length and merged_sample_ids.shape[0] > max_sequence_length:
