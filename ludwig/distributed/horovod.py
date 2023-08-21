@@ -12,8 +12,8 @@ from ray.train.data_parallel_trainer import DataParallelTrainer
 from ray.train.horovod import HorovodTrainer
 from torch import nn
 from torch.optim import Optimizer
-from ludwig.constants import AUTO
 
+from ludwig.constants import AUTO
 from ludwig.distributed.base import DistributedStrategy
 from ludwig.modules.optimization_modules import create_optimizer
 from ludwig.utils.horovod_utils import gather_all_tensors, is_distributed_available
@@ -36,8 +36,9 @@ class HorovodStrategy(DistributedStrategy):
         base_learning_rate: float,
     ) -> Tuple[nn.Module, Optimizer]:
         optimizer = create_optimizer(model, trainer_config.optimizer, base_learning_rate)
-        grad_accum_steps = trainer_config.gradient_accumulation_steps \
-            if trainer_config.gradient_accumulation_steps != AUTO else 1
+        grad_accum_steps = (
+            trainer_config.gradient_accumulation_steps if trainer_config.gradient_accumulation_steps != AUTO else 1
+        )
         dist_optimizer = hvd.DistributedOptimizer(
             optimizer,
             named_parameters=model.named_parameters(),

@@ -402,8 +402,9 @@ class Trainer(BaseTrainer):
             snapshot_weights = False
 
         self.dist_model.train()  # Sets model training mode.
-        evaluator = self._create_batch_size_evaluator() \
-            if tune_for_training else self._create_predict_batch_size_evaluator()
+        evaluator = (
+            self._create_batch_size_evaluator() if tune_for_training else self._create_predict_batch_size_evaluator()
+        )
         with tempfile.TemporaryDirectory() as tmpdir:
             if snapshot_weights:
                 # Save a snapshot of the model and optimizer state to restore later, as they will be modified
@@ -462,7 +463,7 @@ class Trainer(BaseTrainer):
                 trainer.train_step(inputs, targets)
 
         return _TrainerBatchSizeEvaluator()
-    
+
     def _create_predict_batch_size_evaluator(self) -> BatchSizeEvaluator:
         trainer = self
 
