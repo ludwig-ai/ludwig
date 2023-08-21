@@ -1147,7 +1147,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
 
 
 @ray.remote(max_calls=1)
-def _tune_batch_size_fn(evaluator_cls: Type[BatchSizeEvaluator], dataset_len: int, tune_for_training: bool) -> int:
+def _tune_batch_size_fn(evaluator_cls: Type[BatchSizeEvaluator], dataset_len: int) -> int:
     evaluator = evaluator_cls()
     return evaluator.select_best_batch_size(dataset_len)
 
