@@ -93,6 +93,7 @@ class LightGBMTrainer(BaseTrainer):
         self._validation_field = config.validation_field
         self._validation_metric = config.validation_metric
         self.evaluate_training_set = config.evaluate_training_set
+        self.skip_all_evaluation = config.skip_all_evaluation
         try:
             base_learning_rate = float(config.learning_rate)
         except ValueError:
@@ -384,21 +385,24 @@ class LightGBMTrainer(BaseTrainer):
         loss = evals_result["train"][loss_name][-1]
         loss = torch.tensor(loss, dtype=torch.float32)
 
-        should_break = self.run_evaluation(
-            training_set,
-            validation_set,
-            test_set,
-            progress_tracker,
-            train_summary_writer,
-            validation_summary_writer,
-            test_summary_writer,
-            output_features,
-            metrics_names,
-            save_path,
-            loss,
-            {output_feature_name: loss},
-            early_stopping_steps,
-        )
+        if not self.skip_all_evaluation:
+            should_break = self.run_evaluation(
+                training_set,
+                validation_set,
+                test_set,
+                progress_tracker,
+                train_summary_writer,
+                validation_summary_writer,
+                test_summary_writer,
+                output_features,
+                metrics_names,
+                save_path,
+                loss,
+                {output_feature_name: loss},
+                early_stopping_steps,
+            )
+        else:
+            should_break = False
 
         self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path))
 
