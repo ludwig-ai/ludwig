@@ -699,7 +699,11 @@ class LudwigModel:
                             save_json(training_stats_fn, train_stats)
 
                     # results of the model with highest validation test performance
-                    if self.backend.is_coordinator() and validation_set is not None and not trainer.skip_all_evaluation:
+                    if (
+                        self.backend.is_coordinator()
+                        and validation_set is not None
+                        and not self.config_obj.trainer.skip_all_evaluation
+                    ):
                         print_boxed("TRAINING REPORT")
                         training_report = get_training_report(
                             trainer.validation_field,
