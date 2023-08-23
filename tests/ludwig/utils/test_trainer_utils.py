@@ -1,11 +1,13 @@
 from collections import OrderedDict
+from typing import Union
 
 import pytest
 
-from ludwig.constants import BATCH_SIZE, COMBINED, LOSS
+from ludwig.constants import AUTO, BATCH_SIZE, COMBINED, LOSS
 from ludwig.features.category_feature import CategoryOutputFeature
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.schema.features.category_feature import ECDCategoryOutputFeatureConfig
+from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.schema.utils import load_config_with_kwargs
 from ludwig.utils import trainer_utils
 from ludwig.utils.metric_utils import TrainerMetric
@@ -316,3 +318,36 @@ def test_get_final_steps_per_checkpoint():
         )
         == 1024
     )
+
+
+@pytest.mark.parametrize(
+    "effective_batch_size,batch_size,gradient_accumulation_steps,num_workers,expected_batch_size,expected_grad_accum",
+    [
+        (128, 16, 4, 2, 16, 4),
+        (AUTO, 16, 4, 2, 16, 4),
+        (128, 16, AUTO, 2, 16, 4),
+        (128, AUTO, 4, 2, 16, 4),
+        (128, AUTO, AUTO, 2, AUTO, AUTO),
+        (AUTO, AUTO, AUTO, 2, AUTO, AUTO),
+        (AUTO, 16, AUTO, 2, 16, 1),
+        (AUTO, AUTO, 4, 2, AUTO, 4),
+    ],
+)
+def test_get_rendered_batch_size_grad_accum(
+    effective_batch_size: Union[str, int],
+    batch_size: Union[str, int],
+    gradient_accumulation_steps: Union[str, int],
+    num_workers: int,
+    expected_batch_size: int,
+    expected_grad_accum: int,
+):
+    config = ECDTrainerConfig.from_dict(
+        {
+            "effective_batch_size": effective_batch_size,
+            "batch_size": batch_size,
+            "gradient_accumulation_steps": gradient_accumulation_steps,
+        }
+    )
+    rendered_batch_size, rendered_grad_accum = trainer_utils.get_rendered_batch_size_grad_accum(config, num_workers)
+    assert rendered_batch_size == expected_batch_size
+    assert rendered_grad_accum == expected_grad_accum

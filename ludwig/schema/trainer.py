@@ -5,15 +5,7 @@ import torch
 from packaging.version import parse as parse_version
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import (
-    DEFAULT_BATCH_SIZE,
-    LOSS,
-    MAX_POSSIBLE_BATCH_SIZE,
-    MODEL_ECD,
-    MODEL_GBM,
-    MODEL_LLM,
-    TRAINING,
-)
+from ludwig.constants import AUTO, LOSS, MAX_POSSIBLE_BATCH_SIZE, MODEL_ECD, MODEL_GBM, MODEL_LLM, TRAINING
 from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.lr_scheduler import LRSchedulerConfig, LRSchedulerDataclassField
@@ -92,6 +84,9 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
         ),
     )
 
+    def can_tune_batch_size(self) -> bool:
+        return True
+
 
 @DeveloperAPI
 @register_trainer_schema(MODEL_ECD)
@@ -104,6 +99,38 @@ class ECDTrainerConfig(BaseTrainerConfig):
             raise ConfigValidationError(
                 "Trainer param `compile: true` requires PyTorch 2.0.0 or higher. Please upgrade PyTorch and try again."
             )
+
+        if self.effective_batch_size != AUTO and self.max_batch_size < self.effective_batch_size:
+            raise ConfigValidationError(
+                f"`max_batch_size` ({self.max_batch_size}) must be greater than or equal to "
+                f"`effective_batch_size` ({self.effective_batch_size})."
+            )
+
+        if self.effective_batch_size != AUTO and self.batch_size != AUTO:
+            if self.effective_batch_size < self.batch_size:
+                raise ConfigValidationError(
+                    f"`effective_batch_size` ({self.effective_batch_size}) "
+                    f"must be greater than or equal to `batch_size` ({self.batch_size})."
+                )
+
+            if self.effective_batch_size % self.batch_size != 0:
+                raise ConfigValidationError(
+                    f"`effective_batch_size` ({self.effective_batch_size}) "
+                    f"must be divisible by `batch_size` ({self.batch_size})."
+                )
+
+        if self.effective_batch_size != AUTO and self.gradient_accumulation_steps != AUTO:
+            if self.effective_batch_size < self.gradient_accumulation_steps:
+                raise ConfigValidationError(
+                    f"`effective_batch_size` ({self.effective_batch_size}) must be greater than or equal to "
+                    f"`gradient_accumulation_steps` ({self.gradient_accumulation_steps})."
+                )
+
+            if self.effective_batch_size % self.gradient_accumulation_steps != 0:
+                raise ConfigValidationError(
+                    f"`effective_batch_size` ({self.effective_batch_size}) must be divisible by "
+                    f"`gradient_accumulation_steps` ({self.gradient_accumulation_steps})."
+                )
 
     learning_rate: Union[float, str] = schema_utils.OneOfOptionsField(
         default=0.001,
@@ -159,8 +186,27 @@ class ECDTrainerConfig(BaseTrainerConfig):
         parameter_metadata=TRAINER_METADATA[MODEL_ECD]["steps_per_checkpoint"],
     )
 
+    effective_batch_size: Union[int, str] = schema_utils.OneOfOptionsField(
+        default=AUTO,
+        allow_none=False,
+        description=(
+            "The effective batch size is the total number of samples used to compute a single gradient update "
+            "to the model weights. This differs from `batch_size` by taking `gradient_accumulation_steps` and number "
+            "of training worker processes into account. In practice, "
+            "`effective_batch_size = batch_size * gradient_accumulation_steps * num_workers`. "
+            "If 'auto', the effective batch size is derivied implicitly from `batch_size`, but if set explicitly, then "
+            "one of `batch_size` or `gradient_accumulation_steps` must be set to something other than 'auto', and "
+            "consequently will be set following the formula given above."
+        ),
+        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["effective_batch_size"],
+        field_options=[
+            schema_utils.PositiveInteger(default=128, description="", allow_none=False),
+            schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
+        ],
+    )
+
     batch_size: Union[int, str] = schema_utils.OneOfOptionsField(
-        default=DEFAULT_BATCH_SIZE,
+        default=AUTO,
         allow_none=False,
         description=(
             "The number of training examples utilized in one training step of the model. If ’auto’, the "
@@ -183,6 +229,17 @@ class ECDTrainerConfig(BaseTrainerConfig):
             "value is 2^40."
         ),
         parameter_metadata=TRAINER_METADATA[MODEL_ECD]["max_batch_size"],
+    )
+
+    gradient_accumulation_steps: Union[int, str] = schema_utils.OneOfOptionsField(
+        default=AUTO,
+        allow_none=False,
+        description="Number of steps to accumulate gradients over before performing a weight update.",
+        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["gradient_accumulation_steps"],
+        field_options=[
+            schema_utils.PositiveInteger(default=1, description="", allow_none=False),
+            schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
+        ],
     )
 
     early_stop: int = schema_utils.IntegerRange(
@@ -343,11 +400,10 @@ class ECDTrainerConfig(BaseTrainerConfig):
         parameter_metadata=TRAINER_METADATA[MODEL_ECD]["compile"],
     )
 
-    gradient_accumulation_steps: int = schema_utils.PositiveInteger(
-        default=1,
-        description="Number of steps to accumulate gradients over before performing a weight update.",
-        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["gradient_accumulation_steps"],
-    )
+    def update_batch_size_grad_accum(self, num_workers: int):
+        from ludwig.utils.trainer_utils import get_rendered_batch_size_grad_accum
+
+        self.batch_size, self.gradient_accumulation_steps = get_rendered_batch_size_grad_accum(self, num_workers)
 
 
 @DeveloperAPI
@@ -705,6 +761,9 @@ class GBMTrainerConfig(BaseTrainerConfig):
         parameter_metadata=TRAINER_METADATA[MODEL_GBM]["feature_pre_filter"],
     )
 
+    def can_tune_batch_size(self) -> bool:
+        return False
+
 
 @DeveloperAPI
 @ludwig_dataclass
@@ -794,6 +853,9 @@ class NoneTrainerConfig(LLMTrainerConfig):
         description="The type of trainer used to train the model. ",
         parameter_metadata=TRAINER_METADATA[MODEL_LLM]["type"],
     )
+
+    def can_tune_batch_size(self) -> bool:
+        return False
 
 
 @DeveloperAPI

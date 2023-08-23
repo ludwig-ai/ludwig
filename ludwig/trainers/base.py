@@ -26,6 +26,7 @@ class BaseTrainer(ABC):
         random_seed: int = default_random_seed,
         max_trials: int = 10,
         halving_limit: int = 3,
+        tune_for_training: bool = True,
     ) -> int:
         raise NotImplementedError()
 

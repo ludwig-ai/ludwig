@@ -1,4 +1,11 @@
 ecd:
+    effective_batch_size:
+        commonly_used: true
+        expected_impact: 2
+        related_parameters:
+            - batch_size
+        suggested_values: auto
+        ui_display_name: Effective Batch Size
     batch_size:
         commonly_used: true
         default_value_reasoning: Not too big, not too small.
