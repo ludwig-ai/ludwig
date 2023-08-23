@@ -24,7 +24,9 @@ RUN sh -c 'echo "APT { Get { AllowUnauthenticated \"1\"; }; };" > /etc/apt/apt.c
 RUN apt-get -y update && apt-get -y install \
     git \
     libsndfile1 \
-    cmake
+    cmake \
+    ffmpeg \
+    sox
 RUN pip install -U pip
 
 WORKDIR /ludwig

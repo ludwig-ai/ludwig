@@ -613,11 +613,7 @@ class LudwigModel:
                 random_seed=random_seed,
             ) as trainer:
                 # auto tune batch size
-                if (
-                    self.config_obj.trainer.to_dict().get(BATCH_SIZE, None) == AUTO
-                    or self.config_obj.trainer.to_dict().get(EVAL_BATCH_SIZE, None) == AUTO
-                ):
-                    self._tune_batch_size(trainer, training_set, random_seed=random_seed)
+                self._tune_batch_size(trainer, training_set, random_seed=random_seed)
 
                 # train model
                 if self.backend.is_coordinator():
@@ -795,35 +791,60 @@ class LudwigModel:
                 config=self.config_obj.trainer, model=self.model, random_seed=random_seed
             )
 
-            if (
-                self.config_obj.trainer.to_dict().get(BATCH_SIZE, None) == AUTO
-                or self.config_obj.trainer.to_dict().get(EVAL_BATCH_SIZE, None) == AUTO
-            ):
-                self._tune_batch_size(self._online_trainer, dataset, random_seed=random_seed)
+            self._tune_batch_size(self._online_trainer, dataset, random_seed=random_seed)
 
         self.model = self._online_trainer.train_online(training_dataset)
 
     def _tune_batch_size(self, trainer, dataset, random_seed: int = default_random_seed):
+        if not self.config_obj.trainer.can_tune_batch_size():
+            # Models like GBMs don't have batch sizes to be tuned
+            return
+
+        # Render the batch size and gradient accumulation steps prior to batch size tuning. This is needed in the event
+        # the effective_batch_size and gradient_accumulation_steps are set explicitly, but batch_size is AUTO. In this
+        # case, we can infer the batch_size directly without tuning.
+        num_workers = self.backend.num_training_workers
+        self.config_obj.trainer.update_batch_size_grad_accum(num_workers)
+
         # TODO (ASN): add support for substitute_with_max parameter
         # TODO(travis): detect train and eval batch sizes separately (enable / disable gradients)
-        if self.backend.supports_batch_size_tuning():
-            tuned_batch_size = trainer.tune_batch_size(self.config_obj.to_dict(), dataset, random_seed=random_seed)
-        else:
-            logger.warning(
-                f"Backend {self.backend.BACKEND_TYPE} does not support batch size tuning, "
-                f"using fallback batch size {FALLBACK_BATCH_SIZE}."
-            )
-            tuned_batch_size = FALLBACK_BATCH_SIZE
-
-        # TODO(travis): pass these in as args to trainer when we call train,
-        #  to avoid setting state on possibly remote trainer
         if self.config_obj.trainer.batch_size == AUTO:
+            if self.backend.supports_batch_size_tuning():
+                tuned_batch_size = trainer.tune_batch_size(
+                    self.config_obj.to_dict(), dataset, random_seed=random_seed, tune_for_training=True
+                )
+            else:
+                logger.warning(
+                    f"Backend {self.backend.BACKEND_TYPE} does not support batch size tuning, "
+                    f"using fallback training batch size {FALLBACK_BATCH_SIZE}."
+                )
+                tuned_batch_size = FALLBACK_BATCH_SIZE
+
+            # TODO(travis): pass these in as args to trainer when we call train,
+            #  to avoid setting state on possibly remote trainer
             self.config_obj.trainer.batch_size = tuned_batch_size
-            trainer.batch_size = tuned_batch_size
+
+            # Re-render the gradient_accumulation_steps to account for the explicit batch size.
+            self.config_obj.trainer.update_batch_size_grad_accum(num_workers)
 
         if self.config_obj.trainer.eval_batch_size in {AUTO, None}:
+            if self.backend.supports_batch_size_tuning():
+                tuned_batch_size = trainer.tune_batch_size(
+                    self.config_obj.to_dict(), dataset, random_seed=random_seed, tune_for_training=False
+                )
+            else:
+                logger.warning(
+                    f"Backend {self.backend.BACKEND_TYPE} does not support batch size tuning, "
+                    f"using fallback eval batch size {FALLBACK_BATCH_SIZE}."
+                )
+                tuned_batch_size = FALLBACK_BATCH_SIZE
+
             self.config_obj.trainer.eval_batch_size = tuned_batch_size
-            trainer.eval_batch_size = tuned_batch_size
+
+        # Update trainer params separate to config params for backends with stateful trainers
+        trainer.batch_size = self.config_obj.trainer.batch_size
+        trainer.eval_batch_size = self.config_obj.trainer.eval_batch_size
+        trainer.gradient_accumulation_steps = self.config_obj.trainer.gradient_accumulation_steps
 
     def predict(
         self,
@@ -831,6 +852,7 @@ class LudwigModel:
         data_format: str = None,
         split: str = FULL,
         batch_size: int = 128,
+        generation_config: Optional[Dict] = None,
         skip_save_unprocessed_output: bool = True,
         skip_save_predictions: bool = True,
         output_directory: str = "results",
@@ -840,43 +862,34 @@ class LudwigModel:
     ) -> Tuple[Union[dict, pd.DataFrame], str]:
         """Using a trained model, make predictions from the provided dataset.
 
-        # Inputs
-        :param dataset: (Union[str, dict, pandas.DataFrame]) source containing
-            the entire dataset to be evaluated.
-        :param data_format: (str, default: `None`) format to interpret data
-            sources. Will be inferred automatically if not specified.  Valid
-            formats are `'auto'`, `'csv'`, `'df'`, `'dict'`, `'excel'`, `'feather'`,
-            `'fwf'`, `'hdf5'` (cache file produced during previous training),
-            `'html'` (file containing a single HTML `<table>`), `'json'`, `'jsonl'`,
-            `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`, `'spss'`,
-            `'stata'`, `'tsv'`.
-        :param: split: (str, default= `'full'`): if the input dataset contains
-            a split column, this parameter indicates which split of the data
-            to use. Possible values are `'full'`, `'training'`, `'validation'`, `'test'`.
-        :param batch_size: (int, default: 128) size of batch to use when making
-            predictions.
-        :param skip_save_unprocessed_output: (bool, default: `True`) if this
-            parameter is `False`, predictions and their probabilities are saved
-            in both raw unprocessed numpy files containing tensors and as
-            postprocessed CSV files (one for each output feature).
-            If this parameter is `True`, only the CSV ones are saved and the
-            numpy ones are skipped.
-        :param skip_save_predictions: (bool, default: `True`) skips saving
-            test predictions CSV files.
-        :param output_directory: (str, default: `'results'`) the directory that
-            will contain the training statistics, TensorBoard logs, the saved
-            model and the training progress files.
-        :param return_type: (Union[str, dict, pandas.DataFrame], default: pd.DataFrame)
-            indicates the format of the returned predictions.
-        :param callbacks: (Optional[List[Callback]], default: None)
-            optional list of callbacks to use during this predict operation. Any callbacks
-            already registered to the model will be preserved.
+        Args:
+            dataset: (Union[str, dict, pandas.DataFrame]): source containing the entire dataset to be evaluated.
+            data_format: (str, default: `None`) format to interpret data sources. Will be inferred automatically if not
+                specified.  Valid formats are `'auto'`, `'csv'`, `'df'`, `'dict'`, `'excel'`, `'feather'`, `'fwf'`,
+                `'hdf5'` (cache file produced during previous training), `'html'` (file containing a single HTML
+                `<table>`), `'json'`, `'jsonl'`, `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`, `'spss'`,
+                `'stata'`, `'tsv'`.
+            split: (str, default= `'full'`):  if the input dataset contains a split column, this parameter indicates
+                which split of the data to use. Possible values are `'full'`, `'training'`, `'validation'`, `'test'`.
+            batch_size: (int, default: 128) size of batch to use when making predictions.
+            generation_config: Dict, default: `None`) config for the generation of the predictions. If `None`, the
+                config that was used during model training is used.
+            skip_save_unprocessed_output: (bool, default: `True`) if this parameter is `False`, predictions and their
+                probabilities are saved in both raw unprocessed numpy files containing tensors and as postprocessed CSV
+                files (one for each output feature). If this parameter is `True`, only the CSV ones are saved and the
+                numpy ones are skipped.
+            skip_save_predictions: (bool, default: `True`) skips saving test predictions CSV files.
+            output_directory: (str, default: `'results'`) the directory that will contain the training statistics,
+                TensorBoard logs, the saved model and the training progress files.
+            return_type: (Union[str, dict, pandas.DataFrame], default: pd.DataFrame) indicates the format of the
+                returned predictions.
+            callbacks: (Optional[List[Callback]], default: None) optional list of callbacks to use during this predict
+                operation. Any callbacks already registered to the model will be preserved.
 
-        # Return
-
-        :return: (Tuple[Union[dict, pd.DataFrame], str]) `(predictions, output_directory)`
-            `predictions` predictions from the provided dataset,
-            `output_directory` filepath string to where data was stored.
+        Returns:
+            `(predictions, output_directory)`: (Tuple[Union[dict, pd.DataFrame], str])
+                `predictions` predictions from the provided dataset,
+                `output_directory` filepath string to where data was stored.
         """
         self._check_initialization()
 
@@ -893,11 +906,20 @@ class LudwigModel:
             callbacks=self.callbacks + (callbacks or []),
         )
 
+        # Set the generation config if it exists.
+        # model.reset_generation_config() is called after batch prediction.
+        if generation_config is not None:
+            self.model.set_generation_config(generation_config)
+
         logger.debug("Predicting")
         with self.backend.create_predictor(self.model, batch_size=batch_size) as predictor:
             predictions = predictor.batch_predict(
                 dataset,
             )
+
+            # If there was a generation config set prior to batch prediction, reset it.
+            if generation_config is not None:
+                self.model.reset_generation_config()
 
             if self.backend.is_coordinator():
                 # if we are skipping all saving,

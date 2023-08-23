@@ -204,7 +204,11 @@ class NoneTrainer(BaseTrainer):
         halving_limit: int = 3,
         snapshot_weights: bool = True,
         on_best_batch_size_updated: Optional[Callable[[int, float, int], None]] = None,
+        tune_for_training: bool = True,
     ) -> int:
+        # TODO: Implement batch size tuning for LLM, currently just returns the default batch size
+        # Compared to ECD, this just requires forward passes till we OOM.
+        # https://github.com/ludwig-ai/ludwig/issues/3525
         return MINIMUM_BATCH_SIZE
 
     @property

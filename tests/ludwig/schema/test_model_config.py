@@ -796,7 +796,7 @@ def test_encoder_decoder_values_as_str():
     "base_model_config,model_name",
     [
         ("bloomz-3b", "bigscience/bloomz-3b"),
-        ("llama-7b", "huggyllama/llama-7b"),
+        ("vicuna-7b", "lmsys/vicuna-7b-v1.3"),
         ("huggyllama/llama-7b", "huggyllama/llama-7b"),
     ],
 )
@@ -894,3 +894,21 @@ def test_llm_model_parameters_no_rope_scaling():
     config_obj = ModelConfig.from_dict(config)
     assert config_obj.model_parameters.rope_scaling is None
     assert config_obj.model_parameters.to_dict() == {}
+
+
+def test_llm_finetuning_output_feature_config():
+    config = {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: "HuggingFaceH4/tiny-random-LlamaForCausalLM",
+        INPUT_FEATURES: [{NAME: "text_input", TYPE: "text"}],
+        OUTPUT_FEATURES: [{NAME: "category_output", TYPE: "category"}],
+        "trainer": {
+            "type": "finetune",
+        },
+    }
+
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+    config[OUTPUT_FEATURES] = [{NAME: "text_output", TYPE: "text"}]
+    ModelConfig.from_dict(config)
