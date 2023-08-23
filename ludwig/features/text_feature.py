@@ -283,16 +283,14 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
         for metric_name, metric_fn in self._metric_functions.items():
             prediction_key = get_metric_tensor_input(metric_name)
             if prediction_key != RESPONSE:
-                # Non-RESPONSE metrics don't use decoded texts.
                 metric_fn = metric_fn.to(predictions[prediction_key].device)
                 metric_fn.update(predictions[prediction_key].detach(), targets)
                 continue
 
+            # RESPONSE metrics cannot be computed if decoded texts are not provided.
+            # Decoded texts are only provided using the LLM model type.
             if decoded_targets is not None and decoded_predictions is not None:
-                # RESPONSE metrics cannot be computed if decoded texts aren't provided.
-                # We assume that RESPONSE metrics can only be calculated one example at a time.
-                for i in range(len(decoded_predictions)):
-                    metric_fn.update(decoded_predictions[i], decoded_targets[i])
+                metric_fn.update(decoded_predictions, decoded_targets)
 
     @staticmethod
     def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):

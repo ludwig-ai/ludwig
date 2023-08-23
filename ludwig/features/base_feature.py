@@ -384,11 +384,13 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
                 logger.exception(f"Caught exception computing metric: {metric_name} with error: {e}.")
                 continue
 
-            # Metrics from torchmetrics can be a tensor.
+            # Metrics from torchmetrics can be a straightforward tensor.
             if isinstance(computed_metric, Tensor):
                 metric_vals[metric_name] = computed_metric.detach().cpu().numpy().item()
             else:
-                # Or a dict of tensors. Unpack if so.
+                # Metrics from torchmetrics can be a dict of tensors.
+                # For example, ROUGE is returned as a dictionary of tensors.
+                # Unpack.
                 for sub_metric_name, metric in computed_metric.items():
                     metric_vals[sub_metric_name] = metric.detach().cpu().numpy().item()
         return metric_vals
