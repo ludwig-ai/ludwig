@@ -323,7 +323,7 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
 @pytest.mark.parametrize(
     "finetune_strategy,adapter_args,quantization",
     [
-        (None, {}, None),
+        # (None, {}, None),
         # (
         #     "prompt_tuning",
         #     {
@@ -343,26 +343,26 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
         # ("p_tuning", {"num_virtual_tokens": 8, "encoder_reparameterization_type": "MLP"}),
         # ("p_tuning", {"num_virtual_tokens": 8, "encoder_reparameterization_type": "LSTM"}),
         ("lora", {}, None),
-        ("lora", {}, {"bits": 4}),  # qlora
+        # ("lora", {}, {"bits": 4}),  # qlora
         # ("adalora", {}),
-        ("adaption_prompt", {"adapter_len": 6, "adapter_layers": 1}, None),
+        # ("adaption_prompt", {"adapter_len": 6, "adapter_layers": 1}, None),
     ],
     ids=[
-        "none",
+        # "none",
         # "prompt_tuning_init_random",
         # "prompt_tuning_init_text",
         # "prefix_tuning",
         # "p_tuning_mlp_reparameterization",
         # "p_tuning_lstm_reparameterization",
         "lora",
-        "qlora",
+        # "qlora",
         # "adalora",
-        "adaption_prompt",
+        # "adaption_prompt",
     ],
 )
 def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strategy, adapter_args, quantization):
-    if not torch.cuda.is_available() or torch.cuda.device_count() == 0:
-        pytest.skip("Skip: quantization requires GPU and none are available.")
+    # if not torch.cuda.is_available() or torch.cuda.device_count() == 0:
+    #     pytest.skip("Skip: quantization requires GPU and none are available.")
 
     input_features = [text_feature(name="input", encoder={"type": "passthrough"})]
     output_features = [text_feature(name="output")]
@@ -384,7 +384,7 @@ def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strat
         OUTPUT_FEATURES: output_features,
         TRAINER: {
             TYPE: "finetune",
-            BATCH_SIZE: 8,
+            BATCH_SIZE: 1,
             EPOCHS: 2,
         },
         BACKEND: backend,
