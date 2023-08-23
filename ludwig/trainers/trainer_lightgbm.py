@@ -171,6 +171,7 @@ class LightGBMTrainer(BaseTrainer):
         random_seed: int,
         max_trials: int = 10,
         halving_limit: int = 3,
+        tune_for_training: bool = True,
     ) -> int:
         raise NotImplementedError("Tuning batch size is not supported for LightGBM.")
 
