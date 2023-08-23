@@ -111,7 +111,7 @@ class NoneTrainer(BaseTrainer):
         self.evaluate_training_set = self.config.evaluate_training_set
         self.skip_all_evaluation = self.config.skip_all_evaluation
 
-    def finish_training(
+    def close_writers(
         self, progress_tracker, save_path, train_summary_writer, validation_summary_writer, test_summary_writer
     ):
         # ================ Finished Training ================
@@ -174,7 +174,7 @@ class NoneTrainer(BaseTrainer):
         return_value = self.model if not return_state_dict else self.model.cpu().state_dict()
 
         if self.skip_all_evaluation:
-            self.finish_training(
+            self.close_writers(
                 progress_tracker, save_path, train_summary_writer, validation_summary_writer, test_summary_writer
             )
             return (
@@ -197,7 +197,7 @@ class NoneTrainer(BaseTrainer):
                 save_path,
             )
         finally:
-            self.finish_training(
+            self.close_writers(
                 progress_tracker, save_path, train_summary_writer, validation_summary_writer, test_summary_writer
             )
 
