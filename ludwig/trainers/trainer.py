@@ -31,7 +31,7 @@ import psutil
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from ludwig.constants import LOSS, MAX_CPU_BATCH_SIZE, MINIMIZE, MODEL_ECD, TEST, TRAINING, VALIDATION
+from ludwig.constants import AUTO, LOSS, MAX_CPU_BATCH_SIZE, MINIMIZE, MODEL_ECD, TEST, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.globals import (
@@ -139,6 +139,7 @@ class Trainer(BaseTrainer):
         self.regularization_lambda = config.regularization_lambda
         self.regularization_type = config.regularization_type
         self.batch_size = config.batch_size
+        self.effective_batch_size = config.effective_batch_size
         self.max_batch_size = config.max_batch_size
         self.eval_batch_size = config.batch_size if config.eval_batch_size is None else config.eval_batch_size
         self.should_shuffle = config.should_shuffle
@@ -154,7 +155,9 @@ class Trainer(BaseTrainer):
         self.increase_batch_size_eval_metric = config.increase_batch_size_eval_metric
         self.increase_batch_size_eval_split = config.increase_batch_size_eval_split
         self.gradient_accumulation_steps = (
-            config.gradient_accumulation_steps if self.distributed.allow_gradient_accumulation() else 1
+            config.gradient_accumulation_steps
+            if self.distributed.allow_gradient_accumulation() and config.gradient_accumulation_steps != AUTO
+            else 1
         )
         self.resume = resume
         self.skip_save_model = skip_save_model
@@ -167,12 +170,6 @@ class Trainer(BaseTrainer):
         self.device = device
         if self.device is None:
             self.device = get_torch_device()
-
-        base_learning_rate = config.learning_rate
-        if self.distributed:
-            lr_scale_fn = learning_rate_scale_fns[config.learning_rate_scaling]
-            base_learning_rate *= lr_scale_fn(self.distributed.size() * self.gradient_accumulation_steps)
-        self.base_learning_rate = base_learning_rate
 
         self.model = model
         self.model.prepare_for_training()
@@ -207,6 +204,12 @@ class Trainer(BaseTrainer):
         self.original_sigint_handler = None
 
     def prepare(self):
+        base_learning_rate = self.config.learning_rate
+        if self.distributed:
+            lr_scale_fn = learning_rate_scale_fns[self.config.learning_rate_scaling]
+            base_learning_rate *= lr_scale_fn(self.distributed.size() * self.gradient_accumulation_steps)
+        self.base_learning_rate = base_learning_rate
+
         self.dist_model, self.optimizer = self.distributed.prepare(
             self.compiled_model,
             self.config,
@@ -372,6 +375,7 @@ class Trainer(BaseTrainer):
         halving_limit: int = 3,
         snapshot_weights: bool = True,
         on_best_batch_size_updated: Optional[Callable[[int, float, int], None]] = None,
+        tune_for_training: bool = True,
     ) -> int:
         logger.info("Tuning batch size...")
         skip_save_model = self.skip_save_model
@@ -388,8 +392,19 @@ class Trainer(BaseTrainer):
         max_batch_size = (
             self.max_batch_size if torch.cuda.is_available() else min(self.max_batch_size, MAX_CPU_BATCH_SIZE)
         )
+
+        if self.effective_batch_size != AUTO:
+            # If an effective batch size is set, we must ensure that batch size tuning doesn't exceed it
+            max_batch_size = min(self.effective_batch_size, max_batch_size)
+
+        if not tune_for_training:
+            # No need to save and restore model and optimizer states, as they aren't modified during predict
+            snapshot_weights = False
+
         self.dist_model.train()  # Sets model training mode.
-        evaluator = self._create_batch_size_evaluator()
+        evaluator = (
+            self._create_batch_size_evaluator() if tune_for_training else self._create_predict_batch_size_evaluator()
+        )
         with tempfile.TemporaryDirectory() as tmpdir:
             if snapshot_weights:
                 # Save a snapshot of the model and optimizer state to restore later, as they will be modified
@@ -403,12 +418,23 @@ class Trainer(BaseTrainer):
                 best_batch_size = evaluator.select_best_batch_size(
                     len(training_set), max_batch_size, max_trials, self.is_coordinator()
                 )
-                return self.distributed.broadcast_object(best_batch_size)
+                best_batch_size = self.distributed.broadcast_object(best_batch_size)
+
+                if tune_for_training:
+                    # Update batch size / gradient accumulation before preparing the trainer. This is needed primarily
+                    # for DeepSpeed, which needs to know the batch size and gradient accumulation steps before init
+                    self.config.batch_size = best_batch_size
+                    self.config.update_batch_size_grad_accum(self.distributed.size())
+                    self.batch_size = self.config.batch_size
+                    self.gradient_accumulation_steps = self.config.gradient_accumulation_steps
+
+                return best_batch_size
             finally:
                 # Restore original parameters to defaults
                 self.skip_save_model = skip_save_model
                 self.skip_save_progress = skip_save_progress
                 self.skip_save_log = skip_save_log
+
                 if snapshot_weights:
                     # Restore the model weights prior to batch size tuning to undo any updates made to the weights
                     if self.distributed.prepare_before_load():
@@ -437,6 +463,29 @@ class Trainer(BaseTrainer):
                 trainer.train_step(inputs, targets)
 
         return _TrainerBatchSizeEvaluator()
+
+    def _create_predict_batch_size_evaluator(self) -> BatchSizeEvaluator:
+        trainer = self
+
+        class _PredictBatchSizeEvaluator(BatchSizeEvaluator):
+            def reset(self):
+                trainer.model.reset_metrics()
+                trainer.optimizer.zero_grad()
+
+            def step(self, batch_size: int):
+                trainer.distributed.set_batch_size(trainer.dist_model, batch_size)
+                inputs = {
+                    input_feature_name: input_feature.create_sample_input(batch_size=batch_size).to(trainer.device)
+                    for input_feature_name, input_feature in trainer.model.input_features.items()
+                }
+                targets = {
+                    output_feature_name: output_feature.create_sample_output(batch_size=batch_size).to(trainer.device)
+                    for output_feature_name, output_feature in trainer.model.output_features.items()
+                }
+                with torch.no_grad():
+                    trainer.dist_model((inputs, targets))
+
+        return _PredictBatchSizeEvaluator()
 
     def run_evaluation(
         self,

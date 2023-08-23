@@ -250,6 +250,7 @@ def tune_batch_size_fn(
     training_set_metadata: TrainingSetMetadataDict = None,
     features: Dict[str, Dict] = None,
     remote_trainer_cls: Callable[[], Trainer] = None,
+    tune_for_training: bool = True,
     **kwargs,
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
@@ -276,6 +277,7 @@ def tune_batch_size_fn(
             train_shard,
             snapshot_weights=False,
             on_best_batch_size_updated=on_best_batch_size_updated,
+            tune_for_training=tune_for_training,
             **kwargs,
         )
         session.report(
@@ -539,6 +541,7 @@ class RayTrainerV2(BaseTrainer):
         self,
         config: ModelConfigDict,
         training_set: RayDataset,
+        tune_for_training: bool = True,
         **kwargs,
     ) -> int:
         with create_runner(**self.trainer_kwargs) as runner:
@@ -552,6 +555,7 @@ class RayTrainerV2(BaseTrainer):
                     ludwig_config=config,
                     training_set_metadata=training_set.training_set_metadata,
                     features=training_set.features,
+                    tune_for_training=tune_for_training,
                     **kwargs,
                 ),
                 exception_on_error=False,
@@ -591,6 +595,14 @@ class RayTrainerV2(BaseTrainer):
     @eval_batch_size.setter
     def eval_batch_size(self, value: int):
         self.config.eval_batch_size = value
+
+    @property
+    def gradient_accumulation_steps(self) -> int:
+        return self.config.gradient_accumulation_steps
+
+    @gradient_accumulation_steps.setter
+    def gradient_accumulation_steps(self, value: int):
+        self.config.gradient_accumulation_steps = value
 
     @property
     def resources_per_worker(self) -> Dict[str, Any]:
@@ -876,7 +888,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
         super().__init__(dataset_manager=RayDatasetManager(self), **kwargs)
         self._preprocessor_kwargs = preprocessor_kwargs or {}
         self._df_engine = _get_df_engine(processor)
-        self._horovod_kwargs = trainer or {}
+        self._distributed_kwargs = trainer or {}
         self._pytorch_kwargs = {}
         self._data_loader_kwargs = loader or {}
         self._preprocessor_pg = None
@@ -943,7 +955,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
 
         all_kwargs = {
             "model": model,
-            "trainer_kwargs": self._horovod_kwargs,
+            "trainer_kwargs": self._distributed_kwargs,
             "data_loader_kwargs": self._data_loader_kwargs,
             "executable_kwargs": executable_kwargs,
         }
@@ -956,18 +968,18 @@ class RayBackend(RemoteTrainingMixin, Backend):
         return RayPredictor(
             model,
             self.df_engine,
-            self._horovod_kwargs,
+            self._distributed_kwargs,
             self._data_loader_kwargs,
             **executable_kwargs,
         )
 
     @property
     def distributed_kwargs(self):
-        return self._horovod_kwargs
+        return self._distributed_kwargs
 
     @distributed_kwargs.setter
     def distributed_kwargs(self, value):
-        self._horovod_kwargs = value
+        self._distributed_kwargs = value
 
     @property
     def df_engine(self):
@@ -1068,6 +1080,11 @@ class RayBackend(RemoteTrainingMixin, Backend):
             return 1
         return len(ray.nodes())
 
+    @property
+    def num_training_workers(self) -> int:
+        trainer_kwargs = get_trainer_kwargs(**self._distributed_kwargs)
+        return trainer_kwargs["num_workers"]
+
     def get_available_resources(self) -> Resources:
         resources = ray.cluster_resources()
         return Resources(cpus=resources.get("CPU", 0), gpus=resources.get("GPU", 0))
@@ -1122,7 +1139,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
             return self.df_engine.from_ray_dataset(ds)
 
     def _get_transform_kwargs(self) -> Dict[str, Any]:
-        trainer_kwargs = get_trainer_kwargs(**self._horovod_kwargs)
+        trainer_kwargs = get_trainer_kwargs(**self._distributed_kwargs)
         resources_per_worker = trainer_kwargs.get("resources_per_worker", {})
         num_gpus = resources_per_worker.get("GPU", 0)
         num_cpus = resources_per_worker.get("CPU", (1 if num_gpus == 0 else 0))
