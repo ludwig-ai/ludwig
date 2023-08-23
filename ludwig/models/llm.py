@@ -553,6 +553,13 @@ class LLM(BaseModel):
             _predictions = predictions
 
             of_train_loss = of_obj.train_loss(_targets[of_name], _predictions, of_name)
+            if torch.isnan(of_train_loss).item():
+                logger.warning(
+                    "Training loss for current batch was NaN. This is likely because of exploding gradients. "
+                    "You may need to decrease your learning rate, change gradient clipping parameters, or try use non "
+                    "quantized training."
+                )
+
             train_loss += of_obj.loss.weight * of_train_loss
             of_train_losses[of_name] = of_train_loss
 
