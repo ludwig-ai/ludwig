@@ -88,8 +88,9 @@ def test_tune_learning_rate(tmpdir):
 
 
 @pytest.mark.parametrize("is_cpu", [True, False])
+@pytest.mark.parametrize("effective_batch_size", ["auto", 256])
 @pytest.mark.parametrize("eval_batch_size", ["auto", None, 128])
-def test_tune_batch_size_and_lr(tmpdir, eval_batch_size, is_cpu):
+def test_tune_batch_size_and_lr(tmpdir, eval_batch_size, effective_batch_size, is_cpu):
     input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
     output_features = [
         category_feature(decoder={"vocab_size": 2}, reduce_input="sum"),
@@ -106,7 +107,9 @@ def test_tune_batch_size_and_lr(tmpdir, eval_batch_size, is_cpu):
 
     trainer = {
         "epochs": 2,
+        "effective_batch_size": effective_batch_size,
         "batch_size": "auto",
+        "gradient_accumulation_steps": "auto",
         "learning_rate": "auto",
     }
 
@@ -123,7 +126,9 @@ def test_tune_batch_size_and_lr(tmpdir, eval_batch_size, is_cpu):
     model = LudwigModel(config, backend=LocalTestBackend(), logging_level=logging.INFO)
 
     # check preconditions
+    assert model.config_obj.trainer.effective_batch_size == effective_batch_size
     assert model.config_obj.trainer.batch_size == "auto"
+    assert model.config_obj.trainer.gradient_accumulation_steps == "auto"
     assert model.config_obj.trainer.eval_batch_size == eval_batch_size
     assert model.config_obj.trainer.learning_rate == "auto"
 
@@ -135,8 +140,17 @@ def test_tune_batch_size_and_lr(tmpdir, eval_batch_size, is_cpu):
 
     def check_postconditions(model):
         # check batch size
+        assert model.config_obj.trainer.effective_batch_size == effective_batch_size
         assert model.config_obj.trainer.batch_size != "auto"
         assert model.config_obj.trainer.batch_size > 1
+
+        # check gradient accumulation
+        assert model.config_obj.trainer.gradient_accumulation_steps != "auto"
+        if effective_batch_size == "auto":
+            assert model.config_obj.trainer.gradient_accumulation_steps == 1
+        else:
+            batch_size = model.config_obj.trainer.batch_size
+            assert model.config_obj.trainer.gradient_accumulation_steps == effective_batch_size // batch_size
 
         # 4 is the largest possible batch size for this dataset (20% of dataset size)
         assert model.config_obj.trainer.batch_size <= MAX_BATCH_SIZE_DATASET_FRACTION * num_samples
