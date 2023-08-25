@@ -1,9 +1,9 @@
 import logging
 import math
-from typing import Any, Callable, Dict
+from typing import Any, Dict
 
 from torch.optim import Optimizer
-from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts, LambdaLR, ReduceLROnPlateau, SequentialLR
+from torch.optim.lr_scheduler import LambdaLR, ReduceLROnPlateau
 
 from ludwig.constants import MINIMIZE, TRAINING, VALIDATION
 from ludwig.modules.metric_registry import get_metric_objective
@@ -166,29 +166,14 @@ def get_schedule_with_warmup(
     step_info: StepInfo,
 ) -> LambdaLR:
     """Creates a learning rate scheduler that updates each training step."""
-    schedulers = []
+    decay_fn = decay_registry[config.decay]
 
-    # Warmup scheduler
-    if step_info.num_warmup_steps > 0:
-        warmup_scheduler = LambdaLR(
-            optimizer,
-            lambda current_step: float(current_step) / float(max(1, step_info.num_warmup_steps)),
-            last_epoch=-1,
-        )
-        schedulers.append(warmup_scheduler)
+    def lr_lambda(current_step: int):
+        if current_step < step_info.num_warmup_steps:
+            return float(current_step) / float(max(1, step_info.num_warmup_steps))
+        return decay_fn(current_step, step_info.num_training_steps, step_info.num_warmup_steps, config)
 
-    # Decay scheduler
-    decay = config.decay
-    decay_scheduler = decay_registry[decay](config, optimizer, step_info)
-    schedulers.append(decay_scheduler)
-
-    if len(schedulers) == 1:
-        # Only one scheduler, no need to wrap in a SequentialLR
-        return schedulers[0]
-
-    # Return a SequentialLR that applies the warmup and decay schedulers in order
-    # with the warmup scheduler only applied for the first num_warmup_steps steps.
-    return SequentialLR(optimizer, schedulers=schedulers, milestones=[step_info.num_warmup_steps], last_epoch=-1)
+    return LambdaLR(optimizer, lr_lambda, last_epoch=-1)
 
 
 def no_decay(current_step: int, num_training_steps: int, num_warmup_steps: int, config: LRSchedulerConfig):
@@ -196,11 +181,7 @@ def no_decay(current_step: int, num_training_steps: int, num_warmup_steps: int, 
 
 
 def linear_decay(current_step: int, num_training_steps: int, num_warmup_steps: int, config: LRSchedulerConfig):
-    return max(
-        0.0,
-        float(num_training_steps - num_warmup_steps - current_step)
-        / float(max(1, num_training_steps - num_warmup_steps)),
-    )
+    return max(0.0, float(num_training_steps - current_step) / float(max(1, num_training_steps - num_warmup_steps)))
 
 
 def exponential_decay(current_step: int, num_training_steps: int, num_warmup_steps: int, config: LRSchedulerConfig):
@@ -213,36 +194,8 @@ def exponential_decay(current_step: int, num_training_steps: int, num_warmup_ste
     return math.pow(decay_rate, exponent)
 
 
-def wrap_decay_fn(decay_fn: Callable) -> Callable:
-    def init_fn(config: LRSchedulerConfig, optimizer: Optimizer, step_info: StepInfo) -> LambdaLR:
-        return LambdaLR(
-            optimizer,
-            lambda current_step: decay_fn(
-                current_step, step_info.num_training_steps, step_info.num_warmup_steps, config
-            ),
-            last_epoch=-1,
-        )
-
-    return init_fn
-
-
-def init_cosine_decay(
-    config: LRSchedulerConfig,
-    optimizer: Optimizer,
-    step_info: StepInfo,
-) -> CosineAnnealingWarmRestarts:
-    return CosineAnnealingWarmRestarts(
-        optimizer,
-        T_0=config.t_0 or step_info.steps_per_checkpoint,
-        T_mult=config.t_mult or 1,
-        eta_min=config.eta_min or 0,
-        last_epoch=-1,
-    )
-
-
 decay_registry = {
-    None: wrap_decay_fn(no_decay),
-    "linear": wrap_decay_fn(linear_decay),
-    "exponential": wrap_decay_fn(exponential_decay),
-    "cosine": init_cosine_decay,
+    None: no_decay,
+    "linear": linear_decay,
+    "exponential": exponential_decay,
 }
