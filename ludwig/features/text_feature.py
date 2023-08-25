@@ -282,15 +282,14 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
         """
         for metric_name, metric_fn in self._metric_functions.items():
             prediction_key = get_metric_tensor_input(metric_name)
-            if prediction_key != RESPONSE:
+            if prediction_key == RESPONSE:
+                # RESPONSE metrics cannot be computed if decoded texts are not provided.
+                # Decoded texts are only provided using the LLM model type.
+                if decoded_targets is not None and decoded_predictions is not None:
+                    metric_fn.update(decoded_predictions, decoded_targets)
+            else:
                 metric_fn = metric_fn.to(predictions[prediction_key].device)
                 metric_fn.update(predictions[prediction_key].detach(), targets)
-                continue
-
-            # RESPONSE metrics cannot be computed if decoded texts are not provided.
-            # Decoded texts are only provided using the LLM model type.
-            if decoded_targets is not None and decoded_predictions is not None:
-                metric_fn.update(decoded_predictions, decoded_targets)
 
     @staticmethod
     def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):

@@ -308,7 +308,7 @@ class LLM(BaseModel):
         """Builds and returns output feature."""
         # TODO: only single task currently
         if len(output_feature_configs) > 1:
-            raise ValueError("Only single task currently supported")
+            raise ValueError("The LLM model type only supports a single output feature.")
 
         output_feature_config = output_feature_configs[0]
         output_feature_config.input_size = input_size
