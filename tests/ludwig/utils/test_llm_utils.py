@@ -26,7 +26,6 @@ TEST_MODEL_NAME = "hf-internal-testing/tiny-random-OPTForCausalLM"
 def tokenizer():
     tokenizer = AutoTokenizer.from_pretrained(TEST_MODEL_NAME)
     set_pad_token(tokenizer)
-
     return tokenizer
 
 

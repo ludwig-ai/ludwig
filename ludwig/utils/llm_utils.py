@@ -196,13 +196,13 @@ def pad_target_tensor_for_fine_tuning(
 ) -> Dict[str, torch.Tensor]:
     """Pad and adjust target tensors for fine-tuning LLMS models.
 
-    This function is used to pad and adjust the target tensors with -100 based on the model inputs and predictions
-    during the fine-tuning process of Language Models. Here's what this function does:
+    This function is used to pad and adjust the target tensors with IGNORE_INDEX_TOKEN_ID based on the model inputs and
+    predictions during the fine-tuning process of Language Models. Here's what this function does:
         1. If none of the tokens from the target were in the model inputs, we create a tensor of the length of model
-            inputs with value -100s. This ignores this row from affecting loss.
+            inputs with value IGNORE_INDEX_TOKEN_IDs. This ignores this row from affecting loss.
         2. If the target tokens were entirely inside the model inputs, we want to pad all the tokens in model_inputs
-            coming from the input with -100s and leave the target tokens as is. This ensures that all of the target
-            tokens are used during loss computation.
+            coming from the input with IGNORE_INDEX_TOKEN_IDs and leave the target tokens as is. This ensures that all
+            of the target tokens are used during loss computation.
         3. In the scenario that only some part of the target tokens were in the model inputs, we want to pad the model
             inputs until that point and only leave the partial tokens of the target as is. This ensures that we will
             only compute loss on the target tokens that were in the model inputs.
@@ -225,7 +225,7 @@ def pad_target_tensor_for_fine_tuning(
 
     updated_targets = []
     for idx, target in enumerate(targets[of_name]):
-        # Remove any leading -100s in the target that were temporarily added for alignment
+        # Remove any leading IGNORE_INDEX_TOKEN_IDs in the target that were temporarily added for alignment
         end_index = (target != IGNORE_INDEX_TOKEN_ID).nonzero()[0]
         target = target[end_index:]
         target_device = target.device
@@ -235,14 +235,14 @@ def pad_target_tensor_for_fine_tuning(
 
         # If the last matching index is -1, it means that the input tensor passed into the model was truncated
         # and did not contain the target tensor. In this case, we need to truncate the target tensors as well
-        # and just set it to a tensor of -100 so that we don't compute loss on this target tensor.
+        # and just set it to a tensor of IGNORE_INDEX_TOKEN_ID so that we don't compute loss on this target tensor.
         if last_matching_index == -1:
             updated_targets.append(torch.full((prediction_length,), IGNORE_INDEX_TOKEN_ID).to(device=target_device))
 
         # If the last matching index is not -1, it means that the input tensor passed into the model was not
         # truncated and contained either a part of the target tensor or the entire target tensor. In this case,
         # we need to set the target tensor to the part of the target tensor that was passed into the model while
-        # also padding it to the correct length with -100.
+        # also padding it to the correct length with IGNORE_INDEX_TOKEN_ID.
         else:
             padding = torch.full((last_matching_index,), IGNORE_INDEX_TOKEN_ID).to(device=target_device)
             updated_targets.append(torch.cat((padding, target), dim=-1)[:prediction_length])
@@ -302,26 +302,50 @@ def generate_merged_ids(
     return torch.stack(merged_input_and_targets), torch.stack(attention_masks)
 
 
+def _get_decoded_targets_and_predictions(
+    targets: Dict[str, torch.Tensor],
+    predictions: Dict[str, Dict[str, torch.Tensor]],
+    tokenizer: PreTrainedTokenizer,
+    of_name: str,
+):
+    """Returns the decoded targets and predictions, accounting for IGNORE_INDEX_TOKEN_ID."""
+    sanitized_targets = torch.where(targets[of_name] != IGNORE_INDEX_TOKEN_ID, targets[of_name], tokenizer.pad_token_id)
+    sanitized_predictions = torch.where(
+        predictions[of_name][PREDICTIONS] != IGNORE_INDEX_TOKEN_ID,
+        predictions[of_name][PREDICTIONS],
+        tokenizer.pad_token_id,
+    )
+    decoded_targets = tokenizer.batch_decode(sanitized_targets, skip_special_tokens=True)
+    decoded_predictions = tokenizer.batch_decode(sanitized_predictions, skip_special_tokens=True)
+    return decoded_targets, decoded_predictions
+
+
 def realign_target_and_prediction_tensors_for_inference(
     targets: Dict[str, torch.Tensor],
-    predictions: Dict[str, torch.Tensor],
+    predictions: Dict[str, Dict[str, torch.Tensor]],
     of_name: str,
     tokenizer: PreTrainedTokenizer,
     pad_value: int = None,
 ) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
     """Realigns the target tensor with the predictions.
 
-    This is necessary for text metrics that require the target and prediction
-    to be of the same length.
+    This is necessary for text metrics that require the target and prediction to be of the same length.
+
     Args:
         targets: The target tensor.
         predictions: The prediction tensor.
         of_name: The output feature's name.
+        tokenizer: The HF tokenizer.
         pad_direction: The direction to pad the tensors. Can be 'left' or 'right'.
             Defaults to 'right'.
 
     Returns:
-        The realigned target tensor.
+        Tuple of realigned (targets, decoded_targets, predictions, decoded_predictions).
+        - targets is a map of feature name -> tensor of token ids.
+        - predictions is a map from output feature name -> map of tensors with the following items:
+            - "predictions": tensor of token ids.
+            - "probabilities": tensor of probabilities.
+            - "logits": tensor of logits.
     """
     target_length = targets.get(of_name).size()[1]
     prediction_length = predictions[of_name].get(PREDICTIONS).size()[1]

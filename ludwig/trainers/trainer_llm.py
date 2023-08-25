@@ -5,7 +5,7 @@ from typing import Callable, Dict, List, Optional, Union
 
 from torch.utils.tensorboard import SummaryWriter
 
-from ludwig.constants import MINIMUM_BATCH_SIZE, TEST, TRAIN, TRAINING, VALIDATION
+from ludwig.constants import MINIMUM_BATCH_SIZE, TEST, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.features.feature_utils import LudwigFeatureDict
@@ -20,7 +20,7 @@ from ludwig.types import ModelConfigDict
 from ludwig.utils import time_utils
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.metric_utils import TrainerMetric
-from ludwig.utils.metrics_printed_table import MetricsPrintedTable
+from ludwig.utils.metrics_printed_table import print_metrics_table
 from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.torch_utils import get_torch_device
 from ludwig.utils.trainer_utils import append_metrics, get_new_progress_tracker, ProgressTracker
@@ -311,17 +311,12 @@ class NoneTrainer(BaseTrainer):
             logger.info(f"\nRunning evaluation for step: {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
 
         # ================ Eval ================
-        printed_table = MetricsPrintedTable(output_features)
-
         # Run a separate pass over the training data to compute metrics
         # Appends results to progress_tracker.train_metrics.
         if self.evaluate_training_set:
             self.evaluation(
                 training_set, "train", progress_tracker.train_metrics, self.eval_batch_size, progress_tracker
             )
-
-        # eval metrics on the train set
-        printed_table.add_metrics_to_printed_table(progress_tracker.train_metrics, TRAIN)
 
         self.write_eval_summary(
             summary_writer=train_summary_writer,
@@ -333,15 +328,13 @@ class NoneTrainer(BaseTrainer):
             self.callback(lambda c: c.on_validation_start(self, progress_tracker, save_path))
 
             # eval metrics on validation set
-            validation_metrics_log = self.evaluation(
+            self.evaluation(
                 validation_set,
                 VALIDATION,
                 progress_tracker.validation_metrics,
                 self.eval_batch_size,
                 progress_tracker,
             )
-
-            printed_table.add_metrics_to_printed_table(validation_metrics_log, VALIDATION)
 
             self.write_eval_summary(
                 summary_writer=validation_summary_writer,
@@ -355,11 +348,7 @@ class NoneTrainer(BaseTrainer):
             self.callback(lambda c: c.on_test_start(self, progress_tracker, save_path))
 
             # eval metrics on test set
-            test_metrics_log = self.evaluation(
-                test_set, TEST, progress_tracker.test_metrics, self.eval_batch_size, progress_tracker
-            )
-
-            printed_table.add_metrics_to_printed_table(test_metrics_log, TEST)
+            self.evaluation(test_set, TEST, progress_tracker.test_metrics, self.eval_batch_size, progress_tracker)
 
             self.write_eval_summary(
                 summary_writer=test_summary_writer,
@@ -373,7 +362,12 @@ class NoneTrainer(BaseTrainer):
 
         if self.is_coordinator():
             logger.info(f"Evaluation took {time_utils.strdelta(elapsed_time)}\n")
-            printed_table.log_info()
+            print_metrics_table(
+                output_features,
+                progress_tracker.train_metrics,
+                progress_tracker.validation_metrics,
+                progress_tracker.test_metrics,
+            )
 
         # Trigger eval end callback after any model weights save for complete checkpoint
         self.callback(lambda c: c.on_eval_end(self, progress_tracker, save_path))

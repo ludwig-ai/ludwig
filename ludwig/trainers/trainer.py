@@ -31,7 +31,7 @@ import psutil
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from ludwig.constants import AUTO, LOSS, MAX_CPU_BATCH_SIZE, MINIMIZE, MODEL_ECD, TEST, TRAIN, TRAINING, VALIDATION
+from ludwig.constants import AUTO, LOSS, MAX_CPU_BATCH_SIZE, MINIMIZE, MODEL_ECD, TEST, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.globals import (
@@ -58,7 +58,7 @@ from ludwig.utils.data_utils import load_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import path_exists
 from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
-from ludwig.utils.metrics_printed_table import MetricsPrintedTable
+from ludwig.utils.metrics_printed_table import print_metrics_table
 from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.torch_utils import get_torch_device
 from ludwig.utils.trainer_utils import (
@@ -522,25 +522,19 @@ class Trainer(BaseTrainer):
             logger.info(f"\nRunning evaluation for step: {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
 
         # ================ Eval ================
-        printed_table = MetricsPrintedTable(output_features)
-
         # eval metrics on train
         self.eval_batch_size = max(self.eval_batch_size, progress_tracker.batch_size)
 
         if self.evaluate_training_set:
             # Run a separate pass over the training data to compute metrics
-            train_metrics_log = self.evaluation(
+            self.evaluation(
                 training_set, "train", progress_tracker.train_metrics, self.eval_batch_size, progress_tracker
             )
         else:
             # Use metrics accumulated during training
             metrics = self.model.get_metrics()
-            train_metrics_log = append_metrics(
-                self.model, "train", metrics, progress_tracker.train_metrics, progress_tracker
-            )
+            append_metrics(self.model, "train", metrics, progress_tracker.train_metrics, progress_tracker)
             self.model.reset_metrics()
-
-        printed_table.add_metrics_to_printed_table(train_metrics_log, TRAIN)
 
         self.write_eval_summary(
             summary_writer=train_summary_writer,
@@ -552,15 +546,13 @@ class Trainer(BaseTrainer):
             self.callback(lambda c: c.on_validation_start(self, progress_tracker, save_path))
 
             # eval metrics on validation set
-            validation_metrics_log = self.evaluation(
+            self.evaluation(
                 validation_set,
                 VALIDATION,
                 progress_tracker.validation_metrics,
                 self.eval_batch_size,
                 progress_tracker,
             )
-
-            printed_table.add_metrics_to_printed_table(validation_metrics_log, VALIDATION)
 
             self.write_eval_summary(
                 summary_writer=validation_summary_writer,
@@ -574,11 +566,7 @@ class Trainer(BaseTrainer):
             self.callback(lambda c: c.on_test_start(self, progress_tracker, save_path))
 
             # eval metrics on test set
-            test_metrics_log = self.evaluation(
-                test_set, TEST, progress_tracker.test_metrics, self.eval_batch_size, progress_tracker
-            )
-
-            printed_table.add_metrics_to_printed_table(test_metrics_log, TEST)
+            self.evaluation(test_set, TEST, progress_tracker.test_metrics, self.eval_batch_size, progress_tracker)
 
             self.write_eval_summary(
                 summary_writer=test_summary_writer,
@@ -592,7 +580,12 @@ class Trainer(BaseTrainer):
 
         if self.is_coordinator():
             logger.info(f"Evaluation took {time_utils.strdelta(elapsed_time)}\n")
-            printed_table.log_info()
+            print_metrics_table(
+                output_features,
+                progress_tracker.train_metrics,
+                progress_tracker.validation_metrics,
+                progress_tracker.test_metrics,
+            )
 
         # ================ Validation Logic ================
         should_break = False

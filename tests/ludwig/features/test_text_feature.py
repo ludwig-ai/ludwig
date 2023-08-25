@@ -1,7 +1,12 @@
 import pandas as pd
+import torch
+from transformers import AutoTokenizer
 
 from ludwig.backend import LocalBackend
+from ludwig.constants import LOGITS, PREDICTIONS, PROBABILITIES
 from ludwig.features import text_feature
+
+TEST_MODEL_NAME = "hf-internal-testing/tiny-random-OPTForCausalLM"
 
 
 def test_backwards_compatibility():
@@ -101,3 +106,23 @@ def test_backwards_compatibility():
 
     assert list(feature_data[0]) == [1, 3, 3]
     assert list(feature_data[1]) == [1, 3, 3]
+
+
+def test_get_decoded_targets_and_predictions():
+    tokenizer = AutoTokenizer.from_pretrained(TEST_MODEL_NAME)
+    vocab_size = 8
+
+    # Scenario 1: Prediction and target tensors have the same length, so nothing should change
+    targets = torch.tensor([[78, 79, 504, 76, 397, 84, 0]])
+    predictions = {
+        PREDICTIONS: torch.tensor([[78, 79, 504, 76, 397, 84, 0]], dtype=torch.int64),
+        PROBABILITIES: torch.randn(1, 7, vocab_size).to(torch.float32),
+        LOGITS: torch.randn(1, 7, vocab_size).to(torch.float32),
+    }
+    (
+        decoded_targets,
+        decoded_predictions,
+    ) = text_feature.get_decoded_targets_and_predictions(targets, predictions, tokenizer)
+
+    assert decoded_targets == [" first she 18 yearman our<s>"]
+    assert decoded_predictions == [" first she 18 yearman our<s>"]

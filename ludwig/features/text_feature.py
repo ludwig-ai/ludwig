@@ -15,12 +15,15 @@
 # ==============================================================================
 import logging
 from functools import partial
-from typing import Dict, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import torch
+from torch import Tensor
+from transformers import PreTrainedTokenizer
 
 from ludwig.constants import (
     COLUMN,
+    IGNORE_INDEX_TOKEN_ID,
     LAST_PREDICTIONS,
     LENGTHS,
     NAME,
@@ -29,6 +32,7 @@ from ludwig.constants import (
     PROBABILITIES,
     PROBABILITY,
     PROC_COLUMN,
+    RESPONSE,
     TEXT,
 )
 from ludwig.features.base_feature import BaseFeatureMixin, OutputFeature
@@ -39,6 +43,7 @@ from ludwig.features.sequence_feature import (
     SequenceInputFeature,
     SequenceOutputFeature,
 )
+from ludwig.modules.metric_registry import get_metric_tensor_input
 from ludwig.schema.features.text_feature import TextInputFeatureConfig, TextOutputFeatureConfig
 from ludwig.types import FeatureMetadataDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils.math_utils import softmax
@@ -52,6 +57,23 @@ from ludwig.utils.strings_utils import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def get_decoded_targets_and_predictions(
+    targets: Tensor,
+    predictions: Dict[str, Tensor],
+    tokenizer: PreTrainedTokenizer,
+) -> Tuple[List[str], List[str]]:
+    """Returns the decoded targets and predictions, accounting for IGNORE_INDEX_TOKEN_ID."""
+    sanitized_targets = torch.where(targets != IGNORE_INDEX_TOKEN_ID, targets, tokenizer.pad_token_id)
+    sanitized_predictions = torch.where(
+        predictions[PREDICTIONS] != IGNORE_INDEX_TOKEN_ID,
+        predictions[PREDICTIONS],
+        tokenizer.pad_token_id,
+    )
+    decoded_targets = tokenizer.batch_decode(sanitized_targets, skip_special_tokens=True)
+    decoded_predictions = tokenizer.batch_decode(sanitized_predictions, skip_special_tokens=True)
+    return decoded_targets, decoded_predictions
 
 
 class TextFeatureMixin(BaseFeatureMixin):
@@ -260,6 +282,34 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     @property
     def output_shape(self) -> torch.Size:
         return torch.Size([self.decoder_obj.config.max_sequence_length])
+
+    def update_metrics(
+        self,
+        targets: Tensor,
+        predictions: Dict[str, Tensor],
+        tokenizer: Optional[PreTrainedTokenizer] = None,
+    ) -> None:
+        """Updates metrics with the given targets and predictions.
+
+        If decoded_targets and decoded_predictions are provided, as through LLM model types, then additional
+        response-based metrics like BLEU and ROUGE are also computed.
+
+        Args:
+            targets: Tensor with target values for this output feature.
+            predictions: Dict of tensors returned by predictions().
+        """
+        if tokenizer is not None:
+            decoded_targets, decoded_predictions = get_decoded_targets_and_predictions(targets, predictions, tokenizer)
+        for metric_name, metric_fn in self._metric_functions.items():
+            prediction_key = get_metric_tensor_input(metric_name)
+            if prediction_key == RESPONSE and tokenizer is not None:
+                # RESPONSE metrics cannot be computed if decoded texts are not provided.
+                # Decoded texts are only provided using the LLM model type.
+                if decoded_targets is not None and decoded_predictions is not None:
+                    metric_fn.update(decoded_predictions, decoded_targets)
+            else:
+                metric_fn = metric_fn.to(predictions[prediction_key].device)
+                metric_fn.update(predictions[prediction_key].detach(), targets)
 
     @staticmethod
     def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
