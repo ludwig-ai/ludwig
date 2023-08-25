@@ -487,3 +487,27 @@ def _compare_models(model_1: torch.nn.Module, model_2: torch.nn.Module) -> bool:
         if not torch.equal(key_item_1[1], key_item_2[1]):
             return False
     return True
+
+
+def test_global_max_sequence_length_for_llms():
+    """Ensures that user specified global_max_sequence_length can never be greater than the model's context
+    length."""
+    config = {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: "HuggingFaceH4/tiny-random-LlamaForCausalLM",
+        INPUT_FEATURES: [text_feature(name="input", encoder={"type": "passthrough"})],
+        OUTPUT_FEATURES: [text_feature(name="output")],
+    }
+    config_obj = ModelConfig.from_dict(config)
+    model = LLM(config_obj)
+
+    # Default value is set based on model's context_len
+    assert model.global_max_sequence_length == 2048
+
+    # Override to a larger value in the config
+    config["preprocessing"] = {"global_max_sequence_length": 4096}
+    config_obj = ModelConfig.from_dict(config)
+    model = LLM(config_obj)
+
+    # Check that the value can never be larger than the model's context_len
+    assert model.global_max_sequence_length == 2048
