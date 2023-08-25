@@ -151,12 +151,19 @@ class TextPreprocessingConfig(BaseTextPreprocessingConfig):
 
 
 @DeveloperAPI
-@register_preprocessor("text_llm")
+@register_preprocessor("text_llm_input")
 @ludwig_dataclass
-class LLMTextPreprocessingConfig(BaseTextPreprocessingConfig):
+class LLMTextInputPreprocessingConfig(BaseTextPreprocessingConfig):
     """LLMs require the prompt to be provided at the top-level, not preprocessing."""
 
-    pass
+    max_sequence_length: int = schema_utils.PositiveInteger(
+        default=None,
+        allow_none=True,
+        description="The maximum length (number of tokens) of the sequence. Sequences that are longer than this value "
+        "will be truncated. Useful as a stopgap measure if `sequence_length` is set to `None`. If `None`, max sequence "
+        "length will be inferred from the training dataset.",
+        parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["max_sequence_length"],
+    )
 
 
 @DeveloperAPI
@@ -216,4 +223,18 @@ class TextOutputPreprocessingConfig(BaseTextPreprocessingConfig):
         allow_none=False,
         description="The size of the ngram when using the `ngram` tokenizer (e.g, 2 = bigram, 3 = trigram, etc.).",
         parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["ngram_size"],
+    )
+
+
+@DeveloperAPI
+@register_preprocessor("text_llm_output")
+@ludwig_dataclass
+class LLMTextOutputPreprocessingConfig(TextOutputPreprocessingConfig):
+    max_sequence_length: int = schema_utils.PositiveInteger(
+        default=None,
+        allow_none=True,
+        description="The maximum length (number of tokens) of the sequence. Sequences that are longer than this value "
+        "will be truncated. Useful as a stopgap measure if `sequence_length` is set to `None`. If `None`, max sequence "
+        "length will be inferred from the training dataset.",
+        parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["max_sequence_length"],
     )
