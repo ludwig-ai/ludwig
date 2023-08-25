@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple
+from typing import Dict, Tuple
 
 import torch
 import torch.nn.functional as F
@@ -326,7 +326,7 @@ def realign_target_and_prediction_tensors_for_inference(
     of_name: str,
     tokenizer: PreTrainedTokenizer,
     pad_value: int = None,
-) -> Tuple[Dict[str, torch.Tensor], List[str], Dict[str, torch.Tensor], List[str]]:
+) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
     """Realigns the target tensor with the predictions.
 
     This is necessary for text metrics that require the target and prediction to be of the same length.
@@ -342,21 +342,16 @@ def realign_target_and_prediction_tensors_for_inference(
     Returns:
         Tuple of realigned (targets, decoded_targets, predictions, decoded_predictions).
         - targets is a map of feature name -> tensor of token ids.
-        - decoded_targets is a List of decoded strings.
         - predictions is a map from output feature name -> map of tensors with the following items:
             - "predictions": tensor of token ids.
             - "probabilities": tensor of probabilities.
             - "logits": tensor of logits.
-        - decoded_predictions is a List of decoded strings.
     """
     target_length = targets.get(of_name).size()[1]
     prediction_length = predictions[of_name].get(PREDICTIONS).size()[1]
 
     if target_length == prediction_length:
-        decoded_targets, decoded_predictions = _get_decoded_targets_and_predictions(
-            targets, predictions, tokenizer, of_name
-        )
-        return targets, decoded_targets, predictions, decoded_predictions
+        return targets, predictions
 
     if not pad_value:
         pad_value = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else tokenizer.eos_token_id
@@ -380,9 +375,4 @@ def realign_target_and_prediction_tensors_for_inference(
 
         targets[of_name] = F.pad(targets[of_name], (0, zeros_to_add), value=pad_value).to(torch.int64)
 
-    # Once targets and predictions are aligned, decode them.
-    decoded_targets, decoded_predictions = _get_decoded_targets_and_predictions(
-        targets, predictions, tokenizer, of_name
-    )
-
-    return targets, decoded_targets, predictions, decoded_predictions
+    return targets, predictions

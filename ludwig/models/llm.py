@@ -480,15 +480,11 @@ class LLM(BaseModel):
         """Updates the model's metrics given targets and predictions for zero-shot/few-shot."""
         for of_name, of_obj in self.output_features.items():
             if isinstance(of_obj, TextOutputFeature):
-                # 1. Align the target length with the predictions length to enable text metric evaluation.
-                # 2. Decode both the target and predictions tokens to strings to calculate additional metrics.
-                (
-                    _targets,
-                    _decoded_targets,
-                    _predictions,
-                    _decoded_predictions,
-                ) = realign_target_and_prediction_tensors_for_inference(targets, predictions, of_name, self.tokenizer)
-                of_obj.update_metrics(_targets[of_name], _predictions[of_name], _decoded_targets, _decoded_predictions)
+                # Align the target length with the predictions length to enable text metric evaluation.
+                _targets, _predictions = realign_target_and_prediction_tensors_for_inference(
+                    targets, predictions, of_name, self.tokenizer
+                )
+                of_obj.update_metrics(_targets[of_name], _predictions[of_name], self.tokenizer)
             else:
                 of_obj.update_metrics(targets[of_name], predictions[of_name])
 
@@ -510,19 +506,7 @@ class LLM(BaseModel):
                 # forward pass.
                 _targets = self._update_target_tensor_for_finetuning(_targets, _predictions, of_name)
                 if isinstance(of_obj, TextOutputFeature):
-                    # NOTE: Alignment is not technically necessary here, but we re-use the method used in
-                    # LLM.update_metrics() for decoding consistency.
-                    (
-                        _targets,
-                        _decoded_targets,
-                        _predictions,
-                        _decoded_predictions,
-                    ) = realign_target_and_prediction_tensors_for_inference(
-                        _targets, _predictions, of_name, self.tokenizer
-                    )
-                    of_obj.update_metrics(
-                        _targets[of_name], _predictions[of_name], _decoded_targets, _decoded_predictions
-                    )
+                    of_obj.update_metrics(_targets[of_name], _predictions[of_name], self.tokenizer)
                 else:
                     of_obj.update_metrics(_targets[of_name], _predictions[of_name])
                 continue
@@ -599,7 +583,7 @@ class LLM(BaseModel):
         for of_name, of_obj in self.output_features.items():
             if isinstance(of_obj, TextOutputFeature):
                 # Align the target length with the predictions length to enable text metric evaluation.
-                _targets, _, _predictions, _ = realign_target_and_prediction_tensors_for_inference(
+                _targets, _predictions = realign_target_and_prediction_tensors_for_inference(
                     targets, predictions, of_name, self.tokenizer
                 )
                 of_eval_loss = of_obj.eval_loss(_targets[of_name], _predictions[of_name])

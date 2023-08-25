@@ -26,7 +26,6 @@ TEST_MODEL_NAME = "hf-internal-testing/tiny-random-OPTForCausalLM"
 def tokenizer():
     tokenizer = AutoTokenizer.from_pretrained(TEST_MODEL_NAME)
     set_pad_token(tokenizer)
-
     return tokenizer
 
 
@@ -236,12 +235,9 @@ def test_realign_target_and_prediction_tensors_for_inference(tokenizer):
             LOGITS: torch.randn(1, 7, vocab_size).to(torch.float32),
         }
     }
-    (
-        updated_targets,
-        decoded_targets,
-        updated_predictions,
-        decoded_predictions,
-    ) = realign_target_and_prediction_tensors_for_inference(targets, predictions, of_name, tokenizer)
+    updated_targets, updated_predictions = realign_target_and_prediction_tensors_for_inference(
+        targets, predictions, of_name, tokenizer
+    )
 
     assert targets == updated_targets
     assert predictions == updated_predictions
@@ -258,7 +254,7 @@ def test_realign_target_and_prediction_tensors_for_inference(tokenizer):
             LOGITS: torch.randn(1, 9, vocab_size).to(torch.float32),
         }
     }
-    updated_targets, _, updated_predictions, _ = realign_target_and_prediction_tensors_for_inference(
+    updated_targets, updated_predictions = realign_target_and_prediction_tensors_for_inference(
         targets, predictions, of_name, tokenizer
     )
 
@@ -274,7 +270,7 @@ def test_realign_target_and_prediction_tensors_for_inference(tokenizer):
             LOGITS: torch.randn(1, 7, vocab_size).to(torch.float32),
         }
     }
-    updated_targets, _, updated_predictions, _ = realign_target_and_prediction_tensors_for_inference(
+    updated_targets, updated_predictions = realign_target_and_prediction_tensors_for_inference(
         targets, predictions, of_name, tokenizer
     )
 
@@ -291,27 +287,3 @@ def test_realign_target_and_prediction_tensors_for_inference(tokenizer):
     assert torch.equal(updated_predictions[of_name][LOGITS][0][-1], torch.zeros(vocab_size))
     assert torch.equal(updated_predictions[of_name][LOGITS][0][-2], torch.zeros(vocab_size))
     assert not torch.equal(updated_predictions[of_name][LOGITS][0][-3], torch.zeros(vocab_size))
-
-
-def test_realign_target_and_prediction_tensors_for_inference_decoded(tokenizer):
-    of_name = "out_1"
-    vocab_size = 8
-
-    # Scenario 1: Prediction and target tensors have the same length, so nothing should change
-    targets = {of_name: torch.tensor([[78, 79, 504, 76, 397, 84, 0]])}
-    predictions = {
-        of_name: {
-            PREDICTIONS: torch.tensor([[78, 79, 504, 76, 397, 84, 0]], dtype=torch.int64),
-            PROBABILITIES: torch.randn(1, 7, vocab_size).to(torch.float32),
-            LOGITS: torch.randn(1, 7, vocab_size).to(torch.float32),
-        }
-    }
-    (
-        updated_targets,
-        decoded_targets,
-        updated_predictions,
-        decoded_predictions,
-    ) = realign_target_and_prediction_tensors_for_inference(targets, predictions, of_name, tokenizer)
-
-    assert decoded_targets == [" first she 18 yearman our<s>"]
-    assert decoded_predictions == [" first she 18 yearman our<s>"]
