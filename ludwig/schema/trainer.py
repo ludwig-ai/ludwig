@@ -26,6 +26,32 @@ trainer_schema_registry = Registry()
 _llm_trainer_schema_registry = Registry()
 
 
+LEARNING_RATE_DESCRIPTION = (
+    "Controls how much to change the model in response to the estimated error each time the model weights are "
+    "updated. If 'auto', the optimal learning rate is estimated by choosing the learning rate that produces "
+    "the smallest non-diverging gradient update."
+)
+
+EFFECTIVE_BATCH_SIZE_DESCRIPTION = (
+    "The effective batch size is the total number of samples used to compute a single gradient update "
+    "to the model weights. This differs from `batch_size` by taking `gradient_accumulation_steps` and number "
+    "of training worker processes into account. In practice, "
+    "`effective_batch_size = batch_size * gradient_accumulation_steps * num_workers`. "
+    "If 'auto', the effective batch size is derivied implicitly from `batch_size`, but if set explicitly, then "
+    "one of `batch_size` or `gradient_accumulation_steps` must be set to something other than 'auto', and "
+    "consequently will be set following the formula given above."
+)
+
+BATCH_SIZE_DESCRIPTION = (
+    "The number of training examples utilized in one training step of the model. If ’auto’, the "
+    "batch size that maximized training throughput (samples / sec) will be used. For CPU training, the "
+    "tuned batch size is capped at 128 as throughput benefits of large batch sizes are less noticeable without "
+    "a GPU."
+)
+
+EPOCHS_DESCRIPTION = "Number of epochs the algorithm is intended to be run over. Overridden if `train_steps` is set"
+
+
 @DeveloperAPI
 def register_trainer_schema(model_type: str):
     def wrap(trainer_config: BaseTrainerConfig):
@@ -135,11 +161,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
     learning_rate: Union[float, str] = schema_utils.OneOfOptionsField(
         default=0.001,
         allow_none=False,
-        description=(
-            "Controls how much to change the model in response to the estimated error each time the model weights are "
-            "updated. If 'auto', the optimal learning rate is estimated by choosing the learning rate that produces "
-            "the smallest non-diverging gradient update."
-        ),
+        description=LEARNING_RATE_DESCRIPTION,
         parameter_metadata=TRAINER_METADATA[MODEL_ECD]["learning_rate"],
         field_options=[
             schema_utils.FloatRange(default=0.001, allow_none=False, min=0, max=1),
@@ -154,7 +176,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
 
     epochs: int = schema_utils.PositiveInteger(
         default=100,
-        description="Number of epochs the algorithm is intended to be run over. Overridden if `train_steps` is set",
+        description=EPOCHS_DESCRIPTION,
         parameter_metadata=TRAINER_METADATA[MODEL_ECD]["epochs"],
     )
 
@@ -189,15 +211,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
     effective_batch_size: Union[int, str] = schema_utils.OneOfOptionsField(
         default=AUTO,
         allow_none=False,
-        description=(
-            "The effective batch size is the total number of samples used to compute a single gradient update "
-            "to the model weights. This differs from `batch_size` by taking `gradient_accumulation_steps` and number "
-            "of training worker processes into account. In practice, "
-            "`effective_batch_size = batch_size * gradient_accumulation_steps * num_workers`. "
-            "If 'auto', the effective batch size is derivied implicitly from `batch_size`, but if set explicitly, then "
-            "one of `batch_size` or `gradient_accumulation_steps` must be set to something other than 'auto', and "
-            "consequently will be set following the formula given above."
-        ),
+        description=EFFECTIVE_BATCH_SIZE_DESCRIPTION,
         parameter_metadata=TRAINER_METADATA[MODEL_ECD]["effective_batch_size"],
         field_options=[
             schema_utils.PositiveInteger(default=128, description="", allow_none=False),
@@ -208,12 +222,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
     batch_size: Union[int, str] = schema_utils.OneOfOptionsField(
         default=AUTO,
         allow_none=False,
-        description=(
-            "The number of training examples utilized in one training step of the model. If ’auto’, the "
-            "batch size that maximized training throughput (samples / sec) will be used. For CPU training, the "
-            "tuned batch size is capped at 128 as throughput benefits of large batch sizes are less noticeable without "
-            "a GPU."
-        ),
+        description=BATCH_SIZE_DESCRIPTION,
         parameter_metadata=TRAINER_METADATA[MODEL_ECD]["batch_size"],
         field_options=[
             schema_utils.PositiveInteger(default=128, description="", allow_none=False),
@@ -766,9 +775,16 @@ class GBMTrainerConfig(BaseTrainerConfig):
 
 
 @DeveloperAPI
+@register_llm_trainer_schema("none")
 @ludwig_dataclass
-class LLMTrainerConfig(BaseTrainerConfig):
+class NoneTrainerConfig(BaseTrainerConfig):
     """Base class for all LLM trainer configs."""
+
+    type: str = schema_utils.ProtectedString(
+        "none",
+        description="The type of trainer used to train the model. ",
+        parameter_metadata=TRAINER_METADATA[MODEL_LLM]["type"],
+    )
 
     learning_rate: Union[float, str] = schema_utils.OneOfOptionsField(
         default=0.0001,
@@ -840,20 +856,6 @@ class LLMTrainerConfig(BaseTrainerConfig):
         description="Whether to evaluate the training set in the LLM trainer. Note: this operation may be slow.",
     )
 
-
-@DeveloperAPI
-@register_llm_trainer_schema("none")
-@ludwig_dataclass
-class NoneTrainerConfig(LLMTrainerConfig):
-    """Dataclass that configures most of the hyperparameters used for zero-shot / few-shot LLM model training."""
-
-    # Required for lookup during trainer initialization
-    type: str = schema_utils.ProtectedString(
-        "none",
-        description="The type of trainer used to train the model. ",
-        parameter_metadata=TRAINER_METADATA[MODEL_LLM]["type"],
-    )
-
     def can_tune_batch_size(self) -> bool:
         return False
 
@@ -867,9 +869,43 @@ class FineTuneTrainerConfig(ECDTrainerConfig):
     # Required for lookup during trainer initialization
     type: str = schema_utils.ProtectedString("finetune")
 
-    base_learning_rate: float = schema_utils.NonNegativeFloat(
-        default=0.0,
-        description="Base learning rate used for training in the LLM trainer.",
+    learning_rate: Union[float, str] = schema_utils.OneOfOptionsField(
+        default=0.0001,
+        allow_none=False,
+        description=LEARNING_RATE_DESCRIPTION,
+        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["learning_rate"],
+        field_options=[
+            schema_utils.FloatRange(default=0.001, allow_none=False, min=0, max=1),
+            schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
+        ],
+    )
+
+    effective_batch_size: Union[int, str] = schema_utils.OneOfOptionsField(
+        default=32,
+        allow_none=False,
+        description=EFFECTIVE_BATCH_SIZE_DESCRIPTION,
+        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["effective_batch_size"],
+        field_options=[
+            schema_utils.PositiveInteger(default=32, description="", allow_none=False),
+            schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
+        ],
+    )
+
+    batch_size: Union[int, str] = schema_utils.OneOfOptionsField(
+        default=AUTO,
+        allow_none=False,
+        description=BATCH_SIZE_DESCRIPTION,
+        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["batch_size"],
+        field_options=[
+            schema_utils.PositiveInteger(default=1, description="", allow_none=False),
+            schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
+        ],
+    )
+
+    epochs: int = schema_utils.PositiveInteger(
+        default=3,
+        description=EPOCHS_DESCRIPTION,
+        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["epochs"],
     )
 
 
