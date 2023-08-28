@@ -84,6 +84,15 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
         ),
     )
 
+    skip_all_evaluation: bool = schema_utils.Boolean(
+        default=False,
+        description=(
+            "Whether to skip evaluation entirely. If you are training a model with a well-known configuration on a "
+            "well-known dataset and are confident about the expected results, you might skip all evaluation. Moreover, "
+            "evaluating a model, especially on large validation or test sets, can be time-consuming."
+        ),
+    )
+
     def can_tune_batch_size(self) -> bool:
         return True
 

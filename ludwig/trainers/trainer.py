@@ -149,6 +149,7 @@ class Trainer(BaseTrainer):
         self.steps_per_checkpoint = config.steps_per_checkpoint
         self.checkpoints_per_epoch = config.checkpoints_per_epoch
         self.evaluate_training_set = config.evaluate_training_set
+        self.skip_all_evaluation = config.skip_all_evaluation
         self.increase_batch_size_on_plateau = config.increase_batch_size_on_plateau
         self.increase_batch_size_on_plateau_patience = config.increase_batch_size_on_plateau_patience
         self.increase_batch_size_on_plateau_rate = config.increase_batch_size_on_plateau_rate
@@ -836,6 +837,10 @@ class Trainer(BaseTrainer):
                         if self.is_coordinator():
                             progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
 
+                    if not self.skip_save_model and self.skip_all_evaluation:
+                        # All evaluation was skipped, so save the current step as the best so far.
+                        checkpoint_manager.save_best(progress_tracker.steps)
+
                     # Early stop if needed.
                     if should_break:
                         break
@@ -852,6 +857,10 @@ class Trainer(BaseTrainer):
                 validation_summary_writer.close()
             if test_summary_writer is not None:
                 test_summary_writer.close()
+
+            if not self.skip_save_model and self.skip_all_evaluation:
+                # All evaluation was skipped, so save the current step as the best so far.
+                checkpoint_manager.save_best(progress_tracker.steps)
 
             if not self.skip_save_progress:
                 checkpoint_manager.close()
@@ -933,6 +942,7 @@ class Trainer(BaseTrainer):
             }
 
             loss, all_losses = self.train_step(inputs, targets, should_step=should_step)
+            logger.info(f"Train loss for step {progress_tracker.steps}: {loss:.3f}")
 
             if should_step:
                 # Update LR schduler here instead of train loop to avoid updating during batch size tuning, etc.
@@ -961,23 +971,26 @@ class Trainer(BaseTrainer):
             self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path, sync_step=should_step))
 
             if progress_tracker.steps % final_steps_per_checkpoint == 0:
-                should_break = self.run_evaluation(
-                    training_set,
-                    validation_set,
-                    test_set,
-                    progress_tracker,
-                    train_summary_writer,
-                    validation_summary_writer,
-                    test_summary_writer,
-                    model_hyperparameters_path,
-                    output_features,
-                    metrics_names,
-                    save_path,
-                    loss,
-                    all_losses,
-                    early_stopping_steps,
-                    checkpoint_manager,
-                )
+                if not self.skip_all_evaluation:
+                    should_break = self.run_evaluation(
+                        training_set,
+                        validation_set,
+                        test_set,
+                        progress_tracker,
+                        train_summary_writer,
+                        validation_summary_writer,
+                        test_summary_writer,
+                        model_hyperparameters_path,
+                        output_features,
+                        metrics_names,
+                        save_path,
+                        loss,
+                        all_losses,
+                        early_stopping_steps,
+                        checkpoint_manager,
+                    )
+                else:
+                    should_break = False
 
                 # Checkpoint the model.
                 # NOTE: Ideally we would do this before evaluation, but for some reason DeepSpeed will complain
