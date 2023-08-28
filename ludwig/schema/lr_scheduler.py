@@ -17,7 +17,7 @@ class LRSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Configuration for learning rate scheduler parameters."""
 
     decay: str = schema_utils.StringOptions(
-        options=["linear", "exponential"],
+        options=["linear", "exponential", "cosine"],
         default=None,
         allow_none=True,
         description="Turn on decay of the learning rate.",
@@ -97,6 +97,32 @@ class LRSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
             "Which dataset split to listen on for reducing the learning rate " "when `reduce_on_plateau > 0`."
         ),
         parameter_metadata=TRAINER_METADATA[MODEL_ECD]["learning_rate_scheduler"]["reduce_eval_split"],
+    )
+
+    # Parameters for CosineAnnealingWarmRestarts scheduler
+
+    t_0: int = schema_utils.PositiveInteger(
+        default=None,
+        allow_none=True,
+        description="Number of steps before the first restart for cosine annealing decay. If not specified, it"
+        " will be set to `steps_per_checkpoint`.",
+        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["learning_rate_scheduler"]["t_0"],
+    )
+
+    t_mult: int = schema_utils.PositiveInteger(
+        default=1,
+        description="Period multiplier after each restart for cosine annealing decay. Defaults to 1, i.e.,"
+        " restart every `t_0` steps. If set to a larger value, the period between restarts increases by that"
+        " multiplier. For e.g., if t_mult is 2, then the periods would be: t_0, 2*t_0, 2^2*t_0, 2^3*t_0, etc.",
+        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["learning_rate_scheduler"]["t_mult"],
+    )
+
+    eta_min: float = schema_utils.FloatRange(
+        default=0,
+        min=0,
+        max=1,
+        description="Minimum learning rate allowed for cosine annealing decay. Default: 0.",
+        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["learning_rate_scheduler"]["eta_min"],
     )
 
 
