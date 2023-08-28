@@ -52,7 +52,7 @@ def load_trainer_with_kwargs(
     otherwise passes all other parameters through without change.
     """
     from ludwig.constants import MODEL_ECD, MODEL_GBM, MODEL_LLM
-    from ludwig.schema.trainer import ECDTrainerConfig, GBMTrainerConfig, LLMTrainerConfig
+    from ludwig.schema.trainer import ECDTrainerConfig, GBMTrainerConfig, NoneTrainerConfig
 
     # TODO: use registry pattern for trainers
     if model_type == MODEL_ECD:
@@ -60,7 +60,7 @@ def load_trainer_with_kwargs(
     elif model_type == MODEL_GBM:
         trainer_schema = GBMTrainerConfig
     elif model_type == MODEL_LLM:
-        trainer_schema = LLMTrainerConfig
+        trainer_schema = NoneTrainerConfig
 
     return load_config_with_kwargs(trainer_schema, kwargs)
 

@@ -19,7 +19,7 @@ from ludwig.schema.llms.prompt import PromptConfig, PromptConfigField
 from ludwig.schema.llms.quantization import QuantizationConfig, QuantizationConfigField
 from ludwig.schema.model_types.base import ModelConfig, register_model_type
 from ludwig.schema.preprocessing import PreprocessingConfig, PreprocessingField
-from ludwig.schema.trainer import LLMTrainerConfig, LLMTrainerDataclassField
+from ludwig.schema.trainer import BaseTrainerConfig, LLMTrainerDataclassField
 from ludwig.schema.utils import ludwig_dataclass
 
 
@@ -42,8 +42,8 @@ class LLMModelConfig(ModelConfig):
 
     prompt: PromptConfig = PromptConfigField().get_default_field()
 
-    # trainer: LLMTrainerConfig = LLMTrainerField().get_default_field()
-    trainer: LLMTrainerConfig = LLMTrainerDataclassField(
+    # trainer: BaseTrainerConfig = LLMTrainerField().get_default_field()
+    trainer: BaseTrainerConfig = LLMTrainerDataclassField(
         description="The trainer to use for the model",
     )
 
