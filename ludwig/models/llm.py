@@ -140,6 +140,7 @@ class LLM(BaseModel):
         self.max_new_tokens = self.config_obj.generation.max_new_tokens
         self.max_input_length = self.context_len - self.max_new_tokens - 8
 
+        # TODO(Arnav): This needs be more flexible to account for RoPE Scaling
         # When merging input IDs and target IDs for LLM fine-tuning, we want to make sure that the merged tensor is
         # not longer than the global maximum sequence length. This is provided in the preprocessing config. We never
         # want to exceed the maximum possible context length so we also check for that.
