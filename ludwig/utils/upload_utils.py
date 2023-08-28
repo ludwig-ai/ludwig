@@ -198,6 +198,7 @@ class HuggingFaceHub(BaseModelUpload):
             repo_type=repo_type,
             commit_message=commit_message,
             commit_description=commit_description,
+            create_pr=True,
         )
 
         if upload_path:
