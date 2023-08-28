@@ -929,3 +929,21 @@ def test_type_removed_from_defaults_config():
 
     for feature_type in config_obj_2.get("defaults"):
         assert "type" not in config_obj_2["defaults"][feature_type]
+
+
+def test_trainer_effective_batch_size():
+    config = {
+        "input_features": [
+            {"name": "Age", "type": "number"},
+        ],
+        "output_features": [
+            {"name": "Survived", "type": "category"},
+        ],
+        "trainer": {
+            "batch_size": 64,
+        },
+    }
+
+    config_obj = ModelConfig.from_dict(config)
+    assert config_obj.trainer.effective_batch_size
+    assert config_obj.trainer.effective_batch_size == "auto"
