@@ -795,6 +795,16 @@ def _upgrade_legacy_image_encoders(feature: FeatureConfigDict) -> FeatureConfigD
     return feature
 
 
+@register_config_transformation("0.8", ["trainer"])
+def upgrade_trainer_with_effective_batch_size(trainer: TrainerConfigDict):
+    "Add `effective_batch_size` to trainer config if it is missing."
+
+    if trainer.get("effective_batch_size", None):
+        trainer["effective_batch_size"] = "auto"
+
+    return trainer
+
+
 @register_config_transformation("0.7")
 def upgrade_missing_hyperopt(config: ModelConfigDict) -> ModelConfigDict:
     hyperopt = config.get(HYPEROPT)
