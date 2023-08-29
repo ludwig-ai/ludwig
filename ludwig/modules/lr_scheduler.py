@@ -31,7 +31,8 @@ class ReduceLROnPLateauCappedDecreases(ReduceLROnPlateau):
     def num_reduce_lr(self) -> int:
         return self._num_reduce_lr
 
-    def _reduce_lr(self):
+    def _reduce_lr(self, epoch=None):
+        """Overrides the base ReduceLROnPlateau implementation."""
         self._num_reduce_lr += 1
         self.apply_lr()
 
