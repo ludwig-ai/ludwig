@@ -128,6 +128,9 @@ class DDPStrategy(DistributedStrategy):
 
         return MultiNodeCheckpoint(self, model, optimizer, scheduler)
 
+    def to_device(self, model: nn.Module, device: Optional[torch.device] = None) -> nn.Module:
+        return model
+
 
 def local_rank_and_size() -> Tuple[int, int]:
     # DeepSpeed CLI and other tools may set these environment variables for us.
