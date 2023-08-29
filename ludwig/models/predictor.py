@@ -124,11 +124,7 @@ class Predictor(BasePredictor):
             self.batch_evaluation = self._distributed.return_first(self.batch_evaluation)
 
     def batch_predict(self, dataset: Dataset, dataset_name: str = None, collect_logits: bool = False):
-        try:
-            self.dist_model = self._distributed.to_device(self.dist_model)
-        except AttributeError:
-            logging.info("Using DDP, skipping device assignment.")
-
+        self.dist_model = self._distributed.to_device(self.dist_model)
         prev_model_training_mode = self.dist_model.training  # store previous model training mode
         self.dist_model.eval()  # set model to eval mode
 
@@ -220,11 +216,7 @@ class Predictor(BasePredictor):
             model config. The keys of the predictions dictionary depend on which values are requested by the caller:
             collect_predictions, collect_logits.
         """
-        try:
-            self.dist_model = self._distributed.to_device(self.dist_model)
-        except AttributeError:
-            logging.info("Using DDP, skipping device assignment.")
-
+        self.dist_model = self._distributed.to_device(self.dist_model)
         prev_model_training_mode = self.dist_model.training  # store previous model training mode
         self.dist_model.eval()  # set model to eval mode
 
