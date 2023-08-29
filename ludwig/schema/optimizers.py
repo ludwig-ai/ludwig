@@ -405,9 +405,21 @@ class RMSPropOptimizerConfig(BaseOptimizerConfig):
 
 
 @DeveloperAPI
+@register_optimizer(name="paged_adam")
+@ludwig_dataclass
+class PagedAdamOptimizerConfig(AdamOptimizerConfig):
+    from bitsandbytes.optim import PagedAdam
+    from bitsandbytes.optim.optimizer import Optimizer2State
+
+    optimizer_class: ClassVar[Optimizer2State] = PagedAdam
+
+    type: str = schema_utils.ProtectedString("paged_adam")
+
+
+@DeveloperAPI
 @register_optimizer(name="paged_adamw")
 @ludwig_dataclass
-class PagedAdamWOptimizerConfig(AdamOptimizerConfig):
+class PagedAdamWOptimizerConfig(AdamWOptimizerConfig):
     from bitsandbytes.optim import PagedAdamW
     from bitsandbytes.optim.optimizer import Optimizer2State
 
@@ -418,6 +430,49 @@ class PagedAdamWOptimizerConfig(AdamOptimizerConfig):
     weight_decay: float = schema_utils.NonNegativeFloat(
         default=1e-2, description="Weight decay ($L2$ penalty).",
         parameter_metadata=OPTIMIZER_METADATA["weight_decay"]
+    )
+
+
+@DeveloperAPI
+@register_optimizer(name="lamb")
+@ludwig_dataclass
+class LambOptimizerConfig(BaseOptimizerConfig):
+    from bitsandbytes.optim import LAMB
+    from bitsandbytes.optim.optimizer import Optimizer2State
+
+    optimizer_class: ClassVar[Optimizer2State] = LAMB
+
+    type: str = schema_utils.ProtectedString("lamb")
+
+    bias_correct: bool = schema_utils.Boolean(
+        default=True,
+    )
+
+    betas: Tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(
+        default=(0.9, 0.999),
+        description="Coefficients used for computing running averages of gradient and its square.",
+        parameter_metadata=OPTIMIZER_METADATA["betas"],
+    )
+
+    eps: float = schema_utils.NonNegativeFloat(
+        default=1e-08,
+        description="Term added to the denominator to improve numerical stability.",
+        parameter_metadata=OPTIMIZER_METADATA["eps"],
+    )
+
+    weight_decay: float = schema_utils.NonNegativeFloat(
+        default=0.0, description="Weight decay (L2 penalty).", parameter_metadata=OPTIMIZER_METADATA["weight_decay"]
+    )
+
+    amsgrad: bool = schema_utils.Boolean(
+        default=False,
+        description="Whether to use the AMSGrad variant of this algorithm from the paper 'On the Convergence of Adam "
+        "and Beyond'.",
+        parameter_metadata=OPTIMIZER_METADATA["amsgrad"],
+    )
+
+    adam_w_mode: bool = schema_utils.Boolean(
+        default=True,
     )
 
 
