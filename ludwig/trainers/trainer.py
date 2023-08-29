@@ -208,7 +208,7 @@ class Trainer(BaseTrainer):
         base_learning_rate = self.config.learning_rate
         if self.distributed:
             lr_scale_fn = learning_rate_scale_fns[self.config.learning_rate_scaling]
-            base_learning_rate *= lr_scale_fn(self.distributed.size() * self.gradient_accumulation_steps)
+            base_learning_rate *= lr_scale_fn(self.distributed.size())
         self.base_learning_rate = base_learning_rate
 
         self.dist_model, self.optimizer = self.distributed.prepare(
