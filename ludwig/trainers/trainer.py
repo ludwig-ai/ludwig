@@ -208,7 +208,7 @@ class Trainer(BaseTrainer):
         base_learning_rate = self.config.learning_rate
         if self.distributed:
             lr_scale_fn = learning_rate_scale_fns[self.config.learning_rate_scaling]
-            base_learning_rate *= lr_scale_fn(self.distributed.size() * self.gradient_accumulation_steps)
+            base_learning_rate *= lr_scale_fn(self.distributed.size())
         self.base_learning_rate = base_learning_rate
 
         self.dist_model, self.optimizer = self.distributed.prepare(
@@ -216,7 +216,9 @@ class Trainer(BaseTrainer):
             self.config,
             self.base_learning_rate,
         )
-        self.scheduler = LRScheduler(self.config.learning_rate_scheduler, self.optimizer)
+
+        # NOTE: This is a partially configured LRScheduler. It will be updated in the first call to train_step.
+        self.scheduler = LRScheduler(self.config.learning_rate_scheduler, self.optimizer, 0, 0)
 
     def train_step(
         self, inputs: Dict[str, torch.Tensor], targets: Dict[str, torch.Tensor], should_step: bool = True
@@ -762,8 +764,13 @@ class Trainer(BaseTrainer):
                 final_steps_per_checkpoint = min(final_steps_per_checkpoint, self.total_steps)
                 early_stopping_steps = final_steps_per_checkpoint * self.early_stop
 
-                # Update learning rate scheduler which depends on number of steps
-                self.scheduler.reset(final_steps_per_checkpoint, self.total_steps)
+                # Initialize the learning rate scheduler.
+                self.scheduler = LRScheduler(
+                    self.config.learning_rate_scheduler,
+                    self.optimizer,
+                    steps_per_checkpoint=final_steps_per_checkpoint,
+                    total_steps=self.total_steps,
+                )
 
                 if self.is_coordinator():
                     logger.info(
@@ -944,9 +951,8 @@ class Trainer(BaseTrainer):
             loss, all_losses = self.train_step(inputs, targets, should_step=should_step)
             logger.info(f"Train loss for step {progress_tracker.steps}: {loss:.3f}")
 
-            if should_step:
-                # Update LR schduler here instead of train loop to avoid updating during batch size tuning, etc.
-                self.scheduler.step()
+            # Update LR schduler here instead of train loop to avoid updating during batch size tuning, etc.
+            self.scheduler.step()
 
             if self.is_coordinator() and not self.skip_save_log:
                 self.write_step_summary(
