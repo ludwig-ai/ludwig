@@ -405,6 +405,23 @@ class RMSPropOptimizerConfig(BaseOptimizerConfig):
 
 
 @DeveloperAPI
+@register_optimizer(name="paged_adamw")
+@ludwig_dataclass
+class PagedAdamWOptimizerConfig(AdamOptimizerConfig):
+    from bitsandbytes.optim import PagedAdamW
+    from bitsandbytes.optim.optimizer import Optimizer2State
+
+    optimizer_class: ClassVar[Optimizer2State] = PagedAdamW
+
+    type: str = schema_utils.ProtectedString("paged_adamw")
+
+    weight_decay: float = schema_utils.NonNegativeFloat(
+        default=1e-2, description="Weight decay ($L2$ penalty).",
+        parameter_metadata=OPTIMIZER_METADATA["weight_decay"]
+    )
+
+
+@DeveloperAPI
 def get_optimizer_conds():
     """Returns a JSON schema of conditionals to validate against optimizer types defined in
     `ludwig.modules.optimization_modules.optimizer_registry`."""
