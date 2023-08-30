@@ -38,9 +38,9 @@ from ludwig.contrib import add_contrib_callback_args
 from ludwig.utils import visualization_utils
 from ludwig.utils.data_utils import (
     CACHEABLE_FORMATS,
-    HDF5_FORMATS,
     data_reader_registry,
     figure_data_format_dataset,
+    HDF5_FORMATS,
     load_array,
     load_from_file,
     load_json,
@@ -234,7 +234,7 @@ def _get_ground_truth_df(ground_truth: str) -> DataFrame:
     data_format = figure_data_format_dataset(ground_truth)
     if data_format not in GROUND_TRUTH_FORMATS:
         raise ValueError(
-            "{} is not supported for ground truth file, valid types are {}".format(data_format, GROUND_TRUTH_FORMATS)
+            f"{data_format} is not supported for ground truth file, valid types are {GROUND_TRUTH_FORMATS}"
         )
     reader = get_from_registry(data_format, data_reader_registry)
 
