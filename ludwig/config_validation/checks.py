@@ -1,8 +1,8 @@
 """Checks that are not easily covered by marshmallow JSON schema validation like parameter interdependencies."""
 
 from abc import ABC, abstractmethod
-from typing import Callable, TYPE_CHECKING
 from string import Formatter
+from typing import Callable, TYPE_CHECKING
 
 from transformers import AutoConfig
 
@@ -615,7 +615,7 @@ def check_llm_template_references(config: "ModelConfig") -> None:  # noqa: F821
     if config.model_type != MODEL_LLM:
         return
 
-    column_names = set([feature.column for feature in config.input_features])
+    column_names = {feature.column for feature in config.input_features}
     template_refs = set(Formatter().parse(config.prompt.template))
     intersection = column_names & template_refs
 
