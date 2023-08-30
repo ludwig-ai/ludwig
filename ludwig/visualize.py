@@ -1512,6 +1512,9 @@ def compare_performance(
             max_val = float("-inf")
             for metric_name, metric_vals in metrics_dict.items():
                 if len(metric_vals) > 0:
+                    if all([isinstance(m, dict) for m in metric_vals]):
+                        logger.warn(f"skipping possible duplicate metrics {metric_name}")
+                        continue
                     metrics.append(metric_vals)
                     metrics_names.append(metric_name)
                     curr_min = min(metric_vals)
