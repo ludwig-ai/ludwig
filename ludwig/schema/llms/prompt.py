@@ -77,7 +77,7 @@ class PromptConfig(schema_utils.BaseMarshmallowConfig):
 
     template: str = schema_utils.String(
         default=None,
-        allow_none=True,
+        allow_none=False,  # TODO: any problems with this?
         description=(
             "The template to use for the prompt. Must contain at least one of the columns from the input dataset "
             "or `__sample__` as a variable surrounded in curly brackets {} to indicate where to insert the "

@@ -2,6 +2,8 @@
 
 from abc import ABC, abstractmethod
 from typing import Callable, TYPE_CHECKING
+from string import Formatter
+from sympy import intersection
 
 from transformers import AutoConfig
 
@@ -606,3 +608,19 @@ def check_qlora_requirements(config: "ModelConfig") -> None:  # noqa: F821
 
     if config.quantization and (not config.adapter or config.adapter.type != "lora"):
         raise ConfigValidationError("Fine-tuning and LLM with quantization requires using the 'lora' adapter")
+
+
+@register_config_check
+def check_llm_template_references(config: "ModelConfig") -> None:  # noqa: F821
+    """Checks that prompt.template includes a valid reference to a feature column."""
+    if config.model_type != MODEL_LLM:
+        return
+
+    column_names = [feature.column for feature in config.input_features]
+    template_refs = Formatter().parse(config.prompt.template)
+
+    if len(intersection(column_names, template_refs)) == 0:
+        raise ConfigValidationError(
+            "Prompt template must include a reference to a column. This can be as simple as a string with just the "
+            'column and nothing else, e.g.: "{column_name}".'
+        )
