@@ -615,7 +615,7 @@ def check_llm_template_references(config: "ModelConfig") -> None:  # noqa: F821
     if config.model_type != MODEL_LLM:
         return
 
-    column_names = {feature.column for feature in config.input_features}
+    column_names = [feature.column for feature in config.input_features]
     template_refs = set(Formatter().parse(config.prompt.template))
     intersection = column_names & template_refs
 
