@@ -908,7 +908,7 @@ class Trainer(BaseTrainer):
         progress_tracker: ProgressTracker,
         save_path,
         train_summary_writer,
-        progress_bar,
+        progress_bar: LudwigProgressBar,
         training_set,
         validation_set,
         test_set,
@@ -949,7 +949,6 @@ class Trainer(BaseTrainer):
             }
 
             loss, all_losses = self.train_step(inputs, targets, should_step=should_step)
-            logger.info(f"Train loss for step {progress_tracker.steps}: {loss:.3f}")
 
             # Update LR schduler here instead of train loop to avoid updating during batch size tuning, etc.
             self.scheduler.step()
@@ -964,6 +963,7 @@ class Trainer(BaseTrainer):
                 )
 
             progress_tracker.steps += 1
+            progress_bar.set_postfix({"loss": float(loss)})
             progress_bar.update(1)
             if self.is_coordinator():
                 logger.debug(
