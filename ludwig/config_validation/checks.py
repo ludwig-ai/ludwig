@@ -3,7 +3,6 @@
 from abc import ABC, abstractmethod
 from typing import Callable, TYPE_CHECKING
 from string import Formatter
-from sympy import intersection
 
 from transformers import AutoConfig
 
@@ -616,10 +615,11 @@ def check_llm_template_references(config: "ModelConfig") -> None:  # noqa: F821
     if config.model_type != MODEL_LLM:
         return
 
-    column_names = [feature.column for feature in config.input_features]
-    template_refs = Formatter().parse(config.prompt.template)
+    column_names = set([feature.column for feature in config.input_features])
+    template_refs = set(Formatter().parse(config.prompt.template))
+    intersection = column_names & template_refs
 
-    if len(intersection(column_names, template_refs)) == 0:
+    if len(list(intersection)) == 0:
         raise ConfigValidationError(
             "Prompt template must include a reference to a column. This can be as simple as a string with just the "
             'column and nothing else, e.g.: "{column_name}".'
