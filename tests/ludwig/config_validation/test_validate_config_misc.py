@@ -466,3 +466,31 @@ def test_default_param_metadata():
     test_class = unload_jsonschema_from_marshmallow_class(TestClass)
 
     assert test_class["properties"]["test_schema_entry"]["parameter_metadata"] is not None
+
+
+def test_template_string_validation():
+    config = {
+        "model_type": "llm",
+        "prompt": {"template": None},
+        "input_features": [
+            text_feature(name="test", column="test"),
+        ],
+        "output_features": [binary_feature()],
+        "combiner": {
+            "type": "tabnet",
+            "unknown_parameter_combiner": False,
+        },
+        TRAINER: {
+            "epochs": 1000,
+        },
+    }
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+    config.prompt.template = "invalid string"
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+    config.prompt.template = "{{test}}"
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
