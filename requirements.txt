@@ -36,6 +36,7 @@ gpustat
 rich~=12.4.4
 packaging
 retry
+ptitprince==0.2.6
 
 # required for TransfoXLTokenizer when using transformer_xl
 sacremoses
