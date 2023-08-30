@@ -316,6 +316,9 @@ class TqdmCallback(ray.tune.callback.Callback):
         elif action == "update":
             update_by = progress_bar_opts.pop("update_by")
             self.progress_bars[_id].update(update_by)
+        elif action == "set_postfix":
+            postfix = progress_bar_opts.pop("postfix")
+            self.progress_bars[_id].set_postfix(postfix)
 
 
 @contextlib.contextmanager
