@@ -18,6 +18,7 @@ from ludwig.distributed.base import DistributedStrategy
 from ludwig.modules.optimization_modules import create_optimizer
 
 if TYPE_CHECKING:
+    from ludwig.models.base import BaseModel
     from ludwig.modules.lr_scheduler import LRScheduler
     from ludwig.schema.trainer import ECDTrainerConfig
     from ludwig.utils.checkpoint_utils import Checkpoint
@@ -128,7 +129,7 @@ class DDPStrategy(DistributedStrategy):
 
         return MultiNodeCheckpoint(self, model, optimizer, scheduler)
 
-    def to_device(self, model: nn.Module, device: Optional[torch.device] = None) -> nn.Module:
+    def to_device_for_prediction(self, model: "BaseModel", device: Optional[torch.device] = None) -> nn.Module:
         return model
 
 

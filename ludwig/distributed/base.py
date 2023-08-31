@@ -52,6 +52,9 @@ class DistributedStrategy(ABC):
     def to_device(self, model: "BaseModel", device: Optional[torch.device] = None) -> nn.Module:
         return model.to_device(device if device is not None else get_torch_device())
 
+    def to_device_for_prediction(self, model: "BaseModel", device: Optional[torch.device] = None) -> nn.Module:
+        return self.to_device(model, device=device)
+
     def backward(self, loss: torch.Tensor, model: nn.Module):
         loss.backward()
 

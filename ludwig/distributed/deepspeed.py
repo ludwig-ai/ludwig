@@ -21,6 +21,7 @@ _deepspeed_0101 = version.parse(deepspeed.__version__) >= version.parse("0.10.1"
 
 
 if TYPE_CHECKING:
+    from ludwig.models.base import BaseModel
     from ludwig.modules.lr_scheduler import LRScheduler
     from ludwig.schema.trainer import ECDTrainerConfig
 
@@ -123,6 +124,9 @@ class DeepSpeedStrategy(DDPStrategy):
         return model_engine
 
     def to_device(self, model: nn.Module, device: Optional[torch.device] = None) -> nn.Module:
+        return model
+
+    def to_device_for_prediction(self, model: "BaseModel", device: Optional[torch.device] = None) -> nn.Module:
         return model
 
     def backward(self, loss: torch.Tensor, model: nn.Module):
