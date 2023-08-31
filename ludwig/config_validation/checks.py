@@ -627,7 +627,7 @@ def check_prompt_task_and_template(config: "ModelConfig") -> None:  # noqa: F821
 
     # If a template is provided, validate that it has a task and sample or some input column:
     if template:
-        column_names = set([feature.column for feature in config.input_features])
+        column_names = {feature.column for feature in config.input_features}
         template_refs = set(Formatter().parse(template))
         intersection = column_names & template_refs
 
