@@ -468,10 +468,11 @@ def test_default_param_metadata():
     assert test_class["properties"]["test_schema_entry"]["parameter_metadata"] is not None
 
 
-def test_template_string_validation():
+@pytest.mark.parametrize("template", [None, "invalid template", "{{test}}"])
+def test_template_string_validation(template):
     config = {
         "model_type": "llm",
-        "prompt": {"template": None},
+        "prompt": {"template": template},
         "input_features": [
             text_feature(name="test", column="test"),
         ],
@@ -484,13 +485,9 @@ def test_template_string_validation():
             "epochs": 1000,
         },
     }
-    with pytest.raises(ConfigValidationError):
-        ModelConfig.from_dict(config)
 
-    config.prompt.template = "invalid string"
-    with pytest.raises(ConfigValidationError):
+    if template == "{{test}}":
         ModelConfig.from_dict(config)
-
-    config.prompt.template = "{{test}}"
-    with pytest.raises(ConfigValidationError):
-        ModelConfig.from_dict(config)
+    else:
+        with pytest.raises(ConfigValidationError):
+            ModelConfig.from_dict(config)
