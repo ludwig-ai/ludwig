@@ -109,6 +109,23 @@ class NoneTrainer(BaseTrainer):
         self.checkpoints_per_epoch = self.config.checkpoints_per_epoch
         self.early_stop = self.config.early_stop
         self.evaluate_training_set = self.config.evaluate_training_set
+        self.skip_all_evaluation = self.config.skip_all_evaluation
+
+    def close_writers(
+        self, progress_tracker, save_path, train_summary_writer, validation_summary_writer, test_summary_writer
+    ):
+        # ================ Finished Training ================
+        self.callback(
+            lambda c: c.on_trainer_train_teardown(self, progress_tracker, save_path, self.is_coordinator()),
+            coordinator_only=False,
+        )
+
+        if train_summary_writer is not None:
+            train_summary_writer.close()
+        if validation_summary_writer is not None:
+            validation_summary_writer.close()
+        if test_summary_writer is not None:
+            test_summary_writer.close()
 
     def train(
         self,
@@ -151,6 +168,22 @@ class NoneTrainer(BaseTrainer):
             output_features=output_features,
         )
 
+        # When running with Ray, we only need to return the state dict, as it's faster and cheaper to send the
+        # state dict over the network than to load the model state here, serialize it back to a state dict, then
+        # load it back on the head node.
+        return_value = self.model if not return_state_dict else self.model.cpu().state_dict()
+
+        if self.skip_all_evaluation:
+            self.close_writers(
+                progress_tracker, save_path, train_summary_writer, validation_summary_writer, test_summary_writer
+            )
+            return (
+                return_value,
+                progress_tracker.train_metrics,
+                progress_tracker.validation_metrics,
+                progress_tracker.test_metrics,
+            )
+
         try:
             self.run_evaluation(
                 training_set,
@@ -164,23 +197,9 @@ class NoneTrainer(BaseTrainer):
                 save_path,
             )
         finally:
-            # ================ Finished Training ================
-            self.callback(
-                lambda c: c.on_trainer_train_teardown(self, progress_tracker, save_path, self.is_coordinator()),
-                coordinator_only=False,
+            self.close_writers(
+                progress_tracker, save_path, train_summary_writer, validation_summary_writer, test_summary_writer
             )
-
-            if train_summary_writer is not None:
-                train_summary_writer.close()
-            if validation_summary_writer is not None:
-                validation_summary_writer.close()
-            if test_summary_writer is not None:
-                test_summary_writer.close()
-
-        # When running with Ray, we only need to return the state dict, as it's faster and cheaper to send the
-        # state dict over the network than to load the model state here, serialize it back to a state dict, then
-        # load it back on the head node.
-        return_value = self.model if not return_state_dict else self.model.cpu().state_dict()
 
         return (
             return_value,
