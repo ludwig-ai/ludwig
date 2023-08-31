@@ -615,6 +615,10 @@ def check_llm_template_references(config: "ModelConfig") -> None:  # noqa: F821
     if config.model_type != MODEL_LLM:
         return
 
+    # This check only applies if task is not provided:
+    if config.prompt.task is not None:
+        return
+
     template = config.prompt.template
     if template is None or template == "":
         raise ConfigValidationError("Prompt template must not be empty!")
