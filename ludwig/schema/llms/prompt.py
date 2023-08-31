@@ -89,12 +89,6 @@ class PromptConfig(schema_utils.BaseMarshmallowConfig):
         ),
         parameter_metadata=LLM_METADATA["prompt"]["template"],
     )
-    # if task provided, we're fine
-    # template either has reserved keyword sample or some column
-    # if both provided, template has task + sample or some column
-
-    # separate case:
-    # if dataset is already templated then shouldn't provide a prompt (sidenote)
 
     task: str = schema_utils.String(
         default=None,

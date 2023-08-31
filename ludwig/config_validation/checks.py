@@ -610,35 +610,35 @@ def check_qlora_requirements(config: "ModelConfig") -> None:  # noqa: F821
 
 
 @register_config_check
-def check_llm_template_references(config: "ModelConfig") -> None:  # noqa: F821
-    """Checks that prompt.template includes a valid reference to a feature column."""
+def check_prompt_task_and_template(config: "ModelConfig") -> None:  # noqa: F821
+    """Checks that prompt's template and task properties are valid, according to the description on the schema."""
     if config.model_type != MODEL_LLM:
         return
 
-    template = config.prompt.template
-    if config.prompt.task is not None and template is not None:
-        raise ConfigValidationError("Prompt cannot have both a task and a template!")
-
-    if template is None or template == "":
-        raise ConfigValidationError("Prompt template must not be empty!")
-
-    column_names = {feature.column for feature in config.input_features}
-    template_refs = set(Formatter().parse(template))
-    intersection = column_names & template_refs
-
-    if len(list(intersection)) == 0:
-        raise ConfigValidationError(
-            "Prompt template must include a reference to a column. This can be as simple as a string with just the "
-            'column and nothing else, e.g.: "{column_name}".'
-        )
-
-
-@register_config_check
-def check_prompt_task_and_template(config: "ModelConfig") -> None:  # noqa: F821
-    """Checks that prompt's template and task properties are valid, according to the description on the schema."""
-
     # If no prompt is provided, no validation necessary:
+    if not config.prompt:
+        return
 
+    template = config.prompt.template
+    task = config.prompt.task
     # If no template is provided, task is required:
+    if template and not task:
+        raise ConfigValidationError("A prompt task is required if no template is provided!")
 
     # If a template is provided, validate that it has a task and sample or some input column:
+    if template:
+        column_names = set([feature.column for feature in config.input_features])
+        template_refs = set(Formatter().parse(template))
+        intersection = column_names & template_refs
+
+        if task and "__task__" not in template_refs:
+            raise ConfigValidationError(
+                "When providing a template and a task, you must make sure that the task keyword `{{__task__}} is "
+                "present somewhere in the template string!"
+            )
+
+        if len(list(intersection)) == 0 and "__sample__" not in template_refs:
+            raise ConfigValidationError(
+                "A template must contain at least one reference to a column or, in the case of zero/few-shot learning, "
+                "at least the sample keyword `{{__sample__}}`!"
+            )
