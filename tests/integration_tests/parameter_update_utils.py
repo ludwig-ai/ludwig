@@ -46,6 +46,7 @@ def check_module_parameters_updated(
     module.train(True)
 
     target_tensor = module_target
+    target_tensor = target_tensor.to(device=module.device)
 
     trainable_parameter_list = []
     frozen_parameter_list = []
