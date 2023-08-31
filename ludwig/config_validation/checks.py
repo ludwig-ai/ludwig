@@ -622,7 +622,7 @@ def check_prompt_task_and_template(config: "ModelConfig") -> None:  # noqa: F821
     template = config.prompt.template
     task = config.prompt.task
     # If no template is provided, task is required:
-    if template and not task:
+    if not template and not task:
         raise ConfigValidationError("A prompt task is required if no template is provided!")
 
     # If a template is provided, validate that it has a task and sample or some input column:
@@ -637,7 +637,7 @@ def check_prompt_task_and_template(config: "ModelConfig") -> None:  # noqa: F821
                 "present somewhere in the template string!"
             )
 
-        if len(list(intersection)) == 0 and "__sample__" not in template_refs:
+        if len(intersection) == 0 and "__sample__" not in template_refs:
             raise ConfigValidationError(
                 "A template must contain at least one reference to a column or, in the case of zero/few-shot learning, "
                 "at least the sample keyword `{{__sample__}}`!"

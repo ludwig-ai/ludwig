@@ -461,11 +461,9 @@ trainer:
     ModelConfig.from_dict(config)
 
 
-@pytest.mark.parametrize("template", [None, "invalid template", "{{test}}"])
-def test_check_llm_template_references(template):
+def test_check_prompt_task_and_template():
     config = {
         "model_type": "llm",
-        "prompt": {"template": template},
         "input_features": [
             text_feature(name="test", column="test"),
         ],
@@ -479,8 +477,10 @@ def test_check_llm_template_references(template):
         },
     }
 
-    if template == "{{test}}":
+    ModelConfig.from_dict(config)
+
+    config["prompt"] = {"task": "Some task", "template": ""}
+    with pytest.raises(ConfigValidationError):
         ModelConfig.from_dict(config)
-    else:
-        with pytest.raises(ConfigValidationError):
-            ModelConfig.from_dict(config)
+
+    config["prompt"] = {"task": "Some task", "template": "{__task__}"}
