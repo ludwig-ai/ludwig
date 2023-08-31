@@ -465,7 +465,8 @@ def test_check_prompt_task_and_template():
     config = {
         "model_type": "llm",
         "input_features": [
-            text_feature(name="test", column="test"),
+            text_feature(name="test1", column="col1"),
+            text_feature(name="test2", column="col1"),
         ],
         "output_features": [binary_feature()],
         "combiner": {
@@ -483,4 +484,12 @@ def test_check_prompt_task_and_template():
     with pytest.raises(ConfigValidationError):
         ModelConfig.from_dict(config)
 
-    config["prompt"] = {"task": "Some task", "template": "{__task__}"}
+    config["prompt"] = {"task": "Some task", "template": "{{__invalid__}}"}
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+    config["prompt"] = {"task": "Some task", "template": "{{__task__}}"}
+    ModelConfig.from_dict(config)
+
+    config["prompt"] = {"task": "Some task", "template": "{{__task__}} {{col1}} {{col2}}"}
+    ModelConfig.from_dict(config)

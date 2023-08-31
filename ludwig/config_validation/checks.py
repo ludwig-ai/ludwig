@@ -629,6 +629,14 @@ def check_prompt_task_and_template(config: "ModelConfig") -> None:  # noqa: F821
     if template:
         column_names = {feature.column for feature in config.input_features}
         template_refs = set(Formatter().parse(template))
+        reserved_keywords = ["__sample__", "__task__"]
+
+        for ref in template_refs:
+            if ref not in column_names and ref not in reserved_keywords:
+                raise ConfigValidationError(
+                    f"Ref provided in template string: `{{{ref}}} is neither a column name or a keyword!"
+                )
+
         intersection = column_names & template_refs
 
         if task and "__task__" not in template_refs:
