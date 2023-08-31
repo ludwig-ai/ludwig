@@ -622,7 +622,7 @@ def check_llm_template_references(config: "ModelConfig") -> None:  # noqa: F821
     if template is None or template == "":
         raise ConfigValidationError("Prompt template must not be empty!")
 
-    column_names = set([feature.column for feature in config.input_features])
+    column_names = {feature.column for feature in config.input_features}
     template_refs = set(Formatter().parse(template))
     intersection = column_names & template_refs
 
