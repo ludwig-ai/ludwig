@@ -11,6 +11,8 @@ torchaudio
 torchtext
 torchvision
 pydantic<2.0
+# TODO(Arnav): Lift transformers package restriction once 4.32.2 is released.
+# Issue: https://github.com/ludwig-ai/ludwig/issues/3571
 transformers>=4.31.0,<4.32.0
 tokenizers>=0.13.3
 spacy>=2.3
