@@ -622,7 +622,7 @@ def check_llm_template_references(config: "ModelConfig") -> None:  # noqa: F821
     if template is None or template == "":
         raise ConfigValidationError("Prompt template must not be empty!")
 
-    column_names = [feature.column for feature in config.input_features]
+    column_names = set([feature.column for feature in config.input_features])
     template_refs = set(Formatter().parse(template))
     intersection = column_names & template_refs
 
@@ -631,3 +631,14 @@ def check_llm_template_references(config: "ModelConfig") -> None:  # noqa: F821
             "Prompt template must include a reference to a column. This can be as simple as a string with just the "
             'column and nothing else, e.g.: "{column_name}".'
         )
+
+
+@register_config_check
+def check_prompt_task_and_template(config: "ModelConfig") -> None:  # noqa: F821
+    """Checks that prompt's template and task properties are valid, according to the description on the schema."""
+
+    # If no prompt is provided, no validation necessary:
+
+    # If no template is provided, task is required:
+
+    # If a template is provided, validate that it has a task and sample or some input column:

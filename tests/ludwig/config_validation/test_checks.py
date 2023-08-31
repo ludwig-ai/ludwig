@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional
 import pytest
 import yaml
 
-from ludwig.constants import COMBINER, TYPE
+from ludwig.constants import COMBINER, TRAINER, TYPE
 from ludwig.error import ConfigValidationError
 from ludwig.schema.model_types.base import ModelConfig
 from tests.integration_tests.utils import binary_feature, text_feature
@@ -459,3 +459,28 @@ trainer:
         "type": "lora",
     }
     ModelConfig.from_dict(config)
+
+
+@pytest.mark.parametrize("template", [None, "invalid template", "{{test}}"])
+def test_check_llm_template_references(template):
+    config = {
+        "model_type": "llm",
+        "prompt": {"template": template},
+        "input_features": [
+            text_feature(name="test", column="test"),
+        ],
+        "output_features": [binary_feature()],
+        "combiner": {
+            "type": "tabnet",
+            "unknown_parameter_combiner": False,
+        },
+        TRAINER: {
+            "epochs": 1000,
+        },
+    }
+
+    if template == "{{test}}":
+        ModelConfig.from_dict(config)
+    else:
+        with pytest.raises(ConfigValidationError):
+            ModelConfig.from_dict(config)
