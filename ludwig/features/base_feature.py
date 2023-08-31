@@ -42,7 +42,6 @@ from ludwig.schema.features.base import BaseFeatureConfig, BaseOutputFeatureConf
 from ludwig.types import FeatureConfigDict, FeatureMetadataDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils import output_feature_utils
 from ludwig.utils.calibration import CalibrationModule
-from ludwig.utils.metric_utils import get_scalar_from_ludwig_metric
 from ludwig.utils.torch_utils import LudwigModule
 from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
 
@@ -380,9 +379,20 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         metric_vals = {}
         for metric_name, metric_fn in self._metric_functions.items():
             try:
-                metric_vals[metric_name] = get_scalar_from_ludwig_metric(metric_fn)
-            except Exception:
-                logger.exception(f"Caught exception computing metric: {metric_name}.")
+                computed_metric = metric_fn.compute()
+            except Exception as e:
+                logger.exception(f"Caught exception computing metric: {metric_name} with error: {e}.")
+                continue
+
+            # Metrics from torchmetrics can be a straightforward tensor.
+            if isinstance(computed_metric, Tensor):
+                metric_vals[metric_name] = computed_metric.detach().cpu().numpy().item()
+            else:
+                # Metrics from torchmetrics can be a dict of tensors.
+                # For example, ROUGE is returned as a dictionary of tensors.
+                # Unpack.
+                for sub_metric_name, metric in computed_metric.items():
+                    metric_vals[sub_metric_name] = metric.detach().cpu().numpy().item()
         return metric_vals
 
     def reset_metrics(self):

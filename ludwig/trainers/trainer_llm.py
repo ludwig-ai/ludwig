@@ -5,7 +5,7 @@ from typing import Callable, Dict, List, Optional, Union
 
 from torch.utils.tensorboard import SummaryWriter
 
-from ludwig.constants import MINIMUM_BATCH_SIZE, TEST, TRAIN, TRAINING, VALIDATION
+from ludwig.constants import MINIMUM_BATCH_SIZE, TEST, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.features.feature_utils import LudwigFeatureDict
@@ -20,7 +20,7 @@ from ludwig.types import ModelConfigDict
 from ludwig.utils import time_utils
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.metric_utils import TrainerMetric
-from ludwig.utils.metrics_printed_table import MetricsPrintedTable
+from ludwig.utils.metrics_printed_table import print_metrics_table
 from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.torch_utils import get_torch_device
 from ludwig.utils.trainer_utils import append_metrics, get_new_progress_tracker, ProgressTracker
@@ -109,6 +109,23 @@ class NoneTrainer(BaseTrainer):
         self.checkpoints_per_epoch = self.config.checkpoints_per_epoch
         self.early_stop = self.config.early_stop
         self.evaluate_training_set = self.config.evaluate_training_set
+        self.skip_all_evaluation = self.config.skip_all_evaluation
+
+    def close_writers(
+        self, progress_tracker, save_path, train_summary_writer, validation_summary_writer, test_summary_writer
+    ):
+        # ================ Finished Training ================
+        self.callback(
+            lambda c: c.on_trainer_train_teardown(self, progress_tracker, save_path, self.is_coordinator()),
+            coordinator_only=False,
+        )
+
+        if train_summary_writer is not None:
+            train_summary_writer.close()
+        if validation_summary_writer is not None:
+            validation_summary_writer.close()
+        if test_summary_writer is not None:
+            test_summary_writer.close()
 
     def train(
         self,
@@ -151,6 +168,22 @@ class NoneTrainer(BaseTrainer):
             output_features=output_features,
         )
 
+        # When running with Ray, we only need to return the state dict, as it's faster and cheaper to send the
+        # state dict over the network than to load the model state here, serialize it back to a state dict, then
+        # load it back on the head node.
+        return_value = self.model if not return_state_dict else self.model.cpu().state_dict()
+
+        if self.skip_all_evaluation:
+            self.close_writers(
+                progress_tracker, save_path, train_summary_writer, validation_summary_writer, test_summary_writer
+            )
+            return (
+                return_value,
+                progress_tracker.train_metrics,
+                progress_tracker.validation_metrics,
+                progress_tracker.test_metrics,
+            )
+
         try:
             self.run_evaluation(
                 training_set,
@@ -164,23 +197,9 @@ class NoneTrainer(BaseTrainer):
                 save_path,
             )
         finally:
-            # ================ Finished Training ================
-            self.callback(
-                lambda c: c.on_trainer_train_teardown(self, progress_tracker, save_path, self.is_coordinator()),
-                coordinator_only=False,
+            self.close_writers(
+                progress_tracker, save_path, train_summary_writer, validation_summary_writer, test_summary_writer
             )
-
-            if train_summary_writer is not None:
-                train_summary_writer.close()
-            if validation_summary_writer is not None:
-                validation_summary_writer.close()
-            if test_summary_writer is not None:
-                test_summary_writer.close()
-
-        # When running with Ray, we only need to return the state dict, as it's faster and cheaper to send the
-        # state dict over the network than to load the model state here, serialize it back to a state dict, then
-        # load it back on the head node.
-        return_value = self.model if not return_state_dict else self.model.cpu().state_dict()
 
         return (
             return_value,
@@ -204,6 +223,7 @@ class NoneTrainer(BaseTrainer):
         halving_limit: int = 3,
         snapshot_weights: bool = True,
         on_best_batch_size_updated: Optional[Callable[[int, float, int], None]] = None,
+        tune_for_training: bool = True,
     ) -> int:
         # TODO: Implement batch size tuning for LLM, currently just returns the default batch size
         # Compared to ECD, this just requires forward passes till we OOM.
@@ -310,17 +330,12 @@ class NoneTrainer(BaseTrainer):
             logger.info(f"\nRunning evaluation for step: {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
 
         # ================ Eval ================
-        printed_table = MetricsPrintedTable(output_features)
-
         # Run a separate pass over the training data to compute metrics
         # Appends results to progress_tracker.train_metrics.
         if self.evaluate_training_set:
             self.evaluation(
                 training_set, "train", progress_tracker.train_metrics, self.eval_batch_size, progress_tracker
             )
-
-        # eval metrics on the train set
-        printed_table.add_metrics_to_printed_table(progress_tracker.train_metrics, TRAIN)
 
         self.write_eval_summary(
             summary_writer=train_summary_writer,
@@ -332,15 +347,13 @@ class NoneTrainer(BaseTrainer):
             self.callback(lambda c: c.on_validation_start(self, progress_tracker, save_path))
 
             # eval metrics on validation set
-            validation_metrics_log = self.evaluation(
+            self.evaluation(
                 validation_set,
                 VALIDATION,
                 progress_tracker.validation_metrics,
                 self.eval_batch_size,
                 progress_tracker,
             )
-
-            printed_table.add_metrics_to_printed_table(validation_metrics_log, VALIDATION)
 
             self.write_eval_summary(
                 summary_writer=validation_summary_writer,
@@ -354,11 +367,7 @@ class NoneTrainer(BaseTrainer):
             self.callback(lambda c: c.on_test_start(self, progress_tracker, save_path))
 
             # eval metrics on test set
-            test_metrics_log = self.evaluation(
-                test_set, TEST, progress_tracker.test_metrics, self.eval_batch_size, progress_tracker
-            )
-
-            printed_table.add_metrics_to_printed_table(test_metrics_log, TEST)
+            self.evaluation(test_set, TEST, progress_tracker.test_metrics, self.eval_batch_size, progress_tracker)
 
             self.write_eval_summary(
                 summary_writer=test_summary_writer,
@@ -372,7 +381,12 @@ class NoneTrainer(BaseTrainer):
 
         if self.is_coordinator():
             logger.info(f"Evaluation took {time_utils.strdelta(elapsed_time)}\n")
-            printed_table.log_info()
+            print_metrics_table(
+                output_features,
+                progress_tracker.train_metrics,
+                progress_tracker.validation_metrics,
+                progress_tracker.test_metrics,
+            )
 
         # Trigger eval end callback after any model weights save for complete checkpoint
         self.callback(lambda c: c.on_eval_end(self, progress_tracker, save_path))

@@ -482,6 +482,25 @@ def test_llama_rope_scaling():
     assert model.model.config.rope_scaling["factor"] == 2.0
 
 
+def test_default_max_sequence_length():
+    config = {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: TEST_MODEL_NAME,
+        INPUT_FEATURES: [text_feature(name="input", encoder={"type": "passthrough"})],
+        OUTPUT_FEATURES: [text_feature(name="output")],
+        TRAINER: {
+            TYPE: "finetune",
+            BATCH_SIZE: 8,
+            EPOCHS: 2,
+        },
+        ADAPTER: {TYPE: "lora", PRETRAINED_WEIGHTS: "Infernaught/test_adapter_weights"},
+        BACKEND: {TYPE: "local"},
+    }
+    config_obj = ModelConfig.from_dict(config)
+    assert config_obj.input_features[0].preprocessing.max_sequence_length is None
+    assert config_obj.output_features[0].preprocessing.max_sequence_length is None
+
+
 def test_load_pretrained_adapter_weights():
     from peft import PeftModel
     from transformers import PreTrainedModel
@@ -499,8 +518,6 @@ def test_load_pretrained_adapter_weights():
         ADAPTER: {TYPE: "lora", PRETRAINED_WEIGHTS: "Infernaught/test_adapter_weights"},
         BACKEND: {TYPE: "local"},
     }
-
-    print(ModelConfig)
     config_obj = ModelConfig.from_dict(config)
     model = LLM(config_obj)
 
@@ -510,6 +527,10 @@ def test_load_pretrained_adapter_weights():
     model.prepare_for_training()
     assert not isinstance(model.model, PreTrainedModel)
     assert isinstance(model.model, PeftModel)
+
+    config_obj = ModelConfig.from_dict(config)
+    assert config_obj.input_features[0].preprocessing.max_sequence_length is None
+    assert config_obj.output_features[0].preprocessing.max_sequence_length is None
 
 
 def _compare_models(model_1: torch.nn.Module, model_2: torch.nn.Module) -> bool:
