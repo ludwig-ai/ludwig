@@ -70,8 +70,7 @@ class LoraConfig(BaseAdapterConfig):
     )
 
     pretrained_weights: Optional[str] = schema_utils.String(
-        default="none",
-        description="Path to pretrained weights for Lora.",
+        default=None, description="Path to pretrained weights for Lora.", allow_none=True
     )
 
     target_modules: Optional[list] = schema_utils.List(

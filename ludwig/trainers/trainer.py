@@ -272,7 +272,10 @@ class Trainer(BaseTrainer):
                     targets, model_outputs, self.regularization_type, self.regularization_lambda
                 )
                 loss = loss / self.gradient_accumulation_steps
-                loss.requires_grad = True
+                try:
+                    loss.requires_grad = True
+                except RuntimeError:
+                    pass
 
         # Begin the backward pass
         variables = self.dist_model.parameters()

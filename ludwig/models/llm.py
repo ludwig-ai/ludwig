@@ -224,19 +224,18 @@ class LLM(BaseModel):
 
             from peft import get_peft_model
 
-            pretrained = False
             if self.config_obj.adapter.pretrained_weights:
-                print(f"PRETRAINED_WEIGHTS: {self.config_obj.adapter.pretrained_weights}")
+                logger.info(f"Using pretrained weights: {self.config_obj.adapter.pretrained_weights}")
                 # If pretrained adapter weights are provided, we want to load them into the model
                 from peft import MODEL_TYPE_TO_PEFT_MODEL_MAPPING, PeftConfig
 
-                pretrained = True
                 peft_config = PeftConfig.from_pretrained(self.config_obj.adapter.pretrained_weights)
                 peft_dict = peft_config.to_dict()
+
+                # Need to update the peft config with some of the values from config_obj because not all of them are set
                 for param_name, param_value in self.config_obj.adapter.to_config().to_dict().items():
                     if param_name is None:
                         continue
-
                     if param_name not in peft_dict:
                         setattr(peft_config, param_name, param_value)
 
@@ -251,7 +250,7 @@ class LLM(BaseModel):
                     task_type=TaskType.CAUSAL_LM, tokenizer_name_or_path=self.model_name
                 )
 
-                self.model = get_peft_model(self.model, peft_config, pretrained=pretrained)
+                self.model = get_peft_model(self.model, peft_config)
 
             logger.info("==================================================")
             logger.info("Trainable Parameter Summary For Fine-Tuning")
