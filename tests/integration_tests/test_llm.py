@@ -18,6 +18,7 @@ from ludwig.constants import (
     MODEL_TYPE,
     OUTPUT_FEATURES,
     PREPROCESSING,
+    PRETRAINED_WEIGHTS,
     PROMPT,
     TRAINER,
     TYPE,
@@ -479,6 +480,36 @@ def test_llama_rope_scaling():
     assert model.model.config.rope_scaling
     assert model.model.config.rope_scaling["type"] == "dynamic"
     assert model.model.config.rope_scaling["factor"] == 2.0
+
+
+def test_load_pretrained_adapter_weights():
+    from peft import PeftModel
+    from transformers import PreTrainedModel
+
+    config = {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: TEST_MODEL_NAME,
+        INPUT_FEATURES: [text_feature(name="input", encoder={"type": "passthrough"})],
+        OUTPUT_FEATURES: [text_feature(name="output")],
+        TRAINER: {
+            TYPE: "finetune",
+            BATCH_SIZE: 8,
+            EPOCHS: 2,
+        },
+        ADAPTER: {TYPE: "lora", PRETRAINED_WEIGHTS: "Infernaught/test_adapter_weights"},
+        BACKEND: {TYPE: "local"},
+    }
+
+    print(ModelConfig)
+    config_obj = ModelConfig.from_dict(config)
+    model = LLM(config_obj)
+
+    assert model.config_obj.adapter.pretrained_weights
+    assert model.config_obj.adapter.pretrained_weights == "Infernaught/test_adapter_weights"
+
+    model.prepare_for_training()
+    assert not isinstance(model.model, PreTrainedModel)
+    assert isinstance(model.model, PeftModel)
 
 
 def _compare_models(model_1: torch.nn.Module, model_2: torch.nn.Module) -> bool:

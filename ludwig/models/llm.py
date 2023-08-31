@@ -221,12 +221,36 @@ class LLM(BaseModel):
                     "`finetune` or remove the adapter config."
                 )
 
-            from peft import get_peft_model, TaskType
+            from peft import get_peft_model
 
-            peft_config = self.config_obj.adapter.to_config(
-                task_type=TaskType.CAUSAL_LM, tokenizer_name_or_path=self.model_name
-            )
-            self.model = get_peft_model(self.model, peft_config)
+            pretrained = False
+            if self.config_obj.adapter.pretrained_weights:
+                print(f"PRETRAINED_WEIGHTS: {self.config_obj.adapter.pretrained_weights}")
+                # If pretrained adapter weights are provided, we want to load them into the model
+                from peft import MODEL_TYPE_TO_PEFT_MODEL_MAPPING, PeftConfig
+
+                pretrained = True
+                peft_config = PeftConfig.from_pretrained(self.config_obj.adapter.pretrained_weights)
+                peft_dict = peft_config.to_dict()
+                for param_name, param_value in self.config_obj.adapter.to_config().to_dict().items():
+                    if param_name is None:
+                        continue
+
+                    if param_name not in peft_dict:
+                        setattr(peft_config, param_name, param_value)
+
+                self.model = MODEL_TYPE_TO_PEFT_MODEL_MAPPING[peft_config.task_type].from_pretrained(
+                    self.model, self.config_obj.adapter.pretrained_weights
+                )
+            else:
+                # If no pretrained adapter is provided, we want to load untrained weights into the model
+                from peft import TaskType
+
+                peft_config = self.config_obj.adapter.to_config(
+                    task_type=TaskType.CAUSAL_LM, tokenizer_name_or_path=self.model_name
+                )
+
+                self.model = get_peft_model(self.model, peft_config, pretrained=pretrained)
 
             logger.info("==================================================")
             logger.info("Trainable Parameter Summary For Fine-Tuning")

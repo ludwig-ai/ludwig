@@ -266,6 +266,7 @@ class Trainer(BaseTrainer):
                     targets, model_outputs, self.regularization_type, self.regularization_lambda
                 )
                 loss = loss / self.gradient_accumulation_steps
+                loss.requires_grad = True
 
         # Begin the backward pass
         variables = self.dist_model.parameters()
