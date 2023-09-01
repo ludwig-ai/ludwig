@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional
 import pytest
 import yaml
 
-from ludwig.constants import COMBINER, TRAINER, TYPE
+from ludwig.constants import COMBINER, TYPE
 from ludwig.error import ConfigValidationError
 from ludwig.schema.model_types.base import ModelConfig
 from tests.integration_tests.utils import binary_feature, text_feature
