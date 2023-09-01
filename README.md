@@ -50,6 +50,8 @@ pip install ludwig[full]
 
 # 🚂 Getting Started
 
+Want to take a quick peak at some of the Ludwig 0.8 features? Check out this Colab Notebook 🚀 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1lB4ALmEyvcMycE3Mlnsd7I3bc0zxvk39)
+
 For a full tutorial, check out the official [getting started guide](https://ludwig-ai.github.io/ludwig-docs/latest/getting_started/),
 or take a look at end-to-end [Examples](https://ludwig-ai.github.io/ludwig-docs/latest/examples).
 
@@ -90,6 +92,9 @@ adapter:
 
 prompt:
   template: |
+    Below is an instruction that describes a task, paired with an input that may provide further context.
+    Write a response that appropriately completes the request.
+
     ### Instruction:
     {instruction}
 
@@ -113,10 +118,14 @@ trainer:
   gradient_accumulation_steps: 16
   epochs: 3
   learning_rate_scheduler:
+    decay: cosine
     warmup_fraction: 0.01
 
 preprocessing:
   sample_ratio: 0.1
+
+backend:
+  type: local
 ```
 
 And now let's train the model:

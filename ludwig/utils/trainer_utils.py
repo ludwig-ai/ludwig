@@ -1,6 +1,6 @@
 import logging
-from collections import defaultdict, OrderedDict
-from typing import Dict, List, Tuple
+from collections import defaultdict
+from typing import Dict, List, Tuple, TYPE_CHECKING
 
 try:
     from typing import Literal
@@ -8,12 +8,15 @@ except ImportError:
     from typing_extensions import Literal
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import COMBINED, LOSS
-from ludwig.features.base_feature import OutputFeature
+from ludwig.constants import AUTO, COMBINED, LOSS
 from ludwig.models.base import BaseModel
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.utils.data_utils import save_json
 from ludwig.utils.metric_utils import TrainerMetric
+
+if TYPE_CHECKING:
+    from ludwig.features.base_feature import OutputFeature
+    from ludwig.schema.trainer import BaseTrainerConfig
 
 logger = logging.getLogger(__name__)
 
@@ -21,14 +24,7 @@ logger = logging.getLogger(__name__)
 @DeveloperAPI
 def initialize_trainer_metric_dict(output_features) -> Dict[str, Dict[str, List[TrainerMetric]]]:
     """Returns a dict of dict of metrics, output_feature_name -> metric_name -> List[TrainerMetric]."""
-    metrics = OrderedDict()
-
-    for output_feature_name, output_feature in output_features.items():
-        metrics[output_feature_name] = OrderedDict()
-        for metric in output_feature.metric_names:
-            metrics[output_feature_name][metric] = []
-
-    metrics[COMBINED] = {LOSS: []}
+    metrics = defaultdict(lambda: defaultdict(list))
     return metrics
 
 
@@ -52,7 +48,7 @@ def get_new_progress_tracker(
     best_eval_metric_value: float,
     best_increase_batch_size_eval_metric: float,
     learning_rate: float,
-    output_features: Dict[str, OutputFeature],
+    output_features: Dict[str, "OutputFeature"],
 ):
     """Returns a new instance of a ProgressTracker with empty metrics."""
     return ProgressTracker(
@@ -259,7 +255,7 @@ def append_metrics(
 
         # collect metric names based on output features metrics to
         # ensure consistent order of reporting metrics
-        metric_names = model.output_features.get(output_feature).metric_names
+        metric_names = sorted(results[output_feature].keys())
 
         for metric in metric_names:
             if metric in results[output_feature]:
@@ -357,3 +353,22 @@ def get_training_report(
             ]
         )
     return training_report
+
+
+def get_rendered_batch_size_grad_accum(config: "BaseTrainerConfig", num_workers: int) -> Tuple[int, int]:
+    effective_batch_size = config.effective_batch_size
+    batch_size = config.batch_size
+    gradient_accumulation_steps = config.gradient_accumulation_steps
+
+    if config.batch_size == AUTO:
+        if config.effective_batch_size != AUTO and config.gradient_accumulation_steps != AUTO:
+            batch_size = max(int(effective_batch_size / gradient_accumulation_steps / num_workers), 1)
+
+    if config.gradient_accumulation_steps == AUTO:
+        if config.batch_size != AUTO:
+            if config.effective_batch_size != AUTO:
+                gradient_accumulation_steps = max(int(effective_batch_size / batch_size / num_workers), 1)
+            else:
+                gradient_accumulation_steps = 1
+
+    return batch_size, gradient_accumulation_steps

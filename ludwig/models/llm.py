@@ -140,6 +140,7 @@ class LLM(BaseModel):
         self.max_new_tokens = self.config_obj.generation.max_new_tokens
         self.max_input_length = self.context_len - self.max_new_tokens - 8
 
+        # TODO(Arnav): This needs be more flexible to account for RoPE Scaling
         # When merging input IDs and target IDs for LLM fine-tuning, we want to make sure that the merged tensor is
         # not longer than the global maximum sequence length. This is provided in the preprocessing config. We never
         # want to exceed the maximum possible context length so we also check for that.
@@ -308,7 +309,7 @@ class LLM(BaseModel):
         """Builds and returns output feature."""
         # TODO: only single task currently
         if len(output_feature_configs) > 1:
-            raise ValueError("Only single task currently supported")
+            raise ValueError("The LLM model type only supports a single output feature.")
 
         output_feature_config = output_feature_configs[0]
         output_feature_config.input_size = input_size
@@ -398,7 +399,7 @@ class LLM(BaseModel):
                 input_ids_sample_no_padding = remove_left_padding(input_ids_sample, self.tokenizer)
                 logger.info(
                     "Decoded text inputs for the first example in batch: "
-                    f"{self.tokenizer.decode(input_ids_sample_no_padding[0])}"
+                    f"{self.tokenizer.decode(input_ids_sample_no_padding[0], skip_special_tokens=True)}"
                 )
 
                 if input_ids_sample_no_padding.shape[1] > self.max_input_length:
@@ -421,6 +422,10 @@ class LLM(BaseModel):
                         generation_config=self.generation,
                         return_dict_in_generate=True,
                         output_scores=True,
+                    )
+                    logger.info(
+                        "Decoded generated output for the first example in batch: "
+                        f"{self.tokenizer.batch_decode(model_outputs.sequences, skip_special_tokens=True)[0]}"
                     )
 
                 sequences_list.append(model_outputs.sequences[0])
@@ -480,9 +485,12 @@ class LLM(BaseModel):
                 _targets, _predictions = realign_target_and_prediction_tensors_for_inference(
                     targets, predictions, of_name, self.tokenizer
                 )
-                of_obj.update_metrics(_targets[of_name], _predictions[of_name])
-                continue
-            of_obj.update_metrics(targets[of_name], predictions[of_name])
+                of_obj.update_metrics(_targets[of_name], _predictions[of_name], self.tokenizer)
+            else:
+                of_obj.update_metrics(targets[of_name], predictions[of_name])
+
+        # HACK (Tim): get the device of the targets to transfer self.eval_loss_metric to the same device
+        target_device = list(targets.values())[0].device
 
         # HACK (Tim): get the device of the targets to transfer self.eval_loss_metric to the same device
         target_device = list(targets.values())[0].device
@@ -501,7 +509,10 @@ class LLM(BaseModel):
                 # to match the prediction length and depends on how much of the target tensor was included in the
                 # forward pass.
                 _targets = self._update_target_tensor_for_finetuning(_targets, _predictions, of_name)
-                of_obj.update_metrics(_targets[of_name], _predictions[of_name])
+                if isinstance(of_obj, TextOutputFeature):
+                    of_obj.update_metrics(_targets[of_name], _predictions[of_name], self.tokenizer)
+                else:
+                    of_obj.update_metrics(_targets[of_name], _predictions[of_name])
                 continue
 
             of_obj.update_metrics(_targets[of_name], _predictions[of_name])
@@ -639,7 +650,7 @@ class LLM(BaseModel):
 
     def _update_target_tensor_for_finetuning(
         self, targets: Dict[str, torch.Tensor], predictions: Dict[str, torch.Tensor], of_name: str
-    ):
+    ) -> Dict[str, torch.Tensor]:
         """Update target tensor for fine-tuning.
 
         This method removes left padding from target tensors, adds a pad token to the end of the target tensors,

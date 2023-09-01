@@ -31,7 +31,7 @@ import psutil
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from ludwig.constants import LOSS, MAX_CPU_BATCH_SIZE, MINIMIZE, MODEL_ECD, TEST, TRAIN, TRAINING, VALIDATION
+from ludwig.constants import AUTO, LOSS, MAX_CPU_BATCH_SIZE, MINIMIZE, MODEL_ECD, TEST, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.globals import (
@@ -58,7 +58,7 @@ from ludwig.utils.data_utils import load_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import path_exists
 from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
-from ludwig.utils.metrics_printed_table import MetricsPrintedTable
+from ludwig.utils.metrics_printed_table import print_metrics_table
 from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.torch_utils import get_torch_device
 from ludwig.utils.trainer_utils import (
@@ -139,6 +139,7 @@ class Trainer(BaseTrainer):
         self.regularization_lambda = config.regularization_lambda
         self.regularization_type = config.regularization_type
         self.batch_size = config.batch_size
+        self.effective_batch_size = config.effective_batch_size
         self.max_batch_size = config.max_batch_size
         self.eval_batch_size = config.batch_size if config.eval_batch_size is None else config.eval_batch_size
         self.should_shuffle = config.should_shuffle
@@ -148,13 +149,16 @@ class Trainer(BaseTrainer):
         self.steps_per_checkpoint = config.steps_per_checkpoint
         self.checkpoints_per_epoch = config.checkpoints_per_epoch
         self.evaluate_training_set = config.evaluate_training_set
+        self.skip_all_evaluation = config.skip_all_evaluation
         self.increase_batch_size_on_plateau = config.increase_batch_size_on_plateau
         self.increase_batch_size_on_plateau_patience = config.increase_batch_size_on_plateau_patience
         self.increase_batch_size_on_plateau_rate = config.increase_batch_size_on_plateau_rate
         self.increase_batch_size_eval_metric = config.increase_batch_size_eval_metric
         self.increase_batch_size_eval_split = config.increase_batch_size_eval_split
         self.gradient_accumulation_steps = (
-            config.gradient_accumulation_steps if self.distributed.allow_gradient_accumulation() else 1
+            config.gradient_accumulation_steps
+            if self.distributed.allow_gradient_accumulation() and config.gradient_accumulation_steps != AUTO
+            else 1
         )
         self.resume = resume
         self.skip_save_model = skip_save_model
@@ -167,12 +171,6 @@ class Trainer(BaseTrainer):
         self.device = device
         if self.device is None:
             self.device = get_torch_device()
-
-        base_learning_rate = config.learning_rate
-        if self.distributed:
-            lr_scale_fn = learning_rate_scale_fns[config.learning_rate_scaling]
-            base_learning_rate *= lr_scale_fn(self.distributed.size() * self.gradient_accumulation_steps)
-        self.base_learning_rate = base_learning_rate
 
         self.model = model
         self.model.prepare_for_training()
@@ -207,12 +205,20 @@ class Trainer(BaseTrainer):
         self.original_sigint_handler = None
 
     def prepare(self):
+        base_learning_rate = self.config.learning_rate
+        if self.distributed:
+            lr_scale_fn = learning_rate_scale_fns[self.config.learning_rate_scaling]
+            base_learning_rate *= lr_scale_fn(self.distributed.size())
+        self.base_learning_rate = base_learning_rate
+
         self.dist_model, self.optimizer = self.distributed.prepare(
             self.compiled_model,
             self.config,
             self.base_learning_rate,
         )
-        self.scheduler = LRScheduler(self.config.learning_rate_scheduler, self.optimizer)
+
+        # NOTE: This is a partially configured LRScheduler. It will be updated in the first call to train_step.
+        self.scheduler = LRScheduler(self.config.learning_rate_scheduler, self.optimizer, 0, 0)
 
     def train_step(
         self, inputs: Dict[str, torch.Tensor], targets: Dict[str, torch.Tensor], should_step: bool = True
@@ -372,6 +378,7 @@ class Trainer(BaseTrainer):
         halving_limit: int = 3,
         snapshot_weights: bool = True,
         on_best_batch_size_updated: Optional[Callable[[int, float, int], None]] = None,
+        tune_for_training: bool = True,
     ) -> int:
         logger.info("Tuning batch size...")
         skip_save_model = self.skip_save_model
@@ -388,8 +395,19 @@ class Trainer(BaseTrainer):
         max_batch_size = (
             self.max_batch_size if torch.cuda.is_available() else min(self.max_batch_size, MAX_CPU_BATCH_SIZE)
         )
+
+        if self.effective_batch_size != AUTO:
+            # If an effective batch size is set, we must ensure that batch size tuning doesn't exceed it
+            max_batch_size = min(self.effective_batch_size, max_batch_size)
+
+        if not tune_for_training:
+            # No need to save and restore model and optimizer states, as they aren't modified during predict
+            snapshot_weights = False
+
         self.dist_model.train()  # Sets model training mode.
-        evaluator = self._create_batch_size_evaluator()
+        evaluator = (
+            self._create_batch_size_evaluator() if tune_for_training else self._create_predict_batch_size_evaluator()
+        )
         with tempfile.TemporaryDirectory() as tmpdir:
             if snapshot_weights:
                 # Save a snapshot of the model and optimizer state to restore later, as they will be modified
@@ -403,12 +421,23 @@ class Trainer(BaseTrainer):
                 best_batch_size = evaluator.select_best_batch_size(
                     len(training_set), max_batch_size, max_trials, self.is_coordinator()
                 )
-                return self.distributed.broadcast_object(best_batch_size)
+                best_batch_size = self.distributed.broadcast_object(best_batch_size)
+
+                if tune_for_training:
+                    # Update batch size / gradient accumulation before preparing the trainer. This is needed primarily
+                    # for DeepSpeed, which needs to know the batch size and gradient accumulation steps before init
+                    self.config.batch_size = best_batch_size
+                    self.config.update_batch_size_grad_accum(self.distributed.size())
+                    self.batch_size = self.config.batch_size
+                    self.gradient_accumulation_steps = self.config.gradient_accumulation_steps
+
+                return best_batch_size
             finally:
                 # Restore original parameters to defaults
                 self.skip_save_model = skip_save_model
                 self.skip_save_progress = skip_save_progress
                 self.skip_save_log = skip_save_log
+
                 if snapshot_weights:
                     # Restore the model weights prior to batch size tuning to undo any updates made to the weights
                     if self.distributed.prepare_before_load():
@@ -437,6 +466,29 @@ class Trainer(BaseTrainer):
                 trainer.train_step(inputs, targets)
 
         return _TrainerBatchSizeEvaluator()
+
+    def _create_predict_batch_size_evaluator(self) -> BatchSizeEvaluator:
+        trainer = self
+
+        class _PredictBatchSizeEvaluator(BatchSizeEvaluator):
+            def reset(self):
+                trainer.model.reset_metrics()
+                trainer.optimizer.zero_grad()
+
+            def step(self, batch_size: int):
+                trainer.distributed.set_batch_size(trainer.dist_model, batch_size)
+                inputs = {
+                    input_feature_name: input_feature.create_sample_input(batch_size=batch_size).to(trainer.device)
+                    for input_feature_name, input_feature in trainer.model.input_features.items()
+                }
+                targets = {
+                    output_feature_name: output_feature.create_sample_output(batch_size=batch_size).to(trainer.device)
+                    for output_feature_name, output_feature in trainer.model.output_features.items()
+                }
+                with torch.no_grad():
+                    trainer.dist_model((inputs, targets))
+
+        return _PredictBatchSizeEvaluator()
 
     def run_evaluation(
         self,
@@ -473,25 +525,19 @@ class Trainer(BaseTrainer):
             logger.info(f"\nRunning evaluation for step: {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
 
         # ================ Eval ================
-        printed_table = MetricsPrintedTable(output_features)
-
         # eval metrics on train
         self.eval_batch_size = max(self.eval_batch_size, progress_tracker.batch_size)
 
         if self.evaluate_training_set:
             # Run a separate pass over the training data to compute metrics
-            train_metrics_log = self.evaluation(
+            self.evaluation(
                 training_set, "train", progress_tracker.train_metrics, self.eval_batch_size, progress_tracker
             )
         else:
             # Use metrics accumulated during training
             metrics = self.model.get_metrics()
-            train_metrics_log = append_metrics(
-                self.model, "train", metrics, progress_tracker.train_metrics, progress_tracker
-            )
+            append_metrics(self.model, "train", metrics, progress_tracker.train_metrics, progress_tracker)
             self.model.reset_metrics()
-
-        printed_table.add_metrics_to_printed_table(train_metrics_log, TRAIN)
 
         self.write_eval_summary(
             summary_writer=train_summary_writer,
@@ -503,15 +549,13 @@ class Trainer(BaseTrainer):
             self.callback(lambda c: c.on_validation_start(self, progress_tracker, save_path))
 
             # eval metrics on validation set
-            validation_metrics_log = self.evaluation(
+            self.evaluation(
                 validation_set,
                 VALIDATION,
                 progress_tracker.validation_metrics,
                 self.eval_batch_size,
                 progress_tracker,
             )
-
-            printed_table.add_metrics_to_printed_table(validation_metrics_log, VALIDATION)
 
             self.write_eval_summary(
                 summary_writer=validation_summary_writer,
@@ -525,11 +569,7 @@ class Trainer(BaseTrainer):
             self.callback(lambda c: c.on_test_start(self, progress_tracker, save_path))
 
             # eval metrics on test set
-            test_metrics_log = self.evaluation(
-                test_set, TEST, progress_tracker.test_metrics, self.eval_batch_size, progress_tracker
-            )
-
-            printed_table.add_metrics_to_printed_table(test_metrics_log, TEST)
+            self.evaluation(test_set, TEST, progress_tracker.test_metrics, self.eval_batch_size, progress_tracker)
 
             self.write_eval_summary(
                 summary_writer=test_summary_writer,
@@ -543,7 +583,12 @@ class Trainer(BaseTrainer):
 
         if self.is_coordinator():
             logger.info(f"Evaluation took {time_utils.strdelta(elapsed_time)}\n")
-            printed_table.log_info()
+            print_metrics_table(
+                output_features,
+                progress_tracker.train_metrics,
+                progress_tracker.validation_metrics,
+                progress_tracker.test_metrics,
+            )
 
         # ================ Validation Logic ================
         should_break = False
@@ -719,8 +764,13 @@ class Trainer(BaseTrainer):
                 final_steps_per_checkpoint = min(final_steps_per_checkpoint, self.total_steps)
                 early_stopping_steps = final_steps_per_checkpoint * self.early_stop
 
-                # Update learning rate scheduler which depends on number of steps
-                self.scheduler.reset(final_steps_per_checkpoint, self.total_steps)
+                # Initialize the learning rate scheduler.
+                self.scheduler = LRScheduler(
+                    self.config.learning_rate_scheduler,
+                    self.optimizer,
+                    steps_per_checkpoint=final_steps_per_checkpoint,
+                    total_steps=self.total_steps,
+                )
 
                 if self.is_coordinator():
                     logger.info(
@@ -794,6 +844,10 @@ class Trainer(BaseTrainer):
                         if self.is_coordinator():
                             progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
 
+                    if not self.skip_save_model and self.skip_all_evaluation:
+                        # All evaluation was skipped, so save the current step as the best so far.
+                        checkpoint_manager.save_best(progress_tracker.steps)
+
                     # Early stop if needed.
                     if should_break:
                         break
@@ -810,6 +864,10 @@ class Trainer(BaseTrainer):
                 validation_summary_writer.close()
             if test_summary_writer is not None:
                 test_summary_writer.close()
+
+            if not self.skip_save_model and self.skip_all_evaluation:
+                # All evaluation was skipped, so save the current step as the best so far.
+                checkpoint_manager.save_best(progress_tracker.steps)
 
             if not self.skip_save_progress:
                 checkpoint_manager.close()
@@ -850,7 +908,7 @@ class Trainer(BaseTrainer):
         progress_tracker: ProgressTracker,
         save_path,
         train_summary_writer,
-        progress_bar,
+        progress_bar: LudwigProgressBar,
         training_set,
         validation_set,
         test_set,
@@ -892,9 +950,8 @@ class Trainer(BaseTrainer):
 
             loss, all_losses = self.train_step(inputs, targets, should_step=should_step)
 
-            if should_step:
-                # Update LR schduler here instead of train loop to avoid updating during batch size tuning, etc.
-                self.scheduler.step()
+            # Update LR schduler here instead of train loop to avoid updating during batch size tuning, etc.
+            self.scheduler.step()
 
             if self.is_coordinator() and not self.skip_save_log:
                 self.write_step_summary(
@@ -906,6 +963,7 @@ class Trainer(BaseTrainer):
                 )
 
             progress_tracker.steps += 1
+            progress_bar.set_postfix({"loss": float(loss)})
             progress_bar.update(1)
             if self.is_coordinator():
                 logger.debug(
@@ -919,23 +977,26 @@ class Trainer(BaseTrainer):
             self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path, sync_step=should_step))
 
             if progress_tracker.steps % final_steps_per_checkpoint == 0:
-                should_break = self.run_evaluation(
-                    training_set,
-                    validation_set,
-                    test_set,
-                    progress_tracker,
-                    train_summary_writer,
-                    validation_summary_writer,
-                    test_summary_writer,
-                    model_hyperparameters_path,
-                    output_features,
-                    metrics_names,
-                    save_path,
-                    loss,
-                    all_losses,
-                    early_stopping_steps,
-                    checkpoint_manager,
-                )
+                if not self.skip_all_evaluation:
+                    should_break = self.run_evaluation(
+                        training_set,
+                        validation_set,
+                        test_set,
+                        progress_tracker,
+                        train_summary_writer,
+                        validation_summary_writer,
+                        test_summary_writer,
+                        model_hyperparameters_path,
+                        output_features,
+                        metrics_names,
+                        save_path,
+                        loss,
+                        all_losses,
+                        early_stopping_steps,
+                        checkpoint_manager,
+                    )
+                else:
+                    should_break = False
 
                 # Checkpoint the model.
                 # NOTE: Ideally we would do this before evaluation, but for some reason DeepSpeed will complain
