@@ -326,7 +326,6 @@ prompt:
         type: null
         k: 1
     task: "Classify the sample input as either negative, neutral, or positive."
-    template: "{__task__}"
 input_features:
 -
     name: sample
@@ -355,7 +354,6 @@ prompt:
     retrieval:
         type: random
     task: "Classify the sample input as either negative, neutral, or positive."
-    template: "{__context__}  {__task__}"
 input_features:
 -
     name: sample
@@ -380,7 +378,6 @@ prompt:
     retrieval:
         type: semantic
     task: "Classify the sample input as either negative, neutral, or positive."
-    template: "{__context__} {__task__}"
 input_features:
 -
     name: sample
@@ -464,7 +461,7 @@ trainer:
     ModelConfig.from_dict(config)
 
 
-def test_check_prompt_task_and_template():
+def test_check_prompt_requirements():
     config = {
         "model_type": "llm",
         "input_features": [
@@ -476,7 +473,10 @@ def test_check_prompt_task_and_template():
 
     ModelConfig.from_dict(config)
 
-    config["prompt"] = {"task": "Some task", "template": ""}
+    config["prompt"] = {"task": "Some task"}
+    ModelConfig.from_dict(config)
+
+    config["prompt"] = {"task": "Some task", "template": "Some template not mentioning the task"}
     with pytest.raises(ConfigValidationError):
         ModelConfig.from_dict(config)
 

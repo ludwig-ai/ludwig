@@ -610,7 +610,7 @@ def check_qlora_requirements(config: "ModelConfig") -> None:  # noqa: F821
 
 
 @register_config_check
-def check_prompt_task_and_template(config: "ModelConfig") -> None:  # noqa: F821
+def check_prompt_requirements(config: "ModelConfig") -> None:  # noqa: F821
     """Checks that prompt's template and task properties are valid, according to the description on the schema."""
     if config.model_type != MODEL_LLM:
         return
@@ -628,28 +628,29 @@ def check_prompt_task_and_template(config: "ModelConfig") -> None:  # noqa: F821
     task = config.prompt.task
     retrieval = config.prompt.retrieval
 
-    # If no template is provided, task is required:
+    # If template is NOT provided, then task is required for zero/few shot learning:
     if not template and not task:
         raise ConfigValidationError("A prompt task is required if no template is provided!")
 
     template_refs = set(findall(r"\{(.*?)\}", template)) if isinstance(template, str) else set()
 
-    # If task is provided, the template must contain it:
-    if task and "__task__" not in template_refs:
-        raise ConfigValidationError(
-            "When providing a task, you must make sure that the task keyword `{__task__} is "
-            "present somewhere in the template string!"
-        )
-
-    # TODO: retrieval by default should be set to null, not a default dict:
-    if retrieval and retrieval != RetrievalConfig() and "__context__" not in template_refs:
-        raise ConfigValidationError(
-            "When providing a retrieval config, you must make sure that the task keyword `{__context__}` is "
-            "present somewhere in the template string!"
-        )
-
-    # Otherwise, the template should at least contain the sample keyword or some input column:
+    # If a template IS provided (i.e. we are not doing a built-in zero/few-shot learning), then...
     if template:
+        # If task is also provided, the template must contain it:
+        if task and "__task__" not in template_refs:
+            raise ConfigValidationError(
+                "When providing a task, you must make sure that the task keyword `{__task__} is "
+                "present somewhere in the template string!"
+            )
+
+        # TODO: retrieval by default should be set to null, not a default dict:
+        if retrieval and retrieval != RetrievalConfig() and "__context__" not in template_refs:
+            raise ConfigValidationError(
+                "When providing a retrieval config, you must make sure that the task keyword `{__context__}` is "
+                "present somewhere in the template string!"
+            )
+
+        # Otherwise, the template should at least contain the sample keyword or some input column:
         # TODO: len(template_refs) is a 2nd-best attempt to check that there are references to *something* in the
         # string. The proper validation is to check the references against the features in the user's dataset - but we
         # do not have access to the dataset in thise code path right now.
