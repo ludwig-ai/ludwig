@@ -651,9 +651,9 @@ def check_prompt_requirements(config: "ModelConfig") -> None:  # noqa: F821
             )
 
         # Otherwise, the template should at least contain the sample keyword or some input column:
-        # TODO: len(template_refs) is a 2nd-best attempt to check that there are references to *something* in the
+        # TODO: len(template_refs) is a hacky attempt to check that there are references to *something* in the
         # string. The proper validation is to check the references against the features in the user's dataset - but we
-        # do not have access to the dataset in thise code path right now.
+        # do not have access to the dataset in this code path right now.
         if not task:
             if len(template_refs) == 0 and "__sample__" not in template_refs:
                 raise ConfigValidationError(
