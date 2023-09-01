@@ -326,6 +326,7 @@ prompt:
         type: null
         k: 1
     task: "Classify the sample input as either negative, neutral, or positive."
+    template: "{__task__}"
 input_features:
 -
     name: sample
@@ -354,6 +355,7 @@ prompt:
     retrieval:
         type: random
     task: "Classify the sample input as either negative, neutral, or positive."
+    template: "{__task__}"
 input_features:
 -
     name: sample
@@ -378,6 +380,7 @@ prompt:
     retrieval:
         type: semantic
     task: "Classify the sample input as either negative, neutral, or positive."
+    template: "{__task__}"
 input_features:
 -
     name: sample
