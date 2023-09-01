@@ -1,7 +1,7 @@
 """Checks that are not easily covered by marshmallow JSON schema validation like parameter interdependencies."""
 
 from abc import ABC, abstractmethod
-from string import Formatter
+from re import findall
 from typing import Callable, TYPE_CHECKING
 
 from transformers import AutoConfig
@@ -615,38 +615,41 @@ def check_prompt_task_and_template(config: "ModelConfig") -> None:  # noqa: F821
     if config.model_type != MODEL_LLM:
         return
 
-    # If no prompt is provided, no validation necessary:
-    if not config.prompt:
+    # TODO: `prompt` by default should be set to null, not a default dict:
+    # # If no prompt is provided, no validation necessary:
+    # if not config.prompt:
+    #     return
+    from ludwig.schema.llms.prompt import PromptConfig
+
+    if config.prompt == PromptConfig():
         return
 
     template = config.prompt.template
     task = config.prompt.task
+    # TODO: need to handle retreival too, technically. but its a dict by default...
+    # retrieval = config.prompt.retrieval
+
     # If no template is provided, task is required:
     if not template and not task:
         raise ConfigValidationError("A prompt task is required if no template is provided!")
 
-    # If a template is provided, validate that it has a task and sample or some input column:
+    template_refs = set(findall("\{(.*?)\}", template)) if isinstance(template, str) else set()
+
+    # If task is provided, the template must contain it:
+    if task and "__task__" not in template_refs:
+        raise ConfigValidationError(
+            "When providing a task, you must make sure that the task keyword `{{__task__}} is "
+            "present somewhere in the template string!"
+        )
+
+    # Otherwise, the template should at least contain the sample keyword or some input column:
     if template:
-        column_names = {feature.column for feature in config.input_features}
-        template_refs = set(Formatter().parse(template))
-        reserved_keywords = ["__sample__", "__task__", "__context__"]
-
-        for ref in template_refs:
-            if ref not in column_names and ref not in reserved_keywords:
+        # TODO: len(template_refs) is a 2nd-best attempt to check that there are references to *something* in the
+        # string. The proper validation is to check the references against the features in the user's dataset - but we
+        # do not have access to the dataset in thise code path right now.
+        if not task:
+            if len(template_refs) == 0 and "__sample__" not in template_refs:
                 raise ConfigValidationError(
-                    f"Ref provided in template string: `{{{ref}}} is neither a column name or a keyword!"
+                    "A template must contain at least one reference to a column or, in the case of zero/few-shot "
+                    "learning, at least the sample keyword `{{__sample__}}`!"
                 )
-
-        intersection = column_names & template_refs
-
-        if task and "__task__" not in template_refs:
-            raise ConfigValidationError(
-                "When providing a template and a task, you must make sure that the task keyword `{{__task__}} is "
-                "present somewhere in the template string!"
-            )
-
-        if len(intersection) == 0 and "__sample__" not in template_refs:
-            raise ConfigValidationError(
-                "A template must contain at least one reference to a column or, in the case of zero/few-shot learning, "
-                "at least the sample keyword `{{__sample__}}`!"
-            )
