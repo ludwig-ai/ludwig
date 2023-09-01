@@ -633,7 +633,7 @@ def check_prompt_task_and_template(config: "ModelConfig") -> None:  # noqa: F821
     if not template and not task:
         raise ConfigValidationError("A prompt task is required if no template is provided!")
 
-    template_refs = set(findall("\{(.*?)\}", template)) if isinstance(template, str) else set()
+    template_refs = set(findall(r"\{(.*?)\}", template)) if isinstance(template, str) else set()
 
     # If task is provided, the template must contain it:
     if task and "__task__" not in template_refs:
