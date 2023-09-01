@@ -619,15 +619,14 @@ def check_prompt_task_and_template(config: "ModelConfig") -> None:  # noqa: F821
     # # If no prompt is provided, no validation necessary:
     # if not config.prompt:
     #     return
-    from ludwig.schema.llms.prompt import PromptConfig
+    from ludwig.schema.llms.prompt import PromptConfig, RetrievalConfig
 
     if config.prompt == PromptConfig():
         return
 
     template = config.prompt.template
     task = config.prompt.task
-    # TODO: need to handle retreival too, technically. but its a dict by default...
-    # retrieval = config.prompt.retrieval
+    retrieval = config.prompt.retrieval
 
     # If no template is provided, task is required:
     if not template and not task:
@@ -638,7 +637,14 @@ def check_prompt_task_and_template(config: "ModelConfig") -> None:  # noqa: F821
     # If task is provided, the template must contain it:
     if task and "__task__" not in template_refs:
         raise ConfigValidationError(
-            "When providing a task, you must make sure that the task keyword `{{__task__}} is "
+            "When providing a task, you must make sure that the task keyword `{__task__} is "
+            "present somewhere in the template string!"
+        )
+
+    # TODO: retrieval by default should be set to null, not a default dict:
+    if retrieval and retrieval != RetrievalConfig() and "__context__" not in template_refs:
+        raise ConfigValidationError(
+            "When providing a retrieval config, you must make sure that the task keyword `{__context__}` is "
             "present somewhere in the template string!"
         )
 
@@ -651,5 +657,5 @@ def check_prompt_task_and_template(config: "ModelConfig") -> None:  # noqa: F821
             if len(template_refs) == 0 and "__sample__" not in template_refs:
                 raise ConfigValidationError(
                     "A template must contain at least one reference to a column or, in the case of zero/few-shot "
-                    "learning, at least the sample keyword `{{__sample__}}`!"
+                    "learning, at least the sample keyword `{__sample__}`!"
                 )
