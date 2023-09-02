@@ -595,9 +595,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.9.18]
+        python-version: [3.9]
         include:
-          - python-version: 3.9.18
+          - python-version: 3.9
             pytorch-version: 2.0.0
             torchscript-version: 1.10.2
     env:
@@ -611,10 +611,6 @@ jobs:
     timeout-minutes: 70
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
 
       - name: pip cache
         uses: actions/cache@v2
@@ -680,9 +676,9 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.LUDWIG_TESTS_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.LUDWIG_TESTS_AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
 
       - name: Stop EC2 runner
         uses: machulav/ec2-github-runner@v2.2.0
