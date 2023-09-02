@@ -595,9 +595,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.9]
+        python-version: [3.9.18]
         include:
-          - python-version: 3.9
+          - python-version: 3.9.18
             pytorch-version: 2.0.0
             torchscript-version: 1.10.2
     env:
