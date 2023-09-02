@@ -696,6 +696,7 @@ def test_torchscript_preproc_with_nans(tmpdir, csv_filename, feature):
         assert utils.is_all_close(feature_values, feature_values_expected), f"feature: {feature_name}"
 
 
+@pytest.mark.gpu
 @pytest.mark.skipif(torch.cuda.device_count() == 0, reason="test requires at least 1 gpu")
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="test requires gpu support")
 @pytest.mark.distributed
@@ -761,6 +762,7 @@ def test_torchscript_preproc_gpu(tmpdir, csv_filename, feature_fn):
         assert values.is_cuda, f'feature "{name}" tensors are not on GPU'
 
 
+@pytest.mark.gpu
 @pytest.mark.skipif(torch.cuda.device_count() == 0, reason="test requires at least 1 gpu")
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="test requires gpu support")
 @pytest.mark.distributed

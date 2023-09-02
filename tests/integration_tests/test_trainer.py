@@ -65,6 +65,9 @@ except ImportError:
     logging.warn("Failed to import some modules")
 
 
+pytestmark = [pytest.mark.gpu]
+
+
 def test_tune_learning_rate(tmpdir):
     config = {
         "input_features": [text_feature(), binary_feature()],

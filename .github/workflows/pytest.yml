@@ -634,19 +634,25 @@ jobs:
           python --version
           pip --version
           python -m pip install -U pip
+
+          python -m venv ludwig-env
+          . ludwig-env/bin/activate
+
           pip install wheel setuptools_scm
-          pip install torch==${PYTORCH} torchtext torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118 --no-build-isolation
-          pip install '.[test]' --no-build-isolation
+          pip install torch==${PYTORCH} torchtext torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+          pip install '.[test]'
           pip list
         shell: bash
 
       - name: Check CUDA is available
         run: |
+          . ludwig-env/bin/activate
           python -c "import torch; assert torch.cuda.is_available()"
 
       - name: Tests
         run: |
-          pytest -v --timeout 300 --durations 10 --junitxml pytest.xml tests
+          . ludwig-env/bin/activate
+          LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "gpu" --junitxml pytest.xml tests/
 
       - name: Upload Unit Test Results
         if: always()
