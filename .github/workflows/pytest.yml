@@ -620,6 +620,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-py${{ matrix.python-version }}-torch${{ matrix.pytorch-version }}-
 
+      - name: Setup Linux
+        run: |
+          sudo yum install python3-devel
+
       - name: Install dependencies
         env:
           HOROVOD_WITH_PYTORCH: 1
