@@ -630,7 +630,7 @@ jobs:
           python --version
           pip --version
           python -m pip install -U pip
-          pip install wheel
+          pip install wheel setuptools_scm
           pip install torch==${PYTORCH} torchtext torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118 --no-build-isolation
           pip install '.[test]' --no-build-isolation
           pip list
