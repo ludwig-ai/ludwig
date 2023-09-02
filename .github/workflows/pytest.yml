@@ -576,8 +576,8 @@ jobs:
         with:
           mode: start
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          ec2-image-id: ami-0a2e32f9ea98dabff
-          ec2-instance-type: g4dn.xlarge
+          ec2-image-id: ami-00edb26190c330311
+          ec2-instance-type: g4dn.2xlarge
           subnet-id: subnet-80a134dd
           security-group-id: sg-0b48d1445c08d303f
           aws-resource-tags: >
@@ -652,7 +652,7 @@ jobs:
       - name: Tests
         run: |
           . ludwig-env/bin/activate
-          LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "gpu" --junitxml pytest.xml tests/
+          LUDWIG_TEST_SUITE_TIMEOUT_S=3600 pytest -v --timeout 300 --durations 100 -m "gpu" --junitxml pytest.xml tests/
 
       - name: Upload Unit Test Results
         if: always()
