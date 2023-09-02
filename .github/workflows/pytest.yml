@@ -566,8 +566,8 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-access-key-id: ${{ secrets.LUDWIG_TESTS_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.LUDWIG_TESTS_AWS_SECRET_ACCESS_KEY }}
           aws-region: us-west-2
 
       - name: Start EC2 runner
@@ -578,8 +578,8 @@ jobs:
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
           ec2-image-id: ami-0a2e32f9ea98dabff
           ec2-instance-type: g4dn.xlarge
-          subnet-id: subnet-0983be43
-          security-group-id: sg-4cba0d08
+          subnet-id: subnet-80a134dd
+          security-group-id: sg-0b48d1445c08d303f
           aws-resource-tags: >
             [
               {"Key": "Name", "Value": "ludwig-github-${{ github.head_ref || github.sha }}"},
