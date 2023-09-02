@@ -622,7 +622,7 @@ jobs:
 
       - name: Setup Linux
         run: |
-          sudo yum install python3-devel
+          sudo yum install python3-devel -y
 
       - name: Install dependencies
         env:
