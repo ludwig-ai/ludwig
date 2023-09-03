@@ -576,7 +576,7 @@ jobs:
         with:
           mode: start
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          ec2-image-id: ami-00edb26190c330311
+          ec2-image-id: ami-00eb54783eeeb9d1c
           ec2-instance-type: g4dn.2xlarge
           subnet-id: subnet-80a134dd
           security-group-id: sg-0b48d1445c08d303f
@@ -635,8 +635,7 @@ jobs:
           pip --version
           python -m pip install -U pip
 
-          python -m venv ludwig-env
-          . ludwig-env/bin/activate
+          . /root/ludwig-env/bin/activate
 
           pip install wheel setuptools_scm
           pip install torch==${PYTORCH} torchtext torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
@@ -646,12 +645,12 @@ jobs:
 
       - name: Check CUDA is available
         run: |
-          . ludwig-env/bin/activate
+          . /root/ludwig-env/bin/activate
           python -c "import torch; assert torch.cuda.is_available()"
 
       - name: Tests
         run: |
-          . ludwig-env/bin/activate
+          . /root/ludwig-env/bin/activate
           LUDWIG_TEST_SUITE_TIMEOUT_S=3600 pytest -v --timeout 300 --durations 100 -m "gpu" --junitxml pytest.xml tests/
 
       - name: Upload Unit Test Results
