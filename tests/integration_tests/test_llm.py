@@ -518,8 +518,9 @@ def test_global_max_sequence_length_for_llms():
     config_obj = ModelConfig.from_dict(config)
     model = LLM(config_obj)
 
-    # Default value is set based on model's context_len
-    assert model.global_max_sequence_length == 2048
+    # Default value is set based on model's context_len or global_max_sequence_length
+    # in preprocessing.
+    assert model.global_max_sequence_length == 512
 
     # Override to a larger value in the config
     config["preprocessing"] = {"global_max_sequence_length": 4096}
