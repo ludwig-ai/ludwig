@@ -52,6 +52,18 @@ class WandbCallback(Callback):
         del config["input_features"]
         del config["output_features"]
         wandb.config.update(config)
+    
+    def on_eval_end(self, trainer, progress_tracker, save_path):
+        """Called from ludwig/models/model.py."""
+        if wandb.run:
+            for key, value in progress_tracker.log_metrics().items():
+                wandb.log({key: value})
+                
+    def on_epoch_end(self, trainer, progress_tracker, save_path):
+        """Called from ludwig/models/model.py."""
+        if wandb.run:
+            for key, value in progress_tracker.log_metrics().items():
+                wandb.log({key: value})
 
     def on_visualize_figure(self, fig):
         logger.info("wandb.on_visualize_figure() called...")
