@@ -55,16 +55,11 @@ class WandbCallback(Callback):
 
     def on_eval_end(self, trainer, progress_tracker, save_path):
         """Called from ludwig/models/model.py."""
-        # if wandb.run:
-        logger.info("wandb.on_eval_end() called...")
-        logger.info(f"Wandb.Run: {wandb.run}")
         for key, value in progress_tracker.log_metrics().items():
             wandb.log({key: value})
 
     def on_epoch_end(self, trainer, progress_tracker, save_path):
         """Called from ludwig/models/model.py."""
-        logger.info("wandb.on_epoch_end() called...")
-        logger.info(f"Wandb.Run: {wandb.run}")
         for key, value in progress_tracker.log_metrics().items():
             wandb.log({key: value})
 
