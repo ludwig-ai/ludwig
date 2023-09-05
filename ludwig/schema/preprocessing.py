@@ -39,11 +39,12 @@ class PreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     global_max_sequence_length: int = schema_utils.PositiveInteger(
-        default=None,
+        default=512,
         allow_none=True,
-        description="Specifically for LLMs. This is the maximum length of the input sequence going into the model's "
-        "forward pass during training. Sequences will be truncated to this length after merging inputs and targets. "
-        "If not set, the total length of the merged input and target token sequences will be used.",
+        description="Specifically for LLMs. Defaults to 512. This is the maximum length of the input sequence "
+        "going into the model's forward pass during training. Sequences will be truncated to this length after "
+        "merging inputs and targets. If set to None, the total length of the merged input and target token "
+        "sequences will be used.",
         parameter_metadata=PREPROCESSING_METADATA["global_max_sequence_length"],
     )
 
