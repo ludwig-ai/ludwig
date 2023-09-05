@@ -643,6 +643,7 @@ def check_prompt_requirements(config: "ModelConfig") -> None:  # noqa: F821
                 "present somewhere in the template string!"
             )
 
+        # If retrieval is also provided, the template must reference it:
         # TODO: retrieval by default should be set to null, not a default dict:
         if retrieval and retrieval != RetrievalConfig() and "__context__" not in template_refs:
             raise ConfigValidationError(
@@ -657,6 +658,6 @@ def check_prompt_requirements(config: "ModelConfig") -> None:  # noqa: F821
         if not task:
             if len(template_refs) == 0 and "__sample__" not in template_refs:
                 raise ConfigValidationError(
-                    "A template must contain at least one reference to a column or, in the case of zero/few-shot "
-                    "learning, at least the sample keyword `{__sample__}`!"
+                    "A template must contain at least one reference to a column or the sample keyword {__sample__} for "
+                    "a JSON-serialized representation of non-output feature columns."
                 )
