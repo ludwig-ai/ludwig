@@ -461,7 +461,9 @@ class LambOptimizerConfig(BaseOptimizerConfig):
     )
 
     weight_decay: float = schema_utils.NonNegativeFloat(
-        default=0.0, description="Weight decay (L2 penalty).", parameter_metadata=OPTIMIZER_METADATA["weight_decay"]
+        default=0.0,
+        description="Weight decay (L2 penalty).",
+        parameter_metadata=OPTIMIZER_METADATA["weight_decay"],
     )
 
     amsgrad: bool = schema_utils.Boolean(
