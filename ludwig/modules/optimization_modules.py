@@ -49,7 +49,6 @@ def get_optimizer_class_and_kwargs(
     # Create a dict of parameters to be passed to torch (i.e. everything except `type`):
     cls_kwargs = {field: value for field, value in asdict(optimizer_config).items() if field != "type"}
     cls_kwargs["lr"] = learning_rate
-    print("Optimizer kwargs: ", cls_kwargs)
 
     return optimizer_cls, cls_kwargs
 
@@ -67,5 +66,4 @@ def create_optimizer(
     :return: Initialized instance of a torch optimizer.
     """
     optimizer_cls, optimizer_kwargs = get_optimizer_class_and_kwargs(optimizer_config, learning_rate)
-    print("Optimizer Class: ", optimizer_cls)
     return optimizer_cls(model.parameters(), **optimizer_kwargs)
