@@ -2,6 +2,7 @@ from abc import ABC
 from dataclasses import field
 from typing import ClassVar, Dict, Optional, Tuple, Type
 
+import bitsandbytes
 import torch
 from marshmallow import fields, ValidationError
 
@@ -50,12 +51,9 @@ class BaseOptimizerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     a `ValidationError`.
     """
 
+    @property
     def is_paged(self) -> bool:
-        """Returns True if the optimizer supports paging from GPU to CPU."""
-        return False
-
-    def supports_lower_precision(self) -> bool:
-        """Returns True if the optimizer supports lower precision (8-bit representation)."""
+        """Returns True if the optimizer is a Paged optimizer."""
         return False
 
 
@@ -104,10 +102,7 @@ class SGDOptimizerConfig(BaseOptimizerConfig):
 class SGD8BitOptimizerConfig(SGDOptimizerConfig):
     """Parameters for stochastic gradient descent."""
 
-    from bitsandbytes.optim import SGD8bit
-    from bitsandbytes.optim.optimizer import Optimizer1State
-
-    optimizer_class: ClassVar[Optimizer1State] = SGD8bit
+    optimizer_class: ClassVar[torch.optim.Optimizer] = bitsandbytes.optim.SGD8bit
 
     type: str = schema_utils.ProtectedString("sgd_8bit")
 
@@ -122,9 +117,6 @@ class SGD8BitOptimizerConfig(SGDOptimizerConfig):
         max=100,
         description="Percentile clipping.",
     )
-
-    def supports_lower_precision(self) -> bool:
-        return True
 
 
 @DeveloperAPI
@@ -218,18 +210,45 @@ class AdamOptimizerConfig(BaseOptimizerConfig):
 
 
 @DeveloperAPI
+@register_optimizer(name="adam_8bit")
+@ludwig_dataclass
+class Adam8BitOptimizerConfig(AdamOptimizerConfig):
+    optimizer_class: ClassVar[torch.optim.Optimizer] = bitsandbytes.optim.Adam8bit
+
+    type: str = schema_utils.ProtectedString("adam_8bit")
+
+    block_wise: bool = schema_utils.Boolean(
+        default=True,
+        description="Whether to use block wise update.",
+    )
+
+    percentile_clipping: int = schema_utils.IntegerRange(
+        default=100,
+        min=0,
+        max=100,
+        description="Percentile clipping.",
+    )
+
+
+@DeveloperAPI
 @register_optimizer(name="paged_adam")
 @ludwig_dataclass
-class PagedAdamOptimizerConfig(AdamOptimizerConfig):
-    from bitsandbytes.optim import PagedAdam
-    from bitsandbytes.optim.optimizer import Optimizer2State
-
-    optimizer_class: ClassVar[Optimizer2State] = PagedAdam
+class PagedAdamOptimizerConfig(Adam8BitOptimizerConfig):
+    optimizer_class: ClassVar[torch.optim.Optimizer] = bitsandbytes.optim.PagedAdam
 
     type: str = schema_utils.ProtectedString("paged_adam")
 
     def is_paged(self) -> bool:
         return True
+
+
+@DeveloperAPI
+@register_optimizer(name="paged_adam_8bit")
+@ludwig_dataclass
+class PagedAdam8BitOptimizerConfig(PagedAdamOptimizerConfig):
+    optimizer_class: ClassVar[torch.optim.Optimizer] = bitsandbytes.optim.PagedAdam8bit
+
+    type: str = schema_utils.ProtectedString("paged_adam_8bit")
 
 
 @DeveloperAPI
@@ -271,22 +290,45 @@ class AdamWOptimizerConfig(BaseOptimizerConfig):
 
 
 @DeveloperAPI
+@register_optimizer(name="adamw_8bit")
+@ludwig_dataclass
+class AdamW8BitOptimizerConfig(AdamWOptimizerConfig):
+    optimizer_class: ClassVar[torch.optim.Optimizer] = bitsandbytes.optim.AdamW8bit
+
+    type: str = schema_utils.ProtectedString("adamw_8bit")
+
+    block_wise: bool = schema_utils.Boolean(
+        default=True,
+        description="Whether to use block wise update.",
+    )
+
+    percentile_clipping: int = schema_utils.IntegerRange(
+        default=100,
+        min=0,
+        max=100,
+        description="Percentile clipping.",
+    )
+
+
+@DeveloperAPI
 @register_optimizer(name="paged_adamw")
 @ludwig_dataclass
-class PagedAdamWOptimizerConfig(AdamWOptimizerConfig):
-    from bitsandbytes.optim import PagedAdamW
-    from bitsandbytes.optim.optimizer import Optimizer2State
-
-    optimizer_class: ClassVar[Optimizer2State] = PagedAdamW
+class PagedAdamWOptimizerConfig(AdamW8BitOptimizerConfig):
+    optimizer_class: ClassVar[torch.optim.Optimizer] = bitsandbytes.optim.PagedAdamW
 
     type: str = schema_utils.ProtectedString("paged_adamw")
 
-    weight_decay: float = schema_utils.NonNegativeFloat(
-        default=1e-2, description="Weight decay ($L2$ penalty).", parameter_metadata=OPTIMIZER_METADATA["weight_decay"]
-    )
-
     def is_paged(self) -> bool:
         True
+
+
+@DeveloperAPI
+@register_optimizer(name="paged_adamw_8bit")
+@ludwig_dataclass
+class PagedAdamW8BitOptimizerConfig(PagedAdamWOptimizerConfig):
+    optimizer_class: ClassVar[torch.optim.Optimizer] = bitsandbytes.optim.PagedAdamW8bit
+
+    type: str = schema_utils.ProtectedString("paged_adamw_8bit")
 
 
 @DeveloperAPI
@@ -360,15 +402,21 @@ class AdagradOptimizerConfig(BaseOptimizerConfig):
 @register_optimizer(name="adagrad_8bit")
 @ludwig_dataclass
 class Adagrad8BitOptimizerConfig(AdagradOptimizerConfig):
-    from bitsandbytes.optim import Adagrad8bit
-    from bitsandbytes.optim.optimizer import Optimizer1State
-
-    optimizer_class: ClassVar[Optimizer1State] = Adagrad8bit
+    optimizer_class: ClassVar[torch.optim.Optimizer] = bitsandbytes.optim.Adagrad8bit
 
     type: str = schema_utils.ProtectedString("adagrad_8bit")
 
-    def supports_lower_precision(self) -> bool:
-        return True
+    block_wise: bool = schema_utils.Boolean(
+        default=True,
+        description="Whether to use block wise update.",
+    )
+
+    percentile_clipping: int = schema_utils.IntegerRange(
+        default=100,
+        min=0,
+        max=100,
+        description="Percentile clipping.",
+    )
 
 
 @DeveloperAPI
@@ -502,6 +550,27 @@ class RMSPropOptimizerConfig(BaseOptimizerConfig):
 
 
 @DeveloperAPI
+@register_optimizer(name="rmsprop_8bit")
+@ludwig_dataclass
+class RMSProp8BitOptimizerConfig(RMSPropOptimizerConfig):
+    optimizer_class: ClassVar[torch.optim.Optimizer] = bitsandbytes.optim.RMSProp8bit
+
+    type: str = schema_utils.ProtectedString("rmsprop_8bit")
+
+    block_wise: bool = schema_utils.Boolean(
+        default=True,
+        description="Whether to use block wise update.",
+    )
+
+    percentile_clipping: int = schema_utils.IntegerRange(
+        default=100,
+        min=0,
+        max=100,
+        description="Percentile clipping.",
+    )
+
+
+@DeveloperAPI
 @register_optimizer(name="lamb")
 @ludwig_dataclass
 class LAMBOptimizerConfig(BaseOptimizerConfig):
@@ -510,10 +579,7 @@ class LAMBOptimizerConfig(BaseOptimizerConfig):
     Paper: https://arxiv.org/pdf/1904.00962.pdf
     """
 
-    from bitsandbytes.optim import LAMB
-    from bitsandbytes.optim.optimizer import Optimizer2State
-
-    optimizer_class: ClassVar[Optimizer2State] = LAMB
+    optimizer_class: ClassVar[torch.optim.Optimizer] = bitsandbytes.optim.LAMB
 
     type: str = schema_utils.ProtectedString("lamb")
 
@@ -572,6 +638,15 @@ class LAMBOptimizerConfig(BaseOptimizerConfig):
 
 
 @DeveloperAPI
+@register_optimizer(name="lamb_8bit")
+@ludwig_dataclass
+class LAMB8BitOptimizerConfig(LAMBOptimizerConfig):
+    optimizer_class: ClassVar[torch.optim.Optimizer] = bitsandbytes.optim.LAMB8bit
+
+    type: str = schema_utils.ProtectedString("lamb_8bit")
+
+
+@DeveloperAPI
 @register_optimizer(name="lars")
 @ludwig_dataclass
 class LARSOptimizerConfig(BaseOptimizerConfig):
@@ -580,10 +655,7 @@ class LARSOptimizerConfig(BaseOptimizerConfig):
     Paper: https://arxiv.org/pdf/1708.03888.pdf
     """
 
-    from bitsandbytes.optim import LARS
-    from bitsandbytes.optim.optimizer import Optimizer1State
-
-    optimizer_class: ClassVar[Optimizer1State] = LARS
+    optimizer_class: ClassVar[torch.optim.Optimizer] = bitsandbytes.optim.LARS
 
     type: str = schema_utils.ProtectedString("lars")
 
@@ -626,6 +698,15 @@ class LARSOptimizerConfig(BaseOptimizerConfig):
 
 
 @DeveloperAPI
+@register_optimizer(name="lars_8bit")
+@ludwig_dataclass
+class LARS8BitOptimizerConfig(LARSOptimizerConfig):
+    optimizer_class: ClassVar[torch.optim.Optimizer] = bitsandbytes.optim.LARS8bit
+
+    type: str = schema_utils.ProtectedString("lars_8bit")
+
+
+@DeveloperAPI
 @register_optimizer(name="lion")
 @ludwig_dataclass
 class LIONOptimizerConfig(BaseOptimizerConfig):
@@ -634,10 +715,7 @@ class LIONOptimizerConfig(BaseOptimizerConfig):
     Paper: https://arxiv.org/pdf/2302.06675.pdf
     """
 
-    from bitsandbytes.optim import Lion
-    from bitsandbytes.optim.optimizer import Optimizer1State
-
-    optimizer_class: ClassVar[Optimizer1State] = Lion
+    optimizer_class: ClassVar[torch.optim.Optimizer] = bitsandbytes.optim.Lion
 
     type: str = schema_utils.ProtectedString("lion")
 
@@ -661,24 +739,39 @@ class LIONOptimizerConfig(BaseOptimizerConfig):
     )
 
     block_wise: bool = schema_utils.Boolean(
-        default=False,
+        default=True,
         description="Whether to use block wise update.",
     )
+
+
+@DeveloperAPI
+@register_optimizer(name="lion_8bit")
+@ludwig_dataclass
+class LION8BitOptimizerConfig(LIONOptimizerConfig):
+    optimizer_class: ClassVar[torch.optim.Optimizer] = bitsandbytes.optim.Lion8bit
+
+    type: str = schema_utils.ProtectedString("lion_8bit")
 
 
 @DeveloperAPI
 @register_optimizer(name="paged_lion")
 @ludwig_dataclass
 class PagedLionOptimizerConfig(LIONOptimizerConfig):
-    from bitsandbytes.optim import PagedLion
-    from bitsandbytes.optim.optimizer import Optimizer1State
-
-    optimizer_class: ClassVar[Optimizer1State] = PagedLion
+    optimizer_class: ClassVar[torch.optim.Optimizer] = bitsandbytes.optim.PagedLion
 
     type: str = schema_utils.ProtectedString("paged_lion")
 
     def is_paged(self) -> bool:
         return True
+
+
+@DeveloperAPI
+@register_optimizer(name="paged_lion_8bit")
+@ludwig_dataclass
+class PagedLion8BitOptimizerConfig(PagedLionOptimizerConfig):
+    optimizer_class: ClassVar[torch.optim.Optimizer] = bitsandbytes.optim.PagedLion8bit
+
+    type: str = schema_utils.ProtectedString("paged_lion_8bit")
 
 
 @DeveloperAPI
