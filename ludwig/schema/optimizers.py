@@ -50,22 +50,22 @@ class BaseOptimizerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     a `ValidationError`.
     """
 
-    @property
-    def has_paged(self):
-        """Returns True if the optimizer has a paged version, False otherwise.
+    # is_paged: bool
+    # """True if the optimizer has a paged version, False otherwise.
 
-        Paged optimizers move the parameters to from the GPU to the CPU and back to the GPU during the optimization
-        step. This is useful for large models that do not fit in GPU memory.
-        """
-        return False
+    # Paged optimizers move the parameters to from the GPU to the CPU and back to the GPU during the optimization
+    # step. This is useful for large models that do not fit in GPU memory.
+    # """
 
-    @property
-    def has_8bit(self):
-        """Returns True if the optimizer has a 8-bit version, False otherwise.
+    # optim_bits: List[int]
+    # """
+    # Typically, this is 32-bits by default.
+    # 8-bit optimizers use 8-bit gradients and parameters to reduce memory usage and increase speed.
+    # """
 
-        8-bit optimizers use 8-bit gradients and parameters to reduce memory usage and increase speed.
-        """
-        return False
+    # @staticmethod
+    # def is_bnb_optimizer():
+    #     return False
 
 
 @DeveloperAPI
@@ -104,6 +104,32 @@ class SGDOptimizerConfig(BaseOptimizerConfig):
         default=False,
         description="Enables Nesterov momentum.",
         parameter_metadata=OPTIMIZER_METADATA["nesterov"],
+    )
+
+
+@DeveloperAPI
+@register_optimizer(name="sgd_8bit")
+@ludwig_dataclass
+class SGD8BitOptimizerConfig(SGDOptimizerConfig):
+    """Parameters for stochastic gradient descent."""
+
+    from bitsandbytes.optim import SGD8bit
+    from bitsandbytes.optim.optimizer import Optimizer1State
+
+    optimizer_class: ClassVar[Optimizer1State] = SGD8bit
+
+    type: str = schema_utils.ProtectedString("sgd_8bit")
+
+    block_wise: bool = schema_utils.Boolean(
+        default=False,
+        description="Whether to use block wise update.",
+    )
+
+    percentile_clipping: int = schema_utils.IntegerRange(
+        default=100,
+        min=0,
+        max=100,
+        description="Percentile clipping.",
     )
 
 
@@ -198,6 +224,18 @@ class AdamOptimizerConfig(BaseOptimizerConfig):
 
 
 @DeveloperAPI
+@register_optimizer(name="paged_adam")
+@ludwig_dataclass
+class PagedAdamOptimizerConfig(AdamOptimizerConfig):
+    from bitsandbytes.optim import PagedAdam
+    from bitsandbytes.optim.optimizer import Optimizer2State
+
+    optimizer_class: ClassVar[Optimizer2State] = PagedAdam
+
+    type: str = schema_utils.ProtectedString("paged_adam")
+
+
+@DeveloperAPI
 @register_optimizer(name="adamw")
 @ludwig_dataclass
 class AdamWOptimizerConfig(BaseOptimizerConfig):
@@ -232,6 +270,22 @@ class AdamWOptimizerConfig(BaseOptimizerConfig):
         description="Whether to use the AMSGrad variant of this algorithm from the paper 'On the Convergence of Adam "
         "and Beyond'. ",
         parameter_metadata=OPTIMIZER_METADATA["amsgrad"],
+    )
+
+
+@DeveloperAPI
+@register_optimizer(name="paged_adamw")
+@ludwig_dataclass
+class PagedAdamWOptimizerConfig(AdamWOptimizerConfig):
+    from bitsandbytes.optim import PagedAdamW
+    from bitsandbytes.optim.optimizer import Optimizer2State
+
+    optimizer_class: ClassVar[Optimizer2State] = PagedAdamW
+
+    type: str = schema_utils.ProtectedString("paged_adamw")
+
+    weight_decay: float = schema_utils.NonNegativeFloat(
+        default=1e-2, description="Weight decay ($L2$ penalty).", parameter_metadata=OPTIMIZER_METADATA["weight_decay"]
     )
 
 
@@ -430,34 +484,6 @@ class RMSPropOptimizerConfig(BaseOptimizerConfig):
     )
 
     weight_decay: float = schema_utils.NonNegativeFloat(default=0.0, description="Weight decay ($L2$ penalty).")
-
-
-@DeveloperAPI
-@register_optimizer(name="paged_adam")
-@ludwig_dataclass
-class PagedAdamOptimizerConfig(AdamOptimizerConfig):
-    from bitsandbytes.optim import PagedAdam
-    from bitsandbytes.optim.optimizer import Optimizer2State
-
-    optimizer_class: ClassVar[Optimizer2State] = PagedAdam
-
-    type: str = schema_utils.ProtectedString("paged_adam")
-
-
-@DeveloperAPI
-@register_optimizer(name="paged_adamw")
-@ludwig_dataclass
-class PagedAdamWOptimizerConfig(AdamWOptimizerConfig):
-    from bitsandbytes.optim import PagedAdamW
-    from bitsandbytes.optim.optimizer import Optimizer2State
-
-    optimizer_class: ClassVar[Optimizer2State] = PagedAdamW
-
-    type: str = schema_utils.ProtectedString("paged_adamw")
-
-    weight_decay: float = schema_utils.NonNegativeFloat(
-        default=1e-2, description="Weight decay ($L2$ penalty).", parameter_metadata=OPTIMIZER_METADATA["weight_decay"]
-    )
 
 
 @DeveloperAPI
