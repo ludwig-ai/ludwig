@@ -2,10 +2,11 @@ from typing import Dict, Tuple
 
 import torch
 import torch.nn.functional as F
+from bitsandbytes.nn.modules import Embedding
 from transformers import GPT2Tokenizer, GPT2TokenizerFast, LlamaTokenizer, LlamaTokenizerFast, PreTrainedTokenizer
 
 from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, PREDICTIONS, PROBABILITIES
-from ludwig.utils.model_utils import find_embedding_layer
+from ludwig.utils.model_utils import find_embedding_layer_with_path
 
 
 def set_pad_token(tokenizer: PreTrainedTokenizer):
@@ -387,17 +388,15 @@ def update_embedding_layer(model, config_obj):
     # If we're using an 8-bit optimizer, we need to replace the embedding layer with a custom embedding layer from
     # bnb.nn.modules.Embedding.
     if hasattr(config_obj.trainer, "optimizer") and config_obj.trainer.optimizer.is_8bit:
-        embedding_layer = find_embedding_layer(model)
+        embedding_layer, module_path = find_embedding_layer_with_path(model)
         if embedding_layer is None:
             raise ValueError(
                 "Could not find an embedding layer in the model. This is required when using 8-bit optimizers"
                 "  since a custom 8-bit embedding layer is used in place of the original embedding layer."
             )
 
-        from bitsandbytes.nn.modules import Embedding
-
-        # Set the embedding layer to the BNB 8-bit embedding layer
-        model.get_input_embeddings = lambda: Embedding(
+        # Initialize the BNB embedding layer with the same parameters and weights as the original embedding layer.
+        bnb_embedding = Embedding(
             num_embeddings=embedding_layer.num_embeddings,
             embedding_dim=embedding_layer.embedding_dim,
             padding_idx=embedding_layer.padding_idx,
@@ -408,5 +407,16 @@ def update_embedding_layer(model, config_obj):
             _weight=embedding_layer.weight,
             device=model.device,
         )
+
+        # Update the model's original embedding layer to use the BNB 8-bit embedding layer using the module_path
+        # returned by find_embedding_layer_with_path.
+        module_path = module_path.split(".")
+        module = model
+        for module_name in module_path[:-1]:
+            module = getattr(module, module_name)
+        setattr(module, module_path[-1], bnb_embedding)
+
+        # Set the get input embeddings lambda function to return the BNB embedding layer
+        model.get_input_embeddings = lambda: bnb_embedding
 
     return model
