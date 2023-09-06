@@ -116,6 +116,8 @@ def check_training_runway(config: "ModelConfig") -> None:  # noqa: F821
 def check_optimizer_requirements(config: "ModelConfig") -> None:  # noqa: F821
     """Checks if GPU is available when using Paged Optimizer."""
     # TODO: Figure out why this check won't work
+    # Also it seems like this check is needed for 8-bit versions of the optimizers
+    # as well, so add a new property to the base class and then add that check here.
     if config.trainer.optimizer.is_paged and not torch.cuda.is_available():
         raise ConfigValidationError(
             "Paged Optimizers require GPU but no GPU was detected. Please use a different optimizer."

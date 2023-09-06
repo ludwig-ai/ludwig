@@ -382,7 +382,7 @@ def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strat
         BASE_MODEL: model_name,
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
-        TRAINER: {TYPE: "finetune", BATCH_SIZE: 8, EPOCHS: 2, "optimizer": {"type": "paged_adamw"}},
+        TRAINER: {TYPE: "finetune", BATCH_SIZE: 8, EPOCHS: 2, "optimizer": {"type": "adamw_8bit"}},
         BACKEND: backend,
     }
 
