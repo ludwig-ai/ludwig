@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from re import findall
 from typing import Callable, TYPE_CHECKING
 
+import torch
 from transformers import AutoConfig
 
 from ludwig.api_annotations import DeveloperAPI
@@ -109,6 +110,16 @@ def check_training_runway(config: "ModelConfig") -> None:  # noqa: F821
                 "trainer.steps_per_checkpoint. Please specify one or the other, or specify neither to "
                 "checkpoint/eval the model every epoch."
             )
+
+
+@register_config_check
+def check_optimizer_requirements(config: "ModelConfig") -> None:  # noqa: F821
+    """Checks if GPU is available when using Paged Optimizer."""
+    # TODO: Figure out why this check won't work
+    if config.trainer.optimizer.is_paged and not torch.cuda.is_available():
+        raise ConfigValidationError(
+            "Paged Optimizers require GPU but no GPU was detected. Please use a different optimizer."
+        )
 
 
 @register_config_check

@@ -238,6 +238,7 @@ class PagedAdamOptimizerConfig(Adam8BitOptimizerConfig):
 
     type: str = schema_utils.ProtectedString("paged_adam")
 
+    @property
     def is_paged(self) -> bool:
         return True
 
@@ -318,6 +319,7 @@ class PagedAdamWOptimizerConfig(AdamW8BitOptimizerConfig):
 
     type: str = schema_utils.ProtectedString("paged_adamw")
 
+    @property
     def is_paged(self) -> bool:
         True
 
@@ -553,7 +555,7 @@ class RMSPropOptimizerConfig(BaseOptimizerConfig):
 @register_optimizer(name="rmsprop_8bit")
 @ludwig_dataclass
 class RMSProp8BitOptimizerConfig(RMSPropOptimizerConfig):
-    optimizer_class: ClassVar[torch.optim.Optimizer] = bitsandbytes.optim.RMSProp8bit
+    optimizer_class: ClassVar[torch.optim.Optimizer] = bitsandbytes.optim.RMSprop8bit
 
     type: str = schema_utils.ProtectedString("rmsprop_8bit")
 
@@ -761,6 +763,7 @@ class PagedLionOptimizerConfig(LIONOptimizerConfig):
 
     type: str = schema_utils.ProtectedString("paged_lion")
 
+    @property
     def is_paged(self) -> bool:
         return True
 
