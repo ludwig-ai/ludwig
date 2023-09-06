@@ -50,22 +50,13 @@ class BaseOptimizerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     a `ValidationError`.
     """
 
-    # is_paged: bool
-    # """True if the optimizer has a paged version, False otherwise.
+    def is_paged(self) -> bool:
+        """Returns True if the optimizer supports paging from GPU to CPU."""
+        return False
 
-    # Paged optimizers move the parameters to from the GPU to the CPU and back to the GPU during the optimization
-    # step. This is useful for large models that do not fit in GPU memory.
-    # """
-
-    # optim_bits: List[int]
-    # """
-    # Typically, this is 32-bits by default.
-    # 8-bit optimizers use 8-bit gradients and parameters to reduce memory usage and increase speed.
-    # """
-
-    # @staticmethod
-    # def is_bnb_optimizer():
-    #     return False
+    def supports_lower_precision(self) -> bool:
+        """Returns True if the optimizer supports lower precision (8-bit representation)."""
+        return False
 
 
 @DeveloperAPI
@@ -131,6 +122,9 @@ class SGD8BitOptimizerConfig(SGDOptimizerConfig):
         max=100,
         description="Percentile clipping.",
     )
+
+    def supports_lower_precision(self) -> bool:
+        return True
 
 
 @DeveloperAPI
@@ -234,6 +228,9 @@ class PagedAdamOptimizerConfig(AdamOptimizerConfig):
 
     type: str = schema_utils.ProtectedString("paged_adam")
 
+    def is_paged(self) -> bool:
+        return True
+
 
 @DeveloperAPI
 @register_optimizer(name="adamw")
@@ -287,6 +284,9 @@ class PagedAdamWOptimizerConfig(AdamWOptimizerConfig):
     weight_decay: float = schema_utils.NonNegativeFloat(
         default=1e-2, description="Weight decay ($L2$ penalty).", parameter_metadata=OPTIMIZER_METADATA["weight_decay"]
     )
+
+    def is_paged(self) -> bool:
+        True
 
 
 @DeveloperAPI
@@ -354,6 +354,21 @@ class AdagradOptimizerConfig(BaseOptimizerConfig):
         description="Term added to the denominator to improve numerical stability.",
         parameter_metadata=OPTIMIZER_METADATA["eps"],
     )
+
+
+@DeveloperAPI
+@register_optimizer(name="adagrad_8bit")
+@ludwig_dataclass
+class Adagrad8BitOptimizerConfig(AdagradOptimizerConfig):
+    from bitsandbytes.optim import Adagrad8bit
+    from bitsandbytes.optim.optimizer import Optimizer1State
+
+    optimizer_class: ClassVar[Optimizer1State] = Adagrad8bit
+
+    type: str = schema_utils.ProtectedString("adagrad_8bit")
+
+    def supports_lower_precision(self) -> bool:
+        return True
 
 
 @DeveloperAPI
@@ -661,6 +676,9 @@ class PagedLionOptimizerConfig(LIONOptimizerConfig):
     optimizer_class: ClassVar[Optimizer1State] = PagedLion
 
     type: str = schema_utils.ProtectedString("paged_lion")
+
+    def is_paged(self) -> bool:
+        return True
 
 
 @DeveloperAPI
