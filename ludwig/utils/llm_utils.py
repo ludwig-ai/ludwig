@@ -384,6 +384,7 @@ def update_embedding_layer(model, config_obj):
     """Updates the embedding layer of the model to use the 8-bit embedding layer from bitsandbytes.nn.modules.
 
     This is necessary when using 8-bit optimizers from bitsandbytes.
+    See: https://github.com/TimDettmers/bitsandbytes#tldr
     """
     # If we're using an 8-bit optimizer, we need to replace the embedding layer with a custom embedding layer from
     # bnb.nn.modules.Embedding.
@@ -408,7 +409,7 @@ def update_embedding_layer(model, config_obj):
             device=model.device,
         )
 
-        # Update the model's original embedding layer to use the BNB 8-bit embedding layer using the module_path
+        # Update the model's original embedding layer to use the BNB embedding layer using the module_path
         # returned by find_embedding_layer_with_path.
         module_path = module_path.split(".")
         module = model
