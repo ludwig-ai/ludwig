@@ -26,6 +26,7 @@ from ludwig.utils.llm_utils import (
     realign_target_and_prediction_tensors_for_inference,
     remove_left_padding,
     set_pad_token,
+    update_embedding_layer,
 )
 from ludwig.utils.logging_utils import log_once
 from ludwig.utils.output_feature_utils import set_output_feature_tensor
@@ -100,6 +101,10 @@ def load_pretrained_from_config(
     logger.info("Loading large language model...")
     pretrained_model_name_or_path = weights_save_path or config_obj.base_model
     model: PreTrainedModel = AutoModelForCausalLM.from_pretrained(pretrained_model_name_or_path, **load_kwargs)
+
+    # We may need to replace the embedding layer when using 8-bit optimizers from bitsandbytes.
+    update_embedding_layer(model, config_obj)
+
     return model
 
 

@@ -5,6 +5,7 @@ import torch.nn.functional as F
 from transformers import GPT2Tokenizer, GPT2TokenizerFast, LlamaTokenizer, LlamaTokenizerFast, PreTrainedTokenizer
 
 from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, PREDICTIONS, PROBABILITIES
+from ludwig.utils.model_utils import find_embedding_layer
 
 
 def set_pad_token(tokenizer: PreTrainedTokenizer):
@@ -376,3 +377,36 @@ def realign_target_and_prediction_tensors_for_inference(
         targets[of_name] = F.pad(targets[of_name], (0, zeros_to_add), value=pad_value).to(torch.int64)
 
     return targets, predictions
+
+
+def update_embedding_layer(model, config_obj):
+    """Updates the embedding layer of the model to use the 8-bit embedding layer from bitsandbytes.nn.modules.
+
+    This is necessary when using 8-bit optimizers from bitsandbytes.
+    """
+    # If we're using an 8-bit optimizer, we need to replace the embedding layer with a custom embedding layer from
+    # bnb.nn.modules.Embedding.
+    if hasattr(config_obj.trainer, "optimizer") and config_obj.trainer.optimizer.is_8bit:
+        embedding_layer = find_embedding_layer(model)
+        if embedding_layer is None:
+            raise ValueError(
+                "Could not find an embedding layer in the model. This is required when using 8-bit optimizers"
+                "  since a custom 8-bit embedding layer is used in place of the original embedding layer."
+            )
+
+        from bitsandbytes.nn.modules import Embedding
+
+        # Set the embedding layer to the BNB 8-bit embedding layer
+        model.get_input_embeddings = lambda: Embedding(
+            num_embeddings=embedding_layer.num_embeddings,
+            embedding_dim=embedding_layer.embedding_dim,
+            padding_idx=embedding_layer.padding_idx,
+            max_norm=embedding_layer.max_norm,
+            norm_type=embedding_layer.norm_type,
+            scale_grad_by_freq=embedding_layer.scale_grad_by_freq,
+            sparse=embedding_layer.sparse,
+            _weight=embedding_layer.weight,
+            device=model.device,
+        )
+
+    return model
