@@ -240,7 +240,7 @@ class Adam8BitOptimizerConfig(AdamOptimizerConfig):
 
     @property
     def is_8bit(self) -> bool:
-        True
+        return True
 
 
 @DeveloperAPI
@@ -257,7 +257,7 @@ class PagedAdamOptimizerConfig(Adam8BitOptimizerConfig):
 
     @property
     def is_8bit(self) -> bool:
-        False
+        return False
 
 
 @DeveloperAPI
@@ -270,7 +270,7 @@ class PagedAdam8BitOptimizerConfig(PagedAdamOptimizerConfig):
 
     @property
     def is_8bit(self) -> bool:
-        True
+        return True
 
 
 @DeveloperAPI
@@ -346,7 +346,7 @@ class PagedAdamWOptimizerConfig(AdamW8BitOptimizerConfig):
 
     @property
     def is_paged(self) -> bool:
-        True
+        return True
 
     @property
     def is_8bit(self) -> bool:
