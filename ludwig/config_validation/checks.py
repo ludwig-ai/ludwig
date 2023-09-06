@@ -4,7 +4,6 @@ from abc import ABC, abstractmethod
 from re import findall
 from typing import Callable, TYPE_CHECKING
 
-import torch
 from transformers import AutoConfig
 
 from ludwig.api_annotations import DeveloperAPI
@@ -110,28 +109,6 @@ def check_training_runway(config: "ModelConfig") -> None:  # noqa: F821
                 "trainer.steps_per_checkpoint. Please specify one or the other, or specify neither to "
                 "checkpoint/eval the model every epoch."
             )
-
-
-@register_config_check
-def check_optimizer_requirements(config: "ModelConfig") -> None:  # noqa: F821
-    """Checks if GPU is available when using Paged Optimizer."""
-    # GBMs don't specify optimizers, so skip this check for them and potentially other
-    # config types that don't specify optimizers.
-    if not hasattr(config.trainer, "optimizer"):
-        return
-
-    # TODO: Figure out why this check won't work
-    # Also it seems like this check is needed for 8-bit versions of the optimizers
-    # as well, so add a new property to the base class and then add that check here.
-    if config.trainer.optimizer.is_8bit and not torch.cuda.is_available():
-        raise ConfigValidationError(
-            "8-bit Optimizers require GPU but no GPU was detected. Please use a different optimizer."
-        )
-
-    if config.trainer.optimizer.is_paged and not torch.cuda.is_available():
-        raise ConfigValidationError(
-            "Paged Optimizers require GPU but no GPU was detected. Please use a different optimizer."
-        )
 
 
 @register_config_check

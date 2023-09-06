@@ -65,5 +65,16 @@ def create_optimizer(
     :param optimizer_config: Instance of `ludwig.modules.optimization_modules.BaseOptimizerConfig`.
     :return: Initialized instance of a torch optimizer.
     """
+    # Make sure the optimizer is compatible with the available resources:
+    print(f"Optimizer Config Is Paged: {optimizer_config.is_paged}")
+    print(f"Optimizer Config 8Bit: {optimizer_config.is_8bit}")
+    print(f"Is CUDA Available: {torch.cuda.is_available()}")
+
+    if (optimizer_config.is_paged or optimizer_config.is_8bit) and not torch.cuda.is_available():
+        raise ValueError(
+            "Cannot use a paged or 8-bit optimizer on a non-GPU machine. "
+            "Please use a different optimizer or run on a machine with a GPU."
+        )
+
     optimizer_cls, optimizer_kwargs = get_optimizer_class_and_kwargs(optimizer_config, learning_rate)
     return optimizer_cls(model.parameters(), **optimizer_kwargs)
