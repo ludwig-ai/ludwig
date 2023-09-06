@@ -2,7 +2,7 @@ from abc import ABC
 from dataclasses import field
 from typing import ClassVar, Dict, Optional, Tuple, Type
 
-import bitsandbytes
+import bitsandbytes as bnb
 import torch
 from marshmallow import fields, ValidationError
 
@@ -102,7 +102,7 @@ class SGDOptimizerConfig(BaseOptimizerConfig):
 class SGD8BitOptimizerConfig(SGDOptimizerConfig):
     """Parameters for stochastic gradient descent."""
 
-    optimizer_class: ClassVar[torch.optim.Optimizer] = bitsandbytes.optim.SGD8bit
+    optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.SGD8bit
 
     type: str = schema_utils.ProtectedString("sgd_8bit")
 
@@ -213,7 +213,7 @@ class AdamOptimizerConfig(BaseOptimizerConfig):
 @register_optimizer(name="adam_8bit")
 @ludwig_dataclass
 class Adam8BitOptimizerConfig(AdamOptimizerConfig):
-    optimizer_class: ClassVar[torch.optim.Optimizer] = bitsandbytes.optim.Adam8bit
+    optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.Adam8bit
 
     type: str = schema_utils.ProtectedString("adam_8bit")
 
@@ -234,7 +234,7 @@ class Adam8BitOptimizerConfig(AdamOptimizerConfig):
 @register_optimizer(name="paged_adam")
 @ludwig_dataclass
 class PagedAdamOptimizerConfig(Adam8BitOptimizerConfig):
-    optimizer_class: ClassVar[torch.optim.Optimizer] = bitsandbytes.optim.PagedAdam
+    optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.PagedAdam
 
     type: str = schema_utils.ProtectedString("paged_adam")
 
@@ -247,7 +247,7 @@ class PagedAdamOptimizerConfig(Adam8BitOptimizerConfig):
 @register_optimizer(name="paged_adam_8bit")
 @ludwig_dataclass
 class PagedAdam8BitOptimizerConfig(PagedAdamOptimizerConfig):
-    optimizer_class: ClassVar[torch.optim.Optimizer] = bitsandbytes.optim.PagedAdam8bit
+    optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.PagedAdam8bit
 
     type: str = schema_utils.ProtectedString("paged_adam_8bit")
 
@@ -294,7 +294,7 @@ class AdamWOptimizerConfig(BaseOptimizerConfig):
 @register_optimizer(name="adamw_8bit")
 @ludwig_dataclass
 class AdamW8BitOptimizerConfig(AdamWOptimizerConfig):
-    optimizer_class: ClassVar[torch.optim.Optimizer] = bitsandbytes.optim.AdamW8bit
+    optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.AdamW8bit
 
     type: str = schema_utils.ProtectedString("adamw_8bit")
 
@@ -315,7 +315,7 @@ class AdamW8BitOptimizerConfig(AdamWOptimizerConfig):
 @register_optimizer(name="paged_adamw")
 @ludwig_dataclass
 class PagedAdamWOptimizerConfig(AdamW8BitOptimizerConfig):
-    optimizer_class: ClassVar[torch.optim.Optimizer] = bitsandbytes.optim.PagedAdamW
+    optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.PagedAdamW
 
     type: str = schema_utils.ProtectedString("paged_adamw")
 
@@ -328,7 +328,7 @@ class PagedAdamWOptimizerConfig(AdamW8BitOptimizerConfig):
 @register_optimizer(name="paged_adamw_8bit")
 @ludwig_dataclass
 class PagedAdamW8BitOptimizerConfig(PagedAdamWOptimizerConfig):
-    optimizer_class: ClassVar[torch.optim.Optimizer] = bitsandbytes.optim.PagedAdamW8bit
+    optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.PagedAdamW8bit
 
     type: str = schema_utils.ProtectedString("paged_adamw_8bit")
 
@@ -404,7 +404,7 @@ class AdagradOptimizerConfig(BaseOptimizerConfig):
 @register_optimizer(name="adagrad_8bit")
 @ludwig_dataclass
 class Adagrad8BitOptimizerConfig(AdagradOptimizerConfig):
-    optimizer_class: ClassVar[torch.optim.Optimizer] = bitsandbytes.optim.Adagrad8bit
+    optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.Adagrad8bit
 
     type: str = schema_utils.ProtectedString("adagrad_8bit")
 
@@ -555,7 +555,7 @@ class RMSPropOptimizerConfig(BaseOptimizerConfig):
 @register_optimizer(name="rmsprop_8bit")
 @ludwig_dataclass
 class RMSProp8BitOptimizerConfig(RMSPropOptimizerConfig):
-    optimizer_class: ClassVar[torch.optim.Optimizer] = bitsandbytes.optim.RMSprop8bit
+    optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.RMSprop8bit
 
     type: str = schema_utils.ProtectedString("rmsprop_8bit")
 
@@ -581,7 +581,7 @@ class LAMBOptimizerConfig(BaseOptimizerConfig):
     Paper: https://arxiv.org/pdf/1904.00962.pdf
     """
 
-    optimizer_class: ClassVar[torch.optim.Optimizer] = bitsandbytes.optim.LAMB
+    optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.LAMB
 
     type: str = schema_utils.ProtectedString("lamb")
 
@@ -643,7 +643,7 @@ class LAMBOptimizerConfig(BaseOptimizerConfig):
 @register_optimizer(name="lamb_8bit")
 @ludwig_dataclass
 class LAMB8BitOptimizerConfig(LAMBOptimizerConfig):
-    optimizer_class: ClassVar[torch.optim.Optimizer] = bitsandbytes.optim.LAMB8bit
+    optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.LAMB8bit
 
     type: str = schema_utils.ProtectedString("lamb_8bit")
 
@@ -657,7 +657,7 @@ class LARSOptimizerConfig(BaseOptimizerConfig):
     Paper: https://arxiv.org/pdf/1708.03888.pdf
     """
 
-    optimizer_class: ClassVar[torch.optim.Optimizer] = bitsandbytes.optim.LARS
+    optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.LARS
 
     type: str = schema_utils.ProtectedString("lars")
 
@@ -703,7 +703,7 @@ class LARSOptimizerConfig(BaseOptimizerConfig):
 @register_optimizer(name="lars_8bit")
 @ludwig_dataclass
 class LARS8BitOptimizerConfig(LARSOptimizerConfig):
-    optimizer_class: ClassVar[torch.optim.Optimizer] = bitsandbytes.optim.LARS8bit
+    optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.LARS8bit
 
     type: str = schema_utils.ProtectedString("lars_8bit")
 
@@ -717,7 +717,7 @@ class LIONOptimizerConfig(BaseOptimizerConfig):
     Paper: https://arxiv.org/pdf/2302.06675.pdf
     """
 
-    optimizer_class: ClassVar[torch.optim.Optimizer] = bitsandbytes.optim.Lion
+    optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.Lion
 
     type: str = schema_utils.ProtectedString("lion")
 
@@ -750,7 +750,7 @@ class LIONOptimizerConfig(BaseOptimizerConfig):
 @register_optimizer(name="lion_8bit")
 @ludwig_dataclass
 class LION8BitOptimizerConfig(LIONOptimizerConfig):
-    optimizer_class: ClassVar[torch.optim.Optimizer] = bitsandbytes.optim.Lion8bit
+    optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.Lion8bit
 
     type: str = schema_utils.ProtectedString("lion_8bit")
 
@@ -759,7 +759,7 @@ class LION8BitOptimizerConfig(LIONOptimizerConfig):
 @register_optimizer(name="paged_lion")
 @ludwig_dataclass
 class PagedLionOptimizerConfig(LIONOptimizerConfig):
-    optimizer_class: ClassVar[torch.optim.Optimizer] = bitsandbytes.optim.PagedLion
+    optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.PagedLion
 
     type: str = schema_utils.ProtectedString("paged_lion")
 
@@ -772,7 +772,7 @@ class PagedLionOptimizerConfig(LIONOptimizerConfig):
 @register_optimizer(name="paged_lion_8bit")
 @ludwig_dataclass
 class PagedLion8BitOptimizerConfig(PagedLionOptimizerConfig):
-    optimizer_class: ClassVar[torch.optim.Optimizer] = bitsandbytes.optim.PagedLion8bit
+    optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.PagedLion8bit
 
     type: str = schema_utils.ProtectedString("paged_lion_8bit")
 
