@@ -69,7 +69,7 @@ class LoraConfig(BaseAdapterConfig):
         description="Bias type for Lora.",
     )
 
-    pretrained_weights: Optional[str] = schema_utils.String(
+    pretrained_adapter_weights: Optional[str] = schema_utils.String(
         default=None, description="Path to pretrained weights for Lora.", allow_none=True
     )
 

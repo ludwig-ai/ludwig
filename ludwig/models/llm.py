@@ -224,23 +224,25 @@ class LLM(BaseModel):
 
             from peft import get_peft_model
 
-            if self.config_obj.adapter.pretrained_weights:
-                logger.info(f"Using pretrained weights: {self.config_obj.adapter.pretrained_weights}")
+            if self.config_obj.adapter.pretrained_adapter_weights:
+                logger.info(f"Using pretrained adapter weights: {self.config_obj.adapter.pretrained_adapter_weights}")
                 # If pretrained adapter weights are provided, we want to load them into the model
                 from peft import MODEL_TYPE_TO_PEFT_MODEL_MAPPING, PeftConfig
 
-                peft_config = PeftConfig.from_pretrained(self.config_obj.adapter.pretrained_weights)
+                peft_config = PeftConfig.from_pretrained(self.config_obj.adapter.pretrained_adapter_weights)
                 peft_dict = peft_config.to_dict()
 
                 # Need to update the peft config with some of the values from config_obj because not all of them are set
                 for param_name, param_value in self.config_obj.adapter.to_config().to_dict().items():
-                    if param_name is None:
+                    # Not all parameters are supported by all models, so we only add the parameter to the load kwargs
+                    # if it is supported by the model.
+                    if param_value is None:
                         continue
                     if param_name not in peft_dict:
                         setattr(peft_config, param_name, param_value)
 
                 self.model = MODEL_TYPE_TO_PEFT_MODEL_MAPPING[peft_config.task_type].from_pretrained(
-                    self.model, self.config_obj.adapter.pretrained_weights
+                    self.model, self.config_obj.adapter.pretrained_adapter_weights
                 )
             else:
                 # If no pretrained adapter is provided, we want to load untrained weights into the model

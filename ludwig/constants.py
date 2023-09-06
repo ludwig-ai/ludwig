@@ -282,7 +282,7 @@ POSTPROCESSOR = "postprocessor"
 GENERATION = "generation"
 PROMPT = "prompt"
 ADAPTER = "adapter"
-PRETRAINED_WEIGHTS = "pretrained_weights"
+PRETRAINED_ADAPTER_WEIGHTS = "pretrained_adapter_weights"
 
 # CrossEntropyLoss for LLMs
 IGNORE_INDEX_TOKEN_ID = -100

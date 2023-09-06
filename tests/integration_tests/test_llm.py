@@ -18,7 +18,7 @@ from ludwig.constants import (
     MODEL_TYPE,
     OUTPUT_FEATURES,
     PREPROCESSING,
-    PRETRAINED_WEIGHTS,
+    PRETRAINED_ADAPTER_WEIGHTS,
     PROMPT,
     TRAINER,
     TYPE,
@@ -493,7 +493,7 @@ def test_default_max_sequence_length():
             BATCH_SIZE: 8,
             EPOCHS: 2,
         },
-        ADAPTER: {TYPE: "lora", PRETRAINED_WEIGHTS: "Infernaught/test_adapter_weights"},
+        ADAPTER: {TYPE: "lora", PRETRAINED_ADAPTER_WEIGHTS: "Infernaught/test_adapter_weights"},
         BACKEND: {TYPE: "local"},
     }
     config_obj = ModelConfig.from_dict(config)
@@ -515,14 +515,14 @@ def test_load_pretrained_adapter_weights():
             BATCH_SIZE: 8,
             EPOCHS: 2,
         },
-        ADAPTER: {TYPE: "lora", PRETRAINED_WEIGHTS: "Infernaught/test_adapter_weights"},
+        ADAPTER: {TYPE: "lora", PRETRAINED_ADAPTER_WEIGHTS: "Infernaught/test_adapter_weights"},
         BACKEND: {TYPE: "local"},
     }
     config_obj = ModelConfig.from_dict(config)
     model = LLM(config_obj)
 
-    assert model.config_obj.adapter.pretrained_weights
-    assert model.config_obj.adapter.pretrained_weights == "Infernaught/test_adapter_weights"
+    assert model.config_obj.adapter.pretrained_adapter_weights
+    assert model.config_obj.adapter.pretrained_adapter_weights == "Infernaught/test_adapter_weights"
 
     model.prepare_for_training()
     assert not isinstance(model.model, PreTrainedModel)
