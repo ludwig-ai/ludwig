@@ -59,6 +59,14 @@ class BaseOptimizerConfig(schema_utils.BaseMarshmallowConfig, ABC):
         """
         return False
 
+    @property
+    def has_8bit(self):
+        """Returns True if the optimizer has a 8-bit version, False otherwise.
+
+        8-bit optimizers use 8-bit gradients and parameters to reduce memory usage and increase speed.
+        """
+        return False
+
 
 @DeveloperAPI
 @register_optimizer(name="sgd")
@@ -75,16 +83,27 @@ class SGDOptimizerConfig(BaseOptimizerConfig):
 
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.SGD.html#torch.optim.SGD :
     momentum: float = schema_utils.NonNegativeFloat(
-        default=0.0, description="Momentum factor.", parameter_metadata=OPTIMIZER_METADATA["momentum"]
+        default=0.0,
+        description="Momentum factor.",
+        parameter_metadata=OPTIMIZER_METADATA["momentum"],
     )
+
     weight_decay: float = schema_utils.NonNegativeFloat(
-        default=0.0, description="Weight decay ($L2$ penalty).", parameter_metadata=OPTIMIZER_METADATA["weight_decay"]
+        default=0.0,
+        description="Weight decay ($L2$ penalty).",
+        parameter_metadata=OPTIMIZER_METADATA["weight_decay"],
     )
+
     dampening: float = schema_utils.NonNegativeFloat(
-        default=0.0, description="Dampening for momentum.", parameter_metadata=OPTIMIZER_METADATA["dampening"]
+        default=0.0,
+        description="Dampening for momentum.",
+        parameter_metadata=OPTIMIZER_METADATA["dampening"],
     )
+
     nesterov: bool = schema_utils.Boolean(
-        default=False, description="Enables Nesterov momentum.", parameter_metadata=OPTIMIZER_METADATA["nesterov"]
+        default=False,
+        description="Enables Nesterov momentum.",
+        parameter_metadata=OPTIMIZER_METADATA["nesterov"],
     )
 
 
@@ -530,11 +549,13 @@ class LARSOptimizerConfig(BaseOptimizerConfig):
     momentum: float = schema_utils.NonNegativeFloat(
         default=0.0,
         description="Momentum factor.",
+        parameter_metadata=OPTIMIZER_METADATA["momentum"],
     )
 
     dampening: float = schema_utils.NonNegativeFloat(
         default=0.0,
         description="Dampening for momentum.",
+        parameter_metadata=OPTIMIZER_METADATA["dampening"],
     )
 
     weight_decay: float = schema_utils.NonNegativeFloat(
@@ -544,7 +565,9 @@ class LARSOptimizerConfig(BaseOptimizerConfig):
     )
 
     nesterov: bool = schema_utils.Boolean(
-        default=False, description="Enables Nesterov momentum.", parameter_metadata=OPTIMIZER_METADATA["nesterov"]
+        default=False,
+        description="Enables Nesterov momentum.",
+        parameter_metadata=OPTIMIZER_METADATA["nesterov"],
     )
 
     percentile_clipping: int = schema_utils.IntegerRange(
