@@ -50,6 +50,15 @@ class BaseOptimizerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     a `ValidationError`.
     """
 
+    @property
+    def has_paged(self):
+        """Returns True if the optimizer has a paged version, False otherwise.
+
+        Paged optimizers move the parameters to from the GPU to the CPU and back to the GPU during the optimization
+        step. This is useful for large models that do not fit in GPU memory.
+        """
+        return False
+
 
 @DeveloperAPI
 @register_optimizer(name="sgd")
@@ -428,8 +437,7 @@ class PagedAdamWOptimizerConfig(AdamWOptimizerConfig):
     type: str = schema_utils.ProtectedString("paged_adamw")
 
     weight_decay: float = schema_utils.NonNegativeFloat(
-        default=1e-2, description="Weight decay ($L2$ penalty).",
-        parameter_metadata=OPTIMIZER_METADATA["weight_decay"]
+        default=1e-2, description="Weight decay ($L2$ penalty).", parameter_metadata=OPTIMIZER_METADATA["weight_decay"]
     )
 
 
@@ -437,10 +445,11 @@ class PagedAdamWOptimizerConfig(AdamWOptimizerConfig):
 @register_optimizer(name="lamb")
 @ludwig_dataclass
 class LAMBOptimizerConfig(BaseOptimizerConfig):
-    """
-    Layer-wise Adaptive Moments optimizer for Batch training.
+    """Layer-wise Adaptive Moments optimizer for Batch training.
+
     Paper: https://arxiv.org/pdf/1904.00962.pdf
     """
+
     from bitsandbytes.optim import LAMB
     from bitsandbytes.optim.optimizer import Optimizer2State
 
@@ -479,7 +488,8 @@ class LAMBOptimizerConfig(BaseOptimizerConfig):
 
     adam_w_mode: bool = schema_utils.Boolean(
         default=True,
-        description="Whether to use the AdamW mode of this algorithm from the paper 'Decoupled Weight Decay Regularization'.",
+        description="Whether to use the AdamW mode of this algorithm from the paper "
+        "'Decoupled Weight Decay Regularization'.",
     )
 
     percentile_clipping: int = schema_utils.IntegerRange(
@@ -505,10 +515,11 @@ class LAMBOptimizerConfig(BaseOptimizerConfig):
 @register_optimizer(name="lars")
 @ludwig_dataclass
 class LARSOptimizerConfig(BaseOptimizerConfig):
-    """
-    Layerwise Adaptive Rate Scaling.
+    """Layerwise Adaptive Rate Scaling.
+
     Paper: https://arxiv.org/pdf/1708.03888.pdf
     """
+
     from bitsandbytes.optim import LARS
     from bitsandbytes.optim.optimizer import Optimizer1State
 
@@ -533,9 +544,7 @@ class LARSOptimizerConfig(BaseOptimizerConfig):
     )
 
     nesterov: bool = schema_utils.Boolean(
-        default=False,
-        description="Enables Nesterov momentum.",
-        parameter_metadata=OPTIMIZER_METADATA["nesterov"]
+        default=False, description="Enables Nesterov momentum.", parameter_metadata=OPTIMIZER_METADATA["nesterov"]
     )
 
     percentile_clipping: int = schema_utils.IntegerRange(
@@ -556,10 +565,11 @@ class LARSOptimizerConfig(BaseOptimizerConfig):
 @register_optimizer(name="lion")
 @ludwig_dataclass
 class LIONOptimizerConfig(BaseOptimizerConfig):
-    """
-    Evolved Sign Momentum.
+    """Evolved Sign Momentum.
+
     Paper: https://arxiv.org/pdf/2302.06675.pdf
     """
+
     from bitsandbytes.optim import Lion
     from bitsandbytes.optim.optimizer import Optimizer1State
 
