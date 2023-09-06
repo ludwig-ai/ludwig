@@ -56,6 +56,11 @@ class BaseOptimizerConfig(schema_utils.BaseMarshmallowConfig, ABC):
         """Returns True if the optimizer is a Paged optimizer."""
         return False
 
+    @property
+    def is_8bit(self) -> bool:
+        """Returns True if the optimizer is an 8-bit optimizer."""
+        return False
+
 
 @DeveloperAPI
 @register_optimizer(name="sgd")
@@ -117,6 +122,10 @@ class SGD8BitOptimizerConfig(SGDOptimizerConfig):
         max=100,
         description="Percentile clipping.",
     )
+
+    @property
+    def is_8bit(self) -> bool:
+        return True
 
 
 @DeveloperAPI
@@ -229,6 +238,10 @@ class Adam8BitOptimizerConfig(AdamOptimizerConfig):
         description="Percentile clipping.",
     )
 
+    @property
+    def is_8bit(self) -> bool:
+        True
+
 
 @DeveloperAPI
 @register_optimizer(name="paged_adam")
@@ -242,6 +255,10 @@ class PagedAdamOptimizerConfig(Adam8BitOptimizerConfig):
     def is_paged(self) -> bool:
         return True
 
+    @property
+    def is_8bit(self) -> bool:
+        False
+
 
 @DeveloperAPI
 @register_optimizer(name="paged_adam_8bit")
@@ -250,6 +267,10 @@ class PagedAdam8BitOptimizerConfig(PagedAdamOptimizerConfig):
     optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.PagedAdam8bit
 
     type: str = schema_utils.ProtectedString("paged_adam_8bit")
+
+    @property
+    def is_8bit(self) -> bool:
+        True
 
 
 @DeveloperAPI
@@ -310,6 +331,10 @@ class AdamW8BitOptimizerConfig(AdamWOptimizerConfig):
         description="Percentile clipping.",
     )
 
+    @property
+    def is_8bit(self) -> bool:
+        return True
+
 
 @DeveloperAPI
 @register_optimizer(name="paged_adamw")
@@ -323,6 +348,10 @@ class PagedAdamWOptimizerConfig(AdamW8BitOptimizerConfig):
     def is_paged(self) -> bool:
         True
 
+    @property
+    def is_8bit(self) -> bool:
+        return False
+
 
 @DeveloperAPI
 @register_optimizer(name="paged_adamw_8bit")
@@ -331,6 +360,10 @@ class PagedAdamW8BitOptimizerConfig(PagedAdamWOptimizerConfig):
     optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.PagedAdamW8bit
 
     type: str = schema_utils.ProtectedString("paged_adamw_8bit")
+
+    @property
+    def is_8bit(self) -> bool:
+        return True
 
 
 @DeveloperAPI
@@ -419,6 +452,10 @@ class Adagrad8BitOptimizerConfig(AdagradOptimizerConfig):
         max=100,
         description="Percentile clipping.",
     )
+
+    @property
+    def is_8bit(self) -> bool:
+        return True
 
 
 @DeveloperAPI
@@ -571,6 +608,10 @@ class RMSProp8BitOptimizerConfig(RMSPropOptimizerConfig):
         description="Percentile clipping.",
     )
 
+    @property
+    def is_8bit(self) -> bool:
+        return True
+
 
 @DeveloperAPI
 @register_optimizer(name="lamb")
@@ -647,6 +688,10 @@ class LAMB8BitOptimizerConfig(LAMBOptimizerConfig):
 
     type: str = schema_utils.ProtectedString("lamb_8bit")
 
+    @property
+    def is_8bit(self) -> bool:
+        return True
+
 
 @DeveloperAPI
 @register_optimizer(name="lars")
@@ -707,6 +752,10 @@ class LARS8BitOptimizerConfig(LARSOptimizerConfig):
 
     type: str = schema_utils.ProtectedString("lars_8bit")
 
+    @property
+    def is_8bit(self) -> bool:
+        return True
+
 
 @DeveloperAPI
 @register_optimizer(name="lion")
@@ -754,6 +803,10 @@ class LION8BitOptimizerConfig(LIONOptimizerConfig):
 
     type: str = schema_utils.ProtectedString("lion_8bit")
 
+    @property
+    def is_8bit(self) -> bool:
+        return True
+
 
 @DeveloperAPI
 @register_optimizer(name="paged_lion")
@@ -775,6 +828,10 @@ class PagedLion8BitOptimizerConfig(PagedLionOptimizerConfig):
     optimizer_class: ClassVar[torch.optim.Optimizer] = bnb.optim.PagedLion8bit
 
     type: str = schema_utils.ProtectedString("paged_lion_8bit")
+
+    @property
+    def is_8bit(self) -> bool:
+        return True
 
 
 @DeveloperAPI
