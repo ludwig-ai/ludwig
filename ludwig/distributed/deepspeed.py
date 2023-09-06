@@ -82,6 +82,10 @@ class DeepSpeedStrategy(DDPStrategy):
         batch_size = (
             trainer_config.batch_size if isinstance(trainer_config.batch_size, int) else MIN_POSSIBLE_BATCH_SIZE
         )
+        # Paged and 8-bit optimizers are not supported by Deepspeed - just whatever is supported
+        # by torch.optim.Optimizer. https://www.deepspeed.ai/docs/config-json/#optimizer-parameters.
+        if trainer_config.optimizer.is_paged or trainer_config.optimizer.is_8bit:
+            raise ValueError("Cannot use a paged or 8-bit optimizer with DeepSpeed. ")
         optimizer_cls, optimizer_kwargs = get_optimizer_class_and_kwargs(trainer_config.optimizer, base_learning_rate)
         ds_config = {
             "amp": {
