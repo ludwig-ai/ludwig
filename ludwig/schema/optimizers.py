@@ -436,7 +436,11 @@ class PagedAdamWOptimizerConfig(AdamWOptimizerConfig):
 @DeveloperAPI
 @register_optimizer(name="lamb")
 @ludwig_dataclass
-class LambOptimizerConfig(BaseOptimizerConfig):
+class LAMBOptimizerConfig(BaseOptimizerConfig):
+    """
+    Layer-wise Adaptive Moments optimizer for Batch training.
+    Paper: https://arxiv.org/pdf/1904.00962.pdf
+    """
     from bitsandbytes.optim import LAMB
     from bitsandbytes.optim.optimizer import Optimizer2State
 
@@ -444,7 +448,7 @@ class LambOptimizerConfig(BaseOptimizerConfig):
 
     type: str = schema_utils.ProtectedString("lamb")
 
-    bias_correct: bool = schema_utils.Boolean(
+    bias_correction: bool = schema_utils.Boolean(
         default=True,
     )
 
@@ -475,7 +479,129 @@ class LambOptimizerConfig(BaseOptimizerConfig):
 
     adam_w_mode: bool = schema_utils.Boolean(
         default=True,
+        description="Whether to use the AdamW mode of this algorithm from the paper 'Decoupled Weight Decay Regularization'.",
     )
+
+    percentile_clipping: int = schema_utils.IntegerRange(
+        default=100,
+        min=0,
+        max=100,
+        description="Percentile clipping.",
+    )
+
+    block_wise: bool = schema_utils.Boolean(
+        default=False,
+        description="Whether to use block wise update.",
+    )
+
+    max_unorm: float = schema_utils.FloatRange(
+        default=1.0,
+        min=0.0,
+        max=1.0,
+    )
+
+
+@DeveloperAPI
+@register_optimizer(name="lars")
+@ludwig_dataclass
+class LARSOptimizerConfig(BaseOptimizerConfig):
+    """
+    Layerwise Adaptive Rate Scaling.
+    Paper: https://arxiv.org/pdf/1708.03888.pdf
+    """
+    from bitsandbytes.optim import LARS
+    from bitsandbytes.optim.optimizer import Optimizer1State
+
+    optimizer_class: ClassVar[Optimizer1State] = LARS
+
+    type: str = schema_utils.ProtectedString("lars")
+
+    momentum: float = schema_utils.NonNegativeFloat(
+        default=0.0,
+        description="Momentum factor.",
+    )
+
+    dampening: float = schema_utils.NonNegativeFloat(
+        default=0.0,
+        description="Dampening for momentum.",
+    )
+
+    weight_decay: float = schema_utils.NonNegativeFloat(
+        default=0.0,
+        description="Weight decay (L2 penalty).",
+        parameter_metadata=OPTIMIZER_METADATA["weight_decay"],
+    )
+
+    nesterov: bool = schema_utils.Boolean(
+        default=False,
+        description="Enables Nesterov momentum.",
+        parameter_metadata=OPTIMIZER_METADATA["nesterov"]
+    )
+
+    percentile_clipping: int = schema_utils.IntegerRange(
+        default=100,
+        min=0,
+        max=100,
+        description="Percentile clipping.",
+    )
+
+    max_unorm: float = schema_utils.FloatRange(
+        default=1.0,
+        min=0.0,
+        max=1.0,
+    )
+
+
+@DeveloperAPI
+@register_optimizer(name="lion")
+@ludwig_dataclass
+class LIONOptimizerConfig(BaseOptimizerConfig):
+    """
+    Evolved Sign Momentum.
+    Paper: https://arxiv.org/pdf/2302.06675.pdf
+    """
+    from bitsandbytes.optim import Lion
+    from bitsandbytes.optim.optimizer import Optimizer1State
+
+    optimizer_class: ClassVar[Optimizer1State] = Lion
+
+    type: str = schema_utils.ProtectedString("lion")
+
+    betas: Tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(
+        default=(0.9, 0.999),
+        description="Coefficients used for computing running averages of gradient and its square.",
+        parameter_metadata=OPTIMIZER_METADATA["betas"],
+    )
+
+    weight_decay: float = schema_utils.NonNegativeFloat(
+        default=0.0,
+        description="Weight decay (L2 penalty).",
+        parameter_metadata=OPTIMIZER_METADATA["weight_decay"],
+    )
+
+    percentile_clipping: int = schema_utils.IntegerRange(
+        default=100,
+        min=0,
+        max=100,
+        description="Percentile clipping.",
+    )
+
+    block_wise: bool = schema_utils.Boolean(
+        default=False,
+        description="Whether to use block wise update.",
+    )
+
+
+@DeveloperAPI
+@register_optimizer(name="paged_lion")
+@ludwig_dataclass
+class PagedLionOptimizerConfig(LIONOptimizerConfig):
+    from bitsandbytes.optim import PagedLion
+    from bitsandbytes.optim.optimizer import Optimizer1State
+
+    optimizer_class: ClassVar[Optimizer1State] = PagedLion
+
+    type: str = schema_utils.ProtectedString("paged_lion")
 
 
 @DeveloperAPI
