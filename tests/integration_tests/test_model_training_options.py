@@ -238,6 +238,9 @@ def test_resume_training_mlflow(optimizer, tmp_path):
 
 @pytest.mark.parametrize("optimizer_type", optimizer_registry)
 def test_optimizers(optimizer_type, tmp_path):
+    if not torch.cuda.is_available() or torch.cuda.device_count() == 0:
+        pytest.skip("Skip: paged and 8-bit optimizers require GPU and none are available.")
+
     input_features, output_features = synthetic_test_data.get_feature_configs()
 
     config = {
