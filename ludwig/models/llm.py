@@ -237,8 +237,16 @@ class LLM(BaseModel):
                     # Not all parameters are supported by all models, so we only add the parameter to the load kwargs
                     # if it is supported by the model.
                     if param_value is None:
+                        # param_name and param_value come from the config object and contain default
+                        # values for the adapter. Examples of parameters with missing values might be:
+                        # 'auto_mapping', 'base_model_name_or_path', and 'task_type'.
+                        # Note that some of these values might already be set in peft_config, which comes from HF
+                        # directly (specifically, adapter_config.json in the model repo), and we don't want to override
+                        # those values with None.
                         continue
                     if param_name not in peft_dict:
+                        # If any parameters are not set in adapter_config.json in HF, we want to populate them with the
+                        # appropriate default values.
                         setattr(peft_config, param_name, param_value)
 
                 self.model = MODEL_TYPE_TO_PEFT_MODEL_MAPPING[peft_config.task_type].from_pretrained(
