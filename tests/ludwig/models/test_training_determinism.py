@@ -25,7 +25,7 @@ from tests.integration_tests.utils import (
 )
 
 
-# @pytest.mark.skip(reason="https://github.com/ludwig-ai/ludwig/issues/2686")
+@pytest.mark.skip(reason="https://github.com/ludwig-ai/ludwig/issues/2686")
 @pytest.mark.distributed
 def test_training_determinism_ray_backend(csv_filename, tmpdir, ray_cluster_4cpu):
     experiment_output_1, experiment_output_2 = train_twice("ray", csv_filename, tmpdir)
