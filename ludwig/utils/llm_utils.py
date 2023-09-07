@@ -1,3 +1,4 @@
+import logging
 from typing import Dict, Tuple
 
 import torch
@@ -7,6 +8,8 @@ from transformers import GPT2Tokenizer, GPT2TokenizerFast, LlamaTokenizer, Llama
 
 from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, PREDICTIONS, PROBABILITIES
 from ludwig.utils.model_utils import find_embedding_layer_with_path
+
+logger = logging.getLogger(__name__)
 
 
 def set_pad_token(tokenizer: PreTrainedTokenizer):
@@ -388,7 +391,7 @@ def update_embedding_layer(model, config_obj):
     """
     # If we're using an 8-bit optimizer, we need to replace the embedding layer with a custom embedding layer from
     # bnb.nn.modules.Embedding.
-    if hasattr(config_obj.trainer, "optimizer") and config_obj.trainer.optimizer.is_8bit:
+    if hasattr(config_obj, "optimizer") and config_obj.optimizer.is_8bit:
         embedding_layer, module_path = find_embedding_layer_with_path(model)
         if embedding_layer is None:
             raise ValueError(
@@ -419,5 +422,7 @@ def update_embedding_layer(model, config_obj):
 
         # Set the get input embeddings lambda function to return the BNB embedding layer
         model.get_input_embeddings = lambda: bnb_embedding
+
+        logger.info("Updated the pretrained embedding layer to use the embedding layer from bitsandbytes.")
 
     return model

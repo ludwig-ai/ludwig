@@ -706,14 +706,21 @@ class LARSOptimizerConfig(BaseOptimizerConfig):
 
     type: str = schema_utils.ProtectedString("lars")
 
-    momentum: float = schema_utils.NonNegativeFloat(
-        default=0.0,
+    # 0.9 taken from the original paper - momentum requires a non zero value
+    # https://arxiv.org/pdf/1708.03888v3.pdf
+    momentum: float = schema_utils.FloatRange(
+        default=0.9,
+        min=0.0,
+        max=1.0,
+        min_inclusive=False,
         description="Momentum factor.",
         parameter_metadata=OPTIMIZER_METADATA["momentum"],
     )
 
-    dampening: float = schema_utils.NonNegativeFloat(
+    dampening: float = schema_utils.FloatRange(
         default=0.0,
+        min=0.0,
+        max=1.0,
         description="Dampening for momentum.",
         parameter_metadata=OPTIMIZER_METADATA["dampening"],
     )
