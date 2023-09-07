@@ -31,7 +31,7 @@ try:
 except ImportError:
     RayIntegratedGradientsExplainer = None
 
-pytestmark = pytest.mark.integration_tests_b
+pytestmark = pytest.mark.integration_tests_d
 
 
 def test_explanation_dataclass():
@@ -102,6 +102,7 @@ def test_explainer_api_ray(output_feature, tmpdir, ray_cluster_2cpu):
     )
 
 
+@pytest.mark.slow
 @pytest.mark.distributed
 def test_explainer_api_ray_minimum_batch_size(tmpdir, ray_cluster_2cpu):
     from ludwig.explain.captum_ray import RayIntegratedGradientsExplainer

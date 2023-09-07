@@ -280,6 +280,7 @@ def test_autoconfig_preprocessing_text_image(tmpdir):
     assert config[INPUT_FEATURES][1][ENCODER][TYPE] == "stacked_cnn"
 
 
+@pytest.mark.slow
 @pytest.mark.distributed
 @pytest.mark.parametrize("time_budget", [200, 1], ids=["high", "low"])
 def test_train_with_config(time_budget, test_data_tabular_large, ray_cluster_2cpu, tmpdir):
@@ -301,6 +302,7 @@ def test_auto_train(test_data_tabular_large, ray_cluster_2cpu, tmpdir):
         assert trial.status != Trial.ERROR, f"Error in trial {trial}"
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("fs_protocol,bucket", [private_param(("s3", "ludwig-tests"))], ids=["s3"])
 def test_train_with_config_remote(fs_protocol, bucket, test_data_tabular_large, ray_cluster_2cpu):
     backend = {

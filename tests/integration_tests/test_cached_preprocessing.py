@@ -29,6 +29,7 @@ def test_onehot_encoding(tmpdir, backend, ray_cluster_2cpu):
     run_test_suite(config, dataset, backend)
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
     "backend",
     [
@@ -56,6 +57,7 @@ def test_hf_text_embedding(tmpdir, backend, ray_cluster_2cpu):
     run_test_suite(config, dataset, backend)
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("cache_encoder_embeddings", [True, False, None])
 @pytest.mark.parametrize("model_type", [MODEL_ECD, MODEL_GBM])
 def test_onehot_encoding_preprocessing(model_type, cache_encoder_embeddings, tmpdir):

@@ -204,6 +204,7 @@ def run_hyperopt_executor(
     hyperopt_executor.execute(config, dataset=rel_path, output_directory=tmpdir, backend=backend)
 
 
+@pytest.mark.slow
 @pytest.mark.distributed
 @pytest.mark.parametrize("scenario", SCENARIOS)
 def test_hyperopt_executor(scenario, csv_filename, tmpdir, ray_cluster_4cpu):
@@ -214,6 +215,7 @@ def test_hyperopt_executor(scenario, csv_filename, tmpdir, ray_cluster_4cpu):
     run_hyperopt_executor(search_alg, executor, epochs, csv_filename, tmpdir)
 
 
+@pytest.mark.slow
 @pytest.mark.distributed
 @pytest.mark.parametrize("use_split", [True, False], ids=["split", "no_split"])
 def test_hyperopt_executor_with_metric(use_split, csv_filename, tmpdir, ray_cluster_4cpu):
@@ -229,6 +231,7 @@ def test_hyperopt_executor_with_metric(use_split, csv_filename, tmpdir, ray_clus
     )
 
 
+@pytest.mark.slow
 @pytest.mark.distributed
 @pytest.mark.parametrize("backend", ["local", "ray"])
 def test_hyperopt_run_hyperopt(csv_filename, backend, tmpdir, ray_cluster_4cpu):
@@ -301,6 +304,7 @@ def test_hyperopt_run_hyperopt(csv_filename, backend, tmpdir, ray_cluster_4cpu):
     run_hyperopt(config, rel_path, tmpdir, callbacks=[CancelCallback()])
 
 
+@pytest.mark.slow
 @pytest.mark.distributed
 def test_hyperopt_ray_mlflow(csv_filename, tmpdir, ray_cluster_4cpu):
     mlflow_uri = f"file://{tmpdir}/mlruns"

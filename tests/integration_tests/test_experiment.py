@@ -717,6 +717,7 @@ def test_experiment_model_resume(tmpdir):
     shutil.rmtree(output_dir, ignore_errors=True)
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
     "dist_strategy",
     [
@@ -804,6 +805,7 @@ def test_experiment_model_resume_missing_file(tmpdir, missing_file):
     shutil.rmtree(output_dir, ignore_errors=True)
 
 
+@pytest.mark.slow
 @pytest.mark.distributed
 def test_experiment_model_resume_before_1st_epoch_distributed(tmpdir, ray_cluster_4cpu):
     # Single sequence input, single category output
@@ -853,6 +855,7 @@ def test_experiment_model_resume_before_1st_epoch_distributed(tmpdir, ray_cluste
         )
 
 
+@pytest.mark.slow
 @pytest.mark.distributed
 def test_tabnet_with_batch_size_1(tmpdir, ray_cluster_4cpu):
     input_features = [number_feature()]

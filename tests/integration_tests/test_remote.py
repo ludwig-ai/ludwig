@@ -21,6 +21,7 @@ from tests.integration_tests.utils import (
 pytestmark = pytest.mark.integration_tests_b
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
     "backend",
     [
