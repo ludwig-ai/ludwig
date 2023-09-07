@@ -5,7 +5,7 @@ from typing import Dict, List, Optional, Tuple, Union
 import numpy as np
 import pytest
 import torch
-import version
+from packaging import version
 
 from ludwig.combiners.combiners import (
     ComparatorCombiner,
