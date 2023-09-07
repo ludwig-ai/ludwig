@@ -5,6 +5,7 @@ from typing import Dict, List, Optional, Tuple, Union
 import numpy as np
 import pytest
 import torch
+import version
 
 from ludwig.combiners.combiners import (
     ComparatorCombiner,
@@ -670,7 +671,7 @@ def test_tabtransformer_combiner_number_and_binary_with_category(
 
 
 @pytest.mark.skipif(
-    torch.__version__ >= (2, 2, 0),
+    version.parse(torch.__version__) >= version.parse("2.2.0"),
     reason="Fails with torch 2.2.0 9/1 and onwards. https://github.com/ludwig-ai/ludwig/issues/3591",
 )
 @pytest.mark.parametrize(
