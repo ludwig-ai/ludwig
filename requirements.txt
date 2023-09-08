@@ -44,6 +44,9 @@ sentencepiece
 # requirements for daft
 getdaft
 
+# requirement for various paged and 8-bit optimizers
+bitsandbytes<0.41.0
+
 # new data format support
 xlwt                # excel
 xlrd>=2.0.1         # excel
