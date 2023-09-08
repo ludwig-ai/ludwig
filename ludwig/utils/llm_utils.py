@@ -4,9 +4,17 @@ from typing import Dict, Tuple
 import torch
 import torch.nn.functional as F
 from bitsandbytes.nn.modules import Embedding
-from transformers import GPT2Tokenizer, GPT2TokenizerFast, LlamaTokenizer, LlamaTokenizerFast, PreTrainedTokenizer
+from transformers import (
+    AutoModelForCausalLM,
+    GPT2Tokenizer,
+    GPT2TokenizerFast,
+    LlamaTokenizer,
+    LlamaTokenizerFast,
+    PreTrainedTokenizer,
+)
 
 from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, PREDICTIONS, PROBABILITIES
+from ludwig.schema.trainer import LLMTrainerConfig
 from ludwig.utils.model_utils import find_embedding_layer_with_path
 
 logger = logging.getLogger(__name__)
@@ -383,7 +391,7 @@ def realign_target_and_prediction_tensors_for_inference(
     return targets, predictions
 
 
-def update_embedding_layer(model, config_obj):
+def update_embedding_layer(model: AutoModelForCausalLM, config_obj: LLMTrainerConfig) -> AutoModelForCausalLM:
     """Updates the embedding layer of the model to use the 8-bit embedding layer from bitsandbytes.nn.modules.
 
     This is necessary when using 8-bit optimizers from bitsandbytes.
