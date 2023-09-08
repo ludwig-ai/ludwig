@@ -30,6 +30,17 @@ def register_adapter(name: str):
 class BaseAdapterConfig(schema_utils.BaseMarshmallowConfig, ABC):
     type: str
 
+    pretrained_adapter_weights: Optional[str] = schema_utils.String(
+        default=None, description="Path to pretrained weights.", allow_none=True
+    )
+
+    target_modules: Optional[list] = schema_utils.List(
+        str,
+        default=None,
+        allow_none=True,
+        description="List of modules to apply adapter to. If None, apply to all modules.",
+    )
+
     @abstractmethod
     def to_config(self, **kwargs) -> "PeftConfig":
         pass
@@ -67,17 +78,6 @@ class LoraConfig(BaseAdapterConfig):
         options=["none", "all", "lora_only"],
         default="none",
         description="Bias type for Lora.",
-    )
-
-    pretrained_adapter_weights: Optional[str] = schema_utils.String(
-        default=None, description="Path to pretrained weights for Lora.", allow_none=True
-    )
-
-    target_modules: Optional[list] = schema_utils.List(
-        str,
-        default=None,
-        allow_none=True,
-        description="List of modules to apply Lora to. If None, apply to all modules.",
     )
 
     def to_config(self, task_type: str = None, **kwargs) -> "PeftConfig":
@@ -370,7 +370,7 @@ class AdaloraConfig(LoraConfig):
 @register_adapter("adaption_prompt")
 @ludwig_dataclass
 class AdaptionPromptConfig(BaseAdapterConfig):
-    """Adapted from https://github.com/huggingface/peft/blob/main/src/peft/tuners/adaption_prompt.py."""
+    """Adapted from https://github.com/huggingface/peft/blob/main/src/peft/tuners/adaption_prompt/config.py."""
 
     def __post_init__(self):
         if not self.adapter_len:
