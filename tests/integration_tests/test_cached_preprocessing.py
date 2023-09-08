@@ -9,6 +9,7 @@ from tests.integration_tests.test_gbm import category_feature
 from tests.integration_tests.utils import binary_feature, generate_data, number_feature, run_test_suite, text_feature
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
     "backend",
     [

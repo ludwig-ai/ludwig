@@ -671,7 +671,7 @@ def test_tabtransformer_combiner_number_and_binary_with_category(
 
 
 @pytest.mark.skipif(
-    version.parse(torch.__version__) >= version.parse("2.2.0"),
+    version.parse(torch.__version__).base_version >= version.parse("2.2.0").base_version,
     reason="Fails with torch 2.2.0 9/1 and onwards. https://github.com/ludwig-ai/ludwig/issues/3591",
 )
 @pytest.mark.parametrize(
