@@ -216,7 +216,7 @@ class LLM(BaseModel):
     def initialize_adapter(self):
         """If an adapter config is provided, we want to wrap the model with a PEFT model for fine-tuning."""
         if self.config_obj.adapter:
-            if self.config_obj.trainer.type != "finetune":
+            if self.config_obj.trainer.type != "finetune" and not self.config_obj.adapter.pretrained_adapter_weights:
                 raise ValueError(
                     "Adapter config was provided, but trainer type is not set to `finetune`. Either set the trainer to "
                     "`finetune` or remove the adapter config."

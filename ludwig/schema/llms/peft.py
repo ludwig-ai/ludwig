@@ -34,15 +34,6 @@ class BaseAdapterConfig(schema_utils.BaseMarshmallowConfig, ABC):
         default=None, description="Path to pretrained weights.", allow_none=True
     )
 
-    # This is here for now to address "AttributeError: 'AdaloraConfig' object has no attribute 'target_modules'". Will
-    # continue investigating
-    target_modules: Optional[list] = schema_utils.List(
-        str,
-        default=None,
-        allow_none=True,
-        description="List of modules to apply adapter to. If None, apply to all modules.",
-    )
-
     @abstractmethod
     def to_config(self, **kwargs) -> "PeftConfig":
         pass

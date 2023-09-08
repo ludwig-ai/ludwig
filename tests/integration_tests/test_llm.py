@@ -527,7 +527,7 @@ def test_load_pretrained_adapter_weights(adapter):
         INPUT_FEATURES: [text_feature(name="input", encoder={"type": "passthrough"})],
         OUTPUT_FEATURES: [text_feature(name="output")],
         TRAINER: {
-            TYPE: "finetune",
+            TYPE: "none",
             BATCH_SIZE: 8,
             EPOCHS: 2,
         },

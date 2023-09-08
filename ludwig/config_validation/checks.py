@@ -493,6 +493,9 @@ def check_llm_finetuning_trainer_config(config: "ModelConfig"):  # noqa: F821
     if config.model_type != MODEL_LLM:
         return
 
+    if config.trainer.type == "none" and config.adapter.pretrained_adapter_weights is not None:
+        return
+
     if config.adapter is not None and config.trainer.type != "finetune":
         raise ConfigValidationError("LLM finetuning requires trainer type to be finetune.")
 
@@ -528,9 +531,8 @@ def check_llm_finetuning_backend_config(config: "ModelConfig"):  # noqa: F821
 def check_llm_finetuning_adalora_config(config: "ModelConfig"):
     """Checks that the adalora adapter is configured correctly.
 
-    It requires a set of target_modules to be specified in the config for the model. If it isn't specified by the user,
-    we also check against PEFT's predefined target module list for ADALORA to see if this key is present there. If
-    neither is true, AdaloraModel will run into issues downstream.
+    We check against PEFT's predefined target module list for ADALORA to see if this target_modules is present there. If
+    not, AdaloraModel will run into issues downstream.
     """
     if config.model_type != MODEL_LLM:
         return
@@ -544,10 +546,7 @@ def check_llm_finetuning_adalora_config(config: "ModelConfig"):
     from peft.utils import TRANSFORMERS_MODELS_TO_ADALORA_TARGET_MODULES_MAPPING
 
     model_config = _get_llm_model_config(config.base_model)
-    if (
-        not config.adapter.target_modules
-        and model_config.model_type not in TRANSFORMERS_MODELS_TO_ADALORA_TARGET_MODULES_MAPPING
-    ):
+    if model_config.model_type not in TRANSFORMERS_MODELS_TO_ADALORA_TARGET_MODULES_MAPPING:
         raise ConfigValidationError(
             f"Adalora adapter is not supported for {model_config.model_type} model. "
             f"Supported model types are: {list(TRANSFORMERS_MODELS_TO_ADALORA_TARGET_MODULES_MAPPING.keys())}. "

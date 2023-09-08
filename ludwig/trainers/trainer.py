@@ -272,11 +272,6 @@ class Trainer(BaseTrainer):
                     targets, model_outputs, self.regularization_type, self.regularization_lambda
                 )
                 loss = loss / self.gradient_accumulation_steps
-                if not loss.requires_grad:
-                    # From torch autograd docs -- "All Tensors that have requires_grad which
-                    # is False will be leaf Tensors by convention."
-                    # We want to avoid "RuntimeError: you can only change requires_grad flags of leaf variables.""
-                    loss.requires_grad = True
 
         # Begin the backward pass
         variables = self.dist_model.parameters()
