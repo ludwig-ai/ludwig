@@ -477,7 +477,7 @@ def check_llm_finetuning_output_feature_config(config: "ModelConfig"):  # noqa: 
     if config.model_type != MODEL_LLM:
         return
 
-    if config.trainer.type != "finetune":
+    if config.trainer.type != "finetune" and config.adapter.pretrained_adapter_weights is not None:
         return
 
     if config.output_features[0].type != TEXT:
@@ -511,7 +511,7 @@ def check_llm_finetuning_backend_config(config: "ModelConfig"):  # noqa: F821
         return
 
     # LLM finetuning is only supported by the finetune trainer type
-    if config.trainer.type != "finetune":
+    if config.trainer.type != "finetune" and config.adapter.pretrained_adapter_weights is not None:
         return
 
     # Using local backend, so skip the checks below
@@ -600,7 +600,9 @@ def check_llm_quantization_backend_incompatibility(config: "ModelConfig") -> Non
 @register_config_check
 def check_qlora_requirements(config: "ModelConfig") -> None:  # noqa: F821
     """Checks that all the necessary settings are in place for QLoRA."""
-    if config.model_type != MODEL_LLM or config.trainer.type == "none":
+    if config.model_type != MODEL_LLM or (
+        config.trainer.type == "none" and config.adapter.pretrained_adapter_weights is not None
+    ):
         return
 
     if config.quantization and (not config.adapter or config.adapter.type != "lora"):
