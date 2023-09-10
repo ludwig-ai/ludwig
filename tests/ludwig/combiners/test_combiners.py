@@ -672,21 +672,17 @@ def test_tabtransformer_combiner_number_and_binary_with_category(
 @pytest.mark.parametrize(
     "feature_list",  # defines parameter for fixture features_to_test()
     [
-        # TODO: temporary fix for Iss#3591
-        # [
-        #     ("binary", [BATCH_SIZE, 1]),
-        # ],
         [
             ("binary", [BATCH_SIZE, 1]),
             ("binary", [BATCH_SIZE, 1]),
         ],
-        # TODO: temporary fix for Iss#3591
-        # [
-        #     ("number", [BATCH_SIZE, 1]),
-        # ],
         [
             ("number", [BATCH_SIZE, 1]),
             ("number", [BATCH_SIZE, 1]),
+        ],
+        [
+            ("number", [BATCH_SIZE, 1]),
+            ("binary", [BATCH_SIZE, 1]),
         ],
     ],
 )
