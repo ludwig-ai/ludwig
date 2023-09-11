@@ -459,3 +459,30 @@ trainer:
         "type": "lora",
     }
     ModelConfig.from_dict(config)
+
+
+def test_check_prompt_requirements():
+    config = {
+        "model_type": "llm",
+        "input_features": [
+            text_feature(name="test1", column="col1", encoder={"type": "passthrough"}),
+        ],
+        "output_features": [text_feature()],
+        "base_model": "opt-350m",
+    }
+
+    ModelConfig.from_dict(config)
+
+    config["prompt"] = {"task": "Some task"}
+    ModelConfig.from_dict(config)
+
+    config["prompt"] = {"task": "Some task", "template": "Some template not mentioning the task"}
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+    config["prompt"] = {"task": "Some task", "template": "{__invalid__}"}
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+    config["prompt"] = {"task": "Some task", "template": "{__task__}"}
+    ModelConfig.from_dict(config)
