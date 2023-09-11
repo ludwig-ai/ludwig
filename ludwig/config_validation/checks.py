@@ -477,7 +477,7 @@ def check_llm_finetuning_output_feature_config(config: "ModelConfig"):  # noqa: 
     if config.model_type != MODEL_LLM:
         return
 
-    if config.trainer.type != "finetune" and config.adapter.pretrained_adapter_weights is not None:
+    if config.trainer.type != "finetune":
         return
 
     if config.output_features[0].type != TEXT:
