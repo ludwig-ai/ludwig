@@ -506,7 +506,6 @@ def test_load_pretrained_adapter_weights(adapter):
     from peft import PeftModel
     from transformers import PreTrainedModel
 
-    print(f"ADAPTER: {adapter}")
     weights = ""
     model = ""
     if adapter == "lora":
