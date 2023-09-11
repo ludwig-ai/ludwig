@@ -11,9 +11,7 @@ torchaudio
 torchtext
 torchvision
 pydantic<2.0
-# TODO(Arnav): Lift transformers package restriction once 4.32.2 is released.
-# Issue: https://github.com/ludwig-ai/ludwig/issues/3571
-transformers>=4.31.0,<4.32.0
+transformers
 tokenizers>=0.13.3
 spacy>=2.3
 PyYAML>=3.12,<6.0.1,!=5.4.* #Exlude PyYAML 5.4.* due to incompatibility with awscli
@@ -45,6 +43,9 @@ sentencepiece
 
 # requirements for daft
 getdaft
+
+# requirement for various paged and 8-bit optimizers
+bitsandbytes<0.41.0
 
 # new data format support
 xlwt                # excel

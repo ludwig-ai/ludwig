@@ -679,17 +679,15 @@ def test_tabtransformer_combiner_number_and_binary_with_category(
     [
         [
             ("binary", [BATCH_SIZE, 1]),
-        ],
-        [
-            ("binary", [BATCH_SIZE, 1]),
             ("binary", [BATCH_SIZE, 1]),
         ],
         [
             ("number", [BATCH_SIZE, 1]),
+            ("number", [BATCH_SIZE, 1]),
         ],
         [
             ("number", [BATCH_SIZE, 1]),
-            ("number", [BATCH_SIZE, 1]),
+            ("binary", [BATCH_SIZE, 1]),
         ],
     ],
 )
