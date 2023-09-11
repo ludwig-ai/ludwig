@@ -516,7 +516,11 @@ def check_llm_finetuning_backend_config(config: "ModelConfig"):  # noqa: F821
         return
 
     # LLM finetuning is only supported by the finetune trainer type
-    if config.trainer.type != "finetune" and config.adapter.pretrained_adapter_weights is not None:
+    if (
+        config.trainer.type != "finetune"
+        and config.adapter is not None
+        and config.adapter.pretrained_adapter_weights is not None
+    ):
         return
 
     # Using local backend, so skip the checks below
