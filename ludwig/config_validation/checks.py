@@ -493,7 +493,12 @@ def check_llm_finetuning_trainer_config(config: "ModelConfig"):  # noqa: F821
     if config.model_type != MODEL_LLM:
         return
 
-    if config.trainer.type == "none" and config.adapter.pretrained_adapter_weights is not None:
+    if (
+        config.trainer.type == "none"
+        and config.adapter is not None
+        and config.adapter.pretrained_adapter_weights is not None
+    ):
+        # If performing zero-shot, we must specify pretrained adapter weights
         return
 
     if config.adapter is not None and config.trainer.type != "finetune":
