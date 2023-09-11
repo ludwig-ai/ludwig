@@ -615,7 +615,12 @@ class LudwigModel:
                 # auto tune batch size
                 self._tune_batch_size(trainer, training_set, random_seed=random_seed)
 
-                if self.config_obj.adapter.pretrained_adapter_weights and trainer.config.type == "none":
+                if (
+                    self.config_obj.model_type == "LLM"
+                    and trainer.config.type == "none"
+                    and self.config_obj.adapter is not None
+                    and self.config_obj.adapter.pretrained_adapter_weights is not None
+                ):
                     trainer.model.initialize_adapter()  # Load pre-trained adapter weights for inference only
 
                 # train model
