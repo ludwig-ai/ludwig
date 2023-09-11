@@ -610,7 +610,9 @@ def check_llm_quantization_backend_incompatibility(config: "ModelConfig") -> Non
 def check_qlora_requirements(config: "ModelConfig") -> None:  # noqa: F821
     """Checks that all the necessary settings are in place for QLoRA."""
     if config.model_type != MODEL_LLM or (
-        config.trainer.type == "none" and config.adapter.pretrained_adapter_weights is not None
+        config.trainer.type == "none"
+        and config.adapter is not None
+        and config.adapter.pretrained_adapter_weights is not None
     ):
         return
 
