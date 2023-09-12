@@ -69,15 +69,20 @@ def check_module_parameters_updated(
             # do update of model parameters
             optimizer.zero_grad()
             if isinstance(module_output, torch.Tensor):
+                module_target = module_target.to(device=module_output.device)
                 loss = loss_function(module_output, target_tensor)
             elif isinstance(module_output, dict):
                 if "logits" in module_output:
+                    module_target = module_target.to(device=module_output["logits"].device)
                     loss = loss_function(module_output["logits"], target_tensor)
                 elif ENCODER_OUTPUT in module_output:
+                    module_target = module_target.to(device=module_output[ENCODER_OUTPUT].device)
                     loss = loss_function(module_output[ENCODER_OUTPUT], target_tensor)
                 elif "combiner_output" in module_output:
+                    module_target = module_target.to(device=module_output["combiner_output"].device)
                     loss = loss_function(module_output["combiner_output"], target_tensor)
             elif isinstance(module_output, (list, tuple)):
+                module_target = module_target.to(device=module_output[0].device)
                 loss = loss_function(module_output[0], target_tensor)
             else:
                 raise ValueError(f"Unexpected output type.  Module type found is {type(module_output)}")

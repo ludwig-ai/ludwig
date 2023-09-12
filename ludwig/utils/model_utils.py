@@ -74,3 +74,20 @@ def replace_tensors(m: torch.nn.Module, tensors: List[Dict], device: torch.devic
                 name,
                 torch.as_tensor(array, device=device, dtype=NUMPY_TO_TORCH_DTYPE.get(array.dtype)),
             )
+
+
+def find_embedding_layer_with_path(module, module_names=[]):
+    """Recursively search through a module to find an embedding layer and its module path.
+
+    Returns a tuple containing the embedding layer and its module path.
+    """
+    for name, child_module in module.named_children():
+        if isinstance(child_module, torch.nn.Embedding):
+            # If an embedding layer is found, return it along with the module path
+            return child_module, ".".join(module_names + [name])
+        else:
+            # Recursively search in the child module and update the module_names list
+            found, path = find_embedding_layer_with_path(child_module, module_names + [name])
+            if found is not None:
+                return found, path
+    return None, None

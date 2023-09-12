@@ -57,6 +57,7 @@ from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import path_exists
+from ludwig.utils.llm_utils import update_embedding_layer
 from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
 from ludwig.utils.metrics_printed_table import print_metrics_table
 from ludwig.utils.misc_utils import set_random_seed
@@ -211,6 +212,8 @@ class Trainer(BaseTrainer):
             base_learning_rate *= lr_scale_fn(self.distributed.size())
         self.base_learning_rate = base_learning_rate
 
+        # We may need to replace the embedding layer when using 8-bit optimizers from bitsandbytes.
+        update_embedding_layer(self.compiled_model, self.config)
         self.dist_model, self.optimizer = self.distributed.prepare(
             self.compiled_model,
             self.config,
