@@ -6,6 +6,7 @@ import torch.nn.functional as F
 from bitsandbytes.nn.modules import Embedding
 from transformers import (
     AutoModelForCausalLM,
+    CodeLlamaTokenizer,
     GPT2Tokenizer,
     GPT2TokenizerFast,
     LlamaTokenizer,
@@ -40,7 +41,10 @@ def set_pad_token(tokenizer: PreTrainedTokenizer):
     # These recommend using eos tokens instead
     # https://github.com/huggingface/transformers/issues/2648#issuecomment-616177044
     # https://github.com/huggingface/transformers/issues/2630#issuecomment-1290809338
-    if any(isinstance(tokenizer, t) for t in [GPT2Tokenizer, GPT2TokenizerFast, LlamaTokenizer, LlamaTokenizerFast]):
+    if any(
+        isinstance(tokenizer, t)
+        for t in [GPT2Tokenizer, GPT2TokenizerFast, LlamaTokenizer, LlamaTokenizerFast, CodeLlamaTokenizer]
+    ):
         tokenizer.pad_token = tokenizer.eos_token
         tokenizer.pad_token_id = tokenizer.eos_token_id
 
