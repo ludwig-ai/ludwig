@@ -1,3 +1,4 @@
+import os
 from dataclasses import field
 
 from marshmallow import fields, ValidationError
@@ -45,17 +46,20 @@ def BaseModelDataclassField():
         """Validates and upgrades the given model name to its full path, if applicable.
 
         If the name exists in `MODEL_PRESETS`, returns the corresponding value from the dict; otherwise checks if the
-        given name (which should be a full path) exists in the transformers library.
+        given name (which should be a full path) exists locally or in the transformers library.
         """
         if isinstance(model_name, str):
             if model_name in MODEL_PRESETS:
                 return MODEL_PRESETS[model_name]
+            if os.path.isdir(model_name):
+                return model_name
             try:
                 AutoConfig.from_pretrained(model_name)
                 return model_name
             except OSError:
                 raise ConfigValidationError(
                     f"Specified base model `{model_name}` is not a valid pretrained CausalLM listed on huggingface. "
+                    "or a valid directory containing a pretrained CausalLM."
                     "Please see: https://huggingface.co/models?pipeline_tag=text-generation&sort=downloads"
                 )
         raise ValidationError(
