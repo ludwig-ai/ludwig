@@ -812,6 +812,7 @@ class HFTokenizer(BaseTokenizer):
 
         from transformers import (
             CodeLlamaTokenizer,
+            CodeLlamaTokenizerFast,
             GPT2Tokenizer,
             GPT2TokenizerFast,
             LlamaTokenizer,
@@ -828,7 +829,14 @@ class HFTokenizer(BaseTokenizer):
         # https://github.com/huggingface/transformers/issues/2648#issuecomment-616177044
         if any(
             isinstance(self.tokenizer, t)
-            for t in [GPT2Tokenizer, GPT2TokenizerFast, LlamaTokenizer, LlamaTokenizerFast, CodeLlamaTokenizer]
+            for t in [
+                GPT2Tokenizer,
+                GPT2TokenizerFast,
+                LlamaTokenizer,
+                LlamaTokenizerFast,
+                CodeLlamaTokenizer,
+                CodeLlamaTokenizerFast,
+            ]
         ):
             if hasattr(self.tokenizer, "eos_token") and self.tokenizer.eos_token is not None:
                 logger.warning("No padding token id found. Using eos_token as pad_token.")
