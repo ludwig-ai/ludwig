@@ -881,6 +881,11 @@ class FineTuneTrainerConfig(ECDTrainerConfig):
         description="Base learning rate used for training in the LLM trainer.",
     )
 
+    eval_batch_size: int = schema_utils.PositiveInteger(
+        default=2,
+        description="Batch size used for evaluation in the LLM trainer.",
+    )
+
 
 @DeveloperAPI
 def get_model_type_jsonschema(model_type: str = MODEL_ECD):
