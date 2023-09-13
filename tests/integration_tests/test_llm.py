@@ -345,6 +345,7 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
         # ("p_tuning", {"num_virtual_tokens": 8, "encoder_reparameterization_type": "LSTM"}),
         ("lora", {}, None),
         ("lora", {}, {"bits": 4}),  # qlora
+        ("lora", {}, {"bits": 8}),  # qlora 8-bit
         # ("adalora", {}),
         ("adaption_prompt", {"adapter_len": 6, "adapter_layers": 1}, None),
     ],
@@ -357,6 +358,7 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
         # "p_tuning_lstm_reparameterization",
         "lora",
         "qlora",
+        "qlora-8bit",
         # "adalora",
         "adaption_prompt",
     ],
@@ -549,8 +551,21 @@ def test_load_pretrained_adapter_weights(adapter):
 
 
 def _compare_models(model_1: torch.nn.Module, model_2: torch.nn.Module) -> bool:
+    def filter_for_weight_format(i):
+        """Remove bitsandbytes metadata keys added on state dict creation.
+
+        8-bit quantized models that have been put on gpu will have a set of `weight_format` keys in their state dict.
+        These contain strings that are used to reshape quantized tensors, however these have no impact until the state
+        dict is loaded into a model. These keys were causing `torch.equal` to raise an exception, so we skip them in the
+        evaluation.
+        """
+        return "weight_format" not in i[0]
+
+    model_1_filtered_state_dict = filter(filter_for_weight_format, model_1.state_dict().items())
+    model_2_filtered_state_dict = filter(filter_for_weight_format, model_2.state_dict().items())
+
     # Source: https://discuss.pytorch.org/t/check-if-models-have-same-weights/4351/6
-    for key_item_1, key_item_2 in zip(model_1.state_dict().items(), model_2.state_dict().items()):
+    for key_item_1, key_item_2 in zip(model_1_filtered_state_dict, model_2_filtered_state_dict):
         if not torch.equal(key_item_1[1], key_item_2[1]):
             return False
     return True
