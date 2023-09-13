@@ -29,11 +29,7 @@ from ludwig.utils.nlp_utils import load_nlp_pipeline, process_text
 logger = logging.getLogger(__name__)
 torchtext_version = torch.torch_version.TorchVersion(torchtext.__version__)
 
-SPACE_PUNCTUATION_REGEX = re.compile(r"\w+|[^\w\s]")
-COMMA_REGEX = re.compile(r"\s*,\s*")
-UNDERSCORE_REGEX = re.compile(r"\s*_\s*")
-
-TORCHSCRIPT_COMPATIBLE_TOKENIZERS = {"space", "space_punct"}
+TORCHSCRIPT_COMPATIBLE_TOKENIZERS = {"space", "space_punct", "comma", "underscore", "characters"}
 TORCHTEXT_0_12_0_TOKENIZERS = {"sentencepiece", "clip", "gpt2bpe"}
 TORCHTEXT_0_13_0_TOKENIZERS = {"bert"}
 
@@ -50,12 +46,59 @@ class BaseTokenizer:
         pass
 
 
-class CharactersToListTokenizer(BaseTokenizer):
-    def __call__(self, text):
-        return [char for char in text]
+class StringSplitTokenizer(torch.nn.Module):
+    def __init__(self, split_string, **kwargs):
+        super().__init__()
+        self.split_string = split_string
+
+    def forward(self, v: Union[str, List[str], torch.Tensor]) -> Any:
+        if isinstance(v, torch.Tensor):
+            raise ValueError(f"Unsupported input: {v}")
+
+        inputs: List[str] = []
+        # Ludwig calls map on List[str] objects, so we need to handle individual strings as well.
+        if isinstance(v, str):
+            inputs.append(v)
+        else:
+            inputs.extend(v)
+
+        tokens: List[List[str]] = []
+        for sequence in inputs:
+            split_sequence = sequence.strip().split(self.split_string)
+            token_sequence: List[str] = []
+            for token in self.get_tokens(split_sequence):
+                if len(token) > 0:
+                    token_sequence.append(token)
+            tokens.append(token_sequence)
+
+        return tokens[0] if isinstance(v, str) else tokens
+
+    def get_tokens(self, tokens: List[str]) -> List[str]:
+        return tokens
 
 
-class SpaceStringToListTokenizer(torch.nn.Module):
+class SpaceStringToListTokenizer(StringSplitTokenizer):
+    """Implements torchscript-compatible whitespace tokenization."""
+
+    def __init__(self, **kwargs):
+        super().__init__(split_string=" ", **kwargs)
+
+
+class UnderscoreStringToListTokenizer(StringSplitTokenizer):
+    """Implements torchscript-compatible whitespace tokenization."""
+
+    def __init__(self, **kwargs):
+        super().__init__(split_string="_", **kwargs)
+
+
+class CommaStringToListTokenizer(StringSplitTokenizer):
+    """Implements torchscript-compatible whitespace tokenization."""
+
+    def __init__(self, **kwargs):
+        super().__init__(split_string=",", **kwargs)
+
+
+class CharactersToListTokenizer(torch.nn.Module):
     """Implements torchscript-compatible whitespace tokenization."""
 
     def __init__(self, **kwargs):
@@ -74,7 +117,7 @@ class SpaceStringToListTokenizer(torch.nn.Module):
 
         tokens: List[List[str]] = []
         for sequence in inputs:
-            split_sequence = sequence.strip().split(" ")
+            split_sequence = [char for char in sequence]
             token_sequence: List[str] = []
             for token in self.get_tokens(split_sequence):
                 if len(token) > 0:
@@ -140,16 +183,6 @@ class SpacePunctuationStringToListTokenizer(torch.nn.Module):
             tokens.append(token_sequence)
 
         return tokens[0] if isinstance(v, str) else tokens
-
-
-class UnderscoreStringToListTokenizer(BaseTokenizer):
-    def __call__(self, text):
-        return UNDERSCORE_REGEX.split(text.strip())
-
-
-class CommaStringToListTokenizer(BaseTokenizer):
-    def __call__(self, text):
-        return COMMA_REGEX.split(text.strip())
 
 
 class UntokenizedStringToListTokenizer(BaseTokenizer):
@@ -855,10 +888,10 @@ tokenizer_registry = {
     "space": SpaceStringToListTokenizer,
     "space_punct": SpacePunctuationStringToListTokenizer,
     "ngram": NgramTokenizer,
-    # Tokenizers not compatible with torchscript
     "characters": CharactersToListTokenizer,
     "underscore": UnderscoreStringToListTokenizer,
     "comma": CommaStringToListTokenizer,
+    # Tokenizers not compatible with torchscript
     "untokenized": UntokenizedStringToListTokenizer,
     "stripped": StrippedStringToListTokenizer,
     "english_tokenize": EnglishTokenizer,
