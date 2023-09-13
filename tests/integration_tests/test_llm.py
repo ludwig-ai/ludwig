@@ -578,3 +578,38 @@ def test_global_max_sequence_length_for_llms():
 
     # Check that the value can never be larger than the model's context_len
     assert model.global_max_sequence_length == 2048
+
+
+def test_local_path_loading():
+    """Tests that local paths can be used to load models."""
+
+    from huggingface_hub import snapshot_download
+
+    # Download the model to a local directory
+    LOCAL_PATH = "~/test_local_path_loading"
+    REPO_ID = "HuggingFaceH4/tiny-random-LlamaForCausalLM"
+    os.makedirs(LOCAL_PATH, exist_ok=True)
+    snapshot_download(repo_id=REPO_ID, local_dir=LOCAL_PATH)
+
+    # Load the model using the local path
+    config1 = {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: LOCAL_PATH,
+        INPUT_FEATURES: [text_feature(name="input", encoder={"type": "passthrough"})],
+        OUTPUT_FEATURES: [text_feature(name="output")],
+    }
+    config_obj1 = ModelConfig.from_dict(config1)
+    model1 = LLM(config_obj1)
+
+    # Load the model using the repo id
+    config2 = {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: REPO_ID,
+        INPUT_FEATURES: [text_feature(name="input", encoder={"type": "passthrough"})],
+        OUTPUT_FEATURES: [text_feature(name="output")],
+    }
+    config_obj2 = ModelConfig.from_dict(config2)
+    model2 = LLM(config_obj2)
+
+    # Check that the models are the same
+    assert _compare_models(model1.model, model2.model)
