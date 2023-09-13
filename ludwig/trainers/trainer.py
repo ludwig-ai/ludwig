@@ -884,8 +884,18 @@ class Trainer(BaseTrainer):
                     if self.distributed.is_model_parallel():
                         # Assume the full weights cannot fit in memory on GPU
                         self.model = self.model.cpu()
-                    _, unexpected_keys = self.model.load_state_dict(state_dict, strict=False)
-                    assert unexpected_keys == [], f"Unexpected keys found in state dict: {unexpected_keys}"
+                    if hasattr(self.model.config_obj, "quantization") and self.model.config_obj.quantization.bits == 8:
+                        if torch.cuda.is_available():
+                            self.model.model.cuda()
+                            self.model.model.cpu()
+                        _, unexpected_keys = self.model.load_state_dict(state_dict, strict=False)
+                        only_weights_format_keys = ["weights_format" in k for k in unexpected_keys]
+                        assert (
+                            unexpected_keys == [] or only_weights_format_keys
+                        ), f"Unexpected keys found in state dict: {unexpected_keys}"
+                    else:
+                        _, unexpected_keys = self.model.load_state_dict(state_dict, strict=False)
+                        assert unexpected_keys == [], f"Unexpected keys found in state dict: {unexpected_keys}"
             elif return_state_dict:
                 state_dict = self.model.cpu().state_dict()
 
