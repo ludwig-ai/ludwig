@@ -884,6 +884,9 @@ class Trainer(BaseTrainer):
                     if self.distributed.is_model_parallel():
                         # Assume the full weights cannot fit in memory on GPU
                         self.model = self.model.cpu()
+
+                    # For a full explanation of this 8-bit workaround, see https://github.com/ludwig-ai/ludwig/pull/3606
+                    # TODO (jeffkinnison): Investigate why `self.model` is seemingly not placed on GPU before this point
                     if hasattr(self.model.config_obj, "quantization") and self.model.config_obj.quantization.bits == 8:
                         if torch.cuda.is_available():
                             self.model.model.cuda()
