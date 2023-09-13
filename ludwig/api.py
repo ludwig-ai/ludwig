@@ -808,6 +808,17 @@ class LudwigModel:
         self.model = self._online_trainer.train_online(training_dataset)
 
     def _tune_batch_size(self, trainer, dataset, random_seed: int = default_random_seed):
+        """Sets AUTO batch-size-related parameters based on the trainer, backend type, and number of workers.
+
+        Batch-size related parameters that are set:
+        - trainer.batch_size
+        - trainer.eval_batch_size
+        - trainer.gradient_accumulation_steps
+        - trainer.effective_batch_size
+
+        The final batch size selected may be non-deterministic even with a fixed random seed since throughput-based
+        heuristics may be affected by resources used by other processes running on the machine.
+        """
         if not self.config_obj.trainer.can_tune_batch_size():
             # Models like GBMs don't have batch sizes to be tuned
             return

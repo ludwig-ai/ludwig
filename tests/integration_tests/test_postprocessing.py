@@ -51,6 +51,7 @@ def random_set_logits(*args, num_predict_samples, vocab_size, pct_positive, **kw
     return torch.tensor(logits, dtype=torch.float32)  # simulate torch model output
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
     "backend",
     [
@@ -114,6 +115,7 @@ def test_binary_predictions(tmpdir, backend, distinct_values, ray_cluster_2cpu):
         assert np.allclose(prob_0, 1 - prob_1)
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
     "backend",
     [

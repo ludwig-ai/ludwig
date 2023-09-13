@@ -102,6 +102,7 @@ def test_local_gbm_binary(tmpdir, local_backend):
     run_test_gbm_binary(tmpdir, local_backend)
 
 
+@pytest.mark.slow
 @pytest.mark.distributed
 def test_ray_gbm_binary(tmpdir, ray_backend, ray_cluster_5cpu):
     run_test_gbm_binary(tmpdir, ray_backend)
@@ -126,6 +127,7 @@ def test_local_gbm_non_number_inputs(tmpdir, local_backend):
     run_test_gbm_non_number_inputs(tmpdir, local_backend)
 
 
+@pytest.mark.slow
 @pytest.mark.distributed
 def test_ray_gbm_non_number_inputs(tmpdir, ray_backend, ray_cluster_5cpu):
     run_test_gbm_non_number_inputs(tmpdir, ray_backend)
@@ -151,6 +153,7 @@ def test_local_gbm_category(vocab_size, tmpdir, local_backend):
     run_test_gbm_category(vocab_size, tmpdir, local_backend)
 
 
+@pytest.mark.slow
 @pytest.mark.distributed
 @pytest.mark.parametrize("vocab_size", [2, 3])
 def test_ray_gbm_category(vocab_size, tmpdir, ray_backend, ray_cluster_5cpu):
@@ -362,6 +365,7 @@ def test_dart_boosting_type(tmpdir, local_backend):
     _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend, boosting_type="dart")
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
     "backend",
     [
@@ -388,6 +392,7 @@ def test_gbm_category_one_hot_encoding(tmpdir, backend, ray_cluster_4cpu):
     assert prob_col.apply(sum).mean() == pytest.approx(1.0)
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
     "backend",
     [
@@ -437,6 +442,7 @@ def test_gbm_text_tfidf(tmpdir, backend, ray_cluster_4cpu):
 #     assert prob_col.apply(sum).mean() == pytest.approx(1.0)
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("feature_name", ["valid_feature_name", "Unnamed: 0", "{", "}", "[", "]"])
 @pytest.mark.parametrize("feature_type", ["input", "output"])
 @pytest.mark.parametrize(
