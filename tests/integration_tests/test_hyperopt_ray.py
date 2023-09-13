@@ -231,7 +231,6 @@ def test_hyperopt_executor_with_metric(use_split, csv_filename, tmpdir, ray_clus
     )
 
 
-@pytest.mark.slow
 @pytest.mark.distributed
 @pytest.mark.parametrize("backend", ["local", "ray"])
 def test_hyperopt_run_hyperopt(csv_filename, backend, tmpdir, ray_cluster_4cpu):
