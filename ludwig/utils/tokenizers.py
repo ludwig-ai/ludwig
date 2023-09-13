@@ -85,21 +85,21 @@ class SpaceStringToListTokenizer(StringSplitTokenizer):
 
 
 class UnderscoreStringToListTokenizer(StringSplitTokenizer):
-    """Implements torchscript-compatible whitespace tokenization."""
+    """Implements torchscript-compatible underscore tokenization."""
 
     def __init__(self, **kwargs):
         super().__init__(split_string="_", **kwargs)
 
 
 class CommaStringToListTokenizer(StringSplitTokenizer):
-    """Implements torchscript-compatible whitespace tokenization."""
+    """Implements torchscript-compatible comma tokenization."""
 
     def __init__(self, **kwargs):
         super().__init__(split_string=",", **kwargs)
 
 
 class CharactersToListTokenizer(torch.nn.Module):
-    """Implements torchscript-compatible whitespace tokenization."""
+    """Implements torchscript-compatible characters tokenization."""
 
     def __init__(self, **kwargs):
         super().__init__()
