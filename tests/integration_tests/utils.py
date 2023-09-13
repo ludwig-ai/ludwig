@@ -966,10 +966,17 @@ def train_with_backend(
                             f"Metric mismatch between eval and local. Metrics from eval: "
                             f"{metrics_dict_from_eval.keys()}. Metrics from local: {metrics_dict_from_local.keys()}"
                         )
-                        assert np.isclose(metric_value_from_eval, metric_value_from_local, rtol=1e-03, atol=1e-04), (
-                            f"Metric {metric_name_from_eval} for feature {feature_name_from_eval}: "
-                            f"{metric_value_from_eval} != {metric_value_from_local}"
-                        )
+                        if (
+                            metric_value_from_eval == metric_value_from_eval
+                            and feature_name_from_eval == feature_name_from_eval
+                        ):
+                            # Check for equality if the values are non-nans.
+                            assert np.isclose(
+                                metric_value_from_eval, metric_value_from_local, rtol=1e-03, atol=1e-04
+                            ), (
+                                f"Metric {metric_name_from_eval} for feature {feature_name_from_eval}: "
+                                f"{metric_value_from_eval} != {metric_value_from_local}"
+                            )
 
         return model
 

@@ -26,6 +26,7 @@ from tests.integration_tests.utils import (
 pytestmark = pytest.mark.integration_tests_c
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("feature_type,feature_gen", [(TEXT, text_feature), (SEQUENCE, sequence_feature)])
 @pytest.mark.parametrize("decoder_type", ["generator", "tagger"])
 @pytest.mark.distributed

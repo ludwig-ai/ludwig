@@ -1,10 +1,25 @@
+import logging
 from typing import Dict, Tuple
 
 import torch
 import torch.nn.functional as F
-from transformers import GPT2Tokenizer, GPT2TokenizerFast, LlamaTokenizer, LlamaTokenizerFast, PreTrainedTokenizer
+from bitsandbytes.nn.modules import Embedding
+from transformers import (
+    AutoModelForCausalLM,
+    CodeLlamaTokenizer,
+    CodeLlamaTokenizerFast,
+    GPT2Tokenizer,
+    GPT2TokenizerFast,
+    LlamaTokenizer,
+    LlamaTokenizerFast,
+    PreTrainedTokenizer,
+)
 
 from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, PREDICTIONS, PROBABILITIES
+from ludwig.schema.trainer import LLMTrainerConfig
+from ludwig.utils.model_utils import find_embedding_layer_with_path
+
+logger = logging.getLogger(__name__)
 
 
 def set_pad_token(tokenizer: PreTrainedTokenizer):
@@ -27,7 +42,17 @@ def set_pad_token(tokenizer: PreTrainedTokenizer):
     # These recommend using eos tokens instead
     # https://github.com/huggingface/transformers/issues/2648#issuecomment-616177044
     # https://github.com/huggingface/transformers/issues/2630#issuecomment-1290809338
-    if any(isinstance(tokenizer, t) for t in [GPT2Tokenizer, GPT2TokenizerFast, LlamaTokenizer, LlamaTokenizerFast]):
+    if any(
+        isinstance(tokenizer, t)
+        for t in [
+            GPT2Tokenizer,
+            GPT2TokenizerFast,
+            LlamaTokenizer,
+            LlamaTokenizerFast,
+            CodeLlamaTokenizer,
+            CodeLlamaTokenizerFast,
+        ]
+    ):
         tokenizer.pad_token = tokenizer.eos_token
         tokenizer.pad_token_id = tokenizer.eos_token_id
 
@@ -196,13 +221,13 @@ def pad_target_tensor_for_fine_tuning(
 ) -> Dict[str, torch.Tensor]:
     """Pad and adjust target tensors for fine-tuning LLMS models.
 
-    This function is used to pad and adjust the target tensors with -100 based on the model inputs and predictions
-    during the fine-tuning process of Language Models. Here's what this function does:
+    This function is used to pad and adjust the target tensors with IGNORE_INDEX_TOKEN_ID based on the model inputs and
+    predictions during the fine-tuning process of Language Models. Here's what this function does:
         1. If none of the tokens from the target were in the model inputs, we create a tensor of the length of model
-            inputs with value -100s. This ignores this row from affecting loss.
+            inputs with value IGNORE_INDEX_TOKEN_IDs. This ignores this row from affecting loss.
         2. If the target tokens were entirely inside the model inputs, we want to pad all the tokens in model_inputs
-            coming from the input with -100s and leave the target tokens as is. This ensures that all of the target
-            tokens are used during loss computation.
+            coming from the input with IGNORE_INDEX_TOKEN_IDs and leave the target tokens as is. This ensures that all
+            of the target tokens are used during loss computation.
         3. In the scenario that only some part of the target tokens were in the model inputs, we want to pad the model
             inputs until that point and only leave the partial tokens of the target as is. This ensures that we will
             only compute loss on the target tokens that were in the model inputs.
@@ -225,7 +250,7 @@ def pad_target_tensor_for_fine_tuning(
 
     updated_targets = []
     for idx, target in enumerate(targets[of_name]):
-        # Remove any leading -100s in the target that were temporarily added for alignment
+        # Remove any leading IGNORE_INDEX_TOKEN_IDs in the target that were temporarily added for alignment
         end_index = (target != IGNORE_INDEX_TOKEN_ID).nonzero()[0]
         target = target[end_index:]
         target_device = target.device
@@ -235,14 +260,14 @@ def pad_target_tensor_for_fine_tuning(
 
         # If the last matching index is -1, it means that the input tensor passed into the model was truncated
         # and did not contain the target tensor. In this case, we need to truncate the target tensors as well
-        # and just set it to a tensor of -100 so that we don't compute loss on this target tensor.
+        # and just set it to a tensor of IGNORE_INDEX_TOKEN_ID so that we don't compute loss on this target tensor.
         if last_matching_index == -1:
             updated_targets.append(torch.full((prediction_length,), IGNORE_INDEX_TOKEN_ID).to(device=target_device))
 
         # If the last matching index is not -1, it means that the input tensor passed into the model was not
         # truncated and contained either a part of the target tensor or the entire target tensor. In this case,
         # we need to set the target tensor to the part of the target tensor that was passed into the model while
-        # also padding it to the correct length with -100.
+        # also padding it to the correct length with IGNORE_INDEX_TOKEN_ID.
         else:
             padding = torch.full((last_matching_index,), IGNORE_INDEX_TOKEN_ID).to(device=target_device)
             updated_targets.append(torch.cat((padding, target), dim=-1)[:prediction_length])
@@ -302,26 +327,50 @@ def generate_merged_ids(
     return torch.stack(merged_input_and_targets), torch.stack(attention_masks)
 
 
+def _get_decoded_targets_and_predictions(
+    targets: Dict[str, torch.Tensor],
+    predictions: Dict[str, Dict[str, torch.Tensor]],
+    tokenizer: PreTrainedTokenizer,
+    of_name: str,
+):
+    """Returns the decoded targets and predictions, accounting for IGNORE_INDEX_TOKEN_ID."""
+    sanitized_targets = torch.where(targets[of_name] != IGNORE_INDEX_TOKEN_ID, targets[of_name], tokenizer.pad_token_id)
+    sanitized_predictions = torch.where(
+        predictions[of_name][PREDICTIONS] != IGNORE_INDEX_TOKEN_ID,
+        predictions[of_name][PREDICTIONS],
+        tokenizer.pad_token_id,
+    )
+    decoded_targets = tokenizer.batch_decode(sanitized_targets, skip_special_tokens=True)
+    decoded_predictions = tokenizer.batch_decode(sanitized_predictions, skip_special_tokens=True)
+    return decoded_targets, decoded_predictions
+
+
 def realign_target_and_prediction_tensors_for_inference(
     targets: Dict[str, torch.Tensor],
-    predictions: Dict[str, torch.Tensor],
+    predictions: Dict[str, Dict[str, torch.Tensor]],
     of_name: str,
     tokenizer: PreTrainedTokenizer,
     pad_value: int = None,
 ) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
     """Realigns the target tensor with the predictions.
 
-    This is necessary for text metrics that require the target and prediction
-    to be of the same length.
+    This is necessary for text metrics that require the target and prediction to be of the same length.
+
     Args:
         targets: The target tensor.
         predictions: The prediction tensor.
         of_name: The output feature's name.
+        tokenizer: The HF tokenizer.
         pad_direction: The direction to pad the tensors. Can be 'left' or 'right'.
             Defaults to 'right'.
 
     Returns:
-        The realigned target tensor.
+        Tuple of realigned (targets, decoded_targets, predictions, decoded_predictions).
+        - targets is a map of feature name -> tensor of token ids.
+        - predictions is a map from output feature name -> map of tensors with the following items:
+            - "predictions": tensor of token ids.
+            - "probabilities": tensor of probabilities.
+            - "logits": tensor of logits.
     """
     target_length = targets.get(of_name).size()[1]
     prediction_length = predictions[of_name].get(PREDICTIONS).size()[1]
@@ -352,3 +401,48 @@ def realign_target_and_prediction_tensors_for_inference(
         targets[of_name] = F.pad(targets[of_name], (0, zeros_to_add), value=pad_value).to(torch.int64)
 
     return targets, predictions
+
+
+def update_embedding_layer(model: AutoModelForCausalLM, config_obj: LLMTrainerConfig) -> AutoModelForCausalLM:
+    """Updates the embedding layer of the model to use the 8-bit embedding layer from bitsandbytes.nn.modules.
+
+    This is necessary when using 8-bit optimizers from bitsandbytes.
+    See: https://github.com/TimDettmers/bitsandbytes#tldr
+    """
+    # If we're using an 8-bit optimizer, we need to replace the embedding layer with a custom embedding layer from
+    # bnb.nn.modules.Embedding.
+    if hasattr(config_obj, "optimizer") and config_obj.optimizer.is_8bit:
+        embedding_layer, module_path = find_embedding_layer_with_path(model)
+        if embedding_layer is None:
+            raise ValueError(
+                "Could not find an embedding layer in the model. This is required when using 8-bit optimizers"
+                "  since a custom 8-bit embedding layer is used in place of the original embedding layer."
+            )
+
+        # Initialize the BNB embedding layer with the same parameters and weights as the original embedding layer.
+        bnb_embedding = Embedding(
+            num_embeddings=embedding_layer.num_embeddings,
+            embedding_dim=embedding_layer.embedding_dim,
+            padding_idx=embedding_layer.padding_idx,
+            max_norm=embedding_layer.max_norm,
+            norm_type=embedding_layer.norm_type,
+            scale_grad_by_freq=embedding_layer.scale_grad_by_freq,
+            sparse=embedding_layer.sparse,
+            _weight=embedding_layer.weight,
+            device=model.device,
+        )
+
+        # Update the model's original embedding layer to use the BNB embedding layer using the module_path
+        # returned by find_embedding_layer_with_path.
+        module_path = module_path.split(".")
+        module = model
+        for module_name in module_path[:-1]:
+            module = getattr(module, module_name)
+        setattr(module, module_path[-1], bnb_embedding)
+
+        # Set the get input embeddings lambda function to return the BNB embedding layer
+        model.get_input_embeddings = lambda: bnb_embedding
+
+        logger.info("Updated the pretrained embedding layer to use the embedding layer from bitsandbytes.")
+
+    return model

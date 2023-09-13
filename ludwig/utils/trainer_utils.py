@@ -1,5 +1,5 @@
 import logging
-from collections import defaultdict, OrderedDict
+from collections import defaultdict
 from typing import Dict, List, Tuple, TYPE_CHECKING
 
 try:
@@ -24,14 +24,7 @@ logger = logging.getLogger(__name__)
 @DeveloperAPI
 def initialize_trainer_metric_dict(output_features) -> Dict[str, Dict[str, List[TrainerMetric]]]:
     """Returns a dict of dict of metrics, output_feature_name -> metric_name -> List[TrainerMetric]."""
-    metrics = OrderedDict()
-
-    for output_feature_name, output_feature in output_features.items():
-        metrics[output_feature_name] = OrderedDict()
-        for metric in output_feature.metric_names:
-            metrics[output_feature_name][metric] = []
-
-    metrics[COMBINED] = {LOSS: []}
+    metrics = defaultdict(lambda: defaultdict(list))
     return metrics
 
 
@@ -262,7 +255,7 @@ def append_metrics(
 
         # collect metric names based on output features metrics to
         # ensure consistent order of reporting metrics
-        metric_names = model.output_features.get(output_feature).metric_names
+        metric_names = sorted(results[output_feature].keys())
 
         for metric in metric_names:
             if metric in results[output_feature]:
@@ -363,6 +356,24 @@ def get_training_report(
 
 
 def get_rendered_batch_size_grad_accum(config: "BaseTrainerConfig", num_workers: int) -> Tuple[int, int]:
+    """Returns the batch size and gradient accumulation steps to use for training.
+
+    For batch_size==AUTO:
+    1. effective_batch_size is not AUTO and gradient_accumulation_steps is not AUTO:
+        batch size is set to the effective batch size divided by the gradient accumulation steps, divided by the
+        number of workers.
+    2. effective_batch_size is AUTO or gradient_accumulation_steps is AUTO:
+        batch size remains AUTO.
+
+    For gradient_accumulation_steps==AUTO:
+    1. batch size is AUTO:
+        gradient accumulation steps remains AUTO.
+    2. batch_size is not AUTO and effective batch size is not AUTO:
+        gradient accumulation steps is set to the effective batch size divided by the batch size, divided by the number
+        of workers.
+    3. batch size is not AUTO and effective batch size is AUTO:
+        gradient accumulation steps is set to 1.
+    """
     effective_batch_size = config.effective_batch_size
     batch_size = config.batch_size
     gradient_accumulation_steps = config.gradient_accumulation_steps

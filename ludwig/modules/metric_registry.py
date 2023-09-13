@@ -1,7 +1,7 @@
 from typing import Dict, List, Literal, TYPE_CHECKING, Union
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import LOGITS, MAXIMIZE, MINIMIZE, PREDICTIONS, PROBABILITIES
+from ludwig.constants import LOGITS, MAXIMIZE, MINIMIZE, PREDICTIONS, PROBABILITIES, RESPONSE
 from ludwig.utils.registry import Registry
 
 if TYPE_CHECKING:
@@ -84,5 +84,5 @@ def get_metric_objective(metric_name: str) -> Literal[MINIMIZE, MAXIMIZE]:
 
 
 @DeveloperAPI
-def get_metric_tensor_input(metric_name: str) -> Literal[PREDICTIONS, PROBABILITIES, LOGITS]:
+def get_metric_tensor_input(metric_name: str) -> Literal[PREDICTIONS, PROBABILITIES, LOGITS, RESPONSE]:
     return metric_tensor_input_registry[metric_name]

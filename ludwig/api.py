@@ -615,6 +615,14 @@ class LudwigModel:
                 # auto tune batch size
                 self._tune_batch_size(trainer, training_set, random_seed=random_seed)
 
+                if (
+                    self.config_obj.model_type == "LLM"
+                    and trainer.config.type == "none"
+                    and self.config_obj.adapter is not None
+                    and self.config_obj.adapter.pretrained_adapter_weights is not None
+                ):
+                    trainer.model.initialize_adapter()  # Load pre-trained adapter weights for inference only
+
                 # train model
                 if self.backend.is_coordinator():
                     print_boxed("TRAINING")
@@ -695,7 +703,11 @@ class LudwigModel:
                             save_json(training_stats_fn, train_stats)
 
                     # results of the model with highest validation test performance
-                    if self.backend.is_coordinator() and validation_set is not None:
+                    if (
+                        self.backend.is_coordinator()
+                        and validation_set is not None
+                        and not self.config_obj.trainer.skip_all_evaluation
+                    ):
                         print_boxed("TRAINING REPORT")
                         training_report = get_training_report(
                             trainer.validation_field,
@@ -796,6 +808,17 @@ class LudwigModel:
         self.model = self._online_trainer.train_online(training_dataset)
 
     def _tune_batch_size(self, trainer, dataset, random_seed: int = default_random_seed):
+        """Sets AUTO batch-size-related parameters based on the trainer, backend type, and number of workers.
+
+        Batch-size related parameters that are set:
+        - trainer.batch_size
+        - trainer.eval_batch_size
+        - trainer.gradient_accumulation_steps
+        - trainer.effective_batch_size
+
+        The final batch size selected may be non-deterministic even with a fixed random seed since throughput-based
+        heuristics may be affected by resources used by other processes running on the machine.
+        """
         if not self.config_obj.trainer.can_tune_batch_size():
             # Models like GBMs don't have batch sizes to be tuned
             return

@@ -18,6 +18,7 @@ from ludwig.constants import (
     MODEL_TYPE,
     OUTPUT_FEATURES,
     PREPROCESSING,
+    PRETRAINED_ADAPTER_WEIGHTS,
     PROMPT,
     TRAINER,
     TYPE,
@@ -481,9 +482,99 @@ def test_llama_rope_scaling():
     assert model.model.config.rope_scaling["factor"] == 2.0
 
 
+def test_default_max_sequence_length():
+    config = {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: TEST_MODEL_NAME,
+        INPUT_FEATURES: [text_feature(name="input", encoder={"type": "passthrough"})],
+        OUTPUT_FEATURES: [text_feature(name="output")],
+        TRAINER: {
+            TYPE: "finetune",
+            BATCH_SIZE: 8,
+            EPOCHS: 2,
+        },
+        ADAPTER: {TYPE: "lora", PRETRAINED_ADAPTER_WEIGHTS: "Infernaught/test_adapter_weights"},
+        BACKEND: {TYPE: "local"},
+    }
+    config_obj = ModelConfig.from_dict(config)
+    assert config_obj.input_features[0].preprocessing.max_sequence_length is None
+    assert config_obj.output_features[0].preprocessing.max_sequence_length is None
+
+
+@pytest.mark.parametrize("adapter", ["lora", "adalora", "adaption_prompt"])
+def test_load_pretrained_adapter_weights(adapter):
+    from peft import PeftModel
+    from transformers import PreTrainedModel
+
+    weights = ""
+    model = ""
+    if adapter == "lora":
+        weights = "Infernaught/test_adapter_weights"
+        base_model = TEST_MODEL_NAME
+    elif adapter == "adalora":
+        weights = "Infernaught/test_adalora_weights"
+        base_model = "HuggingFaceH4/tiny-random-LlamaForCausalLM"
+    elif adapter == "adaption_prompt":
+        weights = "Infernaught/test_ap_weights"
+        base_model = "HuggingFaceH4/tiny-random-LlamaForCausalLM"
+    else:
+        raise ()
+
+    config = {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: base_model,
+        INPUT_FEATURES: [text_feature(name="input", encoder={"type": "passthrough"})],
+        OUTPUT_FEATURES: [text_feature(name="output")],
+        TRAINER: {
+            TYPE: "none",
+            BATCH_SIZE: 8,
+            EPOCHS: 2,
+        },
+        ADAPTER: {TYPE: adapter, PRETRAINED_ADAPTER_WEIGHTS: weights},
+        BACKEND: {TYPE: "local"},
+    }
+    config_obj = ModelConfig.from_dict(config)
+    model = LLM(config_obj)
+
+    assert model.config_obj.adapter.pretrained_adapter_weights
+    assert model.config_obj.adapter.pretrained_adapter_weights == weights
+
+    model.prepare_for_training()
+    assert not isinstance(model.model, PreTrainedModel)
+    assert isinstance(model.model, PeftModel)
+
+    config_obj = ModelConfig.from_dict(config)
+    assert config_obj.input_features[0].preprocessing.max_sequence_length is None
+    assert config_obj.output_features[0].preprocessing.max_sequence_length is None
+
+
 def _compare_models(model_1: torch.nn.Module, model_2: torch.nn.Module) -> bool:
     # Source: https://discuss.pytorch.org/t/check-if-models-have-same-weights/4351/6
     for key_item_1, key_item_2 in zip(model_1.state_dict().items(), model_2.state_dict().items()):
         if not torch.equal(key_item_1[1], key_item_2[1]):
             return False
     return True
+
+
+def test_global_max_sequence_length_for_llms():
+    """Ensures that user specified global_max_sequence_length can never be greater than the model's context
+    length."""
+    config = {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: "HuggingFaceH4/tiny-random-LlamaForCausalLM",
+        INPUT_FEATURES: [text_feature(name="input", encoder={"type": "passthrough"})],
+        OUTPUT_FEATURES: [text_feature(name="output")],
+    }
+    config_obj = ModelConfig.from_dict(config)
+    model = LLM(config_obj)
+
+    # Default value is set based on model's context_len
+    assert model.global_max_sequence_length == 2048
+
+    # Override to a larger value in the config
+    config["preprocessing"] = {"global_max_sequence_length": 4096}
+    config_obj = ModelConfig.from_dict(config)
+    model = LLM(config_obj)
+
+    # Check that the value can never be larger than the model's context_len
+    assert model.global_max_sequence_length == 2048

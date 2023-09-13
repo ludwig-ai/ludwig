@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 
 from ludwig.api import LudwigModel
-from ludwig.constants import BATCH_SIZE, TRAINER
+from ludwig.constants import BATCH_SIZE, EVAL_BATCH_SIZE, TRAINER
 from ludwig.utils.numerical_test_utils import assert_all_finite
 from tests.integration_tests.utils import (
     audio_feature,
@@ -82,10 +82,12 @@ def train_twice(backend, csv_filename, tmpdir):
         number_feature(),
         category_feature(decoder={"vocab_size": 10}),
     ]
+    # NOTE: It's important that we set batch size and eval batch size explicitly to bypass all batch size tuning, which
+    # is non-deterministic, even with fixed random seeds.
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128, EVAL_BATCH_SIZE: 2},
     }
 
     # Generate training data

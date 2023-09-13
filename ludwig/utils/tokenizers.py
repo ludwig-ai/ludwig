@@ -810,7 +810,14 @@ class HFTokenizer(BaseTokenizer):
     def _set_pad_token(self) -> None:
         """Sets the pad token and pad token ID for the tokenizer."""
 
-        from transformers import GPT2Tokenizer, GPT2TokenizerFast, LlamaTokenizer, LlamaTokenizerFast
+        from transformers import (
+            CodeLlamaTokenizer,
+            CodeLlamaTokenizerFast,
+            GPT2Tokenizer,
+            GPT2TokenizerFast,
+            LlamaTokenizer,
+            LlamaTokenizerFast,
+        )
 
         # Tokenizers might have the pad token id attribute since they tend to use the same base class, but
         # it can be set to None so we check for this explicitly.
@@ -822,7 +829,14 @@ class HFTokenizer(BaseTokenizer):
         # https://github.com/huggingface/transformers/issues/2648#issuecomment-616177044
         if any(
             isinstance(self.tokenizer, t)
-            for t in [GPT2Tokenizer, GPT2TokenizerFast, LlamaTokenizer, LlamaTokenizerFast]
+            for t in [
+                GPT2Tokenizer,
+                GPT2TokenizerFast,
+                LlamaTokenizer,
+                LlamaTokenizerFast,
+                CodeLlamaTokenizer,
+                CodeLlamaTokenizerFast,
+            ]
         ):
             if hasattr(self.tokenizer, "eos_token") and self.tokenizer.eos_token is not None:
                 logger.warning("No padding token id found. Using eos_token as pad_token.")

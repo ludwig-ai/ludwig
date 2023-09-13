@@ -11,7 +11,7 @@ torchaudio
 torchtext
 torchvision
 pydantic<2.0
-transformers>=4.31.0
+transformers
 tokenizers>=0.13.3
 spacy>=2.3
 PyYAML>=3.12,<6.0.1,!=5.4.* #Exlude PyYAML 5.4.* due to incompatibility with awscli
@@ -25,6 +25,7 @@ marshmallow
 marshmallow-jsonschema
 marshmallow-dataclass==8.5.4
 tensorboard
+nltk    # Required for rouge scores.
 torchmetrics>=0.11.0,<=0.11.4
 torchinfo
 filelock
@@ -42,6 +43,9 @@ sentencepiece
 
 # requirements for daft
 getdaft
+
+# requirement for various paged and 8-bit optimizers
+bitsandbytes<0.41.0
 
 # new data format support
 xlwt                # excel

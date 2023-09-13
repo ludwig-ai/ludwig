@@ -81,7 +81,7 @@ class GBMTextInputFeatureConfig(TextInputFeatureConfig):
 @llm_input_config_registry.register(TEXT)
 @ludwig_dataclass
 class LLMTextInputFeatureConfig(TextInputFeatureConfig):
-    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="text_llm")
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="text_llm_input")
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
         MODEL_LLM,
@@ -170,6 +170,8 @@ class LLMTextOutputFeatureConfig(TextOutputFeatureConfig):
         description="Internal only use parameter: default validation metric for text output feature for LLMs.",
         parameter_metadata=INTERNAL_ONLY,
     )
+
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="text_llm_output")
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
         MODEL_LLM,

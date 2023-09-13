@@ -140,6 +140,7 @@ class LLM(BaseModel):
         self.max_new_tokens = self.config_obj.generation.max_new_tokens
         self.max_input_length = self.context_len - self.max_new_tokens - 8
 
+        # TODO(Arnav): This needs be more flexible to account for RoPE Scaling
         # When merging input IDs and target IDs for LLM fine-tuning, we want to make sure that the merged tensor is
         # not longer than the global maximum sequence length. This is provided in the preprocessing config. We never
         # want to exceed the maximum possible context length so we also check for that.
@@ -215,18 +216,51 @@ class LLM(BaseModel):
     def initialize_adapter(self):
         """If an adapter config is provided, we want to wrap the model with a PEFT model for fine-tuning."""
         if self.config_obj.adapter:
-            if self.config_obj.trainer.type != "finetune":
+            if self.config_obj.trainer.type != "finetune" and not self.config_obj.adapter.pretrained_adapter_weights:
                 raise ValueError(
                     "Adapter config was provided, but trainer type is not set to `finetune`. Either set the trainer to "
                     "`finetune` or remove the adapter config."
                 )
 
-            from peft import get_peft_model, TaskType
+            from peft import get_peft_model
 
-            peft_config = self.config_obj.adapter.to_config(
-                task_type=TaskType.CAUSAL_LM, tokenizer_name_or_path=self.model_name
-            )
-            self.model = get_peft_model(self.model, peft_config)
+            if self.config_obj.adapter.pretrained_adapter_weights:
+                logger.info(f"Using pretrained adapter weights: {self.config_obj.adapter.pretrained_adapter_weights}")
+                # If pretrained adapter weights are provided, we want to load them into the model
+                from peft import MODEL_TYPE_TO_PEFT_MODEL_MAPPING, PeftConfig
+
+                peft_config = PeftConfig.from_pretrained(self.config_obj.adapter.pretrained_adapter_weights)
+                peft_dict = peft_config.to_dict()
+
+                # Need to update the peft config with some of the values from config_obj because not all of them are set
+                for param_name, param_value in self.config_obj.adapter.to_config().to_dict().items():
+                    # Not all parameters are supported by all models, so we only add the parameter to the load kwargs
+                    # if it is supported by the model.
+                    if param_value is None:
+                        # param_name and param_value come from the config object and contain default
+                        # values for the adapter. Examples of parameters with missing values might be:
+                        # 'auto_mapping', 'base_model_name_or_path', and 'task_type'.
+                        # Note that some of these values might already be set in peft_config, which comes from HF
+                        # directly (specifically, adapter_config.json in the model repo), and we don't want to override
+                        # those values with None.
+                        continue
+                    if param_name not in peft_dict:
+                        # If any parameters are not set in adapter_config.json in HF, we want to populate them with the
+                        # appropriate default values.
+                        setattr(peft_config, param_name, param_value)
+
+                self.model = MODEL_TYPE_TO_PEFT_MODEL_MAPPING[peft_config.task_type].from_pretrained(
+                    self.model, self.config_obj.adapter.pretrained_adapter_weights
+                )
+            else:
+                # If no pretrained adapter is provided, we want to load untrained weights into the model
+                from peft import TaskType
+
+                peft_config = self.config_obj.adapter.to_config(
+                    task_type=TaskType.CAUSAL_LM, tokenizer_name_or_path=self.model_name
+                )
+
+                self.model = get_peft_model(self.model, peft_config)
 
             logger.info("==================================================")
             logger.info("Trainable Parameter Summary For Fine-Tuning")
@@ -308,7 +342,7 @@ class LLM(BaseModel):
         """Builds and returns output feature."""
         # TODO: only single task currently
         if len(output_feature_configs) > 1:
-            raise ValueError("Only single task currently supported")
+            raise ValueError("The LLM model type only supports a single output feature.")
 
         output_feature_config = output_feature_configs[0]
         output_feature_config.input_size = input_size
@@ -484,9 +518,9 @@ class LLM(BaseModel):
                 _targets, _predictions = realign_target_and_prediction_tensors_for_inference(
                     targets, predictions, of_name, self.tokenizer
                 )
-                of_obj.update_metrics(_targets[of_name], _predictions[of_name])
-                continue
-            of_obj.update_metrics(targets[of_name], predictions[of_name])
+                of_obj.update_metrics(_targets[of_name], _predictions[of_name], self.tokenizer)
+            else:
+                of_obj.update_metrics(targets[of_name], predictions[of_name])
 
         # HACK (Tim): get the device of the targets to transfer self.eval_loss_metric to the same device
         target_device = list(targets.values())[0].device
@@ -505,7 +539,10 @@ class LLM(BaseModel):
                 # to match the prediction length and depends on how much of the target tensor was included in the
                 # forward pass.
                 _targets = self._update_target_tensor_for_finetuning(_targets, _predictions, of_name)
-                of_obj.update_metrics(_targets[of_name], _predictions[of_name])
+                if isinstance(of_obj, TextOutputFeature):
+                    of_obj.update_metrics(_targets[of_name], _predictions[of_name], self.tokenizer)
+                else:
+                    of_obj.update_metrics(_targets[of_name], _predictions[of_name])
                 continue
 
             of_obj.update_metrics(_targets[of_name], _predictions[of_name])
@@ -643,7 +680,7 @@ class LLM(BaseModel):
 
     def _update_target_tensor_for_finetuning(
         self, targets: Dict[str, torch.Tensor], predictions: Dict[str, torch.Tensor], of_name: str
-    ):
+    ) -> Dict[str, torch.Tensor]:
         """Update target tensor for fine-tuning.
 
         This method removes left padding from target tensors, adds a pad token to the end of the target tensors,

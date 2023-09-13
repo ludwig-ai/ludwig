@@ -81,6 +81,7 @@ PRECISION = "precision"
 RECALL = "recall"
 SPECIFICITY = "specificity"
 PREDICTIONS = "predictions"
+RESPONSE = "RESPONSE"
 TOP_K = "top_k"
 TOP_K_PREDICTIONS = "top_k_predictions"
 PROBABILITY = "probability"
@@ -281,6 +282,7 @@ POSTPROCESSOR = "postprocessor"
 GENERATION = "generation"
 PROMPT = "prompt"
 ADAPTER = "adapter"
+PRETRAINED_ADAPTER_WEIGHTS = "pretrained_adapter_weights"
 
 # CrossEntropyLoss for LLMs
 IGNORE_INDEX_TOKEN_ID = -100

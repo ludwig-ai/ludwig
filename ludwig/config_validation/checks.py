@@ -1,6 +1,7 @@
 """Checks that are not easily covered by marshmallow JSON schema validation like parameter interdependencies."""
 
 from abc import ABC, abstractmethod
+from re import findall
 from typing import Callable, TYPE_CHECKING
 
 from transformers import AutoConfig
@@ -493,6 +494,14 @@ def check_llm_finetuning_trainer_config(config: "ModelConfig"):  # noqa: F821
     if config.model_type != MODEL_LLM:
         return
 
+    if (
+        config.trainer.type == "none"
+        and config.adapter is not None
+        and config.adapter.pretrained_adapter_weights is not None
+    ):
+        # If performing zero-shot, we must specify pretrained adapter weights
+        return
+
     if config.adapter is not None and config.trainer.type != "finetune":
         raise ConfigValidationError("LLM finetuning requires trainer type to be finetune.")
 
@@ -508,7 +517,11 @@ def check_llm_finetuning_backend_config(config: "ModelConfig"):  # noqa: F821
         return
 
     # LLM finetuning is only supported by the finetune trainer type
-    if config.trainer.type != "finetune":
+    if (
+        config.trainer.type != "finetune"
+        and config.adapter is not None
+        and config.adapter.pretrained_adapter_weights is not None
+    ):
         return
 
     # Using local backend, so skip the checks below
@@ -528,9 +541,8 @@ def check_llm_finetuning_backend_config(config: "ModelConfig"):  # noqa: F821
 def check_llm_finetuning_adalora_config(config: "ModelConfig"):
     """Checks that the adalora adapter is configured correctly.
 
-    It requires a set of target_modules to be specified in the config for the model. If it isn't specified by the user,
-    we also check against PEFT's predefined target module list for ADALORA to see if this key is present there. If
-    neither is true, AdaloraModel will run into issues downstream.
+    We check against PEFT's predefined target module list for ADALORA to see if this target_modules is present there. If
+    not, AdaloraModel will run into issues downstream.
     """
     if config.model_type != MODEL_LLM:
         return
@@ -544,10 +556,7 @@ def check_llm_finetuning_adalora_config(config: "ModelConfig"):
     from peft.utils import TRANSFORMERS_MODELS_TO_ADALORA_TARGET_MODULES_MAPPING
 
     model_config = _get_llm_model_config(config.base_model)
-    if (
-        not config.adapter.target_modules
-        and model_config.model_type not in TRANSFORMERS_MODELS_TO_ADALORA_TARGET_MODULES_MAPPING
-    ):
+    if model_config.model_type not in TRANSFORMERS_MODELS_TO_ADALORA_TARGET_MODULES_MAPPING:
         raise ConfigValidationError(
             f"Adalora adapter is not supported for {model_config.model_type} model. "
             f"Supported model types are: {list(TRANSFORMERS_MODELS_TO_ADALORA_TARGET_MODULES_MAPPING.keys())}. "
@@ -606,3 +615,57 @@ def check_qlora_requirements(config: "ModelConfig") -> None:  # noqa: F821
 
     if config.quantization and (not config.adapter or config.adapter.type != "lora"):
         raise ConfigValidationError("Fine-tuning and LLM with quantization requires using the 'lora' adapter")
+
+
+@register_config_check
+def check_prompt_requirements(config: "ModelConfig") -> None:  # noqa: F821
+    """Checks that prompt's template and task properties are valid, according to the description on the schema."""
+    if config.model_type != MODEL_LLM:
+        return
+
+    # TODO: `prompt` by default should be set to null, not a default dict:
+    # # If no prompt is provided, no validation necessary:
+    # if not config.prompt:
+    #     return
+    from ludwig.schema.llms.prompt import PromptConfig, RetrievalConfig
+
+    if config.prompt == PromptConfig():
+        return
+
+    template = config.prompt.template
+    task = config.prompt.task
+    retrieval = config.prompt.retrieval
+
+    # If template is NOT provided, then task is required for zero/few shot learning:
+    if not template and not task:
+        raise ConfigValidationError("A prompt task is required if no template is provided!")
+
+    template_refs = set(findall(r"\{(.*?)\}", template)) if isinstance(template, str) else set()
+
+    # If a template IS provided (i.e. we are not doing a built-in zero/few-shot learning), then...
+    if template:
+        # If task is also provided, the template must contain it:
+        if task and "__task__" not in template_refs:
+            raise ConfigValidationError(
+                "When providing a task, you must make sure that the task keyword `{__task__} is "
+                "present somewhere in the template string!"
+            )
+
+        # If retrieval is also provided, the template must reference it:
+        # TODO: retrieval by default should be set to null, not a default dict:
+        if retrieval and retrieval != RetrievalConfig() and "__context__" not in template_refs:
+            raise ConfigValidationError(
+                "When providing a retrieval config, you must make sure that the task keyword `{__context__}` is "
+                "present somewhere in the template string!"
+            )
+
+        # Otherwise, the template should at least contain the sample keyword or some input column:
+        # TODO: len(template_refs) is a hacky attempt to check that there are references to *something* in the
+        # string. The proper validation is to check the references against the features in the user's dataset - but we
+        # do not have access to the dataset in this code path right now.
+        if not task:
+            if len(template_refs) == 0 and "__sample__" not in template_refs:
+                raise ConfigValidationError(
+                    "A template must contain at least one reference to a column or the sample keyword {__sample__} for "
+                    "a JSON-serialized representation of non-output feature columns."
+                )
