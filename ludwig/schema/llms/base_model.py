@@ -58,8 +58,8 @@ def BaseModelDataclassField():
                 return model_name
             except OSError:
                 raise ConfigValidationError(
-                    f"Specified base model `{model_name}` is not a valid pretrained CausalLM listed on huggingface. "
-                    "or a valid directory containing a pretrained CausalLM."
+                    f"Specified base model `{model_name}` is not a valid pretrained CausalLM listed on huggingface "
+                    "or a valid local directory containing the weights for a pretrained CausalLM from huggingface."
                     "Please see: https://huggingface.co/models?pipeline_tag=text-generation&sort=downloads"
                 )
         raise ValidationError(
