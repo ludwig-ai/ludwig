@@ -30,6 +30,10 @@ def register_adapter(name: str):
 class BaseAdapterConfig(schema_utils.BaseMarshmallowConfig, ABC):
     type: str
 
+    pretrained_adapter_weights: Optional[str] = schema_utils.String(
+        default=None, description="Path to pretrained weights.", allow_none=True
+    )
+
     @abstractmethod
     def to_config(self, **kwargs) -> "PeftConfig":
         pass
@@ -359,7 +363,7 @@ class AdaloraConfig(LoraConfig):
 @register_adapter("adaption_prompt")
 @ludwig_dataclass
 class AdaptionPromptConfig(BaseAdapterConfig):
-    """Adapted from https://github.com/huggingface/peft/blob/main/src/peft/tuners/adaption_prompt.py."""
+    """Adapted from https://github.com/huggingface/peft/blob/main/src/peft/tuners/adaption_prompt/config.py."""
 
     def __post_init__(self):
         if not self.adapter_len:

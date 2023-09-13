@@ -216,18 +216,51 @@ class LLM(BaseModel):
     def initialize_adapter(self):
         """If an adapter config is provided, we want to wrap the model with a PEFT model for fine-tuning."""
         if self.config_obj.adapter:
-            if self.config_obj.trainer.type != "finetune":
+            if self.config_obj.trainer.type != "finetune" and not self.config_obj.adapter.pretrained_adapter_weights:
                 raise ValueError(
                     "Adapter config was provided, but trainer type is not set to `finetune`. Either set the trainer to "
                     "`finetune` or remove the adapter config."
                 )
 
-            from peft import get_peft_model, TaskType
+            from peft import get_peft_model
 
-            peft_config = self.config_obj.adapter.to_config(
-                task_type=TaskType.CAUSAL_LM, tokenizer_name_or_path=self.model_name
-            )
-            self.model = get_peft_model(self.model, peft_config)
+            if self.config_obj.adapter.pretrained_adapter_weights:
+                logger.info(f"Using pretrained adapter weights: {self.config_obj.adapter.pretrained_adapter_weights}")
+                # If pretrained adapter weights are provided, we want to load them into the model
+                from peft import MODEL_TYPE_TO_PEFT_MODEL_MAPPING, PeftConfig
+
+                peft_config = PeftConfig.from_pretrained(self.config_obj.adapter.pretrained_adapter_weights)
+                peft_dict = peft_config.to_dict()
+
+                # Need to update the peft config with some of the values from config_obj because not all of them are set
+                for param_name, param_value in self.config_obj.adapter.to_config().to_dict().items():
+                    # Not all parameters are supported by all models, so we only add the parameter to the load kwargs
+                    # if it is supported by the model.
+                    if param_value is None:
+                        # param_name and param_value come from the config object and contain default
+                        # values for the adapter. Examples of parameters with missing values might be:
+                        # 'auto_mapping', 'base_model_name_or_path', and 'task_type'.
+                        # Note that some of these values might already be set in peft_config, which comes from HF
+                        # directly (specifically, adapter_config.json in the model repo), and we don't want to override
+                        # those values with None.
+                        continue
+                    if param_name not in peft_dict:
+                        # If any parameters are not set in adapter_config.json in HF, we want to populate them with the
+                        # appropriate default values.
+                        setattr(peft_config, param_name, param_value)
+
+                self.model = MODEL_TYPE_TO_PEFT_MODEL_MAPPING[peft_config.task_type].from_pretrained(
+                    self.model, self.config_obj.adapter.pretrained_adapter_weights
+                )
+            else:
+                # If no pretrained adapter is provided, we want to load untrained weights into the model
+                from peft import TaskType
+
+                peft_config = self.config_obj.adapter.to_config(
+                    task_type=TaskType.CAUSAL_LM, tokenizer_name_or_path=self.model_name
+                )
+
+                self.model = get_peft_model(self.model, peft_config)
 
             logger.info("==================================================")
             logger.info("Trainable Parameter Summary For Fine-Tuning")
