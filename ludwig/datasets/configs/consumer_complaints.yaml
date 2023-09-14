@@ -5,8 +5,8 @@ archive_filenames: consumer-complaint-database.zip
 dataset_filenames: rows.csv
 loader: consumer_complaints_loader.ConsumerComplaintsLoader
 description: |
-  The dataset contains different information of complaints that customers have made about a multiple products and 
-  services in the financial sector, such us Credit Reports, Student Loans, Money Transfer, etc. The date of each 
+  The dataset contains different information of complaints that customers have made about a multiple products and
+  services in the financial sector, such us Credit Reports, Student Loans, Money Transfer, etc. The date of each
   complaint ranges from November 2011 to May 2019.
 columns:
   - name: Date received
