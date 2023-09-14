@@ -135,6 +135,7 @@ class Trainer(BaseTrainer):
 
         self.epochs = config.epochs
         self.train_steps = config.train_steps
+        self.steps_per_epoch = 0  # Computed during training, after batcher has been initialized.
         self.total_steps = 0  # Computed during training, after batcher has been initialized.
 
         self.regularization_lambda = config.regularization_lambda
@@ -755,6 +756,7 @@ class Trainer(BaseTrainer):
                 augmentation_pipeline=self.model.get_augmentation_pipelines(),
             ) as batcher:
                 # ================ Training Loop ================
+                self.steps_per_epoch = batcher.steps_per_epoch
                 self.total_steps = get_total_steps(self.epochs, batcher.steps_per_epoch, self.train_steps)
 
                 # Get the terminal steps per checkpoint.
