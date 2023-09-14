@@ -888,11 +888,20 @@ class Trainer(BaseTrainer):
                     # For a full explanation of this 8-bit workaround, see https://github.com/ludwig-ai/ludwig/pull/3606
                     # TODO (jeffkinnison): Investigate why `self.model` is seemingly not placed on GPU before this point
                     if hasattr(self.model.config_obj, "quantization") and self.model.config_obj.quantization.bits == 8:
+                        # If the model was previously placed on GPU, 8-bit parameter state will be updated with several
+                        # matrices containing quantization information. These are recorded matrices are recorded in the
+                        # training checkpoint state dicts, but do not necessarily exist in the parameter object, leading
+                        # to a RuntimeError in `load_state_dict`. Explicitly call `model.cuda()` to make sure the
+                        # matrices are part of model state.
                         if torch.cuda.is_available():
                             self.model.model.cuda()
-                            self.model.model.cpu()
                         _, unexpected_keys = self.model.load_state_dict(state_dict, strict=False)
                         only_weights_format_keys = ["weights_format" in k for k in unexpected_keys]
+
+                        # bitsandbytes adds a number of `weights_format` metadata fields to the state dict in
+                        # `Linear8bitLt._save_to_state_dict`. These contain information about how the 8-bit tensors
+                        # are tiled, but the fields themselves never exist in the module and get returned as unexpected
+                        # keys when loading the state dict. The
                         assert (
                             unexpected_keys == [] or only_weights_format_keys
                         ), f"Unexpected keys found in state dict: {unexpected_keys}"
