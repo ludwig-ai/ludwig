@@ -218,7 +218,7 @@ class Trainer(BaseTrainer):
         # Enable gradient checkpointing
         logger.info("Enable only gradient checkpointing")
         self.compiled_model.model.gradient_checkpointing_enable()
-        # self.compiled_model.model.enable_input_require_grads()
+        self.compiled_model.model.enable_input_require_grads()
         logger.info("Enabled only gradient checkpointing")
 
         self.dist_model, self.optimizer = self.distributed.prepare(
