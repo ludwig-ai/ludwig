@@ -29,7 +29,8 @@ class ConsumerComplaintsLoader(DatasetLoader):
 
 
 def preprocess_df(df):
-    """ Preprocesses the dataframe.
+    """Preprocesses the dataframe.
+
         - Remove all rows with missing values in the following columns:
             - Consumer complaint narrative
             - Issue
@@ -41,4 +42,4 @@ def preprocess_df(df):
     Returns:
         pd.DataFrame: The preprocessed dataframe.
     """
-    return df.dropna(subset=['Consumer complaint narrative', 'Issue', 'Product'])
+    return df.dropna(subset=["Consumer complaint narrative", "Issue", "Product"])
