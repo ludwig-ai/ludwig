@@ -34,11 +34,12 @@ class ProfilerConfig(schema_utils.BaseMarshmallowConfig):
     active: int = schema_utils.IntegerRange(
         default=3,
         min=0,
-        description="The number of steps that are actively recorded.",
+        description="The number of steps that are actively recorded. Values more than 10 wil dramatically slow down "
+        "tensorboard loading.",
     )
 
     repeat: int = schema_utils.IntegerRange(
-        default=0,
+        default=5,
         min=0,
         description="The optional number of profiling cycles. Use 0 to profile the entire training run.",
     )
