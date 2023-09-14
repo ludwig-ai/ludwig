@@ -4,7 +4,7 @@ import pytest
 import torch
 import torchtext
 
-from ludwig.utils.tokenizers import EnglishLemmatizeFilterTokenizer, NgramTokenizer
+from ludwig.utils.tokenizers import EnglishLemmatizeFilterTokenizer, NgramTokenizer, StringSplitTokenizer
 
 TORCHTEXT_0_14_0_HF_NAMES = [
     "bert-base-uncased",
@@ -71,6 +71,13 @@ def test_ngram_tokenizer():
     ]
     tokens = tokenizer(inputs)
     assert tokens == tokens_expected
+
+
+def test_string_split_tokenizer():
+    inputs = "Multiple,Elements,Are here!"
+    tokenizer = StringSplitTokenizer(",")
+    tokens = tokenizer(inputs)
+    assert tokens == ["Multiple", "Elements", "Are here!"]
 
 
 def test_english_lemmatize_filter_tokenizer():
