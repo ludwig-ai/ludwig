@@ -216,10 +216,10 @@ class Trainer(BaseTrainer):
         update_embedding_layer(self.compiled_model, self.config)
 
         # Enable gradient checkpointing
-        logger.info("Enabling gradient checkpointing")
-        self.compiled_model.model.gradient_checkpointing_enable()
+        logger.info("Enable input requires grad to true; no gradient checkpointing")
+        # self.compiled_model.model.gradient_checkpointing_enable()
         self.compiled_model.model.enable_input_require_grads()
-        logger.info("Enabled gradient checkpointing")
+        logger.info("Enabled input requires grad to true")
 
         self.dist_model, self.optimizer = self.distributed.prepare(
             self.compiled_model,
