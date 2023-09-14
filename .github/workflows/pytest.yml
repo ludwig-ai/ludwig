@@ -78,6 +78,7 @@ jobs:
       - name: Setup Linux
         if: runner.os == 'linux'
         run: |
+          sudo apt-get update
           sudo apt-get install -y cmake libsndfile1 wget
 
       - name: Setup macOS
@@ -230,6 +231,7 @@ jobs:
       - name: Setup Linux
         if: runner.os == 'linux'
         run: |
+          sudo apt-get update
           sudo apt-get install -y cmake libsndfile1
 
       - name: Setup macOS
@@ -287,6 +289,7 @@ jobs:
       - name: Setup Linux
         if: runner.os == 'linux'
         run: |
+          sudo apt-get update
           sudo apt-get install -y cmake libsndfile1
 
       - name: Setup macOS
@@ -344,6 +347,7 @@ jobs:
       - name: Setup Linux
         if: runner.os == 'linux'
         run: |
+          sudo apt-get update
           sudo apt-get install -y cmake libsndfile1
 
       - name: Setup macOS
@@ -401,6 +405,7 @@ jobs:
       - name: Setup Linux
         if: runner.os == 'linux'
         run: |
+          sudo apt-get update
           sudo apt-get install -y cmake libsndfile1
 
       - name: Setup macOS
@@ -458,6 +463,7 @@ jobs:
       - name: Setup Linux
         if: runner.os == 'linux'
         run: |
+          sudo apt-get update
           sudo apt-get install -y cmake libsndfile1
 
       - name: Setup macOS
@@ -499,6 +505,7 @@ jobs:
       - name: Setup Linux
         if: runner.os == 'linux'
         run: |
+          sudo apt-get update
           sudo apt-get install -y cmake libsndfile1
 
       - name: Setup macOS
@@ -540,6 +547,7 @@ jobs:
       - name: Setup Linux
         if: runner.os == 'linux'
         run: |
+          sudo apt-get update
           sudo apt-get install -y cmake libsndfile1
 
       - name: Setup macOS
@@ -579,6 +587,7 @@ jobs:
       - name: Setup Linux
         if: runner.os == 'linux'
         run: |
+          sudo apt-get update
           sudo apt-get install -y cmake libsndfile1
 
       - name: Setup macOS
