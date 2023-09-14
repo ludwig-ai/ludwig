@@ -293,14 +293,14 @@ class LLM(BaseModel):
         if device == torch.device("cuda") and num_gpus > 1:
             # TODO: make this configurable in the future. These parameters are from FastChat:
             # https://github.com/lm-sys/FastChat/blob/0e958b852a14f4bef5f0e9d7a5e7373477329cf2/fastchat/serve/inference.py#L90  # noqa
-            # TODO: Wrap device_map="auto" in a try-except block since it may not be supported for all models (E.g. BertLMHead)  # noqa
+            # TODO: Wrap device_map="auto" in a try-except block since it may not be supported for all models
+            # (E.g. BertLMHead)  # noqa
             # We don't add quantization here (float16 or bfloat16) since we may not always want to quantize. We should
             # make quantization configurable in the future via the trainer config.
             model_kwargs.update(
                 dict(
                     low_cpu_mem_usage=True,
                     device_map="auto",
-                    max_memory={i: "13GiB" for i in range(num_gpus)},
                 )
             )
 
@@ -321,7 +321,6 @@ class LLM(BaseModel):
                     self.model = PeftModel.from_pretrained(
                         self.model,
                         tmpdir,
-                        torch_dtype=torch.float16,
                     )
                 else:
                     self.model = AutoModelForCausalLM.from_pretrained(
