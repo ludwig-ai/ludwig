@@ -23,4 +23,5 @@ class CodeAlpacaLoader(DatasetLoader):
 
     def load_file_to_dataframe(self, file_path: str) -> pd.DataFrame:
         """Loads a file into a dataframe."""
-        return pd.read_json(file_path, lines=True)
+        df = pd.read_json(file_path)
+        return df
