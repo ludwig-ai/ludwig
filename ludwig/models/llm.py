@@ -224,7 +224,7 @@ class LLM(BaseModel):
 
             from peft import get_peft_model
 
-            # Set requires_grad to False for all parameters in the model
+            # Set requires_grad to False for all parameters in the base model
             logger.info("Disabling gradient computation for all parameters in the model...")
             for param in self.model.parameters():
                 param.requires_grad = False
