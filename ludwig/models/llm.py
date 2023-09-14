@@ -225,8 +225,10 @@ class LLM(BaseModel):
             from peft import get_peft_model
 
             # Set requires_grad to False for all parameters in the model
+            logger.info("Disabling gradient computation for all parameters in the model...")
             for param in self.model.parameters():
                 param.requires_grad = False
+            logger.info("Done.")
 
             if self.config_obj.adapter.pretrained_adapter_weights:
                 logger.info(f"Using pretrained adapter weights: {self.config_obj.adapter.pretrained_adapter_weights}")
