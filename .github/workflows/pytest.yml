@@ -205,7 +205,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        test-markers: 
+        test-markers:
           - "integration_tests_a"
           - "integration_tests_b"
           - "integration_tests_c"
