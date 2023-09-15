@@ -227,3 +227,15 @@ def test_dataset_fallback_mirror(dataset_name, shape):
 
     assert isinstance(dataset, pd.DataFrame)
     assert dataset.shape == shape
+
+
+@private_test
+@pytest.mark.parametrize("dataset_name, size", [("code_alpaca", 20000), ("consumer_complaints", 38000)])
+def test_ad_hoc_dataset_download(tmpdir, dataset_name, size):
+    dataset_config = ludwig.datasets._get_dataset_config(dataset_name)
+    assert isinstance(dataset_config, DatasetConfig)
+
+    ludwig_dataset = ludwig.datasets.get_dataset(dataset_name, cache_dir=tmpdir)
+    df = ludwig_dataset.load()
+    assert df is not None
+    assert len(df) >= size
