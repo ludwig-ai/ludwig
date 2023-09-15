@@ -41,6 +41,7 @@ from ludwig.globals import (
     TRAINING_PROGRESS_TRACKER_FILE_NAME,
 )
 from ludwig.models.ecd import ECD
+from ludwig.models.llm import LLM
 from ludwig.models.predictor import Predictor
 from ludwig.modules.lr_scheduler import LRScheduler
 from ludwig.modules.metric_modules import get_improved_fn, get_initial_validation_value
@@ -215,6 +216,24 @@ class Trainer(BaseTrainer):
 
         # We may need to replace the embedding layer when using 8-bit optimizers from bitsandbytes.
         update_embedding_layer(self.compiled_model, self.config)
+
+        # Enable gradient checkpointing if configured
+        if self.config.enable_gradient_checkpointing:
+            # TODO(Arnav): Add support for gradient checkpointing in the compiled model
+            # when the model is an ECD model using torch.utils.checkpoint (torch.utils.checkpoint.sequential())
+            if not isinstance(self.compiled_model, LLM):
+                logger.warning("Gradient checkpointing is currently only supported for model_type: llm. Skipping...")
+            elif not hasattr(self.compiled_model, "model") and not hasattr(
+                self.compiled_model.model, "gradient_checkpointing_enable"
+            ):
+                logger.warning("Gradient checkpointing is not supported by this model. Skipping...")
+            elif hasattr(self.compiled_model.model, "gradient_checkpointing_enable"):
+                self.compiled_model.model.gradient_checkpointing_enable()
+                self.compiled_model.model.enable_input_require_grads()
+                logger.info("Gradient checkpointing enabled for training.")
+            else:
+                raise RuntimeError("Error when trying to enable gradient checkpointing.")
+
         self.dist_model, self.optimizer = self.distributed.prepare(
             self.compiled_model,
             self.config,

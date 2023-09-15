@@ -425,6 +425,35 @@ def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strat
     assert preds
 
 
+@pytest.mark.parametrize("use_adapter", [True, False], ids=["with_adapter", "without_adapter"])
+def test_llm_training_with_gradient_checkpointing(tmpdir, csv_filename, use_adapter):
+    input_features = [text_feature(name="input", encoder={"type": "passthrough"})]
+    output_features = [text_feature(name="output")]
+
+    df = generate_data(input_features, output_features, filename=csv_filename, num_examples=25)
+
+    config = {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: "HuggingFaceM4/tiny-random-LlamaForCausalLM",
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        TRAINER: {
+            TYPE: "finetune",
+            BATCH_SIZE: 8,
+            EPOCHS: 1,
+            "enable_gradient_checkpointing": True,
+        },
+    }
+
+    if use_adapter:
+        config[ADAPTER] = {TYPE: "lora"}
+
+    model = LudwigModel(config)
+    assert model.config_obj.trainer.enable_gradient_checkpointing
+
+    model.train(dataset=df, output_directory=str(tmpdir), skip_save_processed_input=False)
+
+
 def test_lora_wrap_on_init():
     from peft import PeftModel
     from transformers import PreTrainedModel
