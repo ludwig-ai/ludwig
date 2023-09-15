@@ -225,7 +225,7 @@ class Trainer(BaseTrainer):
             elif not hasattr(self.compiled_model, "model") and not hasattr(
                 self.compiled_model.model, "gradient_checkpointing_enable"
             ):
-                logger.warning("Gradient checkpointing is not supported for this model. Skipping...")
+                logger.warning("Gradient checkpointing is not supported by this model. Skipping...")
             elif hasattr(self.compiled_model.model, "gradient_checkpointing_enable"):
                 self.compiled_model.model.gradient_checkpointing_enable()
                 self.compiled_model.model.enable_input_require_grads()
