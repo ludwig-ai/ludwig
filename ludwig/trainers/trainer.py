@@ -215,11 +215,14 @@ class Trainer(BaseTrainer):
         # We may need to replace the embedding layer when using 8-bit optimizers from bitsandbytes.
         update_embedding_layer(self.compiled_model, self.config)
 
-        # Enable gradient checkpointing
-        logger.info("Enable only gradient checkpointing")
-        self.compiled_model.model.gradient_checkpointing_enable()
-        self.compiled_model.model.enable_input_require_grads()
-        logger.info("Enabled only gradient checkpointing")
+        # Enable gradient checkpointing if configured
+        if self.config.enable_gradient_checkpointing:
+            if hasattr(self.compiled_model.model, "gradient_checkpointing_enable"):
+                self.compiled_model.model.gradient_checkpointing_enable()
+                self.compiled_model.model.enable_input_require_grads()
+                logger.info("Gradient checkpointing enabled during training.")
+            else:
+                logger.warning("Gradient checkpointing is not supported by the current model. Skipping.")
 
         self.dist_model, self.optimizer = self.distributed.prepare(
             self.compiled_model,

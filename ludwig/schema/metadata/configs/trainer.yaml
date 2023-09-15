@@ -429,6 +429,17 @@ ecd:
             Suggested to enable this if training is proceeding very slowly in distributed training (and GPU
             utilization is low), or the batch size is very small and the loss curves look very spiky.
         ui_display_name: Gradient Accumulation Steps
+    enable_gradient_checkpointing:
+        expected_impact: 2
+        ui_display_name: Enable Gradient Checkpointing
+        default_value_reasoning:
+            Gradient checkpointing is a technique to reduce the memory footprint of the model by
+            trading compute for memory. This is useful when training very large models that do
+            not fit in memory. Gradient checkpointing works by recomputing the activations of the
+            model during the backward pass, rather than storing them in memory during the forward pass.
+            This is a tradeoff between compute and memory, as the activations need to be recomputed during
+            the backward pass, but the memory footprint is reduced. This is set to false by default because
+            it is not always beneficial to use gradient checkpointing, and it can sometimes slow down training.
     validation_field:
         default_value_reasoning:
             Concrete evaluation metrics are usually better than loss,

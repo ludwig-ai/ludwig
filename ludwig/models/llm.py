@@ -224,12 +224,6 @@ class LLM(BaseModel):
 
             from peft import get_peft_model
 
-            # Set requires_grad to False for all parameters in the base model
-            logger.info("Disabling gradient computation for all parameters in the model...")
-            for param in self.model.parameters():
-                param.requires_grad = False
-            logger.info("Done.")
-
             if self.config_obj.adapter.pretrained_adapter_weights:
                 logger.info(f"Using pretrained adapter weights: {self.config_obj.adapter.pretrained_adapter_weights}")
                 # If pretrained adapter weights are provided, we want to load them into the model
@@ -273,9 +267,6 @@ class LLM(BaseModel):
             logger.info(f"Fine-tuning with adapter: {self.config_obj.adapter.type}")
             self.model.print_trainable_parameters()
             logger.info("==================================================")
-
-            # print("==================================================")
-            # breakpoint()
 
     def prepare_for_training(self):
         # TODO: this implementation will not work if resuming from a previous checkpoint. Need to fix this.
