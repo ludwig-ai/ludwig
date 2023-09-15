@@ -410,7 +410,7 @@ class WordErrorRateMetric(WordErrorRate, LudwigMetric):
         super().__init__()
 
 
-@register_metric("char_error_rate", [SEQUENCE, TEXT], MINIMIZE, PREDICTIONS)
+@register_metric("char_error_rate", [TEXT], MINIMIZE, RESPONSE)
 class CharErrorRateMetric(CharErrorRate, LudwigMetric):
     def __init__(self, **kwargs):
         super().__init__()
