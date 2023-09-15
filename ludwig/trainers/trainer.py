@@ -910,7 +910,7 @@ class Trainer(BaseTrainer):
                     # TODO (jeffkinnison): Determine why `SCB` and `CB` are deleted from parameter state
                     if (
                         hasattr(self.model.config_obj, "quantization")
-                        and hasattr(self.model.config_obj.quantization, "bits")
+                        and self.model.config_obj.quantization
                         and self.model.config_obj.quantization.bits == 8
                     ):
                         # If the model was previously placed on GPU, 8-bit parameter state will be updated with several
