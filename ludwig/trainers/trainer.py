@@ -374,6 +374,59 @@ class Trainer(BaseTrainer):
         if learning_rate:
             train_summary_writer.add_scalar("combined/step_learning_rate", learning_rate, global_step=step)
 
+        # Log CUDA memory stats.
+        if torch.cuda.is_available():
+            memory_stats = torch.cuda.memory_stats()
+            # Allocated bytes.
+            train_summary_writer.add_scalar(
+                "cuda/allocated_bytes.all.current", memory_stats["allocated_bytes.all.current"], global_step=step
+            )
+            train_summary_writer.add_scalar(
+                "cuda/allocated_bytes.all.peak", memory_stats["allocated_bytes.all.peak"], global_step=step
+            )
+            train_summary_writer.add_scalar(
+                "cuda/allocated_bytes.all.allocated", memory_stats["allocated_bytes.all.allocated"], global_step=step
+            )
+            train_summary_writer.add_scalar(
+                "cuda/allocated_bytes.all.freed", memory_stats["allocated_bytes.all.freed"], global_step=step
+            )
+
+            # Reserved bytes.
+            train_summary_writer.add_scalar(
+                "cuda/reserved_bytes.all.current", memory_stats["reserved_bytes.all.current"], global_step=step
+            )
+            train_summary_writer.add_scalar(
+                "cuda/reserved_bytes.all.peak", memory_stats["reserved_bytes.all.peak"], global_step=step
+            )
+            train_summary_writer.add_scalar(
+                "cuda/reserved_bytes.all.allocated", memory_stats["reserved_bytes.all.allocated"], global_step=step
+            )
+            train_summary_writer.add_scalar(
+                "cuda/reserved_bytes.all.freed", memory_stats["reserved_bytes.all.freed"], global_step=step
+            )
+
+            # Active bytes.
+            train_summary_writer.add_scalar(
+                "cuda/active_bytes.all.current", memory_stats["active_bytes.all.current"], global_step=step
+            )
+            train_summary_writer.add_scalar(
+                "cuda/active_bytes.all.peak", memory_stats["active_bytes.all.peak"], global_step=step
+            )
+            train_summary_writer.add_scalar(
+                "cuda/active_bytes.all.allocated", memory_stats["active_bytes.all.allocated"], global_step=step
+            )
+            train_summary_writer.add_scalar(
+                "cuda/active_bytes.all.freed", memory_stats["active_bytes.all.freed"], global_step=step
+            )
+
+            # Global free memory.
+            train_summary_writer.add_scalar("cuda/global_free_memory", torch.cuda.mem_get_info()[0], global_step=step)
+
+            # Total memory occupied.
+            train_summary_writer.add_scalar(
+                "cuda/total_memory_occupied", torch.cuda.mem_get_info()[1], global_step=step
+            )
+
         train_summary_writer.flush()
 
     def is_cpu_training(self):
