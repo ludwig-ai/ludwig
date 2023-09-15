@@ -229,6 +229,7 @@ def test_local_model_training_with_augmentation_pipeline(
 
 # due to the time it takes to run the tests, run only a subset of the tests
 # and focus on interaction of Ludwig encoder with image preprocessing and augmentation
+@pytest.mark.slow
 @pytest.mark.distributed
 @pytest.mark.parametrize("augmentation_pipeline_ops", AUGMENTATION_PIPELINE_OPS)
 @pytest.mark.parametrize("preprocessing", IMAGE_PREPROCESSING)

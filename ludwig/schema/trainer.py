@@ -409,6 +409,13 @@ class ECDTrainerConfig(BaseTrainerConfig):
         parameter_metadata=TRAINER_METADATA[MODEL_ECD]["compile"],
     )
 
+    enable_gradient_checkpointing: bool = schema_utils.Boolean(
+        default=False,
+        description="Whether to enable gradient checkpointing, which trades compute for memory."
+        "This is useful for training very deep models with limited memory.",
+        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["enable_gradient_checkpointing"],
+    )
+
     def update_batch_size_grad_accum(self, num_workers: int):
         from ludwig.utils.trainer_utils import get_rendered_batch_size_grad_accum
 
@@ -879,6 +886,11 @@ class FineTuneTrainerConfig(ECDTrainerConfig):
     base_learning_rate: float = schema_utils.NonNegativeFloat(
         default=0.0,
         description="Base learning rate used for training in the LLM trainer.",
+    )
+
+    eval_batch_size: int = schema_utils.PositiveInteger(
+        default=2,
+        description="Batch size used for evaluation in the LLM trainer.",
     )
 
 

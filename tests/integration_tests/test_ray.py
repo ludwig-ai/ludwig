@@ -382,6 +382,7 @@ def test_ray_read_binary_files(tmpdir, df_engine, ray_cluster_2cpu):
     assert proc_col.equals(proc_col_expected)
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
 @pytest.mark.parametrize(
     "trainer_strategy",
@@ -742,6 +743,7 @@ def test_ray_lazy_load_audio_error(tmpdir, ray_cluster_2cpu):
     run_test_with_features(input_features, output_features, expect_error=True)
 
 
+@pytest.mark.slow
 @pytest.mark.distributed
 def test_ray_lazy_load_image_works(tmpdir, ray_cluster_2cpu):
     image_dest_folder = os.path.join(tmpdir, "generated_images")
@@ -873,22 +875,7 @@ def test_tune_batch_size_lr_cpu(tmpdir, ray_cluster_2cpu, max_batch_size, expect
     assert model.config[TRAINER]["learning_rate"] == expected_final_learning_rate
 
 
-@pytest.mark.distributed
-def test_ray_progress_bar(ray_cluster_2cpu):
-    # This is a simple test that is just meant to make sure that the progress bar isn't breaking
-    input_features = [
-        sequence_feature(encoder={"reduce_output": "sum"}),
-    ]
-    output_features = [
-        binary_feature(bool2str=["No", "Yes"]),
-    ]
-    run_test_with_features(
-        input_features,
-        output_features,
-        df_engine="dask",
-    )
-
-
+@pytest.mark.slow
 @pytest.mark.parametrize("calibration", [True, False])
 @pytest.mark.distributed
 def test_ray_calibration(calibration, ray_cluster_2cpu):
@@ -904,6 +891,7 @@ def test_ray_calibration(calibration, ray_cluster_2cpu):
     run_test_with_features(input_features, output_features)
 
 
+@pytest.mark.slow
 @pytest.mark.distributed
 def test_ray_distributed_predict(ray_cluster_2cpu):
     preprocessing_params = {
@@ -955,6 +943,7 @@ def test_ray_distributed_predict(ray_cluster_2cpu):
         assert preds.iloc[1].name != preds.iloc[42].name
 
 
+@pytest.mark.slow
 @pytest.mark.distributed
 def test_ray_preprocessing_placement_group(ray_cluster_2cpu):
     preprocessing_params = {

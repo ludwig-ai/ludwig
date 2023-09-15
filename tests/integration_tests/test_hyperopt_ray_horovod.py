@@ -236,6 +236,7 @@ def run_hyperopt_executor(
     )
 
 
+@pytest.mark.slow
 @pytest.mark.distributed
 def test_hyperopt_executor_variant_generator(csv_filename, ray_mock_dir, ray_cluster_7cpu):
     search_alg = SCENARIOS[0]["search_alg"]

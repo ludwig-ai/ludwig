@@ -356,6 +356,24 @@ def get_training_report(
 
 
 def get_rendered_batch_size_grad_accum(config: "BaseTrainerConfig", num_workers: int) -> Tuple[int, int]:
+    """Returns the batch size and gradient accumulation steps to use for training.
+
+    For batch_size==AUTO:
+    1. effective_batch_size is not AUTO and gradient_accumulation_steps is not AUTO:
+        batch size is set to the effective batch size divided by the gradient accumulation steps, divided by the
+        number of workers.
+    2. effective_batch_size is AUTO or gradient_accumulation_steps is AUTO:
+        batch size remains AUTO.
+
+    For gradient_accumulation_steps==AUTO:
+    1. batch size is AUTO:
+        gradient accumulation steps remains AUTO.
+    2. batch_size is not AUTO and effective batch size is not AUTO:
+        gradient accumulation steps is set to the effective batch size divided by the batch size, divided by the number
+        of workers.
+    3. batch size is not AUTO and effective batch size is AUTO:
+        gradient accumulation steps is set to 1.
+    """
     effective_batch_size = config.effective_batch_size
     batch_size = config.batch_size
     gradient_accumulation_steps = config.gradient_accumulation_steps

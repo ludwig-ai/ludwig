@@ -1,0 +1,18 @@
+version: 1.0
+name: code_alpaca
+download_urls: https://raw.githubusercontent.com/sahil280114/codealpaca/master/data/code_alpaca_20k.json
+train_filenames: code_alpaca_20k.json
+loader: code_alpaca_loader.CodeAlpacaLoader
+description: |
+  This dataset, created by sahil280114, aims to build and share an instruction-following LLaMA model for code generation. The repo containing
+  this dataset is fully based on Stanford Alpaca, and only changes the data used for training.
+columns:
+  - name: instruction
+    type: text
+  - name: input
+    type: text
+  - name: output
+    type: text
+output_features:
+  - name: output
+    type: text
