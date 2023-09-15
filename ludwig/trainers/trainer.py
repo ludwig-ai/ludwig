@@ -221,7 +221,7 @@ class Trainer(BaseTrainer):
             # TODO(Arnav): Add support for gradient checkpointing in the compiled model
             # when the model is an ECD model using torch.utils.checkpoint (torch.utils.checkpoint.sequential())
             if not isinstance(self.compiled_model, LLM):
-                logger.warning("Gradient checkpointing is currently only support for model_type: llm. Skipping...")
+                logger.warning("Gradient checkpointing is currently only supported for model_type: llm. Skipping...")
             elif not hasattr(self.compiled_model, "model") and not hasattr(
                 self.compiled_model.model, "gradient_checkpointing_enable"
             ):
@@ -229,7 +229,7 @@ class Trainer(BaseTrainer):
             elif hasattr(self.compiled_model.model, "gradient_checkpointing_enable"):
                 self.compiled_model.model.gradient_checkpointing_enable()
                 self.compiled_model.model.enable_input_require_grads()
-                logger.info("Gradient checkpointing enabled during training.")
+                logger.info("Gradient checkpointing enabled for training.")
             else:
                 raise RuntimeError("Error when trying to enable gradient checkpointing.")
 
