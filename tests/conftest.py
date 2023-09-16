@@ -38,7 +38,7 @@ from tests.integration_tests.utils import category_feature, generate_data, text_
 TEST_SUITE_TIMEOUT_S = int(os.environ.get("LUDWIG_TEST_SUITE_TIMEOUT_S", 3600))
 
 
-explicit_int_markers = ("integration_tests_a", "integration_tests_b" "integration_tests_c", "integration_tests_d")
+explicit_int_markers = {"integration_tests_a", "integration_tests_b", "integration_tests_c", "integration_tests_d"}
 
 
 def pytest_sessionstart(session):
