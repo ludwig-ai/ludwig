@@ -47,7 +47,7 @@ def pytest_sessionstart(session):
 
 def pytest_collection_modifyitems(config, items):
     for item in items:
-        if all(False for x in item.iter_markers() if x.name not in explicit_int_markers):
+        if all(False for x in item.iter_markers() if x.name in explicit_int_markers):
             item.add_marker("integration_tests_e")
 
 
