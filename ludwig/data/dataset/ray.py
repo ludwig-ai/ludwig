@@ -246,10 +246,12 @@ class RayDatasetShard(Dataset):
 
     def create_epoch_iter(self) -> None:
         if _ray_240:
+            print("DATASET SHARD", type(self.dataset_shard))
             if isinstance(self.dataset_shard, DatasetPipeline):
                 self.epoch_iter = self.dataset_shard.repeat().iter_epochs()
             else:
                 self.epoch_iter = self.dataset_shard.repeat()
+            print("EPOCH ITER", type(self.epoch_iter))
             return
 
         if _ray_230:
