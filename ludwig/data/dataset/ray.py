@@ -49,6 +49,7 @@ from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
 
+_ray_240 = version.parse(ray.__version__) >= version.parse("2.4.0")
 _ray_230 = version.parse(ray.__version__) >= version.parse("2.3.0")
 
 
@@ -244,6 +245,13 @@ class RayDatasetShard(Dataset):
         self.create_epoch_iter()
 
     def create_epoch_iter(self) -> None:
+        if _ray_240:
+            if isinstance(self.dataset_shard, DatasetPipeline):
+                self.epoch_iter = self.dataset_shard.repeat().iter_epochs()
+            else:
+                self.epoch_iter = self.dataset_shard.repeat()
+            return
+
         if _ray_230:
             # In Ray >= 2.3, session.get_dataset_shard() returns a DatasetIterator object.
             if isinstance(self.dataset_shard, ray.data.DatasetIterator):
