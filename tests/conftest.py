@@ -38,8 +38,17 @@ from tests.integration_tests.utils import category_feature, generate_data, text_
 TEST_SUITE_TIMEOUT_S = int(os.environ.get("LUDWIG_TEST_SUITE_TIMEOUT_S", 3600))
 
 
+explicit_int_markers = ("integration_tests_a", "integration_tests_b" "integration_tests_c", "integration_tests_d")
+
+
 def pytest_sessionstart(session):
     session.start_time = time.time()
+
+
+def pytest_collection_modifyitems(config, items):
+    for item in items:
+        if all(False for x in item.iter_markers() if x.name not in explicit_int_markers):
+            item.add_marker("integration_tests_e")
 
 
 @pytest.fixture(autouse=True)
