@@ -364,7 +364,7 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
     ],
 )
 def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strategy, adapter_args, quantization):
-    if not torch.cuda.is_available() or torch.cuda.device_count() == 0:
+    if quantization and (not torch.cuda.is_available() or torch.cuda.device_count() == 0):
         pytest.skip("Skip: quantization requires GPU and none are available.")
 
     input_features = [text_feature(name="input", encoder={"type": "passthrough"})]
