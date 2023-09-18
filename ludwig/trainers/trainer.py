@@ -131,11 +131,11 @@ class Trainer(BaseTrainer):
         :param config: `ludwig.schema.trainer.BaseTrainerConfig` instance that specifies training hyperparameters
                 (default: `ludwig.schema.trainer.ECDTrainerConfig()`).
         """
-
         self.distributed = distributed if distributed is not None else LocalStrategy()
 
         self.epochs = config.epochs
         self.train_steps = config.train_steps
+        self.enable_profiling = config.enable_profiling
         self.steps_per_epoch = 0  # Computed during training, after batcher has been initialized.
         self.total_steps = 0  # Computed during training, after batcher has been initialized.
 
@@ -244,7 +244,11 @@ class Trainer(BaseTrainer):
         self.scheduler = LRScheduler(self.config.learning_rate_scheduler, self.optimizer, 0, 0)
 
     def train_step(
-        self, inputs: Dict[str, torch.Tensor], targets: Dict[str, torch.Tensor], should_step: bool = True
+        self,
+        inputs: Dict[str, torch.Tensor],
+        targets: Dict[str, torch.Tensor],
+        should_step: bool = True,
+        profiler: Optional[torch.profiler.profile] = None,
     ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
         """Performs a single training step.
 
@@ -342,6 +346,9 @@ class Trainer(BaseTrainer):
 
         self.distributed.zero_grad(self.optimizer)
 
+        if profiler:
+            profiler.step()
+
         return loss, all_losses
 
     def clip_grads(self, variables):
@@ -386,6 +393,59 @@ class Trainer(BaseTrainer):
 
         if learning_rate:
             train_summary_writer.add_scalar("combined/step_learning_rate", learning_rate, global_step=step)
+
+        # Log CUDA memory stats.
+        if torch.cuda.is_available():
+            memory_stats = torch.cuda.memory_stats()
+            # Allocated bytes.
+            train_summary_writer.add_scalar(
+                "cuda/allocated_bytes.all.current", memory_stats["allocated_bytes.all.current"], global_step=step
+            )
+            train_summary_writer.add_scalar(
+                "cuda/allocated_bytes.all.peak", memory_stats["allocated_bytes.all.peak"], global_step=step
+            )
+            train_summary_writer.add_scalar(
+                "cuda/allocated_bytes.all.allocated", memory_stats["allocated_bytes.all.allocated"], global_step=step
+            )
+            train_summary_writer.add_scalar(
+                "cuda/allocated_bytes.all.freed", memory_stats["allocated_bytes.all.freed"], global_step=step
+            )
+
+            # Reserved bytes.
+            train_summary_writer.add_scalar(
+                "cuda/reserved_bytes.all.current", memory_stats["reserved_bytes.all.current"], global_step=step
+            )
+            train_summary_writer.add_scalar(
+                "cuda/reserved_bytes.all.peak", memory_stats["reserved_bytes.all.peak"], global_step=step
+            )
+            train_summary_writer.add_scalar(
+                "cuda/reserved_bytes.all.allocated", memory_stats["reserved_bytes.all.allocated"], global_step=step
+            )
+            train_summary_writer.add_scalar(
+                "cuda/reserved_bytes.all.freed", memory_stats["reserved_bytes.all.freed"], global_step=step
+            )
+
+            # Active bytes.
+            train_summary_writer.add_scalar(
+                "cuda/active_bytes.all.current", memory_stats["active_bytes.all.current"], global_step=step
+            )
+            train_summary_writer.add_scalar(
+                "cuda/active_bytes.all.peak", memory_stats["active_bytes.all.peak"], global_step=step
+            )
+            train_summary_writer.add_scalar(
+                "cuda/active_bytes.all.allocated", memory_stats["active_bytes.all.allocated"], global_step=step
+            )
+            train_summary_writer.add_scalar(
+                "cuda/active_bytes.all.freed", memory_stats["active_bytes.all.freed"], global_step=step
+            )
+
+            # Global free memory.
+            train_summary_writer.add_scalar("cuda/global_free_memory", torch.cuda.mem_get_info()[0], global_step=step)
+
+            # Total memory occupied.
+            train_summary_writer.add_scalar(
+                "cuda/total_memory_occupied", torch.cuda.mem_get_info()[1], global_step=step
+            )
 
         train_summary_writer.flush()
 
@@ -765,6 +825,23 @@ class Trainer(BaseTrainer):
 
         set_random_seed(self.random_seed)
 
+        if self.enable_profiling:
+            logger.warning("Full torch profiler is enabled. Training may be significantly slower.")
+            profiler = torch.profiler.profile(
+                schedule=torch.profiler.schedule(
+                    wait=self.config.profiler.wait,
+                    warmup=self.config.profiler.warmup,
+                    active=self.config.profiler.active,
+                    repeat=self.config.profiler.repeat,
+                ),
+                on_trace_ready=torch.profiler.tensorboard_trace_handler(os.path.join(tensorboard_log_dir, "profiling")),
+                record_shapes=True,
+                with_stack=True,
+                profile_memory=True,
+            )
+        else:
+            profiler = None
+
         try:
             with training_set.initialize_batcher(
                 batch_size=self.batch_size,
@@ -819,6 +896,9 @@ class Trainer(BaseTrainer):
                 }
                 progress_bar = LudwigProgressBar(self.report_tqdm_to_ray, progress_bar_config, self.is_coordinator())
 
+                if profiler:
+                    profiler.start()
+
                 while progress_tracker.steps < self.total_steps:
                     # note that batch size may change over epochs
                     batcher.set_epoch(progress_tracker.epoch, progress_tracker.batch_size)
@@ -851,6 +931,7 @@ class Trainer(BaseTrainer):
                         checkpoint_manager,
                         final_steps_per_checkpoint,
                         early_stopping_steps,
+                        profiler,
                     )
 
                     # ================ Post Training Epoch ================
@@ -882,6 +963,11 @@ class Trainer(BaseTrainer):
                 coordinator_only=False,
             )
 
+            # Stop the profiler.
+            if profiler:
+                profiler.stop()
+
+            # Close the summary writers.
             if train_summary_writer is not None:
                 train_summary_writer.close()
             if validation_summary_writer is not None:
@@ -972,6 +1058,7 @@ class Trainer(BaseTrainer):
         checkpoint_manager: CheckpointManager,
         final_steps_per_checkpoint: int,
         early_stopping_steps: int,
+        profiler: Optional[torch.profiler.profile],
     ) -> bool:
         """Completes up to one epoch through the data."""
         self.distributed.zero_grad(self.optimizer)
@@ -999,7 +1086,7 @@ class Trainer(BaseTrainer):
                 for o_feat in self.model.output_features.values()
             }
 
-            loss, all_losses = self.train_step(inputs, targets, should_step=should_step)
+            loss, all_losses = self.train_step(inputs, targets, should_step=should_step, profiler=profiler)
 
             # Update LR schduler here instead of train loop to avoid updating during batch size tuning, etc.
             self.scheduler.step()
