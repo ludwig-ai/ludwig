@@ -826,6 +826,7 @@ class Trainer(BaseTrainer):
         set_random_seed(self.random_seed)
 
         if self.enable_profiling:
+            logger.warning("Full torch profiler is enabled. Training may be significantly slower.")
             profiler = torch.profiler.profile(
                 schedule=torch.profiler.schedule(
                     wait=self.config.profiler.wait,
