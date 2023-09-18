@@ -7,7 +7,7 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
-from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer, GenerationConfig, LlamaConfig, PreTrainedModel
+from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer, GenerationConfig, PreTrainedModel
 
 from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, MODEL_LLM, PREDICTIONS, TEXT
 from ludwig.features.base_feature import ModuleWrapper, OutputFeature
@@ -153,11 +153,7 @@ class LLM(BaseModel):
             self.global_max_sequence_length = self.context_len
 
         # Initialize tokenizer
-        use_fast = True
-        if isinstance(self.model_config, LlamaConfig):
-            # HACK: Llama fast tokenizer takes about 2-4 minutes to load, so we disable it for now.
-            use_fast = False
-        self.tokenizer = AutoTokenizer.from_pretrained(self.config_obj.base_model, use_fast=use_fast)
+        self.tokenizer = AutoTokenizer.from_pretrained(self.config_obj.base_model)
         set_pad_token(self.tokenizer)
 
         self.generation = GenerationConfig(**self.config_obj.generation.to_dict())
@@ -384,6 +380,7 @@ class LLM(BaseModel):
         with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=False, enable_mem_efficient=False) if (
             torch.cuda.is_available() and self.curr_device.type == "cuda"
         ) else contextlib.nullcontext():
+            # TODO (jeffkinnison): Determine why the 8-bit `SCB` and `CB` matrices are deleted in the forward pass
             model_outputs = self.model(input_ids=self.model_inputs, attention_mask=self.attention_masks).get(LOGITS)
 
         if self.output_feature_type != TEXT:
