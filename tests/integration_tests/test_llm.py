@@ -434,7 +434,7 @@ def test_llm_training_with_gradient_checkpointing(tmpdir, csv_filename, use_adap
 
     config = {
         MODEL_TYPE: MODEL_LLM,
-        BASE_MODEL: "HuggingFaceM4/tiny-random-LlamaForCausalLM",
+        BASE_MODEL: "hf-internal-testing/tiny-random-BartModel",
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
         TRAINER: {
