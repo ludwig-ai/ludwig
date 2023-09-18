@@ -1,3 +1,5 @@
+from typing import Optional
+
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import DROP_ROW, FILL_WITH_CONST, MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING, TEXT
 from ludwig.schema import utils as schema_utils
@@ -138,6 +140,13 @@ class BaseTextPreprocessingConfig(BasePreprocessingConfig):
     compute_idf: bool = schema_utils.Boolean(
         default=False,
         parameter_metadata=INTERNAL_ONLY,
+    )
+
+    trust_remote_code: Optional[bool] = schema_utils.Boolean(
+        default=False,
+        description="Whether to trust remote code when loading a model. "
+        "This is a security risk, but it is necessary for loading models "
+        "that aren't officially supported by the latest version of the transformers package.",
     )
 
 

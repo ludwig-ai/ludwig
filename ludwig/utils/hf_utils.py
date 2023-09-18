@@ -47,7 +47,11 @@ def load_pretrained_hf_tokenizer(
     """
 
     # HACK: Llama fast tokenizer takes about 2-4 minutes to load, so we disable it for now.
-    config = AutoConfig.from_pretrained(pretrained_model_name_or_path)
+    trust_remote_code = pretrained_kwargs.get("trust_remote_code", False)
+    config = AutoConfig.from_pretrained(
+        pretrained_model_name_or_path,
+        trust_remote_code=trust_remote_code,
+    )
     if isinstance(config, LlamaConfig):
         pretrained_kwargs["use_fast"] = False
 

@@ -313,11 +313,18 @@ def set_llm_tokenizers(config: "ModelConfig") -> None:
     if not isinstance(pretrained_model_name_or_path, str) or pretrained_model_name_or_path is None:
         raise ValueError("Must set `base_model` when using the LLM model.")
 
+    # Check if the user has set the `trust_remote_code` parameter to True. If so, we must pass this flag in
+    # at three different places: AutoTokenizer, AutoConfig and AutoModel.
+    trust_remote_code = False
+    if config.model_parameters and hasattr(config.model_parameters, "trust_remote_code"):
+        trust_remote_code = config.model_parameters.trust_remote_code
+
     for input_feature in config.input_features:
         if input_feature.type == TEXT:
             input_feature.preprocessing.tokenizer = "hf_tokenizer"
             input_feature.preprocessing.pretrained_model_name_or_path = pretrained_model_name_or_path
             input_feature.preprocessing.padding = "left"
+            input_feature.preprocessing.trust_remote_code = trust_remote_code
 
     for output_feature in config.output_features:
         if output_feature.type == TEXT:
@@ -325,6 +332,7 @@ def set_llm_tokenizers(config: "ModelConfig") -> None:
             output_feature.preprocessing.tokenizer = "hf_tokenizer"
             output_feature.preprocessing.pretrained_model_name_or_path = pretrained_model_name_or_path
             output_feature.preprocessing.padding = "left"
+            output_feature.preprocessing.trust_remote_code = trust_remote_code
 
             # Add tokenizer parameters to decoder so it can be used during the forward pass
             output_feature.decoder.pretrained_model_name_or_path = pretrained_model_name_or_path

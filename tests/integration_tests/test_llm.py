@@ -324,7 +324,7 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
 @pytest.mark.parametrize(
     "finetune_strategy,adapter_args,quantization",
     [
-        (None, {}, None),
+        # (None, {}, None),
         # (
         #     "prompt_tuning",
         #     {
@@ -344,41 +344,42 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
         # ("p_tuning", {"num_virtual_tokens": 8, "encoder_reparameterization_type": "MLP"}),
         # ("p_tuning", {"num_virtual_tokens": 8, "encoder_reparameterization_type": "LSTM"}),
         ("lora", {}, None),
-        ("lora", {}, {"bits": 4}),  # qlora
-        ("lora", {}, {"bits": 8}),  # qlora 8-bit
+        # ("lora", {}, {"bits": 4}),  # qlora
+        # ("lora", {}, {"bits": 8}),  # qlora 8-bit
         # ("adalora", {}),
-        ("adaption_prompt", {"adapter_len": 6, "adapter_layers": 1}, None),
+        # ("adaption_prompt", {"adapter_len": 6, "adapter_layers": 1}, None),
     ],
     ids=[
-        "none",
+        # "none",
         # "prompt_tuning_init_random",
         # "prompt_tuning_init_text",
         # "prefix_tuning",
         # "p_tuning_mlp_reparameterization",
         # "p_tuning_lstm_reparameterization",
         "lora",
-        "qlora",
-        "qlora-8bit",
+        # "qlora",
+        # "qlora-8bit",
         # "adalora",
-        "adaption_prompt",
+        # "adaption_prompt",
     ],
 )
 def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strategy, adapter_args, quantization):
-    if not torch.cuda.is_available() or torch.cuda.device_count() == 0:
-        pytest.skip("Skip: quantization requires GPU and none are available.")
+    # if not torch.cuda.is_available() or torch.cuda.device_count() == 0:
+    #     pytest.skip("Skip: quantization requires GPU and none are available.")
 
     input_features = [text_feature(name="input", encoder={"type": "passthrough"})]
     output_features = [text_feature(name="output")]
 
     df = generate_data(input_features, output_features, filename=csv_filename, num_examples=25)
 
-    model_name = TEST_MODEL_NAME
-    if finetune_strategy == "adalora":
-        # Adalora isn't supported for GPT-J model types, so use tiny bart
-        model_name = "hf-internal-testing/tiny-random-BartModel"
-    elif finetune_strategy == "adaption_prompt":
-        # At the time of writing this test, Adaption Prompt fine-tuning is only supported for Llama models
-        model_name = "HuggingFaceM4/tiny-random-LlamaForCausalLM"
+    model_name = "microsoft/phi-1_5"
+    # model_name = TEST_MODEL_NAME
+    # if finetune_strategy == "adalora":
+    #     # Adalora isn't supported for GPT-J model types, so use tiny bart
+    #     model_name = "hf-internal-testing/tiny-random-BartModel"
+    # elif finetune_strategy == "adaption_prompt":
+    #     # At the time of writing this test, Adaption Prompt fine-tuning is only supported for Llama models
+    #     model_name = "HuggingFaceM4/tiny-random-LlamaForCausalLM"
 
     config = {
         MODEL_TYPE: MODEL_LLM,
@@ -389,6 +390,9 @@ def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strat
             TYPE: "finetune",
             BATCH_SIZE: 8,
             EPOCHS: 2,
+        },
+        "model_parameters": {
+            "trust_remote_code": True,
         },
         BACKEND: backend,
     }

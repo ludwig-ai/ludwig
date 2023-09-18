@@ -1236,10 +1236,11 @@ def get_hf_tokenizer(pretrained_model_name_or_path, **kwargs):
     # This is populated in the `get_hf_tokenizer` since the set requires `transformers` to be installed
     HF_BERTLIKE_TOKENIZER_CLS_SET = {BertTokenizer, DistilBertTokenizer, ElectraTokenizer}
 
+    # Remove these pretrained kwargs since they're only required for non-hf tokenizers
+    kwargs = {k: v for k, v in kwargs.items() if k not in {"vocab_file", "ngram_size"}}
+    # cannot trace HF tokenizers directly because HF lacks strict typing and List[str] cannot be traced
     hf_name = pretrained_model_name_or_path
-    # use_fast=False to leverage python class inheritance
-    # cannot tokenize HF tokenizers directly because HF lacks strict typing and List[str] cannot be traced
-    hf_tokenizer = load_pretrained_hf_tokenizer(hf_name, use_fast=False)
+    hf_tokenizer = load_pretrained_hf_tokenizer(hf_name, **kwargs)
 
     torchtext_tokenizer = None
     if "bert" in TORCHSCRIPT_COMPATIBLE_TOKENIZERS and any(
@@ -1279,8 +1280,8 @@ def get_hf_tokenizer(pretrained_model_name_or_path, **kwargs):
     else:
         # If hf_name does not have a torchtext equivalent implementation, load the
         # HuggingFace implementation.
-        logger.info(f"Loaded HuggingFace implementation of {hf_name} tokenizer")
-        return HFTokenizer(hf_name)
+        logger.info(f"Loading HuggingFace implementation of {hf_name} tokenizer")
+        return HFTokenizer(hf_name, **kwargs)
 
 
 def _get_bert_config(hf_name):

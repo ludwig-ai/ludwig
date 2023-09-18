@@ -4,3 +4,7 @@ faiss-cpu
 accelerate
 loralib
 peft>=0.4.0
+
+# Required for microsoft/phi-1_5 and other models where users
+# may want to allow trust remote code for unofficially supported models
+einops

@@ -1,8 +1,12 @@
 from collections import OrderedDict
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, TYPE_CHECKING, Union
 
 import numpy as np
 import torch
+
+if TYPE_CHECKING:
+    from ludwig.schema.model_types.base import ModelConfig
+
 
 NUMPY_TO_TORCH_DTYPE = {
     bool: torch.bool,
@@ -91,3 +95,15 @@ def find_embedding_layer_with_path(module, module_names=[]):
             if found is not None:
                 return found, path
     return None, None
+
+
+def trust_remote_code(config_obj: Union["ModelConfig", Dict]) -> bool:
+    """"""
+    trust_remote_code = False
+    if isinstance(config_obj, ModelConfig):
+        if config_obj.model_parameters and hasattr(config_obj.model_parameters, "trust_remote_code"):
+            trust_remote_code = config_obj.model_parameters.trust_remote_code
+    elif isinstance(config_obj, dict):
+        if config_obj.get("model_parameters", {}).get("trust_remote_code", False):
+            trust_remote_code = config_obj.get("model_parameters").get("trust_remote_code")
+    return trust_remote_code

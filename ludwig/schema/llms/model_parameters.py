@@ -60,8 +60,15 @@ class RoPEScalingConfigField(schema_utils.DictMarshmallowField):
 class ModelParametersConfig(schema_utils.BaseMarshmallowConfig):
     rope_scaling: RoPEScalingConfig = RoPEScalingConfigField().get_default_field()
 
+    trust_remote_code: Optional[bool] = schema_utils.Boolean(
+        default=False,
+        description="Whether to trust remote code when loading a model. "
+        "This is a security risk, but it is necessary for loading models "
+        "that aren't officially supported by the latest version of the transformers package.",
+    )
+
     def to_dict(self):
-        config = {}
+        config = {"trust_remote_code": self.trust_remote_code}
         if self.rope_scaling:
             config["rope_scaling"] = self.rope_scaling.to_dict()
         return config

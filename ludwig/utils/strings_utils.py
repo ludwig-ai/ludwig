@@ -259,6 +259,7 @@ def create_vocabulary(
     ngram_size: Optional[int] = None,
     compute_idf: bool = False,
     processor: DataFrameEngine = PANDAS,
+    **kwargs,
 ) -> Vocabulary:
     """Computes a vocabulary over the provided data frame.
 
@@ -301,6 +302,7 @@ def create_vocabulary(
         vocab_file=vocab_file,
         pretrained_model_name_or_path=pretrained_model_name_or_path,
         ngram_size=ngram_size,
+        **kwargs,
     )
 
     # Pre-trained huggingface tokenizer. Use the pre-existing vocabulary and special symbols.
@@ -480,10 +482,13 @@ def build_sequence_matrix(
     tokenizer_vocab_file=None,
     pretrained_model_name_or_path=None,
     processor=PANDAS,
+    **kwargs,
 ) -> np.ndarray:
+    trust_remote_code = kwargs.get("trust_remote_code", False)
     tokenizer = get_tokenizer_from_registry(tokenizer_type)(
         vocab_file=tokenizer_vocab_file,
         pretrained_model_name_or_path=pretrained_model_name_or_path,
+        trust_remote_code=trust_remote_code,
     )
 
     format_dtype = int_type(len(inverse_vocabulary) - 1)
@@ -531,9 +536,8 @@ def build_sequence_matrix(
     return padded
 
 
-def get_tokenizer(tokenizer_type: str, tokenizer_vocab_file: str, pretrained_model_name_or_path: str):
+def get_tokenizer(tokenizer_type: str, tokenizer_vocab_file: str, pretrained_model_name_or_path: str, **kwargs):
     """Returns a tokenizer object based on the tokenizer type."""
     return get_tokenizer_from_registry(tokenizer_type)(
-        vocab_file=tokenizer_vocab_file,
-        pretrained_model_name_or_path=pretrained_model_name_or_path,
+        vocab_file=tokenizer_vocab_file, pretrained_model_name_or_path=pretrained_model_name_or_path, **kwargs
     )

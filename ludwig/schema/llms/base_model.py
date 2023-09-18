@@ -42,7 +42,7 @@ def BaseModelDataclassField():
         "pretrained model."
     )
 
-    def validate(model_name: str):
+    def validate(model_name: str, trust_remote_code: bool = False):
         """Validates and upgrades the given model name to its full path, if applicable.
 
         If the name exists in `MODEL_PRESETS`, returns the corresponding value from the dict; otherwise checks if the
@@ -54,7 +54,9 @@ def BaseModelDataclassField():
             if os.path.isdir(model_name):
                 return model_name
             try:
-                AutoConfig.from_pretrained(model_name)
+                # TODO(Arnav): Why is this called twice, and why is trust_remote_code false the second time?
+                # breakpoint()
+                AutoConfig.from_pretrained(pretrained_model_name_or_path=model_name, trust_remote_code=True)
                 return model_name
             except OSError:
                 raise ConfigValidationError(
@@ -74,7 +76,10 @@ def BaseModelDataclassField():
             raise ValidationError(f"Value to serialize is not a string: {value}")
 
         def _deserialize(self, value, attr, obj, **kwargs):
-            return validate(value)
+            trust_remote_code = False
+            if obj.get("model_parameters", {}).get("trust_remote_code", False):
+                trust_remote_code = obj.get("model_parameters").get("trust_remote_code")
+            return validate(value, trust_remote_code)
 
         def _jsonschema_type_mapping(self):
             return {

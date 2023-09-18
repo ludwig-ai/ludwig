@@ -99,6 +99,7 @@ class TextFeatureMixin(BaseFeatureMixin):
             ngram_size=preprocessing_parameters["ngram_size"],
             compute_idf=preprocessing_parameters["compute_idf"],
             processor=backend.df_engine,
+            trust_remote_code=preprocessing_parameters.get("trust_remote_code", False),
         )
 
     @staticmethod
@@ -187,6 +188,7 @@ class TextFeatureMixin(BaseFeatureMixin):
             tokenizer_vocab_file=preprocessing_parameters[f"{prefix}vocab_file"],
             pretrained_model_name_or_path=preprocessing_parameters["pretrained_model_name_or_path"],
             processor=backend.df_engine,
+            trust_remote_code=preprocessing_parameters["trust_remote_code"],
         )
 
     @staticmethod
