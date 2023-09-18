@@ -165,39 +165,31 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
         "depending on the size of the model.",
     )
 
-    diversity_penalty: Optional[float] = schema_utils.FloatRange(
+    diversity_penalty: Optional[float] = schema_utils.NonNegativeFloat(
         default=0.0,
-        min=0.0,
-        max=1.0,
         allow_none=True,
         description="The value used to control the diversity of the generated text. The higher the value, the more "
-        "diverse the text will be. The value should be between 0 and 1.0. If set to 0, no diversity is enforced."
+        "diverse the text will be. If set to 0, no diversity is enforced."
         "This value is subtracted from a beam(s) score if it generates a token same as any beam from other group at a"
         "particular time. Note that diversity_penalty is only effective if group beam search is enabled.",
     )
 
-    repetition_penalty: Optional[float] = schema_utils.FloatRange(
+    repetition_penalty: Optional[float] = schema_utils.NonNegativeFloat(
         default=1.0,
-        min=0.0,
-        max=1.0,
         allow_none=True,
         description="The parameter for repetition penalty. 1.0 means no penalty. "
         "See [this paper](https://arxiv.org/pdf/1909.05858.pdf) for more details.",
     )
 
-    encoder_repetition_penalty: Optional[float] = schema_utils.FloatRange(
+    encoder_repetition_penalty: Optional[float] = schema_utils.NonNegativeFloat(
         default=1.0,
-        min=0.0,
-        max=1.0,
         allow_none=True,
         description="The paramater for encoder_repetition_penalty. An exponential penalty on sequences that are not"
         " in the original input. 1.0 means no penalty.",
     )
 
-    length_penalty: Optional[float] = schema_utils.FloatRange(
+    length_penalty: Optional[float] = schema_utils.Float(
         default=1.0,
-        min=0.0,
-        max=1.0,
         allow_none=True,
         description="Exponential penalty to the length that is used with beam-based generation. It is applied as an "
         "exponent to the sequence length, which in turn is used to divide the score of the sequence. Since the score is"
