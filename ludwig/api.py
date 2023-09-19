@@ -1824,6 +1824,11 @@ class LudwigModel:
         if self.model is None or self._user_config is None or self.training_set_metadata is None:
             raise ValueError("Model has not been trained or loaded")
 
+    def free_gpu_memory(self):
+        device = torch.device("cpu")  # Have to move the model to CPU to free GPU memory
+        self.model.model.to(device)
+        torch.cuda.empty_cache()
+
     @staticmethod
     def create_model(config_obj: Union[ModelConfig, dict], random_seed: int = default_random_seed) -> BaseModel:
         """Instantiates BaseModel object.
