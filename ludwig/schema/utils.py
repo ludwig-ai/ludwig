@@ -603,6 +603,35 @@ def IntegerRange(
 
 
 @DeveloperAPI
+def Float(
+    default: Union[None, int],
+    allow_none=False,
+    description="",
+    parameter_metadata: ParameterMetadata = None,
+):
+    """Returns a dataclass field with marshmallow metadata strictly enforcing float inputs."""
+    if default is not None:
+        try:
+            assert isinstance(default, float) or isinstance(default, int)
+        except Exception:
+            raise ValidationError(f"Invalid default: `{default}`")
+    return field(
+        metadata={
+            "marshmallow_field": fields.Float(
+                allow_none=allow_none,
+                load_default=default,
+                dump_default=default,
+                metadata={
+                    "description": description,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata),
+                },
+            )
+        },
+        default=default,
+    )
+
+
+@DeveloperAPI
 def NonNegativeFloat(
     default: Union[None, float],
     allow_none: bool = False,

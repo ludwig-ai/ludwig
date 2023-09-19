@@ -16,6 +16,7 @@ from ludwig.schema.optimizers import (
     GradientClippingDataclassField,
     OptimizerDataclassField,
 )
+from ludwig.schema.profiler import ProfilerConfig, ProfilerDataclassField
 from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils.registry import Registry
 
@@ -91,6 +92,16 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
             "well-known dataset and are confident about the expected results, you might skip all evaluation. Moreover, "
             "evaluating a model, especially on large validation or test sets, can be time-consuming."
         ),
+    )
+
+    enable_profiling: bool = schema_utils.Boolean(
+        default=False,
+        description="Whether to enable profiling of the training process using torch.profiler.profile.",
+    )
+
+    profiler: Optional[ProfilerConfig] = ProfilerDataclassField(
+        description="Parameter values for profiling config.",
+        default={},
     )
 
     def can_tune_batch_size(self) -> bool:
@@ -407,6 +418,13 @@ class ECDTrainerConfig(BaseTrainerConfig):
         default=False,
         description="Whether to compile the model before training.",
         parameter_metadata=TRAINER_METADATA[MODEL_ECD]["compile"],
+    )
+
+    enable_gradient_checkpointing: bool = schema_utils.Boolean(
+        default=False,
+        description="Whether to enable gradient checkpointing, which trades compute for memory."
+        "This is useful for training very deep models with limited memory.",
+        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["enable_gradient_checkpointing"],
     )
 
     def update_batch_size_grad_accum(self, num_workers: int):
@@ -879,6 +897,11 @@ class FineTuneTrainerConfig(ECDTrainerConfig):
     base_learning_rate: float = schema_utils.NonNegativeFloat(
         default=0.0,
         description="Base learning rate used for training in the LLM trainer.",
+    )
+
+    eval_batch_size: int = schema_utils.PositiveInteger(
+        default=2,
+        description="Batch size used for evaluation in the LLM trainer.",
     )
 
 
