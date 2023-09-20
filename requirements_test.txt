@@ -44,5 +44,3 @@ scikit-optimize
 zoopt
 
 s3fs>=2022.8.2
-
-soundfile

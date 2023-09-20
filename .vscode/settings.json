@@ -2,14 +2,12 @@
     "editor.rulers": [
         120
     ],
-    "editor.formatOnSave": true,
-    "python.formatting.provider": "black",
-    "python.linting.enabled": true,
-    "python.linting.flake8Enabled": true,
-    "python.linting.flake8Args": [
-        "--config=setup.cfg"
-    ],
+    "flake8.args": ["--config=setup.cfg"],
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": false,
-    "python.envFile": "${workspaceFolder}/.env"
+    "python.envFile": "${workspaceFolder}/.env",
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.formatOnSave": true
+    }
 }
