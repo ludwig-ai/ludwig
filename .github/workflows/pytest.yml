@@ -126,10 +126,7 @@ jobs:
 
           if [ "$PYTORCH" == "nightly" ]; then
             extra_index_url=https://download.pytorch.org/whl/nightly/cpu
-            # torchaudio_wheel="https://download.pytorch.org/whl/nightly/cpu/torchaudio-2.1.0.dev20230727%2Bcpu-cp310-cp310-linux_x86_64.whl"
             pip install --pre torch torchtext torchvision torchaudio --index-url $extra_index_url
-            # wget $torchaudio_wheel
-            # pip install --no-deps $torchaudio_wheel
 
           else
             extra_index_url=https://download.pytorch.org/whl/cpu
