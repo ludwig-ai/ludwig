@@ -24,8 +24,8 @@ from typing import Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
+import soundfile
 import torch
-import torchaudio
 import yaml
 
 from ludwig.api_annotations import DeveloperAPI
@@ -346,8 +346,9 @@ def generate_audio(feature, outdir: str) -> str:
         audio_length = feature.get("audio_file_length_limit_in_s", 1)
     sampling_rate = 16000
     num_samples = int(audio_length * sampling_rate)
+    channels = 2
     audio = np.sin(np.arange(num_samples) / 100 * 2 * np.pi) * 2 * (np.random.random(num_samples) - 0.5)
-    audio_tensor = torch.tensor(np.array([audio])).type(torch.float32)
+    audio = np.repeat(audio, channels).reshape(num_samples, channels)
     audio_filename = uuid.uuid4().hex[:10].upper() + ".wav"
 
     if not os.path.exists(destination_folder):
@@ -355,7 +356,9 @@ def generate_audio(feature, outdir: str) -> str:
     audio_dest_path = os.path.join(destination_folder, audio_filename)
 
     try:
-        torchaudio.save(audio_dest_path, audio_tensor, sampling_rate, encoding="PCM_F")
+        with soundfile.SoundFile(audio_dest_path, "w", sampling_rate, channels, "PCM_24") as f:
+            f.write(audio)
+
     except OSError as e:
         raise OSError(f"Unable to save audio to disk: {e}")
 
