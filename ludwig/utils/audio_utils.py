@@ -18,7 +18,6 @@ import logging
 from io import BytesIO
 from typing import Any, List, Optional, Union
 
-import soundfile as sf
 import torch
 import torchaudio
 
@@ -67,8 +66,7 @@ def read_audio_from_path(path: str) -> Optional[TorchAudioTuple]:
     Useful for reading from a small number of paths. For more intensive reads, use backend.read_binary_files instead.
     """
     try:
-        data, samplerate = sf.read(path)
-        return torch.Tensor(data), samplerate
+        return torchaudio.backend.sox_io_backend.load(path)
     except Exception as e:
         logger.warning(e)
         return None
@@ -79,8 +77,7 @@ def read_audio_from_path(path: str) -> Optional[TorchAudioTuple]:
 def read_audio_from_bytes_obj(bytes_obj: bytes) -> Optional[TorchAudioTuple]:
     try:
         f = BytesIO(bytes_obj)
-        data, samplerate = sf.read(f)
-        return torch.Tensor(data), samplerate
+        return torchaudio.backend.sox_io_backend.load(f)
     except Exception as e:
         logger.warning(e)
         return None
