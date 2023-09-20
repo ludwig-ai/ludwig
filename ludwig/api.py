@@ -885,32 +885,39 @@ class LudwigModel:
     ) -> Tuple[Union[dict, pd.DataFrame], str]:
         """Using a trained model, make predictions from the provided dataset.
 
-        Args:
-            dataset: (Union[str, dict, pandas.DataFrame]): source containing the entire dataset to be evaluated.
-            data_format: (str, default: `None`) format to interpret data sources. Will be inferred automatically if not
-                specified.  Valid formats are `'auto'`, `'csv'`, `'df'`, `'dict'`, `'excel'`, `'feather'`, `'fwf'`,
-                `'hdf5'` (cache file produced during previous training), `'html'` (file containing a single HTML
-                `<table>`), `'json'`, `'jsonl'`, `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`, `'spss'`,
-                `'stata'`, `'tsv'`.
-            split: (str, default= `'full'`):  if the input dataset contains a split column, this parameter indicates
-                which split of the data to use. Possible values are `'full'`, `'training'`, `'validation'`, `'test'`.
-            batch_size: (int, default: 128) size of batch to use when making predictions.
-            generation_config: Dict, default: `None`) config for the generation of the predictions. If `None`, the
-                config that was used during model training is used.
-            skip_save_unprocessed_output: (bool, default: `True`) if this parameter is `False`, predictions and their
-                probabilities are saved in both raw unprocessed numpy files containing tensors and as postprocessed CSV
-                files (one for each output feature). If this parameter is `True`, only the CSV ones are saved and the
-                numpy ones are skipped.
-            skip_save_predictions: (bool, default: `True`) skips saving test predictions CSV files.
-            output_directory: (str, default: `'results'`) the directory that will contain the training statistics,
-                TensorBoard logs, the saved model and the training progress files.
-            return_type: (Union[str, dict, pandas.DataFrame], default: pd.DataFrame) indicates the format of the
-                returned predictions.
-            callbacks: (Optional[List[Callback]], default: None) optional list of callbacks to use during this predict
-                operation. Any callbacks already registered to the model will be preserved.
+        #Inputs
 
-        Returns:
-            `(predictions, output_directory)`: (Tuple[Union[dict, pd.DataFrame], str])
+            :param dataset: (Union[str, dict, pandas.DataFrame]): source containing the entire dataset to be evaluated.
+            :param data_format: (str, default: `None`) format to interpret data sources. Will be inferred automatically
+                if not specified.  Valid formats are `'auto'`, `'csv'`, `'df'`, `'dict'`, `'excel'`, `'feather'`,
+                `'fwf'`, `'hdf5'` (cache file produced during previous training), `'html'` (file containing a single
+                HTML `<table>`), `'json'`, `'jsonl'`, `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`,
+                `'spss'`, `'stata'`, `'tsv'`.
+            :param split: (str, default= `'full'`):  if the input dataset contains a split column, this parameter
+                indicates which split of the data to use. Possible values are `'full'`, `'training'`, `'validation'`,
+                `'test'`.
+            :param batch_size: (int, default: 128) size of batch to use when making predictions.
+            :param generation_config: (Dict, default: `None`) config for the generation of the
+                predictions. If `None`, the config that was used during model training is
+                used. This is only used if the model type is LLM. Otherwise, this parameter is
+                ignored. See
+                [Large Language Models](https://ludwig.ai/latest/configuration/large_language_model/#generation) under
+                "Generation" for an example generation config.
+            :param skip_save_unprocessed_output: (bool, default: `True`) if this parameter is `False`, predictions and
+                their probabilities are saved in both raw unprocessed numpy files containing tensors and as
+                postprocessed CSV files (one for each output feature). If this parameter is `True`, only the CSV ones
+                are saved and the numpy ones are skipped.
+            :param skip_save_predictions: (bool, default: `True`) skips saving test predictions CSV files.
+            :param output_directory: (str, default: `'results'`) the directory that will contain the training
+                statistics, TensorBoard logs, the saved model and the training progress files.
+            :param return_type: (Union[str, dict, pandas.DataFrame], default: pd.DataFrame) indicates the format of the
+                returned predictions.
+            :param callbacks: (Optional[List[Callback]], default: None) optional list of callbacks to use during this
+                predict operation. Any callbacks already registered to the model will be preserved.
+
+        # Return
+
+            :return `(predictions, output_directory)`: (Tuple[Union[dict, pd.DataFrame], str])
                 `predictions` predictions from the provided dataset,
                 `output_directory` filepath string to where data was stored.
         """
@@ -1816,6 +1823,15 @@ class LudwigModel:
     def _check_initialization(self):
         if self.model is None or self._user_config is None or self.training_set_metadata is None:
             raise ValueError("Model has not been trained or loaded")
+
+    def free_gpu_memory(self):
+        """Manually moves the model to CPU to force GPU memory to be freed.
+
+        For more context: https://discuss.pytorch.org/t/how-can-we-release-gpu-memory-cache/14530/35
+        """
+        if torch.cuda.is_available():
+            self.model.model.to(torch.device("cpu"))
+            torch.cuda.empty_cache()
 
     @staticmethod
     def create_model(config_obj: Union[ModelConfig, dict], random_seed: int = default_random_seed) -> BaseModel:
