@@ -429,8 +429,9 @@ class LudwigModel:
             will contain the training statistics, TensorBoard logs, the saved
             model and the training progress files.
         :param random_seed: (int, default: `42`) a random seed that will be
-               used anywhere there is a call to a random number generator: data
-               splitting, parameter initialization and training set shuffling
+            used anywhere there is a call to a random number generator: data
+            splitting, parameter initialization and training set shuffling
+        :param kwargs: (dict, default: {}) a dictionary of optional parameters.
 
         # Return
 
@@ -645,6 +646,12 @@ class LudwigModel:
                     )
                     (self.model, train_trainset_stats, train_valiset_stats, train_testset_stats) = train_stats
 
+                    if (
+                        self.config_obj.adapter is not None
+                        and self.config_obj.adapter.postprocessor.merge_adapter_into_base_model
+                    ):
+                        self._merge_and_unload(progressbar=self.config_obj.adapter.postprocessor.progressbar)
+
                     # Calibrates output feature probabilities on validation set if calibration is enabled.
                     # Must be done after training, and before final model parameters are saved.
                     if self.backend.is_coordinator():
@@ -806,6 +813,14 @@ class LudwigModel:
             self._tune_batch_size(self._online_trainer, dataset, random_seed=random_seed)
 
         self.model = self._online_trainer.train_online(training_dataset)
+
+    def _merge_and_unload(self, progressbar: bool = False) -> None:
+        if (
+            hasattr(self.model, "merge_and_unload")
+            and self.config_obj.model_type == "llm"
+            and self.config_obj.adapter is not None
+        ):
+            self.model.merge_and_unload(progressbar=progressbar)
 
     def _tune_batch_size(self, trainer, dataset, random_seed: int = default_random_seed):
         """Sets AUTO batch-size-related parameters based on the trainer, backend type, and number of workers.
@@ -1635,6 +1650,13 @@ class LudwigModel:
 
         # load model weights
         ludwig_model.load_weights(model_dir)
+
+        # Due to a potential bug, LoRA weights are loaded; hence, we merge and unload them again.
+        if (
+            ludwig_model.config_obj.adapter is not None
+            and ludwig_model.config_obj.adapter.postprocessor.merge_adapter_into_base_model
+        ):
+            ludwig_model._merge_and_unload(progressbar=ludwig_model.config_obj.adapter.postprocessor.progressbar)
 
         # load train set metadata
         ludwig_model.training_set_metadata = backend.broadcast_return(

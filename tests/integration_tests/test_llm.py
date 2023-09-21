@@ -14,11 +14,14 @@ from ludwig.constants import (
     EPOCHS,
     GENERATION,
     INPUT_FEATURES,
+    MERGE_ADAPTER_INTO_BASE_MODEL,
     MODEL_LLM,
     MODEL_TYPE,
     OUTPUT_FEATURES,
+    POSTPROCESSOR,
     PREPROCESSING,
     PRETRAINED_ADAPTER_WEIGHTS,
+    PROGRESSBAR,
     PROMPT,
     TRAINER,
     TYPE,
@@ -94,6 +97,27 @@ def convert_preds(preds: DataFrame):
     if isinstance(preds, pd.DataFrame):
         return preds.to_dict()
     return preds.compute().to_dict()
+
+
+def _finetune_strategy_requires_cuda(finetune_strategy_name: str, quantization_args: dict | None) -> bool:
+    """This method returns whether or not a given finetine_strategy requires CUDA.
+
+    For all finetune strategies, except "qlora", the decision is based just on the name of the finetine_strategy; in the
+    case of qlora, if the quantization dictionary is non-empty (i.e., contains quantization specifications), then the
+    original finetine_strategy name of "lora" is interpreted as "qlora" and used in the lookup, based on the list of
+    finetine strategies requiring CUDA.
+    """
+    cuda_only_finetune_strategy_names: list[str] = [
+        "prompt_tuning",
+        "prefix_tuning",
+        "p_tuning",
+        "qlora",
+    ]
+
+    if finetune_strategy_name == "lora" and quantization_args:
+        finetune_strategy_name = "qlora"
+
+    return finetune_strategy_name in cuda_only_finetune_strategy_names
 
 
 @pytest.mark.llm
@@ -325,44 +349,57 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
     "finetune_strategy,adapter_args,quantization",
     [
         (None, {}, None),
-        # (
-        #     "prompt_tuning",
-        #     {
-        #         "num_virtual_tokens": 8,
-        #         "prompt_tuning_init": "RANDOM",
-        #     },
-        # ),
-        # (
-        #     "prompt_tuning",
-        #     {
-        #         "num_virtual_tokens": 8,
-        #         "prompt_tuning_init": "TEXT",
-        #         "prompt_tuning_init_text": "Classify if the review is positive, negative, or neutral: ",
-        #     },
-        # ),
-        # ("prefix_tuning", {"num_virtual_tokens": 8}),
-        # ("p_tuning", {"num_virtual_tokens": 8, "encoder_reparameterization_type": "MLP"}),
-        # ("p_tuning", {"num_virtual_tokens": 8, "encoder_reparameterization_type": "LSTM"}),
+        (
+            "prompt_tuning",
+            {
+                "num_virtual_tokens": 8,
+                "prompt_tuning_init": "RANDOM",
+            },
+            None,
+        ),
+        (
+            "prompt_tuning",
+            {
+                "num_virtual_tokens": 8,
+                "prompt_tuning_init": "TEXT",
+                "prompt_tuning_init_text": "Classify if the review is positive, negative, or neutral: ",
+            },
+            None,
+        ),
+        ("prefix_tuning", {"num_virtual_tokens": 8}, None),
+        ("p_tuning", {"num_virtual_tokens": 8, "encoder_reparameterization_type": "MLP"}, None),
+        ("p_tuning", {"num_virtual_tokens": 8, "encoder_reparameterization_type": "LSTM"}, None),
         ("lora", {}, None),
+        ("lora", {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: True, PROGRESSBAR: True}}, None),
+        ("lora", {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: False}}, None),
         ("lora", {}, {"bits": 4}),  # qlora
-        # ("adalora", {}),
+        ("adalora", {}, None),
+        ("adalora", {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: True, PROGRESSBAR: True}}, None),
+        ("adalora", {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: False}}, None),
         ("adaption_prompt", {"adapter_len": 6, "adapter_layers": 1}, None),
     ],
     ids=[
         "none",
-        # "prompt_tuning_init_random",
-        # "prompt_tuning_init_text",
-        # "prefix_tuning",
-        # "p_tuning_mlp_reparameterization",
-        # "p_tuning_lstm_reparameterization",
+        "prompt_tuning_init_random",
+        "prompt_tuning_init_text",
+        "prefix_tuning",
+        "p_tuning_mlp_reparameterization",
+        "p_tuning_lstm_reparameterization",
         "lora",
+        "lora_merged",
+        "lora_not_merged",
         "qlora",
-        # "adalora",
+        "adalora",
+        "adalora_merged",
+        "adalora_not_merged",
         "adaption_prompt",
     ],
 )
 def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strategy, adapter_args, quantization):
-    if not torch.cuda.is_available() or torch.cuda.device_count() == 0:
+    if (
+        _finetune_strategy_requires_cuda(finetune_strategy_name=finetune_strategy, quantization_args=quantization)
+        and not (torch.cuda.is_available() and torch.cuda.device_count()) > 0
+    ):
         pytest.skip("Skip: quantization requires GPU and none are available.")
 
     input_features = [text_feature(name="input", encoder={"type": "passthrough"})]
@@ -371,7 +408,7 @@ def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strat
     df = generate_data(input_features, output_features, filename=csv_filename, num_examples=25)
 
     model_name = TEST_MODEL_NAME
-    if finetune_strategy == "adalora":
+    if finetune_strategy in ["adalora", "adalora_merged"]:
         # Adalora isn't supported for GPT-J model types, so use tiny bart
         model_name = "hf-internal-testing/tiny-random-BartModel"
     elif finetune_strategy == "adaption_prompt":
@@ -550,9 +587,21 @@ def test_load_pretrained_adapter_weights(adapter):
 
 def _compare_models(model_1: torch.nn.Module, model_2: torch.nn.Module) -> bool:
     # Source: https://discuss.pytorch.org/t/check-if-models-have-same-weights/4351/6
+
+    if model_1.__class__.__name__ != model_2.__class__.__name__:
+        return False
+
+    if (
+        hasattr(model_1, "model")
+        and hasattr(model_2, "model")
+        and not _compare_models(model_1=model_1.model, model_2=model_2.model)
+    ):
+        return False
+
     for key_item_1, key_item_2 in zip(model_1.state_dict().items(), model_2.state_dict().items()):
         if not torch.equal(key_item_1[1], key_item_2[1]):
             return False
+
     return True
 
 

@@ -472,6 +472,21 @@ class LLM(BaseModel):
 
         return outputs
 
+    def merge_and_unload(self, progressbar: bool = False) -> None:
+        """This method merges the LoRa layers into the base model.  This is needed if someone wants to use the base
+        model as a standalone model.  The implementation calls merge_and_unload() of the underlying LoraModel class
+        (in peft).
+
+        Args:
+            progressbar (bool): whether to show a progressbar indicating the unload and merge process
+        """
+        from peft import LoraModel
+
+        if isinstance(self.model.base_model, LoraModel):
+            self.model.base_model.merge_and_unload(progressbar=progressbar)
+        else:
+            raise ValueError("This operation requires an LLM model trained using LoRA as the base model.")
+
     def _unpack_inputs(
         self,
         inputs: Union[
@@ -663,6 +678,7 @@ class LLM(BaseModel):
                 self.model = self.model.base_model
 
             self.model = PeftModel.from_pretrained(self.model, weights_save_path)
+
         elif self.config_obj.trainer.type != "none":
             self.model = load_pretrained_from_config(
                 self.config_obj, model_config=self.model_config, weights_save_path=weights_save_path
