@@ -1211,6 +1211,15 @@ def build_dataset(
             logger.debug(f"sample {sample_ratio} of data")
             dataset_df = dataset_df.sample(frac=sample_ratio, random_state=random_seed)
 
+        sample_cap = global_preprocessing_parameters["sample_cap"]
+        if sample_cap:
+            if sample_ratio < 1.0:
+                raise ValueError("sample_cap cannot be used when sample_ratio < 1.0")
+            if sample_cap < len(dataset_df):
+                dataset_df = dataset_df.sample(n=sample_cap, random_state=random_seed)
+            else:
+                logger.info("sample_cap is larger than dataset size, ignoring sample_cap")
+
     # If persisting DataFrames in memory is enabled, we want to do this after
     # each batch of parallel ops in order to avoid redundant computation
     dataset_df = df_engine.persist(dataset_df)
