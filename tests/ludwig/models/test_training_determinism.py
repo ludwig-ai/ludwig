@@ -3,6 +3,8 @@ import os
 
 import numpy as np
 import pytest
+import torch
+from packaging import version
 
 from ludwig.api import LudwigModel
 from ludwig.constants import BATCH_SIZE, EVAL_BATCH_SIZE, TRAINER
@@ -42,6 +44,10 @@ def test_training_determinism_ray_backend(csv_filename, tmpdir, ray_cluster_4cpu
     np.testing.assert_equal(train_stats_1, train_stats_2)
 
 
+@pytest.mark.skipif(
+    version.parse(torch.__version__).base_version >= version.parse("2.2.0").base_version,
+    reason="Fails with torch 2.2.0. https://github.com/ludwig-ai/ludwig/issues/3645",
+)
 def test_training_determinism_local_backend(csv_filename, tmpdir):
     experiment_output_1, experiment_output_2 = train_twice("local", csv_filename, tmpdir)
 
