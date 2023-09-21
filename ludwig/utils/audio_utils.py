@@ -19,9 +19,11 @@ from io import BytesIO
 from typing import Any, List, Optional, Union
 
 import torch
+import torch.nn.functional as F
 import torchaudio
 
 from ludwig.api_annotations import DeveloperAPI
+from ludwig.constants import DEFAULT_AUDIO_TENSOR_LENGTH
 from ludwig.utils.types import TorchAudioTuple
 
 logger = logging.getLogger(__name__)
@@ -40,23 +42,19 @@ def is_torch_audio_tuple(audio: Any) -> bool:
 
 @DeveloperAPI
 def get_default_audio(audio_lst: List[TorchAudioTuple]) -> TorchAudioTuple:
-    return audio_lst[0]
+    sampling_rates = [audio[1] for audio in audio_lst]
+    tensor_list = [audio[0] for audio in audio_lst]
 
-    # This calculation causes OOMs.
-    # https://github.com/ludwig-ai/ludwig/actions/runs/6250680588/job/16970090052?pr=3644
-    # sampling_rates = [audio[1] for audio in audio_lst]
-    # tensor_list = [audio[0] for audio in audio_lst]
+    for i, tensor in enumerate(tensor_list):
+        if tensor.shape[1] > DEFAULT_AUDIO_TENSOR_LENGTH:
+            tensor_list[i] = tensor[:, :DEFAULT_AUDIO_TENSOR_LENGTH]
+        else:
+            pad_size = DEFAULT_AUDIO_TENSOR_LENGTH - tensor.shape[1]
+            tensor_list[i] = F.pad(tensor, (0, pad_size))
+    default_audio_tensor = torch.mean(torch.stack(tensor_list), dim=0)
+    default_sampling_rate = calculate_mean(sum(sampling_rates), len(sampling_rates))
 
-    # for i, tensor in enumerate(tensor_list):
-    #     if tensor.shape[1] > DEFAULT_AUDIO_TENSOR_LENGTH:
-    #         tensor_list[i] = tensor[:, :DEFAULT_AUDIO_TENSOR_LENGTH]
-    #     else:
-    #         pad_size = DEFAULT_AUDIO_TENSOR_LENGTH - tensor.shape[1]
-    #         tensor_list[i] = F.pad(tensor, (0, pad_size))
-    # default_audio_tensor = torch.mean(torch.stack(tensor_list), dim=0)
-    # default_sampling_rate = calculate_mean(sum(sampling_rates), len(sampling_rates))
-
-    # return default_audio_tensor, default_sampling_rate
+    return default_audio_tensor, default_sampling_rate
 
 
 @DeveloperAPI

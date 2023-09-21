@@ -1,6 +1,14 @@
+import pytest
+import torch
+from packaging import version
+
 from ludwig.data import dataset_synthesizer
 
 
+@pytest.mark.skipif(
+    version.parse(torch.__version__).base_version >= version.parse("2.2.0").base_version,
+    reason="Fails with torch 2.2.0. https://github.com/ludwig-ai/ludwig/issues/3645",
+)
 def test_build_synthetic_dataset(tmpdir):
     features = [
         {"name": "text", "type": "text"},
