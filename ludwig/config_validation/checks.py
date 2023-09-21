@@ -599,12 +599,34 @@ def _get_llm_model_config(model_name: str) -> AutoConfig:
 @register_config_check
 def check_llm_quantization_backend_incompatibility(config: "ModelConfig") -> None:  # noqa: F821
     """Checks that LLM model type with quantization uses the local backend."""
-    if config.backend is None:
+    if config.model_type != MODEL_LLM:
         return
 
-    backend_type = config.backend.get("type", "local")
-    if config.model_type == MODEL_LLM and config.quantization and backend_type != "local":
+    if config.quantization is None:
+        return
+
+    backend_type = None
+    if config.backend:
+        backend_type = config.backend.get("type", None)
+
+    # If backend was explicitly set to Ray, then we need to raise an error
+    if backend_type == "ray":
         raise ConfigValidationError(f"LLM with quantization requires the 'local' backend, found: '{backend_type}'")
+
+    # If the backend is not explicitly set, then we need to check if a Ray process is running
+    # If a Ray process is running, then we need to raise an error because the backend will be set to Ray
+    if config.backend is None:
+        try:
+            # May not be installed, so we need to catch the ImportError
+            import ray
+
+            if ray.is_initialized():
+                raise ConfigValidationError(
+                    "LLM with quantization requires the 'local' backend, but backend will be set "
+                    "to Ray since Ray is already running locally."
+                )
+        except ImportError:
+            pass
 
 
 @register_config_check

@@ -912,3 +912,38 @@ def test_llm_finetuning_output_feature_config():
 
     config[OUTPUT_FEATURES] = [{NAME: "text_output", TYPE: "text"}]
     ModelConfig.from_dict(config)
+
+
+@pytest.mark.distributed
+def test_llm_quantization_backend_compatibility():
+    config = {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: "HuggingFaceH4/tiny-random-LlamaForCausalLM",
+        INPUT_FEATURES: [{NAME: "text_input", TYPE: "text"}],
+        OUTPUT_FEATURES: [{NAME: "text_output", TYPE: "text"}],
+        "quantization": {"bits": 4},
+    }
+
+    # Backend not set - defaults to local backend
+    ModelConfig.from_dict(config)
+
+    # Backend explicitly set to local backend
+    config["backend"] = {"type": "local"}
+    ModelConfig.from_dict(config)
+
+    # Backend explicitly set to Ray backend
+    config["backend"] = {"type": "ray"}
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+    # Start local ray process
+    import ray
+
+    ray.init()
+
+    # Backend not set, but local Ray process is running
+    config.pop("backend")
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+    ray.shutdown()

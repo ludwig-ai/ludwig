@@ -1,4 +1,5 @@
 import os
+from typing import Dict, Tuple
 
 import numpy as np
 import pandas as pd
@@ -30,6 +31,9 @@ from ludwig.models.llm import LLM
 from ludwig.schema.model_types.base import ModelConfig
 from ludwig.utils.types import DataFrame
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
+
+pytestmark = pytest.mark.llm
+
 
 LOCAL_BACKEND = {"type": "local"}
 TEST_MODEL_NAME = "hf-internal-testing/tiny-random-GPTJForCausalLM"
@@ -327,95 +331,28 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
     assert preds
 
 
-# TODO(arnav): p-tuning and prefix tuning have errors when enabled that seem to stem from DDP:
-#
-# prefix tuning:
-# Sizes of tensors must match except in dimension 1. Expected size 320 but got size 32 for tensor number 1 in the list.
-#
-# p-tuning:
-# 'PromptEncoder' object has no attribute 'mlp_head'
-@pytest.mark.llm
-@pytest.mark.parametrize(
-    "backend",
-    [
-        pytest.param(LOCAL_BACKEND, id="local"),
-        # TODO(Arnav): Re-enable once we can run tests on GPUs
-        # This is because fine-tuning requires Ray with the deepspeed strategy, and deepspeed
-        # only works with GPUs
-        # pytest.param(RAY_BACKEND, id="ray"),
-    ],
-)
-@pytest.mark.parametrize(
-    "finetune_strategy,adapter_args,quantization",
-    [
-        (None, {}, None),
-        (
-            "prompt_tuning",
-            {
-                "num_virtual_tokens": 8,
-                "prompt_tuning_init": "RANDOM",
-            },
-            None,
-        ),
-        (
-            "prompt_tuning",
-            {
-                "num_virtual_tokens": 8,
-                "prompt_tuning_init": "TEXT",
-                "prompt_tuning_init_text": "Classify if the review is positive, negative, or neutral: ",
-            },
-            None,
-        ),
-        ("prefix_tuning", {"num_virtual_tokens": 8}, None),
-        ("p_tuning", {"num_virtual_tokens": 8, "encoder_reparameterization_type": "MLP"}, None),
-        ("p_tuning", {"num_virtual_tokens": 8, "encoder_reparameterization_type": "LSTM"}, None),
-        ("lora", {}, None),
-        ("lora", {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: True, PROGRESSBAR: True}}, None),
-        ("lora", {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: False}}, None),
-        ("lora", {}, {"bits": 4}),  # qlora
-        ("lora", {}, {"bits": 8}),  # qlora 8-bit
-        ("adalora", {}, None),
-        ("adalora", {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: True, PROGRESSBAR: True}}, None),
-        ("adalora", {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: False}}, None),
-        ("adaption_prompt", {"adapter_len": 6, "adapter_layers": 1}, None),
-    ],
-    ids=[
-        "none",
-        "prompt_tuning_init_random",
-        "prompt_tuning_init_text",
-        "prefix_tuning",
-        "p_tuning_mlp_reparameterization",
-        "p_tuning_lstm_reparameterization",
-        "lora",
-        "lora_merged",
-        "lora_not_merged",
-        "qlora",
-        "qlora-8bit",
-        "adalora",
-        "adalora_merged",
-        "adalora_not_merged",
-        "adaption_prompt",
-    ],
-)
-def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strategy, adapter_args, quantization):
-    if (
-        _finetune_strategy_requires_cuda(finetune_strategy_name=finetune_strategy, quantization_args=quantization)
-        and not (torch.cuda.is_available() and torch.cuda.device_count()) > 0
-    ):
-        pytest.skip("Skip: quantization requires GPU and none are available.")
-
+def _prepare_finetuning_test(
+    csv_filename: str, finetune_strategy: str, backend: Dict, adapter_args: Dict
+) -> Tuple[Dict, str]:
     input_features = [text_feature(name="input", encoder={"type": "passthrough"})]
     output_features = [text_feature(name="output")]
 
-    df = generate_data(input_features, output_features, filename=csv_filename, num_examples=25)
+    train_df = generate_data(input_features, output_features, filename=csv_filename, num_examples=25)
+    prediction_df = pd.DataFrame(
+        [
+            {"input": "The food was amazing!", "output": "positive"},
+            {"input": "The service was terrible.", "output": "negative"},
+            {"input": "The food was okay.", "output": "neutral"},
+        ]
+    )
 
     model_name = TEST_MODEL_NAME
-    if finetune_strategy in ["adalora", "adalora_merged"]:
+    if finetune_strategy == "adalora":
         # Adalora isn't supported for GPT-J model types, so use tiny bart
         model_name = "hf-internal-testing/tiny-random-BartModel"
     elif finetune_strategy == "adaption_prompt":
         # At the time of writing this test, Adaption Prompt fine-tuning is only supported for Llama models
-        model_name = "HuggingFaceM4/tiny-random-LlamaForCausalLM"
+        model_name = "yujiepan/llama-2-tiny-random"
 
     config = {
         MODEL_TYPE: MODEL_LLM,
@@ -436,19 +373,55 @@ def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strat
             **adapter_args,
         }
 
-    if quantization is not None:
-        config["quantization"] = quantization
+    return train_df, prediction_df, config
+
+
+# TODO(arnav): p-tuning and prefix tuning have errors when enabled that seem to stem from DDP:
+#
+# prefix tuning:
+# Sizes of tensors must match except in dimension 1. Expected size 320 but got size 32 for tensor number 1 in the list.
+#
+# p-tuning:
+# 'PromptEncoder' object has no attribute 'mlp_head'
+@pytest.mark.llm
+@pytest.mark.parametrize(
+    "backend",
+    [
+        pytest.param(LOCAL_BACKEND, id="local"),
+        # TODO(Arnav): Re-enable once we can run tests on GPUs
+        # This is because fine-tuning requires Ray with the deepspeed strategy, and deepspeed
+        # only works with GPUs
+        # pytest.param(RAY_BACKEND, id="ray"),
+    ],
+)
+@pytest.mark.parametrize(
+    "finetune_strategy,adapter_args",
+    [
+        (None, {}),
+        ("lora", {}),
+        ("lora", {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: True, PROGRESSBAR: True}}),
+        ("lora", {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: False}}),
+        ("adalora", {}),
+        ("adalora", {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: True, PROGRESSBAR: True}}),
+        ("adalora", {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: False}}),
+        ("adaption_prompt", {"adapter_len": 6, "adapter_layers": 1}),
+    ],
+    ids=[
+        "none",
+        "lora",
+        "lora_merged",
+        "lora_not_merged",
+        "adalora",
+        "adalora_merged",
+        "adalora_not_merged",
+        "adaption_prompt",
+    ],
+)
+def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strategy, adapter_args):
+    train_df, prediction_df, config = _prepare_finetuning_test(csv_filename, finetune_strategy, backend, adapter_args)
 
     model = LudwigModel(config)
-    model.train(dataset=df, output_directory=str(tmpdir), skip_save_processed_input=False)
-
-    prediction_df = pd.DataFrame(
-        [
-            {"input": "The food was amazing!", "output": "positive"},
-            {"input": "The service was terrible.", "output": "negative"},
-            {"input": "The food was okay.", "output": "neutral"},
-        ]
-    )
+    model.train(dataset=train_df, output_directory=str(tmpdir), skip_save_processed_input=False)
 
     # Make sure we can load the saved model and then use it for predictions
     model = LudwigModel.load(os.path.join(str(tmpdir), "api_experiment_run", "model"), backend=backend)
@@ -462,6 +435,47 @@ def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strat
     assert preds
 
 
+@pytest.mark.llm
+@pytest.mark.parametrize(
+    "finetune_strategy,adapter_args,quantization",
+    [
+        ("lora", {}, {"bits": 4}),  # qlora
+        ("lora", {}, {"bits": 8}),  # qlora 8-bit
+    ],
+    ids=[
+        "qlora-4bit",
+        "qlora-8bit",
+    ],
+)
+def test_llm_finetuning_strategies_quantized(tmpdir, csv_filename, finetune_strategy, adapter_args, quantization):
+    if (
+        _finetune_strategy_requires_cuda(finetune_strategy_name=finetune_strategy, quantization_args=quantization)
+        and not (torch.cuda.is_available() and torch.cuda.device_count()) > 0
+    ):
+        pytest.skip("Skip: quantization requires GPU and none are available.")
+
+    backend = LOCAL_BACKEND
+
+    train_df, prediction_df, config = _prepare_finetuning_test(csv_filename, finetune_strategy, backend, adapter_args)
+    config["backend"] = backend
+    config["quantization"] = quantization
+
+    model = LudwigModel(config)
+    model.train(dataset=train_df, output_directory=str(tmpdir), skip_save_processed_input=False)
+
+    # Make sure we can load the saved model and then use it for predictions
+    model = LudwigModel.load(os.path.join(str(tmpdir), "api_experiment_run", "model"))
+
+    base_model = LLM(ModelConfig.from_dict(config))
+    assert not _compare_models(base_model, model.model)
+
+    preds, _ = model.predict(dataset=prediction_df, output_directory=str(tmpdir))
+    preds = convert_preds(preds)
+
+    assert preds
+
+
+@pytest.mark.llm
 @pytest.mark.parametrize("use_adapter", [True, False], ids=["with_adapter", "without_adapter"])
 def test_llm_training_with_gradient_checkpointing(tmpdir, csv_filename, use_adapter):
     input_features = [text_feature(name="input", encoder={"type": "passthrough"})]
@@ -491,6 +505,7 @@ def test_llm_training_with_gradient_checkpointing(tmpdir, csv_filename, use_adap
     model.train(dataset=df, output_directory=str(tmpdir), skip_save_processed_input=False)
 
 
+@pytest.mark.llm
 def test_lora_wrap_on_init():
     from peft import PeftModel
     from transformers import PreTrainedModel
@@ -569,6 +584,7 @@ def test_default_max_sequence_length():
     assert config_obj.output_features[0].preprocessing.max_sequence_length is None
 
 
+@pytest.mark.llm
 @pytest.mark.parametrize("adapter", ["lora", "adalora", "adaption_prompt"])
 def test_load_pretrained_adapter_weights(adapter):
     from peft import PeftModel
