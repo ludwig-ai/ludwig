@@ -1,5 +1,5 @@
 import os
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -103,7 +103,7 @@ def convert_preds(preds: DataFrame):
     return preds.compute().to_dict()
 
 
-def _finetune_strategy_requires_cuda(finetune_strategy_name: str, quantization_args: dict | None) -> bool:
+def _finetune_strategy_requires_cuda(finetune_strategy_name: str, quantization_args: Union[dict, None]) -> bool:
     """This method returns whether or not a given finetine_strategy requires CUDA.
 
     For all finetune strategies, except "qlora", the decision is based just on the name of the finetine_strategy; in the
