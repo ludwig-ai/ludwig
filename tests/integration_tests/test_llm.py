@@ -663,15 +663,15 @@ def test_load_pretrained_adapter_weights(adapter):
 
 def _compare_models(model_1: torch.nn.Module, model_2: torch.nn.Module) -> bool:
     # For a full explanation of this 8-bit workaround, see https://github.com/ludwig-ai/ludwig/pull/3606
-    def filter_for_weight_format(i):
-        """Remove bitsandbytes metadata keys added on state dict creation.
-
-        8-bit quantized models that have been put on gpu will have a set of `weight_format` keys in their state dict.
-        These contain strings that are used to reshape quantized tensors, however these have no impact until the state
-        dict is loaded into a model. These keys were causing `torch.equal` to raise an exception, so we skip them in the
-        evaluation.
-        """
-        return "weight_format" not in i[0]
+    # def filter_for_weight_format(i):
+    #     """Remove bitsandbytes metadata keys added on state dict creation.
+    #
+    #     8-bit quantized models that have been put on gpu will have a set of `weight_format` keys in their state dict.
+    #     These contain strings that are used to reshape quantized tensors, however these have no impact until the state
+    #     dict is loaded into a model. These keys were causing `torch.equal` to raise an exception, so we skip them in
+    #     the evaluation.
+    #     """
+    #     return "weight_format" not in i[0]
 
     # model_1_filtered_state_dict = filter(filter_for_weight_format, model_1.state_dict().items())
     # model_2_filtered_state_dict = filter(filter_for_weight_format, model_2.state_dict().items())
