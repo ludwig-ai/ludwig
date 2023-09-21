@@ -1658,7 +1658,7 @@ class LudwigModel:
         # load model weights
         ludwig_model.load_weights(model_dir)
 
-        # Due to a potential bug, LoRA weights are loaded; hence, we merge and unload them again.
+        # The LoRA layers appear to be loaded again (perhaps due to a potential bug); hence, we merge and unload again.
         if (
             ludwig_model.config_obj.adapter is not None
             and ludwig_model.config_obj.adapter.postprocessor.merge_adapter_into_base_model
