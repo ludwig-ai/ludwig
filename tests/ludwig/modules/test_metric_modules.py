@@ -292,3 +292,12 @@ def test_jaccard_metric(preds: torch.Tensor, target: torch.Tensor, output: torch
     with metric.sync_context():
         metric.update(preds, target)
         assert output == metric.compute()
+
+
+def test_char_error_rate():
+    metric = metric_modules.CharErrorRateMetric()
+    with metric.sync_context():
+        metric.update(
+            ["this is the prediction", "there is an other sample"], ["this is the reference", "there is another one"]
+        )
+        assert torch.isclose(torch.tensor(0.3415), metric.compute(), rtol=0.5)

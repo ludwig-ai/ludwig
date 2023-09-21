@@ -376,3 +376,35 @@ def test_gradient_accumulation(gradient_accumulation_steps: int, tmpdir):
     # convergence like gradient magnitudes, etc. Should also add distributed tests.
     model = LudwigModel(config, backend=LocalTestBackend(), logging_level=logging.INFO)
     model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv, output_directory=tmpdir)
+
+
+def test_enable_gradient_checkpointing(tmpdir, caplog):
+    """Test that gradient checkpointing is enabled when specified in the config and that it does not cause an error
+    when the model does not have support for gradient checkpointing."""
+    input_features = [text_feature()]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
+
+    csv_filename = os.path.join(tmpdir, "training.csv")
+    data_csv = generate_data(input_features, output_features, csv_filename)
+    val_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "validation.csv"))
+    test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "test.csv"))
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "output_size": 14},
+        TRAINER: {
+            "train_steps": 2,
+            "batch_size": 8,
+            "enable_gradient_checkpointing": True,
+        },
+    }
+
+    model = LudwigModel(config, backend=LocalTestBackend(), logging_level=logging.INFO)
+    assert model.config_obj.trainer.enable_gradient_checkpointing
+
+    model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv, output_directory=tmpdir)
+
+    # Check that the warning is emitted when the model does not support gradient checkpointing
+    # but does not prevent training from starting.
+    assert "Gradient checkpointing is currently only supported for model_type: llm. Skipping..." in caplog.text

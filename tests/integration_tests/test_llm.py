@@ -373,6 +373,7 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
         ("lora", {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: True, PROGRESSBAR: True}}, None),
         ("lora", {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: False}}, None),
         ("lora", {}, {"bits": 4}),  # qlora
+        ("lora", {}, {"bits": 8}),  # qlora 8-bit
         ("adalora", {}, None),
         ("adalora", {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: True, PROGRESSBAR: True}}, None),
         ("adalora", {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: False}}, None),
@@ -389,6 +390,7 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
         "lora_merged",
         "lora_not_merged",
         "qlora",
+        "qlora-8bit",
         "adalora",
         "adalora_merged",
         "adalora_not_merged",
@@ -458,6 +460,35 @@ def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strat
     preds = convert_preds(preds)
 
     assert preds
+
+
+@pytest.mark.parametrize("use_adapter", [True, False], ids=["with_adapter", "without_adapter"])
+def test_llm_training_with_gradient_checkpointing(tmpdir, csv_filename, use_adapter):
+    input_features = [text_feature(name="input", encoder={"type": "passthrough"})]
+    output_features = [text_feature(name="output")]
+
+    df = generate_data(input_features, output_features, filename=csv_filename, num_examples=25)
+
+    config = {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: "hf-internal-testing/tiny-random-BartModel",
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        TRAINER: {
+            TYPE: "finetune",
+            BATCH_SIZE: 8,
+            EPOCHS: 1,
+            "enable_gradient_checkpointing": True,
+        },
+    }
+
+    if use_adapter:
+        config[ADAPTER] = {TYPE: "lora"}
+
+    model = LudwigModel(config)
+    assert model.config_obj.trainer.enable_gradient_checkpointing
+
+    model.train(dataset=df, output_directory=str(tmpdir), skip_save_processed_input=False)
 
 
 def test_lora_wrap_on_init():
@@ -586,6 +617,20 @@ def test_load_pretrained_adapter_weights(adapter):
 
 
 def _compare_models(model_1: torch.nn.Module, model_2: torch.nn.Module) -> bool:
+    # For a full explanation of this 8-bit workaround, see https://github.com/ludwig-ai/ludwig/pull/3606
+    def filter_for_weight_format(i):
+        """Remove bitsandbytes metadata keys added on state dict creation.
+
+        8-bit quantized models that have been put on gpu will have a set of `weight_format` keys in their state dict.
+        These contain strings that are used to reshape quantized tensors, however these have no impact until the state
+        dict is loaded into a model. These keys were causing `torch.equal` to raise an exception, so we skip them in the
+        evaluation.
+        """
+        return "weight_format" not in i[0]
+
+    # model_1_filtered_state_dict = filter(filter_for_weight_format, model_1.state_dict().items())
+    # model_2_filtered_state_dict = filter(filter_for_weight_format, model_2.state_dict().items())
+
     # Source: https://discuss.pytorch.org/t/check-if-models-have-same-weights/4351/6
 
     if model_1.__class__.__name__ != model_2.__class__.__name__:
@@ -627,3 +672,38 @@ def test_global_max_sequence_length_for_llms():
 
     # Check that the value can never be larger than the model's context_len
     assert model.global_max_sequence_length == 2048
+
+
+def test_local_path_loading():
+    """Tests that local paths can be used to load models."""
+
+    from huggingface_hub import snapshot_download
+
+    # Download the model to a local directory
+    LOCAL_PATH = "~/test_local_path_loading"
+    REPO_ID = "HuggingFaceH4/tiny-random-LlamaForCausalLM"
+    os.makedirs(LOCAL_PATH, exist_ok=True)
+    snapshot_download(repo_id=REPO_ID, local_dir=LOCAL_PATH)
+
+    # Load the model using the local path
+    config1 = {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: LOCAL_PATH,
+        INPUT_FEATURES: [text_feature(name="input", encoder={"type": "passthrough"})],
+        OUTPUT_FEATURES: [text_feature(name="output")],
+    }
+    config_obj1 = ModelConfig.from_dict(config1)
+    model1 = LLM(config_obj1)
+
+    # Load the model using the repo id
+    config2 = {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: REPO_ID,
+        INPUT_FEATURES: [text_feature(name="input", encoder={"type": "passthrough"})],
+        OUTPUT_FEATURES: [text_feature(name="output")],
+    }
+    config_obj2 = ModelConfig.from_dict(config2)
+    model2 = LLM(config_obj2)
+
+    # Check that the models are the same
+    assert _compare_models(model1.model, model2.model)

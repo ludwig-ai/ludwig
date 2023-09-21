@@ -200,7 +200,7 @@ def test_resume_training_mlflow(optimizer, tmp_path):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat"},
-        TRAINER: {"epochs": 2, "batch_size": 16, "optimizer": {"type": optimizer}},
+        TRAINER: {"epochs": 2, "batch_size": 16, "eval_batch_size": 2, "optimizer": {"type": optimizer}},
     }
 
     # create sub-directory to store results
