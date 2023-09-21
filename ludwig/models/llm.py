@@ -675,7 +675,6 @@ class LLM(BaseModel):
                 self.model = self.model.base_model
 
             self.model = PeftModel.from_pretrained(self.model, weights_save_path)
-
         elif self.config_obj.trainer.type != "none":
             self.model = load_pretrained_from_config(
                 self.config_obj, model_config=self.model_config, weights_save_path=weights_save_path
