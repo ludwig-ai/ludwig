@@ -2009,8 +2009,7 @@ def preprocess_for_training(
             elif training_set_size < MIN_DATASET_SPLIT_ROWS:
                 raise ValueError(
                     f"Training dataset has only {training_set_size} rows following preprocessing, need"
-                    f" at least {MIN_DATASET_SPLIT_ROWS} to compute metrics. If possible, allocate more examples to "
-                    "the training set by adjusting splits or sample_ratio."
+                    f" at least {MIN_DATASET_SPLIT_ROWS} to compute metrics."
                 )
 
             validation_dataset = None
@@ -2026,8 +2025,7 @@ def preprocess_for_training(
                 elif validation_set_size < MIN_DATASET_SPLIT_ROWS:
                     logger.warning(
                         f"Validation set too small to compute metrics. Need at least {MIN_DATASET_SPLIT_ROWS} rows, got"
-                        f" {validation_set_size} after preprocessing. If you have artificially decreased your dataset "
-                        "size with sample_ratio, consider lifting that restriction."
+                        f" {validation_set_size} after preprocessing."
                     )
 
             test_dataset = None
@@ -2043,7 +2041,7 @@ def preprocess_for_training(
                 elif test_set_size < MIN_DATASET_SPLIT_ROWS:
                     logger.warning(
                         f"Test set too small to compute metrics. Need at least {MIN_DATASET_SPLIT_ROWS} rows, got"
-                        f" {test_set_size} after preprocessing. "
+                        f" {test_set_size} after preprocessing."
                     )
 
         return (training_dataset, validation_dataset, test_dataset, training_set_metadata)
