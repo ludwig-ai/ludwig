@@ -1832,7 +1832,7 @@ class LudwigModel:
         if torch.cuda.is_available():
             self.model.model.to(torch.device("cpu"))
             torch.cuda.empty_cache()
-          
+
     @staticmethod
     def create_model(config_obj: Union[ModelConfig, dict], random_seed: int = default_random_seed) -> BaseModel:
         """Instantiates BaseModel object.
