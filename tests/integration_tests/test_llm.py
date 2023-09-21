@@ -408,6 +408,24 @@ def _prepare_finetuning_test(
         ("adalora", {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: False}}),
         ("adaption_prompt", {}),
         ("adaption_prompt", {"adapter_len": 6, "adapter_layers": 1}),
+        # (
+        #     "prompt_tuning",
+        #     {
+        #         "num_virtual_tokens": 8,
+        #         "prompt_tuning_init": "RANDOM",
+        #     },
+        # ),
+        # (
+        #     "prompt_tuning",
+        #     {
+        #         "num_virtual_tokens": 8,
+        #         "prompt_tuning_init": "TEXT",
+        #         "prompt_tuning_init_text": "Classify if the review is positive, negative, or neutral: ",
+        #     },
+        # ),
+        # ("prefix_tuning", {"num_virtual_tokens": 8}),
+        # ("p_tuning", {"num_virtual_tokens": 8, "encoder_reparameterization_type": "MLP"}),
+        # ("p_tuning", {"num_virtual_tokens": 8, "encoder_reparameterization_type": "LSTM"}),
     ],
     ids=[
         "full",
@@ -421,6 +439,11 @@ def _prepare_finetuning_test(
         "adalora_not_merged",
         "adaption_prompt-defaults",
         "adaption_prompt-modified-defaults",
+        # "prompt_tuning_init_random",
+        # "prompt_tuning_init_text",
+        # "prefix_tuning",
+        # "p_tuning_mlp_reparameterization",
+        # "p_tuning_lstm_reparameterization",
     ],
 )
 def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strategy, adapter_args):
