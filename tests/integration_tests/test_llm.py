@@ -100,6 +100,7 @@ def convert_preds(preds: DataFrame):
     return preds.compute().to_dict()
 
 
+@pytest.mark.llm
 @pytest.mark.parametrize(
     "backend",
     [
@@ -166,6 +167,7 @@ def test_llm_text_to_text(tmpdir, backend, ray_cluster_4cpu):
     assert model.model.generation.max_new_tokens == original_max_new_tokens
 
 
+@pytest.mark.llm
 @pytest.mark.parametrize(
     "backend",
     [
@@ -227,6 +229,7 @@ def test_llm_zero_shot_classification(tmpdir, backend, ray_cluster_4cpu):
     assert preds
 
 
+@pytest.mark.llm
 @pytest.mark.parametrize(
     "backend",
     [
@@ -356,6 +359,7 @@ def _prepare_finetuning_test(
 #
 # p-tuning:
 # 'PromptEncoder' object has no attribute 'mlp_head'
+@pytest.mark.llm
 @pytest.mark.parametrize(
     "backend",
     [
@@ -428,6 +432,7 @@ def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strat
     assert preds
 
 
+@pytest.mark.llm
 @pytest.mark.parametrize(
     "finetune_strategy,adapter_args,quantization",
     [
@@ -464,6 +469,7 @@ def test_llm_finetuning_strategies_quantized(tmpdir, csv_filename, finetune_stra
     assert preds
 
 
+@pytest.mark.llm
 @pytest.mark.parametrize("use_adapter", [True, False], ids=["with_adapter", "without_adapter"])
 def test_llm_training_with_gradient_checkpointing(tmpdir, csv_filename, use_adapter):
     input_features = [text_feature(name="input", encoder={"type": "passthrough"})]
@@ -493,6 +499,7 @@ def test_llm_training_with_gradient_checkpointing(tmpdir, csv_filename, use_adap
     model.train(dataset=df, output_directory=str(tmpdir), skip_save_processed_input=False)
 
 
+@pytest.mark.llm
 def test_lora_wrap_on_init():
     from peft import PeftModel
     from transformers import PreTrainedModel
@@ -571,6 +578,7 @@ def test_default_max_sequence_length():
     assert config_obj.output_features[0].preprocessing.max_sequence_length is None
 
 
+@pytest.mark.llm
 @pytest.mark.parametrize("adapter", ["lora", "adalora", "adaption_prompt"])
 def test_load_pretrained_adapter_weights(adapter):
     from peft import PeftModel
