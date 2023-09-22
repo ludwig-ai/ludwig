@@ -103,27 +103,6 @@ def convert_preds(preds: DataFrame):
     return preds.compute().to_dict()
 
 
-def _finetune_strategy_requires_cuda(finetune_strategy_name: str, quantization_args: Union[dict, None]) -> bool:
-    """This method returns whether or not a given finetine_strategy requires CUDA.
-
-    For all finetune strategies, except "qlora", the decision is based just on the name of the finetine_strategy; in the
-    case of qlora, if the quantization dictionary is non-empty (i.e., contains quantization specifications), then the
-    original finetine_strategy name of "lora" is interpreted as "qlora" and used in the lookup, based on the list of
-    finetine strategies requiring CUDA.
-    """
-    cuda_only_finetune_strategy_names: list[str] = [
-        "prompt_tuning",
-        "prefix_tuning",
-        "p_tuning",
-        "qlora",
-    ]
-
-    if finetune_strategy_name == "lora" and quantization_args:
-        finetune_strategy_name = "qlora"
-
-    return finetune_strategy_name in cuda_only_finetune_strategy_names
-
-
 @pytest.mark.llm
 @pytest.mark.parametrize(
     "backend",
@@ -376,6 +355,84 @@ def _prepare_finetuning_test(
     return train_df, prediction_df, config
 
 
+def _finetune_strategy_requires_cuda(finetune_strategy_name: str, quantization_args: Union[dict, None]) -> bool:
+    """This method returns whether or not a given finetine_strategy requires CUDA.
+
+    For all finetune strategies, except "qlora", the decision is based just on the name of the finetine_strategy; in the
+    case of qlora, if the quantization dictionary is non-empty (i.e., contains quantization specifications), then the
+    original finetine_strategy name of "lora" is interpreted as "qlora" and used in the lookup, based on the list of
+    finetine strategies requiring CUDA.
+    """
+    cuda_only_finetune_strategy_names: list[str] = [
+        "prompt_tuning",
+        "prefix_tuning",
+        "p_tuning",
+        "qlora",
+    ]
+
+    if finetune_strategy_name == "lora" and quantization_args:
+        finetune_strategy_name = "qlora"
+
+    return finetune_strategy_name in cuda_only_finetune_strategy_names
+
+
+def _verify_lm_lora_finetuning_layers(
+    attention_layer: torch.nn.Module,
+    merge_adapter_into_base_model: bool,
+    expected_lora_in_features: int,
+    expected_lora_out_features: int,
+) -> bool:
+    """This method verifies that LoRA finetuning layers have correct types and shapes, depending on whether or not
+    the optional "model.merge_and_unload()" method (based on the "merge_adapter_into_base_model" directive) was
+    executed.
+
+    If merge_adapter_into_base_model is True, then both LoRA projection layers, V and Q, in the attention layer must
+    contain square weight matrices (with the dimensions expected_lora_in_features by expected_lora_in_features).
+    However, if merge_adapter_into_base_model is False, then the LoRA part of the attention layer must include Lora_A
+    and Lora_B children layers for each of V and Q projections, such that the product of V and Q matrices is a square
+    matrix (with the dimensions expected_lora_in_features by expected_lora_in_features) for both V and Q projections.
+    """
+    success: bool = True
+    success = success and isinstance(attention_layer.v_proj, torch.nn.Linear)
+    success = success and isinstance(attention_layer.q_proj, torch.nn.Linear)
+    if merge_adapter_into_base_model:
+        success = success and (attention_layer.v_proj.in_features, attention_layer.v_proj.out_features) == (
+            expected_lora_in_features,
+            expected_lora_out_features,
+        )
+        success = success and (attention_layer.q_proj.in_features, attention_layer.q_proj.out_features) == (
+            expected_lora_in_features,
+            expected_lora_out_features,
+        )
+        success = success and not list(attention_layer.v_proj.children())
+        success = success and not list(attention_layer.q_proj.children())
+    else:
+        v_proj_named_children: dict[str, torch.nn.Modeule] = dict(attention_layer.v_proj.named_children())
+        assert isinstance(v_proj_named_children["lora_A"]["default"], torch.nn.Linear)
+        assert (
+            v_proj_named_children["lora_A"]["default"].in_features,
+            v_proj_named_children["lora_A"]["default"].out_features,
+        ) == (expected_lora_in_features, expected_lora_out_features)
+        assert isinstance(v_proj_named_children["lora_B"]["default"], torch.nn.Linear)
+        assert (
+            v_proj_named_children["lora_B"]["default"].in_features,
+            v_proj_named_children["lora_B"]["default"].out_features,
+        ) == (expected_lora_out_features, expected_lora_in_features)
+        q_proj_named_children: dict[str, torch.nn.Modeule] = dict(attention_layer.q_proj.named_children())
+        assert isinstance(q_proj_named_children["lora_A"]["default"], torch.nn.Linear)
+        assert (
+            q_proj_named_children["lora_A"]["default"].in_features,
+            q_proj_named_children["lora_A"]["default"].out_features,
+        ) == (expected_lora_in_features, expected_lora_out_features)
+        assert isinstance(q_proj_named_children["lora_B"]["default"], torch.nn.Linear)
+        assert (
+            q_proj_named_children["lora_B"]["default"].in_features,
+            q_proj_named_children["lora_B"]["default"].out_features,
+        ) == (expected_lora_out_features, expected_lora_in_features)
+
+    return success
+
+
 # TODO(arnav): p-tuning and prefix tuning have errors when enabled that seem to stem from DDP:
 #
 # prefix tuning:
@@ -502,6 +559,66 @@ def test_llm_finetuning_strategies_quantized(tmpdir, csv_filename, finetune_stra
     preds = convert_preds(preds)
 
     assert preds
+
+
+@pytest.mark.llm
+@pytest.mark.parametrize(
+    "backend",
+    [
+        pytest.param(LOCAL_BACKEND, id="local"),
+        # TODO: Re-enable once we can run tests on GPUs
+        # This is because fine-tuning requires Ray with the deepspeed strategy, and deepspeed
+        # only works with GPUs
+        # pytest.param(RAY_BACKEND, id="ray"),
+    ],
+)
+@pytest.mark.parametrize(
+    "merge_adapter_into_base_model,expected_lora_in_features,expected_lora_out_features",
+    [
+        pytest.param(
+            False,
+            32,
+            8,
+            id="lora_not_merged",
+        ),
+        pytest.param(
+            True,
+            32,
+            32,
+            id="lora_merged",
+        ),
+    ],
+)
+def test_llm_lora_finetuning_merge_and_unload(
+    tmpdir, csv_filename, backend, merge_adapter_into_base_model, expected_lora_in_features, expected_lora_out_features
+):
+    finetune_strategy: str = "lora"
+    adapter_args: dict = {
+        POSTPROCESSOR: {
+            MERGE_ADAPTER_INTO_BASE_MODEL: merge_adapter_into_base_model,
+        },
+    }
+    train_df, prediction_df, config = _prepare_finetuning_test(
+        csv_filename=csv_filename, finetune_strategy=finetune_strategy, backend=backend, adapter_args=adapter_args
+    )
+
+    model = LudwigModel(config)
+    model.train(dataset=train_df, output_directory=str(tmpdir), skip_save_processed_input=False)
+    assert _verify_lm_lora_finetuning_layers(
+        attention_layer=model.model.model.base_model.model.transformer.h[1].attn,
+        merge_adapter_into_base_model=merge_adapter_into_base_model,
+        expected_lora_in_features=expected_lora_in_features,
+        expected_lora_out_features=expected_lora_out_features,
+    )
+
+    # Make sure we can load the saved model and verify that the LoRA layers have expected shapes.
+    model = LudwigModel.load(os.path.join(str(tmpdir), "api_experiment_run", "model"), backend=backend)
+    assert _verify_lm_lora_finetuning_layers(
+        attention_layer=model.model.model.base_model.model.transformer.h[1].attn,
+        merge_adapter_into_base_model=merge_adapter_into_base_model,
+        expected_lora_in_features=expected_lora_in_features,
+        expected_lora_out_features=expected_lora_out_features,
+    )
 
 
 @pytest.mark.llm
