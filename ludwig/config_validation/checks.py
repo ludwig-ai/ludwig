@@ -691,3 +691,11 @@ def check_prompt_requirements(config: "ModelConfig") -> None:  # noqa: F821
                     "A template must contain at least one reference to a column or the sample keyword {__sample__} for "
                     "a JSON-serialized representation of non-output feature columns."
                 )
+
+
+@register_config_check
+def check_sample_ratio_and_cap_compatible(config: "ModelConfig") -> None:
+    sample_ratio = config.preprocessing.sample_ratio
+    sample_cap = config.preprocessing.sample_cap
+    if sample_cap and sample_ratio < 1.0:
+        raise ConfigValidationError("sample_cap cannot be used when sample_ratio < 1.0")
