@@ -72,7 +72,7 @@ class RandomAccessBatcher(Batcher):
         elif self.ignore_last and self.step:
             # index += batch_size after each epoch. So, if our current index in total dataset is 1 less than the total
             # dataset size, then the last batch will only have 1 row. Drop it if this happens.
-            if self.index - self.total_size == -1:
+            if self.batch_size > 1 and self.index - self.total_size == -1:
                 logger.info("Last batch in epoch only has 1 sample and will be dropped.")
                 return True
         return False
