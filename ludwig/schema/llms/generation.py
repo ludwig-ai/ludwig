@@ -67,7 +67,7 @@ class LLMGenerationConfig(schema_utils.BaseMarshmallowConfig):
     # Parameters that control the generation strategy used
 
     do_sample: Optional[bool] = schema_utils.Boolean(
-        default=False,
+        default=True,
         description="Whether or not to use sampling ; use greedy decoding otherwise.",
         parameter_metadata=LLM_METADATA["generation"]["do_sample"],
     )
