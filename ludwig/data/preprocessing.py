@@ -1402,7 +1402,9 @@ def _get_sampled_dataset_df(dataset_df, df_engine, sample_ratio, sample_cap, ran
 
     if sample_cap:
         if sample_cap < len(dataset_df):
-            dataset_df = dataset_df.sample(n=sample_cap, random_state=random_seed)
+            # Cannot use 'n' parameter when using dask DataFrames -- only 'frac' is supported
+            sample_ratio = sample_cap / len(dataset_df)
+            dataset_df = dataset_df.sample(frac=sample_ratio, random_state=random_seed)
         else:
             logger.warning("sample_cap is larger than dataset size, ignoring sample_cap")
 
