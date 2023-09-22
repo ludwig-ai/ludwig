@@ -1201,24 +1201,8 @@ def build_dataset(
 
     if mode == "training":
         sample_ratio = global_preprocessing_parameters["sample_ratio"]
-        if sample_ratio < 1.0:
-            if not df_engine.partitioned and len(dataset_df) * sample_ratio < 1:
-                raise ValueError(
-                    f"sample_ratio {sample_ratio} is too small for dataset of length {len(dataset_df)}. "
-                    f"Please increase sample_ratio or use a larger dataset."
-                )
-
-            logger.debug(f"sample {sample_ratio} of data")
-            dataset_df = dataset_df.sample(frac=sample_ratio, random_state=random_seed)
-
         sample_cap = global_preprocessing_parameters["sample_cap"]
-        if sample_cap:
-            if sample_ratio < 1.0:
-                raise ValueError("sample_cap cannot be used when sample_ratio < 1.0")
-            if sample_cap < len(dataset_df):
-                dataset_df = dataset_df.sample(n=sample_cap, random_state=random_seed)
-            else:
-                logger.info("sample_cap is larger than dataset size, ignoring sample_cap")
+        dataset_df = _get_sampled_dataset_df(dataset_df, df_engine, sample_ratio, sample_cap, random_seed)
 
     # If persisting DataFrames in memory is enabled, we want to do this after
     # each batch of parallel ops in order to avoid redundant computation
@@ -1403,6 +1387,26 @@ def embed_fixed_features(
         metadata[feature[NAME]][PREPROCESSING]["cache_encoder_embeddings"] = True
 
     return results
+
+
+def _get_sampled_dataset_df(dataset_df, df_engine, sample_ratio, sample_cap, random_seed):
+    if sample_ratio < 1.0:
+        if not df_engine.partitioned and len(dataset_df) * sample_ratio < 1:
+            raise ValueError(
+                f"sample_ratio {sample_ratio} is too small for dataset of length {len(dataset_df)}. "
+                f"Please increase sample_ratio or use a larger dataset."
+            )
+
+        logger.debug(f"sample {sample_ratio} of data")
+        dataset_df = dataset_df.sample(frac=sample_ratio, random_state=random_seed)
+
+    if sample_cap:
+        if sample_cap < len(dataset_df):
+            dataset_df = dataset_df.sample(n=sample_cap, random_state=random_seed)
+        else:
+            logger.warning("sample_cap is larger than dataset size, ignoring sample_cap")
+
+    return dataset_df
 
 
 def get_features_with_cacheable_fixed_embeddings(
