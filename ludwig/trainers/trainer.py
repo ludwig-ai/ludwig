@@ -31,7 +31,7 @@ import psutil
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from ludwig.constants import AUTO, LOSS, MAX_CPU_BATCH_SIZE, MINIMIZE, MODEL_ECD, TEST, TRAINING, VALIDATION
+from ludwig.constants import AUTO, LOSS, MAX_CPU_BATCH_SIZE, MINIMIZE, MODEL_ECD, MODEL_LLM, TEST, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.globals import (
@@ -848,7 +848,9 @@ class Trainer(BaseTrainer):
                 should_shuffle=self.should_shuffle,
                 random_seed=self.random_seed,
                 distributed=self.distributed,
-                ignore_last=True,
+                ignore_last=(
+                    self.model.type() != MODEL_LLM
+                ),  # LLMs default to batch size 1, skip_last always skips a batch
                 augmentation_pipeline=self.model.get_augmentation_pipelines(),
             ) as batcher:
                 # ================ Training Loop ================
@@ -1157,7 +1159,9 @@ class Trainer(BaseTrainer):
             batch_size=self.batch_size,
             should_shuffle=self.should_shuffle,
             distributed=self.distributed,
-            ignore_last=True,
+            ignore_last=(
+                self.model.type() != MODEL_LLM
+            ),  # LLMs default to batch size 1, skip_last always skips a batch,
         ) as batcher:
             # training step loop
             progress_bar_config = {
