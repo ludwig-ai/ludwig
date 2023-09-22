@@ -53,10 +53,10 @@ def test_audio_input_feature(encoder: str) -> None:
     assert encoder_output[ENCODER_OUTPUT].shape[1:] == audio_input_feature.output_shape
 
 
-@pytest.mark.skipif(
-    version.parse(torch.__version__).base_version >= version.parse("2.2.0").base_version,
-    reason="Fails with torch 2.2.0. https://github.com/ludwig-ai/ludwig/issues/3645",
-)
+# @pytest.mark.skipif(
+#     version.parse(torch.__version__).base_version >= version.parse("2.2.0").base_version,
+#     reason="Fails with torch 2.2.0. https://github.com/ludwig-ai/ludwig/issues/3645",
+# )
 @pytest.mark.parametrize("feature_type", ["raw", "stft", "stft_phase", "group_delay", "fbank"])
 def test_add_feature_data(feature_type, tmpdir):
     preprocessing_params = {
