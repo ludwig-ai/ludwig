@@ -124,8 +124,11 @@ class LLM(BaseModel):
         self.model_name = self.config_obj.base_model
         self.model_config = AutoConfig.from_pretrained(self.config_obj.base_model)
 
-        self.model = load_pretrained_from_config(self.config_obj, model_config=self.model_config)
-        self.curr_device = next(self.model.parameters()).device
+        # self.model = load_pretrained_from_config(self.config_obj, model_config=self.model_config)
+        # self.curr_device = next(self.model.parameters()).device
+
+        self.model = None
+        self.curr_device = torch.device("cpu")
         logger.info("Done.")
 
         # Determines the maximum length of the context (input + output tokens)

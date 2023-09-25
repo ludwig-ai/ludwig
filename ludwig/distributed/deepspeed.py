@@ -128,7 +128,7 @@ class DeepSpeedStrategy(DDPStrategy):
         return model_engine
 
     def to_device(self, model, device: Optional[torch.device] = None) -> nn.Module:
-        return model.to_device(device if device is not None else get_torch_device())
+        return model
 
     def backward(self, loss: torch.Tensor, model: nn.Module):
         # See: https://github.com/huggingface/accelerate/blob/main/src/accelerate/utils/deepspeed.py
