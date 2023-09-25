@@ -299,7 +299,7 @@ class RayDatasetShard(Dataset):
 
     @lru_cache(1)
     def __len__(self):
-        return next(self.epoch_iter).count()
+        return self.epoch_iter._peek().count()
 
     @property
     def size(self):
@@ -374,7 +374,8 @@ class RayDatasetBatcher(Batcher):
         return math.ceil(self.samples_per_epoch / self.batch_size)
 
     def _fetch_next_epoch(self):
-        pipeline = next(self.dataset_epoch_iterator)
+        # pipeline = next(self.dataset_epoch_iterator)
+        pipeline = self.dataset_epoch_iterator
 
         read_parallelism = 1
         if read_parallelism == 1:
@@ -461,7 +462,7 @@ class RayDatasetBatcher(Batcher):
                 if self.augmentation_pipeline:
                     pipeline = pipeline.map_batches(augment_batch, batch_size=batch_size, batch_format="pandas")
 
-                for batch in pipeline.iter_batches(prefetch_blocks=0, batch_size=batch_size, batch_format="pandas"):
+                for batch in pipeline.iterator().iter_batches(prefetch_blocks=0, batch_size=batch_size, batch_format="pandas"):
                     res = self._prepare_batch(batch)
                     q.put(res)
                 q.put(None)
