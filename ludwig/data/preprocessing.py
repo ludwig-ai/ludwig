@@ -61,7 +61,7 @@ from ludwig.data.dataset.base import Dataset
 from ludwig.data.prompt import format_input_with_prompt, index_column
 from ludwig.data.split import get_splitter, split_dataset
 from ludwig.data.utils import get_input_and_output_features, set_fixed_split
-from ludwig.datasets import load_dataset_uris
+from ludwig.datasets import load_dataset_uris, load_hf_datasets
 from ludwig.features.feature_registries import get_base_type_registry
 from ludwig.models.embedder import create_embed_batch_size_evaluator, create_embed_transform_fn
 from ludwig.schema.encoders.utils import get_encoder_cls
@@ -1887,6 +1887,11 @@ def preprocess_for_training(
 
     # preload ludwig datasets
     dataset, training_set, validation_set, test_set = load_dataset_uris(
+        dataset, training_set, validation_set, test_set, backend
+    )
+
+    # preload HF datasets
+    dataset, training_set, validation_set, test_set = load_hf_datasets(
         dataset, training_set, validation_set, test_set, backend
     )
 
