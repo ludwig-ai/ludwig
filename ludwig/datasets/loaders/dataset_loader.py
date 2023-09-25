@@ -453,30 +453,14 @@ class DatasetLoader:
         test_paths = _glob_multiple(_list_of_strings(self.config.test_filenames), root_dir=self.raw_dataset_dir)
         dataframes = []
         if self.config.huggingface_dataset_id:
-            try:
-                train_df = self.load_hf_to_dataframe(
-                    self.config.huggingface_dataset_id, self.config.huggingface_subset, split="train"
-                )
-                train_df[SPLIT] = 0
-                dataframes.append(train_df)
-            except ValueError:  # If there is no train split
-                train_df = None
-            try:
-                validation_df = self.load_hf_to_dataframe(
-                    self.config.huggingface_dataset_id, self.config.huggingface_subset, split="validation"
-                )
-                validation_df[SPLIT] = 1
-                dataframes.append(validation_df)
-            except ValueError:  # If there is no validation split
-                validation_df = None
-            try:
-                test_df = self.load_hf_to_dataframe(
-                    self.config.huggingface_dataset_id, self.config.huggingface_subset, split="test"
-                )
-                test_df[SPLIT] = 2
-                dataframes.append(test_df)
-            except ValueError:  # If there is no test split
-                test_df = None
+            splits = ["train", "validation", "test"]
+            data_dict = self.load_hf_to_dataframe(self.config.huggingface_dataset_id, self.config.huggingface_subset)
+            for split_type in splits:
+                if split_type in data_dict:
+                    # We don't have to do anything if split not in data_dict because we just concatenate the dataframes
+                    # in the end anyway.
+                    data_dict[split_type][SPLIT] = splits.index(split_type)  # Add "split" column (0, 1, or 2)
+                    dataframes.append(data_dict[split_type])
         else:
             if len(train_paths) > 0:
                 train_df = self.load_files_to_dataframe(train_paths)
