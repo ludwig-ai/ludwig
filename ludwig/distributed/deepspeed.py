@@ -16,6 +16,7 @@ from ludwig.distributed.ddp import DDPStrategy
 from ludwig.modules.optimization_modules import get_optimizer_class_and_kwargs
 from ludwig.utils.checkpoint_utils import Checkpoint
 from ludwig.utils.model_utils import extract_tensors, replace_tensors
+from ludwig.utils.torch_utils import get_torch_device
 
 _deepspeed_0101 = version.parse(deepspeed.__version__) >= version.parse("0.10.1")
 
@@ -126,8 +127,8 @@ class DeepSpeedStrategy(DDPStrategy):
         model_engine = deepspeed.init_inference(model=model, config=ds_config)
         return model_engine
 
-    def to_device(self, model: nn.Module, device: Optional[torch.device] = None) -> nn.Module:
-        return model
+    def to_device(self, model, device: Optional[torch.device] = None) -> nn.Module:
+        return model.to_device(device if device is not None else get_torch_device())
 
     def backward(self, loss: torch.Tensor, model: nn.Module):
         # See: https://github.com/huggingface/accelerate/blob/main/src/accelerate/utils/deepspeed.py
@@ -197,14 +198,12 @@ class DeepSpeedStrategy(DDPStrategy):
 
     @classmethod
     def extract_model_for_serialization(cls, model: nn.Module) -> Union[nn.Module, Tuple[nn.Module, List[Dict]]]:
-        return extract_tensors(model)
+        return model
 
     @classmethod
     def replace_model_from_serialization(cls, state: Union[nn.Module, Tuple[nn.Module, List[Dict]]]) -> nn.Module:
-        assert isinstance(state, tuple)
-        model, model_weights = state
-        replace_tensors(model, model_weights, torch.device("cpu"))
-        return model
+        assert isinstance(state, nn.Module)
+        return state
 
 
 class DeepSpeedCheckpoint(Checkpoint):
