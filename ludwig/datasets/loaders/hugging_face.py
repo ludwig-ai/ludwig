@@ -19,6 +19,41 @@ from ludwig.datasets.loaders.dataset_loader import DatasetLoader
 
 
 class HFText2TextGenerationLoader(DatasetLoader):
-    def load_hf_to_dataframe(self, hf_id: str, hf_subset: str, split: str) -> pd.DataFrame:
-        dataset = datasets.load_dataset(path=hf_id, name=hf_subset, split=split)
-        return dataset.to_pandas()
+    def load_hf_to_dict(self, hf_id: str, hf_subset: str) -> dict:
+        dataset_dict = datasets.load_dataset(path=hf_id, name=hf_subset)
+        new_dict = {}
+        for split in dataset_dict:
+            new_dict[split] = dataset_dict[split].to_pandas()
+        return new_dict
+
+    def load(self, split=False, kaggle_username=None, kaggle_key=None) -> pd.DataFrame:
+        dataset_dict = self.load_hf_to_dict(
+            hf_id=self.config["hf_id"],
+            hf_subset=self.config["hf_subset"],
+        )
+        if split:
+            if "train" in dataset_dict:
+                train_df = self.load_hf_to_dataframe(
+                    hf_id=self.config["hf_id"],
+                    hf_subset=self.config["hf_subset"],
+                )["train"]
+            else:
+                train_df = None
+            if "validation" in dataset_dict:
+                validation_df = self.load_hf_to_dataframe(
+                    hf_id=self.config["hf_id"],
+                    hf_subset=self.config["hf_subset"],
+                )["validation"]
+            else:
+                validation_df = None
+            if "test" in dataset_dict:
+                test_df = self.load_hf_to_dataframe(
+                    hf_id=self.config["hf_id"],
+                    hf_subset=self.config["hf_subset"],
+                )["test"]
+            else:
+                test_df = None
+            return train_df, validation_df, test_df
+        else:
+            dataset_list = [dataset_dict[split] for split in dataset_dict]
+            return pd.concat(dataset_list)
