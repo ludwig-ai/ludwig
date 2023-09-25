@@ -56,6 +56,12 @@ class DatasetConfig:
     # The kaggle dataset ID, or None if this dataset if not hosted by Kaggle.
     kaggle_dataset_id: Optional[str] = None
 
+    # The HuggingFace dataset ID, or None if this dataset is not hosted by HuggingFace.
+    huggingface_dataset_id: Optional[str] = None
+
+    # The HuggingFace dataset subset, or None if the subset does not need to be specified.
+    huggingface_subset: Optional[str] = None
+
     # The list of URLs to download.
     download_urls: Union[str, List[str]] = field(default_factory=list)
 
