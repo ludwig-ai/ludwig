@@ -19,8 +19,8 @@ from ludwig.datasets.loaders.dataset_loader import DatasetLoader
 
 
 class HFText2TextGenerationLoader(DatasetLoader):
-    def load_hf_to_dict(self, hf_id: str, hf_subset: str) -> dict:
-        dataset_dict = datasets.load_dataset(path=hf_id, name=hf_subset)
+    def load_hf_to_dict(self, hf_id: str, hf_subsample: str) -> dict:
+        dataset_dict = datasets.load_dataset(path=hf_id, name=hf_subsample)
         new_dict = {}
         for split in dataset_dict:
             new_dict[split] = dataset_dict[split].to_pandas()
@@ -28,28 +28,28 @@ class HFText2TextGenerationLoader(DatasetLoader):
 
     def load(self, split=False, kaggle_username=None, kaggle_key=None) -> pd.DataFrame:
         dataset_dict = self.load_hf_to_dict(
-            hf_id=self.config["hf_id"],
-            hf_subset=self.config["hf_subset"],
+            hf_id=self.config.huggingface_dataset_id,
+            hf_subsample=self.config.huggingface_subsample,
         )
         if split:
             if "train" in dataset_dict:
                 train_df = self.load_hf_to_dataframe(
-                    hf_id=self.config["hf_id"],
-                    hf_subset=self.config["hf_subset"],
+                    hf_id=self.config.huggingface_dataset_id,
+                    hf_subsample=self.config.huggingface_subsample,
                 )["train"]
             else:
                 train_df = None
             if "validation" in dataset_dict:
                 validation_df = self.load_hf_to_dataframe(
-                    hf_id=self.config["hf_id"],
-                    hf_subset=self.config["hf_subset"],
+                    hf_id=self.config.huggingface_dataset_id,
+                    hf_subsample=self.config.huggingface_subsample,
                 )["validation"]
             else:
                 validation_df = None
             if "test" in dataset_dict:
                 test_df = self.load_hf_to_dataframe(
-                    hf_id=self.config["hf_id"],
-                    hf_subset=self.config["hf_subset"],
+                    hf_id=self.config.huggingface_dataset_id,
+                    hf_subsample=self.config.huggingface_subsample,
                 )["test"]
             else:
                 test_df = None

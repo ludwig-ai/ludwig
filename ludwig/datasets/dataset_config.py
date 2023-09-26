@@ -60,7 +60,7 @@ class DatasetConfig:
     huggingface_dataset_id: Optional[str] = None
 
     # The HuggingFace dataset subset, or None if the subset does not need to be specified.
-    huggingface_subset: Optional[str] = None
+    huggingface_subsample: Optional[str] = None
 
     # The list of URLs to download.
     download_urls: Union[str, List[str]] = field(default_factory=list)
