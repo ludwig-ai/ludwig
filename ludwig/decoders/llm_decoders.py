@@ -185,7 +185,7 @@ class CategoryExtractorDecoder(Decoder):
             max_new_tokens=None,
             pad_sequence=False,
         )
-        outputs_device = generated_outputs.device
+        outputs_device = generated_outputs[0].device
 
         # Decode generated outputs from the LLM's generate function.
         decoded_outputs = self.tokenizer.tokenizer.batch_decode(generated_outputs, skip_special_tokens=True)
