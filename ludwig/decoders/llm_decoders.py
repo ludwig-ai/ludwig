@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 import torch
 
@@ -95,7 +95,9 @@ class TextExtractorDecoder(Decoder):
             self.tokenizer_vocab_size = len(self.tokenizer.vocab)
 
         # Maximum number of new tokens that will be generated
-        self.max_sequence_length = self.max_new_tokens = self.config.max_new_tokens
+        # TODO(geoffrey): figure out where self.max_sequence_length is used– if not used, we should remove it.
+        # It's confusing to have both this and the `max_new_tokens` kwarg in the `forward` function.
+        self.max_sequence_length = self.config.max_new_tokens
 
     @staticmethod
     def get_schema_cls():
@@ -108,12 +110,19 @@ class TextExtractorDecoder(Decoder):
     def get_prediction_set(self):
         return {LOGITS, PREDICTIONS, PROBABILITIES}
 
-    def forward(self, inputs: List[torch.Tensor], **kwargs):
+    def forward(
+        self, 
+        inputs: List[torch.Tensor], 
+        input_lengths: Optional[List[int]] = None, 
+        max_new_tokens: Optional[int] = None, 
+    ):
+        if input_lengths is None:
+            input_lengths = []
+
         # Extract the sequences tensor from the LLMs forward pass
-        max_new_tokens = kwargs.get("max_new_tokens", self.max_new_tokens)
         generated_outputs = extract_generated_tokens(
             raw_generated_output_sequences=inputs,
-            llm_model_input_lengths=kwargs.get("llm_model_input_lengths", []),
+            input_lengths=input_lengths,
             max_new_tokens=max_new_tokens,
             pad_sequence=True,
         )
@@ -177,12 +186,20 @@ class CategoryExtractorDecoder(Decoder):
     def get_prediction_set(self):
         return {LOGITS, PREDICTIONS, PROBABILITIES}
 
-    def forward(self, inputs: List[torch.Tensor], **kwargs):
+    def forward(
+        self, 
+        inputs: List[torch.Tensor], 
+        input_lengths: Optional[List[int]] = None, 
+        max_new_tokens: Optional[int] = None, 
+    ):
+        if input_lengths is None:
+            input_lengths = []
+
         # Extract the sequences tensor from the LLMs forward pass
         generated_outputs = extract_generated_tokens(
             raw_generated_output_sequences=inputs,
-            llm_model_input_lengths=kwargs.get("llm_model_input_lengths", []),
-            max_new_tokens=None,
+            input_lengths=input_lengths,
+            max_new_tokens=None,  # NOTE(geoffrey): why don't we use `max_new_tokens` here?
             pad_sequence=False,
         )
         outputs_device = generated_outputs[0].device

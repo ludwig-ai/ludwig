@@ -134,12 +134,8 @@ class LLM(BaseModel):
             self.context_len = self.model_config.max_position_embeddings
         else:
             self.context_len = 2048
-
-        self.generation = GenerationConfig(**self.config_obj.generation.to_dict())
-        # max input length value copied from FastChat
-        # https://github.com/lm-sys/FastChat/blob/0e958b852a14f4bef5f0e9d7a5e7373477329cf2/fastchat/serve/inference.py#L183  # noqa
-        self.max_new_tokens = self.generation.max_new_tokens
-        self.max_input_length = self.context_len - self.max_new_tokens - 8
+            
+        self._set_generation_config(self.config_obj.generation.to_dict())
 
         # TODO(Arnav): This needs be more flexible to account for RoPE Scaling
         # When merging input IDs and target IDs for LLM fine-tuning, we want to make sure that the merged tensor is
@@ -205,14 +201,19 @@ class LLM(BaseModel):
             if generation_config_dict is not None:
                 # unwrap the original generation config, update it with the new generation config
                 new_generation_config_dict = {**self.generation.to_dict(), **generation_config_dict}
-                self.generation = GenerationConfig(**new_generation_config_dict)
-                self.max_new_tokens = self.generation.max_new_tokens
-                self.max_input_length = self.context_len - self.max_new_tokens - 8
+                self._set_generation_config(new_generation_config_dict)
             yield
         finally:
             self.generation = original_generation
             self.max_new_tokens = original_max_new_tokens
             self.max_input_length = original_max_input_length
+
+    def _set_generation_config(self, new_generation_config_dict: Dict[str, Any]):
+        self.generation = GenerationConfig(**new_generation_config_dict)
+        self.max_new_tokens = self.generation.max_new_tokens
+        # max input length value copied from FastChat
+        # https://github.com/lm-sys/FastChat/blob/0e958b852a14f4bef5f0e9d7a5e7373477329cf2/fastchat/serve/inference.py#L183  # noqa
+        self.max_input_length = self.context_len - self.max_new_tokens - 8
 
     @property
     def output_feature_decoder(self) -> OutputFeature:
@@ -455,7 +456,7 @@ class LLM(BaseModel):
             # through the forward pass of the output feature
             outputs = self.output_feature_decoder.decoder_obj.forward(
                 sequences_list,
-                llm_model_input_lengths=input_lengths,
+                input_lengths=input_lengths,
                 max_new_tokens=self.max_new_tokens,
             )
 

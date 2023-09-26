@@ -6,7 +6,7 @@ from torch import Tensor
 
 def extract_generated_tokens(
     raw_generated_output_sequences: List[Tensor],
-    llm_model_input_lengths: List[int],
+    input_lengths: List[int],
     max_new_tokens: int,
     pad_sequence: bool,
 ) -> List[Tensor]:
@@ -15,7 +15,7 @@ def extract_generated_tokens(
     Args:
         raw_generated_output_sequences: The raw output sequences of the language model.
             Represented as a list to handle variable length sequences.
-        llm_model_input_lengths: The length of the inputs to the language model.
+        input_lengths: The length of the inputs to the language model.
         max_new_tokens: The maximum number of new tokens that were generated. Used to
             pad the generated sequences to the max_new_tokens.
         pad_sequence: Whether to pad the generated sequences to the max_new_tokens.
@@ -24,7 +24,7 @@ def extract_generated_tokens(
         The generated tokens.
     """
     generated_outputs = []
-    for idx, input_length in enumerate(llm_model_input_lengths):
+    for idx, input_length in enumerate(input_lengths):
         # Remove the input sequence from the generated sequence
         generated_sequence = raw_generated_output_sequences[idx][input_length:]
 
