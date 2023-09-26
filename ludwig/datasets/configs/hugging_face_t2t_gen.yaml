@@ -1,5 +1,5 @@
 version: 1.0
-name: hf_t2t_gen
+name: hugging_face_t2t_gen
 huggingface_dataset_id: placeholder
 huggingface_subsample: placeholder
 loader: hugging_face.HFText2TextGenerationLoader
