@@ -42,7 +42,7 @@ sacremoses
 sentencepiece
 
 # requirements for daft
-getdaft ; platform_system != "Windows"
+getdaft
 
 # requirement for various paged and 8-bit optimizers
 bitsandbytes<0.41.0
