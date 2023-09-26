@@ -111,10 +111,10 @@ class TextExtractorDecoder(Decoder):
         return {LOGITS, PREDICTIONS, PROBABILITIES}
 
     def forward(
-        self, 
-        inputs: List[torch.Tensor], 
-        input_lengths: Optional[List[int]] = None, 
-        max_new_tokens: Optional[int] = None, 
+        self,
+        inputs: List[torch.Tensor],
+        input_lengths: Optional[List[int]] = None,
+        max_new_tokens: Optional[int] = None,
     ):
         if input_lengths is None:
             input_lengths = []
@@ -187,10 +187,10 @@ class CategoryExtractorDecoder(Decoder):
         return {LOGITS, PREDICTIONS, PROBABILITIES}
 
     def forward(
-        self, 
-        inputs: List[torch.Tensor], 
-        input_lengths: Optional[List[int]] = None, 
-        max_new_tokens: Optional[int] = None, 
+        self,
+        inputs: List[torch.Tensor],
+        input_lengths: Optional[List[int]] = None,
+        max_new_tokens: Optional[int] = None,
     ):
         if input_lengths is None:
             input_lengths = []

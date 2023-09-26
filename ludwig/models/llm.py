@@ -134,7 +134,7 @@ class LLM(BaseModel):
             self.context_len = self.model_config.max_position_embeddings
         else:
             self.context_len = 2048
-            
+
         self._set_generation_config(self.config_obj.generation.to_dict())
 
         # TODO(Arnav): This needs be more flexible to account for RoPE Scaling

@@ -50,7 +50,7 @@ def test_text_extractor_decoder():
 
     # tests happy path
     outputs = decoder.forward(inputs, input_lengths=input_lengths)
-    assert outputs['predictions'].shape == (3, max_new_tokens)
+    assert outputs["predictions"].shape == (3, max_new_tokens)
     # Create a Boolean mask for elements equal to 0 or 2 (padding or output)
     mask = (outputs["predictions"] == 0) | (outputs["predictions"] == 2)
     assert mask.all()
@@ -60,10 +60,10 @@ def test_text_extractor_decoder():
     input_lengths.append(3)
     with pytest.raises(ValueError):
         outputs = decoder.forward(inputs, input_lengths=input_lengths)
-        
+
     # test overly long generation succeeds with new max_new_tokens
     new_max_new_tokens = 5
     outputs = decoder.forward(inputs, input_lengths=input_lengths, max_new_tokens=new_max_new_tokens)
-    assert outputs['predictions'].shape == (4, new_max_new_tokens)
-    mask = (outputs['predictions'] == 0) | (outputs['predictions'] == 2)
+    assert outputs["predictions"].shape == (4, new_max_new_tokens)
+    mask = (outputs["predictions"] == 0) | (outputs["predictions"] == 2)
     assert mask.all()
