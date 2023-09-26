@@ -34,8 +34,4 @@ def extract_generated_tokens(
                 generated_sequence, (0, max_new_tokens - generated_sequence.size()[0]), "constant", 0
             )
         generated_outputs.append(generated_sequence)
-
-    # Stack the predictions for each example in the batch
-    generated_outputs = torch.stack(generated_outputs, dim=0)
-
     return generated_outputs

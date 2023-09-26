@@ -110,21 +110,29 @@ class TextExtractorDecoder(Decoder):
 
     def forward(self, inputs: List[torch.Tensor], **kwargs):
         # Extract the sequences tensor from the LLMs forward pass
+        max_new_tokens = kwargs.get("max_new_tokens", self.max_new_tokens)
         generated_outputs = extract_generated_tokens(
             raw_generated_output_sequences=inputs,
             llm_model_input_lengths=kwargs.get("llm_model_input_lengths", []),
-            max_new_tokens=self.max_new_tokens,
+            max_new_tokens=max_new_tokens,
             pad_sequence=True,
         )
+        # Stack the predictions for each example in the batch. The padding should ensure they are all the same shape.
+        for output in generated_outputs:
+            if output.shape[0] > max_new_tokens:
+                raise ValueError(f"Output {output} is longer than the max_new_tokens {max_new_tokens} during decoding. "
+                                 f"This should never happen– please file an issue on GitHub.")
+
+        generated_outputs = torch.stack(generated_outputs, dim=0)
         outputs_device = generated_outputs.device
 
         return {
             PREDICTIONS: generated_outputs,
             # TODO(Arnav): Add support for probabilities and logits
-            PROBABILITIES: torch.zeros((len(generated_outputs), self.max_new_tokens, self.tokenizer_vocab_size)).to(
+            PROBABILITIES: torch.zeros((len(generated_outputs), max_new_tokens, self.tokenizer_vocab_size)).to(
                 outputs_device
             ),
-            LOGITS: torch.zeros((len(generated_outputs), self.max_new_tokens, self.tokenizer_vocab_size)).to(
+            LOGITS: torch.zeros((len(generated_outputs), max_new_tokens, self.tokenizer_vocab_size)).to(
                 outputs_device
             ),
         }

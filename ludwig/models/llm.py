@@ -3,7 +3,7 @@ import copy
 import logging
 import os
 import tempfile
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -135,9 +135,10 @@ class LLM(BaseModel):
         else:
             self.context_len = 2048
 
+        self.generation = GenerationConfig(**self.config_obj.generation.to_dict())
         # max input length value copied from FastChat
         # https://github.com/lm-sys/FastChat/blob/0e958b852a14f4bef5f0e9d7a5e7373477329cf2/fastchat/serve/inference.py#L183  # noqa
-        self.max_new_tokens = self.config_obj.generation.max_new_tokens
+        self.max_new_tokens = self.generation.max_new_tokens
         self.max_input_length = self.context_len - self.max_new_tokens - 8
 
         # TODO(Arnav): This needs be more flexible to account for RoPE Scaling
@@ -155,12 +156,6 @@ class LLM(BaseModel):
         # Initialize tokenizer
         self.tokenizer = AutoTokenizer.from_pretrained(self.config_obj.base_model)
         set_pad_token(self.tokenizer)
-
-        self.generation = GenerationConfig(**self.config_obj.generation.to_dict())
-
-        # Save the original generation config so that we can reset it if/when we change it when self.generation gets is
-        # dynamically mutated during 1-off predict calls after fine-tuning.
-        self.original_generation_config = copy.deepcopy(self.generation)
 
         # ================ Inputs ================
         try:
@@ -197,13 +192,27 @@ class LLM(BaseModel):
     def create_feature_dict(self) -> LudwigFeatureDict:
         return DictWrapper(LudwigFeatureDict())
 
-    def set_generation_config(self, generation_config_dict):
+    @contextlib.contextmanager
+    def use_generation_config(self, generation_config_dict: Optional[Dict[str, Any]] = None):
         """Sets the generation config for the model."""
-        self.generation = GenerationConfig(**generation_config_dict)
-
-    def reset_generation_config(self):
-        """Sets the generation config for th."""
-        self.generation = self.original_generation_config
+        # Save the original generation config so that we can reset it if/when we change it when self.generation gets is
+        # dynamically mutated during 1-off predict calls after fine-tuning.
+        original_generation = copy.deepcopy(self.generation)
+        original_max_new_tokens = self.max_new_tokens
+        original_max_input_length = self.max_input_length
+        try:
+            # no-op if generation_config is None
+            if generation_config_dict is not None:
+                # unwrap the original generation config, update it with the new generation config
+                new_generation_config_dict = {**self.generation.to_dict(), **generation_config_dict}
+                self.generation = GenerationConfig(**new_generation_config_dict)
+                self.max_new_tokens = self.generation.max_new_tokens
+                self.max_input_length = self.context_len - self.max_new_tokens - 8
+            yield
+        finally:
+            self.generation = original_generation
+            self.max_new_tokens = original_max_new_tokens
+            self.max_input_length = original_max_input_length
 
     @property
     def output_feature_decoder(self) -> OutputFeature:
@@ -447,6 +456,7 @@ class LLM(BaseModel):
             outputs = self.output_feature_decoder.decoder_obj.forward(
                 sequences_list,
                 llm_model_input_lengths=input_lengths,
+                max_new_tokens=self.max_new_tokens,
             )
 
         return outputs

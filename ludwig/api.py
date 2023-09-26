@@ -936,20 +936,12 @@ class LudwigModel:
             callbacks=self.callbacks + (callbacks or []),
         )
 
-        # Set the generation config if it exists.
-        # model.reset_generation_config() is called after batch prediction.
-        if generation_config is not None:
-            self.model.set_generation_config(generation_config)
-
         logger.debug("Predicting")
         with self.backend.create_predictor(self.model, batch_size=batch_size) as predictor:
-            predictions = predictor.batch_predict(
-                dataset,
-            )
-
-            # If there was a generation config set prior to batch prediction, reset it.
-            if generation_config is not None:
-                self.model.reset_generation_config()
+            with self.model.use_generation_config(generation_config):
+                predictions = predictor.batch_predict(
+                    dataset,
+                )
 
             if self.backend.is_coordinator():
                 # if we are skipping all saving,
