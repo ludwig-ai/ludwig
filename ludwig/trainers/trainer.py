@@ -912,7 +912,7 @@ class Trainer(BaseTrainer):
 
                     self.callback(lambda c: c.on_epoch_start(self, progress_tracker, save_path))
 
-                    # Trains over a full epoch of data.
+                    # Trains over a full epoch of data or up to the last training step, whichever is sooner.
                     should_break = self._train_loop(
                         batcher,
                         progress_tracker,
@@ -933,10 +933,6 @@ class Trainer(BaseTrainer):
                         early_stopping_steps,
                         profiler,
                     )
-
-                    # ================ Post Training Epoch ================
-                    progress_tracker.epoch += 1
-                    self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
 
                     if self.is_coordinator():
                         # ========== Save training progress ==========
@@ -1114,8 +1110,16 @@ class Trainer(BaseTrainer):
             # batch duration measurements when using timer callbacks.
             self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path, sync_step=should_step))
 
+            if batcher.last_batch():
+                # We have completed an epoch, so we need to increment the epoch counter. It's important to do this here
+                # instead of outside of the train loop since it's possible the train loop will exit early due to
+                # early stopping, or step-based training.
+                progress_tracker.epoch += 1
+                self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
+
             if progress_tracker.steps % final_steps_per_checkpoint == 0:
                 if not self.skip_all_evaluation:
+                    # Publishes metrics to MLFLow if there are any MLFlow callbacks.
                     should_break = self.run_evaluation(
                         training_set,
                         validation_set,
