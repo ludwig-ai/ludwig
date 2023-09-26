@@ -872,6 +872,8 @@ def figure_data_format_dataset(dataset):
         dataset = dataset.strip()
         if dataset.startswith("ludwig://"):
             return "ludwig"
+        if dataset.startswith("hf://"):
+            return "hf"
 
         dataset = dataset.lower()
         if dataset.endswith(".csv"):
