@@ -456,8 +456,8 @@ class LLM(BaseModel):
             # through the forward pass of the output feature
             outputs = self.output_feature_decoder.decoder_obj.forward(
                 sequences_list,
-                input_lengths=input_lengths,
-                max_new_tokens=self.max_new_tokens,
+                input_lengths,
+                self.max_new_tokens,
             )
 
         return outputs

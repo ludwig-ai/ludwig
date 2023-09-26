@@ -95,8 +95,8 @@ class TextExtractorDecoder(Decoder):
             self.tokenizer_vocab_size = len(self.tokenizer.vocab)
 
         # Maximum number of new tokens that will be generated
-        # TODO(geoffrey): figure out where self.max_sequence_length is used– if not used, we should remove it.
-        # It's confusing to have both this and the `max_new_tokens` kwarg in the `forward` function.
+        # TODO(geoffrey): figure out where self.max_sequence_length is used– if not used, we might consider removing it.
+        # It's confusing to have both this and `max_new_tokens` as a mandatory param in the `forward` function.
         self.max_sequence_length = self.config.max_new_tokens
 
     @staticmethod
@@ -110,15 +110,7 @@ class TextExtractorDecoder(Decoder):
     def get_prediction_set(self):
         return {LOGITS, PREDICTIONS, PROBABILITIES}
 
-    def forward(
-        self,
-        inputs: List[torch.Tensor],
-        input_lengths: Optional[List[int]] = None,
-        max_new_tokens: Optional[int] = None,
-    ):
-        if input_lengths is None:
-            input_lengths = []
-
+    def forward(self, inputs: List[torch.Tensor], input_lengths: List[int], max_new_tokens: int):
         # Extract the sequences tensor from the LLMs forward pass
         generated_outputs = extract_generated_tokens(
             raw_generated_output_sequences=inputs,
@@ -186,20 +178,12 @@ class CategoryExtractorDecoder(Decoder):
     def get_prediction_set(self):
         return {LOGITS, PREDICTIONS, PROBABILITIES}
 
-    def forward(
-        self,
-        inputs: List[torch.Tensor],
-        input_lengths: Optional[List[int]] = None,
-        max_new_tokens: Optional[int] = None,
-    ):
-        if input_lengths is None:
-            input_lengths = []
-
+    def forward(self, inputs: List[torch.Tensor], input_lengths: List[int], max_new_tokens: int):
         # Extract the sequences tensor from the LLMs forward pass
         generated_outputs = extract_generated_tokens(
             raw_generated_output_sequences=inputs,
             input_lengths=input_lengths,
-            max_new_tokens=None,  # NOTE(geoffrey): why don't we use `max_new_tokens` here?
+            max_new_tokens=max_new_tokens,
             pad_sequence=False,
         )
         outputs_device = generated_outputs[0].device

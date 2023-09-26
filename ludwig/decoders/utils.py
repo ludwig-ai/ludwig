@@ -23,6 +23,12 @@ def extract_generated_tokens(
     Returns:
         The generated tokens.
     """
+    if len(raw_generated_output_sequences) != len(input_lengths):
+        raise ValueError(
+            f"The number of raw_generated_output_sequences ({len(raw_generated_output_sequences)}) "
+            f"must be the same as the number of input_lengths ({len(input_lengths)})."
+        )
+
     generated_outputs = []
     for idx, input_length in enumerate(input_lengths):
         # Remove the input sequence from the generated sequence
