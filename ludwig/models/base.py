@@ -333,9 +333,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
     @contextlib.contextmanager
     def use_generation_config(self, generation_config: Dict[str, Any]):
         if generation_config is not None:
-            raise NotImplementedError(
-                f"{self.__class__.__name__} does not support generation_config. "
-            )
+            raise NotImplementedError(f"{self.__class__.__name__} does not support generation_config. ")
         yield
 
 

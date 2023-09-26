@@ -1,14 +1,7 @@
 import pytest
 import torch
 
-from ludwig.constants import (
-    BASE_MODEL,
-    BACKEND,
-    GENERATION,
-    INPUT_FEATURES,
-    MODEL_TYPE,
-    OUTPUT_FEATURES,
-)
+from ludwig.constants import BACKEND, BASE_MODEL, GENERATION, INPUT_FEATURES, MODEL_TYPE, OUTPUT_FEATURES
 from ludwig.decoders.llm_decoders import TextExtractorDecoder
 from ludwig.schema.model_config import ModelConfig
 from tests.integration_tests.utils import text_feature
@@ -18,7 +11,7 @@ TEST_MODEL_NAME = "hf-internal-testing/tiny-random-GPTJForCausalLM"
 
 def test_text_extractor_decoder():
     max_new_tokens = 4
-    
+
     input_features = [
         {
             "name": "Question",
@@ -26,13 +19,7 @@ def test_text_extractor_decoder():
             "encoder": {"type": "passthrough"},
         }
     ]
-    output_features = [
-        text_feature(
-            output_feature=True, 
-            name="Answer", 
-            decoder={"type": "text_extractor"}
-        )
-    ]
+    output_features = [text_feature(output_feature=True, name="Answer", decoder={"type": "text_extractor"})]
 
     config = {
         MODEL_TYPE: "llm",
@@ -48,16 +35,16 @@ def test_text_extractor_decoder():
         OUTPUT_FEATURES: output_features,
         BACKEND: "local",
     }
-    
+
     config = ModelConfig.from_dict(config)
     decoder_config = config.output_features[0].decoder
-    
+
     decoder = TextExtractorDecoder(32, decoder_config)
 
     inputs = [
-        torch.tensor([1, 1, 1, 2, 2, 2, 2]),     # baseline
-        torch.tensor([1, 1, 1, 2]),              # too short; test padding
-        torch.tensor([1, 1, 1, 1, 2, 2, 2]),     # test different input length
+        torch.tensor([1, 1, 1, 2, 2, 2, 2]),  # baseline
+        torch.tensor([1, 1, 1, 2]),  # too short; test padding
+        torch.tensor([1, 1, 1, 1, 2, 2, 2]),  # test different input length
     ]
     input_lengths = [3, 3, 4]
 
@@ -65,9 +52,9 @@ def test_text_extractor_decoder():
     outputs = decoder.forward(inputs, input_lengths=input_lengths)
     assert outputs['predictions'].shape == (3, max_new_tokens)
     # Create a Boolean mask for elements equal to 0 or 2 (padding or output)
-    mask = (outputs['predictions'] == 0) | (outputs['predictions'] == 2)
+    mask = (outputs["predictions"] == 0) | (outputs["predictions"] == 2)
     assert mask.all()
-    
+
     # test overly long generation fails without updated max_new_tokens
     inputs.append(torch.tensor([1, 1, 1, 2, 2, 2, 2, 2]))  # too long; test downstream failure)
     input_lengths.append(3)
