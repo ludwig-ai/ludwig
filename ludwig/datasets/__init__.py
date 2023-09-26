@@ -145,7 +145,7 @@ def load_hf_datasets(
     test_set_out = test_set
 
     # Check that any of the datasets begin with the `hf://` prefix denoting a Hugging Face dataset URI
-    # Hugging Face datasets should follow the naming convention `hf://<dataset_name>.<dataset_subset>`
+    # Hugging Face datasets should follow the naming convention `hf://<dataset_name>.<dataset_subsample>`
     if dataset is not None:
         if isinstance(dataset, str) and dataset.startswith(HF_PREFIX):
             dataset_out = _load_cacheable_dataset(dataset, backend, hf=True)
@@ -154,12 +154,12 @@ def load_hf_datasets(
         training_set_checksum = None
         if isinstance(training_set, str) and training_set.startswith(HF_PREFIX):
             # For the training set, we only want to use the TRAINING split of the dataset
-            dataset_name = training_set[len(HF_PREFIX) :]
-            loader = get_dataset(dataset_name)
-            loader.config["huggingface_dataset_id"] = dataset_name.split(".")[0]
-            loader.config["huggingface_dataset_subset"] = dataset_name.split(".")[1]
+            loader = get_dataset("hugging_face_t2t_gen")
+            dataset_name, dataset_subsample = _get_hf_dataset_and_subsample(training_set)
+            setattr(loader.config, "huggingface_dataset_id", dataset_name)
+            setattr(loader.config, "huggingface_subsample", dataset_subsample)
             train_df, val_df, test_df = loader.load(split=True)
-            training_set_checksum = str(loader.get_mtime())
+            # training_set_checksum = str(loader.get_mtime())
             train_df = backend.df_engine.from_pandas(train_df)
             training_set_out = CacheableDataframe(df=train_df, name=training_set, checksum=training_set_checksum)
 
@@ -169,7 +169,7 @@ def load_hf_datasets(
                 val_df = backend.df_engine.from_pandas(val_df)
                 validation_set_out = CacheableDataframe(df=val_df, name=validation_set, checksum=training_set_checksum)
             else:
-                validation_set_out = _load_cacheable_dataset(validation_set, backend)
+                validation_set_out = _load_cacheable_dataset(validation_set, backend, hf=True)
 
         if isinstance(test_set, str) and test_set.startswith(HF_PREFIX):
             if test_set == training_set:
@@ -177,23 +177,25 @@ def load_hf_datasets(
                 test_df = backend.df_engine.from_pandas(test_df)
                 test_set_out = CacheableDataframe(df=test_df, name=test_set, checksum=training_set_checksum)
             else:
-                test_set_out = _load_cacheable_dataset(test_set, backend)
+                test_set_out = _load_cacheable_dataset(test_set, backend, hf=True)
 
     return dataset_out, training_set_out, validation_set_out, test_set_out
 
 
 def _load_cacheable_dataset(dataset: str, backend: Backend, hf=False) -> CacheableDataframe:
     if hf:
-        dataset_name = dataset[len(HF_PREFIX) :]
+        loader = get_dataset("hugging_face_t2t_gen")
+        dataset_name, dataset_subsample = _get_hf_dataset_and_subsample(dataset)
+        setattr(loader.config, "huggingface_dataset_id", dataset_name)
+        setattr(loader.config, "huggingface_subsample", dataset_subsample)
+        checksum = None
     else:
         dataset_name = dataset[len(URI_PREFIX) :]
-    loader = get_dataset(dataset_name)
-    if hf:
-        loader.config["huggingface_dataset_id"] = dataset_name.split(".")[0]
-        loader.config["huggingface_dataset_subset"] = dataset_name.split(".")[1]
+        loader = get_dataset(dataset_name)
+        checksum = str(loader.get_mtime())
     df = loader.load(split=False)
     df = backend.df_engine.from_pandas(df)
-    return CacheableDataframe(df=df, name=dataset, checksum=str(loader.get_mtime()))
+    return CacheableDataframe(df=df, name=dataset, checksum=checksum)
 
 
 @PublicAPI
@@ -273,6 +275,15 @@ def get_buffer(dataset_name: str, kaggle_username: str = None, kaggle_key: str =
         return buffer
     except Exception as e:
         logging.error(logging.ERROR, f"Failed to upload dataset {dataset_name}: {e}")
+
+
+def _get_hf_dataset_and_subsample(dataset_name: str) -> Tuple[str, Optional[str]]:
+    """Returns the Hugging Face dataset name and subsample name from the dataset name."""
+    dataset_name = dataset_name[len(HF_PREFIX) :]
+    dataset_name = dataset_name.split(".")
+    if len(dataset_name) == 1:
+        return dataset_name[0], None
+    return dataset_name[0], dataset_name[1]
 
 
 def cli(sys_argv):
