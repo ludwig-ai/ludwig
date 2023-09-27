@@ -189,6 +189,12 @@ class Trainer(BaseTrainer):
         self.gradient_clipping_config = create_clipper(config.gradient_clipping)
 
         self.config = config
+
+        self.base_learning_rate = None
+        self.dist_model = None
+        self.optimizer = None
+        self.scheduler = None
+
         self.prepare()
 
         # Setup for automatic mixed precision (AMP)
@@ -759,7 +765,6 @@ class Trainer(BaseTrainer):
         )
 
         # ====== Setup session =======
-        checkpoint_manager = None
         checkpoint = self.distributed.create_checkpoint_handle(
             dist_model=self.dist_model, model=self.model, optimizer=self.optimizer, scheduler=self.scheduler
         )
@@ -1375,8 +1380,8 @@ class Trainer(BaseTrainer):
                 signal.signal(signal.SIGINT, self.original_sigint_handler)
             sys.exit(1)
 
+    @staticmethod
     def resume_files_exist(
-        self,
         training_progress_tracker_path: str,
         training_checkpoint_path: str,
     ) -> bool:
