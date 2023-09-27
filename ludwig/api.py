@@ -269,11 +269,11 @@ class LudwigModel:
         self,
         config: Union[str, dict],
         logging_level: int = logging.ERROR,
-        backend: Union[Backend, str] = None,
-        gpus: Union[str, int, List[int]] = None,
+        backend: Union[Backend, str, None] = None,
+        gpus: Union[str, int, List[int], None] = None,
         gpu_memory_limit: Optional[float] = None,
         allow_parallel_threads: bool = True,
-        callbacks: List[Callback] = None,
+        callbacks: Union[List[Callback], None] = None,
     ) -> None:
         """Constructor for the Ludwig Model class.
 
@@ -305,7 +305,7 @@ class LudwigModel:
             self.config_fp = config
         else:
             config_dict = copy.deepcopy(config)
-            self.config_fp = None
+            self.config_fp = None  # type: ignore [assignment]
 
         self._user_config = upgrade_config_dict_to_latest_version(config_dict)
 
@@ -326,29 +326,29 @@ class LudwigModel:
 
         # setup model
         self.model = None
-        self.training_set_metadata = None
+        self.training_set_metadata: Union[str, dict, None] = None
 
         # online training state
         self._online_trainer = None
 
     def train(
         self,
-        dataset: Union[str, dict, pd.DataFrame] = None,
-        training_set: Union[str, dict, pd.DataFrame, Dataset] = None,
-        validation_set: Union[str, dict, pd.DataFrame, Dataset] = None,
-        test_set: Union[str, dict, pd.DataFrame, Dataset] = None,
-        training_set_metadata: Union[str, dict] = None,
-        data_format: str = None,
+        dataset: Union[str, dict, pd.DataFrame, None] = None,
+        training_set: Union[str, dict, pd.DataFrame, Dataset, None] = None,
+        validation_set: Union[str, dict, pd.DataFrame, Dataset, None] = None,
+        test_set: Union[str, dict, pd.DataFrame, Dataset, None] = None,
+        training_set_metadata: Union[str, dict, None] = None,
+        data_format: Union[str, None] = None,
         experiment_name: str = "api_experiment",
         model_name: str = "run",
-        model_resume_path: str = None,
+        model_resume_path: Union[str, None] = None,
         skip_save_training_description: bool = False,
         skip_save_training_statistics: bool = False,
         skip_save_model: bool = False,
         skip_save_progress: bool = False,
         skip_save_log: bool = False,
         skip_save_processed_input: bool = False,
-        output_directory: str = "results",
+        output_directory: Union[str, None] = "results",
         random_seed: int = default_random_seed,
         **kwargs,
     ) -> TrainingResults:
@@ -540,7 +540,7 @@ class LudwigModel:
                             f"{output_directory}/{experiment_name}/model/model_hyperparameters.json"
                         )
 
-                preprocessed_data = self.preprocess(
+                preprocessed_data = self.preprocess(  # type: ignore[assignment]
                     dataset=dataset,
                     training_set=training_set,
                     validation_set=validation_set,
@@ -569,8 +569,10 @@ class LudwigModel:
 
                 if not skip_save_model:
                     # save train set metadata
-                    os.makedirs(model_dir, exist_ok=True)
-                    save_json(os.path.join(model_dir, TRAIN_SET_METADATA_FILE_NAME), training_set_metadata)
+                    os.makedirs(model_dir, exist_ok=True)  # type: ignore[arg-type]
+                    save_json(  # type: ignore[arg-type]
+                        os.path.join(model_dir, TRAIN_SET_METADATA_FILE_NAME), training_set_metadata
+                    )
 
                 logger.info("\nDataset Statistics")
                 logger.info(tabulate(dataset_statistics, headers="firstrow", tablefmt="fancy_grid"))
@@ -1489,12 +1491,12 @@ class LudwigModel:
 
     def preprocess(
         self,
-        dataset: Union[str, dict, pd.DataFrame] = None,
-        training_set: Union[str, dict, pd.DataFrame] = None,
-        validation_set: Union[str, dict, pd.DataFrame] = None,
-        test_set: Union[str, dict, pd.DataFrame] = None,
-        training_set_metadata: Union[str, dict] = None,
-        data_format: str = None,
+        dataset: Union[str, dict, pd.DataFrame, None] = None,
+        training_set: Union[str, dict, pd.DataFrame, None] = None,
+        validation_set: Union[str, dict, pd.DataFrame, None] = None,
+        test_set: Union[str, dict, pd.DataFrame, None] = None,
+        training_set_metadata: Union[str, dict, None] = None,
+        data_format: Union[str, None] = None,
         skip_save_processed_input: bool = True,
         random_seed: int = default_random_seed,
         **kwargs,
