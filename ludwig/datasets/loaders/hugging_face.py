@@ -17,6 +17,10 @@ import pandas as pd
 
 from ludwig.datasets.loaders.dataset_loader import DatasetLoader
 
+TRAIN = "train"
+VALIDATION = "validation"
+TEST = "test"
+
 
 class HFText2TextGenerationLoader(DatasetLoader):
     def load_hf_to_dict(self, hf_id: str, hf_subsample: str) -> dict:
@@ -32,25 +36,25 @@ class HFText2TextGenerationLoader(DatasetLoader):
             hf_subsample=self.config.huggingface_subsample,
         )
         if split:
-            if "train" in dataset_dict:
+            if TRAIN in dataset_dict:
                 train_df = self.load_hf_to_dataframe(
                     hf_id=self.config.huggingface_dataset_id,
                     hf_subsample=self.config.huggingface_subsample,
-                )["train"]
+                )[TRAIN]
             else:
                 train_df = None
-            if "validation" in dataset_dict:
+            if VALIDATION in dataset_dict:
                 validation_df = self.load_hf_to_dataframe(
                     hf_id=self.config.huggingface_dataset_id,
                     hf_subsample=self.config.huggingface_subsample,
-                )["validation"]
+                )[VALIDATION]
             else:
                 validation_df = None
-            if "test" in dataset_dict:
+            if TEST in dataset_dict:
                 test_df = self.load_hf_to_dataframe(
                     hf_id=self.config.huggingface_dataset_id,
                     hf_subsample=self.config.huggingface_subsample,
-                )["test"]
+                )[TEST]
             else:
                 test_df = None
             return train_df, validation_df, test_df
