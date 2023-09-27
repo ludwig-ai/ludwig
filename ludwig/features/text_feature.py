@@ -313,7 +313,7 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
                             # Move metric function to the device of the predictions.
                             # For CUDA, it can be computed on any of the GPUs since it uses all
                             # We use 'predictions' as the key since it is always present in the predictions dict.
-                            device = 'cuda' if predictions['predictions'].is_cuda else 'cpu'
+                            device = "cuda" if predictions["predictions"].is_cuda else "cpu"
                             metric_fn = metric_fn.to(device)
                             if metric_name == "bleu":
                                 # BLEU takes in targets as a list.
