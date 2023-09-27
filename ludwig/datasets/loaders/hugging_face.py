@@ -20,10 +20,12 @@ from ludwig.datasets.loaders.dataset_loader import DatasetLoader
 TRAIN = "train"
 VALIDATION = "validation"
 TEST = "test"
+splits = [TRAIN, VALIDATION, TEST]
 
 
 class HFText2TextGenerationLoader(DatasetLoader):
     def load_hf_to_dict(self, hf_id: str, hf_subsample: str) -> dict:
+        # Convert from HF DatasetDict type to dict
         dataset_dict = datasets.load_dataset(path=hf_id, name=hf_subsample)
         new_dict = {}
         for split in dataset_dict:
@@ -37,27 +39,21 @@ class HFText2TextGenerationLoader(DatasetLoader):
         )
         if split:
             if TRAIN in dataset_dict:
-                train_df = self.load_hf_to_dataframe(
-                    hf_id=self.config.huggingface_dataset_id,
-                    hf_subsample=self.config.huggingface_subsample,
-                )[TRAIN]
+                train_df = dataset_dict[TRAIN]
             else:
                 train_df = None
             if VALIDATION in dataset_dict:
-                validation_df = self.load_hf_to_dataframe(
-                    hf_id=self.config.huggingface_dataset_id,
-                    hf_subsample=self.config.huggingface_subsample,
-                )[VALIDATION]
+                validation_df = dataset_dict[VALIDATION]
             else:
                 validation_df = None
             if TEST in dataset_dict:
-                test_df = self.load_hf_to_dataframe(
-                    hf_id=self.config.huggingface_dataset_id,
-                    hf_subsample=self.config.huggingface_subsample,
-                )[TEST]
+                test_df = dataset_dict[TEST]
             else:
                 test_df = None
             return train_df, validation_df, test_df
         else:
-            dataset_list = [dataset_dict[split] for split in dataset_dict]
+            dataset_list = []
+            for split in dataset_dict:
+                dataset_dict[split]["split"] = splits.index(split)
+                dataset_list.append(dataset_dict[split])
             return pd.concat(dataset_list)
