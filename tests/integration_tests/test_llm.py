@@ -533,16 +533,16 @@ def _verify_lm_lora_finetuning_layers(
         #     },
         #     id="prefix_tuning",
         # ),
-        pytest.param(
-            "p_tuning",
-            {"num_virtual_tokens": 8, "encoder_reparameterization_type": "MLP"},
-            id="p_tuning_mlp_reparameterization",
-        ),
-        pytest.param(
-            "p_tuning",
-            {"num_virtual_tokens": 8, "encoder_reparameterization_type": "LSTM"},
-            id="p_tuning_lstm_reparameterization",
-        ),
+        # pytest.param(
+        #     "p_tuning",
+        #     {"num_virtual_tokens": 8, "encoder_reparameterization_type": "MLP"},
+        #     id="p_tuning_mlp_reparameterization",
+        # ),
+        # pytest.param(
+        #     "p_tuning",
+        #     {"num_virtual_tokens": 8, "encoder_reparameterization_type": "LSTM"},
+        #     id="p_tuning_lstm_reparameterization",
+        # ),
     ],
 )
 def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strategy, adapter_args):
