@@ -14,9 +14,10 @@ from torch.optim.optimizer import Optimizer
 from ludwig.constants import MIN_POSSIBLE_BATCH_SIZE
 from ludwig.distributed.ddp import DDPStrategy
 from ludwig.modules.optimization_modules import get_optimizer_class_and_kwargs
-from ludwig.utils.checkpoint_utils import Checkpoint
-from ludwig.utils.model_utils import extract_tensors, replace_tensors
-from ludwig.utils.torch_utils import get_torch_device
+from ludwig.utils.checkpoint_utils import Checkpoint, MultiNodeCheckpoint
+
+# from ludwig.utils.model_utils import extract_tensors, replace_tensors
+# from ludwig.utils.torch_utils import get_torch_device
 
 _deepspeed_0101 = version.parse(deepspeed.__version__) >= version.parse("0.10.1")
 
@@ -58,6 +59,7 @@ class DeepSpeedStrategy(DDPStrategy):
 
         super().__init__(**kwargs)
         self.zero_optimization = zero_optimization or DEFAULT_ZERO_OPTIMIZATION
+        self.zero_optimization_stage = self.zero_optimization.get("stage", "auto")
         self.fp16 = fp16
         self.bf16 = bf16
         self.compression_training = compression_training
@@ -83,16 +85,21 @@ class DeepSpeedStrategy(DDPStrategy):
         batch_size = (
             trainer_config.batch_size if isinstance(trainer_config.batch_size, int) else MIN_POSSIBLE_BATCH_SIZE
         )
+
         # Paged and 8-bit optimizers are not supported by Deepspeed - just whatever is supported
         # by torch.optim.Optimizer. https://www.deepspeed.ai/docs/config-json/#optimizer-parameters.
         if trainer_config.optimizer.is_paged or trainer_config.optimizer.is_8bit:
             raise ValueError("Cannot use a paged or 8-bit optimizer with DeepSpeed.")
+
         optimizer_cls, optimizer_kwargs = get_optimizer_class_and_kwargs(trainer_config.optimizer, base_learning_rate)
         ds_config = {
             "amp": {
                 "enabled": trainer_config.use_mixed_precision,
             },
-            "optimizer": {"type": optimizer_cls.__name__, "params": optimizer_kwargs},
+            "optimizer": {
+                "type": optimizer_cls.__name__,
+                "params": optimizer_kwargs,
+            },
             "zero_optimization": self.zero_optimization,
             "gradient_clipping": trainer_config.gradient_clipping.clipglobalnorm,
             "train_micro_batch_size_per_gpu": batch_size,
@@ -194,7 +201,14 @@ class DeepSpeedStrategy(DDPStrategy):
         optimizer: Optional[Optimizer] = None,
         scheduler: Optional["LRScheduler"] = None,
     ) -> Checkpoint:
-        return DeepSpeedCheckpoint(self, dist_model, optimizer, scheduler)
+        if self.zero_optimization_stage == 3:
+            # DeepSpeed Zero3 checkpoints are not compatible with the standard PyTorch checkpointing mechanism since
+            # they are sharded across multiple files. We need to use DeepSpeed's checkpointing mechanism instead.
+            return DeepSpeedCheckpoint(self, dist_model, optimizer, scheduler)
+
+        # For all other stages, we can use the standard PyTorch checkpointing mechanism.
+        # TODO: Figure out what deepspeed stage "auto" actually does.
+        return MultiNodeCheckpoint(self, dist_model, optimizer, scheduler)
 
     @classmethod
     def extract_model_for_serialization(cls, model: nn.Module) -> Union[nn.Module, Tuple[nn.Module, List[Dict]]]:
