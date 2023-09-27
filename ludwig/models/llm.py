@@ -421,7 +421,7 @@ class LLM(BaseModel):
                         f"Input length {input_ids_sample_no_padding.shape[1]} is "
                         f"greater than max input length {self.max_input_length}. Truncating."
                     )
-                    input_ids_sample_no_padding = input_ids_sample_no_padding[:, -self.max_input_length :]
+                    input_ids_sample_no_padding = input_ids_sample_no_padding[:, -self.max_input_length :]  # noqa E203
 
                 input_lengths.append(input_ids_sample_no_padding.shape[1])
 
