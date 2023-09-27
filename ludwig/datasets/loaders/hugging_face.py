@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import logging
+
 import datasets
 import pandas as pd
 
@@ -33,23 +35,28 @@ class HFText2TextGenerationLoader(DatasetLoader):
         return new_dict
 
     def load(self, split=False, kaggle_username=None, kaggle_key=None) -> pd.DataFrame:
+        logger = logging.getLogger(__name__)
         dataset_dict = self.load_hf_to_dict(
             hf_id=self.config.huggingface_dataset_id,
             hf_subsample=self.config.huggingface_subsample,
         )
-        if split:
+        if split:  # For each split, either return the appropriate dataframe or an empty dataframe
             if TRAIN in dataset_dict:
                 train_df = dataset_dict[TRAIN]
             else:
-                train_df = None
+                logger.warning("No training set found in provided Hugging Face dataset. Skipping training set.")
+                train_df = pd.DataFrame()
             if VALIDATION in dataset_dict:
                 validation_df = dataset_dict[VALIDATION]
             else:
-                validation_df = None
+                logger.warning("No validation set found in provided Hugging Face dataset. Skipping validation set.")
+                validation_df = pd.DataFrame()
             if TEST in dataset_dict:
                 test_df = dataset_dict[TEST]
             else:
-                test_df = None
+                logger.warning("No test set found in provided Hugging Face dataset. Skipping test set.")
+                test_df = pd.DataFrame()
+
             return train_df, validation_df, test_df
         else:
             dataset_list = []
