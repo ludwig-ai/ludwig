@@ -464,7 +464,7 @@ class LLM(BaseModel):
         if isinstance(self.model.base_model, LoraModel):
             self.model.base_model.merge_and_unload(progressbar=progressbar)
         else:
-            raise ValueError("This operation requires an LLM model trained using LoRA as the base model.")
+            raise ValueError("This operation requires an LLM model trained with a LoRA adapter.")
 
     def _unpack_inputs(
         self,

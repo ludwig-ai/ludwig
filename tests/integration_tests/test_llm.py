@@ -780,6 +780,8 @@ def test_load_pretrained_adapter_weights(adapter):
 
 def _compare_models(model_1: torch.nn.Module, model_2: torch.nn.Module) -> bool:
     # For a full explanation of this 8-bit workaround, see https://github.com/ludwig-ai/ludwig/pull/3606
+
+    # TODO: Uncomment "filter_for_weight_format()" method definition and enable its usage once GPU tests are set up.
     # def filter_for_weight_format(i):
     #     """Remove bitsandbytes metadata keys added on state dict creation.
     #
