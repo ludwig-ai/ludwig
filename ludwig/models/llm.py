@@ -192,9 +192,11 @@ class LLM(BaseModel):
         # Extract the decoder object for the forward pass
         self._output_feature_decoder = ModuleWrapper(self.output_features.items()[0][1])
 
+        self.attention_masks = None
+
         clear_data_cache()
 
-    def create_feature_dict(self) -> LudwigFeatureDict:
+    def create_feature_dict(self) -> DictWrapper:
         return DictWrapper(LudwigFeatureDict())
 
     def set_generation_config(self, generation_config_dict):
@@ -728,6 +730,7 @@ class LLM(BaseModel):
 
         return _targets
 
-    def get_augmentation_pipelines(self) -> AugmentationPipelines:
+    @staticmethod
+    def get_augmentation_pipelines() -> AugmentationPipelines:
         """Returns the augmentation pipeline for this model."""
         return AugmentationPipelines({})

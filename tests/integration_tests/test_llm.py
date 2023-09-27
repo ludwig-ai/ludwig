@@ -454,53 +454,95 @@ def _verify_lm_lora_finetuning_layers(
 @pytest.mark.parametrize(
     "finetune_strategy,adapter_args",
     [
-        (None, {}),
-        ("lora", {}),
-        ("lora", {"r": 4, "dropout": 0.1}),
-        ("lora", {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: True, PROGRESSBAR: True}}),
-        ("lora", {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: False}}),
-        ("adalora", {}),
-        ("adalora", {"init_r": 8, "beta1": 0.8}),
-        ("adalora", {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: True, PROGRESSBAR: True}}),
-        ("adalora", {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: False}}),
-        ("adaption_prompt", {}),
-        ("adaption_prompt", {"adapter_len": 6, "adapter_layers": 1}),
-        # (
+        pytest.param(
+            None,
+            {},
+            id="full",
+        ),
+        pytest.param(
+            "lora",
+            {},
+            id="lora-defaults",
+        ),
+        pytest.param(
+            "lora",
+            {"r": 4, "dropout": 0.1},
+            id="lora-modified-defaults",
+        ),
+        pytest.param(
+            "lora",
+            {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: True, PROGRESSBAR: True}},
+            id="lora_merged",
+        ),
+        pytest.param(
+            "lora",
+            {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: False}},
+            id="lora_not_merged",
+        ),
+        pytest.param(
+            "adalora",
+            {},
+            id="adalora-defaults",
+        ),
+        pytest.param(
+            "adalora",
+            {"init_r": 8, "beta1": 0.8},
+            id="adalora-modified-defaults",
+        ),
+        pytest.param(
+            "adalora",
+            {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: True, PROGRESSBAR: True}},
+            id="adalora_merged",
+        ),
+        pytest.param(
+            "adalora",
+            {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: False}},
+            id="adalora_not_merged",
+        ),
+        pytest.param(
+            "adaption_prompt",
+            {},
+            id="adaption_prompt-defaults",
+        ),
+        pytest.param(
+            "adaption_prompt",
+            {"adapter_len": 6, "adapter_layers": 1},
+            id="adaption_prompt-modified-defaults",
+        ),
+        # pytest.param(
         #     "prompt_tuning",
         #     {
         #         "num_virtual_tokens": 8,
         #         "prompt_tuning_init": "RANDOM",
         #     },
+        #     id="prompt_tuning_init_random",
         # ),
-        # (
+        # pytest.param(
         #     "prompt_tuning",
         #     {
         #         "num_virtual_tokens": 8,
         #         "prompt_tuning_init": "TEXT",
         #         "prompt_tuning_init_text": "Classify if the review is positive, negative, or neutral: ",
         #     },
+        #     id="prompt_tuning_init_text",
         # ),
-        # ("prefix_tuning", {"num_virtual_tokens": 8}),
-        # ("p_tuning", {"num_virtual_tokens": 8, "encoder_reparameterization_type": "MLP"}),
-        # ("p_tuning", {"num_virtual_tokens": 8, "encoder_reparameterization_type": "LSTM"}),
-    ],
-    ids=[
-        "full",
-        "lora-defaults",
-        "lora-modified-defaults",
-        "lora_merged",
-        "lora_not_merged",
-        "adalora-defaults",
-        "adalora-modified-defaults",
-        "adalora_merged",
-        "adalora_not_merged",
-        "adaption_prompt-defaults",
-        "adaption_prompt-modified-defaults",
-        # "prompt_tuning_init_random",
-        # "prompt_tuning_init_text",
-        # "prefix_tuning",
-        # "p_tuning_mlp_reparameterization",
-        # "p_tuning_lstm_reparameterization",
+        # pytest.param(
+        #     "prefix_tuning",
+        #     {
+        #         "num_virtual_tokens": 8,
+        #     },
+        #     id="prefix_tuning",
+        # ),
+        pytest.param(
+            "p_tuning",
+            {"num_virtual_tokens": 8, "encoder_reparameterization_type": "MLP"},
+            id="p_tuning_mlp_reparameterization",
+        ),
+        pytest.param(
+            "p_tuning",
+            {"num_virtual_tokens": 8, "encoder_reparameterization_type": "LSTM"},
+            id="p_tuning_lstm_reparameterization",
+        ),
     ],
 )
 def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strategy, adapter_args):
