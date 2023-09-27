@@ -82,10 +82,11 @@ def load_dataset_uris(
 
     Returns the input unmodified for any non-Ludwig datasets.
     """
-    dataset_out = dataset
-    training_set_out = training_set
-    validation_set_out = validation_set
-    test_set_out = test_set
+    # Check that any of the datasets begin with the `hf://` prefix denoting a Hugging Face dataset URI
+    # Hugging Face datasets should follow the naming convention `hf://<dataset_name>.<dataset_subsample>`
+    dataset_out, training_set_out, validation_set_out, test_set_out = _load_hf_datasets(
+        dataset, training_set, validation_set, test_set, backend
+    )
 
     # Check that any of the datasets begin with the `ludwig://` prefix denoting a Ludwig dataset URI
     if dataset is not None:
@@ -123,7 +124,7 @@ def load_dataset_uris(
 
 
 @DeveloperAPI
-def load_hf_datasets(
+def _load_hf_datasets(
     dataset: Optional[Union[str, DataFrame]],
     training_set: Optional[Union[str, DataFrame]],
     validation_set: Optional[Union[str, DataFrame]],
