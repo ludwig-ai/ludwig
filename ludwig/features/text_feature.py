@@ -311,7 +311,8 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
                         # Decoded texts are only provided using the LLM model type.
                         if decoded_targets is not None and decoded_predictions is not None:
                             # Move metric function to the device of the predictions.
-                            # For CUDA, it can be computed on any of the GPUs since it uses all
+                            # For CUDA, it can be computed on any of the GPUs since it uses allgather to collect
+                            # the results from all GPUs and compute the final metric.
                             # We use 'predictions' as the key since it is always present in the predictions dict.
                             device = "cuda" if predictions["predictions"].is_cuda else "cpu"
                             metric_fn = metric_fn.to(device)
