@@ -474,7 +474,8 @@ def AdapterDataclassField(default: Optional[str] = None):
         def get_schema_from_registry(self, key: str) -> Type[schema_utils.BaseMarshmallowConfig]:
             return adapter_registry[key]
 
-        def _jsonschema_type_mapping(self):
+        @staticmethod
+        def _jsonschema_type_mapping():
             return {
                 "oneOf": [
                     {

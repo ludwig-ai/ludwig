@@ -111,7 +111,7 @@ logger = logging.getLogger(__name__)
 
 @PublicAPI
 @dataclass
-class EvaluationFrequency:
+class EvaluationFrequency:  # noqa F821
     """Represents the frequency of periodic evaluation of a metric during training. For example:
 
     "every epoch"
@@ -130,7 +130,7 @@ class EvaluationFrequency:
 
 @PublicAPI
 @dataclass
-class TrainingStats:
+class TrainingStats:  # noqa F821
     """Training stats were previously represented as a tuple or a dict.
 
     This class replaces those while preserving dict and tuple-like behavior (unpacking, [] access).
@@ -159,7 +159,7 @@ class TrainingStats:
 
 @PublicAPI
 @dataclass
-class PreprocessedDataset:
+class PreprocessedDataset:  # noqa F821
     training_set: Dataset
     validation_set: Dataset
     test_set: Dataset
@@ -175,7 +175,7 @@ class PreprocessedDataset:
 
 @PublicAPI
 @dataclass
-class TrainingResults:
+class TrainingResults:  # noqa F821
     train_stats: TrainingStats
     preprocessed_data: PreprocessedDataset
     output_directory: str
@@ -1027,7 +1027,7 @@ class LudwigModel:
             `'html'` (file containing a single HTML `<table>`), `'json'`, `'jsonl'`,
             `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`, `'spss'`,
             `'stata'`, `'tsv'`.
-        :param: split: (str, default= `'full'`): if the input dataset contains
+        :param split: (str, default=`'full'`): if the input dataset contains
             a split column, this parameter indicates which split of the data
             to use. Possible values are `'full'`, `'training'`, `'validation'`, `'test'`.
         :param batch_size: (int, default: None) size of batch to use when making
@@ -1439,7 +1439,6 @@ class LudwigModel:
         data_format: str = None,
         split: str = FULL,
         batch_size: int = 128,
-        debug: bool = False,
         **kwargs,
     ) -> list:
         """Loads a pre-trained model model and input data to collect the values of the activations contained in the
@@ -1457,7 +1456,7 @@ class LudwigModel:
             `'html'` (file containing a single HTML `<table>`), `'json'`, `'jsonl'`,
             `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`, `'spss'`,
             `'stata'`, `'tsv'`.
-        :param: split: (str, default= `'full'`): if the input dataset contains
+        :param split: (str, default= `'full'`): if the input dataset contains
             a split column, this parameter indicates which split of the data
             to use. Possible values are `'full'`, `'training'`, `'validation'`, `'test'`.
         :param batch_size: (int, default: 128) size of batch to use when making
@@ -1532,9 +1531,6 @@ class LudwigModel:
                 dataset is provided it is preprocessed and cached by saving an HDF5
                 and JSON files to avoid running the preprocessing again. If this
                 parameter is `False`, the HDF5 and JSON file are not saved.
-            :param output_directory: (str, default: `'results'`) the directory that
-                will contain the training statistics, TensorBoard logs, the saved
-                model and the training progress files.
             :param random_seed: (int, default: `42`) a random seed that will be
                 used anywhere there is a call to a random number generator: data
                 splitting, parameter initialization and training set shuffling
@@ -1728,8 +1724,8 @@ class LudwigModel:
         training_set_metadata_path = os.path.join(save_path, TRAIN_SET_METADATA_FILE_NAME)
         save_json(training_set_metadata_path, self.training_set_metadata)
 
+    @staticmethod
     def upload_to_hf_hub(
-        self,
         repo_id: str,
         model_path: str,
         repo_type: str = "model",

@@ -783,8 +783,8 @@ def create_data_set_to_use(data_format, raw_data, nan_percent=0.0):
     # https://stackoverflow.com/questions/16490261/python-pandas-write-dataframe-to-fixed-width-file-to-fwf
     from tabulate import tabulate
 
-    def to_fwf(df_: pd.DataFrame, fname: str):
-        content = tabulate(df_.values.tolist(), list(df_.columns), tablefmt="plain")
+    def to_fwf(df: pd.DataFrame, fname: str):
+        content = tabulate(df.values.tolist(), list(df.columns), tablefmt="plain")
         open(fname, "w").write(content)
 
     pd.DataFrame.to_fwf = to_fwf

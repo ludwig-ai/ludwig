@@ -136,7 +136,7 @@ class LLM(BaseModel):
             self.context_len = 2048
 
         # max input length value copied from FastChat
-        # https://github.com/lm-sys/FastChat/blob/0e958b852a14f4bef5f0e9d7a5e7373477329cf2/fastchat/serve/inference.py#L183  # noqa
+        # https://github.com/lm-sys/FastChat/blob/0e958b852a14f4bef5f0e9d7a5e7373477329cf2/fastchat/serve/inference.py#L183  # noqa E501
         self.max_new_tokens = self.config_obj.generation.max_new_tokens
         self.max_input_length = self.context_len - self.max_new_tokens - 8
 
