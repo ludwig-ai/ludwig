@@ -644,7 +644,7 @@ def test_api_callbacks_fixed_train_steps_less_than_one_epoch(tmpdir, csv_filenam
     )
 
     assert mock_callback.on_epoch_start.call_count == 1
-    assert mock_callback.on_epoch_end.call_count == 1
+    assert mock_callback.on_epoch_end.call_count == 0
     # The total number of batches is the number of train_steps
     assert mock_callback.on_batch_end.call_count == total_batches
     # The total number of evals is the number of times checkpoints are made
