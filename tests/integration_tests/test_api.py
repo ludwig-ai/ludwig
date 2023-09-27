@@ -563,9 +563,7 @@ def test_api_callbacks_default_train_steps(tmpdir, csv_filename):
 
 
 def test_api_callbacks_fixed_train_steps(tmpdir, csv_filename):
-    # If train_steps is set manually, epochs is ignored.
     train_steps = 100
-    epochs = 2
     batch_size = 8
     num_examples = 80
     mock_callback = mock.Mock(wraps=Callback())
@@ -576,7 +574,7 @@ def test_api_callbacks_fixed_train_steps(tmpdir, csv_filename):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": epochs, "train_steps": train_steps, "batch_size": batch_size},
+        TRAINER: {"train_steps": train_steps, "batch_size": batch_size},
     }
     model = LudwigModel(config, callbacks=[mock_callback])
     model.train(
@@ -614,6 +612,34 @@ def test_api_callbacks_fixed_train_steps_partial_epochs(tmpdir, csv_filename):
 
     # There are 10 steps per epoch, so 95 train steps => 9 full epochs.
     assert mock_callback.on_epoch_end.call_count == 9
+
+
+def test_api_callbacks_batch_size_1(tmpdir, csv_filename):
+    epochs = 2
+    batch_size = 1
+    num_examples = 80
+    mock_callback = mock.Mock(wraps=Callback())
+
+    input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
+    output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "output_size": 14},
+        TRAINER: {"epochs": epochs, "batch_size": batch_size},
+    }
+    model = LudwigModel(config, callbacks=[mock_callback])
+    model.train(
+        training_set=generate_data(
+            input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=num_examples
+        )
+    )
+
+    # There are exactly 2 epoch starts, even with batch_size = 1.
+    assert mock_callback.on_epoch_start.call_count == 2
+    assert mock_callback.on_epoch_end.call_count == 2
+    assert mock_callback.on_batch_start.call_count == 160
+    assert mock_callback.on_batch_end.call_count == 160
 
 
 def test_api_callbacks_fixed_train_steps_less_than_one_epoch(tmpdir, csv_filename):
