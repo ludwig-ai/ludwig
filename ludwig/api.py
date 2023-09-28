@@ -269,11 +269,11 @@ class LudwigModel:
         self,
         config: Union[str, dict],
         logging_level: int = logging.ERROR,
-        backend: Union[Backend, str, None] = None,
-        gpus: Union[str, int, List[int], None] = None,
+        backend: Optional[Union[Backend, str]] = None,
+        gpus: Optional[Union[str, int, List[int]]] = None,
         gpu_memory_limit: Optional[float] = None,
         allow_parallel_threads: bool = True,
-        callbacks: Union[List[Callback], None] = None,
+        callbacks: Optional[List[Callback]] = None,
     ) -> None:
         """Constructor for the Ludwig Model class.
 
@@ -326,29 +326,29 @@ class LudwigModel:
 
         # setup model
         self.model = None
-        self.training_set_metadata: Union[str, dict, None] = None
+        self.training_set_metadata: Optional[str, dict] = None
 
         # online training state
         self._online_trainer = None
 
     def train(
         self,
-        dataset: Union[str, dict, pd.DataFrame, None] = None,
-        training_set: Union[str, dict, pd.DataFrame, Dataset, None] = None,
-        validation_set: Union[str, dict, pd.DataFrame, Dataset, None] = None,
-        test_set: Union[str, dict, pd.DataFrame, Dataset, None] = None,
-        training_set_metadata: Union[str, dict, None] = None,
-        data_format: Union[str, None] = None,
+        dataset: Optional[Union[str, dict, pd.DataFrame]] = None,
+        training_set: Optional[Union[str, dict, pd.DataFrame, Dataset]] = None,
+        validation_set: Optional[Union[str, dict, pd.DataFrame, Dataset]] = None,
+        test_set: Optional[Union[str, dict, pd.DataFrame, Dataset]] = None,
+        training_set_metadata: Optional[Union[str, dict]] = None,
+        data_format: Optional[str] = None,
         experiment_name: str = "api_experiment",
         model_name: str = "run",
-        model_resume_path: Union[str, None] = None,
+        model_resume_path: Optional[str] = None,
         skip_save_training_description: bool = False,
         skip_save_training_statistics: bool = False,
         skip_save_model: bool = False,
         skip_save_progress: bool = False,
         skip_save_log: bool = False,
         skip_save_processed_input: bool = False,
-        output_directory: Union[str, None] = "results",
+        output_directory: Optional[str] = "results",
         random_seed: int = default_random_seed,
         **kwargs,
     ) -> TrainingResults:
@@ -744,7 +744,7 @@ class LudwigModel:
     def train_online(
         self,
         dataset: Union[str, dict, pd.DataFrame],
-        training_set_metadata: Union[str, dict] = None,
+        training_set_metadata: Optional[Union[str, dict]] = None,
         data_format: str = "auto",
         random_seed: int = default_random_seed,
     ) -> None:
@@ -892,11 +892,11 @@ class LudwigModel:
 
     def predict(
         self,
-        dataset: Union[str, dict, pd.DataFrame] = None,
+        dataset: Optional[Union[str, dict, pd.DataFrame]] = None,
         data_format: str = None,
         split: str = FULL,
         batch_size: int = 128,
-        generation_config: Optional[Dict] = None,
+        generation_config: Optional[dict] = None,
         skip_save_unprocessed_output: bool = True,
         skip_save_predictions: bool = True,
         output_directory: str = "results",
@@ -1003,8 +1003,8 @@ class LudwigModel:
 
     def evaluate(
         self,
-        dataset: Union[str, dict, pd.DataFrame] = None,
-        data_format: str = None,
+        dataset: Optional[Union[str, dict, pd.DataFrame]] = None,
+        data_format: Optional[str] = None,
         split: str = FULL,
         batch_size: Optional[int] = None,
         skip_save_unprocessed_output: bool = True,
@@ -1224,16 +1224,16 @@ class LudwigModel:
 
     def experiment(
         self,
-        dataset: Union[str, dict, pd.DataFrame] = None,
-        training_set: Union[str, dict, pd.DataFrame] = None,
-        validation_set: Union[str, dict, pd.DataFrame] = None,
-        test_set: Union[str, dict, pd.DataFrame] = None,
-        training_set_metadata: Union[str, dict] = None,
-        data_format: str = None,
+        dataset: Optional[Union[str, dict, pd.DataFrame]] = None,
+        training_set: Optional[Union[str, dict, pd.DataFrame]] = None,
+        validation_set: Optional[Union[str, dict, pd.DataFrame]] = None,
+        test_set: Optional[Union[str, dict, pd.DataFrame]] = None,
+        training_set_metadata: Optional[Union[str, dict]] = None,
+        data_format: Optional[str] = None,
         experiment_name: str = "experiment",
         model_name: str = "run",
-        model_load_path: str = None,
-        model_resume_path: str = None,
+        model_load_path: Optional[str] = None,
+        model_resume_path: Optional[str] = None,
         eval_split: str = TEST,
         skip_save_training_description: bool = False,
         skip_save_training_statistics: bool = False,
@@ -1438,7 +1438,7 @@ class LudwigModel:
         self,
         layer_names: List[str],
         dataset: Union[str, Dict[str, list], pd.DataFrame],
-        data_format: str = None,
+        data_format: Optional[str] = None,
         split: str = FULL,
         batch_size: int = 128,
         **kwargs,
@@ -1491,12 +1491,12 @@ class LudwigModel:
 
     def preprocess(
         self,
-        dataset: Union[str, dict, pd.DataFrame, None] = None,
-        training_set: Union[str, dict, pd.DataFrame, None] = None,
-        validation_set: Union[str, dict, pd.DataFrame, None] = None,
-        test_set: Union[str, dict, pd.DataFrame, None] = None,
-        training_set_metadata: Union[str, dict, None] = None,
-        data_format: Union[str, None] = None,
+        dataset: Optional[Union[str, dict, pd.DataFrame]] = None,
+        training_set: Optional[Union[str, dict, pd.DataFrame]] = None,
+        validation_set: Optional[Union[str, dict, pd.DataFrame]] = None,
+        test_set: Optional[Union[str, dict, pd.DataFrame]] = None,
+        training_set_metadata: Optional[Union[str, dict]] = None,
+        data_format: Optional[str] = None,
         skip_save_processed_input: bool = True,
         random_seed: int = default_random_seed,
         **kwargs,
@@ -1584,8 +1584,8 @@ class LudwigModel:
     def load(
         model_dir: str,
         logging_level: int = logging.ERROR,
-        backend: Union[Backend, str] = None,
-        gpus: Union[str, int, List[int]] = None,
+        backend: Optional[Union[Backend, str]] = None,
+        gpus: Optional[Union[str, int, List[int]]] = None,
         gpu_memory_limit: Optional[float] = None,
         allow_parallel_threads: bool = True,
         callbacks: List[Callback] = None,
@@ -1923,10 +1923,10 @@ def kfold_cross_validate(
     skip_collect_overall_stats: bool = False,
     output_directory: str = "results",
     random_seed: int = default_random_seed,
-    gpus: Union[str, int, List[int]] = None,
+    gpus: Optional[Union[str, int, List[int]]] = None,
     gpu_memory_limit: Optional[float] = None,
     allow_parallel_threads: bool = True,
-    backend: Union[Backend, str] = None,
+    backend: Optional[Union[Backend, str]] = None,
     logging_level: int = logging.INFO,
     **kwargs,
 ) -> Tuple[dict, dict]:
