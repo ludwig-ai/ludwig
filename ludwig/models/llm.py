@@ -1,5 +1,4 @@
 import contextlib
-import copy
 import logging
 import os
 import tempfile
