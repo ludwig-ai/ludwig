@@ -111,7 +111,7 @@ logger = logging.getLogger(__name__)
 
 @PublicAPI
 @dataclass
-class EvaluationFrequency:
+class EvaluationFrequency:  # noqa F821
     """Represents the frequency of periodic evaluation of a metric during training. For example:
 
     "every epoch"
@@ -130,7 +130,7 @@ class EvaluationFrequency:
 
 @PublicAPI
 @dataclass
-class TrainingStats:
+class TrainingStats:  # noqa F821
     """Training stats were previously represented as a tuple or a dict.
 
     This class replaces those while preserving dict and tuple-like behavior (unpacking, [] access).
@@ -159,7 +159,7 @@ class TrainingStats:
 
 @PublicAPI
 @dataclass
-class PreprocessedDataset:
+class PreprocessedDataset:  # noqa F821
     training_set: Dataset
     validation_set: Dataset
     test_set: Dataset
@@ -175,7 +175,7 @@ class PreprocessedDataset:
 
 @PublicAPI
 @dataclass
-class TrainingResults:
+class TrainingResults:  # noqa F821
     train_stats: TrainingStats
     preprocessed_data: PreprocessedDataset
     output_directory: str
@@ -269,11 +269,11 @@ class LudwigModel:
         self,
         config: Union[str, dict],
         logging_level: int = logging.ERROR,
-        backend: Union[Backend, str] = None,
-        gpus: Union[str, int, List[int]] = None,
+        backend: Optional[Union[Backend, str]] = None,
+        gpus: Optional[Union[str, int, List[int]]] = None,
         gpu_memory_limit: Optional[float] = None,
         allow_parallel_threads: bool = True,
-        callbacks: List[Callback] = None,
+        callbacks: Optional[List[Callback]] = None,
     ) -> None:
         """Constructor for the Ludwig Model class.
 
@@ -305,7 +305,7 @@ class LudwigModel:
             self.config_fp = config
         else:
             config_dict = copy.deepcopy(config)
-            self.config_fp = None
+            self.config_fp = None  # type: ignore [assignment]
 
         self._user_config = upgrade_config_dict_to_latest_version(config_dict)
 
@@ -326,29 +326,29 @@ class LudwigModel:
 
         # setup model
         self.model = None
-        self.training_set_metadata = None
+        self.training_set_metadata: Optional[str, dict] = None
 
         # online training state
         self._online_trainer = None
 
     def train(
         self,
-        dataset: Union[str, dict, pd.DataFrame] = None,
-        training_set: Union[str, dict, pd.DataFrame, Dataset] = None,
-        validation_set: Union[str, dict, pd.DataFrame, Dataset] = None,
-        test_set: Union[str, dict, pd.DataFrame, Dataset] = None,
-        training_set_metadata: Union[str, dict] = None,
-        data_format: str = None,
+        dataset: Optional[Union[str, dict, pd.DataFrame]] = None,
+        training_set: Optional[Union[str, dict, pd.DataFrame, Dataset]] = None,
+        validation_set: Optional[Union[str, dict, pd.DataFrame, Dataset]] = None,
+        test_set: Optional[Union[str, dict, pd.DataFrame, Dataset]] = None,
+        training_set_metadata: Optional[Union[str, dict]] = None,
+        data_format: Optional[str] = None,
         experiment_name: str = "api_experiment",
         model_name: str = "run",
-        model_resume_path: str = None,
+        model_resume_path: Optional[str] = None,
         skip_save_training_description: bool = False,
         skip_save_training_statistics: bool = False,
         skip_save_model: bool = False,
         skip_save_progress: bool = False,
         skip_save_log: bool = False,
         skip_save_processed_input: bool = False,
-        output_directory: str = "results",
+        output_directory: Optional[str] = "results",
         random_seed: int = default_random_seed,
         **kwargs,
     ) -> TrainingResults:
@@ -540,7 +540,7 @@ class LudwigModel:
                             f"{output_directory}/{experiment_name}/model/model_hyperparameters.json"
                         )
 
-                preprocessed_data = self.preprocess(
+                preprocessed_data = self.preprocess(  # type: ignore[assignment]
                     dataset=dataset,
                     training_set=training_set,
                     validation_set=validation_set,
@@ -569,8 +569,10 @@ class LudwigModel:
 
                 if not skip_save_model:
                     # save train set metadata
-                    os.makedirs(model_dir, exist_ok=True)
-                    save_json(os.path.join(model_dir, TRAIN_SET_METADATA_FILE_NAME), training_set_metadata)
+                    os.makedirs(model_dir, exist_ok=True)  # type: ignore[arg-type]
+                    save_json(  # type: ignore[arg-type]
+                        os.path.join(model_dir, TRAIN_SET_METADATA_FILE_NAME), training_set_metadata
+                    )
 
                 logger.info("\nDataset Statistics")
                 logger.info(tabulate(dataset_statistics, headers="firstrow", tablefmt="fancy_grid"))
@@ -742,7 +744,7 @@ class LudwigModel:
     def train_online(
         self,
         dataset: Union[str, dict, pd.DataFrame],
-        training_set_metadata: Union[str, dict] = None,
+        training_set_metadata: Optional[Union[str, dict]] = None,
         data_format: str = "auto",
         random_seed: int = default_random_seed,
     ) -> None:
@@ -890,11 +892,11 @@ class LudwigModel:
 
     def predict(
         self,
-        dataset: Union[str, dict, pd.DataFrame] = None,
+        dataset: Optional[Union[str, dict, pd.DataFrame]] = None,
         data_format: str = None,
         split: str = FULL,
         batch_size: int = 128,
-        generation_config: Optional[Dict] = None,
+        generation_config: Optional[dict] = None,
         skip_save_unprocessed_output: bool = True,
         skip_save_predictions: bool = True,
         output_directory: str = "results",
@@ -1001,8 +1003,8 @@ class LudwigModel:
 
     def evaluate(
         self,
-        dataset: Union[str, dict, pd.DataFrame] = None,
-        data_format: str = None,
+        dataset: Optional[Union[str, dict, pd.DataFrame]] = None,
+        data_format: Optional[str] = None,
         split: str = FULL,
         batch_size: Optional[int] = None,
         skip_save_unprocessed_output: bool = True,
@@ -1027,7 +1029,7 @@ class LudwigModel:
             `'html'` (file containing a single HTML `<table>`), `'json'`, `'jsonl'`,
             `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`, `'spss'`,
             `'stata'`, `'tsv'`.
-        :param: split: (str, default= `'full'`): if the input dataset contains
+        :param split: (str, default=`'full'`): if the input dataset contains
             a split column, this parameter indicates which split of the data
             to use. Possible values are `'full'`, `'training'`, `'validation'`, `'test'`.
         :param batch_size: (int, default: None) size of batch to use when making
@@ -1222,16 +1224,16 @@ class LudwigModel:
 
     def experiment(
         self,
-        dataset: Union[str, dict, pd.DataFrame] = None,
-        training_set: Union[str, dict, pd.DataFrame] = None,
-        validation_set: Union[str, dict, pd.DataFrame] = None,
-        test_set: Union[str, dict, pd.DataFrame] = None,
-        training_set_metadata: Union[str, dict] = None,
-        data_format: str = None,
+        dataset: Optional[Union[str, dict, pd.DataFrame]] = None,
+        training_set: Optional[Union[str, dict, pd.DataFrame]] = None,
+        validation_set: Optional[Union[str, dict, pd.DataFrame]] = None,
+        test_set: Optional[Union[str, dict, pd.DataFrame]] = None,
+        training_set_metadata: Optional[Union[str, dict]] = None,
+        data_format: Optional[str] = None,
         experiment_name: str = "experiment",
         model_name: str = "run",
-        model_load_path: str = None,
-        model_resume_path: str = None,
+        model_load_path: Optional[str] = None,
+        model_resume_path: Optional[str] = None,
         eval_split: str = TEST,
         skip_save_training_description: bool = False,
         skip_save_training_statistics: bool = False,
@@ -1436,10 +1438,9 @@ class LudwigModel:
         self,
         layer_names: List[str],
         dataset: Union[str, Dict[str, list], pd.DataFrame],
-        data_format: str = None,
+        data_format: Optional[str] = None,
         split: str = FULL,
         batch_size: int = 128,
-        debug: bool = False,
         **kwargs,
     ) -> list:
         """Loads a pre-trained model model and input data to collect the values of the activations contained in the
@@ -1457,7 +1458,7 @@ class LudwigModel:
             `'html'` (file containing a single HTML `<table>`), `'json'`, `'jsonl'`,
             `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`, `'spss'`,
             `'stata'`, `'tsv'`.
-        :param: split: (str, default= `'full'`): if the input dataset contains
+        :param split: (str, default= `'full'`): if the input dataset contains
             a split column, this parameter indicates which split of the data
             to use. Possible values are `'full'`, `'training'`, `'validation'`, `'test'`.
         :param batch_size: (int, default: 128) size of batch to use when making
@@ -1490,12 +1491,12 @@ class LudwigModel:
 
     def preprocess(
         self,
-        dataset: Union[str, dict, pd.DataFrame] = None,
-        training_set: Union[str, dict, pd.DataFrame] = None,
-        validation_set: Union[str, dict, pd.DataFrame] = None,
-        test_set: Union[str, dict, pd.DataFrame] = None,
-        training_set_metadata: Union[str, dict] = None,
-        data_format: str = None,
+        dataset: Optional[Union[str, dict, pd.DataFrame]] = None,
+        training_set: Optional[Union[str, dict, pd.DataFrame]] = None,
+        validation_set: Optional[Union[str, dict, pd.DataFrame]] = None,
+        test_set: Optional[Union[str, dict, pd.DataFrame]] = None,
+        training_set_metadata: Optional[Union[str, dict]] = None,
+        data_format: Optional[str] = None,
         skip_save_processed_input: bool = True,
         random_seed: int = default_random_seed,
         **kwargs,
@@ -1532,9 +1533,6 @@ class LudwigModel:
                 dataset is provided it is preprocessed and cached by saving an HDF5
                 and JSON files to avoid running the preprocessing again. If this
                 parameter is `False`, the HDF5 and JSON file are not saved.
-            :param output_directory: (str, default: `'results'`) the directory that
-                will contain the training statistics, TensorBoard logs, the saved
-                model and the training progress files.
             :param random_seed: (int, default: `42`) a random seed that will be
                 used anywhere there is a call to a random number generator: data
                 splitting, parameter initialization and training set shuffling
@@ -1586,8 +1584,8 @@ class LudwigModel:
     def load(
         model_dir: str,
         logging_level: int = logging.ERROR,
-        backend: Union[Backend, str] = None,
-        gpus: Union[str, int, List[int]] = None,
+        backend: Optional[Union[Backend, str]] = None,
+        gpus: Optional[Union[str, int, List[int]]] = None,
         gpu_memory_limit: Optional[float] = None,
         allow_parallel_threads: bool = True,
         callbacks: List[Callback] = None,
@@ -1728,8 +1726,8 @@ class LudwigModel:
         training_set_metadata_path = os.path.join(save_path, TRAIN_SET_METADATA_FILE_NAME)
         save_json(training_set_metadata_path, self.training_set_metadata)
 
+    @staticmethod
     def upload_to_hf_hub(
-        self,
         repo_id: str,
         model_path: str,
         repo_type: str = "model",
@@ -1925,10 +1923,10 @@ def kfold_cross_validate(
     skip_collect_overall_stats: bool = False,
     output_directory: str = "results",
     random_seed: int = default_random_seed,
-    gpus: Union[str, int, List[int]] = None,
+    gpus: Optional[Union[str, int, List[int]]] = None,
     gpu_memory_limit: Optional[float] = None,
     allow_parallel_threads: bool = True,
-    backend: Union[Backend, str] = None,
+    backend: Optional[Union[Backend, str]] = None,
     logging_level: int = logging.INFO,
     **kwargs,
 ) -> Tuple[dict, dict]:

@@ -356,7 +356,7 @@ def _prepare_finetuning_test(
 
 
 def _finetune_strategy_requires_cuda(finetune_strategy_name: str, quantization_args: Union[dict, None]) -> bool:
-    """This method returns whether or not a given finetine_strategy requires CUDA.
+    """This method returns whether a given finetine_strategy requires CUDA.
 
     For all finetune strategies, except "qlora", the decision is based just on the name of the finetine_strategy; in the
     case of qlora, if the quantization dictionary is non-empty (i.e., contains quantization specifications), then the
@@ -382,8 +382,8 @@ def _verify_lm_lora_finetuning_layers(
     expected_lora_in_features: int,
     expected_lora_out_features: int,
 ) -> bool:
-    """This method verifies that LoRA finetuning layers have correct types and shapes, depending on whether or not
-    the optional "model.merge_and_unload()" method (based on the "merge_adapter_into_base_model" directive) was
+    """This method verifies that LoRA finetuning layers have correct types and shapes, depending on whether the
+    optional "model.merge_and_unload()" method (based on the "merge_adapter_into_base_model" directive) was
     executed.
 
     If merge_adapter_into_base_model is True, then both LoRA projection layers, V and Q, in the attention layer must
@@ -454,53 +454,95 @@ def _verify_lm_lora_finetuning_layers(
 @pytest.mark.parametrize(
     "finetune_strategy,adapter_args",
     [
-        (None, {}),
-        ("lora", {}),
-        ("lora", {"r": 4, "dropout": 0.1}),
-        ("lora", {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: True, PROGRESSBAR: True}}),
-        ("lora", {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: False}}),
-        ("adalora", {}),
-        ("adalora", {"init_r": 8, "beta1": 0.8}),
-        ("adalora", {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: True, PROGRESSBAR: True}}),
-        ("adalora", {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: False}}),
-        ("adaption_prompt", {}),
-        ("adaption_prompt", {"adapter_len": 6, "adapter_layers": 1}),
-        # (
+        pytest.param(
+            None,
+            {},
+            id="full",
+        ),
+        pytest.param(
+            "lora",
+            {},
+            id="lora-defaults",
+        ),
+        pytest.param(
+            "lora",
+            {"r": 4, "dropout": 0.1},
+            id="lora-modified-defaults",
+        ),
+        pytest.param(
+            "lora",
+            {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: True, PROGRESSBAR: True}},
+            id="lora_merged",
+        ),
+        pytest.param(
+            "lora",
+            {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: False}},
+            id="lora_not_merged",
+        ),
+        pytest.param(
+            "adalora",
+            {},
+            id="adalora-defaults",
+        ),
+        pytest.param(
+            "adalora",
+            {"init_r": 8, "beta1": 0.8},
+            id="adalora-modified-defaults",
+        ),
+        pytest.param(
+            "adalora",
+            {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: True, PROGRESSBAR: True}},
+            id="adalora_merged",
+        ),
+        pytest.param(
+            "adalora",
+            {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: False}},
+            id="adalora_not_merged",
+        ),
+        pytest.param(
+            "adaption_prompt",
+            {},
+            id="adaption_prompt-defaults",
+        ),
+        pytest.param(
+            "adaption_prompt",
+            {"adapter_len": 6, "adapter_layers": 1},
+            id="adaption_prompt-modified-defaults",
+        ),
+        # pytest.param(
         #     "prompt_tuning",
         #     {
         #         "num_virtual_tokens": 8,
         #         "prompt_tuning_init": "RANDOM",
         #     },
+        #     id="prompt_tuning_init_random",
         # ),
-        # (
+        # pytest.param(
         #     "prompt_tuning",
         #     {
         #         "num_virtual_tokens": 8,
         #         "prompt_tuning_init": "TEXT",
         #         "prompt_tuning_init_text": "Classify if the review is positive, negative, or neutral: ",
         #     },
+        #     id="prompt_tuning_init_text",
         # ),
-        # ("prefix_tuning", {"num_virtual_tokens": 8}),
-        # ("p_tuning", {"num_virtual_tokens": 8, "encoder_reparameterization_type": "MLP"}),
-        # ("p_tuning", {"num_virtual_tokens": 8, "encoder_reparameterization_type": "LSTM"}),
-    ],
-    ids=[
-        "full",
-        "lora-defaults",
-        "lora-modified-defaults",
-        "lora_merged",
-        "lora_not_merged",
-        "adalora-defaults",
-        "adalora-modified-defaults",
-        "adalora_merged",
-        "adalora_not_merged",
-        "adaption_prompt-defaults",
-        "adaption_prompt-modified-defaults",
-        # "prompt_tuning_init_random",
-        # "prompt_tuning_init_text",
-        # "prefix_tuning",
-        # "p_tuning_mlp_reparameterization",
-        # "p_tuning_lstm_reparameterization",
+        # pytest.param(
+        #     "prefix_tuning",
+        #     {
+        #         "num_virtual_tokens": 8,
+        #     },
+        #     id="prefix_tuning",
+        # ),
+        # pytest.param(
+        #     "p_tuning",
+        #     {"num_virtual_tokens": 8, "encoder_reparameterization_type": "MLP"},
+        #     id="p_tuning_mlp_reparameterization",
+        # ),
+        # pytest.param(
+        #     "p_tuning",
+        #     {"num_virtual_tokens": 8, "encoder_reparameterization_type": "LSTM"},
+        #     id="p_tuning_lstm_reparameterization",
+        # ),
     ],
 )
 def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strategy, adapter_args):
@@ -513,7 +555,7 @@ def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strat
     model = LudwigModel.load(os.path.join(str(tmpdir), "api_experiment_run", "model"), backend=backend)
 
     base_model = LLM(ModelConfig.from_dict(config))
-    assert not _compare_models(base_model, model.model)
+    assert not _compare_models(base_model, model.model)  # noqa F821
 
     preds, _ = model.predict(dataset=prediction_df, output_directory=str(tmpdir))
     preds = convert_preds(preds)
@@ -525,12 +567,18 @@ def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strat
 @pytest.mark.parametrize(
     "finetune_strategy,adapter_args,quantization",
     [
-        ("lora", {}, {"bits": 4}),  # qlora
-        ("lora", {}, {"bits": 8}),  # qlora 8-bit
-    ],
-    ids=[
-        "qlora-4bit",
-        "qlora-8bit",
+        pytest.param(
+            "lora",
+            {},
+            {"bits": 4},
+            id="qlora-4bit",
+        ),
+        pytest.param(
+            "lora",
+            {},
+            {"bits": 8},
+            id="qlora-8bit",
+        ),
     ],
 )
 def test_llm_finetuning_strategies_quantized(tmpdir, csv_filename, finetune_strategy, adapter_args, quantization):
@@ -553,7 +601,7 @@ def test_llm_finetuning_strategies_quantized(tmpdir, csv_filename, finetune_stra
     model = LudwigModel.load(os.path.join(str(tmpdir), "api_experiment_run", "model"))
 
     base_model = LLM(ModelConfig.from_dict(config))
-    assert not _compare_models(base_model, model.model)
+    assert not _compare_models(base_model, model.model)  # noqa F821
 
     preds, _ = model.predict(dataset=prediction_df, output_directory=str(tmpdir))
     preds = convert_preds(preds)
@@ -736,8 +784,6 @@ def test_load_pretrained_adapter_weights(adapter):
     from peft import PeftModel
     from transformers import PreTrainedModel
 
-    weights = ""
-    model = ""
     if adapter == "lora":
         weights = "Infernaught/test_adapter_weights"
         base_model = TEST_MODEL_NAME
@@ -844,15 +890,15 @@ def test_local_path_loading():
     from huggingface_hub import snapshot_download
 
     # Download the model to a local directory
-    LOCAL_PATH = "~/test_local_path_loading"
-    REPO_ID = "HuggingFaceH4/tiny-random-LlamaForCausalLM"
-    os.makedirs(LOCAL_PATH, exist_ok=True)
-    snapshot_download(repo_id=REPO_ID, local_dir=LOCAL_PATH)
+    local_path: str = "~/test_local_path_loading"
+    repo_id: str = "HuggingFaceH4/tiny-random-LlamaForCausalLM"
+    os.makedirs(local_path, exist_ok=True)
+    snapshot_download(repo_id=repo_id, local_dir=local_path)
 
     # Load the model using the local path
     config1 = {
         MODEL_TYPE: MODEL_LLM,
-        BASE_MODEL: LOCAL_PATH,
+        BASE_MODEL: local_path,
         INPUT_FEATURES: [text_feature(name="input", encoder={"type": "passthrough"})],
         OUTPUT_FEATURES: [text_feature(name="output")],
     }
@@ -862,7 +908,7 @@ def test_local_path_loading():
     # Load the model using the repo id
     config2 = {
         MODEL_TYPE: MODEL_LLM,
-        BASE_MODEL: REPO_ID,
+        BASE_MODEL: repo_id,
         INPUT_FEATURES: [text_feature(name="input", encoder={"type": "passthrough"})],
         OUTPUT_FEATURES: [text_feature(name="output")],
     }

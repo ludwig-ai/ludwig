@@ -175,7 +175,7 @@ class BasePromptLearningConfig(BaseAdapterConfig):
 #                 "Must provide `prompt_tuning_init_text` when `prompt_tuning_init` is set to `TEXT`."
 #             )
 
-#     type: str = schema_utils.ProtectedString("prompt_tuning")
+"""#     type: str = schema_utils.ProtectedString("prompt_tuning")"""  # Quotes allow mypy to run without syntax errors.
 
 #     prompt_tuning_init: str = schema_utils.StringOptions(
 #         ["RANDOM", "TEXT"],
@@ -212,7 +212,7 @@ class BasePromptLearningConfig(BaseAdapterConfig):
 # class PrefixTuningConfig(BasePromptLearningConfig):
 #     """Adapted from https://github.com/huggingface/peft/blob/main/src/peft/tuners/prefix_tuning.py."""
 
-#     type: str = schema_utils.ProtectedString("prefix_tuning")
+"""#     type: str = schema_utils.ProtectedString("prefix_tuning")"""  # Quotes allow mypy to run without syntax errors.
 
 #     encoder_hidden_size: Optional[int] = schema_utils.Integer(
 #         default=None,
@@ -244,7 +244,7 @@ class BasePromptLearningConfig(BaseAdapterConfig):
 # @register_adapter("p_tuning")
 # @ludwig_dataclass
 # class PTuningConfig(BasePromptLearningConfig):
-#     type: str = schema_utils.ProtectedString("p_tuning")
+"""#     type: str = schema_utils.ProtectedString("p_tuning")"""  # Quotes allow mypy to run without syntax errors.
 
 #     encoder_reparameterization_type: str = schema_utils.StringOptions(
 #         ["MLP", "LSTM"],
@@ -474,7 +474,8 @@ def AdapterDataclassField(default: Optional[str] = None):
         def get_schema_from_registry(self, key: str) -> Type[schema_utils.BaseMarshmallowConfig]:
             return adapter_registry[key]
 
-        def _jsonschema_type_mapping(self):
+        @staticmethod
+        def _jsonschema_type_mapping():
             return {
                 "oneOf": [
                     {

@@ -136,7 +136,7 @@ class LLM(BaseModel):
             self.context_len = 2048
 
         # max input length value copied from FastChat
-        # https://github.com/lm-sys/FastChat/blob/0e958b852a14f4bef5f0e9d7a5e7373477329cf2/fastchat/serve/inference.py#L183  # noqa
+        # https://github.com/lm-sys/FastChat/blob/0e958b852a14f4bef5f0e9d7a5e7373477329cf2/fastchat/serve/inference.py#L183  # noqa E501
         self.max_new_tokens = self.config_obj.generation.max_new_tokens
         self.max_input_length = self.context_len - self.max_new_tokens - 8
 
@@ -192,9 +192,11 @@ class LLM(BaseModel):
         # Extract the decoder object for the forward pass
         self._output_feature_decoder = ModuleWrapper(self.output_features.items()[0][1])
 
+        self.attention_masks = None
+
         clear_data_cache()
 
-    def create_feature_dict(self) -> LudwigFeatureDict:
+    def create_feature_dict(self) -> DictWrapper:
         return DictWrapper(LudwigFeatureDict())
 
     def set_generation_config(self, generation_config_dict):
@@ -419,7 +421,7 @@ class LLM(BaseModel):
                         f"Input length {input_ids_sample_no_padding.shape[1]} is "
                         f"greater than max input length {self.max_input_length}. Truncating."
                     )
-                    input_ids_sample_no_padding = input_ids_sample_no_padding[:, -self.max_input_length :]
+                    input_ids_sample_no_padding = input_ids_sample_no_padding[:, -self.max_input_length :]  # noqa E203
 
                 input_lengths.append(input_ids_sample_no_padding.shape[1])
 
@@ -728,6 +730,7 @@ class LLM(BaseModel):
 
         return _targets
 
-    def get_augmentation_pipelines(self) -> AugmentationPipelines:
+    @staticmethod
+    def get_augmentation_pipelines() -> AugmentationPipelines:
         """Returns the augmentation pipeline for this model."""
         return AugmentationPipelines({})
