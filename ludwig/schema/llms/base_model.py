@@ -57,8 +57,14 @@ def BaseModelDataclassField():
             try:
                 AutoConfig.from_pretrained(model_name)
                 return model_name
-            except OSError as e:
-                raise ConfigValidationError(e)
+            except OSError:
+                raise ConfigValidationError(
+                    f"Specified base model `{model_name}` could not be loaded. If this is a private repository, make "
+                    f"sure to set HUGGING_FACE_HUB_TOKEN in your environment. Check that {model_name} is a valid "
+                    "pretrained CausalLM listed on huggingface or a valid local directory containing the weights for a "
+                    "pretrained CausalLM from huggingface. See: "
+                    "https://huggingface.co/models?pipeline_tag=text-generation&sort=downloads for a full list."
+                )
         raise ValidationError(
             f"`base_model` should be a string, instead given: {model_name}. This can be a preset or any pretrained "
             "CausalLM on huggingface. See: https://huggingface.co/models?pipeline_tag=text-generation&sort=downloads"
