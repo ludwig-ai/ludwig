@@ -25,7 +25,7 @@ TEST = "test"
 splits = [TRAIN, VALIDATION, TEST]
 
 
-class HFText2TextGenerationLoader(DatasetLoader):
+class HFLoader(DatasetLoader):
     def load_hf_to_dict(self, hf_id: str, hf_subsample: str) -> dict:
         # Convert from HF DatasetDict type to dict
         dataset_dict = datasets.load_dataset(path=hf_id, name=hf_subsample)

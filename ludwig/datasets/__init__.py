@@ -155,7 +155,7 @@ def _load_hf_datasets(
         training_set_checksum = None
         if isinstance(training_set, str) and training_set.startswith(HF_PREFIX):
             # For the training set, we only want to use the TRAINING split of the dataset
-            loader = get_dataset("hugging_face_t2t_gen")
+            loader = get_dataset("hugging_face")
             dataset_name, dataset_subsample = _get_hf_dataset_and_subsample(training_set)
             setattr(loader.config, "huggingface_dataset_id", dataset_name)
             setattr(loader.config, "huggingface_subsample", dataset_subsample)
@@ -185,7 +185,7 @@ def _load_hf_datasets(
 
 def _load_cacheable_dataset(dataset: str, backend: Backend, hf=False) -> CacheableDataframe:
     if hf:
-        loader = get_dataset("hugging_face_t2t_gen")
+        loader = get_dataset("hugging_face")
         dataset_name, dataset_subsample = _get_hf_dataset_and_subsample(dataset)
         setattr(loader.config, "huggingface_dataset_id", dataset_name)
         setattr(loader.config, "huggingface_subsample", dataset_subsample)
