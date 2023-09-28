@@ -31,7 +31,7 @@ MODEL_PRESETS = {
     "gpt-j-6b": "EleutherAI/gpt-j-6b",
     "pythia-2.8b": "EleutherAI/pythia-2.8b",
     "pythia-12b": "EleutherAI/pythia-12b",
-    "mistral-7b": "mistralai/Mistral-7B-v0.1",
+    "mistral": "mistralai/Mistral-7B-v0.1",
 }
 
 
