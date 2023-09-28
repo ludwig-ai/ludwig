@@ -57,12 +57,8 @@ def BaseModelDataclassField():
             try:
                 AutoConfig.from_pretrained(model_name)
                 return model_name
-            except OSError:
-                raise ConfigValidationError(
-                    f"Specified base model `{model_name}` is not a valid pretrained CausalLM listed on huggingface "
-                    "or a valid local directory containing the weights for a pretrained CausalLM from huggingface."
-                    "Please see: https://huggingface.co/models?pipeline_tag=text-generation&sort=downloads"
-                )
+            except OSError as e:
+                raise ConfigValidationError(e)
         raise ValidationError(
             f"`base_model` should be a string, instead given: {model_name}. This can be a preset or any pretrained "
             "CausalLM on huggingface. See: https://huggingface.co/models?pipeline_tag=text-generation&sort=downloads"
