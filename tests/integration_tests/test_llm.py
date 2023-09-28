@@ -1,5 +1,5 @@
 import os
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -15,11 +15,14 @@ from ludwig.constants import (
     EPOCHS,
     GENERATION,
     INPUT_FEATURES,
+    MERGE_ADAPTER_INTO_BASE_MODEL,
     MODEL_LLM,
     MODEL_TYPE,
     OUTPUT_FEATURES,
+    POSTPROCESSOR,
     PREPROCESSING,
     PRETRAINED_ADAPTER_WEIGHTS,
+    PROGRESSBAR,
     PROMPT,
     TRAINER,
     TYPE,
@@ -352,6 +355,84 @@ def _prepare_finetuning_test(
     return train_df, prediction_df, config
 
 
+def _finetune_strategy_requires_cuda(finetune_strategy_name: str, quantization_args: Union[dict, None]) -> bool:
+    """This method returns whether a given finetine_strategy requires CUDA.
+
+    For all finetune strategies, except "qlora", the decision is based just on the name of the finetine_strategy; in the
+    case of qlora, if the quantization dictionary is non-empty (i.e., contains quantization specifications), then the
+    original finetine_strategy name of "lora" is interpreted as "qlora" and used in the lookup, based on the list of
+    finetine strategies requiring CUDA.
+    """
+    cuda_only_finetune_strategy_names: list[str] = [
+        "prompt_tuning",
+        "prefix_tuning",
+        "p_tuning",
+        "qlora",
+    ]
+
+    if finetune_strategy_name == "lora" and quantization_args:
+        finetune_strategy_name = "qlora"
+
+    return finetune_strategy_name in cuda_only_finetune_strategy_names
+
+
+def _verify_lm_lora_finetuning_layers(
+    attention_layer: torch.nn.Module,
+    merge_adapter_into_base_model: bool,
+    expected_lora_in_features: int,
+    expected_lora_out_features: int,
+) -> bool:
+    """This method verifies that LoRA finetuning layers have correct types and shapes, depending on whether the
+    optional "model.merge_and_unload()" method (based on the "merge_adapter_into_base_model" directive) was
+    executed.
+
+    If merge_adapter_into_base_model is True, then both LoRA projection layers, V and Q, in the attention layer must
+    contain square weight matrices (with the dimensions expected_lora_in_features by expected_lora_in_features).
+    However, if merge_adapter_into_base_model is False, then the LoRA part of the attention layer must include Lora_A
+    and Lora_B children layers for each of V and Q projections, such that the product of V and Q matrices is a square
+    matrix (with the dimensions expected_lora_in_features by expected_lora_in_features) for both V and Q projections.
+    """
+    success: bool = True
+    success = success and isinstance(attention_layer.v_proj, torch.nn.Linear)
+    success = success and isinstance(attention_layer.q_proj, torch.nn.Linear)
+    if merge_adapter_into_base_model:
+        success = success and (attention_layer.v_proj.in_features, attention_layer.v_proj.out_features) == (
+            expected_lora_in_features,
+            expected_lora_out_features,
+        )
+        success = success and (attention_layer.q_proj.in_features, attention_layer.q_proj.out_features) == (
+            expected_lora_in_features,
+            expected_lora_out_features,
+        )
+        success = success and not list(attention_layer.v_proj.children())
+        success = success and not list(attention_layer.q_proj.children())
+    else:
+        v_proj_named_children: dict[str, torch.nn.Modeule] = dict(attention_layer.v_proj.named_children())
+        assert isinstance(v_proj_named_children["lora_A"]["default"], torch.nn.Linear)
+        assert (
+            v_proj_named_children["lora_A"]["default"].in_features,
+            v_proj_named_children["lora_A"]["default"].out_features,
+        ) == (expected_lora_in_features, expected_lora_out_features)
+        assert isinstance(v_proj_named_children["lora_B"]["default"], torch.nn.Linear)
+        assert (
+            v_proj_named_children["lora_B"]["default"].in_features,
+            v_proj_named_children["lora_B"]["default"].out_features,
+        ) == (expected_lora_out_features, expected_lora_in_features)
+        q_proj_named_children: dict[str, torch.nn.Modeule] = dict(attention_layer.q_proj.named_children())
+        assert isinstance(q_proj_named_children["lora_A"]["default"], torch.nn.Linear)
+        assert (
+            q_proj_named_children["lora_A"]["default"].in_features,
+            q_proj_named_children["lora_A"]["default"].out_features,
+        ) == (expected_lora_in_features, expected_lora_out_features)
+        assert isinstance(q_proj_named_children["lora_B"]["default"], torch.nn.Linear)
+        assert (
+            q_proj_named_children["lora_B"]["default"].in_features,
+            q_proj_named_children["lora_B"]["default"].out_features,
+        ) == (expected_lora_out_features, expected_lora_in_features)
+
+    return success
+
+
 # TODO(arnav): p-tuning and prefix tuning have errors when enabled that seem to stem from DDP:
 #
 # prefix tuning:
@@ -373,45 +454,95 @@ def _prepare_finetuning_test(
 @pytest.mark.parametrize(
     "finetune_strategy,adapter_args",
     [
-        (None, {}),
-        ("lora", {}),
-        ("lora", {"r": 4, "dropout": 0.1}),
-        ("adalora", {}),
-        ("adalora", {"init_r": 8, "beta1": 0.8}),
-        ("adaption_prompt", {}),
-        ("adaption_prompt", {"adapter_len": 6, "adapter_layers": 1}),
-        # (
+        pytest.param(
+            None,
+            {},
+            id="full",
+        ),
+        pytest.param(
+            "lora",
+            {},
+            id="lora-defaults",
+        ),
+        pytest.param(
+            "lora",
+            {"r": 4, "dropout": 0.1},
+            id="lora-modified-defaults",
+        ),
+        pytest.param(
+            "lora",
+            {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: True, PROGRESSBAR: True}},
+            id="lora_merged",
+        ),
+        pytest.param(
+            "lora",
+            {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: False}},
+            id="lora_not_merged",
+        ),
+        pytest.param(
+            "adalora",
+            {},
+            id="adalora-defaults",
+        ),
+        pytest.param(
+            "adalora",
+            {"init_r": 8, "beta1": 0.8},
+            id="adalora-modified-defaults",
+        ),
+        pytest.param(
+            "adalora",
+            {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: True, PROGRESSBAR: True}},
+            id="adalora_merged",
+        ),
+        pytest.param(
+            "adalora",
+            {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: False}},
+            id="adalora_not_merged",
+        ),
+        pytest.param(
+            "adaption_prompt",
+            {},
+            id="adaption_prompt-defaults",
+        ),
+        pytest.param(
+            "adaption_prompt",
+            {"adapter_len": 6, "adapter_layers": 1},
+            id="adaption_prompt-modified-defaults",
+        ),
+        # pytest.param(
         #     "prompt_tuning",
         #     {
         #         "num_virtual_tokens": 8,
         #         "prompt_tuning_init": "RANDOM",
         #     },
+        #     id="prompt_tuning_init_random",
         # ),
-        # (
+        # pytest.param(
         #     "prompt_tuning",
         #     {
         #         "num_virtual_tokens": 8,
         #         "prompt_tuning_init": "TEXT",
         #         "prompt_tuning_init_text": "Classify if the review is positive, negative, or neutral: ",
         #     },
+        #     id="prompt_tuning_init_text",
         # ),
-        # ("prefix_tuning", {"num_virtual_tokens": 8}),
-        # ("p_tuning", {"num_virtual_tokens": 8, "encoder_reparameterization_type": "MLP"}),
-        # ("p_tuning", {"num_virtual_tokens": 8, "encoder_reparameterization_type": "LSTM"}),
-    ],
-    ids=[
-        "full",
-        "lora-defaults",
-        "lora-modified-defaults",
-        "adalora-defaults",
-        "adalora-modified-defaults",
-        "adaption_prompt-defaults",
-        "adaption_prompt-modified-defaults",
-        # "prompt_tuning_init_random",
-        # "prompt_tuning_init_text",
-        # "prefix_tuning",
-        # "p_tuning_mlp_reparameterization",
-        # "p_tuning_lstm_reparameterization",
+        # pytest.param(
+        #     "prefix_tuning",
+        #     {
+        #         "num_virtual_tokens": 8,
+        #     },
+        #     id="prefix_tuning",
+        # ),
+        # pytest.param(
+        #     "p_tuning",
+        #     {"num_virtual_tokens": 8, "encoder_reparameterization_type": "MLP"},
+        #     id="p_tuning_mlp_reparameterization",
+        # ),
+        # pytest.param(
+        #     "p_tuning",
+        #     {"num_virtual_tokens": 8, "encoder_reparameterization_type": "LSTM"},
+        #     id="p_tuning_lstm_reparameterization",
+        # ),
     ],
 )
 def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strategy, adapter_args):
@@ -424,7 +555,7 @@ def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strat
     model = LudwigModel.load(os.path.join(str(tmpdir), "api_experiment_run", "model"), backend=backend)
 
     base_model = LLM(ModelConfig.from_dict(config))
-    assert not _compare_models(base_model, model.model)
+    assert not _compare_models(base_model, model.model)  # noqa F821
 
     preds, _ = model.predict(dataset=prediction_df, output_directory=str(tmpdir))
     preds = convert_preds(preds)
@@ -436,16 +567,25 @@ def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strat
 @pytest.mark.parametrize(
     "finetune_strategy,adapter_args,quantization",
     [
-        ("lora", {}, {"bits": 4}),  # qlora
-        ("lora", {}, {"bits": 8}),  # qlora 8-bit
-    ],
-    ids=[
-        "qlora-4bit",
-        "qlora-8bit",
+        pytest.param(
+            "lora",
+            {},
+            {"bits": 4},
+            id="qlora-4bit",
+        ),
+        pytest.param(
+            "lora",
+            {},
+            {"bits": 8},
+            id="qlora-8bit",
+        ),
     ],
 )
 def test_llm_finetuning_strategies_quantized(tmpdir, csv_filename, finetune_strategy, adapter_args, quantization):
-    if quantization and (not torch.cuda.is_available() or torch.cuda.device_count() == 0):
+    if (
+        _finetune_strategy_requires_cuda(finetune_strategy_name=finetune_strategy, quantization_args=quantization)
+        and not (torch.cuda.is_available() and torch.cuda.device_count()) > 0
+    ):
         pytest.skip("Skip: quantization requires GPU and none are available.")
 
     backend = LOCAL_BACKEND
@@ -461,12 +601,72 @@ def test_llm_finetuning_strategies_quantized(tmpdir, csv_filename, finetune_stra
     model = LudwigModel.load(os.path.join(str(tmpdir), "api_experiment_run", "model"))
 
     base_model = LLM(ModelConfig.from_dict(config))
-    assert not _compare_models(base_model, model.model)
+    assert not _compare_models(base_model, model.model)  # noqa F821
 
     preds, _ = model.predict(dataset=prediction_df, output_directory=str(tmpdir))
     preds = convert_preds(preds)
 
     assert preds
+
+
+@pytest.mark.llm
+@pytest.mark.parametrize(
+    "backend",
+    [
+        pytest.param(LOCAL_BACKEND, id="local"),
+        # TODO: Re-enable once we can run tests on GPUs
+        # This is because fine-tuning requires Ray with the deepspeed strategy, and deepspeed
+        # only works with GPUs
+        # pytest.param(RAY_BACKEND, id="ray"),
+    ],
+)
+@pytest.mark.parametrize(
+    "merge_adapter_into_base_model,expected_lora_in_features,expected_lora_out_features",
+    [
+        pytest.param(
+            False,
+            32,
+            8,
+            id="lora_not_merged",
+        ),
+        pytest.param(
+            True,
+            32,
+            32,
+            id="lora_merged",
+        ),
+    ],
+)
+def test_llm_lora_finetuning_merge_and_unload(
+    tmpdir, csv_filename, backend, merge_adapter_into_base_model, expected_lora_in_features, expected_lora_out_features
+):
+    finetune_strategy: str = "lora"
+    adapter_args: dict = {
+        POSTPROCESSOR: {
+            MERGE_ADAPTER_INTO_BASE_MODEL: merge_adapter_into_base_model,
+        },
+    }
+    train_df, prediction_df, config = _prepare_finetuning_test(
+        csv_filename=csv_filename, finetune_strategy=finetune_strategy, backend=backend, adapter_args=adapter_args
+    )
+
+    model = LudwigModel(config)
+    model.train(dataset=train_df, output_directory=str(tmpdir), skip_save_processed_input=False)
+    assert _verify_lm_lora_finetuning_layers(
+        attention_layer=model.model.model.base_model.model.transformer.h[1].attn,
+        merge_adapter_into_base_model=merge_adapter_into_base_model,
+        expected_lora_in_features=expected_lora_in_features,
+        expected_lora_out_features=expected_lora_out_features,
+    )
+
+    # Make sure we can load the saved model and verify that the LoRA layers have expected shapes.
+    model = LudwigModel.load(os.path.join(str(tmpdir), "api_experiment_run", "model"), backend=backend)
+    assert _verify_lm_lora_finetuning_layers(
+        attention_layer=model.model.model.base_model.model.transformer.h[1].attn,
+        merge_adapter_into_base_model=merge_adapter_into_base_model,
+        expected_lora_in_features=expected_lora_in_features,
+        expected_lora_out_features=expected_lora_out_features,
+    )
 
 
 @pytest.mark.llm
@@ -584,8 +784,6 @@ def test_load_pretrained_adapter_weights(adapter):
     from peft import PeftModel
     from transformers import PreTrainedModel
 
-    weights = ""
-    model = ""
     if adapter == "lora":
         weights = "Infernaught/test_adapter_weights"
         base_model = TEST_MODEL_NAME
@@ -628,23 +826,37 @@ def test_load_pretrained_adapter_weights(adapter):
 
 def _compare_models(model_1: torch.nn.Module, model_2: torch.nn.Module) -> bool:
     # For a full explanation of this 8-bit workaround, see https://github.com/ludwig-ai/ludwig/pull/3606
-    def filter_for_weight_format(i):
-        """Remove bitsandbytes metadata keys added on state dict creation.
 
-        8-bit quantized models that have been put on gpu will have a set of `weight_format` keys in their state dict.
-        These contain strings that are used to reshape quantized tensors, however these have no impact until the state
-        dict is loaded into a model. These keys were causing `torch.equal` to raise an exception, so we skip them in the
-        evaluation.
-        """
-        return "weight_format" not in i[0]
+    # TODO: Uncomment "filter_for_weight_format()" method definition and enable its usage once GPU tests are set up.
+    # def filter_for_weight_format(i):
+    #     """Remove bitsandbytes metadata keys added on state dict creation.
+    #
+    #     8-bit quantized models that have been put on gpu will have a set of `weight_format` keys in their state dict.
+    #     These contain strings that are used to reshape quantized tensors, however these have no impact until the state
+    #     dict is loaded into a model. These keys were causing `torch.equal` to raise an exception, so we skip them in
+    #     the evaluation.
+    #     """
+    #     return "weight_format" not in i[0]
 
-    model_1_filtered_state_dict = filter(filter_for_weight_format, model_1.state_dict().items())
-    model_2_filtered_state_dict = filter(filter_for_weight_format, model_2.state_dict().items())
+    # model_1_filtered_state_dict = filter(filter_for_weight_format, model_1.state_dict().items())
+    # model_2_filtered_state_dict = filter(filter_for_weight_format, model_2.state_dict().items())
 
     # Source: https://discuss.pytorch.org/t/check-if-models-have-same-weights/4351/6
-    for key_item_1, key_item_2 in zip(model_1_filtered_state_dict, model_2_filtered_state_dict):
+
+    if model_1.__class__.__name__ != model_2.__class__.__name__:
+        return False
+
+    if (
+        hasattr(model_1, "model")
+        and hasattr(model_2, "model")
+        and not _compare_models(model_1=model_1.model, model_2=model_2.model)
+    ):
+        return False
+
+    for key_item_1, key_item_2 in zip(model_1.state_dict().items(), model_2.state_dict().items()):
         if not torch.equal(key_item_1[1], key_item_2[1]):
             return False
+
     return True
 
 
@@ -678,15 +890,15 @@ def test_local_path_loading():
     from huggingface_hub import snapshot_download
 
     # Download the model to a local directory
-    LOCAL_PATH = "~/test_local_path_loading"
-    REPO_ID = "HuggingFaceH4/tiny-random-LlamaForCausalLM"
-    os.makedirs(LOCAL_PATH, exist_ok=True)
-    snapshot_download(repo_id=REPO_ID, local_dir=LOCAL_PATH)
+    local_path: str = "~/test_local_path_loading"
+    repo_id: str = "HuggingFaceH4/tiny-random-LlamaForCausalLM"
+    os.makedirs(local_path, exist_ok=True)
+    snapshot_download(repo_id=repo_id, local_dir=local_path)
 
     # Load the model using the local path
     config1 = {
         MODEL_TYPE: MODEL_LLM,
-        BASE_MODEL: LOCAL_PATH,
+        BASE_MODEL: local_path,
         INPUT_FEATURES: [text_feature(name="input", encoder={"type": "passthrough"})],
         OUTPUT_FEATURES: [text_feature(name="output")],
     }
@@ -696,7 +908,7 @@ def test_local_path_loading():
     # Load the model using the repo id
     config2 = {
         MODEL_TYPE: MODEL_LLM,
-        BASE_MODEL: REPO_ID,
+        BASE_MODEL: repo_id,
         INPUT_FEATURES: [text_feature(name="input", encoder={"type": "passthrough"})],
         OUTPUT_FEATURES: [text_feature(name="output")],
     }

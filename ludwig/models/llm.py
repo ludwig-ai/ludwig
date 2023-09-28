@@ -182,9 +182,11 @@ class LLM(BaseModel):
         # Extract the decoder object for the forward pass
         self._output_feature_decoder = ModuleWrapper(self.output_features.items()[0][1])
 
+        self.attention_masks = None
+
         clear_data_cache()
 
-    def create_feature_dict(self) -> LudwigFeatureDict:
+    def create_feature_dict(self) -> DictWrapper:
         return DictWrapper(LudwigFeatureDict())
 
     @contextlib.contextmanager
@@ -207,7 +209,7 @@ class LLM(BaseModel):
         self.generation = GenerationConfig(**new_generation_config_dict)
         self.max_new_tokens = self.generation.max_new_tokens
         # max input length value copied from FastChat
-        # https://github.com/lm-sys/FastChat/blob/0e958b852a14f4bef5f0e9d7a5e7373477329cf2/fastchat/serve/inference.py#L183  # noqa
+        # https://github.com/lm-sys/FastChat/blob/0e958b852a14f4bef5f0e9d7a5e7373477329cf2/fastchat/serve/inference.py#L183  # noqa E501
         self.max_input_length = self.context_len - self.max_new_tokens - 8
 
     @property
@@ -424,7 +426,7 @@ class LLM(BaseModel):
                         f"Input length {input_ids_sample_no_padding.shape[1]} is "
                         f"greater than max input length {self.max_input_length}. Truncating."
                     )
-                    input_ids_sample_no_padding = input_ids_sample_no_padding[:, -self.max_input_length :]
+                    input_ids_sample_no_padding = input_ids_sample_no_padding[:, -self.max_input_length :]  # noqa E203
 
                 input_lengths.append(input_ids_sample_no_padding.shape[1])
 
@@ -456,6 +458,21 @@ class LLM(BaseModel):
             )
 
         return outputs
+
+    def merge_and_unload(self, progressbar: bool = False) -> None:
+        """This method merges the LoRa layers into the base model.  This is needed if someone wants to use the base
+        model as a standalone model.  The implementation calls merge_and_unload() of the underlying LoraModel class
+        (in peft).
+
+        Args:
+            progressbar (bool): whether to show a progressbar indicating the unload and merge process
+        """
+        from peft import LoraModel
+
+        if isinstance(self.model.base_model, LoraModel):
+            self.model.base_model.merge_and_unload(progressbar=progressbar)
+        else:
+            raise ValueError("This operation requires an LLM model trained with a LoRA adapter.")
 
     def _unpack_inputs(
         self,
@@ -719,6 +736,7 @@ class LLM(BaseModel):
 
         return _targets
 
-    def get_augmentation_pipelines(self) -> AugmentationPipelines:
+    @staticmethod
+    def get_augmentation_pipelines() -> AugmentationPipelines:
         """Returns the augmentation pipeline for this model."""
         return AugmentationPipelines({})

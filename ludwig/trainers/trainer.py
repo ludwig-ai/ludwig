@@ -189,6 +189,12 @@ class Trainer(BaseTrainer):
         self.gradient_clipping_config = create_clipper(config.gradient_clipping)
 
         self.config = config
+
+        self.base_learning_rate = None
+        self.dist_model = None
+        self.optimizer = None
+        self.scheduler = None
+
         self.prepare()
 
         # Setup for automatic mixed precision (AMP)
@@ -759,7 +765,6 @@ class Trainer(BaseTrainer):
         )
 
         # ====== Setup session =======
-        checkpoint_manager = None
         checkpoint = self.distributed.create_checkpoint_handle(
             dist_model=self.dist_model, model=self.model, optimizer=self.optimizer, scheduler=self.scheduler
         )
@@ -912,7 +917,7 @@ class Trainer(BaseTrainer):
 
                     self.callback(lambda c: c.on_epoch_start(self, progress_tracker, save_path))
 
-                    # Trains over a full epoch of data.
+                    # Trains over a full epoch of data or up to the last training step, whichever is sooner.
                     should_break = self._train_loop(
                         batcher,
                         progress_tracker,
@@ -933,10 +938,6 @@ class Trainer(BaseTrainer):
                         early_stopping_steps,
                         profiler,
                     )
-
-                    # ================ Post Training Epoch ================
-                    progress_tracker.epoch += 1
-                    self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
 
                     if self.is_coordinator():
                         # ========== Save training progress ==========
@@ -1114,8 +1115,16 @@ class Trainer(BaseTrainer):
             # batch duration measurements when using timer callbacks.
             self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path, sync_step=should_step))
 
+            if batcher.last_batch():
+                # We have completed an epoch, so we need to increment the epoch counter. It's important to do this here
+                # instead of outside of the train loop since it's possible the train loop will exit early due to
+                # early stopping, or step-based training.
+                progress_tracker.epoch += 1
+                self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
+
             if progress_tracker.steps % final_steps_per_checkpoint == 0:
                 if not self.skip_all_evaluation:
+                    # Publishes metrics to MLFLow if there are any MLFlow callbacks.
                     should_break = self.run_evaluation(
                         training_set,
                         validation_set,
@@ -1371,8 +1380,8 @@ class Trainer(BaseTrainer):
                 signal.signal(signal.SIGINT, self.original_sigint_handler)
             sys.exit(1)
 
+    @staticmethod
     def resume_files_exist(
-        self,
         training_progress_tracker_path: str,
         training_checkpoint_path: str,
     ) -> bool:

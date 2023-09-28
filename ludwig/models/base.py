@@ -278,6 +278,10 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
     def eval_loss_metric(self) -> LudwigMetric:
         return self._eval_loss_metric.module
 
+    @eval_loss_metric.setter
+    def eval_loss_metric(self, value: LudwigMetric) -> None:
+        self._eval_loss_metric.module = value
+
     @property
     def eval_additional_losses_metrics(self) -> LudwigMetric:
         return self._eval_additional_losses_metrics.module
