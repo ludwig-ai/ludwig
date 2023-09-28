@@ -193,7 +193,7 @@ class LLM(BaseModel):
         """Sets the generation config for the model."""
         # Save the original generation config so that we can reset it if/when we change it when self.generation gets is
         # dynamically mutated during 1-off predict calls after fine-tuning.
-        original_generation = copy.deepcopy(self.generation)
+        original_generation_config_dict = self.generation.to_dict()
         try:
             # no-op if generation_config is None
             if generation_config_dict is not None:
@@ -202,7 +202,7 @@ class LLM(BaseModel):
                 self._set_generation_config(new_generation_config_dict)
             yield
         finally:
-            self._set_generation_config(original_generation.to_dict())
+            self._set_generation_config(original_generation_config_dict)
 
     def _set_generation_config(self, new_generation_config_dict: Dict[str, Any]):
         self.generation = GenerationConfig(**new_generation_config_dict)
