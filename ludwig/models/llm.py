@@ -198,7 +198,7 @@ class LLM(BaseModel):
             # no-op if generation_config is None
             if generation_config_dict is not None:
                 # unwrap the original generation config, update it with the new generation config
-                new_generation_config_dict = {**self.generation.to_dict(), **generation_config_dict}
+                new_generation_config_dict = {**original_generation_config_dict, **generation_config_dict}
                 self._set_generation_config(new_generation_config_dict)
             yield
         finally:
