@@ -648,9 +648,6 @@ class LudwigModel:
                     )
                     (self.model, train_trainset_stats, train_valiset_stats, train_testset_stats) = train_stats
 
-                    # For an LLM model trained with a LoRA adapter, handle merge and unload postprocessing directives.
-                    self._merge_and_unload()
-
                     # Calibrates output feature probabilities on validation set if calibration is enabled.
                     # Must be done after training, and before final model parameters are saved.
                     if self.backend.is_coordinator():
@@ -730,6 +727,9 @@ class LudwigModel:
                         callback.on_train_end(output_directory)
 
                 self.training_set_metadata = training_set_metadata
+
+                # For an LLM model trained with a LoRA adapter, handle merge and unload postprocessing directives.
+                self._merge_and_unload()
 
                 # Ensure model weights are saved to the driver if training was done remotely
                 if self.backend.is_coordinator() and not skip_save_model:

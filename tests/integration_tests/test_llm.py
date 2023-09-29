@@ -549,15 +549,16 @@ def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strat
     train_df, prediction_df, config = _prepare_finetuning_test(csv_filename, finetune_strategy, backend, adapter_args)
 
     model = LudwigModel(config)
-    model.train(dataset=train_df, output_directory=str(tmpdir), skip_save_processed_input=False)
+    output_directory: str = str(tmpdir)
+    model.train(dataset=train_df, output_directory=output_directory, skip_save_processed_input=False)
 
     # Make sure we can load the saved model and then use it for predictions
-    model = LudwigModel.load(os.path.join(str(tmpdir), "api_experiment_run", "model"), backend=backend)
+    model = LudwigModel.load(os.path.join(output_directory, "api_experiment_run", "model"), backend=backend)
 
     base_model = LLM(ModelConfig.from_dict(config))
     assert not _compare_models(base_model, model.model)  # noqa F821
 
-    preds, _ = model.predict(dataset=prediction_df, output_directory=str(tmpdir))
+    preds, _ = model.predict(dataset=prediction_df, output_directory=output_directory)
     preds = convert_preds(preds)
 
     assert preds
