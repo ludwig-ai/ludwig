@@ -27,6 +27,7 @@ import time
 from typing import Callable, Dict, List, Optional, Tuple
 
 import numpy as np
+import nvidia_smi
 import psutil
 import torch
 from torch.utils.tensorboard import SummaryWriter
@@ -451,6 +452,16 @@ class Trainer(BaseTrainer):
             # Total memory occupied.
             train_summary_writer.add_scalar(
                 "cuda/total_memory_occupied", torch.cuda.mem_get_info()[1], global_step=step
+            )
+
+        # Log nvidia-smi stats
+        nvidia_smi.nvmlInit()
+        device_count = nvidia_smi.nvmlDeviceGetCount()
+        for i in range(device_count):
+            handle = nvidia_smi.nvmlDeviceGetHandleByIndex(i)
+            mem = nvidia_smi.nvmlDeviceGetMemoryInfo(handle)
+            train_summary_writer.add_scalar(
+                f"nvidia-smi/total_memory_used_device{i}", (mem.total - mem.free) / (1024**2), global_step=step
             )
 
         train_summary_writer.flush()
