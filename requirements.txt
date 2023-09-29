@@ -26,7 +26,6 @@ marshmallow-jsonschema
 marshmallow-dataclass==8.5.4
 tensorboard
 nltk    # Required for rouge scores.
-nvidia-ml-py3
 torchmetrics>=0.11.0,<=0.11.4
 torchinfo
 filelock

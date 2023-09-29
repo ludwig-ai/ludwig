@@ -27,7 +27,6 @@ import time
 from typing import Callable, Dict, List, Optional, Tuple
 
 import numpy as np
-import nvidia_smi
 import psutil
 import torch
 from torch.utils.tensorboard import SummaryWriter
@@ -403,67 +402,78 @@ class Trainer(BaseTrainer):
 
         # Log CUDA memory stats.
         if torch.cuda.is_available():
-            memory_stats = torch.cuda.memory_stats()
-            # Allocated bytes.
-            train_summary_writer.add_scalar(
-                "cuda/allocated_bytes.all.current", memory_stats["allocated_bytes.all.current"], global_step=step
-            )
-            train_summary_writer.add_scalar(
-                "cuda/allocated_bytes.all.peak", memory_stats["allocated_bytes.all.peak"], global_step=step
-            )
-            train_summary_writer.add_scalar(
-                "cuda/allocated_bytes.all.allocated", memory_stats["allocated_bytes.all.allocated"], global_step=step
-            )
-            train_summary_writer.add_scalar(
-                "cuda/allocated_bytes.all.freed", memory_stats["allocated_bytes.all.freed"], global_step=step
-            )
+            for i in range(torch.cuda.device_count()):
+                device = torch.device(f"cuda:{i}")
+                memory_stats = torch.cuda.memory_stats(device=device)
+                # Allocated bytes.
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/allocated_bytes.all.current",
+                    memory_stats["allocated_bytes.all.current"],
+                    global_step=step,
+                )
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/allocated_bytes.all.peak",
+                    memory_stats["allocated_bytes.all.peak"],
+                    global_step=step,
+                )
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/allocated_bytes.all.allocated",
+                    memory_stats["allocated_bytes.all.allocated"],
+                    global_step=step,
+                )
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/allocated_bytes.all.freed",
+                    memory_stats["allocated_bytes.all.freed"],
+                    global_step=step,
+                )
 
-            # Reserved bytes.
-            train_summary_writer.add_scalar(
-                "cuda/reserved_bytes.all.current", memory_stats["reserved_bytes.all.current"], global_step=step
-            )
-            train_summary_writer.add_scalar(
-                "cuda/reserved_bytes.all.peak", memory_stats["reserved_bytes.all.peak"], global_step=step
-            )
-            train_summary_writer.add_scalar(
-                "cuda/reserved_bytes.all.allocated", memory_stats["reserved_bytes.all.allocated"], global_step=step
-            )
-            train_summary_writer.add_scalar(
-                "cuda/reserved_bytes.all.freed", memory_stats["reserved_bytes.all.freed"], global_step=step
-            )
+                # Reserved bytes.
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/reserved_bytes.all.current",
+                    memory_stats["reserved_bytes.all.current"],
+                    global_step=step,
+                )
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/reserved_bytes.all.peak", memory_stats["reserved_bytes.all.peak"], global_step=step
+                )
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/reserved_bytes.all.allocated",
+                    memory_stats["reserved_bytes.all.allocated"],
+                    global_step=step,
+                )
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/reserved_bytes.all.freed",
+                    memory_stats["reserved_bytes.all.freed"],
+                    global_step=step,
+                )
 
-            # Active bytes.
-            train_summary_writer.add_scalar(
-                "cuda/active_bytes.all.current", memory_stats["active_bytes.all.current"], global_step=step
-            )
-            train_summary_writer.add_scalar(
-                "cuda/active_bytes.all.peak", memory_stats["active_bytes.all.peak"], global_step=step
-            )
-            train_summary_writer.add_scalar(
-                "cuda/active_bytes.all.allocated", memory_stats["active_bytes.all.allocated"], global_step=step
-            )
-            train_summary_writer.add_scalar(
-                "cuda/active_bytes.all.freed", memory_stats["active_bytes.all.freed"], global_step=step
-            )
+                # Active bytes.
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/active_bytes.all.current",
+                    memory_stats["active_bytes.all.current"],
+                    global_step=step,
+                )
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/active_bytes.all.peak", memory_stats["active_bytes.all.peak"], global_step=step
+                )
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/active_bytes.all.allocated",
+                    memory_stats["active_bytes.all.allocated"],
+                    global_step=step,
+                )
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/active_bytes.all.freed", memory_stats["active_bytes.all.freed"], global_step=step
+                )
 
-            # Global free memory.
-            train_summary_writer.add_scalar("cuda/global_free_memory", torch.cuda.mem_get_info()[0], global_step=step)
+                # Global free memory.
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/global_free_memory", torch.cuda.mem_get_info(device=device)[0], global_step=step
+                )
 
-            # Total memory occupied.
-            train_summary_writer.add_scalar(
-                "cuda/total_memory_occupied", torch.cuda.mem_get_info()[1], global_step=step
-            )
-
-        # Log nvidia-smi stats
-        nvidia_smi.nvmlInit()
-        device_count = nvidia_smi.nvmlDeviceGetCount()
-        for i in range(device_count):
-            handle = nvidia_smi.nvmlDeviceGetHandleByIndex(i)
-            mem = nvidia_smi.nvmlDeviceGetMemoryInfo(handle)
-            train_summary_writer.add_scalar(
-                f"nvidia-smi/total_memory_used_device{i}", (mem.total - mem.free) / (1024**2), global_step=step
-            )
-
+                # Total memory occupied.
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/total_memory_occupied", torch.cuda.mem_get_info(device=device)[1], global_step=step
+                )
         train_summary_writer.flush()
 
     def is_cpu_training(self):
