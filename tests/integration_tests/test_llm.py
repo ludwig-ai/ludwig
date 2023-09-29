@@ -1,4 +1,5 @@
 import os
+import shutil
 from typing import Dict, Tuple, Union
 
 import numpy as np
@@ -917,3 +918,6 @@ def test_local_path_loading():
 
     # Check that the models are the same
     assert _compare_models(model1.model, model2.model)
+
+    # Remove the test directory (created at "local_path")
+    shutil.rmtree(local_path)
