@@ -134,8 +134,6 @@ class LLM(BaseModel):
         else:
             self.context_len = 2048
 
-        self._set_generation_config(self.config_obj.generation.to_dict())
-
         # TODO(Arnav): This needs be more flexible to account for RoPE Scaling
         # When merging input IDs and target IDs for LLM fine-tuning, we want to make sure that the merged tensor is
         # not longer than the global maximum sequence length. This is provided in the preprocessing config. We never
@@ -151,6 +149,8 @@ class LLM(BaseModel):
         # Initialize tokenizer
         self.tokenizer = AutoTokenizer.from_pretrained(self.config_obj.base_model)
         set_pad_token(self.tokenizer)
+        
+        self._set_generation_config(self.config_obj.generation.to_dict())
 
         # ================ Inputs ================
         try:
