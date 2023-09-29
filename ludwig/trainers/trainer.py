@@ -1293,7 +1293,8 @@ class Trainer(BaseTrainer):
 
             # Save the model.
             if not skip_save_model:
-                logger.info("New best model saved.\n")
+                if self.is_coordinator():
+                    logger.info("New best model saved.\n")
                 checkpoint_manager.save_best(progress_tracker.steps)
                 self.callback(lambda c: c.on_save_best_checkpoint(self, progress_tracker, save_path))
 
