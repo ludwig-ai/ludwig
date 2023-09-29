@@ -642,13 +642,22 @@ class LLM(BaseModel):
             predictions[of_name] = outputs
         return predictions
 
-    def save(self, save_path):
+    def save(self, save_path, save_base_model: bool = False):
         """Saves the model to the given path."""
         # TODO(travis): use the implementation of trainer itself to decide whether to save the model, to
         # avoid this hack
         if self.config_obj.trainer.type != "none":
             weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
             self.model.save_pretrained(weights_save_path)
+        else:
+            logger.info("Skipped saving LLM without weight adjustments.")
+
+    def save_base_model(self, save_path):
+        """Saves the base LLM model to the given path."""
+        # TODO: see the "TODO" statement from "LLM.save()" in this module.
+        if self.config_obj.trainer.type != "none":
+            weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
+            self.model.base_model.save_pretrained(weights_save_path)
         else:
             logger.info("Skipped saving LLM without weight adjustments.")
 
