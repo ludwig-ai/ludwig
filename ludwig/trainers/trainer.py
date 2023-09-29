@@ -474,6 +474,13 @@ class Trainer(BaseTrainer):
                 train_summary_writer.add_scalar(
                     f"cuda/device{i}/total_memory_occupied", torch.cuda.mem_get_info(device=device)[1], global_step=step
                 )
+
+                # Total memory used.
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/total_memory_used",
+                    torch.cuda.mem_get_info(device=device)[1] - torch.cuda.mem_get_info(device=device)[0],
+                    global_step=step,
+                )
         train_summary_writer.flush()
 
     def is_cpu_training(self):
