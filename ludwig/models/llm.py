@@ -157,6 +157,10 @@ class LLM(BaseModel):
         set_pad_token(self.tokenizer)
 
         self.generation = GenerationConfig(**self.config_obj.generation.to_dict())
+        self.generation.pad_token_id = self.tokenizer.pad_token_id
+        # We need to manually set the pad_token_id to the tokenizer's pad_token_id for certain models like GPT and
+        # CodeLlama to avoid getting an error. This workaround can be found here:
+        # (https://github.com/huggingface/transformers/issues/25353#issuecomment-1669339754)
 
         # Save the original generation config so that we can reset it if/when we change it when self.generation gets is
         # dynamically mutated during 1-off predict calls after fine-tuning.
