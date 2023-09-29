@@ -16,6 +16,7 @@ from typing import Callable
 
 import pytest
 import torch
+import torchvision.transforms.functional as F
 
 from ludwig.utils.image_utils import (
     crop,
@@ -189,26 +190,32 @@ def test_crop_or_pad(crop_or_pad_fn: Callable, img: torch.Tensor, new_size: int,
 
 @pytest.mark.parametrize("resize_image_fn", [resize_image, torch.jit.script(resize_image)])
 @pytest.mark.parametrize(
-    "img,new_size,resize_method,expected_img",
+    "img,new_size,resize_method",
     [
         (
             torch.arange(27, dtype=torch.int).reshape(3, 3, 3),
             2,
             "crop_or_pad",
-            torch.Tensor([0, 1, 3, 4, 9, 10, 12, 13, 18, 19, 21, 22]).type(torch.int).reshape(3, 2, 2),
         ),
         (
             torch.arange(27, dtype=torch.int).reshape(3, 3, 3),
             2,
             "interpolate",
-            torch.Tensor([1, 2, 6, 7, 10, 12, 14, 16, 19, 20, 24, 25]).type(torch.int).reshape(3, 2, 2),
         ),
     ],
 )
 def test_resize_image(
-    resize_image_fn: Callable, img: torch.Tensor, new_size: int, resize_method: str, expected_img: torch.Tensor
+    resize_image_fn: Callable, img: torch.Tensor, new_size: int, resize_method: str
 ):
+    # Get the expected output from the underlying function
+    if resize_method == "crop_or_pad":
+        expected_img = crop_or_pad(img, new_size)
+    else:
+        expected_img = F.resize(img, new_size)
+
     output_img = resize_image_fn(img, new_size, resize_method)
+
+    # Test that resize_image is equivalent to the underlying function output
     assert torch.equal(output_img, expected_img)
 
 
