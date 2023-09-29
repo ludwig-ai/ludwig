@@ -207,6 +207,10 @@ class LLM(BaseModel):
 
     def _set_generation_config(self, new_generation_config_dict: Dict[str, Any]):
         self.generation = GenerationConfig(**new_generation_config_dict)
+        # We need to manually set the pad_token_id to the tokenizer's pad_token_id for certain models like GPT and
+        # CodeLlama to avoid getting an error. This workaround can be found here:
+        # (https://github.com/huggingface/transformers/issues/25353#issuecomment-1669339754)
+        self.generation.pad_token_id = self.tokenizer.pad_token_id
         self.max_new_tokens = self.generation.max_new_tokens
         # max input length value copied from FastChat
         # https://github.com/lm-sys/FastChat/blob/0e958b852a14f4bef5f0e9d7a5e7373477329cf2/fastchat/serve/inference.py#L183  # noqa E501
