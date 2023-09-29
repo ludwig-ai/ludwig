@@ -1,6 +1,6 @@
 import os
 import pathlib
-from typing import Dict, Tuple, Union
+from typing import Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -365,7 +365,7 @@ def _finetune_strategy_requires_cuda(finetune_strategy_name: str, quantization_a
     original finetine_strategy name of "lora" is interpreted as "qlora" and used in the lookup, based on the list of
     finetine strategies requiring CUDA.
     """
-    cuda_only_finetune_strategy_names: list[str] = [
+    cuda_only_finetune_strategy_names: List[str] = [
         "prompt_tuning",
         "prefix_tuning",
         "p_tuning",
@@ -384,7 +384,7 @@ def _verify_lm_lora_finetuning_layers(
     model_weights_directory: str,
     expected_lora_in_features: int,
     expected_lora_out_features: int,
-    expected_file_names: list[str],
+    expected_file_names: List[str],
 ) -> bool:
     """This method verifies that LoRA finetuning layers have correct types and shapes, depending on whether the
     optional "model.merge_and_unload()" method (based on the "merge_adapter_into_base_model" directive) was
@@ -396,7 +396,7 @@ def _verify_lm_lora_finetuning_layers(
     and Lora_B children layers for each of V and Q projections, such that the product of V and Q matrices is a square
     matrix (with the dimensions expected_lora_in_features by expected_lora_in_features) for both V and Q projections.
     """
-    file_names: list[str] = list_file_names_in_directory(directory_name=model_weights_directory)
+    file_names: List[str] = list_file_names_in_directory(directory_name=model_weights_directory)
     success: bool = set(file_names) == set(expected_file_names)
     success = success and isinstance(attention_layer.v_proj, torch.nn.Linear)
     success = success and isinstance(attention_layer.q_proj, torch.nn.Linear)
