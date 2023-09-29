@@ -204,9 +204,7 @@ def test_crop_or_pad(crop_or_pad_fn: Callable, img: torch.Tensor, new_size: int,
         ),
     ],
 )
-def test_resize_image(
-    resize_image_fn: Callable, img: torch.Tensor, new_size: int, resize_method: str
-):
+def test_resize_image(resize_image_fn: Callable, img: torch.Tensor, new_size: int, resize_method: str):
     # Get the expected output from the underlying function
     if resize_method == "crop_or_pad":
         expected_img = crop_or_pad(img, new_size)
