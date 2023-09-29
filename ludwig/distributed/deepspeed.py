@@ -130,6 +130,12 @@ class DeepSpeedStrategy(DDPStrategy):
         return model_engine, optimizer
 
     def prepare_for_inference(self, model: nn.Module) -> nn.Module:
+        # if self.zero_optimization_stage != 3:
+        #     # If model is on CPU, we should move it to GPU since token generation is faster on GPU.
+        #     # Move it to the driver GPU.
+        #     if model.device.type != "cuda" or model.device.index != 0:
+        #         model = model.to("cuda:0")
+        #     return model
         ds_config = {}
         model_engine = deepspeed.init_inference(model=model, config=ds_config)
         return model_engine
@@ -201,14 +207,14 @@ class DeepSpeedStrategy(DDPStrategy):
         optimizer: Optional[Optimizer] = None,
         scheduler: Optional["LRScheduler"] = None,
     ) -> Checkpoint:
-        if self.zero_optimization_stage == 3:
-            # DeepSpeed Zero3 checkpoints are not compatible with the standard PyTorch checkpointing mechanism since
-            # they are sharded across multiple files. We need to use DeepSpeed's checkpointing mechanism instead.
-            return DeepSpeedCheckpoint(self, dist_model, optimizer, scheduler)
+        if self.zero_optimization_stage != 3:
+            # For all DeepSpeed stages that are not stage 3, we should use the standard
+            # PyTorch checkpointing mechanism.
+            return MultiNodeCheckpoint(self, dist_model, optimizer, scheduler)
 
-        # For all other stages, we can use the standard PyTorch checkpointing mechanism.
-        # TODO: Figure out what deepspeed stage "auto" actually does.
-        return MultiNodeCheckpoint(self, dist_model, optimizer, scheduler)
+        # DeepSpeed Zero3 checkpoints are not compatible with the standard PyTorch checkpointing mechanism since
+        # they are sharded across multiple files. We need to use DeepSpeed's checkpointing mechanism instead.
+        return DeepSpeedCheckpoint(self, dist_model, optimizer, scheduler)
 
     @classmethod
     def extract_model_for_serialization(cls, model: nn.Module) -> Union[nn.Module, Tuple[nn.Module, List[Dict]]]:

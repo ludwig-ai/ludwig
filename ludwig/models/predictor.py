@@ -332,6 +332,14 @@ class Predictor(BasePredictor):
 @register_predictor([MODEL_LLM])
 class LlmPredictor(Predictor):
     def _predict_on_inputs(self, inputs: Dict) -> Dict:
+        # from deepspeed.inference.engine import InferenceEngine
+
+        # # DeepSpeed Stage 2 and below doesn't use DeepSpeed Inference
+        # if not isinstance(self.dist_model, InferenceEngine):
+        #     # Make sure the inputs are on the right device
+        #     for k, v in inputs.items():
+        #         inputs[k] = v.to(self.dist_model.device)
+
         return self.dist_model.generate(inputs)
 
 
