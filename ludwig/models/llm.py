@@ -149,7 +149,7 @@ class LLM(BaseModel):
         # Initialize tokenizer
         self.tokenizer = AutoTokenizer.from_pretrained(self.config_obj.base_model)
         set_pad_token(self.tokenizer)
-        
+
         self._set_generation_config(self.config_obj.generation.to_dict())
 
         # ================ Inputs ================
