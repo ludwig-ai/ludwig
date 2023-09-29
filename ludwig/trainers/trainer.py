@@ -405,80 +405,86 @@ class Trainer(BaseTrainer):
             for i in range(torch.cuda.device_count()):
                 device = torch.device(f"cuda:{i}")
                 memory_stats = torch.cuda.memory_stats(device=device)
+                gb_memory_stats = {k: v / (1000**3) for k, v in memory_stats.items()}
                 # Allocated bytes.
                 train_summary_writer.add_scalar(
-                    f"cuda/device{i}/allocated_bytes.all.current",
-                    memory_stats["allocated_bytes.all.current"],
+                    f"cuda/device{i}/allocated_gb.all.current",
+                    gb_memory_stats["allocated_bytes.all.current"],
                     global_step=step,
                 )
                 train_summary_writer.add_scalar(
-                    f"cuda/device{i}/allocated_bytes.all.peak",
-                    memory_stats["allocated_bytes.all.peak"],
+                    f"cuda/device{i}/allocated_gb.all.peak",
+                    gb_memory_stats["allocated_bytes.all.peak"],
                     global_step=step,
                 )
                 train_summary_writer.add_scalar(
-                    f"cuda/device{i}/allocated_bytes.all.allocated",
-                    memory_stats["allocated_bytes.all.allocated"],
+                    f"cuda/device{i}/allocated_gb.all.allocated",
+                    gb_memory_stats["allocated_bytes.all.allocated"],
                     global_step=step,
                 )
                 train_summary_writer.add_scalar(
-                    f"cuda/device{i}/allocated_bytes.all.freed",
-                    memory_stats["allocated_bytes.all.freed"],
+                    f"cuda/device{i}/allocated_gb.all.freed",
+                    gb_memory_stats["allocated_bytes.all.freed"],
                     global_step=step,
                 )
 
                 # Reserved bytes.
                 train_summary_writer.add_scalar(
-                    f"cuda/device{i}/reserved_bytes.all.current",
-                    memory_stats["reserved_bytes.all.current"],
+                    f"cuda/device{i}/reserved_gb.all.current",
+                    gb_memory_stats["reserved_bytes.all.current"],
                     global_step=step,
                 )
                 train_summary_writer.add_scalar(
-                    f"cuda/device{i}/reserved_bytes.all.peak", memory_stats["reserved_bytes.all.peak"], global_step=step
+                    f"cuda/device{i}/reserved_gb.all.peak", gb_memory_stats["reserved_bytes.all.peak"], global_step=step
                 )
                 train_summary_writer.add_scalar(
-                    f"cuda/device{i}/reserved_bytes.all.allocated",
-                    memory_stats["reserved_bytes.all.allocated"],
+                    f"cuda/device{i}/reserved_gb.all.allocated",
+                    gb_memory_stats["reserved_bytes.all.allocated"],
                     global_step=step,
                 )
                 train_summary_writer.add_scalar(
-                    f"cuda/device{i}/reserved_bytes.all.freed",
-                    memory_stats["reserved_bytes.all.freed"],
+                    f"cuda/device{i}/reserved_gb.all.freed",
+                    gb_memory_stats["reserved_bytes.all.freed"],
                     global_step=step,
                 )
 
                 # Active bytes.
                 train_summary_writer.add_scalar(
-                    f"cuda/device{i}/active_bytes.all.current",
-                    memory_stats["active_bytes.all.current"],
+                    f"cuda/device{i}/active_gb.all.current",
+                    gb_memory_stats["active_bytes.all.current"],
                     global_step=step,
                 )
                 train_summary_writer.add_scalar(
-                    f"cuda/device{i}/active_bytes.all.peak", memory_stats["active_bytes.all.peak"], global_step=step
+                    f"cuda/device{i}/active_gb.all.peak", gb_memory_stats["active_bytes.all.peak"], global_step=step
                 )
                 train_summary_writer.add_scalar(
-                    f"cuda/device{i}/active_bytes.all.allocated",
-                    memory_stats["active_bytes.all.allocated"],
+                    f"cuda/device{i}/active_gb.all.allocated",
+                    gb_memory_stats["active_bytes.all.allocated"],
                     global_step=step,
                 )
                 train_summary_writer.add_scalar(
-                    f"cuda/device{i}/active_bytes.all.freed", memory_stats["active_bytes.all.freed"], global_step=step
+                    f"cuda/device{i}/active_gb.all.freed", gb_memory_stats["active_bytes.all.freed"], global_step=step
                 )
 
                 # Global free memory.
                 train_summary_writer.add_scalar(
-                    f"cuda/device{i}/global_free_memory", torch.cuda.mem_get_info(device=device)[0], global_step=step
+                    f"cuda/device{i}/global_free_memory_gb",
+                    torch.cuda.mem_get_info(device=device)[0] / (1000**3),
+                    global_step=step,
                 )
 
                 # Total memory occupied.
                 train_summary_writer.add_scalar(
-                    f"cuda/device{i}/total_memory_occupied", torch.cuda.mem_get_info(device=device)[1], global_step=step
+                    f"cuda/device{i}/total_memory_occupied_gb",
+                    torch.cuda.mem_get_info(device=device)[1] / (1000**3),
+                    global_step=step,
                 )
 
                 # Total memory used.
                 train_summary_writer.add_scalar(
-                    f"cuda/device{i}/total_memory_used",
-                    torch.cuda.mem_get_info(device=device)[1] - torch.cuda.mem_get_info(device=device)[0],
+                    f"cuda/device{i}/total_memory_used_gb",
+                    (torch.cuda.mem_get_info(device=device)[1] - torch.cuda.mem_get_info(device=device)[0])
+                    / (1000**3),
                     global_step=step,
                 )
         train_summary_writer.flush()
