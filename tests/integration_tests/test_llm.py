@@ -1,5 +1,4 @@
 import os
-import shutil
 from typing import Dict, Tuple, Union
 
 import numpy as np
@@ -885,13 +884,13 @@ def test_global_max_sequence_length_for_llms():
     assert model.global_max_sequence_length == 2048
 
 
-def test_local_path_loading():
+def test_local_path_loading(tmpdir):
     """Tests that local paths can be used to load models."""
 
     from huggingface_hub import snapshot_download
 
     # Download the model to a local directory
-    local_path: str = "~/test_local_path_loading"
+    local_path: str = f"{str(tmpdir)}/test_local_path_loading"
     repo_id: str = "HuggingFaceH4/tiny-random-LlamaForCausalLM"
     os.makedirs(local_path, exist_ok=True)
     snapshot_download(repo_id=repo_id, local_dir=local_path)
@@ -918,6 +917,3 @@ def test_local_path_loading():
 
     # Check that the models are the same
     assert _compare_models(model1.model, model2.model)
-
-    # Remove the test directory (created at "local_path")
-    shutil.rmtree(local_path)
