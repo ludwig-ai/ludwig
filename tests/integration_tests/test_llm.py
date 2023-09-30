@@ -25,6 +25,7 @@ from ludwig.constants import (
     PRETRAINED_ADAPTER_WEIGHTS,
     PROGRESSBAR,
     PROMPT,
+    QUANTIZATION,
     TRAINER,
     TYPE,
 )
@@ -600,7 +601,7 @@ def test_llm_finetuning_strategies_quantized(tmpdir, csv_filename, finetune_stra
 
     train_df, prediction_df, config = _prepare_finetuning_test(csv_filename, finetune_strategy, backend, adapter_args)
     config["backend"] = backend
-    config["quantization"] = quantization
+    config[QUANTIZATION] = quantization
 
     model = LudwigModel(config)
     model.train(dataset=train_df, output_directory=str(tmpdir), skip_save_processed_input=False)
@@ -647,11 +648,16 @@ def test_llm_finetuning_strategies_quantized(tmpdir, csv_filename, finetune_stra
             32,
             32,
             [
+                "tokenizer_config.json",
+                "special_tokens_map.json",
                 "config.json",
+                "tokenizer.json",
                 "generation_config.json",
                 "README.md",
+                "merges.txt",
                 "adapter_config.json",
                 "pytorch_model.bin",
+                "vocab.json",
                 "adapter_model.bin",
             ],
             id="lora_merged",

@@ -732,12 +732,11 @@ class LudwigModel:
                 if self.backend.is_coordinator() and not skip_save_model:
                     self.model.save(model_dir)
 
-                # For an LLM model trained with a LoRA adapter, handle merge and unload postprocessing directives.
-                do_merge_and_unload: bool = self._is_merge_and_unload_set()
-                if do_merge_and_unload:
-                    self._merge_and_unload()
-                    # Also: Ensure that the full model weights are saved to the driver if training was done remotely.
+                if self.config_obj.model_type == "llm" and self.model.is_merge_and_unload_set():
+                    # For an LLM model trained with a LoRA adapter, handle merge and unload postprocessing directives.
+                    self.model.merge_and_unload(progressbar=self.config_obj.adapter.postprocessor.progressbar)
 
+                    # Also: Ensure that the full model weights are saved to the driver if training was done remotely.
                     if self.backend.is_coordinator() and not skip_save_model:
                         self.model.save_base_model(model_dir)
 
@@ -818,27 +817,6 @@ class LudwigModel:
             self._tune_batch_size(self._online_trainer, dataset, random_seed=random_seed)
 
         self.model = self._online_trainer.train_online(training_dataset)
-
-    def _is_merge_and_unload_set(self) -> bool:
-        """First, check that the model is of the "llm" type.  Then check if the "adapter" configuration section
-        contains the "postprocessor" subsection and apply the "merge_adapter_into_base_model" and "progressbar"
-        directives.
-
-        # Return
-
-            :return (bool): whether merge_and_unload should be done.
-        """
-        return (
-            self.config_obj.model_type == "llm"
-            and self.config_obj.adapter is not None
-            and self.config_obj.adapter.postprocessor is not None
-            and self.config_obj.adapter.postprocessor.merge_adapter_into_base_model
-            and hasattr(self.model, "merge_and_unload")
-        )
-
-    def _merge_and_unload(self) -> None:
-        """For an LLM model trained with a LoRA adapter, handle merge and unload postprocessing directives."""
-        self.model.merge_and_unload(progressbar=self.config_obj.adapter.postprocessor.progressbar)
 
     def _tune_batch_size(self, trainer, dataset, random_seed: int = default_random_seed):
         """Sets AUTO batch-size-related parameters based on the trainer, backend type, and number of workers.
@@ -1673,8 +1651,9 @@ class LudwigModel:
         ludwig_model.load_weights(model_dir)
 
         # The LoRA layers appear to be loaded again (perhaps due to a potential bug); hence, we merge and unload again.
-        if ludwig_model._is_merge_and_unload_set():  # noqa W0212
-            ludwig_model._merge_and_unload()  # noqa W0212
+        if config_obj.model_type == "llm" and ludwig_model.model.is_merge_and_unload_set():
+            # For an LLM model trained with a LoRA adapter, handle merge and unload postprocessing directives.
+            ludwig_model.model.merge_and_unload(progressbar=config_obj.adapter.postprocessor.progressbar)
 
         # load train set metadata
         ludwig_model.training_set_metadata = backend.broadcast_return(

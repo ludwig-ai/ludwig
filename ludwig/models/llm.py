@@ -9,7 +9,14 @@ import numpy as np
 import torch
 from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer, GenerationConfig, PreTrainedModel
 
-from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, MODEL_LLM, PREDICTIONS, TEXT
+from ludwig.constants import (
+    IGNORE_INDEX_TOKEN_ID,
+    LOGITS,
+    MIN_QUANTIZATION_BITS_FOR_MERGE_AND_UNLOAD,
+    MODEL_LLM,
+    PREDICTIONS,
+    TEXT,
+)
 from ludwig.features.base_feature import ModuleWrapper, OutputFeature
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.features.text_feature import TextOutputFeature
@@ -122,6 +129,16 @@ class LLM(BaseModel):
 
         self.model_name = self.config_obj.base_model
         self.model_config = AutoConfig.from_pretrained(self.config_obj.base_model)
+
+        if (
+            self.is_merge_and_unload_set()
+            and self.config_obj.quantization
+            and self.config_obj.quantization.bits < MIN_QUANTIZATION_BITS_FOR_MERGE_AND_UNLOAD
+        ):
+            raise ValueError(
+                f"""This operation will entail merging LoRA layers on a {self.config_obj.quantization.bits}-bit \
+quantized model.  Calling "save_pretrained()" on that model is currently unsupported."""
+            )
 
         self.model = load_pretrained_from_config(self.config_obj, model_config=self.model_config)
         self.curr_device = next(self.model.parameters()).device
@@ -457,6 +474,20 @@ class LLM(BaseModel):
 
         return outputs
 
+    def is_merge_and_unload_set(self) -> bool:
+        """Check if the "adapter" configuration section exists and, if affirmative, that it contains the
+        "postprocessor" subsection and the "merge_adapter_into_base_model" and "progressbar" directives.
+
+        # Return
+
+            :return (bool): whether merge_and_unload should be done.
+        """
+        return (
+            self.config_obj.adapter is not None
+            and self.config_obj.adapter.postprocessor is not None
+            and self.config_obj.adapter.postprocessor.merge_adapter_into_base_model
+        )
+
     def merge_and_unload(self, progressbar: bool = False) -> None:
         """This method merges the LoRa layers into the base model.  This is needed if someone wants to use the base
         model as a standalone model.  The implementation calls merge_and_unload() of the underlying LoraModel class
@@ -658,6 +689,7 @@ class LLM(BaseModel):
         if self.config_obj.trainer.type != "none":
             weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
             self.model.base_model.save_pretrained(weights_save_path)
+            self.tokenizer.save_pretrained(weights_save_path)
         else:
             logger.info("Skipped saving LLM without weight adjustments.")
 
