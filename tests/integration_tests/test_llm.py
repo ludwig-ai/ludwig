@@ -620,6 +620,87 @@ def test_llm_finetuning_strategies_quantized(tmpdir, csv_filename, finetune_stra
 
 @pytest.mark.llm
 @pytest.mark.parametrize(
+    "finetune_strategy,adapter_args,quantization,error_raised",
+    [
+        pytest.param(
+            "lora",
+            {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: True, PROGRESSBAR: True}},
+            {"bits": 4},
+            (
+                ValueError,
+                'This operation will entail merging LoRA layers on a 4-bit quantized model.  Calling "save_pretrained()" on that model is currently unsupported.',  # noqa E501
+            ),
+            id="qlora-4bit-merged",
+        ),
+        pytest.param(
+            "lora",
+            {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: False}},
+            {"bits": 4},
+            (
+                ImportError,
+                "Using `load_in_8bit=True` requires Accelerate: `pip install accelerate` and the latest version of bitsandbytes `pip install -i https://test.pypi.org/simple/ bitsandbytes` or pip install bitsandbytes` ",  # noqa E501
+            ),
+            id="qlora-4bit-not-merged",
+        ),
+        pytest.param(
+            "lora",
+            {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: True, PROGRESSBAR: True}},
+            {"bits": 8},
+            (
+                ImportError,
+                "Using `load_in_8bit=True` requires Accelerate: `pip install accelerate` and the latest version of bitsandbytes `pip install -i https://test.pypi.org/simple/ bitsandbytes` or pip install bitsandbytes` ",  # noqa E501
+            ),
+            id="qlora-8bit-merged",
+        ),
+        pytest.param(
+            "lora",
+            {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: False}},
+            {"bits": 8},
+            (
+                ImportError,
+                "Using `load_in_8bit=True` requires Accelerate: `pip install accelerate` and the latest version of bitsandbytes `pip install -i https://test.pypi.org/simple/ bitsandbytes` or pip install bitsandbytes` ",  # noqa E501
+            ),
+            id="qlora-8bit-not-merged",
+        ),
+    ],
+)
+def test_llm_lora_finetuning_merge_and_unload_quantized(
+    csv_filename, finetune_strategy, adapter_args, quantization, error_raised
+):
+    input_features: List[dict] = [text_feature(name="input", encoder={"type": "passthrough"})]
+    output_features: List[dict] = [text_feature(name="output")]
+
+    config: dict = {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: TEST_MODEL_NAME,
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        TRAINER: {
+            TYPE: "finetune",
+            BATCH_SIZE: 8,
+            EPOCHS: 2,
+        },
+        ADAPTER: {
+            TYPE: finetune_strategy,
+            **adapter_args,
+        },
+        QUANTIZATION: quantization,
+    }
+
+    model = LudwigModel(config)
+
+    error_class: type  # noqa [F842]  # incorrect flagging of "local variable is annotated but never used
+    error_message: str  # noqa [F842]  # incorrect flagging of "local variable is annotated but never used
+    error_class, error_message = error_raised
+    with pytest.raises(error_class) as excinfo:
+        train_df = generate_data(input_features, output_features, filename=csv_filename, num_examples=3)
+        model.train(dataset=train_df)
+
+    assert str(excinfo.value) == error_message
+
+
+@pytest.mark.llm
+@pytest.mark.parametrize(
     "backend",
     [
         pytest.param(LOCAL_BACKEND, id="local"),
