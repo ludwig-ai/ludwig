@@ -1237,8 +1237,6 @@ def build_dataset(
     # so that we can compute metadata and build the dataset correctly.
     logger.debug("handle text features with prompt parameters")
 
-    # Get the prompt config from:
-    # prompt_config = _get_prompt_config(config, input_feature_config)
     synthesized_dataset_cols = handle_features_with_prompt_config(
         config, dataset_df, features, split_col=split_col, backend=backend
     )
