@@ -189,14 +189,15 @@ def _load_cacheable_dataset(dataset: str, backend: Backend, hf=False) -> Cacheab
         dataset_name, dataset_subsample = _get_hf_dataset_and_subsample(dataset)
         setattr(loader.config, "huggingface_dataset_id", dataset_name)
         setattr(loader.config, "huggingface_subsample", dataset_subsample)
-        checksum = None
+        df = loader.load(split=False)
+        df = backend.df_engine.from_pandas(df)
+        return CacheableDataframe(df=df, name=dataset, checksum=None)
     else:
         dataset_name = dataset[len(URI_PREFIX) :]
         loader = get_dataset(dataset_name)
-        checksum = str(loader.get_mtime())
-    df = loader.load(split=False)
-    df = backend.df_engine.from_pandas(df)
-    return CacheableDataframe(df=df, name=dataset, checksum=checksum)
+        df = loader.load(split=False)
+        df = backend.df_engine.from_pandas(df)
+        return CacheableDataframe(df=df, name=dataset, checksum=str(loader.get_mtime()))
 
 
 @PublicAPI
