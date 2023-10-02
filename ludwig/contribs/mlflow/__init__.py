@@ -170,7 +170,7 @@ class MlflowCallback(Callback):
                 self.save_fn((progress_tracker.log_metrics(), progress_tracker.steps, save_path, False))
             else:
                 # TODO(Justin): This should probably live in on_ludwig_end, once that's implemented.
-                # Ensure that we break the MLFlow loop if save_in_background is True.
+                # Ensure that we break the MLFlow save_fn loop if save_in_background is True.
                 self.save_fn((None, None, None, False))
 
             # Close the save_thread.
@@ -213,6 +213,7 @@ class MlflowCallback(Callback):
 
 
 def _log_mlflow_loop(q: queue.Queue, log_artifacts: bool = True):
+    """The save_fn for the background thread that logs to MLFlow when save_in_background is True."""
     should_continue = True
     while should_continue:
         elem = q.get()
@@ -233,6 +234,10 @@ def _log_mlflow_loop(q: queue.Queue, log_artifacts: bool = True):
 
 
 def _log_mlflow(log_metrics, steps, save_path, should_continue, log_artifacts: bool = True):
+    """The save_fn for the MlflowCallback.
+
+    This is used when save_in_background is False.
+    """
     if log_metrics is not None:
         mlflow.log_metrics(log_metrics, step=steps)
         if log_artifacts:
