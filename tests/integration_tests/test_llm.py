@@ -7,6 +7,7 @@ import pandas as pd
 import pytest
 import torch
 
+import ludwig.error as ludwig_error
 from ludwig.api import LudwigModel
 from ludwig.constants import (
     ADAPTER,
@@ -624,16 +625,6 @@ def test_llm_finetuning_strategies_quantized(tmpdir, csv_filename, finetune_stra
     [
         pytest.param(
             "lora",
-            {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: True, PROGRESSBAR: True}},
-            {"bits": 4},
-            (
-                ValueError,
-                'This operation will entail merging LoRA layers on a 4-bit quantized model.  Calling "save_pretrained()" on that model is currently unsupported.',  # noqa E501
-            ),
-            id="qlora-4bit-merged",
-        ),
-        pytest.param(
-            "lora",
             {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: False}},
             {"bits": 4},
             (
@@ -664,7 +655,7 @@ def test_llm_finetuning_strategies_quantized(tmpdir, csv_filename, finetune_stra
         ),
     ],
 )
-def test_llm_lora_finetuning_merge_and_unload_quantized(
+def test_llm_lora_finetuning_merge_and_unload_quantized_accelerate_required(
     csv_filename, finetune_strategy, adapter_args, quantization, error_raised
 ):
     input_features: List[dict] = [text_feature(name="input", encoder={"type": "passthrough"})]
@@ -697,6 +688,37 @@ def test_llm_lora_finetuning_merge_and_unload_quantized(
         model.train(dataset=train_df)
 
     assert str(excinfo.value) == error_message
+
+
+@pytest.mark.llm
+def test_llm_lora_finetuning_merge_and_unload_4_bit_quantization_not_supported():
+    input_features: List[dict] = [text_feature(name="input", encoder={"type": "passthrough"})]
+    output_features: List[dict] = [text_feature(name="output")]
+    finetune_strategy: str = "lora"
+
+    config: dict = {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: TEST_MODEL_NAME,
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        TRAINER: {
+            TYPE: "finetune",
+            BATCH_SIZE: 8,
+            EPOCHS: 2,
+        },
+        ADAPTER: {
+            TYPE: finetune_strategy,
+            POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: True, PROGRESSBAR: True},
+        },
+        QUANTIZATION: {"bits": 4},
+    }
+
+    expected_error_class: type = ludwig_error.ConfigValidationError
+    expected_error_message: str = 'This operation will entail merging LoRA layers on a 4-bit quantized model.  Calling "save_pretrained()" on that model is currently unsupported.'  # noqa E501
+    with pytest.raises(expected_error_class) as excinfo:
+        _ = LudwigModel(config)
+
+    assert str(excinfo.value) == expected_error_message
 
 
 @pytest.mark.llm
