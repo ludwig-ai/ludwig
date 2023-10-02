@@ -733,7 +733,7 @@ class LudwigModel:
                 if self.backend.is_coordinator() and not skip_save_model:
                     self.model.save(model_dir)
 
-                if self.config_obj.model_type == MODEL_LLM and self.model.is_merge_and_unload_set():
+                if self.is_merge_and_unload_set():
                     # For an LLM model trained with a LoRA adapter, handle merge and unload postprocessing directives.
                     self.model.merge_and_unload(progressbar=self.config_obj.adapter.postprocessor.progressbar)
 
@@ -1644,7 +1644,7 @@ class LudwigModel:
         ludwig_model.load_weights(model_dir)
 
         # The LoRA layers appear to be loaded again (perhaps due to a potential bug); hence, we merge and unload again.
-        if config_obj.model_type == MODEL_LLM and ludwig_model.model.is_merge_and_unload_set():
+        if ludwig_model.is_merge_and_unload_set():
             # For an LLM model trained with a LoRA adapter, handle merge and unload postprocessing directives.
             ludwig_model.model.merge_and_unload(progressbar=config_obj.adapter.postprocessor.progressbar)
 
@@ -1888,6 +1888,16 @@ class LudwigModel:
         """
         self._user_config = user_config
         self.config_obj = ModelConfig.from_dict(self._user_config)
+
+    def is_merge_and_unload_set(self) -> bool:
+        """Check whether the encapsulated model is of type LLM and is configured to merge_and_unload QLoRA weights.
+
+        # Return
+
+            :return (bool): whether merge_and_unload should be done.
+        """
+        # TODO: In the future, it may be possible to move up the model type check into the BaseModel class.
+        return self.config_obj.model_type == MODEL_LLM and self.model.is_merge_and_unload_set()
 
 
 @PublicAPI

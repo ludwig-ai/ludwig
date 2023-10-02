@@ -644,9 +644,10 @@ def check_qlora_requirements(config: "ModelConfig") -> None:  # noqa: F821
 def check_qlora_merge_and_unload_compatibility(config: "ModelConfig") -> None:  # noqa: F821
     """Checks that model.merge_and_unload() is supported by underlying model.save_pretrained() when merging QLoRA
     layers."""
-    if config.adapter.postprocessor is None or not (
+    if not (
         config.adapter
         and config.adapter.type == "lora"
+        and config.adapter.postprocessor
         and config.adapter.postprocessor.merge_adapter_into_base_model
         and config.quantization
     ):
