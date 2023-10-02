@@ -161,15 +161,26 @@ class MlflowCallback(Callback):
     def on_eval_end(self, trainer, progress_tracker, save_path):
         if progress_tracker.steps not in self.logged_steps:
             self.logged_steps.add(progress_tracker.steps)
-            self.save_fn((progress_tracker.log_metrics(), progress_tracker.steps, save_path, True))  # Why True?
+            # Adds a tuple to the logging queue.
+            # True is passed to indicate that the background saving loop should continue.
+            self.save_fn((progress_tracker.log_metrics(), progress_tracker.steps, save_path, True))
 
     def on_trainer_train_teardown(self, trainer, progress_tracker, save_path, is_coordinator):
         if is_coordinator:
             if progress_tracker.steps not in self.logged_steps:
                 self.logged_steps.add(progress_tracker.steps)
-                self.save_fn((progress_tracker.log_metrics(), progress_tracker.steps, save_path, False))  # Why False?
-                if self.save_thread is not None:
-                    self.save_thread.join()
+                # Adds a tuple to the logging queue.
+                # False is passed to indicate that the background saving loop should break.
+                self.save_fn((progress_tracker.log_metrics(), progress_tracker.steps, save_path, False))
+            # False ensures that the background saving loop breaks.
+            # TODO(Justin): This should probably live in on_ludwig_end, once that's implemented.
+            self.save_fn((None, None, None, False))
+
+            # Close the save_thread.
+            if self.save_thread is not None:
+                self.save_thread.join()
+                # if self.save_thread.is_alive():
+                #     logger.warning("MLFlow save thread timed out and did not close properly.")
 
     def on_visualize_figure(self, fig):
         # TODO: need to also include a filename for this figure
@@ -205,10 +216,15 @@ class MlflowCallback(Callback):
 
 
 def _log_mlflow_loop(q: queue.Queue, log_artifacts: bool = True):
+    """The save_fn for the background thread that logs to MLFlow when save_in_background is True."""
     should_continue = True
     while should_continue:
         elem = q.get()
         log_metrics, steps, save_path, should_continue = elem
+        if log_metrics is None:
+            # Break out of the loop if we're not going to log anything.
+            break
+
         mlflow.log_metrics(log_metrics, step=steps)
 
         if not q.empty():
@@ -221,9 +237,14 @@ def _log_mlflow_loop(q: queue.Queue, log_artifacts: bool = True):
 
 
 def _log_mlflow(log_metrics, steps, save_path, should_continue, log_artifacts: bool = True):
-    mlflow.log_metrics(log_metrics, step=steps)
-    if log_artifacts:
-        _log_model(save_path)
+    """The save_fn for the MlflowCallback.
+
+    This is used when save_in_background is False.
+    """
+    if log_metrics is not None:
+        mlflow.log_metrics(log_metrics, step=steps)
+        if log_artifacts:
+            _log_model(save_path)
 
 
 def _log_artifacts(output_directory):

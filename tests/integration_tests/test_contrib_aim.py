@@ -12,6 +12,7 @@ logging.getLogger("ludwig").setLevel(logging.INFO)
 TEST_SCRIPT = os.path.join(os.path.dirname(__file__), "scripts", "run_train_aim.py")
 
 
+@pytest.mark.skip(reason="Aim integration not compatible with Aim 4.0.")
 @pytest.mark.distributed
 def test_contrib_experiment(csv_filename, tmpdir):
     aim_test_path = os.path.join(tmpdir, "results")
