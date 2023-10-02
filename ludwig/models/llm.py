@@ -662,7 +662,7 @@ class LLM(BaseModel):
             predictions[of_name] = outputs
         return predictions
 
-    def save(self, save_path, save_base_model: bool = False):
+    def save(self, save_path):
         """Saves the model to the given path."""
         # TODO(travis): use the implementation of trainer itself to decide whether to save the model, to
         # avoid this hack
