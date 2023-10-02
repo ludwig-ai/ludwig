@@ -8,10 +8,9 @@ import numpy as np
 import torch
 from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer, GenerationConfig, PreTrainedModel
 
-from ludwig.constants import (
+from ludwig.constants import (  # TODO: <Alex>ALEX</Alex>; MIN_QUANTIZATION_BITS_FOR_MERGE_AND_UNLOAD,
     IGNORE_INDEX_TOKEN_ID,
     LOGITS,
-    MIN_QUANTIZATION_BITS_FOR_MERGE_AND_UNLOAD,
     MODEL_LLM,
     PREDICTIONS,
     TEXT,
@@ -129,15 +128,17 @@ class LLM(BaseModel):
         self.model_name = self.config_obj.base_model
         self.model_config = AutoConfig.from_pretrained(self.config_obj.base_model)
 
-        if (
-            self.is_merge_and_unload_set()
-            and self.config_obj.quantization
-            and self.config_obj.quantization.bits < MIN_QUANTIZATION_BITS_FOR_MERGE_AND_UNLOAD
-        ):
-            raise ValueError(
-                f"""This operation will entail merging LoRA layers on a {self.config_obj.quantization.bits}-bit \
-quantized model.  Calling "save_pretrained()" on that model is currently unsupported."""
-            )
+        # TODO: <Alex>ALEX</Alex>
+        #         if (
+        #             self.is_merge_and_unload_set()
+        #             and self.config_obj.quantization
+        #             and self.config_obj.quantization.bits < MIN_QUANTIZATION_BITS_FOR_MERGE_AND_UNLOAD
+        #         ):
+        #             raise ValueError(
+        #                 f"""This operation will entail merging LoRA layers on a {self.config_obj.quantization.bits}-bit \  # noqa
+        # quantized model.  Calling "save_pretrained()" on that model is currently unsupported."""
+        #             )
+        # TODO: <Alex>ALEX</Alex>
 
         self.model = load_pretrained_from_config(self.config_obj, model_config=self.model_config)
         self.curr_device = next(self.model.parameters()).device
