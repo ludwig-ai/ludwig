@@ -178,9 +178,9 @@ class MlflowCallback(Callback):
 
             # Close the save_thread.
             if self.save_thread is not None:
-                self.save_thread.join(timeout=5)
-                if self.save_thread.is_alive():
-                    logger.warning("MLFlow save thread timed out and did not close properly.")
+                self.save_thread.join()
+                # if self.save_thread.is_alive():
+                #     logger.warning("MLFlow save thread timed out and did not close properly.")
 
     def on_visualize_figure(self, fig):
         # TODO: need to also include a filename for this figure
