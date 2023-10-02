@@ -25,7 +25,7 @@ import torchtext
 
 from ludwig.api import LudwigModel
 from ludwig.backend import RAY
-from ludwig.constants import BATCH_SIZE, COMBINER, LOGITS, NAME, PREDICTIONS, PROBABILITIES, TRAINER
+from ludwig.constants import BATCH_SIZE, COMBINER, EVAL_BATCH_SIZE, LOGITS, NAME, PREDICTIONS, PROBABILITIES, TRAINER
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.features.number_feature import numeric_transformation_registry
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
@@ -415,7 +415,7 @@ def test_torchscript_e2e_text_hf_tokenizer(tmpdir, csv_filename):
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128, EVAL_BATCH_SIZE: 128},
     }
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
 
