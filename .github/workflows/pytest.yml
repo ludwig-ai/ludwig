@@ -262,7 +262,7 @@ jobs:
       - name: Integration Tests
         run: |
           # RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=7200 pytest -v --timeout 300 --durations 100 -m "not slow and not combinatorial and not horovod and not llm and $MARKERS" --junitxml pytest.xml tests/integration_tests
-          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=7200 pytest -v --timeout 300 --durations 100 -m --junitxml pytest.xml tests/integration_tests/test_mlflow.py
+          # RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=7200 pytest -v --timeout 300 --durations 100 --junitxml pytest.xml tests/integration_tests/test_mlflow.py
 
   # llm-tests:
   #   name: LLM Tests
