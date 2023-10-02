@@ -164,7 +164,6 @@ class MlflowCallback(Callback):
             self.save_fn((progress_tracker.log_metrics(), progress_tracker.steps, save_path, True))
 
     def on_trainer_train_teardown(self, trainer, progress_tracker, save_path, is_coordinator):
-        print("Hello! Reached on trainer train teardown.")
         if is_coordinator:
             if progress_tracker.steps not in self.logged_steps:
                 self.logged_steps.add(progress_tracker.steps)
