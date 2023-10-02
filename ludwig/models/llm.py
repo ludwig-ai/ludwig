@@ -678,6 +678,10 @@ class LLM(BaseModel):
         if self.config_obj.trainer.type != "none":
             weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
             self.model.base_model.save_pretrained(weights_save_path)
+            """While this class initializes the tokenizer (from the base_model) automatically, and hence does not
+            need to be saved if inference is to be done using LudwigModel.predict(), the rationale for saving the
+            tokenizer to HuggingFace Hub is to provide access to models fine-tuned and persisted to HuggingFace Hub
+            using Ludwig at a later time, with the ability to perform inference, independently of Ludwig itself."""
             self.tokenizer.save_pretrained(weights_save_path)
         else:
             logger.info("Skipped saving LLM without weight adjustments.")
