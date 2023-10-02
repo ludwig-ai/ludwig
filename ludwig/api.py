@@ -443,6 +443,14 @@ class LudwigModel:
             `(training_set, validation_set, test_set)`.
             `output_directory` filepath to where training results are stored.
         """
+        # Only reset the metadata if the model has not been trained before
+        if self.training_set_metadata:
+            logging.warn(
+                "Previous metadata has been detected. Overriding `training_set_metadata` with metadata from previous "
+                "training run."
+            )
+            training_set_metadata = self.training_set_metadata
+
         if self._user_config.get(HYPEROPT):
             print_boxed("WARNING")
             logger.warning(HYPEROPT_WARNING)
