@@ -161,17 +161,20 @@ class MlflowCallback(Callback):
     def on_eval_end(self, trainer, progress_tracker, save_path):
         if progress_tracker.steps not in self.logged_steps:
             self.logged_steps.add(progress_tracker.steps)
+            # Adds a tuple to the logging queue.
+            # True is passed to indicate that the background saving loop should continue.
             self.save_fn((progress_tracker.log_metrics(), progress_tracker.steps, save_path, True))
 
     def on_trainer_train_teardown(self, trainer, progress_tracker, save_path, is_coordinator):
         if is_coordinator:
             if progress_tracker.steps not in self.logged_steps:
                 self.logged_steps.add(progress_tracker.steps)
+                # Adds a tuple to the logging queue.
+                # False is passed to indicate that the background saving loop should break.
                 self.save_fn((progress_tracker.log_metrics(), progress_tracker.steps, save_path, False))
-            else:
-                # TODO(Justin): This should probably live in on_ludwig_end, once that's implemented.
-                # Ensure that we break the MLFlow save_fn loop if save_in_background is True.
-                self.save_fn((None, None, None, False))
+            # False ensures that the background saving loop breaks.
+            # TODO(Justin): This should probably live in on_ludwig_end, once that's implemented.
+            self.save_fn((None, None, None, False))
 
             # Close the save_thread.
             if self.save_thread is not None:
