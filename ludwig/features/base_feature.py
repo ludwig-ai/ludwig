@@ -20,20 +20,28 @@ from typing import Any, Dict, Optional
 import torch
 from torch import Tensor
 
-from ludwig.constants import HIDDEN, LENGTHS, LOGITS, LOSS, PREDICTIONS, PROBABILITIES
+from ludwig.constants import (
+    ENCODER_OUTPUT,
+    ENCODER_OUTPUT_STATE,
+    HIDDEN,
+    LENGTHS,
+    LOGITS,
+    LOSS,
+    PREDICTIONS,
+    PROBABILITIES,
+)
 from ludwig.decoders.registry import get_decoder_cls
 from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_utils import get_input_size_with_dependencies
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.loss_modules import create_loss
-from ludwig.modules.metric_modules import MeanMetric
+from ludwig.modules.metric_modules import LossMetric, LudwigMetric, MeanMetric
 from ludwig.modules.metric_registry import get_metric_classes, get_metric_cls, get_metric_tensor_input
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.schema.features.base import BaseFeatureConfig, BaseOutputFeatureConfig
 from ludwig.types import FeatureConfigDict, FeatureMetadataDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils import output_feature_utils
 from ludwig.utils.calibration import CalibrationModule
-from ludwig.utils.metric_utils import get_scalar_from_ludwig_metric
 from ludwig.utils.torch_utils import LudwigModule
 from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
 
@@ -283,22 +291,28 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
     def _setup_loss(self):
         self.train_loss_function = create_loss(self.loss)
-        self.eval_loss_metric = get_metric_cls(self.type(), self.loss.type)(config=self.loss)
+        self._eval_loss_metric = ModuleWrapper(get_metric_cls(self.type(), self.loss.type)(config=self.loss))
 
     def _setup_metrics(self):
+        kwargs = {}
+        for name, cls in get_metric_classes(self.type()).items():
+            if cls.can_report(self) and isinstance(cls, LossMetric):
+                kwargs[name] = cls(config=self.loss, **self.metric_kwargs())
+            elif cls.can_report(self):
+                kwargs[name] = cls(**self.metric_kwargs())
         self._metric_functions = {
             LOSS: self.eval_loss_metric,
-            **{
-                name: cls(config=self.loss, **self.metric_kwargs())
-                for name, cls in get_metric_classes(self.type()).items()
-                if cls.can_report(self)
-            },
+            **kwargs,
         }
         self.metric_names = sorted(list(self._metric_functions.keys()))
 
     def create_calibration_module(self, feature: BaseOutputFeatureConfig) -> CalibrationModule:
         """Creates and returns a CalibrationModule that converts logits to a probability distribution."""
         return None
+
+    @property
+    def eval_loss_metric(self) -> LudwigMetric:
+        return self._eval_loss_metric.module
 
     @property
     def calibration_module(self) -> torch.nn.Module:
@@ -365,9 +379,20 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         metric_vals = {}
         for metric_name, metric_fn in self._metric_functions.items():
             try:
-                metric_vals[metric_name] = get_scalar_from_ludwig_metric(metric_fn)
-            except Exception:
-                logger.exception(f"Caught exception computing metric: {metric_name}.")
+                computed_metric = metric_fn.compute()
+            except Exception as e:
+                logger.exception(f"Caught exception computing metric: {metric_name} with error: {e}.")
+                continue
+
+            # Metrics from torchmetrics can be a straightforward tensor.
+            if isinstance(computed_metric, Tensor):
+                metric_vals[metric_name] = computed_metric.detach().cpu().numpy().item()
+            else:
+                # Metrics from torchmetrics can be a dict of tensors.
+                # For example, ROUGE is returned as a dictionary of tensors.
+                # Unpack.
+                for sub_metric_name, metric in computed_metric.items():
+                    metric_vals[sub_metric_name] = metric.detach().cpu().numpy().item()
         return metric_vals
 
     def reset_metrics(self):
@@ -401,8 +426,8 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         # ================ Predictions ================
         logits_input = {HIDDEN: hidden}
         # pass supplemental data from encoders to decoder
-        if "encoder_output_state" in combiner_outputs:
-            logits_input["encoder_output_state"] = combiner_outputs["encoder_output_state"]
+        if ENCODER_OUTPUT_STATE in combiner_outputs:
+            logits_input[ENCODER_OUTPUT_STATE] = combiner_outputs[ENCODER_OUTPUT_STATE]
         if LENGTHS in combiner_outputs:
             logits_input[LENGTHS] = combiner_outputs[LENGTHS]
 
@@ -499,14 +524,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
         return feature_hidden
 
-    def flatten(self, df: DataFrame) -> DataFrame:
-        """Converts the output of batch_predict to a 1D array."""
-        return df
-
-    def unflatten(self, df: DataFrame) -> DataFrame:
-        """Reshapes a flattened 1D array into its original shape."""
-        return df
-
 
 class PassthroughPreprocModule(torch.nn.Module):
     """Combines preprocessing and encoding into a single module for TorchScript inference.
@@ -539,7 +556,7 @@ def create_passthrough_input_feature(feature: InputFeature, config: BaseFeatureC
 
         def forward(self, inputs, mask=None):
             assert isinstance(inputs, torch.Tensor)
-            return {"encoder_output": inputs}
+            return {ENCODER_OUTPUT: inputs}
 
         @property
         def input_dtype(self):

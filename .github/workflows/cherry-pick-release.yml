@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        release-branch: [release-0.6, release-0.7]
+        release-branch: [release-0.7, release-0.8]
 
     steps:
       - name: checkout

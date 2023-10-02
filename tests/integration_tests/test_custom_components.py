@@ -8,7 +8,7 @@ from torch import nn, Tensor
 
 from ludwig.api import LudwigModel
 from ludwig.combiners.combiners import Combiner, register_combiner
-from ludwig.constants import BATCH_SIZE, LOGITS, MINIMIZE, NUMBER, TRAINER
+from ludwig.constants import BATCH_SIZE, ENCODER_OUTPUT, LOGITS, MINIMIZE, NUMBER, TRAINER
 from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
 from ludwig.encoders.base import Encoder
@@ -17,7 +17,7 @@ from ludwig.modules.loss_modules import LogitsInputsMixin, register_loss
 from ludwig.modules.metric_modules import LossMetric, register_metric
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
-from ludwig.schema.combiners.utils import register_combiner as register_combiner_schema
+from ludwig.schema.combiners.utils import register_combiner_config
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import register_decoder_config
 from ludwig.schema.encoders.base import BaseEncoderConfig
@@ -55,7 +55,7 @@ class CustomLossConfig(BaseLossConfig):
     type: str = "custom_loss"
 
 
-@register_combiner_schema("custom_combiner")
+@register_combiner_config("custom_combiner")
 @dataclass
 class CustomTestCombinerConfig(BaseCombinerConfig):
     type: str = "custom_combiner"
@@ -74,7 +74,7 @@ class CustomTestCombiner(Combiner):
             raise ValueError("expected foo to be True")
 
         # minimal transformation from inputs to outputs
-        encoder_outputs = [inputs[k]["encoder_output"] for k in inputs]
+        encoder_outputs = [inputs[k][ENCODER_OUTPUT] for k in inputs]
         hidden = torch.cat(encoder_outputs, 1)
         return_data = {"combiner_output": hidden}
 
@@ -88,7 +88,7 @@ class CustomNumberEncoder(Encoder):
         self.input_size = input_size
 
     def forward(self, inputs, **kwargs):
-        return {"encoder_output": inputs}
+        return {ENCODER_OUTPUT: inputs}
 
     @property
     def input_shape(self) -> torch.Size:

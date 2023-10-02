@@ -15,7 +15,6 @@
 # ==============================================================================
 import contextlib
 import logging
-import re
 import warnings
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Tuple
@@ -28,10 +27,8 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend import Backend, LOCAL_BACKEND
 from ludwig.constants import (
     BFILL,
-    CATEGORY,
     CHECKSUM,
     COLUMN,
-    DECODER,
     DEFAULTS,
     DROP_ROW,
     ENCODER,
@@ -61,13 +58,14 @@ from ludwig.data.cache.manager import DatasetCache
 from ludwig.data.cache.types import wrap
 from ludwig.data.concatenate_datasets import concatenate_df, concatenate_files, concatenate_splits
 from ludwig.data.dataset.base import Dataset
+from ludwig.data.prompt import format_input_with_prompt, index_column
 from ludwig.data.split import get_splitter, split_dataset
-from ludwig.data.utils import set_fixed_split
+from ludwig.data.utils import get_input_and_output_features, set_fixed_split
 from ludwig.datasets import load_dataset_uris
 from ludwig.features.feature_registries import get_base_type_registry
 from ludwig.models.embedder import create_embed_batch_size_evaluator, create_embed_transform_fn
 from ludwig.schema.encoders.utils import get_encoder_cls
-from ludwig.types import FeatureConfigDict, PreprocessingConfigDict, TrainingSetMetadataDict
+from ludwig.types import FeatureConfigDict, ModelConfigDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils import data_utils, strings_utils
 from ludwig.utils.backward_compatibility import upgrade_metadata
 from ludwig.utils.data_utils import (
@@ -106,6 +104,7 @@ from ludwig.utils.data_utils import (
     read_spss,
     read_stata,
     read_tsv,
+    sanitize_column_names,
     SAS_FORMATS,
     SPSS_FORMATS,
     STATA_FORMATS,
@@ -147,7 +146,9 @@ class DataFormatPreprocessor(ABC):
 
     @staticmethod
     @abstractmethod
-    def preprocess_for_prediction(dataset, features, preprocessing_params, training_set_metadata, backend, callbacks):
+    def preprocess_for_prediction(
+        config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
+    ):
         pass
 
     @staticmethod
@@ -211,8 +212,11 @@ class DictPreprocessor(DataFormatPreprocessor):
         )
 
     @staticmethod
-    def preprocess_for_prediction(dataset, features, preprocessing_params, training_set_metadata, backend, callbacks):
+    def preprocess_for_prediction(
+        config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
+    ):
         dataset, training_set_metadata = build_dataset(
+            config,
             pd.DataFrame(dataset),
             features,
             preprocessing_params,
@@ -262,11 +266,14 @@ class DataFramePreprocessor(DataFormatPreprocessor):
         )
 
     @staticmethod
-    def preprocess_for_prediction(dataset, features, preprocessing_params, training_set_metadata, backend, callbacks):
+    def preprocess_for_prediction(
+        config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
+    ):
         if isinstance(dataset, pd.DataFrame):
             dataset = backend.df_engine.from_pandas(dataset)
 
         dataset, training_set_metadata = build_dataset(
+            config,
             dataset,
             features,
             preprocessing_params,
@@ -311,10 +318,13 @@ class CSVPreprocessor(DataFormatPreprocessor):
         )
 
     @staticmethod
-    def preprocess_for_prediction(dataset, features, preprocessing_params, training_set_metadata, backend, callbacks):
+    def preprocess_for_prediction(
+        config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
+    ):
         dataset_df = read_csv(dataset, df_lib=backend.df_engine.df_lib)
         training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
+            config,
             dataset_df,
             features,
             preprocessing_params,
@@ -359,10 +369,13 @@ class TSVPreprocessor(DataFormatPreprocessor):
         )
 
     @staticmethod
-    def preprocess_for_prediction(dataset, features, preprocessing_params, training_set_metadata, backend, callbacks):
+    def preprocess_for_prediction(
+        config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
+    ):
         dataset_df = read_tsv(dataset, df_lib=backend.df_engine.df_lib)
         training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
+            config,
             dataset_df,
             features,
             preprocessing_params,
@@ -407,10 +420,13 @@ class JSONPreprocessor(DataFormatPreprocessor):
         )
 
     @staticmethod
-    def preprocess_for_prediction(dataset, features, preprocessing_params, training_set_metadata, backend, callbacks):
+    def preprocess_for_prediction(
+        config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
+    ):
         dataset_df = read_json(dataset, backend.df_engine.df_lib)
         training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
+            config,
             dataset_df,
             features,
             preprocessing_params,
@@ -455,10 +471,13 @@ class JSONLPreprocessor(DataFormatPreprocessor):
         )
 
     @staticmethod
-    def preprocess_for_prediction(dataset, features, preprocessing_params, training_set_metadata, backend, callbacks):
+    def preprocess_for_prediction(
+        config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
+    ):
         dataset_df = read_jsonl(dataset, backend.df_engine.df_lib)
         training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
+            config,
             dataset_df,
             features,
             preprocessing_params,
@@ -503,10 +522,13 @@ class ExcelPreprocessor(DataFormatPreprocessor):
         )
 
     @staticmethod
-    def preprocess_for_prediction(dataset, features, preprocessing_params, training_set_metadata, backend, callbacks):
+    def preprocess_for_prediction(
+        config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
+    ):
         dataset_df = read_excel(dataset, backend.df_engine.df_lib)
         training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
+            config,
             dataset_df,
             features,
             preprocessing_params,
@@ -551,10 +573,13 @@ class ParquetPreprocessor(DataFormatPreprocessor):
         )
 
     @staticmethod
-    def preprocess_for_prediction(dataset, features, preprocessing_params, training_set_metadata, backend, callbacks):
+    def preprocess_for_prediction(
+        config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
+    ):
         dataset_df = read_parquet(dataset, backend.df_engine.df_lib)
         training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
+            config,
             dataset_df,
             features,
             preprocessing_params,
@@ -628,10 +653,13 @@ class PicklePreprocessor(DataFormatPreprocessor):
         )
 
     @staticmethod
-    def preprocess_for_prediction(dataset, features, preprocessing_params, training_set_metadata, backend, callbacks):
+    def preprocess_for_prediction(
+        config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
+    ):
         dataset_df = read_pickle(dataset, backend.df_engine.df_lib)
         training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
+            config,
             dataset_df,
             features,
             preprocessing_params,
@@ -676,10 +704,13 @@ class FatherPreprocessor(DataFormatPreprocessor):
         )
 
     @staticmethod
-    def preprocess_for_prediction(dataset, features, preprocessing_params, training_set_metadata, backend, callbacks):
+    def preprocess_for_prediction(
+        config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
+    ):
         dataset_df = read_feather(dataset, backend.df_engine.df_lib)
         training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
+            config,
             dataset_df,
             features,
             preprocessing_params,
@@ -724,10 +755,13 @@ class FWFPreprocessor(DataFormatPreprocessor):
         )
 
     @staticmethod
-    def preprocess_for_prediction(dataset, features, preprocessing_params, training_set_metadata, backend, callbacks):
+    def preprocess_for_prediction(
+        config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
+    ):
         dataset_df = read_fwf(dataset, backend.df_engine.df_lib)
         training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
+            config,
             dataset_df,
             features,
             preprocessing_params,
@@ -772,10 +806,13 @@ class HTMLPreprocessor(DataFormatPreprocessor):
         )
 
     @staticmethod
-    def preprocess_for_prediction(dataset, features, preprocessing_params, training_set_metadata, backend, callbacks):
+    def preprocess_for_prediction(
+        config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
+    ):
         dataset_df = read_html(dataset, backend.df_engine.df_lib)
         training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
+            config,
             dataset_df,
             features,
             preprocessing_params,
@@ -820,10 +857,13 @@ class ORCPreprocessor(DataFormatPreprocessor):
         )
 
     @staticmethod
-    def preprocess_for_prediction(dataset, features, preprocessing_params, training_set_metadata, backend, callbacks):
+    def preprocess_for_prediction(
+        config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
+    ):
         dataset_df = read_orc(dataset, backend.df_engine.df_lib)
         training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
+            config,
             dataset_df,
             features,
             preprocessing_params,
@@ -868,10 +908,13 @@ class SASPreprocessor(DataFormatPreprocessor):
         )
 
     @staticmethod
-    def preprocess_for_prediction(dataset, features, preprocessing_params, training_set_metadata, backend, callbacks):
+    def preprocess_for_prediction(
+        config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
+    ):
         dataset_df = read_sas(dataset, backend.df_engine.df_lib)
         training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
+            config,
             dataset_df,
             features,
             preprocessing_params,
@@ -916,10 +959,13 @@ class SPSSPreprocessor(DataFormatPreprocessor):
         )
 
     @staticmethod
-    def preprocess_for_prediction(dataset, features, preprocessing_params, training_set_metadata, backend, callbacks):
+    def preprocess_for_prediction(
+        config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
+    ):
         dataset_df = read_spss(dataset, backend.df_engine.df_lib)
         training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
+            config,
             dataset_df,
             features,
             preprocessing_params,
@@ -964,10 +1010,13 @@ class StataPreprocessor(DataFormatPreprocessor):
         )
 
     @staticmethod
-    def preprocess_for_prediction(dataset, features, preprocessing_params, training_set_metadata, backend, callbacks):
+    def preprocess_for_prediction(
+        config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
+    ):
         dataset_df = read_stata(dataset, backend.df_engine.df_lib)
         training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
+            config,
             dataset_df,
             features,
             preprocessing_params,
@@ -1009,7 +1058,9 @@ class HDF5Preprocessor(DataFormatPreprocessor):
         )
 
     @staticmethod
-    def preprocess_for_prediction(dataset, features, preprocessing_params, training_set_metadata, backend, callbacks):
+    def preprocess_for_prediction(
+        config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
+    ):
         hdf5_fp = dataset
         dataset = load_hdf5(dataset, preprocessing_params, backend, split_data=False, shuffle_training=False)
         return dataset, training_set_metadata, hdf5_fp
@@ -1091,6 +1142,7 @@ data_format_preprocessor_registry = {
 
 
 def build_dataset(
+    config,
     dataset_df,
     features,
     global_preprocessing_parameters,
@@ -1104,6 +1156,7 @@ def build_dataset(
     """Builds a dataset from a dataframe and a list of features.
 
     Args:
+        config: A dictionary containing the Ludwig model configuration
         dataset_df: Pandas or Dask dataframe
         features: List of features
         global_preprocessing_parameters: Global preprocessing parameters
@@ -1142,6 +1195,10 @@ def build_dataset(
 
     dataset_df = df_engine.parallelize(dataset_df)
 
+    # Ensure that column names with non-word characters won't cause problems for downstream operations.
+    # NOTE: Must be kept consistent with config sanitization in schema/model_types/base.py.
+    dataset_df = sanitize_column_names(dataset_df)
+
     if mode == "training":
         sample_ratio = global_preprocessing_parameters["sample_ratio"]
         if sample_ratio < 1.0:
@@ -1166,6 +1223,23 @@ def build_dataset(
         raise ValueError(f"Invalid mode {mode}")
     global_preprocessing_parameters = merge_dict(default_preprocessing_parameters, global_preprocessing_parameters)
 
+    split_col = None
+    if global_preprocessing_parameters["split"]["type"] == "fixed":
+        if global_preprocessing_parameters["split"]["column"] in dataset_df.columns:
+            split_col = dataset_df[global_preprocessing_parameters["split"]["column"]]
+        else:
+            logger.warning(
+                f"Specified split column {global_preprocessing_parameters['split']['column']} for fixed "
+                f"split strategy was not found in dataset."
+            )
+
+    # update input features with prompt configs during preprocessing (as opposed to during the model forward pass)
+    # so that we can compute metadata and build the dataset correctly.
+    logger.debug("handle text features with prompt parameters")
+    synthesized_dataset_cols = handle_features_with_prompt_config(
+        config, dataset_df, features, split_col=split_col, backend=backend
+    )
+
     # Get all the unique preprocessing features to compute
     feature_configs = []
     feature_hashes = set()
@@ -1176,7 +1250,10 @@ def build_dataset(
 
     dataset_cols = {}
     for feature_config in feature_configs:
-        dataset_cols[feature_config[COLUMN]] = dataset_df[feature_config[COLUMN]]
+        col_name = feature_config[COLUMN]
+        dataset_cols[col_name] = (
+            synthesized_dataset_cols[col_name] if col_name in synthesized_dataset_cols else dataset_df[col_name]
+        )
 
     logger.debug("build preprocessing parameters")
     feature_name_to_preprocessing_parameters = build_preprocessing_parameters(
@@ -1198,12 +1275,6 @@ def build_dataset(
     for feature_config in feature_configs:
         preprocessing_parameters = feature_name_to_preprocessing_parameters[feature_config[NAME]]
         handle_missing_values(dataset_cols, feature_config, preprocessing_parameters, backend)
-
-    # If we're using LLMs for zero-shot/few-shot learning, update text input features with the prompt
-    # ahead of time so that we can compute metadata and build the preprocessed data correctly.
-    handle_data_augmentation_with_prompt(
-        dataset_cols, feature_configs, feature_name_to_preprocessing_parameters, backend
-    )
 
     # Happens after missing values are handled to avoid NaN casting issues.
     logger.debug("cast columns")
@@ -1671,88 +1742,92 @@ def _handle_missing_values(
         raise ValueError(f"Invalid missing value strategy {missing_value_strategy}")
 
 
-def handle_data_augmentation_with_prompt(
-    dataset_cols: Dict[str, pd.Series],
-    feature_configs: List[FeatureConfigDict],
-    feature_name_to_preprocessing_parameters: Dict[str, PreprocessingConfigDict],
+def handle_features_with_prompt_config(
+    config: ModelConfigDict,
+    dataset_df: DataFrame,
+    features: List[FeatureConfigDict],
     backend: Backend,
-) -> None:
-    """If output feature is a category feature and it's preprocessing has prompt_template, then we need to update
-    the input feature data with the prompt.
+    split_col: Optional[Series] = None,
+) -> Dict[str, Series]:
+    """Updates (in-place) dataset columns with prompt configurations containing a non-None task parameter.
 
-    Example context:
-        In the example below, {review} is the input text feature, and {labels} are the labels that are passed
-        into the category output feature's preprocessing config.
+    Dataset columns that are updated here are enriched to have prompts as specified by the prompt configuration.
 
-    Example input prompt:
-        Context information is below.
-        ###
-        {review}
-        ###
-        Given the context information and not prior knowledge, classify the context as one of: {labels}
+    Args:
+        config: Model configuration.
+        dataset_df (DataFrame): Input dataset.
+        features (List[FeatureConfigDict]): List of feature configurations.
+        df_engine (DataFrameEngine): Dataframe engine.
+        split_col (Optional[Series], optional): Split column. Defaults to None.
 
-    Example output prompt:
-        Context information is below.
-        ###
-        The food at the restaurant was great!
-        ###
-        Given the context information and not prior knowledge, classify the context as one of: [positive, negative]
+    Returns:
+        Dict[str, Series]: Modified dataset columns.
     """
-
-    # Recover input and output features from combined list of feature configs
-    input_features = []
-    output_features = []
-    for feature in feature_configs:
-        if ENCODER in feature:
-            input_features.append(feature)
-        elif DECODER in feature:
-            output_features.append(feature)
-
-    # If output feature is a category feature and it's preprocessing has prompt_template, then we need to
-    # add the prompt in the input text feature(s). This step assumes only one output feature.
-    names_of_features_to_substitute = None
-    vocab = None
-    prompt = None
-    for output_feature in output_features:
-        if output_feature[TYPE] != CATEGORY:
-            continue
-        if "prompt_template" not in feature_name_to_preprocessing_parameters[output_feature[NAME]]:
+    dataset_cols = {}
+    input_features, output_features = get_input_and_output_features(features)
+    for input_feature_config in input_features:
+        prompt_config = _get_prompt_config(config, input_feature_config)
+        if prompt_config is None:
             continue
 
-        prompt: str = feature_name_to_preprocessing_parameters[output_feature[NAME]]["prompt_template"]
-        vocab: List = feature_name_to_preprocessing_parameters[output_feature[NAME]]["vocab"]
-        names_of_features_to_substitute: List = _extract_feature_names_from_prompt(prompt)
-
-    if not prompt:
-        return
-
-    # Substitute vocab specified in the category feature's preprocessing parameters
-    # into the prompt template.
-    if names_of_features_to_substitute and "vocab" in names_of_features_to_substitute:
-        # Replace {vocab} with the actual labels
-        prompt = prompt.replace("{vocab}", ", ".join(vocab))
-        names_of_features_to_substitute.pop(names_of_features_to_substitute.index("vocab"))
-
-    # Substitute values from the input features into the prompt template, and update the values in
-    # dataset_cols with the updated injected prompt. Assumes just text input features for now.
-    for input_feature in input_features:
-        if input_feature[COLUMN] in names_of_features_to_substitute and input_feature[TYPE] == TEXT:
-            # Ensure that any special characters in the value of input_feature[COLUMN] are properly escaped
-            # before being used in the regular expression pattern.
-            pattern = re.compile(r"\{" + re.escape(input_feature[COLUMN]) + r"\}")
-            dataset_cols[input_feature[COLUMN]] = dataset_cols[input_feature[COLUMN]].apply(
-                lambda x: re.sub(pattern, x, prompt)
+        input_col_name = input_feature_config[COLUMN]
+        if prompt_config["retrieval"]["type"] is not None:
+            # Ensure that the output features are in the dataset columns saved as part of the index
+            # so that they can be retrieved later at lookup time.
+            output_feature_col_names = [output_feature_config[COLUMN] for output_feature_config in output_features]
+            input_and_output_col_names = set([input_col_name] + output_feature_col_names)
+            input_and_output_cols = {
+                feature[NAME]: dataset_df[feature[COLUMN]]
+                for feature in features
+                if feature[NAME] in input_and_output_col_names
+            }
+            retrieval_model, index_name = index_column(
+                prompt_config["retrieval"],
+                col_name=input_col_name,
+                dataset_cols=input_and_output_cols,
+                backend=backend,
+                split_col=split_col,
             )
-        # TODO(Arnav): Add log message showing an updated value with prompt
-        # substituion in dataset_cols
+            k = prompt_config["retrieval"]["k"]
+
+            # NOTE: after indexing the input column, we update the index_name in the prompt config IN PLACE.
+            # This ensures that the preprocessing parameters for this feature have an up-to-date index_name
+            # when the training set metadata is saved.
+            prompt_config["retrieval"]["index_name"] = index_name
+        else:
+            retrieval_model = None
+            k = -1
+
+        dataset_cols[input_col_name] = format_input_with_prompt(
+            input_col_name,
+            dataset_df,
+            backend,
+            prompt_config["task"],
+            retrieval_model=retrieval_model,
+            k=k,
+            template=prompt_config["template"],
+        )
+
+    return dataset_cols
 
 
-def _extract_feature_names_from_prompt(prompt_template: str) -> List[str]:
-    """Extracts feature names from the prompt template whose data needs to be retrieved and injected into the input
-    text features."""
-    pattern = re.compile(r"{([^}]*)}")
-    matches = re.findall(pattern, prompt_template)
-    return matches
+def _get_prompt_config(config: ModelConfigDict, input_feature_config: Dict) -> Dict:
+    if input_feature_config[TYPE] != TEXT:
+        # Prompt config is only applied to text features
+        return None
+
+    preprocessing = input_feature_config["preprocessing"]
+    if _has_prompt_section(preprocessing):
+        return preprocessing["prompt"]
+
+    if _has_prompt_section(config):
+        return config["prompt"]
+
+    return None
+
+
+def _has_prompt_section(config: Dict) -> bool:
+    return "prompt" in config and (config["prompt"]["template"] is not None or config["prompt"]["task"] is not None)
 
 
 def load_hdf5(hdf5_file_path, preprocessing_params, backend, split_data=True, shuffle_training=False):
@@ -2011,6 +2086,7 @@ def _preprocess_file_for_training(
         training_set_metadata[SRC] = dataset
 
         data, training_set_metadata = build_dataset(
+            config,
             dataset_df,
             features,
             preprocessing_params,
@@ -2036,6 +2112,7 @@ def _preprocess_file_for_training(
         preprocessing_params = set_fixed_split(preprocessing_params)
 
         data, training_set_metadata = build_dataset(
+            config,
             concatenated_df,
             features,
             preprocessing_params,
@@ -2107,6 +2184,7 @@ def _preprocess_df_for_training(
     logger.info("Building dataset (it may take a while)")
 
     data, training_set_metadata = build_dataset(
+        config,
         dataset,
         features,
         preprocessing_params,
@@ -2234,7 +2312,7 @@ def preprocess_for_prediction(
             training_set, test_set, validation_set, training_set_metadata = processed
     else:
         processed = data_format_processor.preprocess_for_prediction(
-            dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
+            config, dataset, features, preprocessing_params, training_set_metadata, backend, callbacks
         )
         dataset, training_set_metadata, new_hdf5_fp = processed
         training_set_metadata = training_set_metadata.copy()

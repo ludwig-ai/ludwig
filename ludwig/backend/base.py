@@ -28,6 +28,7 @@ from tqdm import tqdm
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend.utils.storage import StorageManager
+from ludwig.constants import MODEL_LLM
 from ludwig.data.cache.manager import CacheManager
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataframe.pandas import PANDAS
@@ -36,8 +37,9 @@ from ludwig.data.dataset.pandas import PandasDatasetManager
 from ludwig.distributed import init_dist_strategy
 from ludwig.distributed.base import DistributedStrategy
 from ludwig.models.base import BaseModel
-from ludwig.schema.trainer import ECDTrainerConfig, GBMTrainerConfig
+from ludwig.schema.trainer import BaseTrainerConfig
 from ludwig.types import HyperoptConfigDict
+from ludwig.utils.audio_utils import read_audio_from_path
 from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
 from ludwig.utils.dataframe_utils import from_batches, to_batches
 from ludwig.utils.fs_utils import get_bytes_obj_from_path
@@ -116,6 +118,11 @@ class Backend(ABC):
     def num_nodes(self) -> int:
         raise NotImplementedError()
 
+    @property
+    @abstractmethod
+    def num_training_workers(self) -> int:
+        raise NotImplementedError()
+
     @abstractmethod
     def get_available_resources(self) -> Resources:
         raise NotImplementedError()
@@ -159,14 +166,17 @@ class LocalPreprocessingMixin:
         sample_fname = column.head(1).values[0]
         with ThreadPoolExecutor() as executor:  # number of threads is inferred
             if isinstance(sample_fname, str):
-                result = executor.map(
-                    lambda path: get_bytes_obj_from_path(path) if path is not None else path, column.values
-                )
+                if map_fn is read_audio_from_path:  # bypass torchaudio issue that no longer takes in file-like objects
+                    result = executor.map(lambda path: map_fn(path) if path is not None else path, column.values)
+                else:
+                    result = executor.map(
+                        lambda path: get_bytes_obj_from_path(path) if path is not None else path, column.values
+                    )
             else:
                 # If the sample path is not a string, assume the paths has already been read in
                 result = column.values
 
-            if map_fn is not None:
+            if map_fn is not None and map_fn is not read_audio_from_path:
                 result = executor.map(map_fn, result)
 
         return pd.Series(result, index=column.index, name=column.name)
@@ -187,19 +197,20 @@ class LocalTrainingMixin:
     def initialize_pytorch(self, *args, **kwargs):
         initialize_pytorch(*args, **kwargs)
 
-    def create_trainer(
-        self, config: Union[ECDTrainerConfig, GBMTrainerConfig], model: BaseModel, **kwargs
-    ) -> "BaseTrainer":  # noqa: F821
-        from ludwig.trainers.registry import trainers_registry
+    def create_trainer(self, config: BaseTrainerConfig, model: BaseModel, **kwargs) -> "BaseTrainer":  # noqa: F821
+        from ludwig.trainers.registry import get_llm_trainers_registry, get_trainers_registry
 
-        trainer_cls = get_from_registry(model.type(), trainers_registry)
+        if model.type() == MODEL_LLM:
+            trainer_cls = get_from_registry(config.type, get_llm_trainers_registry())
+        else:
+            trainer_cls = get_from_registry(model.type(), get_trainers_registry())
 
         return trainer_cls(config=config, model=model, **kwargs)
 
     def create_predictor(self, model: BaseModel, **kwargs):
-        from ludwig.models.predictor import Predictor
+        from ludwig.models.predictor import get_predictor_cls
 
-        return Predictor(model, **kwargs)
+        return get_predictor_cls(model.type())(model, **kwargs)
 
     def sync_model(self, model):
         pass
@@ -244,6 +255,10 @@ class LocalBackend(LocalPreprocessingMixin, LocalTrainingMixin, Backend):
     def num_nodes(self) -> int:
         return 1
 
+    @property
+    def num_training_workers(self) -> int:
+        return 1
+
     def get_available_resources(self) -> Resources:
         return Resources(cpus=psutil.cpu_count(), gpus=torch.cuda.device_count())
 
@@ -276,9 +291,9 @@ class DataParallelBackend(LocalPreprocessingMixin, Backend, ABC):
         return Trainer(distributed=self._distributed, **kwargs)
 
     def create_predictor(self, model: BaseModel, **kwargs):
-        from ludwig.models.predictor import Predictor
+        from ludwig.models.predictor import get_predictor_cls
 
-        return Predictor(model, distributed=self._distributed, **kwargs)
+        return get_predictor_cls(model.type())(model, distributed=self._distributed, **kwargs)
 
     def sync_model(self, model):
         # Model weights are only saved on the coordinator, so broadcast
@@ -302,6 +317,10 @@ class DataParallelBackend(LocalPreprocessingMixin, Backend, ABC):
 
     @property
     def num_nodes(self) -> int:
+        return self._distributed.size() // self._distributed.local_size()
+
+    @property
+    def num_training_workers(self) -> int:
         return self._distributed.size()
 
     def get_available_resources(self) -> Resources:

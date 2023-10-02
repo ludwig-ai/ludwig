@@ -16,12 +16,14 @@ RUN apt-get -y update && apt-get -y install \
     libsndfile1 \
     build-essential \
     g++ \
-    cmake
+    cmake \
+    ffmpeg \
+    sox
 RUN pip install -U pip
 
 WORKDIR /ludwig
 
-RUN pip install torch==2.0.0 torchtext torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cpu
+RUN pip install --no-cache-dir torch==2.0.0 torchtext torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cpu
 
 COPY . .
 RUN pip install --no-cache-dir '.[full]'

@@ -2,7 +2,7 @@ import contextlib
 import logging
 import os
 import socket
-from typing import Any, Callable, Dict, Optional, Tuple, Type, TYPE_CHECKING
+from typing import Any, Callable, Dict, Optional, Tuple, Type, TYPE_CHECKING, Union
 
 import torch
 import torch.distributed as dist
@@ -16,8 +16,10 @@ from torchmetrics.utilities.distributed import gather_all_tensors
 
 from ludwig.distributed.base import DistributedStrategy
 from ludwig.modules.optimization_modules import create_optimizer
+from ludwig.utils.torch_utils import get_torch_device
 
 if TYPE_CHECKING:
+    from ludwig.models.base import BaseModel
     from ludwig.modules.lr_scheduler import LRScheduler
     from ludwig.schema.trainer import ECDTrainerConfig
     from ludwig.utils.checkpoint_utils import Checkpoint
@@ -124,9 +126,16 @@ class DDPStrategy(DistributedStrategy):
         optimizer: Optional[Optimizer] = None,
         scheduler: Optional["LRScheduler"] = None,
     ) -> "Checkpoint":
-        from ludwig.utils.checkpoint_utils import CoordinatorCheckpoint
+        from ludwig.utils.checkpoint_utils import MultiNodeCheckpoint
 
-        return CoordinatorCheckpoint(self, model, optimizer, scheduler)
+        return MultiNodeCheckpoint(self, model, optimizer, scheduler)
+
+    def to_device(self, model: Union["BaseModel", DDP], device: Optional[torch.device] = None) -> nn.Module:
+        try:
+            return model.to_device(device if device is not None else get_torch_device())
+        except AttributeError:
+            # Model is already wrapped in DistributedDataParallel, so it has already been moved to device
+            return model
 
 
 def local_rank_and_size() -> Tuple[int, int]:

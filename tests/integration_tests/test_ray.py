@@ -76,7 +76,7 @@ from tests.integration_tests.utils import (
 ray = pytest.importorskip("ray")  # noqa
 
 # Mark the entire module as distributed
-pytestmark = pytest.mark.distributed
+pytestmark = [pytest.mark.distributed, pytest.mark.integration_tests_a]
 
 import dask  # noqa: E402
 import ray  # noqa: E402
@@ -382,6 +382,7 @@ def test_ray_read_binary_files(tmpdir, df_engine, ray_cluster_2cpu):
     assert proc_col.equals(proc_col_expected)
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
 @pytest.mark.parametrize(
     "trainer_strategy",
@@ -562,7 +563,7 @@ def test_ray_vector(tmpdir, dataset_type, ray_cluster_2cpu):
 
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
 @pytest.mark.distributed
-def test_ray_audio(tmpdir, dataset_type, ray_cluster_2cpu):
+def test_ray_audio(tmp_path, dataset_type, ray_cluster_2cpu):
     preprocessing_params = {
         "audio_file_length_limit_in_s": 3.0,
         "missing_value_strategy": BFILL,
@@ -574,13 +575,13 @@ def test_ray_audio(tmpdir, dataset_type, ray_cluster_2cpu):
         "window_shift_in_s": 0.02,
         "num_filter_bands": 80,
     }
-    audio_dest_folder = os.path.join(tmpdir, "generated_audio")
+    audio_dest_folder = os.path.join(tmp_path, "generated_audio")
     input_features = [audio_feature(folder=audio_dest_folder, preprocessing=preprocessing_params)]
     output_features = [
         binary_feature(),
     ]
     run_preprocessing(
-        tmpdir,
+        tmp_path,
         "dask",
         input_features,
         output_features,
@@ -652,6 +653,8 @@ def test_ray_image_with_fill_strategy_edge_cases(tmpdir, settings, ray_cluster_2
 
 
 # TODO(geoffrey): Fold modin tests into test_ray_image as @pytest.mark.parametrized once tests are optimized
+
+
 @pytest.mark.distributed
 @pytest.mark.skipif(modin is None, reason="modin not installed")
 @pytest.mark.skip(reason="https://github.com/ludwig-ai/ludwig/issues/2643")
@@ -740,6 +743,7 @@ def test_ray_lazy_load_audio_error(tmpdir, ray_cluster_2cpu):
     run_test_with_features(input_features, output_features, expect_error=True)
 
 
+@pytest.mark.slow
 @pytest.mark.distributed
 def test_ray_lazy_load_image_works(tmpdir, ray_cluster_2cpu):
     image_dest_folder = os.path.join(tmpdir, "generated_images")
@@ -826,6 +830,8 @@ def _run_train_gpu_load_cpu(config, data_parquet):
 
 
 # TODO(geoffrey): add a GPU test for batch size tuning
+
+
 @pytest.mark.distributed
 @pytest.mark.parametrize(
     ("max_batch_size", "expected_final_learning_rate"),
@@ -869,22 +875,7 @@ def test_tune_batch_size_lr_cpu(tmpdir, ray_cluster_2cpu, max_batch_size, expect
     assert model.config[TRAINER]["learning_rate"] == expected_final_learning_rate
 
 
-@pytest.mark.distributed
-def test_ray_progress_bar(ray_cluster_2cpu):
-    # This is a simple test that is just meant to make sure that the progress bar isn't breaking
-    input_features = [
-        sequence_feature(encoder={"reduce_output": "sum"}),
-    ]
-    output_features = [
-        binary_feature(bool2str=["No", "Yes"]),
-    ]
-    run_test_with_features(
-        input_features,
-        output_features,
-        df_engine="dask",
-    )
-
-
+@pytest.mark.slow
 @pytest.mark.parametrize("calibration", [True, False])
 @pytest.mark.distributed
 def test_ray_calibration(calibration, ray_cluster_2cpu):
@@ -900,8 +891,9 @@ def test_ray_calibration(calibration, ray_cluster_2cpu):
     run_test_with_features(input_features, output_features)
 
 
+@pytest.mark.slow
 @pytest.mark.distributed
-def test_ray_distributed_predict(tmpdir, ray_cluster_2cpu):
+def test_ray_distributed_predict(ray_cluster_2cpu):
     preprocessing_params = {
         "audio_file_length_limit_in_s": 3.0,
         "missing_value_strategy": BFILL,
@@ -913,19 +905,19 @@ def test_ray_distributed_predict(tmpdir, ray_cluster_2cpu):
         "window_shift_in_s": 0.02,
         "num_filter_bands": 80,
     }
-    audio_dest_folder = os.path.join(tmpdir, "generated_audio")
-    input_features = [audio_feature(folder=audio_dest_folder, preprocessing=preprocessing_params)]
-    output_features = [
-        binary_feature(),
-    ]
-
-    config = {
-        "input_features": input_features,
-        "output_features": output_features,
-        TRAINER: {"epochs": 2, "batch_size": 8},
-    }
 
     with tempfile.TemporaryDirectory() as tmpdir:
+        audio_dest_folder = os.path.join(tmpdir, "generated_audio")
+        input_features = [audio_feature(folder=audio_dest_folder, preprocessing=preprocessing_params)]
+        output_features = [
+            binary_feature(),
+        ]
+
+        config = {
+            "input_features": input_features,
+            "output_features": output_features,
+            TRAINER: {"epochs": 2, "batch_size": 8},
+        }
         # Deep copy RAY_BACKEND_CONFIG to avoid shallow copy modification
         backend_config = copy.deepcopy(RAY_BACKEND_CONFIG)
         # Manually override num workers to 2 for distributed training and distributed predict
@@ -951,8 +943,9 @@ def test_ray_distributed_predict(tmpdir, ray_cluster_2cpu):
         assert preds.iloc[1].name != preds.iloc[42].name
 
 
+@pytest.mark.slow
 @pytest.mark.distributed
-def test_ray_preprocessing_placement_group(tmpdir, ray_cluster_2cpu):
+def test_ray_preprocessing_placement_group(ray_cluster_2cpu):
     preprocessing_params = {
         "audio_file_length_limit_in_s": 3.0,
         "missing_value_strategy": BFILL,
@@ -964,19 +957,20 @@ def test_ray_preprocessing_placement_group(tmpdir, ray_cluster_2cpu):
         "window_shift_in_s": 0.02,
         "num_filter_bands": 80,
     }
-    audio_dest_folder = os.path.join(tmpdir, "generated_audio")
-    input_features = [audio_feature(folder=audio_dest_folder, preprocessing=preprocessing_params)]
-    output_features = [
-        binary_feature(),
-    ]
-
-    config = {
-        "input_features": input_features,
-        "output_features": output_features,
-        TRAINER: {"epochs": 2, "batch_size": 8},
-    }
 
     with tempfile.TemporaryDirectory() as tmpdir:
+        audio_dest_folder = os.path.join(tmpdir, "generated_audio")
+        input_features = [audio_feature(folder=audio_dest_folder, preprocessing=preprocessing_params)]
+        output_features = [
+            binary_feature(),
+        ]
+
+        config = {
+            "input_features": input_features,
+            "output_features": output_features,
+            TRAINER: {"epochs": 2, "batch_size": 8},
+        }
+
         backend_config = {**RAY_BACKEND_CONFIG}
         backend_config["preprocessor_kwargs"] = {"num_cpu": 1}
         csv_filename = os.path.join(tmpdir, "dataset.csv")

@@ -27,6 +27,7 @@ import ray
 import torch
 from packaging import version
 from pyarrow.fs import FSSpecHandler, PyFileSystem
+from pyarrow.lib import ArrowInvalid
 from ray.data import read_parquet
 from ray.data.dataset_pipeline import DatasetPipeline
 
@@ -55,7 +56,20 @@ _ray_230 = version.parse(ray.__version__) >= version.parse("2.3.0")
 @default_retry()
 def read_remote_parquet(path: str):
     fs, path = get_fs_and_path(path)
-    return read_parquet(path, filesystem=PyFileSystem(FSSpecHandler(fs)))
+
+    # Fix for https://github.com/ludwig-ai/ludwig/issues/3440
+    # Parquet file reads will fail with `pyarrow.lib.ArrowInvalid` under the following conditions:
+    #     1) The Parquet data is in multi-file format
+    #     2) A relative filepath is passed to the read function
+    #     3) A filesystem object is passed to the read function
+    # The issue can be resolved by either:
+    #     1) Passing an absolute filepath
+    #     2) Not passing a filesystem object
+    try:
+        df = read_parquet(path, filesystem=PyFileSystem(FSSpecHandler(fs)))
+    except ArrowInvalid:
+        df = read_parquet(path)
+    return df
 
 
 @DeveloperAPI

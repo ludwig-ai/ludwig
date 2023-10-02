@@ -3,11 +3,14 @@
 https://gist.github.com/kevinzakka/5d345421f7abefd5dbaf6a77f829e70a.
 """
 
+import errno
 import logging
 import os
 import re
+import shutil
 import signal
 import tempfile
+import uuid
 from abc import ABC, abstractmethod
 from glob import glob
 from typing import Any, Dict, Mapping, Optional, TYPE_CHECKING
@@ -17,7 +20,6 @@ from torch.optim import Optimizer
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.modules.lr_scheduler import LRScheduler
-from ludwig.utils.fs_utils import safe_move_file
 
 if TYPE_CHECKING:
     from ludwig.distributed.base import DistributedStrategy
@@ -115,10 +117,11 @@ class Checkpoint(ABC):
 
 
 @DeveloperAPI
-class CoordinatorCheckpoint(Checkpoint):
+class MultiNodeCheckpoint(Checkpoint):
     def prepare(self, directory: str):
-        if self.distributed.is_coordinator():
+        if self.is_local_rank_0():
             super().prepare(directory)
+        self.distributed.barrier()
 
     def load(self, save_path: str, device: Optional[torch.device] = None) -> bool:
         """Load state from a saved checkpoint.
@@ -136,7 +139,8 @@ class CoordinatorCheckpoint(Checkpoint):
             state = torch.load(save_path, map_location=device)
             try:
                 self.global_step = self._get_global_step(state, save_path)
-                self.model.load_state_dict(state["model_weights"])
+                _, unexpected_keys = self.model.load_state_dict(state["model_weights"], strict=False)
+                assert unexpected_keys == [], f"Unexpected keys found in state dict: {unexpected_keys}"
                 if self.optimizer is not None:
                     self.optimizer.load_state_dict(state["optim_state"])
                 if self.scheduler is not None and "scheduler_state" in state:
@@ -169,42 +173,90 @@ class CoordinatorCheckpoint(Checkpoint):
           global_step (int): The iteration number which will be used
              to name the checkpoint.
         """
-        if not self.distributed.is_coordinator():
-            return
+        if self.is_local_rank_0():
+            state = {
+                "global_step": global_step,
+                "model_weights": self.get_model_state_dict(),
+            }
+            if self.optimizer is not None:
+                state["optim_state"] = self.optimizer.state_dict()
+            if self.scheduler is not None:
+                state["scheduler_state"] = self.scheduler.state_dict()
 
-        state = {
-            "global_step": global_step,
-            "model_weights": self.model.state_dict(),
-        }
-        if self.optimizer is not None:
-            state["optim_state"] = self.optimizer.state_dict()
-        if self.scheduler is not None:
-            state["scheduler_state"] = self.scheduler.state_dict()
+            # ignore ctrl+c while saving
+            try:
+                orig_handler = signal.getsignal(signal.SIGINT)
+                signal.signal(signal.SIGINT, lambda _sig, _frame: None)
+            except ValueError:
+                # signal throws a ValueError if we're not in the main thread
+                orig_handler = None
 
-        # ignore ctrl+c while saving
+            try:
+                # atomic save
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    # Save to a temporary directory outside of the checkpoint dir so
+                    # async processes do not try and copy a partially-written checkpoint.
+                    # See Ray Tune and MLFlow for examples of background processes that
+                    # are affected by this.
+                    tmp_path = os.path.join(tmpdir, "temp.ckpt")
+                    torch.save(state, tmp_path)
+
+                    self.safe_move_file(tmp_path, save_path)
+                    logger.debug(f"Saved checkpoint at {save_path}.")
+            finally:
+                # restore SIGINT handler
+                if orig_handler is not None:
+                    signal.signal(signal.SIGINT, orig_handler)
+        self.distributed.barrier()
+
+    def get_model_state_dict(self) -> Dict[str, Any]:
+        state = self.model.state_dict()
+
+        # Remove frozen parameter weights from state_dict for adapters and pretrained models
+        for n, p in self.model.named_parameters():
+            if not p.requires_grad:
+                del state[n]
+
+        return state
+
+    def is_local_rank_0(self) -> bool:
+        return self.distributed.local_rank() == 0
+
+    def safe_move_file(self, src: str, dst: str):
+        """Move a file from one directory to another, possibly across filesystems.
+
+        This implementation specifically addresses the following issue with distributed training:
+
+        1. The `save_path` is a directory local to the node, in which case every node should write
+           checkpoints separately.
+        2. The `save_path` is a remote / global filesystem like NFS, in which case only the coordinator
+           should write checkpoints.
+        """
         try:
-            orig_handler = signal.getsignal(signal.SIGINT)
-            signal.signal(signal.SIGINT, lambda _sig, _frame: None)
-        except ValueError:
-            # signal throws a ValueError if we're not in the main thread
-            orig_handler = None
+            os.replace(src, dst)
+        except OSError as err:
+            if err.errno == errno.EXDEV:
+                # Tried to move to an external filesystem. This means we should only run this on the coordinator
+                if not self.distributed.is_coordinator():
+                    logger.info(
+                        f"Skipping writing checkpoint from rank {self.distributed.rank()} as it is not the coordinator "
+                        f"and the destination filesystem is remote."
+                    )
+                    return
 
-        try:
-            # atomic save
-            with tempfile.TemporaryDirectory() as tmpdir:
-                # Save to a temporary directory outside of the checkpoint dir so
-                # async processes do not try and copy a partially-written checkpoint.
-                # See Ray Tune and MLFlow for examples of background processes that
-                # are affected by this.
-                tmp_path = os.path.join(tmpdir, "temp.ckpt")
-                torch.save(state, tmp_path)
+                # Generate a unique ID, and copy `<src>` to the target directory with a temporary name `<dst>.<ID>.tmp`.
+                # Because we're copying across a filesystem boundary, this initial copy may not be atomic.  We insert a
+                # random UUID so if different processes are copying into `<dst>`, they don't overlap in their tmp
+                # copies.
+                copy_id = uuid.uuid4()
+                tmp_dst = f"{dst}.{copy_id}.tmp"
+                shutil.copyfile(src, tmp_dst)
 
-                safe_move_file(tmp_path, save_path)
-                logger.debug(f"Saved checkpoint at {save_path}.")
-        finally:
-            # restore SIGINT handler
-            if orig_handler is not None:
-                signal.signal(signal.SIGINT, orig_handler)
+                # Atomic replace file onto the new name, and clean up original source file.
+                os.replace(tmp_dst, dst)
+                os.unlink(src)
+            else:
+                raise
 
 
 @DeveloperAPI

@@ -1,4 +1,4 @@
-from typing import Callable, Dict, List, TYPE_CHECKING, Union
+from typing import Callable, Dict, List, Optional, TYPE_CHECKING, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import MODEL_ECD, MODEL_GBM, TEXT
@@ -7,6 +7,7 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.sequence_encoders import SequenceEncoderConfig
 from ludwig.schema.encoders.text.hf_model_params import DebertaModelParams
 from ludwig.schema.encoders.utils import register_encoder_config
+from ludwig.schema.llms.peft import AdapterDataclassField, BaseAdapterConfig
 from ludwig.schema.metadata import ENCODER_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY, ParameterMetadata
 from ludwig.schema.utils import ludwig_dataclass
@@ -59,6 +60,8 @@ class HFEncoderImplConfig(HFEncoderConfig):
         description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["HFEncoder"]["trainable"],
     )
+
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
 
     pretrained_kwargs: dict = schema_utils.Dict(
         default=None,
@@ -136,6 +139,8 @@ class ALBERTConfig(HFEncoderConfig):
         description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["ALBERT"]["trainable"],
     )
+
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
 
     reduce_output: str = schema_utils.String(
         default="cls_pooled",
@@ -336,6 +341,8 @@ class MT5Config(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["MT5"]["trainable"],
     )
 
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
+
     reduce_output: str = schema_utils.String(
         default="sum",
         description="The method used to reduce a sequence of tensors down to a single tensor.",
@@ -532,6 +539,8 @@ class XLMRoBERTaConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["XLMRoBERTa"]["trainable"],
     )
 
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
+
     vocab: list = schema_utils.List(
         default=None,
         description="Vocabulary for the encoder",
@@ -636,6 +645,8 @@ class BERTConfig(HFEncoderConfig):
         description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["BERT"]["trainable"],
     )
+
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
 
     reduce_output: str = schema_utils.String(
         default="cls_pooled",
@@ -840,6 +851,8 @@ class XLMConfig(HFEncoderConfig):
         description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["XLM"]["trainable"],
     )
+
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
 
     reduce_output: str = schema_utils.String(
         default="sum",
@@ -1096,6 +1109,8 @@ class GPTConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["GPT"]["trainable"],
     )
 
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
+
     vocab: list = schema_utils.List(
         default=None,
         description="Vocabulary for the encoder",
@@ -1230,6 +1245,8 @@ class GPT2Config(HFEncoderConfig):
         description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["GPT2"]["trainable"],
     )
+
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
 
     vocab: list = schema_utils.List(
         default=None,
@@ -1392,6 +1409,8 @@ class RoBERTaConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["RoBERTa"]["trainable"],
     )
 
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
+
     vocab: list = schema_utils.List(
         default=None,
         description="Vocabulary for the encoder",
@@ -1483,6 +1502,8 @@ class TransformerXLConfig(HFEncoderConfig):
         description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["TransformerXL"]["trainable"],
     )
+
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
 
     vocab: list = schema_utils.List(
         default=None,
@@ -1712,6 +1733,8 @@ class XLNetConfig(HFEncoderConfig):
         description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["XLNet"]["trainable"],
     )
+
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
 
     vocab: list = schema_utils.List(
         default=None,
@@ -1954,6 +1977,8 @@ class DistilBERTConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["DistilBERT"]["trainable"],
     )
 
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
+
     vocab: list = schema_utils.List(
         default=None,
         description="Vocabulary for the encoder",
@@ -2111,6 +2136,8 @@ class CTRLConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["CTRL"]["trainable"],
     )
 
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
+
     vocab: list = schema_utils.List(
         default=None,
         description="Vocabulary for the encoder",
@@ -2253,6 +2280,8 @@ class CamemBERTConfig(HFEncoderConfig):
         description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["CamemBERT"]["trainable"],
     )
+
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
 
     vocab: list = schema_utils.List(
         default=None,
@@ -2427,6 +2456,8 @@ class T5Config(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["T5"]["trainable"],
     )
 
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
+
     vocab: list = schema_utils.List(
         default=None,
         description="Vocabulary for the encoder",
@@ -2543,7 +2574,7 @@ class FlauBERTConfig(HFEncoderConfig):
     )
 
     use_pretrained: bool = schema_utils.Boolean(
-        default=False,
+        default=True,
         description="Whether to use the pretrained weights for the model. If false, the model will train from "
         "scratch which is very computationally expensive.",
         parameter_metadata=ENCODER_METADATA["FlauBERT"]["use_pretrained"],
@@ -2573,6 +2604,8 @@ class FlauBERTConfig(HFEncoderConfig):
         description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["FlauBERT"]["trainable"],
     )
+
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
 
     vocab: list = schema_utils.List(
         default=None,
@@ -2815,6 +2848,8 @@ class ELECTRAConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["ELECTRA"]["trainable"],
     )
 
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
+
     vocab: list = schema_utils.List(
         default=None,
         description="Vocabulary for the encoder",
@@ -3002,6 +3037,8 @@ class LongformerConfig(HFEncoderConfig):
         parameter_metadata=ENCODER_METADATA["Longformer"]["trainable"],
     )
 
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
+
     vocab: list = schema_utils.List(
         default=None,
         description="Vocabulary for the encoder",
@@ -3050,6 +3087,12 @@ class AutoTransformerConfig(HFEncoderConfig):
     def module_name():
         return "AutoTransformer"
 
+    @property
+    def use_pretrained(self) -> bool:
+        # Always set this to True since we always want to use the pretrained weights
+        # We don't currently support training from scratch for AutoTransformers
+        return True
+
     type: str = schema_utils.ProtectedString(
         "auto_transformer",
         description=ENCODER_METADATA["AutoTransformer"]["type"].long_description,
@@ -3080,6 +3123,8 @@ class AutoTransformerConfig(HFEncoderConfig):
         description="Whether to finetune the model on your dataset.",
         parameter_metadata=ENCODER_METADATA["AutoTransformer"]["trainable"],
     )
+
+    adapter: Optional[BaseAdapterConfig] = AdapterDataclassField()
 
     vocab: list = schema_utils.List(
         default=None,

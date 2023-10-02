@@ -78,6 +78,7 @@ from ludwig.models.predictor import (
 from ludwig.models.registry import model_type_registry
 from ludwig.schema.model_config import ModelConfig
 from ludwig.types import ModelConfigDict, TrainingSetMetadataDict
+from ludwig.upload import get_upload_registry
 from ludwig.utils import metric_utils
 from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
 from ludwig.utils.config_utils import get_preprocessing_params
@@ -110,7 +111,7 @@ logger = logging.getLogger(__name__)
 
 @PublicAPI
 @dataclass
-class EvaluationFrequency:
+class EvaluationFrequency:  # noqa F821
     """Represents the frequency of periodic evaluation of a metric during training. For example:
 
     "every epoch"
@@ -129,7 +130,7 @@ class EvaluationFrequency:
 
 @PublicAPI
 @dataclass
-class TrainingStats:
+class TrainingStats:  # noqa F821
     """Training stats were previously represented as a tuple or a dict.
 
     This class replaces those while preserving dict and tuple-like behavior (unpacking, [] access).
@@ -158,7 +159,7 @@ class TrainingStats:
 
 @PublicAPI
 @dataclass
-class PreprocessedDataset:
+class PreprocessedDataset:  # noqa F821
     training_set: Dataset
     validation_set: Dataset
     test_set: Dataset
@@ -174,7 +175,7 @@ class PreprocessedDataset:
 
 @PublicAPI
 @dataclass
-class TrainingResults:
+class TrainingResults:  # noqa F821
     train_stats: TrainingStats
     preprocessed_data: PreprocessedDataset
     output_directory: str
@@ -268,11 +269,11 @@ class LudwigModel:
         self,
         config: Union[str, dict],
         logging_level: int = logging.ERROR,
-        backend: Union[Backend, str] = None,
-        gpus: Union[str, int, List[int]] = None,
+        backend: Optional[Union[Backend, str]] = None,
+        gpus: Optional[Union[str, int, List[int]]] = None,
         gpu_memory_limit: Optional[float] = None,
         allow_parallel_threads: bool = True,
-        callbacks: List[Callback] = None,
+        callbacks: Optional[List[Callback]] = None,
     ) -> None:
         """Constructor for the Ludwig Model class.
 
@@ -304,7 +305,7 @@ class LudwigModel:
             self.config_fp = config
         else:
             config_dict = copy.deepcopy(config)
-            self.config_fp = None
+            self.config_fp = None  # type: ignore [assignment]
 
         self._user_config = upgrade_config_dict_to_latest_version(config_dict)
 
@@ -325,29 +326,29 @@ class LudwigModel:
 
         # setup model
         self.model = None
-        self.training_set_metadata = None
+        self.training_set_metadata: Optional[str, dict] = None
 
         # online training state
         self._online_trainer = None
 
     def train(
         self,
-        dataset: Union[str, dict, pd.DataFrame] = None,
-        training_set: Union[str, dict, pd.DataFrame, Dataset] = None,
-        validation_set: Union[str, dict, pd.DataFrame, Dataset] = None,
-        test_set: Union[str, dict, pd.DataFrame, Dataset] = None,
-        training_set_metadata: Union[str, dict] = None,
-        data_format: str = None,
+        dataset: Optional[Union[str, dict, pd.DataFrame]] = None,
+        training_set: Optional[Union[str, dict, pd.DataFrame, Dataset]] = None,
+        validation_set: Optional[Union[str, dict, pd.DataFrame, Dataset]] = None,
+        test_set: Optional[Union[str, dict, pd.DataFrame, Dataset]] = None,
+        training_set_metadata: Optional[Union[str, dict]] = None,
+        data_format: Optional[str] = None,
         experiment_name: str = "api_experiment",
         model_name: str = "run",
-        model_resume_path: str = None,
+        model_resume_path: Optional[str] = None,
         skip_save_training_description: bool = False,
         skip_save_training_statistics: bool = False,
         skip_save_model: bool = False,
         skip_save_progress: bool = False,
         skip_save_log: bool = False,
         skip_save_processed_input: bool = False,
-        output_directory: str = "results",
+        output_directory: Optional[str] = "results",
         random_seed: int = default_random_seed,
         **kwargs,
     ) -> TrainingResults:
@@ -428,8 +429,9 @@ class LudwigModel:
             will contain the training statistics, TensorBoard logs, the saved
             model and the training progress files.
         :param random_seed: (int, default: `42`) a random seed that will be
-               used anywhere there is a call to a random number generator: data
-               splitting, parameter initialization and training set shuffling
+            used anywhere there is a call to a random number generator: data
+            splitting, parameter initialization and training set shuffling
+        :param kwargs: (dict, default: {}) a dictionary of optional parameters.
 
         # Return
 
@@ -538,7 +540,7 @@ class LudwigModel:
                             f"{output_directory}/{experiment_name}/model/model_hyperparameters.json"
                         )
 
-                preprocessed_data = self.preprocess(
+                preprocessed_data = self.preprocess(  # type: ignore[assignment]
                     dataset=dataset,
                     training_set=training_set,
                     validation_set=validation_set,
@@ -567,8 +569,10 @@ class LudwigModel:
 
                 if not skip_save_model:
                     # save train set metadata
-                    os.makedirs(model_dir, exist_ok=True)
-                    save_json(os.path.join(model_dir, TRAIN_SET_METADATA_FILE_NAME), training_set_metadata)
+                    os.makedirs(model_dir, exist_ok=True)  # type: ignore[arg-type]
+                    save_json(  # type: ignore[arg-type]
+                        os.path.join(model_dir, TRAIN_SET_METADATA_FILE_NAME), training_set_metadata
+                    )
 
                 logger.info("\nDataset Statistics")
                 logger.info(tabulate(dataset_statistics, headers="firstrow", tablefmt="fancy_grid"))
@@ -612,11 +616,15 @@ class LudwigModel:
                 random_seed=random_seed,
             ) as trainer:
                 # auto tune batch size
+                self._tune_batch_size(trainer, training_set, random_seed=random_seed)
+
                 if (
-                    self.config_obj.trainer.to_dict().get(BATCH_SIZE, None) == AUTO
-                    or self.config_obj.trainer.to_dict().get(EVAL_BATCH_SIZE, None) == AUTO
+                    self.config_obj.model_type == "LLM"
+                    and trainer.config.type == "none"
+                    and self.config_obj.adapter is not None
+                    and self.config_obj.adapter.pretrained_adapter_weights is not None
                 ):
-                    self._tune_batch_size(trainer, training_set, random_seed=random_seed)
+                    trainer.model.initialize_adapter()  # Load pre-trained adapter weights for inference only
 
                 # train model
                 if self.backend.is_coordinator():
@@ -638,12 +646,16 @@ class LudwigModel:
                         test_set=test_set,
                         save_path=model_dir,
                     )
+                    (self.model, train_trainset_stats, train_valiset_stats, train_testset_stats) = train_stats
+
+                    # For an LLM model trained with a LoRA adapter, handle merge and unload postprocessing directives.
+                    self._merge_and_unload()
 
                     # Calibrates output feature probabilities on validation set if calibration is enabled.
                     # Must be done after training, and before final model parameters are saved.
                     if self.backend.is_coordinator():
                         calibrator = Calibrator(
-                            trainer.model,
+                            self.model,
                             self.backend,
                             batch_size=trainer.eval_batch_size,
                         )
@@ -684,7 +696,6 @@ class LudwigModel:
                     # List[TrainerMetric], with one entry per training checkpoint, according to steps_per_checkpoint.
                     # We reduce the dictionary of TrainerMetrics to a simple list of floats for interfacing with Ray
                     # Tune.
-                    (self.model, train_trainset_stats, train_valiset_stats, train_testset_stats) = train_stats
                     train_stats = TrainingStats(
                         metric_utils.reduce_trainer_metrics_dict(train_trainset_stats),
                         metric_utils.reduce_trainer_metrics_dict(train_valiset_stats),
@@ -698,7 +709,11 @@ class LudwigModel:
                             save_json(training_stats_fn, train_stats)
 
                     # results of the model with highest validation test performance
-                    if self.backend.is_coordinator() and validation_set is not None:
+                    if (
+                        self.backend.is_coordinator()
+                        and validation_set is not None
+                        and not self.config_obj.trainer.skip_all_evaluation
+                    ):
                         print_boxed("TRAINING REPORT")
                         training_report = get_training_report(
                             trainer.validation_field,
@@ -729,7 +744,7 @@ class LudwigModel:
     def train_online(
         self,
         dataset: Union[str, dict, pd.DataFrame],
-        training_set_metadata: Union[str, dict] = None,
+        training_set_metadata: Optional[Union[str, dict]] = None,
         data_format: str = "auto",
         random_seed: int = default_random_seed,
     ) -> None:
@@ -794,42 +809,94 @@ class LudwigModel:
                 config=self.config_obj.trainer, model=self.model, random_seed=random_seed
             )
 
-            if (
-                self.config_obj.trainer.to_dict().get(BATCH_SIZE, None) == AUTO
-                or self.config_obj.trainer.to_dict().get(EVAL_BATCH_SIZE, None) == AUTO
-            ):
-                self._tune_batch_size(self._online_trainer, dataset, random_seed=random_seed)
+            self._tune_batch_size(self._online_trainer, dataset, random_seed=random_seed)
 
         self.model = self._online_trainer.train_online(training_dataset)
 
+    def _merge_and_unload(self) -> None:
+        """For an LLM model trained with a LoRA adapter, handle merge and unload postprocessing directives.
+
+        First, check that the model is of the "llm" type.  Then check if the "adapter" configuration section contains
+        the "postprocessor" subsection and apply the "merge_adapter_into_base_model" and "progressbar" directives.
+        """
+        if (
+            self.config_obj.model_type == "llm"
+            and self.config_obj.adapter is not None
+            and self.config_obj.adapter.postprocessor is not None
+            and self.config_obj.adapter.postprocessor.merge_adapter_into_base_model
+            and hasattr(self.model, "merge_and_unload")
+        ):
+            self.model.merge_and_unload(progressbar=self.config_obj.adapter.postprocessor.progressbar)
+
     def _tune_batch_size(self, trainer, dataset, random_seed: int = default_random_seed):
+        """Sets AUTO batch-size-related parameters based on the trainer, backend type, and number of workers.
+
+        Batch-size related parameters that are set:
+        - trainer.batch_size
+        - trainer.eval_batch_size
+        - trainer.gradient_accumulation_steps
+        - trainer.effective_batch_size
+
+        The final batch size selected may be non-deterministic even with a fixed random seed since throughput-based
+        heuristics may be affected by resources used by other processes running on the machine.
+        """
+        if not self.config_obj.trainer.can_tune_batch_size():
+            # Models like GBMs don't have batch sizes to be tuned
+            return
+
+        # Render the batch size and gradient accumulation steps prior to batch size tuning. This is needed in the event
+        # the effective_batch_size and gradient_accumulation_steps are set explicitly, but batch_size is AUTO. In this
+        # case, we can infer the batch_size directly without tuning.
+        num_workers = self.backend.num_training_workers
+        self.config_obj.trainer.update_batch_size_grad_accum(num_workers)
+
         # TODO (ASN): add support for substitute_with_max parameter
         # TODO(travis): detect train and eval batch sizes separately (enable / disable gradients)
-        if self.backend.supports_batch_size_tuning():
-            tuned_batch_size = trainer.tune_batch_size(self.config_obj.to_dict(), dataset, random_seed=random_seed)
-        else:
-            logger.warning(
-                f"Backend {self.backend.BACKEND_TYPE} does not support batch size tuning, "
-                f"using fallback batch size {FALLBACK_BATCH_SIZE}."
-            )
-            tuned_batch_size = FALLBACK_BATCH_SIZE
-
-        # TODO(travis): pass these in as args to trainer when we call train,
-        #  to avoid setting state on possibly remote trainer
         if self.config_obj.trainer.batch_size == AUTO:
+            if self.backend.supports_batch_size_tuning():
+                tuned_batch_size = trainer.tune_batch_size(
+                    self.config_obj.to_dict(), dataset, random_seed=random_seed, tune_for_training=True
+                )
+            else:
+                logger.warning(
+                    f"Backend {self.backend.BACKEND_TYPE} does not support batch size tuning, "
+                    f"using fallback training batch size {FALLBACK_BATCH_SIZE}."
+                )
+                tuned_batch_size = FALLBACK_BATCH_SIZE
+
+            # TODO(travis): pass these in as args to trainer when we call train,
+            #  to avoid setting state on possibly remote trainer
             self.config_obj.trainer.batch_size = tuned_batch_size
-            trainer.batch_size = tuned_batch_size
+
+            # Re-render the gradient_accumulation_steps to account for the explicit batch size.
+            self.config_obj.trainer.update_batch_size_grad_accum(num_workers)
 
         if self.config_obj.trainer.eval_batch_size in {AUTO, None}:
+            if self.backend.supports_batch_size_tuning():
+                tuned_batch_size = trainer.tune_batch_size(
+                    self.config_obj.to_dict(), dataset, random_seed=random_seed, tune_for_training=False
+                )
+            else:
+                logger.warning(
+                    f"Backend {self.backend.BACKEND_TYPE} does not support batch size tuning, "
+                    f"using fallback eval batch size {FALLBACK_BATCH_SIZE}."
+                )
+                tuned_batch_size = FALLBACK_BATCH_SIZE
+
             self.config_obj.trainer.eval_batch_size = tuned_batch_size
-            trainer.eval_batch_size = tuned_batch_size
+
+        # Update trainer params separate to config params for backends with stateful trainers
+        trainer.batch_size = self.config_obj.trainer.batch_size
+        trainer.eval_batch_size = self.config_obj.trainer.eval_batch_size
+        trainer.gradient_accumulation_steps = self.config_obj.trainer.gradient_accumulation_steps
 
     def predict(
         self,
-        dataset: Union[str, dict, pd.DataFrame] = None,
+        dataset: Optional[Union[str, dict, pd.DataFrame]] = None,
         data_format: str = None,
         split: str = FULL,
         batch_size: int = 128,
+        generation_config: Optional[dict] = None,
         skip_save_unprocessed_output: bool = True,
         skip_save_predictions: bool = True,
         output_directory: str = "results",
@@ -839,43 +906,41 @@ class LudwigModel:
     ) -> Tuple[Union[dict, pd.DataFrame], str]:
         """Using a trained model, make predictions from the provided dataset.
 
-        # Inputs
-        :param dataset: (Union[str, dict, pandas.DataFrame]) source containing
-            the entire dataset to be evaluated.
-        :param data_format: (str, default: `None`) format to interpret data
-            sources. Will be inferred automatically if not specified.  Valid
-            formats are `'auto'`, `'csv'`, `'df'`, `'dict'`, `'excel'`, `'feather'`,
-            `'fwf'`, `'hdf5'` (cache file produced during previous training),
-            `'html'` (file containing a single HTML `<table>`), `'json'`, `'jsonl'`,
-            `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`, `'spss'`,
-            `'stata'`, `'tsv'`.
-        :param: split: (str, default= `'full'`): if the input dataset contains
-            a split column, this parameter indicates which split of the data
-            to use. Possible values are `'full'`, `'training'`, `'validation'`, `'test'`.
-        :param batch_size: (int, default: 128) size of batch to use when making
-            predictions.
-        :param skip_save_unprocessed_output: (bool, default: `True`) if this
-            parameter is `False`, predictions and their probabilities are saved
-            in both raw unprocessed numpy files containing tensors and as
-            postprocessed CSV files (one for each output feature).
-            If this parameter is `True`, only the CSV ones are saved and the
-            numpy ones are skipped.
-        :param skip_save_predictions: (bool, default: `True`) skips saving
-            test predictions CSV files.
-        :param output_directory: (str, default: `'results'`) the directory that
-            will contain the training statistics, TensorBoard logs, the saved
-            model and the training progress files.
-        :param return_type: (Union[str, dict, pandas.DataFrame], default: pd.DataFrame)
-            indicates the format of the returned predictions.
-        :param callbacks: (Optional[List[Callback]], default: None)
-            optional list of callbacks to use during this predict operation. Any callbacks
-            already registered to the model will be preserved.
+        #Inputs
+
+            :param dataset: (Union[str, dict, pandas.DataFrame]): source containing the entire dataset to be evaluated.
+            :param data_format: (str, default: `None`) format to interpret data sources. Will be inferred automatically
+                if not specified.  Valid formats are `'auto'`, `'csv'`, `'df'`, `'dict'`, `'excel'`, `'feather'`,
+                `'fwf'`, `'hdf5'` (cache file produced during previous training), `'html'` (file containing a single
+                HTML `<table>`), `'json'`, `'jsonl'`, `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`,
+                `'spss'`, `'stata'`, `'tsv'`.
+            :param split: (str, default= `'full'`):  if the input dataset contains a split column, this parameter
+                indicates which split of the data to use. Possible values are `'full'`, `'training'`, `'validation'`,
+                `'test'`.
+            :param batch_size: (int, default: 128) size of batch to use when making predictions.
+            :param generation_config: (Dict, default: `None`) config for the generation of the
+                predictions. If `None`, the config that was used during model training is
+                used. This is only used if the model type is LLM. Otherwise, this parameter is
+                ignored. See
+                [Large Language Models](https://ludwig.ai/latest/configuration/large_language_model/#generation) under
+                "Generation" for an example generation config.
+            :param skip_save_unprocessed_output: (bool, default: `True`) if this parameter is `False`, predictions and
+                their probabilities are saved in both raw unprocessed numpy files containing tensors and as
+                postprocessed CSV files (one for each output feature). If this parameter is `True`, only the CSV ones
+                are saved and the numpy ones are skipped.
+            :param skip_save_predictions: (bool, default: `True`) skips saving test predictions CSV files.
+            :param output_directory: (str, default: `'results'`) the directory that will contain the training
+                statistics, TensorBoard logs, the saved model and the training progress files.
+            :param return_type: (Union[str, dict, pandas.DataFrame], default: pd.DataFrame) indicates the format of the
+                returned predictions.
+            :param callbacks: (Optional[List[Callback]], default: None) optional list of callbacks to use during this
+                predict operation. Any callbacks already registered to the model will be preserved.
 
         # Return
 
-        :return: (Tuple[Union[dict, pd.DataFrame], str]) `(predictions, output_directory)`
-            `predictions` predictions from the provided dataset,
-            `output_directory` filepath string to where data was stored.
+            :return `(predictions, output_directory)`: (Tuple[Union[dict, pd.DataFrame], str])
+                `predictions` predictions from the provided dataset,
+                `output_directory` filepath string to where data was stored.
         """
         self._check_initialization()
 
@@ -894,9 +959,10 @@ class LudwigModel:
 
         logger.debug("Predicting")
         with self.backend.create_predictor(self.model, batch_size=batch_size) as predictor:
-            predictions = predictor.batch_predict(
-                dataset,
-            )
+            with self.model.use_generation_config(generation_config):
+                predictions = predictor.batch_predict(
+                    dataset,
+                )
 
             if self.backend.is_coordinator():
                 # if we are skipping all saving,
@@ -929,8 +995,8 @@ class LudwigModel:
 
     def evaluate(
         self,
-        dataset: Union[str, dict, pd.DataFrame] = None,
-        data_format: str = None,
+        dataset: Optional[Union[str, dict, pd.DataFrame]] = None,
+        data_format: Optional[str] = None,
         split: str = FULL,
         batch_size: Optional[int] = None,
         skip_save_unprocessed_output: bool = True,
@@ -955,7 +1021,7 @@ class LudwigModel:
             `'html'` (file containing a single HTML `<table>`), `'json'`, `'jsonl'`,
             `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`, `'spss'`,
             `'stata'`, `'tsv'`.
-        :param: split: (str, default= `'full'`): if the input dataset contains
+        :param split: (str, default=`'full'`): if the input dataset contains
             a split column, this parameter indicates which split of the data
             to use. Possible values are `'full'`, `'training'`, `'validation'`, `'test'`.
         :param batch_size: (int, default: None) size of batch to use when making
@@ -1150,16 +1216,16 @@ class LudwigModel:
 
     def experiment(
         self,
-        dataset: Union[str, dict, pd.DataFrame] = None,
-        training_set: Union[str, dict, pd.DataFrame] = None,
-        validation_set: Union[str, dict, pd.DataFrame] = None,
-        test_set: Union[str, dict, pd.DataFrame] = None,
-        training_set_metadata: Union[str, dict] = None,
-        data_format: str = None,
+        dataset: Optional[Union[str, dict, pd.DataFrame]] = None,
+        training_set: Optional[Union[str, dict, pd.DataFrame]] = None,
+        validation_set: Optional[Union[str, dict, pd.DataFrame]] = None,
+        test_set: Optional[Union[str, dict, pd.DataFrame]] = None,
+        training_set_metadata: Optional[Union[str, dict]] = None,
+        data_format: Optional[str] = None,
         experiment_name: str = "experiment",
         model_name: str = "run",
-        model_load_path: str = None,
-        model_resume_path: str = None,
+        model_load_path: Optional[str] = None,
+        model_resume_path: Optional[str] = None,
         eval_split: str = TEST,
         skip_save_training_description: bool = False,
         skip_save_training_statistics: bool = False,
@@ -1364,10 +1430,9 @@ class LudwigModel:
         self,
         layer_names: List[str],
         dataset: Union[str, Dict[str, list], pd.DataFrame],
-        data_format: str = None,
+        data_format: Optional[str] = None,
         split: str = FULL,
         batch_size: int = 128,
-        debug: bool = False,
         **kwargs,
     ) -> list:
         """Loads a pre-trained model model and input data to collect the values of the activations contained in the
@@ -1385,7 +1450,7 @@ class LudwigModel:
             `'html'` (file containing a single HTML `<table>`), `'json'`, `'jsonl'`,
             `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`, `'spss'`,
             `'stata'`, `'tsv'`.
-        :param: split: (str, default= `'full'`): if the input dataset contains
+        :param split: (str, default= `'full'`): if the input dataset contains
             a split column, this parameter indicates which split of the data
             to use. Possible values are `'full'`, `'training'`, `'validation'`, `'test'`.
         :param batch_size: (int, default: 128) size of batch to use when making
@@ -1418,12 +1483,12 @@ class LudwigModel:
 
     def preprocess(
         self,
-        dataset: Union[str, dict, pd.DataFrame] = None,
-        training_set: Union[str, dict, pd.DataFrame] = None,
-        validation_set: Union[str, dict, pd.DataFrame] = None,
-        test_set: Union[str, dict, pd.DataFrame] = None,
-        training_set_metadata: Union[str, dict] = None,
-        data_format: str = None,
+        dataset: Optional[Union[str, dict, pd.DataFrame]] = None,
+        training_set: Optional[Union[str, dict, pd.DataFrame]] = None,
+        validation_set: Optional[Union[str, dict, pd.DataFrame]] = None,
+        test_set: Optional[Union[str, dict, pd.DataFrame]] = None,
+        training_set_metadata: Optional[Union[str, dict]] = None,
+        data_format: Optional[str] = None,
         skip_save_processed_input: bool = True,
         random_seed: int = default_random_seed,
         **kwargs,
@@ -1460,9 +1525,6 @@ class LudwigModel:
                 dataset is provided it is preprocessed and cached by saving an HDF5
                 and JSON files to avoid running the preprocessing again. If this
                 parameter is `False`, the HDF5 and JSON file are not saved.
-            :param output_directory: (str, default: `'results'`) the directory that
-                will contain the training statistics, TensorBoard logs, the saved
-                model and the training progress files.
             :param random_seed: (int, default: `42`) a random seed that will be
                 used anywhere there is a call to a random number generator: data
                 splitting, parameter initialization and training set shuffling
@@ -1514,8 +1576,8 @@ class LudwigModel:
     def load(
         model_dir: str,
         logging_level: int = logging.ERROR,
-        backend: Union[Backend, str] = None,
-        gpus: Union[str, int, List[int]] = None,
+        backend: Optional[Union[Backend, str]] = None,
+        gpus: Optional[Union[str, int, List[int]]] = None,
         gpu_memory_limit: Optional[float] = None,
         allow_parallel_threads: bool = True,
         callbacks: List[Callback] = None,
@@ -1567,6 +1629,7 @@ class LudwigModel:
         # Upgrades deprecated fields and adds new required fields in case the config loaded from disk is old.
         config_obj = ModelConfig.from_dict(config)
 
+        # Ensure that the original backend is used if it was specified in the config and user requests it
         if backend_param is None and "backend" in config:
             # Reset backend from config
             backend = initialize_backend(config.get("backend"))
@@ -1588,6 +1651,9 @@ class LudwigModel:
 
         # load model weights
         ludwig_model.load_weights(model_dir)
+
+        # The LoRA layers appear to be loaded again (perhaps due to a potential bug); hence, we merge and unload again.
+        ludwig_model._merge_and_unload()
 
         # load train set metadata
         ludwig_model.training_set_metadata = backend.broadcast_return(
@@ -1651,6 +1717,53 @@ class LudwigModel:
         # save training set metadata
         training_set_metadata_path = os.path.join(save_path, TRAIN_SET_METADATA_FILE_NAME)
         save_json(training_set_metadata_path, self.training_set_metadata)
+
+    @staticmethod
+    def upload_to_hf_hub(
+        repo_id: str,
+        model_path: str,
+        repo_type: str = "model",
+        private: bool = False,
+        commit_message: str = "Upload trained [Ludwig](https://ludwig.ai/latest/) model weights",
+        commit_description: Optional[str] = None,
+    ) -> bool:
+        """Uploads trained model artifacts to the HuggingFace Hub.
+
+        Args:
+            repo_id (`str`):
+                A namespace (user or an organization) and a repo name separated
+                by a `/`.
+            model_path (`str`):
+                The path of the saved model. This is the top level directory where
+                the models weights as well as other associated training artifacts
+                are saved.
+            private (`bool`, *optional*, defaults to `False`):
+                Whether the model repo should be private.
+            repo_type (`str`, *optional*):
+                Set to `"dataset"` or `"space"` if uploading to a dataset or
+                space, `None` or `"model"` if uploading to a model. Default is
+                `None`.
+            commit_message (`str`, *optional*):
+                The summary / title / first line of the generated commit. Defaults to:
+                `f"Upload {path_in_repo} with huggingface_hub"`
+            commit_description (`str` *optional*):
+                The description of the generated commit
+
+        Returns:
+            bool: True for success, False for failure.
+        """
+        model_service = get_upload_registry()["hf_hub"]
+        hub = model_service()
+        hub.login()
+        upload_status = hub.upload(
+            repo_id=repo_id,
+            model_path=model_path,
+            repo_type=repo_type,
+            private=private,
+            commit_message=commit_message,
+            commit_description=commit_description,
+        )
+        return upload_status
 
     def save_config(self, save_path: str) -> None:
         """Save config to specified location.
@@ -1723,6 +1836,15 @@ class LudwigModel:
         if self.model is None or self._user_config is None or self.training_set_metadata is None:
             raise ValueError("Model has not been trained or loaded")
 
+    def free_gpu_memory(self):
+        """Manually moves the model to CPU to force GPU memory to be freed.
+
+        For more context: https://discuss.pytorch.org/t/how-can-we-release-gpu-memory-cache/14530/35
+        """
+        if torch.cuda.is_available():
+            self.model.model.to(torch.device("cpu"))
+            torch.cuda.empty_cache()
+
     @staticmethod
     def create_model(config_obj: Union[ModelConfig, dict], random_seed: int = default_random_seed) -> BaseModel:
         """Instantiates BaseModel object.
@@ -1793,10 +1915,10 @@ def kfold_cross_validate(
     skip_collect_overall_stats: bool = False,
     output_directory: str = "results",
     random_seed: int = default_random_seed,
-    gpus: Union[str, int, List[int]] = None,
+    gpus: Optional[Union[str, int, List[int]]] = None,
     gpu_memory_limit: Optional[float] = None,
     allow_parallel_threads: bool = True,
-    backend: Union[Backend, str] = None,
+    backend: Optional[Union[Backend, str]] = None,
     logging_level: int = logging.INFO,
     **kwargs,
 ) -> Tuple[dict, dict]:

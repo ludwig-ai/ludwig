@@ -101,7 +101,7 @@ class TVEfficientNetEncoderConfig(TVBaseEncoderConfig):
             "b5",
             "b6",
             "b7",
-            "v2_",
+            "v2_s",
             "v2_m",
             "v2_l",
         ],

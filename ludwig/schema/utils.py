@@ -51,10 +51,16 @@ def load_trainer_with_kwargs(
     In particular, it chooses the correct default type for an incoming config (if it doesn't have one already), but
     otherwise passes all other parameters through without change.
     """
-    from ludwig.constants import MODEL_ECD
-    from ludwig.schema.trainer import ECDTrainerConfig, GBMTrainerConfig
+    from ludwig.constants import MODEL_ECD, MODEL_GBM, MODEL_LLM
+    from ludwig.schema.trainer import ECDTrainerConfig, GBMTrainerConfig, LLMTrainerConfig
 
-    trainer_schema = ECDTrainerConfig if model_type == MODEL_ECD else GBMTrainerConfig
+    # TODO: use registry pattern for trainers
+    if model_type == MODEL_ECD:
+        trainer_schema = ECDTrainerConfig
+    elif model_type == MODEL_GBM:
+        trainer_schema = GBMTrainerConfig
+    elif model_type == MODEL_LLM:
+        trainer_schema = LLMTrainerConfig
 
     return load_config_with_kwargs(trainer_schema, kwargs)
 
@@ -221,7 +227,7 @@ def assert_is_a_marshmallow_class(cls):
 
 
 @DeveloperAPI
-def unload_jsonschema_from_marshmallow_class(mclass, additional_properties: bool = True) -> TDict:
+def unload_jsonschema_from_marshmallow_class(mclass, additional_properties: bool = True, title: str = None) -> TDict:
     """Helper method to directly get a marshmallow class's JSON schema without extra wrapping props."""
     assert_is_a_marshmallow_class(mclass)
     schema = js(props_ordered=True).dump(mclass.Schema())["definitions"][mclass.__name__]
@@ -231,6 +237,8 @@ def unload_jsonschema_from_marshmallow_class(mclass, additional_properties: bool
         if "parameter_metadata" in prop_schema:
             prop_schema["parameter_metadata"] = copy.deepcopy(prop_schema["parameter_metadata"])
     schema["additionalProperties"] = additional_properties
+    if title is not None:
+        schema["title"] = title
     return schema
 
 
@@ -316,10 +324,9 @@ def String(
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata),
                 },
             ),
-            # "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
         },
         default=default,
     )
@@ -361,7 +368,7 @@ def StringOptions(
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata),
                 },
             )
         },
@@ -421,7 +428,7 @@ def IntegerOptions(
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata),
                 },
             )
         },
@@ -448,7 +455,7 @@ def Boolean(default: bool, description: str = "", parameter_metadata: ParameterM
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata),
                 },
             )
         },
@@ -457,7 +464,12 @@ def Boolean(default: bool, description: str = "", parameter_metadata: ParameterM
 
 
 @DeveloperAPI
-def Integer(default: Union[None, int], allow_none=False, description="", parameter_metadata: ParameterMetadata = None):
+def Integer(
+    default: Union[None, int],
+    allow_none=False,
+    description="",
+    parameter_metadata: ParameterMetadata = None,
+):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs."""
     if default is not None:
         try:
@@ -473,7 +485,7 @@ def Integer(default: Union[None, int], allow_none=False, description="", paramet
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata),
                 },
             )
         },
@@ -483,7 +495,10 @@ def Integer(default: Union[None, int], allow_none=False, description="", paramet
 
 @DeveloperAPI
 def PositiveInteger(
-    description: str, default: Union[None, int], allow_none: bool = False, parameter_metadata: ParameterMetadata = None
+    description: str,
+    default: Union[None, int],
+    allow_none: bool = False,
+    parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be
     positive."""
@@ -505,7 +520,7 @@ def PositiveInteger(
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata),
                 },
             )
         },
@@ -540,7 +555,7 @@ def NonNegativeInteger(
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata),
                 },
             )
         },
@@ -579,7 +594,36 @@ def IntegerRange(
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata),
+                },
+            )
+        },
+        default=default,
+    )
+
+
+@DeveloperAPI
+def Float(
+    default: Union[None, int],
+    allow_none=False,
+    description="",
+    parameter_metadata: ParameterMetadata = None,
+):
+    """Returns a dataclass field with marshmallow metadata strictly enforcing float inputs."""
+    if default is not None:
+        try:
+            assert isinstance(default, float) or isinstance(default, int)
+        except Exception:
+            raise ValidationError(f"Invalid default: `{default}`")
+    return field(
+        metadata={
+            "marshmallow_field": fields.Float(
+                allow_none=allow_none,
+                load_default=default,
+                dump_default=default,
+                metadata={
+                    "description": description,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata),
                 },
             )
         },
@@ -613,7 +657,7 @@ def NonNegativeFloat(
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata),
                 },
             )
         },
@@ -651,7 +695,7 @@ def FloatRange(
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata),
                 },
             )
         },
@@ -688,7 +732,7 @@ def Dict(
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata),
                 },
             )
         },
@@ -748,7 +792,7 @@ def List(
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata),
                 },
             )
         },
@@ -785,7 +829,7 @@ def DictList(
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata),
                 },
             )
         },
@@ -843,7 +887,7 @@ def Embed(description: str = "", parameter_metadata: ParameterMetadata = None):
                 dump_default=None,
                 metadata={
                     "description": description,
-                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata),
                 },
             )
         },
@@ -883,7 +927,7 @@ def InitializerOrDict(
 
         def _jsonschema_type_mapping(self):
             initializers = list(initializer_registry.keys())
-            param_metadata = convert_metadata_to_json(parameter_metadata) if parameter_metadata else None
+            param_metadata = convert_metadata_to_json(parameter_metadata)
             return {
                 "oneOf": [
                     # Note: default not provided in the custom dict option:
@@ -920,7 +964,7 @@ def InitializerOrDict(
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata),
                 },
             )
         },
@@ -1005,7 +1049,7 @@ def FloatRangeTupleDataclassField(
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata),
                 },
             )
         },
@@ -1085,7 +1129,7 @@ def OneOfOptionsField(
                 "description": description,
                 "default": default,
                 "title": self.name,
-                "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
+                "parameter_metadata": convert_metadata_to_json(parameter_metadata),
             }
 
             for idx, option in enumerate(field_options):
@@ -1138,7 +1182,7 @@ def OneOfOptionsField(
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata),
                 },
             ),
         },
@@ -1155,6 +1199,7 @@ class TypeSelection(fields.Field):
         description: str = "",
         parameter_metadata: ParameterMetadata = None,
         allow_str_value: bool = False,
+        allow_none: bool = False,
     ):
         self.registry = registry
         self.default_value = default_value
@@ -1172,7 +1217,7 @@ class TypeSelection(fields.Field):
             dump_default = cls.Schema().dump(default_obj)
 
         super().__init__(
-            allow_none=False,
+            allow_none=allow_none,
             dump_default=dump_default,
             load_default=load_default,
             metadata={"description": description, "parameter_metadata": convert_metadata_to_json(parameter_metadata)},
@@ -1184,7 +1229,7 @@ class TypeSelection(fields.Field):
 
         if self.allow_str_value and isinstance(value, str):
             # If user provided the value as a string, assume they were providing the type
-            value = {self.key: value}
+            value = self.str_value_to_object(value)
 
         if isinstance(value, dict):
             cls_type = value.get(self.key)
@@ -1200,9 +1245,13 @@ class TypeSelection(fields.Field):
         maybe_str = ", `str`," if self.allow_str_value else ""
         raise ValidationError(f"Invalid param {value}, expected `None`{maybe_str} or `dict`")
 
+    def str_value_to_object(self, value: str) -> str:
+        return {self.key: value}
+
     def get_schema_from_registry(self, key: str) -> Type[BaseMarshmallowConfig]:
         return self.registry[key]
 
+    # TODO: Maybe need to plumb 'required' through here
     def get_default_field(self) -> Field:
         default_factory = lambda: None
         if self.default_factory is not None:

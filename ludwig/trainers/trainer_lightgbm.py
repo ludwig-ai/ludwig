@@ -11,7 +11,7 @@ import lightgbm as lgb
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from ludwig.constants import BINARY, CATEGORY, MINIMIZE, MODEL_GBM, NUMBER, TEST, TRAIN, TRAINING, VALIDATION
+from ludwig.constants import BINARY, CATEGORY, MINIMIZE, MODEL_GBM, NUMBER, TEST, TRAINING, VALIDATION
 from ludwig.distributed import init_dist_strategy
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.features.feature_utils import LudwigFeatureDict
@@ -39,7 +39,7 @@ from ludwig.utils.gbm_utils import (
     TrainLogits,
 )
 from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
-from ludwig.utils.metrics_printed_table import MetricsPrintedTable
+from ludwig.utils.metrics_printed_table import print_metrics_table
 from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.trainer_utils import (
     append_metrics,
@@ -93,6 +93,7 @@ class LightGBMTrainer(BaseTrainer):
         self._validation_field = config.validation_field
         self._validation_metric = config.validation_metric
         self.evaluate_training_set = config.evaluate_training_set
+        self.skip_all_evaluation = config.skip_all_evaluation
         try:
             base_learning_rate = float(config.learning_rate)
         except ValueError:
@@ -170,6 +171,7 @@ class LightGBMTrainer(BaseTrainer):
         random_seed: int,
         max_trials: int = 10,
         halving_limit: int = 3,
+        tune_for_training: bool = True,
     ) -> int:
         raise NotImplementedError("Tuning batch size is not supported for LightGBM.")
 
@@ -253,8 +255,6 @@ class LightGBMTrainer(BaseTrainer):
             logger.info(f"\nRunning evaluation for step: {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
 
         # ================ Eval ================
-        printed_table = MetricsPrintedTable(output_features)
-
         # eval metrics on train
         if self.evaluate_training_set:
             # Run a separate pass over the training data to compute metrics
@@ -268,8 +268,6 @@ class LightGBMTrainer(BaseTrainer):
             append_metrics(self.model, "train", metrics, progress_tracker.train_metrics, progress_tracker)
             self.model.reset_metrics()
 
-        printed_table.add_metrics_to_printed_table(progress_tracker.train_metrics, TRAIN)
-
         self.write_eval_summary(
             summary_writer=train_summary_writer,
             metrics=progress_tracker.train_metrics,
@@ -280,15 +278,13 @@ class LightGBMTrainer(BaseTrainer):
             self.callback(lambda c: c.on_validation_start(self, progress_tracker, save_path))
 
             # eval metrics on validation set
-            validation_metrics_log = self.evaluation(
+            self.evaluation(
                 validation_set,
                 VALIDATION,
                 progress_tracker.validation_metrics,
                 self.eval_batch_size,
                 progress_tracker,
             )
-
-            printed_table.add_metrics_to_printed_table(validation_metrics_log, VALIDATION)
 
             self.write_eval_summary(
                 summary_writer=validation_summary_writer,
@@ -302,11 +298,7 @@ class LightGBMTrainer(BaseTrainer):
             self.callback(lambda c: c.on_test_start(self, progress_tracker, save_path))
 
             # eval metrics on test set
-            test_metrics_log = self.evaluation(
-                test_set, TEST, progress_tracker.test_metrics, self.eval_batch_size, progress_tracker
-            )
-
-            printed_table.add_metrics_to_printed_table(test_metrics_log, TEST)
+            self.evaluation(test_set, TEST, progress_tracker.test_metrics, self.eval_batch_size, progress_tracker)
 
             self.write_eval_summary(
                 summary_writer=test_summary_writer,
@@ -320,7 +312,12 @@ class LightGBMTrainer(BaseTrainer):
 
         if self.is_coordinator():
             logger.info(f"Evaluation took {time_utils.strdelta(elapsed_time)}\n")
-            printed_table.log_info()
+            print_metrics_table(
+                output_features,
+                progress_tracker.train_metrics,
+                progress_tracker.validation_metrics,
+                progress_tracker.test_metrics,
+            )
 
         # ================ Validation Logic ================
         should_break = False
@@ -384,21 +381,24 @@ class LightGBMTrainer(BaseTrainer):
         loss = evals_result["train"][loss_name][-1]
         loss = torch.tensor(loss, dtype=torch.float32)
 
-        should_break = self.run_evaluation(
-            training_set,
-            validation_set,
-            test_set,
-            progress_tracker,
-            train_summary_writer,
-            validation_summary_writer,
-            test_summary_writer,
-            output_features,
-            metrics_names,
-            save_path,
-            loss,
-            {output_feature_name: loss},
-            early_stopping_steps,
-        )
+        if not self.skip_all_evaluation:
+            should_break = self.run_evaluation(
+                training_set,
+                validation_set,
+                test_set,
+                progress_tracker,
+                train_summary_writer,
+                validation_summary_writer,
+                test_summary_writer,
+                output_features,
+                metrics_names,
+                save_path,
+                loss,
+                {output_feature_name: loss},
+                early_stopping_steps,
+            )
+        else:
+            should_break = False
 
         self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path))
 
@@ -1092,7 +1092,6 @@ def lightgbm_ray_train_step(
     evaluate_training_set: bool,
     device: Optional[str] = None,
 ) -> lgb.LGBMModel:
-
     # We need to add max_calls here to ensure that the Ray actors that get created by the LightGBM class
     # for each boosting round don't leave dangling resources in the object store memory.
     @ray.remote(max_calls=1)

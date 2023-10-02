@@ -52,13 +52,13 @@ config = yaml.safe_load(
             - name: Answer
               type: text
         model_type: llm
-        generation_config:
+        generation:
             temperature: 0.1
             top_p: 0.75
             top_k: 40
             num_beams: 4
             max_new_tokens: 5
-        model_name: facebook/opt-350m
+        base_model: facebook/opt-350m
     """
 )
 

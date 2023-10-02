@@ -9,7 +9,7 @@
 #   model serving
 #
 
-FROM pytorch/pytorch:1.13.1-cuda11.6-cudnn8-devel
+FROM pytorch/pytorch:2.0.1-cuda11.7-cudnn8-devel
 
 # https://forums.developer.nvidia.com/t/notice-cuda-linux-repository-key-rotation/212771
 RUN sh -c 'echo "APT { Get { AllowUnauthenticated \"1\"; }; };" > /etc/apt/apt.conf.d/99allow_unauth' && \
@@ -21,16 +21,19 @@ RUN sh -c 'echo "APT { Get { AllowUnauthenticated \"1\"; }; };" > /etc/apt/apt.c
     rm -f /etc/apt/sources.list.d/cuda.list /etc/apt/apt.conf.d/99allow_unauth cuda-keyring_1.0-1_all.deb && \
     apt-key adv --keyserver keyserver.ubuntu.com --recv-keys A4B469963BF863CC F60F4B3D7FA2AF80
 
-RUN apt-get -y update && apt-get -y install \
+RUN apt-get -y update && DEBIAN_FRONTEND="noninteractive" apt-get -y install \
     git \
     libsndfile1 \
-    cmake
+    cmake \
+    ffmpeg \
+    sox
 RUN pip install -U pip
 
 WORKDIR /ludwig
 
 COPY . .
 RUN pip install --no-cache-dir '.[full]' --extra-index-url https://download.pytorch.org/whl/cu118
+RUN ludwig check_install
 
 WORKDIR /data
 

@@ -69,6 +69,22 @@ def ecd_trainer_config_generator(static_schema: Dict[str, Any] = None) -> Tuple[
     config["trainer"] = {"train_steps": 1}
 
     combined_configs = combine_configs(explored, config)
+
+    # HACK(Arnav): Remove configs that have LARS, LAMB or Lion optimizers, or Paged or 8-bit optimizers.
+    # This is because they require GPUs.
+    filtered_configs = []
+
+    for config, dataset in combined_configs:
+        optimizer_type = config.get("trainer", {}).get("optimizer", "").get("type", "")
+
+        if optimizer_type not in {"lars", "lamb", "lion"} and not (
+            "paged" in optimizer_type or "8bit" in optimizer_type
+        ):
+            filtered_configs.append((config, dataset))
+
+    # Replace combined_configs with the filtered_configs
+    combined_configs = filtered_configs
+
     logging.info(f"Generated {len(combined_configs)} for ECD trainer combinatorial tests.")
 
     for config, dataset in combined_configs:

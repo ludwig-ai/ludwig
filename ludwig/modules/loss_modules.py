@@ -34,6 +34,7 @@ from ludwig.schema.features.loss.loss import (
     MAELossConfig,
     MAPELossConfig,
     MSELossConfig,
+    NextTokenSoftmaxCrossEntropyLossConfig,
     RMSELossConfig,
     RMSPELossConfig,
     SequenceSoftmaxCrossEntropyLossConfig,
@@ -183,7 +184,12 @@ class SequenceSoftmaxCrossEntropyLoss(nn.Module, LogitsInputsMixin):
             class_weights: List or 1D tensor of length equal to number of classes.
         """
         super().__init__()
-        self.loss_fn = nn.CrossEntropyLoss(ignore_index=strings_utils.SpecialSymbol.PADDING.value)
+        if config.class_weights:
+            self.loss_fn = nn.CrossEntropyLoss(
+                weight=torch.Tensor(config.class_weights), ignore_index=strings_utils.SpecialSymbol.PADDING.value
+            )
+        else:
+            self.loss_fn = nn.CrossEntropyLoss(ignore_index=strings_utils.SpecialSymbol.PADDING.value)
 
     def forward(self, preds: Tensor, target: Tensor) -> Tensor:
         """
@@ -193,6 +199,31 @@ class SequenceSoftmaxCrossEntropyLoss(nn.Module, LogitsInputsMixin):
         """
         target = target.long()
         return self.loss_fn(preds[1:].view(-1, preds.size(-1)), target[1:].view(-1))
+
+
+@register_loss(NextTokenSoftmaxCrossEntropyLossConfig)
+class NextTokenSoftmaxCrossEntropyLoss(nn.Module, LogitsInputsMixin):
+    def __init__(self, config: NextTokenSoftmaxCrossEntropyLossConfig):
+        super().__init__()
+        self.loss_fn = nn.CrossEntropyLoss()
+
+    def forward(self, preds: Tensor, target: Tensor) -> Tensor:
+        """
+        Params:
+            preds: Tensor of shape [batch x sequence_length x vocab_size]
+            target: Tensor of shape [batch x sequence_length], where each element is integral between 0 and vocab_size.
+
+        Reference implementation:
+        https://github.com/huggingface/transformers/blob/v4.29.1/src/transformers/models/bert/modeling_bert.py#LL1253C1-L1260C1 # noqa
+        """
+        target = target.long()
+        _, _, vocab_size = preds.shape
+        # logits for all tensors except n+1 since each logit tensor at position i represents the log probabilities for
+        # the next token i+1 if we were to do argmax on the logits ensor at position i.
+        shifted_predictions = preds[:, :-1, :]
+        # Shift by 1 since the logits at position 0 in predictions represent the log likelihood of target token 1
+        shifted_targets = target[:, 1:]
+        return self.loss_fn(shifted_predictions.reshape(-1, vocab_size), shifted_targets.reshape(-1))
 
 
 @register_loss(SigmoidCrossEntropyLossConfig)

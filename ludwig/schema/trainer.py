@@ -1,19 +1,11 @@
 from abc import ABC
-from typing import Optional, Union
+from typing import Optional, Type, Union
 
 import torch
 from packaging.version import parse as parse_version
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import (
-    DEFAULT_BATCH_SIZE,
-    LOSS,
-    MAX_POSSIBLE_BATCH_SIZE,
-    MODEL_ECD,
-    MODEL_GBM,
-    MODEL_LLM,
-    TRAINING,
-)
+from ludwig.constants import AUTO, LOSS, MAX_POSSIBLE_BATCH_SIZE, MODEL_ECD, MODEL_GBM, MODEL_LLM, TRAINING
 from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.lr_scheduler import LRSchedulerConfig, LRSchedulerDataclassField
@@ -24,6 +16,7 @@ from ludwig.schema.optimizers import (
     GradientClippingDataclassField,
     OptimizerDataclassField,
 )
+from ludwig.schema.profiler import ProfilerConfig, ProfilerDataclassField
 from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils.registry import Registry
 
@@ -31,6 +24,7 @@ _torch_200 = parse_version(torch.__version__) >= parse_version("2.0")
 
 
 trainer_schema_registry = Registry()
+_llm_trainer_schema_registry = Registry()
 
 
 @DeveloperAPI
@@ -40,6 +34,21 @@ def register_trainer_schema(model_type: str):
         return trainer_config
 
     return wrap
+
+
+@DeveloperAPI
+def register_llm_trainer_schema(trainer_type: str):
+    def wrap(trainer_config: BaseTrainerConfig):
+        _llm_trainer_schema_registry[trainer_type] = trainer_config
+        return trainer_config
+
+    return wrap
+
+
+@DeveloperAPI
+def get_llm_trainer_cls(trainer_type: str):
+    """Returns the adapter config class registered with the given name."""
+    return _llm_trainer_schema_registry[trainer_type]
 
 
 @DeveloperAPI
@@ -76,6 +85,28 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
         ),
     )
 
+    skip_all_evaluation: bool = schema_utils.Boolean(
+        default=False,
+        description=(
+            "Whether to skip evaluation entirely. If you are training a model with a well-known configuration on a "
+            "well-known dataset and are confident about the expected results, you might skip all evaluation. Moreover, "
+            "evaluating a model, especially on large validation or test sets, can be time-consuming."
+        ),
+    )
+
+    enable_profiling: bool = schema_utils.Boolean(
+        default=False,
+        description="Whether to enable profiling of the training process using torch.profiler.profile.",
+    )
+
+    profiler: Optional[ProfilerConfig] = ProfilerDataclassField(
+        description="Parameter values for profiling config.",
+        default={},
+    )
+
+    def can_tune_batch_size(self) -> bool:
+        return True
+
 
 @DeveloperAPI
 @register_trainer_schema(MODEL_ECD)
@@ -88,6 +119,38 @@ class ECDTrainerConfig(BaseTrainerConfig):
             raise ConfigValidationError(
                 "Trainer param `compile: true` requires PyTorch 2.0.0 or higher. Please upgrade PyTorch and try again."
             )
+
+        if self.effective_batch_size != AUTO and self.max_batch_size < self.effective_batch_size:
+            raise ConfigValidationError(
+                f"`max_batch_size` ({self.max_batch_size}) must be greater than or equal to "
+                f"`effective_batch_size` ({self.effective_batch_size})."
+            )
+
+        if self.effective_batch_size != AUTO and self.batch_size != AUTO:
+            if self.effective_batch_size < self.batch_size:
+                raise ConfigValidationError(
+                    f"`effective_batch_size` ({self.effective_batch_size}) "
+                    f"must be greater than or equal to `batch_size` ({self.batch_size})."
+                )
+
+            if self.effective_batch_size % self.batch_size != 0:
+                raise ConfigValidationError(
+                    f"`effective_batch_size` ({self.effective_batch_size}) "
+                    f"must be divisible by `batch_size` ({self.batch_size})."
+                )
+
+        if self.effective_batch_size != AUTO and self.gradient_accumulation_steps != AUTO:
+            if self.effective_batch_size < self.gradient_accumulation_steps:
+                raise ConfigValidationError(
+                    f"`effective_batch_size` ({self.effective_batch_size}) must be greater than or equal to "
+                    f"`gradient_accumulation_steps` ({self.gradient_accumulation_steps})."
+                )
+
+            if self.effective_batch_size % self.gradient_accumulation_steps != 0:
+                raise ConfigValidationError(
+                    f"`effective_batch_size` ({self.effective_batch_size}) must be divisible by "
+                    f"`gradient_accumulation_steps` ({self.gradient_accumulation_steps})."
+                )
 
     learning_rate: Union[float, str] = schema_utils.OneOfOptionsField(
         default=0.001,
@@ -143,8 +206,27 @@ class ECDTrainerConfig(BaseTrainerConfig):
         parameter_metadata=TRAINER_METADATA[MODEL_ECD]["steps_per_checkpoint"],
     )
 
+    effective_batch_size: Union[int, str] = schema_utils.OneOfOptionsField(
+        default=AUTO,
+        allow_none=False,
+        description=(
+            "The effective batch size is the total number of samples used to compute a single gradient update "
+            "to the model weights. This differs from `batch_size` by taking `gradient_accumulation_steps` and number "
+            "of training worker processes into account. In practice, "
+            "`effective_batch_size = batch_size * gradient_accumulation_steps * num_workers`. "
+            "If 'auto', the effective batch size is derivied implicitly from `batch_size`, but if set explicitly, then "
+            "one of `batch_size` or `gradient_accumulation_steps` must be set to something other than 'auto', and "
+            "consequently will be set following the formula given above."
+        ),
+        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["effective_batch_size"],
+        field_options=[
+            schema_utils.PositiveInteger(default=128, description="", allow_none=False),
+            schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
+        ],
+    )
+
     batch_size: Union[int, str] = schema_utils.OneOfOptionsField(
-        default=DEFAULT_BATCH_SIZE,
+        default=AUTO,
         allow_none=False,
         description=(
             "The number of training examples utilized in one training step of the model. If ’auto’, the "
@@ -167,6 +249,17 @@ class ECDTrainerConfig(BaseTrainerConfig):
             "value is 2^40."
         ),
         parameter_metadata=TRAINER_METADATA[MODEL_ECD]["max_batch_size"],
+    )
+
+    gradient_accumulation_steps: Union[int, str] = schema_utils.OneOfOptionsField(
+        default=AUTO,
+        allow_none=False,
+        description="Number of steps to accumulate gradients over before performing a weight update.",
+        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["gradient_accumulation_steps"],
+        field_options=[
+            schema_utils.PositiveInteger(default=1, description="", allow_none=False),
+            schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
+        ],
     )
 
     early_stop: int = schema_utils.IntegerRange(
@@ -327,11 +420,17 @@ class ECDTrainerConfig(BaseTrainerConfig):
         parameter_metadata=TRAINER_METADATA[MODEL_ECD]["compile"],
     )
 
-    gradient_accumulation_steps: int = schema_utils.PositiveInteger(
-        default=1,
-        description="Number of steps to accumulate gradients over before performing a weight update.",
-        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["gradient_accumulation_steps"],
+    enable_gradient_checkpointing: bool = schema_utils.Boolean(
+        default=False,
+        description="Whether to enable gradient checkpointing, which trades compute for memory."
+        "This is useful for training very deep models with limited memory.",
+        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["enable_gradient_checkpointing"],
     )
+
+    def update_batch_size_grad_accum(self, num_workers: int):
+        from ludwig.utils.trainer_utils import get_rendered_batch_size_grad_accum
+
+        self.batch_size, self.gradient_accumulation_steps = get_rendered_batch_size_grad_accum(self, num_workers)
 
 
 @DeveloperAPI
@@ -689,11 +788,29 @@ class GBMTrainerConfig(BaseTrainerConfig):
         parameter_metadata=TRAINER_METADATA[MODEL_GBM]["feature_pre_filter"],
     )
 
+    def can_tune_batch_size(self) -> bool:
+        return False
+
 
 @DeveloperAPI
 @ludwig_dataclass
 class LLMTrainerConfig(BaseTrainerConfig):
     """Base class for all LLM trainer configs."""
+
+    learning_rate: Union[float, str] = schema_utils.OneOfOptionsField(
+        default=0.0001,
+        allow_none=False,
+        description=(
+            "Controls how much to change the model in response to the estimated error each time the model weights are "
+            "updated. If 'auto', the optimal learning rate is estimated by choosing the learning rate that produces "
+            "the smallest non-diverging gradient update."
+        ),
+        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["learning_rate"],
+        field_options=[
+            schema_utils.FloatRange(default=0.001, allow_none=False, min=0, max=1),
+            schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
+        ],
+    )
 
     batch_size: int = schema_utils.PositiveInteger(
         default=2,
@@ -717,6 +834,7 @@ class LLMTrainerConfig(BaseTrainerConfig):
 
     train_steps: int = schema_utils.PositiveInteger(
         default=None,
+        allow_none=True,
         description="Number of training steps to train in the LLM trainer.",
     )
 
@@ -744,14 +862,47 @@ class LLMTrainerConfig(BaseTrainerConfig):
         description="Batch size used for evaluation in the LLM trainer.",
     )
 
+    evaluate_training_set: bool = schema_utils.Boolean(
+        default=False,
+        description="Whether to evaluate the training set in the LLM trainer. Note: this operation may be slow.",
+    )
+
 
 @DeveloperAPI
-@register_trainer_schema(MODEL_LLM)
+@register_llm_trainer_schema("none")
 @ludwig_dataclass
-class ZeroShotTrainerConfig(LLMTrainerConfig):
-    """Dataclass that configures most of the hyperparameters used for zero-shot LLM model training."""
+class NoneTrainerConfig(LLMTrainerConfig):
+    """Dataclass that configures most of the hyperparameters used for zero-shot / few-shot LLM model training."""
 
-    pass
+    # Required for lookup during trainer initialization
+    type: str = schema_utils.ProtectedString(
+        "none",
+        description="The type of trainer used to train the model. ",
+        parameter_metadata=TRAINER_METADATA[MODEL_LLM]["type"],
+    )
+
+    def can_tune_batch_size(self) -> bool:
+        return False
+
+
+@DeveloperAPI
+@register_llm_trainer_schema("finetune")
+@ludwig_dataclass
+class FineTuneTrainerConfig(ECDTrainerConfig):
+    """Dataclass that configures most of the hyperparameters used for fine-tuning LLM model training."""
+
+    # Required for lookup during trainer initialization
+    type: str = schema_utils.ProtectedString("finetune")
+
+    base_learning_rate: float = schema_utils.NonNegativeFloat(
+        default=0.0,
+        description="Base learning rate used for training in the LLM trainer.",
+    )
+
+    eval_batch_size: int = schema_utils.PositiveInteger(
+        default=2,
+        description="Batch size used for evaluation in the LLM trainer.",
+    )
 
 
 @DeveloperAPI
@@ -759,6 +910,8 @@ def get_model_type_jsonschema(model_type: str = MODEL_ECD):
     enum = [MODEL_ECD]
     if model_type == MODEL_GBM:
         enum = [MODEL_GBM]
+    elif model_type == MODEL_LLM:
+        enum = [MODEL_LLM]
 
     return {
         "type": "string",
@@ -802,9 +955,49 @@ class GBMTrainerField(schema_utils.DictMarshmallowField):
 
 
 @DeveloperAPI
-class LLMTrainerField(schema_utils.DictMarshmallowField):
-    def __init__(self):
-        super().__init__(ZeroShotTrainerConfig)
+def get_llm_trainer_conds():
+    """Returns a JSON schema of conditionals to validate against adapter types."""
+    conds = []
+    for trainer in _llm_trainer_schema_registry:
+        trainer_cls = _llm_trainer_schema_registry[trainer]
+        other_props = schema_utils.unload_jsonschema_from_marshmallow_class(trainer_cls)["properties"]
+        schema_utils.remove_duplicate_fields(other_props)
+        preproc_cond = schema_utils.create_cond(
+            {"type": trainer},
+            other_props,
+        )
+        conds.append(preproc_cond)
+    return conds
 
-    def _jsonschema_type_mapping(self):
-        return get_trainer_jsonschema(MODEL_LLM)
+
+@DeveloperAPI
+def LLMTrainerDataclassField(default="none", description=""):
+    class LLMTrainerSelection(schema_utils.TypeSelection):
+        def __init__(self):
+            super().__init__(
+                registry=_llm_trainer_schema_registry,
+                default_value=default,
+                description=description,
+            )
+
+        def get_schema_from_registry(self, key: str) -> Type[schema_utils.BaseMarshmallowConfig]:
+            return get_llm_trainer_cls(key)
+
+        def _jsonschema_type_mapping(self):
+            return {
+                "type": "object",
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "enum": list(_llm_trainer_schema_registry.keys()),
+                        "default": default,
+                        "description": "The type of LLM trainer to use",
+                    },
+                },
+                "title": "llm_trainer_options",
+                "allOf": get_llm_trainer_conds(),
+                "required": ["type"],
+                "description": description,
+            }
+
+    return LLMTrainerSelection().get_default_field()

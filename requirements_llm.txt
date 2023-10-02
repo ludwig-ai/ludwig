@@ -1,0 +1,6 @@
+sentence-transformers
+faiss-cpu
+
+accelerate
+loralib
+peft>=0.4.0

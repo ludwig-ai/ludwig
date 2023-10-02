@@ -1,12 +1,13 @@
 import logging
 import os
 import warnings
-from typing import Any, Dict, Mapping, Optional, Tuple, TYPE_CHECKING
+from typing import Any, Dict, List, Mapping, Optional, Tuple, TYPE_CHECKING, Union
 
 import deepspeed
 import deepspeed.comm
 import torch
 from deepspeed.utils.zero_to_fp32 import get_fp32_state_dict_from_zero_checkpoint
+from packaging import version
 from torch import nn
 from torch.optim.optimizer import Optimizer
 
@@ -14,6 +15,10 @@ from ludwig.constants import MIN_POSSIBLE_BATCH_SIZE
 from ludwig.distributed.ddp import DDPStrategy
 from ludwig.modules.optimization_modules import get_optimizer_class_and_kwargs
 from ludwig.utils.checkpoint_utils import Checkpoint
+from ludwig.utils.model_utils import extract_tensors, replace_tensors
+
+_deepspeed_0101 = version.parse(deepspeed.__version__) >= version.parse("0.10.1")
+
 
 if TYPE_CHECKING:
     from ludwig.modules.lr_scheduler import LRScheduler
@@ -36,7 +41,14 @@ warnings.filterwarnings(
 
 
 class DeepSpeedStrategy(DDPStrategy):
-    def __init__(self, zero_optimization: Optional[Dict[str, Any]] = None, **kwargs):
+    def __init__(
+        self,
+        zero_optimization: Optional[Dict[str, Any]] = None,
+        fp16: Optional[Dict[str, Any]] = None,
+        bf16: Optional[Dict[str, Any]] = None,
+        compression_training: Optional[Dict[str, Any]] = None,
+        **kwargs
+    ):
         # If we're initializing from a `deepspeed` CLI command, deepspeed will have already been initialized, as
         # indicated by the presence of the LOCAL_RANK var. Otherwise, we're initializing from Ray / torchrun, and will
         # need to set this var ourselves, then init DeepSpeed here.
@@ -45,10 +57,15 @@ class DeepSpeedStrategy(DDPStrategy):
 
         super().__init__(**kwargs)
         self.zero_optimization = zero_optimization or DEFAULT_ZERO_OPTIMIZATION
+        self.fp16 = fp16
+        self.bf16 = bf16
+        self.compression_training = compression_training
 
         if init_deepspeed:
             os.environ["LOCAL_RANK"] = str(self.local_rank())
             os.environ["LOCAL_SIZE"] = str(self.local_size())
+            os.environ["RANK"] = str(self.rank())
+            os.environ["WORLD_SIZE"] = str(self.size())
             deepspeed.init_distributed()
 
     def _log_on_init(self):
@@ -65,6 +82,10 @@ class DeepSpeedStrategy(DDPStrategy):
         batch_size = (
             trainer_config.batch_size if isinstance(trainer_config.batch_size, int) else MIN_POSSIBLE_BATCH_SIZE
         )
+        # Paged and 8-bit optimizers are not supported by Deepspeed - just whatever is supported
+        # by torch.optim.Optimizer. https://www.deepspeed.ai/docs/config-json/#optimizer-parameters.
+        if trainer_config.optimizer.is_paged or trainer_config.optimizer.is_8bit:
+            raise ValueError("Cannot use a paged or 8-bit optimizer with DeepSpeed.")
         optimizer_cls, optimizer_kwargs = get_optimizer_class_and_kwargs(trainer_config.optimizer, base_learning_rate)
         ds_config = {
             "amp": {
@@ -77,6 +98,15 @@ class DeepSpeedStrategy(DDPStrategy):
             "gradient_accumulation_steps": trainer_config.gradient_accumulation_steps,
             "steps_per_print": trainer_config.steps_per_checkpoint or 10000,
         }
+
+        # DeepSpeed doesn't like passing these params as None values
+        if self.fp16 is not None:
+            ds_config["fp16"] = self.fp16
+        if self.bf16 is not None:
+            ds_config["bf16"] = self.bf16
+        if self.compression_training is not None:
+            ds_config["compression_training"] = self.compression_training
+
         model_engine, optimizer, _, _ = deepspeed.initialize(
             model=model,
             model_parameters=model.parameters(),
@@ -84,7 +114,17 @@ class DeepSpeedStrategy(DDPStrategy):
             config=ds_config,
             dist_init_required=False,
         )
-        return model_engine, optimizer.optimizer
+
+        if hasattr(optimizer, "optimizer"):
+            # Zero-3 wraps the optimizer
+            optimizer = optimizer.optimizer
+
+        return model_engine, optimizer
+
+    def prepare_for_inference(self, model: nn.Module) -> nn.Module:
+        ds_config = {}
+        model_engine = deepspeed.init_inference(model=model, config=ds_config)
+        return model_engine
 
     def to_device(self, model: nn.Module, device: Optional[torch.device] = None) -> nn.Module:
         return model
@@ -146,11 +186,6 @@ class DeepSpeedStrategy(DDPStrategy):
     def is_model_parallel(cls) -> bool:
         return True
 
-    def eval(self, model: nn.Module):
-        # TODO(travis): remove this when DeepSpeed resolves issue:
-        # https://github.com/microsoft/DeepSpeed/issues/3068
-        pass
-
     def create_checkpoint_handle(
         self,
         dist_model: nn.Module,
@@ -159,6 +194,17 @@ class DeepSpeedStrategy(DDPStrategy):
         scheduler: Optional["LRScheduler"] = None,
     ) -> Checkpoint:
         return DeepSpeedCheckpoint(self, dist_model, optimizer, scheduler)
+
+    @classmethod
+    def extract_model_for_serialization(cls, model: nn.Module) -> Union[nn.Module, Tuple[nn.Module, List[Dict]]]:
+        return extract_tensors(model)
+
+    @classmethod
+    def replace_model_from_serialization(cls, state: Union[nn.Module, Tuple[nn.Module, List[Dict]]]) -> nn.Module:
+        assert isinstance(state, tuple)
+        model, model_weights = state
+        replace_tensors(model, model_weights, torch.device("cpu"))
+        return model
 
 
 class DeepSpeedCheckpoint(Checkpoint):
@@ -188,7 +234,17 @@ class DeepSpeedCheckpoint(Checkpoint):
         if self.scheduler is not None:
             client_state["scheduler_state"] = self.scheduler.state_dict()
 
-        self.model.save_checkpoint(save_path, client_state=client_state)
+        kwargs = {}
+        if _deepspeed_0101:
+            kwargs["exclude_frozen_parameters"] = True
+
+        self.model.save_checkpoint(save_path, client_state=client_state, **kwargs)
 
     def get_state_for_inference(self, save_path: str, device: Optional[torch.device] = None) -> Mapping[str, Any]:
-        return get_fp32_state_dict_from_zero_checkpoint(save_path)
+        if self.model.zero_optimization_stage() == 3:
+            return get_fp32_state_dict_from_zero_checkpoint(save_path)
+
+        self.model.load_checkpoint(
+            save_path, load_optimizer_states=False, load_lr_scheduler_states=False, load_module_only=True
+        )
+        return self.model.module.cpu().state_dict()

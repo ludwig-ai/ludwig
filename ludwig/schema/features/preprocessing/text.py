@@ -1,10 +1,9 @@
-from typing import Optional
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import DROP_ROW, FILL_WITH_CONST, MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING, SHARED, TEXT
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor
+from ludwig.schema.llms.prompt import PromptConfig, PromptConfigField
 from ludwig.schema.metadata import FEATURE_METADATA, PREPROCESSING_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 from ludwig.schema.utils import ludwig_dataclass
@@ -13,9 +12,8 @@ from ludwig.utils.tokenizers import tokenizer_registry
 
 
 @DeveloperAPI
-@register_preprocessor(TEXT)
 @ludwig_dataclass
-class TextPreprocessingConfig(BasePreprocessingConfig):
+class BaseTextPreprocessingConfig(BasePreprocessingConfig):
     """TextPreprocessingConfig is a dataclass that configures the parameters used for a text input feature."""
 
     pretrained_model_name_or_path: str = schema_utils.String(
@@ -153,22 +151,36 @@ class TextPreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=INTERNAL_ONLY,
     )
 
-    prompt_template: Optional[str] = schema_utils.String(
+
+@DeveloperAPI
+@register_preprocessor(TEXT)
+@ludwig_dataclass
+class TextPreprocessingConfig(BaseTextPreprocessingConfig):
+    """TextPreprocessingConfig is a dataclass that configures the parameters used for a text input feature."""
+
+    prompt: PromptConfig = PromptConfigField().get_default_field()
+
+
+@DeveloperAPI
+@register_preprocessor("text_llm_input")
+@ludwig_dataclass
+class LLMTextInputPreprocessingConfig(BaseTextPreprocessingConfig):
+    """LLMs require the prompt to be provided at the top-level, not preprocessing."""
+
+    max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
         allow_none=True,
-        description=(
-            "Template used to construct a prompt for the model given an input feature. If None, the input feature "
-            "will be passed to the model as-is. The prompt must be of the form `prefix {input} suffix` where `{input}` "
-            "is the placeholder for the input feature. Prompting is useful when fine-tuning pretrained large language "
-            "models, where providing a relevant prompt to the model can improve its performance."
-        ),
+        description="The maximum length (number of tokens) of the sequence. Sequences that are longer than this value "
+        "will be truncated. Useful as a stopgap measure if `sequence_length` is set to `None`. If `None`, max sequence "
+        "length will be inferred from the training dataset.",
+        parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["max_sequence_length"],
     )
 
 
 @DeveloperAPI
 @register_preprocessor("text_output")
 @ludwig_dataclass
-class TextOutputPreprocessingConfig(TextPreprocessingConfig):
+class TextOutputPreprocessingConfig(BaseTextPreprocessingConfig):
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
         default=DROP_ROW,
@@ -222,4 +234,18 @@ class TextOutputPreprocessingConfig(TextPreprocessingConfig):
         allow_none=False,
         description="The size of the ngram when using the `ngram` tokenizer (e.g, 2 = bigram, 3 = trigram, etc.).",
         parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["ngram_size"],
+    )
+
+
+@DeveloperAPI
+@register_preprocessor("text_llm_output")
+@ludwig_dataclass
+class LLMTextOutputPreprocessingConfig(TextOutputPreprocessingConfig):
+    max_sequence_length: int = schema_utils.PositiveInteger(
+        default=None,
+        allow_none=True,
+        description="The maximum length (number of tokens) of the sequence. Sequences that are longer than this value "
+        "will be truncated. Useful as a stopgap measure if `sequence_length` is set to `None`. If `None`, max sequence "
+        "length will be inferred from the training dataset.",
+        parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["max_sequence_length"],
     )

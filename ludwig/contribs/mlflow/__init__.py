@@ -37,6 +37,8 @@ _get_or_create_experiment_id = get_or_create_experiment_id
 @PublicAPI
 class MlflowCallback(Callback):
     def __init__(self, tracking_uri=None, log_artifacts: bool = True):
+        self.logged_steps = set()
+
         if tracking_uri:
             mlflow.set_tracking_uri(tracking_uri)
         self.tracking_uri = mlflow.get_tracking_uri()
@@ -157,13 +159,17 @@ class MlflowCallback(Callback):
             self.save_fn = lambda args: _log_mlflow(*args, self.log_artifacts)
 
     def on_eval_end(self, trainer, progress_tracker, save_path):
-        self.save_fn((progress_tracker.log_metrics(), progress_tracker.steps, save_path, True))
+        if progress_tracker.steps not in self.logged_steps:
+            self.logged_steps.add(progress_tracker.steps)
+            self.save_fn((progress_tracker.log_metrics(), progress_tracker.steps, save_path, True))  # Why True?
 
     def on_trainer_train_teardown(self, trainer, progress_tracker, save_path, is_coordinator):
         if is_coordinator:
-            self.save_fn((progress_tracker.log_metrics(), progress_tracker.steps, save_path, False))
-            if self.save_thread is not None:
-                self.save_thread.join()
+            if progress_tracker.steps not in self.logged_steps:
+                self.logged_steps.add(progress_tracker.steps)
+                self.save_fn((progress_tracker.log_metrics(), progress_tracker.steps, save_path, False))  # Why False?
+                if self.save_thread is not None:
+                    self.save_thread.join()
 
     def on_visualize_figure(self, fig):
         # TODO: need to also include a filename for this figure

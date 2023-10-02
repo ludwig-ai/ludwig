@@ -37,12 +37,14 @@ RUN sudo apt-get update && sudo apt install -y software-properties-common && \
     tzdata \
     rsync \
     vim \
-    gcc-9
+    gcc-9 \
+    ffmpeg \
+    sox
 RUN pip install -U pip
 
 WORKDIR /ludwig
 
-RUN pip install torch==2.0.0 torchtext torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu118
+RUN pip install --no-cache-dir torch==2.0.0 torchtext torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu118
 
 COPY . .
 RUN pip install --no-cache-dir '.[full]' --extra-index-url https://download.pytorch.org/whl/cu118

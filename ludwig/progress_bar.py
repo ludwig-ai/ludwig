@@ -12,6 +12,7 @@ except ImportError:
 class LudwigProgressBarActions:
     CREATE = "create"
     UPDATE = "update"
+    SET_POSTFIX = "set_postfix"
     CLOSE = "close"
 
 
@@ -89,6 +90,21 @@ class LudwigProgressBar:
                         "config": self.config,
                         "action": LudwigProgressBarActions.CREATE,
                         "is_coordinator": self.is_coordinator,
+                    }
+                }
+            )
+
+    def set_postfix(self, postfix: Dict):
+        if self.progress_bar:
+            self.progress_bar.set_postfix(postfix)
+        elif self.report_to_ray:
+            session.report(
+                metrics={
+                    "progress_bar": {
+                        "id": self.id,
+                        "postfix": postfix,
+                        "is_coordinator": self.is_coordinator,
+                        "action": LudwigProgressBarActions.SET_POSTFIX,
                     }
                 }
             )

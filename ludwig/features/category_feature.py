@@ -154,7 +154,7 @@ class CategoryFeatureMixin(BaseFeatureMixin):
             processor=backend.df_engine,
         )
 
-        if "vocab" in preprocessing_parameters:
+        if "vocab" in preprocessing_parameters and preprocessing_parameters["vocab"]:  # Check that vocab is non-empty
             # If vocab was explciitly provided, override the inferred vocab
             idx2str = preprocessing_parameters["vocab"]
             str2idx = {s: i for i, s in enumerate(idx2str)}
@@ -279,12 +279,7 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
 
     def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor)
-        assert (
-            inputs.dtype == torch.int8
-            or inputs.dtype == torch.int16
-            or inputs.dtype == torch.int32
-            or inputs.dtype == torch.int64
-        )
+        assert inputs.dtype in (torch.int8, torch.int16, torch.int32, torch.int64)
         assert len(inputs.shape) == 1 or (len(inputs.shape) == 2 and inputs.shape[1] == 1)
 
         inputs = inputs.reshape(-1, 1)
@@ -292,10 +287,7 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
             inputs = inputs.type(torch.int)
         encoder_output = self.encoder_obj(inputs)
 
-        batch_size = inputs.shape[0]
-        inputs = inputs.reshape(batch_size, -1)
-
-        return {"encoder_output": encoder_output}
+        return encoder_output
 
     @property
     def input_dtype(self):
@@ -383,7 +375,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         return torch.Size([1])
 
     def metric_kwargs(self):
-        return {"top_k": self.top_k, "num_classes": self.num_classes, "task": "multiclass"}
+        return {"top_k": self.top_k, "num_classes": self.num_classes}
 
     @staticmethod
     def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):

@@ -1,7 +1,10 @@
 """Checks that are not easily covered by marshmallow JSON schema validation like parameter interdependencies."""
 
 from abc import ABC, abstractmethod
+from re import findall
 from typing import Callable, TYPE_CHECKING
+
+from transformers import AutoConfig
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
@@ -459,12 +462,232 @@ def check_hyperopt_nested_parameter_dicts(config: "ModelConfig") -> None:  # noq
 
 
 @register_config_check
-def check_llm_atleast_one_input_text_feature(config: "ModelConfig"):  # noqa: F821
+def check_llm_exactly_one_input_text_feature(config: "ModelConfig"):  # noqa: F821
     if config.model_type != MODEL_LLM:
         return
 
-    for input_feature in config.input_features:
-        if input_feature.type == TEXT:
-            return
+    if len(config.input_features) == 1 and config.input_features[0].type == TEXT:
+        return
+    else:
+        raise ConfigValidationError("LLM requires exactly one text input feature.")
 
-    raise ConfigValidationError("LLM requires at least one text input feature.")
+
+@register_config_check
+def check_llm_finetuning_output_feature_config(config: "ModelConfig"):  # noqa: F821
+    """Checks that the output feature config for LLM finetuning is valid."""
+    if config.model_type != MODEL_LLM:
+        return
+
+    if config.trainer.type != "finetune":
+        return
+
+    if config.output_features[0].type != TEXT:
+        raise ConfigValidationError(
+            "LLM finetuning requires the output feature to be a text feature. If you are trying to use a different "
+            "output feature type such as category or binary, please change the output feature type to text."
+        )
+
+
+@register_config_check
+def check_llm_finetuning_trainer_config(config: "ModelConfig"):  # noqa: F821
+    """Ensures that trainer type is finetune if adapter is not None."""
+    if config.model_type != MODEL_LLM:
+        return
+
+    if (
+        config.trainer.type == "none"
+        and config.adapter is not None
+        and config.adapter.pretrained_adapter_weights is not None
+    ):
+        # If performing zero-shot, we must specify pretrained adapter weights
+        return
+
+    if config.adapter is not None and config.trainer.type != "finetune":
+        raise ConfigValidationError("LLM finetuning requires trainer type to be finetune.")
+
+
+@register_config_check
+def check_llm_finetuning_backend_config(config: "ModelConfig"):  # noqa: F821
+    """Checks that the LLM finetuning using Ray is configured correctly.
+
+    DDP strategy is not supported for LLM finetuning because it leads to OOMs since the model is large and DDP strategy
+    requires a copy of the model on each GPU.
+    """
+    if config.model_type != MODEL_LLM:
+        return
+
+    # LLM finetuning is only supported by the finetune trainer type
+    if (
+        config.trainer.type != "finetune"
+        and config.adapter is not None
+        and config.adapter.pretrained_adapter_weights is not None
+    ):
+        return
+
+    # Using local backend, so skip the checks below
+    if not hasattr(config.backend, "type"):
+        return
+
+    backend = config.backend
+    if not hasattr(backend.trainer, "strategy") or backend.trainer.strategy != "deepspeed":
+        raise ConfigValidationError("LLM finetuning with Ray requires the DeepSpeed strategy.")
+
+    # Deepspeed requires GPU
+    if not backend.trainer.use_gpu or backend.trainer.resources_per_worker.GPU < 1:
+        raise ConfigValidationError("LLM finetuning with DeepSpeed requires GPU.")
+
+
+@register_config_check
+def check_llm_finetuning_adalora_config(config: "ModelConfig"):
+    """Checks that the adalora adapter is configured correctly.
+
+    We check against PEFT's predefined target module list for ADALORA to see if this target_modules is present there. If
+    not, AdaloraModel will run into issues downstream.
+    """
+    if config.model_type != MODEL_LLM:
+        return
+
+    if not config.adapter:
+        return
+
+    if config.adapter.type != "adalora":
+        return
+
+    from peft.utils import TRANSFORMERS_MODELS_TO_ADALORA_TARGET_MODULES_MAPPING
+
+    model_config = _get_llm_model_config(config.base_model)
+    if model_config.model_type not in TRANSFORMERS_MODELS_TO_ADALORA_TARGET_MODULES_MAPPING:
+        raise ConfigValidationError(
+            f"Adalora adapter is not supported for {model_config.model_type} model. "
+            f"Supported model types are: {list(TRANSFORMERS_MODELS_TO_ADALORA_TARGET_MODULES_MAPPING.keys())}. "
+            "If you know the target modules for your model, please specify them in the config through the "
+            "`target_modules` key."
+        )
+
+
+@register_config_check
+def check_llm_finetuning_adaption_prompt_parameters(config: "ModelConfig"):
+    """Checks that the adaption_prompt adapter is configured correctly.
+
+    Adaption prompt is only supported for Llama models.
+    """
+    if config.model_type != MODEL_LLM:
+        return
+
+    if not config.adapter:
+        return
+
+    if config.adapter.type != "adaption_prompt":
+        return
+
+    from peft.tuners.adaption_prompt import TRANSFORMERS_MODEL_CONFIG
+
+    # Adaption Config is currently only supported for Llama model types
+    model_config = _get_llm_model_config(config.base_model)
+    if model_config.model_type not in TRANSFORMERS_MODEL_CONFIG:
+        raise ConfigValidationError(
+            f"Adaption prompt adapter is not supported for {model_config.model_type} model. "
+            f"Supported model types are: {list(TRANSFORMERS_MODEL_CONFIG.keys())}."
+        )
+
+
+def _get_llm_model_config(model_name: str) -> AutoConfig:
+    """Returns the LLM model config."""
+    return AutoConfig.from_pretrained(model_name)
+
+
+@register_config_check
+def check_llm_quantization_backend_incompatibility(config: "ModelConfig") -> None:  # noqa: F821
+    """Checks that LLM model type with quantization uses the local backend."""
+    if config.model_type != MODEL_LLM:
+        return
+
+    if config.quantization is None:
+        return
+
+    backend_type = None
+    if config.backend:
+        backend_type = config.backend.get("type", None)
+
+    # If backend was explicitly set to Ray, then we need to raise an error
+    if backend_type == "ray":
+        raise ConfigValidationError(f"LLM with quantization requires the 'local' backend, found: '{backend_type}'")
+
+    # If the backend is not explicitly set, then we need to check if a Ray process is running
+    # If a Ray process is running, then we need to raise an error because the backend will be set to Ray
+    if config.backend is None:
+        try:
+            # May not be installed, so we need to catch the ImportError
+            import ray
+
+            if ray.is_initialized():
+                raise ConfigValidationError(
+                    "LLM with quantization requires the 'local' backend, but backend will be set "
+                    "to Ray since Ray is already running locally."
+                )
+        except ImportError:
+            pass
+
+
+@register_config_check
+def check_qlora_requirements(config: "ModelConfig") -> None:  # noqa: F821
+    """Checks that all the necessary settings are in place for QLoRA."""
+    if config.model_type != MODEL_LLM or config.trainer.type == "none":
+        return
+
+    if config.quantization and (not config.adapter or config.adapter.type != "lora"):
+        raise ConfigValidationError("Fine-tuning and LLM with quantization requires using the 'lora' adapter")
+
+
+@register_config_check
+def check_prompt_requirements(config: "ModelConfig") -> None:  # noqa: F821
+    """Checks that prompt's template and task properties are valid, according to the description on the schema."""
+    if config.model_type != MODEL_LLM:
+        return
+
+    # TODO: `prompt` by default should be set to null, not a default dict:
+    # # If no prompt is provided, no validation necessary:
+    # if not config.prompt:
+    #     return
+    from ludwig.schema.llms.prompt import PromptConfig, RetrievalConfig
+
+    if config.prompt == PromptConfig():
+        return
+
+    template = config.prompt.template
+    task = config.prompt.task
+    retrieval = config.prompt.retrieval
+
+    # If template is NOT provided, then task is required for zero/few shot learning:
+    if not template and not task:
+        raise ConfigValidationError("A prompt task is required if no template is provided!")
+
+    template_refs = set(findall(r"\{(.*?)\}", template)) if isinstance(template, str) else set()
+
+    # If a template IS provided (i.e. we are not doing a built-in zero/few-shot learning), then...
+    if template:
+        # If task is also provided, the template must contain it:
+        if task and "__task__" not in template_refs:
+            raise ConfigValidationError(
+                "When providing a task, you must make sure that the task keyword `{__task__} is "
+                "present somewhere in the template string!"
+            )
+
+        # If retrieval is also provided, the template must reference it:
+        # TODO: retrieval by default should be set to null, not a default dict:
+        if retrieval and retrieval != RetrievalConfig() and "__context__" not in template_refs:
+            raise ConfigValidationError(
+                "When providing a retrieval config, you must make sure that the task keyword `{__context__}` is "
+                "present somewhere in the template string!"
+            )
+
+        # Otherwise, the template should at least contain the sample keyword or some input column:
+        # TODO: len(template_refs) is a hacky attempt to check that there are references to *something* in the
+        # string. The proper validation is to check the references against the features in the user's dataset - but we
+        # do not have access to the dataset in this code path right now.
+        if not task:
+            if len(template_refs) == 0 and "__sample__" not in template_refs:
+                raise ConfigValidationError(
+                    "A template must contain at least one reference to a column or the sample keyword {__sample__} for "
+                    "a JSON-serialized representation of non-output feature columns."
+                )

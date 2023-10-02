@@ -50,40 +50,38 @@ df = pd.DataFrame(review_label_pairs)
 
 config = yaml.safe_load(
     """
-        input_features:
-            - name: review
-              type: text
-        output_features:
-            - name: label
-              type: category
-              preprocessing:
-                vocab: [positive, neutral, negative]
-                fallback_label: neutral
-                prompt_template: |
-                    Context information is below.
-                    ###
-                    {review}
-                    ###
-                    Given the context information and not prior knowledge, classify the context as one of: {labels}
-              decoder:
-                match:
-                    positive:
-                        type: contains
-                        value: positive
-                    neutral:
-                        type: regex
-                        value: neutral
-                    negative:
-                        type: contains
-                        value: negative
-        model_type: llm
-        generation_config:
-            temperature: 0.1
-            top_p: 0.75
-            top_k: 40
-            num_beams: 4
-            max_new_tokens: 5
-        model_name: facebook/opt-350m
+model_type: llm
+base_model: facebook/opt-350m
+generation:
+    temperature: 0.1
+    top_p: 0.75
+    top_k: 40
+    num_beams: 4
+    max_new_tokens: 64
+prompt:
+    task: "Classify the sample input as either negative, neutral, or positive."
+input_features:
+-
+    name: review
+    type: text
+output_features:
+-
+    name: label
+    type: category
+    preprocessing:
+        fallback_label: "neutral"
+    decoder:
+        type: category_extractor
+        match:
+            "negative":
+                type: contains
+                value: "positive"
+            "neutral":
+                type: contains
+                value: "neutral"
+            "positive":
+                type: contains
+                value: "positive"
     """
 )
 

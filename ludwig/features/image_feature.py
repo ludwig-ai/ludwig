@@ -480,7 +480,6 @@ class ImageFeatureMixin(BaseFeatureMixin):
         img_entry: Union[bytes, torch.Tensor, np.ndarray],
         transform_fn: Callable,
     ) -> Optional[np.ndarray]:
-
         if isinstance(img_entry, bytes):
             img = read_image_from_bytes_obj(img_entry)
         elif isinstance(img_entry, str):
@@ -822,7 +821,6 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
         in_memory = feature_config[PREPROCESSING]["in_memory"]
         if in_memory or skip_save_processed_input:
-
             proc_col = backend.read_binary_files(
                 abs_path_column, map_fn=read_image_if_bytes_obj_and_resize, file_size=average_file_size
             )

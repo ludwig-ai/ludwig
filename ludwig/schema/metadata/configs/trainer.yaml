@@ -1,4 +1,11 @@
 ecd:
+    effective_batch_size:
+        commonly_used: true
+        expected_impact: 2
+        related_parameters:
+            - batch_size
+        suggested_values: auto
+        ui_display_name: Effective Batch Size
     batch_size:
         commonly_used: true
         default_value_reasoning: Not too big, not too small.
@@ -422,6 +429,18 @@ ecd:
             Suggested to enable this if training is proceeding very slowly in distributed training (and GPU
             utilization is low), or the batch size is very small and the loss curves look very spiky.
         ui_display_name: Gradient Accumulation Steps
+    enable_gradient_checkpointing:
+        expected_impact: 2
+        ui_display_name: Enable Gradient Checkpointing
+        default_value_reasoning:
+            Gradient checkpointing is a technique to reduce the memory footprint of the model by
+            trading compute for memory. This is useful when training very large models that run into out of memory
+            errors very quickly during training. It is particularly helpful when doing non-quantization based training
+            (adapter based or full fine-tuning). Gradient checkpointing works by recomputing the activations of the
+            model during the backward pass, rather than storing them in memory during the forward pass.
+            This is a tradeoff between compute and memory, as the activations need to be recomputed during
+            the backward pass, but the memory footprint is reduced. This is set to false by default because
+            it is not always beneficial to use gradient checkpointing, and it can sometimes slow down training.
     validation_field:
         default_value_reasoning:
             Concrete evaluation metrics are usually better than loss,
@@ -513,7 +532,10 @@ ecd:
             suggested_values_reasoning:
                 Starting with exponential decay is a safe place to start, as it is a "softer" decrease in the learning
                 rate over time, as compared with linear, which is more steep after the initial drop. Linear decay is
-                most useful when the risk of catastrophic forgetting is very high (e.g, for fine-tuning pretrained models).
+                most useful when the risk of catastrophic forgetting is very high (e.g, for fine-tuning pretrained
+                models). Cosine annealing is a type of learning rate schedule that has the effect of starting with a
+                large learning rate that is relatively rapidly decreased to a minimum value before being increased
+                rapidly again. The resetting of the learning rate acts like a simulated restart of the learning process.
                 If you observe your loss curves shooting up (even on the training set) in later epochs, increasing the
                 decay rate may help mitigate this effect.
             ui_display_name: Decay
@@ -593,6 +615,15 @@ ecd:
         reduce_eval_split:
             expected_impact: 1
             ui_display_name: Reduce Eval Split
+        t_0:
+            expected_impact: 1
+            ui_display_name: T_0
+        t_mult:
+            expected_impact: 1
+            ui_display_name: T_mult
+        eta_min:
+            expected_impact: 1
+            ui_display_name: Eta Min
 gbm:
     learning_rate:
         commonly_used: true
@@ -794,3 +825,15 @@ gbm:
         expected_impact: 1
     feature_pre_filter:
         expected_impact: 1
+llm:
+    type:
+        commonly_used: true
+        default_value_reasoning:
+            It's useful to start with zero-shot or few-shot learning to see what the model
+            can do as a baseline before fine-tuning.
+        suggested_values: none or finetune
+        suggested_values_reasoning:
+            If you want to perform zero shot learning or few shot learning, you should set this to `none`.
+            If you want to perform fine-tuning, you should set this to `finetune`.
+        ui_display_name: Trainer Type
+        expected_impact: 3

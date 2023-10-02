@@ -1,5 +1,13 @@
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import LOSS, MODEL_ECD, MODEL_GBM, MODEL_LLM, PERPLEXITY, SEQUENCE_SOFTMAX_CROSS_ENTROPY, TEXT
+from ludwig.constants import (
+    LOSS,
+    MODEL_ECD,
+    MODEL_GBM,
+    MODEL_LLM,
+    NEXT_TOKEN_SOFTMAX_CROSS_ENTROPY,
+    SEQUENCE_SOFTMAX_CROSS_ENTROPY,
+    TEXT,
+)
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -73,6 +81,8 @@ class GBMTextInputFeatureConfig(TextInputFeatureConfig):
 @llm_input_config_registry.register(TEXT)
 @ludwig_dataclass
 class LLMTextInputFeatureConfig(TextInputFeatureConfig):
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="text_llm_input")
+
     encoder: BaseEncoderConfig = EncoderDataclassField(
         MODEL_LLM,
         feature_type=TEXT,
@@ -155,23 +165,30 @@ class ECDTextOutputFeatureConfig(TextOutputFeatureConfig):
 @ludwig_dataclass
 class LLMTextOutputFeatureConfig(TextOutputFeatureConfig):
     default_validation_metric: str = schema_utils.StringOptions(
-        [PERPLEXITY],
-        default=PERPLEXITY,
-        description="Internal only use parameter: default validation metric for text output feature.",
+        [LOSS],
+        default=LOSS,
+        description="Internal only use parameter: default validation metric for text output feature for LLMs.",
         parameter_metadata=INTERNAL_ONLY,
     )
+
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="text_llm_output")
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
         MODEL_LLM,
         feature_type=TEXT,
-        default="text_parser",
+        default="text_extractor",
+    )
+
+    loss: BaseLossConfig = LossDataclassField(
+        feature_type=TEXT,
+        default=NEXT_TOKEN_SOFTMAX_CROSS_ENTROPY,
     )
 
 
 @DeveloperAPI
 @ecd_defaults_config_registry.register(TEXT)
 @ludwig_dataclass
-class TextDefaultsConfig(TextInputFeatureConfigMixin, TextOutputFeatureConfigMixin):
+class ECDTextDefaultsConfig(TextInputFeatureConfigMixin, TextOutputFeatureConfigMixin):
     encoder: BaseEncoderConfig = EncoderDataclassField(
         MODEL_ECD,
         feature_type=TEXT,
@@ -214,10 +231,11 @@ class LLMTextDefaultsConfig(TextInputFeatureConfigMixin, TextOutputFeatureConfig
     decoder: BaseDecoderConfig = DecoderDataclassField(
         MODEL_LLM,
         feature_type=TEXT,
-        default="text_parser",
+        default="text_extractor",
     )
 
+    # TODO(Arnav): Refactor LossDataclassField to only accept loss types that are valid for the model
     loss: BaseLossConfig = LossDataclassField(
         feature_type=TEXT,
-        default=SEQUENCE_SOFTMAX_CROSS_ENTROPY,
+        default=NEXT_TOKEN_SOFTMAX_CROSS_ENTROPY,
     )

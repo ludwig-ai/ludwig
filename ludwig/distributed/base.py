@@ -1,6 +1,6 @@
 import contextlib
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, Optional, Tuple, Type, TYPE_CHECKING
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TYPE_CHECKING, Union
 
 import torch
 from torch import nn
@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from ray.train.backend import BackendConfig
     from ray.train.data_parallel_trainer import DataParallelTrainer
 
+    from ludwig.models.base import BaseModel
     from ludwig.modules.lr_scheduler import LRScheduler
     from ludwig.schema.trainer import ECDTrainerConfig
     from ludwig.utils.checkpoint_utils import Checkpoint
@@ -45,8 +46,11 @@ class DistributedStrategy(ABC):
         """
         pass
 
-    def to_device(self, model: nn.Module, device: Optional[torch.device] = None) -> nn.Module:
-        return model.to(device if device is not None else get_torch_device())
+    def prepare_for_inference(self, model: nn.Module) -> nn.Module:
+        return model
+
+    def to_device(self, model: "BaseModel", device: Optional[torch.device] = None) -> nn.Module:
+        return model.to_device(device if device is not None else get_torch_device())
 
     def backward(self, loss: torch.Tensor, model: nn.Module):
         loss.backward()
@@ -170,9 +174,6 @@ class DistributedStrategy(ABC):
     def is_model_parallel(cls) -> bool:
         return False
 
-    def eval(self, model: nn.Module):
-        model.eval()
-
     def create_checkpoint_handle(
         self,
         dist_model: nn.Module,
@@ -180,9 +181,18 @@ class DistributedStrategy(ABC):
         optimizer: Optional[Optimizer] = None,
         scheduler: Optional["LRScheduler"] = None,
     ) -> "Checkpoint":
-        from ludwig.utils.checkpoint_utils import CoordinatorCheckpoint
+        from ludwig.utils.checkpoint_utils import MultiNodeCheckpoint
 
-        return CoordinatorCheckpoint(self, model, optimizer, scheduler)
+        return MultiNodeCheckpoint(self, model, optimizer, scheduler)
+
+    @classmethod
+    def extract_model_for_serialization(cls, model: nn.Module) -> Union[nn.Module, Tuple[nn.Module, List[Dict]]]:
+        return model
+
+    @classmethod
+    def replace_model_from_serialization(cls, state: Union[nn.Module, Tuple[nn.Module, List[Dict]]]) -> nn.Module:
+        assert isinstance(state, nn.Module)
+        return state
 
 
 class LocalStrategy(DistributedStrategy):

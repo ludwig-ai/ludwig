@@ -156,7 +156,10 @@ def compare_classifiers_plot(
     width = 0.8 / num_metrics if num_metrics > 1 else 0.4
     ticks = np.arange(len(scores[0]))
 
-    colors = plt.get_cmap("tab10").colors
+    if num_metrics <= 10:
+        colors = plt.get_cmap("tab10").colors
+    else:
+        colors = plt.get_cmap("tab20").colors
     if adaptive:
         maximum = max(max(score) for score in scores)
     else:
@@ -211,8 +214,14 @@ def compare_classifiers_line_plot(
     filename=None,
     callbacks=None,
 ):
+    assert len(scores) > 0
+
     sns.set_style("whitegrid")
-    colors = plt.get_cmap("tab10").colors
+
+    if len(scores) <= 10:
+        colors = plt.get_cmap("tab10").colors
+    else:
+        colors = plt.get_cmap("tab20").colors
 
     fig, ax = plt.subplots()
 
@@ -267,7 +276,10 @@ def compare_classifiers_multiclass_multimetric_plot(
     width = 0.9 / len(scores)
     ticks = np.arange(len(scores[0]))
 
-    colors = plt.get_cmap("tab10").colors
+    if len(scores) <= 10:
+        colors = plt.get_cmap("tab10").colors
+    else:
+        colors = plt.get_cmap("tab20").colors
     ax.set_xlabel("class")
     ax.set_xticks(ticks + width)
     if labels is not None:

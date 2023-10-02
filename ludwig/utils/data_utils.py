@@ -775,7 +775,7 @@ def add_sequence_feature_column(df, col_name, seq_length):
         new_data.append(" ".join(str(j) for j in old_data[i - seq_length : i]))
 
     df[new_col_name] = new_data
-    df[new_col_name] = df[new_col_name].fillna(method="bfill")
+    df[new_col_name] = df[new_col_name].bfill()
 
 
 @DeveloperAPI
@@ -1089,3 +1089,17 @@ def use_credentials(creds):
                     json.dump(old_conf, f)
                 conf.clear()
                 set_conf_files(tmpdir, conf)
+
+
+def get_sanitized_feature_name(feature_name: str) -> str:
+    """Replaces non-word characters (anything other than alphanumeric or _) with _.
+
+    Used in model config initialization and sanitize_column_names(), which is called during dataset building.
+    """
+    return re.sub(r"[(){}.:\"\"\'\'\[\]]", "_", feature_name)
+
+
+def sanitize_column_names(df: DataFrame) -> DataFrame:
+    """Renames df columns with non-word characters (anything other than alphanumeric or _) to _."""
+    safe_column_names = [get_sanitized_feature_name(col) for col in df.columns]
+    return df.rename(columns=dict(zip(df.columns, safe_column_names)))

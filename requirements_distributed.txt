@@ -3,11 +3,13 @@ dask[dataframe]<2023.4.0
 pyarrow
 
 # requirements for ray
-ray[default,data,serve,tune]>=2.2.0
+ray[default,data,serve,tune]>=2.2.0,<2.5
 tensorboardX<2.3
 GPUtil
 tblib
 awscli
 
-# https://github.com/databrickslabs/dolly/issues/125
-deepspeed<0.9
+deepspeed
+
+# requirements for daft
+getdaft[ray]

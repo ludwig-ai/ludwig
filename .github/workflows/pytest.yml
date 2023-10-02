@@ -60,7 +60,7 @@ jobs:
         ports:
           - 9000:9000
 
-    timeout-minutes: 135
+    timeout-minutes: 150
     steps:
       - name: Setup ludwigai/ludwig-ray container for local testing with act.
         if: ${{ env.ACT }}
@@ -78,7 +78,7 @@ jobs:
       - name: Setup Linux
         if: runner.os == 'linux'
         run: |
-          sudo apt-get install -y cmake libsndfile1
+          sudo apt-get update && sudo apt-get install -y cmake libsndfile1 wget libsox-dev
 
       - name: Setup macOS
         if: runner.os == 'macOS'
@@ -91,6 +91,11 @@ jobs:
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-py${{ matrix.python-version }}-torch${{ matrix.pytorch-version }}-${{ matrix.test-markers }}-${{ hashFiles('requirements*.txt', '.github/workflows/pytest.yml') }}
+
+      - name: Debug out of space
+        run: |
+          du -h -d 1 ~
+          df -h
 
       - name: Install dependencies
         run: |
@@ -122,6 +127,7 @@ jobs:
           if [ "$PYTORCH" == "nightly" ]; then
             extra_index_url=https://download.pytorch.org/whl/nightly/cpu
             pip install --pre torch torchtext torchvision torchaudio --index-url $extra_index_url
+
           else
             extra_index_url=https://download.pytorch.org/whl/cpu
             pip install torch==$PYTORCH torchtext torchvision torchaudio --extra-index-url $extra_index_url
@@ -151,18 +157,16 @@ jobs:
 
       - name: Unit Tests
         run: |
-          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow and not combinatorial and not horovod" --junitxml pytest.xml tests/ludwig
-
-      - name: Integration Tests
-        run: |
-          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=6000 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow and not combinatorial and not horovod" --junitxml pytest.xml tests/integration_tests
+          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow and not combinatorial and not horovod and not llm" --junitxml pytest.xml tests/ludwig
 
       - name: Regression Tests
         run: |
-          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow and not combinatorial and not horovod or benchmark" --junitxml pytest.xml tests/regression_tests
+          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and not slow and not combinatorial and not horovod or benchmark and not llm" --junitxml pytest.xml tests/regression_tests
 
+      # Skip Horovod installation for torch nightly.
+      # https://github.com/ludwig-ai/ludwig/issues/3468
       - name: Install Horovod if necessary
-        if: matrix.test-markers == 'distributed'
+        if: matrix.test-markers == 'distributed' && matrix.pytorch-version != 'nightly'
         env:
           HOROVOD_WITH_PYTORCH: 1
           HOROVOD_WITHOUT_MPI: 1
@@ -178,10 +182,12 @@ jobs:
           horovodrun --check-build
         shell: bash
 
+      # Skip Horovod tests for torch nightly.
+      # https://github.com/ludwig-ai/ludwig/issues/3468
       - name: Horovod Tests
-        if: matrix.test-markers == 'distributed'
+        if: matrix.test-markers == 'distributed' && matrix.pytorch-version != 'nightly'
         run: |
-          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and horovod and not slow and not combinatorial" --junitxml pytest.xml tests/
+          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=5400 pytest -v --timeout 300 --durations 100 -m "$MARKERS and horovod and not slow and not combinatorial and not llm" --junitxml pytest.xml tests/
 
       - name: Upload Unit Test Results
         if: ${{ always() && !env.ACT }}
@@ -189,6 +195,114 @@ jobs:
         with:
           name: Unit Test Results (Python ${{ matrix.python-version }} ${{ matrix.test-markers }})
           path: pytest.xml
+
+  integration-tests:
+    name: ${{ matrix.test-markers }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        test-markers:
+          - "integration_tests_a"
+          - "integration_tests_b"
+          - "integration_tests_c"
+          - "integration_tests_d"
+          - "integration_tests_e"
+
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.LUDWIG_TESTS_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.LUDWIG_TESTS_AWS_SECRET_ACCESS_KEY }}
+      KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+      KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+      IS_NOT_FORK: ${{ !(github.event.pull_request.base.repo.full_name == 'ludwig-ai/ludwig' && github.event.pull_request.head.repo.fork) }}
+      MARKERS: ${{ matrix.test-markers }}
+
+    services:
+      minio:
+        image: fclairamb/minio-github-actions
+        env:
+          MINIO_ACCESS_KEY: minio
+          MINIO_SECRET_KEY: minio123
+        ports:
+          - 9000:9000
+
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+
+      - name: Setup Linux
+        if: runner.os == 'linux'
+        run: |
+          sudo apt-get update && sudo apt-get install -y cmake libsndfile1
+
+      - name: Setup macOS
+        if: runner.os == 'macOS'
+        run: |
+          brew install libuv
+
+      - name: Install dependencies
+        run: |
+          python --version
+          pip --version
+          python -m pip install -U pip
+
+          # remove torch and ray from the dependencies so we can add them depending on the matrix args for the job.
+          cat requirements.txt | sed '/^torch[>=<\b]/d' | sed '/^torchtext/d' | sed '/^torchvision/d' | sed '/^torchaudio/d' > requirements-temp && mv requirements-temp requirements.txt
+          cat requirements_distributed.txt | sed '/^ray[\[]/d'
+          pip install torch==2.0.0 torchtext torchvision torchaudio
+          pip install ray==2.3.0
+          pip install '.[test]'
+          pip list
+        shell: bash
+
+      - name: Integration Tests
+        run: |
+          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=7200 pytest -v --timeout 300 --durations 100 -m "not slow and not combinatorial and not horovod and not llm and $MARKERS" --junitxml pytest.xml tests/integration_tests
+
+  llm-tests:
+    name: LLM Tests
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+
+      - name: Setup Linux
+        if: runner.os == 'linux'
+        run: |
+          sudo apt-get update && sudo apt-get install -y cmake libsndfile1
+
+      - name: Setup macOS
+        if: runner.os == 'macOS'
+        run: |
+          brew install libuv
+
+      - name: Install dependencies
+        run: |
+          python --version
+          pip --version
+          python -m pip install -U pip
+
+          # remove torch and ray from the dependencies so we can add them depending on the matrix args for the job.
+          cat requirements.txt | sed '/^torch[>=<\b]/d' | sed '/^torchtext/d' | sed '/^torchvision/d' | sed '/^torchaudio/d' > requirements-temp && mv requirements-temp requirements.txt
+          cat requirements_distributed.txt | sed '/^ray[\[]/d'
+          pip install torch==2.0.0 torchtext torchvision torchaudio
+          pip install ray==2.3.0
+          pip install '.[test]'
+          pip list
+        shell: bash
+
+      - name: LLM Tests
+        run: |
+          pytest -vs --durations 100 -m "llm" --junitxml pytest.xml tests
 
   combinatorial-tests:
     name: Combinatorial Tests
@@ -205,7 +319,7 @@ jobs:
       - name: Setup Linux
         if: runner.os == 'linux'
         run: |
-          sudo apt-get install -y cmake libsndfile1
+          sudo apt-get update && sudo apt-get install -y cmake libsndfile1
 
       - name: Setup macOS
         if: runner.os == 'macOS'
@@ -217,8 +331,7 @@ jobs:
           python --version
           pip --version
           python -m pip install -U pip
-          pip install -r requirements.txt
-          pip install -r requirements_test.txt
+          pip install '.[test]'
           pip list
         shell: bash
 
@@ -245,7 +358,7 @@ jobs:
       - name: Setup Linux
         if: runner.os == 'linux'
         run: |
-          sudo apt-get install -y cmake libsndfile1
+          sudo apt-get update && sudo apt-get install -y cmake libsndfile1
 
       - name: Setup macOS
         if: runner.os == 'macOS'
@@ -257,6 +370,8 @@ jobs:
           python --version
           pip --version
           python -m pip install -U pip
+          pip install torch==2.0.0 torchtext
+          pip install ray==2.3.0
           pip install '.'
           pip list
         shell: bash

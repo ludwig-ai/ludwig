@@ -64,7 +64,7 @@ ray = pytest.importorskip("ray")
 
 from ludwig.hyperopt.execution import get_build_hyperopt_executor, RayTuneExecutor  # noqa
 
-pytestmark = pytest.mark.distributed
+pytestmark = [pytest.mark.distributed, pytest.mark.integration_tests_a]
 
 RANDOM_SEARCH_SIZE = 2
 
@@ -368,6 +368,7 @@ def _run_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, backend, ray_
         assert "model" in os.listdir(path)
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("search_space", ["random", "grid"])
 def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, ray_cluster_7cpu):
     _run_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, "local", ray_cluster_7cpu)
@@ -582,6 +583,7 @@ def test_hyperopt_nested_parameters(csv_filename, tmpdir, ray_cluster_7cpu):
         assert trial_config[TRAINER]["learning_rate"] in {0.7, 0.42}
 
 
+@pytest.mark.slow
 def test_hyperopt_without_config_defaults(csv_filename, tmpdir, ray_cluster_7cpu):
     input_features = [category_feature(encoder={"vocab_size": 3})]
     output_features = [category_feature(decoder={"vocab_size": 3})]
@@ -613,6 +615,7 @@ def test_hyperopt_without_config_defaults(csv_filename, tmpdir, ray_cluster_7cpu
     assert hyperopt_results.experiment_analysis.results_df.shape[0] == 10
 
 
+@pytest.mark.slow
 def test_hyperopt_with_time_budget(csv_filename, tmpdir, ray_cluster_7cpu):
     """Tests that incomplete checkpoints created by RayTune when time budget is hit doesn't throw errors because of
     missing .tune_metadata files in the checkpoint directories."""

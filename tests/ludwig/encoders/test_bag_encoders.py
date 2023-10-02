@@ -3,6 +3,7 @@ from typing import List
 import pytest
 import torch
 
+from ludwig.constants import ENCODER_OUTPUT
 from ludwig.encoders.bag_encoders import BagEmbedWeightedEncoder
 from ludwig.utils.torch_utils import get_torch_device
 from tests.integration_tests.parameter_update_utils import check_module_parameters_updated
@@ -28,7 +29,7 @@ def test_set_encoder(vocab: List[str], embedding_size: int, representation: str,
         dropout=dropout,
     ).to(DEVICE)
     inputs = torch.randint(0, 9, size=(2, len(vocab))).to(DEVICE)
-    outputs = bag_encoder(inputs)
+    outputs = bag_encoder(inputs)[ENCODER_OUTPUT]
     assert outputs.shape[1:] == bag_encoder.output_shape
 
     # check for parameter updating

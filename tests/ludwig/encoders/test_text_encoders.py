@@ -8,7 +8,7 @@ import torch
 
 import ludwig.schema.encoders.utils as schema_encoders_utils
 from ludwig.api import LudwigModel
-from ludwig.constants import ENCODER, MODEL_ECD, NAME, TEXT, TRAINER
+from ludwig.constants import ENCODER, ENCODER_OUTPUT, MODEL_ECD, NAME, TEXT, TRAINER
 from ludwig.encoders import text_encoders
 from ludwig.error import ConfigValidationError
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
@@ -83,7 +83,6 @@ def test_hf_ludwig_model_e2e(tmpdir, csv_filename, encoder_name):
                 "vocab_size": 30,
                 "min_len": 1,
                 "type": encoder_name,
-                "use_pretrained": True,
             }
         )
     ]
@@ -138,7 +137,6 @@ def test_hf_ludwig_model_reduce_options(tmpdir, csv_filename, encoder_name, redu
                 "vocab_size": 30,
                 "min_len": 1,
                 "type": encoder_name,
-                "use_pretrained": True,
                 "reduce_output": reduce_output,
             },
         )
@@ -210,7 +208,6 @@ def test_hf_ludwig_model_auto_transformers(tmpdir, csv_filename, pretrained_mode
                 "min_len": 1,
                 "type": "auto_transformer",
                 "pretrained_model_name_or_path": pretrained_model_name_or_path,
-                "use_pretrained": True,
             },
         )
     ]
@@ -246,14 +243,14 @@ def test_distilbert_param_updates(trainable: bool):
     outputs = distil_bert_encoder(inputs)
 
     # perform a backward pass to update the model params
-    target = torch.randn(outputs["encoder_output"].shape)
+    target = torch.randn(outputs[ENCODER_OUTPUT].shape)
     check_module_parameters_updated(distil_bert_encoder, (inputs,), target)
 
     # send the same input through the model again. should be different if trainable, else the same
     outputs2 = distil_bert_encoder(inputs)
 
-    encoder_output1 = outputs["encoder_output"]
-    encoder_output2 = outputs2["encoder_output"]
+    encoder_output1 = outputs[ENCODER_OUTPUT]
+    encoder_output2 = outputs2[ENCODER_OUTPUT]
 
     if trainable:
         # Outputs should be different if the model was updated
@@ -291,4 +288,24 @@ def test_tfidf_encoder(vocab_size: int):
 
     inputs = torch.randint(2, (batch_size, sequence_length)).to(DEVICE)
     outputs = text_encoder(inputs)
-    assert outputs["encoder_output"].shape[1:] == text_encoder.output_shape
+    assert outputs[ENCODER_OUTPUT].shape[1:] == text_encoder.output_shape
+
+
+def test_hf_auto_transformer_use_pretrained():
+    """This test ensures that use_pretrained is always True when using the auto_transformer text encoder even if a
+    user explicitly sets it to False."""
+    config = {
+        "input_features": [
+            text_feature(
+                encoder={
+                    "type": "auto_transformer",
+                    "use_pretrained": False,
+                    "pretrained_model_name_or_path": "hf-internal-testing/tiny-random-bloom",
+                },
+            )
+        ],
+        "output_features": [category_feature(decoder={"vocab_size": 2})],
+    }
+
+    model = LudwigModel(config=config, backend=LocalTestBackend())
+    assert model.config_obj.input_features[0].encoder.use_pretrained

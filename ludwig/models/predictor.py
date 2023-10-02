@@ -4,7 +4,7 @@ import sys
 from abc import ABC, abstractmethod
 from collections import defaultdict, OrderedDict
 from pprint import pformat
-from typing import Dict, Optional
+from typing import Dict, List, Optional, Type
 
 import numpy as np
 import pandas as pd
@@ -12,7 +12,7 @@ import psutil
 import torch
 from torch import nn
 
-from ludwig.constants import COMBINED, LAST_HIDDEN, LOGITS, MODEL_GBM
+from ludwig.constants import COMBINED, LAST_HIDDEN, LOGITS, MODEL_ECD, MODEL_GBM, MODEL_LLM
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.utils import convert_to_dict
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
@@ -22,6 +22,7 @@ from ludwig.progress_bar import LudwigProgressBar
 from ludwig.utils.data_utils import save_csv, save_json
 from ludwig.utils.dataframe_utils import from_numpy_dataset
 from ludwig.utils.print_utils import repr_ordered_dict
+from ludwig.utils.registry import Registry
 from ludwig.utils.strings_utils import make_safe_filename
 from ludwig.utils.torch_utils import get_torch_device
 
@@ -61,6 +62,23 @@ class BasePredictor(ABC):
         self.shutdown()
 
 
+_predictor_registry = Registry[BasePredictor]()
+
+
+def register_predictor(model_types: List[str]):
+    def wrap(cls):
+        for model_type in model_types:
+            _predictor_registry[model_type] = cls
+        return cls
+
+    return wrap
+
+
+def get_predictor_cls(model_type: str) -> Type[BasePredictor]:
+    return _predictor_registry[model_type]
+
+
+@register_predictor([MODEL_ECD, MODEL_GBM])
 class Predictor(BasePredictor):
     """Predictor is a class that uses a model to predict and evaluate."""
 
@@ -71,6 +89,7 @@ class Predictor(BasePredictor):
         distributed: DistributedStrategy = None,
         report_tqdm_to_ray: bool = False,
         model: Optional[BaseModel] = None,
+        remote: bool = False,
         **kwargs,
     ):
         """
@@ -97,10 +116,17 @@ class Predictor(BasePredictor):
         self.device = device
         self.dist_model = dist_model
         self.model = model
+        self.model.metrics_to_device(device)
+
+        if remote:
+            # Only return results from rank 0 to reduce network overhead
+            self.batch_predict = self._distributed.return_first(self.batch_predict)
+            self.batch_evaluation = self._distributed.return_first(self.batch_evaluation)
 
     def batch_predict(self, dataset: Dataset, dataset_name: str = None, collect_logits: bool = False):
+        self.dist_model = self._distributed.to_device(self.dist_model)
         prev_model_training_mode = self.dist_model.training  # store previous model training mode
-        self._distributed.eval(self.dist_model)  # set model to eval mode
+        self.dist_model.eval()  # set model to eval mode
 
         with torch.no_grad():
             with dataset.initialize_batcher(self._batch_size, should_shuffle=False) as batcher:
@@ -131,7 +157,7 @@ class Predictor(BasePredictor):
 
     def predict_single(self, batch, collect_logits: bool = False):
         prev_model_training_mode = self.dist_model.training  # store previous model training mode
-        self._distributed.eval(self.dist_model)  # set model to eval mode
+        self.dist_model.eval()  # set model to eval mode
 
         with torch.no_grad():
             predictions = defaultdict(list)
@@ -160,7 +186,7 @@ class Predictor(BasePredictor):
             for i_feat in self.model.input_features.values()
         }
 
-        outputs = self.dist_model(inputs)
+        outputs = self._predict_on_inputs(inputs)
         return self.model.outputs_to_predictions(outputs)
 
     def _accumulate_preds(self, preds, predictions, exclude_pred_set=EXCLUDE_PRED_SET):
@@ -169,13 +195,13 @@ class Predictor(BasePredictor):
             for pred_name, pred_values in of_preds.items():
                 if pred_name not in exclude_pred_set:
                     key = f"{of_name}_{pred_name}"
-                    predictions[key].append(pred_values)
+                    predictions[key].append(pred_values.detach().cpu())
 
     def _concat_preds(self, predictions):
         for key, pred_value_list in predictions.items():
-            # Without cloning and detaching, a runtime error is raised since pred_value_list
+            # Without detaching, a runtime error is raised since pred_value_list
             # is a tensor that requires grad.
-            predictions[key] = torch.cat(pred_value_list, dim=0).clone().detach().cpu().numpy()
+            predictions[key] = torch.cat(pred_value_list, dim=0).numpy()
 
     def batch_evaluation(self, dataset, collect_predictions=False, collect_logits=False, dataset_name=None):
         """Batch evaluate model on dataset.
@@ -190,8 +216,9 @@ class Predictor(BasePredictor):
             model config. The keys of the predictions dictionary depend on which values are requested by the caller:
             collect_predictions, collect_logits.
         """
+        self.dist_model = self._distributed.to_device(self.dist_model)
         prev_model_training_mode = self.dist_model.training  # store previous model training mode
-        self._distributed.eval(self.dist_model)  # set model to eval mode
+        self.dist_model.eval()  # set model to eval mode
 
         with torch.no_grad():
             with dataset.initialize_batcher(
@@ -226,7 +253,7 @@ class Predictor(BasePredictor):
                         for o_feat in self.model.output_features.values()
                     }
 
-                    outputs = self.dist_model(inputs)
+                    outputs = self._predict_on_inputs(inputs)
                     preds = self.model.outputs_to_predictions(outputs)
                     self.model.update_metrics(targets, preds)
 
@@ -247,8 +274,7 @@ class Predictor(BasePredictor):
 
             # consolidate predictions from each batch to a single tensor
             if collect_predictions:
-                for key, pred_value_list in predictions.items():
-                    predictions[key] = torch.cat(pred_value_list, dim=0).clone().detach().cpu().numpy()
+                self._concat_preds(predictions)
 
             metrics = self.model.get_metrics()
             self.model.reset_metrics()
@@ -262,7 +288,7 @@ class Predictor(BasePredictor):
             raise ValueError("BucketedBatcher is not supported yet")
 
         prev_model_training_mode = self.dist_model.training  # store previous model training mode
-        self._distributed.eval(self.dist_model)  # set model to eval mode
+        self.dist_model.eval()  # set model to eval mode
 
         with torch.no_grad():
             with dataset.initialize_batcher(
@@ -286,7 +312,7 @@ class Predictor(BasePredictor):
                         )
                         for i_feat in self.model.input_features.values()
                     }
-                    outputs = self.dist_model(inputs)
+                    outputs = self._predict_on_inputs(inputs)
                     collected_tensors = [(concat_name, tensor) for concat_name, tensor in outputs.items()]
                     progress_bar.update(1)
 
@@ -296,17 +322,103 @@ class Predictor(BasePredictor):
 
         return collected_tensors
 
+    def _predict_on_inputs(self, inputs: Dict) -> Dict:
+        return self.dist_model(inputs)
+
     def is_coordinator(self):
         return self._distributed.rank() == 0
 
 
-class RemotePredictor(Predictor):
-    def __init__(self, model: BaseModel, gpus=None, gpu_memory_limit=None, allow_parallel_threads=True, **kwargs):
-        super().__init__(model, **kwargs)
+@register_predictor([MODEL_LLM])
+class LlmPredictor(Predictor):
+    def _predict_on_inputs(self, inputs: Dict) -> Dict:
+        return self.dist_model.generate(inputs)
 
-        # Only return results from rank 0 to reduce network overhead
-        self.batch_predict = self._distributed.return_first(self.batch_predict)
-        self.batch_evaluation = self._distributed.return_first(self.batch_evaluation)
+
+class LlmFineTunePredictor(Predictor):
+    def batch_evaluation(self, dataset, collect_predictions=False, collect_logits=False, dataset_name=None):
+        """Batch evaluate model on dataset.
+
+        Params:
+            dataset (Union[str, dict, pandas.DataFrame]): source containing the entire dataset to be evaluated.
+            collect_predictions: Return model predictions.
+            collect_logits: Return model logits and final layer activations.
+
+        Returns:
+            Tuple of dictionaries of (metrics, predictions). The keys of metrics are determined by the metrics in the
+            model config. The keys of the predictions dictionary depend on which values are requested by the caller:
+            collect_predictions, collect_logits.
+        """
+        prev_model_training_mode = self.dist_model.training  # store previous model training mode
+        self.dist_model.eval()  # set model to eval mode
+
+        with torch.no_grad():
+            with dataset.initialize_batcher(
+                self._batch_size, should_shuffle=False, distributed=self._distributed
+            ) as batcher:
+                progress_bar_config = {
+                    "desc": "Evaluation" if dataset_name is None else f"Evaluation {dataset_name: <5.5}",
+                    "total": batcher.steps_per_epoch,
+                    "file": sys.stdout,
+                    "disable": is_progressbar_disabled(),
+                    "position": 0,  # Necessary to disable extra new line artifacts in training logs.
+                }
+                progress_bar = LudwigProgressBar(self.report_tqdm_to_ray, progress_bar_config, self.is_coordinator())
+
+                predictions = defaultdict(list)
+                while not batcher.last_batch():
+                    batch = batcher.next_batch()
+                    logger.debug(
+                        f"evaluation for {dataset_name}: obtained next batch "
+                        f"memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
+                    )
+                    inputs = {
+                        i_feat.feature_name: torch.from_numpy(np.array(batch[i_feat.proc_column], copy=True)).to(
+                            self.device
+                        )
+                        for i_feat in self.model.input_features.values()
+                    }
+                    targets = {
+                        o_feat.feature_name: torch.from_numpy(np.array(batch[o_feat.proc_column], copy=True)).to(
+                            self.device
+                        )
+                        for o_feat in self.model.output_features.values()
+                    }
+
+                    outputs = self._predict_on_inputs((inputs, targets))
+                    preds = self.model.outputs_to_predictions(outputs)
+
+                    # Need to pass through a custom fine-tune metric function because we need to transform
+                    # the targets into the right format for loss calculation (requires padding with -100s to the left)
+                    # and other tensor alignment.
+                    self.model.update_metrics_finetune_llm(targets, preds)
+
+                    # accumulate predictions from batch for each output feature
+                    if collect_predictions:
+                        self._accumulate_preds(
+                            preds, predictions, exclude_pred_set={LAST_HIDDEN} if collect_logits else EXCLUDE_PRED_SET
+                        )
+
+                    progress_bar.update(1)
+                    if self.is_coordinator():
+                        logger.debug(
+                            f"evaluation for {dataset_name}: completed batch {progress_bar.total_steps} "
+                            f"memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
+                        )
+
+                progress_bar.close()
+
+            # consolidate predictions from each batch to a single tensor
+            if collect_predictions:
+                for key, pred_value_list in predictions.items():
+                    predictions[key] = torch.cat(pred_value_list, dim=0).detach().cpu().numpy()
+
+            metrics = self.model.get_metrics()
+            self.model.reset_metrics()
+
+            self.dist_model.train(prev_model_training_mode)  # Restores previous model training mode.
+
+            return metrics, from_numpy_dataset(predictions)
 
 
 def calculate_overall_stats(output_features, predictions, dataset, training_set_metadata):

@@ -3,7 +3,7 @@ from typing import Dict
 import pytest
 import torch
 
-from ludwig.constants import ENCODER, TYPE
+from ludwig.constants import ENCODER, ENCODER_OUTPUT, TYPE
 from ludwig.features.timeseries_feature import TimeseriesInputFeature
 from ludwig.schema.features.timeseries_feature import TimeseriesInputFeatureConfig
 from ludwig.schema.utils import load_config_with_kwargs
@@ -41,4 +41,4 @@ def test_timeseries_input_feature(timeseries_config: Dict, encoder: str) -> None
     timeseries_input_feature = TimeseriesInputFeature(timeseries_config).to(DEVICE)
     timeseries_tensor = torch.randn([SEQ_SIZE, TIMESERIES_W_SIZE], dtype=torch.float32).to(DEVICE)
     encoder_output = timeseries_input_feature(timeseries_tensor)
-    assert encoder_output["encoder_output"].shape[1:] == timeseries_input_feature.output_shape
+    assert encoder_output[ENCODER_OUTPUT].shape[1:] == timeseries_input_feature.output_shape

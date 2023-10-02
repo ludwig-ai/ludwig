@@ -1,0 +1,159 @@
+base_model:
+  _anyOf:
+    preset:
+      ui_display_name: Preset
+      expected_impact: 3
+    custom:
+      ui_display_name: Custom
+      expected_impact: 3
+  _meta:
+    ui_display_name: Model Name
+    expected_impact: 3
+    ui_component_type: radio_string_combined
+    short_description: This can be one of the presets or a fully qualified name of a pretrained model from the HuggingFace Hub
+generation:
+  temperature:
+    ui_display_name: Temperature
+    default_value_reasoning:
+      Increasing the temperature will allow the model to generate more diverse sequences,
+      but will also increase the likelihood of generating nonsense. As such, we recommend setting this value to
+      something closer to 0 for classification tasks, and something closer to 1 for text generation tasks where the
+      goal is to generate novel text.
+    expected_impact: 3
+  max_new_tokens:
+    ui_display_name: Max New Tokens
+    default_value_reasoning:
+      Increasing the maximum number of new tokens will allow the model
+      to generate longer sequences, but because inference time scales linearly with the sequence length,
+      longer sequences will be much slower to generate. For classification tasks, it's generally better to
+      use a smaller number of new tokens, while for text generation tasks, it's generally better to use a larger
+      number of new tokens.
+    expected_impact: 3
+  num_beams:
+    ui_display_name: Number of Beams
+    default_value_reasoning:
+      Increasing the number of beams will allow the model to generate more diverse sequences,
+      but will also increase inference time. Some backends (like DeepSpeed) also do not support beam search.
+      As such, we recommend leaving this as 1 in most cases, unless you're finding the quality of the generated
+      sequences to be lacking.
+    expected_impact: 2
+  top_k:
+    ui_display_name: Top K
+    expected_impact: 2
+  top_p:
+    ui_display_name: Top P
+    expected_impact: 2
+  max_length:
+    ui_display_name: Max Length
+    expected_impact: 2
+  min_length:
+    ui_display_name: Min Length
+    expected_impact: 2
+  min_new_tokens:
+    ui_display_name: Min New Tokens
+    expected_impact: 2
+  do_sample:
+    ui_display_name: Do Sample
+    expected_impact: 2
+  use_cache:
+    ui_display_name: Use Cache
+    expected_impact: 2
+prompt:
+  retrieval:
+    type:
+      ui_display_name: Type
+      expected_impact: 3
+    index_name:
+      ui_display_name: Index Name
+      expected_impact: 2
+    model_name:
+      ui_display_name: Model Name
+      expected_impact: 2
+    k:
+      ui_display_name: Top K
+      expected_impact: 2
+  task:
+    ui_display_name: Task
+    ui_component_type: textarea
+    expected_impact: 3
+  template:
+    ui_display_name: Template
+    ui_component_type: textarea
+    expected_impact: 3
+adapter:
+  _oneOf:
+    allOf:
+      ui_display_name: Perform parameter efficient fine-tuning
+      expected_impact: 3
+    none:
+      ui_display_name: Disabled
+      expected_impact: 3
+  _meta:
+    expected_impact: 3
+    ui_component_type: radio_string_combined
+  lora:
+    type:
+      long_description: |
+        LoRA is a simple, yet effective, method for parameter-efficient fine-tuning of pretrained language models.
+        It works by adding a small number of trainable parameters to the model, which are used to adapt the
+        pretrained parameters to the downstream task. This allows the model to be fine-tuned with a much smaller
+        number of training examples, and can even be used to fine-tune models on tasks that have no training data
+        available at all.
+    r:
+      ui_display_name: R
+      expected_impact: 3
+    alpha:
+      ui_display_name: Alpha
+      expected_impact: 2
+    dropout:
+      ui_display_name: Dropout
+      expected_impact: 2
+  adalora:
+    type:
+      long_description: |
+        AdaLoRA is an extension of LoRA that allows the model to adapt the pretrained parameters to the downstream
+        task in a task-specific manner. This is done by adding a small number of trainable parameters to the model,
+        which are used to adapt the pretrained parameters to the downstream task. This allows the model to be
+        fine-tuned with a much smaller number of training examples, and can even be used to fine-tune models on tasks
+        that have no training data available at all.
+  prompt_learning:
+    num_virtual_tokens:
+      ui_display_name: Num Virtual Tokens
+      expected_impact: 3
+  prompt_tuning:
+    prompt_tuning_init:
+      ui_display_name: Prompt Tuning Init
+      expected_impact: 2
+    prompt_tuning_init_text:
+      ui_display_name: Prompt Tuning Init Text
+      expected_impact: 2
+  adaption_prompt:
+    type:
+      long_description: |
+        Adaption Prompt is taken from the paper
+        [LLaMA-Adapter: Efficient Fine-tuning of Language Models with Zero-init Attention](https://arxiv.org/pdf/2303.16199.pdf).
+        It adds a set of learnable adaption prompts and prepends them to the word tokens at higher transformer layers.
+        Then, a zero-initialized attention mechanism with zero gating is introduced, which adaptively injects
+        new instructional cues into LLaMA, while effectively preserving its pre-trained knowledge. According to
+        the paper, LLaMA-Adapter can generate high-quality responses, comparable to Alpaca with fully fine-tuned
+        7B parameters.
+    adapter_len:
+      ui_display_name: Adapter Length
+      expected_impact: 3
+    adapter_layers:
+      ui_display_name: Adapter Layers
+      expected_impact: 3
+quantization:
+  _oneOf:
+    object:
+      ui_display_name: Quantization
+      expected_impact: 3
+    none:
+      ui_display_name: No Quantization
+      expected_impact: 3
+  _meta:
+    expected_impact: 3
+    ui_component_type: radio_string_combined
+  bits:
+    ui_display_name: Bits per parameter
+    expected_impact: 3

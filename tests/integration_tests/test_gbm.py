@@ -1,16 +1,18 @@
 import os
-import re
 
 import numpy as np
 import pytest
 
 from ludwig.api import LudwigModel
-from ludwig.constants import COLUMN, INPUT_FEATURES, MODEL_TYPE, NAME, OUTPUT_FEATURES, TRAINER
+from ludwig.constants import INPUT_FEATURES, MODEL_TYPE, OUTPUT_FEATURES, TRAINER
 from ludwig.error import ConfigValidationError
+from ludwig.schema.model_types.base import ModelConfig
 from tests.integration_tests import synthetic_test_data
 from tests.integration_tests.utils import binary_feature
 from tests.integration_tests.utils import category_feature as _category_feature
 from tests.integration_tests.utils import generate_data, number_feature, text_feature
+
+pytestmark = pytest.mark.integration_tests_b
 
 BOOSTING_TYPES = ["gbdt", "goss", "dart"]
 TREE_LEARNERS = ["serial", "feature", "data", "voting"]
@@ -64,6 +66,8 @@ def _train_and_predict_gbm(input_features, output_features, tmpdir, backend_conf
     if trainer_config:
         config[TRAINER].update(trainer_config)
 
+    config = ModelConfig.from_dict(config).to_dict()
+
     model = LudwigModel(config, backend=backend_config)
     _, _, output_directory = model.train(
         dataset=dataset_filename,
@@ -98,6 +102,7 @@ def test_local_gbm_binary(tmpdir, local_backend):
     run_test_gbm_binary(tmpdir, local_backend)
 
 
+@pytest.mark.slow
 @pytest.mark.distributed
 def test_ray_gbm_binary(tmpdir, ray_backend, ray_cluster_5cpu):
     run_test_gbm_binary(tmpdir, ray_backend)
@@ -122,6 +127,7 @@ def test_local_gbm_non_number_inputs(tmpdir, local_backend):
     run_test_gbm_non_number_inputs(tmpdir, local_backend)
 
 
+@pytest.mark.slow
 @pytest.mark.distributed
 def test_ray_gbm_non_number_inputs(tmpdir, ray_backend, ray_cluster_5cpu):
     run_test_gbm_non_number_inputs(tmpdir, ray_backend)
@@ -147,6 +153,7 @@ def test_local_gbm_category(vocab_size, tmpdir, local_backend):
     run_test_gbm_category(vocab_size, tmpdir, local_backend)
 
 
+@pytest.mark.slow
 @pytest.mark.distributed
 @pytest.mark.parametrize("vocab_size", [2, 3])
 def test_ray_gbm_category(vocab_size, tmpdir, ray_backend, ray_cluster_5cpu):
@@ -295,25 +302,6 @@ def test_save_load(tmpdir, local_backend):
     assert init_preds.equals(preds)
 
 
-def test_lgbm_dataset_setup(tmpdir, local_backend):
-    """Test that LGBM dataset column name errors are handled."""
-    input_features = [number_feature()]
-    output_features = [binary_feature()]
-
-    # Overwrite the automatically generated feature/column name with an invalid string.
-    input_features[0][NAME] = ",Unnamed: 0"
-    input_features[0][COLUMN] = input_features[0][NAME]
-
-    # Test that the custom error is raised (lightgbm.basic.LightGBMError -> ValueError)
-    with pytest.raises(ValueError):
-        try:
-            _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend)
-        except ValueError as e:
-            # Check that the intended ValueError was raised
-            assert re.search("Some column names in the training set contain invalid characters", str(e))
-            raise
-
-
 def test_boosting_type_rf_invalid(tmpdir, local_backend):
     """Test that the Random Forest boosting type is not supported.
 
@@ -377,6 +365,7 @@ def test_dart_boosting_type(tmpdir, local_backend):
     _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend, boosting_type="dart")
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
     "backend",
     [
@@ -403,6 +392,7 @@ def test_gbm_category_one_hot_encoding(tmpdir, backend, ray_cluster_4cpu):
     assert prob_col.apply(sum).mean() == pytest.approx(1.0)
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
     "backend",
     [
@@ -450,3 +440,24 @@ def test_gbm_text_tfidf(tmpdir, backend, ray_cluster_4cpu):
 #         prob_col = prob_col.compute()
 #     assert len(prob_col.iloc[0]) == 2
 #     assert prob_col.apply(sum).mean() == pytest.approx(1.0)
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("feature_name", ["valid_feature_name", "Unnamed: 0", "{", "}", "[", "]"])
+@pytest.mark.parametrize("feature_type", ["input", "output"])
+@pytest.mark.parametrize(
+    "backend",
+    [
+        pytest.param(LOCAL_BACKEND, id="local"),
+        pytest.param(RAY_BACKEND, id="ray", marks=pytest.mark.distributed),
+    ],
+)
+def test_gbm_feature_name_special_characters(tmpdir, feature_name, feature_type, backend, ray_cluster_4cpu):
+    """Test that feature names containing JSON special characters are properly sanitized.
+
+    LGBM Datasets do not support feature names with JSON special characters. This tests that our sanitizer both solves
+    the special character error and also does not impede training.
+    """
+    input_features = [binary_feature(name=feature_name)] if feature_name == "input" else [binary_feature()]
+    output_features = [binary_feature(name=feature_name)] if feature_type == "output" else [binary_feature()]
+    _train_and_predict_gbm(input_features, output_features, tmpdir, backend)

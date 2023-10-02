@@ -171,6 +171,7 @@ def generate_data(
     filename="test_csv.csv",
     num_examples=25,
     nan_percent=0.0,
+    with_split=False,
 ):
     """Helper method to generate synthetic data based on input, output feature specs.
 
@@ -179,9 +180,14 @@ def generate_data(
     :param output_features: schema
     :param filename: path to the file where data is stored
     :param nan_percent: percent of values in a feature to be NaN
+    :param with_split: If True, then new column "split" is created, containing integer values as follows:
+        0 -- for training set;
+        1 -- for validation set;
+        2 -- for test set.
+
     :return:
     """
-    df = generate_data_as_dataframe(input_features, output_features, num_examples, nan_percent)
+    df = generate_data_as_dataframe(input_features, output_features, num_examples, nan_percent, with_split=with_split)
     df.to_csv(filename, index=False)
     return filename
 
@@ -191,14 +197,20 @@ def generate_data_as_dataframe(
     output_features,
     num_examples=25,
     nan_percent=0.0,
+    with_split=False,
 ) -> pd.DataFrame:
     """Helper method to generate synthetic data based on input, output feature specs.
 
     Args:
-        num_examples: number of examples to generate
         input_features: schema
         output_features: schema
+        num_examples: number of examples to generate
         nan_percent: percent of values in a feature to be NaN
+        with_split: If True, then new column "split" is created, containing integer values as follows:
+            0 -- for training set;
+            1 -- for validation set;
+            2 -- for test set.
+
     Returns:
         A pandas DataFrame
     """
@@ -206,7 +218,16 @@ def generate_data_as_dataframe(
     df = build_synthetic_dataset(num_examples, features)
     data = [next(df) for _ in range(num_examples + 1)]
 
-    return pd.DataFrame(data[1:], columns=data[0])
+    df = pd.DataFrame(data[1:], columns=data[0])
+
+    # Add "split" column to DataFrame
+    if with_split:
+        num_val_examples = max(2, int(num_examples * 0.1))
+        num_test_examples = max(2, int(num_examples * 0.1))
+        num_train_examples = num_examples - num_val_examples - num_test_examples
+        df["split"] = [0] * num_train_examples + [1] * num_val_examples + [2] * num_test_examples
+
+    return df
 
 
 def recursive_update(dictionary, values):
@@ -509,6 +530,12 @@ def run_experiment(
 
     :param input_features: list of input feature dictionaries
     :param output_features: list of output feature dictionaries
+    :param config: A dictionary containing the Ludwig model configuration
+    :param skip_save_processed_input: (bool, default: `False`) if input
+    dataset is provided it is preprocessed and cached by saving an HDF5
+    and JSON files to avoid running the preprocessing again. If this
+    parameter is `False`, the HDF5 and JSON file are not saved.
+    :param backend: (Union[Backend, str]) `Backend` or string name
     **kwargs you may also pass extra parameters to the experiment as keyword
     arguments
     :return: None
@@ -756,7 +783,7 @@ def create_data_set_to_use(data_format, raw_data, nan_percent=0.0):
     # https://stackoverflow.com/questions/16490261/python-pandas-write-dataframe-to-fixed-width-file-to-fwf
     from tabulate import tabulate
 
-    def to_fwf(df, fname):
+    def to_fwf(df: pd.DataFrame, fname: str):
         content = tabulate(df.values.tolist(), list(df.columns), tablefmt="plain")
         open(fname, "w").write(content)
 
@@ -925,13 +952,20 @@ def train_with_backend(
 
                 # Filter out metrics that are not being aggregated correctly for now
                 # TODO(travis): https://github.com/ludwig-ai/ludwig/issues/1956
+                # Filter out next_token_perplexity since it is only relevant for LLMs
                 def filter(stats):
                     return {
                         k: {
                             metric_name: value
                             for metric_name, value in v.items()
                             if metric_name
-                            not in {"loss", "root_mean_squared_percentage_error", "jaccard", "token_accuracy"}
+                            not in {
+                                "loss",
+                                "root_mean_squared_percentage_error",
+                                "jaccard",
+                                "token_accuracy",
+                                "next_token_perplexity",
+                            }
                         }
                         for k, v in stats.items()
                     }
@@ -948,10 +982,17 @@ def train_with_backend(
                             f"Metric mismatch between eval and local. Metrics from eval: "
                             f"{metrics_dict_from_eval.keys()}. Metrics from local: {metrics_dict_from_local.keys()}"
                         )
-                        assert np.isclose(metric_value_from_eval, metric_value_from_local, rtol=1e-03, atol=1e-04), (
-                            f"Metric {metric_name_from_eval} for feature {feature_name_from_eval}: "
-                            f"{metric_value_from_eval} != {metric_value_from_local}"
-                        )
+                        if (
+                            metric_value_from_eval == metric_value_from_eval
+                            and feature_name_from_eval == feature_name_from_eval
+                        ):
+                            # Check for equality if the values are non-nans.
+                            assert np.isclose(
+                                metric_value_from_eval, metric_value_from_local, rtol=1e-03, atol=1e-04
+                            ), (
+                                f"Metric {metric_name_from_eval} for feature {feature_name_from_eval}: "
+                                f"{metric_value_from_eval} != {metric_value_from_local}"
+                            )
 
         return model
 
@@ -1107,3 +1148,14 @@ def clear_huggingface_cache():
             os.unlink(os.path.join(root, f))
         for d in dirs:
             shutil.rmtree(os.path.join(root, d))
+
+
+def run_test_suite(config, dataset, backend):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        model = LudwigModel(config, backend=backend)
+        _, _, output_dir = model.train(dataset=dataset, output_directory=tmpdir)
+
+        model_dir = os.path.join(output_dir, "model")
+        loaded_model = LudwigModel.load(model_dir, backend=backend)
+        loaded_model.predict(dataset=dataset)
+        return loaded_model

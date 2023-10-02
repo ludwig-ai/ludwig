@@ -33,7 +33,9 @@ from torchmetrics.classification import (
 )
 from torchmetrics.functional.regression.r2 import _r2_score_compute, _r2_score_update
 from torchmetrics.metric import jit_distributed_available
+from torchmetrics.text import BLEUScore, WordErrorRate
 from torchmetrics.text.perplexity import Perplexity
+from torchmetrics.text.rouge import ROUGEScore
 
 from ludwig.constants import (
     ACCURACY,
@@ -45,6 +47,7 @@ from ludwig.constants import (
     CORN,
     HITS_AT_K,
     HUBER,
+    IGNORE_INDEX_TOKEN_ID,
     JACCARD,
     LOGITS,
     LOSS,
@@ -53,6 +56,7 @@ from ludwig.constants import (
     MEAN_ABSOLUTE_PERCENTAGE_ERROR,
     MEAN_SQUARED_ERROR,
     MINIMIZE,
+    NEXT_TOKEN_PERPLEXITY,
     NUMBER,
     PERPLEXITY,
     PRECISION,
@@ -60,6 +64,7 @@ from ludwig.constants import (
     PROBABILITIES,
     R2,
     RECALL,
+    RESPONSE,
     ROC_AUC,
     ROOT_MEAN_SQUARED_ERROR,
     ROOT_MEAN_SQUARED_PERCENTAGE_ERROR,
@@ -77,6 +82,7 @@ from ludwig.modules.loss_modules import (
     BWCEWLoss,
     CORNLoss,
     HuberLoss,
+    NextTokenSoftmaxCrossEntropyLoss,
     SequenceSoftmaxCrossEntropyLoss,
     SigmoidCrossEntropyLoss,
     SoftmaxCrossEntropyLoss,
@@ -321,6 +327,16 @@ class SequenceSoftmaxCrossEntropyMetric(LossMetric):
         return self.sequence_softmax_cross_entropy_function(preds, target)
 
 
+@register_metric("next_token_softmax_cross_entropy", [SEQUENCE, TEXT], MINIMIZE, LOGITS)
+class NextTokenSoftmaxCrossEntropyMetric(LossMetric):
+    def __init__(self, config: SequenceSoftmaxCrossEntropyLossConfig, **kwargs):
+        super().__init__()
+        self.next_token_softmax_cross_entropy_function = NextTokenSoftmaxCrossEntropyLoss(config)
+
+    def get_current_value(self, preds: Tensor, target: Tensor):
+        return self.next_token_softmax_cross_entropy_function(preds, target)
+
+
 @register_metric("sigmoid_cross_entropy", [SET], MINIMIZE, LOGITS)
 class SigmoidCrossEntropyMetric(LossMetric):
     def __init__(self, config: SigmoidCrossEntropyLossConfig, **kwargs):
@@ -355,13 +371,46 @@ class SequenceAccuracyMetric(MeanMetric):
 @register_metric(PERPLEXITY, [SEQUENCE, TEXT], MINIMIZE, PROBABILITIES)
 class PerplexityMetric(Perplexity, LudwigMetric):
     def __init__(self, **kwargs):
-        super().__init__()
+        super().__init__(ignore_index=IGNORE_INDEX_TOKEN_ID)
 
     def update(self, preds: Tensor, target: Tensor) -> None:
         super().update(preds, target.type(torch.int64))
 
 
-@register_metric("char_error_rate", [SEQUENCE, TEXT], MINIMIZE, PREDICTIONS)
+@register_metric(NEXT_TOKEN_PERPLEXITY, [SEQUENCE, TEXT], MINIMIZE, PROBABILITIES)
+class NextTokenPerplexityMetric(MeanMetric):
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.next_token_softmax_cross_entropy_function = NextTokenSoftmaxCrossEntropyLoss({})
+
+    def get_current_value(self, preds: Tensor, target: Tensor):
+        # Perplexity can be represented as the exponential of the cross-entropy loss.
+        # https://towardsdatascience.com/perplexity-in-language-models-87a196019a94
+        # We can't use torchmetrics perplexity because it calculates normal cross-entropy
+        # loss as opposed to shifted cross entropy loss.
+        shifted_loss = self.next_token_softmax_cross_entropy_function(preds, target)
+        return torch.exp(shifted_loss)
+
+
+@register_metric("bleu", [TEXT], MAXIMIZE, RESPONSE)
+class BLEUScoreMetric(BLEUScore, LudwigMetric):
+    def __init__(self, **kwargs):
+        super().__init__()
+
+
+@register_metric("rouge", [TEXT], MAXIMIZE, RESPONSE)
+class ROUGEScoreMetric(ROUGEScore, LudwigMetric):
+    def __init__(self, **kwargs):
+        super().__init__()
+
+
+@register_metric("word_error_rate", [TEXT], MINIMIZE, RESPONSE)
+class WordErrorRateMetric(WordErrorRate, LudwigMetric):
+    def __init__(self, **kwargs):
+        super().__init__()
+
+
+@register_metric("char_error_rate", [TEXT], MINIMIZE, RESPONSE)
 class CharErrorRateMetric(CharErrorRate, LudwigMetric):
     def __init__(self, **kwargs):
         super().__init__()

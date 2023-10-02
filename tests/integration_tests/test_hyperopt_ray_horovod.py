@@ -40,6 +40,9 @@ except ImportError:
     RayTuneExecutor = object
 
 
+pytestmark = pytest.mark.integration_tests_a
+
+
 # Dummy sync templates
 LOCAL_SYNC_TEMPLATE = "echo {source}/ {target}/"
 LOCAL_DELETE_TEMPLATE = "echo {target}"
@@ -178,7 +181,7 @@ def run_hyperopt_executor(
     config = _get_config(search_alg, executor)
 
     csv_filename = os.path.join(ray_mock_dir, "dataset.csv")
-    dataset_csv = generate_data(config["input_features"], config["output_features"], csv_filename, num_examples=100)
+    dataset_csv = generate_data(config["input_features"], config["output_features"], csv_filename, num_examples=25)
     dataset_parquet = create_data_set_to_use("parquet", dataset_csv)
 
     config = ModelConfig.from_dict(config).to_dict()
@@ -233,6 +236,7 @@ def run_hyperopt_executor(
     )
 
 
+@pytest.mark.slow
 @pytest.mark.distributed
 def test_hyperopt_executor_variant_generator(csv_filename, ray_mock_dir, ray_cluster_7cpu):
     search_alg = SCENARIOS[0]["search_alg"]

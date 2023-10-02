@@ -4,6 +4,7 @@ import pytest
 import torch
 from torch.autograd import gradcheck
 
+from ludwig.constants import IGNORE_INDEX_TOKEN_ID
 from ludwig.utils.entmax.losses import Entmax15Loss, EntmaxBisectLoss, SparsemaxBisectLoss, SparsemaxLoss
 
 # make data
@@ -46,7 +47,7 @@ def test_index_ignored(Loss):
     _, y = torch.max(torch.randn_like(x), dim=1)
 
     loss_ignore = Loss(reduction="sum", ignore_index=y[0])
-    loss_noignore = Loss(reduction="sum", ignore_index=-100)
+    loss_noignore = Loss(reduction="sum", ignore_index=IGNORE_INDEX_TOKEN_ID)
 
     # Note: since these are sparse losses, it is possible that an element makes no contribution to the loss.
     assert loss_ignore(x, y) <= loss_noignore(x, y)

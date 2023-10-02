@@ -52,7 +52,7 @@ from ludwig.utils.strings_utils import (
     UNKNOWN_SYMBOL,
 )
 from ludwig.utils.tokenizers import get_tokenizer_from_registry
-from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
+from ludwig.utils.types import TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
 
@@ -383,6 +383,25 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                     )
                 )
 
+        if isinstance(feature_config.loss.class_weights, dict):
+            if feature_metadata["str2idx"].keys() != feature_config.loss.class_weights.keys():
+                raise ValueError(
+                    "The class_weights keys ({}) are not compatible with "
+                    "the classes ({}) of feature {}. "
+                    "Check the metadata JSON file to see the classes "
+                    "and consider there needs to be a weight "
+                    "for the <UNK> class too.".format(
+                        feature_config.loss.class_weights.keys(),
+                        feature_metadata["str2idx"].keys(),
+                        feature_config.column,
+                    )
+                )
+            else:
+                class_weights = feature_config.loss.class_weights
+                idx2str = feature_metadata["idx2str"]
+                class_weights_list = [class_weights[s] for s in idx2str]
+                feature_config.loss.class_weights = class_weights_list
+
         if feature_config.loss.class_similarities_temperature > 0:
             if "class_similarities" in feature_config.loss:
                 similarities = feature_config.loss.class_similarities
@@ -506,15 +525,3 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     @staticmethod
     def get_schema_cls():
         return SequenceOutputFeatureConfig
-
-    def flatten(self, df: DataFrame) -> DataFrame:
-        probs_col = f"{self.feature_name}_{PROBABILITIES}"
-        df[probs_col] = df[probs_col].apply(lambda x: x.flatten())
-        return df
-
-    def unflatten(self, df: DataFrame) -> DataFrame:
-        probs_col = f"{self.feature_name}_{PROBABILITIES}"
-        df[probs_col] = df[probs_col].apply(
-            lambda x: x.reshape(-1, self.decoder_obj.config.vocab_size), meta=(probs_col, "object")
-        )
-        return df

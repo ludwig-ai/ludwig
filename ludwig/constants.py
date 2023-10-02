@@ -53,6 +53,7 @@ ROC_AUC = "roc_auc"
 EVAL_LOSS = "eval_loss"
 TRAIN_MEAN_LOSS = "train_mean_loss"
 SEQUENCE_SOFTMAX_CROSS_ENTROPY = "sequence_softmax_cross_entropy"
+NEXT_TOKEN_SOFTMAX_CROSS_ENTROPY = "next_token_softmax_cross_entropy"
 SOFTMAX_CROSS_ENTROPY = "softmax_cross_entropy"
 SIGMOID_CROSS_ENTROPY = "sigmoid_cross_entropy"
 BINARY_WEIGHTED_CROSS_ENTROPY = "binary_weighted_cross_entropy"
@@ -75,11 +76,13 @@ CORN = "corn"
 R2 = "r2"
 EDIT_DISTANCE = "edit_distance"
 PERPLEXITY = "perplexity"
+NEXT_TOKEN_PERPLEXITY = "next_token_perplexity"
 JACCARD = "jaccard"
 PRECISION = "precision"
 RECALL = "recall"
 SPECIFICITY = "specificity"
 PREDICTIONS = "predictions"
+RESPONSE = "RESPONSE"
 TOP_K = "top_k"
 TOP_K_PREDICTIONS = "top_k_predictions"
 PROBABILITY = "probability"
@@ -129,9 +132,12 @@ PREDICTION = "prediction"
 LOGITS = "logits"
 HIDDEN = "hidden"
 LAST_HIDDEN = "last_hidden"
+ENCODER_OUTPUT = "encoder_output"
 ENCODER_OUTPUT_STATE = "encoder_output_state"
 PROJECTION_INPUT = "projection_input"
 LEARNING_RATE_SCHEDULER = "learning_rate_scheduler"
+
+SEMANTIC = "semantic"
 
 RANDOM = "random"
 SUM = "sum"
@@ -194,6 +200,8 @@ BATCH_SIZE = "batch_size"
 EVAL_BATCH_SIZE = "eval_batch_size"
 DEFAULT_BATCH_SIZE = "auto"
 FALLBACK_BATCH_SIZE = 128
+# The smallest batch size that is supported on Ludwig.
+MINIMUM_BATCH_SIZE = 1
 # 2^40. Used for `max_batch_size` config param. Not a hard constraint for `batch_size` config param.
 MAX_POSSIBLE_BATCH_SIZE = 1099511627776
 # min batch size. Used as a floor for batch size tuning.
@@ -260,7 +268,7 @@ AUDIO_FEATURE_KEYS = [
     "num_filter_bands",
 ]
 
-MODEL_NAME = "model_name"
+BASE_MODEL = "base_model"
 MODEL_TYPE = "model_type"
 MODEL_ECD = "ecd"
 MODEL_GBM = "gbm"
@@ -271,6 +279,16 @@ LUDWIG_VERSION = "ludwig_version"
 PREPROCESSOR = "preprocessor"
 PREDICTOR = "predictor"
 POSTPROCESSOR = "postprocessor"
+
+GENERATION = "generation"
+PROMPT = "prompt"
+ADAPTER = "adapter"
+PRETRAINED_ADAPTER_WEIGHTS = "pretrained_adapter_weights"
+MERGE_ADAPTER_INTO_BASE_MODEL = "merge_adapter_into_base_model"
+PROGRESSBAR = "progressbar"
+
+# CrossEntropyLoss for LLMs
+IGNORE_INDEX_TOKEN_ID = -100
 
 S3 = "s3"
 CACHE = "cache"

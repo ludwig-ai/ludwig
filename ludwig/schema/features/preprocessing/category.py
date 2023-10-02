@@ -147,9 +147,3 @@ class LLMCategoryOutputPreprocessingConfig(CategoryOutputPreprocessingConfig):
         allow_none=False,
         description="The label to use when the model doesn't match any of the labels in the `labels` list.",
     )
-
-    prompt_template: str = schema_utils.String(
-        default="",
-        allow_none=False,
-        description="The template to use for the prompt. The labels will be inserted into the template.",
-    )

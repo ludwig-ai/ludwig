@@ -1,5 +1,4 @@
 import os
-import tempfile
 
 import numpy as np
 import pytest
@@ -7,19 +6,10 @@ import pytest
 from ludwig.api import LudwigModel
 from ludwig.constants import MODEL_ECD, MODEL_GBM, PREPROCESSING, PROC_COLUMN, TRAINER
 from tests.integration_tests.test_gbm import category_feature
-from tests.integration_tests.utils import binary_feature, generate_data, number_feature, text_feature
+from tests.integration_tests.utils import binary_feature, generate_data, number_feature, run_test_suite, text_feature
 
 
-def run_test_suite(config, dataset, backend):
-    with tempfile.TemporaryDirectory() as tmpdir:
-        model = LudwigModel(config, backend=backend)
-        _, _, output_dir = model.train(dataset=dataset, output_directory=tmpdir)
-
-        model_dir = os.path.join(output_dir, "model")
-        loaded_model = LudwigModel.load(model_dir, backend=backend)
-        loaded_model.predict(dataset=dataset)
-
-
+@pytest.mark.slow
 @pytest.mark.parametrize(
     "backend",
     [
@@ -40,6 +30,7 @@ def test_onehot_encoding(tmpdir, backend, ray_cluster_2cpu):
     run_test_suite(config, dataset, backend)
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
     "backend",
     [
@@ -63,10 +54,11 @@ def test_hf_text_embedding(tmpdir, backend, ray_cluster_2cpu):
     data_csv_path = os.path.join(tmpdir, "dataset.csv")
     dataset = generate_data(input_features, output_features, data_csv_path)
 
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 1}}
     run_test_suite(config, dataset, backend)
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("cache_encoder_embeddings", [True, False, None])
 @pytest.mark.parametrize("model_type", [MODEL_ECD, MODEL_GBM])
 def test_onehot_encoding_preprocessing(model_type, cache_encoder_embeddings, tmpdir):

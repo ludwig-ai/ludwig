@@ -30,6 +30,7 @@ from ludwig.schema.features.utils import output_config_registry
 from ludwig.schema.hyperopt.scheduler import BaseHyperbandSchedulerConfig
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.types import HyperoptConfigDict, ModelConfigDict
+from ludwig.utils.data_utils import get_sanitized_feature_name
 
 if TYPE_CHECKING:
     from ludwig.schema.model_types.base import ModelConfig
@@ -173,11 +174,15 @@ def set_derived_feature_columns_(config_obj: "ModelConfig"):
             feature.proc_column = compute_feature_hash(feature.to_dict())
 
 
-def filter_combiner_entities_(config: "ModelConfig"):
+def sanitize_and_filter_combiner_entities_(config: "ModelConfig"):
     if config.model_type != MODEL_ECD or config.combiner.type != "comparator":
         return
 
     input_feature_names = {input_feature.name for input_feature in config.input_features}
+
+    # Sanitize feature names.
+    config.combiner.entity_1 = [get_sanitized_feature_name(fname) for fname in config.combiner.entity_1]
+    config.combiner.entity_2 = [get_sanitized_feature_name(fname) for fname in config.combiner.entity_2]
 
     entity_1_excluded = {fname for fname in config.combiner.entity_1 if fname not in input_feature_names}
     if entity_1_excluded:
@@ -304,9 +309,9 @@ def set_llm_tokenizers(config: "ModelConfig") -> None:
     if config.model_type != "llm":
         return
 
-    pretrained_model_name_or_path = config.model_name
-    if pretrained_model_name_or_path is None:
-        raise ValueError("Must set model_name when using the LLM model.")
+    pretrained_model_name_or_path = config.base_model
+    if not isinstance(pretrained_model_name_or_path, str) or pretrained_model_name_or_path is None:
+        raise ValueError("Must set `base_model` when using the LLM model.")
 
     for input_feature in config.input_features:
         if input_feature.type == TEXT:
@@ -323,7 +328,7 @@ def set_llm_tokenizers(config: "ModelConfig") -> None:
 
             # Add tokenizer parameters to decoder so it can be used during the forward pass
             output_feature.decoder.pretrained_model_name_or_path = pretrained_model_name_or_path
-            output_feature.decoder.max_new_tokens = config.generation_config.max_new_tokens
+            output_feature.decoder.max_new_tokens = config.generation.max_new_tokens
         elif output_feature.type == CATEGORY:
             # Tokenizer parameters
             output_feature.decoder.tokenizer = "hf_tokenizer"

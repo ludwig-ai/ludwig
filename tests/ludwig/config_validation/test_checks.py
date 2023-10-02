@@ -281,3 +281,208 @@ model_type: ecd
     # Confirms that the choice of the combiner type is the only reason for the ConfigValidationError.
     config[COMBINER][TYPE] = "sequence_concat"
     ModelConfig.from_dict(config)
+
+
+def test_check_llm_input_features():
+    config = yaml.safe_load(
+        """
+model_type: llm
+base_model: facebook/opt-350m
+input_features:
+  - name: sample_1
+    type: text
+  - name: sample_2
+    type: text
+output_features:
+  - name: label
+    type: text
+backend:
+  type: ray
+"""
+    )
+
+    # do not allow more than one input feature
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+    # do not allow one non-text input feature
+    config["input_features"].pop(-1)
+    config["input_features"][0]["type"] = "category"
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+    # allow exactly one text input feature
+    config["input_features"][0]["type"] = "text"
+    ModelConfig.from_dict(config)
+
+
+def test_retrieval_config_none_type():
+    config = yaml.safe_load(
+        """
+model_type: llm
+base_model: facebook/opt-350m
+prompt:
+    retrieval:
+        type: null
+        k: 1
+    task: "Classify the sample input as either negative, neutral, or positive."
+input_features:
+-
+    name: sample
+    type: text
+output_features:
+-
+    name: label
+    type: text
+"""
+    )
+
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+    # will not fail
+    config["prompt"]["retrieval"]["k"] = 0
+    ModelConfig.from_dict(config)
+
+
+def test_retrieval_config_random_type():
+    config = yaml.safe_load(
+        """
+model_type: llm
+base_model: facebook/opt-350m
+prompt:
+    retrieval:
+        type: random
+    task: "Classify the sample input as either negative, neutral, or positive."
+input_features:
+-
+    name: sample
+    type: text
+output_features:
+-
+    name: label
+    type: text
+"""
+    )
+
+    # should not fail because we auto-set k=1 if k=0 on __post_init__
+    ModelConfig.from_dict(config)
+
+
+def test_retrieval_config_semantic_type():
+    config = yaml.safe_load(
+        """
+model_type: llm
+base_model: facebook/opt-350m
+prompt:
+    retrieval:
+        type: semantic
+    task: "Classify the sample input as either negative, neutral, or positive."
+input_features:
+-
+    name: sample
+    type: text
+output_features:
+-
+    name: label
+    type: text
+"""
+    )
+
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+    config["prompt"]["retrieval"]["model_name"] = "some-huggingface-model"
+    ModelConfig.from_dict(config)
+
+
+def test_check_llm_quantization_backend_incompatibility():
+    config = yaml.safe_load(
+        """
+model_type: llm
+base_model: facebook/opt-350m
+quantization:
+  bits: 4
+input_features:
+  - name: sample
+    type: text
+output_features:
+  - name: label
+    type: text
+backend:
+  type: ray
+"""
+    )
+
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+    config["backend"]["type"] = "local"
+    ModelConfig.from_dict(config)
+
+    del config["backend"]
+    ModelConfig.from_dict(config)
+
+    del config["quantization"]
+    config["backend"] = {"type": "ray"}
+    ModelConfig.from_dict(config)
+
+
+def test_check_qlora():
+    config = yaml.safe_load(
+        """
+model_type: llm
+base_model: facebook/opt-350m
+quantization:
+  bits: 4
+input_features:
+  - name: sample
+    type: text
+output_features:
+  - name: label
+    type: text
+trainer:
+  type: finetune
+"""
+    )
+
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+    config["adapter"] = {
+        "type": "adaption_prompt",
+    }
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+    config["adapter"] = {
+        "type": "lora",
+    }
+    ModelConfig.from_dict(config)
+
+
+def test_check_prompt_requirements():
+    config = {
+        "model_type": "llm",
+        "input_features": [
+            text_feature(name="test1", column="col1", encoder={"type": "passthrough"}),
+        ],
+        "output_features": [text_feature()],
+        "base_model": "opt-350m",
+    }
+
+    ModelConfig.from_dict(config)
+
+    config["prompt"] = {"task": "Some task"}
+    ModelConfig.from_dict(config)
+
+    config["prompt"] = {"task": "Some task", "template": "Some template not mentioning the task"}
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+    config["prompt"] = {"task": "Some task", "template": "{__invalid__}"}
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+    config["prompt"] = {"task": "Some task", "template": "{__task__}"}
+    ModelConfig.from_dict(config)

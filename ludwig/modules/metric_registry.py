@@ -1,8 +1,12 @@
-from typing import Dict, List, Literal, Union
+from typing import Dict, List, Literal, TYPE_CHECKING, Union
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import LOGITS, MAXIMIZE, MINIMIZE, PREDICTIONS, PROBABILITIES
+from ludwig.constants import LOGITS, MAXIMIZE, MINIMIZE, PREDICTIONS, PROBABILITIES, RESPONSE
 from ludwig.utils.registry import Registry
+
+if TYPE_CHECKING:
+    from ludwig.modules.metric_modules import LudwigMetric
+
 
 metric_feature_type_registry = Registry()
 metric_registry = Registry()
@@ -41,11 +45,11 @@ def register_metric(
     return wrap
 
 
-def get_metric_classes(feature_type: str):
+def get_metric_classes(feature_type: str) -> Dict[str, "LudwigMetric"]:
     return metric_feature_type_registry[feature_type]
 
 
-def get_metric_cls(feature_type: str, name: str):
+def get_metric_cls(feature_type: str, name: str) -> "LudwigMetric":
     return metric_feature_type_registry[feature_type][name]
 
 
@@ -80,5 +84,5 @@ def get_metric_objective(metric_name: str) -> Literal[MINIMIZE, MAXIMIZE]:
 
 
 @DeveloperAPI
-def get_metric_tensor_input(metric_name: str) -> Literal[PREDICTIONS, PROBABILITIES, LOGITS]:
+def get_metric_tensor_input(metric_name: str) -> Literal[PREDICTIONS, PROBABILITIES, LOGITS, RESPONSE]:
     return metric_tensor_input_registry[metric_name]

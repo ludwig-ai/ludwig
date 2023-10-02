@@ -30,6 +30,9 @@ with open(path.join(here, "requirements_hyperopt.txt"), encoding="utf-8") as f:
 with open(path.join(here, "requirements_tree.txt"), encoding="utf-8") as f:
     extra_requirements["tree"] = [line.strip() for line in f if line]
 
+with open(path.join(here, "requirements_llm.txt"), encoding="utf-8") as f:
+    extra_requirements["llm"] = [line.strip() for line in f if line]
+
 with open(path.join(here, "requirements_explain.txt"), encoding="utf-8") as f:
     extra_requirements["explain"] = [line.strip() for line in f if line]
 
@@ -46,7 +49,7 @@ with open(path.join(here, "requirements_extra.txt"), encoding="utf-8") as f:
 
 setup(
     name="ludwig",
-    version="0.8.dev",
+    version="0.8",
     description="Declarative machine learning: End-to-end machine learning pipelines using data-driven configurations.",
     long_description=long_description,
     long_description_content_type="text/markdown",

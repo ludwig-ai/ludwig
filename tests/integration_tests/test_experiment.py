@@ -30,6 +30,7 @@ from ludwig.backend import LOCAL_BACKEND
 from ludwig.callbacks import Callback
 from ludwig.constants import BATCH_SIZE, COLUMN, ENCODER, H3, NAME, PREPROCESSING, TRAINER, TYPE
 from ludwig.data.concatenate_datasets import concatenate_df
+from ludwig.data.dataset_synthesizer import build_synthetic_dataset_df
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.encoders.registry import get_encoder_classes
 from ludwig.error import ConfigValidationError
@@ -61,6 +62,8 @@ from tests.integration_tests.utils import (
     timeseries_feature,
     vector_feature,
 )
+
+pytestmark = pytest.mark.integration_tests_d
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -347,6 +350,8 @@ def test_experiment_image_inputs(image_params: ImageParams, tmpdir):
 
 # Primary focus of this test is to determine if exceptions are raised for different data set formats and in_memory
 # setting.
+
+
 @pytest.mark.parametrize("test_in_memory", [True, False])
 @pytest.mark.parametrize("test_format", ["csv", "df", "hdf5"])
 @pytest.mark.parametrize("train_in_memory", [True, False])
@@ -712,6 +717,7 @@ def test_experiment_model_resume(tmpdir):
     shutil.rmtree(output_dir, ignore_errors=True)
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
     "dist_strategy",
     [
@@ -731,7 +737,7 @@ def test_experiment_model_resume_distributed(tmpdir, dist_strategy, ray_cluster_
         pytest.param("deepspeed", id="deepspeed", marks=pytest.mark.distributed),
     ],
 )
-def test_experiemnt_model_resume_distributed_gpu(tmpdir, dist_strategy, ray_cluster_4cpu):
+def test_experiment_model_resume_distributed_gpu(tmpdir, dist_strategy, ray_cluster_4cpu):
     _run_experiment_model_resume_distributed(tmpdir, dist_strategy)
 
 
@@ -799,6 +805,7 @@ def test_experiment_model_resume_missing_file(tmpdir, missing_file):
     shutil.rmtree(output_dir, ignore_errors=True)
 
 
+@pytest.mark.slow
 @pytest.mark.distributed
 def test_experiment_model_resume_before_1st_epoch_distributed(tmpdir, ray_cluster_4cpu):
     # Single sequence input, single category output
@@ -846,6 +853,32 @@ def test_experiment_model_resume_before_1st_epoch_distributed(tmpdir, ray_cluste
             skip_save_processed_input=True,
             model_resume_path=os.path.join(tmpdir, "results1"),
         )
+
+
+@pytest.mark.slow
+@pytest.mark.distributed
+def test_tabnet_with_batch_size_1(tmpdir, ray_cluster_4cpu):
+    input_features = [number_feature()]
+    output_features = [category_feature(output_feature=True)]
+    training_set = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "tabnet"},
+        TRAINER: {"train_steps": 1, BATCH_SIZE: 1},
+        "backend": {"type": "ray", "trainer": {"strategy": "ddp", "num_workers": 2}},
+    }
+    model = LudwigModel(config=config, logging_level=logging.INFO)
+    model.train(
+        dataset=training_set,
+        skip_save_training_description=True,
+        skip_save_training_statistics=True,
+        skip_save_model=True,
+        skip_save_progress=True,
+        skip_save_log=True,
+        skip_save_processed_input=True,
+    )
 
 
 def test_experiment_various_feature_types(csv_filename):
@@ -1100,3 +1133,64 @@ def test_experiment_ordinal_category(csv_filename):
 
     rel_path = generate_data(input_features, output_features, csv_filename)
     run_experiment(input_features, output_features, dataset=rel_path)
+
+
+def test_experiment_feature_names_with_non_word_chars(tmpdir):
+    config = yaml.safe_load(
+        """
+input_features:
+    - name: Pclass (new)
+      type: category
+    - name: review.text
+      type: category
+    - name: other_feature
+      type: category
+      tied: review.text
+
+output_features:
+    - name: Survived (new)
+      type: binary
+    - name: Thrived
+      type: binary
+      dependencies:
+        - Survived (new)
+
+combiner:
+    type: comparator
+    entity_1:
+        - Pclass (new)
+        - other_feature
+    entity_2:
+        - review.text
+
+"""
+    )
+
+    df = build_synthetic_dataset_df(120, config)
+    model = LudwigModel(config, logging_level=logging.INFO)
+
+    model.train(dataset=df, output_directory=tmpdir)
+
+
+def test_text_output_feature_cols(tmpdir, csv_filename):
+    """Test ensures that there are 4 output columns when model.predict() is called for text output features."""
+    input_features = [text_feature(encoder={"type": "parallel_cnn"})]
+    output_features = [text_feature(output_feature=True)]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, os.path.join(tmpdir, csv_filename))
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "trainer": {"train_steps": 2, "batch_size": 5},
+    }
+
+    model = LudwigModel(config, logging_level=logging.INFO)
+    model.train(dataset=rel_path, output_directory=tmpdir)
+    predict_output = model.predict(dataset=rel_path)[0]
+
+    assert len(predict_output.columns) == 4
+
+    predict_df_headers = {col_name.split("_")[2] for col_name in list(predict_output.columns)}
+    assert predict_df_headers == {"predictions", "probability", "probabilities", "response"}

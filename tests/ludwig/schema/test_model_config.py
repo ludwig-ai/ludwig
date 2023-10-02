@@ -1,11 +1,13 @@
 import os
 from tempfile import TemporaryDirectory
+from typing import Any, Dict, Optional, Union
 
 import pytest
 import yaml
 
 from ludwig.constants import (
     ACTIVE,
+    BASE_MODEL,
     CLIP,
     COLUMN,
     COMBINER,
@@ -20,6 +22,8 @@ from ludwig.constants import (
     LOSS,
     MODEL_ECD,
     MODEL_GBM,
+    MODEL_LLM,
+    MODEL_TYPE,
     NAME,
     NUM_CLASSES,
     OPTIMIZER,
@@ -32,12 +36,14 @@ from ludwig.constants import (
     TRAINER,
     TYPE,
 )
+from ludwig.error import ConfigValidationError
 from ludwig.schema.decoders.base import ClassifierConfig
 from ludwig.schema.encoders.text_encoders import BERTConfig
 from ludwig.schema.features.augmentation.image import RandomBlurConfig, RandomRotateConfig
 from ludwig.schema.features.image_feature import AUGMENTATION_DEFAULT_OPERATIONS
 from ludwig.schema.features.number_feature import NumberOutputFeatureConfig
 from ludwig.schema.features.text_feature import TextOutputFeatureConfig
+from ludwig.schema.llms.quantization import QuantizationConfig
 from ludwig.schema.model_config import ModelConfig
 from ludwig.schema.utils import BaseMarshmallowConfig, convert_submodules
 
@@ -784,3 +790,160 @@ def test_encoder_decoder_values_as_str():
 
     assert isinstance(config_obj.input_features[0].encoder, BERTConfig)
     assert isinstance(config_obj.output_features[0].decoder, ClassifierConfig)
+
+
+@pytest.mark.parametrize(
+    "base_model_config,model_name",
+    [
+        ("bloomz-3b", "bigscience/bloomz-3b"),
+        ("vicuna-7b", "lmsys/vicuna-7b-v1.3"),
+        ("huggyllama/llama-7b", "huggyllama/llama-7b"),
+    ],
+)
+def test_llm_base_model_config(base_model_config, model_name):
+    config = {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: base_model_config,
+        INPUT_FEATURES: [{NAME: "text_input", TYPE: "text"}],
+        OUTPUT_FEATURES: [{NAME: "text_output", TYPE: "text"}],
+    }
+
+    config_obj = ModelConfig.from_dict(config)
+
+    assert config_obj.base_model == model_name
+
+
+@pytest.mark.parametrize(
+    "base_model_config",
+    [
+        None,
+        "invalid/model/name",
+    ],
+)
+def test_llm_base_model_config_error(base_model_config):
+    config = {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: base_model_config,
+        INPUT_FEATURES: [{NAME: "text_input", TYPE: "text"}],
+        OUTPUT_FEATURES: [{NAME: "text_output", TYPE: "text"}],
+    }
+
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+
+@pytest.mark.parametrize(
+    "bits,expected_qconfig",
+    [
+        (None, None),
+        (4, QuantizationConfig(bits=4)),
+        (8, QuantizationConfig(bits=8)),
+    ],
+)
+def test_llm_quantization_config(bits: Optional[int], expected_qconfig: Optional[QuantizationConfig]):
+    config = {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: "bigscience/bloomz-3b",
+        "quantization": {"bits": bits},
+        INPUT_FEATURES: [{NAME: "text_input", TYPE: "text"}],
+        OUTPUT_FEATURES: [{NAME: "text_output", TYPE: "text"}],
+    }
+
+    if bits is None:
+        del config["quantization"]
+
+    config_obj = ModelConfig.from_dict(config)
+
+    assert config_obj.quantization == expected_qconfig
+
+
+@pytest.mark.parametrize(
+    "rope_scaling_config",
+    [
+        ({"type": "linear"}),
+        ({"factor": 2.0}),
+        ({"type": "linear", "factor": 1.0}),
+    ],
+)
+def test_llm_rope_scaling_failure_modes(
+    rope_scaling_config: Union[None, Dict[str, Any]],
+):
+    config = {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: "HuggingFaceH4/tiny-random-LlamaForCausalLM",
+        INPUT_FEATURES: [{NAME: "text_input", TYPE: "text"}],
+        OUTPUT_FEATURES: [{NAME: "text_output", TYPE: "text"}],
+        "model_parameters": {
+            "rope_scaling": rope_scaling_config,
+        },
+    }
+
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+
+def test_llm_model_parameters_no_rope_scaling():
+    config = {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: "HuggingFaceH4/tiny-random-LlamaForCausalLM",
+        INPUT_FEATURES: [{NAME: "text_input", TYPE: "text"}],
+        OUTPUT_FEATURES: [{NAME: "text_output", TYPE: "text"}],
+        "model_parameters": {},
+    }
+
+    config_obj = ModelConfig.from_dict(config)
+    assert config_obj.model_parameters.rope_scaling is None
+    assert config_obj.model_parameters.to_dict() == {}
+
+
+def test_llm_finetuning_output_feature_config():
+    config = {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: "HuggingFaceH4/tiny-random-LlamaForCausalLM",
+        INPUT_FEATURES: [{NAME: "text_input", TYPE: "text"}],
+        OUTPUT_FEATURES: [{NAME: "category_output", TYPE: "category"}],
+        "trainer": {
+            "type": "finetune",
+        },
+    }
+
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+    config[OUTPUT_FEATURES] = [{NAME: "text_output", TYPE: "text"}]
+    ModelConfig.from_dict(config)
+
+
+@pytest.mark.distributed
+def test_llm_quantization_backend_compatibility():
+    config = {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: "HuggingFaceH4/tiny-random-LlamaForCausalLM",
+        INPUT_FEATURES: [{NAME: "text_input", TYPE: "text"}],
+        OUTPUT_FEATURES: [{NAME: "text_output", TYPE: "text"}],
+        "quantization": {"bits": 4},
+    }
+
+    # Backend not set - defaults to local backend
+    ModelConfig.from_dict(config)
+
+    # Backend explicitly set to local backend
+    config["backend"] = {"type": "local"}
+    ModelConfig.from_dict(config)
+
+    # Backend explicitly set to Ray backend
+    config["backend"] = {"type": "ray"}
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+    # Start local ray process
+    import ray
+
+    ray.init()
+
+    # Backend not set, but local Ray process is running
+    config.pop("backend")
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+    ray.shutdown()

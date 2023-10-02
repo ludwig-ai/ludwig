@@ -10,13 +10,14 @@ torch>=1.13.0
 torchaudio
 torchtext
 torchvision
-transformers>=4.28.1
+pydantic<2.0
+transformers>=4.33.2
+tokenizers>=0.13.3
 spacy>=2.3
-PyYAML>=3.12
+PyYAML>=3.12,<6.0.1,!=5.4.* #Exlude PyYAML 5.4.* due to incompatibility with awscli
 absl-py
 kaggle
 requests
-tables
 fsspec[http]
 dataclasses-json
 jsonschema>=4.5.0,<4.7
@@ -24,19 +25,27 @@ marshmallow
 marshmallow-jsonschema
 marshmallow-dataclass==8.5.4
 tensorboard
-torchmetrics>=0.11
+nltk    # Required for rouge scores.
+torchmetrics>=0.11.0,<=0.11.4
 torchinfo
 filelock
 psutil==5.9.4
-protobuf
+protobuf==3.20.3
 py-cpuinfo==9.0.0
 gpustat
 rich~=12.4.4
 packaging
 retry
+
 # required for TransfoXLTokenizer when using transformer_xl
 sacremoses
 sentencepiece
+
+# requirements for daft
+getdaft
+
+# requirement for various paged and 8-bit optimizers
+bitsandbytes<0.41.0
 
 # new data format support
 xlwt                # excel
@@ -46,5 +55,4 @@ openpyxl>=3.0.7     # excel
 pyxlsb>=1.0.8       # excel
 pyarrow             # parquet
 lxml                # html
-
-whylogs>=1.1.9
+html5lib            # html

@@ -1,17 +1,20 @@
+import contextlib
 import logging
 from abc import ABCMeta, abstractmethod
 from collections import OrderedDict
-from typing import Dict, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 import numpy as np
 import torch
+import torchmetrics
 
 from ludwig.combiners.combiners import Combiner
 from ludwig.constants import COMBINED, LOSS, NAME
 from ludwig.encoders.base import Encoder
-from ludwig.features.base_feature import create_passthrough_input_feature, InputFeature, OutputFeature
+from ludwig.features.base_feature import create_passthrough_input_feature, InputFeature, ModuleWrapper, OutputFeature
 from ludwig.features.feature_registries import get_input_type_registry, get_output_type_registry
 from ludwig.features.feature_utils import LudwigFeatureDict
+from ludwig.modules.metric_modules import LudwigMetric
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig, FeatureCollection
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
 from ludwig.utils.metric_utils import get_scalar_from_ludwig_metric
@@ -45,8 +48,25 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
 
         super().__init__()
 
-        self.input_features = LudwigFeatureDict()
-        self.output_features = LudwigFeatureDict()
+        self.input_features = self.create_feature_dict()
+        self.output_features = self.create_feature_dict()
+
+        # ================ Combined loss metric ================
+        self._eval_loss_metric = ModuleWrapper(torchmetrics.MeanMetric())
+        self._eval_additional_losses_metrics = ModuleWrapper(torchmetrics.MeanMetric())
+
+    def create_feature_dict(self) -> LudwigFeatureDict:
+        """Creates and returns a LudwigFeatureDict."""
+        return LudwigFeatureDict()
+
+    def to_device(self, device):
+        return self.to(device)
+
+    def metrics_to_device(self, device: str):
+        self._eval_loss_metric.module = self._eval_loss_metric.module.to(device)
+        self._eval_additional_losses_metrics.module = self._eval_additional_losses_metrics.module.to(device)
+        for feature in self.output_features.values():
+            feature._eval_loss_metric.module = feature._eval_loss_metric.module.to(device)
 
     @classmethod
     def build_inputs(cls, input_feature_configs: FeatureCollection[BaseInputFeatureConfig]) -> Dict[str, InputFeature]:
@@ -254,6 +274,18 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         self.eval_loss_metric.update(eval_loss)
         self.eval_additional_losses_metrics.update(additional_losses)
 
+    @property
+    def eval_loss_metric(self) -> LudwigMetric:
+        return self._eval_loss_metric.module
+
+    @eval_loss_metric.setter
+    def eval_loss_metric(self, value: LudwigMetric) -> None:
+        self._eval_loss_metric.module = value
+
+    @property
+    def eval_additional_losses_metrics(self) -> LudwigMetric:
+        return self._eval_additional_losses_metrics.module
+
     def get_metrics(self) -> Dict[str, Dict[str, float]]:
         """Returns a dictionary of metrics for each output feature of the model."""
         all_of_metrics = {}
@@ -301,6 +333,12 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
     @abstractmethod
     def get_args(self):
         """Returns init arguments for constructing this model."""
+
+    @contextlib.contextmanager
+    def use_generation_config(self, generation_config: Dict[str, Any]):
+        if generation_config is not None:
+            raise NotImplementedError(f"{self.__class__.__name__} does not support generation_config. ")
+        yield
 
 
 def create_input_feature(feature_config: BaseInputFeatureConfig, encoder_obj: Optional[Encoder]) -> InputFeature:
