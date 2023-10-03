@@ -86,7 +86,7 @@ def load_dataset_uris(
 
     dataset_out, training_set_out, validation_set_out, test_set_out = dataset, training_set, validation_set, test_set
     # Check that any of the datasets begin with the `hf://` prefix denoting a Hugging Face dataset URI
-    # Hugging Face datasets should follow the naming convention `hf://<dataset_name>--<dataset_subsample>`
+    # Hugging Face datasets should follow the naming convention `hf://<hf_id>--<hf_subsample>`
     if _is_hf(dataset, training_set):
         dataset_out, training_set_out, validation_set_out, test_set_out = _load_hf_datasets(
             dataset, training_set, validation_set, test_set, backend
@@ -161,7 +161,7 @@ def _load_hf_datasets(
     test_set_out = test_set
 
     # Check that any of the datasets begin with the `hf://` prefix denoting a Hugging Face dataset URI
-    # Hugging Face datasets should follow the naming convention `hf://<dataset_name>--<dataset_subsample>`
+    # Hugging Face datasets should follow the naming convention `hf://<hf_id>--<hf_subsample>`
     if dataset is not None:
         if isinstance(dataset, str) and dataset.startswith(HF_PREFIX):
             dataset_out = _load_cacheable_hf_dataset(dataset, backend)
@@ -295,7 +295,15 @@ def get_buffer(dataset_name: str, kaggle_username: str = None, kaggle_key: str =
 
 
 def _get_hf_dataset_and_subsample(dataset_name: str) -> Tuple[str, Optional[str]]:
-    """Returns the Hugging Face dataset name and subsample name from the dataset name."""
+    """Returns the Hugging Face ID and subsample name from the dataset name.
+
+    The dataset name should follow the format "{HF_PREFIX}{hf_id}--{hf_subsample}"
+
+    Examples (Dataset Name --> HF ID; HF subsample):
+    "hf://wikisql" --> "wikisql", None
+    "hf://ColumbiaNLP/FLUTE" --> "ColumbiaNLP/FLUTE"; None
+    "hf://mstz/adult--income" --> "mstz/adult"; "income"
+    """
     dataset_name = dataset_name[len(HF_PREFIX) :]
     dataset_name = dataset_name.split("--")
     if len(dataset_name) == 1:
