@@ -520,6 +520,8 @@ class RayTrainerV2(BaseTrainer):
 
         # ensure module is initialized exactly as it is in the trainer process
         # so that the state dict can be loaded back into the model correctly.
+        # It's okay to reload the model this way since we update the model's state
+        # dict with the actual weight checkpoint via load_state_dict below.
         self.model.prepare_for_training()
 
         # Set validation field and metric used by trainer
