@@ -103,7 +103,7 @@ def load_dataset_uris(
             # For the training set, we only want to use the TRAINING split of the dataset
             dataset_name = training_set[len(URI_PREFIX) :]
             loader = get_dataset(dataset_name)
-            train_df, test_df, val_df = loader.load(split=True)  # Why is test second and val third?
+            train_df, test_df, val_df = loader.load(split=True)
             training_set_checksum = str(loader.get_mtime())
             train_df = backend.df_engine.from_pandas(train_df)
             training_set_out = CacheableDataframe(df=train_df, name=training_set, checksum=training_set_checksum)
