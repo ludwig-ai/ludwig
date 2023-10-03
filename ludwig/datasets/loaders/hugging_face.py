@@ -50,10 +50,10 @@ class HFLoader(DatasetLoader):
         return new_dict
 
     def load(self, hf_id, hf_subsample, split=False) -> pd.DataFrame:
-        """When load() is called, instead of downloading any files, HFLoader calls the datasets API to return all
-        of the data in a HuggingFace DatasetDict, converts it to a dictionary of pandas dataframes, and returns
-        either three dataframes containing train, validation, and test data or one dataframe that is the
-        concatenation of all three depending on whether `split` is set to True or False.
+        """When load() is called, HFLoader calls the datasets API to return all of the data in a HuggingFace
+        DatasetDict, converts it to a dictionary of pandas dataframes, and returns either three dataframes
+        containing train, validation, and test data or one dataframe that is the concatenation of all three
+        depending on whether `split` is set to True or False.
 
         Note that some datasets may not provide a validation set or a test set. In this case:
         - If split is True, the DataFrames corresponding to the missing sets are initialized to be empty
