@@ -456,7 +456,7 @@ class DatasetLoader:
             dataframes = self._get_dataframe_with_fixed_splits_from_hf()
         else:
             dataframes = self._get_dataframe_with_fixed_splits(
-                self, train_paths, validation_paths, test_paths, dataset_paths, file_paths
+                train_paths, validation_paths, test_paths, dataset_paths, file_paths
             )
         return pd.concat(dataframes, ignore_index=True)
 
