@@ -250,6 +250,20 @@ class LLM(BaseModel):
             self.model.print_trainable_parameters()
             logger.info("==================================================")
 
+    @property
+    def trained_using_adapter(self) -> bool:
+        if self.config_obj.adapter:
+            return True
+        return False
+
+    def prepare_for_inference(self):
+        print("!!!!! PREPARE FOR INFERENCE")
+        # Reload the model onto the right device with the relevant load kwargs
+        self.model = load_pretrained_from_config(self.config_obj, model_config=self.model_config)
+        if self.config_obj.quantization:
+            self.prepare_for_quantized_training()
+        self.initialize_adapter()
+
     def prepare_for_training(self):
         print("!!!!! PREPARE FOR TRAINING")
         # TODO: this implementation will not work if resuming from a previous checkpoint. Need to fix this.

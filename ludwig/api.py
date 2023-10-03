@@ -942,7 +942,7 @@ class LudwigModel:
             self.model.set_generation_config(generation_config)
 
         logger.debug("Predicting")
-        with self.backend.create_predictor(self.model, batch_size=batch_size) as predictor:
+        with self.backend.create_predictor(self.model, config=self.config_obj, batch_size=batch_size) as predictor:
             predictions = predictor.batch_predict(
                 dataset,
             )
@@ -1066,7 +1066,7 @@ class LudwigModel:
             ) or self.config_obj.trainer.to_dict().get(BATCH_SIZE, None)
 
         logger.debug("Predicting")
-        with self.backend.create_predictor(self.model, batch_size=batch_size) as predictor:
+        with self.backend.create_predictor(self.model, config=self.config_obj, batch_size=batch_size) as predictor:
             eval_stats, predictions = predictor.batch_evaluation(
                 dataset,
                 collect_predictions=collect_predictions or collect_overall_stats,
@@ -1461,7 +1461,7 @@ class LudwigModel:
         )
 
         logger.debug("Predicting")
-        with self.backend.create_predictor(self.model, batch_size=batch_size) as predictor:
+        with self.backend.create_predictor(self.model, config=self.config_obj, batch_size=batch_size) as predictor:
             activations = predictor.batch_collect_activations(
                 layer_names,
                 dataset,

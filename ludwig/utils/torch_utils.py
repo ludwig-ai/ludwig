@@ -183,6 +183,16 @@ class LudwigModule(Module):
     def device(self):
         return self.device_tensor.device
 
+    @property
+    def trained_using_adapter(self) -> bool:
+        """This is called from within the Predictor class to see if the model was trained using a parameter
+        efficient fine-tuning method such as a LoRA adapter."""
+        return False
+
+    def prepare_for_inference(self):
+        """"""
+        pass
+
     def prepare_for_training(self):
         """This is called from within the Trainer object to do any final instantiation before model training."""
         pass

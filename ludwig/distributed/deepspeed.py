@@ -130,12 +130,13 @@ class DeepSpeedStrategy(DDPStrategy):
         return model_engine, optimizer
 
     def prepare_for_inference(self, model: nn.Module) -> nn.Module:
-        # if self.zero_optimization_stage != 3:
-        #     # If model is on CPU, we should move it to GPU since token generation is faster on GPU.
-        #     # Move it to the driver GPU.
-        #     if model.device.type != "cuda" or model.device.index != 0:
-        #         model = model.to("cuda:0")
-        #     return model
+        if self.zero_optimization_stage != 3:
+            # For all DeepSpeed stages that are not stage 3, we can just return the model.
+            # The model doesn't require model parallelism, and can be placed on the GPUs directly.
+            model.prepare_for_inference()
+            return model
+
+        # Only Zero3 models need to be wrapped in a DeepSpeed engine for inference.
         ds_config = {}
         model_engine = deepspeed.init_inference(model=model, config=ds_config)
         return model_engine
@@ -217,7 +218,24 @@ class DeepSpeedStrategy(DDPStrategy):
         return DeepSpeedCheckpoint(self, dist_model, optimizer, scheduler)
 
     @classmethod
+    def extract_adapter_weights_for_serialization(cls, model: nn.Module):
+        """TODO: Add useful docstring"""
+        from peft.utils.save_and_load import get_peft_model_state_dict
+
+        # We do model.model because the model is wrapped in a the LLM model wrapper.
+        return get_peft_model_state_dict(model.model)
+
+    @classmethod
     def extract_model_for_serialization(cls, model: nn.Module) -> Union[nn.Module, Tuple[nn.Module, List[Dict]]]:
+        return model
+
+    @classmethod
+    def replace_adapter_weights_from_serialization(cls, model: nn.Module, state_dict: Dict[str, Any]):
+        """TODO: Add useful docstring"""
+        from peft.utils.save_and_load import set_peft_model_state_dict
+
+        # We do model.model because the model is wrapped in a the LLM model wrapper.
+        set_peft_model_state_dict(model.model, state_dict)
         return model
 
     @classmethod

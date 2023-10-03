@@ -212,12 +212,16 @@ def train_fn(
             report_tqdm_to_ray=True,
             **executable_kwargs,
         )
+
+        # Trainer returns model/state_dict, progress_tracker.train_metrics,
+        # progress_tracker.validation_metrics and progress_tracker.test_metrics
         results = trainer.train(train_shard, val_shard, test_shard, return_state_dict=True, **kwargs)
         torch.cuda.empty_cache()
 
         # Passing objects containing Torch tensors as metrics is not supported as it will throw an
         # exception on deserialization, so create a checkpoint and return via session.report() along
-        # with the path of the checkpoint
+        # with the path of the checkpoint. This key contains the state dict and progress tracker metrics
+        # that will be deserialized on the driver.
         ckpt = Checkpoint.from_dict({"state_dict": results})
         torch_ckpt = TorchCheckpoint.from_checkpoint(ckpt)
 
@@ -529,6 +533,7 @@ class RayTrainerV2(BaseTrainer):
         # load state dict back into the model
         # use `strict=False` to account for PEFT training, where the saved state in the checkpoint
         # might only contain the PEFT layers that were modified during training
+        # *args are progress_tracker metrics for the train, val and test set.
         state_dict, *args = results
         self.model.load_state_dict(state_dict, strict=False)
         results = (self.model, *args)
@@ -646,6 +651,7 @@ def eval_fn(
     distributed_strategy: Union[str, Dict[str, Any]],
     predictor_kwargs: Dict[str, Any] = None,
     model_ref: ObjectRef = None,  # noqa: F821
+    adapter_ref: ObjectRef = None,  # noqa: F821
     training_set_metadata: TrainingSetMetadataDict = None,
     features: Dict[str, Dict] = None,
     **kwargs,
@@ -669,8 +675,18 @@ def eval_fn(
         # have to wrap here because we are passing into predictor directly.
         # This is in contrast creating the predictor in the trainer class and
         # passing in the model post-wrap.
+        #
+        # For LLMs:
+        # If we are using DeepSpeed Stage 3, this wraps the model in DeepSpeed Zero Inference.
+        # For DeepSpeed Stage 2 and below, this loads the base model weights into the model.
+        # If the model was not trained using an adapter, the fine-tuned weights are loaded into the model.
+        # If the model was trained using an adapter, the base model weights are loaded into the model.
         dist_model = distributed.prepare_for_inference(model)
+        if adapter_ref:
+            model = distributed.replace_adapter_weights_from_serialization(model, ray.get(adapter_ref))
+            dist_model = distributed.replace_adapter_weights_from_serialization(dist_model, ray.get(adapter_ref))
 
+        # Create an instance of the RayPredictor class
         predictor = get_predictor_cls(model.type())(
             dist_model=dist_model,
             distributed=distributed,
@@ -679,6 +695,7 @@ def eval_fn(
             model=model,
             **predictor_kwargs,
         )
+
         results = predictor.batch_evaluation(eval_shard, **kwargs)
 
         # The result object returned from trainer.fit() contains the metrics from the last session.report() call.
@@ -777,16 +794,27 @@ class RayPredictor(BasePredictor):
         # dataset. In the future, we can explore ways to combine these into a single step to reduce IO.
         with create_runner(**self.trainer_kwargs) as runner:
             dist_strategy = runner.dist_strategy
+            predictor_kwargs = {**self.predictor_kwargs, "collect_predictions": False}
+
+            # If the model is a fine-tuned LLM model that uses an adapter, we can just place the adapter
+            # weights in the Ray object store and load them back on each worker since the underlying base
+            # model's weights aren't modified.
+            adapter_ref = None
+            if self.model.trained_using_adapter:
+                adapter_state_dict = dist_strategy.extract_adapter_weights_for_serialization(self.model)
+                adapter_ref = ray.put(adapter_state_dict)
+
             model_ref = ray.put(dist_strategy.extract_model_for_serialization(self.model))
             # Collect eval metrics by distributing work across nodes / gpus with Horovod
             datasets = {"eval": dataset.ds}
             stream_window_size = {"eval": dataset.window_size_bytes}
-            predictor_kwargs = {**self.predictor_kwargs, "collect_predictions": False}
+
             eval_results = runner.run(
                 lambda config: eval_fn(**config),
                 config={
                     "predictor_kwargs": predictor_kwargs,
                     "model_ref": model_ref,
+                    "adapter_ref": adapter_ref,
                     "training_set_metadata": dataset.training_set_metadata,
                     "features": dataset.features,
                     **kwargs,

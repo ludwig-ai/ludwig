@@ -186,6 +186,14 @@ class DistributedStrategy(ABC):
         return MultiNodeCheckpoint(self, model, optimizer, scheduler)
 
     @classmethod
+    def extract_adapter_weights_for_serialization(cls, model: nn.Module):
+        return model
+
+    @classmethod
+    def replace_adapter_weights_from_serialization(cls, model: nn.Module):
+        return model
+
+    @classmethod
     def extract_model_for_serialization(cls, model: nn.Module) -> Union[nn.Module, Tuple[nn.Module, List[Dict]]]:
         return model
 
