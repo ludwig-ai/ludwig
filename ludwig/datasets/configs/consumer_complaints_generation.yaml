@@ -1,0 +1,28 @@
+version: 1.0
+name: consumer_complaints_generation
+download_urls: https://predibase-public-us-west-2.s3.us-west-2.amazonaws.com/datasets/consumer_complaints_gen_tutorial.csv
+train_filenames: consumer_complaints_gen_tutorial.csv
+description: |
+  The dataset contains different information of complaints that customers have made about a multiple products and
+  services in the financial sector, such us Credit Reports, Student Loans, Money Transfer, etc. The date of each
+  complaint ranges from November 2011 to May 2019. The dataset has been modified to be used for text generation.
+  We have added a structured JSON field that contains a company generated response to the raised complaint. The idea
+  is to fine-tune an LLM to generate this output JSON field.
+columns:
+  - name: Date received
+    type: Date
+  - name: Generated Company Response
+    type: text
+  - name: Complaint ID
+    type: number
+  - name: Issue
+    type: text
+  - name: Product
+    type: text
+  - name: Structured JSON Output
+    type: text
+  - name: Consumer complaint narrative
+    type: text
+output_features:
+  - name: Structured JSON Output
+    type: text
