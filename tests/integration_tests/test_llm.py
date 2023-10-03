@@ -715,7 +715,10 @@ def test_llm_lora_finetuning_merge_and_unload_4_bit_quantization_not_supported(l
     }
 
     expected_error_class: type = ludwig_error.ConfigValidationError
-    expected_error_message: str = 'This operation will entail merging LoRA layers on a 4-bit quantized model.  Calling "save_pretrained()" on that model is currently unsupported.'  # noqa E501
+    expected_error_message: str = """This operation will entail merging LoRA layers on a 4-bit quantized model.  \
+Calling "save_pretrained()" on that model is currently unsupported.  If you want to merge the LoRA adapter weights \
+into the base model, you need to use 8-bit quantization or do non-quantized based training by removing the \
+quantization section from your Ludwig configuration."""
     with pytest.raises(expected_error_class) as excinfo:
         _ = LudwigModel(config)
 

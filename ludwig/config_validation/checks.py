@@ -659,7 +659,9 @@ def check_qlora_merge_and_unload_compatibility(config: "ModelConfig") -> None:  
     if config.quantization.bits < MIN_QUANTIZATION_BITS_FOR_MERGE_AND_UNLOAD:
         raise ConfigValidationError(
             f"""This operation will entail merging LoRA layers on a {config.quantization.bits}-bit \
-quantized model.  Calling "save_pretrained()" on that model is currently unsupported."""
+quantized model.  Calling "save_pretrained()" on that model is currently unsupported.  If you want to merge the LoRA \
+adapter weights into the base model, you need to use 8-bit quantization or do non-quantized based training by removing \
+the quantization section from your Ludwig configuration."""
         )
 
 
