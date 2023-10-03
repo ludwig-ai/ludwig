@@ -691,7 +691,7 @@ def test_llm_lora_finetuning_merge_and_unload_quantized_accelerate_required(
 
 
 @pytest.mark.llm
-def test_llm_lora_finetuning_merge_and_unload_4_bit_quantization_not_supported():
+def test_llm_lora_finetuning_merge_and_unload_4_bit_quantization_not_supported(local_backend: dict):
     input_features: List[dict] = [text_feature(name="input", encoder={"type": "passthrough"})]
     output_features: List[dict] = [text_feature(name="output")]
     finetune_strategy: str = "lora"
@@ -711,6 +711,7 @@ def test_llm_lora_finetuning_merge_and_unload_4_bit_quantization_not_supported()
             POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: True, PROGRESSBAR: True},
         },
         QUANTIZATION: {"bits": 4},
+        BACKEND: local_backend,
     }
 
     expected_error_class: type = ludwig_error.ConfigValidationError
