@@ -445,9 +445,11 @@ class LudwigModel:
         """
         # Only reset the metadata if the model has not been trained before
         if self.training_set_metadata:
-            logging.warn(
-                "Previous metadata has been detected. Overriding `training_set_metadata` with metadata from previous "
-                "training run."
+            logger.warning(
+                "This model has been trained before. Its architecture has been defined by the original training set "
+                "(for example, the number of possible categorical outputs). The current training data will be mapped "
+                "to this architecture. If you want to change the architecture of the model, please concatenate your "
+                "new training data with the original and train a new model from scratch."
             )
             training_set_metadata = self.training_set_metadata
 
