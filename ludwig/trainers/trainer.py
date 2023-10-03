@@ -41,6 +41,7 @@ from ludwig.globals import (
     TRAINING_PROGRESS_TRACKER_FILE_NAME,
 )
 from ludwig.models.ecd import ECD
+from ludwig.models.llm import LLM
 from ludwig.models.predictor import Predictor
 from ludwig.modules.lr_scheduler import LRScheduler
 from ludwig.modules.metric_modules import get_improved_fn, get_initial_validation_value
@@ -130,11 +131,12 @@ class Trainer(BaseTrainer):
         :param config: `ludwig.schema.trainer.BaseTrainerConfig` instance that specifies training hyperparameters
                 (default: `ludwig.schema.trainer.ECDTrainerConfig()`).
         """
-
         self.distributed = distributed if distributed is not None else LocalStrategy()
 
         self.epochs = config.epochs
         self.train_steps = config.train_steps
+        self.enable_profiling = config.enable_profiling
+        self.steps_per_epoch = 0  # Computed during training, after batcher has been initialized.
         self.total_steps = 0  # Computed during training, after batcher has been initialized.
 
         self.regularization_lambda = config.regularization_lambda
@@ -187,6 +189,12 @@ class Trainer(BaseTrainer):
         self.gradient_clipping_config = create_clipper(config.gradient_clipping)
 
         self.config = config
+
+        self.base_learning_rate = None
+        self.dist_model = None
+        self.optimizer = None
+        self.scheduler = None
+
         self.prepare()
 
         # Setup for automatic mixed precision (AMP)
@@ -214,6 +222,24 @@ class Trainer(BaseTrainer):
 
         # We may need to replace the embedding layer when using 8-bit optimizers from bitsandbytes.
         update_embedding_layer(self.compiled_model, self.config)
+
+        # Enable gradient checkpointing if configured
+        if self.config.enable_gradient_checkpointing:
+            # TODO(Arnav): Add support for gradient checkpointing in the compiled model
+            # when the model is an ECD model using torch.utils.checkpoint (torch.utils.checkpoint.sequential())
+            if not isinstance(self.compiled_model, LLM):
+                logger.warning("Gradient checkpointing is currently only supported for model_type: llm. Skipping...")
+            elif not hasattr(self.compiled_model, "model") and not hasattr(
+                self.compiled_model.model, "gradient_checkpointing_enable"
+            ):
+                logger.warning("Gradient checkpointing is not supported by this model. Skipping...")
+            elif hasattr(self.compiled_model.model, "gradient_checkpointing_enable"):
+                self.compiled_model.model.gradient_checkpointing_enable()
+                self.compiled_model.model.enable_input_require_grads()
+                logger.info("Gradient checkpointing enabled for training.")
+            else:
+                raise RuntimeError("Error when trying to enable gradient checkpointing.")
+
         self.dist_model, self.optimizer = self.distributed.prepare(
             self.compiled_model,
             self.config,
@@ -224,7 +250,11 @@ class Trainer(BaseTrainer):
         self.scheduler = LRScheduler(self.config.learning_rate_scheduler, self.optimizer, 0, 0)
 
     def train_step(
-        self, inputs: Dict[str, torch.Tensor], targets: Dict[str, torch.Tensor], should_step: bool = True
+        self,
+        inputs: Dict[str, torch.Tensor],
+        targets: Dict[str, torch.Tensor],
+        should_step: bool = True,
+        profiler: Optional[torch.profiler.profile] = None,
     ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
         """Performs a single training step.
 
@@ -322,6 +352,9 @@ class Trainer(BaseTrainer):
 
         self.distributed.zero_grad(self.optimizer)
 
+        if profiler:
+            profiler.step()
+
         return loss, all_losses
 
     def clip_grads(self, variables):
@@ -367,6 +400,93 @@ class Trainer(BaseTrainer):
         if learning_rate:
             train_summary_writer.add_scalar("combined/step_learning_rate", learning_rate, global_step=step)
 
+        # Log CUDA memory stats.
+        if torch.cuda.is_available():
+            for i in range(torch.cuda.device_count()):
+                device = torch.device(f"cuda:{i}")
+                memory_stats = torch.cuda.memory_stats(device=device)
+                gb_memory_stats = {k: v / (1000**3) for k, v in memory_stats.items()}
+                # Allocated bytes.
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/allocated_gb.all.current",
+                    gb_memory_stats["allocated_bytes.all.current"],
+                    global_step=step,
+                )
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/allocated_gb.all.peak",
+                    gb_memory_stats["allocated_bytes.all.peak"],
+                    global_step=step,
+                )
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/allocated_gb.all.allocated",
+                    gb_memory_stats["allocated_bytes.all.allocated"],
+                    global_step=step,
+                )
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/allocated_gb.all.freed",
+                    gb_memory_stats["allocated_bytes.all.freed"],
+                    global_step=step,
+                )
+
+                # Reserved bytes.
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/reserved_gb.all.current",
+                    gb_memory_stats["reserved_bytes.all.current"],
+                    global_step=step,
+                )
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/reserved_gb.all.peak", gb_memory_stats["reserved_bytes.all.peak"], global_step=step
+                )
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/reserved_gb.all.allocated",
+                    gb_memory_stats["reserved_bytes.all.allocated"],
+                    global_step=step,
+                )
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/reserved_gb.all.freed",
+                    gb_memory_stats["reserved_bytes.all.freed"],
+                    global_step=step,
+                )
+
+                # Active bytes.
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/active_gb.all.current",
+                    gb_memory_stats["active_bytes.all.current"],
+                    global_step=step,
+                )
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/active_gb.all.peak", gb_memory_stats["active_bytes.all.peak"], global_step=step
+                )
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/active_gb.all.allocated",
+                    gb_memory_stats["active_bytes.all.allocated"],
+                    global_step=step,
+                )
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/active_gb.all.freed", gb_memory_stats["active_bytes.all.freed"], global_step=step
+                )
+
+                # Global free memory.
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/global_free_memory_gb",
+                    torch.cuda.mem_get_info(device=device)[0] / (1000**3),
+                    global_step=step,
+                )
+
+                # Total memory occupied.
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/total_memory_occupied_gb",
+                    torch.cuda.mem_get_info(device=device)[1] / (1000**3),
+                    global_step=step,
+                )
+
+                # Total memory used.
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/total_memory_used_gb",
+                    (torch.cuda.mem_get_info(device=device)[1] - torch.cuda.mem_get_info(device=device)[0])
+                    / (1000**3),
+                    global_step=step,
+                )
         train_summary_writer.flush()
 
     def is_cpu_training(self):
@@ -679,7 +799,6 @@ class Trainer(BaseTrainer):
         )
 
         # ====== Setup session =======
-        checkpoint_manager = None
         checkpoint = self.distributed.create_checkpoint_handle(
             dist_model=self.dist_model, model=self.model, optimizer=self.optimizer, scheduler=self.scheduler
         )
@@ -745,6 +864,23 @@ class Trainer(BaseTrainer):
 
         set_random_seed(self.random_seed)
 
+        if self.enable_profiling:
+            logger.warning("Full torch profiler is enabled. Training may be significantly slower.")
+            profiler = torch.profiler.profile(
+                schedule=torch.profiler.schedule(
+                    wait=self.config.profiler.wait,
+                    warmup=self.config.profiler.warmup,
+                    active=self.config.profiler.active,
+                    repeat=self.config.profiler.repeat,
+                ),
+                on_trace_ready=torch.profiler.tensorboard_trace_handler(os.path.join(tensorboard_log_dir, "profiling")),
+                record_shapes=True,
+                with_stack=True,
+                profile_memory=True,
+            )
+        else:
+            profiler = None
+
         try:
             with training_set.initialize_batcher(
                 batch_size=self.batch_size,
@@ -755,6 +891,7 @@ class Trainer(BaseTrainer):
                 augmentation_pipeline=self.model.get_augmentation_pipelines(),
             ) as batcher:
                 # ================ Training Loop ================
+                self.steps_per_epoch = batcher.steps_per_epoch
                 self.total_steps = get_total_steps(self.epochs, batcher.steps_per_epoch, self.train_steps)
 
                 # Get the terminal steps per checkpoint.
@@ -798,6 +935,9 @@ class Trainer(BaseTrainer):
                 }
                 progress_bar = LudwigProgressBar(self.report_tqdm_to_ray, progress_bar_config, self.is_coordinator())
 
+                if profiler:
+                    profiler.start()
+
                 while progress_tracker.steps < self.total_steps:
                     # note that batch size may change over epochs
                     batcher.set_epoch(progress_tracker.epoch, progress_tracker.batch_size)
@@ -811,7 +951,7 @@ class Trainer(BaseTrainer):
 
                     self.callback(lambda c: c.on_epoch_start(self, progress_tracker, save_path))
 
-                    # Trains over a full epoch of data.
+                    # Trains over a full epoch of data or up to the last training step, whichever is sooner.
                     should_break = self._train_loop(
                         batcher,
                         progress_tracker,
@@ -830,11 +970,8 @@ class Trainer(BaseTrainer):
                         checkpoint_manager,
                         final_steps_per_checkpoint,
                         early_stopping_steps,
+                        profiler,
                     )
-
-                    # ================ Post Training Epoch ================
-                    progress_tracker.epoch += 1
-                    self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
 
                     if self.is_coordinator():
                         # ========== Save training progress ==========
@@ -861,6 +998,11 @@ class Trainer(BaseTrainer):
                 coordinator_only=False,
             )
 
+            # Stop the profiler.
+            if profiler:
+                profiler.stop()
+
+            # Close the summary writers.
             if train_summary_writer is not None:
                 train_summary_writer.close()
             if validation_summary_writer is not None:
@@ -884,8 +1026,35 @@ class Trainer(BaseTrainer):
                     if self.distributed.is_model_parallel():
                         # Assume the full weights cannot fit in memory on GPU
                         self.model = self.model.cpu()
-                    _, unexpected_keys = self.model.load_state_dict(state_dict, strict=False)
-                    assert unexpected_keys == [], f"Unexpected keys found in state dict: {unexpected_keys}"
+
+                    # For a full explanation of this 8-bit workaround, see https://github.com/ludwig-ai/ludwig/pull/3606
+                    # TODO (jeffkinnison): Determine why `SCB` and `CB` are deleted from parameter state
+                    if (
+                        hasattr(self.model.config_obj, "quantization")
+                        and self.model.config_obj.quantization
+                        and self.model.config_obj.quantization.bits == 8
+                    ):
+                        # If the model was previously placed on GPU, 8-bit parameter state will be updated with several
+                        # matrices containing quantization information. These are recorded matrices are recorded in the
+                        # training checkpoint state dicts, but do not necessarily exist in the parameter object, leading
+                        # to a RuntimeError in `load_state_dict`. Explicitly call `model.cuda()` to make sure the
+                        # matrices are part of model state. This workaround is necessary because the matrices are
+                        # deleted during the model's forward pass.
+                        if self.model.model.device.type == "cuda":
+                            self.model.model.cuda()
+                        _, unexpected_keys = self.model.load_state_dict(state_dict, strict=False)
+                        only_weights_format_keys = ["weights_format" in k for k in unexpected_keys]
+
+                        # bitsandbytes adds a number of `weights_format` metadata fields to the state dict in
+                        # `Linear8bitLt._save_to_state_dict`. These contain information about how the 8-bit tensors
+                        # are tiled, but the fields themselves never exist in the module and get returned as unexpected
+                        # keys when loading the state dict. The
+                        assert (
+                            unexpected_keys == [] or only_weights_format_keys
+                        ), f"Unexpected keys found in state dict: {unexpected_keys}"
+                    else:
+                        _, unexpected_keys = self.model.load_state_dict(state_dict, strict=False)
+                        assert unexpected_keys == [], f"Unexpected keys found in state dict: {unexpected_keys}"
             elif return_state_dict:
                 state_dict = self.model.cpu().state_dict()
 
@@ -924,6 +1093,7 @@ class Trainer(BaseTrainer):
         checkpoint_manager: CheckpointManager,
         final_steps_per_checkpoint: int,
         early_stopping_steps: int,
+        profiler: Optional[torch.profiler.profile],
     ) -> bool:
         """Completes up to one epoch through the data."""
         self.distributed.zero_grad(self.optimizer)
@@ -951,7 +1121,7 @@ class Trainer(BaseTrainer):
                 for o_feat in self.model.output_features.values()
             }
 
-            loss, all_losses = self.train_step(inputs, targets, should_step=should_step)
+            loss, all_losses = self.train_step(inputs, targets, should_step=should_step, profiler=profiler)
 
             # Update LR schduler here instead of train loop to avoid updating during batch size tuning, etc.
             self.scheduler.step()
@@ -979,8 +1149,16 @@ class Trainer(BaseTrainer):
             # batch duration measurements when using timer callbacks.
             self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path, sync_step=should_step))
 
+            if batcher.last_batch():
+                # We have completed an epoch, so we need to increment the epoch counter. It's important to do this here
+                # instead of outside of the train loop since it's possible the train loop will exit early due to
+                # early stopping, or step-based training.
+                progress_tracker.epoch += 1
+                self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
+
             if progress_tracker.steps % final_steps_per_checkpoint == 0:
                 if not self.skip_all_evaluation:
+                    # Publishes metrics to MLFLow if there are any MLFlow callbacks.
                     should_break = self.run_evaluation(
                         training_set,
                         validation_set,
@@ -1236,8 +1414,8 @@ class Trainer(BaseTrainer):
                 signal.signal(signal.SIGINT, self.original_sigint_handler)
             sys.exit(1)
 
+    @staticmethod
     def resume_files_exist(
-        self,
         training_progress_tracker_path: str,
         training_checkpoint_path: str,
     ) -> bool:

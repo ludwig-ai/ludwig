@@ -1,3 +1,4 @@
+import os
 from dataclasses import field
 
 from marshmallow import fields, ValidationError
@@ -30,6 +31,7 @@ MODEL_PRESETS = {
     "gpt-j-6b": "EleutherAI/gpt-j-6b",
     "pythia-2.8b": "EleutherAI/pythia-2.8b",
     "pythia-12b": "EleutherAI/pythia-12b",
+    "mistral-7b": "mistralai/Mistral-7B-v0.1",
 }
 
 
@@ -45,18 +47,23 @@ def BaseModelDataclassField():
         """Validates and upgrades the given model name to its full path, if applicable.
 
         If the name exists in `MODEL_PRESETS`, returns the corresponding value from the dict; otherwise checks if the
-        given name (which should be a full path) exists in the transformers library.
+        given name (which should be a full path) exists locally or in the transformers library.
         """
         if isinstance(model_name, str):
             if model_name in MODEL_PRESETS:
                 return MODEL_PRESETS[model_name]
+            if os.path.isdir(model_name):
+                return model_name
             try:
                 AutoConfig.from_pretrained(model_name)
                 return model_name
             except OSError:
                 raise ConfigValidationError(
-                    f"Specified base model `{model_name}` is not a valid pretrained CausalLM listed on huggingface. "
-                    "Please see: https://huggingface.co/models?pipeline_tag=text-generation&sort=downloads"
+                    f"Specified base model `{model_name}` could not be loaded. If this is a private repository, make "
+                    f"sure to set HUGGING_FACE_HUB_TOKEN in your environment. Check that {model_name} is a valid "
+                    "pretrained CausalLM listed on huggingface or a valid local directory containing the weights for a "
+                    "pretrained CausalLM from huggingface. See: "
+                    "https://huggingface.co/models?pipeline_tag=text-generation&sort=downloads for a full list."
                 )
         raise ValidationError(
             f"`base_model` should be a string, instead given: {model_name}. This can be a preset or any pretrained "

@@ -299,7 +299,9 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
             predictions: Dict of tensors returned by predictions().
         """
         if tokenizer is not None:
+            # Decode the targets and predictions to compute response-based metrics using the initialized tokenizer.
             decoded_targets, decoded_predictions = get_decoded_targets_and_predictions(targets, predictions, tokenizer)
+
         for metric_name, metric_fn in self._metric_functions.items():
             prediction_key = get_metric_tensor_input(metric_name)
             try:
@@ -308,6 +310,12 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
                         # RESPONSE metrics cannot be computed if decoded texts are not provided.
                         # Decoded texts are only provided using the LLM model type.
                         if decoded_targets is not None and decoded_predictions is not None:
+                            # Move metric function to the device of the predictions.
+                            # For CUDA, it can be computed on any of the GPUs since it uses allgather to collect
+                            # the results from all GPUs and compute the final metric.
+                            # We use 'predictions' as the key since it is always present in the predictions dict.
+                            device = "cuda" if predictions["predictions"].is_cuda else "cpu"
+                            metric_fn = metric_fn.to(device)
                             if metric_name == "bleu":
                                 # BLEU takes in targets as a list.
                                 metric_fn.update(decoded_predictions, [decoded_targets])

@@ -1,0 +1,50 @@
+version: 1.0
+name: consumer_complaints
+kaggle_dataset_id: selener/consumer-complaint-database
+archive_filenames: consumer-complaint-database.zip
+dataset_filenames: rows.csv
+loader: consumer_complaints_loader.ConsumerComplaintsLoader
+description: |
+  The dataset contains different information of complaints that customers have made about a multiple products and
+  services in the financial sector, such us Credit Reports, Student Loans, Money Transfer, etc. The date of each
+  complaint ranges from November 2011 to May 2019.
+columns:
+  - name: Date received
+    type: Date
+  - name: Product
+    type: text
+  - name: Sub-product
+    type: text
+  - name: Issue
+    type: text
+  - name: Sub-issue
+    type: text
+  - name: Consumer complaint narrative
+    type: text
+  - name: Company public response
+    type: text
+  - name: Company
+    type: text
+  - name: State
+    type: category
+  - name: ZIP code
+    type: category
+  - name: Tags
+    type: category
+  - name: Consumer consent provided?
+    type: text
+  - name: Submitted via
+    type: category
+  - name: Date sent to company
+    type: date
+  - name: Company response to consumer
+    type: text
+  - name: Timely response?
+    type: binary
+  - name: Consumer disputed?
+    type: binary
+  - name: Complaint ID
+    type: number
+output_features:
+  - name: Issue
+    type: text

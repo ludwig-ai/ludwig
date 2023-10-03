@@ -1,7 +1,8 @@
+import contextlib
 import logging
 from abc import ABCMeta, abstractmethod
 from collections import OrderedDict
-from typing import Dict, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -277,6 +278,10 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
     def eval_loss_metric(self) -> LudwigMetric:
         return self._eval_loss_metric.module
 
+    @eval_loss_metric.setter
+    def eval_loss_metric(self, value: LudwigMetric) -> None:
+        self._eval_loss_metric.module = value
+
     @property
     def eval_additional_losses_metrics(self) -> LudwigMetric:
         return self._eval_additional_losses_metrics.module
@@ -328,6 +333,12 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
     @abstractmethod
     def get_args(self):
         """Returns init arguments for constructing this model."""
+
+    @contextlib.contextmanager
+    def use_generation_config(self, generation_config: Dict[str, Any]):
+        if generation_config is not None:
+            raise NotImplementedError(f"{self.__class__.__name__} does not support generation_config. ")
+        yield
 
 
 def create_input_feature(feature_config: BaseInputFeatureConfig, encoder_obj: Optional[Encoder]) -> InputFeature:
