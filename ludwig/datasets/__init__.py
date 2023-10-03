@@ -11,7 +11,7 @@ import yaml
 
 from ludwig.api_annotations import DeveloperAPI, PublicAPI
 from ludwig.backend.base import Backend
-from ludwig.constants import AUDIO, BINARY, CATEGORY, IMAGE, NUMBER, TEXT, TYPE
+from ludwig.constants import AUDIO, BINARY, CATEGORY, IMAGE, NUMBER, TEST, TEXT, TRAIN, TYPE, VALIDATION
 from ludwig.data.cache.types import CacheableDataframe
 from ludwig.datasets import configs
 from ludwig.datasets.dataset_config import DatasetConfig
@@ -25,6 +25,7 @@ from ludwig.utils.types import DataFrame
 
 URI_PREFIX = "ludwig://"
 HF_PREFIX = "hf://"
+SPLITS = [TRAIN, VALIDATION, TEST]
 
 
 def _load_dataset_config(config_filename: str):
@@ -84,15 +85,18 @@ def load_dataset_uris(
     """
     # Check that any of the datasets begin with the `hf://` prefix denoting a Hugging Face dataset URI
     # Hugging Face datasets should follow the naming convention `hf://<dataset_name>--<dataset_subsample>`
-    dataset_out, training_set_out, validation_set_out, test_set_out = _load_hf_datasets(
-        dataset, training_set, validation_set, test_set, backend
-    )
+    if _is_hf(dataset, training_set):
+        dataset_out, training_set_out, validation_set_out, test_set_out = _load_hf_datasets(
+            dataset, training_set, validation_set, test_set, backend
+        )
+        return dataset_out, training_set_out, validation_set_out, test_set_out
 
     # Check that any of the datasets begin with the `ludwig://` prefix denoting a Ludwig dataset URI
     if dataset is not None:
         if isinstance(dataset, str) and dataset.startswith(URI_PREFIX):
             dataset_out = _load_cacheable_dataset(dataset, backend)
-    elif training_set is not None:
+        return dataset_out, training_set_out, validation_set_out, test_set_out
+    if training_set is not None:
         train_df = test_df = val_df = None
         training_set_checksum = None
         if isinstance(training_set, str) and training_set.startswith(URI_PREFIX):
@@ -120,10 +124,19 @@ def load_dataset_uris(
             else:
                 test_set_out = _load_cacheable_dataset(test_set, backend)
 
-    return dataset_out, training_set_out, validation_set_out, test_set_out
+        return dataset_out, training_set_out, validation_set_out, test_set_out
+    else:
+        raise ValueError("Neither dataset nor training_set has been provided. Please provide one of the two.")
 
 
-@DeveloperAPI
+def _is_hf(dataset, training_set):
+    dataset_is_hf = dataset is not None and isinstance(dataset, str) and dataset.startswith(HF_PREFIX)
+    training_set_is_hf = (
+        training_set is not None and isinstance(training_set, str) and training_set.startswith(HF_PREFIX)
+    )
+    return dataset_is_hf or training_set_is_hf
+
+
 def _load_hf_datasets(
     dataset: Optional[Union[str, DataFrame]],
     training_set: Optional[Union[str, DataFrame]],
@@ -149,55 +162,55 @@ def _load_hf_datasets(
     # Hugging Face datasets should follow the naming convention `hf://<dataset_name>--<dataset_subsample>`
     if dataset is not None:
         if isinstance(dataset, str) and dataset.startswith(HF_PREFIX):
-            dataset_out = _load_cacheable_dataset(dataset, backend, hf=True)
-    elif training_set is not None:
-        train_df = test_df = val_df = None
-        training_set_checksum = None
-        if isinstance(training_set, str) and training_set.startswith(HF_PREFIX):
-            # For the training set, we only want to use the TRAINING split of the dataset
-            loader = get_dataset("hugging_face")
-            dataset_name, dataset_subsample = _get_hf_dataset_and_subsample(training_set)
-            setattr(loader.config, "huggingface_dataset_id", dataset_name)
-            setattr(loader.config, "huggingface_subsample", dataset_subsample)
-            train_df, val_df, test_df = loader.load(split=True)
-            # training_set_checksum = str(loader.get_mtime())
-            train_df = backend.df_engine.from_pandas(train_df)
-            training_set_out = CacheableDataframe(df=train_df, name=training_set, checksum=training_set_checksum)
+            dataset_out = _load_cacheable_hf_dataset(dataset, backend)
+        return dataset_out, training_set_out, validation_set_out, test_set_out
 
-        if isinstance(validation_set, str) and validation_set.startswith(HF_PREFIX):
-            if validation_set == training_set:
-                # Reuse the loaded DF from the training split
-                val_df = backend.df_engine.from_pandas(val_df)
-                validation_set_out = CacheableDataframe(df=val_df, name=validation_set, checksum=training_set_checksum)
-            else:
-                validation_set_out = _load_cacheable_dataset(validation_set, backend, hf=True)
+    # Because of the conditional logic (_is_hf) in load_dataset_uris, if the above block is not triggered, then
+    # training_set must be a string that starts with HF_PREFIX
+    train_df = test_df = val_df = None
+    loader = get_dataset("hugging_face")
+    hf_id, hf_subsample = _get_hf_dataset_and_subsample(training_set)
+    train_df, val_df, test_df = loader.load(hf_id, hf_subsample, split=True)  # Call hugging_face loader
+    train_df = backend.df_engine.from_pandas(train_df)
+    training_set_out = CacheableDataframe(df=train_df, name=training_set, checksum=None)
 
-        if isinstance(test_set, str) and test_set.startswith(HF_PREFIX):
-            if test_set == training_set:
-                # Reuse the loaded DF from the training split
-                test_df = backend.df_engine.from_pandas(test_df)
-                test_set_out = CacheableDataframe(df=test_df, name=test_set, checksum=training_set_checksum)
-            else:
-                test_set_out = _load_cacheable_dataset(test_set, backend, hf=True)
+    if isinstance(validation_set, str) and validation_set.startswith(HF_PREFIX):
+        if validation_set == training_set:
+            # Reuse the loaded DF from the training split
+            val_df = backend.df_engine.from_pandas(val_df)
+            validation_set_out = CacheableDataframe(df=val_df, name=validation_set, checksum=None)
+        else:
+            validation_set_out = _load_cacheable_hf_dataset(validation_set, backend, split_set=VALIDATION)
+
+    if isinstance(test_set, str) and test_set.startswith(HF_PREFIX):
+        if test_set == training_set:
+            # Reuse the loaded DF from the training split
+            test_df = backend.df_engine.from_pandas(test_df)
+            test_set_out = CacheableDataframe(df=test_df, name=test_set, checksum=None)
+        else:
+            test_set_out = _load_cacheable_hf_dataset(test_set, backend, split_set=TEST)
 
     return dataset_out, training_set_out, validation_set_out, test_set_out
 
 
-def _load_cacheable_dataset(dataset: str, backend: Backend, hf=False) -> CacheableDataframe:
-    if hf:
-        loader = get_dataset("hugging_face")
-        dataset_name, dataset_subsample = _get_hf_dataset_and_subsample(dataset)
-        setattr(loader.config, "huggingface_dataset_id", dataset_name)
-        setattr(loader.config, "huggingface_subsample", dataset_subsample)
-        df = loader.load(split=False)
-        df = backend.df_engine.from_pandas(df)
-        return CacheableDataframe(df=df, name=dataset, checksum=None)
+def _load_cacheable_hf_dataset(dataset: str, backend: Backend, split_set=None) -> CacheableDataframe:
+    loader = get_dataset("hugging_face")
+    hf_id, hf_subsample = _get_hf_dataset_and_subsample(dataset)
+    if split_set:
+        train_df, validation_df, test_df = loader.load(hf_id, hf_subsample, split=True)
+        df = [train_df, validation_df, test_df][SPLITS.index(split_set)]
     else:
-        dataset_name = dataset[len(URI_PREFIX) :]
-        loader = get_dataset(dataset_name)
-        df = loader.load(split=False)
-        df = backend.df_engine.from_pandas(df)
-        return CacheableDataframe(df=df, name=dataset, checksum=str(loader.get_mtime()))
+        df = loader.load(hf_id, hf_subsample, split=False)
+    df = backend.df_engine.from_pandas(df)
+    return CacheableDataframe(df=df, name=dataset, checksum=None)
+
+
+def _load_cacheable_dataset(dataset: str, backend: Backend) -> CacheableDataframe:
+    dataset_name = dataset[len(URI_PREFIX) :]
+    loader = get_dataset(dataset_name)
+    df = loader.load(split=False)
+    df = backend.df_engine.from_pandas(df)
+    return CacheableDataframe(df=df, name=dataset, checksum=str(loader.get_mtime()))
 
 
 @PublicAPI
