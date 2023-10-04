@@ -287,7 +287,11 @@ def download_dataset(dataset_name: str, output_dir: str = "."):
 def get_buffer(dataset_name: str, kaggle_username: str = None, kaggle_key: str = None) -> BytesIO:
     """Returns a byte buffer for the specified dataset."""
     try:
-        dataset = get_dataset(dataset_name).load(kaggle_username=kaggle_username, kaggle_key=kaggle_key)
+        if dataset_name.startswith(HF_PREFIX):
+            hf_id, hf_subsample = _get_hf_dataset_and_subsample(dataset_name)
+            dataset = get_dataset("hugging_face").load(hf_id, hf_subsample)
+        else:
+            dataset = get_dataset(dataset_name).load(kaggle_username=kaggle_username, kaggle_key=kaggle_key)
         buffer = BytesIO(dataset.to_parquet())
         return buffer
     except Exception as e:
