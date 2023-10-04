@@ -387,7 +387,7 @@ def _verify_lm_lora_finetuning_layers(
     expected_lora_in_features: int,
     expected_lora_out_features: int,
     expected_file_names: List[str],
-) -> bool:
+) -> None:
     """This method verifies that LoRA finetuning layers have correct types and shapes, depending on whether the
     optional "model.merge_and_unload()" method (based on the "merge_adapter_into_base_model" directive) was
     executed.
@@ -399,20 +399,20 @@ def _verify_lm_lora_finetuning_layers(
     matrix (with the dimensions expected_lora_in_features by expected_lora_in_features) for both V and Q projections.
     """
     file_names: List[str] = list_file_names_in_directory(directory_name=model_weights_directory)
-    success: bool = set(file_names) == set(expected_file_names)
-    success = success and isinstance(attention_layer.v_proj, torch.nn.Linear)
-    success = success and isinstance(attention_layer.q_proj, torch.nn.Linear)
+    assert set(file_names) == set(expected_file_names)
+    assert isinstance(attention_layer.v_proj, torch.nn.Linear)
+    assert isinstance(attention_layer.q_proj, torch.nn.Linear)
     if merge_adapter_into_base_model:
-        success = success and (attention_layer.v_proj.in_features, attention_layer.v_proj.out_features) == (
+        assert (attention_layer.v_proj.in_features, attention_layer.v_proj.out_features) == (
             expected_lora_in_features,
             expected_lora_out_features,
         )
-        success = success and (attention_layer.q_proj.in_features, attention_layer.q_proj.out_features) == (
+        assert (attention_layer.q_proj.in_features, attention_layer.q_proj.out_features) == (
             expected_lora_in_features,
             expected_lora_out_features,
         )
-        success = success and not list(attention_layer.v_proj.children())
-        success = success and not list(attention_layer.q_proj.children())
+        assert not list(attention_layer.v_proj.children())
+        assert not list(attention_layer.q_proj.children())
     else:
         v_proj_named_children: dict[str, torch.nn.Modeule] = dict(attention_layer.v_proj.named_children())
         assert isinstance(v_proj_named_children["lora_A"]["default"], torch.nn.Linear)
@@ -436,8 +436,6 @@ def _verify_lm_lora_finetuning_layers(
             q_proj_named_children["lora_B"]["default"].in_features,
             q_proj_named_children["lora_B"]["default"].out_features,
         ) == (expected_lora_out_features, expected_lora_in_features)
-
-    return success
 
 
 # TODO(arnav): p-tuning and prefix tuning have errors when enabled that seem to stem from DDP:
@@ -620,6 +618,8 @@ def test_llm_finetuning_strategies_quantized(tmpdir, csv_filename, finetune_stra
 
 
 @pytest.mark.llm
+@pytest.mark.skipif(torch.cuda.device_count() == 0, reason="test requires at least 1 gpu")
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="test requires gpu support")
 @pytest.mark.parametrize(
     "finetune_strategy,adapter_args,quantization,error_raised",
     [
@@ -755,6 +755,7 @@ quantization section from your Ludwig configuration."""
             32,
             32,
             [
+                "added_tokens.json",
                 "tokenizer_config.json",
                 "special_tokens_map.json",
                 "config.json",
@@ -796,7 +797,7 @@ def test_llm_lora_finetuning_merge_and_unload(
 
     model = LudwigModel(config)
     model.train(dataset=train_df, output_directory=output_directory, skip_save_processed_input=False)
-    assert _verify_lm_lora_finetuning_layers(
+    _verify_lm_lora_finetuning_layers(
         attention_layer=model.model.model.base_model.model.transformer.h[1].attn,
         merge_adapter_into_base_model=merge_adapter_into_base_model,
         model_weights_directory=model_weights_directory,
@@ -807,7 +808,7 @@ def test_llm_lora_finetuning_merge_and_unload(
 
     # Make sure we can load the saved model and verify that the LoRA layers have expected shapes.
     model = LudwigModel.load(str(model_directory), backend=backend)
-    assert _verify_lm_lora_finetuning_layers(
+    _verify_lm_lora_finetuning_layers(
         attention_layer=model.model.model.base_model.model.transformer.h[1].attn,
         merge_adapter_into_base_model=merge_adapter_into_base_model,
         model_weights_directory=model_weights_directory,
