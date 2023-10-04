@@ -1,5 +1,8 @@
 import logging
 import os
+import tempfile
+import zipfile
+from pathlib import Path
 from abc import ABC, abstractmethod
 from typing import Optional
 
@@ -37,6 +40,8 @@ class BaseModelUpload(ABC):
         private: Optional[bool] = False,
         commit_message: Optional[str] = None,
         commit_description: Optional[str] = None,
+        dataset_file: Optional[str] = None,
+        dataset_name: Optional[str] = None,
     ) -> bool:
         """Abstract method to upload trained model artifacts to the target repository.
 
@@ -61,6 +66,8 @@ class BaseModelUpload(ABC):
         private: Optional[bool] = False,
         commit_message: Optional[str] = None,
         commit_description: Optional[str] = None,
+        dataset_file: Optional[str] = None,
+        dataset_name: Optional[str] = None,
     ):
         """Validate parameters before uploading trained model artifacts.
 
@@ -203,5 +210,90 @@ class HuggingFaceHub(BaseModelUpload):
         if upload_path:
             logger.info(f"Model uploaded to `{upload_path}` with repository name `{repo_id}`")
             return True
+
+        return False
+
+
+class Predibase(BaseModelUpload):
+    def __init__(self):
+        self.pc = None
+
+    def login(self):
+        """Login to Predibase using the token stored in the PREDIBASE_API_TOKEN environment variable and returns
+        a PredibaseClient object that can be used to interact with Predibase."""
+        from predibase import PredibaseClient
+
+        try:
+            pc = PredibaseClient()
+
+            # TODO: Check if subscription has expired
+
+            self.pc = pc
+        except Exception as e:
+            raise Exception(f"Failed to login to Predibase: {e}")
+            return False
+
+        return True
+
+    def upload(
+        self,
+        repo_id: str,
+        model_path: str,
+        commit_description: Optional[str] = None,
+        dataset_file: Optional[str] = None,
+        dataset_name: Optional[str] = None,
+    ) -> bool:
+        """Create an empty repo in Predibase and upload trained model artifacts to that repo.
+
+        Args:
+            model_path (`str`):
+                The path of the saved model. This is the top level directory where
+                the models weights as well as other associated training artifacts
+                are saved.
+            repo_name (`str`):
+                A repo name.
+            repo_description (`str` *optional*):
+                The description of the repo.
+        """
+        # Create empty model repo using repo_name, but it is okay if it already exists.
+        try:
+            repo = self.pc.create_repo(
+                name=repo_id,
+                description=commit_description,
+                exist_ok=True,
+            )
+        except Exception as e:
+            raise Exception(f"Failed to create repo in Predibase: {e}")
+            return True
+
+        # Upload the dataset to Predibase
+        try:
+            dataset = self.pc.upload_dataset(
+                file_path=dataset_file,
+                name=dataset_name,
+            )
+        except Exception as e:
+            raise Exception(f"Failed to upload dataset to Predibase: {e}")
+            return True
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create a zip file of the model weights folder
+            model_data_zip_path = os.path.join(tmpdir, "model_data.zip")
+            fp_zip = Path(model_data_zip_path)
+            path_to_archive = Path(model_path)
+            with zipfile.ZipFile(fp_zip, "w", zipfile.ZIP_DEFLATED) as zipf:
+                for fp in path_to_archive.glob("**/*"):
+                    zipf.write(fp, arcname=fp.relative_to(path_to_archive))
+
+            # Upload the zip file to Predibase
+            try:
+                self.pc.upload_model(
+                    repo_id=repo.id,
+                    zip_fp=model_data_zip_path,
+                    dataset=dataset,
+                )
+            except Exception as e:
+                raise Exception(f"Failed to upload model to Predibase: {e}")
+                return True
 
         return False
