@@ -650,7 +650,7 @@ def check_qlora_merge_and_unload_compatibility(config: "ModelConfig") -> None:  
 
     if not (
         config.adapter
-        and config.adapter.type == "lora"
+        and config.adapter.type in ["lora", "adalora"]
         and config.adapter.postprocessor
         and config.adapter.postprocessor.merge_adapter_into_base_model
         and config.quantization
