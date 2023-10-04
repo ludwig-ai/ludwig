@@ -596,7 +596,8 @@ def _get_llm_model_config(model_name: str) -> AutoConfig:
     return AutoConfig.from_pretrained(model_name)
 
 
-@register_config_check
+# TODO(geoffrey, arnav): uncomment this when we have reconciled the config with the backend kwarg in api.py
+# @register_config_check
 def check_llm_quantization_backend_incompatibility(config: "ModelConfig") -> None:  # noqa: F821
     """Checks that LLM model type with quantization uses the local backend."""
     if config.model_type != MODEL_LLM:
