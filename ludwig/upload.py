@@ -4,8 +4,7 @@ import sys
 from typing import Optional
 
 from ludwig.utils.print_utils import get_logging_level_registry
-from ludwig.utils.upload_utils import HuggingFaceHub
-from ludwig.utils.upload_utils import Predibase
+from ludwig.utils.upload_utils import HuggingFaceHub, Predibase
 
 logger = logging.getLogger(__name__)
 

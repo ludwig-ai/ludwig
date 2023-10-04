@@ -2,8 +2,8 @@ import logging
 import os
 import tempfile
 import zipfile
-from pathlib import Path
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import Optional
 
 from huggingface_hub import HfApi, login
@@ -219,8 +219,8 @@ class Predibase(BaseModelUpload):
         self.pc = None
 
     def login(self):
-        """Login to Predibase using the token stored in the PREDIBASE_API_TOKEN environment variable and returns
-        a PredibaseClient object that can be used to interact with Predibase."""
+        """Login to Predibase using the token stored in the PREDIBASE_API_TOKEN environment variable and returns a
+        PredibaseClient object that can be used to interact with Predibase."""
         from predibase import PredibaseClient
 
         try:
