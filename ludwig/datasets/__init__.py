@@ -304,7 +304,7 @@ def _get_hf_dataset_and_subsample(dataset_name: str) -> Tuple[str, Optional[str]
     The dataset name should follow the format "{HF_PREFIX}{hf_id}--{hf_subsample}"
 
     Examples (Dataset Name --> HF ID; HF subsample):
-    "hf://wikisql" --> "wikisql", None
+    "hf://wikisql" --> "wikisql"; None
     "hf://ColumbiaNLP/FLUTE" --> "ColumbiaNLP/FLUTE"; None
     "hf://mstz/adult--income" --> "mstz/adult"; "income"
     """
