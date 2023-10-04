@@ -236,10 +236,16 @@ def get_datasets_output_features(
     """
     ordered_configs = OrderedDict(sorted(_get_dataset_configs().items()))
     competition_datasets = []
+    hugging_face_datasets = []
 
     for name, config in ordered_configs.items():
         if not include_competitions and config.kaggle_competition:
             competition_datasets.append(name)
+            continue
+
+        if config.name == "hugging_face":
+            # There is no output_features attribute for hugging_face datasets
+            hugging_face_datasets.append(name)
             continue
 
         ordered_configs[name] = {"name": config.name, "output_features": config.output_features}
@@ -265,6 +271,9 @@ def get_datasets_output_features(
     if not include_competitions:
         for competition in competition_datasets:
             del ordered_configs[competition]
+
+    for hf_dataset in hugging_face_datasets:
+        del ordered_configs[hf_dataset]
 
     return ordered_configs
 
