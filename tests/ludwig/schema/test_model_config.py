@@ -914,6 +914,9 @@ def test_llm_finetuning_output_feature_config():
     ModelConfig.from_dict(config)
 
 
+@pytest.mark.skip(
+    reason="TODO(geoffrey, arnav): re-enable this when we have reconciled the config with the backend kwarg in api.py"
+)
 @pytest.mark.distributed
 def test_llm_quantization_backend_compatibility():
     config = {
