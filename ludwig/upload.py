@@ -127,6 +127,11 @@ def cli(sys_argv):
         choices=["critical", "error", "warning", "info", "debug", "notset"],
     )
 
+    parser.add_argument("-df", "--dataset_file", help="The location of the dataset file", default=None)
+    parser.add_argument(
+        "-dn", "--dataset_name", help="(Optional) The name of the dataset in the Provider", default=None
+    )
+
     args = parser.parse_args(sys_argv)
 
     args.logging_level = get_logging_level_registry()[args.logging_level]

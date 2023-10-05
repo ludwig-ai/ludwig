@@ -277,6 +277,60 @@ class Predibase(BaseModelUpload):
 
         return True
 
+    @staticmethod
+    def _validate_upload_parameters(
+        repo_id: str,
+        model_path: str,
+        repo_type: Optional[str] = None,
+        private: Optional[bool] = False,
+        commit_message: Optional[str] = None,
+        commit_description: Optional[str] = None,
+        dataset_file: Optional[str] = None,
+        dataset_name: Optional[str] = None,
+    ):
+        """Validate parameters before uploading trained model artifacts.
+
+        This method checks if the input parameters meet the necessary requirements before uploading
+        trained model artifacts to the target repository.
+
+        Args:
+            repo_id (str): The ID of the target repository. It must be a namespace (user or an organization)
+                and a repository name separated by a '/'. For example, if your HF username is 'johndoe' and you
+                want to create a repository called 'test', the repo_id should be 'johndoe/test'.
+            model_path (str): The path to the directory containing the trained model artifacts. It should contain
+                the model's weights, usually saved under 'model/model_weights'.
+            repo_type (str, optional): The type of the repository. Not used in the base class, but subclasses
+                may use it for specific repository implementations. Defaults to None.
+            private (bool, optional): Whether the repository should be private or not. Not used in the base class,
+                but subclasses may use it for specific repository implementations. Defaults to False.
+            commit_message (str, optional): A message to attach to the commit when uploading to version control
+                systems. Not used in the base class, but subclasses may use it for specific repository
+                implementations. Defaults to None.
+            commit_description (str, optional): A description of the commit when uploading to version control
+                systems. Not used in the base class, but subclasses may use it for specific repository
+                implementations. Defaults to None.
+
+        Raises:
+            AssertionError: If the repo_id has non-url safe characters.
+        """
+        # Validate repo_id has both a namespace and a repo name
+        # TODO: Add this validation?
+        # assert "/" in repo_id, (
+        #     "`repo_id` must be a namespace (user or an organization) and a repo name separated by a `/`."
+        #     " For example, if your HF username is `johndoe` and you want to create a repository called `test`, the"
+        #     " repo_id should be johndoe/test"
+        # )
+        BaseModelUpload._validate_upload_parameters(
+            repo_id,
+            model_path,
+            repo_type,
+            private,
+            commit_message,
+            commit_description,
+            dataset_file,
+            dataset_name,
+        )
+
     def upload(
         self,
         repo_id: str,
@@ -298,6 +352,23 @@ class Predibase(BaseModelUpload):
             repo_description (`str` *optional*):
                 The description of the repo.
         """
+        # Validate upload parameters are in the right format
+        Predibase._validate_upload_parameters(
+            repo_id,
+            model_path,
+            repo_type,
+            private,
+            commit_message,
+            commit_description,
+        )
+
+        # Upload the dataset to Predibase
+        try:
+            dataset = self.pc.upload_dataset(file_path=dataset_file, name=dataset_name)
+        except Exception as e:
+            raise RuntimeError("Failed to upload dataset to Predibase") from e
+            return True
+
         # Create empty model repo using repo_name, but it is okay if it already exists.
         try:
             repo = self.pc.create_model_repo(
@@ -307,13 +378,6 @@ class Predibase(BaseModelUpload):
             )
         except Exception as e:
             raise RuntimeError("Failed to create repo in Predibase") from e
-            return True
-
-        # Upload the dataset to Predibase
-        try:
-            dataset = self.pc.upload_dataset(file_path=dataset_file, name=dataset_name)
-        except Exception as e:
-            raise RuntimeError("Failed to upload dataset to Predibase") from e
             return True
 
         # Upload the zip file to Predibase
