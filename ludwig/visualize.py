@@ -3737,10 +3737,10 @@ def confusion_matrix(
                     and output_feature_name in metadata
                     and ("idx2str" in metadata[output_feature_name] or "bool2str" in metadata[output_feature_name])
                 ):
-                    if "idx2str" in metadata[output_feature_name]:
-                        labels = metadata[output_feature_name]["idx2str"]
-                    elif "bool2str" in metadata[output_feature_name]:  # Handles the binary output case
+                    if "bool2str" in metadata[output_feature_name]:  # Handles the binary output case
                         labels = metadata[output_feature_name]["bool2str"]
+                    else:
+                        labels = metadata[output_feature_name]["idx2str"]
                 else:
                     labels = list(range(len(_confusion_matrix)))
 
