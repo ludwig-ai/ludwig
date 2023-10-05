@@ -268,32 +268,20 @@ class Predibase(BaseModelUpload):
 
         # Upload the dataset to Predibase
         try:
-            dataset = self.pc.upload_dataset(
-                file_path=dataset_file,
-                name=dataset_name,
-            )
+            dataset = self.pc.upload_dataset(file_path=dataset_file, name=dataset_name)
         except Exception as e:
             raise Exception(f"Failed to upload dataset to Predibase: {e}")
             return True
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            # Create a zip file of the model weights folder
-            model_data_zip_path = os.path.join(tmpdir, "model_data.zip")
-            fp_zip = Path(model_data_zip_path)
-            path_to_archive = Path(model_path)
-            with zipfile.ZipFile(fp_zip, "w", zipfile.ZIP_DEFLATED) as zipf:
-                for fp in path_to_archive.glob("**/*"):
-                    zipf.write(fp, arcname=fp.relative_to(path_to_archive))
-
-            # Upload the zip file to Predibase
-            try:
-                self.pc.upload_model(
-                    repo_id=repo.id,
-                    zip_fp=model_data_zip_path,
-                    dataset=dataset,
-                )
-            except Exception as e:
-                raise Exception(f"Failed to upload model to Predibase: {e}")
-                return True
+        # Upload the zip file to Predibase
+        try:
+            self.pc.upload_model(
+                repo=repo,
+                model_path=model_path,
+                dataset=dataset,
+            )
+        except Exception as e:
+            raise Exception(f"Failed to upload model to Predibase: {e}")
+            return True
 
         return False
