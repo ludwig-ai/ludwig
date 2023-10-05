@@ -16,6 +16,7 @@ docker_assets
 mnist_data/
 profile_images/
 ./profile_images/
+data/
 
 ###########
 # General #
@@ -130,6 +131,9 @@ ENV/
 
 # PyCharm
 .idea
+
+# VsCode
+.vscode
 
 # ctags
 tags
