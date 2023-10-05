@@ -34,7 +34,7 @@ def upload_cli(
     Args:
         service (`str`):
             Name of the hosted model service to push the trained artifacts to.
-            Currently, this only supports `hf_hub`.
+            Currently, this only supports `hf_hub` and `predibase`.
         repo_id (`str`):
             A namespace (user or an organization) and a repo name separated
             by a `/`.
@@ -89,7 +89,7 @@ def cli(sys_argv):
         "service",
         help="Name of the model repository service.",
         default="hf_hub",
-        choices=["hf_hub"],
+        choices=["hf_hub", "predibase"],
     )
 
     parser.add_argument(

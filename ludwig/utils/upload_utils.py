@@ -1,8 +1,5 @@
 import logging
 import os
-import tempfile
-import zipfile
-from pathlib import Path
 from abc import ABC, abstractmethod
 from typing import Optional
 
@@ -92,18 +89,10 @@ class BaseModelUpload(ABC):
                 implementations. Defaults to None.
 
         Raises:
-            AssertionError: If the repo_id does not have both a namespace and a repo name separated by a '/'.
             FileNotFoundError: If the model_path does not exist.
             Exception: If the trained model artifacts are not found at the expected location within model_path, or
                 if the artifacts are not in the required format (i.e., 'pytorch_model.bin' or 'adapter_model.bin').
         """
-        # Validate repo_id has both a namespace and a repo name
-        assert "/" in repo_id, (
-            "`repo_id` must be a namespace (user or an organization) and a repo name separated by a `/`."
-            " For example, if your HF username is `johndoe` and you want to create a repository called `test`, the"
-            " repo_id should be johndoe/test"
-        )
-
         # Make sure the model's save path is actually a valid path
         if not os.path.exists(model_path):
             raise FileNotFoundError(f"The path '{model_path}' does not exist.")
@@ -148,6 +137,59 @@ class HuggingFaceHub(BaseModelUpload):
         assert hf_api.token == hf_token
 
         self.api = hf_api
+
+    @staticmethod
+    def _validate_upload_parameters(
+        repo_id: str,
+        model_path: str,
+        repo_type: Optional[str] = None,
+        private: Optional[bool] = False,
+        commit_message: Optional[str] = None,
+        commit_description: Optional[str] = None,
+        dataset_file: Optional[str] = None,
+        dataset_name: Optional[str] = None,
+    ):
+        """Validate parameters before uploading trained model artifacts.
+
+        This method checks if the input parameters meet the necessary requirements before uploading
+        trained model artifacts to the target repository.
+
+        Args:
+            repo_id (str): The ID of the target repository. It must be a namespace (user or an organization)
+                and a repository name separated by a '/'. For example, if your HF username is 'johndoe' and you
+                want to create a repository called 'test', the repo_id should be 'johndoe/test'.
+            model_path (str): The path to the directory containing the trained model artifacts. It should contain
+                the model's weights, usually saved under 'model/model_weights'.
+            repo_type (str, optional): The type of the repository. Not used in the base class, but subclasses
+                may use it for specific repository implementations. Defaults to None.
+            private (bool, optional): Whether the repository should be private or not. Not used in the base class,
+                but subclasses may use it for specific repository implementations. Defaults to False.
+            commit_message (str, optional): A message to attach to the commit when uploading to version control
+                systems. Not used in the base class, but subclasses may use it for specific repository
+                implementations. Defaults to None.
+            commit_description (str, optional): A description of the commit when uploading to version control
+                systems. Not used in the base class, but subclasses may use it for specific repository
+                implementations. Defaults to None.
+
+        Raises:
+            AssertionError: If the repo_id does not have both a namespace and a repo name separated by a '/'.
+        """
+        # Validate repo_id has both a namespace and a repo name
+        assert "/" in repo_id, (
+            "`repo_id` must be a namespace (user or an organization) and a repo name separated by a `/`."
+            " For example, if your HF username is `johndoe` and you want to create a repository called `test`, the"
+            " repo_id should be johndoe/test"
+        )
+        BaseModelUpload._validate_upload_parameters(
+            repo_id,
+            model_path,
+            repo_type,
+            private,
+            commit_message,
+            commit_description,
+            dataset_file,
+            dataset_name,
+        )
 
     def upload(
         self,
@@ -242,6 +284,7 @@ class Predibase(BaseModelUpload):
         commit_description: Optional[str] = None,
         dataset_file: Optional[str] = None,
         dataset_name: Optional[str] = None,
+        **kwargs,
     ) -> bool:
         """Create an empty repo in Predibase and upload trained model artifacts to that repo.
 
@@ -257,20 +300,20 @@ class Predibase(BaseModelUpload):
         """
         # Create empty model repo using repo_name, but it is okay if it already exists.
         try:
-            repo = self.pc.create_repo(
+            repo = self.pc.create_model_repo(
                 name=repo_id,
                 description=commit_description,
-                exist_ok=True,
+                exists_ok=True,
             )
         except Exception as e:
-            raise Exception(f"Failed to create repo in Predibase: {e}")
+            raise RuntimeError("Failed to create repo in Predibase") from e
             return True
 
         # Upload the dataset to Predibase
         try:
             dataset = self.pc.upload_dataset(file_path=dataset_file, name=dataset_name)
         except Exception as e:
-            raise Exception(f"Failed to upload dataset to Predibase: {e}")
+            raise RuntimeError("Failed to upload dataset to Predibase") from e
             return True
 
         # Upload the zip file to Predibase
@@ -281,7 +324,7 @@ class Predibase(BaseModelUpload):
                 dataset=dataset,
             )
         except Exception as e:
-            raise Exception(f"Failed to upload model to Predibase: {e}")
+            raise RuntimeError("Failed to upload model to Predibase") from e
             return True
 
         return False
