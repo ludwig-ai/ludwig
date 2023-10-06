@@ -41,7 +41,8 @@ class PandasEngine(DataFrameEngine):
     def compute(self, data):
         return data
 
-    def concat(self, dfs):
+    @staticmethod
+    def concat(dfs) -> pd.DataFrame:
         return pd.concat(dfs)
 
     def from_pandas(self, df):
@@ -65,7 +66,8 @@ class PandasEngine(DataFrameEngine):
     def split(self, df, probabilities):
         return split_by_slices(df.iloc, len(df), probabilities)
 
-    def remove_empty_partitions(self, df):
+    @staticmethod
+    def remove_empty_partitions(df: pd.DataFram) -> pd.DataFrame:
         return df
 
     def to_parquet(self, df, path, index=False):
@@ -86,10 +88,12 @@ class PandasEngine(DataFrameEngine):
 
         return from_pandas(df)
 
-    def from_ray_dataset(self, dataset) -> pd.DataFrame:
+    @staticmethod
+    def from_ray_dataset(dataset) -> pd.DataFrame:
         return dataset.to_pandas()
 
-    def reset_index(self, df):
+    @staticmethod
+    def reset_index(df) -> pd.DataFrame:
         return df.reset_index(drop=True)
 
     @property
