@@ -150,9 +150,6 @@ class Backend(ABC):
 
 
 class LocalPreprocessingMixin:
-    def __init__(self) -> None:
-        pass
-
     @property
     def df_engine(self):
         return PANDAS
@@ -196,9 +193,6 @@ class LocalPreprocessingMixin:
 
 
 class LocalTrainingMixin:
-    def __init__(self) -> None:
-        pass
-
     @staticmethod
     def initialize():
         init_dist_strategy("local")
@@ -241,9 +235,6 @@ class LocalTrainingMixin:
 
 
 class RemoteTrainingMixin:
-    def __init__(self) -> None:
-        pass
-
     def sync_model(self, model):
         pass
 
