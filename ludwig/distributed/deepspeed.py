@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 
 
 DEFAULT_ZERO_OPTIMIZATION = {
-    "stage": "auto",
+    "stage": 3,
     "stage3_gather_16bit_weights_on_model_save": "auto",
     "offload_optimizer": {"device": "auto"},
     "offload_param": {"device": "auto"},
@@ -248,8 +248,6 @@ class DeepSpeedStrategy(DDPStrategy):
 
     @property
     def optimization_stage(self) -> Union[int, str, None]:
-        if self.zero_optimization_stage == "auto":
-            return None
         return self.zero_optimization_stage
 
 
