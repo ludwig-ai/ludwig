@@ -299,6 +299,7 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
             predictions: Dict of tensors returned by predictions().
         """
         if tokenizer is not None:
+            # Decode the targets and predictions to compute response-based metrics using the initialized tokenizer.
             decoded_targets, decoded_predictions = get_decoded_targets_and_predictions(targets, predictions, tokenizer)
 
         for metric_name, metric_fn in self._metric_functions.items():

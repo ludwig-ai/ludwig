@@ -31,6 +31,7 @@ MODEL_PRESETS = {
     "gpt-j-6b": "EleutherAI/gpt-j-6b",
     "pythia-2.8b": "EleutherAI/pythia-2.8b",
     "pythia-12b": "EleutherAI/pythia-12b",
+    "mistral-7b": "mistralai/Mistral-7B-v0.1",
 }
 
 
@@ -58,9 +59,11 @@ def BaseModelDataclassField():
                 return model_name
             except OSError:
                 raise ConfigValidationError(
-                    f"Specified base model `{model_name}` is not a valid pretrained CausalLM listed on huggingface "
-                    "or a valid local directory containing the weights for a pretrained CausalLM from huggingface."
-                    "Please see: https://huggingface.co/models?pipeline_tag=text-generation&sort=downloads"
+                    f"Specified base model `{model_name}` could not be loaded. If this is a private repository, make "
+                    f"sure to set HUGGING_FACE_HUB_TOKEN in your environment. Check that {model_name} is a valid "
+                    "pretrained CausalLM listed on huggingface or a valid local directory containing the weights for a "
+                    "pretrained CausalLM from huggingface. See: "
+                    "https://huggingface.co/models?pipeline_tag=text-generation&sort=downloads for a full list."
                 )
         raise ValidationError(
             f"`base_model` should be a string, instead given: {model_name}. This can be a preset or any pretrained "

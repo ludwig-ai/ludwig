@@ -27,12 +27,40 @@ def register_adapter(name: str):
 
 @DeveloperAPI
 @ludwig_dataclass
+class LoraPostprocessorConfig(schema_utils.BaseMarshmallowConfig):
+    """This Dataclass is a schema for the nested postprocessing config under adapter of type "lora"."""
+
+    merge_adapter_into_base_model: bool = schema_utils.Boolean(
+        default=False,
+        description="""Instructs whether or not the fine-tuned LoRA weights are to be merged into the base LLM model so
+that the complete fine-tuned model is available to be used and/or persisted, and then reused upon loading as a single
+model (rather than having to load base and fine-tuned models separately).""",
+    )
+    progressbar: bool = schema_utils.Boolean(
+        default=False,
+        description="Instructs whether or not to show a progress bar indicating the unload and merge process.",
+    )
+
+
+@DeveloperAPI
+class LoraPostprocessorConfigField(schema_utils.DictMarshmallowField):
+    def __init__(self):
+        super().__init__(LoraPostprocessorConfig)
+
+    def _jsonschema_type_mapping(self):
+        return schema_utils.unload_jsonschema_from_marshmallow_class(LoraPostprocessorConfig, title="LoraPostprocessor")
+
+
+@DeveloperAPI
+@ludwig_dataclass
 class BaseAdapterConfig(schema_utils.BaseMarshmallowConfig, ABC):
     type: str
 
     pretrained_adapter_weights: Optional[str] = schema_utils.String(
         default=None, description="Path to pretrained weights.", allow_none=True
     )
+
+    postprocessor: LoraPostprocessorConfig = LoraPostprocessorConfigField().get_default_field()
 
     @abstractmethod
     def to_config(self, **kwargs) -> "PeftConfig":
@@ -147,7 +175,7 @@ class BasePromptLearningConfig(BaseAdapterConfig):
 #                 "Must provide `prompt_tuning_init_text` when `prompt_tuning_init` is set to `TEXT`."
 #             )
 
-#     type: str = schema_utils.ProtectedString("prompt_tuning")
+"""#     type: str = schema_utils.ProtectedString("prompt_tuning")"""  # Quotes allow mypy to run without syntax errors.
 
 #     prompt_tuning_init: str = schema_utils.StringOptions(
 #         ["RANDOM", "TEXT"],
@@ -184,7 +212,7 @@ class BasePromptLearningConfig(BaseAdapterConfig):
 # class PrefixTuningConfig(BasePromptLearningConfig):
 #     """Adapted from https://github.com/huggingface/peft/blob/main/src/peft/tuners/prefix_tuning.py."""
 
-#     type: str = schema_utils.ProtectedString("prefix_tuning")
+"""#     type: str = schema_utils.ProtectedString("prefix_tuning")"""  # Quotes allow mypy to run without syntax errors.
 
 #     encoder_hidden_size: Optional[int] = schema_utils.Integer(
 #         default=None,
@@ -216,7 +244,7 @@ class BasePromptLearningConfig(BaseAdapterConfig):
 # @register_adapter("p_tuning")
 # @ludwig_dataclass
 # class PTuningConfig(BasePromptLearningConfig):
-#     type: str = schema_utils.ProtectedString("p_tuning")
+"""#     type: str = schema_utils.ProtectedString("p_tuning")"""  # Quotes allow mypy to run without syntax errors.
 
 #     encoder_reparameterization_type: str = schema_utils.StringOptions(
 #         ["MLP", "LSTM"],
@@ -446,7 +474,8 @@ def AdapterDataclassField(default: Optional[str] = None):
         def get_schema_from_registry(self, key: str) -> Type[schema_utils.BaseMarshmallowConfig]:
             return adapter_registry[key]
 
-        def _jsonschema_type_mapping(self):
+        @staticmethod
+        def _jsonschema_type_mapping():
             return {
                 "oneOf": [
                     {

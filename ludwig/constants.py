@@ -282,7 +282,11 @@ POSTPROCESSOR = "postprocessor"
 GENERATION = "generation"
 PROMPT = "prompt"
 ADAPTER = "adapter"
+QUANTIZATION = "quantization"
+MIN_QUANTIZATION_BITS_FOR_MERGE_AND_UNLOAD = 8
 PRETRAINED_ADAPTER_WEIGHTS = "pretrained_adapter_weights"
+MERGE_ADAPTER_INTO_BASE_MODEL = "merge_adapter_into_base_model"
+PROGRESSBAR = "progressbar"
 
 # CrossEntropyLoss for LLMs
 IGNORE_INDEX_TOKEN_ID = -100
