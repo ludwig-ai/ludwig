@@ -34,15 +34,10 @@ class HFLoader(DatasetLoader):
     """
 
     def load_hf_to_dict(self, hf_id: str, hf_subsample: str) -> Dict[str, pd.DataFrame]:
-        """Datasets.load_dataset() returns a mapping of type datasets.dataset_dict.DatasetDict that maps a string
-        in.
-
-        ["train", "validation", "test"] to a dataset of type datasets.arrow_dataset.Dataset.
-
-        This function converts each of the datasets in the original mapping to a pandas DataFrame and returns a new
-        dictionary that maps a string in ["train", "validation", "test"] to the corresponding DataFrame.
-        """
-        dataset_dict = datasets.load_dataset(path=hf_id, name=hf_subsample)
+        """Returns a map of split -> pd.DataFrame for the given HF dataset."""
+        dataset_dict: Dict[str, "datasets.arrow_dataset.Dataset"] = datasets.load_dataset(
+            path=hf_id, name=hf_subsample
+        )  # noqa
         new_dict = {}
         for split in dataset_dict:
             # Convert from HF DatasetDict type to a dictionary of pandas dataframes
@@ -60,26 +55,26 @@ class HFLoader(DatasetLoader):
         - If split is False, the "split" column in the resulting DataFrame will reflect the fact that there is no
           validation/test split (i.e., there will be no 1s/2s)
 
-        A train set should always be provided by Hugging Face
+        A train set should always be provided by Hugging Face.
         """
         self.config.huggingface_dataset_id = hf_id
         self.config.huggingface_subsample = hf_subsample
-        dataset_dict = self.load_hf_to_dict(
+        pandas_dict = self.load_hf_to_dict(
             hf_id=hf_id,
             hf_subsample=hf_subsample,
         )
         if split:  # For each split, either return the appropriate dataframe or an empty dataframe
             for spl in SPLITS:
-                if spl not in dataset_dict:
+                if spl not in pandas_dict:
                     logger.warning(f"No {spl} set found in provided Hugging Face dataset. Skipping {spl} set.")
-            train_df = dataset_dict[TRAIN] if TRAIN in dataset_dict else pd.DataFrame()
-            validation_df = dataset_dict[VALIDATION] if VALIDATION in dataset_dict else pd.DataFrame()
-            test_df = dataset_dict[TEST] if TEST in dataset_dict else pd.DataFrame()
+            train_df = pandas_dict[TRAIN] if TRAIN in pandas_dict else pd.DataFrame()
+            validation_df = pandas_dict[VALIDATION] if VALIDATION in pandas_dict else pd.DataFrame()
+            test_df = pandas_dict[TEST] if TEST in pandas_dict else pd.DataFrame()
 
             return train_df, validation_df, test_df
         else:
             dataset_list = []
-            for spl in dataset_dict:
-                dataset_dict[spl]["split"] = SPLITS.index(spl)  # Add a column containing 0s, 1s, and 2s denoting splits
-                dataset_list.append(dataset_dict[spl])
+            for spl in pandas_dict:
+                pandas_dict[spl]["split"] = SPLITS.index(spl)  # Add a column containing 0s, 1s, and 2s denoting splits
+                dataset_list.append(pandas_dict[spl])
             return pd.concat(dataset_list)
