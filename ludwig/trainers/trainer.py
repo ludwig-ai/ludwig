@@ -1098,6 +1098,7 @@ class Trainer(BaseTrainer):
         """Completes up to one epoch through the data."""
         self.distributed.zero_grad(self.optimizer)
         batch_idx = 0
+        has_called_on_epoch_end = False
         while not batcher.last_batch() and progress_tracker.steps < self.total_steps:
             progress_tracker.learning_rate = self.optimizer.param_groups[0]["lr"]
             self.callback(lambda c: c.on_batch_start(self, progress_tracker, save_path))
@@ -1182,15 +1183,26 @@ class Trainer(BaseTrainer):
                     if self.is_coordinator():
                         progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
 
-                if should_break:
-                    return should_break
+                # If this was the last batch, then increment the epoch counter and invoke the `on_epoch_end` callback.
+                if not has_called_on_epoch_end and batcher.last_batch():
+                    progress_tracker.epoch += 1
+                    self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
 
-            if batcher.last_batch():
-                # We have completed an epoch, so we need to increment the epoch counter. It's important to do this here
-                # instead of outside of the train loop since it's possible the train loop will exit early due to
-                # early stopping, or step-based training.
+                    # Ensures that we only call `on_epoch_end` once, for example, if evaluation is configured to run
+                    # several times per epoch.
+                    has_called_on_epoch_end = True
+
+                if should_break:
+                    return True
+
+            # If this was the last batch, then increment the epoch counter and invoke the `on_epoch_end` callback.
+            if not has_called_on_epoch_end and batcher.last_batch():
                 progress_tracker.epoch += 1
                 self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
+
+                # Ensures that we only call `on_epoch_end` once, for example, if evaluation is configured to run
+                # several times per epoch.
+                has_called_on_epoch_end = True
 
         return False
 
