@@ -1,6 +1,7 @@
 import logging
 import os
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import Optional
 
 from huggingface_hub import HfApi, login
@@ -261,8 +262,8 @@ class Predibase(BaseModelUpload):
         self.pc = None
 
     def login(self):
-        """Login to Predibase using the token stored in the PREDIBASE_API_TOKEN environment variable and returns
-        a PredibaseClient object that can be used to interact with Predibase."""
+        """Login to Predibase using the token stored in the PREDIBASE_API_TOKEN environment variable and returns a
+        PredibaseClient object that can be used to interact with Predibase."""
         from predibase import PredibaseClient
 
         try:
@@ -356,9 +357,9 @@ class Predibase(BaseModelUpload):
         Predibase._validate_upload_parameters(
             repo_id,
             model_path,
-            repo_type,
-            private,
-            commit_message,
+            None,
+            False,
+            "",
             commit_description,
         )
 
