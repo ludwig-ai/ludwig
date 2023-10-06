@@ -227,7 +227,10 @@ class DeepSpeedStrategy(DDPStrategy):
 
     @classmethod
     def extract_model_for_serialization(cls, model: nn.Module) -> Union[nn.Module, Tuple[nn.Module, List[Dict]]]:
+        # if self.zero_optimization_stage != 3:
         return model
+
+        # return extract_tensors(model)
 
     @classmethod
     def replace_adapter_weights_from_serialization(cls, model: nn.Module, state_dict: Dict[str, Any]):

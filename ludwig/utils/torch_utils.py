@@ -185,12 +185,12 @@ class LudwigModule(Module):
 
     @property
     def trained_using_adapter(self) -> bool:
-        """This is called from within the Predictor class to see if the model was trained using a parameter
-        efficient fine-tuning method such as a LoRA adapter."""
+        """This is called from within the Predictor class to see if the model was trained using 
+        a parameter efficient fine-tuning method such as a LoRA adapter."""
         return False
 
     def prepare_for_inference(self):
-        """"""
+        """This is called from within the Evaluator object to do any final instantiation before model evaluation"""
         pass
 
     def prepare_for_training(self):
