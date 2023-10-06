@@ -897,41 +897,41 @@ class LudwigModel:
     ) -> Tuple[Union[dict, pd.DataFrame], str]:
         """Using a trained model, make predictions from the provided dataset.
 
-        #Inputs
+        # Inputs
 
-            :param dataset: (Union[str, dict, pandas.DataFrame]): source containing the entire dataset to be evaluated.
-            :param data_format: (str, default: `None`) format to interpret data sources. Will be inferred automatically
-                if not specified.  Valid formats are `'auto'`, `'csv'`, `'df'`, `'dict'`, `'excel'`, `'feather'`,
-                `'fwf'`, `'hdf5'` (cache file produced during previous training), `'html'` (file containing a single
-                HTML `<table>`), `'json'`, `'jsonl'`, `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`,
-                `'spss'`, `'stata'`, `'tsv'`.
-            :param split: (str, default= `'full'`):  if the input dataset contains a split column, this parameter
-                indicates which split of the data to use. Possible values are `'full'`, `'training'`, `'validation'`,
-                `'test'`.
-            :param batch_size: (int, default: 128) size of batch to use when making predictions.
-            :param generation_config: (Dict, default: `None`) config for the generation of the
-                predictions. If `None`, the config that was used during model training is
-                used. This is only used if the model type is LLM. Otherwise, this parameter is
-                ignored. See
-                [Large Language Models](https://ludwig.ai/latest/configuration/large_language_model/#generation) under
-                "Generation" for an example generation config.
-            :param skip_save_unprocessed_output: (bool, default: `True`) if this parameter is `False`, predictions and
-                their probabilities are saved in both raw unprocessed numpy files containing tensors and as
-                postprocessed CSV files (one for each output feature). If this parameter is `True`, only the CSV ones
-                are saved and the numpy ones are skipped.
-            :param skip_save_predictions: (bool, default: `True`) skips saving test predictions CSV files.
-            :param output_directory: (str, default: `'results'`) the directory that will contain the training
-                statistics, TensorBoard logs, the saved model and the training progress files.
-            :param return_type: (Union[str, dict, pandas.DataFrame], default: pd.DataFrame) indicates the format of the
-                returned predictions.
-            :param callbacks: (Optional[List[Callback]], default: None) optional list of callbacks to use during this
-                predict operation. Any callbacks already registered to the model will be preserved.
+        :param dataset: (Union[str, dict, pandas.DataFrame]): source containing the entire dataset to be evaluated.
+        :param data_format: (str, default: `None`) format to interpret data sources. Will be inferred automatically
+            if not specified.  Valid formats are `'auto'`, `'csv'`, `'df'`, `'dict'`, `'excel'`, `'feather'`,
+            `'fwf'`, `'hdf5'` (cache file produced during previous training), `'html'` (file containing a single
+            HTML `<table>`), `'json'`, `'jsonl'`, `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`,
+            `'spss'`, `'stata'`, `'tsv'`.
+        :param split: (str, default= `'full'`):  if the input dataset contains a split column, this parameter
+            indicates which split of the data to use. Possible values are `'full'`, `'training'`, `'validation'`,
+            `'test'`.
+        :param batch_size: (int, default: 128) size of batch to use when making predictions.
+        :param generation_config: (Dict, default: `None`) config for the generation of the
+            predictions. If `None`, the config that was used during model training is
+            used. This is only used if the model type is LLM. Otherwise, this parameter is
+            ignored. See
+            [Large Language Models](https://ludwig.ai/latest/configuration/large_language_model/#generation) under
+            "Generation" for an example generation config.
+        :param skip_save_unprocessed_output: (bool, default: `True`) if this parameter is `False`, predictions and
+            their probabilities are saved in both raw unprocessed numpy files containing tensors and as
+            postprocessed CSV files (one for each output feature). If this parameter is `True`, only the CSV ones
+            are saved and the numpy ones are skipped.
+        :param skip_save_predictions: (bool, default: `True`) skips saving test predictions CSV files.
+        :param output_directory: (str, default: `'results'`) the directory that will contain the training
+            statistics, TensorBoard logs, the saved model and the training progress files.
+        :param return_type: (Union[str, dict, pandas.DataFrame], default: pd.DataFrame) indicates the format of the
+            returned predictions.
+        :param callbacks: (Optional[List[Callback]], default: None) optional list of callbacks to use during this
+            predict operation. Any callbacks already registered to the model will be preserved.
 
         # Return
 
-            :return `(predictions, output_directory)`: (Tuple[Union[dict, pd.DataFrame], str])
-                `predictions` predictions from the provided dataset,
-                `output_directory` filepath string to where data was stored.
+        :return `(predictions, output_directory)`: (Tuple[Union[dict, pd.DataFrame], str])
+            `predictions` predictions from the provided dataset,
+            `output_directory` filepath string to where data was stored.
         """
         self._check_initialization()
 
@@ -1722,28 +1722,30 @@ class LudwigModel:
     ) -> bool:
         """Uploads trained model artifacts to the HuggingFace Hub.
 
-        Args:
-            repo_id (`str`):
-                A namespace (user or an organization) and a repo name separated
-                by a `/`.
-            model_path (`str`):
-                The path of the saved model. This is the top level directory where
-                the models weights as well as other associated training artifacts
-                are saved.
-            private (`bool`, *optional*, defaults to `False`):
-                Whether the model repo should be private.
-            repo_type (`str`, *optional*):
-                Set to `"dataset"` or `"space"` if uploading to a dataset or
-                space, `None` or `"model"` if uploading to a model. Default is
-                `None`.
-            commit_message (`str`, *optional*):
-                The summary / title / first line of the generated commit. Defaults to:
-                `f"Upload {path_in_repo} with huggingface_hub"`
-            commit_description (`str` *optional*):
-                The description of the generated commit
+        # Inputs
 
-        Returns:
-            bool: True for success, False for failure.
+        :param repo_id (`str`):
+            A namespace (user or an organization) and a repo name separated
+            by a `/`.
+        :param model_path (`str`):
+            The path of the saved model. This is the top level directory where
+            the models weights as well as other associated training artifacts
+            are saved.
+        :param private (`bool`, *optional*, defaults to `False`):
+            Whether the model repo should be private.
+        :param repo_type (`str`, *optional*):
+            Set to `"dataset"` or `"space"` if uploading to a dataset or
+            space, `None` or `"model"` if uploading to a model. Default is
+            `None`.
+        :param commit_message (`str`, *optional*):
+            The summary / title / first line of the generated commit. Defaults to:
+            `f"Upload {path_in_repo} with huggingface_hub"`
+        :param commit_description (`str` *optional*):
+            The description of the generated commit
+
+        # Returns
+
+        :return: (bool) True for success, False for failure.
         """
         model_service = get_upload_registry()["hf_hub"]
         hub = model_service()
@@ -1780,13 +1782,16 @@ class LudwigModel:
     ):
         """Converts the trained model to Torchscript.
 
-        Args:
-            model_only (bool, optional): If True, only the ECD model will be converted to Torchscript. Else,
-                preprocessing and postprocessing steps will also be converted to Torchscript.
-            device (TorchDevice, optional): If None, the model will be converted to Torchscript on the same device to
-                ensure maximum model parity.
-        Returns:
-            A torch.jit.ScriptModule that can be used to predict on a dictionary of inputs.
+        # Inputs
+
+        :param  model_only (bool, optional): If True, only the ECD model will be converted to Torchscript. Else,
+            preprocessing and postprocessing steps will also be converted to Torchscript.
+        :param device (TorchDevice, optional): If None, the model will be converted to Torchscript on the same device to
+            ensure maximum model parity.
+
+        # Returns
+
+        :return: A torch.jit.ScriptModule that can be used to predict on a dictionary of inputs.
         """
         if device is None:
             device = DEVICE
@@ -1808,10 +1813,17 @@ class LudwigModel:
     ):
         """Saves the Torchscript model to disk.
 
-        save_path (str): The path to the directory where the model will be saved. model_only (bool, optional): If True,
-        only the ECD model will be converted to Torchscript. Else, the     preprocessing and postprocessing steps will
-        also be converted to Torchscript. device (TorchDevice, optional): If None, the model will be converted to
-        Torchscript on the same device to     ensure maximum model parity.
+        # Inputs
+
+        :param save_path (str): The path to the directory where the model will be saved.
+        :param model_only (bool, optional): If True, only the ECD model will be converted to Torchscript. Else, the
+            preprocessing and postprocessing steps will also be converted to Torchscript.
+        :param device (TorchDevice, optional): If None, the model will be converted to Torchscript on the same device to
+            ensure maximum model parity.
+
+        # Return
+
+        :return: `None`
         """
         if device is None:
             device = DEVICE
