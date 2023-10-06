@@ -246,6 +246,12 @@ class DeepSpeedStrategy(DDPStrategy):
         assert isinstance(state, nn.Module)
         return state
 
+    @property
+    def optimization_stage(self) -> Union[int, str, None]:
+        if self.zero_optimization_stage == "auto":
+            return None
+        return self.zero_optimization_stage
+
 
 class DeepSpeedCheckpoint(Checkpoint):
     def prepare(self, directory: str):

@@ -661,6 +661,7 @@ def eval_fn(
     # Pin GPU before loading the model to prevent memory leaking onto other devices
     initialize_pytorch(local_rank=session.get_local_rank(), local_size=_local_size())
     distributed = init_dist_strategy(distributed_strategy)
+    distributed_optimization_stage = distributed.optimization_stage
     try:
         eval_shard = RayDatasetShard(
             session.get_dataset_shard("eval"),
@@ -682,9 +683,11 @@ def eval_fn(
         # If we are using DeepSpeed Stage 3, this wraps the model in DeepSpeed Zero Inference.
         # For DeepSpeed Stage 2 and below, this loads the base model weights into the model.
         # If the model was not trained using an adapter, the fine-tuned weights are loaded into the model.
-        # If the model was trained using an adapter, the base model weights are loaded into the model.
+        # If the model was trained using an adapter, the base model weights are loaded into the model along with the
+        # adapter weights used at initialization. We will updated the state dict to use the weights from the
+        # fine-tuned adapter.
         dist_model = distributed.prepare_for_inference(model)
-        if adapter_ref:
+        if (distributed_optimization_stage and distributed_optimization_stage <= 2) and adapter_ref:
             model = distributed.replace_adapter_weights_from_serialization(model, ray.get(adapter_ref))
             dist_model = distributed.replace_adapter_weights_from_serialization(dist_model, ray.get(adapter_ref))
 

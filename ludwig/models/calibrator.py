@@ -43,7 +43,7 @@ class Calibrator:
         if not self.calibration_enabled():
             # Early out if no output features have calibration enabled.
             return
-        with self.backend.create_predictor(self.model, config=None, batch_size=self.batch_size) as predictor:
+        with self.backend.create_predictor(self.model, batch_size=self.batch_size) as predictor:
             metrics, predictions = predictor.batch_evaluation(
                 dataset, collect_predictions=True, collect_logits=True, dataset_name=dataset_name
             )

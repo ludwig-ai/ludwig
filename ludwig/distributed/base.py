@@ -189,8 +189,7 @@ class DistributedStrategy(ABC):
     def extract_adapter_weights_for_serialization(cls, model: nn.Module):
         return model
 
-    @classmethod
-    def replace_adapter_weights_from_serialization(cls, model: nn.Module):
+    def replace_adapter_weights_from_serialization(model: nn.Module):
         return model
 
     @classmethod
@@ -201,6 +200,15 @@ class DistributedStrategy(ABC):
     def replace_model_from_serialization(cls, state: Union[nn.Module, Tuple[nn.Module, List[Dict]]]) -> nn.Module:
         assert isinstance(state, nn.Module)
         return state
+
+    @property
+    def optimization_stage(self) -> Union[int, str, None]:
+        """This is used in particular by DeepSpeed, which has a different stages for different optimizations for
+        training.
+
+        It is a no-op for all other distributed strategies.
+        """
+        return None
 
 
 class LocalStrategy(DistributedStrategy):
