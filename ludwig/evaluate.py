@@ -20,10 +20,10 @@ from typing import List, Optional, Union
 
 import pandas as pd
 
-from ludwig.api import LudwigModel
+from ludwig.api import ExternalModel, LudwigModel
 from ludwig.backend import ALL_BACKENDS, Backend, initialize_backend
 from ludwig.callbacks import Callback
-from ludwig.constants import FULL, TEST, TRAINING, VALIDATION
+from ludwig.constants import EXTERNAL_MODELS, FULL, TEST, TRAINING, VALIDATION
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.print_utils import get_logging_level_registry, print_ludwig
@@ -103,15 +103,28 @@ def evaluate_cli(
 
      :return: (`None`)
     """
-    model = LudwigModel.load(
-        model_path,
-        logging_level=logging_level,
-        backend=backend,
-        gpus=gpus,
-        gpu_memory_limit=gpu_memory_limit,
-        allow_parallel_threads=allow_parallel_threads,
-        callbacks=callbacks,
-    )
+    if model_path in EXTERNAL_MODELS:
+        model = ExternalModel.load(
+            model_path,
+            logging_level=logging_level,
+            callbacks=callbacks,
+        )
+        if not skip_collect_predictions:
+            logger.warning("skip_collect_predictions is not supported for ExternalModel, setting to True")
+        skip_collect_predictions = True
+        if not skip_collect_overall_stats:
+            logger.warning("skip_collect_overall_stats is not supported for ExternalModel, setting to True")
+            skip_collect_overall_stats = True
+    else:
+        model = LudwigModel.load(
+            model_path,
+            logging_level=logging_level,
+            backend=backend,
+            gpus=gpus,
+            gpu_memory_limit=gpu_memory_limit,
+            allow_parallel_threads=allow_parallel_threads,
+            callbacks=callbacks,
+        )
     model.evaluate(
         dataset=dataset,
         data_format=data_format,

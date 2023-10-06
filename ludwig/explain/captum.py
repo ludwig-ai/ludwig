@@ -291,7 +291,7 @@ def get_input_tensors(
             preprocessing["cache_encoder_embeddings"] = False
 
     # Convert raw input data into preprocessed tensor data
-    dataset, _ = preprocess_for_prediction(
+    dataset, _, _ = preprocess_for_prediction(
         config,
         dataset=input_set,
         training_set_metadata=training_set_metadata,

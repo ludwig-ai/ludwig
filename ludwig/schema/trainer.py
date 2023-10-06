@@ -5,7 +5,16 @@ import torch
 from packaging.version import parse as parse_version
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import AUTO, LOSS, MAX_POSSIBLE_BATCH_SIZE, MODEL_ECD, MODEL_GBM, MODEL_LLM, TRAINING
+from ludwig.constants import (
+    AUTO,
+    LOSS,
+    MAX_POSSIBLE_BATCH_SIZE,
+    MODEL_ECD,
+    MODEL_EXTERNAL,
+    MODEL_GBM,
+    MODEL_LLM,
+    TRAINING,
+)
 from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.lr_scheduler import LRSchedulerConfig, LRSchedulerDataclassField
@@ -906,6 +915,22 @@ class FineTuneTrainerConfig(ECDTrainerConfig):
 
 
 @DeveloperAPI
+@register_trainer_schema(MODEL_EXTERNAL)
+@ludwig_dataclass
+class ExternalTrainerConfig(BaseTrainerConfig):
+    validation_metric: str = schema_utils.String(
+        default="loss",
+        allow_none=True,
+        description=(
+            "Metric from `validation_field` that is used. If validation_field is not explicitly specified, this is "
+            "overwritten to be the first output feature type's `default_validation_metric`, consistent with "
+            "validation_field. If the validation_metric is specified, then we will use the first output feature that "
+            "produces this metric as the `validation_field`."
+        ),
+    )
+
+
+@DeveloperAPI
 def get_model_type_jsonschema(model_type: str = MODEL_ECD):
     enum = [MODEL_ECD]
     if model_type == MODEL_GBM:
@@ -1001,3 +1026,12 @@ def LLMTrainerDataclassField(default="none", description=""):
             }
 
     return LLMTrainerSelection().get_default_field()
+
+
+@DeveloperAPI
+class ExternalTrainerField(schema_utils.DictMarshmallowField):
+    def __init__(self):
+        super().__init__(ExternalTrainerConfig)
+
+    def _jsonschema_type_mapping(self):
+        return get_trainer_jsonschema(MODEL_EXTERNAL)

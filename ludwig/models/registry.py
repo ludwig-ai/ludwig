@@ -1,8 +1,9 @@
 import logging
 
-from ludwig.constants import MODEL_ECD, MODEL_GBM, MODEL_LLM
+from ludwig.constants import MODEL_ECD, MODEL_GBM, MODEL_LLM, MODEL_OPENAI_GPT4
 from ludwig.models.ecd import ECD
 from ludwig.models.llm import LLM
+from ludwig.models.openai import GPT4
 
 logger = logging.getLogger(__name__)
 
@@ -24,4 +25,5 @@ model_type_registry = {
     MODEL_ECD: ECD,
     MODEL_GBM: gbm,
     MODEL_LLM: LLM,
+    MODEL_OPENAI_GPT4: GPT4,
 }

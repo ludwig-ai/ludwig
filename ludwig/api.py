@@ -37,7 +37,7 @@ from marshmallow_dataclass import dataclass
 from tabulate import tabulate
 
 from ludwig.api_annotations import PublicAPI
-from ludwig.backend import Backend, initialize_backend, provision_preprocessing_workers
+from ludwig.backend import Backend, initialize_backend, LOCAL, provision_preprocessing_workers
 from ludwig.callbacks import Callback
 from ludwig.constants import (
     AUTO,
@@ -49,8 +49,10 @@ from ludwig.constants import (
     HYPEROPT_WARNING,
     MIN_DATASET_SPLIT_ROWS,
     MODEL_ECD,
+    MODEL_EXTERNAL,
     MODEL_LLM,
     TEST,
+    TEXT,
     TIMESERIES,
     TRAINING,
     VALIDATION,
@@ -60,6 +62,8 @@ from ludwig.data.dataset.base import Dataset
 from ludwig.data.postprocessing import convert_predictions, postprocess
 from ludwig.data.preprocessing import load_metadata, preprocess_for_prediction, preprocess_for_training
 from ludwig.datasets import load_dataset_uris
+from ludwig.decoders.external_decoders import ExternalDecoder
+from ludwig.encoders.external_encoders import ExternalEncoder
 from ludwig.features.feature_registries import update_config_with_metadata, update_config_with_model
 from ludwig.globals import (
     LUDWIG_VERSION,
@@ -77,7 +81,7 @@ from ludwig.models.predictor import (
     save_prediction_outputs,
 )
 from ludwig.models.registry import model_type_registry
-from ludwig.schema.model_config import ModelConfig
+from ludwig.schema.model_config import ExternalModelConfig, ModelConfig
 from ludwig.types import ModelConfigDict, TrainingSetMetadataDict
 from ludwig.upload import get_upload_registry
 from ludwig.utils import metric_utils
@@ -937,7 +941,7 @@ class LudwigModel:
 
         # preprocessing
         logger.debug("Preprocessing")
-        dataset, _ = preprocess_for_prediction(  # TODO (Connor): Refactor to use self.config_obj
+        dataset, _, _ = preprocess_for_prediction(  # TODO (Connor): Refactor to use self.config_obj
             self.config_obj.to_dict(),
             dataset=dataset,
             training_set_metadata=self.training_set_metadata,
@@ -1051,7 +1055,7 @@ class LudwigModel:
 
         # preprocessing
         logger.debug("Preprocessing")
-        dataset, training_set_metadata = preprocess_for_prediction(  # TODO (Connor): Refactor to use self.config_obj
+        dataset, training_set_metadata, _ = preprocess_for_prediction(  # TODO (Connor): Refactor to use self.config_obj
             self.config_obj.to_dict(),
             dataset=dataset,
             training_set_metadata=self.training_set_metadata,
@@ -1454,7 +1458,7 @@ class LudwigModel:
 
         # preprocessing
         logger.debug("Preprocessing")
-        dataset, training_set_metadata = preprocess_for_prediction(  # TODO (Connor): Refactor to use self.config_obj
+        dataset, training_set_metadata, _ = preprocess_for_prediction(  # TODO (Connor): Refactor to use self.config_obj
             self.config_obj.to_dict(),
             dataset=dataset,
             training_set_metadata=self.training_set_metadata,
@@ -1910,6 +1914,349 @@ class LudwigModel:
         """
         # TODO: In the future, it may be possible to move up the model type check into the BaseModel class.
         return self.config_obj.model_type == MODEL_LLM and self.model.is_merge_and_unload_set()
+
+
+@PublicAPI
+class ExternalModel:
+    """Class that allows access to high level External functionalities.
+
+    # Inputs
+
+    :param logging_level: (int) Log level that will be sent to stderr.
+    :param callbacks: (list, default: `None`) a list of
+          `ludwig.callbacks.Callback` objects that provide hooks into the
+           Ludwig pipeline.
+
+    # Example usage:
+
+    ```python
+    from ludwig.api import ExternalModel
+    ```
+
+    Evaluation:
+
+    ```python
+    eval_stats, _, _ = external_model.evaluate(dataset=file_path)
+    ```
+
+    or
+
+    ```python
+    eval_stats, _, _ = external_model.evaluate(dataset=dataframe)
+    ```
+    """
+
+    def __init__(
+        self,
+        logging_level: int = logging.ERROR,
+        callbacks: Optional[List[Callback]] = None,
+    ) -> None:
+        """Constructor for the ExternalModel class.
+
+        # Inputs
+
+        :param logging_level: (int) Log level that will be sent to stderr.
+        :param callbacks: (list, default: `None`) a list of
+              `ludwig.callbacks.Callback` objects that provide hooks into the
+               Ludwig pipeline.
+
+        # Return
+
+        :return: (None) `None`
+        """
+        # Initialize an empty config object, features will be inferred from
+        # the dataset and the user provided values
+        self.config_obj: ModelConfigDict = dict(
+            {
+                "model_type": MODEL_EXTERNAL,
+                "input_features": [],
+                "output_features": [],
+            }
+        )
+        self.config_obj = ExternalModelConfig.from_dict(self.config_obj)
+
+        # setup logging
+        self.set_logging_level(logging_level)
+
+        # setup Backend
+        self.backend = initialize_backend(LOCAL)
+        self.callbacks = callbacks if callbacks is not None else []
+
+        # setup model
+        self.model = None
+        self.training_set_metadata: Optional[str, dict] = None
+
+    @staticmethod
+    def load(
+        model_path: str,
+        logging_level: int = logging.ERROR,
+        backend: Optional[Union[Backend, str]] = None,
+        gpus: Optional[Union[str, int, List[int]]] = None,
+        gpu_memory_limit: Optional[float] = None,
+        allow_parallel_threads: bool = False,
+        callbacks: List[Callback] = None,
+    ) -> "ExternalModel":  # return is an instance of ludwig.api.ExternalModel class
+        """This function allows for loading external models.
+
+        # Inputs
+
+        :param model_path: (string) path for the registered external model, e.g., openai/gpt4
+        :param logging_level: (int, default: 40) log level that will be sent to
+            stderr.
+        :param callbacks: (list, default: `None`) a list of
+            `ludwig.callbacks.Callback` objects that provide hooks into the
+            Ludwig pipeline.
+
+        # Return
+
+        :return: (ExternalModel) a ExternalModel object
+
+
+        # Example usage
+
+        ```python
+        external_model = ExternalModel.load(model_path)
+        ```
+        """
+        if backend:
+            raise ValueError("backend is not supported for ExternalModel")
+        if gpus:
+            raise ValueError("gpus is not supported for ExternalModel")
+        if gpu_memory_limit:
+            raise ValueError("gpu_memory_limit is not supported for ExternalModel")
+        if allow_parallel_threads:
+            raise ValueError("allow_parallel_threads is not supported for ExternalModel")
+
+        # initialize model
+        external_model = ExternalModel(
+            logging_level=logging_level,
+            callbacks=callbacks,
+        )
+        # generate model from model_path
+        external_model.model = ExternalModel.create_model(model_path)
+
+        return external_model
+
+    @staticmethod
+    def create_model(model_path: str, random_seed: int = default_random_seed) -> BaseModel:
+        """Instantiates ExternalModel object.
+
+        # Inputs
+        :param model_path: (string) the path for the registered external model, e.g., openai/gpt4
+        :param random_seed: (int, default: ludwig default random seed) Random
+            seed used for weights initialization,
+            splits and any other random function.
+
+        # Return
+        :return: (ludwig.models.BaseModel) Instance of the External model object.
+        """
+        model_type = get_from_registry(model_path, model_type_registry)
+        return model_type(random_seed=random_seed)
+
+    @staticmethod
+    def set_logging_level(logging_level: int) -> None:
+        """Sets level for log messages.
+
+        # Inputs
+
+        :param logging_level: (int) Set/Update the logging level. Use logging
+        constants like `logging.DEBUG` , `logging.INFO` and `logging.ERROR`.
+
+        # Return
+
+        :return: `None`
+        """
+        logging.getLogger("ludwig").setLevel(logging_level)
+        if logging_level in {logging.WARNING, logging.ERROR, logging.CRITICAL}:
+            set_disable_progressbar(True)
+        else:
+            set_disable_progressbar(False)
+
+    def evaluate(
+        self,
+        dataset: Optional[Union[str, dict, pd.DataFrame]] = None,
+        data_format: Optional[str] = None,
+        split: str = FULL,
+        batch_size: Optional[int] = None,
+        skip_save_unprocessed_output: bool = False,
+        skip_save_predictions: bool = False,
+        skip_save_eval_stats: bool = False,
+        collect_predictions: bool = False,
+        collect_overall_stats: bool = False,
+        output_directory: str = "results",
+        return_type: Union[str, dict, pd.DataFrame] = pd.DataFrame,
+        **kwargs,
+    ) -> Tuple[dict, Union[dict, pd.DataFrame], str]:
+        """This function is used to predict the output variables given the input variables using the external model
+        and compute test statistics like performance measures, confusion matrices and the like.
+
+        # Inputs
+        :param dataset: (Union[str, dict, pandas.DataFrame]) source containing
+            the entire dataset to be evaluated.
+        :param data_format: (str, default: `None`) format to interpret data
+            sources. Will be inferred automatically if not specified.  Valid
+            formats are `'auto'`, `'csv'`, `'df'`, `'dict'`, `'excel'`, `'feather'`,
+            `'fwf'`, `'hdf5'` (cache file produced during previous training),
+            `'html'` (file containing a single HTML `<table>`), `'json'`, `'jsonl'`,
+            `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`, `'spss'`,
+            `'stata'`, `'tsv'`.
+        :param split: (str, default=`'full'`): if the input dataset contains
+            a split column, this parameter indicates which split of the data
+            to use. Possible values are `'full'`, `'training'`, `'validation'`, `'test'`.
+        :param batch_size: (int, default: None) size of batch to use when making
+            predictions. Defaults to ludwig.constants.EVAL_BATCH_SIZE
+        :param output_directory: (str, default: `'results'`) the directory that
+            will contain the training statistics, TensorBoard logs, the saved
+            model and the training progress files.
+        :param return_type: (Union[str, dict, pd.DataFrame], default: pandas.DataFrame) indicates
+            the format to of the returned predictions.
+
+        # Return
+        :return: (`evaluation_statistics`, `predictions`, `output_directory`)
+            `evaluation_statistics` dictionary containing evaluation performance
+                statistics,
+            `postprocess_predictions` is always empty
+            `output_directory` is location where results are stored.
+        """
+        if skip_save_unprocessed_output:
+            raise ValueError("skip_save_unprocessed_output is not supported for ExternalModel")
+        if skip_save_predictions:
+            raise ValueError("skip_save_predictions is not supported for ExternalModel")
+        if collect_predictions:
+            raise ValueError("collect_predictions is not supported for ExternalModel")
+        if collect_overall_stats:
+            raise ValueError("collect_overall_stats is not supported for ExternalModel")
+
+        for callback in self.callbacks:
+            callback.on_evaluation_start()
+
+        # Load dataset in order to infer input_features
+        dataset_df, _, _, _ = load_dataset_uris(dataset, None, None, None, self.backend)
+        if isinstance(dataset_df, CacheableDataset):
+            dataset_df = dataset.unwrap()
+        dataset_df = load_dataset(dataset_df, data_format=data_format, df_lib=self.backend.df_engine.df_lib)
+
+        self.config_obj.input_features = [
+            {
+                "active": True,
+                "name": column,
+                "column": column,
+                "type": TEXT,
+            }
+            for column in dataset_df.columns.to_list()
+        ]
+
+        # TODO (Andres) load output_features from user input
+        self.config_obj.output_features = [
+            {
+                "active": True,
+                "name": "recommended",
+                "column": "recommended",
+                "type": TEXT,
+            }
+        ]
+        # Re-run validations with updated config
+        self.config_obj = ExternalModelConfig.from_dict(self.config_obj.to_dict())
+        for input_feature in self.config_obj.input_features:
+            input_feature.encoder = ExternalEncoder()
+            input_feature.decoder = ExternalDecoder()
+        for output_feature in self.config_obj.output_features:
+            output_feature.encoder = ExternalEncoder()
+            output_feature.decoder = ExternalDecoder()
+
+        self.model.input_features.update(self.model.build_inputs(input_feature_configs=self.config_obj.input_features))
+        self.model.output_features.update(
+            self.model.build_outputs(
+                output_feature_configs=self.config_obj.output_features,
+            )
+        )
+
+        # preprocessing
+        logger.debug("Preprocessing")
+        (
+            dataset,
+            training_set_metadata,
+            dataset_df,
+        ) = preprocess_for_prediction(  # TODO (Connor): Refactor to use self.config_obj
+            self.config_obj.to_dict(),
+            dataset=dataset,
+            data_format=data_format,
+            split=split,
+            include_outputs=True,
+            backend=self.backend,
+            callbacks=self.callbacks,
+        )
+
+        # Fallback to use eval_batch_size or batch_size if not provided
+        if batch_size is None:
+            batch_size = EVAL_BATCH_SIZE
+
+        logger.debug("Predicting")
+        with self.backend.create_predictor(self.model, batch_size=batch_size) as predictor:
+            eval_stats, predictions = predictor.batch_evaluation(
+                dataset,
+                dataset_df,
+            )
+
+            makedirs(output_directory, exist_ok=True)
+            postproc_predictions = predictions  # = {}
+            print_evaluation_stats(eval_stats)
+            save_evaluation_stats(eval_stats, output_directory)
+            logger.info(f"Saved to: {output_directory}")
+
+            for callback in self.callbacks:
+                callback.on_evaluation_end()
+
+            return eval_stats, postproc_predictions, output_directory
+
+    def train(self, *args):
+        raise TypeError("train() is not supported for ExternalModel")
+
+    def train_online(self, *args):
+        raise TypeError("train_online() is not supported for ExternalModel")
+
+    def predict(self, *args):
+        raise TypeError("predict() is not supported for ExternalModel")
+
+    def forecast(self, *args):
+        raise TypeError("forecast() is not supported for ExternalModel")
+
+    def experiment(self, *args):
+        raise TypeError("experiment() is not supported for ExternalModel")
+
+    def collect_weights(self, *args):
+        raise TypeError("collect_weights() is not supported for ExternalModel")
+
+    def collect_activations(sef, *args):
+        raise TypeError("collect_activations() is not supported for ExternalModel")
+
+    def preprocess(self, *args):
+        raise TypeError("preprocess() is not supported for ExternalModel")
+
+    def load_weights(self, *args):
+        raise TypeError("load_weights() is not supported for ExternalModel")
+
+    def save(self, *args):
+        raise TypeError("save() is not supported for ExternalModel")
+
+    @staticmethod
+    def upload_to_hf_hub(self, *args):
+        raise TypeError("upload_to_hf_hub() is not supported for ExternalModel")
+
+    def save_config(self, *args):
+        raise TypeError("save_config() is not supported for ExternalModel")
+
+    def to_torchscript(self, *args):
+        raise TypeError("to_torchscript() is not supported for ExternalModel")
+
+    def save_torchscript(self, *args):
+        raise TypeError("save_torchscript() is not supported for ExternalModel")
+
+    def free_gpu_memory(self):
+        raise TypeError("free_gpu_memory() is not supported for ExternalModel")
+
+    def is_merge_and_unload_set(self):
+        raise TypeError("is_merge_and_unload_set() is not supported for ExternalModel")
 
 
 @PublicAPI

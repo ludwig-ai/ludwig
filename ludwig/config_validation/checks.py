@@ -288,6 +288,7 @@ def check_stacked_transformer_requirements(config: "ModelConfig") -> None:  # no
         encoder = input_feature.encoder
         if (
             if_type in sequence_types
+            and encoder
             and encoder.type == "transformer"
             and not is_divisible(encoder.hidden_size, encoder.num_heads)
         ):
@@ -328,7 +329,11 @@ def check_tagger_decoder_requirements(config: "ModelConfig") -> None:  # noqa: F
     # Check if there is a text or sequence output feature using a tagger decoder
     output_feature_with_tagger_decoder = False
     for output_feature in config.output_features:
-        if output_feature.type in {TEXT, SEQUENCE} and output_feature.decoder.type == "tagger":
+        if (
+            output_feature.type in {TEXT, SEQUENCE}
+            and output_feature.decoder
+            and output_feature.decoder.type == "tagger"
+        ):
             output_feature_with_tagger_decoder = True
 
     if not output_feature_with_tagger_decoder:

@@ -22,6 +22,9 @@ from ludwig.schema.features.utils import (
     ecd_defaults_config_registry,
     ecd_input_config_registry,
     ecd_output_config_registry,
+    external_defaults_config_registry,
+    external_input_config_registry,
+    external_output_config_registry,
     gbm_defaults_config_registry,
     gbm_input_config_registry,
     input_mixin_registry,
@@ -88,6 +91,13 @@ class LLMTextInputFeatureConfig(TextInputFeatureConfig):
         feature_type=TEXT,
         default="passthrough",
     )
+
+
+@DeveloperAPI
+@external_input_config_registry.register(TEXT)
+@ludwig_dataclass
+class ExternalTextInputFeatureConfig(TextInputFeatureConfig):
+    pass
 
 
 @DeveloperAPI
@@ -186,6 +196,13 @@ class LLMTextOutputFeatureConfig(TextOutputFeatureConfig):
 
 
 @DeveloperAPI
+@external_output_config_registry.register(TEXT)
+@ludwig_dataclass
+class ExternalTextOutputFeatureConfig(TextOutputFeatureConfig):
+    pass
+
+
+@DeveloperAPI
 @ecd_defaults_config_registry.register(TEXT)
 @ludwig_dataclass
 class ECDTextDefaultsConfig(TextInputFeatureConfigMixin, TextOutputFeatureConfigMixin):
@@ -239,3 +256,10 @@ class LLMTextDefaultsConfig(TextInputFeatureConfigMixin, TextOutputFeatureConfig
         feature_type=TEXT,
         default=NEXT_TOKEN_SOFTMAX_CROSS_ENTROPY,
     )
+
+
+@DeveloperAPI
+@external_defaults_config_registry.register(TEXT)
+@ludwig_dataclass
+class ExternalTextDefaultsConfig(TextInputFeatureConfigMixin):
+    pass

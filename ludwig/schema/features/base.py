@@ -15,6 +15,7 @@ from ludwig.constants import (
     H3,
     IMAGE,
     MODEL_ECD,
+    MODEL_EXTERNAL,
     MODEL_GBM,
     MODEL_LLM,
     NUMBER,
@@ -29,6 +30,8 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.utils import (
     ecd_input_config_registry,
     ecd_output_config_registry,
+    external_input_config_registry,
+    external_output_config_registry,
     gbm_input_config_registry,
     gbm_output_config_registry,
     get_input_feature_jsonschema,
@@ -298,6 +301,14 @@ class LLMInputFeatureSelection(FeaturesTypeSelection):
         return get_input_feature_jsonschema(MODEL_LLM)
 
 
+class ExternalInputFeatureSelection(FeaturesTypeSelection):
+    def __init__(self):
+        super().__init__(min_length=0, registry=external_input_config_registry, description="Type of the input feature")
+
+    def _jsonschema_type_mapping(self):
+        return get_input_feature_jsonschema(MODEL_EXTERNAL)
+
+
 class ECDOutputFeatureSelection(FeaturesTypeSelection):
     def __init__(self):
         super().__init__(registry=ecd_output_config_registry, description="Type of the output feature")
@@ -321,3 +332,16 @@ class LLMOutputFeatureSelection(FeaturesTypeSelection):
 
     def _jsonschema_type_mapping(self):
         return get_output_feature_jsonschema(MODEL_LLM)
+
+
+class ExternalOutputFeatureSelection(FeaturesTypeSelection):
+    def __init__(self):
+        super().__init__(
+            min_length=0,
+            max_length=1,
+            registry=external_output_config_registry,
+            description="Type of the output feature",
+        )
+
+    def _jsonschema_type_mapping(self):
+        return get_output_feature_jsonschema(MODEL_EXTERNAL)

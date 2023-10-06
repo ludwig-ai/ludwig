@@ -93,7 +93,7 @@ def test_sample_ratio(backend, tmpdir, ray_cluster_2cpu):
     assert sample_size == count
 
     # Check that sample ratio is disabled when doing preprocessing for prediction
-    dataset, _ = preprocess_for_prediction(
+    dataset, _, _ = preprocess_for_prediction(
         model.config_obj.to_dict(),
         dataset=data_csv,
         training_set_metadata=training_set_metadata,

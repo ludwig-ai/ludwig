@@ -177,7 +177,7 @@ def test_torchscript(tmpdir, csv_filename, should_load_model, model_type):
     #####################################################
     training_set_metadata_json_fp = os.path.join(ludwigmodel_path, TRAIN_SET_METADATA_FILE_NAME)
 
-    dataset, training_set_metadata = preprocess_for_prediction(
+    dataset, training_set_metadata, _ = preprocess_for_prediction(
         ludwig_model.config_obj.to_dict(),
         dataset=data_csv_path,
         training_set_metadata=training_set_metadata_json_fp,
@@ -541,7 +541,7 @@ def test_torchscript_preproc_vector_alternative_type(tmpdir, csv_filename, vecto
     ludwig_model, script_module = initialize_torchscript_module(tmpdir, config, backend, training_data_csv_path)
 
     # Obtain preprocessed inputs from Python model
-    preproc_inputs_expected, _ = preprocess_for_prediction(
+    preproc_inputs_expected, _, _ = preprocess_for_prediction(
         ludwig_model.config_obj.to_dict(),
         training_data_csv_path,
         ludwig_model.training_set_metadata,
@@ -605,7 +605,7 @@ def test_torchscript_preproc_timeseries_alternative_type(tmpdir, csv_filename, p
     ludwig_model, script_module = initialize_torchscript_module(tmpdir, config, backend, training_data_csv_path)
 
     # Obtain preprocessed inputs from Python model
-    preproc_inputs_expected, _ = preprocess_for_prediction(
+    preproc_inputs_expected, _, _ = preprocess_for_prediction(
         ludwig_model.config_obj.to_dict(),
         training_data_csv_path,
         ludwig_model.training_set_metadata,
@@ -674,7 +674,7 @@ def test_torchscript_preproc_with_nans(tmpdir, csv_filename, feature):
     ludwig_model, script_module = initialize_torchscript_module(tmpdir, config, backend, training_data_csv_path)
 
     # Obtain preprocessed inputs from Python model
-    preproc_inputs_expected, _ = preprocess_for_prediction(
+    preproc_inputs_expected, _, _ = preprocess_for_prediction(
         ludwig_model.config_obj.to_dict(),
         training_data_csv_path,
         ludwig_model.training_set_metadata,

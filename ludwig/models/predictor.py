@@ -12,7 +12,7 @@ import psutil
 import torch
 from torch import nn
 
-from ludwig.constants import COMBINED, LAST_HIDDEN, LOGITS, MODEL_ECD, MODEL_GBM, MODEL_LLM
+from ludwig.constants import COMBINED, LAST_HIDDEN, LOGITS, MODEL_ECD, MODEL_EXTERNAL, MODEL_GBM, MODEL_LLM
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.utils import convert_to_dict
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
@@ -492,3 +492,118 @@ def get_output_columns(output_features, include_logits: bool = False):
             if pred not in EXCLUDE_PRED_SET or (pred == LOGITS and include_logits):
                 output_columns.append(f"{of_name}_{pred}")
     return output_columns
+
+
+@register_predictor([MODEL_EXTERNAL])
+class ExternalPredictor(BasePredictor):
+    """ExternalPredictor is a class that uses an external model to evaluate."""
+
+    def __init__(
+        self,
+        model: BaseModel = None,
+        batch_size: int = 128,
+    ):
+        """
+        :param batch_size: batch size to use for prediction
+        :param model: Ludwig BaseModel before being wrapped for distributed training.
+            Used to call Ludwig helper functions.
+        """
+        assert isinstance(model, BaseModel)
+        self.model = model
+        self._batch_size = batch_size
+
+    def batch_evaluation(self, dataset, dataset_df, collect_predictions=False, collect_logits=False, dataset_name=None):
+        """Batch evaluate model on dataset.
+
+        Params:
+            dataset (Union[str, dict, pandas.DataFrame]): source containing the entire dataset to be evaluated.
+
+        Returns:
+            Tuple of dictionaries of (metrics, []).
+        The keys of metrics are determined by the metrics in the model config.
+        Predictions is an empty list since predictions are not supported by ExternalPredictor.
+        """
+
+        if collect_predictions:
+            raise ValueError("collect_predictions is not supported for ExternalPredictor")
+        if collect_logits:
+            raise ValueError("collect_logits is not supported for ExternalPredictor")
+
+        with dataset.initialize_batcher(
+            self._batch_size,
+            should_shuffle=False,
+            distributed=False,
+        ) as batcher:
+            progress_bar_config = {
+                "desc": "Evaluation" if dataset_name is None else f"Evaluation {dataset_name: <5.5}",
+                "total": batcher.steps_per_epoch,
+                "file": sys.stdout,
+                "disable": is_progressbar_disabled(),
+                "position": 0,  # Necessary to disable extra new line artifacts in training logs.
+            }
+            progress_bar = LudwigProgressBar(False, progress_bar_config, self.is_coordinator())
+
+            while not batcher.last_batch():
+                batch = batcher.next_batch()
+                logger.debug(f"evaluation for {dataset_name}: obtained next batch ")
+
+                targets = {
+                    o_feat.feature_name: torch.from_numpy(np.array(batch[o_feat.proc_column], copy=True))
+                    for o_feat in self.model.output_features.values()
+                }
+
+                output_features = list(targets.keys())
+                input_features = [
+                    i_feat.feature_name
+                    for i_feat in self.model.input_features.values()
+                    if i_feat.feature_name not in output_features
+                ]
+
+                for output_feature in output_features:
+                    dataset_df.drop(output_feature, axis=1)
+                if batcher.batch_size > batcher.total_size:
+                    start = batcher.index - batcher.total_size
+                else:
+                    start = batcher.index - batcher.batch_size
+                end = batcher.index
+                values = [dataset_df.iloc[index].to_list() for index in range(start, end)]
+
+                inputs = {
+                    "input_features": input_features,
+                    "output_features": output_features,
+                    "values": values,
+                }
+
+                # outputs = self._predict_on_inputs(inputs)
+                # preds = self.model.outputs_to_predictions(outputs)
+
+                preds = self._predict_on_inputs(inputs)
+                print("PREDS", preds)
+
+                # TODO (Andres) actually compute metrics
+                # self.model.update_metrics(targets, preds)
+
+                progress_bar.update(1)
+                logger.debug(f"evaluation for {dataset_name}: completed batch {progress_bar.total_steps} ")
+
+            progress_bar.close()
+
+            metrics = self.model.get_metrics()
+            self.model.reset_metrics()
+
+            return metrics, []
+
+    def _predict_on_inputs(self, inputs: Dict) -> Dict:
+        return self.model.evaluate(inputs)
+
+    def is_coordinator(self):
+        return True
+
+    def batch_collect_activations(self, layer_names, dataset, bucketing_field=None):
+        raise TypeError("batch_collect_activations() is not supported for ExternalPredictor")
+
+    def batch_predict(self, dataset, dataset_name=None):
+        raise TypeError("batch_predict() is not supported for ExternalPredictor")
+
+    def predict_single(self, batch):
+        raise TypeError("predict_single() is not supported for ExternalPredictor")
