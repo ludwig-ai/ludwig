@@ -84,14 +84,14 @@ def load_dataset_uris(
     Returns the input unmodified for any non-Ludwig datasets.
     """
 
+    if dataset is None and training_set is None:
+        raise ValueError("Neither dataset nor training_set has been provided. Please provide one of the two.")
+
     dataset_out, training_set_out, validation_set_out, test_set_out = dataset, training_set, validation_set, test_set
     # Check that any of the datasets begin with the `hf://` prefix denoting a Hugging Face dataset URI
     # Hugging Face datasets should follow the naming convention `hf://<hf_id>--<hf_subsample>`
     if _is_hf(dataset, training_set):
-        dataset_out, training_set_out, validation_set_out, test_set_out = _load_hf_datasets(
-            dataset, training_set, validation_set, test_set, backend
-        )
-        return dataset_out, training_set_out, validation_set_out, test_set_out
+        return _load_hf_datasets(dataset, training_set, validation_set, test_set, backend)
 
     # Check that any of the datasets begin with the `ludwig://` prefix denoting a Ludwig dataset URI
     if dataset is not None:
@@ -127,8 +127,6 @@ def load_dataset_uris(
                 test_set_out = _load_cacheable_dataset(test_set, backend)
 
         return dataset_out, training_set_out, validation_set_out, test_set_out
-    else:
-        raise ValueError("Neither dataset nor training_set has been provided. Please provide one of the two.")
 
 
 def _is_hf(dataset, training_set):
@@ -200,7 +198,9 @@ def _load_cacheable_hf_dataset(dataset: str, backend: Backend, split_set=None) -
     hf_id, hf_subsample = _get_hf_dataset_and_subsample(dataset)
     if split_set:
         train_df, validation_df, test_df = loader.load(hf_id, hf_subsample, split=True)
-        df = [train_df, validation_df, test_df][SPLITS.index(split_set)]
+        df = [train_df, validation_df, test_df][
+            SPLITS.index(split_set)
+        ]  # split_set should be one of TRAIN, VALIDATION, or TEST
     else:
         df = loader.load(hf_id, hf_subsample, split=False)
     df = backend.df_engine.from_pandas(df)
@@ -227,6 +227,9 @@ def get_datasets_output_features(
 ) -> dict:
     """Returns a dictionary with the output features for each dataset. Optionally, you can pass a dataset name
     which will then cause the function to return a dictionary with the output features for that dataset.
+
+    Because Hugging Face Datasets are loaded dynamically through a shared connector, they don't have fixed output
+    features. As such, we exclude Hugging Face datasets here.
 
     :param dataset: (str) name of the dataset
     :param include_competitions: (bool) whether to include the output features from kaggle competition datasets
@@ -272,8 +275,7 @@ def get_datasets_output_features(
         for competition in competition_datasets:
             del ordered_configs[competition]
 
-    for hf_dataset in hugging_face_datasets:
-        del ordered_configs[hf_dataset]
+    del ordered_configs["hugging_face"]
 
     return ordered_configs
 
