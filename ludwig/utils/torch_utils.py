@@ -190,7 +190,7 @@ class LudwigModule(Module):
         return False
 
     def prepare_for_inference(self):
-        """This is called from within the Evaluator object to do any final instantiation before model evaluation"""
+        """This is called from within the Ray evaluator object to do any final instantiation before model evaluation"""
         pass
 
     def prepare_for_training(self):
