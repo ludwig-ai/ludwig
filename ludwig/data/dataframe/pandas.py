@@ -67,7 +67,7 @@ class PandasEngine(DataFrameEngine):
         return split_by_slices(df.iloc, len(df), probabilities)
 
     @staticmethod
-    def remove_empty_partitions(df: pd.DataFram) -> pd.DataFrame:
+    def remove_empty_partitions(df: pd.DataFrame) -> pd.DataFrame:
         return df
 
     def to_parquet(self, df, path, index=False):
