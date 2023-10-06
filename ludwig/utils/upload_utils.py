@@ -1,7 +1,6 @@
 import logging
 import os
 from abc import ABC, abstractmethod
-from pathlib import Path
 from typing import Optional
 
 from huggingface_hub import HfApi, login
@@ -64,8 +63,6 @@ class BaseModelUpload(ABC):
         private: Optional[bool] = False,
         commit_message: Optional[str] = None,
         commit_description: Optional[str] = None,
-        dataset_file: Optional[str] = None,
-        dataset_name: Optional[str] = None,
     ):
         """Validate parameters before uploading trained model artifacts.
 
@@ -73,9 +70,7 @@ class BaseModelUpload(ABC):
         trained model artifacts to the target repository.
 
         Args:
-            repo_id (str): The ID of the target repository. It must be a namespace (user or an organization)
-                and a repository name separated by a '/'. For example, if your HF username is 'johndoe' and you
-                want to create a repository called 'test', the repo_id should be 'johndoe/test'.
+            repo_id (str): The ID of the target repository. Each provider will verify their specific rules.
             model_path (str): The path to the directory containing the trained model artifacts. It should contain
                 the model's weights, usually saved under 'model/model_weights'.
             repo_type (str, optional): The type of the repository. Not used in the base class, but subclasses
@@ -107,17 +102,6 @@ class BaseModelUpload(ABC):
                 "wrong during training where the model's weights were not saved."
             )
 
-        # Make sure the model's saved artifacts either contain:
-        # 1. pytorch_model.bin -> regular model training, such as ECD or for LLMs
-        # 2. adapter_model.bin -> LLM fine-tuning using PEFT
-        files = set(os.listdir(trained_model_artifacts_path))
-        if "pytorch_model.bin" not in files and "adapter_model.bin" not in files:
-            raise Exception(
-                f"Can't find model weights at {trained_model_artifacts_path}. Trained model weights should "
-                "either be saved as `pytorch_model.bin` for regular model training, or have `adapter_model.bin`"
-                "if using parameter efficient fine-tuning methods like LoRA."
-            )
-
 
 class HuggingFaceHub(BaseModelUpload):
     def __init__(self):
@@ -147,8 +131,6 @@ class HuggingFaceHub(BaseModelUpload):
         private: Optional[bool] = False,
         commit_message: Optional[str] = None,
         commit_description: Optional[str] = None,
-        dataset_file: Optional[str] = None,
-        dataset_name: Optional[str] = None,
     ):
         """Validate parameters before uploading trained model artifacts.
 
@@ -188,9 +170,19 @@ class HuggingFaceHub(BaseModelUpload):
             private,
             commit_message,
             commit_description,
-            dataset_file,
-            dataset_name,
         )
+
+        trained_model_artifacts_path = os.path.join(model_path, "model", "model_weights")
+        # Make sure the model's saved artifacts either contain:
+        # 1. pytorch_model.bin -> regular model training, such as ECD or for LLMs
+        # 2. adapter_model.bin -> LLM fine-tuning using PEFT
+        files = set(os.listdir(trained_model_artifacts_path))
+        if "pytorch_model.bin" not in files and "adapter_model.bin" not in files:
+            raise Exception(
+                f"Can't find model weights at {trained_model_artifacts_path}. Trained model weights should "
+                "either be saved as `pytorch_model.bin` for regular model training, or have `adapter_model.bin`"
+                "if using parameter efficient fine-tuning methods like LoRA."
+            )
 
     def upload(
         self,
@@ -200,6 +192,7 @@ class HuggingFaceHub(BaseModelUpload):
         private: Optional[bool] = False,
         commit_message: Optional[str] = None,
         commit_description: Optional[str] = None,
+        **kwargs,
     ) -> bool:
         """Create an empty repo on the HuggingFace Hub and upload trained model artifacts to that repo.
 
@@ -262,7 +255,7 @@ class Predibase(BaseModelUpload):
         self.pc = None
 
     def login(self):
-        """Login to Predibase using the token stored in the PREDIBASE_API_TOKEN environment variable and returns a
+        """Login to Predibase using the token stored in the PREDIBASE_API_TOKEN environment variable and return a
         PredibaseClient object that can be used to interact with Predibase."""
         from predibase import PredibaseClient
 
@@ -286,8 +279,6 @@ class Predibase(BaseModelUpload):
         private: Optional[bool] = False,
         commit_message: Optional[str] = None,
         commit_description: Optional[str] = None,
-        dataset_file: Optional[str] = None,
-        dataset_name: Optional[str] = None,
     ):
         """Validate parameters before uploading trained model artifacts.
 
@@ -295,9 +286,7 @@ class Predibase(BaseModelUpload):
         trained model artifacts to the target repository.
 
         Args:
-            repo_id (str): The ID of the target repository. It must be a namespace (user or an organization)
-                and a repository name separated by a '/'. For example, if your HF username is 'johndoe' and you
-                want to create a repository called 'test', the repo_id should be 'johndoe/test'.
+            repo_id (str): The ID of the target repository. It must be a less than 256 characters.
             model_path (str): The path to the directory containing the trained model artifacts. It should contain
                 the model's weights, usually saved under 'model/model_weights'.
             repo_type (str, optional): The type of the repository. Not used in the base class, but subclasses
@@ -314,13 +303,7 @@ class Predibase(BaseModelUpload):
         Raises:
             AssertionError: If the repo_id has non-url safe characters.
         """
-        # Validate repo_id has both a namespace and a repo name
-        # TODO: Add this validation?
-        # assert "/" in repo_id, (
-        #     "`repo_id` must be a namespace (user or an organization) and a repo name separated by a `/`."
-        #     " For example, if your HF username is `johndoe` and you want to create a repository called `test`, the"
-        #     " repo_id should be johndoe/test"
-        # )
+        assert len(repo_id) <= 255, "`repo_id` must be 255 characters or less."
         BaseModelUpload._validate_upload_parameters(
             repo_id,
             model_path,
@@ -328,8 +311,6 @@ class Predibase(BaseModelUpload):
             private,
             commit_message,
             commit_description,
-            dataset_file,
-            dataset_name,
         )
 
     def upload(
@@ -352,6 +333,12 @@ class Predibase(BaseModelUpload):
                 A repo name.
             repo_description (`str` *optional*):
                 The description of the repo.
+            dataset_file (`str` *optional*):
+                The path to the dataset file. Required if `service` is set to
+                `"predibase"` for new model repos.
+            dataset_name (`str` *optional*):
+                The name of the dataset. Used by the `service`
+                `"predibase"`. Falls back to the filename.
         """
         # Validate upload parameters are in the right format
         Predibase._validate_upload_parameters(
@@ -392,4 +379,5 @@ class Predibase(BaseModelUpload):
             raise RuntimeError("Failed to upload model to Predibase") from e
             return True
 
+        logger.info(f"Model uploaded to Predibase with repository name `{repo_id}`")
         return False

@@ -54,7 +54,7 @@ def upload_cli(
             The description of the generated commit
         dataset_file (`str`, *optional*):
             The path to the dataset file. Required if `service` is set to
-            `"predibase"`.
+            `"predibase"` for new model repos.
         dataset_name (`str`, *optional*):
             The name of the dataset. Used by the `service`
             `"predibase"`.
