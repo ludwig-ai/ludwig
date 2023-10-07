@@ -20,7 +20,7 @@ import time
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
-from typing import Any, Callable
+from typing import Any, Callable, TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
@@ -40,7 +40,6 @@ from ludwig.distributed import init_dist_strategy
 from ludwig.distributed.base import DistributedStrategy
 from ludwig.models.base import BaseModel
 from ludwig.schema.trainer import BaseTrainerConfig
-from ludwig.trainers.base import BaseTrainer
 from ludwig.types import HyperoptConfigDict
 from ludwig.utils.audio_utils import read_audio_from_path
 from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
@@ -50,6 +49,9 @@ from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.system_utils import Resources
 from ludwig.utils.torch_utils import initialize_pytorch
 from ludwig.utils.types import DataFrame, Series
+
+if TYPE_CHECKING:
+    from ludwig.trainers.base import BaseTrainer
 
 
 @DeveloperAPI
