@@ -14,11 +14,13 @@
 # limitations under the License.
 # ==============================================================================
 
+from __future__ import annotations
+
 import time
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
-from typing import Any, Callable, Dict, Optional, Type, Union
+from typing import Any, Callable
 
 import numpy as np
 import pandas as pd
@@ -38,6 +40,7 @@ from ludwig.distributed import init_dist_strategy
 from ludwig.distributed.base import DistributedStrategy
 from ludwig.models.base import BaseModel
 from ludwig.schema.trainer import BaseTrainerConfig
+from ludwig.trainers.base import BaseTrainer
 from ludwig.types import HyperoptConfigDict
 from ludwig.utils.audio_utils import read_audio_from_path
 from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
@@ -54,8 +57,8 @@ class Backend(ABC):
     def __init__(
         self,
         dataset_manager: DatasetManager,
-        cache_dir: Optional[str] = None,
-        credentials: Optional[Dict[str, Dict[str, Any]]] = None,
+        cache_dir: str | None = None,
+        credentials: dict[str, dict[str, Any]] | None = None,
     ):
         credentials = credentials or {}
         self._dataset_manager = dataset_manager
@@ -84,7 +87,7 @@ class Backend(ABC):
 
     @contextmanager
     @abstractmethod
-    def create_trainer(self, **kwargs) -> "BaseTrainer":  # noqa: F821
+    def create_trainer(self, **kwargs) -> BaseTrainer:
         raise NotImplementedError()
 
     @abstractmethod
@@ -110,7 +113,7 @@ class Backend(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def read_binary_files(self, column: Series, map_fn: Optional[Callable] = None) -> Series:
+    def read_binary_files(self, column: Series, map_fn: Callable | None = None) -> Series:
         raise NotImplementedError()
 
     @property
@@ -128,11 +131,11 @@ class Backend(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def max_concurrent_trials(self, hyperopt_config: HyperoptConfigDict) -> Union[int, None]:
+    def max_concurrent_trials(self, hyperopt_config: HyperoptConfigDict) -> int | None:
         raise NotImplementedError()
 
     @abstractmethod
-    def tune_batch_size(self, evaluator_cls: Type[BatchSizeEvaluator], dataset_len: int) -> int:
+    def tune_batch_size(self, evaluator_cls: type[BatchSizeEvaluator], dataset_len: int) -> int:
         """Returns best batch size (measured in samples / s) on the given evaluator.
 
         The evaluator class will need to be instantiated on each worker in the backend cluster, then call
@@ -159,9 +162,7 @@ class LocalPreprocessingMixin:
         return True
 
     @staticmethod
-    def read_binary_files(
-        column: pd.Series, map_fn: Optional[Callable] = None, file_size: Optional[int] = None
-    ) -> pd.Series:
+    def read_binary_files(column: pd.Series, map_fn: Callable | None = None, file_size: int | None = None) -> pd.Series:
         column = column.fillna(np.nan).replace([np.nan], [None])  # normalize NaNs to None
 
         sample_fname = column.head(1).values[0]
@@ -201,7 +202,7 @@ class LocalTrainingMixin:
     def initialize_pytorch(*args, **kwargs):
         initialize_pytorch(*args, **kwargs)
 
-    def create_trainer(self, config: BaseTrainerConfig, model: BaseModel, **kwargs) -> "BaseTrainer":  # noqa: F821
+    def create_trainer(self, config: BaseTrainerConfig, model: BaseModel, **kwargs) -> BaseTrainer:
         from ludwig.trainers.registry import get_llm_trainers_registry, get_trainers_registry
 
         if model.type() == MODEL_LLM:
@@ -229,7 +230,7 @@ class LocalTrainingMixin:
         return True
 
     @staticmethod
-    def tune_batch_size(evaluator_cls: Type[BatchSizeEvaluator], dataset_len: int) -> int:
+    def tune_batch_size(evaluator_cls: type[BatchSizeEvaluator], dataset_len: int) -> int:
         evaluator = evaluator_cls()
         return evaluator.select_best_batch_size(dataset_len)
 
@@ -272,7 +273,7 @@ class LocalBackend(LocalPreprocessingMixin, LocalTrainingMixin, Backend):
     def get_available_resources(self) -> Resources:
         return Resources(cpus=psutil.cpu_count(), gpus=torch.cuda.device_count())
 
-    def max_concurrent_trials(self, hyperopt_config: HyperoptConfigDict) -> Union[int, None]:
+    def max_concurrent_trials(self, hyperopt_config: HyperoptConfigDict) -> int | None:
         # Every trial will be run with Pandas and NO Ray Datasets. Allow Ray Tune to use all the
         # trial resources it wants, because there is no Ray Datasets process to compete with it for CPUs.
         return None
@@ -284,7 +285,7 @@ class DataParallelBackend(LocalPreprocessingMixin, Backend, ABC):
 
     def __init__(self, **kwargs):
         super().__init__(dataset_manager=PandasDatasetManager(self), **kwargs)
-        self._distributed: Optional[DistributedStrategy] = None
+        self._distributed: DistributedStrategy | None = None
 
     @abstractmethod
     def initialize(self):
@@ -295,7 +296,7 @@ class DataParallelBackend(LocalPreprocessingMixin, Backend, ABC):
             *args, local_rank=self._distributed.local_rank(), local_size=self._distributed.local_size(), **kwargs
         )
 
-    def create_trainer(self, **kwargs) -> "BaseTrainer":  # noqa: F821
+    def create_trainer(self, **kwargs) -> BaseTrainer:
         from ludwig.trainers.trainer import Trainer
 
         return Trainer(distributed=self._distributed, **kwargs)
@@ -343,10 +344,10 @@ class DataParallelBackend(LocalPreprocessingMixin, Backend, ABC):
 
         return Resources(cpus=cpus, gpus=gpus)
 
-    def max_concurrent_trials(self, hyperopt_config: HyperoptConfigDict) -> Union[int, None]:
+    def max_concurrent_trials(self, hyperopt_config: HyperoptConfigDict) -> int | None:
         # Return None since there is no Ray component
         return None
 
-    def tune_batch_size(self, evaluator_cls: Type[BatchSizeEvaluator], dataset_len: int) -> int:
+    def tune_batch_size(self, evaluator_cls: type[BatchSizeEvaluator], dataset_len: int) -> int:
         evaluator = evaluator_cls()
         return evaluator.select_best_batch_size(dataset_len)
