@@ -8,3 +8,7 @@ order_by_type = "False"
 [tool.black]
 line-length = 120
 exclude = "./python/"
+
+
+[build-system]
+requires = ["packaging"]
