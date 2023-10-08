@@ -1,4 +1,5 @@
 # requirements for horovod
+packaging
 horovod[pytorch]>=0.24.0,!=0.26.0
 
 # alternative to Dask
