@@ -176,6 +176,7 @@ jobs:
           pip install -r requirements_extra.txt
           HOROVOD_BUILT=$(python -c "import horovod.torch; horovod.torch.nccl_built(); print('SUCCESS')" || true)
           if [[ $HOROVOD_BUILT != "SUCCESS" ]]; then
+            pip install packaging
             pip uninstall -y horovod
             pip install --no-cache-dir git+https://github.com/horovod/horovod.git@master
           fi
