@@ -173,7 +173,6 @@ jobs:
           HOROVOD_WITHOUT_TENSORFLOW: 1
           HOROVOD_WITHOUT_MXNET: 1
         run: |
-          pip install packaging
           pip install -r requirements_extra.txt
           HOROVOD_BUILT=$(python -c "import horovod.torch; horovod.torch.nccl_built(); print('SUCCESS')" || true)
           if [[ $HOROVOD_BUILT != "SUCCESS" ]]; then
