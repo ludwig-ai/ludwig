@@ -3732,13 +3732,15 @@ def confusion_matrix(
                 model_name_name = (
                     model_names_list[i] if (model_names_list is not None and i < len(model_names_list)) else ""
                 )
-
                 if (
                     metadata is not None
                     and output_feature_name in metadata
-                    and "idx2str" in metadata[output_feature_name]
+                    and ("idx2str" in metadata[output_feature_name] or "bool2str" in metadata[output_feature_name])
                 ):
-                    labels = metadata[output_feature_name]["idx2str"]
+                    if "bool2str" in metadata[output_feature_name]:  # Handles the binary output case
+                        labels = metadata[output_feature_name]["bool2str"]
+                    else:
+                        labels = metadata[output_feature_name]["idx2str"]
                 else:
                     labels = list(range(len(_confusion_matrix)))
 

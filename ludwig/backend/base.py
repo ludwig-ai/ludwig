@@ -158,8 +158,9 @@ class LocalPreprocessingMixin:
     def supports_multiprocessing(self):
         return True
 
+    @staticmethod
     def read_binary_files(
-        self, column: pd.Series, map_fn: Optional[Callable] = None, file_size: Optional[int] = None
+        column: pd.Series, map_fn: Optional[Callable] = None, file_size: Optional[int] = None
     ) -> pd.Series:
         column = column.fillna(np.nan).replace([np.nan], [None])  # normalize NaNs to None
 
@@ -181,7 +182,8 @@ class LocalPreprocessingMixin:
 
         return pd.Series(result, index=column.index, name=column.name)
 
-    def batch_transform(self, df: DataFrame, batch_size: int, transform_fn: Callable, name: str = None) -> DataFrame:
+    @staticmethod
+    def batch_transform(df: DataFrame, batch_size: int, transform_fn: Callable, name: str = None) -> DataFrame:
         name = name or "Batch Transform"
         batches = to_batches(df, batch_size)
         transform = transform_fn()
@@ -191,10 +193,12 @@ class LocalPreprocessingMixin:
 
 
 class LocalTrainingMixin:
-    def initialize(self):
+    @staticmethod
+    def initialize():
         init_dist_strategy("local")
 
-    def initialize_pytorch(self, *args, **kwargs):
+    @staticmethod
+    def initialize_pytorch(*args, **kwargs):
         initialize_pytorch(*args, **kwargs)
 
     def create_trainer(self, config: BaseTrainerConfig, model: BaseModel, **kwargs) -> "BaseTrainer":  # noqa: F821
@@ -207,7 +211,8 @@ class LocalTrainingMixin:
 
         return trainer_cls(config=config, model=model, **kwargs)
 
-    def create_predictor(self, model: BaseModel, **kwargs):
+    @staticmethod
+    def create_predictor(model: BaseModel, **kwargs):
         from ludwig.models.predictor import get_predictor_cls
 
         return get_predictor_cls(model.type())(model, **kwargs)
@@ -215,13 +220,16 @@ class LocalTrainingMixin:
     def sync_model(self, model):
         pass
 
-    def broadcast_return(self, fn):
+    @staticmethod
+    def broadcast_return(fn):
         return fn()
 
-    def is_coordinator(self):
+    @staticmethod
+    def is_coordinator() -> bool:
         return True
 
-    def tune_batch_size(self, evaluator_cls: Type[BatchSizeEvaluator], dataset_len: int) -> int:
+    @staticmethod
+    def tune_batch_size(evaluator_cls: Type[BatchSizeEvaluator], dataset_len: int) -> int:
         evaluator = evaluator_cls()
         return evaluator.select_best_batch_size(dataset_len)
 
@@ -230,10 +238,12 @@ class RemoteTrainingMixin:
     def sync_model(self, model):
         pass
 
-    def broadcast_return(self, fn):
+    @staticmethod
+    def broadcast_return(fn):
         return fn()
 
-    def is_coordinator(self):
+    @staticmethod
+    def is_coordinator() -> bool:
         return True
 
 
@@ -274,7 +284,7 @@ class DataParallelBackend(LocalPreprocessingMixin, Backend, ABC):
 
     def __init__(self, **kwargs):
         super().__init__(dataset_manager=PandasDatasetManager(self), **kwargs)
-        self._distributed: DistributedStrategy = None
+        self._distributed: Optional[DistributedStrategy] = None
 
     @abstractmethod
     def initialize(self):
