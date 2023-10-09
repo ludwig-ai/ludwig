@@ -49,8 +49,8 @@ with open(path.join(here, "requirements_extra.txt"), encoding="utf-8") as f:
 
 setup(
     name="ludwig",
-    version="0.8.4",
-    description="Declarative machine learning: End-to-end machine learning pipelines using data-driven configurations.",
+    version="0.8.5",
+    description="Low-code framework for building custom LLMs, neural networks, and other AI models.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/ludwig-ai/ludwig",
