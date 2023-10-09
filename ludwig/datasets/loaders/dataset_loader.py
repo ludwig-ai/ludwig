@@ -452,7 +452,7 @@ class DatasetLoader:
         )
         test_paths = _glob_multiple(_list_of_strings(self.config.test_filenames), root_dir=self.raw_dataset_dir)
         dataframes = []
-        if self.config.huggingface_dataset_id:
+        if self.config.name == "hugging_face":
             dataframes = self._get_dataframe_with_fixed_splits_from_hf()
         else:
             dataframes = self._get_dataframe_with_fixed_splits(
@@ -463,7 +463,7 @@ class DatasetLoader:
     def _get_dataframe_with_fixed_splits_from_hf(self):
         dataframes = []
         splits = ["train", "validation", "test"]
-        data_dict = self.load_hf_to_dataframe(
+        data_dict = self.load_hf_to_dict(
             self.config.huggingface_dataset_id, self.config.huggingface_subset
         )  # This function is defined in the Hugging Face dataloader
         for split_type in splits:
