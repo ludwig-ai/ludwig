@@ -5,7 +5,7 @@ import os
 from collections import OrderedDict
 from functools import lru_cache
 from io import BytesIO
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 import yaml
 
@@ -193,7 +193,9 @@ def _load_hf_datasets(
     return dataset_out, training_set_out, validation_set_out, test_set_out
 
 
-def _load_cacheable_hf_dataset(dataset: str, backend: Backend, split_set=None) -> CacheableDataframe:
+def _load_cacheable_hf_dataset(
+    dataset: str, backend: Backend, split_set: Optional[Literal[TRAIN, VALIDATION, TEST]] = None
+) -> CacheableDataframe:
     loader = get_dataset("hugging_face")
     hf_id, hf_subsample = _get_hf_dataset_and_subsample(dataset)
     if split_set:
