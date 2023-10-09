@@ -9,7 +9,7 @@ GPUtil
 tblib
 awscli
 
-deepspeed<0.11.0  # 10/7/2023: limiting version to prevent PyTorch installation issues
+deepspeed!=0.11.0  # https://github.com/microsoft/DeepSpeed/issues/4473
 
 # requirements for daft
 getdaft[ray]
