@@ -6,7 +6,7 @@ from urllib.parse import quote
 
 import pytest
 
-from ludwig.utils.fs_utils import get_fs_and_path, safe_move_directory
+from ludwig.utils.fs_utils import get_fs_and_path, list_file_names_in_directory, safe_move_directory
 
 logger = logging.getLogger(__name__)
 
@@ -92,3 +92,18 @@ def test_safe_move_directory(tmpdir):
     assert os.path.exists(os.path.join(dst_dir, "file.txt"))
     with open(os.path.join(dst_dir, "file.txt")) as f:
         assert f.read() == "test"
+
+
+@pytest.mark.filesystem
+def test_list_file_names_in_directory(tmpdir):
+    my_dir = os.path.join(tmpdir, "my_dir")
+
+    os.mkdir(my_dir)
+
+    with open(os.path.join(my_dir, "my_file.txt"), "w") as f:
+        f.write("test_0")
+
+    with open(os.path.join(my_dir, "my_other_file.txt"), "w") as f:
+        f.write("test_1")
+
+    assert set(list_file_names_in_directory(directory_name=my_dir)) == {"my_file.txt", "my_other_file.txt"}

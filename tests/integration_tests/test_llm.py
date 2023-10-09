@@ -1,11 +1,13 @@
 import os
-from typing import Dict, Tuple, Union
+import pathlib
+from typing import Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
 import pytest
 import torch
 
+import ludwig.error as ludwig_error
 from ludwig.api import LudwigModel
 from ludwig.constants import (
     ADAPTER,
@@ -24,11 +26,13 @@ from ludwig.constants import (
     PRETRAINED_ADAPTER_WEIGHTS,
     PROGRESSBAR,
     PROMPT,
+    QUANTIZATION,
     TRAINER,
     TYPE,
 )
 from ludwig.models.llm import LLM
 from ludwig.schema.model_types.base import ModelConfig
+from ludwig.utils.fs_utils import list_file_names_in_directory
 from ludwig.utils.types import DataFrame
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
 
@@ -363,7 +367,7 @@ def _finetune_strategy_requires_cuda(finetune_strategy_name: str, quantization_a
     original finetine_strategy name of "lora" is interpreted as "qlora" and used in the lookup, based on the list of
     finetine strategies requiring CUDA.
     """
-    cuda_only_finetune_strategy_names: list[str] = [
+    cuda_only_finetune_strategy_names: List[str] = [
         "prompt_tuning",
         "prefix_tuning",
         "p_tuning",
@@ -379,9 +383,11 @@ def _finetune_strategy_requires_cuda(finetune_strategy_name: str, quantization_a
 def _verify_lm_lora_finetuning_layers(
     attention_layer: torch.nn.Module,
     merge_adapter_into_base_model: bool,
+    model_weights_directory: str,
     expected_lora_in_features: int,
     expected_lora_out_features: int,
-) -> bool:
+    expected_file_names: List[str],
+) -> None:
     """This method verifies that LoRA finetuning layers have correct types and shapes, depending on whether the
     optional "model.merge_and_unload()" method (based on the "merge_adapter_into_base_model" directive) was
     executed.
@@ -392,20 +398,21 @@ def _verify_lm_lora_finetuning_layers(
     and Lora_B children layers for each of V and Q projections, such that the product of V and Q matrices is a square
     matrix (with the dimensions expected_lora_in_features by expected_lora_in_features) for both V and Q projections.
     """
-    success: bool = True
-    success = success and isinstance(attention_layer.v_proj, torch.nn.Linear)
-    success = success and isinstance(attention_layer.q_proj, torch.nn.Linear)
+    file_names: List[str] = list_file_names_in_directory(directory_name=model_weights_directory)
+    assert set(file_names) == set(expected_file_names)
+    assert isinstance(attention_layer.v_proj, torch.nn.Linear)
+    assert isinstance(attention_layer.q_proj, torch.nn.Linear)
     if merge_adapter_into_base_model:
-        success = success and (attention_layer.v_proj.in_features, attention_layer.v_proj.out_features) == (
+        assert (attention_layer.v_proj.in_features, attention_layer.v_proj.out_features) == (
             expected_lora_in_features,
             expected_lora_out_features,
         )
-        success = success and (attention_layer.q_proj.in_features, attention_layer.q_proj.out_features) == (
+        assert (attention_layer.q_proj.in_features, attention_layer.q_proj.out_features) == (
             expected_lora_in_features,
             expected_lora_out_features,
         )
-        success = success and not list(attention_layer.v_proj.children())
-        success = success and not list(attention_layer.q_proj.children())
+        assert not list(attention_layer.v_proj.children())
+        assert not list(attention_layer.q_proj.children())
     else:
         v_proj_named_children: dict[str, torch.nn.Modeule] = dict(attention_layer.v_proj.named_children())
         assert isinstance(v_proj_named_children["lora_A"]["default"], torch.nn.Linear)
@@ -429,8 +436,6 @@ def _verify_lm_lora_finetuning_layers(
             q_proj_named_children["lora_B"]["default"].in_features,
             q_proj_named_children["lora_B"]["default"].out_features,
         ) == (expected_lora_out_features, expected_lora_in_features)
-
-    return success
 
 
 # TODO(arnav): p-tuning and prefix tuning have errors when enabled that seem to stem from DDP:
@@ -548,16 +553,19 @@ def _verify_lm_lora_finetuning_layers(
 def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strategy, adapter_args):
     train_df, prediction_df, config = _prepare_finetuning_test(csv_filename, finetune_strategy, backend, adapter_args)
 
+    output_directory: str = str(tmpdir)
+    model_directory: str = pathlib.Path(output_directory) / "api_experiment_run" / "model"
+
     model = LudwigModel(config)
-    model.train(dataset=train_df, output_directory=str(tmpdir), skip_save_processed_input=False)
+    model.train(dataset=train_df, output_directory=output_directory, skip_save_processed_input=False)
 
     # Make sure we can load the saved model and then use it for predictions
-    model = LudwigModel.load(os.path.join(str(tmpdir), "api_experiment_run", "model"), backend=backend)
+    model = LudwigModel.load(str(model_directory), backend=backend)
 
     base_model = LLM(ModelConfig.from_dict(config))
     assert not _compare_models(base_model, model.model)  # noqa F821
 
-    preds, _ = model.predict(dataset=prediction_df, output_directory=str(tmpdir))
+    preds, _ = model.predict(dataset=prediction_df, output_directory=output_directory)
     preds = convert_preds(preds)
 
     assert preds
@@ -592,7 +600,7 @@ def test_llm_finetuning_strategies_quantized(tmpdir, csv_filename, finetune_stra
 
     train_df, prediction_df, config = _prepare_finetuning_test(csv_filename, finetune_strategy, backend, adapter_args)
     config["backend"] = backend
-    config["quantization"] = quantization
+    config[QUANTIZATION] = quantization
 
     model = LudwigModel(config)
     model.train(dataset=train_df, output_directory=str(tmpdir), skip_save_processed_input=False)
@@ -610,6 +618,114 @@ def test_llm_finetuning_strategies_quantized(tmpdir, csv_filename, finetune_stra
 
 
 @pytest.mark.llm
+@pytest.mark.skipif(torch.cuda.device_count() == 0, reason="test requires at least 1 gpu")
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="test requires gpu support")
+@pytest.mark.parametrize(
+    "finetune_strategy,adapter_args,quantization,error_raised",
+    [
+        pytest.param(
+            "lora",
+            {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: False}},
+            {"bits": 4},
+            (
+                ImportError,
+                "Using `load_in_8bit=True` requires Accelerate: `pip install accelerate` and the latest version of bitsandbytes `pip install -i https://test.pypi.org/simple/ bitsandbytes` or pip install bitsandbytes` ",  # noqa E501
+            ),
+            id="qlora-4bit-not-merged",
+        ),
+        pytest.param(
+            "lora",
+            {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: True, PROGRESSBAR: True}},
+            {"bits": 8},
+            (
+                ImportError,
+                "Using `load_in_8bit=True` requires Accelerate: `pip install accelerate` and the latest version of bitsandbytes `pip install -i https://test.pypi.org/simple/ bitsandbytes` or pip install bitsandbytes` ",  # noqa E501
+            ),
+            id="qlora-8bit-merged",
+        ),
+        pytest.param(
+            "lora",
+            {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: False}},
+            {"bits": 8},
+            (
+                ImportError,
+                "Using `load_in_8bit=True` requires Accelerate: `pip install accelerate` and the latest version of bitsandbytes `pip install -i https://test.pypi.org/simple/ bitsandbytes` or pip install bitsandbytes` ",  # noqa E501
+            ),
+            id="qlora-8bit-not-merged",
+        ),
+    ],
+)
+def test_llm_lora_finetuning_merge_and_unload_quantized_accelerate_required(
+    csv_filename, finetune_strategy, adapter_args, quantization, error_raised
+):
+    input_features: List[dict] = [text_feature(name="input", encoder={"type": "passthrough"})]
+    output_features: List[dict] = [text_feature(name="output")]
+
+    config: dict = {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: TEST_MODEL_NAME,
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        TRAINER: {
+            TYPE: "finetune",
+            BATCH_SIZE: 8,
+            EPOCHS: 2,
+        },
+        ADAPTER: {
+            TYPE: finetune_strategy,
+            **adapter_args,
+        },
+        QUANTIZATION: quantization,
+    }
+
+    model = LudwigModel(config)
+
+    error_class: type  # noqa [F842]  # incorrect flagging of "local variable is annotated but never used
+    error_message: str  # noqa [F842]  # incorrect flagging of "local variable is annotated but never used
+    error_class, error_message = error_raised
+    with pytest.raises(error_class) as excinfo:
+        train_df = generate_data(input_features, output_features, filename=csv_filename, num_examples=3)
+        model.train(dataset=train_df)
+
+    assert str(excinfo.value) == error_message
+
+
+@pytest.mark.llm
+def test_llm_lora_finetuning_merge_and_unload_4_bit_quantization_not_supported(local_backend: dict):
+    input_features: List[dict] = [text_feature(name="input", encoder={"type": "passthrough"})]
+    output_features: List[dict] = [text_feature(name="output")]
+    finetune_strategy: str = "lora"
+
+    config: dict = {
+        MODEL_TYPE: MODEL_LLM,
+        BASE_MODEL: TEST_MODEL_NAME,
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        TRAINER: {
+            TYPE: "finetune",
+            BATCH_SIZE: 8,
+            EPOCHS: 2,
+        },
+        ADAPTER: {
+            TYPE: finetune_strategy,
+            POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: True, PROGRESSBAR: True},
+        },
+        QUANTIZATION: {"bits": 4},
+        BACKEND: local_backend,
+    }
+
+    expected_error_class: type = ludwig_error.ConfigValidationError
+    expected_error_message: str = """This operation will entail merging LoRA layers on a 4-bit quantized model.  \
+Calling "save_pretrained()" on that model is currently unsupported.  If you want to merge the LoRA adapter weights \
+into the base model, you need to use 8-bit quantization or do non-quantized based training by removing the \
+quantization section from your Ludwig configuration."""
+    with pytest.raises(expected_error_class) as excinfo:
+        _ = LudwigModel(config)
+
+    assert str(excinfo.value) == expected_error_message
+
+
+@pytest.mark.llm
 @pytest.mark.parametrize(
     "backend",
     [
@@ -621,24 +737,49 @@ def test_llm_finetuning_strategies_quantized(tmpdir, csv_filename, finetune_stra
     ],
 )
 @pytest.mark.parametrize(
-    "merge_adapter_into_base_model,expected_lora_in_features,expected_lora_out_features",
+    "merge_adapter_into_base_model,expected_lora_in_features,expected_lora_out_features,expected_file_names",
     [
         pytest.param(
             False,
             32,
             8,
+            [
+                "README.md",
+                "adapter_config.json",
+                "adapter_model.bin",
+            ],
             id="lora_not_merged",
         ),
         pytest.param(
             True,
             32,
             32,
+            [
+                "README.md",
+                "adapter_config.json",
+                "adapter_model.bin",
+                "added_tokens.json",
+                "config.json",
+                "generation_config.json",
+                "merges.txt",
+                "pytorch_model.bin",
+                "special_tokens_map.json",
+                "tokenizer.json",
+                "tokenizer_config.json",
+                "vocab.json",
+            ],
             id="lora_merged",
         ),
     ],
 )
 def test_llm_lora_finetuning_merge_and_unload(
-    tmpdir, csv_filename, backend, merge_adapter_into_base_model, expected_lora_in_features, expected_lora_out_features
+    tmpdir,
+    csv_filename,
+    backend,
+    merge_adapter_into_base_model,
+    expected_lora_in_features,
+    expected_lora_out_features,
+    expected_file_names,
 ):
     finetune_strategy: str = "lora"
     adapter_args: dict = {
@@ -650,22 +791,30 @@ def test_llm_lora_finetuning_merge_and_unload(
         csv_filename=csv_filename, finetune_strategy=finetune_strategy, backend=backend, adapter_args=adapter_args
     )
 
+    output_directory: str = str(tmpdir)
+    model_directory: str = pathlib.Path(output_directory) / "api_experiment_run" / "model"
+    model_weights_directory: str = pathlib.Path(output_directory) / "api_experiment_run" / "model" / "model_weights"
+
     model = LudwigModel(config)
-    model.train(dataset=train_df, output_directory=str(tmpdir), skip_save_processed_input=False)
-    assert _verify_lm_lora_finetuning_layers(
+    model.train(dataset=train_df, output_directory=output_directory, skip_save_processed_input=False)
+    _verify_lm_lora_finetuning_layers(
         attention_layer=model.model.model.base_model.model.transformer.h[1].attn,
         merge_adapter_into_base_model=merge_adapter_into_base_model,
+        model_weights_directory=model_weights_directory,
         expected_lora_in_features=expected_lora_in_features,
         expected_lora_out_features=expected_lora_out_features,
+        expected_file_names=expected_file_names,
     )
 
     # Make sure we can load the saved model and verify that the LoRA layers have expected shapes.
-    model = LudwigModel.load(os.path.join(str(tmpdir), "api_experiment_run", "model"), backend=backend)
-    assert _verify_lm_lora_finetuning_layers(
+    model = LudwigModel.load(str(model_directory), backend=backend)
+    _verify_lm_lora_finetuning_layers(
         attention_layer=model.model.model.base_model.model.transformer.h[1].attn,
         merge_adapter_into_base_model=merge_adapter_into_base_model,
+        model_weights_directory=model_weights_directory,
         expected_lora_in_features=expected_lora_in_features,
         expected_lora_out_features=expected_lora_out_features,
+        expected_file_names=expected_file_names,
     )
 
 
