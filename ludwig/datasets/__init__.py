@@ -202,7 +202,7 @@ def _load_hf_datasets(
 
 
 def _load_cacheable_hf_dataset(
-    dataset: str, backend: Backend, split_set: Optional[Literal[TRAIN, VALIDATION, TEST]] = None
+    dataset: str, backend: Backend, split_set: Optional[Literal["train", "validation", "test"]] = None
 ) -> CacheableDataframe:
     loader = get_dataset("hugging_face")
     hf_id, hf_subsample = _get_hf_dataset_and_subsample(dataset)
