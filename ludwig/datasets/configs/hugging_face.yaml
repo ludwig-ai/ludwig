@@ -1,7 +1,5 @@
 version: 1.0
 name: hugging_face
-huggingface_dataset_id: placeholder
-huggingface_subsample: placeholder
 loader: hugging_face.HFLoader
 description: |
   Hugging Face Datasets
