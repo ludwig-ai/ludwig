@@ -318,6 +318,10 @@ more accessible and feature rich framework for everyone to use!
   <img src="https://contrib.rocks/image?repo=ludwig-ai/ludwig" />
 </a><br/>
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=ludwig-ai/ludwig&type=Date)](https://star-history.com/#ludwig-ai/ludwig&Date)
+
 # 👋 Getting Involved
 
 - [Slack](https://join.slack.com/t/ludwig-ai/shared_invite/zt-mrxo87w6-DlX5~73T2B4v_g6jj0pJcQ)

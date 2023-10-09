@@ -13,6 +13,7 @@ from ludwig.constants import (
     CATEGORY,
     IMAGE,
     IN_MEMORY,
+    MIN_QUANTIZATION_BITS_FOR_MERGE_AND_UNLOAD,
     MODEL_ECD,
     MODEL_GBM,
     MODEL_LLM,
@@ -596,7 +597,8 @@ def _get_llm_model_config(model_name: str) -> AutoConfig:
     return AutoConfig.from_pretrained(model_name)
 
 
-@register_config_check
+# TODO(geoffrey, arnav): uncomment this when we have reconciled the config with the backend kwarg in api.py
+# @register_config_check
 def check_llm_quantization_backend_incompatibility(config: "ModelConfig") -> None:  # noqa: F821
     """Checks that LLM model type with quantization uses the local backend."""
     if config.model_type != MODEL_LLM:
@@ -637,6 +639,31 @@ def check_qlora_requirements(config: "ModelConfig") -> None:  # noqa: F821
 
     if config.quantization and (not config.adapter or config.adapter.type != "lora"):
         raise ConfigValidationError("Fine-tuning and LLM with quantization requires using the 'lora' adapter")
+
+
+@register_config_check
+def check_qlora_merge_and_unload_compatibility(config: "ModelConfig") -> None:  # noqa: F821
+    """Checks that model.merge_and_unload() is supported by underlying model.save_pretrained() when merging QLoRA
+    layers."""
+    if config.model_type != MODEL_LLM or config.trainer.type == "none":
+        return
+
+    if not (
+        config.adapter
+        and config.adapter.type in ["lora", "adalora"]
+        and config.adapter.postprocessor
+        and config.adapter.postprocessor.merge_adapter_into_base_model
+        and config.quantization
+    ):
+        return
+
+    if config.quantization.bits < MIN_QUANTIZATION_BITS_FOR_MERGE_AND_UNLOAD:
+        raise ConfigValidationError(
+            f"""This operation will entail merging LoRA layers on a {config.quantization.bits}-bit \
+quantized model.  Calling "save_pretrained()" on that model is currently unsupported.  If you want to merge the LoRA \
+adapter weights into the base model, you need to use 8-bit quantization or do non-quantized based training by removing \
+the quantization section from your Ludwig configuration."""
+        )
 
 
 @register_config_check
