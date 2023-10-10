@@ -18,6 +18,7 @@ from ludwig.schema.features.base import BaseOutputFeatureConfig, FeatureCollecti
 from ludwig.schema.model_types.llm import LLMModelConfig
 from ludwig.utils.augmentation_utils import AugmentationPipelines
 from ludwig.utils.data_utils import clear_data_cache
+from ludwig.utils.fs_utils import file_lock
 from ludwig.utils.llm_utils import (
     add_left_padding,
     generate_merged_ids,
@@ -71,6 +72,13 @@ class DictWrapper:
         self.obj.update(modules)
 
 
+def _default_transformers_cache_dir():
+    """Returns the default transformers cache directory."""
+    home_dir = os.path.expanduser("~")
+    cache_dir = os.path.join(home_dir, ".cache", "huggingface", "hub")
+    return cache_dir
+
+
 def load_pretrained_from_config(
     config_obj: LLMModelConfig,
     model_config: Optional[AutoConfig] = None,
@@ -107,9 +115,13 @@ def load_pretrained_from_config(
             else:
                 logger.warning(f"Parameter {param_name} is not supported by {config_obj.base_model}. Skipping.")
 
-    logger.info("Loading large language model...")
     pretrained_model_name_or_path = weights_save_path or config_obj.base_model
-    model: PreTrainedModel = AutoModelForCausalLM.from_pretrained(pretrained_model_name_or_path, **load_kwargs)
+
+    with file_lock(path=_default_transformers_cache_dir(), lock_file=".model_weights_lock"):
+        logger.info("Loading large language model...")
+        model: PreTrainedModel = AutoModelForCausalLM.from_pretrained(pretrained_model_name_or_path, **load_kwargs)
+        logger.info("Done.")
+
     return model
 
 
@@ -138,7 +150,6 @@ class LLM(BaseModel):
 
         self.model = None
         self.curr_device = torch.device("cpu")
-        logger.info("Done.")
 
         # Determines the maximum length of the context (input + output tokens)
         if hasattr(self.model_config, "max_sequence_length"):
