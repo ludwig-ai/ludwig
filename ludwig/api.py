@@ -896,22 +896,33 @@ class LudwigModel:
         generation_config: Optional[dict] = None,
     ) -> Union[str, List[str]]:
         """A simple generate() method that directly uses the underlying transformers library to generate text."""
+        import time
+
+        from ludwig.utils.tokenizers import HFTokenizer
+
         if self.config_obj.model_type != MODEL_LLM:
             raise ValueError(
                 f"Model type {self.config_obj.model_type} is not supported by this method. Only `llm` model type is "
                 "supported."
             )
+        # tokenizer = AutoTokenizer.from_pretrained(self.config_obj.base_model)
+        tokenizer = HFTokenizer(self.config_obj.base_model)
 
-        from transformers import AutoTokenizer
-
-        tokenizer = AutoTokenizer.from_pretrained(self.config_obj.base_model)
-        inputs = tokenizer(input_strings, return_tensors="pt")
+        start_time = time.time()
 
         with self.model.use_generation_config(generation_config):
-            generation_config = self.model.model.generation_config
-            return tokenizer.batch_decode(
-                self.model.model.generate(**inputs, generation_config=generation_config), skip_special_tokens=True
-            )
+            inputs = tokenizer.tokenizer(input_strings, return_tensors="pt", padding=True)
+            print(f"Finished tokenizing in: {time.time() - start_time}")
+            start_time = time.time()
+            inputs["input_ids"].to("cuda")
+            with torch.no_grad():
+                outputs = self.model.model.generate(**inputs, generation_config=self.model.model.generation_config)
+                print(f"Finished generating in: {time.time() - start_time}")
+                print("Got outputs")
+                start_time = time.time()
+                decoded_outputs = tokenizer.tokenizer.batch_decode(outputs, skip_special_tokens=True)
+                print(f"Finished decoding in: {time.time() - start_time}")
+                return decoded_outputs
 
     def predict(
         self,
@@ -965,6 +976,10 @@ class LudwigModel:
             `predictions` predictions from the provided dataset,
             `output_directory` filepath string to where data was stored.
         """
+        import time
+
+        start_time = time.time()
+
         self._check_initialization()
 
         # preprocessing
@@ -1014,6 +1029,7 @@ class LudwigModel:
 
                     logger.info(f"Saved to: {output_directory}")
 
+            print(f"Finished decoding in: {time.time() - start_time}")
             return converted_postproc_predictions, output_directory
 
     def evaluate(
