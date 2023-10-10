@@ -169,9 +169,9 @@ def test_sample_ratio_deterministic(backend, tmpdir, ray_cluster_2cpu):
         pytest.param("ray", id="ray", marks=pytest.mark.distributed),
     ],
 )
-def test_sample_cap(backend, tmpdir, ray_cluster_2cpu):
+def test_sample_size(backend, tmpdir, ray_cluster_2cpu):
     num_examples = 100
-    sample_cap = 25
+    sample_size = 25
 
     input_features = [sequence_feature(encoder={"reduce_output": "sum"}), audio_feature(folder=tmpdir)]
     output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
@@ -184,7 +184,7 @@ def test_sample_cap(backend, tmpdir, ray_cluster_2cpu):
         TRAINER: {
             EPOCHS: 2,
         },
-        PREPROCESSING: {"sample_cap": sample_cap},
+        PREPROCESSING: {"sample_size": sample_size},
     }
 
     model = LudwigModel(config, backend=backend)
@@ -194,7 +194,7 @@ def test_sample_cap(backend, tmpdir, ray_cluster_2cpu):
     )
 
     count = len(train_set) + len(val_set) + len(test_set)
-    assert sample_cap == count
+    assert sample_size == count
 
     # Check that sample cap is disabled when doing preprocessing for prediction
     dataset, _ = preprocess_for_prediction(
@@ -205,7 +205,7 @@ def test_sample_cap(backend, tmpdir, ray_cluster_2cpu):
         include_outputs=True,
         backend=model.backend,
     )
-    assert "sample_cap" in model.config_obj.preprocessing.to_dict()
+    assert "sample_size" in model.config_obj.preprocessing.to_dict()
     assert len(dataset) == num_examples
 
 
@@ -216,14 +216,14 @@ def test_sample_cap(backend, tmpdir, ray_cluster_2cpu):
         pytest.param("ray", id="ray", marks=pytest.mark.distributed),
     ],
 )
-def test_sample_cap_deterministic(backend, tmpdir, ray_cluster_2cpu):
+def test_sample_size_deterministic(backend, tmpdir, ray_cluster_2cpu):
     """Ensures that the sampled dataset is the same when using a random seed.
 
     model.preprocess returns a PandasPandasDataset object when using local backend, and returns a RayDataset object when
     using the Ray backend.
     """
     num_examples = 100
-    sample_cap = 30
+    sample_size = 30
 
     input_features = [binary_feature()]
     output_features = [category_feature()]
@@ -234,7 +234,7 @@ def test_sample_cap_deterministic(backend, tmpdir, ray_cluster_2cpu):
     config = {
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
-        PREPROCESSING: {"sample_cap": sample_cap},
+        PREPROCESSING: {"sample_size": sample_size},
     }
 
     model1 = LudwigModel(config, backend=backend)
@@ -250,8 +250,8 @@ def test_sample_cap_deterministic(backend, tmpdir, ray_cluster_2cpu):
     )
 
     # Ensure sizes are the same
-    assert sample_cap == len(train_set_1) + len(val_set_1) + len(test_set_1)
-    assert sample_cap == len(train_set_2) + len(val_set_2) + len(test_set_2)
+    assert sample_size == len(train_set_1) + len(val_set_1) + len(test_set_1)
+    assert sample_size == len(train_set_2) + len(val_set_2) + len(test_set_2)
 
     # Ensure actual rows are the same
     if backend == "local":

@@ -1201,8 +1201,8 @@ def build_dataset(
 
     if mode == "training":
         sample_ratio = global_preprocessing_parameters["sample_ratio"]
-        sample_cap = global_preprocessing_parameters["sample_cap"]
-        dataset_df = _get_sampled_dataset_df(dataset_df, df_engine, sample_ratio, sample_cap, random_seed)
+        sample_size = global_preprocessing_parameters["sample_size"]
+        dataset_df = _get_sampled_dataset_df(dataset_df, df_engine, sample_ratio, sample_size, random_seed)
 
     # If persisting DataFrames in memory is enabled, we want to do this after
     # each batch of parallel ops in order to avoid redundant computation
@@ -1389,7 +1389,7 @@ def embed_fixed_features(
     return results
 
 
-def _get_sampled_dataset_df(dataset_df, df_engine, sample_ratio, sample_cap, random_seed):
+def _get_sampled_dataset_df(dataset_df, df_engine, sample_ratio, sample_size, random_seed):
     if sample_ratio < 1.0:
         if not df_engine.partitioned and len(dataset_df) * sample_ratio < 1:
             raise ValueError(
@@ -1400,13 +1400,13 @@ def _get_sampled_dataset_df(dataset_df, df_engine, sample_ratio, sample_cap, ran
         logger.debug(f"sample {sample_ratio} of data")
         dataset_df = dataset_df.sample(frac=sample_ratio, random_state=random_seed)
 
-    if sample_cap:
-        if sample_cap < len(dataset_df):
+    if sample_size:
+        if sample_size < len(dataset_df):
             # Cannot use 'n' parameter when using dask DataFrames -- only 'frac' is supported
-            sample_ratio = sample_cap / len(dataset_df)
+            sample_ratio = sample_size / len(dataset_df)
             dataset_df = dataset_df.sample(frac=sample_ratio, random_state=random_seed)
         else:
-            logger.warning("sample_cap is larger than dataset size, ignoring sample_cap")
+            logger.warning("sample_size is larger than dataset size, ignoring sample_size")
 
     return dataset_df
 

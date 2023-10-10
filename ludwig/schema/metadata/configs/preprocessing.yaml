@@ -44,7 +44,7 @@ sample_ratio:
     expected_impact: 2
     suggested_values: Depends on data size
     ui_display_name: Sample Ratio
-sample_cap:
+sample_size:
     default_value_reasoning:
         The default value is None because we do not want to shrink
         the dataset by default, and we do not know the size of an arbitrary dataset.
