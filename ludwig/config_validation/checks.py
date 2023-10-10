@@ -694,8 +694,8 @@ def check_prompt_requirements(config: "ModelConfig") -> None:  # noqa: F821
 
 
 @register_config_check
-def check_sample_ratio_and_cap_compatible(config: "ModelConfig") -> None:
+def check_sample_ratio_and_size_compatible(config: "ModelConfig") -> None:
     sample_ratio = config.preprocessing.sample_ratio
     sample_size = config.preprocessing.sample_size
-    if sample_size and sample_ratio < 1.0:
+    if sample_size is not None and sample_ratio < 1.0:
         raise ConfigValidationError("sample_size cannot be used when sample_ratio < 1.0")
