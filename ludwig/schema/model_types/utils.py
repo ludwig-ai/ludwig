@@ -389,14 +389,25 @@ def _set_generation_max_new_tokens(config: "ModelConfig") -> None:
     if max_possible_sequence_length == default_max_sequence_length:
         model_config = AutoConfig.from_pretrained(config.base_model)
         max_possible_sequence_length = get_context_len(model_config)
-
-    logger.info(
-        f"Setting generation max_new_tokens to {max_possible_sequence_length} to correspond with the max "
-        "sequence length assigned to the output feature or the global max sequence length. This will ensure that "
-        "the correct number of tokens are generated at inference time. To override this behavior, set "
-        "`generation.max_new_tokens` to a different value in your Ludwig config."
-    )
-    config.generation.max_new_tokens = max_possible_sequence_length
+        # Max length only works if max_new_tokens is not set.
+        # If max_new_tokens is set, then we need to set max_length to None to ensure that the correct number of tokens
+        # are generated (input + output tokens), otherwise we will exceed the bounds of generation resulting in errors.
+        config.generation.max_new_tokens = None
+        config.generation.max_length = max_possible_sequence_length
+        logger.info(
+            f"Setting generation max_length to {max_possible_sequence_length} to correspond with the max sequence "
+            "length assigned to the output feature or the global max sequence length. This will ensure that the "
+            "correct number of tokens are generated at inference time. To override this behavior, set "
+            "`generation.max_length` to a different value in your Ludwig config."
+        )
+    else:
+        logger.info(
+            f"Setting generation max_new_tokens to {max_possible_sequence_length} to correspond with the max "
+            "sequence length assigned to the output feature or the global max sequence length. This will ensure that "
+            "the correct number of tokens are generated at inference time. To override this behavior, set "
+            "`generation.max_new_tokens` to a different value in your Ludwig config."
+        )
+        config.generation.max_new_tokens = max_possible_sequence_length
 
 
 @DeveloperAPI
