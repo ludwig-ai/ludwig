@@ -357,6 +357,9 @@ class RayAirRunner:
         trainer_kwargs = copy.copy(trainer_kwargs)
         self.backend_config = trainer_kwargs.pop("backend", None)
         self.strategy = trainer_kwargs.pop("strategy", get_default_strategy_name())
+
+        # Returns a reference to the underlying DistributedStrategy object that will be used
+        # by the trainer without initializing it.
         self.dist_strategy = get_dist_strategy(self.strategy)
 
         if "max_retries" in trainer_kwargs:
@@ -477,6 +480,7 @@ class RayTrainerV2(BaseTrainer):
         test_set: Optional[RayDataset] = None,
         **kwargs,
     ):
+        # Trainer config object for backend
         executable_kwargs = self.executable_kwargs
         kwargs = {
             "training_set_metadata": training_set.training_set_metadata,
@@ -500,7 +504,7 @@ class RayTrainerV2(BaseTrainer):
             # This enables zero copy model loading on each training worker using shared
             # memory from the Ray object store for model initialization.
             dist_strategy = runner.dist_strategy
-            model_ref = ray.put(dist_strategy.extract_model_for_serialization(self.model))
+            model_ref = ray.put(dist_strategy.extract_model_for_serialization(self.model, **self.trainer_kwargs))
             trainer_results = runner.run(
                 lambda config: train_fn(**config),
                 config={
@@ -516,7 +520,7 @@ class RayTrainerV2(BaseTrainer):
             )
 
         # re-register the weights of the model object in the main process
-        self.model = dist_strategy.replace_model_from_serialization(ray.get(model_ref))
+        self.model = dist_strategy.replace_model_from_serialization(ray.get(model_ref), **self.trainer_kwargs)
 
         # ensure module is initialized exactly as it is in the trainer process
         # so that the state dict can be loaded back into the model correctly.
@@ -661,6 +665,9 @@ def eval_fn(
     # Pin GPU before loading the model to prevent memory leaking onto other devices
     initialize_pytorch(local_rank=session.get_local_rank(), local_size=_local_size())
     distributed = init_dist_strategy(distributed_strategy)
+
+    # If the distributed strategy is not DeepSpeed, this is set to None.
+    # TODO: Consider renaming this to deepspeed_optimization_stage
     distributed_optimization_stage = distributed.optimization_stage
     try:
         eval_shard = RayDatasetShard(
@@ -687,7 +694,7 @@ def eval_fn(
         # adapter weights used at initialization. We will updated the state dict to use the weights from the
         # fine-tuned adapter.
         dist_model = distributed.prepare_for_inference(model)
-        if (distributed_optimization_stage and distributed_optimization_stage <= 2) and adapter_ref:
+        if adapter_ref and (distributed_optimization_stage and distributed_optimization_stage <= 2):
             model = distributed.replace_adapter_weights_from_serialization(model, ray.get(adapter_ref))
             dist_model = distributed.replace_adapter_weights_from_serialization(dist_model, ray.get(adapter_ref))
 
@@ -756,7 +763,7 @@ class RayPredictor(BasePredictor):
 
         # reuse model ref if provided
         if model_ref is None:
-            model_ref = ray.put(dist_strategy.extract_model_for_serialization(self.model))
+            model_ref = ray.put(dist_strategy.extract_model_for_serialization(self.model, **self.trainer_kwargs))
 
         batch_predictor = self.get_batch_infer_model(
             model_ref,
@@ -809,7 +816,7 @@ class RayPredictor(BasePredictor):
                 adapter_state_dict = dist_strategy.extract_adapter_weights_for_serialization(self.model)
                 adapter_ref = ray.put(adapter_state_dict)
 
-            model_ref = ray.put(dist_strategy.extract_model_for_serialization(self.model))
+            model_ref = ray.put(dist_strategy.extract_model_for_serialization(self.model, **self.trainer_kwargs))
             # Collect eval metrics by distributing work across nodes / gpus with Horovod
             datasets = {"eval": dataset.ds}
             stream_window_size = {"eval": dataset.window_size_bytes}
@@ -862,9 +869,11 @@ class RayPredictor(BasePredictor):
         **kwargs,
     ):
         class BatchInferModel:
-            def __init__(self):
+            def __init__(self, ray_predictor: "BasePredictor"):  # noqa: F821
                 # only use passed in distributed strategy for loading the model into the worker
-                model = dist_strategy.replace_model_from_serialization(ray.get(model_ref))
+                model = dist_strategy.replace_model_from_serialization(
+                    ray.get(model_ref), **ray_predictor.trainer_kwargs
+                )
 
                 # use local strategy for model sharding and batch inference
                 distributed = LocalStrategy()
@@ -907,7 +916,7 @@ class RayPredictor(BasePredictor):
 
                 return res
 
-        return BatchInferModel
+        return BatchInferModel(self)
 
 
 class RayBackend(RemoteTrainingMixin, Backend):

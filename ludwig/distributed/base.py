@@ -46,7 +46,7 @@ class DistributedStrategy(ABC):
         """
         pass
 
-    def prepare_for_inference(self, model: nn.Module) -> nn.Module:
+    def prepare_for_inference(self, model: nn.Module, **trainer_kwargs) -> nn.Module:
         return model
 
     def to_device(self, model: "BaseModel", device: Optional[torch.device] = None) -> nn.Module:
@@ -193,16 +193,20 @@ class DistributedStrategy(ABC):
         return model
 
     @classmethod
-    def extract_model_for_serialization(cls, model: nn.Module) -> Union[nn.Module, Tuple[nn.Module, List[Dict]]]:
+    def extract_model_for_serialization(
+        cls, model: nn.Module, **trainer_kwargs
+    ) -> Union[nn.Module, Tuple[nn.Module, List[Dict]]]:
         return model
 
     @classmethod
-    def replace_model_from_serialization(cls, state: Union[nn.Module, Tuple[nn.Module, List[Dict]]]) -> nn.Module:
+    def replace_model_from_serialization(
+        cls, state: Union[nn.Module, Tuple[nn.Module, List[Dict]]], **trainer_kwargs
+    ) -> nn.Module:
         assert isinstance(state, nn.Module)
         return state
 
     @property
-    def optimization_stage(self) -> Union[int, str, None]:
+    def optimization_stage(self) -> Union[int, None]:
         """This is used in particular by DeepSpeed, which has a different stages for different optimizations for
         training.
 

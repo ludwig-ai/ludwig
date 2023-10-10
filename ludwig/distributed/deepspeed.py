@@ -15,9 +15,7 @@ from ludwig.constants import MIN_POSSIBLE_BATCH_SIZE
 from ludwig.distributed.ddp import DDPStrategy
 from ludwig.modules.optimization_modules import get_optimizer_class_and_kwargs
 from ludwig.utils.checkpoint_utils import Checkpoint, MultiNodeCheckpoint
-
-# from ludwig.utils.model_utils import extract_tensors, replace_tensors
-# from ludwig.utils.torch_utils import get_torch_device
+from ludwig.utils.model_utils import extract_tensors, replace_tensors
 
 _deepspeed_0101 = version.parse(deepspeed.__version__) >= version.parse("0.10.1")
 
@@ -40,6 +38,12 @@ warnings.filterwarnings(
     category=UserWarning,
     module="torch.distributed.distributed_c10d",
 )
+
+
+def _get_optimization_stage_from_trainer_config(trainer_config: Dict[str, Any]) -> int:
+    """Returns the DeepSpeed optimization stage from the backend's trainer config."""
+    distributed_strategy_kwargs = trainer_config.get("strategy", {})
+    return distributed_strategy_kwargs.get("zero_optimization", {}).get("stage", 3)
 
 
 class DeepSpeedStrategy(DDPStrategy):
@@ -129,8 +133,13 @@ class DeepSpeedStrategy(DDPStrategy):
 
         return model_engine, optimizer
 
-    def prepare_for_inference(self, model: nn.Module) -> nn.Module:
-        if self.zero_optimization_stage != 3:
+    def prepare_for_inference(self, model: nn.Module, **trainer_kwargs) -> nn.Module:
+        if trainer_kwargs:
+            optimization_stage = _get_optimization_stage_from_trainer_config(trainer_kwargs)
+        else:
+            optimization_stage = self.zero_optimization_stage
+
+        if optimization_stage != 3:
             # For all DeepSpeed stages that are not stage 3, we can just return the model.
             # The model doesn't require model parallelism, and can be placed on the GPUs directly.
             model.prepare_for_inference()
@@ -226,11 +235,15 @@ class DeepSpeedStrategy(DDPStrategy):
         return get_peft_model_state_dict(model.model)
 
     @classmethod
-    def extract_model_for_serialization(cls, model: nn.Module) -> Union[nn.Module, Tuple[nn.Module, List[Dict]]]:
-        # if self.zero_optimization_stage != 3:
-        return model
+    def extract_model_for_serialization(
+        cls, model: nn.Module, **trainer_kwargs
+    ) -> Union[nn.Module, Tuple[nn.Module, List[Dict]]]:
+        """Trainer_kwargs is the trainer config from the backend's trainer config."""
+        optimization_stage = _get_optimization_stage_from_trainer_config(trainer_kwargs)
+        if optimization_stage != 3:
+            return model
 
-        # return extract_tensors(model)
+        return extract_tensors(model)
 
     @classmethod
     def replace_adapter_weights_from_serialization(cls, model: nn.Module, state_dict: Dict[str, Any]):
@@ -242,12 +255,30 @@ class DeepSpeedStrategy(DDPStrategy):
         return model
 
     @classmethod
-    def replace_model_from_serialization(cls, state: Union[nn.Module, Tuple[nn.Module, List[Dict]]]) -> nn.Module:
+    def replace_model_from_serialization(
+        cls, state: Union[nn.Module, Tuple[nn.Module, List[Dict]]], **trainer_kwargs
+    ) -> nn.Module:
+        if trainer_kwargs:
+            # Trainer kwargs are only passed in when we're using a reference to the DistributedStrategy class
+            # as opposed to an instance of the class. In this case, we need to extract the zero optimization stage
+            # from the trainer kwargs.
+            optimization_stage = _get_optimization_stage_from_trainer_config(trainer_kwargs)
+        else:
+            optimization_stage = cls.optimization_stage
+
+        # If we're using DeepSpeed Zero3, we need to replace the serialized tensors back into the model.
+        if optimization_stage == 3:
+            assert isinstance(state, tuple)
+            model, model_weights = state
+            replace_tensors(model, model_weights, torch.device("cpu"))
+            return model
+
+        # For all other DeepSpeed stages, we can just return the state.
         assert isinstance(state, nn.Module)
         return state
 
     @property
-    def optimization_stage(self) -> Union[int, str, None]:
+    def optimization_stage(self) -> Union[int, None]:
         return self.zero_optimization_stage
 
 

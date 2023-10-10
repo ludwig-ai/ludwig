@@ -84,6 +84,16 @@ def load_pretrained_from_config(
         load_kwargs["quantization_config"] = config_obj.quantization.to_bitsandbytes()
         load_kwargs["device_map"] = f"cuda:{torch.cuda.current_device()}"
 
+    # Initialize device_map based on backend and distributed strategy
+    # backend = config_obj.backend
+    # backend_type = backend.get("type", "local")
+    # backend_trainer_config = backend.get("trainer", {})
+    # if backend_type == "ray" and backend_trainer_config["strategy"] == "deepspeed":
+    #     # If using stage
+    # else:
+    #     # Default to auto device map
+    #     load_kwargs["device_map"] = "auto"
+
     if config_obj.model_parameters:
         # Add any model specific parameters to the load kwargs
         for param_name, param_value in config_obj.model_parameters.to_dict().items():
@@ -278,8 +288,8 @@ class LLM(BaseModel):
     def prepare_for_training(self):
         print("!!!!! PREPARE FOR TRAINING")
         # TODO: this implementation will not work if resuming from a previous checkpoint. Need to fix this.
+        self.model = load_pretrained_from_config(self.config_obj, model_config=self.model_config)
         if self.config_obj.quantization:
-            self.model = load_pretrained_from_config(self.config_obj, model_config=self.model_config)
             self.prepare_for_quantized_training()
         self.initialize_adapter()
 
