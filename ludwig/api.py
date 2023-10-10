@@ -332,6 +332,15 @@ class LudwigModel:
         # online training state
         self._online_trainer = None
 
+    def initialize_llm(self, random_seed: int = default_random_seed):
+        """Initialize the LLM model."""
+        if self.config_obj.model_type != MODEL_LLM:
+            raise ValueError(
+                f"Model type {self.config_obj.model_type} is not supported by this method. Only `llm` model type is "
+                "supported."
+            )
+        self.model = LudwigModel.create_model(self.config_obj, random_seed=random_seed)
+
     def train(
         self,
         dataset: Optional[Union[str, dict, pd.DataFrame]] = None,
@@ -880,6 +889,29 @@ class LudwigModel:
         trainer.batch_size = self.config_obj.trainer.batch_size
         trainer.eval_batch_size = self.config_obj.trainer.eval_batch_size
         trainer.gradient_accumulation_steps = self.config_obj.trainer.gradient_accumulation_steps
+
+    def generate(
+        self,
+        input_strings: Union[str, List[str]],
+        generation_config: Optional[dict] = None,
+    ) -> Union[str, List[str]]:
+        """A simple generate() method that directly uses the underlying transformers library to generate text."""
+        if self.config_obj.model_type != MODEL_LLM:
+            raise ValueError(
+                f"Model type {self.config_obj.model_type} is not supported by this method. Only `llm` model type is "
+                "supported."
+            )
+
+        from transformers import AutoTokenizer
+
+        tokenizer = AutoTokenizer.from_pretrained(self.config_obj.base_model)
+        inputs = tokenizer(input_strings, return_tensors="pt")
+
+        with self.model.use_generation_config(generation_config):
+            generation_config = self.model.model.generation_config
+            return tokenizer.batch_decode(
+                self.model.model.generate(**inputs, generation_config=generation_config), skip_special_tokens=True
+            )
 
     def predict(
         self,
