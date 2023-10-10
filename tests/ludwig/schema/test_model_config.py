@@ -1008,4 +1008,5 @@ def test_max_new_tokens_override_fallback_to_model_window_size():
     }
 
     config_obj = ModelConfig.from_dict(config)
-    assert config_obj.generation.max_new_tokens == 2048
+    assert config_obj.generation.max_new_tokens is None
+    assert config_obj.generation.max_length == 2048
