@@ -384,6 +384,7 @@ def _set_generation_max_new_tokens(config: "ModelConfig") -> None:
     # It's possible that both max_sequence_length and global_max_sequence_length are not set, in which case
     # we should fall back to the window size of the pretrained model. By this point, because of schema validation
     # checks, we know that the base_model exists so we can safely grab the base model's config.
+    # TODO (Arnav): Figure out how to factor in rope scaling factor into this calculation.
     if max_possible_sequence_length == default_max_sequence_length:
         model_config = AutoConfig.from_pretrained(config.base_model)
         # Determines the maximum length of the context (input + output tokens)
