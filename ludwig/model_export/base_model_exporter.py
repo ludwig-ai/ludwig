@@ -11,10 +11,10 @@ class BaseModelExporter(ABC):
         pass
 
     @abstractmethod
-    def export_classifier_onnx(model_path, export_path):
+    def export_classifier(self, model_path, export_path, export_args_override):
         pass
 
 
     @abstractmethod
-    def quantize(path_fp32, path_int8):
+    def quantize(self, path_fp32, path_int8):
         pass

@@ -13,7 +13,6 @@ class OnnxExporter(ABC):
     def export_classifier(self, model_path, export_path):
         ludwig_model = LudwigModel.load(model_path)
         model = OnnxExporter(ludwig_model.model)  # Wrap the model
-        model.eval()  # inference mode, is this needed.. I think onnx export does this for us
 
         width = ludwig_model.config["input_features"][0]["preprocessing"]["width"]
         height = ludwig_model.config["input_features"][0]["preprocessing"]["height"]
