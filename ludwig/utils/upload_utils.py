@@ -156,14 +156,15 @@ class HuggingFaceHub(BaseModelUpload):
                 implementations. Defaults to None.
 
         Raises:
-            AssertionError: If the repo_id does not have both a namespace and a repo name separated by a '/'.
+            ValueError: If the repo_id does not have both a namespace and a repo name separated by a '/'.
         """
         # Validate repo_id has both a namespace and a repo name
-        assert "/" in repo_id, (
-            "`repo_id` must be a namespace (user or an organization) and a repo name separated by a `/`."
-            " For example, if your HF username is `johndoe` and you want to create a repository called `test`, the"
-            " repo_id should be johndoe/test"
-        )
+        if "/" not in repo_id:
+            raise ValueError(
+                "`repo_id` must be a namespace (user or an organization) and a repo name separated by a `/`."
+                " For example, if your HF username is `johndoe` and you want to create a repository called `test`, the"
+                " repo_id should be johndoe/test"
+            )
         BaseModelUpload._validate_upload_parameters(
             repo_id,
             model_path,
@@ -310,9 +311,11 @@ class Predibase(BaseModelUpload):
                 implementations. Defaults to None.
 
         Raises:
-            AssertionError: If the repo_id has non-url safe characters.
+            ValueError: If the repo_id is too long.
         """
-        assert len(repo_id) <= 255, "`repo_id` must be 255 characters or less."
+        if len(repo_id) > 255:
+            raise ValueError("`repo_id` must be 255 characters or less.")
+
         BaseModelUpload._validate_upload_parameters(
             repo_id,
             model_path,
@@ -364,7 +367,6 @@ class Predibase(BaseModelUpload):
             dataset = self.pc.upload_dataset(file_path=dataset_file, name=dataset_name)
         except Exception as e:
             raise RuntimeError("Failed to upload dataset to Predibase") from e
-            return True
 
         # Create empty model repo using repo_name, but it is okay if it already exists.
         try:
@@ -375,7 +377,6 @@ class Predibase(BaseModelUpload):
             )
         except Exception as e:
             raise RuntimeError("Failed to create repo in Predibase") from e
-            return True
 
         # Upload the zip file to Predibase
         try:
@@ -386,7 +387,6 @@ class Predibase(BaseModelUpload):
             )
         except Exception as e:
             raise RuntimeError("Failed to upload model to Predibase") from e
-            return True
 
         logger.info(f"Model uploaded to Predibase with repository name `{repo_id}`")
-        return False
+        return True
