@@ -1390,10 +1390,11 @@ def embed_fixed_features(
 
 
 def _get_sampled_dataset_df(dataset_df, df_engine, sample_ratio, sample_size, random_seed):
+    df_len = len(dataset_df)
     if sample_ratio < 1.0:
-        if not df_engine.partitioned and len(dataset_df) * sample_ratio < 1:
+        if not df_engine.partitioned and df_len * sample_ratio < 1:
             raise ValueError(
-                f"sample_ratio {sample_ratio} is too small for dataset of length {len(dataset_df)}. "
+                f"sample_ratio {sample_ratio} is too small for dataset of length {df_len}. "
                 f"Please increase sample_ratio or use a larger dataset."
             )
 
@@ -1401,9 +1402,9 @@ def _get_sampled_dataset_df(dataset_df, df_engine, sample_ratio, sample_size, ra
         dataset_df = dataset_df.sample(frac=sample_ratio, random_state=random_seed)
 
     if sample_size:
-        if sample_size < len(dataset_df):
+        if sample_size < df_len:
             # Cannot use 'n' parameter when using dask DataFrames -- only 'frac' is supported
-            sample_ratio = sample_size / len(dataset_df)
+            sample_ratio = sample_size / df_len
             dataset_df = dataset_df.sample(frac=sample_ratio, random_state=random_seed)
         else:
             logger.warning("sample_size is larger than dataset size, ignoring sample_size")
