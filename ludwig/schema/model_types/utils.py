@@ -363,7 +363,7 @@ def _set_generation_max_new_tokens(config: "ModelConfig") -> None:
 
     if config.output_features[0].type != TEXT:
         # This is trickier to set for other output features, so don't override for now.
-        # TODO: Add support for other category features
+        # TODO: Add better support for category output features
         return
 
     max_possible_sequence_length = default_max_sequence_length
