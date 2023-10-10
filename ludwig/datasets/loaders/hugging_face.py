@@ -38,11 +38,11 @@ class HFLoader(DatasetLoader):
         dataset_dict: Dict[str, "datasets.arrow_dataset.Dataset"] = datasets.load_dataset(
             path=hf_id, name=hf_subsample
         )  # noqa
-        new_dict = {}
+        pandas_dict = {}
         for split in dataset_dict:
             # Convert from HF DatasetDict type to a dictionary of pandas dataframes
-            new_dict[split] = dataset_dict[split].to_pandas()
-        return new_dict
+            pandas_dict[split] = dataset_dict[split].to_pandas()
+        return pandas_dict
 
     def load(self, hf_id, hf_subsample, split=False) -> pd.DataFrame:
         """When load() is called, HFLoader calls the datasets API to return all of the data in a HuggingFace
