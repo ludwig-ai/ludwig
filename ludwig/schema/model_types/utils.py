@@ -355,6 +355,7 @@ def _set_generation_max_new_tokens(config: "ModelConfig") -> None:
     from transformers import AutoConfig
 
     from ludwig.schema.llms.generation import LLMGenerationConfig
+    from ludwig.utils.llm_utils import get_context_len
 
     default_max_sequence_length = LLMGenerationConfig().max_new_tokens
     if config.generation.max_new_tokens != default_max_sequence_length:
@@ -387,15 +388,7 @@ def _set_generation_max_new_tokens(config: "ModelConfig") -> None:
     # TODO (Arnav): Figure out how to factor in rope scaling factor into this calculation.
     if max_possible_sequence_length == default_max_sequence_length:
         model_config = AutoConfig.from_pretrained(config.base_model)
-        # Determines the maximum length of the context (input + output tokens)
-        if hasattr(model_config, "max_sequence_length"):
-            max_possible_sequence_length = model_config.max_sequence_length
-        elif hasattr(model_config, "max_position_embeddings"):
-            max_possible_sequence_length = model_config.max_position_embeddings
-        else:
-            # Fallback to 2048 for now.
-            # TODO: Determine this dynamically
-            max_possible_sequence_length = 2048
+        max_possible_sequence_length = get_context_len(model_config)
 
     logger.info(
         f"Setting generation max_new_tokens to {max_possible_sequence_length} to correspond with the max "
