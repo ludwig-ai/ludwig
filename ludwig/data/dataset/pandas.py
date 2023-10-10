@@ -17,12 +17,11 @@
 from __future__ import annotations
 
 import contextlib
-from typing import Iterable
+from typing import Iterable, TYPE_CHECKING
 
 import numpy as np
 from pandas import DataFrame
 
-from ludwig.backend.base import Backend
 from ludwig.constants import PREPROCESSING, TRAINING
 from ludwig.data.batcher.base import Batcher
 from ludwig.data.batcher.random_access import RandomAccessBatcher
@@ -35,6 +34,9 @@ from ludwig.utils.dataframe_utils import from_numpy_dataset, to_numpy_dataset, t
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import download_h5
 from ludwig.utils.misc_utils import get_proc_features
+
+if TYPE_CHECKING:
+    from ludwig.backend.base import Backend
 
 
 class PandasDataset(Dataset):
