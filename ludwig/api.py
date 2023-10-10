@@ -1215,7 +1215,6 @@ class LudwigModel:
         data_format: Optional[str] = None,
         experiment_name: str = "experiment",
         model_name: str = "run",
-        model_load_path: Optional[str] = None,
         model_resume_path: Optional[str] = None,
         eval_split: str = TEST,
         skip_save_training_description: bool = False,
@@ -1264,9 +1263,6 @@ class LudwigModel:
             the experiment.
         :param model_name: (str, default: `'run'`) name of the model that is
             being used.
-        :param model_load_path: (str, default: `None`) if this is specified the
-            loaded model will be used as initialization
-            (useful for transfer learning).
         :param model_resume_path: (str, default: `None`) resumes training of
             the model from the path specified. The config is restored.
             In addition to config, training statistics and loss for
@@ -1347,7 +1343,6 @@ class LudwigModel:
             data_format=data_format,
             experiment_name=experiment_name,
             model_name=model_name,
-            model_load_path=model_load_path,
             model_resume_path=model_resume_path,
             skip_save_training_description=skip_save_training_description,
             skip_save_training_statistics=skip_save_training_statistics,
