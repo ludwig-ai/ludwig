@@ -7,7 +7,6 @@ import coremltools as ct
 
 class CoreMLExporter(BaseModelExporter):
 
-    @abstractmethod
     def forward(self, x):
         return self.model({"image_path": x})
 
@@ -37,3 +36,12 @@ class CoreMLExporter(BaseModelExporter):
 
         # Save the CoreML model
         coreml_model_updated.save(export_path)
+
+    @abstractmethod
+    def quantize(self, path_fp32, path_int8):
+        import coremltools.optimize.coreml as cto
+        ludwig_model = LudwigModel.load(path_fp32)
+        model = CoreMLExporter(ludwig_model.model)  # Wrap the model
+        op_config = cto.OpLinearQuantizerConfig(mode="linear_symmetric", weight_threshold=512)
+        config = cto.OptimizationConfig(global_config=op_config)
+        compressed_8_bit_model = cto.linear_quantize_weights(model, config=config)
