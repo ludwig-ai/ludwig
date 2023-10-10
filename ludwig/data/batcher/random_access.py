@@ -63,6 +63,10 @@ class RandomAccessBatcher(Batcher):
         return sub_batch
 
     def last_batch(self):
+        """Returns whether we've exhausted all batches for this epoch.
+
+        If False, then there is at least 1 more batch available with next_batch().
+        """
         # If our current index in the dataset exceeds the size of the dataset,
         # we've finished the epoch and can indicate that this is the last batch
         if self.index >= self.total_size:
@@ -71,8 +75,9 @@ class RandomAccessBatcher(Batcher):
         # For e.g., batch size = 128 but the dataset only has 100 rows.
         elif self.ignore_last and self.step:
             # index += batch_size after each epoch. So, if our current index in total dataset is 1 less than the total
-            # dataset size, then the last batch will only have 1 row. Drop it if this happens.
-            if self.index - self.total_size == -1:
+            # dataset size, then the last batch will only have 1 row.
+            # If this happens, we drop the last batch, unless batch_size is 1.
+            if self.batch_size > 1 and self.index - self.total_size == -1:
                 logger.info("Last batch in epoch only has 1 sample and will be dropped.")
                 return True
         return False

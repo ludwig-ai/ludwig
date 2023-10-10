@@ -1,9 +1,8 @@
 import contextlib
-import copy
 import logging
 import os
 import tempfile
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -135,11 +134,6 @@ class LLM(BaseModel):
         else:
             self.context_len = 2048
 
-        # max input length value copied from FastChat
-        # https://github.com/lm-sys/FastChat/blob/0e958b852a14f4bef5f0e9d7a5e7373477329cf2/fastchat/serve/inference.py#L183  # noqa
-        self.max_new_tokens = self.config_obj.generation.max_new_tokens
-        self.max_input_length = self.context_len - self.max_new_tokens - 8
-
         # TODO(Arnav): This needs be more flexible to account for RoPE Scaling
         # When merging input IDs and target IDs for LLM fine-tuning, we want to make sure that the merged tensor is
         # not longer than the global maximum sequence length. This is provided in the preprocessing config. We never
@@ -156,11 +150,7 @@ class LLM(BaseModel):
         self.tokenizer = AutoTokenizer.from_pretrained(self.config_obj.base_model)
         set_pad_token(self.tokenizer)
 
-        self.generation = GenerationConfig(**self.config_obj.generation.to_dict())
-
-        # Save the original generation config so that we can reset it if/when we change it when self.generation gets is
-        # dynamically mutated during 1-off predict calls after fine-tuning.
-        self.original_generation_config = copy.deepcopy(self.generation)
+        self._set_generation_config(self.config_obj.generation.to_dict())
 
         # ================ Inputs ================
         try:
@@ -192,18 +182,39 @@ class LLM(BaseModel):
         # Extract the decoder object for the forward pass
         self._output_feature_decoder = ModuleWrapper(self.output_features.items()[0][1])
 
+        self.attention_masks = None
+
         clear_data_cache()
 
-    def create_feature_dict(self) -> LudwigFeatureDict:
+    def create_feature_dict(self) -> DictWrapper:
         return DictWrapper(LudwigFeatureDict())
 
-    def set_generation_config(self, generation_config_dict):
+    @contextlib.contextmanager
+    def use_generation_config(self, generation_config_dict: Optional[Dict[str, Any]] = None):
         """Sets the generation config for the model."""
-        self.generation = GenerationConfig(**generation_config_dict)
+        # Save the original generation config so that we can reset it if/when we change it when self.generation gets is
+        # dynamically mutated during 1-off predict calls after fine-tuning.
+        original_generation_config_dict = self.generation.to_dict()
+        try:
+            # no-op if generation_config is None
+            if generation_config_dict is not None:
+                # unwrap the original generation config, update it with the new generation config
+                new_generation_config_dict = {**original_generation_config_dict, **generation_config_dict}
+                self._set_generation_config(new_generation_config_dict)
+            yield
+        finally:
+            self._set_generation_config(original_generation_config_dict)
 
-    def reset_generation_config(self):
-        """Sets the generation config for th."""
-        self.generation = self.original_generation_config
+    def _set_generation_config(self, new_generation_config_dict: Dict[str, Any]):
+        self.generation = GenerationConfig(**new_generation_config_dict)
+        # We need to manually set the pad_token_id to the tokenizer's pad_token_id for certain models like GPT and
+        # CodeLlama to avoid getting an error. This workaround can be found here:
+        # (https://github.com/huggingface/transformers/issues/25353#issuecomment-1669339754)
+        self.generation.pad_token_id = self.tokenizer.pad_token_id
+        self.max_new_tokens = self.generation.max_new_tokens
+        # max input length value copied from FastChat
+        # https://github.com/lm-sys/FastChat/blob/0e958b852a14f4bef5f0e9d7a5e7373477329cf2/fastchat/serve/inference.py#L183  # noqa E501
+        self.max_input_length = self.context_len - self.max_new_tokens - 8
 
     @property
     def output_feature_decoder(self) -> OutputFeature:
@@ -226,24 +237,6 @@ class LLM(BaseModel):
                 from peft import MODEL_TYPE_TO_PEFT_MODEL_MAPPING, PeftConfig
 
                 peft_config = PeftConfig.from_pretrained(self.config_obj.adapter.pretrained_adapter_weights)
-                peft_dict = peft_config.to_dict()
-
-                # Need to update the peft config with some of the values from config_obj because not all of them are set
-                for param_name, param_value in self.config_obj.adapter.to_config().to_dict().items():
-                    # Not all parameters are supported by all models, so we only add the parameter to the load kwargs
-                    # if it is supported by the model.
-                    if param_value is None:
-                        # param_name and param_value come from the config object and contain default
-                        # values for the adapter. Examples of parameters with missing values might be:
-                        # 'auto_mapping', 'base_model_name_or_path', and 'task_type'.
-                        # Note that some of these values might already be set in peft_config, which comes from HF
-                        # directly (specifically, adapter_config.json in the model repo), and we don't want to override
-                        # those values with None.
-                        continue
-                    if param_name not in peft_dict:
-                        # If any parameters are not set in adapter_config.json in HF, we want to populate them with the
-                        # appropriate default values.
-                        setattr(peft_config, param_name, param_value)
 
                 self.model = MODEL_TYPE_TO_PEFT_MODEL_MAPPING[peft_config.task_type].from_pretrained(
                     self.model, self.config_obj.adapter.pretrained_adapter_weights
@@ -437,7 +430,7 @@ class LLM(BaseModel):
                         f"Input length {input_ids_sample_no_padding.shape[1]} is "
                         f"greater than max input length {self.max_input_length}. Truncating."
                     )
-                    input_ids_sample_no_padding = input_ids_sample_no_padding[:, -self.max_input_length :]
+                    input_ids_sample_no_padding = input_ids_sample_no_padding[:, -self.max_input_length :]  # noqa E203
 
                 input_lengths.append(input_ids_sample_no_padding.shape[1])
 
@@ -464,10 +457,40 @@ class LLM(BaseModel):
             # through the forward pass of the output feature
             outputs = self.output_feature_decoder.decoder_obj.forward(
                 sequences_list,
-                llm_model_input_lengths=input_lengths,
+                input_lengths,
+                self.max_new_tokens,
             )
 
         return outputs
+
+    def is_merge_and_unload_set(self) -> bool:
+        """Check if the "adapter" configuration section exists and, if affirmative, that it contains the
+        "postprocessor" subsection and the "merge_adapter_into_base_model" and "progressbar" directives.
+
+        # Return
+
+            :return (bool): whether merge_and_unload should be done.
+        """
+        return (
+            self.config_obj.adapter is not None
+            and self.config_obj.adapter.postprocessor is not None
+            and self.config_obj.adapter.postprocessor.merge_adapter_into_base_model
+        )
+
+    def merge_and_unload(self, progressbar: bool = False) -> None:
+        """This method merges the LoRa layers into the base model.  This is needed if someone wants to use the base
+        model as a standalone model.  The implementation calls merge_and_unload() of the underlying LoraModel class
+        (in peft).
+
+        Args:
+            progressbar (bool): whether to show a progressbar indicating the unload and merge process
+        """
+        from peft import LoraModel
+
+        if isinstance(self.model.base_model, LoraModel):
+            self.model.base_model.merge_and_unload(progressbar=progressbar)
+        else:
+            raise ValueError("This operation requires an LLM model trained with a LoRA adapter.")
 
     def _unpack_inputs(
         self,
@@ -649,6 +672,20 @@ class LLM(BaseModel):
         else:
             logger.info("Skipped saving LLM without weight adjustments.")
 
+    def save_base_model(self, save_path):
+        """Saves the base LLM model to the given path."""
+        # TODO: see the "TODO" statement from "LLM.save()" in this module.
+        if self.config_obj.trainer.type != "none":
+            weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
+            self.model.base_model.save_pretrained(weights_save_path)
+            """While this class initializes the tokenizer (from the base_model) automatically, and hence does not
+            need to be saved if inference is to be done using LudwigModel.predict(), the rationale for saving the
+            tokenizer to HuggingFace Hub is to provide access to models fine-tuned and persisted to HuggingFace Hub
+            using Ludwig at a later time, with the ability to perform inference, independently of Ludwig itself."""
+            self.tokenizer.save_pretrained(weights_save_path)
+        else:
+            logger.info("Skipped saving LLM without weight adjustments.")
+
     def load(self, save_path):
         """Loads the model from the given path."""
         weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
@@ -731,6 +768,7 @@ class LLM(BaseModel):
 
         return _targets
 
-    def get_augmentation_pipelines(self) -> AugmentationPipelines:
+    @staticmethod
+    def get_augmentation_pipelines() -> AugmentationPipelines:
         """Returns the augmentation pipeline for this model."""
         return AugmentationPipelines({})

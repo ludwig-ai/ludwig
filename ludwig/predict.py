@@ -16,6 +16,7 @@
 import argparse
 import logging
 import sys
+from ast import literal_eval
 from typing import List, Optional, Union
 
 import pandas as pd
@@ -37,6 +38,7 @@ def predict_cli(
     data_format: str = None,
     split: str = FULL,
     batch_size: int = 128,
+    generation_config: Optional[str] = None,
     skip_save_unprocessed_output: bool = False,
     skip_save_predictions: bool = False,
     output_directory: str = "results",
@@ -66,6 +68,12 @@ def predict_cli(
         to perform predictions. Valid values are `'training'`, `'validation'`,
         `'test'` and `'full'`.
     :param batch_size: (int, default `128`) size of batches for processing.
+    :param generation_config: (str, default: `None`) a string representing
+        the parameters for generation required to perform predictions with
+        an LLM. The string must be a JSON formatted dictionary with keys from
+        https://huggingface.co/docs/transformers/main_classes/text_generation#transformers.GenerationConfig
+        These will be merged with the generation parameters from the original
+        model config.
     :param skip_save_unprocessed_output: (bool, default: `False`) by default
         predictions and their probabilities are saved in both raw
         unprocessed numpy files containing tensors and as postprocessed
@@ -108,6 +116,7 @@ def predict_cli(
         data_format=data_format,
         split=split,
         batch_size=batch_size,
+        generation_config=literal_eval(generation_config) if generation_config else None,
         skip_save_unprocessed_output=skip_save_unprocessed_output,
         skip_save_predictions=skip_save_predictions,
         output_directory=output_directory,
@@ -157,6 +166,7 @@ def cli(sys_argv):
     # Model parameters
     # ----------------
     parser.add_argument("-m", "--model_path", help="model to load", required=True)
+    parser.add_argument("-gc", "--generation_config", help="generation config (LLMs only)", default=None)
 
     # -------------------------
     # Output results parameters

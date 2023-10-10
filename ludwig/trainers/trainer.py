@@ -189,6 +189,12 @@ class Trainer(BaseTrainer):
         self.gradient_clipping_config = create_clipper(config.gradient_clipping)
 
         self.config = config
+
+        self.base_learning_rate = None
+        self.dist_model = None
+        self.optimizer = None
+        self.scheduler = None
+
         self.prepare()
 
         # Setup for automatic mixed precision (AMP)
@@ -396,57 +402,91 @@ class Trainer(BaseTrainer):
 
         # Log CUDA memory stats.
         if torch.cuda.is_available():
-            memory_stats = torch.cuda.memory_stats()
-            # Allocated bytes.
-            train_summary_writer.add_scalar(
-                "cuda/allocated_bytes.all.current", memory_stats["allocated_bytes.all.current"], global_step=step
-            )
-            train_summary_writer.add_scalar(
-                "cuda/allocated_bytes.all.peak", memory_stats["allocated_bytes.all.peak"], global_step=step
-            )
-            train_summary_writer.add_scalar(
-                "cuda/allocated_bytes.all.allocated", memory_stats["allocated_bytes.all.allocated"], global_step=step
-            )
-            train_summary_writer.add_scalar(
-                "cuda/allocated_bytes.all.freed", memory_stats["allocated_bytes.all.freed"], global_step=step
-            )
+            for i in range(torch.cuda.device_count()):
+                device = torch.device(f"cuda:{i}")
+                memory_stats = torch.cuda.memory_stats(device=device)
+                gb_memory_stats = {k: v / (1000**3) for k, v in memory_stats.items()}
+                # Allocated bytes.
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/allocated_gb.all.current",
+                    gb_memory_stats["allocated_bytes.all.current"],
+                    global_step=step,
+                )
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/allocated_gb.all.peak",
+                    gb_memory_stats["allocated_bytes.all.peak"],
+                    global_step=step,
+                )
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/allocated_gb.all.allocated",
+                    gb_memory_stats["allocated_bytes.all.allocated"],
+                    global_step=step,
+                )
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/allocated_gb.all.freed",
+                    gb_memory_stats["allocated_bytes.all.freed"],
+                    global_step=step,
+                )
 
-            # Reserved bytes.
-            train_summary_writer.add_scalar(
-                "cuda/reserved_bytes.all.current", memory_stats["reserved_bytes.all.current"], global_step=step
-            )
-            train_summary_writer.add_scalar(
-                "cuda/reserved_bytes.all.peak", memory_stats["reserved_bytes.all.peak"], global_step=step
-            )
-            train_summary_writer.add_scalar(
-                "cuda/reserved_bytes.all.allocated", memory_stats["reserved_bytes.all.allocated"], global_step=step
-            )
-            train_summary_writer.add_scalar(
-                "cuda/reserved_bytes.all.freed", memory_stats["reserved_bytes.all.freed"], global_step=step
-            )
+                # Reserved bytes.
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/reserved_gb.all.current",
+                    gb_memory_stats["reserved_bytes.all.current"],
+                    global_step=step,
+                )
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/reserved_gb.all.peak", gb_memory_stats["reserved_bytes.all.peak"], global_step=step
+                )
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/reserved_gb.all.allocated",
+                    gb_memory_stats["reserved_bytes.all.allocated"],
+                    global_step=step,
+                )
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/reserved_gb.all.freed",
+                    gb_memory_stats["reserved_bytes.all.freed"],
+                    global_step=step,
+                )
 
-            # Active bytes.
-            train_summary_writer.add_scalar(
-                "cuda/active_bytes.all.current", memory_stats["active_bytes.all.current"], global_step=step
-            )
-            train_summary_writer.add_scalar(
-                "cuda/active_bytes.all.peak", memory_stats["active_bytes.all.peak"], global_step=step
-            )
-            train_summary_writer.add_scalar(
-                "cuda/active_bytes.all.allocated", memory_stats["active_bytes.all.allocated"], global_step=step
-            )
-            train_summary_writer.add_scalar(
-                "cuda/active_bytes.all.freed", memory_stats["active_bytes.all.freed"], global_step=step
-            )
+                # Active bytes.
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/active_gb.all.current",
+                    gb_memory_stats["active_bytes.all.current"],
+                    global_step=step,
+                )
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/active_gb.all.peak", gb_memory_stats["active_bytes.all.peak"], global_step=step
+                )
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/active_gb.all.allocated",
+                    gb_memory_stats["active_bytes.all.allocated"],
+                    global_step=step,
+                )
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/active_gb.all.freed", gb_memory_stats["active_bytes.all.freed"], global_step=step
+                )
 
-            # Global free memory.
-            train_summary_writer.add_scalar("cuda/global_free_memory", torch.cuda.mem_get_info()[0], global_step=step)
+                # Global free memory.
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/global_free_memory_gb",
+                    torch.cuda.mem_get_info(device=device)[0] / (1000**3),
+                    global_step=step,
+                )
 
-            # Total memory occupied.
-            train_summary_writer.add_scalar(
-                "cuda/total_memory_occupied", torch.cuda.mem_get_info()[1], global_step=step
-            )
+                # Total memory occupied.
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/total_memory_occupied_gb",
+                    torch.cuda.mem_get_info(device=device)[1] / (1000**3),
+                    global_step=step,
+                )
 
+                # Total memory used.
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/total_memory_used_gb",
+                    (torch.cuda.mem_get_info(device=device)[1] - torch.cuda.mem_get_info(device=device)[0])
+                    / (1000**3),
+                    global_step=step,
+                )
         train_summary_writer.flush()
 
     def is_cpu_training(self):
@@ -759,7 +799,6 @@ class Trainer(BaseTrainer):
         )
 
         # ====== Setup session =======
-        checkpoint_manager = None
         checkpoint = self.distributed.create_checkpoint_handle(
             dist_model=self.dist_model, model=self.model, optimizer=self.optimizer, scheduler=self.scheduler
         )
@@ -912,7 +951,7 @@ class Trainer(BaseTrainer):
 
                     self.callback(lambda c: c.on_epoch_start(self, progress_tracker, save_path))
 
-                    # Trains over a full epoch of data.
+                    # Trains over a full epoch of data or up to the last training step, whichever is sooner.
                     should_break = self._train_loop(
                         batcher,
                         progress_tracker,
@@ -933,10 +972,6 @@ class Trainer(BaseTrainer):
                         early_stopping_steps,
                         profiler,
                     )
-
-                    # ================ Post Training Epoch ================
-                    progress_tracker.epoch += 1
-                    self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
 
                     if self.is_coordinator():
                         # ========== Save training progress ==========
@@ -1063,7 +1098,8 @@ class Trainer(BaseTrainer):
         """Completes up to one epoch through the data."""
         self.distributed.zero_grad(self.optimizer)
         batch_idx = 0
-        while not batcher.last_batch() and progress_tracker.steps < self.total_steps:
+        should_break = False
+        while not batcher.last_batch() and progress_tracker.steps < self.total_steps and not should_break:
             progress_tracker.learning_rate = self.optimizer.param_groups[0]["lr"]
             self.callback(lambda c: c.on_batch_start(self, progress_tracker, save_path))
 
@@ -1116,6 +1152,7 @@ class Trainer(BaseTrainer):
 
             if progress_tracker.steps % final_steps_per_checkpoint == 0:
                 if not self.skip_all_evaluation:
+                    # Publishes metrics to MLFLow if there are any MLFlow callbacks.
                     should_break = self.run_evaluation(
                         training_set,
                         validation_set,
@@ -1146,10 +1183,12 @@ class Trainer(BaseTrainer):
                     if self.is_coordinator():
                         progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
 
-                if should_break:
-                    return should_break
+            # If this was the last batch, then increment the epoch counter and invoke the `on_epoch_end` callback.
+            if batcher.last_batch():
+                progress_tracker.epoch += 1
+                self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
 
-        return False
+        return should_break
 
     def train_online(self, dataset):
         self.dist_model.train()  # Sets model training mode.
@@ -1371,8 +1410,8 @@ class Trainer(BaseTrainer):
                 signal.signal(signal.SIGINT, self.original_sigint_handler)
             sys.exit(1)
 
+    @staticmethod
     def resume_files_exist(
-        self,
         training_progress_tracker_path: str,
         training_checkpoint_path: str,
     ) -> bool:
