@@ -239,3 +239,16 @@ def test_ad_hoc_dataset_download(tmpdir, dataset_name, size):
     df = ludwig_dataset.load()
     assert df is not None
     assert len(df) >= size
+
+
+def test_hf_dataset_loading():
+    loader = ludwig.datasets.get_dataset("hugging_face")
+    data = loader.load("JeremyAlain/123_test", "data_0")
+
+    assert len(data) == 200
+
+    train, val, test = loader.load("neil-code/dialogsum-test", None, split=True)
+
+    assert len(train) == 1999
+    assert len(val) == 499
+    assert len(test) == 499
