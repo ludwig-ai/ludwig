@@ -1,6 +1,9 @@
-import torch
-from ludwig.api import LudwigModel
 from abc import ABC, abstractmethod
+
+import torch
+
+from ludwig.api import LudwigModel
+
 
 class OnnxExporter(ABC):
     def __init__(self, model):
@@ -29,8 +32,8 @@ class OnnxExporter(ABC):
             output_names=["combiner_hidden_1", "output", "combiner_hidden_2"],
         )
 
-
     @abstractmethod
     def quantize(self, path_fp32, path_int8):
         from onnxruntime.quantization import quantize_dynamic
+
         quantize_dynamic(path_fp32, path_int8)  # type: ignore

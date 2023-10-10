@@ -1,12 +1,13 @@
-import torch
-from ludwig.api import LudwigModel
 from abc import ABC, abstractmethod
-from ludwig.model_export.base_model_exporter import BaseModelExporter
-import torch
+
 import coremltools as ct
+import torch
+
+from ludwig.api import LudwigModel
+from ludwig.model_export.base_model_exporter import BaseModelExporter
+
 
 class CoreMLExporter(BaseModelExporter):
-
     def forward(self, x):
         return self.model({"image_path": x})
 
@@ -23,7 +24,7 @@ class CoreMLExporter(BaseModelExporter):
         # Trace the model
         traced_model = torch.jit.trace(model, example_input)
         # Create the input image type
-        input_image = ct.ImageType(name=example_input, shape=(1, 3, width, height), scale=1/255)
+        input_image = ct.ImageType(name=example_input, shape=(1, 3, width, height), scale=1 / 255)
         # Convert the model
         coreml_model = ct.convert(traced_model, inputs=[input_image])
 
@@ -40,6 +41,7 @@ class CoreMLExporter(BaseModelExporter):
     @abstractmethod
     def quantize(self, path_fp32, path_int8):
         import coremltools.optimize.coreml as cto
+
         ludwig_model = LudwigModel.load(path_fp32)
         model = CoreMLExporter(ludwig_model.model)  # Wrap the model
         op_config = cto.OpLinearQuantizerConfig(mode="linear_symmetric", weight_threshold=512)
