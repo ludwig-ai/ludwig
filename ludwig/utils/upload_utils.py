@@ -106,6 +106,7 @@ class BaseModelUpload(ABC):
 class HuggingFaceHub(BaseModelUpload):
     def __init__(self):
         self.api = None
+        self.login()
 
     def login(self):
         """Login to huggingface hub using the token stored in ~/.cache/huggingface/token and returns a HfApi client
@@ -253,6 +254,7 @@ class HuggingFaceHub(BaseModelUpload):
 class Predibase(BaseModelUpload):
     def __init__(self):
         self.pc = None
+        self.login()
 
     def login(self):
         """Login to Predibase using the token stored in the PREDIBASE_API_TOKEN environment variable and return a

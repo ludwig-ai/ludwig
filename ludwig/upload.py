@@ -61,7 +61,6 @@ def upload_cli(
     """
     model_service = get_upload_registry().get(service, "hf_hub")
     hub = model_service()
-    hub.login()
     hub.upload(
         repo_id=repo_id,
         model_path=model_path,
