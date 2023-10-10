@@ -56,3 +56,6 @@ pyxlsb>=1.0.8       # excel
 pyarrow             # parquet
 lxml                # html
 html5lib            # html
+
+# requirement for loading hugging face datasets
+datasets
