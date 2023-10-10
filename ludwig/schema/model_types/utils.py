@@ -389,6 +389,9 @@ def _set_generation_max_new_tokens(config: "ModelConfig") -> None:
     if max_possible_sequence_length == default_max_sequence_length:
         model_config = AutoConfig.from_pretrained(config.base_model)
         max_possible_sequence_length = get_context_len(model_config)
+        # Artifically leave a buffer for now to prevent the following error:
+        # RuntimeError: index 512 is out of bounds for dimension 1 with size 512
+        max_possible_sequence_length -= 32
     #     # Max length only works if max_new_tokens is not set.
     #     # If max_new_tokens is set, then we need to set max_length to None to ensure that the correct number of tokens
     #     # are generated (input + output tokens), otherwise we will exceed the bounds of generation
