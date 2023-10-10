@@ -264,7 +264,8 @@ class Predibase(BaseModelUpload):
         token = os.environ.get("PREDIBASE_API_TOKEN")
         if token is None:
             raise ValueError(
-                "Unable to find PREDIBASE_API_TOKEN environment variable. Please log into Predibase, generate a token and use `export PREDIBASE_API_TOKEN=` to use Predibase"
+                "Unable to find PREDIBASE_API_TOKEN environment variable. Please log into Predibase, "
+                "generate a token and use `export PREDIBASE_API_TOKEN=` to use Predibase"
             )
 
         try:
