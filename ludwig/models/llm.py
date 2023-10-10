@@ -206,13 +206,11 @@ class LLM(BaseModel):
         # CodeLlama to avoid getting an error. This workaround can be found here:
         # (https://github.com/huggingface/transformers/issues/25353#issuecomment-1669339754)
         self.generation.pad_token_id = self.tokenizer.pad_token_id
-        self.max_new_tokens = self.generation.max_new_tokens or self.generation.max_length
+        self.max_new_tokens = self.generation.max_new_tokens
         # max input length value copied from FastChat
-        # https://github.com/lm-sys/FastChat/blob/0e958b852a14f4bef5f0e9d7a5e7373477329cf2/fastchat/serve/inference.py#L180 # noqa E501
-        if self.model_config.is_encoder_decoder:
-            self.max_input_length = self.context_len - self.max_new_tokens - 8
-        else:
-            self.max_input_length = self.context_len
+        # https://github.com/lm-sys/FastChat/blob/0e958b852a14f4bef5f0e9d7a5e7373477329cf2/fastchat/serve/inference.py#L183 # noqa E501
+        self.max_input_length = self.context_len - self.max_new_tokens - 8
+        assert self.max_input_length > 0
 
     @property
     def output_feature_decoder(self) -> OutputFeature:
