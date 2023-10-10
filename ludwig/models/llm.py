@@ -463,6 +463,20 @@ class LLM(BaseModel):
 
         return outputs
 
+    def is_merge_and_unload_set(self) -> bool:
+        """Check if the "adapter" configuration section exists and, if affirmative, that it contains the
+        "postprocessor" subsection and the "merge_adapter_into_base_model" and "progressbar" directives.
+
+        # Return
+
+            :return (bool): whether merge_and_unload should be done.
+        """
+        return (
+            self.config_obj.adapter is not None
+            and self.config_obj.adapter.postprocessor is not None
+            and self.config_obj.adapter.postprocessor.merge_adapter_into_base_model
+        )
+
     def merge_and_unload(self, progressbar: bool = False) -> None:
         """This method merges the LoRa layers into the base model.  This is needed if someone wants to use the base
         model as a standalone model.  The implementation calls merge_and_unload() of the underlying LoraModel class
@@ -655,6 +669,20 @@ class LLM(BaseModel):
         if self.config_obj.trainer.type != "none":
             weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
             self.model.save_pretrained(weights_save_path)
+        else:
+            logger.info("Skipped saving LLM without weight adjustments.")
+
+    def save_base_model(self, save_path):
+        """Saves the base LLM model to the given path."""
+        # TODO: see the "TODO" statement from "LLM.save()" in this module.
+        if self.config_obj.trainer.type != "none":
+            weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
+            self.model.base_model.save_pretrained(weights_save_path)
+            """While this class initializes the tokenizer (from the base_model) automatically, and hence does not
+            need to be saved if inference is to be done using LudwigModel.predict(), the rationale for saving the
+            tokenizer to HuggingFace Hub is to provide access to models fine-tuned and persisted to HuggingFace Hub
+            using Ludwig at a later time, with the ability to perform inference, independently of Ludwig itself."""
+            self.tokenizer.save_pretrained(weights_save_path)
         else:
             logger.info("Skipped saving LLM without weight adjustments.")
 
