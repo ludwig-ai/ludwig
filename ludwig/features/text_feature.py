@@ -364,31 +364,21 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
         feature_config.decoder.max_sequence_length = feature_metadata["max_sequence_length"]
         if isinstance(feature_config.loss.class_weights, (list, tuple)):
             # [0, 0] for UNK and PAD
-            feature_config.loss.class_weights = [
-                0,
-                0,
-            ] + feature_config.loss.class_weights
+            feature_config.loss.class_weights = [0, 0] + feature_config.loss.class_weights
             if len(feature_config.loss.class_weights) != feature_config.decoder.vocab_size:
                 raise ValueError(
-                    "The length of class_weights ({}) is not compatible with "
-                    "the number of classes ({})".format(
-                        len(feature_config.loss.class_weights),
-                        feature_config.decoder.vocab_size,
-                    )
+                    f"The length of class_weights ({len(feature_config.loss.class_weights)}) is not compatible with "
+                    f"the number of classes ({feature_config.decoder.vocab_size})"
                 )
 
         if isinstance(feature_config.loss.class_weights, dict):
             if feature_metadata["str2idx"].keys() != feature_config.loss.class_weights.keys():
                 raise ValueError(
-                    "The class_weights keys ({}) are not compatible with "
-                    "the classes ({}) of feature {}. "
+                    f"The class_weights keys ({feature_config.loss.class_weights.keys()}) are not compatible with "
+                    f'the classes ({feature_metadata["str2idx"].keys()}) of feature {feature_config.column}. '
                     "Check the metadata JSON file to see the classes "
                     "and consider there needs to be a weight "
-                    "for the <UNK> class too.".format(
-                        feature_config.loss.class_weights.keys(),
-                        feature_metadata["str2idx"].keys(),
-                        feature_config.column,
-                    )
+                    "for the <UNK> class too."
                 )
             else:
                 class_weights = feature_config.loss.class_weights

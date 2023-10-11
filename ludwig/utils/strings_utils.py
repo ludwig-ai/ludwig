@@ -490,13 +490,7 @@ def create_vocabulary_single_token(
 
 
 def _get_sequence_vector(
-    sequence,
-    tokenizer,
-    tokenizer_type,
-    format_dtype,
-    unit_to_id,
-    lowercase=True,
-    unknown_symbol=UNKNOWN_SYMBOL,
+    sequence, tokenizer, tokenizer_type, format_dtype, unit_to_id, lowercase=True, unknown_symbol=UNKNOWN_SYMBOL
 ) -> np.ndarray:
     unit_sequence = tokenizer(sequence.lower() if lowercase else sequence)
 

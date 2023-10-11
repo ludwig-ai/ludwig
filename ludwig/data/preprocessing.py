@@ -1289,7 +1289,7 @@ def build_dataset(
         config, metadata, feature_name_to_preprocessing_parameters, dataset_cols, feature_configs, backend
     )
 
-    check_global_max_sequence_length_fits_prompt_template(metadata, feature_configs, global_preprocessing_parameters)
+    check_global_max_sequence_length_fits_prompt_template(metadata, global_preprocessing_parameters)
 
     for callback in callbacks or []:
         callback.on_build_metadata_end(dataset_df, mode)
@@ -1509,7 +1509,7 @@ def is_input_feature(feature_config: FeatureConfigDict) -> bool:
 
 def build_metadata(
     config: ModelConfigDict,
-    metadata: TrainingSetMetadataDict,  # Seems to just a checksum. {'checksum': '8necrb3jNsX2uc3_hzikSw=='}
+    metadata: TrainingSetMetadataDict,
     feature_name_to_preprocessing_parameters: Dict[str, PreprocessingConfigDict],
     dataset_cols: Dict[str, Series],
     feature_configs: List[FeatureConfigDict],
