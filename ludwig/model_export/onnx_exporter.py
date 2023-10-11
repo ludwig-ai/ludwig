@@ -9,7 +9,6 @@ class OnnxExporter(ABC):
     def __init__(self, model):
         self.model = model
 
-    @abstractmethod
     def forward(self, x):
         return self.model({"image_path": x})
 
@@ -32,7 +31,6 @@ class OnnxExporter(ABC):
             output_names=["combiner_hidden_1", "output", "combiner_hidden_2"],
         )
 
-    @abstractmethod
     def quantize(self, path_fp32, path_int8):
         from onnxruntime.quantization import quantize_dynamic
 

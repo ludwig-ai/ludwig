@@ -38,7 +38,6 @@ class CoreMLExporter(BaseModelExporter):
         # Save the CoreML model
         coreml_model_updated.save(export_path)
 
-    @abstractmethod
     def quantize(self, path_fp32, path_int8):
         import coremltools.optimize.coreml as cto
 
