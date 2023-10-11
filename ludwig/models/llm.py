@@ -90,19 +90,18 @@ def load_pretrained_from_config(
         # Apply quanitzation configuration at model load time
         load_kwargs["torch_dtype"] = getattr(torch, config_obj.quantization.bnb_4bit_compute_dtype)
         load_kwargs["quantization_config"] = config_obj.quantization.to_bitsandbytes()
-        # load_kwargs["device_map"] = f"cuda:{torch.cuda.current_device()}"
 
     # Initialize device_map load kwarg based on backend and distributed strategy
     backend = config_obj.backend
     backend_type = backend.get("type", "local")
     backend_trainer_config = backend.get("trainer", {})
     if backend_type == "ray" and backend_trainer_config.get("strategy", {}).get("type") == "deepspeed":
-        # If using stage 3 deepspeed, we need to use the auto device map
+        # If using deepspeed stage 3, we need to use the auto device map
         strategy_config = backend_trainer_config.get("strategy")
         if strategy_config.get("zero_optimization", {}).get("stage", 3) == 3:
             load_kwargs["device_map"] = "auto"
         else:
-            # If using stage 0, 1 or 2 deepspeed, we need to use the local rank device map
+            # If using deepspeed stage 0, 1 or 2, we need to use the local rank device map
             # This is safe to do since we only support single node multi-gpu training with deepspeed
             load_kwargs["device_map"] = f"cuda:{torch.cuda.current_device()}"
     else:
