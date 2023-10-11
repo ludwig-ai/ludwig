@@ -26,6 +26,7 @@ from ludwig.schema.features.set_feature import SetInputFeatureConfig, SetOutputF
 from ludwig.types import (
     FeatureMetadataDict,
     FeaturePostProcessingOutputDict,
+    ModelConfigDict,
     PreprocessingConfigDict,
     TrainingSetMetadataDict,
 )
@@ -151,7 +152,11 @@ class SetFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def get_feature_meta(
-        column, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
+        config: ModelConfigDict,
+        column,
+        preprocessing_parameters: PreprocessingConfigDict,
+        backend,
+        is_input_feature: bool,
     ) -> FeatureMetadataDict:
         vocabulary = create_vocabulary(
             column,

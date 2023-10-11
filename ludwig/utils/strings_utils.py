@@ -228,10 +228,10 @@ class Vocabulary:
     str2idf: Optional[Dict[str, int]]
     """Map of symbol to inverse document frequency."""
 
-    line_length_max: int
+    max_sequence_length: int
     """Maximum sequence length."""
 
-    line_length_99ptile: float
+    sequence_length_99ptile: int
     """99th percentile of maximum sequence length."""
 
     pad_idx: int
@@ -243,66 +243,28 @@ class Vocabulary:
     unknown_symbol: str
     """Actual unknown symbol."""
 
+    prompt_template_num_tokens: int = 0
+    """The number of tokens in the prompt template.
 
-def create_vocabulary(
-    data: Series,
-    tokenizer_type: str = "space",
-    lowercase: bool = True,
-    num_most_frequent: int = None,
-    vocab_file: str = None,
-    add_special_symbols: bool = True,
-    unknown_symbol: str = UNKNOWN_SYMBOL,
-    padding_symbol: str = PADDING_SYMBOL,
-    start_symbol: str = START_SYMBOL,
-    stop_symbol: str = STOP_SYMBOL,
-    pretrained_model_name_or_path: str = None,
-    ngram_size: Optional[int] = None,
-    compute_idf: bool = False,
-    processor: DataFrameEngine = PANDAS,
-) -> Vocabulary:
-    """Computes a vocabulary over the provided data frame.
-
-    This function is used when the data consists of multiple tokens within one example. E.g., words in a text feature,
-    items in a set feature, etc. If the feature only contains a single token, use `create_vocabulary_single_token`
-    instead.
-
-    A tokenizer is specified using the `tokenizer_type`. The tokenizer will be used to process all of the data
-    provided, producing an indexed vocabulary with frequency counts. If the `tokenizer_type` is 'hf_tokenizer',
-    then a pre-trained huggingface tokenizer is loaded from `pretrained_model_name_or_path` and that vocabulary is
-    used directly.
-
-    The UNKNOWN special symbol is always included in the final vocabulary. Additional special symbols (PADDING, START,
-    STOP) are added if add_special_symbols=True.
-
-    Args:
-        data: Series of string data.
-        tokenizer_type: Tokenizer type. Can be a tokenizer registry value or 'hf_tokenizer' for huggingface.
-        lowercase: Whether to lowercase all strings.
-        num_most_frequent: Upper limit on vocabulary size.,
-        add_special_symbols: If True, START, STOP, PADDING special symbols are added to the vocabulary. UNKNOWN is
-            always added.
-        unknown_symbol: String representation for the UNKNOWN symbol.
-        padding_symbol: String representation for the PADDING symbol.
-        start_symbol: String representation for the START symbol.
-        stop_symbol: String representation for the STOP symbol.
-        pretrained_model_name_or_path: Name/path to huggingface model.
-        ngram_size: Size of the n-gram when using `ngram` tokenizer.
-        compute_idf: If True, computes the inverse document frequency for each token.
-        processor: Which processor to use to process data.
-
-    Returns:
-        Vocabulary object containing metadata about the vocab.
-
-    TODO(Justin): Clean up pad_idx, padding_symbol, unknown_symbol return, as no one seems to be using it.
+    If -1, then there is no prompt template.
     """
-    vocab = None
 
-    tokenizer = get_tokenizer_from_registry(tokenizer_type)(
-        vocab_file=vocab_file,
-        pretrained_model_name_or_path=pretrained_model_name_or_path,
-        ngram_size=ngram_size,
-    )
 
+def _get_vocabulary(
+    tokenizer_type: str,
+    tokenizer,
+    vocab_file: str,
+    unknown_symbol: str,
+    add_special_symbols: bool,
+    padding_symbol: str,
+    unit_counts: Counter,
+    num_most_frequent: int,
+) -> Optional[List[str]]:
+    """Returns the vocabulary from the tokenizer_type, tokenizer, or vocab_file.
+
+    If there's no vocab_file or if the tokenizer has no set vocabulary (e.g. space_punct), then the vocabulary is
+    determined from the tokenized data.
+    """
     # Pre-trained huggingface tokenizer. Use the pre-existing vocabulary and special symbols.
     if tokenizer_type == "hf_tokenizer":
         try:
@@ -341,12 +303,89 @@ def create_vocabulary(
             vocab = [padding_symbol] + vocab
         else:
             padding_symbol = pad_token
-    elif hasattr(tokenizer, "get_vocab"):
-        vocab = tokenizer.get_vocab()
-        vocab = list(vocab.keys())
-    elif vocab_file is not None:
-        vocab = load_vocabulary(vocab_file)
 
+        return vocab
+
+    # The tokenizer has a preset vocabulary.
+    if hasattr(tokenizer, "get_vocab"):
+        vocab = tokenizer.get_vocab()
+        return list(vocab.keys())
+
+    # Load the vocabulary from the vocab file.
+    if vocab_file is not None:
+        return load_vocabulary(vocab_file)
+
+    # The tokenizer had no preset vocabulary, for example space_punct.
+    # Compute the vocabulary from tokenized data.
+    return [unit for unit, _ in unit_counts.most_common(num_most_frequent)]
+
+
+def create_vocabulary(
+    prompt_template: str,
+    data: Series,
+    tokenizer_type: str = "space",
+    lowercase: bool = True,
+    num_most_frequent: int = None,
+    vocab_file: str = None,
+    add_special_symbols: bool = True,
+    unknown_symbol: str = UNKNOWN_SYMBOL,
+    padding_symbol: str = PADDING_SYMBOL,
+    start_symbol: str = START_SYMBOL,
+    stop_symbol: str = STOP_SYMBOL,
+    pretrained_model_name_or_path: str = None,
+    ngram_size: Optional[int] = None,
+    compute_idf: bool = False,
+    processor: DataFrameEngine = PANDAS,
+) -> Vocabulary:
+    """Computes a vocabulary over the provided data frame.
+
+    This function is used when the data consists of multiple tokens within one example. E.g., words in a text feature,
+    items in a set feature, etc. If the feature only contains a single token like for category features,
+    `create_vocabulary_single_token` should be used instead, as it is more efficient.
+
+    A tokenizer is specified using the `tokenizer_type`. The tokenizer will be used to process all of the data
+    provided, producing an indexed vocabulary with frequency counts. If the `tokenizer_type` is 'hf_tokenizer',
+    then a pre-trained huggingface tokenizer is loaded from `pretrained_model_name_or_path` and that vocabulary is
+    used directly.
+
+    The UNKNOWN special symbol is always included in the final vocabulary. Additional special symbols (PADDING, START,
+    STOP) are added if add_special_symbols=True. If the tokenizer is a pre-trained huggingface tokenizer, then the
+    special symbols are taken from the tokenizer's vocabulary.
+
+    Args:
+        prompt_template: The prompt template for the model. Applicable only to LLMs.
+        data: Series of string data.
+        tokenizer_type: Tokenizer type. Can be a tokenizer registry value or 'hf_tokenizer' for huggingface.
+        lowercase: Whether to lowercase all strings.
+        num_most_frequent: Upper limit on vocabulary size.,
+        add_special_symbols: If True, START, STOP, PADDING special symbols are added to the vocabulary. UNKNOWN is
+            always added.
+        unknown_symbol: String representation for the UNKNOWN symbol.
+        padding_symbol: String representation for the PADDING symbol.
+        start_symbol: String representation for the START symbol.
+        stop_symbol: String representation for the STOP symbol.
+        pretrained_model_name_or_path: Name/path to huggingface model.
+        ngram_size: Size of the n-gram when using `ngram` tokenizer.
+        compute_idf: If True, computes the inverse document frequency for each token.
+        processor: Which processor to use to process data.
+
+    Returns:
+        Vocabulary object containing metadata about the vocab.
+
+    TODO(Justin): Clean up pad_idx, padding_symbol, unknown_symbol return, as no one seems to be using it.
+    """
+    tokenizer = get_tokenizer_from_registry(tokenizer_type)(
+        vocab_file=vocab_file,
+        pretrained_model_name_or_path=pretrained_model_name_or_path,
+        ngram_size=ngram_size,
+    )
+
+    # Number of tokens in template.
+    prompt_template_num_tokens = -1
+    if prompt_template:
+        prompt_template_num_tokens = len(tokenizer(prompt_template))
+
+    # Tokenize the data.
     def process_line(line):
         return tokenizer(line.lower() if lowercase else line)
 
@@ -354,6 +393,20 @@ def create_vocabulary(
     processed_counts = processed_lines.explode().value_counts(sort=False)
     processed_counts = processor.compute(processed_counts)
     unit_counts = Counter(dict(processed_counts))
+    max_sequence_length = processor.compute(processed_lines.map(len).max())
+    sequence_length_99ptile = processor.compute(processed_lines.map(len).quantile(0.99))
+
+    vocab: List[str] = _get_vocabulary(
+        tokenizer_type,
+        tokenizer,
+        vocab_file,
+        unknown_symbol,
+        add_special_symbols,
+        padding_symbol,
+        unit_counts,
+        num_most_frequent,
+    )
+    vocab_set = set(vocab)
 
     doc_unit_counts = None
     if compute_idf:
@@ -361,14 +414,6 @@ def create_vocabulary(
         document_counts = processed_lines.map(lambda x: set(x)).explode().value_counts(sort=False)
         document_counts = processor.compute(document_counts)
         doc_unit_counts = Counter(dict(document_counts))
-
-    line_length_max = processor.compute(processed_lines.map(len).max())
-    line_length_99ptile = processor.compute(processed_lines.map(len).quantile(0.99))
-
-    if vocab is None:
-        vocab = [unit for unit, _ in unit_counts.most_common(num_most_frequent)]
-
-    vocab_set = set(vocab)
 
     if tokenizer_type != "hf_tokenizer":
         if add_special_symbols:
@@ -395,11 +440,12 @@ def create_vocabulary(
         str2idx=str2idx,
         str2freq=str2freq,
         str2idf=str2idf,
-        line_length_max=line_length_max,
-        line_length_99ptile=line_length_99ptile,
+        max_sequence_length=max_sequence_length,
+        sequence_length_99ptile=sequence_length_99ptile,
         pad_idx=pad_idx,
         padding_symbol=padding_symbol,
         unknown_symbol=unknown_symbol,
+        prompt_template_num_tokens=prompt_template_num_tokens,
     )
 
 
@@ -444,7 +490,13 @@ def create_vocabulary_single_token(
 
 
 def _get_sequence_vector(
-    sequence, tokenizer, tokenizer_type, format_dtype, unit_to_id, lowercase=True, unknown_symbol=UNKNOWN_SYMBOL
+    sequence,
+    tokenizer,
+    tokenizer_type,
+    format_dtype,
+    unit_to_id,
+    lowercase=True,
+    unknown_symbol=UNKNOWN_SYMBOL,
 ) -> np.ndarray:
     unit_sequence = tokenizer(sequence.lower() if lowercase else sequence)
 

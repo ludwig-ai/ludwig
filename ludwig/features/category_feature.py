@@ -45,6 +45,7 @@ from ludwig.schema.features.loss.loss import CORNLossConfig
 from ludwig.types import (
     FeatureMetadataDict,
     FeaturePostProcessingOutputDict,
+    ModelConfigDict,
     PreprocessingConfigDict,
     TrainingSetMetadataDict,
 )
@@ -145,7 +146,11 @@ class CategoryFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def get_feature_meta(
-        column, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
+        config: ModelConfigDict,
+        column,
+        preprocessing_parameters: PreprocessingConfigDict,
+        backend,
+        is_input_feature: bool,
     ) -> FeatureMetadataDict:
         idx2str, str2idx, str2freq = create_vocabulary_single_token(
             column,
@@ -255,7 +260,11 @@ class CategoryDistributionFeatureMixin(VectorFeatureMixin):
 
     @staticmethod
     def get_feature_meta(
-        column, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
+        config: ModelConfigDict,
+        column,
+        preprocessing_parameters: PreprocessingConfigDict,
+        backend,
+        is_input_feature: bool,
     ) -> FeatureMetadataDict:
         idx2str = preprocessing_parameters["vocab"]
         str2idx = {s: i for i, s in enumerate(idx2str)}

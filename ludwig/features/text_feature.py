@@ -17,6 +17,7 @@ import logging
 from functools import partial
 from typing import Dict, List, Optional, Tuple, Union
 
+import numpy as np
 import torch
 from torch import Tensor
 from transformers import PreTrainedTokenizer
@@ -45,7 +46,7 @@ from ludwig.features.sequence_feature import (
 )
 from ludwig.modules.metric_registry import get_metric_tensor_input
 from ludwig.schema.features.text_feature import TextInputFeatureConfig, TextOutputFeatureConfig
-from ludwig.types import FeatureMetadataDict, PreprocessingConfigDict, TrainingSetMetadataDict
+from ludwig.types import FeatureMetadataDict, ModelConfigDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.strings_utils import (
     build_sequence_matrix,
@@ -76,6 +77,42 @@ def get_decoded_targets_and_predictions(
     return decoded_targets, decoded_predictions
 
 
+def _get_metadata_reconciled_max_sequence_length(
+    preprocessing_parameters: Dict, vocabulary: List[str]
+) -> Tuple[int, int]:
+    """Reconciles the different ways sequence length can be specified in preprocessing parameters.
+
+    If the max sequence length is explicitly specified, we use the minimum of the true maximum sequence length and
+    the explicitly specified value. If the explicitly specified value is less than the true maximum sequence length, we
+    log a warning.
+
+    If the max sequence length is not specified, we use the true maximum sequence length.
+
+    Returns:
+        Tuple(max_sequence_length, sequence_length_99ptile).
+    """
+    # For sequence features with a fixed length specified by `sequence_length`, use this as the max_sequence_length.
+    if preprocessing_parameters["sequence_length"] is not None:
+        return preprocessing_parameters["sequence_length"], preprocessing_parameters["sequence_length"]
+
+    # Max sequence length is explicitly set. Use this as the max_sequence_length.
+    if preprocessing_parameters["max_sequence_length"] is not None:
+        if preprocessing_parameters["max_sequence_length"] < vocabulary.max_sequence_length:
+            logger.warning(
+                f"The max sequence length of the data, {vocabulary.max_sequence_length} is longer than the max "
+                f"sequence length set in the config, {preprocessing_parameters['max_sequence_length']}. Note that this "
+                "will truncating all examples to max_sequence_length="
+                f"{preprocessing_parameters['max_sequence_length']}."
+            )
+        return (
+            min(vocabulary.max_sequence_length, preprocessing_parameters["max_sequence_length"]),
+            min(vocabulary.sequence_length_99ptile, preprocessing_parameters["max_sequence_length"]),
+        )
+
+    # Max sequence length is None. Use the max sequence length of the data.
+    return vocabulary.max_sequence_length, vocabulary.sequence_length_99ptile
+
+
 class TextFeatureMixin(BaseFeatureMixin):
     @staticmethod
     def type():
@@ -86,8 +123,20 @@ class TextFeatureMixin(BaseFeatureMixin):
         return column.astype(str)
 
     @staticmethod
-    def feature_meta(column, preprocessing_parameters: PreprocessingConfigDict, backend) -> Vocabulary:
-        return create_vocabulary(
+    def get_feature_meta(
+        config: ModelConfigDict,
+        column,
+        preprocessing_parameters: PreprocessingConfigDict,
+        backend,
+        is_input_feature: bool,
+    ) -> FeatureMetadataDict:
+        """Returns all metadata for the given text feature.
+
+        Raises:
+            ValueError, if the tokenized prompt template is longer than the max sequence length.
+        """
+        vocabulary: Vocabulary = create_vocabulary(
+            config["prompt"]["template"],
             column,
             tokenizer_type=preprocessing_parameters["tokenizer"],
             num_most_frequent=preprocessing_parameters["most_common"],
@@ -100,40 +149,21 @@ class TextFeatureMixin(BaseFeatureMixin):
             compute_idf=preprocessing_parameters["compute_idf"],
             processor=backend.df_engine,
         )
-
-    @staticmethod
-    def get_feature_meta(
-        column, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
-    ) -> FeatureMetadataDict:
-        vocabulary = TextFeatureMixin.feature_meta(column, preprocessing_parameters, backend)
+        # Note: The vocabulary's max_sequence_length includes the prompt template, which is merged into the column prior
+        # to computing feature metadata.
         logger.info(
-            f"Max length of feature '{column.name}': {vocabulary.line_length_max} (without start and stop symbols)"
+            f"Max length of feature '{column.name}': {vocabulary.max_sequence_length} (without start and stop symbols)"
         )
 
-        # Use sequence_length if provided, otherwise use max length found in dataset.
-        if preprocessing_parameters["sequence_length"] is not None:
-            logger.info(
-                f"Setting max length to sequence_length={preprocessing_parameters['sequence_length']} provided in "
-                f"preprocessing parameters"
-            )
-            max_sequence_length = preprocessing_parameters["sequence_length"]
-            max_sequence_length_99ptile = preprocessing_parameters["sequence_length"]
-        else:
-            max_sequence_length = vocabulary.line_length_max + 2  # For start and stop symbols.
-            max_sequence_length_99ptile = vocabulary.line_length_99ptile + 2  # For start and stop symbols.
-            logger.info(f"Setting max length using dataset: {max_sequence_length} (including start and stop symbols)")
+        max_sequence_length, max_sequence_length_99ptile = _get_metadata_reconciled_max_sequence_length(
+            preprocessing_parameters, vocabulary
+        )
 
-            # If max_sequence_length is None, then use the max length found in the dataset.
-            if (
-                preprocessing_parameters["max_sequence_length"] is not None
-                and preprocessing_parameters["max_sequence_length"] < max_sequence_length
-            ):
-                logger.info(
-                    f"Truncating max length with max_sequence_length={preprocessing_parameters['max_sequence_length']} "
-                    f"from preprocessing parameters"
-                )
-                max_sequence_length = preprocessing_parameters["max_sequence_length"]
-                max_sequence_length_99ptile = min(vocabulary.line_length_99ptile, max_sequence_length)
+        if is_input_feature and max_sequence_length < vocabulary.prompt_template_num_tokens:
+            raise ValueError(
+                "The input feature's max sequence length is shorter than the prompt template length. This will "
+                "truncate all unique information. Consider making the template shorter."
+            )
 
         logger.info(f"max sequence length is {max_sequence_length} for feature '{column.name}'")
 
@@ -148,10 +178,11 @@ class TextFeatureMixin(BaseFeatureMixin):
             "pad_idx": vocabulary.pad_idx,
             "padding_symbol": vocabulary.padding_symbol,
             "unknown_symbol": vocabulary.unknown_symbol,
+            "prompt_template_num_tokens": vocabulary.prompt_template_num_tokens,
         }
 
     @staticmethod
-    def feature_data(column, metadata, preprocessing_parameters: PreprocessingConfigDict, backend):
+    def feature_data(column, metadata, preprocessing_parameters: PreprocessingConfigDict, backend) -> np.ndarray:
         # TODO(1891): Remove backward compatibility hack once all models have been retrained with Ludwig after
         # https://github.com/ludwig-ai/ludwig/pull/1859.
         prefix = ""
@@ -333,12 +364,16 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
         feature_config.decoder.max_sequence_length = feature_metadata["max_sequence_length"]
         if isinstance(feature_config.loss.class_weights, (list, tuple)):
             # [0, 0] for UNK and PAD
-            feature_config.loss.class_weights = [0, 0] + feature_config.loss.class_weights
+            feature_config.loss.class_weights = [
+                0,
+                0,
+            ] + feature_config.loss.class_weights
             if len(feature_config.loss.class_weights) != feature_config.decoder.vocab_size:
                 raise ValueError(
                     "The length of class_weights ({}) is not compatible with "
                     "the number of classes ({})".format(
-                        len(feature_config.loss.class_weights), feature_config.decoder.vocab_size
+                        len(feature_config.loss.class_weights),
+                        feature_config.decoder.vocab_size,
                     )
                 )
 

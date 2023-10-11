@@ -29,6 +29,7 @@ from ludwig.schema.features.number_feature import NumberInputFeatureConfig, Numb
 from ludwig.types import (
     FeatureMetadataDict,
     FeaturePostProcessingOutputDict,
+    ModelConfigDict,
     PreprocessingConfigDict,
     TrainingSetMetadataDict,
 )
@@ -315,7 +316,11 @@ class NumberFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def get_feature_meta(
-        column, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
+        config: ModelConfigDict,
+        column,
+        preprocessing_parameters: PreprocessingConfigDict,
+        backend,
+        is_input_feature: bool,
     ) -> FeatureMetadataDict:
         numeric_transformer: NumberTransformer = get_from_registry(
             preprocessing_parameters.get("normalization", None),
