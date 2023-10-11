@@ -374,19 +374,18 @@ def _set_generation_max_new_tokens(config: "ModelConfig") -> None:
         max_possible_sequence_length = max(
             _DEFAULT_MAX_SEQUENCE_LENGTH, config.output_features[0].preprocessing.max_sequence_length
         )
-    if config.preprocessing.global_max_sequence_length is not None:
+    elif config.preprocessing.global_max_sequence_length is not None:
         # This is not perfect since it includes tokens from both input + output features, but this at least
         # ensures that max possible of the sequence length is used. It is very likely that the model learns
         # to generate sequences than this value.
         max_possible_sequence_length = max(
             max_possible_sequence_length, config.preprocessing.global_max_sequence_length
         )
-
-    # It's possible that both max_sequence_length and global_max_sequence_length are not set, in which case
-    # we should fall back to the window size of the pretrained model. By this point, because of schema validation
-    # checks, we know that the base_model exists so we can safely grab the base model's config.
-    # TODO (Arnav): Figure out how to factor in rope scaling factor into this calculation.
-    if max_possible_sequence_length == _DEFAULT_MAX_SEQUENCE_LENGTH:
+    elif max_possible_sequence_length == _DEFAULT_MAX_SEQUENCE_LENGTH:
+        # It's possible that both max_sequence_length and global_max_sequence_length are not set, in which case
+        # we should fall back to the window size of the pretrained model. By this point, because of schema validation
+        # checks, we know that the base_model exists so we can safely grab the base model's config.
+        # TODO (Arnav): Figure out how to factor in rope scaling factor into this calculation.
         model_config = AutoConfig.from_pretrained(config.base_model)
         max_possible_sequence_length = get_context_len(model_config)
         # Artifically leave a buffer of half the total model window size to trade off
