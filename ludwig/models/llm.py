@@ -408,7 +408,7 @@ class LLM(BaseModel):
         mask=None,
     ) -> Dict[str, torch.Tensor]:
         """Generates tokens using the model."""
-        logger.info(f"For generating text, using: {self.generation}")
+        log_once(f"For generating text, using: {self.generation}")
         input_ids, _ = self._unpack_inputs(inputs)
 
         with torch.no_grad():
