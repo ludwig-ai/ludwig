@@ -135,8 +135,9 @@ class TextFeatureMixin(BaseFeatureMixin):
         Raises:
             ValueError, if the tokenized prompt template is longer than the max sequence length.
         """
+        prompt_template = config.get("prompt", {}).get("template", "")
         vocabulary: Vocabulary = create_vocabulary(
-            config["prompt"]["template"],
+            prompt_template,
             column,
             tokenizer_type=preprocessing_parameters["tokenizer"],
             num_most_frequent=preprocessing_parameters["most_common"],
@@ -161,8 +162,9 @@ class TextFeatureMixin(BaseFeatureMixin):
 
         if is_input_feature and max_sequence_length < vocabulary.prompt_template_num_tokens:
             raise ValueError(
-                "The input feature's max sequence length is shorter than the prompt template length. This will "
-                "truncate all unique information. Consider making the template shorter."
+                f"The input feature's max sequence length ({max_sequence_length}) is shorter than the prompt template "
+                f"length ({vocabulary.prompt_template_num_tokens}). This will truncate all unique information. "
+                "Consider making the template shorter or increasing the input feature's max sequence length."
             )
 
         logger.info(f"max sequence length is {max_sequence_length} for feature '{column.name}'")
