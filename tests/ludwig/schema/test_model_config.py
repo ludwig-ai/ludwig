@@ -1008,4 +1008,6 @@ def test_max_new_tokens_override_fallback_to_model_window_size():
     }
 
     config_obj = ModelConfig.from_dict(config)
+    # Base model context length is 2048 tokens by default
+    # Since we fallback to setting max_new_tokens to the model context length / 2, we expect it to be 1024 tokens
     assert config_obj.generation.max_new_tokens == 1024
