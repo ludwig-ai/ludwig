@@ -84,9 +84,6 @@ def load_dataset_uris(
     Returns the input unmodified for any non-Ludwig datasets.
     """
 
-    if dataset is None and training_set is None:
-        raise ValueError("Neither dataset nor training_set has been provided. Please provide one of the two.")
-
     dataset_out, training_set_out, validation_set_out, test_set_out = dataset, training_set, validation_set, test_set
     # Check that any of the datasets begin with the `hf://` prefix denoting a Hugging Face dataset URI
     # Hugging Face datasets should follow the naming convention `hf://<hf_id>--<hf_subsample>`
