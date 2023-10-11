@@ -357,8 +357,8 @@ def _set_generation_max_new_tokens(config: "ModelConfig") -> None:
     from ludwig.schema.llms.generation import LLMGenerationConfig
     from ludwig.utils.llm_utils import get_context_len
 
-    default_max_sequence_length = LLMGenerationConfig().max_new_tokens
-    if config.generation.max_new_tokens != default_max_sequence_length:
+    _DEFAULT_MAX_SEQUENCE_LENGTH = LLMGenerationConfig().max_new_tokens
+    if config.generation.max_new_tokens != _DEFAULT_MAX_SEQUENCE_LENGTH:
         # Max new tokens is explicitly set by user, so don't override
         return
 
@@ -367,12 +367,12 @@ def _set_generation_max_new_tokens(config: "ModelConfig") -> None:
         # TODO: Add better support for category output features
         return
 
-    max_possible_sequence_length = default_max_sequence_length
+    max_possible_sequence_length = _DEFAULT_MAX_SEQUENCE_LENGTH
     if config.output_features[0].preprocessing.max_sequence_length is not None:
         # Note: We don't need to check for max between feature.preprocessing.max_sequence_length and
         # defaults.text.preprocessing.max_sequence_length because the latter is only applied to input features.
         max_possible_sequence_length = max(
-            default_max_sequence_length, config.output_features[0].preprocessing.max_sequence_length
+            _DEFAULT_MAX_SEQUENCE_LENGTH, config.output_features[0].preprocessing.max_sequence_length
         )
     if config.preprocessing.global_max_sequence_length is not None:
         # This is not perfect since it includes tokens from both input + output features, but this at least
@@ -386,25 +386,13 @@ def _set_generation_max_new_tokens(config: "ModelConfig") -> None:
     # we should fall back to the window size of the pretrained model. By this point, because of schema validation
     # checks, we know that the base_model exists so we can safely grab the base model's config.
     # TODO (Arnav): Figure out how to factor in rope scaling factor into this calculation.
-    if max_possible_sequence_length == default_max_sequence_length:
+    if max_possible_sequence_length == _DEFAULT_MAX_SEQUENCE_LENGTH:
         model_config = AutoConfig.from_pretrained(config.base_model)
         max_possible_sequence_length = get_context_len(model_config)
-        # Artifically leave a buffer for now to prevent the following error:
-        # RuntimeError: index 512 is out of bounds for dimension 1 with size 512
-        max_possible_sequence_length -= 32
-    #     # Max length only works if max_new_tokens is not set.
-    #     # If max_new_tokens is set, then we need to set max_length to None to ensure that the correct number of tokens
-    #     # are generated (input + output tokens), otherwise we will exceed the bounds of generation
-    #     # resulting in errors.
-    #     config.generation.max_new_tokens = max_possible_sequence_length - 8
-    #     config.generation.max_length = max_possible_sequence_length
-    #     logger.info(
-    #         f"Setting generation max_length to {max_possible_sequence_length} to correspond with the max sequence "
-    #         "length assigned to the output feature or the global max sequence length. This will ensure that the "
-    #         "correct number of tokens are generated at inference time. To override this behavior, set "
-    #         "`generation.max_length` to a different value in your Ludwig config."
-    #     )
-    # else:
+        # Artifically leave a buffer of half the total model window size to trade off
+        # runtime while likely covering a majority of the max sequence length.
+        max_possible_sequence_length = max_possible_sequence_length // 2
+
     logger.info(
         f"Setting generation max_new_tokens to {max_possible_sequence_length} to correspond with the max "
         "sequence length assigned to the output feature or the global max sequence length. This will ensure that "
