@@ -2141,6 +2141,31 @@ def kfold_cross_validate(
     return kfold_cv_stats, kfold_split_indices
 
 
+def _get_compute_description(backend) -> Dict:
+    """Returns the compute description for the backend."""
+    compute_description = {"num_nodes": backend.num_nodes}
+
+    if torch.cuda.is_available():
+        # Assumption: All nodes are of the same instance type.
+        # TODO: fix for Ray where workers may be of different skus
+        compute_description.update(
+            {
+                "gpus_per_node": torch.cuda.device_count(),
+                "arch_list": torch.cuda.get_arch_list(),
+                "gencode_flags": torch.cuda.get_gencode_flags(),
+                "devices": {},
+            }
+        )
+        for i in range(torch.cuda.device_count()):
+            compute_description["devices"][i] = {
+                "gpu_type": torch.cuda.get_device_name(i),
+                "device_capability": torch.cuda.get_device_capability(i),
+                "device_properties": str(torch.cuda.get_device_properties(i)),
+            }
+
+    return compute_description
+
+
 @PublicAPI
 def get_experiment_description(
     config,
@@ -2184,15 +2209,6 @@ def get_experiment_description(
 
     description["config"] = config
     description["torch_version"] = torch.__version__
-
-    gpu_info = {}
-    if torch.cuda.is_available():
-        # Assumption: All nodes are of the same instance type.
-        # TODO: fix for Ray where workers may be of different skus
-        gpu_info = {"gpu_type": torch.cuda.get_device_name(0), "gpus_per_node": torch.cuda.device_count()}
-
-    compute_description = {"num_nodes": backend.num_nodes, **gpu_info}
-
-    description["compute"] = compute_description
+    description["compute"] = _get_compute_description(backend)
 
     return description
