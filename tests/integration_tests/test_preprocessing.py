@@ -196,7 +196,7 @@ def test_sample_size(backend, tmpdir, ray_cluster_2cpu):
     count = len(train_set) + len(val_set) + len(test_set)
     assert sample_size == count
 
-    # Check that sample cap is disabled when doing preprocessing for prediction
+    # Check that sample size is disabled when doing preprocessing for prediction
     dataset, _ = preprocess_for_prediction(
         model.config_obj.to_dict(),
         dataset=data_csv,

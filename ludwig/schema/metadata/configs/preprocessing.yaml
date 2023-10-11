@@ -59,7 +59,7 @@ sample_size:
         - 1000
     expected_impact: 2
     suggested_values: Depends on data size
-    ui_display_name: Sample Cap
+    ui_display_name: Sample Size
 column:
     expected_impact: 3
     ui_display_name: Split Column
