@@ -89,7 +89,7 @@ class BaseTextPreprocessingConfig(BasePreprocessingConfig):
     )
 
     lowercase: bool = schema_utils.Boolean(
-        default=True,
+        default=False,
         description="If true, converts the string to lowercase before tokenizing.",
         parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["lowercase"],
     )
@@ -205,7 +205,7 @@ class TextOutputPreprocessingConfig(BaseTextPreprocessingConfig):
     )
 
     lowercase: bool = schema_utils.Boolean(
-        default=True,
+        default=False,
         description="If true, converts the string to lowercase before tokenizing.",
         parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["lowercase"],
     )
