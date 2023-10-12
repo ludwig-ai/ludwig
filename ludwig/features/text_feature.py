@@ -167,7 +167,7 @@ class TextFeatureMixin(BaseFeatureMixin):
                 "Consider making the template shorter or increasing the input feature's max sequence length."
             )
 
-        logger.info(f"max sequence length is {max_sequence_length} for feature '{column.name}'")
+        logger.info(f"Max sequence length is {max_sequence_length} for feature '{column.name}'")
 
         return {
             "idx2str": vocabulary.vocab,

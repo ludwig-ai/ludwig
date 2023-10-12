@@ -396,6 +396,11 @@ def create_vocabulary(
     max_sequence_length = processor.compute(processed_lines.map(len).max())
     sequence_length_99ptile = processor.compute(processed_lines.map(len).quantile(0.99))
 
+    if tokenizer_type != "hf_tokenizer":
+        # For non-HF tokenizers, add 2 for start and stop symbols.
+        max_sequence_length += 2
+        sequence_length_99ptile += 2
+
     vocab: List[str] = _get_vocabulary(
         tokenizer_type,
         tokenizer,

@@ -1,5 +1,5 @@
 def check_global_max_sequence_length_fits_prompt_template(metadata, global_preprocessing_parameters):
-    """Checks that the prompt template fits into the global max sequence length."""
+    """Checks that the prompt template fits within the global max sequence length."""
 
     if (
         "global_max_sequence_length" in global_preprocessing_parameters

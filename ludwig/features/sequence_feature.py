@@ -229,7 +229,7 @@ class SequenceFeatureMixin(BaseFeatureMixin):
             )
             max_sequence_length = preprocessing_parameters["sequence_length"]
         else:
-            max_sequence_length = vocabulary.max_sequence_length + 2  # For start and stop symbols.
+            max_sequence_length = vocabulary.max_sequence_length
             logger.info(f"Setting max length using dataset: {max_sequence_length} (including start and stop symbols)")
 
             # If max_sequence_length is None, then use the max length found in the dataset.
@@ -243,7 +243,7 @@ class SequenceFeatureMixin(BaseFeatureMixin):
                 )
                 max_sequence_length = preprocessing_parameters["max_sequence_length"]
 
-        logger.info(f"max sequence length is {max_sequence_length} for feature '{column.name}'")
+        logger.info(f"Max sequence length is {max_sequence_length} for feature '{column.name}'")
         return {
             "idx2str": vocabulary.vocab,
             "str2idx": vocabulary.str2idx,
