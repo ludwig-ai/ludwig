@@ -315,6 +315,8 @@ def _get_vocabulary(
     if vocab_file is not None:
         return load_vocabulary(vocab_file)
 
+    print(f"padding_symbol: {padding_symbol}")
+
     # The tokenizer had no preset vocabulary, for example space_punct.
     # Compute the vocabulary from tokenized data.
     return [unit for unit, _ in unit_counts.most_common(num_most_frequent)]
@@ -400,6 +402,11 @@ def create_vocabulary(
         # For non-HF tokenizers, add 2 for start and stop symbols.
         max_sequence_length += 2
         sequence_length_99ptile += 2
+
+    if tokenizer_type == "hf_tokenizer":
+        # Replace the special symbols with the ones from the tokenizer.
+        unknown_symbol = tokenizer.unk_token
+        padding_symbol = tokenizer.pad_token
 
     vocab: List[str] = _get_vocabulary(
         tokenizer_type,
