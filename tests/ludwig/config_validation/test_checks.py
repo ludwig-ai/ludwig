@@ -489,3 +489,35 @@ def test_check_prompt_requirements():
 
     config["prompt"] = {"task": "Some task", "template": "{__task__}"}
     ModelConfig.from_dict(config)
+
+
+def test_check_sample_ratio_and_size_compatible():
+    config = {
+        "input_features": [binary_feature()],
+        "output_features": [binary_feature()],
+        "model_type": "ecd",
+    }
+    ModelConfig.from_dict(
+        {
+            "input_features": [binary_feature()],
+            "output_features": [binary_feature()],
+            "model_type": "ecd",
+        }
+    )
+
+    config["preprocessing"] = {"sample_size": 10}
+    ModelConfig.from_dict(config)
+
+    config["preprocessing"]["sample_ratio"] = 1
+    ModelConfig.from_dict(config)
+
+    config["preprocessing"]["sample_ratio"] = 0.1
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+    config["preprocessing"]["sample_size"] = 0
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+    del config["preprocessing"]["sample_size"]
+    ModelConfig.from_dict(config)
