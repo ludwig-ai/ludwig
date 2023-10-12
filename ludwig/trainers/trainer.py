@@ -487,6 +487,14 @@ class Trainer(BaseTrainer):
                     / (1000**3),
                     global_step=step,
                 )
+
+                # Utilization.
+                # https://pytorch.org/docs/stable/generated/torch.cuda.utilization.html#torch.cuda.utilization
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/utilization",
+                    torch.cuda.device(i).utilization(),
+                    global_step=step,
+                )
         train_summary_writer.flush()
 
     def is_cpu_training(self):
@@ -735,7 +743,8 @@ class Trainer(BaseTrainer):
         else:
             # There's no validation, so we save the model.
             if not self.skip_save_model:
-                logger.info("Saving model.\n")
+                if self.is_coordinator():
+                    logger.info("Saving model.\n")
                 checkpoint_manager.save_best(progress_tracker.steps)
                 self.callback(lambda c: c.on_save_best_checkpoint(self, progress_tracker, save_path))
 
@@ -828,7 +837,8 @@ class Trainer(BaseTrainer):
             try:
                 progress_tracker = self.resume_training_progress_tracker(training_progress_tracker_path)
                 self.resume_weights_and_optimizer(training_checkpoints_path, checkpoint)
-                logger.info("Resuming training from previous run.")
+                if self.is_coordinator():
+                    logger.info("Resuming training from previous run.")
             except Exception:
                 # This may happen if model training is interrupted after the progress tracker is initialized
                 # but before any real training progress is made.
@@ -841,7 +851,8 @@ class Trainer(BaseTrainer):
                     ),
                     output_features=output_features,
                 )
-                logger.info("Failed to resume training from previous run. Creating fresh model training run.")
+                if self.is_coordinator():
+                    logger.info("Failed to resume training from previous run. Creating fresh model training run.")
         else:
             progress_tracker = get_new_progress_tracker(
                 batch_size=self.batch_size,
@@ -850,7 +861,8 @@ class Trainer(BaseTrainer):
                 best_increase_batch_size_eval_metric=get_initial_validation_value(self.increase_batch_size_eval_metric),
                 output_features=output_features,
             )
-            logger.info("Creating fresh model training run.")
+            if self.is_coordinator():
+                logger.info("Creating fresh model training run.")
 
         # Distributed: broadcast initial variable states from rank 0 to all other processes.
         # This is necessary to ensure consistent initialization of all workers when
@@ -1098,7 +1110,8 @@ class Trainer(BaseTrainer):
         """Completes up to one epoch through the data."""
         self.distributed.zero_grad(self.optimizer)
         batch_idx = 0
-        while not batcher.last_batch() and progress_tracker.steps < self.total_steps:
+        should_break = False
+        while not batcher.last_batch() and progress_tracker.steps < self.total_steps and not should_break:
             progress_tracker.learning_rate = self.optimizer.param_groups[0]["lr"]
             self.callback(lambda c: c.on_batch_start(self, progress_tracker, save_path))
 
@@ -1149,13 +1162,6 @@ class Trainer(BaseTrainer):
             # batch duration measurements when using timer callbacks.
             self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path, sync_step=should_step))
 
-            if batcher.last_batch():
-                # We have completed an epoch, so we need to increment the epoch counter. It's important to do this here
-                # instead of outside of the train loop since it's possible the train loop will exit early due to
-                # early stopping, or step-based training.
-                progress_tracker.epoch += 1
-                self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
-
             if progress_tracker.steps % final_steps_per_checkpoint == 0:
                 if not self.skip_all_evaluation:
                     # Publishes metrics to MLFLow if there are any MLFlow callbacks.
@@ -1189,10 +1195,12 @@ class Trainer(BaseTrainer):
                     if self.is_coordinator():
                         progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
 
-                if should_break:
-                    return should_break
+            # If this was the last batch, then increment the epoch counter and invoke the `on_epoch_end` callback.
+            if batcher.last_batch():
+                progress_tracker.epoch += 1
+                self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
 
-        return False
+        return should_break
 
     def train_online(self, dataset):
         self.dist_model.train()  # Sets model training mode.

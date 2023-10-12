@@ -14,11 +14,13 @@
 # limitations under the License.
 # ==============================================================================
 
+from __future__ import annotations
+
 import time
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
-from typing import Any, Callable, Dict, Optional, Type, Union
+from typing import Any, Callable, Generator, TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
@@ -48,14 +50,17 @@ from ludwig.utils.system_utils import Resources
 from ludwig.utils.torch_utils import initialize_pytorch
 from ludwig.utils.types import DataFrame, Series
 
+if TYPE_CHECKING:
+    from ludwig.trainers.base import BaseTrainer
+
 
 @DeveloperAPI
 class Backend(ABC):
     def __init__(
         self,
         dataset_manager: DatasetManager,
-        cache_dir: Optional[str] = None,
-        credentials: Optional[Dict[str, Dict[str, Any]]] = None,
+        cache_dir: str | None = None,
+        credentials: dict[str, dict[str, Any]] | None = None,
     ):
         credentials = credentials or {}
         self._dataset_manager = dataset_manager
@@ -84,7 +89,7 @@ class Backend(ABC):
 
     @contextmanager
     @abstractmethod
-    def create_trainer(self, **kwargs) -> "BaseTrainer":  # noqa: F821
+    def create_trainer(self, config: BaseTrainerConfig, model: BaseModel, **kwargs) -> Generator:
         raise NotImplementedError()
 
     @abstractmethod
@@ -110,7 +115,7 @@ class Backend(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def read_binary_files(self, column: Series, map_fn: Optional[Callable] = None) -> Series:
+    def read_binary_files(self, column: Series, map_fn: Callable | None = None) -> Series:
         raise NotImplementedError()
 
     @property
@@ -128,11 +133,11 @@ class Backend(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def max_concurrent_trials(self, hyperopt_config: HyperoptConfigDict) -> Union[int, None]:
+    def max_concurrent_trials(self, hyperopt_config: HyperoptConfigDict) -> int | None:
         raise NotImplementedError()
 
     @abstractmethod
-    def tune_batch_size(self, evaluator_cls: Type[BatchSizeEvaluator], dataset_len: int) -> int:
+    def tune_batch_size(self, evaluator_cls: type[BatchSizeEvaluator], dataset_len: int) -> int:
         """Returns best batch size (measured in samples / s) on the given evaluator.
 
         The evaluator class will need to be instantiated on each worker in the backend cluster, then call
@@ -141,7 +146,9 @@ class Backend(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def batch_transform(self, df: DataFrame, batch_size: int, transform_fn: Callable, name: str = None) -> DataFrame:
+    def batch_transform(
+        self, df: DataFrame, batch_size: int, transform_fn: Callable, name: str | None = None
+    ) -> DataFrame:
         """Applies `transform_fn` to every `batch_size` length batch of `df` and returns the result."""
         raise NotImplementedError()
 
@@ -159,16 +166,16 @@ class LocalPreprocessingMixin:
         return True
 
     @staticmethod
-    def read_binary_files(
-        column: pd.Series, map_fn: Optional[Callable] = None, file_size: Optional[int] = None
-    ) -> pd.Series:
+    def read_binary_files(column: pd.Series, map_fn: Callable | None = None, file_size: int | None = None) -> pd.Series:
         column = column.fillna(np.nan).replace([np.nan], [None])  # normalize NaNs to None
 
         sample_fname = column.head(1).values[0]
         with ThreadPoolExecutor() as executor:  # number of threads is inferred
             if isinstance(sample_fname, str):
                 if map_fn is read_audio_from_path:  # bypass torchaudio issue that no longer takes in file-like objects
-                    result = executor.map(lambda path: map_fn(path) if path is not None else path, column.values)
+                    result = executor.map(  # type: ignore[misc]
+                        lambda path: map_fn(path) if path is not None else path, column.values
+                    )
                 else:
                     result = executor.map(
                         lambda path: get_bytes_obj_from_path(path) if path is not None else path, column.values
@@ -183,7 +190,7 @@ class LocalPreprocessingMixin:
         return pd.Series(result, index=column.index, name=column.name)
 
     @staticmethod
-    def batch_transform(df: DataFrame, batch_size: int, transform_fn: Callable, name: str = None) -> DataFrame:
+    def batch_transform(df: DataFrame, batch_size: int, transform_fn: Callable, name: str | None = None) -> DataFrame:
         name = name or "Batch Transform"
         batches = to_batches(df, batch_size)
         transform = transform_fn()
@@ -201,21 +208,11 @@ class LocalTrainingMixin:
     def initialize_pytorch(*args, **kwargs):
         initialize_pytorch(*args, **kwargs)
 
-    def create_trainer(self, config: BaseTrainerConfig, model: BaseModel, **kwargs) -> "BaseTrainer":  # noqa: F821
-        from ludwig.trainers.registry import get_llm_trainers_registry, get_trainers_registry
-
-        if model.type() == MODEL_LLM:
-            trainer_cls = get_from_registry(config.type, get_llm_trainers_registry())
-        else:
-            trainer_cls = get_from_registry(model.type(), get_trainers_registry())
-
-        return trainer_cls(config=config, model=model, **kwargs)
-
     @staticmethod
     def create_predictor(model: BaseModel, **kwargs):
         from ludwig.models.predictor import get_predictor_cls
 
-        return get_predictor_cls(model.type())(model, **kwargs)
+        return get_predictor_cls(model.type())(model, **kwargs)  # type: ignore[call-arg]
 
     def sync_model(self, model):
         pass
@@ -229,7 +226,7 @@ class LocalTrainingMixin:
         return True
 
     @staticmethod
-    def tune_batch_size(evaluator_cls: Type[BatchSizeEvaluator], dataset_len: int) -> int:
+    def tune_batch_size(evaluator_cls: type[BatchSizeEvaluator], dataset_len: int) -> int:
         evaluator = evaluator_cls()
         return evaluator.select_best_batch_size(dataset_len)
 
@@ -251,14 +248,16 @@ class RemoteTrainingMixin:
 class LocalBackend(LocalPreprocessingMixin, LocalTrainingMixin, Backend):
     BACKEND_TYPE = "local"
 
+    _shared_instance: LocalBackend
+
     @classmethod
-    def shared_instance(cls):
+    def shared_instance(cls) -> LocalBackend:
         """Returns a shared singleton LocalBackend instance."""
         if not hasattr(cls, "_shared_instance"):
             cls._shared_instance = cls()
         return cls._shared_instance
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__(dataset_manager=PandasDatasetManager(self), **kwargs)
 
     @property
@@ -272,10 +271,26 @@ class LocalBackend(LocalPreprocessingMixin, LocalTrainingMixin, Backend):
     def get_available_resources(self) -> Resources:
         return Resources(cpus=psutil.cpu_count(), gpus=torch.cuda.device_count())
 
-    def max_concurrent_trials(self, hyperopt_config: HyperoptConfigDict) -> Union[int, None]:
+    def max_concurrent_trials(self, hyperopt_config: HyperoptConfigDict) -> int | None:
         # Every trial will be run with Pandas and NO Ray Datasets. Allow Ray Tune to use all the
         # trial resources it wants, because there is no Ray Datasets process to compete with it for CPUs.
         return None
+
+    def create_trainer(
+        self,
+        config: BaseTrainerConfig,
+        model: BaseModel,
+        **kwargs,
+    ) -> BaseTrainer:  # type: ignore[override]
+        from ludwig.trainers.registry import get_llm_trainers_registry, get_trainers_registry
+
+        trainer_cls: type
+        if model.type() == MODEL_LLM:
+            trainer_cls = get_from_registry(config.type, get_llm_trainers_registry())
+        else:
+            trainer_cls = get_from_registry(model.type(), get_trainers_registry())
+
+        return trainer_cls(config=config, model=model, **kwargs)
 
 
 @DeveloperAPI
@@ -284,7 +299,7 @@ class DataParallelBackend(LocalPreprocessingMixin, Backend, ABC):
 
     def __init__(self, **kwargs):
         super().__init__(dataset_manager=PandasDatasetManager(self), **kwargs)
-        self._distributed: Optional[DistributedStrategy] = None
+        self._distributed: DistributedStrategy | None = None
 
     @abstractmethod
     def initialize(self):
@@ -295,7 +310,12 @@ class DataParallelBackend(LocalPreprocessingMixin, Backend, ABC):
             *args, local_rank=self._distributed.local_rank(), local_size=self._distributed.local_size(), **kwargs
         )
 
-    def create_trainer(self, **kwargs) -> "BaseTrainer":  # noqa: F821
+    def create_trainer(
+        self,
+        config: BaseTrainerConfig,
+        model: BaseModel,
+        **kwargs,
+    ) -> BaseTrainer:  # type: ignore[override]
         from ludwig.trainers.trainer import Trainer
 
         return Trainer(distributed=self._distributed, **kwargs)
@@ -303,7 +323,7 @@ class DataParallelBackend(LocalPreprocessingMixin, Backend, ABC):
     def create_predictor(self, model: BaseModel, **kwargs):
         from ludwig.models.predictor import get_predictor_cls
 
-        return get_predictor_cls(model.type())(model, distributed=self._distributed, **kwargs)
+        return get_predictor_cls(model.type())(model, distributed=self._distributed, **kwargs)  # type: ignore[call-arg]
 
     def sync_model(self, model):
         # Model weights are only saved on the coordinator, so broadcast
@@ -343,10 +363,10 @@ class DataParallelBackend(LocalPreprocessingMixin, Backend, ABC):
 
         return Resources(cpus=cpus, gpus=gpus)
 
-    def max_concurrent_trials(self, hyperopt_config: HyperoptConfigDict) -> Union[int, None]:
+    def max_concurrent_trials(self, hyperopt_config: HyperoptConfigDict) -> int | None:
         # Return None since there is no Ray component
         return None
 
-    def tune_batch_size(self, evaluator_cls: Type[BatchSizeEvaluator], dataset_len: int) -> int:
+    def tune_batch_size(self, evaluator_cls: type[BatchSizeEvaluator], dataset_len: int) -> int:
         evaluator = evaluator_cls()
         return evaluator.select_best_batch_size(dataset_len)
