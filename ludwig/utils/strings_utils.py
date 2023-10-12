@@ -405,8 +405,8 @@ def create_vocabulary(
 
     if tokenizer_type == "hf_tokenizer":
         # Replace the special symbols with the ones from the tokenizer.
-        unknown_symbol = tokenizer.unk_token
-        padding_symbol = tokenizer.pad_token
+        unknown_symbol = tokenizer.get_unk_token()
+        padding_symbol = tokenizer.get_pad_token()
 
     vocab: List[str] = _get_vocabulary(
         tokenizer_type,
