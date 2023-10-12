@@ -1,7 +1,10 @@
 def check_global_max_sequence_length_fits_prompt_template(metadata, global_preprocessing_parameters):
     """Checks that the prompt template fits into the global max sequence length."""
 
-    if global_preprocessing_parameters["global_max_sequence_length"] is not None:
+    if (
+        "global_max_sequence_length" in global_preprocessing_parameters
+        and global_preprocessing_parameters["global_max_sequence_length"] is not None
+    ):
         for feature_name, feature_metadata in metadata.items():
             if (
                 "prompt_template_num_tokens" in feature_metadata

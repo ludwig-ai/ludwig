@@ -137,7 +137,6 @@ class TextFeatureMixin(BaseFeatureMixin):
         """
         prompt_template = config.get("prompt", {}).get("template", "")
         vocabulary: Vocabulary = create_vocabulary(
-            prompt_template,
             column,
             tokenizer_type=preprocessing_parameters["tokenizer"],
             num_most_frequent=preprocessing_parameters["most_common"],
@@ -149,6 +148,7 @@ class TextFeatureMixin(BaseFeatureMixin):
             ngram_size=preprocessing_parameters["ngram_size"],
             compute_idf=preprocessing_parameters["compute_idf"],
             processor=backend.df_engine,
+            prompt_template=prompt_template,
         )
         # Note: The vocabulary's max_sequence_length includes the prompt template, which is merged into the column prior
         # to computing feature metadata.

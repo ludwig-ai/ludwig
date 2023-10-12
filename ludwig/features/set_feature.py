@@ -171,7 +171,7 @@ class SetFeatureMixin(BaseFeatureMixin):
             "str2idx": vocabulary.str2idx,
             "str2freq": vocabulary.str2freq,
             "vocab_size": len(vocabulary.str2idx),
-            "max_set_size": vocabulary.line_length_max,
+            "max_set_size": vocabulary.max_sequence_length,
         }
 
     @staticmethod

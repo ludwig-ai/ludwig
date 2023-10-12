@@ -321,7 +321,6 @@ def _get_vocabulary(
 
 
 def create_vocabulary(
-    prompt_template: str,
     data: Series,
     tokenizer_type: str = "space",
     lowercase: bool = True,
@@ -336,6 +335,7 @@ def create_vocabulary(
     ngram_size: Optional[int] = None,
     compute_idf: bool = False,
     processor: DataFrameEngine = PANDAS,
+    prompt_template: str = "",
 ) -> Vocabulary:
     """Computes a vocabulary over the provided data frame.
 

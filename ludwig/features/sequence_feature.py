@@ -218,7 +218,7 @@ class SequenceFeatureMixin(BaseFeatureMixin):
             processor=backend.df_engine,
         )
         logger.info(
-            f"Max length of feature '{column.name}': {vocabulary.line_length_max} (without start and stop symbols)"
+            f"Max length of feature '{column.name}': {vocabulary.max_sequence_length} (without start and stop symbols)"
         )
 
         # Use sequence_length if provided, otherwise use max length found in dataset.
@@ -229,7 +229,7 @@ class SequenceFeatureMixin(BaseFeatureMixin):
             )
             max_sequence_length = preprocessing_parameters["sequence_length"]
         else:
-            max_sequence_length = vocabulary.line_length_max + 2  # For start and stop symbols.
+            max_sequence_length = vocabulary.max_sequence_length + 2  # For start and stop symbols.
             logger.info(f"Setting max length using dataset: {max_sequence_length} (including start and stop symbols)")
 
             # If max_sequence_length is None, then use the max length found in the dataset.
