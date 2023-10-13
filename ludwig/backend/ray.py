@@ -698,6 +698,9 @@ def eval_fn(
         # fine-tuned adapter.
         dist_model = distributed.prepare_for_inference(model)
         if adapter_ref and (distributed_optimization_stage and distributed_optimization_stage <= 2):
+            # TODO: Fix issue where the trained adapter weights get replaced with the base adapter weights
+            # from the self.initialize_adapter() call in prepare for inference. Somehow it results in a cuda device
+            # placement mismatch error.
             model = distributed.replace_adapter_weights_from_serialization(model, ray.get(adapter_ref))
             dist_model = distributed.replace_adapter_weights_from_serialization(dist_model, ray.get(adapter_ref))
 
