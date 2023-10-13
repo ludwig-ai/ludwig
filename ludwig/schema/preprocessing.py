@@ -18,6 +18,14 @@ class PreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         parameter_metadata=PREPROCESSING_METADATA["sample_ratio"],
     )
 
+    sample_size: float = schema_utils.NonNegativeInteger(
+        default=None,
+        allow_none=True,
+        description="The maximum number of samples from the dataset to use. Cannot be set if sample_ratio is set to be "
+        "< 1.0. If sample_ratio is set to 1.0, this will override the number of samples to used.",
+        parameter_metadata=PREPROCESSING_METADATA["sample_size"],
+    )
+
     oversample_minority: float = schema_utils.NonNegativeFloat(
         default=None,
         allow_none=True,

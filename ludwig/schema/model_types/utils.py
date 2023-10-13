@@ -5,6 +5,7 @@ import warnings
 from typing import Any, Dict, List, Mapping, Set, TYPE_CHECKING
 
 from marshmallow import ValidationError
+from transformers import AutoConfig
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
@@ -17,6 +18,7 @@ from ludwig.constants import (
     INPUT_FEATURES,
     LOSS,
     MODEL_ECD,
+    MODEL_LLM,
     OUTPUT_FEATURES,
     PARAMETERS,
     PREPROCESSING,
@@ -28,9 +30,11 @@ from ludwig.constants import (
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.schema.features.utils import output_config_registry
 from ludwig.schema.hyperopt.scheduler import BaseHyperbandSchedulerConfig
+from ludwig.schema.llms.generation import LLMGenerationConfig
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.types import HyperoptConfigDict, ModelConfigDict
 from ludwig.utils.data_utils import get_sanitized_feature_name
+from ludwig.utils.llm_utils import get_context_len
 
 if TYPE_CHECKING:
     from ludwig.schema.model_types.base import ModelConfig
@@ -299,16 +303,24 @@ def set_tagger_decoder_parameters(config: "ModelConfig") -> None:
                 output_feature.reduce_input = None
 
 
-def set_llm_tokenizers(config: "ModelConfig") -> None:
+def set_llm_parameters(config: "ModelConfig") -> None:
+    if config.model_type != MODEL_LLM:
+        return
+
+    # Set preprocessing parameters for text features for LLM model type
+    _set_llm_tokenizers(config)
+
+    # Set max_new_tokens in generation config to the max sequence length of the output features
+    _set_generation_max_new_tokens(config)
+
+
+def _set_llm_tokenizers(config: "ModelConfig") -> None:
     """Sets the tokenizers for the LLM model to the pretrained model name or path. This ensures that they use the
     correct shared vocabulary from the tokenizer.
 
     This also ensures padding is correctly set to left padding to prevent the LLM from trying to continue to sequence
     based on the right padding tokens, which might exist based on sequence length.
     """
-    if config.model_type != "llm":
-        return
-
     pretrained_model_name_or_path = config.base_model
     if not isinstance(pretrained_model_name_or_path, str) or pretrained_model_name_or_path is None:
         raise ValueError("Must set `base_model` when using the LLM model.")
@@ -335,6 +347,62 @@ def set_llm_tokenizers(config: "ModelConfig") -> None:
             output_feature.decoder.pretrained_model_name_or_path = pretrained_model_name_or_path
             # Parameters for building decoder vocabulary
             output_feature.decoder.fallback_label = output_feature.preprocessing.fallback_label
+
+
+def _get_maximum_possible_sequence_length(config: "ModelConfig", default_max_sequence_length: int) -> int:
+    """Returns the maximum possible sequence length for the LLM model based on the model config."""
+    max_possible_sequence_length = default_max_sequence_length
+    if config.output_features[0].preprocessing.max_sequence_length is not None:
+        # Note: We don't need to check for max between feature.preprocessing.max_sequence_length and
+        # defaults.text.preprocessing.max_sequence_length because the latter is only applied to input features.
+        max_possible_sequence_length = max(
+            default_max_sequence_length, config.output_features[0].preprocessing.max_sequence_length
+        )
+    elif config.preprocessing.global_max_sequence_length is not None:
+        # This is not perfect since it includes tokens from both input + output features, but this at least
+        # ensures that max possible of the sequence length is used. It is very likely that the model learns
+        # to generate sequences than this value.
+        max_possible_sequence_length = max(
+            max_possible_sequence_length, config.preprocessing.global_max_sequence_length
+        )
+    elif max_possible_sequence_length == default_max_sequence_length:
+        # It's possible that both max_sequence_length and global_max_sequence_length are not set, in which case
+        # we should fall back to the window size of the pretrained model. By this point, because of schema validation
+        # checks, we know that the base_model exists so we can safely grab the base model's config.
+        # TODO (Arnav): Figure out how to factor in rope scaling factor into this calculation.
+        model_config = AutoConfig.from_pretrained(config.base_model)
+        max_possible_sequence_length = get_context_len(model_config)
+        # Artifically leave a buffer of half the total model window size to trade off
+        # runtime while likely covering a majority of the max sequence length.
+        max_possible_sequence_length = max_possible_sequence_length // 2
+    return max_possible_sequence_length
+
+
+def _set_generation_max_new_tokens(config: "ModelConfig") -> None:
+    """Sets the max_new_tokens parameter in the generation config to the max sequence length of the output
+    features.
+
+    This ensures that the generation config is set to the correct value for the LLM model type.
+    """
+    _DEFAULT_MAX_SEQUENCE_LENGTH = LLMGenerationConfig().max_new_tokens
+    if config.generation.max_new_tokens != _DEFAULT_MAX_SEQUENCE_LENGTH:
+        # Max new tokens is explicitly set by user, so don't override
+        return
+
+    if config.output_features[0].type != TEXT:
+        # This is trickier to set for other output features, so don't override for now.
+        # TODO: Add better support for category output features
+        return
+
+    max_possible_sequence_length = _get_maximum_possible_sequence_length(config, _DEFAULT_MAX_SEQUENCE_LENGTH)
+
+    logger.info(
+        f"Setting generation max_new_tokens to {max_possible_sequence_length} to correspond with the max "
+        "sequence length assigned to the output feature or the global max sequence length. This will ensure that "
+        "the correct number of tokens are generated at inference time. To override this behavior, set "
+        "`generation.max_new_tokens` to a different value in your Ludwig config."
+    )
+    config.generation.max_new_tokens = max_possible_sequence_length
 
 
 @DeveloperAPI

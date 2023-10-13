@@ -21,6 +21,7 @@ from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.llm_utils import (
     add_left_padding,
     generate_merged_ids,
+    get_context_len,
     pad_target_tensor_for_fine_tuning,
     realign_target_and_prediction_tensors_for_inference,
     remove_left_padding,
@@ -126,13 +127,7 @@ class LLM(BaseModel):
         self.curr_device = next(self.model.parameters()).device
         logger.info("Done.")
 
-        # Determines the maximum length of the context (input + output tokens)
-        if hasattr(self.model_config, "max_sequence_length"):
-            self.context_len = self.model_config.max_sequence_length
-        elif hasattr(self.model_config, "max_position_embeddings"):
-            self.context_len = self.model_config.max_position_embeddings
-        else:
-            self.context_len = 2048
+        self.context_len = get_context_len(self.model_config)
 
         # TODO(Arnav): This needs be more flexible to account for RoPE Scaling
         # When merging input IDs and target IDs for LLM fine-tuning, we want to make sure that the merged tensor is
@@ -412,7 +407,7 @@ class LLM(BaseModel):
         mask=None,
     ) -> Dict[str, torch.Tensor]:
         """Generates tokens using the model."""
-        logger.info(f"For generating text, using: {self.generation}")
+        log_once(f"For generating text, using: {self.generation}")
         input_ids, _ = self._unpack_inputs(inputs)
 
         with torch.no_grad():

@@ -56,7 +56,7 @@ Available sub-commands:
    init_config           Initialize a user config from a dataset and targets
    render_config         Renders the fully populated config with all defaults set
    check_install         Runs a quick training run on synthetic data to verify installation status
-   upload                Push trained model artifacts to a registry (e.g., HuggingFace Hub)
+   upload                Push trained model artifacts to a registry (e.g., Predibase, HuggingFace Hub)
 """,
         )
         parser.add_argument("command", help="Subcommand to run")

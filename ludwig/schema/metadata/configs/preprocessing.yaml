@@ -44,6 +44,22 @@ sample_ratio:
     expected_impact: 2
     suggested_values: Depends on data size
     ui_display_name: Sample Ratio
+sample_size:
+    default_value_reasoning:
+        The default value is None because we do not want to shrink
+        the dataset by default, and we do not know the size of an arbitrary dataset.
+        By setting the default to None, we fall back on the sample_ratio to determine
+        the size of the dataset.
+    description_implications:
+        Decreases the amount of data you are inputting into
+        the model. Could be useful if you have more data than you need and you are
+        concerned with computational costs. More useful than sample_ratio if you
+        know the exact number of samples you want to train on instead of knowing the proportion.
+    example_value:
+        - 1000
+    expected_impact: 2
+    suggested_values: Depends on data size
+    ui_display_name: Sample Size
 column:
     expected_impact: 3
     ui_display_name: Split Column
