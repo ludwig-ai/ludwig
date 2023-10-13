@@ -40,12 +40,6 @@ warnings.filterwarnings(
 )
 
 
-def _get_optimization_stage_from_trainer_config(trainer_config: Dict[str, Any]) -> int:
-    """Returns the DeepSpeed optimization stage from the backend's trainer config."""
-    distributed_strategy_kwargs = trainer_config.get("strategy", {})
-    return distributed_strategy_kwargs.get("zero_optimization", {}).get("stage", 3)
-
-
 class DeepSpeedStrategy(DDPStrategy):
     def __init__(
         self,
@@ -63,7 +57,7 @@ class DeepSpeedStrategy(DDPStrategy):
 
         super().__init__(**kwargs)
         self.zero_optimization = zero_optimization or DEFAULT_ZERO_OPTIMIZATION
-        self.zero_optimization_stage = self.zero_optimization.get("stage", "auto")
+        self.zero_optimization_stage = self.zero_optimization.get("stage", 3)
         self.fp16 = fp16
         self.bf16 = bf16
         self.compression_training = compression_training
@@ -133,19 +127,13 @@ class DeepSpeedStrategy(DDPStrategy):
 
         return model_engine, optimizer
 
-    def prepare_for_inference(self, model: nn.Module, **trainer_kwargs) -> nn.Module:
-        if trainer_kwargs:
-            optimization_stage = _get_optimization_stage_from_trainer_config(trainer_kwargs)
-        else:
-            optimization_stage = self.zero_optimization_stage
-
-        if optimization_stage != 3:
+    def prepare_for_inference(self, model: nn.Module) -> nn.Module:
+        if self.zero_optimization_stage != 3:
             # For all DeepSpeed stages that are not stage 3, we can just return the model.
             # The model doesn't require model parallelism, and can be placed on the GPUs directly.
             # TODO: Current issue here is that this actually replaces the fine-tuned model weights if you
             # do non-adapter based fine-tuning using DS stage <= 2. Need a good workaround for this.
             model.prepare_for_inference()
-            # breakpoint()
             return model
 
         # Only Zero3 models need to be wrapped in a DeepSpeed engine for inference.
@@ -240,10 +228,9 @@ class DeepSpeedStrategy(DDPStrategy):
 
     @classmethod
     def extract_model_for_serialization(
-        cls, model: nn.Module, **trainer_kwargs
+        cls, model: nn.Module, optimization_stage: Optional[Union[int, None]] = 3
     ) -> Union[nn.Module, Tuple[nn.Module, List[Dict]]]:
         """Trainer_kwargs is the trainer config from the backend's trainer config."""
-        optimization_stage = _get_optimization_stage_from_trainer_config(trainer_kwargs)
         if optimization_stage != 3:
             return model
 
@@ -261,17 +248,10 @@ class DeepSpeedStrategy(DDPStrategy):
 
     @classmethod
     def replace_model_from_serialization(
-        cls, state: Union[nn.Module, Tuple[nn.Module, List[Dict]]], **trainer_kwargs
+        cls,
+        state: Union[nn.Module, Tuple[nn.Module, List[Dict]]],
+        optimization_stage: Optional[Union[int, None]] = 3,
     ) -> nn.Module:
-        if trainer_kwargs:
-            # Trainer kwargs are only passed in when we're using a reference to the DistributedStrategy class
-            # as opposed to an instance of the class. In this case, we need to extract the zero optimization stage
-            # from the trainer kwargs.
-            optimization_stage = _get_optimization_stage_from_trainer_config(trainer_kwargs)
-        else:
-            optimization_stage = cls.optimization_stage
-
-        # If we're using DeepSpeed Zero3, we need to replace the serialized tensors back into the model.
         if optimization_stage == 3:
             assert isinstance(state, tuple)
             model, model_weights = state
