@@ -4,6 +4,6 @@ faiss-cpu
 accelerate
 loralib
 
-# peft>=0.4.0
-# Temporarily pin PEFT to PEFT master for Mistral-7b support
+# Temporarily pin PEFT to PEFT master for Mistral-7b support:
+# https://github.com/ludwig-ai/ludwig/issues/3724
 -e git+https://github.com/huggingface/peft.git@07f2b82#egg=peft
