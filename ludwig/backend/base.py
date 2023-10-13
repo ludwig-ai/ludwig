@@ -20,7 +20,7 @@ import time
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
-from typing import Any, Callable, TYPE_CHECKING
+from typing import Any, Callable, Generator, TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
@@ -89,7 +89,7 @@ class Backend(ABC):
 
     @contextmanager
     @abstractmethod
-    def create_trainer(self, **kwargs) -> BaseTrainer:
+    def create_trainer(self, config: BaseTrainerConfig, model: BaseModel, **kwargs) -> Generator:
         raise NotImplementedError()
 
     @abstractmethod
@@ -146,7 +146,9 @@ class Backend(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def batch_transform(self, df: DataFrame, batch_size: int, transform_fn: Callable, name: str = None) -> DataFrame:
+    def batch_transform(
+        self, df: DataFrame, batch_size: int, transform_fn: Callable, name: str | None = None
+    ) -> DataFrame:
         """Applies `transform_fn` to every `batch_size` length batch of `df` and returns the result."""
         raise NotImplementedError()
 
@@ -171,7 +173,9 @@ class LocalPreprocessingMixin:
         with ThreadPoolExecutor() as executor:  # number of threads is inferred
             if isinstance(sample_fname, str):
                 if map_fn is read_audio_from_path:  # bypass torchaudio issue that no longer takes in file-like objects
-                    result = executor.map(lambda path: map_fn(path) if path is not None else path, column.values)
+                    result = executor.map(  # type: ignore[misc]
+                        lambda path: map_fn(path) if path is not None else path, column.values
+                    )
                 else:
                     result = executor.map(
                         lambda path: get_bytes_obj_from_path(path) if path is not None else path, column.values
@@ -186,7 +190,7 @@ class LocalPreprocessingMixin:
         return pd.Series(result, index=column.index, name=column.name)
 
     @staticmethod
-    def batch_transform(df: DataFrame, batch_size: int, transform_fn: Callable, name: str = None) -> DataFrame:
+    def batch_transform(df: DataFrame, batch_size: int, transform_fn: Callable, name: str | None = None) -> DataFrame:
         name = name or "Batch Transform"
         batches = to_batches(df, batch_size)
         transform = transform_fn()
@@ -204,21 +208,11 @@ class LocalTrainingMixin:
     def initialize_pytorch(*args, **kwargs):
         initialize_pytorch(*args, **kwargs)
 
-    def create_trainer(self, config: BaseTrainerConfig, model: BaseModel, **kwargs) -> BaseTrainer:
-        from ludwig.trainers.registry import get_llm_trainers_registry, get_trainers_registry
-
-        if model.type() == MODEL_LLM:
-            trainer_cls = get_from_registry(config.type, get_llm_trainers_registry())
-        else:
-            trainer_cls = get_from_registry(model.type(), get_trainers_registry())
-
-        return trainer_cls(config=config, model=model, **kwargs)
-
     @staticmethod
     def create_predictor(model: BaseModel, **kwargs):
         from ludwig.models.predictor import get_predictor_cls
 
-        return get_predictor_cls(model.type())(model, **kwargs)
+        return get_predictor_cls(model.type())(model, **kwargs)  # type: ignore[call-arg]
 
     def sync_model(self, model):
         pass
@@ -254,14 +248,16 @@ class RemoteTrainingMixin:
 class LocalBackend(LocalPreprocessingMixin, LocalTrainingMixin, Backend):
     BACKEND_TYPE = "local"
 
+    _shared_instance: LocalBackend
+
     @classmethod
-    def shared_instance(cls):
+    def shared_instance(cls) -> LocalBackend:
         """Returns a shared singleton LocalBackend instance."""
         if not hasattr(cls, "_shared_instance"):
             cls._shared_instance = cls()
         return cls._shared_instance
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__(dataset_manager=PandasDatasetManager(self), **kwargs)
 
     @property
@@ -279,6 +275,22 @@ class LocalBackend(LocalPreprocessingMixin, LocalTrainingMixin, Backend):
         # Every trial will be run with Pandas and NO Ray Datasets. Allow Ray Tune to use all the
         # trial resources it wants, because there is no Ray Datasets process to compete with it for CPUs.
         return None
+
+    def create_trainer(
+        self,
+        config: BaseTrainerConfig,
+        model: BaseModel,
+        **kwargs,
+    ) -> BaseTrainer:  # type: ignore[override]
+        from ludwig.trainers.registry import get_llm_trainers_registry, get_trainers_registry
+
+        trainer_cls: type
+        if model.type() == MODEL_LLM:
+            trainer_cls = get_from_registry(config.type, get_llm_trainers_registry())
+        else:
+            trainer_cls = get_from_registry(model.type(), get_trainers_registry())
+
+        return trainer_cls(config=config, model=model, **kwargs)
 
 
 @DeveloperAPI
@@ -298,7 +310,12 @@ class DataParallelBackend(LocalPreprocessingMixin, Backend, ABC):
             *args, local_rank=self._distributed.local_rank(), local_size=self._distributed.local_size(), **kwargs
         )
 
-    def create_trainer(self, **kwargs) -> BaseTrainer:
+    def create_trainer(
+        self,
+        config: BaseTrainerConfig,
+        model: BaseModel,
+        **kwargs,
+    ) -> BaseTrainer:  # type: ignore[override]
         from ludwig.trainers.trainer import Trainer
 
         return Trainer(distributed=self._distributed, **kwargs)
@@ -306,7 +323,7 @@ class DataParallelBackend(LocalPreprocessingMixin, Backend, ABC):
     def create_predictor(self, model: BaseModel, **kwargs):
         from ludwig.models.predictor import get_predictor_cls
 
-        return get_predictor_cls(model.type())(model, distributed=self._distributed, **kwargs)
+        return get_predictor_cls(model.type())(model, distributed=self._distributed, **kwargs)  # type: ignore[call-arg]
 
     def sync_model(self, model):
         # Model weights are only saved on the coordinator, so broadcast

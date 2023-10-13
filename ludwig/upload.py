@@ -4,7 +4,7 @@ import sys
 from typing import Optional
 
 from ludwig.utils.print_utils import get_logging_level_registry
-from ludwig.utils.upload_utils import HuggingFaceHub
+from ludwig.utils.upload_utils import HuggingFaceHub, Predibase
 
 logger = logging.getLogger(__name__)
 
@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 def get_upload_registry():
     return {
         "hf_hub": HuggingFaceHub,
+        "predibase": Predibase,
     }
 
 
@@ -23,6 +24,8 @@ def upload_cli(
     private: bool = False,
     commit_message: str = "Upload trained [Ludwig](https://ludwig.ai/latest/) model weights",
     commit_description: Optional[str] = None,
+    dataset_file: Optional[str] = None,
+    dataset_name: Optional[str] = None,
     **kwargs,
 ) -> None:
     """Create an empty repo on the HuggingFace Hub and upload trained model artifacts to that repo.
@@ -30,7 +33,7 @@ def upload_cli(
     Args:
         service (`str`):
             Name of the hosted model service to push the trained artifacts to.
-            Currently, this only supports `hf_hub`.
+            Currently, this only supports `hf_hub` and `predibase`.
         repo_id (`str`):
             A namespace (user or an organization) and a repo name separated
             by a `/`.
@@ -49,10 +52,15 @@ def upload_cli(
             `f"Upload {path_in_repo} with huggingface_hub"`
         commit_description (`str` *optional*):
             The description of the generated commit
+        dataset_file (`str`, *optional*):
+            The path to the dataset file. Required if `service` is set to
+            `"predibase"` for new model repos.
+        dataset_name (`str`, *optional*):
+            The name of the dataset. Used by the `service`
+            `"predibase"`.
     """
     model_service = get_upload_registry().get(service, "hf_hub")
     hub = model_service()
-    hub.login()
     hub.upload(
         repo_id=repo_id,
         model_path=model_path,
@@ -60,6 +68,8 @@ def upload_cli(
         private=private,
         commit_message=commit_message,
         commit_description=commit_description,
+        dataset_file=dataset_file,
+        dataset_name=dataset_name,
     )
 
 
@@ -77,7 +87,7 @@ def cli(sys_argv):
         "service",
         help="Name of the model repository service.",
         default="hf_hub",
-        choices=["hf_hub"],
+        choices=["hf_hub", "predibase"],
     )
 
     parser.add_argument(
@@ -113,6 +123,11 @@ def cli(sys_argv):
         default="info",
         help="The level of logging to use",
         choices=["critical", "error", "warning", "info", "debug", "notset"],
+    )
+
+    parser.add_argument("-df", "--dataset_file", help="The location of the dataset file", default=None)
+    parser.add_argument(
+        "-dn", "--dataset_name", help="(Optional) The name of the dataset in the Provider", default=None
     )
 
     args = parser.parse_args(sys_argv)

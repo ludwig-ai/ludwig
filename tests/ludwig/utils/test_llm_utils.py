@@ -1,13 +1,15 @@
 import pytest
 import torch
-from transformers import AutoTokenizer
+from transformers import AutoConfig, AutoTokenizer
 
 from ludwig.constants import LOGITS, PREDICTIONS, PROBABILITIES
 from ludwig.utils.llm_utils import (
     add_left_padding,
     create_attention_mask,
+    FALLBACK_CONTEXT_LEN,
     find_last_matching_index,
     generate_merged_ids,
+    get_context_len,
     has_padding_token,
     pad_target_tensor_for_fine_tuning,
     realign_target_and_prediction_tensors_for_inference,
@@ -55,6 +57,29 @@ def test_set_pad_token_already_exists():
 
     set_pad_token(tokenizer)
     assert tokenizer.pad_token_id == 1
+
+
+class TestSetContextLen:
+    def test_max_sequence_length(self):
+        # Test when 'max_sequence_length' is present in the model configuration
+        config = AutoConfig.from_pretrained("huggyllama/llama-7b")
+        assert get_context_len(config) == config.max_sequence_length
+
+    def test_max_position_embeddings(self):
+        # Test when 'max_position_embeddings' is present in the model configuration
+        config = AutoConfig.from_pretrained("huggyllama/llama-7b")
+        del config.max_sequence_length
+        assert get_context_len(config) == config.max_position_embeddings
+
+    def test_n_positions(self):
+        # Test when 'n_positions' is present in the model configuration
+        config = AutoConfig.from_pretrained("hf-internal-testing/tiny-random-GPTJForCausalLM")
+        assert get_context_len(config) == config.n_positions
+
+    def test_default_value(self):
+        config = AutoConfig.from_pretrained("hf-internal-testing/tiny-random-GPTJForCausalLM")
+        del config.n_positions
+        assert get_context_len(config) == FALLBACK_CONTEXT_LEN
 
 
 def test_has_padding_token_with_padding_tokens(tokenizer):

@@ -487,6 +487,14 @@ class Trainer(BaseTrainer):
                     / (1000**3),
                     global_step=step,
                 )
+
+                # Utilization.
+                # https://pytorch.org/docs/stable/generated/torch.cuda.utilization.html#torch.cuda.utilization
+                train_summary_writer.add_scalar(
+                    f"cuda/device{i}/utilization",
+                    torch.cuda.device(i).utilization(),
+                    global_step=step,
+                )
         train_summary_writer.flush()
 
     def is_cpu_training(self):
