@@ -303,10 +303,10 @@ class LLM(BaseModel):
     def prepare_for_inference(self):
         print("!!!!! PREPARE FOR INFERENCE")
         # breakpoint()
-        if not self.model:
-            # Reload the model onto the right device with the relevant load kwargs
-            # Required for inference when using deepspeed stage <= 2.
-            self.model = load_pretrained_from_config(self.config_obj, model_config=self.model_config)
+        # if not self.model:
+        # Reload the model onto the right device with the relevant load kwargs
+        # Required for inference when using deepspeed stage <= 2.
+        self.model = load_pretrained_from_config(self.config_obj, model_config=self.model_config)
         if self.config_obj.quantization:
             self.prepare_for_quantized_training()
         self.initialize_adapter()
@@ -315,8 +315,8 @@ class LLM(BaseModel):
         print("!!!!! PREPARE FOR TRAINING")
         # TODO: this implementation will not work if resuming from a previous checkpoint. Need to fix this.
         # breakpoint()
-        if not self.model:
-            self.model = load_pretrained_from_config(self.config_obj, model_config=self.model_config)
+        # if not self.model:
+        self.model = load_pretrained_from_config(self.config_obj, model_config=self.model_config)
         if self.config_obj.quantization:
             self.prepare_for_quantized_training()
         self.initialize_adapter()
@@ -327,7 +327,7 @@ class LLM(BaseModel):
         self.model = prepare_model_for_kbit_training(self.model, use_gradient_checkpointing=False)
 
     def to_device(self, device):
-        print("!!!!! TO DEVICE !!!!!", torch.cuda.device_count())
+        print("!!!!! TO DEVICE !!!!!", torch.cuda.current_device())
         device = torch.device(device)
 
         if device.type == self.curr_device.type:
