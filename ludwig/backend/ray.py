@@ -681,11 +681,10 @@ def eval_fn(
         # Deserialize the model (minus weights) from Plasma
         # Extract the weights from Plasma (without copying data)
         # Load the weights back into the model in-place on the current device (CPU)
-        # breakpoint()
         model = distributed.replace_model_from_serialization(ray.get(model_ref))
         model = distributed.to_device(model)
 
-        # have to wrap here because we are passing into predictor directly.
+        # We have to wrap here because we are passing into predictor directly.
         # This is in contrast creating the predictor in the trainer class and
         # passing in the model post-wrap.
         #
@@ -698,9 +697,6 @@ def eval_fn(
         # fine-tuned adapter.
         dist_model = distributed.prepare_for_inference(model)
         if adapter_ref and (distributed_optimization_stage and distributed_optimization_stage <= 2):
-            # TODO: Fix issue where the trained adapter weights get replaced with the base adapter weights
-            # from the self.initialize_adapter() call in prepare for inference. Somehow it results in a cuda device
-            # placement mismatch error.
             model = distributed.replace_adapter_weights_from_serialization(model, ray.get(adapter_ref))
             dist_model = distributed.replace_adapter_weights_from_serialization(dist_model, ray.get(adapter_ref))
 
@@ -820,8 +816,7 @@ class RayPredictor(BasePredictor):
             # breakpoint()
             adapter_ref = None
             if self.model.trained_using_adapter:
-                adapter_state_dict = dist_strategy.extract_adapter_weights_for_serialization(self.model)
-                adapter_ref = ray.put(adapter_state_dict)
+                adapter_ref = ray.put(dist_strategy.extract_adapter_weights_for_serialization(self.model))
 
             model_ref = ray.put(dist_strategy.extract_model_for_serialization(self.model, **self.trainer_kwargs))
             # Collect eval metrics by distributing work across nodes / gpus with Horovod

@@ -53,7 +53,7 @@ class DeepSpeedStrategy(DDPStrategy):
         fp16: Optional[Dict[str, Any]] = None,
         bf16: Optional[Dict[str, Any]] = None,
         compression_training: Optional[Dict[str, Any]] = None,
-        **kwargs
+        **kwargs,
     ):
         # If we're initializing from a `deepspeed` CLI command, deepspeed will have already been initialized, as
         # indicated by the presence of the LOCAL_RANK var. Otherwise, we're initializing from Ray / torchrun, and will
@@ -142,7 +142,10 @@ class DeepSpeedStrategy(DDPStrategy):
         if optimization_stage != 3:
             # For all DeepSpeed stages that are not stage 3, we can just return the model.
             # The model doesn't require model parallelism, and can be placed on the GPUs directly.
+            # TODO: Current issue here is that this actually replaces the fine-tuned model weights if you
+            # do non-adapter based fine-tuning using DS stage <= 2. Need a good workaround for this.
             model.prepare_for_inference()
+            # breakpoint()
             return model
 
         # Only Zero3 models need to be wrapped in a DeepSpeed engine for inference.
@@ -231,7 +234,8 @@ class DeepSpeedStrategy(DDPStrategy):
         """TODO: Add useful docstring"""
         from peft.utils.save_and_load import get_peft_model_state_dict
 
-        # We do model.model because the model is wrapped in a the LLM model wrapper.
+        # We do model.model because the model is wrapped in a the LLM model wrapper
+        # but this function expects a PeftModel.
         return get_peft_model_state_dict(model.model)
 
     @classmethod
@@ -251,6 +255,7 @@ class DeepSpeedStrategy(DDPStrategy):
         from peft.utils.save_and_load import set_peft_model_state_dict
 
         # We do model.model because the model is wrapped in a the LLM model wrapper.
+        # but this function expects a PeftModel.
         set_peft_model_state_dict(model.model, state_dict)
         return model
 
