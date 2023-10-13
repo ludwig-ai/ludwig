@@ -152,12 +152,23 @@ class LLM(BaseModel):
         self.model_name = self.config_obj.base_model
         self.model_config = AutoConfig.from_pretrained(self.config_obj.base_model)
 
-        # self.model = load_pretrained_from_config(self.config_obj, model_config=self.model_config)
-        # self.curr_device = next(self.model.parameters()).device
+        backend = config_obj.backend
+        backend_type = backend.get("type", "local")
+        backend_trainer_config = backend.get("trainer", {})
+        if backend_type == "local":
+            self.model = load_pretrained_from_config(self.config_obj, model_config=self.model_config)
+            self.curr_device = next(self.model.parameters()).device
+        elif backend_type == "ray" and backend_trainer_config.get("strategy", {}).get("type") == "deepspeed":
+            # If using deepspeed stage 3, we need to use the auto device map
+            strategy_config = backend_trainer_config.get("strategy")
+            if strategy_config.get("zero_optimization", {}).get("stage", 3) == 3:
+                self.model = load_pretrained_from_config(self.config_obj, model_config=self.model_config)
+                self.curr_device = next(self.model.parameters()).device
+            else:
+                self.model = None
+                self.curr_device = torch.device("cpu")
 
-        self.model = None
-        self.curr_device = torch.device("cpu")
-
+        # breakpoint()
         self.context_len = get_context_len(self.model_config)
 
         # TODO(Arnav): This needs be more flexible to account for RoPE Scaling
@@ -291,8 +302,11 @@ class LLM(BaseModel):
 
     def prepare_for_inference(self):
         print("!!!!! PREPARE FOR INFERENCE")
-        # Reload the model onto the right device with the relevant load kwargs
-        self.model = load_pretrained_from_config(self.config_obj, model_config=self.model_config)
+        # breakpoint()
+        if not self.model:
+            # Reload the model onto the right device with the relevant load kwargs
+            # Required for inference when using deepspeed stage <= 2.
+            self.model = load_pretrained_from_config(self.config_obj, model_config=self.model_config)
         if self.config_obj.quantization:
             self.prepare_for_quantized_training()
         self.initialize_adapter()
@@ -300,7 +314,9 @@ class LLM(BaseModel):
     def prepare_for_training(self):
         print("!!!!! PREPARE FOR TRAINING")
         # TODO: this implementation will not work if resuming from a previous checkpoint. Need to fix this.
-        self.model = load_pretrained_from_config(self.config_obj, model_config=self.model_config)
+        # breakpoint()
+        if not self.model:
+            self.model = load_pretrained_from_config(self.config_obj, model_config=self.model_config)
         if self.config_obj.quantization:
             self.prepare_for_quantized_training()
         self.initialize_adapter()
