@@ -326,8 +326,11 @@ class LLM(BaseModel):
         print("!!!!! PREPARE FOR TRAINING")
         # TODO: this implementation will not work if resuming from a previous checkpoint. Need to fix this.
         # breakpoint()
-        # if not self.model:
-        self.model = load_pretrained_from_config(self.config_obj, model_config=self.model_config)
+        if not self.model:
+            # If we're using DS stage <= 2, we only load the model into memory once we're actually inside
+            # of the training workers. For local backend and DS stage 3, we load the model into memory
+            # in the LLM model class constructor.
+            self.model = load_pretrained_from_config(self.config_obj, model_config=self.model_config)
         if self.config_obj.quantization:
             self.prepare_for_quantized_training()
         self.initialize_adapter()

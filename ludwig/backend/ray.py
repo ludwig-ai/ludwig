@@ -520,7 +520,6 @@ class RayTrainerV2(BaseTrainer):
             # This enables zero copy model loading on each training worker using shared
             # memory from the Ray object store for model initialization.
             dist_strategy = runner.dist_strategy
-            # breakpoint()
             optimization_stage = _get_optimization_stage_from_trainer_config(self.trainer_kwargs)
             model_ref = ray.put(
                 dist_strategy.extract_model_for_serialization(self.model, optimization_stage=optimization_stage)
