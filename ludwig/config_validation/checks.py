@@ -581,7 +581,7 @@ def check_llm_finetuning_adaption_prompt_parameters(config: "ModelConfig"):
     if config.adapter.type != "adaption_prompt":
         return
 
-    from peft.tuners.adaption_prompt import TRANSFORMERS_MODEL_CONFIG
+    from peft.tuners.adaption_prompt.config import TRANSFORMERS_MODEL_CONFIG
 
     # Adaption Config is currently only supported for Llama model types
     model_config = _get_llm_model_config(config.base_model)
