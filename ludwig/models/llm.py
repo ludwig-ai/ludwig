@@ -80,6 +80,27 @@ def _default_transformers_cache_dir():
     return cache_dir
 
 
+def _get_backend_type_from_config(config_obj: LLMModelConfig) -> str:
+    """Returns the backend type from the config object."""
+    backend = config_obj.backend
+    backend_type = backend.get("type", "local")
+    return backend_type
+
+
+def _get_deepspeed_optimization_stage_from_config(config_obj: LLMModelConfig) -> Union[int, None]:
+    """Returns the deepspeed optimization stage from the config object."""
+    backend_type = _get_backend_type_from_config(config_obj)
+    if backend_type != "ray":
+        return None
+
+    backend_trainer_config = config_obj.backend.get("trainer", {})
+    strategy_config = backend_trainer_config.get("strategy", {})
+    if strategy_config.get("type") != "deepspeed":
+        return None
+
+    return strategy_config.get("zero_optimization", {}).get("stage", 3)
+
+
 def load_pretrained_from_config(
     config_obj: LLMModelConfig,
     model_config: Optional[AutoConfig] = None,
@@ -92,19 +113,13 @@ def load_pretrained_from_config(
         load_kwargs["torch_dtype"] = getattr(torch, config_obj.quantization.bnb_4bit_compute_dtype)
         load_kwargs["quantization_config"] = config_obj.quantization.to_bitsandbytes()
 
-    # Initialize device_map load kwarg based on backend and distributed strategy
-    backend = config_obj.backend
-    backend_type = backend.get("type", "local")
-    backend_trainer_config = backend.get("trainer", {})
-    if backend_type == "ray" and backend_trainer_config.get("strategy", {}).get("type") == "deepspeed":
-        # If using deepspeed stage 3, we need to use the auto device map
-        strategy_config = backend_trainer_config.get("strategy")
-        if strategy_config.get("zero_optimization", {}).get("stage", 3) == 3:
-            load_kwargs["device_map"] = "auto"
-        else:
-            # If using deepspeed stage 0, 1 or 2, we need to use the local rank device map
-            # This is safe to do since we only support single node multi-gpu training with deepspeed
-            load_kwargs["device_map"] = f"cuda:{torch.cuda.current_device()}"
+    # Set device_map load kwarg based on backend and distributed strategy
+    backend_type = _get_backend_type_from_config(config_obj)
+    deepspeed_optimization_strategy = _get_deepspeed_optimization_stage_from_config(config_obj)
+    if backend_type == "ray" and deepspeed_optimization_strategy is not None and deepspeed_optimization_strategy <= 2:
+        # If using deepspeed stage 0, 1 or 2, we need to use the local rank device map
+        # This is safe to do since we only support single node multi-gpu training with deepspeed
+        load_kwargs["device_map"] = f"cuda:{torch.cuda.current_device()}"
     else:
         # Fallback to auto device map
         load_kwargs["device_map"] = "auto"
@@ -152,23 +167,19 @@ class LLM(BaseModel):
         self.model_name = self.config_obj.base_model
         self.model_config = AutoConfig.from_pretrained(self.config_obj.base_model)
 
-        backend = config_obj.backend
-        backend_type = backend.get("type", "local")
-        backend_trainer_config = backend.get("trainer", {})
-        if backend_type == "local":
+        backend_type = _get_backend_type_from_config(config_obj)
+        deepspeed_optimization_strategy = _get_deepspeed_optimization_stage_from_config(config_obj)
+        if (
+            backend_type == "ray"
+            and deepspeed_optimization_strategy is not None
+            and deepspeed_optimization_strategy <= 2
+        ):
+            self.model = None
+            self.curr_device = torch.device("cpu")
+        else:
             self.model = load_pretrained_from_config(self.config_obj, model_config=self.model_config)
             self.curr_device = next(self.model.parameters()).device
-        elif backend_type == "ray" and backend_trainer_config.get("strategy", {}).get("type") == "deepspeed":
-            # If using deepspeed stage 3, we need to use the auto device map
-            strategy_config = backend_trainer_config.get("strategy")
-            if strategy_config.get("zero_optimization", {}).get("stage", 3) == 3:
-                self.model = load_pretrained_from_config(self.config_obj, model_config=self.model_config)
-                self.curr_device = next(self.model.parameters()).device
-            else:
-                self.model = None
-                self.curr_device = torch.device("cpu")
 
-        # breakpoint()
         self.context_len = get_context_len(self.model_config)
 
         # TODO(Arnav): This needs be more flexible to account for RoPE Scaling
