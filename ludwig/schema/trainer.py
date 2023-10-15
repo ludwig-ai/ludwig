@@ -5,7 +5,17 @@ import torch
 from packaging.version import parse as parse_version
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import AUTO, LOSS, MAX_POSSIBLE_BATCH_SIZE, MODEL_ECD, MODEL_GBM, MODEL_LLM, TRAINING
+from ludwig.constants import (
+    AUTO,
+    EFFECTIVE_BATCH_SIZE,
+    LOSS,
+    MAX_BATCH_SIZE,
+    MAX_POSSIBLE_BATCH_SIZE,
+    MODEL_ECD,
+    MODEL_GBM,
+    MODEL_LLM,
+    TRAINING,
+)
 from ludwig.error import ConfigValidationError
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.lr_scheduler import LRSchedulerConfig, LRSchedulerDataclassField
@@ -218,7 +228,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
             "one of `batch_size` or `gradient_accumulation_steps` must be set to something other than 'auto', and "
             "consequently will be set following the formula given above."
         ),
-        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["effective_batch_size"],
+        parameter_metadata=TRAINER_METADATA[MODEL_ECD][EFFECTIVE_BATCH_SIZE],
         field_options=[
             schema_utils.PositiveInteger(default=128, description="", allow_none=False),
             schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
@@ -248,7 +258,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
             "Auto batch size tuning and increasing batch size on plateau will be capped at this value. The default "
             "value is 2^40."
         ),
-        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["max_batch_size"],
+        parameter_metadata=TRAINER_METADATA[MODEL_ECD][MAX_BATCH_SIZE],
     )
 
     gradient_accumulation_steps: Union[int, str] = schema_utils.OneOfOptionsField(

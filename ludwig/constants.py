@@ -197,6 +197,8 @@ EARLY_STOP = "early_stop"
 EPOCHS = "epochs"
 BATCH_SIZE = "batch_size"
 EVAL_BATCH_SIZE = "eval_batch_size"
+EFFECTIVE_BATCH_SIZE = "effective_batch_size"
+MAX_BATCH_SIZE = "max_batch_size"
 DEFAULT_BATCH_SIZE = "auto"
 FALLBACK_BATCH_SIZE = 128
 # The smallest batch size that is supported on Ludwig.
