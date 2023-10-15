@@ -3,10 +3,15 @@
         120
     ],
     "editor.formatOnSave": true,
-    "python.formatting.provider": "black",
-    "python.linting.enabled": true,
-    "python.linting.flake8Enabled": true,
-    "python.linting.flake8Args": [
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.formatOnSave": true
+    },
+    "black-formatter.args": [
+        "--line-length",
+        "120"
+    ],
+    "flake8.args": [
         "--config=setup.cfg"
     ],
     "python.testing.unittestEnabled": false,
