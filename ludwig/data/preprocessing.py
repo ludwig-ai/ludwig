@@ -1901,7 +1901,7 @@ def preprocess_for_training(
     if dataset is None and training_set is None:
         raise ValueError("No training data is provided!")
 
-    # preload ludwig datasets
+    # preload ludwig and HF datasets
     dataset, training_set, validation_set, test_set = load_dataset_uris(
         dataset, training_set, validation_set, test_set, backend
     )
@@ -2255,7 +2255,7 @@ def preprocess_for_prediction(
     if isinstance(dataset, Dataset):
         return dataset, training_set_metadata
 
-    # preload ludwig datasets
+    # preload ludwig and HF datasets
     dataset, _, _, _ = load_dataset_uris(dataset, None, None, None, backend)
 
     # determine data format if not provided or auto
