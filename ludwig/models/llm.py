@@ -154,6 +154,9 @@ def load_pretrained_from_config(
 
     pretrained_model_name_or_path = weights_save_path or config_obj.base_model
 
+    # When performing data parallel training with DeepSpeed, we need to load the model weights on each worker
+    # but we only want to download the weights once. To do this, we use a file lock to ensure that only one
+    # worker downloads the weights and the other workers load the weights from the cache.
     with file_lock(path=_default_transformers_cache_dir(), lock_file=".model_weights_lock"):
         logger.info("Loading large language model...")
         model: PreTrainedModel = AutoModelForCausalLM.from_pretrained(pretrained_model_name_or_path, **load_kwargs)
@@ -754,10 +757,10 @@ class LLM(BaseModel):
         if self.config_obj.trainer.type != "none":
             weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
             self.model.base_model.save_pretrained(weights_save_path)
-            """While this class initializes the tokenizer (from the base_model) automatically, and hence does not
-            need to be saved if inference is to be done using LudwigModel.predict(), the rationale for saving the
-            tokenizer to HuggingFace Hub is to provide access to models fine-tuned and persisted to HuggingFace Hub
-            using Ludwig at a later time, with the ability to perform inference, independently of Ludwig itself."""
+            # While this class initializes the tokenizer (from the base_model) automatically, and hence does not
+            # need to be saved if inference is to be done using LudwigModel.predict(), the rationale for saving the
+            # tokenizer to HuggingFace Hub is to provide access to models fine-tuned and persisted to HuggingFace Hub
+            # using Ludwig at a later time, with the ability to perform inference, independently of Ludwig itself.
             self.tokenizer.save_pretrained(weights_save_path)
         else:
             logger.info("Skipped saving LLM without weight adjustments.")
