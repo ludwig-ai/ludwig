@@ -70,7 +70,7 @@ prompt:
 
 generation:
     temperature: 0.1
-    max_new_tokens: 128
+    max_new_tokens: 256
 
 adapter:
     type: lora
@@ -100,7 +100,7 @@ trainer:
     eval_batch_size: 1
     enable_gradient_checkpointing: true
     gradient_accumulation_steps: 4
-    learning_rate: 0.0002
+    learning_rate: 0.0001
     learning_rate_scheduler:
         decay: cosine
         warmup_fraction: 0.03
@@ -109,6 +109,21 @@ trainer:
 
 model = LudwigModel(config=fine_tuning_config, logging_level=logging.INFO)
 results = model.train(dataset=df)
+
+(
+    train_stats,  # dictionary containing training statistics
+    preprocessed_data,  # tuple Ludwig Dataset objects of pre-processed training data
+    output_directory,  # location of training results stored on disk
+) = model.train(
+    dataset=df,
+    experiment_name="alpaca_instruct",
+    model_name="llama2_7b",
+)
+
+# list contents of output directory
+print("contents of output directory:", output_directory)
+for item in os.listdir(output_directory):
+    print("\t", item)
 
 prediction_df = pd.DataFrame(
     [
