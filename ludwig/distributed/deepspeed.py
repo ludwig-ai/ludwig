@@ -128,11 +128,15 @@ class DeepSpeedStrategy(DDPStrategy):
         return model_engine, optimizer
 
     def prepare_for_inference(self, model: nn.Module) -> nn.Module:
+        """Prepares the model for inference/evaluation.
+
+        For DeepSpeed Stage 3, we need to wrap the model in a DeepSpeed engine for inference. For all other DeepSpeed
+        stages, we load the base model back. For LLMs, this recreates either the base model or the PEFT model, depending
+        on whether a PEFT adapter was specified.
+        """
         if self.zero_optimization_stage != 3:
             # For all DeepSpeed stages that are not stage 3, we can just return the model.
             # The model doesn't require model parallelism, and can be placed on the GPUs directly.
-            # TODO: Current issue here is that this actually replaces the fine-tuned model weights if you
-            # do non-adapter based fine-tuning using DS stage <= 2. Need a good workaround for this.
             model.prepare_for_inference()
             return model
 
@@ -208,9 +212,11 @@ class DeepSpeedStrategy(DDPStrategy):
         optimizer: Optional[Optimizer] = None,
         scheduler: Optional["LRScheduler"] = None,
     ) -> Checkpoint:
+        """Creates a checkpoint handle for saving and loading checkpoints."""
         if self.zero_optimization_stage != 3:
             # For all DeepSpeed stages that are not stage 3, we should use the standard
-            # PyTorch checkpointing mechanism.
+            # PyTorch checkpointing mechanism because we do not need to shard the checkpoints as a
+            # result of data parallel training.
             return MultiNodeCheckpoint(self, dist_model, optimizer, scheduler)
 
         # DeepSpeed Zero3 checkpoints are not compatible with the standard PyTorch checkpointing mechanism since
@@ -222,8 +228,8 @@ class DeepSpeedStrategy(DDPStrategy):
         """Grabs the adapter weight tensors from the model for serialization."""
         from peft.utils.save_and_load import get_peft_model_state_dict
 
-        # We do model.model because the model is wrapped in a the LLM model wrapper
-        # but this function expects a PeftModel.
+        # We do model.model because the model is wrapped in a the LLM model wrapper and this function
+        # expects a PeftModel object.
         return get_peft_model_state_dict(model.model)
 
     @classmethod
@@ -259,7 +265,7 @@ class DeepSpeedStrategy(DDPStrategy):
         """Replaces the serialized model weights from the provided state object.
 
         Model weights are only serialized for DeepSpeed Zero3 models. For all other DeepSpeed stages, we can just return
-        the state..
+        the state.
         """
         if optimization_stage == 3:
             assert isinstance(state, tuple)

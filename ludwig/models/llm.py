@@ -17,6 +17,11 @@ from ludwig.models.base import BaseModel
 from ludwig.schema.features.base import BaseOutputFeatureConfig, FeatureCollection
 from ludwig.schema.model_types.llm import LLMModelConfig
 from ludwig.utils.augmentation_utils import AugmentationPipelines
+from ludwig.utils.backend_utils import (
+    _default_transformers_cache_dir,
+    _get_backend_type_from_config,
+    _get_deepspeed_optimization_stage_from_config,
+)
 from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.fs_utils import file_lock
 from ludwig.utils.llm_utils import (
@@ -73,34 +78,6 @@ class DictWrapper:
         self.obj.update(modules)
 
 
-def _default_transformers_cache_dir():
-    """Returns the default transformers cache directory."""
-    home_dir = os.path.expanduser("~")
-    cache_dir = os.path.join(home_dir, ".cache", "huggingface", "hub")
-    return cache_dir
-
-
-def _get_backend_type_from_config(config_obj: LLMModelConfig) -> str:
-    """Returns the backend type from the config object."""
-    backend = config_obj.backend
-    backend_type = backend.get("type", "local")
-    return backend_type
-
-
-def _get_deepspeed_optimization_stage_from_config(config_obj: LLMModelConfig) -> Union[int, None]:
-    """Returns the deepspeed optimization stage from the config object."""
-    backend_type = _get_backend_type_from_config(config_obj)
-    if backend_type != "ray":
-        return None
-
-    backend_trainer_config = config_obj.backend.get("trainer", {})
-    strategy_config = backend_trainer_config.get("strategy", {})
-    if strategy_config.get("type") != "deepspeed":
-        return None
-
-    return strategy_config.get("zero_optimization", {}).get("stage", 3)
-
-
 def load_pretrained_from_config(
     config_obj: LLMModelConfig,
     model_config: Optional[AutoConfig] = None,
@@ -108,7 +85,6 @@ def load_pretrained_from_config(
 ) -> PreTrainedModel:
     load_kwargs = {}
     if config_obj.quantization:
-        print("!!!! CURRENT DEVICE", torch.cuda.current_device())
         # Apply quanitzation configuration at model load time
         load_kwargs["torch_dtype"] = getattr(torch, config_obj.quantization.bnb_4bit_compute_dtype)
         load_kwargs["quantization_config"] = config_obj.quantization.to_bitsandbytes()
@@ -178,9 +154,12 @@ class LLM(BaseModel):
             and deepspeed_optimization_strategy is not None
             and deepspeed_optimization_strategy <= 2
         ):
+            # If using deepspeed stage 0, 1 or 2, we only load the model into memory once we're actually inside
+            # of the training workers.
             self.model = None
             self.curr_device = torch.device("cpu")
         else:
+            # If using local backend or deepspeed stage 3, we load the model into memory upon class initialization.
             self.model = load_pretrained_from_config(self.config_obj, model_config=self.model_config)
             self.curr_device = next(self.model.parameters()).device
 
@@ -340,7 +319,6 @@ class LLM(BaseModel):
         self.model = prepare_model_for_kbit_training(self.model, use_gradient_checkpointing=False)
 
     def to_device(self, device):
-        print("!!!!! TO DEVICE !!!!!", torch.cuda.current_device())
         device = torch.device(device)
 
         if device.type == self.curr_device.type:

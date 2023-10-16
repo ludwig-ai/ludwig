@@ -312,7 +312,6 @@ def initialize_pytorch(
     local_rank: int = 0,
     local_size: int = 1,
 ):
-    print("!!!! LOCAL RANK LOCAL SIZE", local_rank, local_size)
     param_tuple = (gpus, gpu_memory_limit, allow_parallel_threads, local_rank, local_size)
     if _TORCH_INIT_PARAMS is not None:
         if _TORCH_INIT_PARAMS != param_tuple:
