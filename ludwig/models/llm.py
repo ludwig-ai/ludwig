@@ -316,17 +316,14 @@ class LLM(BaseModel):
         return False
 
     def prepare_for_inference(self):
-        print("!!!!! PREPARE FOR INFERENCE")
-        # if not self.model:
         # Reload the model onto the right device with the relevant load kwargs
-        # Required for inference when using deepspeed stage <= 2.
+        # Only called when using deepspeed stage <= 2.
         self.model = load_pretrained_from_config(self.config_obj, model_config=self.model_config)
         if self.config_obj.quantization:
             self.prepare_for_quantized_training()
         self.initialize_adapter()
 
     def prepare_for_training(self):
-        print("!!!!! PREPARE FOR TRAINING")
         # TODO: this implementation will not work if resuming from a previous checkpoint. Need to fix this.
         if not self.model:
             # If we're using DS stage <= 2, we only load the model into memory once we're actually inside
@@ -355,8 +352,6 @@ class LLM(BaseModel):
         model_kwargs = {}
         num_gpus = torch.cuda.device_count()
         if device == torch.device("cuda") and num_gpus > 1:
-            print("!!!!! MULTI GPU !!!!!")
-
             # TODO: make this configurable in the future. These parameters are from FastChat:
             # https://github.com/lm-sys/FastChat/blob/0e958b852a14f4bef5f0e9d7a5e7373477329cf2/fastchat/serve/inference.py#L90  # noqa
             # TODO: Wrap device_map="auto" in a try-except block since it may not be supported for all models (E.g. BertLMHead)  # noqa
@@ -396,8 +391,7 @@ class LLM(BaseModel):
                     )
 
         else:
-            print("!!!!! SINGLE GPU !!!!!")
-            self.model = self.model.cuda()
+            self.model = self.model.to(device)
 
         self.curr_device = device
         return self

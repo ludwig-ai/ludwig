@@ -219,7 +219,7 @@ class DeepSpeedStrategy(DDPStrategy):
 
     @classmethod
     def extract_adapter_weights_for_serialization(cls, model: nn.Module):
-        """TODO: Add useful docstring"""
+        """Grabs the adapter weight tensors from the model for serialization."""
         from peft.utils.save_and_load import get_peft_model_state_dict
 
         # We do model.model because the model is wrapped in a the LLM model wrapper
@@ -230,7 +230,11 @@ class DeepSpeedStrategy(DDPStrategy):
     def extract_model_for_serialization(
         cls, model: nn.Module, optimization_stage: Optional[Union[int, None]] = 3
     ) -> Union[nn.Module, Tuple[nn.Module, List[Dict]]]:
-        """Trainer_kwargs is the trainer config from the backend's trainer config."""
+        """Extracts the models weights from the model as numpy tensors for serialization into the Ray object store.
+
+        Model weights are only serialized for DeepSpeed Zero3 models. For all other DeepSpeed stages, we can just return
+        the model.
+        """
         if optimization_stage != 3:
             return model
 
@@ -238,11 +242,11 @@ class DeepSpeedStrategy(DDPStrategy):
 
     @classmethod
     def replace_adapter_weights_from_serialization(cls, model: nn.Module, state_dict: Dict[str, Any]):
-        """TODO: Add useful docstring"""
+        """Replaces the adapter weight tensors in the model from the provided state dictionary."""
         from peft.utils.save_and_load import set_peft_model_state_dict
 
-        # We do model.model because the model is wrapped in a the LLM model wrapper.
-        # but this function expects a PeftModel.
+        # We do model.model because the model is wrapped in a the LLM model wrapper and this function
+        # expects a PeftModel object.
         set_peft_model_state_dict(model.model, state_dict)
         return model
 
@@ -252,6 +256,11 @@ class DeepSpeedStrategy(DDPStrategy):
         state: Union[nn.Module, Tuple[nn.Module, List[Dict]]],
         optimization_stage: Optional[Union[int, None]] = 3,
     ) -> nn.Module:
+        """Replaces the serialized model weights from the provided state object.
+
+        Model weights are only serialized for DeepSpeed Zero3 models. For all other DeepSpeed stages, we can just return
+        the state..
+        """
         if optimization_stage == 3:
             assert isinstance(state, tuple)
             model, model_weights = state

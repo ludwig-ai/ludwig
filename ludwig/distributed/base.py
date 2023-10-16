@@ -187,15 +187,28 @@ class DistributedStrategy(ABC):
 
     @classmethod
     def extract_adapter_weights_for_serialization(cls, model: nn.Module):
+        """Extracts the adapter weights from the model for serialization.
+
+        Applies to adapter based training with deepspeed only. This is a no-op for all other distributed strategies.
+        """
         return model
 
     def replace_adapter_weights_from_serialization(model: nn.Module):
+        """Replaces the adapter weights from the serialized checkpoint.
+
+        Applies to adapter based training with deepspeed only. This is a no-op for all other distributed strategies.
+        """
         return model
 
     @classmethod
     def extract_model_for_serialization(
         cls, model: nn.Module, optimization_stage: Optional[Union[int, None]] = None
     ) -> Union[nn.Module, Tuple[nn.Module, List[Dict]]]:
+        """Extracts the model weights from the model into numpy tensors for serialization into the Ray object
+        store.
+
+        Applies to deepspeed distributed training only. This is a no-op for all other distributed strategies.
+        """
         return model
 
     @classmethod
@@ -204,6 +217,10 @@ class DistributedStrategy(ABC):
         state: Union[nn.Module, Tuple[nn.Module, List[Dict]]],
         optimization_stage: Optional[Union[int, None]] = None,
     ) -> nn.Module:
+        """Inserts model weights stored as numpy arrays into the model.
+
+        Applies to deepspeed distributed training only. This is a no-op for all other distributed strategies.
+        """
         assert isinstance(state, nn.Module)
         return state
 
