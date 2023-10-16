@@ -108,7 +108,6 @@ trainer:
 )
 
 model = LudwigModel(config=fine_tuning_config, logging_level=logging.INFO)
-results = model.train(dataset=df)
 
 (
     train_stats,  # dictionary containing training statistics
@@ -116,23 +115,30 @@ results = model.train(dataset=df)
     output_directory,  # location of training results stored on disk
 ) = model.train(
     dataset=df,
-    experiment_name="alpaca_instruct",
+    experiment_name="code_alpaca_instruct",
     model_name="llama2_7b",
 )
 
-# list contents of output directory
-print("contents of output directory:", output_directory)
+# List contents of output directory
+print("Contents of output directory:", output_directory)
 for item in os.listdir(output_directory):
     print("\t", item)
 
+# Run Inference
 prediction_df = pd.DataFrame(
     [
-        {"instruction": "Create an array of length 5 which contains all even numbers between 1 and 10.", "input": ""},
+        {
+            "instruction": "Create an array of length 5 which contains all even numbers between 1 and 10.",
+            "input": "",
+        },
         {
             "instruction": "Create an array of length 15 containing numbers divisible by 3 up to 45.",
             "input": "",
         },
-        {"instruction": "Create a nested loop to print every combination of numbers between 0-9", "input": ""},
+        {
+            "instruction": "Create a nested loop to print every combination of numbers between 0-9",
+            "input": "",
+        },
         {
             "instruction": "Generate a function that computes the sum of the numbers in a given list",
             "input": "",
