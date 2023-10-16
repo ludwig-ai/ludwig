@@ -113,16 +113,20 @@ def load_pretrained_from_config(
         load_kwargs["torch_dtype"] = getattr(torch, config_obj.quantization.bnb_4bit_compute_dtype)
         load_kwargs["quantization_config"] = config_obj.quantization.to_bitsandbytes()
 
-    # Set device_map load kwarg based on backend and distributed strategy
-    backend_type = _get_backend_type_from_config(config_obj)
-    deepspeed_optimization_strategy = _get_deepspeed_optimization_stage_from_config(config_obj)
-    if backend_type == "ray" and deepspeed_optimization_strategy is not None and deepspeed_optimization_strategy <= 2:
-        # If using deepspeed stage 0, 1 or 2, we need to use the local rank device map
-        # This is safe to do since we only support single node multi-gpu training with deepspeed
-        load_kwargs["device_map"] = f"cuda:{torch.cuda.current_device()}"
-    else:
-        # Fallback to auto device map
-        load_kwargs["device_map"] = "auto"
+        # Set device_map load kwarg based on backend and distributed strategy
+        backend_type = _get_backend_type_from_config(config_obj)
+        deepspeed_optimization_strategy = _get_deepspeed_optimization_stage_from_config(config_obj)
+        if (
+            backend_type == "ray"
+            and deepspeed_optimization_strategy is not None
+            and deepspeed_optimization_strategy <= 2
+        ):
+            # If using deepspeed stage 0, 1 or 2, we need to use the local rank device map
+            # This is safe to do since we only support single node multi-gpu training with deepspeed
+            load_kwargs["device_map"] = f"cuda:{torch.cuda.current_device()}"
+        else:
+            # Fallback to auto device map
+            load_kwargs["device_map"] = "auto"
 
     if config_obj.model_parameters:
         # Add any model specific parameters to the load kwargs
@@ -313,7 +317,6 @@ class LLM(BaseModel):
 
     def prepare_for_inference(self):
         print("!!!!! PREPARE FOR INFERENCE")
-        # breakpoint()
         # if not self.model:
         # Reload the model onto the right device with the relevant load kwargs
         # Required for inference when using deepspeed stage <= 2.
@@ -325,7 +328,6 @@ class LLM(BaseModel):
     def prepare_for_training(self):
         print("!!!!! PREPARE FOR TRAINING")
         # TODO: this implementation will not work if resuming from a previous checkpoint. Need to fix this.
-        # breakpoint()
         if not self.model:
             # If we're using DS stage <= 2, we only load the model into memory once we're actually inside
             # of the training workers. For local backend and DS stage 3, we load the model into memory

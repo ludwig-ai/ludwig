@@ -216,7 +216,6 @@ def train_fn(
         # Deserialize the model (minus weights) from Plasma
         # Extract the weights from Plasma (without copying data)
         # Load the weights back into the model in-place on the current device (CPU)
-        # breakpoint()
         model = distributed.replace_model_from_serialization(
             ray.get(model_ref), optimization_stage=distributed_optimization_stage
         )
@@ -837,7 +836,6 @@ class RayPredictor(BasePredictor):
             # If the model is a fine-tuned LLM model that uses an adapter, we can just place the adapter
             # weights in the Ray object store and load them back on each worker since the underlying base
             # model's weights aren't modified.
-            # breakpoint()
             adapter_ref = None
             if self.model.trained_using_adapter:
                 adapter_ref = ray.put(dist_strategy.extract_adapter_weights_for_serialization(self.model))
