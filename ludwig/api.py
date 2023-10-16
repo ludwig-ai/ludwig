@@ -898,30 +898,36 @@ class LudwigModel:
         """A simple generate() method that directly uses the underlying transformers library to generate text."""
         import time
 
-        from ludwig.utils.tokenizers import HFTokenizer
-
         if self.config_obj.model_type != MODEL_LLM:
             raise ValueError(
                 f"Model type {self.config_obj.model_type} is not supported by this method. Only `llm` model type is "
                 "supported."
             )
-        # tokenizer = AutoTokenizer.from_pretrained(self.config_obj.base_model)
+
+        if not torch.cuda.is_available():
+            raise ValueError("GPU is not available.")
+
+        from ludwig.utils.tokenizers import HFTokenizer
+
         tokenizer = HFTokenizer(self.config_obj.base_model)
 
         start_time = time.time()
 
         with self.model.use_generation_config(generation_config):
             inputs = tokenizer.tokenizer(input_strings, return_tensors="pt", padding=True)
-            print(f"Finished tokenizing in: {time.time() - start_time}")
-            start_time = time.time()
-            inputs["input_ids"].to("cuda")
+            input_ids = inputs["input_ids"].to("cuda")
+            attention_mask = inputs["attention_mask"].to("cuda")
             with torch.no_grad():
-                outputs = self.model.model.generate(**inputs, generation_config=self.model.model.generation_config)
-                print(f"Finished generating in: {time.time() - start_time}")
-                print("Got outputs")
-                start_time = time.time()
+                outputs = self.model.model.generate(
+                    input_ids=input_ids,
+                    attention_mask=attention_mask,
+                    # NOTE: self.model.model.generation_config is not used here because it is the default
+                    # generation config that the CausalLM was initialized with, rather than the one set within the
+                    # context manager.
+                    generation_config=self.model.generation,
+                )
                 decoded_outputs = tokenizer.tokenizer.batch_decode(outputs, skip_special_tokens=True)
-                print(f"Finished decoding in: {time.time() - start_time}")
+                logging.info(f"Finished generating in: {(time.time() - start_time):.2f}s.")
                 return decoded_outputs
 
     def predict(
