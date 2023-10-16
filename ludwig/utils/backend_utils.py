@@ -1,5 +1,5 @@
 import os
-from typing import Union
+from typing import Any, Dict, Union
 
 from ludwig.schema.model_types.base import ModelConfig
 
@@ -29,9 +29,30 @@ def _get_backend_type_from_config(config_obj: ModelConfig) -> str:
     Returns:
         str: The backend type, defaulting to "local" if not explicitly specified.
     """
-    backend = config_obj.backend
+    # config_obj.backend maybe None if the backend was not explicitly set in the config
+    backend = config_obj.backend or {}
     backend_type = backend.get("type", "local")
     return backend_type
+
+
+def _get_optimization_stage_from_trainer_config(trainer_config: Dict[str, Any]) -> Union[int, None]:
+    """Retrieve the DeepSpeed optimization stage from the backend's trainer configuration.
+
+    This function extracts the DeepSpeed optimization stage from the backend's trainer configuration if the
+    distributed strategy type is set to "deepspeed".
+
+    Args:
+        trainer_config (Dict[str, Any]): The configuration dictionary for the backend's trainer.
+
+    Returns:
+        Union[int, None]: The DeepSpeed optimization stage (an integer), or None if DeepSpeed is not the
+        selected strategy or no stage is specified.
+    """
+    distributed_strategy_kwargs = trainer_config.get("strategy", {})
+    if distributed_strategy_kwargs.get("type") != "deepspeed":
+        return None
+
+    return distributed_strategy_kwargs.get("zero_optimization", {}).get("stage", 3)
 
 
 def _get_deepspeed_optimization_stage_from_config(config_obj: ModelConfig) -> Union[int, None]:
@@ -51,8 +72,4 @@ def _get_deepspeed_optimization_stage_from_config(config_obj: ModelConfig) -> Un
         return None
 
     backend_trainer_config = config_obj.backend.get("trainer", {})
-    strategy_config = backend_trainer_config.get("strategy", {})
-    if strategy_config.get("type") != "deepspeed":
-        return None
-
-    return strategy_config.get("zero_optimization", {}).get("stage", 3)
+    return _get_optimization_stage_from_trainer_config(backend_trainer_config)

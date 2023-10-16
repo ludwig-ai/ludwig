@@ -64,6 +64,7 @@ from ludwig.trainers.registry import (
 from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer, Trainer
 from ludwig.trainers.trainer_llm import RemoteLLMFineTuneTrainer, RemoteLLMTrainer
 from ludwig.types import HyperoptConfigDict, ModelConfigDict, TrainerConfigDict, TrainingSetMetadataDict
+from ludwig.utils.backend_utils import _get_optimization_stage_from_trainer_config
 from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
 from ludwig.utils.dataframe_utils import is_dask_series_or_df, set_index_name
 from ludwig.utils.fs_utils import get_fs_and_path
@@ -161,15 +162,6 @@ def _get_df_engine(processor):
     return engine_cls(**processor_kwargs)
 
 
-def _get_optimization_stage_from_trainer_config(trainer_config: Dict[str, Any]) -> Union[int, None]:
-    """Returns the DeepSpeed optimization stage from the backend's trainer config."""
-    distributed_strategy_kwargs = trainer_config.get("strategy", {})
-    if distributed_strategy_kwargs.get("type") != "deepspeed":
-        return None
-
-    return distributed_strategy_kwargs.get("zero_optimization", {}).get("stage", 3)
-
-
 def _local_size() -> int:
     return torch.cuda.device_count() if torch.cuda.is_available() else 1
 
@@ -188,7 +180,6 @@ def train_fn(
     distributed = init_dist_strategy(distributed_strategy)
 
     # If the distributed strategy is not DeepSpeed, this is set to None.
-    # TODO: Consider renaming this to deepspeed_optimization_stage
     distributed_optimization_stage = distributed.optimization_stage
     try:
         train_shard = RayDatasetShard(
@@ -687,7 +678,6 @@ def eval_fn(
     distributed = init_dist_strategy(distributed_strategy)
 
     # If the distributed strategy is not DeepSpeed, this is set to None.
-    # TODO: Consider renaming this to deepspeed_optimization_stage
     distributed_optimization_stage = distributed.optimization_stage
     try:
         eval_shard = RayDatasetShard(
