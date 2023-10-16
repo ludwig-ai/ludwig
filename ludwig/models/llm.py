@@ -78,6 +78,55 @@ class DictWrapper:
         self.obj.update(modules)
 
 
+def _should_initialize_model_on_driver(config_obj: LLMModelConfig) -> bool:
+    """Determine if the model should be loaded on the driver or inside training workers.
+
+    This function checks the configuration to decide whether the model should be loaded into memory on the driver
+    or within training workers. If using Ray as the backend and DeepSpeed optimization stage 0, 1, or 2, the model
+    is loaded within the workers since the GPUs need to visible within the RayTrainer process; otherwise, it's
+    loaded at class initialization time.
+
+    Args:
+        config_obj (LLMModelConfig): The language model configuration.
+
+    Returns:
+        bool: True if the model should be loaded on the driver, False otherwise.
+    """
+    backend_type = _get_backend_type_from_config(config_obj)
+    deepspeed_optimization_strategy = _get_deepspeed_optimization_stage_from_config(config_obj)
+    if backend_type == "ray" and deepspeed_optimization_strategy is not None and deepspeed_optimization_strategy <= 2:
+        # If using deepspeed stage 0, 1 or 2, we only load the model into memory once we're actually inside
+        # of the training workers.
+        return False
+    # If using local backend or deepspeed stage 3, we load the model into memory upon class initialization.
+    return True
+
+
+def _get_device_map(config_obj: LLMModelConfig) -> str:
+    """Get the appropriate device map configuration based on backend and strategy.
+
+    This function determines the device map configuration to be used, which is essential for GPU allocation, based
+    on the selected backend and distributed strategy. If Ray is used as the backend and DeepSpeed optimization stage
+    is 0, 1, or 2, it utilizes the local rank device map, suitable for single-node multi-GPU training; otherwise,
+    it defaults to 'auto'.
+
+    Args:
+        config_obj (LLMModelConfig): The language model configuration.
+
+    Returns:
+        str: The device map configuration, either 'cuda:<current_device>' or 'auto'.
+    """
+    # Set device_map load kwarg based on backend and distributed strategy
+    backend_type = _get_backend_type_from_config(config_obj)
+    deepspeed_optimization_strategy = _get_deepspeed_optimization_stage_from_config(config_obj)
+    if backend_type == "ray" and deepspeed_optimization_strategy is not None and deepspeed_optimization_strategy <= 2:
+        # If using deepspeed stage 0, 1 or 2, we need to use the local rank device map
+        # This is safe to do since we only support single node multi-gpu training with deepspeed
+        return f"cuda:{torch.cuda.current_device()}"
+    # Fall back to the default device map
+    return "auto"
+
+
 def load_pretrained_from_config(
     config_obj: LLMModelConfig,
     model_config: Optional[AutoConfig] = None,
@@ -88,21 +137,7 @@ def load_pretrained_from_config(
         # Apply quanitzation configuration at model load time
         load_kwargs["torch_dtype"] = getattr(torch, config_obj.quantization.bnb_4bit_compute_dtype)
         load_kwargs["quantization_config"] = config_obj.quantization.to_bitsandbytes()
-
-        # Set device_map load kwarg based on backend and distributed strategy
-        backend_type = _get_backend_type_from_config(config_obj)
-        deepspeed_optimization_strategy = _get_deepspeed_optimization_stage_from_config(config_obj)
-        if (
-            backend_type == "ray"
-            and deepspeed_optimization_strategy is not None
-            and deepspeed_optimization_strategy <= 2
-        ):
-            # If using deepspeed stage 0, 1 or 2, we need to use the local rank device map
-            # This is safe to do since we only support single node multi-gpu training with deepspeed
-            load_kwargs["device_map"] = f"cuda:{torch.cuda.current_device()}"
-        else:
-            # Fallback to auto device map
-            load_kwargs["device_map"] = "auto"
+        load_kwargs["device_map"] = _get_device_map(config_obj)
 
     if config_obj.model_parameters:
         # Add any model specific parameters to the load kwargs
@@ -147,21 +182,12 @@ class LLM(BaseModel):
         self.model_name = self.config_obj.base_model
         self.model_config = AutoConfig.from_pretrained(self.config_obj.base_model)
 
-        backend_type = _get_backend_type_from_config(config_obj)
-        deepspeed_optimization_strategy = _get_deepspeed_optimization_stage_from_config(config_obj)
-        if (
-            backend_type == "ray"
-            and deepspeed_optimization_strategy is not None
-            and deepspeed_optimization_strategy <= 2
-        ):
-            # If using deepspeed stage 0, 1 or 2, we only load the model into memory once we're actually inside
-            # of the training workers.
-            self.model = None
-            self.curr_device = torch.device("cpu")
-        else:
-            # If using local backend or deepspeed stage 3, we load the model into memory upon class initialization.
+        if _should_initialize_model_on_driver(self.config_obj):
             self.model = load_pretrained_from_config(self.config_obj, model_config=self.model_config)
             self.curr_device = next(self.model.parameters()).device
+        else:
+            self.model = None
+            self.curr_device = torch.device("cpu")
 
         self.context_len = get_context_len(self.model_config)
 
