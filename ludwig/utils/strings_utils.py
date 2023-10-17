@@ -372,7 +372,7 @@ def create_vocabulary(
     prompt_template_num_tokens = -1
     if prompt_template:
         prompt_without_bracketed_elements = remove_bracketed_elements(prompt_template)
-        prompt_template_num_tokens = len(tokenizer(prompt_without_bracketed_elements, add_special_symbols=True))
+        prompt_template_num_tokens = len(tokenizer(prompt_without_bracketed_elements))
 
     # Tokenize the data.
     def process_line(line):
