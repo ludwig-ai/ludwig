@@ -143,6 +143,9 @@ class DeepSpeedStrategy(DDPStrategy):
             return model
 
         # Only Zero3 models need to be wrapped in a DeepSpeed engine for inference.
+        # DeepSpeed ZeRO Inference supports ZeRO stage 3 with ZeRO-Infinity. It uses the same ZeRO protocol as
+        # training, but it doesn’t use an optimizer and a lr scheduler and only stage 3 is relevant.
+        # Docs: https://huggingface.co/docs/transformers/main_classes/deepspeed#zero-inference
         ds_config = {}
         model_engine = deepspeed.init_inference(model=model, config=ds_config)
         return model_engine
