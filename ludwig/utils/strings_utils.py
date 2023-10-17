@@ -286,30 +286,6 @@ def _get_vocabulary(
             for idx in range(tokenizer.tokenizer.vocab_size):
                 vocab.append(tokenizer.tokenizer._convert_id_to_token(idx))
             vocab += tokenizer.tokenizer.added_tokens_encoder.keys()
-
-        pad_token = tokenizer.get_pad_token()
-        unk_token = tokenizer.get_unk_token()
-
-        if unk_token is None:
-            logger.warning(
-                "No unknown token found in HuggingFace tokenizer. Adding one. "
-                + "NOTE: This will change the vocabulary size and may affect model "
-                + "performance, particularly if the model weights are frozen."
-            )
-            vocab = [unknown_symbol] + vocab
-        else:
-            unknown_symbol = unk_token
-
-        if pad_token is None and add_special_symbols:
-            logger.warning(
-                "No padding token found in HuggingFace tokenizer. Adding one. "
-                + "NOTE: This will change the vocabulary size and may affect model "
-                + "performance, particularly if the model weights are frozen."
-            )
-            vocab = [padding_symbol] + vocab
-        else:
-            padding_symbol = pad_token
-
         return vocab
 
     # The tokenizer has a preset vocabulary.
