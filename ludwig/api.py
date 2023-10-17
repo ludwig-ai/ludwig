@@ -909,7 +909,12 @@ class LudwigModel:
 
         from ludwig.utils.tokenizers import HFTokenizer
 
-        tokenizer = HFTokenizer(self.config_obj.base_model)
+        if not self.model.model.config.is_encoder_decoder:
+            padding_side = "left"
+        else:
+            padding_side = "right"
+
+        tokenizer = HFTokenizer(self.config_obj.base_model, padding_side=padding_side)
 
         start_time = time.time()
 
@@ -1035,7 +1040,7 @@ class LudwigModel:
 
                     logger.info(f"Saved to: {output_directory}")
 
-            print(f"Finished decoding in: {time.time() - start_time}")
+            print(f"Finished decoding in: {(time.time() - start_time):.2f}s.")
             return converted_postproc_predictions, output_directory
 
     def evaluate(
