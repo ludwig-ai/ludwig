@@ -275,7 +275,7 @@ def _get_vocabulary(
     if tokenizer_type == "hf_tokenizer":
         try:
             vocab = tokenizer.get_vocab()
-            vocab = list(vocab.keys())
+            return list(vocab.keys())
         except NotImplementedError:
             logger.warning(
                 "HuggingFace tokenizer does not have a get_vocab() method. "
@@ -286,7 +286,7 @@ def _get_vocabulary(
             for idx in range(tokenizer.tokenizer.vocab_size):
                 vocab.append(tokenizer.tokenizer._convert_id_to_token(idx))
             vocab += tokenizer.tokenizer.added_tokens_encoder.keys()
-        return vocab
+            return vocab
 
     # The tokenizer has a preset vocabulary.
     if hasattr(tokenizer, "get_vocab"):
