@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import logging
 import os
 import warnings
-from typing import Any, Dict, List, Mapping, Optional, Tuple, TYPE_CHECKING, Union
+from typing import Any, Mapping, TYPE_CHECKING
 
 import deepspeed
 import deepspeed.comm
@@ -43,10 +45,10 @@ warnings.filterwarnings(
 class DeepSpeedStrategy(DDPStrategy):
     def __init__(
         self,
-        zero_optimization: Optional[Dict[str, Any]] = None,
-        fp16: Optional[Dict[str, Any]] = None,
-        bf16: Optional[Dict[str, Any]] = None,
-        compression_training: Optional[Dict[str, Any]] = None,
+        zero_optimization: dict[str, Any] = None,
+        fp16: dict[str, Any] = None,
+        bf16: dict[str, Any] = None,
+        compression_training: dict[str, Any] = None,
         **kwargs,
     ):
         # If we're initializing from a `deepspeed` CLI command, deepspeed will have already been initialized, as
@@ -75,9 +77,9 @@ class DeepSpeedStrategy(DDPStrategy):
     def prepare(
         self,
         model: nn.Module,
-        trainer_config: "ECDTrainerConfig",
+        trainer_config: ECDTrainerConfig,
         base_learning_rate: float,
-    ) -> Tuple[nn.Module, Optimizer]:
+    ) -> tuple[nn.Module, Optimizer]:
         # If `batch_size=auto`, we set to MIN_POSSIBLE_BATCH_SIZE temporarily until auto-tuning adjusts it`
         # We can really set it to be whatever we want, as it will be overridden by the auto-tuning.
         batch_size = (
@@ -145,7 +147,7 @@ class DeepSpeedStrategy(DDPStrategy):
         model_engine = deepspeed.init_inference(model=model, config=ds_config)
         return model_engine
 
-    def to_device(self, model, device: Optional[torch.device] = None) -> nn.Module:
+    def to_device(self, model, device: torch.device = None) -> nn.Module:
         return model
 
     def backward(self, loss: torch.Tensor, model: nn.Module):
@@ -209,8 +211,8 @@ class DeepSpeedStrategy(DDPStrategy):
         self,
         dist_model: nn.Module,
         model: nn.Module,
-        optimizer: Optional[Optimizer] = None,
-        scheduler: Optional["LRScheduler"] = None,
+        optimizer: Optimizer = None,
+        scheduler: LRScheduler = None,
     ) -> Checkpoint:
         """Creates a checkpoint handle for saving and loading checkpoints."""
         if self.zero_optimization_stage != 3:
@@ -224,7 +226,7 @@ class DeepSpeedStrategy(DDPStrategy):
         return DeepSpeedCheckpoint(self, dist_model, optimizer, scheduler)
 
     @classmethod
-    def extract_adapter_weights_for_serialization(cls, model: nn.Module):
+    def extract_adapter_weights_for_serialization(cls, model: nn.Module) -> Mapping[str, Any]:
         """Grabs the adapter weight tensors from the model for serialization."""
         from peft.utils.save_and_load import get_peft_model_state_dict
 
@@ -234,8 +236,8 @@ class DeepSpeedStrategy(DDPStrategy):
 
     @classmethod
     def extract_model_for_serialization(
-        cls, model: nn.Module, optimization_stage: Optional[Union[int, None]] = 3
-    ) -> Union[nn.Module, Tuple[nn.Module, List[Dict]]]:
+        cls, model: nn.Module, optimization_stage: int | None = None
+    ) -> nn.Module | tuple[nn.Module, list[dict]]:
         """Extracts the models weights from the model as numpy tensors for serialization into the Ray object store.
 
         Model weights are only serialized for DeepSpeed Zero3 models. For all other DeepSpeed stages, we can just return
@@ -247,7 +249,7 @@ class DeepSpeedStrategy(DDPStrategy):
         return extract_tensors(model)
 
     @classmethod
-    def replace_adapter_weights_from_serialization(cls, model: nn.Module, state_dict: Dict[str, Any]):
+    def replace_adapter_weights_from_serialization(cls, model: nn.Module, state_dict: dict[str, Any]) -> nn.Module:
         """Replaces the adapter weight tensors in the model from the provided state dictionary."""
         from peft.utils.save_and_load import set_peft_model_state_dict
 
@@ -259,8 +261,8 @@ class DeepSpeedStrategy(DDPStrategy):
     @classmethod
     def replace_model_from_serialization(
         cls,
-        state: Union[nn.Module, Tuple[nn.Module, List[Dict]]],
-        optimization_stage: Optional[Union[int, None]] = 3,
+        state: nn.Module | tuple[nn.Module, list[dict]],
+        optimization_stage: int | None = None,
     ) -> nn.Module:
         """Replaces the serialized model weights from the provided state object.
 
@@ -278,7 +280,7 @@ class DeepSpeedStrategy(DDPStrategy):
         return state
 
     @property
-    def optimization_stage(self) -> Union[int, None]:
+    def optimization_stage(self) -> int | None:
         return self.zero_optimization_stage
 
 
@@ -288,7 +290,7 @@ class DeepSpeedCheckpoint(Checkpoint):
             # Checkpoints need to be written on every rank, but the directory only needs to be created once per node.
             super().prepare(directory)
 
-    def load(self, save_path: str, device: Optional[torch.device] = None) -> bool:
+    def load(self, save_path: str, device: torch.device = None) -> bool:
         """Load a checkpoint.
 
         For DeepSpeed, we need every worker to independently load back the model weights, as the checkpoints themselves
@@ -315,7 +317,7 @@ class DeepSpeedCheckpoint(Checkpoint):
 
         self.model.save_checkpoint(save_path, client_state=client_state, **kwargs)
 
-    def get_state_for_inference(self, save_path: str, device: Optional[torch.device] = None) -> Mapping[str, Any]:
+    def get_state_for_inference(self, save_path: str, device: torch.device = None) -> Mapping[str, Any]:
         if self.model.zero_optimization_stage() == 3:
             return get_fp32_state_dict_from_zero_checkpoint(save_path)
 

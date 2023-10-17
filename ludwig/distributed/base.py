@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import contextlib
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TYPE_CHECKING, Union
+from typing import Any, Callable, Mapping, TYPE_CHECKING
 
 import torch
 from torch import nn
@@ -31,9 +33,9 @@ class DistributedStrategy(ABC):
     def prepare(
         self,
         model: nn.Module,
-        trainer_config: "ECDTrainerConfig",
+        trainer_config: ECDTrainerConfig,
         base_learning_rate: float,
-    ) -> Tuple[nn.Module, Optimizer]:
+    ) -> tuple[nn.Module, Optimizer]:
         """Modifies the model to support distributed training and creates the optimizer.
 
         Args:
@@ -49,7 +51,7 @@ class DistributedStrategy(ABC):
     def prepare_for_inference(self, model: nn.Module) -> nn.Module:
         return model
 
-    def to_device(self, model: "BaseModel", device: Optional[torch.device] = None) -> nn.Module:
+    def to_device(self, model: BaseModel, device: torch.device | None = None) -> nn.Module:
         return model.to_device(device if device is not None else get_torch_device())
 
     def backward(self, loss: torch.Tensor, model: nn.Module):
@@ -104,7 +106,7 @@ class DistributedStrategy(ABC):
         pass
 
     @abstractmethod
-    def broadcast_object(self, v: Any, name: Optional[str] = None) -> Any:
+    def broadcast_object(self, v: Any, name: str | None = None) -> Any:
         pass
 
     @abstractmethod
@@ -128,17 +130,17 @@ class DistributedStrategy(ABC):
 
     @classmethod
     @abstractmethod
-    def gather_all_tensors_fn(cls) -> Optional[Callable]:
+    def gather_all_tensors_fn(cls) -> Callable | None:
         pass
 
     @classmethod
     @abstractmethod
-    def get_ray_trainer_backend(cls, **kwargs) -> Optional[Any]:
+    def get_ray_trainer_backend(cls, **kwargs) -> Any | None:
         pass
 
     @classmethod
     @abstractmethod
-    def get_trainer_cls(cls, backend_config: "BackendConfig") -> Tuple[Type["DataParallelTrainer"], Dict[str, Any]]:
+    def get_trainer_cls(cls, backend_config: BackendConfig) -> tuple[type[DataParallelTrainer], dict[str, Any]]:
         pass
 
     @abstractmethod
@@ -178,22 +180,22 @@ class DistributedStrategy(ABC):
         self,
         dist_model: nn.Module,
         model: nn.Module,
-        optimizer: Optional[Optimizer] = None,
-        scheduler: Optional["LRScheduler"] = None,
-    ) -> "Checkpoint":
+        optimizer: Optimizer | None = None,
+        scheduler: LRScheduler | None = None,
+    ) -> Checkpoint:
         from ludwig.utils.checkpoint_utils import MultiNodeCheckpoint
 
         return MultiNodeCheckpoint(self, model, optimizer, scheduler)
 
     @classmethod
-    def extract_adapter_weights_for_serialization(cls, model: nn.Module):
+    def extract_adapter_weights_for_serialization(cls, model: nn.Module) -> Mapping[str, Any]:
         """Extracts the adapter weights from the model for serialization.
 
         Applies to adapter based training with deepspeed only. This is a no-op for all other distributed strategies.
         """
         return model
 
-    def replace_adapter_weights_from_serialization(model: nn.Module):
+    def replace_adapter_weights_from_serialization(model: nn.Module) -> nn.Module:
         """Replaces the adapter weights from the serialized checkpoint.
 
         Applies to adapter based training with deepspeed only. This is a no-op for all other distributed strategies.
@@ -202,8 +204,8 @@ class DistributedStrategy(ABC):
 
     @classmethod
     def extract_model_for_serialization(
-        cls, model: nn.Module, optimization_stage: Optional[Union[int, None]] = None
-    ) -> Union[nn.Module, Tuple[nn.Module, List[Dict]]]:
+        cls, model: nn.Module, optimization_stage: int | None = None
+    ) -> nn.Module | tuple[nn.Module, list[dict]]:
         """Extracts the model weights from the model into numpy tensors for serialization into the Ray object
         store.
 
@@ -214,8 +216,8 @@ class DistributedStrategy(ABC):
     @classmethod
     def replace_model_from_serialization(
         cls,
-        state: Union[nn.Module, Tuple[nn.Module, List[Dict]]],
-        optimization_stage: Optional[Union[int, None]] = None,
+        state: nn.Module | tuple[nn.Module, list[dict]],
+        optimization_stage: int | None = None,
     ) -> nn.Module:
         """Inserts model weights stored as numpy arrays into the model.
 
@@ -225,7 +227,7 @@ class DistributedStrategy(ABC):
         return state
 
     @property
-    def optimization_stage(self) -> Union[int, None]:
+    def optimization_stage(self) -> int | None:
         """This is used in particular by DeepSpeed, which has a different stages for different optimizations for
         training.
 
@@ -238,9 +240,9 @@ class LocalStrategy(DistributedStrategy):
     def prepare(
         self,
         model: nn.Module,
-        trainer_config: "ECDTrainerConfig",
+        trainer_config: ECDTrainerConfig,
         base_learning_rate: float,
-    ) -> Tuple[nn.Module, Optimizer]:
+    ) -> tuple[nn.Module, Optimizer]:
         return model, create_optimizer(model, trainer_config.optimizer, base_learning_rate)
 
     def size(self) -> int:
@@ -270,7 +272,7 @@ class LocalStrategy(DistributedStrategy):
     def sync_optimizer(self, optimizer: Optimizer):
         pass
 
-    def broadcast_object(self, v: Any, name: Optional[str] = None) -> Any:
+    def broadcast_object(self, v: Any, name: str | None = None) -> Any:
         return v
 
     def wait_optimizer_synced(self, optimizer: Optimizer):
@@ -291,15 +293,15 @@ class LocalStrategy(DistributedStrategy):
         return False
 
     @classmethod
-    def gather_all_tensors_fn(cls) -> Optional[Callable]:
+    def gather_all_tensors_fn(cls) -> Callable | None:
         return None
 
     @classmethod
-    def get_ray_trainer_backend(cls, **kwargs) -> Optional[Any]:
+    def get_ray_trainer_backend(cls, **kwargs) -> Any | None:
         return None
 
     @classmethod
-    def get_trainer_cls(cls, backend_config: "BackendConfig") -> Tuple[Type["DataParallelTrainer"], Dict[str, Any]]:
+    def get_trainer_cls(cls, backend_config: BackendConfig) -> tuple[type[DataParallelTrainer], dict[str, Any]]:
         raise ValueError("Cannot construct a trainer from a local strategy.")
 
     def shutdown(self):
