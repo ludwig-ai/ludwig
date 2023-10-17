@@ -78,7 +78,7 @@ def get_decoded_targets_and_predictions(
 
 
 def _get_metadata_reconciled_max_sequence_length(
-    preprocessing_parameters: Dict, vocabulary: List[str]
+    preprocessing_parameters: Dict, vocabulary: Vocabulary
 ) -> Tuple[int, int]:
     """Reconciles the different ways sequence length can be specified in preprocessing parameters.
 
@@ -164,7 +164,8 @@ class TextFeatureMixin(BaseFeatureMixin):
             raise ValueError(
                 f"The input feature's max sequence length ({max_sequence_length}) is shorter than the prompt template "
                 f"length ({vocabulary.prompt_template_num_tokens}). This will truncate all unique information. "
-                "Consider making the template shorter or increasing the input feature's max sequence length."
+                "Consider making the template shorter or increasing the input feature's max sequence length to a "
+                f"value >> {vocabulary.prompt_template_num_tokens}."
             )
 
         logger.info(f"Max sequence length is {max_sequence_length} for feature '{column.name}'")

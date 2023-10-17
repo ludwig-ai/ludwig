@@ -86,6 +86,7 @@ class BaseFeatureMixin(ABC):
         """Returns a dictionary of feature metadata.
 
         Args:
+            config: Ludwig model config dict.
             column: Pandas column of values.
             preprocessing_parameters: Preprocessing configuration for this feature.
             backend: (Union[Backend, str]) Backend to use for feature data processing.

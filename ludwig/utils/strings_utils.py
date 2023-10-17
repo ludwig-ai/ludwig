@@ -262,8 +262,14 @@ def _get_vocabulary(
 ) -> Optional[List[str]]:
     """Returns the vocabulary from the tokenizer_type, tokenizer, or vocab_file.
 
+    If the `tokenizer_type` is 'hf_tokenizer', then the set vocabulary from the tokenizer is used.
+
     If there's no vocab_file or if the tokenizer has no set vocabulary (e.g. space_punct), then the vocabulary is
-    determined from the tokenized data.
+    determined from the tokenized data (unit_counts).
+
+    The UNKNOWN special symbol is always included in the final vocabulary. Additional special symbols (PADDING, START,
+    STOP) are added if add_special_symbols=True. If the tokenizer is a pre-trained huggingface tokenizer, then the
+    special symbols are taken from the tokenizer's vocabulary.
     """
     # Pre-trained huggingface tokenizer. Use the pre-existing vocabulary and special symbols.
     if tokenizer_type == "hf_tokenizer":
@@ -315,11 +321,15 @@ def _get_vocabulary(
     if vocab_file is not None:
         return load_vocabulary(vocab_file)
 
-    print(f"padding_symbol: {padding_symbol}")
-
     # The tokenizer had no preset vocabulary, for example space_punct.
     # Compute the vocabulary from tokenized data.
     return [unit for unit, _ in unit_counts.most_common(num_most_frequent)]
+
+
+def remove_bracketed_elements(prompt_template: str) -> str:
+    """Example: <The {pronoun} sits on the {object}> -> <The  sits on the >."""
+    pattern = r"\{.*?\}"
+    return re.sub(pattern, "", prompt_template)
 
 
 def create_vocabulary(
@@ -385,7 +395,8 @@ def create_vocabulary(
     # Number of tokens in template.
     prompt_template_num_tokens = -1
     if prompt_template:
-        prompt_template_num_tokens = len(tokenizer(prompt_template))
+        prompt_without_bracketed_elements = remove_bracketed_elements(prompt_template)
+        prompt_template_num_tokens = len(tokenizer(prompt_without_bracketed_elements, add_special_symbols=True))
 
     # Tokenize the data.
     def process_line(line):
