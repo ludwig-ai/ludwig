@@ -841,8 +841,10 @@ class HFTokenizer(BaseTokenizer):
 
     def _set_pad_token(self) -> None:
         """Sets the pad token and pad token ID for the tokenizer.
+
         If there is no pad token, then set one by default.
         If there is no pad token index, then set it to 0.
+
         Notes:
         - (geoffrey): gpt2 has no pad token. Recommendation is to use eos token instead.
             - https://github.com/huggingface/transformers/issues/2630#issuecomment-1290809338
