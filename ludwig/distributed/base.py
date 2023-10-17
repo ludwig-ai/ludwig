@@ -218,7 +218,7 @@ class DistributedStrategy(ABC):
         cls,
         state: nn.Module | tuple[nn.Module, list[dict]],
         optimization_stage: int | None = None,
-    ) -> nn.Module:
+    ) -> nn.Module | tuple[nn.Module, list[dict]]:
         """Inserts model weights stored as numpy arrays into the model.
 
         Applies to deepspeed distributed training only. This is a no-op for all other distributed strategies.

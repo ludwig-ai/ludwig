@@ -263,21 +263,21 @@ class DeepSpeedStrategy(DDPStrategy):
         cls,
         state: nn.Module | tuple[nn.Module, list[dict]],
         optimization_stage: int | None = None,
-    ) -> nn.Module:
+    ) -> nn.Module | tuple[nn.Module, list[dict]]:
         """Replaces the serialized model weights from the provided state object.
 
         Model weights are only serialized for DeepSpeed Zero3 models. For all other DeepSpeed stages, we can just return
         the state.
         """
-        if optimization_stage == 3:
-            assert isinstance(state, tuple)
-            model, model_weights = state
-            replace_tensors(model, model_weights, torch.device("cpu"))
-            return model
+        if optimization_stage != 3:
+            # For DeepSpeed stages 0, 1 and 2, we can just return the state.
+            assert isinstance(state, nn.Module)
+            return state
 
-        # For all other DeepSpeed stages, we can just return the state.
-        assert isinstance(state, nn.Module)
-        return state
+        assert isinstance(state, tuple)
+        model, model_weights = state
+        replace_tensors(model, model_weights, torch.device("cpu"))
+        return model
 
     @property
     def optimization_stage(self) -> int | None:

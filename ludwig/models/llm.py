@@ -319,9 +319,7 @@ class LLM(BaseModel):
 
     @property
     def trained_using_adapter(self) -> bool:
-        if self.config_obj.adapter:
-            return True
-        return False
+        return bool(self.config_obj.adapter)
 
     def prepare_for_inference(self):
         # Reload the model onto the right device with the relevant load kwargs
