@@ -933,6 +933,8 @@ class LudwigModel:
                 )
                 decoded_outputs = tokenizer.tokenizer.batch_decode(outputs, skip_special_tokens=True)
                 logging.info(f"Finished generating in: {(time.time() - start_time):.2f}s.")
+                if len(decoded_outputs) == 1:
+                    return decoded_outputs[0]
                 return decoded_outputs
 
     def predict(

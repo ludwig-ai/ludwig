@@ -840,40 +840,27 @@ class HFTokenizer(BaseTokenizer):
         return self.tokenizer.unk_token
 
     def _set_pad_token(self) -> None:
-        """Sets the pad token and pad token ID for the tokenizer."""
+        """Sets the pad token and pad token ID for the tokenizer.
 
-        from transformers import (
-            CodeLlamaTokenizer,
-            CodeLlamaTokenizerFast,
-            GPT2Tokenizer,
-            GPT2TokenizerFast,
-            LlamaTokenizer,
-            LlamaTokenizerFast,
-        )
-
-        # Tokenizers might have the pad token id attribute since they tend to use the same base class, but
-        # it can be set to None so we check for this explicitly.
-        if hasattr(self.tokenizer, "pad_token_id") and self.tokenizer.pad_token_id is not None:
-            return
-
+        If there is no pad token, then set one by default. If there is no pad token index, then set it to 0.
+        """
         # HACK(geoffrey): gpt2 has no pad token. Recommendation is to use eos token instead.
         # https://github.com/huggingface/transformers/issues/2630#issuecomment-1290809338
         # https://github.com/huggingface/transformers/issues/2648#issuecomment-616177044
-        if any(
-            isinstance(self.tokenizer, t)
-            for t in [
-                GPT2Tokenizer,
-                GPT2TokenizerFast,
-                LlamaTokenizer,
-                LlamaTokenizerFast,
-                CodeLlamaTokenizer,
-                CodeLlamaTokenizerFast,
-            ]
-        ):
-            if hasattr(self.tokenizer, "eos_token") and self.tokenizer.eos_token is not None:
-                logger.warning("No padding token id found. Using eos_token as pad_token.")
-                self.tokenizer.pad_token = self.tokenizer.eos_token
-                self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
+        # NOTE(Justin): Using the EOS token in place of the pad token causes an issue with HF model.generate() when
+        # there are multiple examples in the batch.
+        # https://github.com/facebookresearch/llama/issues/380#issuecomment-1716832417
+        # Recommendation is to use [PAD] token.
+        if self.tokenizer.pad_token is None:
+            # NOTE: Calling tokenizer.pad_token prints this: "Using pad_token, but it is not set yet."
+            # Input Target PAD (adding a pad token at the end is how SFT works)
+            # Original fine-tuning PEFT notebooks.
+            # Input Target EOS
+            # Specific to llama.
+            # Arnav: Tried EOS instead of PAD, and get worse results?
+            logger.warning("No pad token for the tokenizer. Using [PAD] as pad token.")
+            self.tokenizer.pad_token = "[PAD]"
+            self.tokenizer.pad_token_id = 0
 
         # Incase any HF tokenizer does not have pad token ID, just default to using 0
         # as the pad_token_id.
