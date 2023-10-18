@@ -6,20 +6,10 @@ scipy>=0.18
 tabulate>=0.7
 scikit-learn
 tqdm
-# TODO: <Alex>ALEX</Alex>
 torch>=1.13.0
-# TODO: <Alex>ALEX</Alex>
-# TODO: <Alex>ALEX</Alex>
-#torch>=1.13.0,<=2.0.1
-# TODO: <Alex>ALEX</Alex>
 torchaudio
 torchtext
-# TODO: <Alex>ALEX</Alex>
 torchvision
-# TODO: <Alex>ALEX</Alex>
-# TODO: <Alex>ALEX</Alex>
-#torchvision<0.16
-# TODO: <Alex>ALEX</Alex>
 pydantic<2.0
 transformers>=4.33.2
 tokenizers>=0.13.3
