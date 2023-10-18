@@ -30,7 +30,12 @@ jobs:
             torchscript-version: 1.10.2
             ray-version: 2.2.0
           - python-version: "3.9"
-            pytorch-version: 2.0.1
+            # TODO: <Alex>ALEX</Alex>
+            # pytorch-version: 2.0.1
+            # TODO: <Alex>ALEX</Alex>
+            # TODO: <Alex>ALEX</Alex>
+            pytorch-version: 2.1.0
+            # TODO: <Alex>ALEX</Alex>
             torchscript-version: 1.10.2
             ray-version: 2.3.0
           - python-version: "3.10"
