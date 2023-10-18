@@ -930,68 +930,68 @@ def test_torchscript_preproc_gpu(tmpdir, csv_filename, feature_fn):
         assert values.is_cuda, f'feature "{name}" tensors are not on GPU'
 
 
-# @pytest.mark.skipif(torch.cuda.device_count() == 0, reason="test requires at least 1 gpu")
-# @pytest.mark.skipif(not torch.cuda.is_available(), reason="test requires gpu support")
-# @pytest.mark.distributed
-# @pytest.mark.parametrize(
-#     "feature_fn",
-#     [
-#         number_feature,
-#         category_feature,
-#         binary_feature,
-#         set_feature,
-#         vector_feature,
-#         sequence_feature,
-#         text_feature,
-#     ],
-# )
-# # TODO: <Alex>ALEX</Alex>
-# # @pytest.mark.integration_tests_e
-# # TODO: <Alex>ALEX</Alex>
-# # TODO: <Alex>ALEX</Alex>
-# @pytest.mark.integration_tests_e_issue_3734
-# # TODO: <Alex>ALEX</Alex>
-# def test_torchscript_postproc_gpu(tmpdir, csv_filename, feature_fn):
-#     data_csv_path = os.path.join(tmpdir, csv_filename)
-#
-#     feature_kwargs = {}
-#     if feature_fn in {category_feature, set_feature, sequence_feature, text_feature}:
-#         feature_kwargs["vocab_size"] = 3
-#
-#     input_features = [
-#         number_feature(),
-#     ]
-#     output_features = [
-#         feature_fn(**feature_kwargs),
-#     ]
-#
-#     config = {
-#         "input_features": input_features,
-#         "output_features": output_features,
-#         TRAINER: {"epochs": 2, BATCH_SIZE: 128},
-#     }
-#     backend = RAY
-#     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
-#     _, script_module = initialize_torchscript_module(
-#         tmpdir,
-#         config,
-#         backend,
-#         training_data_csv_path,
-#         device=torch.device("cuda"),
-#     )
-#
-#     df = pd.read_csv(training_data_csv_path)
-#     inputs = to_inference_module_input_from_dataframe(
-#         df,
-#         config,
-#         load_paths=True,
-#         device=torch.device("cuda"),
-#     )
-#     postproc_outputs = script_module(inputs)
-#
-#     for feature_name, feature_outputs in postproc_outputs.items():
-#         for output_name, output_values in feature_outputs.items():
-#             assert utils.is_all_tensors_cuda(output_values), f"{feature_name}.{output_name} tensors are not on GPU"
+@pytest.mark.skipif(torch.cuda.device_count() == 0, reason="test requires at least 1 gpu")
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="test requires gpu support")
+@pytest.mark.distributed
+@pytest.mark.parametrize(
+    "feature_fn",
+    [
+        number_feature,
+        category_feature,
+        binary_feature,
+        set_feature,
+        vector_feature,
+        sequence_feature,
+        text_feature,
+    ],
+)
+# TODO: <Alex>ALEX</Alex>
+# @pytest.mark.integration_tests_e
+# TODO: <Alex>ALEX</Alex>
+# TODO: <Alex>ALEX</Alex>
+@pytest.mark.integration_tests_e_issue_3734
+# TODO: <Alex>ALEX</Alex>
+def test_torchscript_postproc_gpu(tmpdir, csv_filename, feature_fn):
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+
+    feature_kwargs = {}
+    if feature_fn in {category_feature, set_feature, sequence_feature, text_feature}:
+        feature_kwargs["vocab_size"] = 3
+
+    input_features = [
+        number_feature(),
+    ]
+    output_features = [
+        feature_fn(**feature_kwargs),
+    ]
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+    }
+    backend = RAY
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+    _, script_module = initialize_torchscript_module(
+        tmpdir,
+        config,
+        backend,
+        training_data_csv_path,
+        device=torch.device("cuda"),
+    )
+
+    df = pd.read_csv(training_data_csv_path)
+    inputs = to_inference_module_input_from_dataframe(
+        df,
+        config,
+        load_paths=True,
+        device=torch.device("cuda"),
+    )
+    postproc_outputs = script_module(inputs)
+
+    for feature_name, feature_outputs in postproc_outputs.items():
+        for output_name, output_values in feature_outputs.items():
+            assert utils.is_all_tensors_cuda(output_values), f"{feature_name}.{output_name} tensors are not on GPU"
 
 
 def validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path, tolerance=1e-8):
