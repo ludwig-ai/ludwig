@@ -726,70 +726,70 @@ def test_torchscript_preproc_vector_alternative_type(tmpdir, csv_filename, vecto
         assert utils.is_all_close(feature_values, feature_values_expected), f"feature: {feature_name}"
 
 
-# @pytest.mark.parametrize("padding", ["left", "right"])
-# @pytest.mark.parametrize("fill_value", ["", "1.0"])
-# # TODO: <Alex>ALEX</Alex>
-# # @pytest.mark.integration_tests_e
-# # TODO: <Alex>ALEX</Alex>
-# # TODO: <Alex>ALEX</Alex>
-# @pytest.mark.integration_tests_e_issue_3734
-# # TODO: <Alex>ALEX</Alex>
-# def test_torchscript_preproc_timeseries_alternative_type(tmpdir, csv_filename, padding, fill_value):
-#     data_csv_path = os.path.join(tmpdir, csv_filename)
-#     feature = timeseries_feature(
-#         preprocessing={
-#             "padding": padding,
-#             "timeseries_length_limit": 4,
-#             "fill_value": "1.0",
-#         },
-#         encoder={"max_len": 7},
-#     )
-#     input_features = [
-#         feature,
-#     ]
-#     output_features = [
-#         binary_feature(),
-#     ]
-#     backend = LocalTestBackend()
-#     config = {
-#         "input_features": input_features,
-#         "output_features": output_features,
-#         TRAINER: {"epochs": 2, BATCH_SIZE: 128},
-#     }
-#     training_data_csv_path = generate_data(input_features, output_features, data_csv_path, nan_percent=0.2)
-#
-#     # Initialize Ludwig model
-#     ludwig_model, script_module = initialize_torchscript_module(tmpdir, config, backend, training_data_csv_path)
-#
-#     # Obtain preprocessed inputs from Python model
-#     preproc_inputs_expected, _ = preprocess_for_prediction(
-#         ludwig_model.config_obj.to_dict(),
-#         training_data_csv_path,
-#         ludwig_model.training_set_metadata,
-#         backend=backend,
-#         include_outputs=False,
-#     )
-#
-#     df = pd.read_csv(training_data_csv_path)
-#     inputs = to_inference_module_input_from_dataframe(df, config, load_paths=True)
-#
-#     def transform_timeseries_from_str_list_to_tensor_list(timeseries_list):
-#         timeseries = []
-#         for timeseries_str in timeseries_list:
-#             timeseries.append(torch.tensor([float(x) for x in timeseries_str.split()]))
-#         return timeseries
-#
-#     inputs[feature[NAME]] = transform_timeseries_from_str_list_to_tensor_list(inputs[feature[NAME]])
-#
-#     preproc_inputs = script_module.preprocessor_forward(inputs)
-#
-#     # Check that preproc_inputs is the same as preproc_inputs_expected.
-#     for feature_name_expected, feature_values_expected in preproc_inputs_expected.dataset.items():
-#         feature_name = feature_name_expected[: feature_name_expected.rfind("_")]  # remove proc suffix
-#         assert feature_name in preproc_inputs.keys(), f'feature "{feature_name}" not found.'
-#
-#         feature_values = preproc_inputs[feature_name]
-#        assert utils.is_all_close(feature_values, feature_values_expected), f'feature "{feature_name}" value mismatch.'
+@pytest.mark.parametrize("padding", ["left", "right"])
+@pytest.mark.parametrize("fill_value", ["", "1.0"])
+# TODO: <Alex>ALEX</Alex>
+# @pytest.mark.integration_tests_e
+# TODO: <Alex>ALEX</Alex>
+# TODO: <Alex>ALEX</Alex>
+@pytest.mark.integration_tests_e_issue_3734
+# TODO: <Alex>ALEX</Alex>
+def test_torchscript_preproc_timeseries_alternative_type(tmpdir, csv_filename, padding, fill_value):
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+    feature = timeseries_feature(
+        preprocessing={
+            "padding": padding,
+            "timeseries_length_limit": 4,
+            "fill_value": "1.0",
+        },
+        encoder={"max_len": 7},
+    )
+    input_features = [
+        feature,
+    ]
+    output_features = [
+        binary_feature(),
+    ]
+    backend = LocalTestBackend()
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+    }
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path, nan_percent=0.2)
+
+    # Initialize Ludwig model
+    ludwig_model, script_module = initialize_torchscript_module(tmpdir, config, backend, training_data_csv_path)
+
+    # Obtain preprocessed inputs from Python model
+    preproc_inputs_expected, _ = preprocess_for_prediction(
+        ludwig_model.config_obj.to_dict(),
+        training_data_csv_path,
+        ludwig_model.training_set_metadata,
+        backend=backend,
+        include_outputs=False,
+    )
+
+    df = pd.read_csv(training_data_csv_path)
+    inputs = to_inference_module_input_from_dataframe(df, config, load_paths=True)
+
+    def transform_timeseries_from_str_list_to_tensor_list(timeseries_list):
+        timeseries = []
+        for timeseries_str in timeseries_list:
+            timeseries.append(torch.tensor([float(x) for x in timeseries_str.split()]))
+        return timeseries
+
+    inputs[feature[NAME]] = transform_timeseries_from_str_list_to_tensor_list(inputs[feature[NAME]])
+
+    preproc_inputs = script_module.preprocessor_forward(inputs)
+
+    # Check that preproc_inputs is the same as preproc_inputs_expected.
+    for feature_name_expected, feature_values_expected in preproc_inputs_expected.dataset.items():
+        feature_name = feature_name_expected[: feature_name_expected.rfind("_")]  # remove proc suffix
+        assert feature_name in preproc_inputs.keys(), f'feature "{feature_name}" not found.'
+
+        feature_values = preproc_inputs[feature_name]
+        assert utils.is_all_close(feature_values, feature_values_expected), f'feature "{feature_name}" value mismatch.'
 
 
 # @pytest.mark.parametrize(
