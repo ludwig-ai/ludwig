@@ -233,7 +233,6 @@ def test_experiment_multilabel_with_class_weights(csv_filename):
         generate_output_features_with_dependencies_complex(),
     ],
 )
-@pytest.mark.integration_tests_e
 def test_experiment_multiple_seq_seq(csv_filename, output_features):
     input_features = [
         text_feature(encoder={"vocab_size": 100, "min_len": 1, "type": "stacked_cnn"}),

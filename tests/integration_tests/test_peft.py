@@ -13,7 +13,6 @@ from tests.integration_tests.utils import binary_feature, generate_data, run_tes
         pytest.param("ray", id="ray", marks=pytest.mark.distributed),
     ],
 )
-@pytest.mark.integration_tests_e
 def test_text_adapter_lora(tmpdir, backend, ray_cluster_2cpu):
     input_features = [
         text_feature(

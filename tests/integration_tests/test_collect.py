@@ -16,7 +16,6 @@ import os
 import shutil
 
 import numpy as np
-import pytest
 import torch
 
 from ludwig.api import LudwigModel
@@ -62,7 +61,6 @@ def _collect_activations(model_path, layers, csv_filename, output_directory):
     return collect_activations(model_path, layers, dataset=csv_filename, output_directory=output_directory)
 
 
-@pytest.mark.integration_tests_e
 def test_collect_weights(tmpdir, csv_filename):
     output_dir = None
     try:
@@ -90,7 +88,6 @@ def test_collect_weights(tmpdir, csv_filename):
             shutil.rmtree(output_dir, ignore_errors=True)
 
 
-@pytest.mark.integration_tests_e
 def test_collect_activations(tmpdir, csv_filename):
     output_dir = None
     try:
@@ -107,7 +104,6 @@ def test_collect_activations(tmpdir, csv_filename):
             shutil.rmtree(output_dir, ignore_errors=True)
 
 
-@pytest.mark.integration_tests_e
 def test_print_model_summary(csv_filename):
     output_dir = None
     model, output_dir = _train(*_prepare_data(csv_filename))

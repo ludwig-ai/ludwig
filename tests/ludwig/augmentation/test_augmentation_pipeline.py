@@ -17,7 +17,6 @@ from ludwig.schema.features.image_feature import ImageInputFeatureConfig
 
 # define fixture for test  image augmentation
 @pytest.fixture(scope="module")
-@pytest.mark.integration_tests_e
 def test_image():
     # return random normal batch of images of size 2x3x32x32 [batch_size, channels, height, width]
     return torch.randn(2, 3, 32, 32)

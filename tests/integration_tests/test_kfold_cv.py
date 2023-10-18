@@ -84,7 +84,6 @@ FEATURES_TO_TEST = [
 
 
 @pytest.mark.parametrize("features_to_use", FEATURES_TO_TEST)
-@pytest.mark.integration_tests_e
 def test_kfold_cv_cli(tmpdir, features_to_use: FeaturesToUse):
     # k-fold cross validation cli
     num_folds = 3
@@ -140,7 +139,6 @@ def test_kfold_cv_cli(tmpdir, features_to_use: FeaturesToUse):
         assert key in cv_indices
 
 
-@pytest.mark.integration_tests_e
 def test_kfold_cv_api_from_file(tmpdir):
     # k-fold_cross_validate api with config file
     num_folds = 3
@@ -180,7 +178,6 @@ def test_kfold_cv_api_from_file(tmpdir):
         assert key in kfold_split_indices
 
 
-@pytest.mark.integration_tests_e
 def test_kfold_cv_api_in_memory(tmpdir):
     # k-fold_cross_validate api with in-memory config
     num_folds = 3
@@ -234,7 +231,6 @@ DATA_FORMATS_FOR_KFOLDS = [
 
 
 @pytest.mark.parametrize("data_format", DATA_FORMATS_FOR_KFOLDS)
-@pytest.mark.integration_tests_e
 def test_kfold_cv_dataset_formats(tmpdir, data_format):
     # k-fold_cross_validate api with in-memory config
     num_folds = 3

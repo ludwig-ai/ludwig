@@ -88,7 +88,6 @@ def test_mlp_mixer_encoder(height: int, width: int, num_channels: int):
 
 @pytest.mark.parametrize("image_size,num_channels", [(224, 3)])
 @pytest.mark.parametrize("use_pretrained", [True, False])
-@pytest.mark.integration_tests_e
 def test_vit_encoder(image_size: int, num_channels: int, use_pretrained: bool):
     # make repeatable
     set_random_seed(RANDOM_SEED)

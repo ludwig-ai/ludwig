@@ -43,7 +43,6 @@ OTHER_HIDDEN_SIZE2 = 64
     "reduce_dependencies",
     ["sum", "mean", "avg", "max", "concat", "last"],
 )
-@pytest.mark.integration_tests_e
 def test_multiple_dependencies(reduce_dependencies, hidden_shape, dependent_hidden_shape, dependent_hidden_shape2):
     # setup at least for a single dependency
     hidden_layer = torch.randn(hidden_shape, dtype=torch.float32)
@@ -107,7 +106,6 @@ def test_multiple_dependencies(reduce_dependencies, hidden_shape, dependent_hidd
         generate_output_features_with_dependencies("sequence_feature", ["category_feature", "number_feature"]),
     ],
 )
-@pytest.mark.integration_tests_e
 def test_construct_output_features_with_dependencies(output_feature_defs):
     # Add keys to output_feature_defs which would have been derived from data.
     def add_data_derived_keys(output_feature_def):

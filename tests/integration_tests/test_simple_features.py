@@ -51,7 +51,6 @@ logging.getLogger("ludwig").setLevel(logging.INFO)
         (category_feature(), category_feature(output_feature=True), {"loss": {"type": "softmax_cross_entropy"}}),
     ],
 )
-@pytest.mark.integration_tests_e
 def test_feature(input_test_feature, output_test_feature, output_loss_parameter, csv_filename):
     input_features = [input_test_feature]
 
@@ -89,7 +88,6 @@ def test_feature(input_test_feature, output_test_feature, output_loss_parameter,
         ([bag_feature()], [vector_feature(), vector_feature()]),
     ],
 )
-@pytest.mark.integration_tests_e
 def test_feature_multiple_outputs(input_test_feature, output_test_feature, csv_filename):
     # Generate test data
     rel_path = generate_data(input_test_feature, output_test_feature, csv_filename, 1001)
@@ -97,7 +95,6 @@ def test_feature_multiple_outputs(input_test_feature, output_test_feature, csv_f
     run_experiment(input_test_feature, output_test_feature, dataset=rel_path)
 
 
-@pytest.mark.integration_tests_e
 def test_category_int_dtype(tmpdir):
     feature = category_feature()
     input_features = [feature]

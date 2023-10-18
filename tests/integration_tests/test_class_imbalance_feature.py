@@ -127,7 +127,6 @@ def run_test_imbalance_local(
 )
 @pytest.mark.distributed
 @pytest.mark.skip(reason="Flaky")
-@pytest.mark.integration_tests_e
 def test_imbalance_ray(balance):
     config = {
         "input_features": [
@@ -159,7 +158,6 @@ def test_imbalance_ray(balance):
     "balance",
     ["oversample_minority", "undersample_majority"],
 )
-@pytest.mark.integration_tests_e
 def test_imbalance_local(balance):
     config = {
         "input_features": [

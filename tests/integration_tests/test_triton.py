@@ -38,7 +38,6 @@ from tests.integration_tests.utils import (
 )
 
 
-@pytest.mark.integration_tests_e
 def test_triton_torchscript(csv_filename, tmpdir):
     # Configure features to be tested:
     input_features = [
@@ -163,7 +162,6 @@ def get_test_config_filenames() -> List[str]:
 
 
 @pytest.mark.parametrize("config_path", get_test_config_filenames())
-@pytest.mark.integration_tests_e
 def test_triton_exportability(config_path, tmpdir):
     """Tests whether Triton export succeeds for a config."""
     config = load_yaml(config_path)

@@ -13,53 +13,24 @@
 # limitations under the License.
 # ==============================================================================
 import os
-
-# TODO: <Alex>ALEX</Alex>
 import shutil
 from copy import deepcopy
-
-# TODO: <Alex>ALEX</Alex>
 from typing import List
 
-# TODO: <Alex>ALEX</Alex>
 import numpy as np
-
-# TODO: <Alex>ALEX</Alex>
 import pandas as pd
 import pytest
 import torch
-
-# TODO: <Alex>ALEX</Alex>
 import torchtext
 
 from ludwig.api import LudwigModel
-
-# TODO: <Alex>ALEX</Alex>
 from ludwig.backend import RAY
-
-# TODO: <Alex>ALEX</Alex>
-# TODO: <Alex>ALEX</Alex>
 from ludwig.constants import BATCH_SIZE, COMBINER, EVAL_BATCH_SIZE, LOGITS, NAME, PREDICTIONS, PROBABILITIES, TRAINER
-
-# TODO: <Alex>ALEX</Alex>
-# from ludwig.constants import BATCH_SIZE, COMBINER, EVAL_BATCH_SIZE, LOGITS, NAME, PREDICTIONS, PROBABILITIES, TRAINER
-# TODO: <Alex>ALEX</Alex>
 from ludwig.data.preprocessing import preprocess_for_prediction
-
-# TODO: <Alex>ALEX</Alex>
 from ludwig.features.number_feature import numeric_transformation_registry
-
-# TODO: <Alex>ALEX</Alex>
-# TODO: <Alex>ALEX</Alex>
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
-
-# TODO: <Alex>ALEX</Alex>
 from ludwig.models.inference import to_inference_module_input_from_dataframe
-
-# TODO: <Alex>ALEX</Alex>
 from ludwig.utils import output_feature_utils
-
-# TODO: <Alex>ALEX</Alex>
 from ludwig.utils.tokenizers import TORCHSCRIPT_COMPATIBLE_TOKENIZERS
 from tests.integration_tests import utils
 from tests.integration_tests.utils import (
@@ -80,26 +51,10 @@ from tests.integration_tests.utils import (
     vector_feature,
 )
 
-# TODO: <Alex>ALEX</Alex>
 
-
-# TODO: <Alex>ALEX</Alex>
-
-# TODO: <Alex>ALEX</Alex>
-
-
-# TODO: <Alex>ALEX</Alex>
-
-
-# TODO: <Alex>ALEX</Alex>
+@pytest.mark.integration_tests_e
 @pytest.mark.parametrize("should_load_model", [True, False])
 @pytest.mark.parametrize("model_type", ["ecd", "gbm"])
-# TODO: <Alex>ALEX</Alex>
-# @pytest.mark.integration_tests_e
-# TODO: <Alex>ALEX</Alex>
-# TODO: <Alex>ALEX</Alex>
-@pytest.mark.integration_tests_e_issue_3734
-# TODO: <Alex>ALEX</Alex>
 def test_torchscript(tmpdir, csv_filename, should_load_model, model_type):
     #######
     # Setup
@@ -265,16 +220,7 @@ def test_torchscript(tmpdir, csv_filename, should_load_model, model_type):
     assert np.all(original_predictions_df[predictions_column_name] == restored_predictions)
 
 
-# TODO: <Alex>ALEX</Alex>
-
-
-# TODO: <Alex>ALEX</Alex>
-# TODO: <Alex>ALEX</Alex>
-# @pytest.mark.integration_tests_e
-# TODO: <Alex>ALEX</Alex>
-# TODO: <Alex>ALEX</Alex>
-@pytest.mark.integration_tests_e_issue_3734
-# TODO: <Alex>ALEX</Alex>
+@pytest.mark.integration_tests_e
 def test_torchscript_e2e_tabular(csv_filename, tmpdir):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     # Configure features to be tested:
@@ -331,16 +277,7 @@ def test_torchscript_e2e_tabular(csv_filename, tmpdir):
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
 
-# TODO: <Alex>ALEX</Alex>
-
-
-# TODO: <Alex>ALEX</Alex>
-# TODO: <Alex>ALEX</Alex>
-# @pytest.mark.integration_tests_e
-# TODO: <Alex>ALEX</Alex>
-# TODO: <Alex>ALEX</Alex>
-@pytest.mark.integration_tests_e_issue_3734
-# TODO: <Alex>ALEX</Alex>
+@pytest.mark.integration_tests_e
 def test_torchscript_e2e_binary_only(csv_filename, tmpdir):
     data_csv_path = os.path.join(tmpdir, csv_filename)
 
@@ -363,16 +300,7 @@ def test_torchscript_e2e_binary_only(csv_filename, tmpdir):
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
 
-# TODO: <Alex>ALEX</Alex>
-
-
-# TODO: <Alex>ALEX</Alex>
-# TODO: <Alex>ALEX</Alex>
-# @pytest.mark.integration_tests_e
-# TODO: <Alex>ALEX</Alex>
-# TODO: <Alex>ALEX</Alex>
-@pytest.mark.integration_tests_e_issue_3734
-# TODO: <Alex>ALEX</Alex>
+@pytest.mark.integration_tests_e
 def test_torchscript_e2e_tabnet_combiner(csv_filename, tmpdir):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     # Configure features to be tested:
@@ -406,16 +334,7 @@ def test_torchscript_e2e_tabnet_combiner(csv_filename, tmpdir):
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
 
-# TODO: <Alex>ALEX</Alex>
-
-
-# TODO: <Alex>ALEX</Alex>
-# TODO: <Alex>ALEX</Alex>
-# @pytest.mark.integration_tests_e
-# TODO: <Alex>ALEX</Alex>
-# TODO: <Alex>ALEX</Alex>
-@pytest.mark.integration_tests_e_issue_3734
-# TODO: <Alex>ALEX</Alex>
+@pytest.mark.integration_tests_e
 def test_torchscript_e2e_audio(csv_filename, tmpdir):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     audio_dest_folder = os.path.join(tmpdir, "generated_audio")
@@ -440,10 +359,7 @@ def test_torchscript_e2e_audio(csv_filename, tmpdir):
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path, tolerance=1e-6)
 
 
-# TODO: <Alex>ALEX</Alex>
-
-
-# TODO: <Alex>ALEX</Alex>
+@pytest.mark.integration_tests_e
 @pytest.mark.parametrize(
     "kwargs",
     [
@@ -451,12 +367,6 @@ def test_torchscript_e2e_audio(csv_filename, tmpdir):
         {"encoder": {"type": "alexnet", "use_pretrained": False}},  # TorchVision pretrained model encoder
     ],
 )
-# TODO: <Alex>ALEX</Alex>
-# @pytest.mark.integration_tests_e
-# TODO: <Alex>ALEX</Alex>
-# TODO: <Alex>ALEX</Alex>
-@pytest.mark.integration_tests_e_issue_3734
-# TODO: <Alex>ALEX</Alex>
 def test_torchscript_e2e_image(tmpdir, csv_filename, kwargs):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     image_dest_folder = os.path.join(tmpdir, "generated_images")
@@ -477,16 +387,7 @@ def test_torchscript_e2e_image(tmpdir, csv_filename, kwargs):
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
 
-# TODO: <Alex>ALEX</Alex>
-
-
-# TODO: <Alex>ALEX</Alex>
-# TODO: <Alex>ALEX</Alex>
-# @pytest.mark.integration_tests_e
-# TODO: <Alex>ALEX</Alex>
-# TODO: <Alex>ALEX</Alex>
-@pytest.mark.integration_tests_e_issue_3734
-# TODO: <Alex>ALEX</Alex>
+@pytest.mark.integration_tests_e
 def test_torchscript_e2e_text(tmpdir, csv_filename):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     input_features = [
@@ -507,19 +408,11 @@ def test_torchscript_e2e_text(tmpdir, csv_filename):
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
 
-# TODO: <Alex>ALEX</Alex>
-
-
 @pytest.mark.skipif(
     torch.torch_version.TorchVersion(torchtext.__version__) < (0, 14, 0),
     reason="requires torchtext 0.14.0 or higher",
 )
-# TODO: <Alex>ALEX</Alex>
-# @pytest.mark.integration_tests_e
-# TODO: <Alex>ALEX</Alex>
-# TODO: <Alex>ALEX</Alex>
-@pytest.mark.integration_tests_e_issue_3734
-# TODO: <Alex>ALEX</Alex>
+@pytest.mark.integration_tests_e
 def test_torchscript_e2e_text_hf_tokenizer(tmpdir, csv_filename):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     input_features = [text_feature(encoder={"vocab_size": 3, "type": "bert"})]
@@ -541,12 +434,7 @@ def test_torchscript_e2e_text_hf_tokenizer(tmpdir, csv_filename):
     torch.torch_version.TorchVersion(torchtext.__version__) < (0, 14, 0),
     reason="requires torchtext 0.14.0 or higher",
 )
-# TODO: <Alex>ALEX</Alex>
-# @pytest.mark.integration_tests_e
-# TODO: <Alex>ALEX</Alex>
-# TODO: <Alex>ALEX</Alex>
-@pytest.mark.integration_tests_e_issue_3734
-# TODO: <Alex>ALEX</Alex>
+@pytest.mark.integration_tests_e
 def test_torchscript_e2e_text_hf_tokenizer_truncated_sequence(tmpdir, csv_filename):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     input_features = [text_feature(encoder={"vocab_size": 3, "type": "bert"}, preprocessing={"max_sequence_length": 3})]
@@ -564,12 +452,7 @@ def test_torchscript_e2e_text_hf_tokenizer_truncated_sequence(tmpdir, csv_filena
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
 
-# TODO: <Alex>ALEX</Alex>
-# @pytest.mark.integration_tests_e
-# TODO: <Alex>ALEX</Alex>
-# TODO: <Alex>ALEX</Alex>
-@pytest.mark.integration_tests_e_issue_3734
-# TODO: <Alex>ALEX</Alex>
+@pytest.mark.integration_tests_e
 def test_torchscript_e2e_sequence(tmpdir, csv_filename):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     input_features = [
@@ -589,12 +472,7 @@ def test_torchscript_e2e_sequence(tmpdir, csv_filename):
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
 
-# TODO: <Alex>ALEX</Alex>
-# @pytest.mark.integration_tests_e
-# TODO: <Alex>ALEX</Alex>
-# TODO: <Alex>ALEX</Alex>
-@pytest.mark.integration_tests_e_issue_3734
-# TODO: <Alex>ALEX</Alex>
+@pytest.mark.integration_tests_e
 def test_torchscript_e2e_timeseries(tmpdir, csv_filename):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     input_features = [
@@ -614,12 +492,7 @@ def test_torchscript_e2e_timeseries(tmpdir, csv_filename):
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
 
-# TODO: <Alex>ALEX</Alex>
-# @pytest.mark.integration_tests_e
-# TODO: <Alex>ALEX</Alex>
-# TODO: <Alex>ALEX</Alex>
-@pytest.mark.integration_tests_e_issue_3734
-# TODO: <Alex>ALEX</Alex>
+@pytest.mark.integration_tests_e
 def test_torchscript_e2e_h3(tmpdir, csv_filename):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     input_features = [
@@ -639,12 +512,7 @@ def test_torchscript_e2e_h3(tmpdir, csv_filename):
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
 
-# TODO: <Alex>ALEX</Alex>
-# @pytest.mark.integration_tests_e
-# TODO: <Alex>ALEX</Alex>
-# TODO: <Alex>ALEX</Alex>
-@pytest.mark.integration_tests_e_issue_3734
-# TODO: <Alex>ALEX</Alex>
+@pytest.mark.integration_tests_e
 def test_torchscript_e2e_date(tmpdir, csv_filename):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     input_features = [
@@ -664,13 +532,8 @@ def test_torchscript_e2e_date(tmpdir, csv_filename):
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
 
+@pytest.mark.integration_tests_e
 @pytest.mark.parametrize("vector_type", [torch.Tensor, List[torch.Tensor]])
-# TODO: <Alex>ALEX</Alex>
-# @pytest.mark.integration_tests_e
-# TODO: <Alex>ALEX</Alex>
-# TODO: <Alex>ALEX</Alex>
-@pytest.mark.integration_tests_e_issue_3734
-# TODO: <Alex>ALEX</Alex>
 def test_torchscript_preproc_vector_alternative_type(tmpdir, csv_filename, vector_type):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     feature = vector_feature()
@@ -726,14 +589,9 @@ def test_torchscript_preproc_vector_alternative_type(tmpdir, csv_filename, vecto
         assert utils.is_all_close(feature_values, feature_values_expected), f"feature: {feature_name}"
 
 
+@pytest.mark.integration_tests_e
 @pytest.mark.parametrize("padding", ["left", "right"])
 @pytest.mark.parametrize("fill_value", ["", "1.0"])
-# TODO: <Alex>ALEX</Alex>
-# @pytest.mark.integration_tests_e
-# TODO: <Alex>ALEX</Alex>
-# TODO: <Alex>ALEX</Alex>
-@pytest.mark.integration_tests_e_issue_3734
-# TODO: <Alex>ALEX</Alex>
 def test_torchscript_preproc_timeseries_alternative_type(tmpdir, csv_filename, padding, fill_value):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     feature = timeseries_feature(
@@ -792,6 +650,7 @@ def test_torchscript_preproc_timeseries_alternative_type(tmpdir, csv_filename, p
         assert utils.is_all_close(feature_values, feature_values_expected), f'feature "{feature_name}" value mismatch.'
 
 
+@pytest.mark.integration_tests_e
 @pytest.mark.parametrize(
     "feature",
     [
@@ -811,12 +670,6 @@ def test_torchscript_preproc_timeseries_alternative_type(tmpdir, csv_filename, p
         # date_feature(),   # default fill with datetime.now() strategy is not scriptable
     ],
 )
-# TODO: <Alex>ALEX</Alex>
-# @pytest.mark.integration_tests_e
-# TODO: <Alex>ALEX</Alex>
-# TODO: <Alex>ALEX</Alex>
-@pytest.mark.integration_tests_e_issue_3734
-# TODO: <Alex>ALEX</Alex>
 def test_torchscript_preproc_with_nans(tmpdir, csv_filename, feature):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     input_features = [
@@ -861,6 +714,7 @@ def test_torchscript_preproc_with_nans(tmpdir, csv_filename, feature):
 
 @pytest.mark.skipif(torch.cuda.device_count() == 0, reason="test requires at least 1 gpu")
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="test requires gpu support")
+@pytest.mark.integration_tests_e
 @pytest.mark.distributed
 @pytest.mark.parametrize(
     "feature_fn",
@@ -881,12 +735,6 @@ def test_torchscript_preproc_with_nans(tmpdir, csv_filename, feature):
         # timeseries_feature(),            # Torchscript takes List[str] as input, so currently CPU only
     ],
 )
-# TODO: <Alex>ALEX</Alex>
-# @pytest.mark.integration_tests_e
-# TODO: <Alex>ALEX</Alex>
-# TODO: <Alex>ALEX</Alex>
-@pytest.mark.integration_tests_e_issue_3734
-# TODO: <Alex>ALEX</Alex>
 def test_torchscript_preproc_gpu(tmpdir, csv_filename, feature_fn):
     data_csv_path = os.path.join(tmpdir, csv_filename)
 
@@ -932,6 +780,7 @@ def test_torchscript_preproc_gpu(tmpdir, csv_filename, feature_fn):
 
 @pytest.mark.skipif(torch.cuda.device_count() == 0, reason="test requires at least 1 gpu")
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="test requires gpu support")
+@pytest.mark.integration_tests_e
 @pytest.mark.distributed
 @pytest.mark.parametrize(
     "feature_fn",
@@ -945,12 +794,6 @@ def test_torchscript_preproc_gpu(tmpdir, csv_filename, feature_fn):
         text_feature,
     ],
 )
-# TODO: <Alex>ALEX</Alex>
-# @pytest.mark.integration_tests_e
-# TODO: <Alex>ALEX</Alex>
-# TODO: <Alex>ALEX</Alex>
-@pytest.mark.integration_tests_e_issue_3734
-# TODO: <Alex>ALEX</Alex>
 def test_torchscript_postproc_gpu(tmpdir, csv_filename, feature_fn):
     data_csv_path = os.path.join(tmpdir, csv_filename)
 

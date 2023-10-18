@@ -7,7 +7,6 @@ from ludwig.schema.features.augmentation.utils import get_augmentation_cls
 
 
 @pytest.fixture(scope="module")
-@pytest.mark.integration_tests_e
 def test_image():
     # return random normal image of size 2x3x32x32 [batch_size, channels, height, width]
     return torch.randn(2, 3, 32, 32)

@@ -96,7 +96,6 @@ def run_mlflow_callback_test_without_artifacts(mlflow_client, config, training_d
 
 
 @pytest.mark.parametrize("external_run", [False, True], ids=["internal_run", "external_run"])
-@pytest.mark.integration_tests_e
 def test_mlflow(tmpdir, external_run):
     epochs = 2
     batch_size = 8
@@ -144,7 +143,6 @@ def test_mlflow(tmpdir, external_run):
         mlflow.end_run()
 
 
-@pytest.mark.integration_tests_e
 def test_export_mlflow_local(tmpdir):
     epochs = 2
     batch_size = 8
@@ -176,7 +174,6 @@ def test_export_mlflow_local(tmpdir):
 
 
 @pytest.mark.distributed
-@pytest.mark.integration_tests_e
 def test_mlflow_ray(tmpdir, ray_cluster_2cpu):
     epochs = 2
     batch_size = 8

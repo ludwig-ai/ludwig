@@ -17,7 +17,6 @@ from tests.integration_tests.utils import binary_feature, generate_data, number_
         pytest.param("ray", id="ray", marks=pytest.mark.distributed),
     ],
 )
-@pytest.mark.integration_tests_e
 def test_onehot_encoding(tmpdir, backend, ray_cluster_2cpu):
     input_features = [
         number_feature(),
@@ -39,7 +38,6 @@ def test_onehot_encoding(tmpdir, backend, ray_cluster_2cpu):
         pytest.param("ray", id="ray", marks=pytest.mark.distributed),
     ],
 )
-@pytest.mark.integration_tests_e
 def test_hf_text_embedding(tmpdir, backend, ray_cluster_2cpu):
     input_features = [
         number_feature(),
@@ -63,7 +61,6 @@ def test_hf_text_embedding(tmpdir, backend, ray_cluster_2cpu):
 @pytest.mark.slow
 @pytest.mark.parametrize("cache_encoder_embeddings", [True, False, None])
 @pytest.mark.parametrize("model_type", [MODEL_ECD, MODEL_GBM])
-@pytest.mark.integration_tests_e
 def test_onehot_encoding_preprocessing(model_type, cache_encoder_embeddings, tmpdir):
     vocab_size = 5
     input_features = [
@@ -111,7 +108,6 @@ def test_onehot_encoding_preprocessing(model_type, cache_encoder_embeddings, tmp
         assert data.shape == (num_examples,)
 
 
-@pytest.mark.integration_tests_e
 def test_hf_text_embedding_tied(tmpdir):
     input_features = [
         text_feature(

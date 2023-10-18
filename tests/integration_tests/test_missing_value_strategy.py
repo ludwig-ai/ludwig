@@ -35,7 +35,6 @@ from tests.integration_tests.utils import (
 )
 
 
-@pytest.mark.integration_tests_e
 def test_missing_value_prediction(tmpdir, csv_filename):
     random.seed(1)
     np.random.seed(1)
@@ -72,7 +71,6 @@ def test_missing_value_prediction(tmpdir, csv_filename):
         pytest.param("ray", id="ray", marks=pytest.mark.distributed),
     ],
 )
-@pytest.mark.integration_tests_e
 def test_missing_values_fill_with_mean(backend, csv_filename, tmpdir, ray_cluster_2cpu):
     data_csv_path = os.path.join(tmpdir, csv_filename)
 
@@ -96,7 +94,6 @@ def test_missing_values_fill_with_mean(backend, csv_filename, tmpdir, ray_cluste
     ludwig_model.preprocess(dataset=training_data_csv_path)
 
 
-@pytest.mark.integration_tests_e
 def test_missing_values_drop_rows(csv_filename, tmpdir):
     data_csv_path = os.path.join(tmpdir, csv_filename)
 
@@ -139,7 +136,6 @@ def test_missing_values_drop_rows(csv_filename, tmpdir):
 )
 @pytest.mark.parametrize("outlier_threshold", [1.0, 3.0])
 @pytest.mark.parametrize("outlier_strategy", [None, "fill_with_mean", "fill_with_const"])
-@pytest.mark.integration_tests_e
 def test_outlier_strategy(outlier_strategy, outlier_threshold, backend, tmpdir, ray_cluster_2cpu):
     fill_value = 42
     kwargs = {

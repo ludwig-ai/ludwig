@@ -141,7 +141,6 @@ def convert_to_batch_form(data_df):
     return files
 
 
-@pytest.mark.integration_tests_e
 def test_server_integration_with_images(tmpdir):
     # Image Inputs
     image_dest_folder = os.path.join(tmpdir, "generated_images")
@@ -205,7 +204,6 @@ def test_server_integration_with_images(tmpdir):
     assert model_output == server_response
 
 
-@pytest.mark.integration_tests_e
 def test_server_integration_with_stratified_split(tmpdir):
     input_features = [
         text_feature(encoder={"type": "embed", "min_len": 1}),
@@ -263,7 +261,6 @@ def test_server_integration_with_stratified_split(tmpdir):
 
 
 @pytest.mark.parametrize("single_record", [False, True])
-@pytest.mark.integration_tests_e
 def test_server_integration_with_audio(single_record, tmpdir):
     # Audio Inputs
     audio_dest_folder = os.path.join(tmpdir, "generated_audio")

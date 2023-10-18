@@ -46,7 +46,6 @@ IMAGE_DIR = tempfile.mkdtemp()
         ([set_feature()], [set_feature(output_feature=True)]),
     ],
 )
-@pytest.mark.integration_tests_e
 def test_regularizers(
     input_features,
     output_features,

@@ -115,7 +115,6 @@ def convert_preds(preds: DataFrame):
         pytest.param(RAY_BACKEND, id="ray"),
     ],
 )
-@pytest.mark.integration_tests_e
 def test_llm_text_to_text(tmpdir, backend, ray_cluster_4cpu):
     """Test that the LLM model can train and predict with text inputs and text outputs."""
     input_features = [
@@ -183,7 +182,6 @@ def test_llm_text_to_text(tmpdir, backend, ray_cluster_4cpu):
         pytest.param(RAY_BACKEND, id="ray"),
     ],
 )
-@pytest.mark.integration_tests_e
 def test_llm_zero_shot_classification(tmpdir, backend, ray_cluster_4cpu):
     input_features = [
         {
@@ -246,7 +244,6 @@ def test_llm_zero_shot_classification(tmpdir, backend, ray_cluster_4cpu):
         pytest.param(RAY_BACKEND, id="ray"),
     ],
 )
-@pytest.mark.integration_tests_e
 def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_4cpu):
     input_features = [
         text_feature(
@@ -553,7 +550,6 @@ def _verify_lm_lora_finetuning_layers(
         # ),
     ],
 )
-@pytest.mark.integration_tests_e
 def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strategy, adapter_args):
     train_df, prediction_df, config = _prepare_finetuning_test(csv_filename, finetune_strategy, backend, adapter_args)
 
@@ -593,7 +589,6 @@ def test_llm_finetuning_strategies(tmpdir, csv_filename, backend, finetune_strat
         ),
     ],
 )
-@pytest.mark.integration_tests_e
 def test_llm_finetuning_strategies_quantized(tmpdir, csv_filename, finetune_strategy, adapter_args, quantization):
     if (
         _finetune_strategy_requires_cuda(finetune_strategy_name=finetune_strategy, quantization_args=quantization)
@@ -660,7 +655,6 @@ def test_llm_finetuning_strategies_quantized(tmpdir, csv_filename, finetune_stra
         ),
     ],
 )
-@pytest.mark.integration_tests_e
 def test_llm_lora_finetuning_merge_and_unload_quantized_accelerate_required(
     csv_filename, finetune_strategy, adapter_args, quantization, error_raised
 ):
@@ -697,7 +691,6 @@ def test_llm_lora_finetuning_merge_and_unload_quantized_accelerate_required(
 
 
 @pytest.mark.llm
-@pytest.mark.integration_tests_e
 def test_llm_lora_finetuning_merge_and_unload_4_bit_quantization_not_supported(local_backend: dict):
     input_features: List[dict] = [text_feature(name="input", encoder={"type": "passthrough"})]
     output_features: List[dict] = [text_feature(name="output")]
@@ -779,7 +772,6 @@ quantization section from your Ludwig configuration."""
         ),
     ],
 )
-@pytest.mark.integration_tests_e
 def test_llm_lora_finetuning_merge_and_unload(
     tmpdir,
     csv_filename,
@@ -828,7 +820,6 @@ def test_llm_lora_finetuning_merge_and_unload(
 
 @pytest.mark.llm
 @pytest.mark.parametrize("use_adapter", [True, False], ids=["with_adapter", "without_adapter"])
-@pytest.mark.integration_tests_e
 def test_llm_training_with_gradient_checkpointing(tmpdir, csv_filename, use_adapter):
     input_features = [text_feature(name="input", encoder={"type": "passthrough"})]
     output_features = [text_feature(name="output")]
@@ -858,7 +849,6 @@ def test_llm_training_with_gradient_checkpointing(tmpdir, csv_filename, use_adap
 
 
 @pytest.mark.llm
-@pytest.mark.integration_tests_e
 def test_lora_wrap_on_init():
     from peft import PeftModel
     from transformers import PreTrainedModel
@@ -892,7 +882,6 @@ def test_lora_wrap_on_init():
     assert isinstance(model.model, PeftModel)
 
 
-@pytest.mark.integration_tests_e
 def test_llama_rope_scaling():
     config = {
         MODEL_TYPE: MODEL_LLM,
@@ -919,7 +908,6 @@ def test_llama_rope_scaling():
     assert model.model.config.rope_scaling["factor"] == 2.0
 
 
-@pytest.mark.integration_tests_e
 def test_default_max_sequence_length():
     config = {
         MODEL_TYPE: MODEL_LLM,
@@ -941,7 +929,6 @@ def test_default_max_sequence_length():
 
 @pytest.mark.llm
 @pytest.mark.parametrize("adapter", ["lora", "adalora", "adaption_prompt"])
-@pytest.mark.integration_tests_e
 def test_load_pretrained_adapter_weights(adapter):
     from peft import PeftModel
     from transformers import PreTrainedModel
@@ -1022,7 +1009,6 @@ def _compare_models(model_1: torch.nn.Module, model_2: torch.nn.Module) -> bool:
     return True
 
 
-@pytest.mark.integration_tests_e
 def test_global_max_sequence_length_for_llms():
     """Ensures that user specified global_max_sequence_length can never be greater than the model's context
     length."""
@@ -1047,7 +1033,6 @@ def test_global_max_sequence_length_for_llms():
     assert model.global_max_sequence_length == 2048
 
 
-@pytest.mark.integration_tests_e
 def test_local_path_loading(tmpdir):
     """Tests that local paths can be used to load models."""
 

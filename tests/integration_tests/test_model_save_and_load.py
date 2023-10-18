@@ -32,7 +32,6 @@ from tests.integration_tests.utils import (
 )
 
 
-@pytest.mark.integration_tests_e
 def test_model_save_reload_api(tmpdir, csv_filename, tmp_path):
     torch.manual_seed(1)
     random.seed(1)
@@ -139,7 +138,6 @@ def test_model_save_reload_api(tmpdir, csv_filename, tmp_path):
     check_model_equal(ludwig_model_exp)
 
 
-@pytest.mark.integration_tests_e
 def test_gbm_model_save_reload_api(tmpdir, csv_filename, tmp_path):
     torch.manual_seed(1)
     random.seed(1)
@@ -230,7 +228,6 @@ def test_gbm_model_save_reload_api(tmpdir, csv_filename, tmp_path):
     check_model_equal(ludwig_model_exp)
 
 
-@pytest.mark.integration_tests_e
 def test_model_weights_match_training(tmpdir, csv_filename):
     np.random.seed(1)
 
@@ -279,7 +276,6 @@ def test_model_weights_match_training(tmpdir, csv_filename):
 
 
 @pytest.mark.parametrize("torch_encoder, variant", [("resnet", 18), ("googlenet", "base")])
-@pytest.mark.integration_tests_e
 def test_model_save_reload_tv_model(torch_encoder, variant, tmpdir, csv_filename, tmp_path):
     torch.manual_seed(1)
     random.seed(1)
@@ -375,7 +371,6 @@ def test_model_save_reload_tv_model(torch_encoder, variant, tmpdir, csv_filename
 
 
 @pytest.mark.slow
-@pytest.mark.integration_tests_e
 def test_model_save_reload_hf_model(tmpdir, csv_filename, tmp_path):
     torch.manual_seed(1)
     random.seed(1)
