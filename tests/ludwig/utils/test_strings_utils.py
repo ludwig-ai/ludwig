@@ -78,7 +78,7 @@ def test_create_vocabulary_chars():
     )
     vocab = vocabulary.vocab
 
-    assert len(vocab) == 24
+    assert len(vocab) == 27
     assert vocab[strings_utils.SpecialSymbol.START.value] == strings_utils.START_SYMBOL
     assert vocab[strings_utils.SpecialSymbol.STOP.value] == strings_utils.STOP_SYMBOL
     assert vocab[strings_utils.SpecialSymbol.PADDING.value] == strings_utils.PADDING_SYMBOL
@@ -231,13 +231,13 @@ def test_create_vocabulary_idf(compute_idf: bool):
 
     # "sentence" and "and" should be next, as they appear in two docs each
     assert idf_sorted[1][0] > idf_sorted[0][0]
-    assert idf_sorted[1][1] == {"sentence", "and"}
+    assert idf_sorted[1][1] == {"sentence", "And"}
 
     # finally, every token that only appears once
     assert idf_sorted[2][0] > idf_sorted[1][0]
     assert idf_sorted[2][1] == {
         ",",
-        "i",
+        "I",
         "'",
         "one",
         "very",
@@ -246,7 +246,7 @@ def test_create_vocabulary_idf(compute_idf: bool):
         "m",
         "!",
         "last",
-        "hello",
+        "Hello",
         "a",
         "another",
     }

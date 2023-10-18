@@ -5,6 +5,7 @@ import torch
 import torch.nn.functional as F
 from bitsandbytes.nn.modules import Embedding
 from transformers import (
+    AutoConfig,
     AutoModelForCausalLM,
     CodeLlamaTokenizer,
     CodeLlamaTokenizerFast,
@@ -20,6 +21,9 @@ from ludwig.schema.trainer import LLMTrainerConfig
 from ludwig.utils.model_utils import find_embedding_layer_with_path
 
 logger = logging.getLogger(__name__)
+
+
+FALLBACK_CONTEXT_LEN = 2048
 
 
 def set_pad_token(tokenizer: PreTrainedTokenizer):
@@ -55,6 +59,45 @@ def set_pad_token(tokenizer: PreTrainedTokenizer):
     ):
         tokenizer.pad_token = tokenizer.eos_token
         tokenizer.pad_token_id = tokenizer.eos_token_id
+
+
+def get_context_len(model_config: AutoConfig):
+    """Determines the maximum length of the context (input + output tokens) based on the provided model
+    configuration.
+
+    Args:
+        model_config (AutoConfig): The model configuration object containing information about the model's properties.
+
+    Returns:
+        int: The maximum context length, which can be derived from the model configuration. If no relevant attribute
+             is found, the default value of 2048 is returned.
+
+    This function examines the provided model configuration object to identify the attribute that specifies the maximum
+    context length. It checks for attributes in the following order of preference:
+    1. 'max_sequence_length': If this attribute is present in the model configuration, its value is returned.
+    2. 'max_position_embeddings': If 'max_sequence_length' is not found but 'max_position_embeddings' is present, its
+       value is returned.
+    3. 'n_positions': If neither 'max_sequence_length' nor 'max_position_embeddings' are found, and 'n_positions' is
+       present, its value is returned.
+    4. Default: If none of the relevant attributes are present, the function returns a default value of 2048.
+
+    Note:
+    - The maximum context length is important for defining the size of input and output sequences in a model.
+
+    Example Usage:
+    >>> config = AutoConfig.from_pretrained("bert-base-uncased")
+    >>> context_len = get_context_len(config)
+    >>> print(context_len)
+    512
+    """
+    if hasattr(model_config, "max_sequence_length"):
+        return model_config.max_sequence_length
+    elif hasattr(model_config, "max_position_embeddings"):
+        return model_config.max_position_embeddings
+    elif hasattr(model_config, "n_positions"):
+        return model_config.n_positions
+    else:
+        return FALLBACK_CONTEXT_LEN
 
 
 def has_padding_token(input_tensor: torch.Tensor, tokenizer: PreTrainedTokenizer):

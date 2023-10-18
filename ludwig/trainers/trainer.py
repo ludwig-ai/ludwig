@@ -492,7 +492,7 @@ class Trainer(BaseTrainer):
                 # https://pytorch.org/docs/stable/generated/torch.cuda.utilization.html#torch.cuda.utilization
                 train_summary_writer.add_scalar(
                     f"cuda/device{i}/utilization",
-                    torch.cuda.device(i).utilization(),
+                    torch.cuda.utilization(device=device),
                     global_step=step,
                 )
         train_summary_writer.flush()
@@ -743,7 +743,8 @@ class Trainer(BaseTrainer):
         else:
             # There's no validation, so we save the model.
             if not self.skip_save_model:
-                logger.info("Saving model.\n")
+                if self.is_coordinator():
+                    logger.info("Saving model.\n")
                 checkpoint_manager.save_best(progress_tracker.steps)
                 self.callback(lambda c: c.on_save_best_checkpoint(self, progress_tracker, save_path))
 
@@ -836,7 +837,8 @@ class Trainer(BaseTrainer):
             try:
                 progress_tracker = self.resume_training_progress_tracker(training_progress_tracker_path)
                 self.resume_weights_and_optimizer(training_checkpoints_path, checkpoint)
-                logger.info("Resuming training from previous run.")
+                if self.is_coordinator():
+                    logger.info("Resuming training from previous run.")
             except Exception:
                 # This may happen if model training is interrupted after the progress tracker is initialized
                 # but before any real training progress is made.
@@ -849,7 +851,8 @@ class Trainer(BaseTrainer):
                     ),
                     output_features=output_features,
                 )
-                logger.info("Failed to resume training from previous run. Creating fresh model training run.")
+                if self.is_coordinator():
+                    logger.info("Failed to resume training from previous run. Creating fresh model training run.")
         else:
             progress_tracker = get_new_progress_tracker(
                 batch_size=self.batch_size,
@@ -858,7 +861,8 @@ class Trainer(BaseTrainer):
                 best_increase_batch_size_eval_metric=get_initial_validation_value(self.increase_batch_size_eval_metric),
                 output_features=output_features,
             )
-            logger.info("Creating fresh model training run.")
+            if self.is_coordinator():
+                logger.info("Creating fresh model training run.")
 
         # Distributed: broadcast initial variable states from rank 0 to all other processes.
         # This is necessary to ensure consistent initialization of all workers when
