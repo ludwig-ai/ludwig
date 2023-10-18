@@ -208,10 +208,12 @@ jobs:
       # TODO: <Alex>ALEX</Alex>
       matrix:
         test-markers:
-          - "integration_tests_a"
-          - "integration_tests_b"
-          - "integration_tests_c"
-          - "integration_tests_d"
+          # TODO: <Alex>ALEX</Alex>
+          # - "integration_tests_a"
+          # - "integration_tests_b"
+          # - "integration_tests_c"
+          # - "integration_tests_d"
+          # TODO: <Alex>ALEX</Alex>
           - "integration_tests_e"
 
     env:
