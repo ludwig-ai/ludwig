@@ -26,11 +26,14 @@ import pandas as pd
 import pytest
 import torch
 
+# TODO: <Alex>ALEX</Alex>
+import torchtext
+
 from ludwig.api import LudwigModel
 
 # TODO: <Alex>ALEX</Alex>
 # TODO: <Alex>ALEX</Alex>
-from ludwig.constants import BATCH_SIZE, COMBINER, LOGITS, NAME, PREDICTIONS, PROBABILITIES, TRAINER
+from ludwig.constants import BATCH_SIZE, COMBINER, EVAL_BATCH_SIZE, LOGITS, NAME, PREDICTIONS, PROBABILITIES, TRAINER
 
 # TODO: <Alex>ALEX</Alex>
 # from ludwig.constants import BATCH_SIZE, COMBINER, EVAL_BATCH_SIZE, LOGITS, NAME, PREDICTIONS, PROBABILITIES, TRAINER
@@ -76,8 +79,6 @@ from tests.integration_tests.utils import (
 # TODO: <Alex>ALEX</Alex>
 
 
-# TODO: <Alex>ALEX</Alex>
-# import torchtext
 # TODO: <Alex>ALEX</Alex>
 
 # TODO: <Alex>ALEX</Alex>
@@ -507,31 +508,31 @@ def test_torchscript_e2e_text(tmpdir, csv_filename):
 # TODO: <Alex>ALEX</Alex>
 
 
-# @pytest.mark.skipif(
-#     torch.torch_version.TorchVersion(torchtext.__version__) < (0, 14, 0),
-#     reason="requires torchtext 0.14.0 or higher",
-# )
-# # TODO: <Alex>ALEX</Alex>
-# # @pytest.mark.integration_tests_e
-# # TODO: <Alex>ALEX</Alex>
-# # TODO: <Alex>ALEX</Alex>
-# @pytest.mark.integration_tests_e_issue_3734
-# # TODO: <Alex>ALEX</Alex>
-# def test_torchscript_e2e_text_hf_tokenizer(tmpdir, csv_filename):
-#     data_csv_path = os.path.join(tmpdir, csv_filename)
-#     input_features = [text_feature(encoder={"vocab_size": 3, "type": "bert"})]
-#     output_features = [
-#         text_feature(decoder={"vocab_size": 3}),
-#     ]
-#     backend = LocalTestBackend()
-#     config = {
-#         "input_features": input_features,
-#         "output_features": output_features,
-#         TRAINER: {"epochs": 2, BATCH_SIZE: 128, EVAL_BATCH_SIZE: 128},
-#     }
-#     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
-#
-#     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
+@pytest.mark.skipif(
+    torch.torch_version.TorchVersion(torchtext.__version__) < (0, 14, 0),
+    reason="requires torchtext 0.14.0 or higher",
+)
+# TODO: <Alex>ALEX</Alex>
+# @pytest.mark.integration_tests_e
+# TODO: <Alex>ALEX</Alex>
+# TODO: <Alex>ALEX</Alex>
+@pytest.mark.integration_tests_e_issue_3734
+# TODO: <Alex>ALEX</Alex>
+def test_torchscript_e2e_text_hf_tokenizer(tmpdir, csv_filename):
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+    input_features = [text_feature(encoder={"vocab_size": 3, "type": "bert"})]
+    output_features = [
+        text_feature(decoder={"vocab_size": 3}),
+    ]
+    backend = LocalTestBackend()
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128, EVAL_BATCH_SIZE: 128},
+    }
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+
+    validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
 
 # @pytest.mark.skipif(
