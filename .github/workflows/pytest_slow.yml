@@ -152,12 +152,14 @@ jobs:
         run: |
           RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=6000 pytest -vs --timeout 450 --durations 100 -m "($MARKERS) and (not $EXCLUDED_MARKERS)" --junitxml pytest_slow.xml tests
 
-      - name: Upload Unit Test Results
-        if: ${{ always() && !env.ACT }}
-        uses: actions/upload-artifact@v2
-        with:
-          name: Unit Test Results (Python ${{ matrix.python-version }} ${{ matrix.test-markers }})
-          path: pytest.xml
+      # TODO: <Alex>ALEX</Alex>
+#      - name: Upload Unit Test Results
+#        if: ${{ always() && !env.ACT }}
+#        uses: actions/upload-artifact@v2
+#        with:
+#          name: Unit Test Results (Python ${{ matrix.python-version }} ${{ matrix.test-markers }})
+#          path: pytest.xml
+      # TODO: <Alex>ALEX</Alex>
 
   stop-runner:
     name: Stop self-hosted EC2 runner
