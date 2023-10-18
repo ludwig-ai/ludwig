@@ -30,7 +30,7 @@ jobs:
             torchscript-version: 1.10.2
             ray-version: 2.2.0
           - python-version: "3.9"
-            pytorch-version: 2.0.0
+            pytorch-version: 2.0.1
             torchscript-version: 1.10.2
             ray-version: 2.3.0
           - python-version: "3.10"
