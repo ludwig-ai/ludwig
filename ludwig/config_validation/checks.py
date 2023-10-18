@@ -25,6 +25,7 @@ from ludwig.constants import (
     VECTOR,
 )
 from ludwig.error import ConfigValidationError
+from ludwig.utils.backend_utils import _get_backend_type_from_config, _get_deepspeed_optimization_stage_from_config
 from ludwig.utils.metric_utils import get_feature_to_metric_names_map_from_feature_collection
 from ludwig.utils.misc_utils import merge_dict
 
@@ -597,8 +598,7 @@ def _get_llm_model_config(model_name: str) -> AutoConfig:
     return AutoConfig.from_pretrained(model_name)
 
 
-# TODO(geoffrey, arnav): uncomment this when we have reconciled the config with the backend kwarg in api.py
-# @register_config_check
+@register_config_check
 def check_llm_quantization_backend_incompatibility(config: "ModelConfig") -> None:  # noqa: F821
     """Checks that LLM model type with quantization uses the local backend."""
     if config.model_type != MODEL_LLM:
@@ -607,28 +607,15 @@ def check_llm_quantization_backend_incompatibility(config: "ModelConfig") -> Non
     if config.quantization is None:
         return
 
-    backend_type = None
-    if config.backend:
-        backend_type = config.backend.get("type", None)
+    backend_type = _get_backend_type_from_config(config)
+    optimization_stage = _get_deepspeed_optimization_stage_from_config(config)
 
-    # If backend was explicitly set to Ray, then we need to raise an error
-    if backend_type == "ray":
-        raise ConfigValidationError(f"LLM with quantization requires the 'local' backend, found: '{backend_type}'")
-
-    # If the backend is not explicitly set, then we need to check if a Ray process is running
-    # If a Ray process is running, then we need to raise an error because the backend will be set to Ray
-    if config.backend is None:
-        try:
-            # May not be installed, so we need to catch the ImportError
-            import ray
-
-            if ray.is_initialized():
-                raise ConfigValidationError(
-                    "LLM with quantization requires the 'local' backend, but backend will be set "
-                    "to Ray since Ray is already running locally."
-                )
-        except ImportError:
-            pass
+    if backend_type == "ray" and (optimization_stage is None or optimization_stage == 3):
+        raise ConfigValidationError(
+            "When using the Ray backend, LLMs with quantization require using the deepspeed strategy with "
+            "zero optimization stage set to 2. Please ensure that you are using DeepSpeed with zero optimization stage "
+            "0, 1, or 2 in your config."
+        )
 
 
 @register_config_check

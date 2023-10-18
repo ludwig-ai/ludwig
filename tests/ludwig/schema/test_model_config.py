@@ -914,10 +914,6 @@ def test_llm_finetuning_output_feature_config():
     ModelConfig.from_dict(config)
 
 
-@pytest.mark.skip(
-    reason="TODO(geoffrey, arnav): re-enable this when we have reconciled the config with the backend kwarg in api.py"
-)
-@pytest.mark.distributed
 def test_llm_quantization_backend_compatibility():
     config = {
         MODEL_TYPE: MODEL_LLM,
@@ -934,22 +930,38 @@ def test_llm_quantization_backend_compatibility():
     config["backend"] = {"type": "local"}
     ModelConfig.from_dict(config)
 
-    # Backend explicitly set to Ray backend
+    # Backend explicitly set to Ray backend but uses DDP
     config["backend"] = {"type": "ray"}
     with pytest.raises(ConfigValidationError):
         ModelConfig.from_dict(config)
 
-    # Start local ray process
-    import ray
-
-    ray.init()
-
-    # Backend not set, but local Ray process is running
-    config.pop("backend")
+    # Backend explicitly set to Ray backend and explicitly to DDP
+    config["backend"] = {"type": "ray", "trainer": {"strategy": "ddp"}}
     with pytest.raises(ConfigValidationError):
         ModelConfig.from_dict(config)
 
-    ray.shutdown()
+    # Backend explicitly set to Ray backend and explicitly to DeepSpeed (defaults to using stage 3)
+    config["backend"] = {"type": "ray", "trainer": {"strategy": "deepspeed"}}
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
+
+    # Backend explicitly set to Ray backend with DeepSpeed stage 2
+    base_deepspeed_backend_config = {
+        "type": "ray",
+        "trainer": {"strategy": {"type": "deepspeed", "zero_optimization": {"stage": 2}}},
+    }
+    config["backend"] = base_deepspeed_backend_config
+    ModelConfig.from_dict(config)
+
+    # Backend explicitly set to Ray backend awith DeepSpeed stage 1
+    base_deepspeed_backend_config["trainer"]["strategy"]["zero_optimization"]["stage"] = 1
+    config["backend"] = base_deepspeed_backend_config
+    ModelConfig.from_dict(config)
+
+    # Backend explicitly set to Ray backend awith DeepSpeed stage 0
+    base_deepspeed_backend_config["trainer"]["strategy"]["zero_optimization"]["stage"] = 0
+    config["backend"] = base_deepspeed_backend_config
+    ModelConfig.from_dict(config)
 
 
 class TestMaxNewTokensOverride:

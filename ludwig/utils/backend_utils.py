@@ -1,7 +1,8 @@
 import os
-from typing import Any, Dict, Union
+from typing import Any, Dict, TYPE_CHECKING, Union
 
-from ludwig.schema.model_types.base import ModelConfig
+if TYPE_CHECKING:
+    from ludwig.schema.model_types.base import ModelConfig
 
 
 def _default_transformers_cache_dir() -> str:
@@ -18,7 +19,7 @@ def _default_transformers_cache_dir() -> str:
     return cache_dir
 
 
-def _get_backend_type_from_config(config_obj: ModelConfig) -> str:
+def _get_backend_type_from_config(config_obj: "ModelConfig") -> str:  # noqa: F821
     """Get the backend type from a model configuration object.
 
     This function retrieves the backend type specified in a language model configuration.
@@ -48,14 +49,22 @@ def _get_optimization_stage_from_trainer_config(trainer_config: Dict[str, Any]) 
         Union[int, None]: The DeepSpeed optimization stage (an integer), or None if DeepSpeed is not the
         selected strategy or no stage is specified.
     """
-    distributed_strategy_kwargs = trainer_config.get("strategy", {})
-    if distributed_strategy_kwargs.get("type") != "deepspeed":
+    # Distributed strategy can directly be the strategy name or be a dict with strategy name and kwargs
+    distributed_strategy_name_or_kwargs = trainer_config.get("strategy", "ddp")
+    if isinstance(distributed_strategy_name_or_kwargs, dict):
+        distributed_strategy_type = distributed_strategy_name_or_kwargs.get("type", "ddp")
+    else:
+        distributed_strategy_type = distributed_strategy_name_or_kwargs
+
+    if distributed_strategy_type != "deepspeed":
         return None
 
-    return distributed_strategy_kwargs.get("zero_optimization", {}).get("stage", 3)
+    if isinstance(distributed_strategy_name_or_kwargs, str):
+        return None
+    return distributed_strategy_name_or_kwargs.get("zero_optimization", {}).get("stage", 3)
 
 
-def _get_deepspeed_optimization_stage_from_config(config_obj: ModelConfig) -> Union[int, None]:
+def _get_deepspeed_optimization_stage_from_config(config_obj: "ModelConfig") -> Union[int, None]:  # noqa: F821
     """Get the DeepSpeed optimization stage from a model configuration object.
 
     This function extracts the DeepSpeed optimization stage from a language model configuration if the backend type
