@@ -588,79 +588,79 @@ def test_torchscript_e2e_sequence(tmpdir, csv_filename):
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
 
-# # TODO: <Alex>ALEX</Alex>
-# # @pytest.mark.integration_tests_e
-# # TODO: <Alex>ALEX</Alex>
-# # TODO: <Alex>ALEX</Alex>
-# @pytest.mark.integration_tests_e_issue_3734
-# # TODO: <Alex>ALEX</Alex>
-# def test_torchscript_e2e_timeseries(tmpdir, csv_filename):
-#     data_csv_path = os.path.join(tmpdir, csv_filename)
-#     input_features = [
-#         timeseries_feature(),
-#     ]
-#     output_features = [
-#         binary_feature(),
-#     ]
-#     backend = LocalTestBackend()
-#     config = {
-#         "input_features": input_features,
-#         "output_features": output_features,
-#         TRAINER: {"epochs": 2, BATCH_SIZE: 128},
-#     }
-#     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
-#
-#     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
+# TODO: <Alex>ALEX</Alex>
+# @pytest.mark.integration_tests_e
+# TODO: <Alex>ALEX</Alex>
+# TODO: <Alex>ALEX</Alex>
+@pytest.mark.integration_tests_e_issue_3734
+# TODO: <Alex>ALEX</Alex>
+def test_torchscript_e2e_timeseries(tmpdir, csv_filename):
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+    input_features = [
+        timeseries_feature(),
+    ]
+    output_features = [
+        binary_feature(),
+    ]
+    backend = LocalTestBackend()
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+    }
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+
+    validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
 
-# # TODO: <Alex>ALEX</Alex>
-# # @pytest.mark.integration_tests_e
-# # TODO: <Alex>ALEX</Alex>
-# # TODO: <Alex>ALEX</Alex>
-# @pytest.mark.integration_tests_e_issue_3734
-# # TODO: <Alex>ALEX</Alex>
-# def test_torchscript_e2e_h3(tmpdir, csv_filename):
-#     data_csv_path = os.path.join(tmpdir, csv_filename)
-#     input_features = [
-#         h3_feature(),
-#     ]
-#     output_features = [
-#         binary_feature(),
-#     ]
-#     backend = LocalTestBackend()
-#     config = {
-#         "input_features": input_features,
-#         "output_features": output_features,
-#         TRAINER: {"epochs": 2, BATCH_SIZE: 128},
-#     }
-#     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
-#
-#     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
+# TODO: <Alex>ALEX</Alex>
+# @pytest.mark.integration_tests_e
+# TODO: <Alex>ALEX</Alex>
+# TODO: <Alex>ALEX</Alex>
+@pytest.mark.integration_tests_e_issue_3734
+# TODO: <Alex>ALEX</Alex>
+def test_torchscript_e2e_h3(tmpdir, csv_filename):
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+    input_features = [
+        h3_feature(),
+    ]
+    output_features = [
+        binary_feature(),
+    ]
+    backend = LocalTestBackend()
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+    }
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+
+    validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
 
-# # TODO: <Alex>ALEX</Alex>
-# # @pytest.mark.integration_tests_e
-# # TODO: <Alex>ALEX</Alex>
-# # TODO: <Alex>ALEX</Alex>
-# @pytest.mark.integration_tests_e_issue_3734
-# # TODO: <Alex>ALEX</Alex>
-# def test_torchscript_e2e_date(tmpdir, csv_filename):
-#     data_csv_path = os.path.join(tmpdir, csv_filename)
-#     input_features = [
-#         date_feature(),
-#     ]
-#     output_features = [
-#         binary_feature(),
-#     ]
-#     backend = LocalTestBackend()
-#     config = {
-#         "input_features": input_features,
-#         "output_features": output_features,
-#         TRAINER: {"epochs": 2, BATCH_SIZE: 128},
-#     }
-#     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
-#
-#     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
+# TODO: <Alex>ALEX</Alex>
+# @pytest.mark.integration_tests_e
+# TODO: <Alex>ALEX</Alex>
+# TODO: <Alex>ALEX</Alex>
+@pytest.mark.integration_tests_e_issue_3734
+# TODO: <Alex>ALEX</Alex>
+def test_torchscript_e2e_date(tmpdir, csv_filename):
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+    input_features = [
+        date_feature(),
+    ]
+    output_features = [
+        binary_feature(),
+    ]
+    backend = LocalTestBackend()
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+    }
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+
+    validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
 
 # @pytest.mark.parametrize("vector_type", [torch.Tensor, List[torch.Tensor]])
