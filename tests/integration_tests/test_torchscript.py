@@ -32,6 +32,9 @@ import torchtext
 from ludwig.api import LudwigModel
 
 # TODO: <Alex>ALEX</Alex>
+from ludwig.backend import RAY
+
+# TODO: <Alex>ALEX</Alex>
 # TODO: <Alex>ALEX</Alex>
 from ludwig.constants import BATCH_SIZE, COMBINER, EVAL_BATCH_SIZE, LOGITS, NAME, PREDICTIONS, PROBABILITIES, TRAINER
 
@@ -81,8 +84,6 @@ from tests.integration_tests.utils import (
 
 # TODO: <Alex>ALEX</Alex>
 
-# TODO: <Alex>ALEX</Alex>
-# from ludwig.backend import RAY
 # TODO: <Alex>ALEX</Alex>
 
 
@@ -535,56 +536,56 @@ def test_torchscript_e2e_text_hf_tokenizer(tmpdir, csv_filename):
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
 
-# @pytest.mark.skipif(
-#     torch.torch_version.TorchVersion(torchtext.__version__) < (0, 14, 0),
-#     reason="requires torchtext 0.14.0 or higher",
-# )
-# # TODO: <Alex>ALEX</Alex>
-# # @pytest.mark.integration_tests_e
-# # TODO: <Alex>ALEX</Alex>
-# # TODO: <Alex>ALEX</Alex>
-# @pytest.mark.integration_tests_e_issue_3734
-# # TODO: <Alex>ALEX</Alex>
-# def test_torchscript_e2e_text_hf_tokenizer_truncated_sequence(tmpdir, csv_filename):
-#     data_csv_path = os.path.join(tmpdir, csv_filename)
-#   input_features = [text_feature(encoder={"vocab_size": 3, "type": "bert"}, preprocessing={"max_sequence_length": 3})]
-#     output_features = [
-#         text_feature(decoder={"vocab_size": 3}),
-#     ]
-#     backend = LocalTestBackend()
-#     config = {
-#         "input_features": input_features,
-#         "output_features": output_features,
-#         TRAINER: {"epochs": 2, BATCH_SIZE: 128},
-#     }
-#     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
-#
-#     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
+@pytest.mark.skipif(
+    torch.torch_version.TorchVersion(torchtext.__version__) < (0, 14, 0),
+    reason="requires torchtext 0.14.0 or higher",
+)
+# TODO: <Alex>ALEX</Alex>
+# @pytest.mark.integration_tests_e
+# TODO: <Alex>ALEX</Alex>
+# TODO: <Alex>ALEX</Alex>
+@pytest.mark.integration_tests_e_issue_3734
+# TODO: <Alex>ALEX</Alex>
+def test_torchscript_e2e_text_hf_tokenizer_truncated_sequence(tmpdir, csv_filename):
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+    input_features = [text_feature(encoder={"vocab_size": 3, "type": "bert"}, preprocessing={"max_sequence_length": 3})]
+    output_features = [
+        text_feature(decoder={"vocab_size": 3}),
+    ]
+    backend = LocalTestBackend()
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+    }
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+
+    validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
 
-# # TODO: <Alex>ALEX</Alex>
-# # @pytest.mark.integration_tests_e
-# # TODO: <Alex>ALEX</Alex>
-# # TODO: <Alex>ALEX</Alex>
-# @pytest.mark.integration_tests_e_issue_3734
-# # TODO: <Alex>ALEX</Alex>
-# def test_torchscript_e2e_sequence(tmpdir, csv_filename):
-#     data_csv_path = os.path.join(tmpdir, csv_filename)
-#     input_features = [
-#         sequence_feature(encoder={"vocab_size": 3}, preprocessing={"tokenizer": "space"}),
-#     ]
-#     output_features = [
-#         sequence_feature(decoder={"vocab_size": 3}),
-#     ]
-#     backend = LocalTestBackend()
-#     config = {
-#         "input_features": input_features,
-#         "output_features": output_features,
-#         TRAINER: {"epochs": 2, BATCH_SIZE: 128},
-#     }
-#     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
-#
-#     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
+# TODO: <Alex>ALEX</Alex>
+# @pytest.mark.integration_tests_e
+# TODO: <Alex>ALEX</Alex>
+# TODO: <Alex>ALEX</Alex>
+@pytest.mark.integration_tests_e_issue_3734
+# TODO: <Alex>ALEX</Alex>
+def test_torchscript_e2e_sequence(tmpdir, csv_filename):
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+    input_features = [
+        sequence_feature(encoder={"vocab_size": 3}, preprocessing={"tokenizer": "space"}),
+    ]
+    output_features = [
+        sequence_feature(decoder={"vocab_size": 3}),
+    ]
+    backend = LocalTestBackend()
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+    }
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+
+    validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
 
 # # TODO: <Alex>ALEX</Alex>
@@ -857,75 +858,75 @@ def test_torchscript_e2e_text_hf_tokenizer(tmpdir, csv_filename):
 #         assert utils.is_all_close(feature_values, feature_values_expected), f"feature: {feature_name}"
 
 
-# @pytest.mark.skipif(torch.cuda.device_count() == 0, reason="test requires at least 1 gpu")
-# @pytest.mark.skipif(not torch.cuda.is_available(), reason="test requires gpu support")
-# @pytest.mark.distributed
-# @pytest.mark.parametrize(
-#     "feature_fn",
-#     [
-#         number_feature,
-#         image_feature,
-#         audio_feature,
-#         h3_feature,
-#         date_feature,
-#         # TODO: future support
-#         # binary_feature(),                # Torchscript takes List[str] as input, so currently CPU only
-#         # category_feature(encoder={"vocab_size": 3}),  # Torchscript takes List[str] as input, so currently CPU only
-#         # set_feature(encoder={"vocab_size": 3}),       # Torchscript takes List[str] as input, so currently CPU only
-#         # sequence_feature(encoder={"vocab_size": 3}),  # Torchscript takes List[str] as input, so currently CPU only
-#         # text_feature(encoder={"vocab_size": 3}),      # Torchscript takes List[str] as input, so currently CPU only
-#         # vector_feature(),                # Torchscript takes List[str] as input, so currently CPU only
-#         # bag_feature(encoder={"vocab_size": 3}),       # Torchscript takes List[str] as input, so currently CPU only
-#         # timeseries_feature(),            # Torchscript takes List[str] as input, so currently CPU only
-#     ],
-# )
-# # TODO: <Alex>ALEX</Alex>
-# # @pytest.mark.integration_tests_e
-# # TODO: <Alex>ALEX</Alex>
-# # TODO: <Alex>ALEX</Alex>
-# @pytest.mark.integration_tests_e_issue_3734
-# # TODO: <Alex>ALEX</Alex>
-# def test_torchscript_preproc_gpu(tmpdir, csv_filename, feature_fn):
-#     data_csv_path = os.path.join(tmpdir, csv_filename)
-#
-#     feature_kwargs = {}
-#     if feature_fn in {image_feature, audio_feature}:
-#         dest_folder = os.path.join(tmpdir, "generated_samples")
-#         feature_kwargs["folder"] = dest_folder
-#
-#     input_features = [
-#         feature_fn(**feature_kwargs),
-#     ]
-#     output_features = [
-#         binary_feature(),
-#     ]
-#
-#     config = {
-#         "input_features": input_features,
-#         "output_features": output_features,
-#         TRAINER: {"epochs": 2, BATCH_SIZE: 128},
-#     }
-#     backend = RAY
-#     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
-#     _, script_module = initialize_torchscript_module(
-#         tmpdir,
-#         config,
-#         backend,
-#         training_data_csv_path,
-#         device=torch.device("cuda"),
-#     )
-#
-#     df = pd.read_csv(training_data_csv_path)
-#     inputs = to_inference_module_input_from_dataframe(
-#         df,
-#         config,
-#         load_paths=True,
-#         device=torch.device("cuda"),
-#     )
-#     preproc_inputs = script_module.preprocessor_forward(inputs)
-#
-#     for name, values in preproc_inputs.items():
-#         assert values.is_cuda, f'feature "{name}" tensors are not on GPU'
+@pytest.mark.skipif(torch.cuda.device_count() == 0, reason="test requires at least 1 gpu")
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="test requires gpu support")
+@pytest.mark.distributed
+@pytest.mark.parametrize(
+    "feature_fn",
+    [
+        number_feature,
+        image_feature,
+        audio_feature,
+        h3_feature,
+        date_feature,
+        # TODO: future support
+        # binary_feature(),                # Torchscript takes List[str] as input, so currently CPU only
+        # category_feature(encoder={"vocab_size": 3}),  # Torchscript takes List[str] as input, so currently CPU only
+        # set_feature(encoder={"vocab_size": 3}),       # Torchscript takes List[str] as input, so currently CPU only
+        # sequence_feature(encoder={"vocab_size": 3}),  # Torchscript takes List[str] as input, so currently CPU only
+        # text_feature(encoder={"vocab_size": 3}),      # Torchscript takes List[str] as input, so currently CPU only
+        # vector_feature(),                # Torchscript takes List[str] as input, so currently CPU only
+        # bag_feature(encoder={"vocab_size": 3}),       # Torchscript takes List[str] as input, so currently CPU only
+        # timeseries_feature(),            # Torchscript takes List[str] as input, so currently CPU only
+    ],
+)
+# TODO: <Alex>ALEX</Alex>
+# @pytest.mark.integration_tests_e
+# TODO: <Alex>ALEX</Alex>
+# TODO: <Alex>ALEX</Alex>
+@pytest.mark.integration_tests_e_issue_3734
+# TODO: <Alex>ALEX</Alex>
+def test_torchscript_preproc_gpu(tmpdir, csv_filename, feature_fn):
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+
+    feature_kwargs = {}
+    if feature_fn in {image_feature, audio_feature}:
+        dest_folder = os.path.join(tmpdir, "generated_samples")
+        feature_kwargs["folder"] = dest_folder
+
+    input_features = [
+        feature_fn(**feature_kwargs),
+    ]
+    output_features = [
+        binary_feature(),
+    ]
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+    }
+    backend = RAY
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+    _, script_module = initialize_torchscript_module(
+        tmpdir,
+        config,
+        backend,
+        training_data_csv_path,
+        device=torch.device("cuda"),
+    )
+
+    df = pd.read_csv(training_data_csv_path)
+    inputs = to_inference_module_input_from_dataframe(
+        df,
+        config,
+        load_paths=True,
+        device=torch.device("cuda"),
+    )
+    preproc_inputs = script_module.preprocessor_forward(inputs)
+
+    for name, values in preproc_inputs.items():
+        assert values.is_cuda, f'feature "{name}" tensors are not on GPU'
 
 
 # @pytest.mark.skipif(torch.cuda.device_count() == 0, reason="test requires at least 1 gpu")
