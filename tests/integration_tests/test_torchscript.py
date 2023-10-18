@@ -19,6 +19,9 @@ import shutil
 from copy import deepcopy
 
 # TODO: <Alex>ALEX</Alex>
+from typing import List
+
+# TODO: <Alex>ALEX</Alex>
 import numpy as np
 
 # TODO: <Alex>ALEX</Alex>
@@ -77,8 +80,6 @@ from tests.integration_tests.utils import (
     vector_feature,
 )
 
-# TODO: <Alex>ALEX</Alex>
-# from typing import List
 # TODO: <Alex>ALEX</Alex>
 
 
@@ -663,66 +664,66 @@ def test_torchscript_e2e_date(tmpdir, csv_filename):
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
 
-# @pytest.mark.parametrize("vector_type", [torch.Tensor, List[torch.Tensor]])
-# # TODO: <Alex>ALEX</Alex>
-# # @pytest.mark.integration_tests_e
-# # TODO: <Alex>ALEX</Alex>
-# # TODO: <Alex>ALEX</Alex>
-# @pytest.mark.integration_tests_e_issue_3734
-# # TODO: <Alex>ALEX</Alex>
-# def test_torchscript_preproc_vector_alternative_type(tmpdir, csv_filename, vector_type):
-#     data_csv_path = os.path.join(tmpdir, csv_filename)
-#     feature = vector_feature()
-#     input_features = [
-#         feature,
-#     ]
-#     output_features = [
-#         binary_feature(),
-#     ]
-#     backend = LocalTestBackend()
-#     config = {
-#         "input_features": input_features,
-#         "output_features": output_features,
-#         TRAINER: {"epochs": 2, BATCH_SIZE: 128},
-#     }
-#     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
-#
-#     # Initialize Ludwig model
-#     ludwig_model, script_module = initialize_torchscript_module(tmpdir, config, backend, training_data_csv_path)
-#
-#     # Obtain preprocessed inputs from Python model
-#     preproc_inputs_expected, _ = preprocess_for_prediction(
-#         ludwig_model.config_obj.to_dict(),
-#         training_data_csv_path,
-#         ludwig_model.training_set_metadata,
-#         backend=backend,
-#         include_outputs=False,
-#     )
-#
-#     df = pd.read_csv(training_data_csv_path)
-#     inputs = to_inference_module_input_from_dataframe(df, config, load_paths=True)
-#
-#     def transform_vector_list(vector_list, vector_type):
-#         vectors = []
-#         for vector_str in vector_list:
-#             vectors.append(torch.tensor([float(x) for x in vector_str.split()]))
-#
-#         if vector_type == torch.Tensor:
-#             vectors = torch.stack(vectors)
-#         return vectors
-#
-#     inputs[feature[NAME]] = transform_vector_list(inputs[feature[NAME]], vector_type)
-#
-#     preproc_inputs = script_module.preprocessor_forward(inputs)
-#
-#     # Check that preproc_inputs is the same as preproc_inputs_expected.
-#     for feature_name_expected, feature_values_expected in preproc_inputs_expected.dataset.items():
-#         feature_name = feature_name_expected[: feature_name_expected.rfind("_")]  # remove proc suffix
-#         if feature_name not in preproc_inputs.keys():
-#             continue
-#
-#         feature_values = preproc_inputs[feature_name]
-#         assert utils.is_all_close(feature_values, feature_values_expected), f"feature: {feature_name}"
+@pytest.mark.parametrize("vector_type", [torch.Tensor, List[torch.Tensor]])
+# TODO: <Alex>ALEX</Alex>
+# @pytest.mark.integration_tests_e
+# TODO: <Alex>ALEX</Alex>
+# TODO: <Alex>ALEX</Alex>
+@pytest.mark.integration_tests_e_issue_3734
+# TODO: <Alex>ALEX</Alex>
+def test_torchscript_preproc_vector_alternative_type(tmpdir, csv_filename, vector_type):
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+    feature = vector_feature()
+    input_features = [
+        feature,
+    ]
+    output_features = [
+        binary_feature(),
+    ]
+    backend = LocalTestBackend()
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+    }
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+
+    # Initialize Ludwig model
+    ludwig_model, script_module = initialize_torchscript_module(tmpdir, config, backend, training_data_csv_path)
+
+    # Obtain preprocessed inputs from Python model
+    preproc_inputs_expected, _ = preprocess_for_prediction(
+        ludwig_model.config_obj.to_dict(),
+        training_data_csv_path,
+        ludwig_model.training_set_metadata,
+        backend=backend,
+        include_outputs=False,
+    )
+
+    df = pd.read_csv(training_data_csv_path)
+    inputs = to_inference_module_input_from_dataframe(df, config, load_paths=True)
+
+    def transform_vector_list(vector_list, vector_type):
+        vectors = []
+        for vector_str in vector_list:
+            vectors.append(torch.tensor([float(x) for x in vector_str.split()]))
+
+        if vector_type == torch.Tensor:
+            vectors = torch.stack(vectors)
+        return vectors
+
+    inputs[feature[NAME]] = transform_vector_list(inputs[feature[NAME]], vector_type)
+
+    preproc_inputs = script_module.preprocessor_forward(inputs)
+
+    # Check that preproc_inputs is the same as preproc_inputs_expected.
+    for feature_name_expected, feature_values_expected in preproc_inputs_expected.dataset.items():
+        feature_name = feature_name_expected[: feature_name_expected.rfind("_")]  # remove proc suffix
+        if feature_name not in preproc_inputs.keys():
+            continue
+
+        feature_values = preproc_inputs[feature_name]
+        assert utils.is_all_close(feature_values, feature_values_expected), f"feature: {feature_name}"
 
 
 # @pytest.mark.parametrize("padding", ["left", "right"])
