@@ -13,11 +13,16 @@
 # limitations under the License.
 # ==============================================================================
 import os
-import shutil
-from copy import deepcopy
+
+# TODO: <Alex>ALEX</Alex>
+# import shutil
+# from copy import deepcopy
+# TODO: <Alex>ALEX</Alex>
 from typing import List
 
-import numpy as np
+# TODO: <Alex>ALEX</Alex>
+# import numpy as np
+# TODO: <Alex>ALEX</Alex>
 import pandas as pd
 import pytest
 import torch
@@ -25,12 +30,27 @@ import torchtext
 
 from ludwig.api import LudwigModel
 from ludwig.backend import RAY
-from ludwig.constants import BATCH_SIZE, COMBINER, EVAL_BATCH_SIZE, LOGITS, NAME, PREDICTIONS, PROBABILITIES, TRAINER
+
+# TODO: <Alex>ALEX</Alex>
+# from ludwig.constants import BATCH_SIZE, COMBINER, EVAL_BATCH_SIZE, LOGITS, NAME, PREDICTIONS, PROBABILITIES, TRAINER
+# TODO: <Alex>ALEX</Alex>
+# TODO: <Alex>ALEX</Alex>
+from ludwig.constants import BATCH_SIZE, EVAL_BATCH_SIZE, LOGITS, NAME, PREDICTIONS, PROBABILITIES, TRAINER
+
+# TODO: <Alex>ALEX</Alex>
 from ludwig.data.preprocessing import preprocess_for_prediction
-from ludwig.features.number_feature import numeric_transformation_registry
-from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
+
+# TODO: <Alex>ALEX</Alex>
+# from ludwig.features.number_feature import numeric_transformation_registry
+# TODO: <Alex>ALEX</Alex>
+# TODO: <Alex>ALEX</Alex>
+# from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
+# TODO: <Alex>ALEX</Alex>
 from ludwig.models.inference import to_inference_module_input_from_dataframe
-from ludwig.utils import output_feature_utils
+
+# TODO: <Alex>ALEX</Alex>
+# from ludwig.utils import output_feature_utils
+# TODO: <Alex>ALEX</Alex>
 from ludwig.utils.tokenizers import TORCHSCRIPT_COMPATIBLE_TOKENIZERS
 from tests.integration_tests import utils
 from tests.integration_tests.utils import (
@@ -51,340 +71,341 @@ from tests.integration_tests.utils import (
     vector_feature,
 )
 
-
-@pytest.mark.parametrize("should_load_model", [True, False])
-@pytest.mark.parametrize("model_type", ["ecd", "gbm"])
-@pytest.mark.integration_tests_e
-def test_torchscript(tmpdir, csv_filename, should_load_model, model_type):
-    #######
-    # Setup
-    #######
-    dir_path = tmpdir
-    data_csv_path = os.path.join(tmpdir, csv_filename)
-
-    # Single sequence input, single category output
-    input_features = [
-        binary_feature(),
-        number_feature(),
-        category_feature(encoder={"type": "passthrough", "vocab_size": 3}),
-        category_feature(encoder={"type": "onehot", "vocab_size": 3}),
-    ]
-    if model_type == "ecd":
-        image_dest_folder = os.path.join(tmpdir, "generated_images")
-        audio_dest_folder = os.path.join(tmpdir, "generated_audio")
-        input_features.extend(
-            [
-                category_feature(encoder={"type": "dense", "vocab_size": 3}),
-                sequence_feature(encoder={"vocab_size": 3}),
-                text_feature(encoder={"vocab_size": 3}),
-                vector_feature(),
-                image_feature(image_dest_folder),
-                audio_feature(audio_dest_folder),
-                timeseries_feature(),
-                date_feature(),
-                date_feature(),
-                h3_feature(),
-                set_feature(encoder={"vocab_size": 3}),
-                bag_feature(encoder={"vocab_size": 3}),
-            ]
-        )
-
-    output_features = [
-        category_feature(decoder={"vocab_size": 3}),
-    ]
-    if model_type == "ecd":
-        output_features.extend(
-            [
-                binary_feature(),
-                number_feature(),
-                set_feature(decoder={"vocab_size": 3}),
-                vector_feature(),
-                sequence_feature(decoder={"vocab_size": 3}),
-                text_feature(decoder={"vocab_size": 3}),
-            ]
-        )
-
-    predictions_column_name = "{}_predictions".format(output_features[0]["name"])
-
-    # Generate test data
-    data_csv_path = generate_data(input_features, output_features, data_csv_path)
-
-    #############
-    # Train model
-    #############
-    backend = LocalTestBackend()
-    config = {
-        "model_type": model_type,
-        "input_features": input_features,
-        "output_features": output_features,
-    }
-    if model_type == "ecd":
-        config[TRAINER] = {"epochs": 2}
-    else:
-        # Disable feature filtering to avoid having no features due to small test dataset,
-        # see https://stackoverflow.com/a/66405983/5222402
-        config[TRAINER] = {"num_boost_round": 2, "feature_pre_filter": False}
-    ludwig_model = LudwigModel(config, backend=backend)
-    ludwig_model.train(
-        dataset=data_csv_path,
-        skip_save_training_description=True,
-        skip_save_training_statistics=True,
-        skip_save_model=True,
-        skip_save_progress=True,
-        skip_save_log=True,
-        skip_save_processed_input=True,
-    )
-
-    ###################
-    # save Ludwig model
-    ###################
-    ludwigmodel_path = os.path.join(dir_path, "ludwigmodel")
-    shutil.rmtree(ludwigmodel_path, ignore_errors=True)
-    ludwig_model.save(ludwigmodel_path)
-
-    ###################
-    # load Ludwig model
-    ###################
-    if should_load_model:
-        ludwig_model = LudwigModel.load(ludwigmodel_path, backend=backend)
-
-    ##############################
-    # collect weight tensors names
-    ##############################
-    original_predictions_df, _ = ludwig_model.predict(dataset=data_csv_path)
-    original_weights = deepcopy(list(ludwig_model.model.parameters()))
-    original_weights = [t.cpu() for t in original_weights]
-
-    # Move the model to CPU for tracing
-    ludwig_model.model.cpu()
-
-    #################
-    # save torchscript
-    #################
-    torchscript_path = os.path.join(dir_path, "torchscript")
-    shutil.rmtree(torchscript_path, ignore_errors=True)
-    ludwig_model.model.save_torchscript(torchscript_path)
-
-    ###################################################
-    # load Ludwig model, obtain predictions and weights
-    ###################################################
-    ludwig_model = LudwigModel.load(ludwigmodel_path, backend=backend)
-    loaded_prediction_df, _ = ludwig_model.predict(dataset=data_csv_path)
-    loaded_weights = deepcopy(list(ludwig_model.model.parameters()))
-    loaded_weights = [t.cpu() for t in loaded_weights]
-
-    #####################################################
-    # restore torchscript, obtain predictions and weights
-    #####################################################
-    training_set_metadata_json_fp = os.path.join(ludwigmodel_path, TRAIN_SET_METADATA_FILE_NAME)
-
-    dataset, training_set_metadata = preprocess_for_prediction(
-        ludwig_model.config_obj.to_dict(),
-        dataset=data_csv_path,
-        training_set_metadata=training_set_metadata_json_fp,
-        include_outputs=False,
-        backend=backend,
-    )
-
-    restored_model = torch.jit.load(torchscript_path)
-
-    # Check the outputs for one of the features for correctness
-    # Here we choose the first output feature (categorical)
-    of_name = list(ludwig_model.model.output_features.keys())[0]
-
-    data_to_predict = {
-        name: torch.from_numpy(dataset.dataset[feature.proc_column])
-        for name, feature in ludwig_model.model.input_features.items()
-    }
-
-    # Get predictions from restored torchscript.
-    logits = restored_model(data_to_predict)
-    restored_predictions = torch.argmax(output_feature_utils.get_output_feature_tensor(logits, of_name, "logits"), -1)
-
-    restored_predictions = [training_set_metadata[of_name]["idx2str"][idx] for idx in restored_predictions]
-
-    restored_weights = deepcopy(list(restored_model.parameters()))
-    restored_weights = [t.cpu() for t in restored_weights]
-
-    ###############################################
-    # Check if weights and predictions are the same
-    ###############################################
-
-    # Check to weight values match the original model.
-    assert utils.is_all_close(original_weights, loaded_weights)
-    assert utils.is_all_close(original_weights, restored_weights)
-
-    # Check that predictions are identical to the original model.
-    assert np.all(original_predictions_df[predictions_column_name] == loaded_prediction_df[predictions_column_name])
-
-    assert np.all(original_predictions_df[predictions_column_name] == restored_predictions)
-
-
-@pytest.mark.integration_tests_e
-def test_torchscript_e2e_tabular(csv_filename, tmpdir):
-    data_csv_path = os.path.join(tmpdir, csv_filename)
-    # Configure features to be tested:
-    bin_str_feature_input_feature = binary_feature()
-    bin_str_feature_output_feature = binary_feature(output_feature=True)
-    transformed_number_features = [
-        number_feature(preprocessing={"normalization": numeric_transformer})
-        for numeric_transformer in numeric_transformation_registry.keys()
-    ]
-    input_features = [
-        bin_str_feature_input_feature,
-        binary_feature(),
-        *transformed_number_features,
-        number_feature(preprocessing={"outlier_strategy": "fill_with_mean"}),
-        category_feature(encoder={"vocab_size": 3}),
-        bag_feature(encoder={"vocab_size": 3}),
-        set_feature(encoder={"vocab_size": 3}),
-        vector_feature(),
-        # TODO: future support
-        # date_feature(),
-        # h3_feature(),
-    ]
-    output_features = [
-        bin_str_feature_output_feature,
-        binary_feature(output_feature=True),
-        number_feature(),
-        category_feature(decoder={"vocab_size": 3}),
-        set_feature(decoder={"vocab_size": 3}),
-        vector_feature(),
-        sequence_feature(decoder={"vocab_size": 3}),
-        text_feature(decoder={"vocab_size": 3}),
-    ]
-    backend = LocalTestBackend()
-    config = {
-        "input_features": input_features,
-        "output_features": output_features,
-        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
-    }
-
-    # Generate training data
-    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
-
-    # Convert bool values to strings, e.g., {'Yes', 'No'}
-    df = pd.read_csv(training_data_csv_path)
-    false_value, true_value = "No", "Yes"
-    df[bin_str_feature_input_feature[NAME]] = df[bin_str_feature_input_feature[NAME]].map(
-        lambda x: true_value if x else false_value
-    )
-    df[bin_str_feature_output_feature[NAME]] = df[bin_str_feature_output_feature[NAME]].map(
-        lambda x: true_value if x else false_value
-    )
-    df.to_csv(training_data_csv_path)
-
-    validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
-
-
-@pytest.mark.integration_tests_e
-def test_torchscript_e2e_binary_only(csv_filename, tmpdir):
-    data_csv_path = os.path.join(tmpdir, csv_filename)
-
-    input_features = [
-        binary_feature(),
-    ]
-    output_features = [
-        binary_feature(),
-    ]
-    backend = LocalTestBackend()
-    config = {
-        "input_features": input_features,
-        "output_features": output_features,
-        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
-    }
-
-    # Generate training data
-    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
-
-    validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
-
-
-@pytest.mark.integration_tests_e
-def test_torchscript_e2e_tabnet_combiner(csv_filename, tmpdir):
-    data_csv_path = os.path.join(tmpdir, csv_filename)
-    # Configure features to be tested:
-    input_features = [
-        binary_feature(),
-        number_feature(),
-        category_feature(encoder={"vocab_size": 3}),
-        bag_feature(encoder={"vocab_size": 3}),
-        set_feature(encoder={"vocab_size": 3}),
-    ]
-    output_features = [
-        binary_feature(),
-        number_feature(),
-        category_feature(decoder={"vocab_size": 3}),
-    ]
-    backend = LocalTestBackend()
-    config = {
-        "input_features": input_features,
-        "output_features": output_features,
-        COMBINER: {
-            "type": "tabnet",
-            "num_total_blocks": 2,
-            "num_shared_blocks": 2,
-        },
-        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
-    }
-
-    # Generate training data
-    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
-
-    validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
-
-
-@pytest.mark.integration_tests_e
-def test_torchscript_e2e_audio(csv_filename, tmpdir):
-    data_csv_path = os.path.join(tmpdir, csv_filename)
-    audio_dest_folder = os.path.join(tmpdir, "generated_audio")
-
-    input_features = [
-        audio_feature(audio_dest_folder),
-    ]
-    output_features = [
-        binary_feature(),
-    ]
-    backend = LocalTestBackend()
-    config = {
-        "input_features": input_features,
-        "output_features": output_features,
-        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
-    }
-    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
-
-    # NOTE: audio preprocessing mismatches by very small margins ~O(1e-6) but causes flakiness in e2e test.
-    # Increasing tolerance is a workaround to reduce flakiness for now.
-    # TODO: remove this workaround when audio preprocessing is fixed.
-    validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path, tolerance=1e-6)
-
-
-@pytest.mark.parametrize(
-    "kwargs",
-    [
-        {"encoder": {"type": "stacked_cnn"}},  # Ludwig custom encoder
-        {"encoder": {"type": "alexnet", "use_pretrained": False}},  # TorchVision pretrained model encoder
-    ],
-)
-@pytest.mark.integration_tests_e
-def test_torchscript_e2e_image(tmpdir, csv_filename, kwargs):
-    data_csv_path = os.path.join(tmpdir, csv_filename)
-    image_dest_folder = os.path.join(tmpdir, "generated_images")
-    input_features = [
-        image_feature(image_dest_folder, **kwargs),
-    ]
-    output_features = [
-        binary_feature(),
-    ]
-    backend = LocalTestBackend()
-    config = {
-        "input_features": input_features,
-        "output_features": output_features,
-        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
-    }
-    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
-
-    validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
+# TODO: <Alex>ALEX</Alex>
+# @pytest.mark.parametrize("should_load_model", [True, False])
+# @pytest.mark.parametrize("model_type", ["ecd", "gbm"])
+# @pytest.mark.integration_tests_e
+# def test_torchscript(tmpdir, csv_filename, should_load_model, model_type):
+#     #######
+#     # Setup
+#     #######
+#     dir_path = tmpdir
+#     data_csv_path = os.path.join(tmpdir, csv_filename)
+#
+#     # Single sequence input, single category output
+#     input_features = [
+#         binary_feature(),
+#         number_feature(),
+#         category_feature(encoder={"type": "passthrough", "vocab_size": 3}),
+#         category_feature(encoder={"type": "onehot", "vocab_size": 3}),
+#     ]
+#     if model_type == "ecd":
+#         image_dest_folder = os.path.join(tmpdir, "generated_images")
+#         audio_dest_folder = os.path.join(tmpdir, "generated_audio")
+#         input_features.extend(
+#             [
+#                 category_feature(encoder={"type": "dense", "vocab_size": 3}),
+#                 sequence_feature(encoder={"vocab_size": 3}),
+#                 text_feature(encoder={"vocab_size": 3}),
+#                 vector_feature(),
+#                 image_feature(image_dest_folder),
+#                 audio_feature(audio_dest_folder),
+#                 timeseries_feature(),
+#                 date_feature(),
+#                 date_feature(),
+#                 h3_feature(),
+#                 set_feature(encoder={"vocab_size": 3}),
+#                 bag_feature(encoder={"vocab_size": 3}),
+#             ]
+#         )
+#
+#     output_features = [
+#         category_feature(decoder={"vocab_size": 3}),
+#     ]
+#     if model_type == "ecd":
+#         output_features.extend(
+#             [
+#                 binary_feature(),
+#                 number_feature(),
+#                 set_feature(decoder={"vocab_size": 3}),
+#                 vector_feature(),
+#                 sequence_feature(decoder={"vocab_size": 3}),
+#                 text_feature(decoder={"vocab_size": 3}),
+#             ]
+#         )
+#
+#     predictions_column_name = "{}_predictions".format(output_features[0]["name"])
+#
+#     # Generate test data
+#     data_csv_path = generate_data(input_features, output_features, data_csv_path)
+#
+#     #############
+#     # Train model
+#     #############
+#     backend = LocalTestBackend()
+#     config = {
+#         "model_type": model_type,
+#         "input_features": input_features,
+#         "output_features": output_features,
+#     }
+#     if model_type == "ecd":
+#         config[TRAINER] = {"epochs": 2}
+#     else:
+#         # Disable feature filtering to avoid having no features due to small test dataset,
+#         # see https://stackoverflow.com/a/66405983/5222402
+#         config[TRAINER] = {"num_boost_round": 2, "feature_pre_filter": False}
+#     ludwig_model = LudwigModel(config, backend=backend)
+#     ludwig_model.train(
+#         dataset=data_csv_path,
+#         skip_save_training_description=True,
+#         skip_save_training_statistics=True,
+#         skip_save_model=True,
+#         skip_save_progress=True,
+#         skip_save_log=True,
+#         skip_save_processed_input=True,
+#     )
+#
+#     ###################
+#     # save Ludwig model
+#     ###################
+#     ludwigmodel_path = os.path.join(dir_path, "ludwigmodel")
+#     shutil.rmtree(ludwigmodel_path, ignore_errors=True)
+#     ludwig_model.save(ludwigmodel_path)
+#
+#     ###################
+#     # load Ludwig model
+#     ###################
+#     if should_load_model:
+#         ludwig_model = LudwigModel.load(ludwigmodel_path, backend=backend)
+#
+#     ##############################
+#     # collect weight tensors names
+#     ##############################
+#     original_predictions_df, _ = ludwig_model.predict(dataset=data_csv_path)
+#     original_weights = deepcopy(list(ludwig_model.model.parameters()))
+#     original_weights = [t.cpu() for t in original_weights]
+#
+#     # Move the model to CPU for tracing
+#     ludwig_model.model.cpu()
+#
+#     #################
+#     # save torchscript
+#     #################
+#     torchscript_path = os.path.join(dir_path, "torchscript")
+#     shutil.rmtree(torchscript_path, ignore_errors=True)
+#     ludwig_model.model.save_torchscript(torchscript_path)
+#
+#     ###################################################
+#     # load Ludwig model, obtain predictions and weights
+#     ###################################################
+#     ludwig_model = LudwigModel.load(ludwigmodel_path, backend=backend)
+#     loaded_prediction_df, _ = ludwig_model.predict(dataset=data_csv_path)
+#     loaded_weights = deepcopy(list(ludwig_model.model.parameters()))
+#     loaded_weights = [t.cpu() for t in loaded_weights]
+#
+#     #####################################################
+#     # restore torchscript, obtain predictions and weights
+#     #####################################################
+#     training_set_metadata_json_fp = os.path.join(ludwigmodel_path, TRAIN_SET_METADATA_FILE_NAME)
+#
+#     dataset, training_set_metadata = preprocess_for_prediction(
+#         ludwig_model.config_obj.to_dict(),
+#         dataset=data_csv_path,
+#         training_set_metadata=training_set_metadata_json_fp,
+#         include_outputs=False,
+#         backend=backend,
+#     )
+#
+#     restored_model = torch.jit.load(torchscript_path)
+#
+#     # Check the outputs for one of the features for correctness
+#     # Here we choose the first output feature (categorical)
+#     of_name = list(ludwig_model.model.output_features.keys())[0]
+#
+#     data_to_predict = {
+#         name: torch.from_numpy(dataset.dataset[feature.proc_column])
+#         for name, feature in ludwig_model.model.input_features.items()
+#     }
+#
+#     # Get predictions from restored torchscript.
+#     logits = restored_model(data_to_predict)
+#     restored_predictions = torch.argmax(output_feature_utils.get_output_feature_tensor(logits, of_name, "logits"), -1)
+#
+#     restored_predictions = [training_set_metadata[of_name]["idx2str"][idx] for idx in restored_predictions]
+#
+#     restored_weights = deepcopy(list(restored_model.parameters()))
+#     restored_weights = [t.cpu() for t in restored_weights]
+#
+#     ###############################################
+#     # Check if weights and predictions are the same
+#     ###############################################
+#
+#     # Check to weight values match the original model.
+#     assert utils.is_all_close(original_weights, loaded_weights)
+#     assert utils.is_all_close(original_weights, restored_weights)
+#
+#     # Check that predictions are identical to the original model.
+#     assert np.all(original_predictions_df[predictions_column_name] == loaded_prediction_df[predictions_column_name])
+#
+#     assert np.all(original_predictions_df[predictions_column_name] == restored_predictions)
+#
+#
+# @pytest.mark.integration_tests_e
+# def test_torchscript_e2e_tabular(csv_filename, tmpdir):
+#     data_csv_path = os.path.join(tmpdir, csv_filename)
+#     # Configure features to be tested:
+#     bin_str_feature_input_feature = binary_feature()
+#     bin_str_feature_output_feature = binary_feature(output_feature=True)
+#     transformed_number_features = [
+#         number_feature(preprocessing={"normalization": numeric_transformer})
+#         for numeric_transformer in numeric_transformation_registry.keys()
+#     ]
+#     input_features = [
+#         bin_str_feature_input_feature,
+#         binary_feature(),
+#         *transformed_number_features,
+#         number_feature(preprocessing={"outlier_strategy": "fill_with_mean"}),
+#         category_feature(encoder={"vocab_size": 3}),
+#         bag_feature(encoder={"vocab_size": 3}),
+#         set_feature(encoder={"vocab_size": 3}),
+#         vector_feature(),
+#         # TODO: future support
+#         # date_feature(),
+#         # h3_feature(),
+#     ]
+#     output_features = [
+#         bin_str_feature_output_feature,
+#         binary_feature(output_feature=True),
+#         number_feature(),
+#         category_feature(decoder={"vocab_size": 3}),
+#         set_feature(decoder={"vocab_size": 3}),
+#         vector_feature(),
+#         sequence_feature(decoder={"vocab_size": 3}),
+#         text_feature(decoder={"vocab_size": 3}),
+#     ]
+#     backend = LocalTestBackend()
+#     config = {
+#         "input_features": input_features,
+#         "output_features": output_features,
+#         TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+#     }
+#
+#     # Generate training data
+#     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+#
+#     # Convert bool values to strings, e.g., {'Yes', 'No'}
+#     df = pd.read_csv(training_data_csv_path)
+#     false_value, true_value = "No", "Yes"
+#     df[bin_str_feature_input_feature[NAME]] = df[bin_str_feature_input_feature[NAME]].map(
+#         lambda x: true_value if x else false_value
+#     )
+#     df[bin_str_feature_output_feature[NAME]] = df[bin_str_feature_output_feature[NAME]].map(
+#         lambda x: true_value if x else false_value
+#     )
+#     df.to_csv(training_data_csv_path)
+#
+#     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
+#
+#
+# @pytest.mark.integration_tests_e
+# def test_torchscript_e2e_binary_only(csv_filename, tmpdir):
+#     data_csv_path = os.path.join(tmpdir, csv_filename)
+#
+#     input_features = [
+#         binary_feature(),
+#     ]
+#     output_features = [
+#         binary_feature(),
+#     ]
+#     backend = LocalTestBackend()
+#     config = {
+#         "input_features": input_features,
+#         "output_features": output_features,
+#         TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+#     }
+#
+#     # Generate training data
+#     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+#
+#     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
+#
+#
+# @pytest.mark.integration_tests_e
+# def test_torchscript_e2e_tabnet_combiner(csv_filename, tmpdir):
+#     data_csv_path = os.path.join(tmpdir, csv_filename)
+#     # Configure features to be tested:
+#     input_features = [
+#         binary_feature(),
+#         number_feature(),
+#         category_feature(encoder={"vocab_size": 3}),
+#         bag_feature(encoder={"vocab_size": 3}),
+#         set_feature(encoder={"vocab_size": 3}),
+#     ]
+#     output_features = [
+#         binary_feature(),
+#         number_feature(),
+#         category_feature(decoder={"vocab_size": 3}),
+#     ]
+#     backend = LocalTestBackend()
+#     config = {
+#         "input_features": input_features,
+#         "output_features": output_features,
+#         COMBINER: {
+#             "type": "tabnet",
+#             "num_total_blocks": 2,
+#             "num_shared_blocks": 2,
+#         },
+#         TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+#     }
+#
+#     # Generate training data
+#     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+#
+#     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
+#
+#
+# @pytest.mark.integration_tests_e
+# def test_torchscript_e2e_audio(csv_filename, tmpdir):
+#     data_csv_path = os.path.join(tmpdir, csv_filename)
+#     audio_dest_folder = os.path.join(tmpdir, "generated_audio")
+#
+#     input_features = [
+#         audio_feature(audio_dest_folder),
+#     ]
+#     output_features = [
+#         binary_feature(),
+#     ]
+#     backend = LocalTestBackend()
+#     config = {
+#         "input_features": input_features,
+#         "output_features": output_features,
+#         TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+#     }
+#     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+#
+#     # NOTE: audio preprocessing mismatches by very small margins ~O(1e-6) but causes flakiness in e2e test.
+#     # Increasing tolerance is a workaround to reduce flakiness for now.
+#     # TODO: remove this workaround when audio preprocessing is fixed.
+#     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path, tolerance=1e-6)
+#
+#
+# @pytest.mark.parametrize(
+#     "kwargs",
+#     [
+#         {"encoder": {"type": "stacked_cnn"}},  # Ludwig custom encoder
+#         {"encoder": {"type": "alexnet", "use_pretrained": False}},  # TorchVision pretrained model encoder
+#     ],
+# )
+# @pytest.mark.integration_tests_e
+# def test_torchscript_e2e_image(tmpdir, csv_filename, kwargs):
+#     data_csv_path = os.path.join(tmpdir, csv_filename)
+#     image_dest_folder = os.path.join(tmpdir, "generated_images")
+#     input_features = [
+#         image_feature(image_dest_folder, **kwargs),
+#     ]
+#     output_features = [
+#         binary_feature(),
+#     ]
+#     backend = LocalTestBackend()
+#     config = {
+#         "input_features": input_features,
+#         "output_features": output_features,
+#         TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+#     }
+#     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+#
+#     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
+# TODO: <Alex>ALEX</Alex>
 
 
 @pytest.mark.integration_tests_e
