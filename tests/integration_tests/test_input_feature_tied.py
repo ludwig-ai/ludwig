@@ -89,6 +89,7 @@ InputFeatureOptions = namedtuple("InputFeatureOptions", "feature_type feature_op
         ),
     ],
 )
+@pytest.mark.integration_tests_e
 def test_tied_micro_level(input_feature_options):
     # build input feature config
     input_feature_configs = list()
@@ -132,6 +133,7 @@ TiedUseCase = namedtuple("TiedUseCase", "input_feature output_feature")
         TiedUseCase(sequence_feature, sequence_feature),
     ],
 )
+@pytest.mark.integration_tests_e
 def test_tied_macro_level(tied_use_case: TiedUseCase, csv_filename: str):
     input_features = [
         number_feature(),  # Other feature

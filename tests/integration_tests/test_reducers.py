@@ -5,6 +5,7 @@ from tests.integration_tests.utils import category_feature, generate_data, run_e
 
 
 @pytest.mark.parametrize("reduce_output", reduce_mode_registry)
+@pytest.mark.integration_tests_e
 def test_reduction(reduce_output, csv_filename):
     input_features = [sequence_feature(reduce_output=reduce_output)]
 

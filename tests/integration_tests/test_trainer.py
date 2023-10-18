@@ -74,6 +74,7 @@ except ImportError:
     logging.warn("Failed to import some modules")
 
 
+@pytest.mark.integration_tests_e
 def test_tune_learning_rate(tmpdir):
     config = {
         INPUT_FEATURES: [text_feature(), binary_feature()],
@@ -99,6 +100,7 @@ def test_tune_learning_rate(tmpdir):
 @pytest.mark.parametrize("is_cpu", [True, False])
 @pytest.mark.parametrize(EFFECTIVE_BATCH_SIZE, ["auto", 256])
 @pytest.mark.parametrize(EVAL_BATCH_SIZE, ["auto", None, 128])
+@pytest.mark.integration_tests_e
 def test_ecd_tune_batch_size_and_lr(tmpdir, eval_batch_size, effective_batch_size, is_cpu):
     input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
     output_features = [
@@ -186,6 +188,7 @@ def test_ecd_tune_batch_size_and_lr(tmpdir, eval_batch_size, effective_batch_siz
 @pytest.mark.parametrize("learning_rate_scaling, expected_lr", [("constant", 1), ("sqrt", 2), ("linear", 4)])
 @pytest.mark.distributed
 @pytest.mark.horovod
+@pytest.mark.integration_tests_e
 def test_scale_lr(learning_rate_scaling, expected_lr, tmpdir, ray_cluster_2cpu):
     base_lr = 1.0
     num_workers = 4
@@ -214,6 +217,7 @@ def test_scale_lr(learning_rate_scaling, expected_lr, tmpdir, ray_cluster_2cpu):
     assert actual_lr == expected_lr
 
 
+@pytest.mark.integration_tests_e
 def test_changing_parameters_on_plateau(tmpdir):
     input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
     output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
@@ -240,6 +244,7 @@ def test_changing_parameters_on_plateau(tmpdir):
 
 
 @pytest.mark.distributed
+@pytest.mark.integration_tests_e
 def test_lightgbm_dataset_partition(ray_cluster_2cpu):
     # Create a LightGBM model with a Ray backend
     config = {
@@ -298,6 +303,7 @@ def test_lightgbm_dataset_partition(ray_cluster_2cpu):
 
 @pytest.mark.skipif(torch.cuda.device_count() == 0, reason="test requires at least 1 gpu")
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="test requires gpu support")
+@pytest.mark.integration_tests_e
 def test_mixed_precision(tmpdir):
     input_features = [text_feature()]
     output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
@@ -329,6 +335,7 @@ def test_mixed_precision(tmpdir):
 @pytest.mark.skipif(
     parse_version(torch.__version__) < parse_version("2.0"), reason="Model compilation requires PyTorch >= 2.0"
 )
+@pytest.mark.integration_tests_e
 def test_compile(tmpdir):
     input_features = [text_feature()]
     output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
@@ -358,6 +365,7 @@ def test_compile(tmpdir):
 
 
 @pytest.mark.parametrize("gradient_accumulation_steps", [1, 2, 3])
+@pytest.mark.integration_tests_e
 def test_gradient_accumulation(gradient_accumulation_steps: int, tmpdir):
     input_features = [text_feature()]
     output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
@@ -387,6 +395,7 @@ def test_gradient_accumulation(gradient_accumulation_steps: int, tmpdir):
     model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv, output_directory=tmpdir)
 
 
+@pytest.mark.integration_tests_e
 def test_enable_gradient_checkpointing(tmpdir, caplog):
     """Test that gradient checkpointing is enabled when specified in the config and that it does not cause an error
     when the model does not have support for gradient checkpointing."""

@@ -18,6 +18,7 @@ DEFAULT_OUTPUT_SIZE = 4
 @pytest.mark.parametrize(
     "enc_encoder", ["stacked_cnn", "parallel_cnn", "stacked_parallel_cnn", "rnn", "cnnrnn", "passthrough"]
 )
+@pytest.mark.integration_tests_e
 def test_timeseries_feature(enc_encoder):
     # synthetic time series tensor
     timeseries_tensor = torch.randn([BATCH_SIZE, SEQ_SIZE], dtype=torch.float32)
@@ -50,6 +51,7 @@ def test_timeseries_feature(enc_encoder):
         assert encoder_output[ENCODER_OUTPUT].shape == (BATCH_SIZE, DEFAULT_OUTPUT_SIZE)
 
 
+@pytest.mark.integration_tests_e
 def test_timeseries_preprocessing_with_nan():
     config = {
         "input_features": [timeseries_feature(preprocessing={"padding_value": 42})],

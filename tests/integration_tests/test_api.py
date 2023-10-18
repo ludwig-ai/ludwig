@@ -149,6 +149,7 @@ def run_api_experiment_separated_datasets(input_features, output_features, data_
             shutil.rmtree(output_dir, ignore_errors=True)
 
 
+@pytest.mark.integration_tests_e
 def test_api_intent_classification(csv_filename):
     # Single sequence input, single category output
     input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
@@ -161,6 +162,7 @@ def test_api_intent_classification(csv_filename):
         run_api_experiment(input_features, output_features, data_csv=rel_path)
 
 
+@pytest.mark.integration_tests_e
 def test_api_intent_classification_separated(csv_filename):
     # Single sequence input, single category output
     input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
@@ -173,6 +175,7 @@ def test_api_intent_classification_separated(csv_filename):
         run_api_experiment_separated_datasets(input_features, output_features, data_csv=rel_path)
 
 
+@pytest.mark.integration_tests_e
 def test_api_train_online(csv_filename):
     input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
     output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
@@ -190,6 +193,7 @@ def test_api_train_online(csv_filename):
     model.predict(dataset=data_csv)
 
 
+@pytest.mark.integration_tests_e
 def test_api_training_set(tmpdir):
     input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
     output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
@@ -211,6 +215,7 @@ def test_api_training_set(tmpdir):
     model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv)
 
 
+@pytest.mark.integration_tests_e
 def test_api_training_determinism(tmpdir):
     input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
     output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
@@ -341,6 +346,7 @@ def run_api_commands(
 @pytest.mark.parametrize("skip_save_progress", [False, True])
 @pytest.mark.parametrize("skip_save_log", [False, True])
 @pytest.mark.parametrize("skip_save_processed_input", [False, True])
+@pytest.mark.integration_tests_e
 def test_api_skip_parameters_train(
     tmpdir,
     csv_filename,
@@ -373,6 +379,7 @@ def test_api_skip_parameters_train(
 
 @pytest.mark.parametrize("skip_save_unprocessed_output", [False, True])
 @pytest.mark.parametrize("skip_save_predictions", [False, True])
+@pytest.mark.integration_tests_e
 def test_api_skip_parameters_predict(
     tmpdir,
     csv_filename,
@@ -400,6 +407,7 @@ def test_api_skip_parameters_predict(
 @pytest.mark.parametrize("skip_save_eval_stats", [False, True])
 @pytest.mark.parametrize("skip_collect_predictions", [False, True])
 @pytest.mark.parametrize("skip_collect_overall_stats", [False, True])
+@pytest.mark.integration_tests_e
 def test_api_skip_parameters_evaluate(
     tmpdir,
     csv_filename,
@@ -432,6 +440,7 @@ def test_api_skip_parameters_evaluate(
 @pytest.mark.parametrize("batch_size", [4, 8])
 @pytest.mark.parametrize("num_examples", [16, 32])
 @pytest.mark.parametrize("steps_per_checkpoint", [1, 2])
+@pytest.mark.integration_tests_e
 def test_api_callbacks(tmpdir, csv_filename, epochs, batch_size, num_examples, steps_per_checkpoint):
     mock_callback = mock.Mock(wraps=Callback())
 
@@ -485,6 +494,7 @@ def test_api_callbacks(tmpdir, csv_filename, epochs, batch_size, num_examples, s
 @pytest.mark.parametrize("batch_size", [4, 8])
 @pytest.mark.parametrize("num_examples", [32, 64])
 @pytest.mark.parametrize("checkpoints_per_epoch", [1, 2, 4])
+@pytest.mark.integration_tests_e
 def test_api_callbacks_checkpoints_per_epoch(
     tmpdir, csv_filename, epochs, batch_size, num_examples, checkpoints_per_epoch
 ):
@@ -535,6 +545,7 @@ def test_api_callbacks_checkpoints_per_epoch(
     assert mock_callback.on_eval_start.call_count == total_checkpoints
 
 
+@pytest.mark.integration_tests_e
 def test_api_callbacks_default_train_steps(tmpdir, csv_filename):
     # Default for train_steps is -1: use epochs.
     train_steps = None
@@ -562,6 +573,7 @@ def test_api_callbacks_default_train_steps(tmpdir, csv_filename):
     assert mock_callback.on_epoch_start.call_count == epochs
 
 
+@pytest.mark.integration_tests_e
 def test_api_callbacks_fixed_train_steps(tmpdir, csv_filename):
     train_steps = 100
     batch_size = 8
@@ -587,6 +599,7 @@ def test_api_callbacks_fixed_train_steps(tmpdir, csv_filename):
     assert mock_callback.on_epoch_start.call_count == 10
 
 
+@pytest.mark.integration_tests_e
 def test_api_callbacks_fixed_train_steps_partial_epochs(tmpdir, csv_filename):
     # If train_steps is set manually, epochs is ignored.
     train_steps = 95
@@ -614,6 +627,7 @@ def test_api_callbacks_fixed_train_steps_partial_epochs(tmpdir, csv_filename):
     assert mock_callback.on_epoch_end.call_count == 9
 
 
+@pytest.mark.integration_tests_e
 def test_api_callbacks_batch_size_1(tmpdir, csv_filename):
     epochs = 2
     batch_size = 1
@@ -642,6 +656,7 @@ def test_api_callbacks_batch_size_1(tmpdir, csv_filename):
     assert mock_callback.on_batch_end.call_count == 160
 
 
+@pytest.mark.integration_tests_e
 def test_api_callbacks_fixed_train_steps_less_than_one_epoch(tmpdir, csv_filename):
     # If train_steps is set manually, epochs is ignored.
     train_steps = total_batches = 6
@@ -677,6 +692,7 @@ def test_api_callbacks_fixed_train_steps_less_than_one_epoch(tmpdir, csv_filenam
     assert mock_callback.on_eval_end.call_count == train_steps // steps_per_checkpoint
 
 
+@pytest.mark.integration_tests_e
 def test_api_save_torchscript(tmpdir):
     """Tests successful saving and loading of model in TorchScript format."""
     input_features = [category_feature(encoder={"vocab_size": 5})]
@@ -709,6 +725,7 @@ def test_api_save_torchscript(tmpdir):
         assert output_df[col].equals(output_df_expected[col])
 
 
+@pytest.mark.integration_tests_e
 def test_saved_weights_in_checkpoint(tmpdir):
     image_dest_folder = os.path.join(tmpdir, "generated_images")
     input_features = [
@@ -742,6 +759,7 @@ def test_saved_weights_in_checkpoint(tmpdir):
         assert input_feature_encoder["saved_weights_in_checkpoint"]
 
 
+@pytest.mark.integration_tests_e
 def test_constant_metadata(tmpdir):
     input_features = [category_feature(encoder={"vocab_size": 5})]
     output_features = [category_feature(name="class", decoder={"vocab_size": 5}, output_feature=True)]

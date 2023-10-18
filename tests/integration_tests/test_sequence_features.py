@@ -104,6 +104,7 @@ def setup_model_scaffolding(raw_df, input_features, output_features):
         ((128, 10, TEST_STATE_SIZE), ((128, TEST_STATE_SIZE),)),
     ],
 )
+@pytest.mark.integration_tests_e
 def test_sequence_decoders(
     dec_cell_type,
     combiner_output_shapes,
@@ -149,6 +150,7 @@ def test_sequence_decoders(
 @pytest.mark.parametrize("dec_cell_type", ["lstm", "rnn", "gru"])
 @pytest.mark.parametrize("enc_cell_type", ["lstm", "rnn", "gru"])
 @pytest.mark.parametrize("enc_encoder", ["embed", "rnn"])
+@pytest.mark.integration_tests_e
 def test_sequence_generator(enc_encoder, enc_cell_type, dec_cell_type, csv_filename):
     # Define input and output features
     input_features = [

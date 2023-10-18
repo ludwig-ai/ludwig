@@ -1,6 +1,8 @@
 import logging
 from typing import Dict, Tuple
 
+import pytest
+
 from ludwig.constants import (
     BATCH_SIZE,
     CATEGORY,
@@ -61,12 +63,14 @@ def _prepare_data(csv_filename: str) -> Tuple[Dict, str]:
     return config, dataset
 
 
+@pytest.mark.integration_tests_e
 def test_run_experiment_with_global_default_parameters(csv_filename):
     config, dataset = _prepare_data(csv_filename)
 
     run_experiment(config=config, dataset=dataset)
 
 
+@pytest.mark.integration_tests_e
 def test_global_defaults_with_encoder_dependencies():
     input_features = [text_feature(name="title", reduce_output="sum")]
     output_features = [category_feature(name="article", embedding_size=3, output_feature=True)]

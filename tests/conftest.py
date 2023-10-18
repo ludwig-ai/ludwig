@@ -45,10 +45,12 @@ def pytest_sessionstart(session):
     session.start_time = time.time()
 
 
-def pytest_collection_modifyitems(config, items):
-    for item in items:
-        if all(False for x in item.iter_markers() if x.name in explicit_int_markers):
-            item.add_marker("integration_tests_e")
+# TODO: <Alex>ALEX</Alex>
+# def pytest_collection_modifyitems(config, items):
+#     for item in items:
+#         if all(False for x in item.iter_markers() if x.name in explicit_int_markers):
+#             item.add_marker("integration_tests_e")
+# TODO: <Alex>ALEX</Alex>
 
 
 @pytest.fixture(autouse=True)

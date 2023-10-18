@@ -271,6 +271,7 @@ def test_sequence_encoder_embed():
 @pytest.mark.parametrize("encoder_type", [ParallelCNN, StackedCNN, StackedParallelCNN, StackedRNN, StackedCNNRNN])
 @pytest.mark.parametrize("trainable", [True, False])
 @pytest.mark.parametrize("reduce_output", ["sum", "max"])
+@pytest.mark.integration_tests_e
 def test_sequence_encoders(encoder_type: Encoder, trainable: bool, reduce_output: str):
     num_sentences = 4
     embedding_size = 5

@@ -2,6 +2,7 @@ import os
 import tempfile
 from typing import Dict
 
+import pytest
 import torch
 from marshmallow_dataclass import dataclass
 from torch import nn, Tensor
@@ -144,10 +145,12 @@ class CustomLossMetric(LossMetric):
         return self.loss_fn(preds, target)
 
 
+@pytest.mark.integration_tests_e
 def test_custom_combiner():
     _run_test(combiner={"type": "custom_combiner", "foo": True})
 
 
+@pytest.mark.integration_tests_e
 def test_custom_encoder_decoder():
     input_features = [
         sequence_feature(encoder={"reduce_output": "sum"}),
@@ -159,6 +162,7 @@ def test_custom_encoder_decoder():
     _run_test(input_features=input_features, output_features=output_features)
 
 
+@pytest.mark.integration_tests_e
 def test_custom_loss_metric():
     output_features = [
         number_feature(loss={"type": "custom_loss"}),

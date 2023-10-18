@@ -38,6 +38,7 @@ def raw_dataset_fp(tmpdir: pathlib.Path) -> str:
 
 @pytest.mark.parametrize("second_seed_offset", [0, 1])
 @pytest.mark.parametrize("random_seed", [1919, 31])
+@pytest.mark.integration_tests_e
 def test_preprocess(raw_dataset_fp: str, random_seed: int, second_seed_offset: int) -> None:
     """Test reproducibility of train/validation/test splits.
 
@@ -72,6 +73,7 @@ def test_preprocess(raw_dataset_fp: str, random_seed: int, second_seed_offset: i
 
 
 @pytest.mark.parametrize("random_seed", [1919, 31])
+@pytest.mark.integration_tests_e
 def test_preprocess_ignore_torch_seed(raw_dataset_fp: str, random_seed: int) -> None:
     """Test reproducibility of train/validation/test splits when an unrelated torch random operation is performed
     between the Ludwig operations.
@@ -107,6 +109,7 @@ def test_preprocess_ignore_torch_seed(raw_dataset_fp: str, random_seed: int) -> 
 
 @pytest.mark.parametrize("second_seed_offset", [0, 1])
 @pytest.mark.parametrize("random_seed", [1919, 31])
+@pytest.mark.integration_tests_e
 def test_train(raw_dataset_fp: str, random_seed: int, second_seed_offset: int) -> None:
     """Test reproducibility of training API.
 
@@ -153,6 +156,7 @@ def test_train(raw_dataset_fp: str, random_seed: int, second_seed_offset: int) -
 
 
 @pytest.mark.parametrize("random_seed", [1919, 31])
+@pytest.mark.integration_tests_e
 def test_train_ignore_torch_seed(raw_dataset_fp: str, random_seed: int) -> None:
     """Test reproducibility of training API when an unrelated torch random operation is performed between the
     Ludwig operations.
@@ -194,6 +198,7 @@ def test_train_ignore_torch_seed(raw_dataset_fp: str, random_seed: int) -> None:
 
 @pytest.mark.parametrize("second_seed_offset", [0, 1])
 @pytest.mark.parametrize("random_seed", [1919, 31])
+@pytest.mark.integration_tests_e
 def test_experiment(raw_dataset_fp: str, random_seed: int, second_seed_offset: int) -> None:
     """Test reproducibility of experiment API.
 
@@ -239,6 +244,7 @@ def test_experiment(raw_dataset_fp: str, random_seed: int, second_seed_offset: i
 
 
 @pytest.mark.parametrize("random_seed", [1919, 31])
+@pytest.mark.integration_tests_e
 def test_experiment_ignore_torch_seed(raw_dataset_fp: str, random_seed: int) -> None:
     """Test reproducibility of experiment API when an unrelated torch random operation is performed between the
     Ludwig operations.

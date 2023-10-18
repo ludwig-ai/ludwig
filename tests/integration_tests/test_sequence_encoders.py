@@ -67,6 +67,7 @@ def input_sequence() -> torch.Tensor:
 @pytest.mark.parametrize("enc_dropout", [0, 0.2])
 @pytest.mark.parametrize("enc_cell_type", ["rnn", "gru", "lstm"])
 @pytest.mark.parametrize("enc_encoder", ENCODERS + ["passthrough"])
+@pytest.mark.integration_tests_e
 def test_sequence_encoders(
     enc_encoder: str,
     enc_cell_type: str,
@@ -166,6 +167,7 @@ def test_sequence_encoders(
 
 
 @pytest.mark.parametrize("enc_reduce_output", [None, "sum", "last", "mean", "max", "concat"])
+@pytest.mark.integration_tests_e
 def test_passthrough_encoder(enc_reduce_output, input_sequence):
     encoder_parameters = {"reduce_output": enc_reduce_output}
 
@@ -182,6 +184,7 @@ def test_passthrough_encoder(enc_reduce_output, input_sequence):
 
 # test to ensure correct handling of vocab_size and embedding_size specifications
 @pytest.mark.parametrize("enc_embedding_size", [TEST_VOCAB_SIZE - 8, TEST_VOCAB_SIZE, TEST_VOCAB_SIZE + 8])
+@pytest.mark.integration_tests_e
 def test_sequence_embed_encoder(enc_embedding_size: int, input_sequence: torch.Tensor) -> None:
     encoder_parameters["embedding_size"] = enc_embedding_size
 

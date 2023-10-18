@@ -5,6 +5,7 @@ from ludwig.api import LudwigModel
 from tests.integration_tests.utils import generate_data, number_feature
 
 
+@pytest.mark.integration_tests_e
 def test_number_feature_zscore_normalization_error():
     input_features = [number_feature(name="num_input", preprocessing={"normalization": "zscore"})]
     output_features = [number_feature(name="num_output")]

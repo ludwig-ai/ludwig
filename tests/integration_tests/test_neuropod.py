@@ -40,6 +40,7 @@ from tests.integration_tests.utils import (
 @pytest.mark.skipif(
     parse_version(torch.__version__) >= parse_version("1.12"), reason="Neuropod does not support PyTorch >= 1.12"
 )
+@pytest.mark.integration_tests_e
 def test_neuropod_torchscript(csv_filename, tmpdir):
     data_csv_path = os.path.join(tmpdir, csv_filename)
 

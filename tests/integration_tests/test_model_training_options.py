@@ -39,6 +39,7 @@ RANDOM_SEED = 42
 
 
 @pytest.mark.parametrize("early_stop", [3, 5])
+@pytest.mark.integration_tests_e
 def test_early_stopping(early_stop, tmp_path):
     input_features, output_features = synthetic_test_data.get_feature_configs()
 
@@ -94,6 +95,7 @@ def test_early_stopping(early_stop, tmp_path):
 
 @pytest.mark.parametrize("skip_save_progress", [False])
 @pytest.mark.parametrize("skip_save_model", [False, True])
+@pytest.mark.integration_tests_e
 def test_model_progress_save(skip_save_progress, skip_save_model, tmp_path):
     input_features, output_features = synthetic_test_data.get_feature_configs()
 
@@ -140,6 +142,7 @@ def test_model_progress_save(skip_save_progress, skip_save_model, tmp_path):
 
 
 @pytest.mark.parametrize("optimizer", ["sgd", "adam"])
+@pytest.mark.integration_tests_e
 def test_resume_training(optimizer, tmp_path):
     input_features, output_features = synthetic_test_data.get_feature_configs()
     config = {
@@ -194,6 +197,7 @@ def test_resume_training(optimizer, tmp_path):
 
 
 @pytest.mark.parametrize("optimizer", ["sgd", "adam"])
+@pytest.mark.integration_tests_e
 def test_resume_training_mlflow(optimizer, tmp_path):
     input_features, output_features = synthetic_test_data.get_feature_configs()
     config = {
@@ -237,6 +241,7 @@ def test_resume_training_mlflow(optimizer, tmp_path):
 
 
 @pytest.mark.parametrize("optimizer_type", optimizer_registry)
+@pytest.mark.integration_tests_e
 def test_optimizers(optimizer_type, tmp_path):
     if (optimizer_type in {"lars", "lamb", "lion"}) and (
         not torch.cuda.is_available() or torch.cuda.device_count() == 0
@@ -290,6 +295,7 @@ def test_optimizers(optimizer_type, tmp_path):
     np.testing.assert_array_less(train_losses[last_entry - 1], train_losses[0])
 
 
+@pytest.mark.integration_tests_e
 def test_regularization(tmp_path):
     input_features, output_features = synthetic_test_data.get_feature_configs()
 
@@ -355,6 +361,7 @@ def test_regularization(tmp_path):
 
 
 # test cache checksum function
+@pytest.mark.integration_tests_e
 def test_cache_checksum(csv_filename, tmp_path):
     # setup for training
     input_features = [category_feature(encoder={"vocab_size": 5})]
@@ -443,6 +450,7 @@ def test_cache_checksum(csv_filename, tmp_path):
 
 
 @pytest.mark.parametrize("transformer_key", list(numeric_transformation_registry.keys()))
+@pytest.mark.integration_tests_e
 def test_numeric_transformer(transformer_key, tmpdir):
     Transformer = get_from_registry(transformer_key, numeric_transformation_registry)
     transformer_name = Transformer().__class__.__name__

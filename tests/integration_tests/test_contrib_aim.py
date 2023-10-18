@@ -14,6 +14,7 @@ TEST_SCRIPT = os.path.join(os.path.dirname(__file__), "scripts", "run_train_aim.
 
 @pytest.mark.skip(reason="Aim integration not compatible with Aim 4.0.")
 @pytest.mark.distributed
+@pytest.mark.integration_tests_e
 def test_contrib_experiment(csv_filename, tmpdir):
     aim_test_path = os.path.join(tmpdir, "results")
     os.makedirs(aim_test_path, exist_ok=True)

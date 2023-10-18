@@ -64,6 +64,7 @@ NUM_EXAMPLES = 20
         pytest.param("ray", id="ray", marks=pytest.mark.distributed),
     ],
 )
+@pytest.mark.integration_tests_e
 def test_sample_ratio(backend, tmpdir, ray_cluster_2cpu):
     num_examples = 100
     sample_ratio = 0.25
@@ -112,6 +113,7 @@ def test_sample_ratio(backend, tmpdir, ray_cluster_2cpu):
         pytest.param("ray", id="ray", marks=pytest.mark.distributed),
     ],
 )
+@pytest.mark.integration_tests_e
 def test_sample_ratio_deterministic(backend, tmpdir, ray_cluster_2cpu):
     """Ensures that the sampled dataset is the same when using a random seed.
 
@@ -169,6 +171,7 @@ def test_sample_ratio_deterministic(backend, tmpdir, ray_cluster_2cpu):
         pytest.param("ray", id="ray", marks=pytest.mark.distributed),
     ],
 )
+@pytest.mark.integration_tests_e
 def test_sample_size(backend, tmpdir, ray_cluster_2cpu):
     num_examples = 100
     sample_size = 25
@@ -216,6 +219,7 @@ def test_sample_size(backend, tmpdir, ray_cluster_2cpu):
         pytest.param("ray", id="ray", marks=pytest.mark.distributed),
     ],
 )
+@pytest.mark.integration_tests_e
 def test_sample_size_deterministic(backend, tmpdir, ray_cluster_2cpu):
     """Ensures that the sampled dataset is the same when using a random seed.
 
@@ -264,6 +268,7 @@ def test_sample_size_deterministic(backend, tmpdir, ray_cluster_2cpu):
         assert test_set_1.to_df().compute().equals(test_set_2.to_df().compute())
 
 
+@pytest.mark.integration_tests_e
 def test_strip_whitespace_category(csv_filename, tmpdir):
     data_csv_path = os.path.join(tmpdir, csv_filename)
 
@@ -294,6 +299,7 @@ def test_strip_whitespace_category(csv_filename, tmpdir):
         pytest.param("ray", id="ray", marks=pytest.mark.distributed),
     ],
 )
+@pytest.mark.integration_tests_e
 def test_with_split(backend, csv_filename, tmpdir, ray_cluster_2cpu):
     num_examples = NUM_EXAMPLES
     train_set_size = int(num_examples * 0.8)
@@ -329,6 +335,7 @@ def test_with_split(backend, csv_filename, tmpdir, ray_cluster_2cpu):
 
 @pytest.mark.distributed
 @pytest.mark.parametrize("feature_fn", [image_feature, audio_feature])
+@pytest.mark.integration_tests_e
 def test_dask_known_divisions(feature_fn, csv_filename, tmpdir, ray_cluster_2cpu):
     import dask.dataframe as dd
 
@@ -355,6 +362,7 @@ def test_dask_known_divisions(feature_fn, csv_filename, tmpdir, ray_cluster_2cpu
 
 
 @pytest.mark.distributed
+@pytest.mark.integration_tests_e
 def test_drop_empty_partitions(csv_filename, tmpdir, ray_cluster_2cpu):
     import dask.dataframe as dd
 
@@ -386,6 +394,7 @@ def test_drop_empty_partitions(csv_filename, tmpdir, ray_cluster_2cpu):
 
 
 @pytest.mark.parametrize("generate_images_as_numpy", [False, True])
+@pytest.mark.integration_tests_e
 def test_read_image_from_path(tmpdir, csv_filename, generate_images_as_numpy):
     input_features = [image_feature(os.path.join(tmpdir, "generated_output"), save_as_numpy=generate_images_as_numpy)]
     output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
@@ -406,6 +415,7 @@ def test_read_image_from_path(tmpdir, csv_filename, generate_images_as_numpy):
     )
 
 
+@pytest.mark.integration_tests_e
 def test_read_image_from_numpy_array(tmpdir, csv_filename):
     input_features = [image_feature(os.path.join(tmpdir, "generated_output"))]
     output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
@@ -440,6 +450,7 @@ def test_read_image_from_numpy_array(tmpdir, csv_filename):
     )
 
 
+@pytest.mark.integration_tests_e
 def test_read_image_failure_default_image(monkeypatch, tmpdir, csv_filename):
     """Tests that the default image used when an image cannot be read has the correct properties."""
 
@@ -476,6 +487,7 @@ def test_read_image_failure_default_image(monkeypatch, tmpdir, csv_filename):
     )
 
 
+@pytest.mark.integration_tests_e
 def test_number_feature_wrong_dtype(csv_filename, tmpdir):
     """Tests that a number feature with all string values is treated as having missing values by default."""
     data_csv_path = os.path.join(tmpdir, csv_filename)
@@ -534,6 +546,7 @@ def test_number_feature_wrong_dtype(csv_filename, tmpdir):
         text_feature,
     ],
 )
+@pytest.mark.integration_tests_e
 def test_seq_features_max_sequence_length(
     csv_filename, tmpdir, feature_type, max_len, sequence_length, max_sequence_length, sequence_length_expected
 ):
@@ -563,6 +576,7 @@ def test_seq_features_max_sequence_length(
     assert all(len(x) == sequence_length_expected for x in all_df[proc_column_name])
 
 
+@pytest.mark.integration_tests_e
 def test_column_feature_type_mismatch_fill():
     """Tests that we are able to fill missing values even in columns where the column dtype and desired feature
     dtype do not match."""
@@ -587,6 +601,7 @@ def test_column_feature_type_mismatch_fill():
 
 
 @pytest.mark.parametrize("format", ["file", "df"])
+@pytest.mark.integration_tests_e
 def test_presplit_override(format, tmpdir):
     """Tests that provising a pre-split file or dataframe overrides the user's split config."""
     num_feat = number_feature(normalization=None)
@@ -648,6 +663,7 @@ def test_presplit_override(format, tmpdir):
         pytest.param("ray", id="ray", marks=pytest.mark.distributed),
     ],
 )
+@pytest.mark.integration_tests_e
 def test_empty_training_set_error(backend, tmpdir, ray_cluster_2cpu):
     """Tests that an error is raised if one or more of the splits is empty after preprocessing."""
     data_csv_path = os.path.join(tmpdir, "data.csv")
@@ -677,6 +693,7 @@ def test_empty_training_set_error(backend, tmpdir, ray_cluster_2cpu):
         pytest.param("ray", id="ray", marks=pytest.mark.distributed),
     ],
 )
+@pytest.mark.integration_tests_e
 def test_in_memory_dataset_size(backend, tmpdir, ray_cluster_2cpu):
     data_csv_path = os.path.join(tmpdir, "data.csv")
 
@@ -734,6 +751,7 @@ def test_in_memory_dataset_size(backend, tmpdir, ray_cluster_2cpu):
         ),
     ],
 )
+@pytest.mark.integration_tests_e
 def test_non_conventional_bool_with_fallback(binary_as_input, expected_preprocessing, missing_value_strategy, tmpdir):
     # Specify a non-conventional boolean feature with a fallback true label.
     bin_feature = binary_feature(
@@ -774,6 +792,7 @@ def test_non_conventional_bool_with_fallback(binary_as_input, expected_preproces
 @pytest.mark.parametrize(
     "binary_as_input", [pytest.param(True, id="binary_as_input"), pytest.param(False, id="binary_as_output")]
 )
+@pytest.mark.integration_tests_e
 def test_non_conventional_bool_without_fallback_logs_warning(binary_as_input, caplog, tmpdir):
     # Specify a non-conventional boolean feature without a fallback true label.
     bin_feature = binary_feature(bool2str=["<=50K", ">50K"], preprocessing={"fallback_true_label": None})
@@ -805,6 +824,7 @@ def test_non_conventional_bool_without_fallback_logs_warning(binary_as_input, ca
 
 
 @pytest.mark.parametrize("feature_type", ["input_feature", "output_feature"], ids=["input_feature", "output_feature"])
+@pytest.mark.integration_tests_e
 def test_category_feature_vocab_size_1(feature_type, tmpdir) -> None:
     data_csv_path = os.path.join(tmpdir, "data.csv")
 
@@ -825,6 +845,7 @@ def test_category_feature_vocab_size_1(feature_type, tmpdir) -> None:
 
 
 @pytest.mark.parametrize("use_pretrained", [False, True], ids=["false", "true"])
+@pytest.mark.integration_tests_e
 def test_vit_encoder_different_dimension_image(tmpdir, csv_filename, use_pretrained: bool):
     input_features = [
         image_feature(
@@ -858,6 +879,7 @@ def test_vit_encoder_different_dimension_image(tmpdir, csv_filename, use_pretrai
         "https://github.com/ludwig-ai/ludwig/actions/runs/4918126111/jobs/8784071603?pr=3388."
     )
 )
+@pytest.mark.integration_tests_e
 def test_image_encoder_torchvision_different_num_channels(tmpdir, csv_filename):
     input_features = [
         image_feature(
@@ -892,6 +914,7 @@ def test_image_encoder_torchvision_different_num_channels(tmpdir, csv_filename):
         pytest.param("dask", id="dask", marks=pytest.mark.distributed),
     ],
 )
+@pytest.mark.integration_tests_e
 def test_fill_with_mode_different_df_engine(tmpdir, csv_filename, df_engine, ray_cluster_2cpu):
     config = {
         INPUT_FEATURES: [category_feature(preprocessing={"missing_value_strategy": "fill_with_mode"})],
@@ -978,6 +1001,7 @@ Input:"""
     ],
     ids=["task_sample", "multi_col"],
 )
+@pytest.mark.integration_tests_e
 def test_prompt_template(input_features, expected, model_type, backend, tmpdir, ray_cluster_2cpu):
     """Tests that prompt template is correctly applied to inputs."""
     input_features = copy.deepcopy(input_features)
@@ -1046,6 +1070,7 @@ def test_prompt_template(input_features, expected, model_type, backend, tmpdir, 
         pytest.param({"type": "semantic", "model_name": "paraphrase-MiniLM-L3-v2", "k": 2}, id="semantic_retrieval"),
     ],
 )
+@pytest.mark.integration_tests_e
 def test_handle_features_with_few_shot_prompt_config(backend, retrieval_kwargs, ray_cluster_2cpu):
     prompt_config = PromptConfig.from_dict(
         {
@@ -1122,6 +1147,7 @@ def test_handle_features_with_few_shot_prompt_config(backend, retrieval_kwargs, 
 
 @pytest.mark.llm
 @pytest.mark.parametrize("backend", ["local", "ray"])
+@pytest.mark.integration_tests_e
 def test_handle_features_with_prompt_config_multi_col(backend, ray_cluster_2cpu):
     df = pd.DataFrame(
         [

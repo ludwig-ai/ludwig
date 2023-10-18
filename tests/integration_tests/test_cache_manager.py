@@ -20,6 +20,7 @@ def change_test_dir(tmpdir, monkeypatch):
 @pytest.mark.parametrize("use_df", [True, False], ids=["df", "filename"])
 @pytest.mark.parametrize("use_split", [True, False], ids=["split", "no_split"])
 @pytest.mark.parametrize("use_cache_dir", [True, False], ids=["cache_dir", "no_cache_dir"])
+@pytest.mark.integration_tests_e
 def test_cache_dataset(use_cache_dir, use_split, use_df, tmpdir, change_test_dir):
     dataset_manager = PandasDatasetManager(backend=LocalTestBackend())
     cache_dir = os.path.join(tmpdir, "cache") if use_cache_dir else None

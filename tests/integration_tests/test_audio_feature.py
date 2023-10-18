@@ -14,6 +14,7 @@ DEFAULT_OUTPUT_SIZE = 256
 
 
 @pytest.mark.parametrize("enc_encoder", ["stacked_cnn", "parallel_cnn", "stacked_parallel_cnn", "rnn", "cnnrnn"])
+@pytest.mark.integration_tests_e
 def test_audio_feature(enc_encoder):
     # synthetic audio tensor
     audio_tensor = torch.randn([BATCH_SIZE, SEQ_SIZE, AUDIO_W_SIZE], dtype=torch.float32)

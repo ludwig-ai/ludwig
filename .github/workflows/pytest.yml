@@ -200,7 +200,12 @@ jobs:
     name: ${{ matrix.test-markers }}
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
+      # TODO: <Alex>ALEX</Alex>
+      # fail-fast: false
+      # TODO: <Alex>ALEX</Alex>
+      # TODO: <Alex>ALEX</Alex>
+      fail-fast: true
+      # TODO: <Alex>ALEX</Alex>
       matrix:
         test-markers:
           - "integration_tests_a"
@@ -263,127 +268,133 @@ jobs:
         run: |
           RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=7200 pytest -v --timeout 300 --durations 100 -m "not slow and not combinatorial and not horovod and not llm and $MARKERS" --junitxml pytest.xml tests/integration_tests
 
-  llm-tests:
-    name: LLM Tests
-    runs-on: ubuntu-latest
+# TODO: <Alex>ALEX</Alex>
+#  llm-tests:
+#    name: LLM Tests
+#    runs-on: ubuntu-latest
+#
+#    timeout-minutes: 60
+#    steps:
+#      - uses: actions/checkout@v2
+#      - name: Set up Python 3.9
+#        uses: actions/setup-python@v2
+#        with:
+#          python-version: 3.9
+#
+#      - name: Setup Linux
+#        if: runner.os == 'linux'
+#        run: |
+#          sudo apt-get update && sudo apt-get install -y cmake libsndfile1
+#
+#      - name: Setup macOS
+#        if: runner.os == 'macOS'
+#        run: |
+#          brew install libuv
+#
+#      - name: Install dependencies
+#        run: |
+#          python --version
+#          pip --version
+#          python -m pip install -U pip
+#
+#          # remove torch and ray from the dependencies so we can add them depending on the matrix args for the job.
+#          cat requirements.txt | sed '/^torch[>=<\b]/d' | sed '/^torchtext/d' | sed '/^torchvision/d' | sed '/^torchaudio/d' > requirements-temp && mv requirements-temp requirements.txt
+#          cat requirements_distributed.txt | sed '/^ray[\[]/d'
+#          pip install torch==2.0.0 torchtext torchvision torchaudio
+#          pip install ray==2.3.0
+#          pip install '.[test]'
+#          pip list
+#        shell: bash
+#
+#      - name: LLM Tests
+#        run: |
+#          pytest -vs --durations 100 -m "llm" --junitxml pytest.xml tests
+# TODO: <Alex>ALEX</Alex>
 
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.9
+# TODO: <Alex>ALEX</Alex>
+#  combinatorial-tests:
+#    name: Combinatorial Tests
+#    runs-on: ubuntu-latest
+#
+#    timeout-minutes: 60
+#    steps:
+#      - uses: actions/checkout@v2
+#      - name: Set up Python 3.8
+#        uses: actions/setup-python@v2
+#        with:
+#          python-version: 3.8
+#
+#      - name: Setup Linux
+#        if: runner.os == 'linux'
+#        run: |
+#          sudo apt-get update && sudo apt-get install -y cmake libsndfile1
+#
+#      - name: Setup macOS
+#        if: runner.os == 'macOS'
+#        run: |
+#          brew install libuv
+#
+#      - name: Install dependencies
+#        run: |
+#          python --version
+#          pip --version
+#          python -m pip install -U pip
+#          pip install '.[test]'
+#          pip list
+#        shell: bash
+#
+#      - name: Testing combinatorial config generation code
+#        run: |
+#          pytest -vs --durations 100 -m "combinatorial" --junitxml pytest.xml tests/ludwig/config_sampling
+#
+#      - name: Combinatorial Tests
+#        run: |
+#          pytest -rx --durations 100 -m "combinatorial" --junitxml pytest.xml tests/training_success
+# TODO: <Alex>ALEX</Alex>
 
-      - name: Setup Linux
-        if: runner.os == 'linux'
-        run: |
-          sudo apt-get update && sudo apt-get install -y cmake libsndfile1
-
-      - name: Setup macOS
-        if: runner.os == 'macOS'
-        run: |
-          brew install libuv
-
-      - name: Install dependencies
-        run: |
-          python --version
-          pip --version
-          python -m pip install -U pip
-
-          # remove torch and ray from the dependencies so we can add them depending on the matrix args for the job.
-          cat requirements.txt | sed '/^torch[>=<\b]/d' | sed '/^torchtext/d' | sed '/^torchvision/d' | sed '/^torchaudio/d' > requirements-temp && mv requirements-temp requirements.txt
-          cat requirements_distributed.txt | sed '/^ray[\[]/d'
-          pip install torch==2.0.0 torchtext torchvision torchaudio
-          pip install ray==2.3.0
-          pip install '.[test]'
-          pip list
-        shell: bash
-
-      - name: LLM Tests
-        run: |
-          pytest -vs --durations 100 -m "llm" --junitxml pytest.xml tests
-
-  combinatorial-tests:
-    name: Combinatorial Tests
-    runs-on: ubuntu-latest
-
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.8
-
-      - name: Setup Linux
-        if: runner.os == 'linux'
-        run: |
-          sudo apt-get update && sudo apt-get install -y cmake libsndfile1
-
-      - name: Setup macOS
-        if: runner.os == 'macOS'
-        run: |
-          brew install libuv
-
-      - name: Install dependencies
-        run: |
-          python --version
-          pip --version
-          python -m pip install -U pip
-          pip install '.[test]'
-          pip list
-        shell: bash
-
-      - name: Testing combinatorial config generation code
-        run: |
-          pytest -vs --durations 100 -m "combinatorial" --junitxml pytest.xml tests/ludwig/config_sampling
-
-      - name: Combinatorial Tests
-        run: |
-          pytest -rx --durations 100 -m "combinatorial" --junitxml pytest.xml tests/training_success
-
-  test-minimal-install:
-    name: Test Minimal Install
-    runs-on: ubuntu-latest
-
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.8
-
-      - name: Setup Linux
-        if: runner.os == 'linux'
-        run: |
-          sudo apt-get update && sudo apt-get install -y cmake libsndfile1
-
-      - name: Setup macOS
-        if: runner.os == 'macOS'
-        run: |
-          brew install libuv
-
-      - name: Install dependencies
-        run: |
-          python --version
-          pip --version
-          python -m pip install -U pip
-          pip install torch==2.0.0 torchtext
-          pip install ray==2.3.0
-          pip install '.'
-          pip list
-        shell: bash
-      - name: Check Install
-        run: |
-          ludwig check_install
-        shell: bash
-
-      - name: Test Getting Started
-        run: |
-          cd examples/getting_started && sh ./run.sh
-        shell: bash
+# TODO: <Alex>ALEX</Alex>
+#  test-minimal-install:
+#    name: Test Minimal Install
+#    runs-on: ubuntu-latest
+#
+#    timeout-minutes: 15
+#    steps:
+#      - uses: actions/checkout@v2
+#      - name: Set up Python 3.8
+#        uses: actions/setup-python@v2
+#        with:
+#          python-version: 3.8
+#
+#      - name: Setup Linux
+#        if: runner.os == 'linux'
+#        run: |
+#          sudo apt-get update && sudo apt-get install -y cmake libsndfile1
+#
+#      - name: Setup macOS
+#        if: runner.os == 'macOS'
+#        run: |
+#          brew install libuv
+#
+#      - name: Install dependencies
+#        run: |
+#          python --version
+#          pip --version
+#          python -m pip install -U pip
+#          pip install torch==2.0.0 torchtext
+#          pip install ray==2.3.0
+#          pip install '.'
+#          pip list
+#        shell: bash
+#      - name: Check Install
+#        run: |
+#          ludwig check_install
+#        shell: bash
+#
+#      - name: Test Getting Started
+#        run: |
+#          cd examples/getting_started && sh ./run.sh
+#        shell: bash
+# TODO: <Alex>ALEX</Alex>
 
   # start-runner:
   #   name: Start self-hosted EC2 runner

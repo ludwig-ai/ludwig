@@ -71,6 +71,7 @@ def float_date_df() -> "pd.DataFrame":
         pytest.param("float_date_df", id="float_date"),
     ],
 )
+@pytest.mark.integration_tests_e
 def test_date_feature_formats(date_df, request, ray_cluster_2cpu):
     df = request.getfixturevalue(date_df)
 
