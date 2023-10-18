@@ -216,7 +216,12 @@ jobs:
           # - "integration_tests_c"
           # - "integration_tests_d"
           # TODO: <Alex>ALEX</Alex>
-          - "integration_tests_e"
+          # TODO: <Alex>ALEX</Alex>
+          # - "integration_tests_e"
+          # TODO: <Alex>ALEX</Alex>
+          # TODO: <Alex>ALEX</Alex>
+           - "integration_tests_e_issue_3734"
+          # TODO: <Alex>ALEX</Alex>
 
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.LUDWIG_TESTS_AWS_ACCESS_KEY_ID }}
