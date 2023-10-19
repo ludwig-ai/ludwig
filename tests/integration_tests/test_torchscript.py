@@ -52,6 +52,7 @@ from tests.integration_tests.utils import (
 )
 
 
+@pytest.mark.integration_tests_e
 @pytest.mark.parametrize("should_load_model", [True, False])
 @pytest.mark.parametrize("model_type", ["ecd", "gbm"])
 def test_torchscript(tmpdir, csv_filename, should_load_model, model_type):
@@ -219,6 +220,7 @@ def test_torchscript(tmpdir, csv_filename, should_load_model, model_type):
     assert np.all(original_predictions_df[predictions_column_name] == restored_predictions)
 
 
+@pytest.mark.integration_tests_e
 def test_torchscript_e2e_tabular(csv_filename, tmpdir):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     # Configure features to be tested:
@@ -275,6 +277,7 @@ def test_torchscript_e2e_tabular(csv_filename, tmpdir):
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
 
+@pytest.mark.integration_tests_e
 def test_torchscript_e2e_binary_only(csv_filename, tmpdir):
     data_csv_path = os.path.join(tmpdir, csv_filename)
 
@@ -297,6 +300,7 @@ def test_torchscript_e2e_binary_only(csv_filename, tmpdir):
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
 
+@pytest.mark.integration_tests_e
 def test_torchscript_e2e_tabnet_combiner(csv_filename, tmpdir):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     # Configure features to be tested:
@@ -330,6 +334,7 @@ def test_torchscript_e2e_tabnet_combiner(csv_filename, tmpdir):
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
 
+@pytest.mark.integration_tests_e
 def test_torchscript_e2e_audio(csv_filename, tmpdir):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     audio_dest_folder = os.path.join(tmpdir, "generated_audio")
@@ -354,6 +359,7 @@ def test_torchscript_e2e_audio(csv_filename, tmpdir):
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path, tolerance=1e-6)
 
 
+@pytest.mark.integration_tests_e
 @pytest.mark.parametrize(
     "kwargs",
     [
@@ -381,6 +387,7 @@ def test_torchscript_e2e_image(tmpdir, csv_filename, kwargs):
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
 
+@pytest.mark.integration_tests_e
 def test_torchscript_e2e_text(tmpdir, csv_filename):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     input_features = [
@@ -405,6 +412,7 @@ def test_torchscript_e2e_text(tmpdir, csv_filename):
     torch.torch_version.TorchVersion(torchtext.__version__) < (0, 14, 0),
     reason="requires torchtext 0.14.0 or higher",
 )
+@pytest.mark.integration_tests_e
 def test_torchscript_e2e_text_hf_tokenizer(tmpdir, csv_filename):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     input_features = [text_feature(encoder={"vocab_size": 3, "type": "bert"})]
@@ -426,6 +434,7 @@ def test_torchscript_e2e_text_hf_tokenizer(tmpdir, csv_filename):
     torch.torch_version.TorchVersion(torchtext.__version__) < (0, 14, 0),
     reason="requires torchtext 0.14.0 or higher",
 )
+@pytest.mark.integration_tests_e
 def test_torchscript_e2e_text_hf_tokenizer_truncated_sequence(tmpdir, csv_filename):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     input_features = [text_feature(encoder={"vocab_size": 3, "type": "bert"}, preprocessing={"max_sequence_length": 3})]
@@ -443,6 +452,7 @@ def test_torchscript_e2e_text_hf_tokenizer_truncated_sequence(tmpdir, csv_filena
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
 
+@pytest.mark.integration_tests_e
 def test_torchscript_e2e_sequence(tmpdir, csv_filename):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     input_features = [
@@ -462,6 +472,7 @@ def test_torchscript_e2e_sequence(tmpdir, csv_filename):
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
 
+@pytest.mark.integration_tests_e
 def test_torchscript_e2e_timeseries(tmpdir, csv_filename):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     input_features = [
@@ -481,6 +492,7 @@ def test_torchscript_e2e_timeseries(tmpdir, csv_filename):
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
 
+@pytest.mark.integration_tests_e
 def test_torchscript_e2e_h3(tmpdir, csv_filename):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     input_features = [
@@ -500,6 +512,7 @@ def test_torchscript_e2e_h3(tmpdir, csv_filename):
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
 
+@pytest.mark.integration_tests_e
 def test_torchscript_e2e_date(tmpdir, csv_filename):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     input_features = [
@@ -519,6 +532,7 @@ def test_torchscript_e2e_date(tmpdir, csv_filename):
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
 
+@pytest.mark.integration_tests_e
 @pytest.mark.parametrize("vector_type", [torch.Tensor, List[torch.Tensor]])
 def test_torchscript_preproc_vector_alternative_type(tmpdir, csv_filename, vector_type):
     data_csv_path = os.path.join(tmpdir, csv_filename)
@@ -575,6 +589,7 @@ def test_torchscript_preproc_vector_alternative_type(tmpdir, csv_filename, vecto
         assert utils.is_all_close(feature_values, feature_values_expected), f"feature: {feature_name}"
 
 
+@pytest.mark.integration_tests_e
 @pytest.mark.parametrize("padding", ["left", "right"])
 @pytest.mark.parametrize("fill_value", ["", "1.0"])
 def test_torchscript_preproc_timeseries_alternative_type(tmpdir, csv_filename, padding, fill_value):
@@ -635,6 +650,7 @@ def test_torchscript_preproc_timeseries_alternative_type(tmpdir, csv_filename, p
         assert utils.is_all_close(feature_values, feature_values_expected), f'feature "{feature_name}" value mismatch.'
 
 
+@pytest.mark.integration_tests_e
 @pytest.mark.parametrize(
     "feature",
     [
@@ -698,6 +714,7 @@ def test_torchscript_preproc_with_nans(tmpdir, csv_filename, feature):
 
 @pytest.mark.skipif(torch.cuda.device_count() == 0, reason="test requires at least 1 gpu")
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="test requires gpu support")
+@pytest.mark.integration_tests_e
 @pytest.mark.distributed
 @pytest.mark.parametrize(
     "feature_fn",
@@ -763,6 +780,7 @@ def test_torchscript_preproc_gpu(tmpdir, csv_filename, feature_fn):
 
 @pytest.mark.skipif(torch.cuda.device_count() == 0, reason="test requires at least 1 gpu")
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="test requires gpu support")
+@pytest.mark.integration_tests_e
 @pytest.mark.distributed
 @pytest.mark.parametrize(
     "feature_fn",
