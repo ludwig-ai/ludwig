@@ -493,7 +493,7 @@ def test_check_prompt_requirements():
     config["prompt"] = {"template": "{input1}"}
     ModelConfig.from_dict(config)
 
-    # Raise an error if template has a placeholder for the output feature name.
+    # Raise an error if template has a placeholder for the output feature.
     config["prompt"] = {"template": "{input1}: {output1}"}
     with pytest.raises(ConfigValidationError):
         ModelConfig.from_dict(config)

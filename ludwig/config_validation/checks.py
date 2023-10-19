@@ -723,8 +723,8 @@ def check_prompt_requirements(config: "ModelConfig") -> None:  # noqa: F821
         output_feature_col = config.output_features[0].column
         if output_feature_col in template_refs:
             raise ConfigValidationError(
-                "Prompt template should not contain the output feature name. The output feature is automatically "
-                "added to the end of the prompt template merged with the input at training time."
+                "Prompt template should not have a reference to the output feature. The output feature is "
+                "automatically added to the end of the prompt template merged with the input at training time."
             )
 
 
