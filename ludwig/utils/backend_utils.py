@@ -30,7 +30,7 @@ def _get_backend_type_from_config(config_obj: "ModelConfig") -> str:  # noqa: F8
     Returns:
         str: The backend type, defaulting to "local" if not explicitly specified.
     """
-    # config_obj.backend maybe None if the backend was not explicitly set in the config
+    # config_obj.backend may be None if the backend was not explicitly set in the config
     backend = config_obj.backend or {}
     backend_type = backend.get("type", "local")
     return backend_type
