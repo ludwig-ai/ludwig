@@ -26,7 +26,12 @@ if TYPE_CHECKING:
     from ludwig.modules.lr_scheduler import LRScheduler
     from ludwig.schema.trainer import ECDTrainerConfig
 
-
+# By defaulting to deepspeed zero stage 3, we assume the worst-case scenario where the model may not fit into
+# memory, necessitating model parallel + data parallel training due to its size. This choice also assumes no
+# quantization-based fine-tuning. The goal is to provide a simple and robust configuration that "just works" for
+# various LLM models, irrespective of their size. This configuration ensures the highest chance of success for
+# full fine-tuning with or without adapters, even when specific model size reduction techniques are not specified
+# in the LLM fine-tuning configuration.
 DEFAULT_ZERO_OPTIMIZATION = {
     "stage": 3,
     "stage3_gather_16bit_weights_on_model_save": "auto",
@@ -58,8 +63,16 @@ class DeepSpeedStrategy(DDPStrategy):
         init_deepspeed = local_rank is None or local_size is None
 
         super().__init__(**kwargs)
+
+        # By defaulting to deepspeed zero stage 3, we assume the worst-case scenario where the model may not fit
+        # into memory, necessitating model parallel + data parallel training due to its size. This choice also
+        # assumes no quantization-based fine-tuning. The goal is to provide a simple and robust configuration
+        # that "just works" for various LLM models, irrespective of their size. This configuration ensures the
+        # highest chance of success for full fine-tuning with or without adapters, even when specific model
+        # size reduction techniques are not specified in the LLM fine-tuning configuration.
         self.zero_optimization = zero_optimization or DEFAULT_ZERO_OPTIMIZATION
         self.zero_optimization_stage = self.zero_optimization.get("stage", 3)
+
         self.fp16 = fp16
         self.bf16 = bf16
         self.compression_training = compression_training

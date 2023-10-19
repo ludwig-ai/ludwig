@@ -6,6 +6,7 @@ import pandas as pd
 import yaml
 
 from ludwig.api import LudwigModel
+from ludwig.datasets import code_alpaca
 
 np.random.seed(123)
 
@@ -17,31 +18,6 @@ if "HUGGING_FACE_HUB_TOKEN" not in os.environ:
         "Please set your Hugging Face Hub token as an environment variable using `export "
         "HUGGING_FACE_HUB_TOKEN=your_token`. You can get a token at https://huggingface.co/settings/tokens"
     )
-
-df = pd.read_json("https://raw.githubusercontent.com/sahil280114/codealpaca/master/data/code_alpaca_20k.json")
-
-# We're going to create a new column called `split` where:
-# 90% will be assigned a value of 0 -> train set
-# 5% will be assigned a value of 1 -> validation set
-# 5% will be assigned a value of 2 -> test set
-# Calculate the number of rows for each split value
-total_rows = len(df)
-split_0_count = int(total_rows * 0.9)
-split_1_count = int(total_rows * 0.05)
-split_2_count = total_rows - split_0_count - split_1_count
-
-# Create an array with split values based on the counts
-split_values = np.concatenate([np.zeros(split_0_count), np.ones(split_1_count), np.full(split_2_count, 2)])
-
-# Shuffle the array to ensure randomness
-np.random.shuffle(split_values)
-
-# Add the 'split' column to the DataFrame
-df["split"] = split_values
-df["split"] = df["split"].astype(int)
-
-# For now, just use 1000 rows as a demonstration
-df = df.head(n=1000)
 
 fine_tuning_config = yaml.safe_load(
     """
@@ -80,9 +56,13 @@ quantization:
 
 preprocessing:
     split:
-        type: fixed
-        column: split
+        type: random
+        probabilities:
+        - 0.9
+        - 0.05
+        - 0.05
     global_max_sequence_length: 512
+    sample_size: 1000
 
 backend:
     type: ray
@@ -107,6 +87,7 @@ trainer:
     """
 )
 
+df = code_alpaca.load(split=False)
 model = LudwigModel(config=fine_tuning_config, logging_level=logging.INFO)
 
 (
@@ -125,6 +106,7 @@ for item in os.listdir(output_directory):
     print("\t", item)
 
 # Run Inference
+print("Predict")
 prediction_df = pd.DataFrame(
     [
         {
@@ -153,8 +135,6 @@ prediction_df = pd.DataFrame(
         },
     ]
 )
-
-print("Predict")
 preds, _ = model.predict(dataset=prediction_df)
 preds = preds.compute()
 for input_with_prediction in zip(prediction_df["instruction"], prediction_df["input"], preds["output_response"]):
