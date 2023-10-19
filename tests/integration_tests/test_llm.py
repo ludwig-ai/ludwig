@@ -758,7 +758,6 @@ quantization section from your Ludwig configuration."""
                 "README.md",
                 "adapter_config.json",
                 "adapter_model.bin",
-                "added_tokens.json",
                 "config.json",
                 "generation_config.json",
                 "merges.txt",
