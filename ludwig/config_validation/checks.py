@@ -719,6 +719,14 @@ def check_prompt_requirements(config: "ModelConfig") -> None:  # noqa: F821
                     "a JSON-serialized representation of non-output feature columns."
                 )
 
+        # Raise an error if template has a placeholder for the output feature name.
+        output_feature_name = config.output_features[0].name
+        if output_feature_name in template_refs:
+            raise ConfigValidationError(
+                "Prompt template should not contain the output feature name. The output feature is automatically "
+                "added to the end of the prompt template merged with the input at training time."
+            )
+
 
 @register_config_check
 def check_sample_ratio_and_size_compatible(config: "ModelConfig") -> None:
