@@ -25,6 +25,7 @@ import logging
 import os
 import sys
 import tempfile
+import time
 import traceback
 from collections import OrderedDict
 from pprint import pformat
@@ -103,6 +104,7 @@ from ludwig.utils.misc_utils import (
     set_saved_weights_in_checkpoint_flag,
 )
 from ludwig.utils.print_utils import print_boxed
+from ludwig.utils.tokenizers import HFTokenizer
 from ludwig.utils.torch_utils import DEVICE
 from ludwig.utils.trainer_utils import get_training_report
 from ludwig.utils.types import DataFrame, TorchDevice
@@ -906,29 +908,22 @@ class LudwigModel:
         generation_config: Optional[dict] = None,
     ) -> Union[str, List[str]]:
         """A simple generate() method that directly uses the underlying transformers library to generate text."""
-        import time
-
         if self.config_obj.model_type != MODEL_LLM:
             raise ValueError(
                 f"Model type {self.config_obj.model_type} is not supported by this method. Only `llm` model type is "
                 "supported."
             )
-
         if not torch.cuda.is_available():
             raise ValueError("GPU is not available.")
-
-        from ludwig.utils.tokenizers import HFTokenizer
 
         if not self.model.model.config.is_encoder_decoder:
             padding_side = "left"
         else:
             padding_side = "right"
-
         tokenizer = HFTokenizer(self.config_obj.base_model, padding_side=padding_side)
 
-        start_time = time.time()
-
         with self.model.use_generation_config(generation_config):
+            start_time = time.time()
             inputs = tokenizer.tokenizer(input_strings, return_tensors="pt", padding=True)
             input_ids = inputs["input_ids"].to("cuda")
             attention_mask = inputs["attention_mask"].to("cuda")
@@ -942,7 +937,7 @@ class LudwigModel:
                     generation_config=self.model.generation,
                 )
                 decoded_outputs = tokenizer.tokenizer.batch_decode(outputs, skip_special_tokens=True)
-                logging.info(f"Finished generating in: {(time.time() - start_time):.2f}s.")
+                logger.info(f"Finished generating in: {(time.time() - start_time):.2f}s.")
                 if len(decoded_outputs) == 1:
                     return decoded_outputs[0]
                 return decoded_outputs
@@ -999,13 +994,10 @@ class LudwigModel:
             `predictions` predictions from the provided dataset,
             `output_directory` filepath string to where data was stored.
         """
-        import time
-
-        start_time = time.time()
-
         self._check_initialization()
 
         # preprocessing
+        start_time = time.time()
         logger.debug("Preprocessing")
         dataset, _ = preprocess_for_prediction(  # TODO (Connor): Refactor to use self.config_obj
             self.config_obj.to_dict(),
@@ -1052,7 +1044,7 @@ class LudwigModel:
 
                     logger.info(f"Saved to: {output_directory}")
 
-            print(f"Finished decoding in: {(time.time() - start_time):.2f}s.")
+            logger.info(f"Finished decoding in: {(time.time() - start_time):.2f}s.")
             return converted_postproc_predictions, output_directory
 
     def evaluate(
