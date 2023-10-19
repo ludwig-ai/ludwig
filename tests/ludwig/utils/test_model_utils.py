@@ -66,7 +66,6 @@ def test_replace_tensors():
             assert torch.allclose(module._buffers[name], torch.as_tensor(array, device=device))
 
 
-# Define a sample module structure for testing
 class SampleModule(torch.nn.Module):
     def __init__(self):
         super().__init__()
@@ -102,6 +101,9 @@ def test_no_embedding_layer():
 
 
 class TestHasNanOrInfTensors:
+    """Test suite for the 'has_nan_or_inf_tensors' function, which checks for NaN or infinity (inf) values in
+    PyTorch tensors."""
+
     class SampleModel(torch.nn.Module):
         def __init__(self):
             super().__init__()
