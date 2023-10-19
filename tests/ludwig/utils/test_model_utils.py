@@ -1,9 +1,13 @@
+import pytest
 import torch
 from transformers import AutoModelForCausalLM
 
-from ludwig.utils.model_utils import extract_tensors, find_embedding_layer_with_path, replace_tensors
-
-# Define a sample model for testing
+from ludwig.utils.model_utils import (
+    extract_tensors,
+    find_embedding_layer_with_path,
+    has_nan_or_inf_tensors,
+    replace_tensors,
+)
 
 
 class SampleModel(torch.nn.Module):
@@ -95,3 +99,39 @@ def test_no_embedding_layer():
     embedding_layer, path = find_embedding_layer_with_path(no_embedding_model)
     assert embedding_layer is None
     assert path is None
+
+
+class TestHasNanOrInfTensors:
+    class SampleModel(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.param = torch.nn.Parameter(torch.tensor(1.0, requires_grad=True))
+            self.buffer = torch.nn.Parameter(torch.tensor(1.0, requires_grad=True))
+
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.model_with_nan_or_inf = self.SampleModel()
+        self.model_without_nan_or_inf = self.SampleModel()
+        self.transformer_model = AutoModelForCausalLM.from_pretrained("HuggingFaceM4/tiny-random-LlamaForCausalLM")
+
+    def test_has_nan_or_inf_tensors_without_nan_or_inf(self):
+        assert has_nan_or_inf_tensors(self.model_without_nan_or_inf) is False
+
+    def test_has_nan_or_inf_tensors_with_nan(self):
+        self.model_with_nan_or_inf.param.data = torch.tensor(float("nan"))
+        assert has_nan_or_inf_tensors(self.model_with_nan_or_inf) is True
+
+    def test_has_nan_or_inf_tensors_without_nan(self):
+        self.model_with_nan_or_inf.buffer.data = torch.tensor(float("inf"))
+        assert has_nan_or_inf_tensors(self.model_with_nan_or_inf) is True
+
+    def test_has_nan_or_inf_tensors_transformer_model(self):
+        assert has_nan_or_inf_tensors(self.transformer_model) is False
+
+    def test_has_nan_or_inf_tensors_transformer_model_with_nan(self):
+        self.transformer_model.model.embed_tokens.weight.data[0][0] = float("nan")
+        assert has_nan_or_inf_tensors(self.transformer_model) is True
+
+    def test_has_nan_or_inf_tensors_transformer_model_with_inf(self):
+        self.transformer_model.model.embed_tokens.weight.data[0][0] = float("inf")
+        assert has_nan_or_inf_tensors(self.transformer_model) is True
