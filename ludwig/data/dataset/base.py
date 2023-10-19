@@ -14,10 +14,13 @@
 # limitations under the License.
 # ==============================================================================
 
+from __future__ import annotations
+
 import contextlib
 from abc import ABC, abstractmethod
-from typing import Iterable, Optional
+from typing import Iterable
 
+from ludwig.data.batcher.base import Batcher
 from ludwig.distributed import DistributedStrategy
 from ludwig.features.base_feature import BaseFeature
 from ludwig.utils.defaults import default_random_seed
@@ -26,7 +29,7 @@ from ludwig.utils.types import DataFrame
 
 class Dataset(ABC):
     @abstractmethod
-    def __len__(self):
+    def __len__(self) -> int:
         raise NotImplementedError()
 
     @contextlib.contextmanager
@@ -38,36 +41,36 @@ class Dataset(ABC):
         random_seed: int = default_random_seed,
         ignore_last: bool = False,
         distributed: DistributedStrategy = None,
-    ):
+    ) -> Batcher:
         raise NotImplementedError()
 
     @abstractmethod
-    def to_df(self, features: Optional[Iterable[BaseFeature]] = None) -> DataFrame:
+    def to_df(self, features: Iterable[BaseFeature] | None = None) -> DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
-    def to_scalar_df(self, features: Optional[Iterable[BaseFeature]] = None) -> DataFrame:
+    def to_scalar_df(self, features: Iterable[BaseFeature] | None = None) -> DataFrame:
         raise NotImplementedError()
 
     @property
-    def in_memory_size_bytes(self):
+    def in_memory_size_bytes(self) -> int:
         raise NotImplementedError()
 
 
 class DatasetManager(ABC):
     @abstractmethod
-    def create(self, dataset, config, training_set_metadata):
+    def create(self, dataset, config, training_set_metadata) -> Dataset:
         raise NotImplementedError()
 
     @abstractmethod
-    def save(self, cache_path, dataset, config, training_set_metadata, tag):
+    def save(self, cache_path, dataset, config, training_set_metadata, tag) -> Dataset:
         raise NotImplementedError()
 
     @abstractmethod
-    def can_cache(self, skip_save_processed_input):
+    def can_cache(self, skip_save_processed_input) -> bool:
         raise NotImplementedError()
 
     @property
     @abstractmethod
-    def data_format(self):
+    def data_format(self) -> str:
         raise NotImplementedError()

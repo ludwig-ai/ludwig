@@ -452,6 +452,30 @@ class DatasetLoader:
         )
         test_paths = _glob_multiple(_list_of_strings(self.config.test_filenames), root_dir=self.raw_dataset_dir)
         dataframes = []
+        if self.config.name == "hugging_face":
+            dataframes = self._get_dataframe_with_fixed_splits_from_hf()
+        else:
+            dataframes = self._get_dataframe_with_fixed_splits(
+                train_paths, validation_paths, test_paths, dataset_paths, file_paths
+            )
+        return pd.concat(dataframes, ignore_index=True)
+
+    def _get_dataframe_with_fixed_splits_from_hf(self):
+        dataframes = []
+        splits = ["train", "validation", "test"]
+        data_dict = self.load_hf_to_dict(
+            self.config.huggingface_dataset_id, self.config.huggingface_subset
+        )  # This function is defined in the Hugging Face dataloader
+        for split_type in splits:
+            if split_type in data_dict:
+                # We don't have to do anything if split not in data_dict because we just concatenate the dataframes
+                # in the end anyway.
+                data_dict[split_type][SPLIT] = splits.index(split_type)  # Add "split" column (0, 1, or 2)
+                dataframes.append(data_dict[split_type])
+        return dataframes
+
+    def _get_dataframe_with_fixed_splits(self, train_paths, validation_paths, test_paths, dataset_paths, file_paths):
+        dataframes = []
         if len(train_paths) > 0:
             train_df = self.load_files_to_dataframe(train_paths)
             train_df[SPLIT] = 0
@@ -464,12 +488,13 @@ class DatasetLoader:
             test_df = self.load_files_to_dataframe(test_paths)
             test_df[SPLIT] = 2
             dataframes.append(test_df)
-        # If we have neither train/validation/test files nor dataset_paths in the config, use data files in root dir.
+        # If we have neither train/validation/test files nor dataset_paths in the config,
+        # use data files in root dir.
         if len(dataset_paths) == len(dataframes) == 0:
             dataset_paths = file_paths
         if len(dataset_paths) > 0:
             dataframes.append(self.load_files_to_dataframe(dataset_paths))
-        return pd.concat(dataframes, ignore_index=True)
+        return dataframes
 
     def transform_dataframe(self, dataframe: pd.DataFrame) -> pd.DataFrame:
         """Transforms a dataframe of the entire dataset.

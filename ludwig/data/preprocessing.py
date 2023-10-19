@@ -1201,15 +1201,8 @@ def build_dataset(
 
     if mode == "training":
         sample_ratio = global_preprocessing_parameters["sample_ratio"]
-        if sample_ratio < 1.0:
-            if not df_engine.partitioned and len(dataset_df) * sample_ratio < 1:
-                raise ValueError(
-                    f"sample_ratio {sample_ratio} is too small for dataset of length {len(dataset_df)}. "
-                    f"Please increase sample_ratio or use a larger dataset."
-                )
-
-            logger.debug(f"sample {sample_ratio} of data")
-            dataset_df = dataset_df.sample(frac=sample_ratio, random_state=random_seed)
+        sample_size = global_preprocessing_parameters["sample_size"]
+        dataset_df = _get_sampled_dataset_df(dataset_df, df_engine, sample_ratio, sample_size, random_seed)
 
     # If persisting DataFrames in memory is enabled, we want to do this after
     # each batch of parallel ops in order to avoid redundant computation
@@ -1394,6 +1387,29 @@ def embed_fixed_features(
         metadata[feature[NAME]][PREPROCESSING]["cache_encoder_embeddings"] = True
 
     return results
+
+
+def _get_sampled_dataset_df(dataset_df, df_engine, sample_ratio, sample_size, random_seed):
+    df_len = len(dataset_df)
+    if sample_ratio < 1.0:
+        if not df_engine.partitioned and df_len * sample_ratio < 1:
+            raise ValueError(
+                f"sample_ratio {sample_ratio} is too small for dataset of length {df_len}. "
+                f"Please increase sample_ratio or use a larger dataset."
+            )
+
+        logger.debug(f"sample {sample_ratio} of data")
+        dataset_df = dataset_df.sample(frac=sample_ratio, random_state=random_seed)
+
+    if sample_size:
+        if sample_size < df_len:
+            # Cannot use 'n' parameter when using dask DataFrames -- only 'frac' is supported
+            sample_ratio = sample_size / df_len
+            dataset_df = dataset_df.sample(frac=sample_ratio, random_state=random_seed)
+        else:
+            logger.warning("sample_size is larger than dataset size, ignoring sample_size")
+
+    return dataset_df
 
 
 def get_features_with_cacheable_fixed_embeddings(
@@ -1885,7 +1901,7 @@ def preprocess_for_training(
     if dataset is None and training_set is None:
         raise ValueError("No training data is provided!")
 
-    # preload ludwig datasets
+    # preload ludwig and HF datasets
     dataset, training_set, validation_set, test_set = load_dataset_uris(
         dataset, training_set, validation_set, test_set, backend
     )
@@ -2239,7 +2255,7 @@ def preprocess_for_prediction(
     if isinstance(dataset, Dataset):
         return dataset, training_set_metadata
 
-    # preload ludwig datasets
+    # preload ludwig and HF datasets
     dataset, _, _, _ = load_dataset_uris(dataset, None, None, None, backend)
 
     # determine data format if not provided or auto
