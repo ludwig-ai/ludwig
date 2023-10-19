@@ -1119,6 +1119,7 @@ class Trainer(BaseTrainer):
         self.distributed.zero_grad(self.optimizer)
         batch_idx = 0
         should_break = False
+        has_nan_or_inf_tensors = False
         while not batcher.last_batch() and progress_tracker.steps < self.total_steps and not should_break:
             progress_tracker.learning_rate = self.optimizer.param_groups[0]["lr"]
             self.callback(lambda c: c.on_batch_start(self, progress_tracker, save_path))
