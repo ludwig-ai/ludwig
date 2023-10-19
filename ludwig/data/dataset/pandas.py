@@ -43,11 +43,11 @@ class PandasDataset(Dataset):
     def __init__(self, dataset, features, data_hdf5_fp):
         self.features = features
         self.data_hdf5_fp = data_hdf5_fp
-        self.size = len(dataset)
 
         if isinstance(dataset, str):
             dataset = load_hdf5(dataset)
         self.dataset = to_numpy_dataset(dataset)
+        self.size = len(list(self.dataset.values())[0])
 
     def to_df(self, features: Iterable[BaseFeature] | None = None) -> DataFrame:
         """Convert the dataset to a Pandas DataFrame."""

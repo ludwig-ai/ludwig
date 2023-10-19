@@ -26,11 +26,12 @@ from tests.integration_tests.utils import (
 
 ray = pytest.importorskip("ray")
 
-import dask.dataframe as dd  # noqa
-from ray.tune.experiment.trial import Trial  # noqa
+import dask.dataframe as dd  # noqa E402
+from ray.tune.experiment.trial import Trial  # noqa E402
 
-from ludwig.automl import auto_train, create_auto_config, train_with_config  # noqa
-from ludwig.hyperopt.execution import RayTuneExecutor  # noqa
+from ludwig.automl import auto_train, create_auto_config, train_with_config  # noqa E402
+from ludwig.automl.automl import OUTPUT_DIR  # noqa E402
+from ludwig.hyperopt.execution import RayTuneExecutor  # noqa E402
 
 pytestmark = [pytest.mark.distributed, pytest.mark.integration_tests_c]
 
@@ -290,10 +291,12 @@ def test_train_with_config(time_budget, test_data_tabular_large, ray_cluster_2cp
 @pytest.mark.distributed
 def test_auto_train(test_data_tabular_large, ray_cluster_2cpu, tmpdir):
     _, ofeatures, dataset_csv = test_data_tabular_large
+    local_output_directory_path: str = f"{str(tmpdir)}/{OUTPUT_DIR}"
     results = auto_train(
         dataset=dataset_csv,
         target=ofeatures[0][NAME],
         time_limit_s=120,
+        output_directory=local_output_directory_path,
         user_config={"hyperopt": {"executor": {"num_samples": 2}}},
     )
 

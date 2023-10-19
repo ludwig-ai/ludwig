@@ -937,17 +937,17 @@ template_multi_col = """
 You are a helpful chatbot. USER: {__sample__}: {country}, {year:.2f} ASSISTANT:
 """
 
-expected_task_sample = """instruction: predict the output feature. return only values in {true, false}
+expected_task_sample = """Instruction: predict the output feature. Return only values in {true, false}
 ###
-examples:
+Examples:
 ###
-input: foo bar
-output: true
+Input: foo bar
+Output: true
 ###
-input: baz quc
-output: false
+Input: baz quc
+Output: false
 ###
-input:"""
+Input:"""
 
 
 @pytest.mark.llm
@@ -973,7 +973,7 @@ input:"""
                 category_feature(name="country"),
                 number_feature(name="year"),
             ],
-            ("you are a helpful chatbot. user: "),
+            ("You are a helpful chatbot. USER: "),
         ),
     ],
     ids=["task_sample", "multi_col"],
@@ -988,7 +988,7 @@ def test_prompt_template(input_features, expected, model_type, backend, tmpdir, 
     data_df = pd.read_csv(data_csv)
     raw_values = [data_df[input_features[i][COLUMN]].values.tolist() for i in range(len(input_features))]
 
-    # Only use the first input featuere (text) and discard the others, which are only used for data gen
+    # Only use the first input feature (text) and discard the others, which are only used for data gen
     input_features = input_features[:1]
     config = {
         MODEL_TYPE: model_type,
@@ -1032,7 +1032,7 @@ def test_prompt_template(input_features, expected, model_type, backend, tmpdir, 
                 # Test formatting in parametrize uses 2 decimal places of precision
                 raw_text = f"{v:.2f}"
             else:
-                raw_text = str(v).lower()
+                raw_text = str(v)
             assert raw_text in decoded, f"'{raw_text}' not in '{decoded}'"
 
 

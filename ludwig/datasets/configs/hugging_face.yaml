@@ -1,0 +1,5 @@
+version: 1.0
+name: hugging_face
+loader: hugging_face.HFLoader
+description: |
+  Hugging Face Datasets
