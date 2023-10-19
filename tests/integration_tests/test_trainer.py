@@ -11,7 +11,16 @@ from packaging.version import parse as parse_version
 
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
-from ludwig.constants import BATCH_SIZE, MAX_BATCH_SIZE_DATASET_FRACTION, TRAINER
+from ludwig.constants import (
+    BATCH_SIZE,
+    EFFECTIVE_BATCH_SIZE,
+    EPOCHS,
+    EVAL_BATCH_SIZE,
+    INPUT_FEATURES,
+    MAX_BATCH_SIZE_DATASET_FRACTION,
+    OUTPUT_FEATURES,
+    TRAINER,
+)
 from ludwig.distributed import init_dist_strategy
 from tests.integration_tests.utils import (
     binary_feature,
@@ -67,8 +76,8 @@ except ImportError:
 
 def test_tune_learning_rate(tmpdir):
     config = {
-        "input_features": [text_feature(), binary_feature()],
-        "output_features": [binary_feature()],
+        INPUT_FEATURES: [text_feature(), binary_feature()],
+        OUTPUT_FEATURES: [binary_feature()],
         TRAINER: {
             "train_steps": 1,
             BATCH_SIZE: 128,
@@ -77,7 +86,7 @@ def test_tune_learning_rate(tmpdir):
     }
 
     csv_filename = os.path.join(tmpdir, "training.csv")
-    data_csv = generate_data(config["input_features"], config["output_features"], csv_filename)
+    data_csv = generate_data(config[INPUT_FEATURES], config[OUTPUT_FEATURES], csv_filename)
     val_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "validation.csv"))
     test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "test.csv"))
 
@@ -88,9 +97,9 @@ def test_tune_learning_rate(tmpdir):
 
 
 @pytest.mark.parametrize("is_cpu", [True, False])
-@pytest.mark.parametrize("effective_batch_size", ["auto", 256])
-@pytest.mark.parametrize("eval_batch_size", ["auto", None, 128])
-def test_tune_batch_size_and_lr(tmpdir, eval_batch_size, effective_batch_size, is_cpu):
+@pytest.mark.parametrize(EFFECTIVE_BATCH_SIZE, ["auto", 256])
+@pytest.mark.parametrize(EVAL_BATCH_SIZE, ["auto", None, 128])
+def test_ecd_tune_batch_size_and_lr(tmpdir, eval_batch_size, effective_batch_size, is_cpu):
     input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
     output_features = [
         category_feature(decoder={"vocab_size": 2}, reduce_input="sum"),
@@ -106,19 +115,19 @@ def test_tune_batch_size_and_lr(tmpdir, eval_batch_size, effective_batch_size, i
     test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "test.csv"))
 
     trainer = {
-        "epochs": 2,
-        "effective_batch_size": effective_batch_size,
-        "batch_size": "auto",
+        EPOCHS: 2,
+        EFFECTIVE_BATCH_SIZE: effective_batch_size,
+        BATCH_SIZE: "auto",
         "gradient_accumulation_steps": "auto",
         "learning_rate": "auto",
     }
 
     if eval_batch_size:
-        trainer["eval_batch_size"] = eval_batch_size
+        trainer[EVAL_BATCH_SIZE] = eval_batch_size
 
     config = {
-        "input_features": input_features,
-        "output_features": output_features,
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
         "combiner": {"type": "concat", "output_size": 14},
         TRAINER: trainer,
     }
@@ -190,11 +199,11 @@ def test_scale_lr(learning_rate_scaling, expected_lr, tmpdir, ray_cluster_2cpu):
     data_csv = generate_data(input_features, output_features, csv_filename)
 
     config = {
-        "input_features": input_features,
-        "output_features": output_features,
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
         "combiner": {"type": "concat", "output_size": 14},
         TRAINER: {
-            "epochs": 2,
+            EPOCHS: 2,
             BATCH_SIZE: 128,
             "learning_rate": base_lr,
             "learning_rate_scaling": learning_rate_scaling,
@@ -214,11 +223,11 @@ def test_changing_parameters_on_plateau(tmpdir):
     val_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "validation.csv"))
     test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "test.csv"))
     config = {
-        "input_features": input_features,
-        "output_features": output_features,
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
         "combiner": {"type": "concat", "output_size": 14},
         TRAINER: {
-            "epochs": 2,
+            EPOCHS: 2,
             BATCH_SIZE: 128,
             "learning_rate": 1.0,
             "reduce_learning_rate_on_plateau": 1,
@@ -234,8 +243,8 @@ def test_changing_parameters_on_plateau(tmpdir):
 def test_lightgbm_dataset_partition(ray_cluster_2cpu):
     # Create a LightGBM model with a Ray backend
     config = {
-        "input_features": [{"name": "in_column", "type": "binary"}],
-        "output_features": [{"name": "out_column", "type": "binary"}],
+        INPUT_FEATURES: [{"name": "in_column", "type": "binary"}],
+        OUTPUT_FEATURES: [{"name": "out_column", "type": "binary"}],
         "model_type": "gbm",
         # Disable feature filtering to avoid having no features due to small test dataset,
         # see https://stackoverflow.com/a/66405983/5222402
@@ -299,13 +308,13 @@ def test_mixed_precision(tmpdir):
     test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "test.csv"))
 
     trainer = {
-        "epochs": 2,
+        EPOCHS: 2,
         "use_mixed_precision": True,
     }
 
     config = {
-        "input_features": input_features,
-        "output_features": output_features,
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
         "combiner": {"type": "concat", "output_size": 14},
         TRAINER: trainer,
     }
@@ -330,13 +339,13 @@ def test_compile(tmpdir):
     test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "test.csv"))
 
     trainer = {
-        "epochs": 2,
+        EPOCHS: 2,
         "compile": True,
     }
 
     config = {
-        "input_features": input_features,
-        "output_features": output_features,
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
         "combiner": {"type": "concat", "output_size": 14},
         TRAINER: trainer,
     }
@@ -359,14 +368,14 @@ def test_gradient_accumulation(gradient_accumulation_steps: int, tmpdir):
     test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "test.csv"))
 
     trainer = {
-        "epochs": 2,
-        "batch_size": 8,
+        EPOCHS: 2,
+        BATCH_SIZE: 8,
         "gradient_accumulation_steps": gradient_accumulation_steps,
     }
 
     config = {
-        "input_features": input_features,
-        "output_features": output_features,
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
         "combiner": {"type": "concat", "output_size": 14},
         TRAINER: trainer,
     }
@@ -390,12 +399,12 @@ def test_enable_gradient_checkpointing(tmpdir, caplog):
     test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "test.csv"))
 
     config = {
-        "input_features": input_features,
-        "output_features": output_features,
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
         "combiner": {"type": "concat", "output_size": 14},
         TRAINER: {
             "train_steps": 2,
-            "batch_size": 8,
+            BATCH_SIZE: 8,
             "enable_gradient_checkpointing": True,
         },
     }

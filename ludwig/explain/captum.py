@@ -279,9 +279,11 @@ def get_input_tensors(
 
     :return: A list of variables, one for each input feature. Shape of each variable is [batch size, embedding size].
     """
-    # Ignore sample_ratio from the model config, since we want to explain all the data.
+    # Ignore sample_ratio and sample_size from the model config, since we want to explain all the data.
     sample_ratio_bak = model.config_obj.preprocessing.sample_ratio
+    sample_size_bak = model.config_obj.preprocessing.sample_size
     model.config_obj.preprocessing.sample_ratio = 1.0
+    model.config_obj.preprocessing.sample_size = None
 
     config = model.config_obj.to_dict()
     training_set_metadata = copy.deepcopy(model.training_set_metadata)
@@ -302,8 +304,9 @@ def get_input_tensors(
         callbacks=model.callbacks,
     )
 
-    # Restore sample_ratio
+    # Restore sample_ratio and sample_size
     model.config_obj.preprocessing.sample_ratio = sample_ratio_bak
+    model.config_obj.preprocessing.sample_size = sample_size_bak
 
     # Make sure the number of rows in the preprocessed dataset matches the number of rows in the input data
     assert (
