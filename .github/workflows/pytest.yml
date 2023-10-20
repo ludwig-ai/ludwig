@@ -584,13 +584,23 @@
 #name: pytest (ALEX_TEST-slow-ALEX_TEST)
 # TODO: <Alex>ALEX</Alex>
 # TODO: <Alex>ALEX</Alex>
-name: pytest-slow
+#name: pytest-slow
 # TODO: <Alex>ALEX</Alex>
+name: pytest
 
 on:
   push:
     branches: ["master", "release-*"]
-    tags: ["v*.*.*"]
+  pull_request:
+    branches: ["master", "release-*"]
+
+
+# TODO: <Alex>ALEX</Alex>
+#on:
+#  push:
+#    branches: ["master", "release-*"]
+#    tags: ["v*.*.*"]
+# TODO: <Alex>ALEX</Alex>
 
 jobs:
   start-runner:

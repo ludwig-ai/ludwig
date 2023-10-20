@@ -1,14 +1,8 @@
-# TODO: <Alex>ALEX</Alex>
 name: test results
 
 on:
   workflow_run:
-    # TODO: <Alex>ALEX</Alex>
-    # workflows: ["pytest"]
-    # TODO: <Alex>ALEX</Alex>
-    # TODO: <Alex>ALEX</Alex>
-    workflows: ["pytest-slow"]
-    # TODO: <Alex>ALEX</Alex>
+    workflows: ["pytest"]
     types:
       - completed
 
@@ -41,4 +35,3 @@ jobs:
           event_file: artifacts/Event File/event.json
           event_name: ${{ github.event.workflow_run.event }}
           files: "artifacts/**/*.xml"
-# TODO: <Alex>ALEX</Alex>
