@@ -1,8 +1,9 @@
 import pytest
 import torch
-from transformers import AutoConfig, AutoTokenizer
+from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer
 
 from ludwig.constants import LOGITS, PREDICTIONS, PROBABILITIES
+from ludwig.modules.neftune_modules import NoisedEmbedding
 from ludwig.utils.llm_utils import (
     add_left_padding,
     create_attention_mask,
@@ -312,3 +313,61 @@ def test_realign_target_and_prediction_tensors_for_inference(tokenizer):
     assert torch.equal(updated_predictions[of_name][LOGITS][0][-1], torch.zeros(vocab_size))
     assert torch.equal(updated_predictions[of_name][LOGITS][0][-2], torch.zeros(vocab_size))
     assert not torch.equal(updated_predictions[of_name][LOGITS][0][-3], torch.zeros(vocab_size))
+
+
+def test_noised_embedding_forward_during_training():
+    # Create a simple AutoModelForCausalLM model for testing
+    model_name = "HuggingFaceH4/tiny-random-LlamaForCausalLM"
+    model = AutoModelForCausalLM.from_pretrained(model_name)
+    config = AutoConfig.from_pretrained(model_name)
+
+    # Set the model in training mode
+    model.train()
+    assert model.training
+
+    # Create a NoisedEmbedding instance
+    noised_embedding = NoisedEmbedding(model.get_input_embeddings(), noise_alpha=5)
+
+    # Create an input tensor with indices within the vocabulary size
+    batch_size = 4
+    sequence_length = 10
+    vocab_size = config.vocab_size
+
+    # Create a random input tensor
+    input_tensor = torch.randint(0, vocab_size, (batch_size, sequence_length))
+
+    # Apply forward during training
+    output = noised_embedding(input_tensor)
+
+    assert isinstance(output, torch.Tensor)
+    # The embedding should have noise added
+    assert not torch.equal(output, model.get_input_embeddings()(input_tensor))
+
+
+def test_noised_embedding_forward_during_generation():
+    # Create a simple AutoModelForCausalLM model for testing
+    model_name = "HuggingFaceH4/tiny-random-LlamaForCausalLM"
+    model = AutoModelForCausalLM.from_pretrained(model_name)
+    config = AutoConfig.from_pretrained(model_name)
+
+    # Set the model in eval mode
+    model.training = False
+    assert not model.training
+
+    # Create a NoisedEmbedding instance
+    noised_embedding = NoisedEmbedding(model.get_input_embeddings(), noise_alpha=5)
+
+    # Create an input tensor with indices within the vocabulary size
+    batch_size = 4
+    sequence_length = 10
+    vocab_size = config.vocab_size
+
+    # Create a random input tensor
+    input_tensor = torch.randint(0, vocab_size, (batch_size, sequence_length))
+
+    # Apply forward during training
+    output = noised_embedding(input_tensor)
+
+    assert isinstance(output, torch.Tensor)
+    # The embedding should have no noise added
+    assert torch.equal(output, model.get_input_embeddings()(input_tensor))
