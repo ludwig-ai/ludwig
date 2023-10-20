@@ -1,35 +1,37 @@
-name: Cherry-Pick into Release Branch
-
-on:
-  push:
-    branches: ["master"]
-
-jobs:
-  release_pull_requestk:
-    name: cherry_pick_into_${{ matrix.release-branch }}
-    runs-on: ubuntu-latest
-
-    strategy:
-      fail-fast: false
-      matrix:
-        release-branch: [release-0.7, release-0.8]
-
-    steps:
-      - name: checkout
-        uses: actions/checkout@v1
-
-      - name: Check PR labels action step
-        id: check_pr_labels
-        uses: shioyang/check-pr-labels-on-push-action@v1.0.6
-        with:
-          github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          labels: '["${{ matrix.release-branch }}"]'
-
-      - name: Create PR into release branch
-        if: steps.check_pr_labels.outputs.result == 'true'
-        uses: gorillio/github-action-cherry-pick@master
-        with:
-          pr_branch: ${{ matrix.release-branch }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          DRY_RUN: false
+# TODO: <Alex>ALEX</Alex>
+#name: Cherry-Pick into Release Branch
+#
+#on:
+#  push:
+#    branches: ["master"]
+#
+#jobs:
+#  release_pull_requestk:
+#    name: cherry_pick_into_${{ matrix.release-branch }}
+#    runs-on: ubuntu-latest
+#
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        release-branch: [release-0.7, release-0.8]
+#
+#    steps:
+#      - name: checkout
+#        uses: actions/checkout@v1
+#
+#      - name: Check PR labels action step
+#        id: check_pr_labels
+#        uses: shioyang/check-pr-labels-on-push-action@v1.0.6
+#        with:
+#          github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+#          labels: '["${{ matrix.release-branch }}"]'
+#
+#      - name: Create PR into release branch
+#        if: steps.check_pr_labels.outputs.result == 'true'
+#        uses: gorillio/github-action-cherry-pick@master
+#        with:
+#          pr_branch: ${{ matrix.release-branch }}
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+#          DRY_RUN: false
+# TODO: <Alex>ALEX</Alex>
