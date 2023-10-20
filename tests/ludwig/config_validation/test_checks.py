@@ -468,9 +468,9 @@ def test_check_prompt_requirements():
     config = {
         "model_type": "llm",
         "input_features": [
-            text_feature(name="test1", column="col1", encoder={"type": "passthrough"}),
+            text_feature(name="input1", column="col1", encoder={"type": "passthrough"}),
         ],
-        "output_features": [text_feature()],
+        "output_features": [text_feature(name="output1")],
         "base_model": "opt-350m",
     }
 
@@ -489,6 +489,14 @@ def test_check_prompt_requirements():
 
     config["prompt"] = {"task": "Some task", "template": "{__task__}"}
     ModelConfig.from_dict(config)
+
+    config["prompt"] = {"template": "{input1}"}
+    ModelConfig.from_dict(config)
+
+    # Raise an error if template has a placeholder for the output feature.
+    config["prompt"] = {"template": "{input1}: {output1}"}
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
 
 
 def test_check_sample_ratio_and_size_compatible():
