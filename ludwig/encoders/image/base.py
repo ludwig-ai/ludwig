@@ -33,6 +33,7 @@ from ludwig.schema.encoders.image.base import (
     Stacked2DCNNConfig,
     ViTConfig,
 )
+from ludwig.utils.hf_utils import load_pretrained_hf_class_with_hub_fallback
 from ludwig.utils.torch_utils import FreezeModule
 
 logger = logging.getLogger(__name__)
@@ -382,7 +383,7 @@ class ViTEncoder(ImageEncoder):
         self._input_shape = (in_channels, img_height, img_width)
 
         if use_pretrained and not saved_weights_in_checkpoint:
-            transformer = ViTModel.from_pretrained(pretrained_model)
+            transformer = load_pretrained_hf_class_with_hub_fallback(ViTModel, pretrained_model)
         else:
             config = ViTConfig(
                 image_size=img_height,

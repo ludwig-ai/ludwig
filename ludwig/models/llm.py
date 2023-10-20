@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
-from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer, GenerationConfig, PreTrainedModel
+from transformers import AutoConfig, AutoModelForCausalLM, GenerationConfig, PreTrainedModel
 
 from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, MODEL_LLM, PREDICTIONS, TEXT
 from ludwig.features.base_feature import ModuleWrapper, OutputFeature
@@ -19,6 +19,7 @@ from ludwig.schema.model_types.llm import LLMModelConfig
 from ludwig.utils.augmentation_utils import AugmentationPipelines
 from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.error_handling_utils import default_retry
+from ludwig.utils.hf_utils import load_pretrained_hf_class_with_hub_fallback
 from ludwig.utils.llm_utils import (
     add_left_padding,
     generate_merged_ids,
@@ -26,10 +27,10 @@ from ludwig.utils.llm_utils import (
     pad_target_tensor_for_fine_tuning,
     realign_target_and_prediction_tensors_for_inference,
     remove_left_padding,
-    set_pad_token,
 )
 from ludwig.utils.logging_utils import log_once
 from ludwig.utils.output_feature_utils import set_output_feature_tensor
+from ludwig.utils.tokenizers import HFTokenizer
 from ludwig.utils.torch_utils import reg_loss
 
 logger = logging.getLogger(__name__)
@@ -101,7 +102,9 @@ def load_pretrained_from_config(
 
     logger.info("Loading large language model...")
     pretrained_model_name_or_path = weights_save_path or config_obj.base_model
-    model: PreTrainedModel = AutoModelForCausalLM.from_pretrained(pretrained_model_name_or_path, **load_kwargs)
+    model: PreTrainedModel = load_pretrained_hf_class_with_hub_fallback(
+        AutoModelForCausalLM, pretrained_model_name_or_path, **load_kwargs
+    )
     return model
 
 
@@ -123,7 +126,7 @@ class LLM(BaseModel):
         self._random_seed = random_seed
 
         self.model_name = self.config_obj.base_model
-        self.model_config = AutoConfig.from_pretrained(self.config_obj.base_model)
+        self.model_config = load_pretrained_hf_class_with_hub_fallback(AutoConfig, self.config_obj.base_model)
 
         self.model = load_pretrained_from_config(self.config_obj, model_config=self.model_config)
         self.curr_device = next(self.model.parameters()).device
@@ -144,8 +147,8 @@ class LLM(BaseModel):
             self.global_max_sequence_length = self.context_len
 
         # Initialize tokenizer
-        self.tokenizer = AutoTokenizer.from_pretrained(self.config_obj.base_model)
-        set_pad_token(self.tokenizer)
+        ludwig_tokenizer = HFTokenizer(self.config_obj.base_model)
+        self.tokenizer = ludwig_tokenizer.tokenizer
 
         self._set_generation_config(self.config_obj.generation.to_dict())
 
@@ -300,7 +303,8 @@ class LLM(BaseModel):
                 if self.config_obj.adapter:
                     from peft import PeftModel
 
-                    self.model = AutoModelForCausalLM.from_pretrained(
+                    self.model = load_pretrained_hf_class_with_hub_fallback(
+                        AutoModelForCausalLM,
                         self.model_name,
                         **model_kwargs,
                     )
@@ -310,7 +314,8 @@ class LLM(BaseModel):
                         torch_dtype=torch.float16,
                     )
                 else:
-                    self.model = AutoModelForCausalLM.from_pretrained(
+                    self.model = load_pretrained_hf_class_with_hub_fallback(
+                        AutoModelForCausalLM,
                         tmpdir,
                         **model_kwargs,
                     )
@@ -693,7 +698,7 @@ class LLM(BaseModel):
                 # Unwrap and reload PeftModel
                 self.model = self.model.base_model
 
-            self.model = PeftModel.from_pretrained(self.model, weights_save_path)
+            self.model = load_pretrained_hf_class_with_hub_fallback(PeftModel, self.model, weights_save_path)
         elif self.config_obj.trainer.type != "none":
             self.model = load_pretrained_from_config(
                 self.config_obj, model_config=self.model_config, weights_save_path=weights_save_path

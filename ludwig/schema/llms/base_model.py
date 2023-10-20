@@ -9,6 +9,7 @@ from ludwig.constants import BASE_MODEL
 from ludwig.error import ConfigValidationError
 from ludwig.schema.metadata import LLM_METADATA
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json
+from ludwig.utils.hf_utils import load_pretrained_hf_class_with_hub_fallback
 
 # Maps a preset LLM name to the full slash-delimited HF path. If the user chooses a preset LLM, the preset LLM name is
 # replaced with the full slash-delimited HF path using this map, after JSON validation but before config object
@@ -55,7 +56,7 @@ def BaseModelDataclassField():
             if os.path.isdir(model_name):
                 return model_name
             try:
-                AutoConfig.from_pretrained(model_name)
+                load_pretrained_hf_class_with_hub_fallback(AutoConfig, model_name)
                 return model_name
             except OSError:
                 raise ConfigValidationError(

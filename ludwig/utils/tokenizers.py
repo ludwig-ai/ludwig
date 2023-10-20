@@ -19,10 +19,11 @@ from typing import Any, Dict, List, Optional, Union
 
 import torch
 import torchtext
+from transformers import AutoTokenizer
 
 from ludwig.constants import PADDING_SYMBOL, UNKNOWN_SYMBOL
 from ludwig.utils.data_utils import load_json
-from ludwig.utils.hf_utils import load_pretrained_hf_tokenizer
+from ludwig.utils.hf_utils import load_pretrained_hf_class_with_hub_fallback
 from ludwig.utils.nlp_utils import load_nlp_pipeline, process_text
 
 logger = logging.getLogger(__name__)
@@ -824,7 +825,9 @@ class HFTokenizer(BaseTokenizer):
     def __init__(self, pretrained_model_name_or_path, **kwargs):
         super().__init__()
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
-        self.tokenizer = load_pretrained_hf_tokenizer(self.pretrained_model_name_or_path, **kwargs)
+        self.tokenizer, _ = load_pretrained_hf_class_with_hub_fallback(
+            AutoTokenizer, self.pretrained_model_name_or_path, **kwargs
+        )
         self._set_pad_token()
 
     def __call__(self, text):
@@ -1219,7 +1222,7 @@ def get_hf_tokenizer(pretrained_model_name_or_path, **kwargs):
     hf_name = pretrained_model_name_or_path
     # use_fast=False to leverage python class inheritance
     # cannot tokenize HF tokenizers directly because HF lacks strict typing and List[str] cannot be traced
-    hf_tokenizer = load_pretrained_hf_tokenizer(hf_name, use_fast=False)
+    hf_tokenizer, _ = load_pretrained_hf_class_with_hub_fallback(AutoTokenizer, hf_name, use_fast=False)
 
     torchtext_tokenizer = None
     if "bert" in TORCHSCRIPT_COMPATIBLE_TOKENIZERS and any(

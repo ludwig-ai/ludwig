@@ -4,8 +4,7 @@ import tempfile
 from os import PathLike
 from typing import Optional, Tuple, Type, Union
 
-from transformers import AutoTokenizer, PreTrainedModel
-from transformers.tokenization_utils import PreTrainedTokenizer
+from transformers import PreTrainedModel
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.utils.error_handling_utils import default_retry
@@ -15,53 +14,38 @@ logger = logging.getLogger(__name__)
 
 
 @default_retry()
-def load_pretrained_hf_model_from_hub(
-    model_class: Type,
+def _load_pretrained_hf_class_from_hub(
+    hf_class: Type,
     pretrained_model_name_or_path: Optional[Union[str, PathLike]],
     **pretrained_kwargs,
 ) -> PreTrainedModel:
-    """Download a HuggingFace model.
+    """Download a HuggingFace artifact (model, tokenizer, config).
 
     Downloads a model from the HuggingFace zoo with retry on failure.
     Args:
-        model_class: Class of the model to download.
+        hf_class: Class of the model to download.
         pretrained_model_name_or_path: Name of the model to download.
         pretrained_kwargs: Additional arguments to pass to the model constructor.
     Returns:
         The pretrained model object.
     """
-    return model_class.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
+    return hf_class.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
 
 
-@default_retry()
-def load_pretrained_hf_tokenizer(
-    pretrained_model_name_or_path: Optional[Union[str, PathLike]], **pretrained_kwargs
-) -> PreTrainedTokenizer:
-    """Download a HuggingFace tokenizer.
-
-    Args:
-        pretrained_model_name_or_path: Name of the tokenizer to download.
-        pretrained_kwargs: Additional arguments to pass to the tokenizer constructor.
-    Returns:
-        The pretrained tokenizer object.
-    """
-    return AutoTokenizer.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
-
-
-def _load_pretrained_hf_model_from_dir(
-    model_class: Type,
+def _load_pretrained_hf_class_from_dir(
+    hf_class: Type,
     pretrained_model_name_or_path: Optional[Union[str, PathLike]],
     **pretrained_kwargs,
 ) -> PreTrainedModel:
     """Downloads a model to a local temporary directory, and Loads a pretrained HF model from a local directory."""
     with tempfile.TemporaryDirectory() as tmpdir:
         download(pretrained_model_name_or_path, tmpdir)
-        return model_class.from_pretrained(tmpdir, **pretrained_kwargs)
+        return hf_class.from_pretrained(tmpdir, **pretrained_kwargs)
 
 
 @DeveloperAPI
-def load_pretrained_hf_model_with_hub_fallback(
-    model_class: Type,
+def load_pretrained_hf_class_with_hub_fallback(
+    hf_class: Type,
     pretrained_model_name_or_path: Optional[Union[str, PathLike]],
     **pretrained_kwargs,
 ) -> Tuple[PreTrainedModel, bool]:
@@ -88,22 +72,19 @@ def load_pretrained_hf_model_with_hub_fallback(
     """
     pretrained_models_dir = os.environ.get("LUDWIG_PRETRAINED_MODELS_DIR")
     if pretrained_models_dir:
+        logger.info("LUDWIG_PRETRAINED_MODELS_DIR was set. Attempting to load HF artifact from S3.")
         pretrained_model_path = os.path.join(pretrained_models_dir, pretrained_model_name_or_path)
         if path_exists(pretrained_model_path):
             try:
-                logger.info(
-                    f"Found existing pretrained model artifact {pretrained_model_name_or_path} in directory "
-                    f"{pretrained_models_dir}. Downloading."
-                )
                 return (
-                    _load_pretrained_hf_model_from_dir(model_class, pretrained_model_path, **pretrained_kwargs),
+                    _load_pretrained_hf_class_from_dir(hf_class, pretrained_model_path, **pretrained_kwargs),
                     False,
                 )
             except Exception as e:
                 logger.warning(
-                    f"Failed to download pretrained model from {pretrained_models_dir} with error {e}. "
-                    "Falling back to HuggingFace model hub."
+                    f"Failed to download pretrained artifact for hf class {hf_class} from {pretrained_models_dir} with "
+                    f"error {e}. Falling back to HuggingFace model hub."
                 )
 
     # Fallback to HF hub.
-    return load_pretrained_hf_model_from_hub(model_class, pretrained_model_name_or_path, **pretrained_kwargs), True
+    return _load_pretrained_hf_class_from_hub(hf_class, pretrained_model_name_or_path, **pretrained_kwargs), True

@@ -4,17 +4,7 @@ from typing import Dict, Tuple
 import torch
 import torch.nn.functional as F
 from bitsandbytes.nn.modules import Embedding
-from transformers import (
-    AutoConfig,
-    AutoModelForCausalLM,
-    CodeLlamaTokenizer,
-    CodeLlamaTokenizerFast,
-    GPT2Tokenizer,
-    GPT2TokenizerFast,
-    LlamaTokenizer,
-    LlamaTokenizerFast,
-    PreTrainedTokenizer,
-)
+from transformers import AutoConfig, AutoModelForCausalLM, PreTrainedTokenizer
 
 from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, PREDICTIONS, PROBABILITIES
 from ludwig.schema.trainer import LLMTrainerConfig
@@ -24,41 +14,6 @@ logger = logging.getLogger(__name__)
 
 
 FALLBACK_CONTEXT_LEN = 2048
-
-
-def set_pad_token(tokenizer: PreTrainedTokenizer):
-    """Sets the pad token for the tokenizer if it is not already set.
-
-    Args:
-        tokenizer (PreTrainedTokenizer): The tokenizer.
-
-    Example:
-        >>> from transformers import GPT2Tokenizer, GPT2TokenizerFast, LlamaTokenizer, LlamaTokenizerFast # noqa
-        >>> tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
-        >>> set_pad_token(tokenizer)
-    """
-    # Tokenizers might have the pad token id attribute since they tend to use the same base class, but
-    # it can be set to None so we check for this explicitly.
-    if hasattr(tokenizer, "pad_token_id") and tokenizer.pad_token_id is not None:
-        return
-
-    # HACK(Arnav): gpt, gpt2 and llama tokenizers had no pad tokens.
-    # These recommend using eos tokens instead
-    # https://github.com/huggingface/transformers/issues/2648#issuecomment-616177044
-    # https://github.com/huggingface/transformers/issues/2630#issuecomment-1290809338
-    if any(
-        isinstance(tokenizer, t)
-        for t in [
-            GPT2Tokenizer,
-            GPT2TokenizerFast,
-            LlamaTokenizer,
-            LlamaTokenizerFast,
-            CodeLlamaTokenizer,
-            CodeLlamaTokenizerFast,
-        ]
-    ):
-        tokenizer.pad_token = tokenizer.eos_token
-        tokenizer.pad_token_id = tokenizer.eos_token_id
 
 
 def get_context_len(model_config: AutoConfig):

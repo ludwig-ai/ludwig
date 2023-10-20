@@ -103,7 +103,7 @@ def test_hf_ludwig_model_e2e(tmpdir, csv_filename, encoder_name):
     model = LudwigModel(config=config, backend=LocalTestBackend())
 
     with mock.patch(
-        "ludwig.encoders.text_encoders.load_pretrained_hf_model_with_hub_fallback",
+        "ludwig.encoders.text_encoders.load_pretrained_hf_class_with_hub_fallback",
         side_effect=_load_pretrained_hf_model_no_weights,
     ):
         # Validates that the defaults associated with the encoder are compatible with Ludwig training.
@@ -168,7 +168,7 @@ def test_hf_ludwig_model_reduce_options(tmpdir, csv_filename, encoder_name, redu
 
     # Validates that the defaults associated with the encoder are compatible with Ludwig training.
     with mock.patch(
-        "ludwig.encoders.text_encoders.load_pretrained_hf_model_with_hub_fallback",
+        "ludwig.encoders.text_encoders.load_pretrained_hf_class_with_hub_fallback",
         side_effect=_load_pretrained_hf_model_no_weights,
     ):
         model.train(
@@ -223,7 +223,7 @@ def test_hf_ludwig_model_auto_transformers(tmpdir, csv_filename, pretrained_mode
 
     # Validates that the defaults associated with the encoder are compatible with Ludwig training.
     with mock.patch(
-        "ludwig.encoders.text_encoders.load_pretrained_hf_model_with_hub_fallback",
+        "ludwig.encoders.text_encoders.load_pretrained_hf_class_with_hub_fallback",
         side_effect=_load_pretrained_hf_model_no_weights,
     ):
         model.train(dataset=rel_path, output_directory=tmpdir)

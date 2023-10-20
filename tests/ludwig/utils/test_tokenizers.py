@@ -4,7 +4,7 @@ import pytest
 import torch
 import torchtext
 
-from ludwig.utils.tokenizers import EnglishLemmatizeFilterTokenizer, NgramTokenizer, StringSplitTokenizer
+from ludwig.utils.tokenizers import EnglishLemmatizeFilterTokenizer, HFTokenizer, NgramTokenizer, StringSplitTokenizer
 
 TORCHTEXT_0_14_0_HF_NAMES = [
     "bert-base-uncased",
@@ -15,6 +15,10 @@ TORCHTEXT_0_14_0_HF_NAMES = [
     "emilyalsentzer/Bio_ClinicalBERT",  # Community model
     "bionlp/bluebert_pubmed_mimic_uncased_L-12_H-768_A-12",  # Community model
 ]
+
+# Pad token ID is 1 for OPT even though it uses the GPT2 tokenizer
+# BOS token ID is 2
+TEST_MODEL_NAME = "hf-internal-testing/tiny-random-OPTForCausalLM"
 
 
 @pytest.mark.parametrize(
@@ -85,3 +89,13 @@ def test_english_lemmatize_filter_tokenizer():
     tokenizer = EnglishLemmatizeFilterTokenizer()
     tokens = tokenizer(inputs)
     assert len(tokens) > 0
+
+
+def test_set_pad_token_doesnt_exist():
+    tokenizer = HFTokenizer("gpt2", use_fast=False)
+    assert tokenizer.tokenizer.pad_token_id == 50256
+
+
+def test_set_pad_token_already_exists():
+    tokenizer = HFTokenizer(TEST_MODEL_NAME, use_fast=False)
+    assert tokenizer.tokenizer.pad_token_id == 1

@@ -25,6 +25,7 @@ from ludwig.constants import (
     VECTOR,
 )
 from ludwig.error import ConfigValidationError
+from ludwig.utils.hf_utils import load_pretrained_hf_class_with_hub_fallback
 from ludwig.utils.metric_utils import get_feature_to_metric_names_map_from_feature_collection
 from ludwig.utils.misc_utils import merge_dict
 
@@ -594,7 +595,7 @@ def check_llm_finetuning_adaption_prompt_parameters(config: "ModelConfig"):
 
 def _get_llm_model_config(model_name: str) -> AutoConfig:
     """Returns the LLM model config."""
-    return AutoConfig.from_pretrained(model_name)
+    return load_pretrained_hf_class_with_hub_fallback(AutoConfig, model_name)[0]
 
 
 # TODO(geoffrey, arnav): uncomment this when we have reconciled the config with the backend kwarg in api.py
