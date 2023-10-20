@@ -5,13 +5,16 @@ import torch
 from ludwig.api import LudwigModel
 
 
-class BaseModelExporter(ABC):
+class LudwigTorchWrapper(torch.nn.Module):
     def __init__(self, model):
+        super(LudwigTorchWrapper, self).__init__()
         self.model = model
 
-    @abstractmethod
     def forward(self, x):
-        pass
+        return self.model({"image_path": x})
+
+
+class BaseModelExporter(ABC):
 
     @abstractmethod
     def export_classifier(self, model_path, export_path, export_args_override):
@@ -19,4 +22,8 @@ class BaseModelExporter(ABC):
 
     @abstractmethod
     def quantize(self, path_fp32, path_int8):
+        pass
+
+    @abstractmethod
+    def check_model_export(self):
         pass
