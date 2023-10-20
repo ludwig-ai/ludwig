@@ -580,7 +580,12 @@
 # This workflow will install Python dependencies and run all tests marked as `slow` on a single Python version.
 # The tests will run on a high-memory AWS compute instance to accommodate memory-intensive workloads.
 
-name: pytest (ALEX_TEST-slow-ALEX_TEST)
+# TODO: <Alex>ALEX</Alex>
+#name: pytest (ALEX_TEST-slow-ALEX_TEST)
+# TODO: <Alex>ALEX</Alex>
+# TODO: <Alex>ALEX</Alex>
+name: pytest-slow
+# TODO: <Alex>ALEX</Alex>
 
 on:
   push:
