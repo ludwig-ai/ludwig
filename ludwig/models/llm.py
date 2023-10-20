@@ -18,6 +18,7 @@ from ludwig.schema.features.base import BaseOutputFeatureConfig, FeatureCollecti
 from ludwig.schema.model_types.llm import LLMModelConfig
 from ludwig.utils.augmentation_utils import AugmentationPipelines
 from ludwig.utils.data_utils import clear_data_cache
+from ludwig.utils.error_handling_utils import default_retry
 from ludwig.utils.llm_utils import (
     add_left_padding,
     generate_merged_ids,
@@ -72,6 +73,7 @@ class DictWrapper:
         self.obj.update(modules)
 
 
+@default_retry(tries=8)
 def load_pretrained_from_config(
     config_obj: LLMModelConfig,
     model_config: Optional[AutoConfig] = None,
