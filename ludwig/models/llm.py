@@ -18,9 +18,11 @@ from ludwig.schema.features.base import BaseOutputFeatureConfig, FeatureCollecti
 from ludwig.schema.model_types.llm import LLMModelConfig
 from ludwig.utils.augmentation_utils import AugmentationPipelines
 from ludwig.utils.data_utils import clear_data_cache
+from ludwig.utils.error_handling_utils import default_retry
 from ludwig.utils.llm_utils import (
     add_left_padding,
     generate_merged_ids,
+    get_context_len,
     pad_target_tensor_for_fine_tuning,
     realign_target_and_prediction_tensors_for_inference,
     remove_left_padding,
@@ -71,6 +73,7 @@ class DictWrapper:
         self.obj.update(modules)
 
 
+@default_retry(tries=8)
 def load_pretrained_from_config(
     config_obj: LLMModelConfig,
     model_config: Optional[AutoConfig] = None,
@@ -126,13 +129,7 @@ class LLM(BaseModel):
         self.curr_device = next(self.model.parameters()).device
         logger.info("Done.")
 
-        # Determines the maximum length of the context (input + output tokens)
-        if hasattr(self.model_config, "max_sequence_length"):
-            self.context_len = self.model_config.max_sequence_length
-        elif hasattr(self.model_config, "max_position_embeddings"):
-            self.context_len = self.model_config.max_position_embeddings
-        else:
-            self.context_len = 2048
+        self.context_len = get_context_len(self.model_config)
 
         # TODO(Arnav): This needs be more flexible to account for RoPE Scaling
         # When merging input IDs and target IDs for LLM fine-tuning, we want to make sure that the merged tensor is

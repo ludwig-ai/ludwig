@@ -581,7 +581,7 @@ def check_llm_finetuning_adaption_prompt_parameters(config: "ModelConfig"):
     if config.adapter.type != "adaption_prompt":
         return
 
-    from peft.tuners.adaption_prompt import TRANSFORMERS_MODEL_CONFIG
+    from peft.tuners.adaption_prompt.config import TRANSFORMERS_MODEL_CONFIG
 
     # Adaption Config is currently only supported for Llama model types
     model_config = _get_llm_model_config(config.base_model)
@@ -718,3 +718,19 @@ def check_prompt_requirements(config: "ModelConfig") -> None:  # noqa: F821
                     "A template must contain at least one reference to a column or the sample keyword {__sample__} for "
                     "a JSON-serialized representation of non-output feature columns."
                 )
+
+        # Raise an error if template has a placeholder for the output feature name (column).
+        output_feature_col = config.output_features[0].column
+        if output_feature_col in template_refs:
+            raise ConfigValidationError(
+                "Prompt template should not have a reference to the output feature. The output feature is "
+                "automatically added to the end of the prompt template merged with the input at training time."
+            )
+
+
+@register_config_check
+def check_sample_ratio_and_size_compatible(config: "ModelConfig") -> None:
+    sample_ratio = config.preprocessing.sample_ratio
+    sample_size = config.preprocessing.sample_size
+    if sample_size is not None and sample_ratio < 1.0:
+        raise ConfigValidationError("sample_size cannot be used when sample_ratio < 1.0")

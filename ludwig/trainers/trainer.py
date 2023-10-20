@@ -492,7 +492,7 @@ class Trainer(BaseTrainer):
                 # https://pytorch.org/docs/stable/generated/torch.cuda.utilization.html#torch.cuda.utilization
                 train_summary_writer.add_scalar(
                     f"cuda/device{i}/utilization",
-                    torch.cuda.device(i).utilization(),
+                    torch.cuda.utilization(device=device),
                     global_step=step,
                 )
         train_summary_writer.flush()
@@ -1162,6 +1162,11 @@ class Trainer(BaseTrainer):
             # batch duration measurements when using timer callbacks.
             self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path, sync_step=should_step))
 
+            # If this is the last batch in the epoch, increment before running evaluation so that metrics are reported
+            # with the correct epoch.
+            if batcher.last_batch():
+                progress_tracker.epoch += 1
+
             if progress_tracker.steps % final_steps_per_checkpoint == 0:
                 if not self.skip_all_evaluation:
                     # Publishes metrics to MLFLow if there are any MLFlow callbacks.
@@ -1188,7 +1193,7 @@ class Trainer(BaseTrainer):
                 # Checkpoint the model.
                 # NOTE: Ideally we would do this before evaluation, but for some reason DeepSpeed will complain
                 # about inflight params if we do that, which is why we checkpoint after eval instead. In practice,
-                # this should not make a difference, xcept in the unlikely event an error occurs during eval and we
+                # this should not make a difference, except in the unlikely event an error occurs during eval and we
                 # want to resume from the last checkpoint, in which case we will lose slightly more progress this way.
                 if not self.skip_save_progress:
                     checkpoint_manager.save(progress_tracker.steps)
@@ -1197,7 +1202,6 @@ class Trainer(BaseTrainer):
 
             # If this was the last batch, then increment the epoch counter and invoke the `on_epoch_end` callback.
             if batcher.last_batch():
-                progress_tracker.epoch += 1
                 self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
 
         return should_break

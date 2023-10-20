@@ -67,3 +67,6 @@ class WandbCallback(Callback):
         logger.info("wandb.on_visualize_figure() called...")
         if wandb.run:
             wandb.log({"figure": fig})
+
+    def on_train_end(self, output_directory):
+        wandb.finish()
