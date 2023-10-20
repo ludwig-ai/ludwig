@@ -25,6 +25,7 @@ import logging
 import os
 import sys
 import tempfile
+import time
 import traceback
 from collections import OrderedDict
 from pprint import pformat
@@ -103,6 +104,7 @@ from ludwig.utils.misc_utils import (
     set_saved_weights_in_checkpoint_flag,
 )
 from ludwig.utils.print_utils import print_boxed
+from ludwig.utils.tokenizers import HFTokenizer
 from ludwig.utils.torch_utils import DEVICE
 from ludwig.utils.trainer_utils import get_training_report
 from ludwig.utils.types import DataFrame, TorchDevice
@@ -460,6 +462,16 @@ class LudwigModel:
             `(training_set, validation_set, test_set)`.
             `output_directory` filepath to where training results are stored.
         """
+        # Only reset the metadata if the model has not been trained before
+        if self.training_set_metadata:
+            logger.warning(
+                "This model has been trained before. Its architecture has been defined by the original training set "
+                "(for example, the number of possible categorical outputs). The current training data will be mapped "
+                "to this architecture. If you want to change the architecture of the model, please concatenate your "
+                "new training data with the original and train a new model from scratch."
+            )
+            training_set_metadata = self.training_set_metadata
+
         if self._user_config.get(HYPEROPT):
             print_boxed("WARNING")
             logger.warning(HYPEROPT_WARNING)
@@ -903,29 +915,22 @@ class LudwigModel:
         generation_config: Optional[dict] = None,
     ) -> Union[str, List[str]]:
         """A simple generate() method that directly uses the underlying transformers library to generate text."""
-        import time
-
         if self.config_obj.model_type != MODEL_LLM:
             raise ValueError(
                 f"Model type {self.config_obj.model_type} is not supported by this method. Only `llm` model type is "
                 "supported."
             )
-
         if not torch.cuda.is_available():
             raise ValueError("GPU is not available.")
-
-        from ludwig.utils.tokenizers import HFTokenizer
 
         if not self.model.model.config.is_encoder_decoder:
             padding_side = "left"
         else:
             padding_side = "right"
-
         tokenizer = HFTokenizer(self.config_obj.base_model, padding_side=padding_side)
 
-        start_time = time.time()
-
         with self.model.use_generation_config(generation_config):
+            start_time = time.time()
             inputs = tokenizer.tokenizer(input_strings, return_tensors="pt", padding=True)
             input_ids = inputs["input_ids"].to("cuda")
             attention_mask = inputs["attention_mask"].to("cuda")
@@ -939,7 +944,7 @@ class LudwigModel:
                     generation_config=self.model.generation,
                 )
                 decoded_outputs = tokenizer.tokenizer.batch_decode(outputs, skip_special_tokens=True)
-                logging.info(f"Finished generating in: {(time.time() - start_time):.2f}s.")
+                logger.info(f"Finished generating in: {(time.time() - start_time):.2f}s.")
                 if len(decoded_outputs) == 1:
                     return decoded_outputs[0]
                 return decoded_outputs
@@ -996,13 +1001,10 @@ class LudwigModel:
             `predictions` predictions from the provided dataset,
             `output_directory` filepath string to where data was stored.
         """
-        import time
-
-        start_time = time.time()
-
         self._check_initialization()
 
         # preprocessing
+        start_time = time.time()
         logger.debug("Preprocessing")
         dataset, _ = preprocess_for_prediction(  # TODO (Connor): Refactor to use self.config_obj
             self.config_obj.to_dict(),
@@ -1049,7 +1051,7 @@ class LudwigModel:
 
                     logger.info(f"Saved to: {output_directory}")
 
-            print(f"Finished decoding in: {(time.time() - start_time):.2f}s.")
+            logger.info(f"Finished decoding in: {(time.time() - start_time):.2f}s.")
             return converted_postproc_predictions, output_directory
 
     def evaluate(
@@ -2199,6 +2201,31 @@ def kfold_cross_validate(
     return kfold_cv_stats, kfold_split_indices
 
 
+def _get_compute_description(backend) -> Dict:
+    """Returns the compute description for the backend."""
+    compute_description = {"num_nodes": backend.num_nodes}
+
+    if torch.cuda.is_available():
+        # Assumption: All nodes are of the same instance type.
+        # TODO: fix for Ray where workers may be of different skus
+        compute_description.update(
+            {
+                "gpus_per_node": torch.cuda.device_count(),
+                "arch_list": torch.cuda.get_arch_list(),
+                "gencode_flags": torch.cuda.get_gencode_flags(),
+                "devices": {},
+            }
+        )
+        for i in range(torch.cuda.device_count()):
+            compute_description["devices"][i] = {
+                "gpu_type": torch.cuda.get_device_name(i),
+                "device_capability": torch.cuda.get_device_capability(i),
+                "device_properties": str(torch.cuda.get_device_properties(i)),
+            }
+
+    return compute_description
+
+
 @PublicAPI
 def get_experiment_description(
     config,
@@ -2242,15 +2269,6 @@ def get_experiment_description(
 
     description["config"] = config
     description["torch_version"] = torch.__version__
-
-    gpu_info = {}
-    if torch.cuda.is_available():
-        # Assumption: All nodes are of the same instance type.
-        # TODO: fix for Ray where workers may be of different skus
-        gpu_info = {"gpu_type": torch.cuda.get_device_name(0), "gpus_per_node": torch.cuda.device_count()}
-
-    compute_description = {"num_nodes": backend.num_nodes, **gpu_info}
-
-    description["compute"] = compute_description
+    description["compute"] = _get_compute_description(backend)
 
     return description

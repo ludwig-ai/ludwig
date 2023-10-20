@@ -3,3 +3,6 @@ horovod[pytorch]>=0.24.0,!=0.26.0
 
 # alternative to Dask
 modin[ray]
+
+# Allows users to upload
+predibase>=2023.10.2
