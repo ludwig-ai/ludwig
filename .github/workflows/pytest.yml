@@ -630,13 +630,27 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
+        # TODO: <Alex>ALEX</Alex>
+        # python-version: [3.8]
+        # TODO: <Alex>ALEX</Alex>
+        # TODO: <Alex>ALEX</Alex>
         python-version: [3.8]
+        # TODO: <Alex>ALEX</Alex>
         test-markers: ["slow"]
+        # TODO: <Alex>ALEX</Alex>
+        # include:
+        #   - python-version: 3.8
+        #     pytorch-version: 2.0.0
+        #     torchscript-version: 1.10.2
+        #     ray-version: 2.3.1
+        # TODO: <Alex>ALEX</Alex>
+        # TODO: <Alex>ALEX</Alex>
         include:
-          - python-version: 3.8
-            pytorch-version: 2.0.0
+          - python-version: "3.9"
+            pytorch-version: 2.1.0
             torchscript-version: 1.10.2
-            ray-version: 2.3.1
+            ray-version: 2.3.0
+        # TODO: <Alex>ALEX</Alex>
     env:
       PYTORCH: ${{ matrix.pytorch-version }}
       MARKERS: ${{ matrix.test-markers }}
@@ -745,7 +759,9 @@ jobs:
     if: always() && needs.start-runner.result != 'skipped'
     needs:
       - start-runner # required to get output from the start-runner job
-      - slow-pytest # required to wait when the main job is done
+      # TODO: <Alex>ALEX</Alex>
+      # - slow-pytest # required to wait when the main job is done
+      # TODO: <Alex>ALEX</Alex>
     runs-on: ubuntu-latest
 
     steps:
