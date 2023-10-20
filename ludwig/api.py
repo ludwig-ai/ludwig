@@ -444,6 +444,16 @@ class LudwigModel:
             `(training_set, validation_set, test_set)`.
             `output_directory` filepath to where training results are stored.
         """
+        # Only reset the metadata if the model has not been trained before
+        if self.training_set_metadata:
+            logger.warning(
+                "This model has been trained before. Its architecture has been defined by the original training set "
+                "(for example, the number of possible categorical outputs). The current training data will be mapped "
+                "to this architecture. If you want to change the architecture of the model, please concatenate your "
+                "new training data with the original and train a new model from scratch."
+            )
+            training_set_metadata = self.training_set_metadata
+
         if self._user_config.get(HYPEROPT):
             print_boxed("WARNING")
             logger.warning(HYPEROPT_WARNING)
@@ -2131,6 +2141,31 @@ def kfold_cross_validate(
     return kfold_cv_stats, kfold_split_indices
 
 
+def _get_compute_description(backend) -> Dict:
+    """Returns the compute description for the backend."""
+    compute_description = {"num_nodes": backend.num_nodes}
+
+    if torch.cuda.is_available():
+        # Assumption: All nodes are of the same instance type.
+        # TODO: fix for Ray where workers may be of different skus
+        compute_description.update(
+            {
+                "gpus_per_node": torch.cuda.device_count(),
+                "arch_list": torch.cuda.get_arch_list(),
+                "gencode_flags": torch.cuda.get_gencode_flags(),
+                "devices": {},
+            }
+        )
+        for i in range(torch.cuda.device_count()):
+            compute_description["devices"][i] = {
+                "gpu_type": torch.cuda.get_device_name(i),
+                "device_capability": torch.cuda.get_device_capability(i),
+                "device_properties": str(torch.cuda.get_device_properties(i)),
+            }
+
+    return compute_description
+
+
 @PublicAPI
 def get_experiment_description(
     config,
@@ -2174,15 +2209,6 @@ def get_experiment_description(
 
     description["config"] = config
     description["torch_version"] = torch.__version__
-
-    gpu_info = {}
-    if torch.cuda.is_available():
-        # Assumption: All nodes are of the same instance type.
-        # TODO: fix for Ray where workers may be of different skus
-        gpu_info = {"gpu_type": torch.cuda.get_device_name(0), "gpus_per_node": torch.cuda.device_count()}
-
-    compute_description = {"num_nodes": backend.num_nodes, **gpu_info}
-
-    description["compute"] = compute_description
+    description["compute"] = _get_compute_description(backend)
 
     return description
