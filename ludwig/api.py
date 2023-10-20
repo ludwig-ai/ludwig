@@ -332,8 +332,15 @@ class LudwigModel:
         # online training state
         self._online_trainer = None
 
-    def initialize_llm(self, random_seed: int = default_random_seed):
-        """Initialize the LLM model."""
+        # Zero-shot LLM usage.
+        if self.config_obj.model_type == MODEL_LLM and self.config_obj.trainer.type == "none":
+            self._initialize_llm()
+
+    def _initialize_llm(self, random_seed: int = default_random_seed):
+        """Initialize the LLM model.
+
+        Should only be used in a zero-shot (NoneTrainer) setting.
+        """
         if self.config_obj.model_type != MODEL_LLM:
             raise ValueError(
                 f"Model type {self.config_obj.model_type} is not supported by this method. Only `llm` model type is "
