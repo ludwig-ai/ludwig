@@ -1065,3 +1065,51 @@ def test_local_path_loading(tmpdir):
 
     # Check that the models are the same
     assert _compare_models(model1.model, model2.model)
+
+
+@pytest.mark.parametrize(
+    "base_model",
+    [
+        pytest.param("HuggingFaceH4/tiny-random-LlamaForCausalLM", id="HuggingFaceH4/tiny-random-LlamaForCausalLM"),
+        pytest.param("yujiepan/llama-2-tiny-random", id="yujiepan/llama-2-tiny-random"),
+        pytest.param(
+            "hf-internal-testing/tiny-random-GPTJForCausalLM", id="hf-internal-testing/tiny-random-GPTJForCausalLM"
+        ),
+        # Does not have architecture specified in model config
+        pytest.param(
+            "hf-internal-testing/tiny-random-GPTJForCausalLM", id="hf-internal-testing/tiny-random-GPTJForCausalLM"
+        ),
+        pytest.param("hf-internal-testing/tiny-random-BartModel", id="hf-internal-testing/tiny-random-BartModel"),
+        pytest.param(
+            "hf-internal-testing/tiny-random-OPTForCausalLM", id="hf-internal-testing/tiny-random-OPTForCausalLM"
+        ),
+    ],
+)
+def test_llm_finetuning_with_embedding_noise(
+    tmpdir,
+    csv_filename,
+    base_model,
+):
+    train_df, prediction_df, config = _prepare_finetuning_test(csv_filename, "lora", LOCAL_BACKEND, {})
+    output_directory: str = str(tmpdir)
+    model_directory: str = pathlib.Path(output_directory) / "api_experiment_run" / "model"
+
+    # Add embedding noise
+    config["base_model"] = base_model
+    config["model_parameters"] = {"embedding_noise_alpha": 5}
+
+    model = LudwigModel(config)
+    assert model.config_obj.model_parameters.embedding_noise_alpha == 5
+
+    model.train(dataset=train_df, output_directory=output_directory, skip_save_processed_input=False)
+
+    # Make sure we can load the saved model and then use it for predictions
+    model = LudwigModel.load(str(model_directory), backend=LOCAL_BACKEND)
+
+    base_model = LLM(ModelConfig.from_dict(config))
+    assert not _compare_models(base_model, model.model)  # noqa F821
+
+    preds, _ = model.predict(dataset=prediction_df, output_directory=output_directory)
+    preds = convert_preds(preds)
+
+    assert preds

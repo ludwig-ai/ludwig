@@ -14,6 +14,7 @@ from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.features.text_feature import TextOutputFeature
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
+from ludwig.modules.neftune_modules import NEFTune
 from ludwig.schema.features.base import BaseOutputFeatureConfig, FeatureCollection
 from ludwig.schema.model_types.llm import LLMModelConfig
 from ludwig.utils.augmentation_utils import AugmentationPipelines
@@ -100,6 +101,11 @@ def load_pretrained_from_config(
     logger.info("Loading large language model...")
     pretrained_model_name_or_path = weights_save_path or config_obj.base_model
     model: PreTrainedModel = AutoModelForCausalLM.from_pretrained(pretrained_model_name_or_path, **load_kwargs)
+
+    if config_obj.model_parameters and config_obj.model_parameters.embedding_noise_alpha:
+        # Add embedding noise to training forward pass if specified
+        model = NEFTune(model, model_config, config_obj.model_parameters.embedding_noise_alpha)
+
     return model
 
 
