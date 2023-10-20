@@ -1,16 +1,15 @@
+import os
 from abc import ABC, abstractmethod
 
-import torch
 import onnx
+import torch
+
 from ludwig.api import LudwigModel
-import os
 from ludwig.model_export.base_model_exporter import LudwigTorchWrapper
 
 
 class OnnxExporter(ABC):
-
     def export_classifier(self, model_id, model_path, export_path, input_model_name, output_model_name):
-
         ludwig_model = LudwigModel.load(model_path)
         model = LudwigTorchWrapper(ludwig_model.model)  # Wrap the model
         model.eval()  # inference mode, is this needed.. I think onnx export does this for us
@@ -32,6 +31,7 @@ class OnnxExporter(ABC):
 
     def quantize_onnx(self, model_id, path_fp32, path_int8):
         from onnxruntime.quantization import quantize_dynamic
+
         quantize_dynamic(path_fp32, path_int8)  # type: ignore
 
     def check_model_export(self, model_id, export_path, output_model_name):

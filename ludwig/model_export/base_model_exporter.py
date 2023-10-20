@@ -7,7 +7,7 @@ from ludwig.api import LudwigModel
 
 class LudwigTorchWrapper(torch.nn.Module):
     def __init__(self, model):
-        super(LudwigTorchWrapper, self).__init__()
+        super().__init__()
         self.model = model
 
     def forward(self, x):
@@ -15,7 +15,6 @@ class LudwigTorchWrapper(torch.nn.Module):
 
 
 class BaseModelExporter(ABC):
-
     @abstractmethod
     def export_classifier(self, model_path, export_path, export_args_override):
         pass
