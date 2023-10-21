@@ -277,7 +277,7 @@ jobs:
           # RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=7200 pytest -v --timeout 300 --durations 100 -m "not slow and not combinatorial and not horovod and not llm and $MARKERS" --junitxml pytest.xml tests/integration_tests
           # TODO: <Alex>ALEX</Alex>
           # TODO: <Alex>ALEX</Alex>
-          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=7200 pytest -v --timeout 300 --durations 100 -m "not slow and not combinatorial and not horovod and not llm and $MARKERS" --junitxml pytest.xml tests/integration_tests
+          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=7200 pytest -v --timeout 300 --durations 100 -m "not combinatorial and not horovod and not llm and $MARKERS" --junitxml pytest.xml tests/integration_tests
           # TODO: <Alex>ALEX</Alex>
 
 # TODO: <Alex>ALEX</Alex>
