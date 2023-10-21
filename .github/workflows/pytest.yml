@@ -210,15 +210,15 @@ jobs:
           # TODO: <Alex>ALEX</Alex>
           # TODO: <Alex>ALEX</Alex>
           # TODO: <Alex>ALEX</Alex>
-          # - "slow"
+          - "slow"
           # TODO: <Alex>ALEX</Alex>
           # TODO: <Alex>ALEX</Alex>
-          # - "integration_tests_a"
-          # - "integration_tests_b"
-          # - "integration_tests_c"
-          # - "integration_tests_d"
-          # - "integration_tests_e"
-          # - "integration_tests_f"
+          - "integration_tests_a"
+          - "integration_tests_b"
+          - "integration_tests_c"
+          - "integration_tests_d"
+          - "integration_tests_e"
+          - "integration_tests_f"
           # TODO: <Alex>ALEX</Alex>
 
     env:

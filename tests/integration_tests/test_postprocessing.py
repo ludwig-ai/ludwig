@@ -52,7 +52,7 @@ def random_set_logits(*args, num_predict_samples, vocab_size, pct_positive, **kw
 
 
 # TODO: <Alex>ALEX</Alex>
-@pytest.mark.alex_test
+# @pytest.mark.alex_test
 # TODO: <Alex>ALEX</Alex>
 @pytest.mark.slow
 @pytest.mark.parametrize(
@@ -119,7 +119,7 @@ def test_binary_predictions(tmpdir, backend, distinct_values, ray_cluster_2cpu):
 
 
 # TODO: <Alex>ALEX</Alex>
-@pytest.mark.alex_test
+# @pytest.mark.alex_test
 # TODO: <Alex>ALEX</Alex>
 @pytest.mark.slow
 @pytest.mark.parametrize(
