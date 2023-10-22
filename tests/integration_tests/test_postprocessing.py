@@ -51,9 +51,6 @@ def random_set_logits(*args, num_predict_samples, vocab_size, pct_positive, **kw
     return torch.tensor(logits, dtype=torch.float32)  # simulate torch model output
 
 
-# TODO: <Alex>ALEX</Alex>
-# @pytest.mark.alex_test
-# TODO: <Alex>ALEX</Alex>
 @pytest.mark.slow
 @pytest.mark.parametrize(
     "backend",
@@ -118,9 +115,6 @@ def test_binary_predictions(tmpdir, backend, distinct_values, ray_cluster_2cpu):
         assert np.allclose(prob_0, 1 - prob_1)
 
 
-# TODO: <Alex>ALEX</Alex>
-# @pytest.mark.alex_test
-# TODO: <Alex>ALEX</Alex>
 @pytest.mark.slow
 @pytest.mark.parametrize(
     "backend",
@@ -185,14 +179,6 @@ def test_binary_predictions_with_number_dtype(tmpdir, backend, distinct_values, 
         assert np.allclose(prob_0, 1 - prob_1)
 
 
-# TODO: <Alex>ALEX</Alex>
-# TODO: <Alex>ALEX</Alex>
-# @pytest.mark.alex_test
-# TODO: <Alex>ALEX</Alex>
-# TODO: <Alex>ALEX</Alex>
-@pytest.mark.integration_tests_a
-# TODO: <Alex>ALEX</Alex>
-# TODO: <Alex>ALEX</Alex>
 @pytest.mark.parametrize("pct_positive", [1.0, 0.5, 0.0])
 def test_set_feature_saving(tmpdir, pct_positive):
     backend = "local"
