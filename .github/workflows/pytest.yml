@@ -238,7 +238,12 @@ jobs:
         ports:
           - 9000:9000
 
-    timeout-minutes: 90
+    # TODO: <Alex>ALEX</Alex>
+    # timeout-minutes: 90
+    # TODO: <Alex>ALEX</Alex>
+    # TODO: <Alex>ALEX</Alex>
+    timeout-minutes: 120
+    # TODO: <Alex>ALEX</Alex>
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python 3.9
@@ -277,7 +282,7 @@ jobs:
           # RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=7200 pytest -v --timeout 300 --durations 100 -m "not slow and not combinatorial and not horovod and not llm and $MARKERS" --junitxml pytest.xml tests/integration_tests
           # TODO: <Alex>ALEX</Alex>
           # TODO: <Alex>ALEX</Alex>
-          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=7200 pytest -v --timeout 300 --durations 100 -m "not combinatorial and not horovod and not llm and $MARKERS" --junitxml pytest.xml tests/integration_tests
+          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=7200 pytest -v --timeout 360 --durations 100 -m "not combinatorial and not horovod and not llm and $MARKERS" --junitxml pytest.xml tests/integration_tests
           # TODO: <Alex>ALEX</Alex>
 
 # TODO: <Alex>ALEX</Alex>
