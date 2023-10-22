@@ -186,7 +186,12 @@ def test_binary_predictions_with_number_dtype(tmpdir, backend, distinct_values, 
 
 
 # TODO: <Alex>ALEX</Alex>
-@pytest.mark.alex_test
+# TODO: <Alex>ALEX</Alex>
+# @pytest.mark.alex_test
+# TODO: <Alex>ALEX</Alex>
+# TODO: <Alex>ALEX</Alex>
+@pytest.mark.integration_tests_a
+# TODO: <Alex>ALEX</Alex>
 # TODO: <Alex>ALEX</Alex>
 @pytest.mark.parametrize("pct_positive", [1.0, 0.5, 0.0])
 def test_set_feature_saving(tmpdir, pct_positive):

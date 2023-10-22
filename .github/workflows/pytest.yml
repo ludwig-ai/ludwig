@@ -206,7 +206,7 @@ jobs:
       matrix:
         test-markers:
           # TODO: <Alex>ALEX</Alex>
-          - "alex_test"
+          # - "alex_test"
           # TODO: <Alex>ALEX</Alex>
           # TODO: <Alex>ALEX</Alex>
           # TODO: <Alex>ALEX</Alex>
