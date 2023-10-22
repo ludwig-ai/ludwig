@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+from __future__ import annotations
+
 import logging
-from typing import Dict
 
 import datasets
 import pandas as pd
@@ -33,11 +34,10 @@ class HFLoader(DatasetLoader):
     identify which dataset and which subsample of that dataset to load in.
     """
 
-    def load_hf_to_dict(self, hf_id: str, hf_subsample: str) -> Dict[str, pd.DataFrame]:
+    @staticmethod
+    def load_hf_to_dict(hf_id: str, hf_subsample: str) -> dict[str, pd.DataFrame]:
         """Returns a map of split -> pd.DataFrame for the given HF dataset."""
-        dataset_dict: Dict[str, "datasets.arrow_dataset.Dataset"] = datasets.load_dataset(
-            path=hf_id, name=hf_subsample
-        )  # noqa
+        dataset_dict: dict[str, datasets.Dataset] = datasets.load_dataset(path=hf_id, name=hf_subsample)
         pandas_dict = {}
         for split in dataset_dict:
             # Convert from HF DatasetDict type to a dictionary of pandas dataframes
