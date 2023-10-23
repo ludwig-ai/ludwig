@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+from __future__ import annotations
+
 import logging
-from typing import Dict
+from typing import overload
 
 import datasets
 import pandas as pd
@@ -33,18 +35,18 @@ class HFLoader(DatasetLoader):
     identify which dataset and which subsample of that dataset to load in.
     """
 
-    def load_hf_to_dict(self, hf_id: str, hf_subsample: str) -> Dict[str, pd.DataFrame]:
+    @staticmethod
+    def load_hf_to_dict(hf_id: str, hf_subsample: str) -> dict[str, pd.DataFrame]:
         """Returns a map of split -> pd.DataFrame for the given HF dataset."""
-        dataset_dict: Dict[str, "datasets.arrow_dataset.Dataset"] = datasets.load_dataset(
-            path=hf_id, name=hf_subsample
-        )  # noqa
+        dataset_dict: dict[str, datasets.Dataset] = datasets.load_dataset(path=hf_id, name=hf_subsample)
         pandas_dict = {}
         for split in dataset_dict:
             # Convert from HF DatasetDict type to a dictionary of pandas dataframes
             pandas_dict[split] = dataset_dict[split].to_pandas()
         return pandas_dict
 
-    def load(self, hf_id, hf_subsample, split=False) -> pd.DataFrame:
+    @overload  # HuggingFace use-case requires different signature for "load()" than "DatasetLoader.load()" base class.
+    def load(self, hf_id: str, hf_subsample: str, split: bool = False) -> pd.DataFrame:  # type: ignore[override]
         """When load() is called, HFLoader calls the datasets API to return all of the data in a HuggingFace
         DatasetDict, converts it to a dictionary of pandas dataframes, and returns either three dataframes
         containing train, validation, and test data or one dataframe that is the concatenation of all three
