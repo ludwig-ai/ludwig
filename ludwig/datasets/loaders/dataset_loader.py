@@ -254,7 +254,7 @@ class DatasetLoader:
             else:
                 shutil.copy2(source, destination)
 
-    def _download_and_process(self, kaggle_username=None, kaggle_key=None):
+    def _download_and_process(self, kaggle_username: str | None = None, kaggle_key: str | None = None):
         """Loads the dataset, downloaded and processing it if needed.
 
         If dataset is already processed, does nothing.
@@ -286,7 +286,7 @@ class DatasetLoader:
                 logger.exception("Failed to transform dataset")
 
     def load(
-        self, kaggle_username: str, kaggle_key: str | None = None, split: bool = False
+        self, kaggle_username: str | None = None, kaggle_key: str | None = None, split: bool = False
     ) -> pd.DataFrame | list[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """Loads the dataset, downloaded and processing it if needed.
 
@@ -306,7 +306,7 @@ class DatasetLoader:
             else:
                 return dataset_df
 
-    def download(self, kaggle_username=None, kaggle_key=None) -> list[str]:
+    def download(self, kaggle_username: str | None = None, kaggle_key: str | None = None) -> list[str]:
         if not os.path.exists(self.raw_dataset_dir):
             os.makedirs(self.raw_dataset_dir)
         if self.is_kaggle_dataset:

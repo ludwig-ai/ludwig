@@ -35,7 +35,7 @@ class HFLoader(DatasetLoader):
     """
 
     @staticmethod
-    def load_hf_to_dict(hf_id: str, hf_subsample: str) -> dict[str, pd.DataFrame]:
+    def load_hf_to_dict(hf_id: str | None = None, hf_subsample: str | None = None) -> dict[str, pd.DataFrame]:
         """Returns a map of split -> pd.DataFrame for the given HF dataset.
 
         :param hf_id: (str) path to dataset on HuggingFace platform
@@ -49,7 +49,7 @@ class HFLoader(DatasetLoader):
         return pandas_dict
 
     def load(
-        self, hf_id: str, hf_subsample: str | None = None, split: bool = False
+        self, hf_id: str | None = None, hf_subsample: str | None = None, split: bool = False
     ) -> pd.DataFrame | list[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """When load() is called, HFLoader calls the datasets API to return all of the data in a HuggingFace
         DatasetDict, converts it to a dictionary of pandas dataframes, and returns either three dataframes
