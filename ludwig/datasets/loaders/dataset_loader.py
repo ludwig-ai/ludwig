@@ -55,7 +55,7 @@ class TqdmUpTo(tqdm):
             Total size (in tqdm units). If [default: None] remains unchanged.
         """
         if tsize is not None:
-            self.total = tsize
+            self.total = tsize  # noqa W0201
         self.update(b * bsize - self.n)  # will also set self.n = b * bsize
 
 
@@ -198,7 +198,8 @@ class DatasetLoader:
             return _list_of_strings(self.config.archive_filenames)
         return [os.path.basename(urlparse(url).path) for url in self.download_urls]
 
-    def get_mirror_download_paths(self, mirror: DatasetFallbackMirror):
+    @staticmethod
+    def get_mirror_download_paths(mirror: DatasetFallbackMirror):
         """Filenames for downloaded files inferred from mirror download_paths."""
         return _list_of_strings(mirror.download_paths)
 
@@ -284,7 +285,9 @@ class DatasetLoader:
             except Exception:
                 logger.exception("Failed to transform dataset")
 
-    def load(self, kaggle_username: str, kaggle_key: str | None = None, split: bool = False) -> pd.DataFrame:
+    def load(
+        self, kaggle_username: str, kaggle_key: str | None = None, split: bool = False
+    ) -> pd.DataFrame | list[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """Loads the dataset, downloaded and processing it if needed.
 
         Note: This method is also responsible for splitting the data, returning a single dataframe if split=False, and a
@@ -454,7 +457,6 @@ class DatasetLoader:
             _list_of_strings(self.config.validation_filenames), root_dir=self.raw_dataset_dir
         )
         test_paths = _glob_multiple(_list_of_strings(self.config.test_filenames), root_dir=self.raw_dataset_dir)
-        dataframes = []
         if self.config.name == "hugging_face":
             dataframes = self._get_dataframe_with_fixed_splits_from_hf()
         else:
@@ -522,7 +524,8 @@ class DatasetLoader:
         """Last modified time of the processed dataset after downloading successfully."""
         return os.path.getmtime(self.processed_dataset_path)
 
-    def split(self, dataset: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    @staticmethod
+    def split(dataset: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         if SPLIT in dataset:
             dataset[SPLIT] = pd.to_numeric(dataset[SPLIT])
             training_set = dataset[dataset[SPLIT] == 0].drop(columns=[SPLIT])

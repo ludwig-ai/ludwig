@@ -48,7 +48,9 @@ class HFLoader(DatasetLoader):
             pandas_dict[split] = dataset_dict[split].to_pandas()
         return pandas_dict
 
-    def load(self, hf_id: str, hf_subsample: str | None = None, split: bool = False) -> pd.DataFrame:
+    def load(
+        self, hf_id: str, hf_subsample: str | None = None, split: bool = False
+    ) -> pd.DataFrame | list[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """When load() is called, HFLoader calls the datasets API to return all of the data in a HuggingFace
         DatasetDict, converts it to a dictionary of pandas dataframes, and returns either three dataframes
         containing train, validation, and test data or one dataframe that is the concatenation of all three
