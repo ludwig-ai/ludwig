@@ -257,16 +257,6 @@ class Predictor(BasePredictor):
                     preds = self.model.outputs_to_predictions(outputs)
                     self.model.update_metrics(targets, preds)
 
-                    # Max New tokens: 64
-                    # When max_seq_len set for output feature to 256
-                    # prediction: [eval_batch_size, 256]
-                    # probabilities: [eval_batch_size, 256, vocab_size]
-
-                    # Max New tokens: 64
-                    # When max_seq_len not set >> 256
-                    # prediction: [eval_batch_size, row_with_most_tokens]
-                    # probabilities: [eval_batch_size, row_with_most_tokens, vocab_size]
-
                     # accumulate predictions from batch for each output feature
                     if collect_predictions:
                         self._accumulate_preds(
@@ -284,11 +274,6 @@ class Predictor(BasePredictor):
 
             # consolidate predictions from each batch to a single tensor
             if collect_predictions:
-                # predictions: [dataset, worst_case_length]
-                # probabilities: [dataset, worst_case_length, vocab_size]
-                # vs
-                # predictions: [dataset, 256]
-                # probabilities: [dataset, 256, vocab_size]
                 self._concat_preds(predictions)
 
             metrics = self.model.get_metrics()
