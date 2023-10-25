@@ -1,3 +1,4 @@
+import copy
 import logging
 from typing import Dict, Tuple
 
@@ -388,7 +389,7 @@ def _get_decoded_targets_and_predictions(
     return decoded_targets, decoded_predictions
 
 
-def realign_target_and_prediction_tensors_for_inference(
+def get_realigned_target_and_prediction_tensors_for_inference(
     targets: Dict[str, torch.Tensor],
     predictions: Dict[str, Dict[str, torch.Tensor]],
     of_name: str,
@@ -424,26 +425,30 @@ def realign_target_and_prediction_tensors_for_inference(
     if not pad_value:
         pad_value = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else tokenizer.eos_token_id
 
+    zeros_to_add = (
+        target_length - prediction_length if target_length > prediction_length else prediction_length - target_length
+    )
+
+    # We don't want to modify the original targets and predictions tensors, so we create a copy of them.
+    _targets = copy.deepcopy(targets)
+    _predictions = copy.deepcopy(predictions)
+
     # Align target and prediction tensors for text to text metric computation
     if target_length > prediction_length:
         # Pad the predictions.
-        zeros_to_add = target_length - prediction_length
-
-        predictions[of_name][PREDICTIONS] = F.pad(
-            predictions[of_name][PREDICTIONS], (0, zeros_to_add), value=pad_value
+        _predictions[of_name][PREDICTIONS] = F.pad(
+            _predictions[of_name][PREDICTIONS], (0, zeros_to_add), value=pad_value
         ).to(torch.int64)
 
-        predictions[of_name][PROBABILITIES] = F.pad(predictions[of_name][PROBABILITIES], (0, 0, 0, zeros_to_add)).to(
+        _predictions[of_name][PROBABILITIES] = F.pad(_predictions[of_name][PROBABILITIES], (0, 0, 0, zeros_to_add)).to(
             torch.float32
         )
 
-        predictions[of_name][LOGITS] = F.pad(predictions[of_name][LOGITS], (0, 0, 0, zeros_to_add)).to(torch.float32)
+        _predictions[of_name][LOGITS] = F.pad(_predictions[of_name][LOGITS], (0, 0, 0, zeros_to_add)).to(torch.float32)
     else:
-        zeros_to_add = prediction_length - target_length
+        _targets[of_name] = F.pad(_targets[of_name], (0, zeros_to_add), value=pad_value).to(torch.int64)
 
-        targets[of_name] = F.pad(targets[of_name], (0, zeros_to_add), value=pad_value).to(torch.int64)
-
-    return targets, predictions
+    return _targets, _predictions
 
 
 def update_embedding_layer(model: AutoModelForCausalLM, config_obj: LLMTrainerConfig) -> AutoModelForCausalLM:

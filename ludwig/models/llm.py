@@ -23,8 +23,8 @@ from ludwig.utils.llm_utils import (
     add_left_padding,
     generate_merged_ids,
     get_context_len,
+    get_realigned_target_and_prediction_tensors_for_inference,
     pad_target_tensor_for_fine_tuning,
-    realign_target_and_prediction_tensors_for_inference,
     remove_left_padding,
     set_pad_token,
 )
@@ -532,7 +532,7 @@ class LLM(BaseModel):
         for of_name, of_obj in self.output_features.items():
             if isinstance(of_obj, TextOutputFeature):
                 # Align the target length with the predictions length to enable text metric evaluation.
-                _targets, _predictions = realign_target_and_prediction_tensors_for_inference(
+                _targets, _predictions = get_realigned_target_and_prediction_tensors_for_inference(
                     targets, predictions, of_name, self.tokenizer
                 )
                 of_obj.update_metrics(_targets[of_name], _predictions[of_name], self.tokenizer)
@@ -634,7 +634,7 @@ class LLM(BaseModel):
         for of_name, of_obj in self.output_features.items():
             if isinstance(of_obj, TextOutputFeature):
                 # Align the target length with the predictions length to enable text metric evaluation.
-                _targets, _predictions = realign_target_and_prediction_tensors_for_inference(
+                _targets, _predictions = get_realigned_target_and_prediction_tensors_for_inference(
                     targets, predictions, of_name, self.tokenizer
                 )
                 of_eval_loss = of_obj.eval_loss(_targets[of_name], _predictions[of_name])
