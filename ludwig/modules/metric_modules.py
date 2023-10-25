@@ -136,7 +136,7 @@ class RMSEMetric(MeanSquaredError, LudwigMetric):
     """Root mean squared error metric."""
 
     def __init__(self, **kwargs):
-        super().__init__(squared=False, **kwargs)
+        super().__init__(squared=False)
 
 
 @register_metric(PRECISION, [BINARY], MAXIMIZE, PROBABILITIES)
