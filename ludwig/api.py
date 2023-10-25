@@ -335,7 +335,13 @@ class LudwigModel:
         self._online_trainer = None
 
         # Zero-shot LLM usage.
-        if self.config_obj.model_type == MODEL_LLM and self.config_obj.trainer.type == "none":
+        if (
+            self.config_obj.model_type == MODEL_LLM
+            and self.config_obj.trainer.type == "none"
+            # Category output features require a vocabulary. The LLM LudwigModel should be initialized with
+            # model.train(dataset).
+            and self.config_obj.output_features[0].type == "text"
+        ):
             self._initialize_llm()
 
     def _initialize_llm(self, random_seed: int = default_random_seed):
@@ -343,11 +349,6 @@ class LudwigModel:
 
         Should only be used in a zero-shot (NoneTrainer) setting.
         """
-        if self.config_obj.model_type != MODEL_LLM:
-            raise ValueError(
-                f"Model type {self.config_obj.model_type} is not supported by this method. Only `llm` model type is "
-                "supported."
-            )
         self.model = LudwigModel.create_model(self.config_obj, random_seed=random_seed)
 
     def train(
