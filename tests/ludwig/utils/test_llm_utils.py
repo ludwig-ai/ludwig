@@ -283,7 +283,11 @@ def test_realign_target_and_prediction_tensors_for_inference(tokenizer):
         targets, predictions, of_name, tokenizer
     )
 
-    assert predictions == updated_predictions
+    for key in updated_predictions.keys():
+        assert torch.equal(updated_predictions[key][PREDICTIONS], predictions[key][PREDICTIONS])
+        assert torch.equal(updated_predictions[key][PROBABILITIES], predictions[key][PROBABILITIES])
+        assert torch.equal(updated_predictions[key][LOGITS], predictions[key][LOGITS])
+
     assert torch.equal(updated_targets[of_name], torch.tensor([[78, 79, 504, 76, 397, 84, 0, 1, 1]]))
 
     # Scenario 3: Target length is longer than the prediction tensor, so we need to realign them
@@ -299,7 +303,7 @@ def test_realign_target_and_prediction_tensors_for_inference(tokenizer):
         targets, predictions, of_name, tokenizer
     )
 
-    assert targets == updated_targets
+    assert torch.equal(updated_targets[of_name], targets[of_name])
 
     assert torch.equal(updated_predictions[of_name][PREDICTIONS], torch.tensor([[78, 79, 504, 76, 397, 84, 0, 1, 1]]))
     assert updated_predictions[of_name][PROBABILITIES].shape[1] == targets[of_name].shape[1]
