@@ -389,7 +389,7 @@ def _get_decoded_targets_and_predictions(
     return decoded_targets, decoded_predictions
 
 
-def realign_target_and_prediction_tensors_for_inference(
+def get_realigned_target_and_prediction_tensors_for_inference(
     targets: Dict[str, torch.Tensor],
     predictions: Dict[str, Dict[str, torch.Tensor]],
     of_name: str,
