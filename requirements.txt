@@ -42,7 +42,8 @@ sacremoses
 sentencepiece
 
 # requirements for daft
-getdaft
+# NOTE: Pinned to <0.2 because of deprecation of fsspec argument in Daft
+getdaft<0.2
 
 # requirement for various paged and 8-bit optimizers
 bitsandbytes<0.41.0
