@@ -1052,7 +1052,7 @@ class LudwigModel:
 
                     logger.info(f"Saved to: {output_directory}")
 
-            logger.info(f"Finished decoding in: {(time.time() - start_time):.2f}s.")
+            logger.info(f"Finished predictions in: {(time.time() - start_time):.2f}s.")
             return converted_postproc_predictions, output_directory
 
     def evaluate(
