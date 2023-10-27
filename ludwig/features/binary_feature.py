@@ -27,6 +27,7 @@ from ludwig.types import (
     FeatureConfigDict,
     FeatureMetadataDict,
     FeaturePostProcessingOutputDict,
+    ModelConfigDict,
     PreprocessingConfigDict,
     TrainingSetMetadataDict,
 )
@@ -142,7 +143,11 @@ class BinaryFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def get_feature_meta(
-        column: DataFrame, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
+        config: ModelConfigDict,
+        column: DataFrame,
+        preprocessing_parameters: PreprocessingConfigDict,
+        backend,
+        is_input_feature: bool,
     ) -> FeatureMetadataDict:
         if column.dtype != object:
             return {}

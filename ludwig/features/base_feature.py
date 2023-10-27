@@ -39,7 +39,13 @@ from ludwig.modules.metric_modules import LossMetric, LudwigMetric, MeanMetric
 from ludwig.modules.metric_registry import get_metric_classes, get_metric_cls, get_metric_tensor_input
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.schema.features.base import BaseFeatureConfig, BaseOutputFeatureConfig
-from ludwig.types import FeatureConfigDict, FeatureMetadataDict, PreprocessingConfigDict, TrainingSetMetadataDict
+from ludwig.types import (
+    FeatureConfigDict,
+    FeatureMetadataDict,
+    ModelConfigDict,
+    PreprocessingConfigDict,
+    TrainingSetMetadataDict,
+)
 from ludwig.utils import output_feature_utils
 from ludwig.utils.calibration import CalibrationModule
 from ludwig.utils.torch_utils import LudwigModule
@@ -71,11 +77,16 @@ class BaseFeatureMixin(ABC):
 
     @abstractstaticmethod
     def get_feature_meta(
-        column: DataFrame, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
+        config: ModelConfigDict,
+        column: DataFrame,
+        preprocessing_parameters: PreprocessingConfigDict,
+        backend,
+        is_input_feature: bool,
     ) -> FeatureMetadataDict:
         """Returns a dictionary of feature metadata.
 
         Args:
+            config: Ludwig model config dict.
             column: Pandas column of values.
             preprocessing_parameters: Preprocessing configuration for this feature.
             backend: (Union[Backend, str]) Backend to use for feature data processing.
