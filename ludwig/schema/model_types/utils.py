@@ -371,7 +371,7 @@ def _get_maximum_possible_sequence_length(config: "ModelConfig", default_max_seq
         # we should fall back to the window size of the pretrained model. By this point, because of schema validation
         # checks, we know that the base_model exists so we can safely grab the base model's config.
         # TODO (Arnav): Figure out how to factor in rope scaling factor into this calculation.
-        model_config = load_pretrained_hf_class_with_hub_fallback(AutoConfig, config.base_model)
+        model_config, _ = load_pretrained_hf_class_with_hub_fallback(AutoConfig, config.base_model)
         max_possible_sequence_length = get_context_len(model_config)
         # Artifically leave a buffer of half the total model window size to trade off
         # runtime while likely covering a majority of the max sequence length.
