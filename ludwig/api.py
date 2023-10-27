@@ -926,6 +926,8 @@ class LudwigModel:
                 "supported."
             )
         if not torch.cuda.is_available() or torch.cuda.device_count() == 0:
+            # GPU is generally well-advised for working with LLMs and is required for loading quantized models, see
+            # https://github.com/ludwig-ai/ludwig/issues/3695.
             raise ValueError("GPU is not available.")
 
         # TODO(Justin): Decide if it's worth folding padding_side handling into llm.py's tokenizer initialization.
