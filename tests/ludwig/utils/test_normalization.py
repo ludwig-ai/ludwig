@@ -54,9 +54,9 @@ def test_norm(backend, ray_cluster_2cpu):
     data_df, proc_df = get_test_data(backend)
     backend = initialize_backend(backend)
 
-    feature_1_meta = NumberFeatureMixin.get_feature_meta(data_df["x"], {"normalization": "zscore"}, backend, True)
-    feature_2_meta = NumberFeatureMixin.get_feature_meta(data_df["x"], {"normalization": "minmax"}, backend, True)
-    feature_3_meta = NumberFeatureMixin.get_feature_meta(data_df["x"], {"normalization": "iq"}, backend, True)
+    feature_1_meta = NumberFeatureMixin.get_feature_meta({}, data_df["x"], {"normalization": "zscore"}, backend, True)
+    feature_2_meta = NumberFeatureMixin.get_feature_meta({}, data_df["x"], {"normalization": "minmax"}, backend, True)
+    feature_3_meta = NumberFeatureMixin.get_feature_meta({}, data_df["x"], {"normalization": "iq"}, backend, True)
 
     assert feature_1_meta["mean"] == 6
     assert feature_2_meta["min"] == 2
@@ -116,7 +116,9 @@ def test_numeric_transformation_registry(transformation, backend, ray_cluster_2c
     data_df, proc_df = get_test_data(backend)
     backend = initialize_backend(backend)
 
-    feature_meta = NumberFeatureMixin.get_feature_meta(data_df["x"], {"normalization": transformation}, backend, True)
+    feature_meta = NumberFeatureMixin.get_feature_meta(
+        {}, data_df["x"], {"normalization": transformation}, backend, True
+    )
 
     num_feature = number_feature()
 

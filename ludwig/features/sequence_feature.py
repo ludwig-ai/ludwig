@@ -38,6 +38,7 @@ from ludwig.schema.features.sequence_feature import SequenceInputFeatureConfig, 
 from ludwig.types import (
     FeatureMetadataDict,
     FeaturePostProcessingOutputDict,
+    ModelConfigDict,
     PreprocessingConfigDict,
     TrainingSetMetadataDict,
 )
@@ -199,7 +200,11 @@ class SequenceFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def get_feature_meta(
-        column, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
+        config: ModelConfigDict,
+        column,
+        preprocessing_parameters: PreprocessingConfigDict,
+        backend,
+        is_input_feature: bool,
     ) -> FeatureMetadataDict:
         vocabulary = create_vocabulary(
             column,
@@ -213,7 +218,7 @@ class SequenceFeatureMixin(BaseFeatureMixin):
             processor=backend.df_engine,
         )
         logger.info(
-            f"Max length of feature '{column.name}': {vocabulary.line_length_max} (without start and stop symbols)"
+            f"Max length of feature '{column.name}': {vocabulary.max_sequence_length} (without start and stop symbols)"
         )
 
         # Use sequence_length if provided, otherwise use max length found in dataset.
@@ -224,7 +229,7 @@ class SequenceFeatureMixin(BaseFeatureMixin):
             )
             max_sequence_length = preprocessing_parameters["sequence_length"]
         else:
-            max_sequence_length = vocabulary.line_length_max + 2  # For start and stop symbols.
+            max_sequence_length = vocabulary.max_sequence_length
             logger.info(f"Setting max length using dataset: {max_sequence_length} (including start and stop symbols)")
 
             # If max_sequence_length is None, then use the max length found in the dataset.
@@ -238,7 +243,7 @@ class SequenceFeatureMixin(BaseFeatureMixin):
                 )
                 max_sequence_length = preprocessing_parameters["max_sequence_length"]
 
-        logger.info(f"max sequence length is {max_sequence_length} for feature '{column.name}'")
+        logger.info(f"Max sequence length is {max_sequence_length} for feature '{column.name}'")
         return {
             "idx2str": vocabulary.vocab,
             "str2idx": vocabulary.str2idx,
@@ -371,29 +376,21 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         if isinstance(feature_config.loss.class_weights, (list, tuple)):
             if len(feature_config.loss.class_weights) != feature_config.decoder.vocab_size:
                 raise ValueError(
-                    "The length of class_weights ({}) is not compatible with "
-                    "the number of classes ({}) for feature {}. "
+                    f"The length of class_weights ({len(feature_config.loss.class_weights)}) is not compatible with "
+                    f"the number of classes ({feature_config.decoder.vocab_size}) for feature {feature_config.column}. "
                     "Check the metadata JSON file to see the classes "
                     "and their order and consider there needs to be a weight "
-                    "for the <UNK> and <PAD> class too.".format(
-                        len(feature_config.loss.class_weights),
-                        feature_config.decoder.vocab_size,
-                        feature_config.column,
-                    )
+                    "for the <UNK> and <PAD> class too."
                 )
 
         if isinstance(feature_config.loss.class_weights, dict):
             if feature_metadata["str2idx"].keys() != feature_config.loss.class_weights.keys():
                 raise ValueError(
-                    "The class_weights keys ({}) are not compatible with "
-                    "the classes ({}) of feature {}. "
+                    f"The class_weights keys ({feature_config.loss.class_weights.keys()}) are not compatible with "
+                    f'the classes ({feature_metadata["str2idx"].keys()}) of feature {feature_config.column}. '
                     "Check the metadata JSON file to see the classes "
                     "and consider there needs to be a weight "
-                    "for the <UNK> class too.".format(
-                        feature_config.loss.class_weights.keys(),
-                        feature_metadata["str2idx"].keys(),
-                        feature_config.column,
-                    )
+                    "for the <UNK> class too."
                 )
             else:
                 class_weights = feature_config.loss.class_weights
@@ -431,22 +428,18 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
 
                 if all_rows_length != len(similarities):
                     raise ValueError(
-                        "The class_similarities matrix of {} has "
-                        "{} rows and {} columns, "
-                        "their number must be identical.".format(
-                            feature_config.column, len(similarities), all_rows_length
-                        )
+                        f"The class_similarities matrix of {feature_config.column} has "
+                        f"{len(similarities)} rows and {all_rows_length} columns, "
+                        "their number must be identical."
                     )
 
                 if all_rows_length != feature_config.decoder.vocab_size:
                     raise ValueError(
-                        "The size of the class_similarities matrix of {} is "
-                        "{}, different from the number of classes ({}). "
-                        "Check the metadata JSON file to see the classes "
+                        f"The size of the class_similarities matrix of {feature_config.column} is "
+                        f"{all_rows_length}, different from the number of classes "
+                        f"({feature_config.decoder.vocab_size}). Check the metadata JSON file to see the classes "
                         "and their order and "
-                        "consider <UNK> and <PAD> class too.".format(
-                            feature_config.column, all_rows_length, feature_config.decoder.vocab_size
-                        )
+                        "consider <UNK> and <PAD> class too."
                     )
 
                 similarities = np.array(similarities, dtype=np.float32)
@@ -457,7 +450,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                 raise ValueError(
                     "class_similarities_temperature > 0, "
                     "but no class_similarities are provided "
-                    "for feature {}".format(feature_config.column)
+                    f"for feature {feature_config.column}"
                 )
 
     @staticmethod
