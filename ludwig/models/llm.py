@@ -102,7 +102,7 @@ def load_pretrained_from_config(
 
     logger.info("Loading large language model...")
     pretrained_model_name_or_path = weights_save_path or config_obj.base_model
-    model: PreTrainedModel = load_pretrained_hf_class_with_hub_fallback(
+    model, _ = load_pretrained_hf_class_with_hub_fallback(
         AutoModelForCausalLM, pretrained_model_name_or_path, **load_kwargs
     )
     return model
@@ -126,7 +126,7 @@ class LLM(BaseModel):
         self._random_seed = random_seed
 
         self.model_name = self.config_obj.base_model
-        self.model_config = load_pretrained_hf_class_with_hub_fallback(AutoConfig, self.config_obj.base_model)
+        self.model_config, _ = load_pretrained_hf_class_with_hub_fallback(AutoConfig, self.config_obj.base_model)
 
         self.model = load_pretrained_from_config(self.config_obj, model_config=self.model_config)
         self.curr_device = next(self.model.parameters()).device
@@ -303,7 +303,7 @@ class LLM(BaseModel):
                 if self.config_obj.adapter:
                     from peft import PeftModel
 
-                    self.model = load_pretrained_hf_class_with_hub_fallback(
+                    self.model, _ = load_pretrained_hf_class_with_hub_fallback(
                         AutoModelForCausalLM,
                         self.model_name,
                         **model_kwargs,
@@ -314,7 +314,7 @@ class LLM(BaseModel):
                         torch_dtype=torch.float16,
                     )
                 else:
-                    self.model = load_pretrained_hf_class_with_hub_fallback(
+                    self.model, _ = load_pretrained_hf_class_with_hub_fallback(
                         AutoModelForCausalLM,
                         tmpdir,
                         **model_kwargs,
@@ -698,7 +698,7 @@ class LLM(BaseModel):
                 # Unwrap and reload PeftModel
                 self.model = self.model.base_model
 
-            self.model = load_pretrained_hf_class_with_hub_fallback(PeftModel, self.model, weights_save_path)
+            self.model = PeftModel.from_pretrained(self.model, weights_save_path)
         elif self.config_obj.trainer.type != "none":
             self.model = load_pretrained_from_config(
                 self.config_obj, model_config=self.model_config, weights_save_path=weights_save_path
