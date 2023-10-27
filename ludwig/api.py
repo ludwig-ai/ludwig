@@ -924,6 +924,7 @@ class LudwigModel:
         if not torch.cuda.is_available():
             raise ValueError("GPU is not available.")
 
+        # TODO(Justin): Decide if it's worth folding padding_side handling into llm.py's tokenizer initialization.
         if not self.model.model.config.is_encoder_decoder:
             padding_side = "left"
         else:
