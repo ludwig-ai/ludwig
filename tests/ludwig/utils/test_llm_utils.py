@@ -26,7 +26,7 @@ TEST_MODEL_NAME = "hf-internal-testing/tiny-random-OPTForCausalLM"
 
 @pytest.fixture
 def tokenizer():
-    return HFTokenizer(TEST_MODEL_NAME)
+    return HFTokenizer(TEST_MODEL_NAME).tokenizer
 
 
 @pytest.fixture
