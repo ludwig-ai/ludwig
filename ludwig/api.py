@@ -921,10 +921,14 @@ class LudwigModel:
                 f"Model type {self.config_obj.model_type} is not supported by this method. Only `llm` model type is "
                 "supported."
             )
-        if not torch.cuda.is_available():
+        if not torch.cuda.is_available() or torch.cuda.device_count() == 0:
             raise ValueError("GPU is not available.")
 
         # TODO(Justin): Decide if it's worth folding padding_side handling into llm.py's tokenizer initialization.
+        # For batch inference with models like facebook/opt-350m, if the tokenizer padding side is off, HF prints a
+        # warning, e.g.:
+        # "A decoder-only architecture is being used, but right-padding was detected! For correct generation results, "
+        # "please set `padding_side='left'` when initializing the tokenizer.
         if not self.model.model.config.is_encoder_decoder:
             padding_side = "left"
         else:
