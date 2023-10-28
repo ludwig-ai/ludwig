@@ -6,6 +6,7 @@ from ludwig.constants import COMBINER, EPOCHS, INPUT_FEATURES, OUTPUT_FEATURES, 
 from tests.integration_tests.utils import binary_feature, generate_data, run_test_suite, text_feature
 
 
+@pytest.mark.integration_tests_e
 @pytest.mark.parametrize(
     "backend",
     [
