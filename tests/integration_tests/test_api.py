@@ -768,6 +768,7 @@ def test_constant_metadata(tmpdir):
     assert metadata1 == metadata2
 
 
+@pytest.mark.integration_tests_e
 @pytest.mark.parametrize(
     "input_max_sequence_length, global_max_sequence_length, expect_raise",
     [
@@ -797,9 +798,6 @@ def test_llm_template_too_long(tmpdir, input_max_sequence_length, global_max_seq
 
   preprocessing:
     global_max_sequence_length: {global_max_sequence_length}
-
-  quantization:
-    bits: 4
   """
     )
     zero_shot_config["prompt"] = {}

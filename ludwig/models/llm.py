@@ -417,10 +417,6 @@ class LLM(BaseModel):
             sequences_list = []
             for input_ids_sample in input_ids:
                 input_ids_sample_no_padding = remove_left_padding(input_ids_sample, self.tokenizer)
-                logger.info(
-                    "Decoded text inputs for the first example in batch: "
-                    f"{self.tokenizer.decode(input_ids_sample_no_padding[0], skip_special_tokens=True)}"
-                )
 
                 if input_ids_sample_no_padding.shape[1] > self.max_input_length:
                     logger.warning(
@@ -442,10 +438,6 @@ class LLM(BaseModel):
                         generation_config=self.generation,
                         return_dict_in_generate=True,
                         output_scores=True,
-                    )
-                    logger.info(
-                        "Decoded generated output for the first example in batch: "
-                        f"{self.tokenizer.batch_decode(model_outputs.sequences, skip_special_tokens=True)[0]}"
                     )
 
                 sequences_list.append(model_outputs.sequences[0])
