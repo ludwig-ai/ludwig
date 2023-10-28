@@ -797,9 +797,6 @@ def test_llm_template_too_long(tmpdir, input_max_sequence_length, global_max_seq
 
   preprocessing:
     global_max_sequence_length: {global_max_sequence_length}
-
-  quantization:
-    bits: 4
   """
     )
     zero_shot_config["prompt"] = {}
