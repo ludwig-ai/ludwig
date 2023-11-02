@@ -351,7 +351,7 @@ class LudwigModel:
         """
         self.model = LudwigModel.create_model(self.config_obj, random_seed=random_seed)
 
-        if self.model.model.device == "cpu":
+        if self.model.model.device.type == "cpu":
             logger.warning(f"LLM was initialized on {self.model.model.device}. Moving to GPU for inference.")
             self.model.model.to(torch.device("cuda"))
 
