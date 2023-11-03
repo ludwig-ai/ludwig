@@ -51,14 +51,14 @@ Work on your self-assigned issue and eventually create a Pull Request.
    pre-commit install
    ```
 
-1. If this installation approach runs into errors, you may need to install the following prerequisites:
+1. On MacOS with Apple Silicon, if this installation approach runs into errors, you may need to install the following prerequisites:
 
    ```bash
    brew install cmake
    brew install cmake libomp
    ```
 
-and then repeat the installation step:
+which require `homebrew` to already be installed on your development machine.  Please install these libraries and then repeat the previous step:
 
 ```bash
 pip install -e .
