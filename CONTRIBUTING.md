@@ -81,7 +81,8 @@ pip install -e .
    To do that, edit the file `requirements_extra.txt` and comment out the line that begins with `horovod`.  After that,
    please execute the long `pip install` command given in the previous step.  With these work-around provisions, your
    installation should run to completion successfully.  If you are still having difficulty, please reach out with the
-   specifics of your environment in [Slack](https://join.slack.com/t/ludwig-ai/shared_invite/zt-mrxo87w6-DlX5~73T2B4v_g6jj0pJcQ).
+   specifics of your environment in [Slack](https://join.slack.com/t/ludwig-ai/shared_invite/zt-mrxo87w6-DlX5~73T2B4v_g6jj0pJcQ)
+   and someone from the Ludwig Community will assist you.
 
 Make sure to not forget to install and run `pre-commit`:
 
