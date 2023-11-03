@@ -366,22 +366,12 @@ class LLM(BaseModel):
             input_ids, target_ids, self.tokenizer, self.global_max_sequence_length
         )
 
-        # TODO: <Alex>ALEX</Alex>
         # Wrap with flash attention backend for faster generation
-        # with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=False, enable_mem_efficient=False) if (
-        #     torch.cuda.is_available() and self.curr_device.type == "cuda"
-        # ) else contextlib.nullcontext():
-        #     # TODO (jeffkinnison): Determine why the 8-bit `SCB` and `CB` matrices are deleted in the forward pass
-        #     model_outputs = self.model(input_ids=self.model_inputs, attention_mask=self.attention_masks).get(LOGITS)
-        # TODO: <Alex>ALEX</Alex>
-        # TODO: <Alex>ALEX</Alex>
-        if torch.cuda.is_available():
-            with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=False, enable_mem_efficient=False):
-                model_outputs = self.model(input_ids=self.model_inputs, attention_mask=self.attention_masks).get(LOGITS)
-        else:
-            with contextlib.nullcontext():
-                model_outputs = self.model(input_ids=self.model_inputs, attention_mask=self.attention_masks).get(LOGITS)
-        # TODO: <Alex>ALEX</Alex>
+        with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=False, enable_mem_efficient=False) if (
+            torch.cuda.is_available() and self.curr_device.type == "cuda"
+        ) else contextlib.nullcontext():
+            # TODO (jeffkinnison): Determine why the 8-bit `SCB` and `CB` matrices are deleted in the forward pass
+            model_outputs = self.model(input_ids=self.model_inputs, attention_mask=self.attention_masks).get(LOGITS)
 
         if self.output_feature_type != TEXT:
             # Pass generated tokens through decoder after averaging the token probabilities
