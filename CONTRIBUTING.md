@@ -51,6 +51,43 @@ Work on your self-assigned issue and eventually create a Pull Request.
    pre-commit install
    ```
 
+1. If this installation approach runs into errors, you may need to install the following prerequisites:
+
+   ```bash
+   brew install cmake
+   brew install cmake libomp
+   ```
+
+and then repeat the installation step:
+
+```bash
+pip install -e .
+```
+
+1. If the installation still does not complete successfully, then it is possible that the order of the
+   "requirements" files matters.  To carry out the installation in the proper sequence, please execute:
+
+   ```bash
+   pip install --use-pep517 --requirement requirements.txt --requirement requirements_benchmarking.txt \
+      --requirement requirements_distributed.txt --requirement requirements_explain.txt \
+      --requirement requirements_hyperopt.txt --requirement requirements_llm.txt \
+      --requirement requirements_serve.txt --requirement requirements_test.txt \
+      --requirement requirements_tree.txt --requirement requirements_viz.txt \
+      --requirement requirements_extra.txt --editable .
+   ```
+
+1. Finally, if during the installation of `horovod`, the exception `ModuleNotFoundError: No module named 'packaging'`
+   occurs, you mean need to disable `horovod` (that means you will need train with another backend, just not `horovod`).
+   To do that, edit the file `requirements_extra.txt` and comment out the line that begins with `horovod`.  After that,
+   execute the `pip install` command given in the previous step; you should be able to complete the installation fully.
+
+Make sure to not forget to install and run `pre-commit`:
+
+```bash
+pip install pre-commit
+pre-commit install
+```
+
 1. Develop features on your branch.
 
 1. Format your code by running pre-commits so that your newly added files look nice:
