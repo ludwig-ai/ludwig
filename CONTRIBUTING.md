@@ -58,7 +58,7 @@ Work on your self-assigned issue and eventually create a Pull Request.
    brew install cmake libomp
    ```
 
-which require `homebrew` to already be installed on your development machine.  Please install these libraries and then repeat the previous step:
+which require `homebrew` to be installed on your development machine.  Please install these libraries and then repeat the previous step:
 
 ```bash
 pip install -e .
