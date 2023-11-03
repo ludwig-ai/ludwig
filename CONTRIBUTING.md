@@ -54,7 +54,6 @@ Work on your self-assigned issue and eventually create a Pull Request.
 1. On MacOS with Apple Silicon, if this installation approach runs into errors, you may need to install the following prerequisites:
 
    ```bash
-   brew install cmake
    brew install cmake libomp
    ```
 
