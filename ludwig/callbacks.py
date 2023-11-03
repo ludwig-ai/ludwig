@@ -299,6 +299,12 @@ class Callback(ABC):
         # Triggers early stopping if any callback on any worker returns True
         return False
 
+    def on_checkpoint(self, trainer, progress_tracker):
+        """Called after each checkpoint is passed, regardless of whether the model was evaluated or saved at that
+         checkpoint.
+         """
+        pass
+
     def on_save_best_checkpoint(self, trainer, progress_tracker, save_path):
         """Called on every worker immediately after a new best model is checkpointed."""
         pass

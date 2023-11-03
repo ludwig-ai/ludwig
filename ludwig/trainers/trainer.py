@@ -84,19 +84,19 @@ class Trainer(BaseTrainer):
         return ECDTrainerConfig
 
     def __init__(
-        self,
-        config: ECDTrainerConfig,
-        model: ECD,
-        resume: float = False,
-        skip_save_model: bool = False,
-        skip_save_progress: bool = False,
-        skip_save_log: bool = False,
-        callbacks: List = None,
-        report_tqdm_to_ray=False,
-        random_seed: float = default_random_seed,
-        distributed: Optional[DistributedStrategy] = None,
-        device: Optional[str] = None,
-        **kwargs,
+            self,
+            config: ECDTrainerConfig,
+            model: ECD,
+            resume: float = False,
+            skip_save_model: bool = False,
+            skip_save_progress: bool = False,
+            skip_save_log: bool = False,
+            callbacks: List = None,
+            report_tqdm_to_ray=False,
+            random_seed: float = default_random_seed,
+            distributed: Optional[DistributedStrategy] = None,
+            device: Optional[str] = None,
+            **kwargs,
     ):
         """Trains a model with a set of options and hyperparameters listed below. Customizable.
 
@@ -138,6 +138,7 @@ class Trainer(BaseTrainer):
         self.enable_profiling = config.enable_profiling
         self.steps_per_epoch = 0  # Computed during training, after batcher has been initialized.
         self.total_steps = 0  # Computed during training, after batcher has been initialized.
+        self.total_expected_checkpoints = 0  # Computed during training, after batcher has been initialized.
 
         self.regularization_lambda = config.regularization_lambda
         self.regularization_type = config.regularization_type
@@ -230,7 +231,7 @@ class Trainer(BaseTrainer):
             if not isinstance(self.compiled_model, LLM):
                 logger.warning("Gradient checkpointing is currently only supported for model_type: llm. Skipping...")
             elif not hasattr(self.compiled_model, "model") and not hasattr(
-                self.compiled_model.model, "gradient_checkpointing_enable"
+                    self.compiled_model.model, "gradient_checkpointing_enable"
             ):
                 logger.warning("Gradient checkpointing is not supported by this model. Skipping...")
             elif hasattr(self.compiled_model.model, "gradient_checkpointing_enable"):
@@ -250,11 +251,11 @@ class Trainer(BaseTrainer):
         self.scheduler = LRScheduler(self.config.learning_rate_scheduler, self.optimizer, 0, 0)
 
     def train_step(
-        self,
-        inputs: Dict[str, torch.Tensor],
-        targets: Dict[str, torch.Tensor],
-        should_step: bool = True,
-        profiler: Optional[torch.profiler.profile] = None,
+            self,
+            inputs: Dict[str, torch.Tensor],
+            targets: Dict[str, torch.Tensor],
+            should_step: bool = True,
+            profiler: Optional[torch.profiler.profile] = None,
     ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
         """Performs a single training step.
 
@@ -368,10 +369,10 @@ class Trainer(BaseTrainer):
 
     @classmethod
     def write_eval_summary(
-        cls,
-        summary_writer,
-        metrics,
-        step,
+            cls,
+            summary_writer,
+            metrics,
+            step,
     ):
         if not summary_writer:
             return
@@ -405,7 +406,7 @@ class Trainer(BaseTrainer):
             for i in range(torch.cuda.device_count()):
                 device = torch.device(f"cuda:{i}")
                 memory_stats = torch.cuda.memory_stats(device=device)
-                gb_memory_stats = {k: v / (1000**3) for k, v in memory_stats.items()}
+                gb_memory_stats = {k: v / (1000 ** 3) for k, v in memory_stats.items()}
                 # Allocated bytes.
                 train_summary_writer.add_scalar(
                     f"cuda/device{i}/allocated_gb.all.current",
@@ -469,14 +470,14 @@ class Trainer(BaseTrainer):
                 # Global free memory.
                 train_summary_writer.add_scalar(
                     f"cuda/device{i}/global_free_memory_gb",
-                    torch.cuda.mem_get_info(device=device)[0] / (1000**3),
+                    torch.cuda.mem_get_info(device=device)[0] / (1000 ** 3),
                     global_step=step,
                 )
 
                 # Total memory occupied.
                 train_summary_writer.add_scalar(
                     f"cuda/device{i}/total_memory_occupied_gb",
-                    torch.cuda.mem_get_info(device=device)[1] / (1000**3),
+                    torch.cuda.mem_get_info(device=device)[1] / (1000 ** 3),
                     global_step=step,
                 )
 
@@ -484,7 +485,7 @@ class Trainer(BaseTrainer):
                 train_summary_writer.add_scalar(
                     f"cuda/device{i}/total_memory_used_gb",
                     (torch.cuda.mem_get_info(device=device)[1] - torch.cuda.mem_get_info(device=device)[0])
-                    / (1000**3),
+                    / (1000 ** 3),
                     global_step=step,
                 )
 
@@ -501,15 +502,15 @@ class Trainer(BaseTrainer):
         return torch.device(self.device) == torch.device("cpu")
 
     def tune_batch_size(
-        self,
-        config: ModelConfigDict,
-        training_set: Dataset,
-        random_seed: int = default_random_seed,
-        max_trials: int = 20,
-        halving_limit: int = 3,
-        snapshot_weights: bool = True,
-        on_best_batch_size_updated: Optional[Callable[[int, float, int], None]] = None,
-        tune_for_training: bool = True,
+            self,
+            config: ModelConfigDict,
+            training_set: Dataset,
+            random_seed: int = default_random_seed,
+            max_trials: int = 20,
+            halving_limit: int = 3,
+            snapshot_weights: bool = True,
+            on_best_batch_size_updated: Optional[Callable[[int, float, int], None]] = None,
+            tune_for_training: bool = True,
     ) -> int:
         logger.info("Tuning batch size...")
         skip_save_model = self.skip_save_model
@@ -622,22 +623,22 @@ class Trainer(BaseTrainer):
         return _PredictBatchSizeEvaluator()
 
     def run_evaluation(
-        self,
-        training_set,
-        validation_set,
-        test_set,
-        progress_tracker: ProgressTracker,
-        train_summary_writer,
-        validation_summary_writer,
-        test_summary_writer,
-        model_hyperparameters_path,
-        output_features,
-        metrics_names,
-        save_path,
-        loss: torch.Tensor,
-        all_losses: Dict[str, torch.Tensor],
-        early_stopping_steps: int,
-        checkpoint_manager: CheckpointManager,
+            self,
+            training_set,
+            validation_set,
+            test_set,
+            progress_tracker: ProgressTracker,
+            train_summary_writer,
+            validation_summary_writer,
+            test_summary_writer,
+            model_hyperparameters_path,
+            output_features,
+            metrics_names,
+            save_path,
+            loss: torch.Tensor,
+            all_losses: Dict[str, torch.Tensor],
+            early_stopping_steps: int,
+            checkpoint_manager: CheckpointManager,
     ) -> bool:
         """Runs evaluation over training, validation, and test sets.
 
@@ -757,13 +758,13 @@ class Trainer(BaseTrainer):
         return should_break
 
     def train(
-        self,
-        training_set,
-        validation_set=None,
-        test_set=None,
-        save_path="model",
-        return_state_dict: bool = False,
-        **kwargs,
+            self,
+            training_set,
+            validation_set=None,
+            test_set=None,
+            save_path="model",
+            return_state_dict: bool = False,
+            **kwargs,
     ):
         """Trains a model with a set of hyperparameters listed below. Customizable.
 
@@ -895,12 +896,12 @@ class Trainer(BaseTrainer):
 
         try:
             with training_set.initialize_batcher(
-                batch_size=self.batch_size,
-                should_shuffle=self.should_shuffle,
-                random_seed=self.random_seed,
-                distributed=self.distributed,
-                ignore_last=True,
-                augmentation_pipeline=self.model.get_augmentation_pipelines(),
+                    batch_size=self.batch_size,
+                    should_shuffle=self.should_shuffle,
+                    random_seed=self.random_seed,
+                    distributed=self.distributed,
+                    ignore_last=True,
+                    augmentation_pipeline=self.model.get_augmentation_pipelines(),
             ) as batcher:
                 # ================ Training Loop ================
                 self.steps_per_epoch = batcher.steps_per_epoch
@@ -915,6 +916,7 @@ class Trainer(BaseTrainer):
                 )
                 final_steps_per_checkpoint = min(final_steps_per_checkpoint, self.total_steps)
                 early_stopping_steps = final_steps_per_checkpoint * self.early_stop
+                self.total_expected_checkpoints = self.total_steps // final_steps_per_checkpoint
 
                 # Initialize the learning rate scheduler.
                 self.scheduler = LRScheduler(
@@ -1042,9 +1044,9 @@ class Trainer(BaseTrainer):
                     # For a full explanation of this 8-bit workaround, see https://github.com/ludwig-ai/ludwig/pull/3606
                     # TODO (jeffkinnison): Determine why `SCB` and `CB` are deleted from parameter state
                     if (
-                        hasattr(self.model.config_obj, "quantization")
-                        and self.model.config_obj.quantization
-                        and self.model.config_obj.quantization.bits == 8
+                            hasattr(self.model.config_obj, "quantization")
+                            and self.model.config_obj.quantization
+                            and self.model.config_obj.quantization.bits == 8
                     ):
                         # If the model was previously placed on GPU, 8-bit parameter state will be updated with several
                         # matrices containing quantization information. These are recorded matrices are recorded in the
@@ -1062,7 +1064,7 @@ class Trainer(BaseTrainer):
                         # are tiled, but the fields themselves never exist in the module and get returned as unexpected
                         # keys when loading the state dict. The
                         assert (
-                            unexpected_keys == [] or only_weights_format_keys
+                                unexpected_keys == [] or only_weights_format_keys
                         ), f"Unexpected keys found in state dict: {unexpected_keys}"
                     else:
                         _, unexpected_keys = self.model.load_state_dict(state_dict, strict=False)
@@ -1087,25 +1089,25 @@ class Trainer(BaseTrainer):
         )
 
     def _train_loop(
-        self,
-        batcher,
-        progress_tracker: ProgressTracker,
-        save_path,
-        train_summary_writer,
-        progress_bar: LudwigProgressBar,
-        training_set,
-        validation_set,
-        test_set,
-        start_time,
-        validation_summary_writer,
-        test_summary_writer,
-        model_hyperparameters_path,
-        output_features,
-        metrics_names,
-        checkpoint_manager: CheckpointManager,
-        final_steps_per_checkpoint: int,
-        early_stopping_steps: int,
-        profiler: Optional[torch.profiler.profile],
+            self,
+            batcher,
+            progress_tracker: ProgressTracker,
+            save_path,
+            train_summary_writer,
+            progress_bar: LudwigProgressBar,
+            training_set,
+            validation_set,
+            test_set,
+            start_time,
+            validation_summary_writer,
+            test_summary_writer,
+            model_hyperparameters_path,
+            output_features,
+            metrics_names,
+            checkpoint_manager: CheckpointManager,
+            final_steps_per_checkpoint: int,
+            early_stopping_steps: int,
+            profiler: Optional[torch.profiler.profile],
     ) -> bool:
         """Completes up to one epoch through the data."""
         self.distributed.zero_grad(self.optimizer)
@@ -1200,6 +1202,9 @@ class Trainer(BaseTrainer):
                     if self.is_coordinator():
                         progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
 
+                # Callback that the checkpoint was reached, regardless of whether the model was evaluated or saved.
+                self.callback(lambda c: c.on_checkpoint(self, progress_tracker))
+
             # If this was the last batch, then increment the epoch counter and invoke the `on_epoch_end` callback.
             if batcher.last_batch():
                 self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
@@ -1209,10 +1214,10 @@ class Trainer(BaseTrainer):
     def train_online(self, dataset):
         self.dist_model.train()  # Sets model training mode.
         with dataset.initialize_batcher(
-            batch_size=self.batch_size,
-            should_shuffle=self.should_shuffle,
-            distributed=self.distributed,
-            ignore_last=True,
+                batch_size=self.batch_size,
+                should_shuffle=self.should_shuffle,
+                distributed=self.distributed,
+                ignore_last=True,
         ) as batcher:
             # training step loop
             progress_bar_config = {
@@ -1269,21 +1274,21 @@ class Trainer(BaseTrainer):
         return append_metrics(self.model, dataset_name, metrics, metrics_log, progress_tracker)
 
     def check_progress_on_validation(
-        self,
-        progress_tracker,
-        validation_output_feature_name,
-        validation_metric: str,
-        save_path,
-        model_hyperparameters_path,
-        increase_batch_size_on_plateau,
-        increase_batch_size_on_plateau_patience,
-        increase_batch_size_on_plateau_rate,
-        increase_batch_size_on_plateau_max,
-        increase_batch_size_eval_metric,
-        increase_batch_size_eval_split,
-        early_stopping_steps: int,
-        skip_save_model,
-        checkpoint_manager: CheckpointManager,
+            self,
+            progress_tracker,
+            validation_output_feature_name,
+            validation_metric: str,
+            save_path,
+            model_hyperparameters_path,
+            increase_batch_size_on_plateau,
+            increase_batch_size_on_plateau_patience,
+            increase_batch_size_on_plateau_rate,
+            increase_batch_size_on_plateau_max,
+            increase_batch_size_eval_metric,
+            increase_batch_size_eval_split,
+            early_stopping_steps: int,
+            skip_save_model,
+            checkpoint_manager: CheckpointManager,
     ) -> bool:
         """Checks the history of validation scores.
 
@@ -1373,13 +1378,13 @@ class Trainer(BaseTrainer):
                 increase_batch_size_eval_split,
             )
             progress_tracker.last_increase_batch_size = (
-                progress_tracker.steps - progress_tracker.last_increase_batch_size_steps
+                    progress_tracker.steps - progress_tracker.last_increase_batch_size_steps
             )
             if (
-                progress_tracker.last_increase_batch_size > 0
-                and progress_tracker.last_increase_batch_size_eval_metric_improvement > 0
-                and not progress_tracker.num_increases_batch_size >= increase_batch_size_on_plateau
-                and not progress_tracker.batch_size >= increase_batch_size_on_plateau_max
+                    progress_tracker.last_increase_batch_size > 0
+                    and progress_tracker.last_increase_batch_size_eval_metric_improvement > 0
+                    and not progress_tracker.num_increases_batch_size >= increase_batch_size_on_plateau
+                    and not progress_tracker.batch_size >= increase_batch_size_on_plateau_max
             ):
                 logger.info(
                     "Last batch size increase "
@@ -1428,8 +1433,8 @@ class Trainer(BaseTrainer):
 
     @staticmethod
     def resume_files_exist(
-        training_progress_tracker_path: str,
-        training_checkpoint_path: str,
+            training_progress_tracker_path: str,
+            training_checkpoint_path: str,
     ) -> bool:
         missing_files = []
         # training_progress.json
@@ -1459,27 +1464,27 @@ class Trainer(BaseTrainer):
         return progress_tracker
 
     def resume_weights_and_optimizer(
-        self,
-        model_weights_progress_path: str,
-        checkpoint: Checkpoint,
+            self,
+            model_weights_progress_path: str,
+            checkpoint: Checkpoint,
     ):
         CheckpointManager.load_latest_checkpoint(checkpoint, model_weights_progress_path, self.device)
 
     def increase_batch_size(
-        self,
-        progress_tracker: ProgressTracker,
-        validation_output_feature_name: str,
-        increase_batch_size_on_plateau: int,
-        increase_batch_size_on_plateau_patience: int,
-        increase_batch_size_on_plateau_rate: float,
-        increase_batch_size_on_plateau_max: int,
-        increase_batch_size_eval_metric: str = LOSS,
-        increase_batch_size_eval_split: str = TRAINING,
+            self,
+            progress_tracker: ProgressTracker,
+            validation_output_feature_name: str,
+            increase_batch_size_on_plateau: int,
+            increase_batch_size_on_plateau_patience: int,
+            increase_batch_size_on_plateau_rate: float,
+            increase_batch_size_on_plateau_max: int,
+            increase_batch_size_eval_metric: str = LOSS,
+            increase_batch_size_eval_split: str = TRAINING,
     ):
         """Uses the progress tracker to determine if the batch size should be increased."""
         if (
-            not progress_tracker.num_increases_batch_size >= increase_batch_size_on_plateau
-            and not progress_tracker.batch_size == increase_batch_size_on_plateau_max
+                not progress_tracker.num_increases_batch_size >= increase_batch_size_on_plateau
+                and not progress_tracker.batch_size == increase_batch_size_on_plateau_max
         ):
             if increase_batch_size_eval_split == TRAINING:
                 split_metrics = progress_tracker.train_metrics
@@ -1502,13 +1507,13 @@ class Trainer(BaseTrainer):
             else:
                 progress_tracker.last_increase_batch_size_eval_metric_improvement += 1
                 if not is_improved and (
-                    # Batch size increase happened more than N steps ago
-                    progress_tracker.last_increase_batch_size >= increase_batch_size_on_plateau_patience
-                    and (
-                        # No improvement of the evaluation metric since more than N steps ago
-                        progress_tracker.last_increase_batch_size_eval_metric_improvement
-                        >= increase_batch_size_on_plateau_patience
-                    )
+                        # Batch size increase happened more than N steps ago
+                        progress_tracker.last_increase_batch_size >= increase_batch_size_on_plateau_patience
+                        and (
+                                # No improvement of the evaluation metric since more than N steps ago
+                                progress_tracker.last_increase_batch_size_eval_metric_improvement
+                                >= increase_batch_size_on_plateau_patience
+                        )
                 ):
                     progress_tracker.batch_size = min(
                         int(increase_batch_size_on_plateau_rate * progress_tracker.batch_size),
