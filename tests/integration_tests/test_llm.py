@@ -761,7 +761,7 @@ quantization section from your Ludwig configuration."""
                 "config.json",
                 "generation_config.json",
                 "merges.txt",
-                "pytorch_model.bin",
+                "model.safetensors",
                 "special_tokens_map.json",
                 "tokenizer.json",
                 "tokenizer_config.json",
