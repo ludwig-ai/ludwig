@@ -301,8 +301,7 @@ class Callback(ABC):
 
     def on_checkpoint(self, trainer, progress_tracker):
         """Called after each checkpoint is passed, regardless of whether the model was evaluated or saved at that
-         checkpoint.
-         """
+        checkpoint."""
         pass
 
     def on_save_best_checkpoint(self, trainer, progress_tracker, save_path):
