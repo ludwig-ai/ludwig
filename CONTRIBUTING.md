@@ -77,7 +77,7 @@ pip install -e .
    ```
 
 1. Finally, if during the installation of `horovod`, the exception `ModuleNotFoundError: No module named 'packaging'`
-   occurs, you mean need to disable `horovod` (that means you will need train with another backend, just not `horovod`).
+   occurs, you may need to disable `horovod` (that means you will need train with another backend, just not `horovod`).
    To do that, edit the file `requirements_extra.txt` and comment out the line that begins with `horovod`.  After that,
    execute the `pip install` command given in the previous step; you should be able to complete the installation fully.
 
