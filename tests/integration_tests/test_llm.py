@@ -459,6 +459,7 @@ def _verify_lm_lora_finetuning_layers(
 @pytest.mark.parametrize(
     "finetune_strategy,adapter_args",
     [
+        # TODO: <Alex>ALEX</Alex>
         pytest.param(
             None,
             {},
@@ -504,16 +505,20 @@ def _verify_lm_lora_finetuning_layers(
             {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: False}},
             id="adalora_not_merged",
         ),
+        # TODO: <Alex>ALEX</Alex>
+        # TODO: <Alex>ALEX</Alex>
         pytest.param(
             "adaption_prompt",
             {},
             id="adaption_prompt-defaults",
         ),
+        # TODO: <Alex>ALEX</Alex>
         pytest.param(
             "adaption_prompt",
             {"adapter_len": 6, "adapter_layers": 1},
             id="adaption_prompt-modified-defaults",
         ),
+        # TODO: <Alex>ALEX</Alex>
         # pytest.param(
         #     "prompt_tuning",
         #     {
@@ -761,7 +766,7 @@ quantization section from your Ludwig configuration."""
                 "config.json",
                 "generation_config.json",
                 "merges.txt",
-                "pytorch_model.bin",
+                "model.safetensors",
                 "special_tokens_map.json",
                 "tokenizer.json",
                 "tokenizer_config.json",
