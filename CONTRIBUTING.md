@@ -47,32 +47,48 @@ Work on your self-assigned issue and eventually create a Pull Request.
 
    ```bash
    pip install -e .
-   pip install pre-commit
-   pre-commit install
    ```
 
-1. On MacOS with Apple Silicon, if this installation approach runs into errors, you may need to install the following prerequisites:
+   The above command will install only the packages in "requirements.txt" in the developer mode.  If you would like to
+   be able to potentially make changes to the overall Ludwig codebase, then use the following command:
+
+   ```bash
+   pip install -e .[full]
+   ```
+
+   Please note that in certain Shell environments (e.g., the `zhell`), the dependencies in brackets have to be quoted:
+
+   ```bash
+   pip install -e ."[full]"
+   ```
+
+   If you do not need access to the entire Ludwig codebase, but just want to be able to run `pytest` on the essential
+   functionality, then you would replace the above command with:
+
+   ```bash
+   pip install -e .[test]
+   ```
+
+   (Please use `pip install -e ."[test]"` where your Shell environment requires quotes around the square brackets.)
+
+   For the full list of the optional dependencies available in Ludwig, please see
+   [Installation Guide](https://ludwig.ai/latest/getting_started/installation/) and "setup.py" in the root of the Ludwig
+   repository.
+
+1. On MacOS with Apple Silicon, if this installation approach runs into errors, you may need to install the following
+   prerequisites:
 
    ```bash
    brew install cmake libomp
    ```
 
-which require `homebrew` to be installed on your development machine.  Please install these libraries and then repeat the previous step:
+   This step requires `homebrew` to be installed on your development machine.
 
-```bash
-pip install -e .
-```
-
-1. If the installation still does not complete successfully, then it is possible that the order of the
-   "requirements" files matters.  To carry out the installation in the proper sequence, please execute:
+1. Install and run `pre-commit`:
 
    ```bash
-   pip install --use-pep517 --requirement requirements.txt --requirement requirements_benchmarking.txt \
-      --requirement requirements_distributed.txt --requirement requirements_explain.txt \
-      --requirement requirements_hyperopt.txt --requirement requirements_llm.txt \
-      --requirement requirements_serve.txt --requirement requirements_test.txt \
-      --requirement requirements_tree.txt --requirement requirements_viz.txt \
-      --requirement requirements_extra.txt --editable .
+   pip install pre-commit
+   pre-commit install
    ```
 
 1. Finally, if during the installation of `horovod`, the exception `ModuleNotFoundError: No module named 'packaging'`
@@ -80,14 +96,8 @@ pip install -e .
    To do that, edit the file `requirements_extra.txt` and comment out the line that begins with `horovod`.  After that,
    please execute the long `pip install` command given in the previous step.  With these work-around provisions, your
    installation should run to completion successfully.  If you are still having difficulty, please reach out with the
-   specifics of your environment in the Ludwig Community [Slack](https://join.slack.com/t/ludwig-ai/shared_invite/zt-mrxo87w6-DlX5~73T2B4v_g6jj0pJcQ).
-
-Make sure to not forget to install and run `pre-commit`:
-
-```bash
-pip install pre-commit
-pre-commit install
-```
+   specifics of your environment in the Ludwig Community
+   [Slack](https://join.slack.com/t/ludwig-ai/shared_invite/zt-mrxo87w6-DlX5~73T2B4v_g6jj0pJcQ).
 
 1. Develop features on your branch.
 
