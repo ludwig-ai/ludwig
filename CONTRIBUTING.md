@@ -56,7 +56,7 @@ Work on your self-assigned issue and eventually create a Pull Request.
    pip install -e .[full]
    ```
 
-   Please note that in certain Shell environments (e.g., the `zhell`), the dependencies in brackets have to be quoted:
+   Please note that in certain Shell environments (e.g., the `Z shell`), the dependencies in brackets have to be quoted:
 
    ```bash
    pip install -e ."[full]"
