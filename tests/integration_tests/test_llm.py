@@ -761,7 +761,7 @@ quantization section from your Ludwig configuration."""
                 "config.json",
                 "generation_config.json",
                 "merges.txt",
-                "model.safetensors",
+                "pytorch_model.bin",  # If Transformers >4.34.1 is installed with PEFT 0.6.0, use "model.safetensors".
                 "special_tokens_map.json",
                 "tokenizer.json",
                 "tokenizer_config.json",
