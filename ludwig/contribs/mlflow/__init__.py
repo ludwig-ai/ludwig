@@ -225,6 +225,14 @@ def _log_mlflow_loop(q: queue.Queue, log_artifacts: bool = True):
             # Break out of the loop if we're not going to log anything.
             break
 
+        if log_metrics is not None:
+            if log_metrics["llm_outputs"] is not None:
+                mlflow.llm.log_predictions(
+                    inputs=log_metrics["llm_outputs"]["inputs"],
+                    prompts=[0] * len(log_metrics["llm_outputs"]["inputs"]),  # This is a workaround
+                    outputs=log_metrics["llm_outputs"]["outputs"],
+                )
+                del log_metrics["llm_outputs"]
         mlflow.log_metrics(log_metrics, step=steps)
 
         if not q.empty():
@@ -241,10 +249,13 @@ def _log_mlflow(log_metrics, steps, save_path, should_continue, log_artifacts: b
 
     This is used when save_in_background is False.
     """
+    # breakpoint()
     if log_metrics is not None:
         if log_metrics["llm_outputs"] is not None:
             mlflow.llm.log_predictions(
-                inputs=log_metrics["llm_outputs"]["inputs"], outputs=log_metrics["llm_outputs"]["outputs"]
+                inputs=log_metrics["llm_outputs"]["inputs"],
+                prompts=[0] * len(log_metrics["llm_outputs"]["inputs"]),
+                outputs=log_metrics["llm_outputs"]["outputs"],
             )
             del log_metrics["llm_outputs"]
         mlflow.log_metrics(log_metrics, step=steps)

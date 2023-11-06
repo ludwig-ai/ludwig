@@ -58,7 +58,7 @@ from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import path_exists
-from ludwig.utils.llm_utils import update_embedding_layer
+from ludwig.utils.llm_utils import remove_left_padding, update_embedding_layer
 from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
 from ludwig.utils.metrics_printed_table import print_metrics_table
 from ludwig.utils.misc_utils import set_random_seed
@@ -676,15 +676,15 @@ class Trainer(BaseTrainer):
                 for o_feat in self.dist_model.output_features.values()
             }
             eval_example_outputs = self.dist_model((inputs, targets))["predictions"]
-            llm_outputs = {"input": [], "output": []}
+            llm_outputs = {"inputs": [], "outputs": []}
+            input_list = list(inputs.values())[0]
             for i in range(len(eval_example_outputs)):
-                input_list = list(inputs.values())[0]
-                decoded_input = self.dist_model.tokenizer.decode(input_list[i])
-                decoded_output = self.dist_model.tokenizer.decode(eval_example_outputs[i])
-                llm_outputs["input"].append(decoded_input)
-                llm_outputs["output"].append(decoded_output)
-                logger.info(f"INPUT:\n {decoded_input}\n")
-                logger.info(f"OUTPUT:\n {decoded_output}\n")
+                clean_input = remove_left_padding(input_list[i], self.dist_model.tokenizer)[0]
+                clean_output = remove_left_padding(eval_example_outputs[i], self.dist_model.tokenizer)[0]
+                decoded_input = self.dist_model.tokenizer.decode(clean_input)
+                decoded_output = self.dist_model.tokenizer.decode(clean_output)
+                llm_outputs["inputs"].append(decoded_input)
+                llm_outputs["outputs"].append(decoded_output)
 
             progress_tracker.llm_outputs = llm_outputs
 
