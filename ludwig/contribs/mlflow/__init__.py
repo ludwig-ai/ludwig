@@ -242,6 +242,11 @@ def _log_mlflow(log_metrics, steps, save_path, should_continue, log_artifacts: b
     This is used when save_in_background is False.
     """
     if log_metrics is not None:
+        if log_metrics["llm_outputs"] is not None:
+            mlflow.llm.log_predictions(
+                inputs=log_metrics["llm_outputs"]["inputs"], outputs=log_metrics["llm_outputs"]["outputs"]
+            )
+            del log_metrics["llm_outputs"]
         mlflow.log_metrics(log_metrics, step=steps)
         if log_artifacts:
             _log_model(save_path)

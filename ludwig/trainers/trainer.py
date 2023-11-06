@@ -639,6 +639,7 @@ class Trainer(BaseTrainer):
         all_losses: Dict[str, torch.Tensor],
         early_stopping_steps: int,
         checkpoint_manager: CheckpointManager,
+        num_eval_examples: int = 5,
     ) -> bool:
         """Runs evaluation over training, validation, and test sets.
 
@@ -658,6 +659,34 @@ class Trainer(BaseTrainer):
         # ================ Eval ================
         # eval metrics on train
         self.eval_batch_size = max(self.eval_batch_size, progress_tracker.batch_size)
+
+        if self.dist_model.config_obj.model_type == "llm":
+            # Log the input and output of the LLM model
+            num_eval_examples = min(num_eval_examples, training_set.size)
+            inputs = {
+                i_feat.feature_name: torch.from_numpy(
+                    np.array(training_set.dataset[i_feat.proc_column][:num_eval_examples], copy=True)
+                ).to(self.device)
+                for i_feat in self.dist_model.input_features.values()
+            }
+            targets = {
+                o_feat.feature_name: torch.from_numpy(
+                    np.array(training_set.dataset[o_feat.proc_column][:num_eval_examples], copy=True)
+                ).to(self.device)
+                for o_feat in self.dist_model.output_features.values()
+            }
+            eval_example_outputs = self.dist_model((inputs, targets))["predictions"]
+            llm_outputs = {"input": [], "output": []}
+            for i in range(len(eval_example_outputs)):
+                input_list = list(inputs.values())[0]
+                decoded_input = self.dist_model.tokenizer.decode(input_list[i])
+                decoded_output = self.dist_model.tokenizer.decode(eval_example_outputs[i])
+                llm_outputs["input"].append(decoded_input)
+                llm_outputs["output"].append(decoded_output)
+                logger.info(f"INPUT:\n {decoded_input}\n")
+                logger.info(f"OUTPUT:\n {decoded_output}\n")
+
+            progress_tracker.llm_outputs = llm_outputs
 
         if self.evaluate_training_set:
             # Run a separate pass over the training data to compute metrics
@@ -987,7 +1016,6 @@ class Trainer(BaseTrainer):
                         early_stopping_steps,
                         profiler,
                     )
-
                     if self.is_coordinator():
                         # ========== Save training progress ==========
                         logger.debug(

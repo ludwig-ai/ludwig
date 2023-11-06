@@ -109,6 +109,7 @@ class ProgressTracker:
         best_eval_train_metrics: Dict[str, Dict[str, float]],
         best_eval_validation_metrics: Dict[str, Dict[str, float]],
         best_eval_test_metrics: Dict[str, Dict[str, float]],
+        llm_outputs: Dict[str, List[str]] = None,
     ):
         """JSON-serializable holder object that stores information related to training progress.
 
@@ -179,6 +180,7 @@ class ProgressTracker:
         self.train_metrics = train_metrics
         self.validation_metrics = validation_metrics
         self.test_metrics = test_metrics
+        self.llm_outputs = llm_outputs
 
         # Best metrics.
         self.best_eval_train_metrics = best_eval_train_metrics
@@ -210,6 +212,7 @@ class ProgressTracker:
             "best_valid_metric": self.best_eval_metric_value,
             "num_reductions_lr": self.num_reductions_learning_rate,
             "num_increases_bs": self.num_increases_batch_size,
+            "llm_outputs": self.llm_outputs,
         }
         for metrics_dict_name in [
             "train_metrics",
