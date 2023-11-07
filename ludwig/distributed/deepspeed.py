@@ -221,7 +221,9 @@ class DeepSpeedCheckpoint(Checkpoint):
 
         https://deepspeed.readthedocs.io/en/latest/model-checkpointing.html#loading-training-checkpoints
         """
-        _, client_state = self.model.load_checkpoint(save_path, load_lr_scheduler_states=False, load_module_strict=False)
+        _, client_state = self.model.load_checkpoint(
+            save_path, load_lr_scheduler_states=False, load_module_strict=False
+        )
         self.global_step = self._get_global_step(client_state, save_path)
         if self.scheduler is not None and "scheduler_state" in client_state:
             self.scheduler.load_state_dict(client_state["scheduler_state"])
