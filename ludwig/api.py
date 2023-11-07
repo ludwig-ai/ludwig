@@ -351,7 +351,7 @@ class LudwigModel:
         """
         self.model = LudwigModel.create_model(self.config_obj, random_seed=random_seed)
 
-        if self.model.model.device == "cpu":
+        if self.model.model.device.type == "cpu" and torch.cuda.is_available():
             logger.warning(f"LLM was initialized on {self.model.model.device}. Moving to GPU for inference.")
             self.model.model.to(torch.device("cuda"))
 
@@ -925,7 +925,7 @@ class LudwigModel:
                 f"Model type {self.config_obj.model_type} is not supported by this method. Only `llm` model type is "
                 "supported."
             )
-        if not torch.cuda.is_available() or torch.cuda.device_count() == 0:
+        if not torch.cuda.is_available():
             # GPU is generally well-advised for working with LLMs and is required for loading quantized models, see
             # https://github.com/ludwig-ai/ludwig/issues/3695.
             raise ValueError("GPU is not available.")
