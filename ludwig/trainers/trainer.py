@@ -58,7 +58,7 @@ from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import path_exists
-from ludwig.utils.llm_utils import remove_left_padding, update_embedding_layer
+from ludwig.utils.llm_utils import update_embedding_layer
 from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
 from ludwig.utils.metrics_printed_table import print_metrics_table
 from ludwig.utils.misc_utils import set_random_seed
@@ -659,34 +659,6 @@ class Trainer(BaseTrainer):
         # ================ Eval ================
         # eval metrics on train
         self.eval_batch_size = max(self.eval_batch_size, progress_tracker.batch_size)
-
-        if self.dist_model.config_obj.model_type == "llm":
-            # Log the input and output of the LLM model
-            num_eval_examples = min(num_eval_examples, training_set.size)
-            llm_outputs = {"inputs": [], "outputs": []}
-            for i in range(num_eval_examples):
-                inputs = {
-                    i_feat.feature_name: remove_left_padding(
-                        torch.from_numpy(np.array(training_set.dataset[i_feat.proc_column][i], copy=True)),
-                        self.dist_model.tokenizer,
-                    ).to(self.device)
-                    for i_feat in self.dist_model.input_features.values()
-                }
-                targets = {
-                    o_feat.feature_name: remove_left_padding(
-                        torch.from_numpy(np.array(training_set.dataset[o_feat.proc_column][i], copy=True)),
-                        self.dist_model.tokenizer,
-                    ).to(self.device)
-                    for o_feat in self.dist_model.output_features.values()
-                }
-                example_output = self.dist_model((inputs, targets))["predictions"][0]
-                input_tensor = list(inputs.values())[0][0]
-                decoded_input = self.dist_model.tokenizer.decode(input_tensor)
-                decoded_output = self.dist_model.tokenizer.decode(example_output)
-                llm_outputs["inputs"].append(decoded_input)
-                llm_outputs["outputs"].append(decoded_output)
-
-            progress_tracker.llm_outputs = llm_outputs
 
         if self.evaluate_training_set:
             # Run a separate pass over the training data to compute metrics
