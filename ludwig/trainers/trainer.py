@@ -663,26 +663,26 @@ class Trainer(BaseTrainer):
         if self.dist_model.config_obj.model_type == "llm":
             # Log the input and output of the LLM model
             num_eval_examples = min(num_eval_examples, training_set.size)
-            inputs = {
-                i_feat.feature_name: torch.from_numpy(
-                    np.array(training_set.dataset[i_feat.proc_column][:num_eval_examples], copy=True)
-                ).to(self.device)
-                for i_feat in self.dist_model.input_features.values()
-            }
-            targets = {
-                o_feat.feature_name: torch.from_numpy(
-                    np.array(training_set.dataset[o_feat.proc_column][:num_eval_examples], copy=True)
-                ).to(self.device)
-                for o_feat in self.dist_model.output_features.values()
-            }
-            eval_example_outputs = self.dist_model((inputs, targets))["predictions"]
             llm_outputs = {"inputs": [], "outputs": []}
-            input_list = list(inputs.values())[0]
-            for i in range(len(eval_example_outputs)):
-                clean_input = remove_left_padding(input_list[i], self.dist_model.tokenizer)[0]
-                clean_output = remove_left_padding(eval_example_outputs[i], self.dist_model.tokenizer)[0]
-                decoded_input = self.dist_model.tokenizer.decode(clean_input)
-                decoded_output = self.dist_model.tokenizer.decode(clean_output)
+            for i in range(num_eval_examples):
+                inputs = {
+                    i_feat.feature_name: remove_left_padding(
+                        torch.from_numpy(np.array(training_set.dataset[i_feat.proc_column][i], copy=True)),
+                        self.dist_model.tokenizer,
+                    ).to(self.device)
+                    for i_feat in self.dist_model.input_features.values()
+                }
+                targets = {
+                    o_feat.feature_name: remove_left_padding(
+                        torch.from_numpy(np.array(training_set.dataset[o_feat.proc_column][i], copy=True)),
+                        self.dist_model.tokenizer,
+                    ).to(self.device)
+                    for o_feat in self.dist_model.output_features.values()
+                }
+                example_output = self.dist_model((inputs, targets))["predictions"][0]
+                input_tensor = list(inputs.values())[0][0]
+                decoded_input = self.dist_model.tokenizer.decode(input_tensor)
+                decoded_output = self.dist_model.tokenizer.decode(example_output)
                 llm_outputs["inputs"].append(decoded_input)
                 llm_outputs["outputs"].append(decoded_output)
 
