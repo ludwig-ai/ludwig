@@ -227,11 +227,7 @@ def _log_mlflow_loop(q: queue.Queue, log_artifacts: bool = True):
 
         if log_metrics is not None:
             if log_metrics["llm_eval_examples"] is not None:
-                mlflow.llm.log_predictions(
-                    inputs=log_metrics["llm_eval_examples"]["inputs"],
-                    prompts=log_metrics["llm_eval_examples"]["targets"],
-                    outputs=log_metrics["llm_eval_examples"]["outputs"],
-                )
+                mlflow.log_table(log_metrics["llm_eval_examples"], artifact_file="llm_eval_examples.json")
                 del log_metrics["llm_eval_examples"]
         mlflow.log_metrics(log_metrics, step=steps)
 
@@ -251,11 +247,7 @@ def _log_mlflow(log_metrics, steps, save_path, should_continue, log_artifacts: b
     """
     if log_metrics is not None:
         if log_metrics["llm_eval_examples"] is not None:
-            mlflow.llm.log_predictions(
-                inputs=log_metrics["llm_eval_examples"]["inputs"],
-                prompts=log_metrics["llm_eval_examples"]["targets"],
-                outputs=log_metrics["llm_eval_examples"]["outputs"],
-            )
+            mlflow.log_table(log_metrics["llm_eval_examples"], artifact_file="llm_eval_examples.json")
             del log_metrics["llm_eval_examples"]
         mlflow.log_metrics(log_metrics, step=steps)
         if log_artifacts:
