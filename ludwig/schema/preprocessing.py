@@ -26,6 +26,13 @@ class PreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         parameter_metadata=PREPROCESSING_METADATA["sample_size"],
     )
 
+    eval_steps: float = schema_utils.NonNegativeInteger(
+        default=None,
+        allow_none=True,
+        description="The number of steps to use for evaluation. If None, the entire dataset will be used.",
+        parameter_metadata=PREPROCESSING_METADATA["eval_steps"],
+    )
+
     oversample_minority: float = schema_utils.NonNegativeFloat(
         default=None,
         allow_none=True,

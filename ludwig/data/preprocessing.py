@@ -2151,6 +2151,14 @@ def _preprocess_file_for_training(
         features, split_dataset(data, preprocessing_params, backend, random_seed)
     )
 
+    if config["preprocessing"]["eval_steps"]:
+        num_val_samples = int(
+            config["preprocessing"]["eval_steps"] * len(validation_data) / (len(validation_data) + len(test_data))
+        )
+        num_test_samples = config["preprocessing"]["eval_steps"] - num_val_samples
+        validation_data = validation_data.head(num_val_samples)
+        test_data = test_data.head(num_test_samples)
+
     if dataset and backend.is_coordinator() and not skip_save_processed_input:
         logger.debug("writing split file")
         splits_df = concatenate_splits(training_data, validation_data, test_data, backend)
@@ -2219,6 +2227,14 @@ def _preprocess_df_for_training(
     training_set, validation_set, test_set = drop_extra_cols(
         features, split_dataset(data, preprocessing_params, backend, random_seed)
     )
+
+    if config["preprocessing"]["eval_steps"]:
+        num_val_samples = int(
+            config["preprocessing"]["eval_steps"] * len(validation_set) / (len(validation_set) + len(test_set))
+        )
+        num_test_samples = config["preprocessing"]["eval_steps"] - num_val_samples
+        validation_set = validation_set.head(num_val_samples)
+        test_set = test_set.head(num_test_samples)
 
     logger.info("Building dataset: DONE")
     if preprocessing_params["oversample_minority"] or preprocessing_params["undersample_majority"]:

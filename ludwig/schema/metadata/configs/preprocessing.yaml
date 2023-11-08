@@ -60,6 +60,19 @@ sample_size:
     expected_impact: 2
     suggested_values: Depends on data size
     ui_display_name: Sample Size
+eval_steps:
+    default_value_reasoning:
+        The default value is None because we do not want to lower the number of evaluation steps
+        by default, and we do not know the size of an arbitrary dataset.
+        By setting the default to None, we simply evaluate on the full evaluation set.
+    description_implications:
+        Effectively samples from the evaluation set. Could be useful if want to shorten the amount
+        of time evaluation takes.
+    example_value:
+        - 1000
+    expected_impact: 2
+    suggested_values: Depends on data size
+    ui_display_name: Evaluation Steps
 column:
     expected_impact: 3
     ui_display_name: Split Column
