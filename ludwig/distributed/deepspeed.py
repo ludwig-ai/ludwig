@@ -223,7 +223,7 @@ class DeepSpeedCheckpoint(Checkpoint):
         """
         # NOTE(geoffrey): `load_module_strict=False` because this code path is frequently used to load models trained
         # using adapter-based fine-tuning, where the checkpoints only contain the adapter weights, and not the full
-        # model weights. This may lead to silent, unexpected behavior for resuming full model fine-tuning, 
+        # model weights. This may lead to silent, unexpected behavior for resuming full model fine-tuning,
         # where all the model weights *must* be loaded in.
         # TODO(geoffrey): Add a boolean arg to function to control load_module_strict behavior.
         _, client_state = self.model.load_checkpoint(
