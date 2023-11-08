@@ -226,7 +226,9 @@ class DeepSpeedCheckpoint(Checkpoint):
         # model weights. This may lead to silent, unexpected behavior for resuming full model fine-tuning, 
         # where all the model weights *must* be loaded in.
         # TODO(geoffrey): Add a boolean arg to function to control load_module_strict behavior.
-        _, client_state = self.model.load_checkpoint(save_path, load_lr_scheduler_states=False, load_module_strict=False)
+        _, client_state = self.model.load_checkpoint(
+            save_path, load_lr_scheduler_states=False, load_module_strict=False
+        )
         self.global_step = self._get_global_step(client_state, save_path)
         if self.scheduler is not None and "scheduler_state" in client_state:
             self.scheduler.load_state_dict(client_state["scheduler_state"])
