@@ -639,7 +639,6 @@ class Trainer(BaseTrainer):
         all_losses: Dict[str, torch.Tensor],
         early_stopping_steps: int,
         checkpoint_manager: CheckpointManager,
-        num_eval_examples: int = 5,
     ) -> bool:
         """Runs evaluation over training, validation, and test sets.
 
