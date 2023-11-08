@@ -941,6 +941,7 @@ class Trainer(BaseTrainer):
 
                 progress_bar_config = {
                     "desc": "Training",
+                    "initial": progress_tracker.steps,
                     "total": self.total_steps,
                     "disable": is_progressbar_disabled(),
                     "file": sys.stdout,
