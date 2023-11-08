@@ -183,7 +183,7 @@ class ProgressTracker:
 
         # This should be an dictionary whose keys are "inputs", "targets", and "outputs" and whose values are dicts.
         # The keys of each subdict are the names of the input/target/output features and the values are lists of
-        # example tensors.
+        # example tensors. This is only set for LLM fine-tuning.
         self.llm_eval_examples = llm_eval_examples
 
         # Best metrics.
