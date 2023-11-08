@@ -345,9 +345,11 @@ class LlmFineTunePredictor(Predictor):
             collect_logits: Return model logits and final layer activations.
 
         Returns:
-            Tuple of dictionaries of (metrics, predictions). The keys of metrics are determined by the metrics in the
-            model config. The keys of the predictions dictionary depend on which values are requested by the caller:
-            collect_predictions, collect_logits.
+            Tuple of dictionaries of (metrics, predictions, input/target/output dictionary). The keys of metrics are
+            determined by the metrics in the model config. The keys of the predictions dictionary depend on which values
+            are requested by the caller: collect_predictions, collect_logits. The keys of the input/target/output
+            dictionary are "inputs", "targets", and "outputs". The values of each of these keys are dictionaries of
+            feature names to lists of tensors. The tensors are the inputs, targets, and outputs for each batch.
         """
         prev_model_training_mode = self.dist_model.training  # store previous model training mode
         self.dist_model.eval()  # set model to eval mode
