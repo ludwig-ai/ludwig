@@ -216,11 +216,15 @@ class ProgressTracker:
             "best_valid_metric": self.best_eval_metric_value,
             "num_reductions_lr": self.num_reductions_learning_rate,
             "num_increases_bs": self.num_increases_batch_size,
-            "llm_eval_examples": self.llm_eval_examples,  # This is a non-numerical metric
-            # This should be an dictionary whose keys are "inputs", "targets", and "outputs" and whose values are dicts.
-            # The keys of each subdict are the names of the input/target/output features and the values are lists of
-            # example tensors.
         }
+
+        # This is a non-numerical metric that is only for LLM fine-tuning
+        # This should be an dictionary whose keys are "inputs", "targets", and "outputs" and whose values are dicts.
+        # The keys of each subdict are the names of the input/target/output features and the values are lists of
+        # example tensors.
+        if self.llm_eval_examples:
+            log_metrics["llm_eval_examples"] = self.llm_eval_examples
+
         for metrics_dict_name in [
             "train_metrics",
             "validation_metrics",
