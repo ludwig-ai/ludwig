@@ -105,6 +105,7 @@ def test_progress_tracker_empty():
         "best_eval_metric_epoch": 0,
         "checkpoint_number": 0,
         "last_improvement_steps": 0,
+        "llm_eval_examples": None,
     }
 
 
@@ -150,6 +151,7 @@ def test_progress_tracker():
         "tune_checkpoint_num": 0,
         "validation_metrics.combined.loss": 0.2,
         "last_improvement_steps": 0,
+        "llm_eval_examples": None,
     }
 
 
@@ -294,6 +296,7 @@ def test_full_progress_tracker():
         "validation_metrics.Survived.loss": 4.473,
         "validation_metrics.Survived.roc_auc": 0.671,
         "validation_metrics.combined.loss": 4.473,
+        "llm_eval_examples": None,
     }
 
 
