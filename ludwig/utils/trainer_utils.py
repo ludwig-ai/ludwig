@@ -180,6 +180,10 @@ class ProgressTracker:
         self.train_metrics = train_metrics
         self.validation_metrics = validation_metrics
         self.test_metrics = test_metrics
+
+        # This should be an dictionary whose keys are "inputs", "targets", and "outputs" and whose values are dicts.
+        # The keys of each subdict are the names of the input/target/output features and the values are lists of
+        # example tensors.
         self.llm_eval_examples = llm_eval_examples
 
         # Best metrics.
