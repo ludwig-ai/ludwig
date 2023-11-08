@@ -208,7 +208,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
     )
 
     steps_per_checkpoint: int = schema_utils.NonNegativeInteger(
-        default=0,
+        default=1000,
         description=(
             "How often the model is checkpointed. Also dictates maximum evaluation frequency. If 0 the model is "
             "checkpointed after every epoch."
@@ -849,7 +849,7 @@ class LLMTrainerConfig(BaseTrainerConfig):
     )
 
     steps_per_checkpoint: int = schema_utils.NonNegativeInteger(
-        default=0,
+        default=1000,
         description="Number of steps per checkpoint in the LLM trainer.",
     )
 
