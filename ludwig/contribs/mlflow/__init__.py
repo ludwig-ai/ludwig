@@ -249,12 +249,11 @@ def _log_mlflow(log_metrics, steps, save_path, should_continue, log_artifacts: b
 
     This is used when save_in_background is False.
     """
-    # breakpoint()
     if log_metrics is not None:
         if log_metrics["llm_eval_examples"] is not None:
             mlflow.llm.log_predictions(
                 inputs=log_metrics["llm_eval_examples"]["inputs"],
-                prompts=[0] * len(log_metrics["llm_eval_examples"]["inputs"]),
+                prompts=log_metrics["llm_eval_examples"]["targets"],
                 outputs=log_metrics["llm_eval_examples"]["outputs"],
             )
             del log_metrics["llm_eval_examples"]
