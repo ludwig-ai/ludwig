@@ -266,3 +266,51 @@ class ClassifierConfig(BaseDecoderConfig):
         description="Initializer for the bias vector.",
         parameter_metadata=DECODER_METADATA["Classifier"]["bias_initializer"],
     )
+
+
+@DeveloperAPI
+@register_decoder_config("tart", [BINARY, CATEGORY], model_types=[MODEL_ECD, MODEL_GBM, MODEL_LLM])
+@ludwig_dataclass
+class TARTDecoderConfig(BaseDecoderConfig):
+    reasoning_head: str = schema_utils.StringOptions(
+        options=[
+            "EleutherAI/gpt-neo-1.3B",
+            "EleutherAI/gpt-neo-125m",
+            "EleutherAI/pythia-1.4b-deduped",
+            "EleutherAI/pythia-2.8b-deduped",
+            "facebook/opt-iml-max-1.3b",
+        ],
+        default=None,
+        allow_none=True,
+        description="The model architecture to use in the reasoning head. Defaults to the GPT-2 backbone.",
+    )
+
+    max_sequence_length: int = common_fields.MaxSequenceLengthField(default=256)
+
+    num_pca_components: int = schema_utils.PositiveInteger(
+        default=16, description="Target size of the PCA projections."
+    )
+
+    embedding_size: int = schema_utils.PositiveInteger(
+        default=256, description="Size of the hidden state of the reasoning head."
+    )
+
+    num_layers: int = schema_utils.PositiveInteger(
+        default=12, description="Number of layers in the reasoning head model. Only used with the GPT-2 backbone."
+    )
+
+    num_heads: int = schema_utils.PositiveInteger(
+        default=8,
+        description="The number of attention heads in the reasoning module. Only used with the GPT-2 backbone.",
+    )
+
+    embedding_protocol: str = schema_utils.StringOptions(
+        options=["vanilla", "loo"],
+        default="loo",
+        description=(
+            'The embedding protocol used to create TART inputs. For "vanilla", the test example is appended to the '
+            'training set and the sequence is passed to the base model. For "loo" embeddings are generated for each '
+            "train example separately by placing all other train examples before it in the prompt and averaging the "
+            "embeddings over the final example's tokens."
+        ),
+    )
