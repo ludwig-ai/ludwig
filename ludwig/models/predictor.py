@@ -234,7 +234,11 @@ class Predictor(BasePredictor):
                 progress_bar = LudwigProgressBar(self.report_tqdm_to_ray, progress_bar_config, self.is_coordinator())
 
                 predictions = defaultdict(list)
-                eval_steps = self.dist_model.config_obj.trainer.eval_steps
+                eval_steps = (
+                    self.dist_model.config_obj.trainer.eval_steps
+                    if hasattr(self.dist_model.config_obj.trainer, "eval_steps")
+                    else None
+                )
                 eval_steps_counter = 0
                 while not batcher.last_batch():
                     if eval_steps and eval_steps_counter >= eval_steps:
@@ -371,7 +375,11 @@ class LlmFineTunePredictor(Predictor):
                 progress_bar = LudwigProgressBar(self.report_tqdm_to_ray, progress_bar_config, self.is_coordinator())
 
                 predictions = defaultdict(list)
-                eval_steps = self.dist_model.config_obj.trainer.eval_steps
+                eval_steps = (
+                    self.dist_model.config_obj.trainer.eval_steps
+                    if hasattr(self.dist_model.config_obj.trainer, "eval_steps")
+                    else None
+                )
                 eval_steps_counter = 0
                 while not batcher.last_batch():
                     if eval_steps and eval_steps_counter >= eval_steps:
