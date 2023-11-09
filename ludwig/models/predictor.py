@@ -237,6 +237,7 @@ class Predictor(BasePredictor):
                 eval_steps = (
                     self.dist_model.config_obj.trainer.eval_steps
                     if hasattr(self.dist_model.config_obj.trainer, "eval_steps")
+                    and hasattr(self.dist_model, "config_obj")
                     else None
                 )
                 eval_steps_counter = 0
@@ -378,6 +379,7 @@ class LlmFineTunePredictor(Predictor):
                 eval_steps = (
                     self.dist_model.config_obj.trainer.eval_steps
                     if hasattr(self.dist_model.config_obj.trainer, "eval_steps")
+                    and hasattr(self.dist_model, "config_obj")
                     else None
                 )
                 eval_steps_counter = 0
