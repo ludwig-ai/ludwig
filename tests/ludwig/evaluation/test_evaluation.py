@@ -32,31 +32,17 @@ def test_eval_steps_determinism():
     generation:
         temperature: null
         do_sample: False
-        max_new_tokens: 512
 
     preprocessing:
         split:
             type: fixed
             column: split
 
-    adapter:
-        type: lora
-
-    quantization:
-        bits: 4
-
     trainer:
         type: finetune
-        optimizer:
-            type: paged_adam
         epochs: 1
         batch_size: 1
         eval_batch_size: 2
-        gradient_accumulation_steps: 16
-        learning_rate: 0.0004
-        learning_rate_scheduler:
-            warmup_fraction: 0.03
-        enable_gradient_checkpointing: True
 
     backend:
         type: local
