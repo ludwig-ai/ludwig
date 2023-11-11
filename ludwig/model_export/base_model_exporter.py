@@ -5,8 +5,9 @@ import torch
 
 class LudwigTorchWrapper(torch.nn.Module):
     """Base class that establishes the contract for exporting to different file formats."""
+
     def __init__(self, model):
-        super(LudwigTorchWrapper, self).__init__()
+        super().__init__()
         self.model = model
 
     def forward(self, x):
@@ -14,11 +15,9 @@ class LudwigTorchWrapper(torch.nn.Module):
 
 
 class BaseModelExporter(ABC):
-
     @abstractmethod
     def export(self, model_path, export_path, export_args_override):
         pass
-
 
     @abstractmethod
     def check_model_export(self, path):

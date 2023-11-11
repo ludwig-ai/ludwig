@@ -1,10 +1,10 @@
-from abc import ABC, abstractmethod
-
-import torch
-import onnx
-from ludwig.api import LudwigModel
 import os
-from ludwig.model_export.base_model_exporter import LudwigTorchWrapper, BaseModelExporter
+
+import onnx
+import torch
+
+from ludwig.api import LudwigModel
+from ludwig.model_export.base_model_exporter import BaseModelExporter, LudwigTorchWrapper
 
 
 # Copyright (c) 2019 Uber Technologies, Inc.
@@ -25,7 +25,6 @@ class OnnxExporter(BaseModelExporter):
     """Class that abstracts the convertion of torch to onnx."""
 
     def export(self, model_path, export_path, output_model_name):
-
         ludwig_model = LudwigModel.load(model_path)
         model = LudwigTorchWrapper(ludwig_model.model)  # Wrap the model
         model.eval()  # inference mode, is this needed.. I think onnx export does this for us
@@ -44,7 +43,6 @@ class OnnxExporter(BaseModelExporter):
             input_names=["input"],
             output_names=["combiner_hidden_1", "output", "combiner_hidden_2"],
         )
-
 
     def check_model_export(self, path):
         onnx_model = onnx.load(path)
