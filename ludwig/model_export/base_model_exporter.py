@@ -2,10 +2,9 @@ from abc import ABC, abstractmethod
 
 import torch
 
-from ludwig.api import LudwigModel
-
 
 class LudwigTorchWrapper(torch.nn.Module):
+    """Base class that establishes the contract for exporting to different file formats."""
     def __init__(self, model):
         super(LudwigTorchWrapper, self).__init__()
         self.model = model
