@@ -9,6 +9,7 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BINARY
 from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
+from ludwig.schema.decoders.base import TARTDecoderConfig
 from ludwig.utils.registry import Registry
 from ludwig.utils.torch_utils import Dense
 
@@ -143,7 +144,7 @@ class BinaryTARTDecoder(Decoder):
 
     @staticmethod
     def get_schema_cls():
-        pass
+        return TARTDecoderConfig
 
     @property
     def input_shape(self):
