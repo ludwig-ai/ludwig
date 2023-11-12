@@ -2,6 +2,7 @@ import logging
 from typing import Callable, List
 
 import torch
+from sklearn.decomposition import PCA
 from transformers import GPT2Config, GPT2Model
 
 from ludwig.api_annotations import DeveloperAPI
@@ -20,7 +21,6 @@ _embedding_protocol_registry = Registry()
 @DeveloperAPI
 def get_embedding_protocol(name: str) -> Callable:
     """Get a registered embedding protocol by name.
-
     Args:
         name: The name of the embedding protocol
 
@@ -79,6 +79,9 @@ class BinaryTARTDecoder(Decoder):
         **kwargs,
     ):
         super().__init__()
+        self.decoder_config = decoder_config
+
+        self.pca_is_fit = False
 
         # The embedding protocol determines how the inputs are averaged for processing by the reasoning module.
         self.embedding_protocol = get_embedding_protocol(self.config.embedding_protocol)
@@ -87,12 +90,12 @@ class BinaryTARTDecoder(Decoder):
         self.pca = Dense(
             input_size,
             self.config.num_pca_components,
-            use_bias=use_bias,
+            use_bias=False,
             weights_initializer=weights_initializer,
             bias_initializer=bias_initializer,
         )
 
-        # Transform the reduced inputs to ma
+        # Transform the reduced input to work with the reasoning module.
         self.dense1 = Dense(
             self.config.num_pca_components,
             self.config.embedding_size,
@@ -115,7 +118,7 @@ class BinaryTARTDecoder(Decoder):
 
         self.reasoning_module = GPT2Model(self.backbone_config)
 
-        # Tranform the embeddings to the output feature shape.
+        # Transform the embeddings to the output feature shape.
         self.dense2 = Dense(
             self.config.embedding_size,
             1,
@@ -124,8 +127,19 @@ class BinaryTARTDecoder(Decoder):
             bias_initializer=bias_initializer,
         )
 
-    def set_pca_state(self, state):
-        pass
+    def fit_pca(self, inputs: List[torch.Tensor]):
+        """Fit a PCA model to vanilla or LOO embedded inputs.
+
+        Args:
+            inputs: Base model output embedded with one of the embedding protocols.
+        """
+        pca = PCA(n_components=self.decoder_config.num_pca_components, whiten=True)
+        pca.fit(inputs)
+
+        state_dict = {"weight": torch.from_numpy(pca.components_)}
+        self.pca.load_state_dict(state_dict)
+
+        self.pca_is_fit = True
 
     @staticmethod
     def get_schema_cls():
