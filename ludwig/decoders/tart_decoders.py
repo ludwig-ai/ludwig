@@ -150,6 +150,11 @@ class BinaryTARTDecoder(Decoder):
         return self.pca.input_shape
 
     def forward(self, inputs, mask=None):
+        if not self.pca_is_fit:
+            raise RuntimeError(
+                "Attempting to use a TART decoder without first fitting it to the data. Please run `ludwig train` "
+                "with this config before predicting."
+            )
         x = self.pca(inputs)
         x = self.dense1(x)
         x = self.reasoning_module(x)
