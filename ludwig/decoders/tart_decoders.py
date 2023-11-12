@@ -85,12 +85,12 @@ class BinaryTARTDecoder(Decoder):
         self.pca_is_fit = False
 
         # The embedding protocol determines how the inputs are averaged for processing by the reasoning module.
-        self.embedding_protocol = get_embedding_protocol(self.config.embedding_protocol)
+        self.embedding_protocol = get_embedding_protocol(self.decoder_config.embedding_protocol)
 
         # Combiner/LLM output is potentially very large, so it is reduced with PCA.
         self.pca = Dense(
             input_size,
-            self.config.num_pca_components,
+            self.decoder_config.num_pca_components,
             use_bias=False,
             weights_initializer=weights_initializer,
             bias_initializer=bias_initializer,
@@ -98,8 +98,8 @@ class BinaryTARTDecoder(Decoder):
 
         # Transform the reduced input to work with the reasoning module.
         self.dense1 = Dense(
-            self.config.num_pca_components,
-            self.config.embedding_size,
+            self.decoder_config.num_pca_components,
+            self.decoder_config.embedding_size,
             use_bias=use_bias,
             weights_initializer=weights_initializer,
             bias_initializer=bias_initializer,
@@ -107,21 +107,21 @@ class BinaryTARTDecoder(Decoder):
 
         # Set up the encoder/backbone of the reasoning head. We use
         self._backbone_config = GPT2Config(
-            n_positions=2 * self.config.max_sequence_length,
-            n_embd=self.config.embedding_size,
-            n_layer=self.config.num_layers,
-            n_head=self.config.num_heads,
+            n_positions=2 * self.decoder_config.max_sequence_length,
+            n_embd=self.decoder_config.embedding_size,
+            n_layer=self.decoder_config.num_layers,
+            n_head=self.decoder_config.num_heads,
             resid_pdrop=0.0,
             embd_pdrop=0.0,
             attn_pdrop=0.0,
             use_cache=False,
         )
 
-        self.reasoning_module = GPT2Model(self.backbone_config)
+        self.reasoning_module = GPT2Model(self._backbone_config)
 
         # Transform the embeddings to the output feature shape.
         self.dense2 = Dense(
-            self.config.embedding_size,
+            self.decoder_config.embedding_size,
             1,
             use_bias=use_bias,
             weights_initializer=weights_initializer,
@@ -164,7 +164,7 @@ class BinaryTARTDecoder(Decoder):
 
 
 @register_embedding_protocol("vanilla")
-def vanilla_embedding(inputs: List[torch.Tensor]) -> torch.Tensor:
+def vanilla_embeddings(inputs: List[torch.Tensor]) -> torch.Tensor:
     pass
 
 
