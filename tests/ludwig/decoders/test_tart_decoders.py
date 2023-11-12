@@ -1,7 +1,7 @@
 import pytest
 from transformers import GPT2Config, GPT2Model
 
-from ludwig.decoders.tart_decoders import BinaryTARTDecoder, loo_embeddings  # , vanilla_embeddings
+from ludwig.decoders.tart_decoders import BinaryTARTDecoder, get_embedding_protocol
 from ludwig.schema.decoders.base import TARTDecoderConfig
 from ludwig.utils.torch_utils import Dense
 
@@ -23,7 +23,7 @@ class TestBinaryTARTDecoder:
 
         assert decoder.decoder_config is default_tart_decoder_schema
         assert not decoder.pca_is_fit
-        assert decoder.embedding_protocol is loo_embeddings
+        assert decoder.embedding_protocol is get_embedding_protocol(decoder.decoder_config.embedding_protocol)
 
         assert isinstance(decoder.pca, Dense)
         # assert decoder.pca.size() == (
