@@ -1,6 +1,7 @@
 import logging
-from typing import Callable, List
+from typing import Callable, List, Union
 
+import numpy as np
 import torch
 from sklearn.decomposition import PCA
 from transformers import GPT2Config, GPT2Model
@@ -50,7 +51,7 @@ def register_embedding_protocol(name: str) -> Callable:
         An inner function to use as a decorator.
     """
 
-    def wrap(func):
+    def wrap(func: Callable) -> Callable:
         """Register an embedding protocol function by name.
 
         Args:
@@ -128,7 +129,7 @@ class BinaryTARTDecoder(Decoder):
             bias_initializer=bias_initializer,
         )
 
-    def fit_pca(self, inputs: List[torch.Tensor]):
+    def fit_pca(self, inputs: Union[np.ndarray, List[np.ndarray]]):
         """Fit a PCA model to vanilla or LOO embedded inputs.
 
         Args:
@@ -147,10 +148,10 @@ class BinaryTARTDecoder(Decoder):
         return TARTDecoderConfig
 
     @property
-    def input_shape(self):
-        return self.pca.input_shape
+    def input_shape(self) -> torch.Size:
+        return self.pca.dense.in_features
 
-    def forward(self, inputs, mask=None):
+    def forward(self, inputs, mask=None) -> torch.Tensor:
         if not self.pca_is_fit:
             raise RuntimeError(
                 "Attempting to use a TART decoder without first fitting it to the data. Please run `ludwig train` "
