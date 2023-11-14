@@ -378,7 +378,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def _read_image_if_bytes_obj_and_resize(
-        img_entry: Union[bytes, torch.Tensor, np.ndarray],
+        img_entry: Union[bytes, torch.Tensor, np.ndarray, str],
         img_width: int,
         img_height: int,
         should_resize: bool,
@@ -388,7 +388,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
         standardize_image: str,
     ) -> Optional[np.ndarray]:
         """
-        :param img_entry Union[bytes, torch.Tensor, np.ndarray]: if str file path to the
+        :param img_entry Union[bytes, torch.Tensor, np.ndarray, str]: if str file path to the
             image else torch.Tensor of the image itself
         :param img_width: expected width of the image
         :param img_height: expected height of the image
