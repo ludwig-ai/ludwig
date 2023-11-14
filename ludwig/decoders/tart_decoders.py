@@ -138,7 +138,7 @@ class BinaryTARTDecoder(Decoder):
         pca = PCA(n_components=self.decoder_config.num_pca_components, whiten=True)
         pca.fit(inputs)
 
-        state_dict = {"weight": torch.from_numpy(pca.components_)}
+        state_dict = {"dense.weight": torch.from_numpy(pca.components_)}
         self.pca.load_state_dict(state_dict)
 
         self.pca_is_fit = True
@@ -151,17 +151,55 @@ class BinaryTARTDecoder(Decoder):
     def input_shape(self) -> torch.Size:
         return self.pca.dense.in_features
 
-    def forward(self, inputs, mask=None) -> torch.Tensor:
+    def _combine_gen(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+        """Interleave the inputs and labels into a single sequence.
+
+        Args:
+            x: Input examples reduced by PCA, shape (batch_size, sequence_length, num_pca_components)
+            y: Label for each example, shape (batch_size, 1)
+
+        Returns:
+            The inputs and labels stacked, shape (batch_size, 2 * sequence_length, num_pca_components)
+        """
+        batch_size, num_examples, reduced_size = x.shape
+        y_list = []
+
+        # Assume one output per input
+        y_i = y[0, ::]
+        y_i_wide = torch.cat(
+            (
+                y_i.view(batch_size, num_examples, 1),
+                torch.zeros(batch_size, num_examples, reduced_size - 1, device=y.device),
+            ),
+            axis=2,
+        )
+        y_list.append(y_i_wide)
+        zs = torch.stack((x, *y_list), dim=2)
+        zs = zs.view(batch_size, (2) * num_examples, reduced_size)
+
+        return zs
+
+    def forward(self, inputs: torch.Tensor, labels: torch.Tensor, mask=None) -> torch.Tensor:
         if not self.pca_is_fit:
             raise RuntimeError(
                 "Attempting to use a TART decoder without first fitting it to the data. Please run `ludwig train` "
                 "with this config before predicting."
             )
         x = self.pca(inputs)
-        x = self.dense1(x)
-        x = self.reasoning_module(x)
-        y = self.dense2(x)
-        return y
+
+        inds = torch.arange(labels.shape[-1])
+        stacked = self._combine_gen(x, labels)
+
+        embeds = self.dense1(stacked)
+        embeds = self.reasoning_module(inputs_embeds=embeds).last_hidden_state
+
+        prediction = self.dense2(embeds)
+
+        # Assume one output per input
+        preds = []
+        preds.append(prediction[:, 0 :: self.y_step_size, 0][:, inds])
+
+        return preds
 
 
 @register_embedding_protocol("vanilla")
