@@ -45,6 +45,7 @@ from ludwig.schema.features.loss.loss import CORNLossConfig
 from ludwig.types import (
     FeatureMetadataDict,
     FeaturePostProcessingOutputDict,
+    ModelConfigDict,
     PreprocessingConfigDict,
     TrainingSetMetadataDict,
 )
@@ -145,7 +146,11 @@ class CategoryFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def get_feature_meta(
-        column, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
+        config: ModelConfigDict,
+        column,
+        preprocessing_parameters: PreprocessingConfigDict,
+        backend,
+        is_input_feature: bool,
     ) -> FeatureMetadataDict:
         idx2str, str2idx, str2freq = create_vocabulary_single_token(
             column,
@@ -255,7 +260,11 @@ class CategoryDistributionFeatureMixin(VectorFeatureMixin):
 
     @staticmethod
     def get_feature_meta(
-        column, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
+        config: ModelConfigDict,
+        column,
+        preprocessing_parameters: PreprocessingConfigDict,
+        backend,
+        is_input_feature: bool,
     ) -> FeatureMetadataDict:
         idx2str = preprocessing_parameters["vocab"]
         str2idx = {s: i for i, s in enumerate(idx2str)}
@@ -389,29 +398,21 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         if isinstance(feature_config.loss.class_weights, (list, tuple)):
             if len(feature_config.loss.class_weights) != feature_config.num_classes:
                 raise ValueError(
-                    "The length of class_weights ({}) is not compatible with "
-                    "the number of classes ({}) for feature {}. "
+                    f"The length of class_weights ({len(feature_config.loss.class_weights)}) is not compatible with "
+                    f"the number of classes ({feature_config.num_classes}) for feature {feature_config.column}. "
                     "Check the metadata JSON file to see the classes "
                     "and their order and consider there needs to be a weight "
-                    "for the <UNK> class too.".format(
-                        len(feature_config.loss.class_weights),
-                        feature_config.num_classes,
-                        feature_config.column,
-                    )
+                    "for the <UNK> class too."
                 )
 
         if isinstance(feature_config.loss.class_weights, dict):
             if feature_metadata["str2idx"].keys() != feature_config.loss.class_weights.keys():
                 raise ValueError(
-                    "The class_weights keys ({}) are not compatible with "
-                    "the classes ({}) of feature {}. "
+                    f"The class_weights keys ({feature_config.loss.class_weights.keys()}) are not compatible with "
+                    f'the classes ({feature_metadata["str2idx"].keys()}) of feature {feature_config.column}. '
                     "Check the metadata JSON file to see the classes "
                     "and consider there needs to be a weight "
-                    "for the <UNK> class too.".format(
-                        feature_config.loss.class_weights.keys(),
-                        feature_metadata["str2idx"].keys(),
-                        feature_config.column,
-                    )
+                    "for the <UNK> class too."
                 )
             else:
                 class_weights = feature_config.loss.class_weights
@@ -458,13 +459,11 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
 
                 if all_rows_length != feature_config.num_classes:
                     raise ValueError(
-                        "The size of the class_similarities matrix of {} is "
-                        "{}, different from the number of classes ({}). "
+                        f"The size of the class_similarities matrix of {feature_config.column} is "
+                        f"{all_rows_length}, different from the number of classes ({feature_config.num_classes}). "
                         "Check the metadata JSON file to see the classes "
                         "and their order and "
-                        "consider <UNK> class too.".format(
-                            feature_config.column, all_rows_length, feature_config.num_classes
-                        )
+                        "consider <UNK> class too."
                     )
 
                 similarities = np.array(similarities, dtype=np.float32)

@@ -250,7 +250,6 @@ class LightGBMTrainer(BaseTrainer):
         start_time = time.time()
         self.callback(lambda c: c.on_eval_start(self, progress_tracker, save_path))
 
-        progress_tracker.checkpoint_number += 1
         if self.is_coordinator():
             logger.info(f"\nRunning evaluation for step: {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
 
@@ -684,9 +683,12 @@ class LightGBMTrainer(BaseTrainer):
                         f"{time_utils.strdelta((time.time()- start_time) * 1000.0)}."
                     )
                     if not self.skip_save_progress:
+                        progress_tracker.checkpoint_number += 1
                         checkpoint_manager.checkpoint.model = self.model
                         checkpoint_manager.save(progress_tracker.steps)
                         progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
+
+                        self.callback(lambda c: c.on_checkpoint(self, progress_tracker))
 
                 # Early stop if needed.
                 if should_break:

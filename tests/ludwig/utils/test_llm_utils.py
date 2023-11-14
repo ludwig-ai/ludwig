@@ -11,9 +11,9 @@ from ludwig.utils.llm_utils import (
     find_last_matching_index,
     generate_merged_ids,
     get_context_len,
+    get_realigned_target_and_prediction_tensors_for_inference,
     has_padding_token,
     pad_target_tensor_for_fine_tuning,
-    realign_target_and_prediction_tensors_for_inference,
     remove_left_padding,
     set_pad_token,
 )
@@ -248,7 +248,7 @@ def test_pad_target_tensor_for_fine_tuning():
     assert torch.equal(expected_target[of_name], updated_targets[of_name])
 
 
-def test_realign_target_and_prediction_tensors_for_inference(tokenizer):
+def test_get_realigned_target_and_prediction_tensors_for_inference(tokenizer):
     of_name = "out_1"
     vocab_size = 8
 
@@ -261,7 +261,7 @@ def test_realign_target_and_prediction_tensors_for_inference(tokenizer):
             LOGITS: torch.randn(1, 7, vocab_size).to(torch.float32),
         }
     }
-    updated_targets, updated_predictions = realign_target_and_prediction_tensors_for_inference(
+    updated_targets, updated_predictions = get_realigned_target_and_prediction_tensors_for_inference(
         targets, predictions, of_name, tokenizer
     )
 
@@ -280,11 +280,15 @@ def test_realign_target_and_prediction_tensors_for_inference(tokenizer):
             LOGITS: torch.randn(1, 9, vocab_size).to(torch.float32),
         }
     }
-    updated_targets, updated_predictions = realign_target_and_prediction_tensors_for_inference(
+    updated_targets, updated_predictions = get_realigned_target_and_prediction_tensors_for_inference(
         targets, predictions, of_name, tokenizer
     )
 
-    assert predictions == updated_predictions
+    for key in updated_predictions.keys():
+        assert torch.equal(updated_predictions[key][PREDICTIONS], predictions[key][PREDICTIONS])
+        assert torch.equal(updated_predictions[key][PROBABILITIES], predictions[key][PROBABILITIES])
+        assert torch.equal(updated_predictions[key][LOGITS], predictions[key][LOGITS])
+
     assert torch.equal(updated_targets[of_name], torch.tensor([[78, 79, 504, 76, 397, 84, 0, 1, 1]]))
 
     # Scenario 3: Target length is longer than the prediction tensor, so we need to realign them
@@ -296,11 +300,11 @@ def test_realign_target_and_prediction_tensors_for_inference(tokenizer):
             LOGITS: torch.randn(1, 7, vocab_size).to(torch.float32),
         }
     }
-    updated_targets, updated_predictions = realign_target_and_prediction_tensors_for_inference(
+    updated_targets, updated_predictions = get_realigned_target_and_prediction_tensors_for_inference(
         targets, predictions, of_name, tokenizer
     )
 
-    assert targets == updated_targets
+    assert torch.equal(updated_targets[of_name], targets[of_name])
 
     assert torch.equal(updated_predictions[of_name][PREDICTIONS], torch.tensor([[78, 79, 504, 76, 397, 84, 0, 1, 1]]))
     assert updated_predictions[of_name][PROBABILITIES].shape[1] == targets[of_name].shape[1]

@@ -280,11 +280,15 @@ def category_feature(output_feature=False, **kwargs):
     return feature
 
 
-def text_feature(output_feature=False, **kwargs):
+def text_feature(output_feature: bool = False, name: str = None, **kwargs):
     if DECODER in kwargs:
         output_feature = True
+    if name is not None:
+        feature_name = name
+    else:
+        feature_name = f"{TEXT}_{random_string()}"
     feature = {
-        "name": f"{TEXT}_{random_string()}",
+        "name": feature_name,
         "type": TEXT,
     }
     if output_feature:

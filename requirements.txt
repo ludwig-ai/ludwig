@@ -18,7 +18,7 @@ PyYAML>=3.12,<6.0.1,!=5.4.* #Exlude PyYAML 5.4.* due to incompatibility with aws
 absl-py
 kaggle
 requests
-fsspec[http]
+fsspec[http]<2023.10.0
 dataclasses-json
 jsonschema>=4.5.0,<4.7
 marshmallow
@@ -26,7 +26,7 @@ marshmallow-jsonschema
 marshmallow-dataclass==8.5.4
 tensorboard
 nltk    # Required for rouge scores.
-torchmetrics>=0.11.0,<=0.11.4
+torchmetrics>=0.11.0
 torchinfo
 filelock
 psutil==5.9.4
@@ -42,7 +42,8 @@ sacremoses
 sentencepiece
 
 # requirements for daft
-getdaft
+# NOTE: Pinned to <0.2 because of deprecation of fsspec argument in Daft
+getdaft<0.2
 
 # requirement for various paged and 8-bit optimizers
 bitsandbytes<0.41.0

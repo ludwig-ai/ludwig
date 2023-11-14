@@ -138,6 +138,7 @@ class Trainer(BaseTrainer):
         self.enable_profiling = config.enable_profiling
         self.steps_per_epoch = 0  # Computed during training, after batcher has been initialized.
         self.total_steps = 0  # Computed during training, after batcher has been initialized.
+        self.total_expected_checkpoints = 0  # Computed during training, after batcher has been initialized.
 
         self.regularization_lambda = config.regularization_lambda
         self.regularization_type = config.regularization_type
@@ -651,7 +652,6 @@ class Trainer(BaseTrainer):
         start_time = time.time()
         self.callback(lambda c: c.on_eval_start(self, progress_tracker, save_path))
 
-        progress_tracker.checkpoint_number += 1
         if self.is_coordinator():
             logger.info(f"\nRunning evaluation for step: {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
 
@@ -915,6 +915,8 @@ class Trainer(BaseTrainer):
                 )
                 final_steps_per_checkpoint = min(final_steps_per_checkpoint, self.total_steps)
                 early_stopping_steps = final_steps_per_checkpoint * self.early_stop
+                if not self.skip_save_progress:
+                    self.total_expected_checkpoints = self.total_steps // final_steps_per_checkpoint + self.epochs
 
                 # Initialize the learning rate scheduler.
                 self.scheduler = LRScheduler(
@@ -941,6 +943,7 @@ class Trainer(BaseTrainer):
 
                 progress_bar_config = {
                     "desc": "Training",
+                    "initial": progress_tracker.steps,
                     "total": self.total_steps,
                     "disable": is_progressbar_disabled(),
                     "file": sys.stdout,
@@ -992,9 +995,14 @@ class Trainer(BaseTrainer):
                             f"{time_utils.strdelta((time.time() - start_time) * 1000.0)}."
                         )
                     if not self.skip_save_progress:
+                        progress_tracker.checkpoint_number += 1
+
                         checkpoint_manager.save(progress_tracker.steps)
                         if self.is_coordinator():
                             progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
+
+                        # Callback that the checkpoint was reached, regardless of whether the model was evaluated.
+                        self.callback(lambda c: c.on_checkpoint(self, progress_tracker))
 
                     if not self.skip_save_model and self.skip_all_evaluation:
                         # All evaluation was skipped, so save the current step as the best so far.
@@ -1162,6 +1170,11 @@ class Trainer(BaseTrainer):
             # batch duration measurements when using timer callbacks.
             self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path, sync_step=should_step))
 
+            # If this is the last batch in the epoch, increment before running evaluation so that metrics are reported
+            # with the correct epoch.
+            if batcher.last_batch():
+                progress_tracker.epoch += 1
+
             if progress_tracker.steps % final_steps_per_checkpoint == 0:
                 if not self.skip_all_evaluation:
                     # Publishes metrics to MLFLow if there are any MLFlow callbacks.
@@ -1188,16 +1201,19 @@ class Trainer(BaseTrainer):
                 # Checkpoint the model.
                 # NOTE: Ideally we would do this before evaluation, but for some reason DeepSpeed will complain
                 # about inflight params if we do that, which is why we checkpoint after eval instead. In practice,
-                # this should not make a difference, xcept in the unlikely event an error occurs during eval and we
+                # this should not make a difference, except in the unlikely event an error occurs during eval and we
                 # want to resume from the last checkpoint, in which case we will lose slightly more progress this way.
                 if not self.skip_save_progress:
+                    progress_tracker.checkpoint_number += 1
                     checkpoint_manager.save(progress_tracker.steps)
                     if self.is_coordinator():
                         progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
 
+                    # Callback that the checkpoint was reached, regardless of whether the model was evaluated or not.
+                    self.callback(lambda c: c.on_checkpoint(self, progress_tracker))
+
             # If this was the last batch, then increment the epoch counter and invoke the `on_epoch_end` callback.
             if batcher.last_batch():
-                progress_tracker.epoch += 1
                 self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
 
         return should_break

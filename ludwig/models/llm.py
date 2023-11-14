@@ -19,12 +19,13 @@ from ludwig.schema.features.base import BaseOutputFeatureConfig, FeatureCollecti
 from ludwig.schema.model_types.llm import LLMModelConfig
 from ludwig.utils.augmentation_utils import AugmentationPipelines
 from ludwig.utils.data_utils import clear_data_cache
+from ludwig.utils.error_handling_utils import default_retry
 from ludwig.utils.llm_utils import (
     add_left_padding,
     generate_merged_ids,
     get_context_len,
+    get_realigned_target_and_prediction_tensors_for_inference,
     pad_target_tensor_for_fine_tuning,
-    realign_target_and_prediction_tensors_for_inference,
     remove_left_padding,
     set_pad_token,
 )
@@ -73,6 +74,7 @@ class DictWrapper:
         self.obj.update(modules)
 
 
+@default_retry(tries=8)
 def load_pretrained_from_config(
     config_obj: LLMModelConfig,
     model_config: Optional[AutoConfig] = None,
@@ -421,10 +423,6 @@ class LLM(BaseModel):
             sequences_list = []
             for input_ids_sample in input_ids:
                 input_ids_sample_no_padding = remove_left_padding(input_ids_sample, self.tokenizer)
-                logger.info(
-                    "Decoded text inputs for the first example in batch: "
-                    f"{self.tokenizer.decode(input_ids_sample_no_padding[0], skip_special_tokens=True)}"
-                )
 
                 if input_ids_sample_no_padding.shape[1] > self.max_input_length:
                     logger.warning(
@@ -446,10 +444,6 @@ class LLM(BaseModel):
                         generation_config=self.generation,
                         return_dict_in_generate=True,
                         output_scores=True,
-                    )
-                    logger.info(
-                        "Decoded generated output for the first example in batch: "
-                        f"{self.tokenizer.batch_decode(model_outputs.sequences, skip_special_tokens=True)[0]}"
                     )
 
                 sequences_list.append(model_outputs.sequences[0])
@@ -536,7 +530,7 @@ class LLM(BaseModel):
         for of_name, of_obj in self.output_features.items():
             if isinstance(of_obj, TextOutputFeature):
                 # Align the target length with the predictions length to enable text metric evaluation.
-                _targets, _predictions = realign_target_and_prediction_tensors_for_inference(
+                _targets, _predictions = get_realigned_target_and_prediction_tensors_for_inference(
                     targets, predictions, of_name, self.tokenizer
                 )
                 of_obj.update_metrics(_targets[of_name], _predictions[of_name], self.tokenizer)
@@ -638,7 +632,7 @@ class LLM(BaseModel):
         for of_name, of_obj in self.output_features.items():
             if isinstance(of_obj, TextOutputFeature):
                 # Align the target length with the predictions length to enable text metric evaluation.
-                _targets, _predictions = realign_target_and_prediction_tensors_for_inference(
+                _targets, _predictions = get_realigned_target_and_prediction_tensors_for_inference(
                     targets, predictions, of_name, self.tokenizer
                 )
                 of_eval_loss = of_obj.eval_loss(_targets[of_name], _predictions[of_name])
