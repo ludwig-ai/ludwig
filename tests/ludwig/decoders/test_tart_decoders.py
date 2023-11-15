@@ -16,16 +16,16 @@ def default_tart_decoder_schema():
 
 
 class TestBinaryTARTDecoder:
-    def create_sample_input(self, config):
-        return np.random.rand(1024, config.max_sequence_length).astype(np.float32)
+    def create_sample_input(self, decoder_config):
+        return np.random.rand(1024, decoder_config.max_sequence_length).astype(np.float32)
 
-    def create_decoder_from_config(self, config):
+    def create_decoder_from_config(self, decoder_config):
         return BinaryTARTDecoder(
-            config.max_sequence_length,
+            decoder_config.max_sequence_length,
             use_bias=True,
             weights_initializer="xavier_uniform",
             bias_initializer="zeros",
-            decoder_config=config,
+            decoder_config=decoder_config,
         )
 
     def test__init__(self, default_tart_decoder_schema: TARTDecoderConfig):
@@ -103,6 +103,7 @@ class TestBinaryTARTDecoder:
 
         input = self.create_sample_input(default_tart_decoder_schema)
 
+        # For simplicity, assume batch size 1
         with pytest.raises(RuntimeError):
             decoder(torch.unsqueeze(torch.from_numpy(input), 0))
 
