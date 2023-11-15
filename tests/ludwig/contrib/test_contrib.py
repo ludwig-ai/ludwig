@@ -7,6 +7,7 @@ from ludwig.contrib import add_contrib_callback_args
 from ludwig.contribs.aim import AimCallback
 from ludwig.contribs.comet import CometCallback
 from ludwig.contribs.mlflow import MlflowCallback
+from ludwig.contribs.predibase import PredibaseCallback
 from ludwig.contribs.wandb import WandbCallback
 
 
@@ -17,6 +18,7 @@ from ludwig.contribs.wandb import WandbCallback
         (["--mlflow"], [MlflowCallback]),
         (["--aim"], [AimCallback]),
         (["--comet"], [CometCallback]),
+        (["--predibase"], [PredibaseCallback]),
         (["--wandb"], [WandbCallback]),
     ],
 )

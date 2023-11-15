@@ -78,6 +78,14 @@ class MlflowLoader(ContribLoader):
 
         return MlflowCallback()
 
+class PredibaseLoader(ContribLoader):
+    def load(self) -> Callback:
+        from ludwig.contribs.predibase import PredibaseCallback
+
+        return PredibaseCallback()
+
+    def preload(self):
+        import comet_ml  # noqa
 
 contrib_registry = {
     # Contributors, add your class here:
@@ -85,4 +93,5 @@ contrib_registry = {
     "wandb": WandbLoader(),
     "mlflow": MlflowLoader(),
     "aim": AimLoader(),
+    "predibase": PredibaseLoader(),
 }
