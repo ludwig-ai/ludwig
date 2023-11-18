@@ -412,13 +412,12 @@ def test_decoder_descriptions():
 def test_deprecation_warning_raised_for_unknown_parameters():
     config = {
         "input_features": [
-            category_feature(encoder={"type": "dense", "vocab_size": 2}, reduce_input="sum"),
+            category_feature(encoder={"type": "dense"}),
             number_feature(),
         ],
         "output_features": [binary_feature()],
         "combiner": {
             "type": "tabnet",
-            "unknown_parameter_combiner": False,
         },
         TRAINER: {
             "epochs": 1000,
