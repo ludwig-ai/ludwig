@@ -105,7 +105,7 @@ class DDPStrategy(DistributedStrategy):
     def get_ray_trainer_backend(cls, **kwargs) -> Optional[Any]:
         from ray.train.torch import TorchConfig
 
-        return TorchConfig()
+        return TorchConfig(init_method="tcp")
 
     @classmethod
     def get_trainer_cls(cls, backend_config: BackendConfig) -> Tuple[Type[DataParallelTrainer], Dict[str, Any]]:
