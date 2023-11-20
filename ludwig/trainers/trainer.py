@@ -987,7 +987,6 @@ class Trainer(BaseTrainer):
                         early_stopping_steps,
                         profiler,
                     )
-
                     if self.is_coordinator():
                         # ========== Save training progress ==========
                         logger.debug(

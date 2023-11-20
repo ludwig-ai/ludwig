@@ -345,13 +345,17 @@ class LlmFineTunePredictor(Predictor):
             collect_logits: Return model logits and final layer activations.
 
         Returns:
-            Tuple of dictionaries of (metrics, predictions). The keys of metrics are determined by the metrics in the
-            model config. The keys of the predictions dictionary depend on which values are requested by the caller:
-            collect_predictions, collect_logits.
+            Tuple of dictionaries of (metrics, predictions, input/target/output dictionary). The keys of metrics are
+            determined by the metrics in the model config. The keys of the predictions dictionary depend on which values
+            are requested by the caller: collect_predictions, collect_logits. The keys of the input/target/output
+            dictionary are "inputs", "targets", and "outputs". The values of each of these keys are dictionaries of
+            feature names to lists of tensors. The tensors are the inputs, targets, and outputs for each batch.
         """
         prev_model_training_mode = self.dist_model.training  # store previous model training mode
         self.dist_model.eval()  # set model to eval mode
-
+        example_inputs = defaultdict(list)
+        example_targets = defaultdict(list)
+        example_outputs = defaultdict(list)
         with torch.no_grad():
             with dataset.initialize_batcher(
                 self._batch_size, should_shuffle=False, distributed=self._distributed
@@ -388,6 +392,13 @@ class LlmFineTunePredictor(Predictor):
                     outputs = self._predict_on_inputs((inputs, targets))
                     preds = self.model.outputs_to_predictions(outputs)
 
+                    for key in inputs:
+                        example_inputs[key].extend(inputs[key])
+                    for key in targets:
+                        example_targets[key].extend(targets[key])
+                    for key in preds:
+                        example_outputs[key].extend(preds[key]["predictions"])
+
                     # Need to pass through a custom fine-tune metric function because we need to transform
                     # the targets into the right format for loss calculation (requires padding with -100s to the left)
                     # and other tensor alignment.
@@ -416,9 +427,14 @@ class LlmFineTunePredictor(Predictor):
             metrics = self.model.get_metrics()
             self.model.reset_metrics()
 
-            self.dist_model.train(prev_model_training_mode)  # Restores previous model training mode.
+            input_target_output_dict = {
+                "inputs": example_inputs,
+                "targets": example_targets,
+                "outputs": example_outputs,
+            }
 
-            return metrics, from_numpy_dataset(predictions)
+            self.dist_model.train(prev_model_training_mode)  # Restores previous model training mode.
+            return metrics, from_numpy_dataset(predictions), input_target_output_dict
 
 
 def calculate_overall_stats(output_features, predictions, dataset, training_set_metadata):
