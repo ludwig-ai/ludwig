@@ -427,10 +427,14 @@ class LlmFineTunePredictor(Predictor):
             metrics = self.model.get_metrics()
             self.model.reset_metrics()
 
-            inp_tar_out_dict = {"inputs": example_inputs, "targets": example_targets, "outputs": example_outputs}
+            input_target_output_dict = {
+                "inputs": example_inputs,
+                "targets": example_targets,
+                "outputs": example_outputs,
+            }
 
             self.dist_model.train(prev_model_training_mode)  # Restores previous model training mode.
-            return metrics, from_numpy_dataset(predictions), inp_tar_out_dict
+            return metrics, from_numpy_dataset(predictions), input_target_output_dict
 
 
 def calculate_overall_stats(output_features, predictions, dataset, training_set_metadata):

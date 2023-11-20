@@ -434,7 +434,7 @@ class FineTuneTrainer(Trainer):
         predictor = LlmFineTunePredictor(
             self.model, batch_size=batch_size, distributed=self.distributed, report_tqdm_to_ray=self.report_tqdm_to_ray
         )
-        metrics, _, inp_tar_out_dict = predictor.batch_evaluation(
+        metrics, _, input_target_output_dict = predictor.batch_evaluation(
             dataset, collect_predictions=False, dataset_name=dataset_name
         )
         # Setting collect_predictions=True currently causes an error when doing batch evaluation because the outputs
@@ -443,16 +443,16 @@ class FineTuneTrainer(Trainer):
         tokenizer = self.dist_model.tokenizer
 
         llm_eval_examples = {"inputs": [], "targets": [], "outputs": []}
-        for key in inp_tar_out_dict["inputs"]:
-            for inp in inp_tar_out_dict["inputs"][key]:
+        for key in input_target_output_dict["inputs"]:
+            for inp in input_target_output_dict["inputs"][key]:
                 llm_eval_examples["inputs"].append(tokenizer.decode(inp, skip_special_tokens=True))
 
-        for key in inp_tar_out_dict["targets"]:
-            for tar in inp_tar_out_dict["targets"][key]:
+        for key in input_target_output_dict["targets"]:
+            for tar in input_target_output_dict["targets"][key]:
                 llm_eval_examples["targets"].append(tokenizer.decode(tar, skip_special_tokens=True))
 
-        for key in inp_tar_out_dict["outputs"]:
-            for out in inp_tar_out_dict["outputs"][key]:
+        for key in input_target_output_dict["outputs"]:
+            for out in input_target_output_dict["outputs"][key]:
                 llm_eval_examples["outputs"].append(tokenizer.decode(out, skip_special_tokens=True))
 
         progress_tracker.llm_eval_examples = llm_eval_examples
