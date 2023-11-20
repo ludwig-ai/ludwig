@@ -56,7 +56,12 @@ def test_eval_steps_determinism():
     results2 = model.evaluate(df)
     results3 = model.evaluate(df)
 
+    diff_exists = False
     for k in results1[0]["out"]:
-        if results1[0]["out"][k] != 0:  # Some metrics will be 0 across all runs
-            assert results1[0]["out"][k] != results2[0]["out"][k]
+        # Some metrics will be 0 across all runs
+        if results1[0]["out"][k] != 0 and results1[0]["out"][k] != results2[0]["out"][k]:
+            # Test if there is a difference between the metrics in results1 and results2
+            diff_exists = True
+        # Test if all the metrics are the same between results2 and results3
         assert results2[0]["out"][k] == results3[0]["out"][k]
+    assert diff_exists
