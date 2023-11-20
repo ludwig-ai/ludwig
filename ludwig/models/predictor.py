@@ -404,16 +404,6 @@ class LlmFineTunePredictor(Predictor):
                     # and other tensor alignment.
                     self.model.update_metrics_finetune_llm(targets, preds)
 
-                    # There is only one input and output feature for fine-tuning LLMs.
-                    input_key = list(example_inputs.keys())[0]
-                    output_key = list(example_outputs.keys())[0]
-
-                    # Surface the input and output for the user
-                    for i in range(len(example_inputs[input_key])):
-                        logger.info(f"Input: {example_inputs[input_key][i]}")
-                        logger.info(f"Output: {example_outputs[output_key][i]}")
-                        logger.info("--------------------")
-
                     # accumulate predictions from batch for each output feature
                     if collect_predictions:
                         self._accumulate_preds(

@@ -455,6 +455,11 @@ class FineTuneTrainer(Trainer):
             for out in input_target_output_dict["outputs"][key]:
                 llm_eval_examples["outputs"].append(tokenizer.decode(out, skip_special_tokens=True))
 
+        for i in range(len(llm_eval_examples["inputs"])):
+            logger.info(f"Input: {llm_eval_examples['inputs'][i]}")
+            logger.info(f"Output: {llm_eval_examples['outputs'][i]}")
+            logger.info("--------------------")
+
         progress_tracker.llm_eval_examples = llm_eval_examples
         return append_metrics(self.model, dataset_name, metrics, metrics_log, progress_tracker)
 
