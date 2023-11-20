@@ -234,7 +234,17 @@ class Predictor(BasePredictor):
                 progress_bar = LudwigProgressBar(self.report_tqdm_to_ray, progress_bar_config, self.is_coordinator())
 
                 predictions = defaultdict(list)
+                eval_steps = (
+                    self.dist_model.config_obj.trainer.eval_steps
+                    if hasattr(self.dist_model, "config_obj")
+                    and hasattr(self.dist_model.config_obj.trainer, "eval_steps")
+                    else None
+                )
+                eval_steps_counter = 0
                 while not batcher.last_batch():
+                    if eval_steps and eval_steps_counter >= eval_steps:
+                        logger.info(f"Reached evaluation step {eval_steps}. Ending evaluation.")
+                        break
                     batch = batcher.next_batch()
                     logger.debug(
                         f"evaluation for {dataset_name}: obtained next batch "
@@ -264,12 +274,12 @@ class Predictor(BasePredictor):
                         )
 
                     progress_bar.update(1)
+                    eval_steps_counter += 1
                     if self.is_coordinator():
                         logger.debug(
                             f"evaluation for {dataset_name}: completed batch {progress_bar.total_steps} "
                             f"memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
                         )
-
                 progress_bar.close()
 
             # consolidate predictions from each batch to a single tensor
@@ -370,7 +380,17 @@ class LlmFineTunePredictor(Predictor):
                 progress_bar = LudwigProgressBar(self.report_tqdm_to_ray, progress_bar_config, self.is_coordinator())
 
                 predictions = defaultdict(list)
+                eval_steps = (
+                    self.dist_model.config_obj.trainer.eval_steps
+                    if hasattr(self.dist_model, "config_obj")
+                    and hasattr(self.dist_model.config_obj.trainer, "eval_steps")
+                    else None
+                )
+                eval_steps_counter = 0
                 while not batcher.last_batch():
+                    if eval_steps and eval_steps_counter >= eval_steps:
+                        logger.info(f"Reached evaluation step {eval_steps}. Ending evaluation.")
+                        break
                     batch = batcher.next_batch()
                     logger.debug(
                         f"evaluation for {dataset_name}: obtained next batch "
@@ -411,6 +431,7 @@ class LlmFineTunePredictor(Predictor):
                         )
 
                     progress_bar.update(1)
+                    eval_steps_counter += 1
                     if self.is_coordinator():
                         logger.debug(
                             f"evaluation for {dataset_name}: completed batch {progress_bar.total_steps} "
