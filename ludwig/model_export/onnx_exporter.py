@@ -7,7 +7,7 @@ from ludwig.api import LudwigModel
 from ludwig.model_export.base_model_exporter import BaseModelExporter, LudwigTorchWrapper
 
 
-# Copyright (c) 2019 Uber Technologies, Inc.
+# Copyright (c) 2023 Predibase, Inc., 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
