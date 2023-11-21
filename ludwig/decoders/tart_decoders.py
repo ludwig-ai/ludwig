@@ -97,6 +97,8 @@ class BinaryTARTDecoder(Decoder):
             bias_initializer=bias_initializer,
         )
 
+        print(f"PCA SHAPE: {self.pca}")
+
         # Transform the reduced input to work with the reasoning module.
         self.dense1 = Dense(
             self.decoder_config.num_pca_components,
@@ -185,19 +187,26 @@ class BinaryTARTDecoder(Decoder):
                 "Attempting to use a TART decoder without first fitting it to the data. Please run `ludwig train` "
                 "with this config before predicting."
             )
+
+        # Reduce the size of the input representations
         x = self.pca(inputs)
 
+        # Stack the x and y examples
         inds = torch.arange(labels.shape[-1])
         stacked = self._combine_gen(x, labels)
 
+        # Transform the inputs to match the GPT2 dimensions
         embeds = self.dense1(stacked)
+
+        # Compute the embeddings
         embeds = self.reasoning_module(inputs_embeds=embeds).last_hidden_state
 
+        # Generate class predictions
         prediction = self.dense2(embeds)
 
-        # Assume one output per input
         preds = []
-        preds.append(prediction[:, 0 :: self.y_step_size, 0][:, inds])
+        preds.append(prediction[:, 0::1][:, inds])
+        preds = torch.cat(preds, dim=0)
 
         return preds
 
