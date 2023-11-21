@@ -1,6 +1,6 @@
 import pytest
 import torch
-from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoConfig, AutoModelForCausalLM
 
 from ludwig.constants import LOGITS, PREDICTIONS, PROBABILITIES
 from ludwig.modules.training_hooks import NEFTuneHook
@@ -15,8 +15,8 @@ from ludwig.utils.llm_utils import (
     has_padding_token,
     pad_target_tensor_for_fine_tuning,
     remove_left_padding,
-    set_pad_token,
 )
+from ludwig.utils.tokenizers import HFTokenizer
 
 pytestmark = [pytest.mark.llm]
 
@@ -27,9 +27,7 @@ TEST_MODEL_NAME = "hf-internal-testing/tiny-random-OPTForCausalLM"
 
 @pytest.fixture
 def tokenizer():
-    tokenizer = AutoTokenizer.from_pretrained(TEST_MODEL_NAME)
-    set_pad_token(tokenizer)
-    return tokenizer
+    return HFTokenizer(TEST_MODEL_NAME).tokenizer
 
 
 @pytest.fixture
@@ -42,22 +40,6 @@ def input_ids():
 def target_ids():
     # Provide sample target IDs tensor
     return torch.tensor([[9, 10, 11], [12, 13, 14]])
-
-
-def test_set_pad_token_doesnt_exist():
-    tokenizer = AutoTokenizer.from_pretrained("gpt2", use_fast=False)
-    assert tokenizer.pad_token_id is None
-
-    set_pad_token(tokenizer)
-    assert tokenizer.pad_token_id == 50256
-
-
-def test_set_pad_token_already_exists():
-    tokenizer = AutoTokenizer.from_pretrained(TEST_MODEL_NAME, use_fast=False)
-    assert tokenizer.pad_token_id == 1
-
-    set_pad_token(tokenizer)
-    assert tokenizer.pad_token_id == 1
 
 
 class TestSetContextLen:

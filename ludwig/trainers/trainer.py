@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-# Copyright (c) 2019 Uber Technologies, Inc.
+# Copyright (c) 2023 Predibase, Inc., 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -990,7 +990,6 @@ class Trainer(BaseTrainer):
                         early_stopping_steps,
                         profiler,
                     )
-
                     if self.is_coordinator():
                         # ========== Save training progress ==========
                         logger.debug(

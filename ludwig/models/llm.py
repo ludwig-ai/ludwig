@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
-from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer, GenerationConfig, PreTrainedModel
+from transformers import AutoConfig, AutoModelForCausalLM, GenerationConfig, PreTrainedModel
 
 from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, MODEL_LLM, PREDICTIONS, TEXT
 from ludwig.features.base_feature import ModuleWrapper, OutputFeature
@@ -27,10 +27,10 @@ from ludwig.utils.llm_utils import (
     get_realigned_target_and_prediction_tensors_for_inference,
     pad_target_tensor_for_fine_tuning,
     remove_left_padding,
-    set_pad_token,
 )
 from ludwig.utils.logging_utils import log_once
 from ludwig.utils.output_feature_utils import set_output_feature_tensor
+from ludwig.utils.tokenizers import HFTokenizer
 from ludwig.utils.torch_utils import reg_loss
 
 logger = logging.getLogger(__name__)
@@ -145,8 +145,7 @@ class LLM(BaseModel):
             self.global_max_sequence_length = self.context_len
 
         # Initialize tokenizer
-        self.tokenizer = AutoTokenizer.from_pretrained(self.config_obj.base_model)
-        set_pad_token(self.tokenizer)
+        self.tokenizer = HFTokenizer(self.config_obj.base_model).tokenizer
 
         self._set_generation_config(self.config_obj.generation.to_dict())
 
