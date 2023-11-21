@@ -15,6 +15,7 @@ from ludwig.features.base_feature import create_passthrough_input_feature, Input
 from ludwig.features.feature_registries import get_input_type_registry, get_output_type_registry
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.modules.metric_modules import LudwigMetric
+from ludwig.modules.training_hooks import TrainingHook
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig, FeatureCollection
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
 from ludwig.utils.metric_utils import get_scalar_from_ludwig_metric
@@ -56,7 +57,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         self._eval_additional_losses_metrics = ModuleWrapper(torchmetrics.MeanMetric())
 
         # ================ Training Hook Handles ================
-        self._forward_hook_handles: List[torch.utils.hooks.RemovableHandle] = []
+        self._forward_hook_handles: List[TrainingHook] = []
 
     def create_feature_dict(self) -> LudwigFeatureDict:
         """Creates and returns a LudwigFeatureDict."""
