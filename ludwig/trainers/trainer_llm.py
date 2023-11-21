@@ -456,8 +456,8 @@ class FineTuneTrainer(Trainer):
                 llm_eval_examples["outputs"].append(tokenizer.decode(out, skip_special_tokens=True))
 
         for i in range(len(llm_eval_examples["inputs"])):
-            logger.info(f"Input: {llm_eval_examples['inputs'][i]}")
-            logger.info(f"Output: {llm_eval_examples['outputs'][i]}")
+            logger.info(f"Input: {llm_eval_examples['inputs'][i].strip()}")
+            logger.info(f"Output: {llm_eval_examples['outputs'][i].strip()}")
             logger.info("--------------------")
 
         progress_tracker.llm_eval_examples = llm_eval_examples
