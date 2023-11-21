@@ -3,7 +3,7 @@ import torch
 from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer
 
 from ludwig.constants import LOGITS, PREDICTIONS, PROBABILITIES
-from ludwig.modules.neftune_modules import NoisedEmbedding
+from ludwig.modules.training_hooks import NEFTuneHook
 from ludwig.utils.llm_utils import (
     add_left_padding,
     create_attention_mask,
@@ -319,59 +319,45 @@ def test_get_realigned_target_and_prediction_tensors_for_inference(tokenizer):
     assert not torch.equal(updated_predictions[of_name][LOGITS][0][-3], torch.zeros(vocab_size))
 
 
-def test_noised_embedding_forward_during_training():
-    # Create a simple AutoModelForCausalLM model for testing
-    model_name = "HuggingFaceH4/tiny-random-LlamaForCausalLM"
-    model = AutoModelForCausalLM.from_pretrained(model_name)
-    config = AutoConfig.from_pretrained(model_name)
+def _setup_models_for_neftune():
+    module_without_hook = AutoModelForCausalLM.from_pretrained(TEST_MODEL_NAME)
+    module_with_hook = AutoModelForCausalLM.from_pretrained(TEST_MODEL_NAME)
 
-    # Set the model in training mode
-    model.train()
-    assert model.training
+    # Only module_with_hook should have the NEFTuneHook
+    neftune_hook = NEFTuneHook(neftune_noise_alpha=5)
+    module_with_hook = neftune_hook.activate_hook(module_with_hook)
 
-    # Create a NoisedEmbedding instance
-    noised_embedding = NoisedEmbedding(model.get_input_embeddings(), noise_alpha=5)
-
-    # Create an input tensor with indices within the vocabulary size
-    batch_size = 4
-    sequence_length = 10
-    vocab_size = config.vocab_size
-
-    # Create a random input tensor
-    input_tensor = torch.randint(0, vocab_size, (batch_size, sequence_length))
-
-    # Apply forward during training
-    output = noised_embedding(input_tensor)
-
-    assert isinstance(output, torch.Tensor)
-    # The embedding should have noise added
-    assert not torch.equal(output, model.get_input_embeddings()(input_tensor))
+    return module_without_hook, module_with_hook
 
 
-def test_noised_embedding_forward_during_generation():
-    # Create a simple AutoModelForCausalLM model for testing
-    model_name = "HuggingFaceH4/tiny-random-LlamaForCausalLM"
-    model = AutoModelForCausalLM.from_pretrained(model_name)
-    config = AutoConfig.from_pretrained(model_name)
+def _forward_pass_and_assert_neftune_hook(module_without_hook, module_with_hook, mode):
+    assert module_with_hook.get_input_embeddings()._forward_hooks
+    assert not module_without_hook.get_input_embeddings()._forward_hooks
 
-    # Set the model in eval mode
-    model.training = False
-    assert not model.training
+    if mode == "train":
+        module_without_hook.train()
+        module_with_hook.train()
+    elif mode == "eval":
+        module_without_hook.eval()
+        module_with_hook.eval()
 
-    # Create a NoisedEmbedding instance
-    noised_embedding = NoisedEmbedding(model.get_input_embeddings(), noise_alpha=5)
+    input_tensor = torch.tensor([[1, 2, 3]])
+    output_tensor_with_noise = module_with_hook.get_input_embeddings()(input_tensor)
+    output_tensor_without_noise = module_without_hook.get_input_embeddings()(input_tensor)
 
-    # Create an input tensor with indices within the vocabulary size
-    batch_size = 4
-    sequence_length = 10
-    vocab_size = config.vocab_size
+    if mode == "train":
+        assert not torch.equal(output_tensor_with_noise, output_tensor_without_noise)
+    elif mode == "eval":
+        assert torch.equal(output_tensor_with_noise, output_tensor_without_noise)
 
-    # Create a random input tensor
-    input_tensor = torch.randint(0, vocab_size, (batch_size, sequence_length))
 
-    # Apply forward during training
-    output = noised_embedding(input_tensor)
+def test_neftune_hook_without_noise_alpha_train_mode():
+    """Test that the NEFTuneHook is only applied when the module is in training mode."""
+    module_without_hook, module_with_hook = _setup_models_for_neftune()
+    _forward_pass_and_assert_neftune_hook(module_without_hook, module_with_hook, mode="train")
 
-    assert isinstance(output, torch.Tensor)
-    # The embedding should have no noise added
-    assert torch.equal(output, model.get_input_embeddings()(input_tensor))
+
+def test_neftune_hook_without_noise_alpha_eval_mode():
+    """Test that the NEFTuneHook is not applied when the module is in eval mode."""
+    module_without_hook, module_with_hook = _setup_models_for_neftune()
+    _forward_pass_and_assert_neftune_hook(module_without_hook, module_with_hook, mode="eval")

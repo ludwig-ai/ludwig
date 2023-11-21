@@ -60,7 +60,7 @@ class RoPEScalingConfigField(schema_utils.DictMarshmallowField):
 class ModelParametersConfig(schema_utils.BaseMarshmallowConfig):
     rope_scaling: RoPEScalingConfig = RoPEScalingConfigField().get_default_field()
 
-    embedding_noise_alpha: Optional[int] = schema_utils.IntegerRange(
+    neftune_noise_alpha: Optional[int] = schema_utils.IntegerRange(
         default=0,
         min=0,
         allow_none=True,
@@ -74,8 +74,8 @@ class ModelParametersConfig(schema_utils.BaseMarshmallowConfig):
         config = {}
         if self.rope_scaling:
             config["rope_scaling"] = self.rope_scaling.to_dict()
-        if self.embedding_noise_alpha:
-            config["embedding_noise_alpha"] = self.embedding_noise_alpha
+        if self.neftune_noise_alpha:
+            config["neftune_noise_alpha"] = self.neftune_noise_alpha
         return config
 
 

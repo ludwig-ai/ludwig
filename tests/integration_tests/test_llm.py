@@ -1068,39 +1068,33 @@ def test_local_path_loading(tmpdir):
 
 
 @pytest.mark.parametrize(
-    "base_model",
+    "finetuning_strategy, embedding_noise",
     [
-        pytest.param("HuggingFaceH4/tiny-random-LlamaForCausalLM", id="HuggingFaceH4/tiny-random-LlamaForCausalLM"),
-        pytest.param("yujiepan/llama-2-tiny-random", id="yujiepan/llama-2-tiny-random"),
-        pytest.param(
-            "hf-internal-testing/tiny-random-GPTJForCausalLM", id="hf-internal-testing/tiny-random-GPTJForCausalLM"
-        ),
-        # Does not have architecture specified in model config
-        pytest.param(
-            "hf-internal-testing/tiny-random-GPTJForCausalLM", id="hf-internal-testing/tiny-random-GPTJForCausalLM"
-        ),
-        pytest.param("hf-internal-testing/tiny-random-BartModel", id="hf-internal-testing/tiny-random-BartModel"),
-        pytest.param(
-            "hf-internal-testing/tiny-random-OPTForCausalLM", id="hf-internal-testing/tiny-random-OPTForCausalLM"
-        ),
+        pytest.param(None, 0, id="None_without_noise"),
+        pytest.param(None, 5, id="None_with_noise"),
+        pytest.param("lora", 0, id="lora_without_noise"),
+        pytest.param("lora", 5, id="lora_with_noise"),
     ],
 )
 def test_llm_finetuning_with_embedding_noise(
     tmpdir,
     csv_filename,
-    base_model,
+    finetuning_strategy,
+    embedding_noise,
 ):
-    train_df, prediction_df, config = _prepare_finetuning_test(csv_filename, "lora", LOCAL_BACKEND, {})
-    output_directory: str = str(tmpdir)
-    model_directory: str = pathlib.Path(output_directory) / "api_experiment_run" / "model"
+    train_df, prediction_df, config = _prepare_finetuning_test(csv_filename, finetuning_strategy, LOCAL_BACKEND, {})
 
     # Add embedding noise
-    config["base_model"] = base_model
-    config["model_parameters"] = {"embedding_noise_alpha": 5}
+    if embedding_noise:
+        config["model_parameters"] = {"neftune_noise_alpha": embedding_noise}
 
     model = LudwigModel(config)
-    assert model.config_obj.model_parameters.embedding_noise_alpha == 5
 
+    if embedding_noise:
+        assert model.config_obj.model_parameters.neftune_noise_alpha == embedding_noise
+
+    output_directory: str = str(tmpdir)
+    model_directory: str = pathlib.Path(output_directory) / "api_experiment_run" / "model"
     model.train(dataset=train_df, output_directory=output_directory, skip_save_processed_input=False)
 
     # Make sure we can load the saved model and then use it for predictions

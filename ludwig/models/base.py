@@ -2,7 +2,7 @@ import contextlib
 import logging
 from abc import ABCMeta, abstractmethod
 from collections import OrderedDict
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -54,6 +54,9 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         # ================ Combined loss metric ================
         self._eval_loss_metric = ModuleWrapper(torchmetrics.MeanMetric())
         self._eval_additional_losses_metrics = ModuleWrapper(torchmetrics.MeanMetric())
+
+        # ================ Training Hook Handles ================
+        self._forward_hook_handles: List[torch.utils.hooks.RemovableHandle] = []
 
     def create_feature_dict(self) -> LudwigFeatureDict:
         """Creates and returns a LudwigFeatureDict."""
@@ -339,6 +342,15 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         if generation_config is not None:
             raise NotImplementedError(f"{self.__class__.__name__} does not support generation_config. ")
         yield
+
+    def _activate_forward_hooks(self):
+        """Activates/registers forward hooks for the model."""
+        pass
+
+    def _deactivate_forward_hooks(self) -> None:
+        """Deactivates/de-registers forward hooks for the model (if needed)."""
+        for handle in self._forward_hook_handles:
+            handle.deactivate_hook()
 
 
 def create_input_feature(feature_config: BaseInputFeatureConfig, encoder_obj: Optional[Encoder]) -> InputFeature:
