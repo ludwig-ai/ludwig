@@ -13,19 +13,8 @@ class TrainingHook(ABC):
     that can be activated, deactivated, and maintain a handle to the hook.
 
     Attributes:
-        handle (Optional[torch.utils.hooks.RemovableHandle]): A handle to the
+        _hook_handle (Optional[torch.utils.hooks.RemovableHandle]): A handle to the
             registered forward hook, initially set to None.
-
-    Methods:
-        hook_fn(module: nn.Module, inputs, outputs):
-            An abstract method to be implemented by subclasses.
-            Defines the custom behavior of the training hook during a forward pass.
-
-        activate_hook(module: nn.Module, hook_fn: Optional[Callable] = None):
-            Activates the training hook for a given module.
-
-        deactivate_hook():
-            Deactivates and removes the training hook.
     """
 
     def __init__(self, **kwargs) -> None:
@@ -33,12 +22,16 @@ class TrainingHook(ABC):
 
     @abstractmethod
     def hook_fn(self, module: torch.nn.Module, inputs: torch.tensor, outputs: torch.tensor) -> torch.tensor:
-        """Abstract method to be implemented by subclasses.
+        """Abstract method to be implemented by subclasses. This is the method that defines the custom behavior of
+        the training hook during a forward pass for the specified module.
 
         Args:
             module (nn.Module): The PyTorch module for which the hook is activated.
-            inputs: The input to the module during the forward pass.
-            outputs: The output from the module during the forward pass.
+            inputs (torch.Tensor): The input to the module during the forward pass.
+            outputs (torch.Tensor): The output from the module during the forward pass.
+
+        Returns:
+            torch.Tensor: The output tensor from the module.
 
         Raises:
             NotImplementedError: If the method is not implemented in a subclass.
@@ -50,21 +43,15 @@ class TrainingHook(ABC):
 
         Args:
             module (nn.Module): The PyTorch module for which the hook is activated.
-            hook_fn (Optional[Callable]): Custom hook function. If not provided,
-                uses the hook_fn defined in the subclass.
 
-        Raises:
-            RuntimeError: If the hook function is not provided and the subclass
-                does not implement the abstract hook_fn method.
+        Returns:
+            nn.Module: The input module with the training hook activated.
         """
         self._hook_handle = module.register_forward_hook(self.hook_fn)
+        return module
 
     def deactivate_hook(self):
-        """Deactivates and removes the training hook.
-
-        Raises:
-            RuntimeError: If the hook is not activated.
-        """
+        """Deactivates and removes the training hook."""
         if self._hook_handle is not None:
             self._hook_handle.remove()
             self._hook_handle = None
@@ -82,14 +69,8 @@ class NEFTuneHook(TrainingHook):
 
         The input tensor is ignored since the noise is added to the output of the embedding layer.
 
-        Args:
-            module (`torch.nn.Module`):
-                The embedding module where the hook is attached. Note that you need to set `module.neftune_noise_alpha`
-                to the desired noise alpha value.
-            input (`torch.Tensor`):
-                The input tensor to the model.
-            output (`torch.Tensor`):
-                The output tensor of the model (i.e. the embeddings).
+        Returns:
+            torch.Tensor: The output tensor from the module.
         """
         if module.training:
             dims = torch.tensor(output.size(1) * output.size(2))
@@ -102,6 +83,12 @@ class NEFTuneHook(TrainingHook):
 
         Code: https://github.com/neelsjain/NEFTune
         Paper: https://arxiv.org/abs/2310.05914
+
+        Args:
+            module (nn.Module): The PyTorch module for which the hook is activated.
+
+        Returns:
+            nn.Module: The input module with the training hook activated.
         """
         from peft import PeftModel
 
