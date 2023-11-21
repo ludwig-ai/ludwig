@@ -17,11 +17,11 @@ def default_tart_decoder_schema():
 
 class TestBinaryTARTDecoder:
     def create_sample_input(self, decoder_config):
-        return np.random.rand(1024, decoder_config.max_sequence_length).astype(np.float32)
+        return np.random.rand(decoder_config.max_sequence_length, 1024).astype(np.float32)
 
     def create_decoder_from_config(self, decoder_config):
         return BinaryTARTDecoder(
-            decoder_config.max_sequence_length,
+            1024,
             use_bias=True,
             weights_initializer="xavier_uniform",
             bias_initializer="zeros",
@@ -30,7 +30,7 @@ class TestBinaryTARTDecoder:
 
     def test__init__(self, default_tart_decoder_schema: TARTDecoderConfig):
         decoder = BinaryTARTDecoder(
-            default_tart_decoder_schema.max_sequence_length,
+            1024,
             use_bias=True,
             weights_initializer="xavier_uniform",
             bias_initializer="zeros",
@@ -83,7 +83,7 @@ class TestBinaryTARTDecoder:
 
     def test_input_shape(self, default_tart_decoder_schema: TARTDecoderConfig):
         decoder = BinaryTARTDecoder(
-            default_tart_decoder_schema.max_sequence_length,
+            1024,
             use_bias=True,
             weights_initializer="xavier_uniform",
             bias_initializer="zeros",
@@ -94,7 +94,7 @@ class TestBinaryTARTDecoder:
 
     def test_forward(self, default_tart_decoder_schema: TARTDecoderConfig):
         decoder = BinaryTARTDecoder(
-            default_tart_decoder_schema.max_sequence_length,
+            1024,
             use_bias=True,
             weights_initializer="xavier_uniform",
             bias_initializer="zeros",
@@ -102,10 +102,13 @@ class TestBinaryTARTDecoder:
         )
 
         input = self.create_sample_input(default_tart_decoder_schema)
+        labels = torch.FloatTensor(1, default_tart_decoder_schema.max_sequence_length, 1)
 
         # For simplicity, assume batch size 1
         with pytest.raises(RuntimeError):
-            decoder(torch.unsqueeze(torch.from_numpy(input), 0))
+            decoder(torch.unsqueeze(torch.from_numpy(input), 0), labels)
 
         decoder.fit_pca(input)
-        decoder(torch.unsqueeze(torch.from_numpy(input), 0))
+        predictions = decoder(torch.unsqueeze(torch.from_numpy(input), 0), labels)
+
+        assert predictions.size() == (1, 1)
