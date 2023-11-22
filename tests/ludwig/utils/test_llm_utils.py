@@ -333,13 +333,13 @@ def _forward_pass_and_assert_neftune_hook(module_without_hook, module_with_hook,
         assert torch.equal(output_tensor_with_noise, output_tensor_without_noise)
 
 
-def test_neftune_hook_without_noise_alpha_train_mode():
+def test_neftune_hook_with_noise_alpha_train_mode():
     """Test that the NEFTuneHook is only applied when the module is in training mode."""
     module_without_hook, module_with_hook = _setup_models_for_neftune()
     _forward_pass_and_assert_neftune_hook(module_without_hook, module_with_hook, mode="train")
 
 
-def test_neftune_hook_without_noise_alpha_eval_mode():
+def test_neftune_hook_with_noise_alpha_eval_mode():
     """Test that the NEFTuneHook is not applied when the module is in eval mode."""
     module_without_hook, module_with_hook = _setup_models_for_neftune()
     _forward_pass_and_assert_neftune_hook(module_without_hook, module_with_hook, mode="eval")
