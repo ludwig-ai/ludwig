@@ -27,6 +27,9 @@ from ludwig.utils.trainer_utils import append_metrics, get_new_progress_tracker,
 
 logger = logging.getLogger(__name__)
 
+MAX_EVALUATION_EXAMPLES = 1000
+MAX_EVALUATION_EXAMPLES_SHOWN = 5
+
 
 @register_llm_trainer("none")
 @register_llm_ray_trainer("none")
@@ -444,7 +447,7 @@ class FineTuneTrainer(Trainer):
 
         # There should only be one key in the dict for LLMs
         input_key = list(input_target_output_dict["inputs"].keys())[0]
-        num_examples = min(len(input_target_output_dict["inputs"][input_key]), 1000)
+        num_examples = min(len(input_target_output_dict["inputs"][input_key]), MAX_EVALUATION_EXAMPLES)
 
         llm_eval_examples = {"inputs": [], "targets": [], "outputs": []}
         for key in input_target_output_dict["inputs"]:
@@ -459,7 +462,7 @@ class FineTuneTrainer(Trainer):
             for out in input_target_output_dict["outputs"][key][:num_examples]:
                 llm_eval_examples["outputs"].append(tokenizer.decode(out, skip_special_tokens=True))
 
-        num_examples_shown = min(len(llm_eval_examples["inputs"]), 5)
+        num_examples_shown = min(len(llm_eval_examples["inputs"]), MAX_EVALUATION_EXAMPLES_SHOWN)
         for i in range(num_examples_shown):
             logger.info(f"Input: {llm_eval_examples['inputs'][i].strip()}")
             logger.info(f"Output: {llm_eval_examples['outputs'][i].strip()}")
