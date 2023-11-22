@@ -27,6 +27,9 @@ from ludwig.utils.trainer_utils import append_metrics, get_new_progress_tracker,
 
 logger = logging.getLogger(__name__)
 
+MAX_EVALUATION_EXAMPLES = 1000
+MAX_EVALUATION_EXAMPLES_SHOWN = 5
+
 
 @register_llm_trainer("none")
 @register_llm_ray_trainer("none")
@@ -442,22 +445,27 @@ class FineTuneTrainer(Trainer):
 
         tokenizer = self.dist_model.tokenizer
 
+        # There should only be one key in the dict for LLMs
+        input_key = list(input_target_output_dict["inputs"].keys())[0]
+        num_examples = min(len(input_target_output_dict["inputs"][input_key]), MAX_EVALUATION_EXAMPLES)
+
         llm_eval_examples = {"inputs": [], "targets": [], "outputs": []}
         for key in input_target_output_dict["inputs"]:
-            for inp in input_target_output_dict["inputs"][key]:
+            for inp in input_target_output_dict["inputs"][key][:num_examples]:
                 llm_eval_examples["inputs"].append(tokenizer.decode(inp, skip_special_tokens=True))
 
         for key in input_target_output_dict["targets"]:
-            for tar in input_target_output_dict["targets"][key]:
+            for tar in input_target_output_dict["targets"][key][:num_examples]:
                 llm_eval_examples["targets"].append(tokenizer.decode(tar, skip_special_tokens=True))
 
         for key in input_target_output_dict["outputs"]:
-            for out in input_target_output_dict["outputs"][key]:
+            for out in input_target_output_dict["outputs"][key][:num_examples]:
                 llm_eval_examples["outputs"].append(tokenizer.decode(out, skip_special_tokens=True))
 
-        for i in range(len(llm_eval_examples["inputs"])):
-            logger.info(f"Input: {llm_eval_examples['inputs'][i]}")
-            logger.info(f"Output: {llm_eval_examples['outputs'][i]}")
+        num_examples_shown = min(len(llm_eval_examples["inputs"]), MAX_EVALUATION_EXAMPLES_SHOWN)
+        for i in range(num_examples_shown):
+            logger.info(f"Input: {llm_eval_examples['inputs'][i].strip()}")
+            logger.info(f"Output: {llm_eval_examples['outputs'][i].strip()}")
             logger.info("--------------------")
 
         progress_tracker.llm_eval_examples = llm_eval_examples

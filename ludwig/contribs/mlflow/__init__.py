@@ -225,11 +225,10 @@ def _log_mlflow_loop(q: queue.Queue, log_artifacts: bool = True):
             # Break out of the loop if we're not going to log anything.
             break
 
-        if log_metrics is not None:
-            if "llm_eval_examples" in log_metrics and log_metrics["llm_eval_examples"] is not None:
-                mlflow.log_table(log_metrics["llm_eval_examples"], artifact_file="llm_eval_examples.json")
-                # Delete the table from the metrics dict so we don't try to log it with the other metrics
-                del log_metrics["llm_eval_examples"]
+        if "llm_eval_examples" in log_metrics and log_metrics["llm_eval_examples"] is not None:
+            # mlflow.log_dict(log_metrics["llm_eval_examples"], artifact_file="llm_eval_examples.json")
+            # Delete the table from the metrics dict so we don't try to log it with the other metrics
+            del log_metrics["llm_eval_examples"]
         mlflow.log_metrics(log_metrics, step=steps)
 
         if not q.empty():
@@ -248,7 +247,7 @@ def _log_mlflow(log_metrics, steps, save_path, should_continue, log_artifacts: b
     """
     if log_metrics is not None:
         if "llm_eval_examples" in log_metrics and log_metrics["llm_eval_examples"] is not None:
-            mlflow.log_table(log_metrics["llm_eval_examples"], artifact_file="llm_eval_examples.json")
+            # mlflow.log_dict(log_metrics["llm_eval_examples"], artifact_file="llm_eval_examples.json")
             # Delete the table from the metrics dict so we don't try to log it with the other metrics
             del log_metrics["llm_eval_examples"]
         mlflow.log_metrics(log_metrics, step=steps)
