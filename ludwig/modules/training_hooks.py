@@ -17,11 +17,11 @@ class TrainingHook(ABC):
             registered forward hook, initially set to None.
     """
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, *args, **kwargs) -> None:
         self._hook_handle = None
 
     @abstractmethod
-    def hook_fn(self, module: torch.nn.Module, inputs: torch.tensor, outputs: torch.tensor) -> torch.tensor:
+    def hook_fn(self, module: torch.nn.Module, inputs: torch.tensor, outputs: torch.Tensor) -> torch.Tensor:
         """Abstract method to be implemented by subclasses. This is the method that defines the custom behavior of
         the training hook during a forward pass for the specified module.
 
@@ -58,11 +58,11 @@ class TrainingHook(ABC):
 
 
 class NEFTuneHook(TrainingHook):
-    def __init__(self, **kwargs) -> None:
-        super().__init__(**kwargs)
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
         self.neftune_noise_alpha = kwargs.get("neftune_noise_alpha")
 
-    def hook_fn(self, module: torch.nn.Module, input: torch.tensor, output: torch.tensor) -> torch.tensor:
+    def hook_fn(self, module: torch.nn.Module, input: torch.Tensor, output: torch.Tensor) -> torch.Tensor:
         """Implements the NEFTune forward pass for the model using forward hooks. Note this works only for
         torch.nn. Embedding layers. This method is slightly adapted from the original source code that can be found
         here: https://github.com/neelsjain/NEFTune.

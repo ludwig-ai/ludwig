@@ -1070,8 +1070,8 @@ def test_local_path_loading(tmpdir):
 @pytest.mark.parametrize(
     "finetuning_strategy, embedding_noise",
     [
-        pytest.param(None, 0, id="None_without_noise"),
-        pytest.param(None, 5, id="None_with_noise"),
+        pytest.param(None, 0, id="full_finetuning_without_noise"),
+        pytest.param(None, 5, id="full_finetuning_with_noise"),
         pytest.param("lora", 0, id="lora_without_noise"),
         pytest.param("lora", 5, id="lora_with_noise"),
     ],
