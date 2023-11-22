@@ -442,23 +442,25 @@ class FineTuneTrainer(Trainer):
 
         tokenizer = self.dist_model.tokenizer
 
+        # There should only be one key in the dict for LLMs
+        input_key = list(input_target_output_dict["inputs"].keys())[0]
+        num_examples = min(len(input_target_output_dict["inputs"][input_key]), 1000)
+
         llm_eval_examples = {"inputs": [], "targets": [], "outputs": []}
         for key in input_target_output_dict["inputs"]:
-            num_examples = min(len(input_target_output_dict["inputs"][key]), 5)
             for inp in input_target_output_dict["inputs"][key][:num_examples]:
                 llm_eval_examples["inputs"].append(tokenizer.decode(inp, skip_special_tokens=True))
 
         for key in input_target_output_dict["targets"]:
-            num_examples = min(len(input_target_output_dict["targets"][key]), 5)
             for tar in input_target_output_dict["targets"][key][:num_examples]:
                 llm_eval_examples["targets"].append(tokenizer.decode(tar, skip_special_tokens=True))
 
         for key in input_target_output_dict["outputs"]:
-            num_examples = min(len(input_target_output_dict["outputs"][key]), 5)
             for out in input_target_output_dict["outputs"][key][:num_examples]:
                 llm_eval_examples["outputs"].append(tokenizer.decode(out, skip_special_tokens=True))
 
-        for i in range(len(llm_eval_examples["inputs"])):
+        num_examples_shown = min(len(llm_eval_examples["inputs"]), 5)
+        for i in range(num_examples_shown):
             logger.info(f"Input: {llm_eval_examples['inputs'][i].strip()}")
             logger.info(f"Output: {llm_eval_examples['outputs'][i].strip()}")
             logger.info("--------------------")
