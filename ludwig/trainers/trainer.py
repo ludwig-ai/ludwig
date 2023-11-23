@@ -224,6 +224,9 @@ class Trainer(BaseTrainer):
         # We may need to replace the embedding layer when using 8-bit optimizers from bitsandbytes.
         update_embedding_layer(self.compiled_model, self.config)
 
+        # Register any post forward hooks for the model
+        self.compiled_model._activate_forward_hooks()
+
         # Enable gradient checkpointing if configured
         if self.config.enable_gradient_checkpointing:
             # TODO(Arnav): Add support for gradient checkpointing in the compiled model
@@ -1016,6 +1019,9 @@ class Trainer(BaseTrainer):
                 lambda c: c.on_trainer_train_teardown(self, progress_tracker, save_path, self.is_coordinator()),
                 coordinator_only=False,
             )
+
+            # Deactivate any forward hooks for the model used at training time.
+            self.compiled_model._deactivate_forward_hooks()
 
             # Stop the profiler.
             if profiler:
