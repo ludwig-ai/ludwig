@@ -23,6 +23,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
+from torchvision import transforms
 from torchvision.transforms import functional as F
 from torchvision.transforms.functional import normalize
 
@@ -52,6 +53,7 @@ from ludwig.encoders.image.torchvision import TVModelVariant
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.schema.features.augmentation.base import BaseAugmentationConfig
 from ludwig.schema.features.augmentation.image import (
+    AutoAugmentationConfig,
     RandomBlurConfig,
     RandomBrightnessConfig,
     RandomContrastConfig,
@@ -90,6 +92,24 @@ logger = logging.getLogger(__name__)
 ###
 # Image specific augmentation operations
 ###
+@register_augmentation_op(name="auto_augmentation", features=IMAGE)
+class AutoAugment(torch.nn.Module):
+    def __init__(
+        self,
+        config: AutoAugmentationConfig,
+    ):
+        super().__init__()
+
+    def forward(self, imgs):
+        trivial_augment = transforms.TrivialAugmentWide()
+
+        for img in imgs:
+            img = img.to(torch.uint8)
+        imgs = trivial_augment(imgs)
+
+        return imgs
+
+
 @register_augmentation_op(name="random_vertical_flip", features=IMAGE)
 class RandomVFlip(torch.nn.Module):
     def __init__(

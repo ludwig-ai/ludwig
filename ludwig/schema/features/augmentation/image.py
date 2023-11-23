@@ -8,6 +8,18 @@ from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
+@register_augmentation_config(name="auto_augmentation", features=IMAGE)
+@ludwig_dataclass
+class AutoAugmentationConfig(BaseAugmentationConfig):
+    """Automatic augmentation operation."""
+
+    type: str = schema_utils.ProtectedString(
+        "auto_augmentation",
+        parameter_metadata=FEATURE_METADATA[IMAGE][AUGMENTATION][TYPE],
+    )
+
+
+@DeveloperAPI
 @register_augmentation_config(name="random_horizontal_flip", features=IMAGE)
 @ludwig_dataclass
 class RandomHorizontalFlipConfig(BaseAugmentationConfig):

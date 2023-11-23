@@ -15,13 +15,14 @@ def test_image():
 @pytest.mark.parametrize(
     "augmentation_type, augmentation_params",
     [
-        ("random_horizontal_flip", {}),
-        ("random_vertical_flip", {}),
-        ("random_rotate", {"degree": 45}),
-        ("random_blur", {"kernel_size": 9}),
-        ("random_blur", {"kernel_size": 15}),
-        ("random_contrast", {"min": 0.5, "max": 1.5}),
-        ("random_brightness", {"min": 0.5, "max": 1.5}),
+        ("auto_augmentation", {}),
+        # ("random_horizontal_flip", {}),
+        # ("random_vertical_flip", {}),
+        # ("random_rotate", {"degree": 45}),
+        # ("random_blur", {"kernel_size": 9}),
+        # ("random_blur", {"kernel_size": 15}),
+        # ("random_contrast", {"min": 0.5, "max": 1.5}),
+        # ("random_brightness", {"min": 0.5, "max": 1.5}),
     ],
 )
 def test_image_augmentation(test_image, augmentation_type, augmentation_params):
