@@ -103,10 +103,9 @@ class AutoAugment(torch.nn.Module):
     def forward(self, imgs):
         trivial_augment = transforms.TrivialAugmentWide()
 
-        for img in imgs:
-            img = img.to(torch.uint8)
-        imgs = trivial_augment(imgs)
-
+        for i in range(imgs.size(0)):
+            img = imgs[i].to(torch.uint8)
+            imgs[i] = trivial_augment(img)
         return imgs
 
 
