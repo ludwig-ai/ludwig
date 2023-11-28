@@ -15,7 +15,7 @@
 # ==============================================================================
 """This module contains the class and auxiliary methods of a model."""
 import contextlib
-import json
+import csv
 import logging
 import math
 import os
@@ -28,6 +28,7 @@ import time
 from typing import Callable, Dict, List, Optional, Tuple
 
 import numpy as np
+import pandas as pd
 import psutil
 import torch
 from torch.utils.tensorboard import SummaryWriter
@@ -695,9 +696,12 @@ class Trainer(BaseTrainer):
             llm_eval_examples = progress_tracker.llm_eval_examples
             dict_save_dir = os.path.join(os.path.dirname(checkpoint_manager.directory), "llm_eval_examples")
             os.makedirs(dict_save_dir, exist_ok=True)
-            dict_save_path = os.path.join(dict_save_dir, f"{progress_tracker.checkpoint_number}.json")
+            dict_save_path = os.path.join(dict_save_dir, f"{progress_tracker.checkpoint_number}.csv")
+            llm_eval_examples = pd.DataFrame(llm_eval_examples).to_dict(orient="records")
             with open(dict_save_path, "w") as outfile:
-                json.dump(llm_eval_examples, outfile)
+                writer = csv.DictWriter(outfile, fieldnames=["inputs", "targets", "outputs"])
+                writer.writeheader()
+                writer.writerows(llm_eval_examples)
 
             self.write_eval_summary(
                 summary_writer=validation_summary_writer,
