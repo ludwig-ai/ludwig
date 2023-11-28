@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-# Copyright (c) 2019 Uber Technologies, Inc.
+# Copyright (c) 2023 Predibase, Inc., 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -138,6 +138,7 @@ class Trainer(BaseTrainer):
         self.enable_profiling = config.enable_profiling
         self.steps_per_epoch = 0  # Computed during training, after batcher has been initialized.
         self.total_steps = 0  # Computed during training, after batcher has been initialized.
+        self.total_expected_checkpoints = 0  # Computed during training, after batcher has been initialized.
 
         self.regularization_lambda = config.regularization_lambda
         self.regularization_type = config.regularization_type
@@ -222,6 +223,9 @@ class Trainer(BaseTrainer):
 
         # We may need to replace the embedding layer when using 8-bit optimizers from bitsandbytes.
         update_embedding_layer(self.compiled_model, self.config)
+
+        # Register any post forward hooks for the model
+        self.compiled_model._activate_forward_hooks()
 
         # Enable gradient checkpointing if configured
         if self.config.enable_gradient_checkpointing:
@@ -651,7 +655,6 @@ class Trainer(BaseTrainer):
         start_time = time.time()
         self.callback(lambda c: c.on_eval_start(self, progress_tracker, save_path))
 
-        progress_tracker.checkpoint_number += 1
         if self.is_coordinator():
             logger.info(f"\nRunning evaluation for step: {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
 
@@ -915,6 +918,8 @@ class Trainer(BaseTrainer):
                 )
                 final_steps_per_checkpoint = min(final_steps_per_checkpoint, self.total_steps)
                 early_stopping_steps = final_steps_per_checkpoint * self.early_stop
+                if not self.skip_save_progress:
+                    self.total_expected_checkpoints = self.total_steps // final_steps_per_checkpoint + self.epochs
 
                 # Initialize the learning rate scheduler.
                 self.scheduler = LRScheduler(
@@ -941,6 +946,7 @@ class Trainer(BaseTrainer):
 
                 progress_bar_config = {
                     "desc": "Training",
+                    "initial": progress_tracker.steps,
                     "total": self.total_steps,
                     "disable": is_progressbar_disabled(),
                     "file": sys.stdout,
@@ -984,7 +990,6 @@ class Trainer(BaseTrainer):
                         early_stopping_steps,
                         profiler,
                     )
-
                     if self.is_coordinator():
                         # ========== Save training progress ==========
                         logger.debug(
@@ -992,9 +997,14 @@ class Trainer(BaseTrainer):
                             f"{time_utils.strdelta((time.time() - start_time) * 1000.0)}."
                         )
                     if not self.skip_save_progress:
+                        progress_tracker.checkpoint_number += 1
+
                         checkpoint_manager.save(progress_tracker.steps)
                         if self.is_coordinator():
                             progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
+
+                        # Callback that the checkpoint was reached, regardless of whether the model was evaluated.
+                        self.callback(lambda c: c.on_checkpoint(self, progress_tracker))
 
                     if not self.skip_save_model and self.skip_all_evaluation:
                         # All evaluation was skipped, so save the current step as the best so far.
@@ -1009,6 +1019,9 @@ class Trainer(BaseTrainer):
                 lambda c: c.on_trainer_train_teardown(self, progress_tracker, save_path, self.is_coordinator()),
                 coordinator_only=False,
             )
+
+            # Deactivate any forward hooks for the model used at training time.
+            self.compiled_model._deactivate_forward_hooks()
 
             # Stop the profiler.
             if profiler:
@@ -1196,9 +1209,13 @@ class Trainer(BaseTrainer):
                 # this should not make a difference, except in the unlikely event an error occurs during eval and we
                 # want to resume from the last checkpoint, in which case we will lose slightly more progress this way.
                 if not self.skip_save_progress:
+                    progress_tracker.checkpoint_number += 1
                     checkpoint_manager.save(progress_tracker.steps)
                     if self.is_coordinator():
                         progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
+
+                    # Callback that the checkpoint was reached, regardless of whether the model was evaluated or not.
+                    self.callback(lambda c: c.on_checkpoint(self, progress_tracker))
 
             # If this was the last batch, then increment the epoch counter and invoke the `on_epoch_end` callback.
             if batcher.last_batch():

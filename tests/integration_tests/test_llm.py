@@ -761,7 +761,7 @@ quantization section from your Ludwig configuration."""
                 "config.json",
                 "generation_config.json",
                 "merges.txt",
-                "pytorch_model.bin",
+                "model.safetensors",
                 "special_tokens_map.json",
                 "tokenizer.json",
                 "tokenizer_config.json",
@@ -1065,3 +1065,45 @@ def test_local_path_loading(tmpdir):
 
     # Check that the models are the same
     assert _compare_models(model1.model, model2.model)
+
+
+@pytest.mark.parametrize(
+    "finetuning_strategy, embedding_noise",
+    [
+        pytest.param(None, 0, id="full_finetuning_without_noise"),
+        pytest.param(None, 5, id="full_finetuning_with_noise"),
+        pytest.param("lora", 0, id="lora_without_noise"),
+        pytest.param("lora", 5, id="lora_with_noise"),
+    ],
+)
+def test_llm_finetuning_with_embedding_noise(
+    tmpdir,
+    csv_filename,
+    finetuning_strategy,
+    embedding_noise,
+):
+    train_df, prediction_df, config = _prepare_finetuning_test(csv_filename, finetuning_strategy, LOCAL_BACKEND, {})
+
+    # Add embedding noise
+    if embedding_noise:
+        config["model_parameters"] = {"neftune_noise_alpha": embedding_noise}
+
+    model = LudwigModel(config)
+
+    if embedding_noise:
+        assert model.config_obj.model_parameters.neftune_noise_alpha == embedding_noise
+
+    output_directory: str = str(tmpdir)
+    model_directory: str = pathlib.Path(output_directory) / "api_experiment_run" / "model"
+    model.train(dataset=train_df, output_directory=output_directory, skip_save_processed_input=False)
+
+    # Make sure we can load the saved model and then use it for predictions
+    model = LudwigModel.load(str(model_directory), backend=LOCAL_BACKEND)
+
+    base_model = LLM(ModelConfig.from_dict(config))
+    assert not _compare_models(base_model, model.model)  # noqa F821
+
+    preds, _ = model.predict(dataset=prediction_df, output_directory=output_directory)
+    preds = convert_preds(preds)
+
+    assert preds
