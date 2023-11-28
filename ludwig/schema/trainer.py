@@ -207,6 +207,13 @@ class ECDTrainerConfig(BaseTrainerConfig):
         parameter_metadata=TRAINER_METADATA[MODEL_ECD]["train_steps"],
     )
 
+    eval_steps: float = schema_utils.NonNegativeInteger(
+        default=None,
+        allow_none=True,
+        description="The number of steps to use for evaluation. If None, the entire evaluation set will be used.",
+        parameter_metadata=TRAINER_METADATA[MODEL_ECD]["eval_steps"],
+    )
+
     steps_per_checkpoint: int = schema_utils.NonNegativeInteger(
         default=0,
         description=(
@@ -846,6 +853,12 @@ class LLMTrainerConfig(BaseTrainerConfig):
         default=None,
         allow_none=True,
         description="Number of training steps to train in the LLM trainer.",
+    )
+
+    eval_steps: float = schema_utils.NonNegativeInteger(
+        default=None,
+        allow_none=True,
+        description="The number of steps to evaluate in the LLM trainer.",
     )
 
     steps_per_checkpoint: int = schema_utils.NonNegativeInteger(

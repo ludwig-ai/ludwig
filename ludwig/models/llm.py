@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
-from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer, GenerationConfig, PreTrainedModel
+from transformers import AutoConfig, AutoModelForCausalLM, GenerationConfig, PreTrainedModel
 
 from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, MODEL_LLM, PREDICTIONS, TEXT
 from ludwig.features.base_feature import ModuleWrapper, OutputFeature
@@ -14,6 +14,7 @@ from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.features.text_feature import TextOutputFeature
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
+from ludwig.modules.training_hooks import NEFTuneHook
 from ludwig.schema.features.base import BaseOutputFeatureConfig, FeatureCollection
 from ludwig.schema.model_types.llm import LLMModelConfig
 from ludwig.utils.augmentation_utils import AugmentationPipelines
@@ -26,10 +27,10 @@ from ludwig.utils.llm_utils import (
     get_realigned_target_and_prediction_tensors_for_inference,
     pad_target_tensor_for_fine_tuning,
     remove_left_padding,
-    set_pad_token,
 )
 from ludwig.utils.logging_utils import log_once
 from ludwig.utils.output_feature_utils import set_output_feature_tensor
+from ludwig.utils.tokenizers import HFTokenizer
 from ludwig.utils.torch_utils import reg_loss
 
 logger = logging.getLogger(__name__)
@@ -144,8 +145,7 @@ class LLM(BaseModel):
             self.global_max_sequence_length = self.context_len
 
         # Initialize tokenizer
-        self.tokenizer = AutoTokenizer.from_pretrained(self.config_obj.base_model)
-        set_pad_token(self.tokenizer)
+        self.tokenizer = HFTokenizer(self.config_obj.base_model).tokenizer
 
         self._set_generation_config(self.config_obj.generation.to_dict())
 
@@ -756,6 +756,22 @@ class LLM(BaseModel):
         _targets = pad_target_tensor_for_fine_tuning(targets, predictions, self.model_inputs, of_name)
 
         return _targets
+
+    def _activate_forward_hooks(self):
+        """Activates/registers forward hooks for the model."""
+        if not self.config_obj.model_parameters:
+            return
+
+        # Initialize forward hook handles
+        if self.config_obj.model_parameters.neftune_noise_alpha:
+            self._forward_hook_handles.append(
+                NEFTuneHook(neftune_noise_alpha=self.config_obj.model_parameters.neftune_noise_alpha)
+            )
+
+        # Activate forward hooks iteratively
+        for hook in self._forward_hook_handles:
+            # Update the model with the forward hooks in place
+            self.model = hook.activate_hook(self.model)
 
     @staticmethod
     def get_augmentation_pipelines() -> AugmentationPipelines:

@@ -60,10 +60,22 @@ class RoPEScalingConfigField(schema_utils.DictMarshmallowField):
 class ModelParametersConfig(schema_utils.BaseMarshmallowConfig):
     rope_scaling: RoPEScalingConfig = RoPEScalingConfigField().get_default_field()
 
+    neftune_noise_alpha: Optional[int] = schema_utils.IntegerRange(
+        default=0,
+        min=0,
+        allow_none=True,
+        description="The alpha parameter for the embedding noise, which controls the amount of noise added to the "
+        "embeddings. The higher the value, the more noise is added. This is based on the paper NEFTune: Noisy "
+        "Embeddings Improve Instruction Finetuning. Paper: https://arxiv.org/pdf/2310.05914.pdf. Default: 0."
+        "Suggested values: 5, 10",
+    )
+
     def to_dict(self):
         config = {}
         if self.rope_scaling:
             config["rope_scaling"] = self.rope_scaling.to_dict()
+        if self.neftune_noise_alpha:
+            config["neftune_noise_alpha"] = self.neftune_noise_alpha
         return config
 
 
