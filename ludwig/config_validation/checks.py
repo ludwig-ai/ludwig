@@ -633,7 +633,7 @@ def check_llm_quantization_backend_incompatibility(config: "ModelConfig") -> Non
 
 @register_config_check
 def check_llm_text_encoder_is_not_used_with_ecd(config: "ModelConfig") -> None:
-    """Checks that the text encoder is not used with ECD."""
+    """Checks that a pretrained text encoder is not used for ECD models with a text output feature."""
     if config.model_type != MODEL_ECD:
         return
 
