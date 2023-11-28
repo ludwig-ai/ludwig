@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-# Copyright (c) 2019 Uber Technologies, Inc.
+# Copyright (c) 2023 Predibase, Inc., 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.features.set_feature import _SetPreprocessing
 from ludwig.schema.features.bag_feature import BagInputFeatureConfig
-from ludwig.types import FeatureMetadataDict, PreprocessingConfigDict, TrainingSetMetadataDict
+from ludwig.types import FeatureMetadataDict, ModelConfigDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils.strings_utils import create_vocabulary
 
 logger = logging.getLogger(__name__)
@@ -41,7 +41,11 @@ class BagFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def get_feature_meta(
-        column, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
+        config: ModelConfigDict,
+        column,
+        preprocessing_parameters: PreprocessingConfigDict,
+        backend,
+        is_input_feature: bool,
     ) -> FeatureMetadataDict:
         vocabulary = create_vocabulary(
             column,
@@ -55,7 +59,7 @@ class BagFeatureMixin(BaseFeatureMixin):
             "str2idx": vocabulary.str2idx,
             "str2freq": vocabulary.str2freq,
             "vocab_size": len(vocabulary.str2idx),
-            "max_set_size": vocabulary.line_length_max,
+            "max_set_size": vocabulary.max_sequence_length,
         }
 
     @staticmethod

@@ -1,20 +1,11 @@
+import copy
 import logging
 from typing import Dict, Tuple
 
 import torch
 import torch.nn.functional as F
 from bitsandbytes.nn.modules import Embedding
-from transformers import (
-    AutoConfig,
-    AutoModelForCausalLM,
-    CodeLlamaTokenizer,
-    CodeLlamaTokenizerFast,
-    GPT2Tokenizer,
-    GPT2TokenizerFast,
-    LlamaTokenizer,
-    LlamaTokenizerFast,
-    PreTrainedTokenizer,
-)
+from transformers import AutoConfig, AutoModelForCausalLM, PreTrainedTokenizer
 
 from ludwig.constants import IGNORE_INDEX_TOKEN_ID, LOGITS, PREDICTIONS, PROBABILITIES
 from ludwig.schema.trainer import LLMTrainerConfig
@@ -24,41 +15,6 @@ logger = logging.getLogger(__name__)
 
 
 FALLBACK_CONTEXT_LEN = 2048
-
-
-def set_pad_token(tokenizer: PreTrainedTokenizer):
-    """Sets the pad token for the tokenizer if it is not already set.
-
-    Args:
-        tokenizer (PreTrainedTokenizer): The tokenizer.
-
-    Example:
-        >>> from transformers import GPT2Tokenizer, GPT2TokenizerFast, LlamaTokenizer, LlamaTokenizerFast # noqa
-        >>> tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
-        >>> set_pad_token(tokenizer)
-    """
-    # Tokenizers might have the pad token id attribute since they tend to use the same base class, but
-    # it can be set to None so we check for this explicitly.
-    if hasattr(tokenizer, "pad_token_id") and tokenizer.pad_token_id is not None:
-        return
-
-    # HACK(Arnav): gpt, gpt2 and llama tokenizers had no pad tokens.
-    # These recommend using eos tokens instead
-    # https://github.com/huggingface/transformers/issues/2648#issuecomment-616177044
-    # https://github.com/huggingface/transformers/issues/2630#issuecomment-1290809338
-    if any(
-        isinstance(tokenizer, t)
-        for t in [
-            GPT2Tokenizer,
-            GPT2TokenizerFast,
-            LlamaTokenizer,
-            LlamaTokenizerFast,
-            CodeLlamaTokenizer,
-            CodeLlamaTokenizerFast,
-        ]
-    ):
-        tokenizer.pad_token = tokenizer.eos_token
-        tokenizer.pad_token_id = tokenizer.eos_token_id
 
 
 def get_context_len(model_config: AutoConfig):
@@ -388,7 +344,7 @@ def _get_decoded_targets_and_predictions(
     return decoded_targets, decoded_predictions
 
 
-def realign_target_and_prediction_tensors_for_inference(
+def get_realigned_target_and_prediction_tensors_for_inference(
     targets: Dict[str, torch.Tensor],
     predictions: Dict[str, Dict[str, torch.Tensor]],
     of_name: str,
@@ -424,26 +380,30 @@ def realign_target_and_prediction_tensors_for_inference(
     if not pad_value:
         pad_value = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else tokenizer.eos_token_id
 
+    zeros_to_add = (
+        target_length - prediction_length if target_length > prediction_length else prediction_length - target_length
+    )
+
+    # We don't want to modify the original targets and predictions tensors, so we create a copy of them.
+    _targets = copy.deepcopy(targets)
+    _predictions = copy.deepcopy(predictions)
+
     # Align target and prediction tensors for text to text metric computation
     if target_length > prediction_length:
         # Pad the predictions.
-        zeros_to_add = target_length - prediction_length
-
-        predictions[of_name][PREDICTIONS] = F.pad(
-            predictions[of_name][PREDICTIONS], (0, zeros_to_add), value=pad_value
+        _predictions[of_name][PREDICTIONS] = F.pad(
+            _predictions[of_name][PREDICTIONS], (0, zeros_to_add), value=pad_value
         ).to(torch.int64)
 
-        predictions[of_name][PROBABILITIES] = F.pad(predictions[of_name][PROBABILITIES], (0, 0, 0, zeros_to_add)).to(
+        _predictions[of_name][PROBABILITIES] = F.pad(_predictions[of_name][PROBABILITIES], (0, 0, 0, zeros_to_add)).to(
             torch.float32
         )
 
-        predictions[of_name][LOGITS] = F.pad(predictions[of_name][LOGITS], (0, 0, 0, zeros_to_add)).to(torch.float32)
+        _predictions[of_name][LOGITS] = F.pad(_predictions[of_name][LOGITS], (0, 0, 0, zeros_to_add)).to(torch.float32)
     else:
-        zeros_to_add = prediction_length - target_length
+        _targets[of_name] = F.pad(_targets[of_name], (0, zeros_to_add), value=pad_value).to(torch.int64)
 
-        targets[of_name] = F.pad(targets[of_name], (0, zeros_to_add), value=pad_value).to(torch.int64)
-
-    return targets, predictions
+    return _targets, _predictions
 
 
 def update_embedding_layer(model: AutoModelForCausalLM, config_obj: LLMTrainerConfig) -> AutoModelForCausalLM:

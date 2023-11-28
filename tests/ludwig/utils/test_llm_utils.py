@@ -1,8 +1,9 @@
 import pytest
 import torch
-from transformers import AutoConfig, AutoTokenizer
+from transformers import AutoConfig, AutoModelForCausalLM
 
 from ludwig.constants import LOGITS, PREDICTIONS, PROBABILITIES
+from ludwig.modules.training_hooks import NEFTuneHook
 from ludwig.utils.llm_utils import (
     add_left_padding,
     create_attention_mask,
@@ -10,12 +11,12 @@ from ludwig.utils.llm_utils import (
     find_last_matching_index,
     generate_merged_ids,
     get_context_len,
+    get_realigned_target_and_prediction_tensors_for_inference,
     has_padding_token,
     pad_target_tensor_for_fine_tuning,
-    realign_target_and_prediction_tensors_for_inference,
     remove_left_padding,
-    set_pad_token,
 )
+from ludwig.utils.tokenizers import HFTokenizer
 
 pytestmark = [pytest.mark.llm]
 
@@ -26,9 +27,7 @@ TEST_MODEL_NAME = "hf-internal-testing/tiny-random-OPTForCausalLM"
 
 @pytest.fixture
 def tokenizer():
-    tokenizer = AutoTokenizer.from_pretrained(TEST_MODEL_NAME)
-    set_pad_token(tokenizer)
-    return tokenizer
+    return HFTokenizer(TEST_MODEL_NAME).tokenizer
 
 
 @pytest.fixture
@@ -41,22 +40,6 @@ def input_ids():
 def target_ids():
     # Provide sample target IDs tensor
     return torch.tensor([[9, 10, 11], [12, 13, 14]])
-
-
-def test_set_pad_token_doesnt_exist():
-    tokenizer = AutoTokenizer.from_pretrained("gpt2", use_fast=False)
-    assert tokenizer.pad_token_id is None
-
-    set_pad_token(tokenizer)
-    assert tokenizer.pad_token_id == 50256
-
-
-def test_set_pad_token_already_exists():
-    tokenizer = AutoTokenizer.from_pretrained(TEST_MODEL_NAME, use_fast=False)
-    assert tokenizer.pad_token_id == 1
-
-    set_pad_token(tokenizer)
-    assert tokenizer.pad_token_id == 1
 
 
 class TestSetContextLen:
@@ -247,7 +230,7 @@ def test_pad_target_tensor_for_fine_tuning():
     assert torch.equal(expected_target[of_name], updated_targets[of_name])
 
 
-def test_realign_target_and_prediction_tensors_for_inference(tokenizer):
+def test_get_realigned_target_and_prediction_tensors_for_inference(tokenizer):
     of_name = "out_1"
     vocab_size = 8
 
@@ -260,7 +243,7 @@ def test_realign_target_and_prediction_tensors_for_inference(tokenizer):
             LOGITS: torch.randn(1, 7, vocab_size).to(torch.float32),
         }
     }
-    updated_targets, updated_predictions = realign_target_and_prediction_tensors_for_inference(
+    updated_targets, updated_predictions = get_realigned_target_and_prediction_tensors_for_inference(
         targets, predictions, of_name, tokenizer
     )
 
@@ -279,11 +262,15 @@ def test_realign_target_and_prediction_tensors_for_inference(tokenizer):
             LOGITS: torch.randn(1, 9, vocab_size).to(torch.float32),
         }
     }
-    updated_targets, updated_predictions = realign_target_and_prediction_tensors_for_inference(
+    updated_targets, updated_predictions = get_realigned_target_and_prediction_tensors_for_inference(
         targets, predictions, of_name, tokenizer
     )
 
-    assert predictions == updated_predictions
+    for key in updated_predictions.keys():
+        assert torch.equal(updated_predictions[key][PREDICTIONS], predictions[key][PREDICTIONS])
+        assert torch.equal(updated_predictions[key][PROBABILITIES], predictions[key][PROBABILITIES])
+        assert torch.equal(updated_predictions[key][LOGITS], predictions[key][LOGITS])
+
     assert torch.equal(updated_targets[of_name], torch.tensor([[78, 79, 504, 76, 397, 84, 0, 1, 1]]))
 
     # Scenario 3: Target length is longer than the prediction tensor, so we need to realign them
@@ -295,11 +282,11 @@ def test_realign_target_and_prediction_tensors_for_inference(tokenizer):
             LOGITS: torch.randn(1, 7, vocab_size).to(torch.float32),
         }
     }
-    updated_targets, updated_predictions = realign_target_and_prediction_tensors_for_inference(
+    updated_targets, updated_predictions = get_realigned_target_and_prediction_tensors_for_inference(
         targets, predictions, of_name, tokenizer
     )
 
-    assert targets == updated_targets
+    assert torch.equal(updated_targets[of_name], targets[of_name])
 
     assert torch.equal(updated_predictions[of_name][PREDICTIONS], torch.tensor([[78, 79, 504, 76, 397, 84, 0, 1, 1]]))
     assert updated_predictions[of_name][PROBABILITIES].shape[1] == targets[of_name].shape[1]
@@ -312,3 +299,47 @@ def test_realign_target_and_prediction_tensors_for_inference(tokenizer):
     assert torch.equal(updated_predictions[of_name][LOGITS][0][-1], torch.zeros(vocab_size))
     assert torch.equal(updated_predictions[of_name][LOGITS][0][-2], torch.zeros(vocab_size))
     assert not torch.equal(updated_predictions[of_name][LOGITS][0][-3], torch.zeros(vocab_size))
+
+
+def _setup_models_for_neftune():
+    module_without_hook = AutoModelForCausalLM.from_pretrained(TEST_MODEL_NAME)
+    module_with_hook = AutoModelForCausalLM.from_pretrained(TEST_MODEL_NAME)
+
+    # Only module_with_hook should have the NEFTuneHook
+    neftune_hook = NEFTuneHook(neftune_noise_alpha=5)
+    module_with_hook = neftune_hook.activate_hook(module_with_hook)
+
+    return module_without_hook, module_with_hook
+
+
+def _forward_pass_and_assert_neftune_hook(module_without_hook, module_with_hook, mode):
+    assert module_with_hook.get_input_embeddings()._forward_hooks
+    assert not module_without_hook.get_input_embeddings()._forward_hooks
+
+    if mode == "train":
+        module_without_hook.train()
+        module_with_hook.train()
+    elif mode == "eval":
+        module_without_hook.eval()
+        module_with_hook.eval()
+
+    input_tensor = torch.tensor([[1, 2, 3]])
+    output_tensor_with_noise = module_with_hook.get_input_embeddings()(input_tensor)
+    output_tensor_without_noise = module_without_hook.get_input_embeddings()(input_tensor)
+
+    if mode == "train":
+        assert not torch.equal(output_tensor_with_noise, output_tensor_without_noise)
+    elif mode == "eval":
+        assert torch.equal(output_tensor_with_noise, output_tensor_without_noise)
+
+
+def test_neftune_hook_with_noise_alpha_train_mode():
+    """Test that the NEFTuneHook is only applied when the module is in training mode."""
+    module_without_hook, module_with_hook = _setup_models_for_neftune()
+    _forward_pass_and_assert_neftune_hook(module_without_hook, module_with_hook, mode="train")
+
+
+def test_neftune_hook_with_noise_alpha_eval_mode():
+    """Test that the NEFTuneHook is not applied when the module is in eval mode."""
+    module_without_hook, module_with_hook = _setup_models_for_neftune()
+    _forward_pass_and_assert_neftune_hook(module_without_hook, module_with_hook, mode="eval")

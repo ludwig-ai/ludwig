@@ -1,4 +1,4 @@
-# Copyright (c) 2019 Uber Technologies, Inc.
+# Copyright (c) 2023 Predibase, Inc., 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ from unittest import mock
 import pandas as pd
 import pytest
 import torch
+import yaml
 
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
@@ -765,3 +766,52 @@ def test_constant_metadata(tmpdir):
     metadata2 = model.training_set_metadata
 
     assert metadata1 == metadata2
+
+
+@pytest.mark.integration_tests_e
+@pytest.mark.parametrize(
+    "input_max_sequence_length, global_max_sequence_length, expect_raise",
+    [
+        (5, "null", True),
+        ("null", 5, True),
+        (5, 5, True),
+        (100, 100, False),
+        (100, "null", False),
+        ("null", "null", False),
+    ],
+)
+def test_llm_template_too_long(tmpdir, input_max_sequence_length, global_max_sequence_length, expect_raise):
+    zero_shot_config = yaml.safe_load(
+        f"""
+  model_type: llm
+  base_model: hf-internal-testing/tiny-random-GPTJForCausalLM
+
+  input_features:
+    - name: instruction
+      type: text
+      preprocessing:
+        max_sequence_length: {input_max_sequence_length}
+
+  output_features:
+    - name: output
+      type: text
+
+  preprocessing:
+    global_max_sequence_length: {global_max_sequence_length}
+  """
+    )
+    zero_shot_config["prompt"] = {}
+    zero_shot_config["prompt"][
+        "template"
+    ] = "This is a very long template that is longer than the max sequence length {instruction}"
+
+    input_features = [text_feature(name="instruction")]
+    output_features = [text_feature(name="output", output_feature=True)]
+    data_csv1 = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset1.csv"))
+    model = LudwigModel(zero_shot_config)
+
+    if expect_raise:
+        with pytest.raises(RuntimeError):
+            model.preprocess(dataset=data_csv1, output_directory=tmpdir)
+    else:
+        model.preprocess(dataset=data_csv1, output_directory=tmpdir)

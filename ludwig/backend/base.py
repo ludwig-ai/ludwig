@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-# Copyright (c) 2020 Uber Technologies, Inc.
+# Copyright (c) 2023 Predibase, Inc., 2020 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -318,7 +318,7 @@ class DataParallelBackend(LocalPreprocessingMixin, Backend, ABC):
     ) -> BaseTrainer:  # type: ignore[override]
         from ludwig.trainers.trainer import Trainer
 
-        return Trainer(distributed=self._distributed, **kwargs)
+        return Trainer(config, model, distributed=self._distributed, **kwargs)
 
     def create_predictor(self, model: BaseModel, **kwargs):
         from ludwig.models.predictor import get_predictor_cls

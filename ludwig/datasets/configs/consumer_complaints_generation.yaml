@@ -9,19 +9,19 @@ description: |
   We have added a structured JSON field that contains a company generated response to the raised complaint. The idea
   is to fine-tune an LLM to generate this output JSON field.
 columns:
-  - name: Date received
-    type: Date
-  - name: Generated Company Response
-    type: text
   - name: Complaint ID
     type: number
-  - name: Issue
-    type: text
+  - name: Date received
+    type: Date
   - name: Product
     type: text
-  - name: Structured JSON Output
+  - name: Issue
     type: text
-  - name: Consumer complaint narrative
+  - name: Complaint
+    type: text
+  - name: Company Response
+    type: text
+  - name: Structured JSON Output
     type: text
 output_features:
   - name: Structured JSON Output

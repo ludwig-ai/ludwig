@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-# Copyright (c) 2019 Uber Technologies, Inc.
+# Copyright (c) 2023 Predibase, Inc., 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import torch
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend import Backend, LOCAL_BACKEND
+from ludwig.config_validation.preprocessing import check_global_max_sequence_length_fits_prompt_template
 from ludwig.constants import (
     BFILL,
     CHECKSUM,
@@ -1277,9 +1278,11 @@ def build_dataset(
         callback.on_build_metadata_start(dataset_df, mode)
 
     logger.debug("build metadata")
-    metadata = build_metadata(
-        metadata, feature_name_to_preprocessing_parameters, dataset_cols, feature_configs, backend
+    metadata: TrainingSetMetadataDict = build_metadata(
+        config, metadata, feature_name_to_preprocessing_parameters, dataset_cols, feature_configs, backend
     )
+
+    check_global_max_sequence_length_fits_prompt_template(metadata, global_preprocessing_parameters)
 
     for callback in callbacks or []:
         callback.on_build_metadata_end(dataset_df, mode)
@@ -1346,7 +1349,7 @@ def build_dataset(
     col_name_to_dtype = {}
     for col_name, col in proc_cols.items():
         # if col is a list of list-like objects, we assume the internal dtype of each col[i] remains unchanged.
-        if type(col) == list and type(col[0]) in {list, np.ndarray, torch.Tensor}:
+        if type(col) is list and type(col[0]) in {list, np.ndarray, torch.Tensor}:
             continue
         col_name_to_dtype[col_name] = col.dtype
     dataset = dataset.astype(col_name_to_dtype)
@@ -1521,6 +1524,7 @@ def is_input_feature(feature_config: FeatureConfigDict) -> bool:
 
 
 def build_metadata(
+    config: ModelConfigDict,
     metadata: TrainingSetMetadataDict,
     feature_name_to_preprocessing_parameters: Dict[str, PreprocessingConfigDict],
     dataset_cols: Dict[str, Series],
@@ -1536,7 +1540,7 @@ def build_metadata(
 
         column = dataset_cols[feature_config[COLUMN]]
         metadata[feature_name] = get_from_registry(feature_config[TYPE], get_base_type_registry()).get_feature_meta(
-            column, preprocessing_parameters, backend, is_input_feature(feature_config)
+            config, column, preprocessing_parameters, backend, is_input_feature(feature_config)
         )
 
         metadata[feature_name][PREPROCESSING] = preprocessing_parameters
