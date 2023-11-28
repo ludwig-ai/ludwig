@@ -505,13 +505,7 @@ def test_check_sample_ratio_and_size_compatible():
         "output_features": [binary_feature()],
         "model_type": "ecd",
     }
-    ModelConfig.from_dict(
-        {
-            "input_features": [binary_feature()],
-            "output_features": [binary_feature()],
-            "model_type": "ecd",
-        }
-    )
+    ModelConfig.from_dict(config)
 
     config["preprocessing"] = {"sample_size": 10}
     ModelConfig.from_dict(config)
@@ -529,3 +523,24 @@ def test_check_sample_ratio_and_size_compatible():
 
     del config["preprocessing"]["sample_size"]
     ModelConfig.from_dict(config)
+
+
+def test_check_llm_text_encoder_is_not_used_with_ecd():
+    config = {
+        "input_features": [
+            {
+                "name": "Question",
+                "type": "text",
+                "encoder": {
+                    "type": "auto_transformer",
+                    "pretrained_model_name_or_path": "meta-llama/Llama-2-7b-hf",
+                    "trainable": False,
+                },
+                "preprocessing": {"cache_encoder_embeddings": True},
+            }
+        ],
+        "output_features": [{"name": "Answer", "type": "text"}],
+    }
+
+    with pytest.raises(ConfigValidationError):
+        ModelConfig.from_dict(config)
