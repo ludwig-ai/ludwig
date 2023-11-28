@@ -1191,10 +1191,12 @@ class Trainer(BaseTrainer):
 
             if progress_tracker.steps % final_steps_per_checkpoint == 0:
                 # Before continuing to evaluation or skipping evaluation altogether, we should use this point to
-                # ensure that the model weights are not NaN or Inf. If a nan/inf tensor is detected, we should break
-                # out of the training loop immediately and raise an error. There is no point in running evaluation
-                # for this step, as the model weights are already in a bad state or continuing to train the model.
+                # ensure that the model weights are not NaN or Inf.
                 has_nan_or_inf_tensors = self._has_for_nan_or_inf_weights(self.dist_model)
+                # If a nan/inf tensor is detected, we should break out of the training loop immediately and raise an #
+                # error. There is no point in running evaluation for this step, as the model weights are already in
+                # a bad state, or continuing to train the model since the loss will always be NaN or Inf from this
+                # point forward.
                 if has_nan_or_inf_tensors:
                     return True, has_nan_or_inf_tensors
 
@@ -1259,8 +1261,8 @@ class Trainer(BaseTrainer):
         """
         local_has_nan_or_inf = has_nan_or_inf_tensors(model)
 
-        # Use all_reduce to aggregate local_has_nan across all processes and sum the result into global_has_nan.
-        global_has_nan_or_inf = torch.zeros(1)
+        # Use all_reduce to aggregate local_has_nan across all processes and sum the result into global_has_nan, which
+        # will be a tensor with a single element on all processes after the all_reduce operation.
         global_has_nan_or_inf = torch.tensor(int(local_has_nan_or_inf), device=self.device)
         self.distributed.allreduce(global_has_nan_or_inf)
 

@@ -109,17 +109,17 @@ def has_nan_or_inf_tensors(module: torch.nn.Module) -> bool:
     """
     for name, param in module.named_parameters():
         if param.requires_grad and (torch.isnan(param).any() or torch.isinf(param).any()):
-            logger.debug(f"Found NaN or inf values in parameter {name} of module {module.__class__.__name__}")
+            logger.info(f"Found NaN or inf values in parameter {name} of module {module.__class__.__name__}")
             return True
 
     for name, buffer in module.named_buffers():
         if torch.isnan(buffer).any() or torch.isinf(buffer).any():
-            logger.debug(f"Found NaN or inf values in buffer {name} of module {module.__class__.__name__}")
+            logger.info(f"Found NaN or inf values in buffer {name} of module {module.__class__.__name__}")
             return True
 
     for name, submodule in module.named_children():
         if has_nan_or_inf_tensors(submodule):
-            logger.debug(f"Found NaN or inf values in submodule {name} of module {module.__class__.__name__}")
+            logger.info(f"Found NaN or inf values in submodule {name} of module {module.__class__.__name__}")
             return True
 
     return False
