@@ -48,6 +48,8 @@ Or install with all optional dependencies:
 pip install ludwig[full]
 ```
 
+Please see [contributing](https://ludwig.ai/latest/developer_guide/contributing/) for more detailed installation instructions.
+
 # 🚂 Getting Started
 
 Want to take a quick peak at some of the Ludwig 0.8 features? Check out this Colab Notebook 🚀 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1lB4ALmEyvcMycE3Mlnsd7I3bc0zxvk39)
@@ -310,7 +312,7 @@ Read our publications on [Ludwig](https://arxiv.org/pdf/1909.07930.pdf), [declar
 
 Learn more about [how Ludwig works](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/how_ludwig_works/), [how to get started](https://ludwig-ai.github.io/ludwig-docs/latest/getting_started/), and work through more [examples](https://ludwig-ai.github.io/ludwig-docs/latest/examples).
 
-If you are interested in contributing, have questions, comments, or thoughts to share, or if you just want to be in the
+If you are interested in [contributing](https://ludwig.ai/latest/developer_guide/contributing/), have questions, comments, or thoughts to share, or if you just want to be in the
 know, please consider [joining the Ludwig Slack](https://join.slack.com/t/ludwig-ai/shared_invite/zt-mrxo87w6-DlX5~73T2B4v_g6jj0pJcQ) and follow us on [Twitter](https://twitter.com/ludwig_ai)!
 
 # 🤝 Join the community to build Ludwig with us
