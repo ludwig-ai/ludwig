@@ -643,7 +643,10 @@ def check_llm_text_encoder_is_not_used_with_ecd(config: "ModelConfig") -> None:
     if config.input_features[0].type != TEXT:
         return
 
-    if config.input_features[0].encoder.pretrained_model_name_or_path:
+    if (
+        hasattr(config.input_features[0].encoder, "pretrained_model_name_or_path")
+        and config.input_features[0].encoder.pretrained_model_name_or_path
+    ):
         raise ConfigValidationError("Please use the `model_type: llm` for text-to-text models.")
 
 
