@@ -15,6 +15,7 @@
 # ==============================================================================
 """This module contains the class and auxiliary methods of a model."""
 import contextlib
+import json
 import logging
 import math
 import os
@@ -690,6 +691,13 @@ class Trainer(BaseTrainer):
                 self.eval_batch_size,
                 progress_tracker,
             )
+
+            llm_eval_examples = progress_tracker.llm_eval_examples
+            dict_save_dir = os.path.join(os.path.dirname(checkpoint_manager.directory), "llm_eval_examples")
+            os.makedirs(dict_save_dir, exist_ok=True)
+            dict_save_path = os.path.join(dict_save_dir, f"llm_eval_examples_{progress_tracker.checkpoint_number}.json")
+            with open(dict_save_path, "w") as outfile:
+                json.dump(llm_eval_examples, outfile)
 
             self.write_eval_summary(
                 summary_writer=validation_summary_writer,
