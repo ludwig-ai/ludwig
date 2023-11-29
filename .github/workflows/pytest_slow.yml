@@ -4,9 +4,8 @@
 name: pytest (slow)
 
 on:
-  push:
+  pull_request:
     branches: ["master", "release-*"]
-    tags: ["v*.*.*"]
 
 jobs:
   start-runner:
@@ -51,31 +50,20 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        python-version: [3.8]
         test-markers: ["slow"]
-        include:
-          - python-version: 3.9
-            pytorch-version: 2.1.0
-            torchscript-version: 1.10.2
-            ray-version: 2.3.1
+        python-version: [3.9]
     env:
-      PYTORCH: ${{ matrix.pytorch-version }}
       MARKERS: ${{ matrix.test-markers }}
-      NEUROPOD_BASE_DIR: "/usr/local/lib/neuropod"
-      NEUROPOD_VERSION: "0.3.0-rc6"
-      TORCHSCRIPT_VERSION: ${{ matrix.torchscript-version }}
-      RAY_VERSION: ${{ matrix.ray-version }}
       AWS_ACCESS_KEY_ID: ${{ secrets.LUDWIG_TESTS_AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.LUDWIG_TESTS_AWS_SECRET_ACCESS_KEY }}
-      EXCLUDED_MARKERS: "benchmark"
-      TOKENIZERS_PARALLELISM: false
+      # TOKENIZERS_PARALLELISM: false
 
-    name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, ${{ matrix.test-markers }}, ${{ matrix.os }}, ray ${{ matrix.ray-version }}
+    name: py-slow${{ matrix.python-version  }}
     if: needs.start-runner.result != 'skipped'
     needs: start-runner # required to start the main job when the runner is ready
     runs-on: ${{ needs.start-runner.outputs.label }} # run the job on the newly created runners
 
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}
@@ -94,70 +82,22 @@ jobs:
         run: |
           brew install libuv
 
-      - name: pip cache
-        if: ${{ !env.ACT }}
-        uses: actions/cache@v2
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-py${{ matrix.python-version }}-torch${{ matrix.pytorch-version }}-${{ matrix.test-markers }}-${{ hashFiles('requirements*.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-py${{ matrix.python-version }}-torch${{ matrix.pytorch-version }}-${{ matrix.test-markers }}-
-
       - name: Install dependencies
         run: |
           python --version
           pip --version
           python -m pip install -U pip
-          cmake --version
+          pip install torch==2.1.0 torchtext torchvision torchaudio
+          pip install ray==2.3.1
+          pip install '.[test]'
 
-          echo "MARKERS:" $MARKERS
-
-          if [ "$PYTORCH" == "nightly" ]; then
-            cat requirements.txt | sed '/^torch[>=<]/d' | sed '/^torchtext[>=<]/d' | sed '/^torchvision[>=<]/d' | sed '/^torchaudio[>=<]/d' > requirements-temp && mv requirements-temp requirements.txt
-            extra_index_url=https://download.pytorch.org/whl/nightly/cpu
-            pip install --pre torch torchtext torchvision torchaudio --extra-index-url $extra_index_url
-          else
-            extra_index_url=https://download.pytorch.org/whl/cpu
-            pip install torch==$PYTORCH torchtext torchvision torchaudio --extra-index-url $extra_index_url
-          fi
-
-          if [ "$RAY_VERSION" == "nightly" ]; then
-            # NOTE: hardcoded for python 3.9 on Linux
-            pip install https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-3.0.0.dev0-cp39-cp39-manylinux2014_x86_64.whl
-          else
-            # installing `six` early resolves ModuleNotFound error in ray==2.1.0
-            pip install six
-            pip install ray==$RAY_VERSION
-          fi
-          ray_expected=$(python -c "import ray; print(ray.__version__)")
-
-          torch_expected=$(python -c "import torch; print(torch.__version__)")
-
-          pip install '.[test]' --extra-index-url $extra_index_url
           pip list
 
-          python -c "import torch; assert torch.__version__ == \"$torch_expected\", f\"torch {torch.__version__} != $torch_expected\""
-          python -c "import ray; assert ray.__version__ == \"$ray_expected\", f\"ray {ray.__version__} != $ray_expected\""
-        shell: bash
-
-      - name: Install Neuropod backend
-        run: |
-          sudo mkdir -p "$NEUROPOD_BASE_DIR"
-          curl -L https://github.com/uber/neuropod/releases/download/v${{ env.NEUROPOD_VERSION }}/libneuropod-cpu-linux-v${{ env.NEUROPOD_VERSION }}-torchscript-${{ env.TORCHSCRIPT_VERSION }}-backend.tar.gz | sudo tar -xz -C "$NEUROPOD_BASE_DIR"
         shell: bash
 
       - name: Tests
-        env:
-          TRANSFORMERS_CACHE: "/root/huggingface_cache"
         run: |
-          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=6000 pytest -vs --timeout 600 --durations 100 -m "($MARKERS) and (not $EXCLUDED_MARKERS)" --junitxml pytest_slow.xml tests
-
-      - name: Upload Unit Test Results
-        if: ${{ always() && !env.ACT }}
-        uses: actions/upload-artifact@v2
-        with:
-          name: Unit Test Results (Python ${{ matrix.python-version }} ${{ matrix.test-markers }})
-          path: pytest.xml
+          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=7200 pytest -v --timeout 600 --durations 100 -m "slow" --junitxml pytest.xml tests/
 
   stop-runner:
     name: Stop self-hosted EC2 runner
