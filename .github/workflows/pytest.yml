@@ -209,9 +209,6 @@ jobs:
           - "integration_tests_d"
           - "integration_tests_e"
           - "integration_tests_f"
-          # TODO: <Alex>ALEX</Alex>
-          - "slow"
-          # TODO: <Alex>ALEX</Alex>
 
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.LUDWIG_TESTS_AWS_ACCESS_KEY_ID }}
@@ -230,12 +227,7 @@ jobs:
         ports:
           - 9000:9000
 
-    # TODO: <Alex>ALEX</Alex>
-    # timeout-minutes: 90
-    # TODO: <Alex>ALEX</Alex>
-    # TODO: <Alex>ALEX</Alex>
-    timeout-minutes: 150
-    # TODO: <Alex>ALEX</Alex>
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python 3.9
@@ -270,12 +262,7 @@ jobs:
 
       - name: Integration Tests
         run: |
-          # TODO: <Alex>ALEX</Alex>
-          # RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=7200 pytest -v --timeout 300 --durations 100 -m "not slow and not combinatorial and not horovod and not llm and $MARKERS" --junitxml pytest.xml tests/integration_tests
-          # TODO: <Alex>ALEX</Alex>
-          # TODO: <Alex>ALEX</Alex>
-          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=7200 pytest -v --timeout 480 --durations 100 -m "not combinatorial and not horovod and not llm and $MARKERS" --junitxml pytest.xml tests/integration_tests
-          # TODO: <Alex>ALEX</Alex>
+          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=7200 pytest -v --timeout 300 --durations 100 -m "not slow and not combinatorial and not horovod and not llm and $MARKERS" --junitxml pytest.xml tests/integration_tests
 
   llm-tests:
     name: LLM Tests
