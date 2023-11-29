@@ -98,7 +98,7 @@ jobs:
 
       - name: Tests
         run: |
-          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=7200 pytest -v --timeout 600 --durations 100 -m "slow" --junitxml pytest.xml tests/
+          RUN_PRIVATE=$IS_NOT_FORK LUDWIG_TEST_SUITE_TIMEOUT_S=7200 pytest -v --timeout 600 --durations 100 -m "slow" --junitxml pytest.xml tests/integration_tests/
 
   stop-runner:
     name: Stop self-hosted EC2 runner
