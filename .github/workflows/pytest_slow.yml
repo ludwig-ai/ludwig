@@ -54,7 +54,7 @@ jobs:
         python-version: [3.8]
         test-markers: ["slow"]
         include:
-          - python-version: "3.9"
+          - python-version: 3.9
             pytorch-version: 2.1.0
             torchscript-version: 1.10.2
             ray-version: 2.3.1
