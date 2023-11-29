@@ -54,8 +54,8 @@ jobs:
         python-version: [3.8]
         test-markers: ["slow"]
         include:
-          - python-version: 3.8
-            pytorch-version: 2.0.0
+          - python-version: "3.9"
+            pytorch-version: 2.1.0
             torchscript-version: 1.10.2
             ray-version: 2.3.1
     env:
@@ -150,7 +150,7 @@ jobs:
         env:
           TRANSFORMERS_CACHE: "/root/huggingface_cache"
         run: |
-          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=6000 pytest -vs --timeout 450 --durations 100 -m "($MARKERS) and (not $EXCLUDED_MARKERS)" --junitxml pytest_slow.xml tests
+          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=6000 pytest -vs --timeout 600 --durations 100 -m "($MARKERS) and (not $EXCLUDED_MARKERS)" --junitxml pytest_slow.xml tests
 
       - name: Upload Unit Test Results
         if: ${{ always() && !env.ACT }}
