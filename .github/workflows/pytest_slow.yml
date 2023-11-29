@@ -56,6 +56,7 @@ jobs:
       MARKERS: ${{ matrix.test-markers }}
       AWS_ACCESS_KEY_ID: ${{ secrets.LUDWIG_TESTS_AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.LUDWIG_TESTS_AWS_SECRET_ACCESS_KEY }}
+      IS_NOT_FORK: ${{ !(github.event.pull_request.base.repo.full_name == 'ludwig-ai/ludwig' && github.event.pull_request.head.repo.fork) }}
       # TOKENIZERS_PARALLELISM: false
 
     name: py-slow${{ matrix.python-version  }}
