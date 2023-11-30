@@ -96,14 +96,25 @@ logger = logging.getLogger(__name__)
 class AutoAugment(torch.nn.Module):
     def __init__(self, config: AutoAugmentationConfig):
         super().__init__()
-        self.auto_augmentation_type = config.auto_type
+        self.auto_augmentation_method = config.method
+        self.augmentation_method = self.get_augmentation_method()
+
+    def get_augmentation_method(self):
+        match self.auto_augmentation_method:
+            case "trivial_augment":
+                return transforms.TrivialAugmentWide()
+            case "auto_augment":
+                return transforms.AutoAugment()
+            case "rand_augment":
+                return transforms.RandAugment()
+            case _:
+                raise ValueError(f"Unsupported auto-augmentation method: {self.auto_augmentation_method}")
 
     def forward(self, imgs):
-        trivial_augment = transforms.TrivialAugmentWide()
-
+        method = self.augmentation_method
         for i in range(imgs.size(0)):
             img = imgs[i].to(torch.uint8)
-            imgs[i] = trivial_augment(img)
+            imgs[i] = method(img)
         return imgs
 
 
