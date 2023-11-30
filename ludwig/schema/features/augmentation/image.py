@@ -17,6 +17,10 @@ class AutoAugmentationConfig(BaseAugmentationConfig):
         "auto_augmentation",
         parameter_metadata=FEATURE_METADATA[IMAGE][AUGMENTATION][TYPE],
     )
+    method: str = schema_utils.ProtectedString(
+        description="Specifies the method for applying automatic data augmentation",
+        parameter_metadata=FEATURE_METADATA[IMAGE][AUGMENTATION]["method"],
+    )
 
 
 @DeveloperAPI

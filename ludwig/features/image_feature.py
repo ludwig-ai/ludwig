@@ -94,11 +94,9 @@ logger = logging.getLogger(__name__)
 ###
 @register_augmentation_op(name="auto_augmentation", features=IMAGE)
 class AutoAugment(torch.nn.Module):
-    def __init__(
-        self,
-        config: AutoAugmentationConfig,
-    ):
+    def __init__(self, config: AutoAugmentationConfig):
         super().__init__()
+        self.auto_augmentation_type = config.auto_type
 
     def forward(self, imgs):
         trivial_augment = transforms.TrivialAugmentWide()
