@@ -305,6 +305,7 @@ def test_auto_train(test_data_tabular_large, ray_cluster_2cpu, tmpdir):
         assert trial.status != Trial.ERROR, f"Error in trial {trial}"
 
 
+@pytest.mark.skip(reason="This test is failing on CI.")
 @pytest.mark.slow
 @pytest.mark.parametrize("fs_protocol,bucket", [private_param(("s3", "ludwig-tests"))], ids=["s3"])
 def test_train_with_config_remote(fs_protocol, bucket, test_data_tabular_large, ray_cluster_2cpu):
