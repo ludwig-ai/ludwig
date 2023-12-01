@@ -915,7 +915,20 @@ class LudwigModel:
         trainer.gradient_accumulation_steps = self.config_obj.trainer.gradient_accumulation_steps
 
     def upscale_quantized_weights(self, save_path: str) -> None:
-        """Upscales quantized weights of a model and saves the result in a specified folder."""
+        """Upscales quantized weights of a model to fp16 and saves the result in a specified folder.
+
+        Args:
+            save_path (str): The path to the folder where the upscaled model weights will be saved.
+
+        Raises:
+            ValueError:
+                If the model type is not 'llm' or if quantization is not enabled or the number of bits is not 4 or 8.
+            RuntimeError:
+                If no GPU is available, as GPU is required for quantized models.
+
+        Returns:
+            None
+        """
         if self.config_obj.model_type != MODEL_LLM:
             raise ValueError(
                 f"Model type {self.config_obj.model_type} is not supported by this method. Only `llm` model type is "

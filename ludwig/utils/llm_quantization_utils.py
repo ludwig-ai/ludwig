@@ -7,10 +7,21 @@ from ludwig.api_annotations import DeveloperAPI
 
 @DeveloperAPI
 class Linear4BitToLinear(nn.Module):
+    """Converts a Linear4Bit layer to a standard Linear layer by dequantizing the weight values and copying the
+    dequantized weights to a new Linear layer."""
+
     def __init__(self):
         super().__init__()
 
     def forward(self, linear4bit_layer):
+        """Forward pass of the conversion.
+
+        Args:
+            linear4bit_layer (Linear4bit): The input Linear4Bit layer.
+
+        Returns:
+            nn.Linear: A new Linear layer with dequantized weights and biases.
+        """
         # Create a new Linear layer with the same shape
         new_linear_layer = nn.Linear(
             linear4bit_layer.in_features, linear4bit_layer.out_features, bias=linear4bit_layer.bias is not None
@@ -29,6 +40,14 @@ class Linear4BitToLinear(nn.Module):
 
 @DeveloperAPI
 def convert_linear4bit_to_linear(module):
+    """Recursively converts Linear4Bit layers to standard Linear layers in a given module.
+
+    Args:
+        module (nn.Module): The input module containing potentially nested Linear4Bit layers.
+
+    Returns:
+        None
+    """
     for name, child in module.named_children():
         if isinstance(child, Linear4bit):
             # Replace Linear4Bit layer with a new Linear layer
