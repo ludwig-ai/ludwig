@@ -1502,6 +1502,8 @@ def compare_performance(
         metric_names = metric_names_sets[0]
         for metric_names_set in metric_names_sets:
             metric_names = metric_names.intersection(metric_names_set)
+        if LOSS in metric_names:
+            metric_names.remove(LOSS)
         for name in ignore_names:
             if name in metric_names:
                 metric_names.remove(name)
