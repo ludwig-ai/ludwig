@@ -20,7 +20,7 @@ from ludwig.schema.model_types.llm import LLMModelConfig
 from ludwig.utils.augmentation_utils import AugmentationPipelines
 from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.error_handling_utils import default_retry
-from ludwig.utils.llm_quantization_utils import convert_linear4bit_to_linear
+from ludwig.utils.llm_quantization_utils import convert_quantized_linear_to_linear
 from ludwig.utils.llm_utils import (
     add_left_padding,
     generate_merged_ids,
@@ -691,7 +691,7 @@ class LLM(BaseModel):
         # Dequantize the model weights and cast them to fp16 - replace quantized layers with appropriate
         # linear layers in-place.
         logger.info("Upscaling quantized weights to fp16...")
-        convert_linear4bit_to_linear(self.model)
+        convert_quantized_linear_to_linear(self.model)
         logger.info("Done.")
 
         # Override properties of the model to indicate that it is no longer quantized.

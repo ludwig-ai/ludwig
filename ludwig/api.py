@@ -935,17 +935,20 @@ class LudwigModel:
                 "supported."
             )
 
-        if not self.config_obj.quantization or self.config_obj.quantization.bits not in {4, 8}:
+        if not self.config_obj.quantization:
             raise ValueError(
-                "Quantization is not enabled or the number of bits is not 4 or 8. "
-                "This method only works with quantized models with 4 or 8 bits."
+                "Quantization is not enabled in your Ludwig model config. "
+                "To enable quantization, set `quantization` to `{'bits': 4}` or `{'bits': 8}` in your model config."
+            )
+
+        if self.config_obj.quantization.bits != 4:
+            raise ValueError(
+                "This method only works with quantized models with 4 bits. "
+                "Support for 8-bit quantized models will be added in a future release."
             )
 
         if not torch.cuda.is_available():
             raise RuntimeError("GPU is required for quantized models but no GPU found.")
-
-        if not save_path:
-            raise ValueError("save_path must be specified.")
 
         # Create the LLM model class instance with the loaded LLM if it hasn't been initialized yet.
         if not self.model:

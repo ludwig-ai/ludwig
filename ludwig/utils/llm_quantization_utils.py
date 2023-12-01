@@ -45,7 +45,7 @@ class Linear4BitToLinear(nn.Module):
 
 
 @DeveloperAPI
-def convert_linear4bit_to_linear(module):
+def convert_quantized_linear_to_linear(module):
     """Recursively converts Linear4Bit layers to standard Linear layers in a given module.
 
     Args:
@@ -60,4 +60,4 @@ def convert_linear4bit_to_linear(module):
             setattr(module, name, Linear4BitToLinear()(child))
         else:
             # Recursively apply the conversion for nested modules
-            convert_linear4bit_to_linear(child)
+            convert_quantized_linear_to_linear(child)
