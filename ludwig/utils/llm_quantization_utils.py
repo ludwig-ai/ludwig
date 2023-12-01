@@ -27,13 +27,14 @@ class Linear4BitToLinear(nn.Module):
             linear4bit_layer.in_features, linear4bit_layer.out_features, bias=linear4bit_layer.bias is not None
         )
 
-        # Copy the weight and bias from the Linear4Bit layer to the new Linear layer
-        # Dequantize the weight and bias from the Linear4bit layer
-        new_linear_layer.weight.data = dequantize_4bit(
-            linear4bit_layer.weight.data, linear4bit_layer.weight.quant_state
+        # Dequantize the weight and bias from the Linear4bit layer and perform an in-place tensor replacement to update
+        # the weights and bias in the new Linear layer. This is done to avoid creating a new tensor and copying the
+        # data, which is slow.
+        new_linear_layer.weight.data.copy_(
+            dequantize_4bit(linear4bit_layer.weight.data, linear4bit_layer.weight.quant_state)
         )
         if linear4bit_layer.bias is not None:
-            new_linear_layer.bias.data = linear4bit_layer.bias.data
+            new_linear_layer.bias.data.copy_(linear4bit_layer.bias.data)
 
         return new_linear_layer
 
