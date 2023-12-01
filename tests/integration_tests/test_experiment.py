@@ -717,7 +717,6 @@ def test_experiment_model_resume(tmpdir):
     shutil.rmtree(output_dir, ignore_errors=True)
 
 
-@pytest.mark.skip(reason="This test is failing on CI.")
 @pytest.mark.slow
 @pytest.mark.parametrize(
     "dist_strategy",
