@@ -914,6 +914,46 @@ class LudwigModel:
         trainer.eval_batch_size = self.config_obj.trainer.eval_batch_size
         trainer.gradient_accumulation_steps = self.config_obj.trainer.gradient_accumulation_steps
 
+    def upscale_quantized_weights(self, save_path: str) -> None:
+        """Upscales quantized weights of a model and saves the result in a specified folder."""
+        if self.config_obj.model_type != MODEL_LLM:
+            raise ValueError(
+                f"Model type {self.config_obj.model_type} is not supported by this method. Only `llm` model type is "
+                "supported."
+            )
+
+        if not self.config_obj.quantization or self.config_obj.quantization.bits not in {4, 8}:
+            raise ValueError(
+                "Quantization is not enabled or the number of bits is not 4 or 8. "
+                "This method only works with quantized models with 4 or 8 bits."
+            )
+
+        if not torch.cuda.is_available():
+            raise RuntimeError("GPU is required for quantized models but no GPU found.")
+
+        if not save_path:
+            raise ValueError("save_path must be specified.")
+
+        # Create the model if it hasn't been initialized yet.
+        if not self.model:
+            self.model = LudwigModel.create_model(self.config_obj)
+
+        from ludwig.utils.llm_quantization_utils import convert_linear4bit_to_linear
+
+        # Dequantize the model weights and cast them to fp16 - replace quantized layers with appropriate
+        # linear layers in-place.
+        convert_linear4bit_to_linear(self.model)
+
+        # Override properties of the model to indicate that it is no longer quantized.
+        # This is also necessary to ensure that the model can be saved, otherwise it will raise an error like
+        # "You are calling `save_pretrained` on a 4-bit converted model. This is currently not supported"
+        # See: https://github.com/huggingface/transformers/blob/0ad4e7e6dad670a7151aaceb1af3c272a3bf73a8/src/transformers/modeling_utils.py#L2054 # noqa
+        self.model.is_loaded_in_4bit = False
+        self.model.is_loaded_in_8bit = False
+
+        # Save the model
+        self.model.save_pretrained(save_path)
+
     def generate(
         self,
         input_strings: Union[str, List[str]],
