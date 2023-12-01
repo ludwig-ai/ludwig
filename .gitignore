@@ -140,7 +140,3 @@ examples/*/visualizations/
 
 # benchmarking configs
 ludwig/benchmarking/configs/
-testingmnist.yaml
-predictions/predictions.shapes.json
-ludwig_env/
-test images/
