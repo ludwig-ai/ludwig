@@ -678,6 +678,16 @@ class LLM(BaseModel):
 
     def save_upscaled_quantized_model(self, save_path):
         """Saves the upscaled quantized model to the given path."""
+        from peft import PeftModel
+
+        if isinstance(self.model, PeftModel):
+            # Get the base model back by removing all the adapter modules without merging.
+            logger.warning(
+                "LLM model is currently wrapped in a PeftModel. Removing the adapter layers and saving the base model."
+                "Reload the model via LudwigModel.load() to use your trained adapter layers for inference."
+            )
+            self.model = self.model.unload()
+
         # Dequantize the model weights and cast them to fp16 - replace quantized layers with appropriate
         # linear layers in-place.
         logger.info("Upscaling quantized weights to fp16...")
@@ -692,12 +702,12 @@ class LLM(BaseModel):
         self.model.is_loaded_in_8bit = False
 
         # Save the model
-        logger.info(f"Saving the upscaled model to {save_path}")
+        logger.info(f"Saving upscaled model to {save_path}")
         self.model.save_pretrained(save_path)
         logger.info("Done.")
 
         # Save the tokenizer
-        logger.info(f"Saving the tokenizer to {save_path}")
+        logger.info(f"Saving tokenizer to {save_path}")
         self.tokenizer.save_pretrained(save_path)
         logger.info("Done.")
 
