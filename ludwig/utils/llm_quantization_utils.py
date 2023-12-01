@@ -25,21 +25,20 @@ class Linear4BitToLinear(nn.Module):
         """
         # Create a new Linear layer with the same shape
         new_linear_layer = nn.Linear(
-            linear4bit_layer.in_features, linear4bit_layer.out_features, bias=linear4bit_layer.bias is not None
+            linear4bit_layer.in_features,
+            linear4bit_layer.out_features,
+            bias=linear4bit_layer.bias is not None,
+            dtype=torch.float16,
         )
 
         # Dequantize the weight and bias from the Linear4bit layer and perform an in-place tensor replacement to update
         # the weights and bias in the new Linear layer. This is done to avoid creating a new tensor and copying the
-        # data, which is slow. The to() call is needed to ensure the new tensors have the same dtype as the original
-        # dequantized tensors, which is fp16. Otherwise, the new tensors will be fp32 by default.
+        # data, which is slow.
         new_linear_layer.weight.data.copy_(
             dequantize_4bit(linear4bit_layer.weight.data, linear4bit_layer.weight.quant_state)
         )
-        new_linear_layer.weight.data = new_linear_layer.weight.data.to(dtype=torch.float16)
-
         if linear4bit_layer.bias is not None:
             new_linear_layer.bias.data.copy_(linear4bit_layer.bias.data)
-            new_linear_layer.bias.data = new_linear_layer.bias.data.to(dtype=linear4bit_layer.bias.data.dtype)
 
         return new_linear_layer
 
