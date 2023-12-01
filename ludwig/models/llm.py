@@ -20,6 +20,7 @@ from ludwig.schema.model_types.llm import LLMModelConfig
 from ludwig.utils.augmentation_utils import AugmentationPipelines
 from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.error_handling_utils import default_retry
+from ludwig.utils.llm_quantization_utils import convert_linear4bit_to_linear
 from ludwig.utils.llm_utils import (
     add_left_padding,
     generate_merged_ids,
@@ -674,6 +675,31 @@ class LLM(BaseModel):
             self.tokenizer.save_pretrained(weights_save_path)
         else:
             logger.info("Skipped saving LLM without weight adjustments.")
+
+    def save_upscaled_quantized_model(self, save_path):
+        """Saves the upscaled quantized model to the given path."""
+        # Dequantize the model weights and cast them to fp16 - replace quantized layers with appropriate
+        # linear layers in-place.
+        logger.info("Upscaling quantized weights to fp16...")
+        convert_linear4bit_to_linear(self.model)
+        logger.info("Done.")
+
+        # Override properties of the model to indicate that it is no longer quantized.
+        # This is also necessary to ensure that the model can be saved, otherwise it will raise an error like
+        # "You are calling `save_pretrained` on a 4-bit converted model. This is currently not supported"
+        # See: https://github.com/huggingface/transformers/blob/0ad4e7e6dad670a7151aaceb1af3c272a3bf73a8/src/transformers/modeling_utils.py#L2054 # noqa
+        self.model.is_loaded_in_4bit = False
+        self.model.is_loaded_in_8bit = False
+
+        # Save the model
+        logger.info(f"Saving the upscaled model to {save_path}")
+        self.model.save_pretrained(save_path)
+        logger.info("Done.")
+
+        # Save the tokenizer
+        logger.info(f"Saving the tokenizer to {save_path}")
+        self.tokenizer.save_pretrained(save_path)
+        logger.info("Done.")
 
     def load(self, save_path):
         """Loads the model from the given path."""
