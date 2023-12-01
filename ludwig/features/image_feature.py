@@ -100,15 +100,14 @@ class AutoAugment(torch.nn.Module):
         self.augmentation_method = self.get_augmentation_method()
 
     def get_augmentation_method(self):
-        match self.auto_augmentation_method:
-            case "trivial_augment":
-                return transforms.TrivialAugmentWide()
-            case "auto_augment":
-                return transforms.AutoAugment()
-            case "rand_augment":
-                return transforms.RandAugment()
-            case _:
-                raise ValueError(f"Unsupported auto-augmentation method: {self.auto_augmentation_method}")
+        if self.auto_augmentation_method == "trivial_augment":
+            return transforms.TrivialAugmentWide()
+        elif self.auto_augmentation_method == "auto_augment":
+            return transforms.AutoAugment()
+        elif self.auto_augmentation_method == "rand_augment":
+            return transforms.RandAugment()
+        else:
+            raise ValueError(f"Unsupported auto-augmentation method: {self.auto_augmentation_method}")
 
     def forward(self, imgs):
         method = self.augmentation_method
