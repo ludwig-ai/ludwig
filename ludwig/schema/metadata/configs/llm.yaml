@@ -104,7 +104,7 @@ adapter:
       expected_impact: 3
     alpha:
       ui_display_name: Alpha
-      expected_impact: 2
+      expected_impact: 1
     dropout:
       ui_display_name: Dropout
       expected_impact: 2
