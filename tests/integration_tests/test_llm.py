@@ -476,6 +476,11 @@ def _verify_lm_lora_finetuning_layers(
         ),
         pytest.param(
             "lora",
+            {"target_modules": ["q_proj", "k_proj", "v_proj"]},
+            id="lora-target-modules",
+        ),
+        pytest.param(
+            "lora",
             {POSTPROCESSOR: {MERGE_ADAPTER_INTO_BASE_MODEL: True, PROGRESSBAR: True}},
             id="lora_merged",
         ),
