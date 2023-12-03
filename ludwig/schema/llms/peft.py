@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional, Type, TYPE_CHECKING
+from typing import List, Optional, Type, TYPE_CHECKING
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.error import ConfigValidationError
@@ -71,6 +71,10 @@ class BaseAdapterConfig(schema_utils.BaseMarshmallowConfig, ABC):
 @register_adapter(name="lora")
 @ludwig_dataclass
 class LoraConfig(BaseAdapterConfig):
+    def __post_init__(self):
+        if self.alpha is None:
+            self.alpha = self.r * 2
+
     type: str = schema_utils.ProtectedString(
         "lora",
         description=LLM_METADATA["adapter"]["lora"]["type"].long_description,
@@ -82,9 +86,10 @@ class LoraConfig(BaseAdapterConfig):
         parameter_metadata=LLM_METADATA["adapter"]["lora"]["r"],
     )
 
-    alpha: int = schema_utils.PositiveInteger(
-        default=16,
-        description="The alpha parameter for Lora scaling.",
+    alpha: Optional[int] = schema_utils.PositiveInteger(
+        default=None,
+        allow_none=True,
+        description="The alpha parameter for Lora scaling. Defaults to `2 * r`.",
         parameter_metadata=LLM_METADATA["adapter"]["lora"]["alpha"],
     )
 
@@ -101,6 +106,18 @@ class LoraConfig(BaseAdapterConfig):
         description="Bias type for Lora.",
     )
 
+    target_modules: Optional[List[str]] = schema_utils.List(
+        default=None,
+        allow_none=True,
+        description=(
+            "List of module names or regex expression of the module names to replace with LoRA. "
+            "For example, ['q', 'v'] or '.*decoder.*(SelfAttention|EncDecAttention).*(q|v)$'. "
+            "Defaults to targeting the query and value matrices of all self-attention and encoder-decoder attention "
+            "layers."
+        ),
+        parameter_metadata=LLM_METADATA["adapter"]["lora"]["target_modules"],
+    )
+
     def to_config(self, task_type: str = None, **kwargs) -> "PeftConfig":
         from peft import LoraConfig as _LoraConfig
 
@@ -109,6 +126,7 @@ class LoraConfig(BaseAdapterConfig):
             lora_alpha=self.alpha,
             lora_dropout=self.dropout,
             bias=self.bias_type,
+            target_modules=self.target_modules,
             task_type=task_type,
         )
 
