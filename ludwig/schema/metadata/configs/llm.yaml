@@ -108,6 +108,9 @@ adapter:
     dropout:
       ui_display_name: Dropout
       expected_impact: 2
+    target_modules:
+      ui_display_name: Target Modules
+      expected_impact: 2
   adalora:
     type:
       long_description: |
