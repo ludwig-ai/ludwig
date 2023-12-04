@@ -6,7 +6,7 @@ scipy>=0.18
 tabulate>=0.7
 scikit-learn
 tqdm
-torch>=1.13.0
+torch>=1.13.0,<2.1.1
 torchaudio
 torchtext
 torchvision
