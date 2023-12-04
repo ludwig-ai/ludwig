@@ -1480,7 +1480,7 @@ def compare_performance(
     compare_performance([a_evaluation_stats, b_evaluation_stats], model_names=["A", "B"])
     ```
     """
-    ignore_names = [
+    ignore_names = {
         "overall_stats",
         "confusion_matrix",
         "per_class_stats",
@@ -1488,7 +1488,8 @@ def compare_performance(
         "probabilities",
         "roc_curve",
         "precision_recall_curve",
-    ]
+        LOSS,
+    }
 
     filename_template = "compare_performance_{}." + file_format
     filename_template_path = generate_filename_template_path(output_directory, filename_template)
