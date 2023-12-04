@@ -280,6 +280,7 @@ LUDWIG_VERSION = "ludwig_version"
 PREPROCESSOR = "preprocessor"
 PREDICTOR = "predictor"
 POSTPROCESSOR = "postprocessor"
+TARGET_MODULES = "target_modules"
 
 GENERATION = "generation"
 PROMPT = "prompt"

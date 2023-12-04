@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import os
 import pathlib
-from typing import Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -27,6 +28,7 @@ from ludwig.constants import (
     PROGRESSBAR,
     PROMPT,
     QUANTIZATION,
+    TARGET_MODULES,
     TRAINER,
     TYPE,
 )
@@ -315,8 +317,8 @@ def test_llm_few_shot_classification(tmpdir, backend, csv_filename, ray_cluster_
 
 
 def _prepare_finetuning_test(
-    csv_filename: str, finetune_strategy: str, backend: Dict, adapter_args: Dict
-) -> Tuple[Dict, str]:
+    csv_filename: str, finetune_strategy: str, backend: dict, adapter_args: dict
+) -> tuple[dict, str]:
     input_features = [text_feature(name="input", encoder={"type": "passthrough"})]
     output_features = [text_feature(name="output")]
 
@@ -359,7 +361,7 @@ def _prepare_finetuning_test(
     return train_df, prediction_df, config
 
 
-def _finetune_strategy_requires_cuda(finetune_strategy_name: str, quantization_args: Union[dict, None]) -> bool:
+def _finetune_strategy_requires_cuda(finetune_strategy_name: str, quantization_args: dict | None) -> bool:
     """This method returns whether a given finetine_strategy requires CUDA.
 
     For all finetune strategies, except "qlora", the decision is based just on the name of the finetine_strategy; in the
@@ -367,7 +369,7 @@ def _finetune_strategy_requires_cuda(finetune_strategy_name: str, quantization_a
     original finetine_strategy name of "lora" is interpreted as "qlora" and used in the lookup, based on the list of
     finetine strategies requiring CUDA.
     """
-    cuda_only_finetune_strategy_names: List[str] = [
+    cuda_only_finetune_strategy_names: list[str] = [
         "prompt_tuning",
         "prefix_tuning",
         "p_tuning",
@@ -382,60 +384,71 @@ def _finetune_strategy_requires_cuda(finetune_strategy_name: str, quantization_a
 
 def _verify_lm_lora_finetuning_layers(
     attention_layer: torch.nn.Module,
+    target_modules: set[str],
     merge_adapter_into_base_model: bool,
     model_weights_directory: str,
     expected_lora_in_features: int,
     expected_lora_out_features: int,
-    expected_file_names: List[str],
+    expected_file_names: list[str],
 ) -> None:
     """This method verifies that LoRA finetuning layers have correct types and shapes, depending on whether the
     optional "model.merge_and_unload()" method (based on the "merge_adapter_into_base_model" directive) was
     executed.
 
-    If merge_adapter_into_base_model is True, then both LoRA projection layers, V and Q, in the attention layer must
+    If merge_adapter_into_base_model is True, then all specified LoRA projection layers in the attention layer must
     contain square weight matrices (with the dimensions expected_lora_in_features by expected_lora_in_features).
     However, if merge_adapter_into_base_model is False, then the LoRA part of the attention layer must include Lora_A
-    and Lora_B children layers for each of V and Q projections, such that the product of V and Q matrices is a square
-    matrix (with the dimensions expected_lora_in_features by expected_lora_in_features) for both V and Q projections.
+    and Lora_B children layers for each specified projection, such that the product of Lora_A and Lora_B is a square
+    matrix (with the dimensions expected_lora_in_features by expected_lora_in_features) for each specified projection.
     """
-    file_names: List[str] = list_file_names_in_directory(directory_name=model_weights_directory)
+    from peft.tuners.lora.layer import Linear
+
+    expected_lora_num_features_orig: tuple[int] = (expected_lora_in_features, expected_lora_out_features)
+
+    file_names: list[str] = list_file_names_in_directory(directory_name=model_weights_directory)
     assert set(file_names) == set(expected_file_names)
-    assert isinstance(attention_layer.v_proj, torch.nn.Linear)
-    assert isinstance(attention_layer.q_proj, torch.nn.Linear)
+
+    target_module_name: str
+    target_module_obj: Linear
+
+    # Not providing default value to "getattr()" so that error is raised if incorrect projection layer name is supplied.
+
+    for target_module_name in target_modules:
+        target_module_obj = getattr(attention_layer, target_module_name)
+        assert isinstance(target_module_obj, torch.nn.Linear)
+
     if merge_adapter_into_base_model:
-        assert (attention_layer.v_proj.in_features, attention_layer.v_proj.out_features) == (
-            expected_lora_in_features,
-            expected_lora_out_features,
-        )
-        assert (attention_layer.q_proj.in_features, attention_layer.q_proj.out_features) == (
-            expected_lora_in_features,
-            expected_lora_out_features,
-        )
-        assert not list(attention_layer.v_proj.children())
-        assert not list(attention_layer.q_proj.children())
+        # If LoRA A & B layers are merged, they must have no children layers, and projection matrices must be square.
+        for target_module_name in target_modules:
+            target_module_obj = getattr(attention_layer, target_module_name)
+            assert not list(target_module_obj.children())
+            assert (target_module_obj.in_features, target_module_obj.out_features) == (
+                expected_lora_in_features,
+                expected_lora_out_features,
+            )
     else:
-        v_proj_named_children: dict[str, torch.nn.Modeule] = dict(attention_layer.v_proj.named_children())
-        assert isinstance(v_proj_named_children["lora_A"]["default"], torch.nn.Linear)
-        assert (
-            v_proj_named_children["lora_A"]["default"].in_features,
-            v_proj_named_children["lora_A"]["default"].out_features,
-        ) == (expected_lora_in_features, expected_lora_out_features)
-        assert isinstance(v_proj_named_children["lora_B"]["default"], torch.nn.Linear)
-        assert (
-            v_proj_named_children["lora_B"]["default"].in_features,
-            v_proj_named_children["lora_B"]["default"].out_features,
-        ) == (expected_lora_out_features, expected_lora_in_features)
-        q_proj_named_children: dict[str, torch.nn.Modeule] = dict(attention_layer.q_proj.named_children())
-        assert isinstance(q_proj_named_children["lora_A"]["default"], torch.nn.Linear)
-        assert (
-            q_proj_named_children["lora_A"]["default"].in_features,
-            q_proj_named_children["lora_A"]["default"].out_features,
-        ) == (expected_lora_in_features, expected_lora_out_features)
-        assert isinstance(q_proj_named_children["lora_B"]["default"], torch.nn.Linear)
-        assert (
-            q_proj_named_children["lora_B"]["default"].in_features,
-            q_proj_named_children["lora_B"]["default"].out_features,
-        ) == (expected_lora_out_features, expected_lora_in_features)
+        # If LoRA A & B layers are not merged, their children layers must be correctly-dimensioned projection matrices.
+        expected_lora_num_features: tuple[int]
+        target_named_children: dict[str, torch.nn.Module]
+        lora_matrix_name: str
+        idx: int
+        for target_module_name in target_modules:
+            target_module_obj = getattr(attention_layer, target_module_name)
+            target_named_children = dict(target_module_obj.named_children())
+
+            for idx, lora_matrix_name in enumerate(["lora_A", "lora_B"]):
+                assert isinstance(target_named_children[lora_matrix_name]["default"], torch.nn.Linear)
+
+                # LoRA A and B matrix dimensions are transposes of one another so that their product is square matrix.
+                expected_lora_num_features = (
+                    expected_lora_num_features_orig
+                    if idx % 2 == 0
+                    else (expected_lora_num_features_orig[1], expected_lora_num_features_orig[0])
+                )
+                assert (
+                    target_named_children[lora_matrix_name]["default"].in_features,
+                    target_named_children[lora_matrix_name]["default"].out_features,
+                ) == expected_lora_num_features
 
 
 # TODO(arnav): p-tuning and prefix tuning have errors when enabled that seem to stem from DDP:
@@ -476,7 +489,7 @@ def _verify_lm_lora_finetuning_layers(
         ),
         pytest.param(
             "lora",
-            {"target_modules": ["q_proj", "k_proj", "v_proj"]},
+            {TARGET_MODULES: ["q_proj", "k_proj", "v_proj"]},
             id="lora-target-modules",
         ),
         pytest.param(
@@ -663,8 +676,8 @@ def test_llm_finetuning_strategies_quantized(tmpdir, csv_filename, finetune_stra
 def test_llm_lora_finetuning_merge_and_unload_quantized_accelerate_required(
     csv_filename, finetune_strategy, adapter_args, quantization, error_raised
 ):
-    input_features: List[dict] = [text_feature(name="input", encoder={"type": "passthrough"})]
-    output_features: List[dict] = [text_feature(name="output")]
+    input_features: list[dict] = [text_feature(name="input", encoder={"type": "passthrough"})]
+    output_features: list[dict] = [text_feature(name="output")]
 
     config: dict = {
         MODEL_TYPE: MODEL_LLM,
@@ -697,8 +710,8 @@ def test_llm_lora_finetuning_merge_and_unload_quantized_accelerate_required(
 
 @pytest.mark.llm
 def test_llm_lora_finetuning_merge_and_unload_4_bit_quantization_not_supported(local_backend: dict):
-    input_features: List[dict] = [text_feature(name="input", encoder={"type": "passthrough"})]
-    output_features: List[dict] = [text_feature(name="output")]
+    input_features: list[dict] = [text_feature(name="input", encoder={"type": "passthrough"})]
+    output_features: list[dict] = [text_feature(name="output")]
     finetune_strategy: str = "lora"
 
     config: dict = {
@@ -742,9 +755,10 @@ quantization section from your Ludwig configuration."""
     ],
 )
 @pytest.mark.parametrize(
-    "merge_adapter_into_base_model,expected_lora_in_features,expected_lora_out_features,expected_file_names",
+    "target_modules,merge_adapter_into_base_model,expected_lora_in_features,expected_lora_out_features,expected_file_names",  # noqa: E501
     [
         pytest.param(
+            None,
             False,
             32,
             8,
@@ -753,9 +767,10 @@ quantization section from your Ludwig configuration."""
                 "adapter_config.json",
                 "adapter_model.bin",
             ],
-            id="lora_not_merged",
+            id="lora_default_not_merged",
         ),
         pytest.param(
+            None,
             True,
             32,
             32,
@@ -772,25 +787,66 @@ quantization section from your Ludwig configuration."""
                 "tokenizer_config.json",
                 "vocab.json",
             ],
-            id="lora_merged",
+            id="lora_default_merged",
+        ),
+        pytest.param(
+            ["q_proj", "k_proj", "v_proj"],
+            False,
+            32,
+            8,
+            [
+                "README.md",
+                "adapter_config.json",
+                "adapter_model.bin",
+            ],
+            id="lora_custom_not_merged",
+        ),
+        pytest.param(
+            ["q_proj", "k_proj", "v_proj"],
+            True,
+            32,
+            32,
+            [
+                "README.md",
+                "adapter_config.json",
+                "adapter_model.bin",
+                "config.json",
+                "generation_config.json",
+                "merges.txt",
+                "model.safetensors",
+                "special_tokens_map.json",
+                "tokenizer.json",
+                "tokenizer_config.json",
+                "vocab.json",
+            ],
+            id="lora_custom_merged",
         ),
     ],
 )
 def test_llm_lora_finetuning_merge_and_unload(
-    tmpdir,
-    csv_filename,
-    backend,
-    merge_adapter_into_base_model,
-    expected_lora_in_features,
-    expected_lora_out_features,
-    expected_file_names,
+    tmpdir: str,
+    csv_filename: str,
+    backend: dict,
+    target_modules: list[str] | set[str] | None,
+    merge_adapter_into_base_model: bool,
+    expected_lora_in_features: int,
+    expected_lora_out_features: int,
+    expected_file_names: list[str],
 ):
+    from peft.tuners.lora.config import LoraConfig
+    from peft.tuners.lora.model import LoraModel
+
     finetune_strategy: str = "lora"
+
     adapter_args: dict = {
         POSTPROCESSOR: {
             MERGE_ADAPTER_INTO_BASE_MODEL: merge_adapter_into_base_model,
         },
     }
+    # If "target_modules" is None, then ["q_proj", "v_proj"] is used (HuggingFace Transformers/PEFT internal default).
+    if target_modules:
+        adapter_args[TARGET_MODULES] = target_modules
+
     train_df, prediction_df, config = _prepare_finetuning_test(
         csv_filename=csv_filename, finetune_strategy=finetune_strategy, backend=backend, adapter_args=adapter_args
     )
@@ -801,8 +857,16 @@ def test_llm_lora_finetuning_merge_and_unload(
 
     model = LudwigModel(config)
     model.train(dataset=train_df, output_directory=output_directory, skip_save_processed_input=False)
+
+    # Get actual "target_modules" from trained model (to be used in assertions).
+    lora_model: LoraModel = model.model.model.base_model
+    peft_config: dict = lora_model.peft_config
+    lora_config: LoraConfig = peft_config["default"]
+    target_modules = lora_config.target_modules
+
     _verify_lm_lora_finetuning_layers(
         attention_layer=model.model.model.base_model.model.transformer.h[1].attn,
+        target_modules=target_modules,
         merge_adapter_into_base_model=merge_adapter_into_base_model,
         model_weights_directory=model_weights_directory,
         expected_lora_in_features=expected_lora_in_features,
@@ -814,6 +878,7 @@ def test_llm_lora_finetuning_merge_and_unload(
     model = LudwigModel.load(str(model_directory), backend=backend)
     _verify_lm_lora_finetuning_layers(
         attention_layer=model.model.model.base_model.model.transformer.h[1].attn,
+        target_modules=target_modules,
         merge_adapter_into_base_model=merge_adapter_into_base_model,
         model_weights_directory=model_weights_directory,
         expected_lora_in_features=expected_lora_in_features,
