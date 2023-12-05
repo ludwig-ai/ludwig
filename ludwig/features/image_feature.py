@@ -111,10 +111,10 @@ class AutoAugment(torch.nn.Module):
 
     def forward(self, imgs):
         method = self.augmentation_method
-        for i in range(imgs.size(0)):
-            img = imgs[i].to(torch.uint8)
-            imgs[i] = method(img)
-        return imgs
+        uint8imgs = imgs.to(torch.uint8)
+        augmented_imgs = method(uint8imgs)
+
+        return augmented_imgs.to(torch.float32)
 
 
 @register_augmentation_op(name="random_vertical_flip", features=IMAGE)
