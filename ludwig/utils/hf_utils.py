@@ -4,7 +4,6 @@ import tempfile
 from os import PathLike
 from typing import Optional, Tuple, Type, Union
 
-from huggingface_hub import HfApi
 from transformers import AutoTokenizer, PreTrainedModel
 from transformers.tokenization_utils import PreTrainedTokenizer
 
@@ -114,7 +113,6 @@ def load_pretrained_hf_model_with_hub_fallback(
 def upload_folder_to_hfhub(
     repo_id: str,
     folder_path: str,
-    token: Optional[str] = None,
     repo_type: Optional[str] = "model",
     private: Optional[bool] = False,
     path_in_repo: Optional[str] = None,  # defaults to root of repo
@@ -126,8 +124,6 @@ def upload_folder_to_hfhub(
     Args:
         repo_id (str): The ID of the target repository on the Hugging Face Model Hub.
         folder_path (str): The local path to the folder to be uploaded.
-        token (str, optional): The authentication token for the Hugging Face account.
-            If not provided, it will attempt to log in using the `hf_hub_login` function.
         repo_type (str, optional): The type of the repository ('model', 'dataset', or 'space').
             Defaults to 'model'.
         private (bool, optional): If True, the repository will be private; otherwise, it will be public.
@@ -140,7 +136,6 @@ def upload_folder_to_hfhub(
     Raises:
         FileNotFoundError: If the specified folder does not exist.
         ValueError: If the specified folder is empty, a file, or if an invalid 'repo_type' is provided.
-        ValueError: If authentication fails with an invalid token.
         ValueError: If the upload process fails for any reason.
 
     Returns:
@@ -150,25 +145,19 @@ def upload_folder_to_hfhub(
     if not os.path.exists(folder_path):
         raise FileNotFoundError(f"Folder {folder_path} does not exist.")
 
-    # Make sure the folder is not empty
-    if not os.listdir(folder_path):
-        raise ValueError(f"Folder {folder_path} is empty.")
-
     # Make sure the folder is not a file
     if os.path.isfile(folder_path):
         raise ValueError(f"Folder {folder_path} is a file. Please provide a folder.")
+
+    # Make sure the folder is not empty
+    if not os.listdir(folder_path):
+        raise ValueError(f"Folder {folder_path} is empty.")
 
     if repo_type not in {"model", "dataset", "space"}:
         raise ValueError(f"Invalid repo_type {repo_type}. Valid values are 'model', 'dataset', and 'space'.")
 
     # Login to the hub
-    if token is None:
-        api = hf_hub_login()
-    else:
-        try:
-            api = HfApi(token=token)
-        except Exception as e:
-            raise ValueError("Invalid token") from e
+    api = hf_hub_login()
 
     # Create the repo if it doesn't exist. This is a no-op if the repo already exists
     # This is required because the API doesn't allow uploading to a non-existent repo
