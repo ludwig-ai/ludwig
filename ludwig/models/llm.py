@@ -676,8 +676,15 @@ class LLM(BaseModel):
         else:
             logger.info("Skipped saving LLM without weight adjustments.")
 
-    def save_upscaled_quantized_model(self, save_path):
-        """Saves the upscaled quantized model to the given path."""
+    def save_dequantized_base_model(self, save_path: str) -> None:
+        """Upscales quantized weights of a model to fp16 and saves the result in a folder specified by save_path.
+
+        Args:
+            save_path (str): The path to the folder where the upscaled model weights will be saved.
+
+        Returns:
+            None
+        """
         from peft import PeftModel
 
         if isinstance(self.model, PeftModel):

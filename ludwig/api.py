@@ -914,7 +914,7 @@ class LudwigModel:
         trainer.eval_batch_size = self.config_obj.trainer.eval_batch_size
         trainer.gradient_accumulation_steps = self.config_obj.trainer.gradient_accumulation_steps
 
-    def save_upscaled_quantized_model(self, save_path: str) -> None:
+    def save_dequantized_base_model(self, save_path: str) -> None:
         """Upscales quantized weights of a model to fp16 and saves the result in a specified folder.
 
         Args:
@@ -954,7 +954,7 @@ class LudwigModel:
         if not self.model:
             self.model = LudwigModel.create_model(self.config_obj)
 
-        self.model.save_upscaled_quantized_model(save_path)
+        self.model.save_dequantized_base_model(save_path)
 
     def generate(
         self,
