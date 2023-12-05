@@ -197,7 +197,6 @@ def hyperopt(
         descending performance on the target metric.
     """
     from ludwig.hyperopt.execution import get_build_hyperopt_executor, RayTuneExecutor
-
     # check if config is a path or a dict
     if isinstance(config, str):  # assume path
         with open_file(config, "r") as def_file:
