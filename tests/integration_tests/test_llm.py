@@ -401,7 +401,7 @@ def _verify_lm_lora_finetuning_layers(
     and Lora_B children layers for each specified projection, such that the product of Lora_A and Lora_B is a square
     matrix (with the dimensions expected_lora_in_features by expected_lora_in_features) for each specified projection.
     """
-    from peft.tuners.lora.layer import Linear
+    from peft.tuners.lora.layer import LoraLayer
 
     expected_lora_num_features_orig: tuple[int] = (expected_lora_in_features, expected_lora_out_features)
 
@@ -409,7 +409,7 @@ def _verify_lm_lora_finetuning_layers(
     assert set(file_names) == set(expected_file_names)
 
     target_module_name: str
-    target_module_obj: Linear
+    target_module_obj: LoraLayer
 
     # Not providing default value to "getattr()" so that error is raised if incorrect projection layer name is supplied.
 
