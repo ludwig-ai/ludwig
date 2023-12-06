@@ -102,12 +102,11 @@ class AutoAugment(torch.nn.Module):
     def get_augmentation_method(self):
         if self.auto_augmentation_method == "trivial_augment":
             return transforms.TrivialAugmentWide()
-        elif self.auto_augmentation_method == "auto_augment":
+        if self.auto_augmentation_method == "auto_augment":
             return transforms.AutoAugment()
-        elif self.auto_augmentation_method == "rand_augment":
+        if self.auto_augmentation_method == "rand_augment":
             return transforms.RandAugment()
-        else:
-            raise ValueError(f"Unsupported auto-augmentation method: {self.auto_augmentation_method}")
+        raise ValueError(f"Unsupported auto-augmentation method: {self.auto_augmentation_method}")
 
     def forward(self, imgs: torch.Tensor) -> torch.Tensor:
         method = self.augmentation_method
