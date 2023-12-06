@@ -29,7 +29,7 @@ jobs:
             pytorch-version: 2.0.0
             torchscript-version: 1.10.2
             ray-version: 2.2.0
-          - python-version: 3.9
+          - python-version: "3.9"
             pytorch-version: 2.1.1
             torchscript-version: 1.10.2
             ray-version: 2.3.1
@@ -126,7 +126,9 @@ jobs:
 
           if [ "$PYTORCH" == "nightly" ]; then
             extra_index_url=https://download.pytorch.org/whl/nightly/cpu
-            pip install --pre torch torchtext torchvision torchaudio --index-url $extra_index_url
+            # Temporary Fix - remove torchdata once https://github.com/pytorch/text/pull/2218 lands.
+            pip install torchdata --extra-index-url https://download.pytorch.org/whl/cpu
+            pip install --pre torch torchdata torchtext torchvision torchaudio --index-url $extra_index_url
 
           else
             extra_index_url=https://download.pytorch.org/whl/cpu
