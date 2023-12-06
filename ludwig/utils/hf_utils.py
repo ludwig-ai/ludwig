@@ -10,6 +10,7 @@ from transformers.tokenization_utils import PreTrainedTokenizer
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.utils.error_handling_utils import default_retry
 from ludwig.utils.fs_utils import download, path_exists
+from ludwig.utils.upload_utils import hf_hub_login
 
 logger = logging.getLogger(__name__)
 
@@ -107,3 +108,73 @@ def load_pretrained_hf_model_with_hub_fallback(
 
     # Fallback to HF hub.
     return load_pretrained_hf_model_from_hub(model_class, pretrained_model_name_or_path, **pretrained_kwargs), True
+
+
+def upload_folder_to_hfhub(
+    repo_id: str,
+    folder_path: str,
+    repo_type: Optional[str] = "model",
+    private: Optional[bool] = False,
+    path_in_repo: Optional[str] = None,  # defaults to root of repo
+    commit_message: Optional[str] = None,
+    commit_description: Optional[str] = None,
+) -> None:
+    """Uploads a local folder to the Hugging Face Model Hub.
+
+    Args:
+        repo_id (str): The ID of the target repository on the Hugging Face Model Hub.
+        folder_path (str): The local path to the folder to be uploaded.
+        repo_type (str, optional): The type of the repository ('model', 'dataset', or 'space').
+            Defaults to 'model'.
+        private (bool, optional): If True, the repository will be private; otherwise, it will be public.
+            Defaults to False.
+        path_in_repo (str, optional): The relative path within the repository where the folder should be uploaded.
+            Defaults to None, which means the root of the repository.
+        commit_message (str, optional): A message for the commit associated with the upload.
+        commit_description (str, optional): A description for the commit associated with the upload.
+
+    Raises:
+        FileNotFoundError: If the specified folder does not exist.
+        ValueError: If the specified folder is empty, a file, or if an invalid 'repo_type' is provided.
+        ValueError: If the upload process fails for any reason.
+
+    Returns:
+        None
+    """
+    # Make sure the folder exists
+    if not os.path.exists(folder_path):
+        raise FileNotFoundError(f"Folder {folder_path} does not exist.")
+
+    # Make sure the folder is not a file
+    if os.path.isfile(folder_path):
+        raise ValueError(f"Folder {folder_path} is a file. Please provide a folder.")
+
+    # Make sure the folder is not empty
+    if not os.listdir(folder_path):
+        raise ValueError(f"Folder {folder_path} is empty.")
+
+    if repo_type not in {"model", "dataset", "space"}:
+        raise ValueError(f"Invalid repo_type {repo_type}. Valid values are 'model', 'dataset', and 'space'.")
+
+    # Login to the hub
+    api = hf_hub_login()
+
+    # Create the repo if it doesn't exist. This is a no-op if the repo already exists
+    # This is required because the API doesn't allow uploading to a non-existent repo
+    if not api.repo_exists(repo_id, repo_type=repo_type):
+        logger.info(f"{repo_id} does not exist. Creating.")
+        api.create_repo(repo_id, private=private, exist_ok=True, repo_type=repo_type)
+
+    # Upload the folder
+    try:
+        logger.info(f"Uploading folder {folder_path} to repo {repo_id}.")
+        api.upload_folder(
+            repo_id=repo_id,
+            folder_path=folder_path,
+            repo_type=repo_type,
+            path_in_repo=path_in_repo,
+            commit_message=commit_message,
+            commit_description=commit_description,
+        )
+    except Exception as e:
+        raise ValueError(f"Failed to upload folder {folder_path} to repo {repo_id}") from e
