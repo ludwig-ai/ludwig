@@ -765,7 +765,7 @@ quantization section from your Ludwig configuration."""
             [
                 "README.md",
                 "adapter_config.json",
-                "adapter_model.bin",
+                "adapter_model.safetensors",
             ],
             id="lora_default_not_merged",
         ),
@@ -777,7 +777,7 @@ quantization section from your Ludwig configuration."""
             [
                 "README.md",
                 "adapter_config.json",
-                "adapter_model.bin",
+                "adapter_model.safetensors",
                 "config.json",
                 "generation_config.json",
                 "merges.txt",
@@ -797,7 +797,7 @@ quantization section from your Ludwig configuration."""
             [
                 "README.md",
                 "adapter_config.json",
-                "adapter_model.bin",
+                "adapter_model.safetensors",
             ],
             id="lora_custom_not_merged",
         ),
@@ -809,7 +809,7 @@ quantization section from your Ludwig configuration."""
             [
                 "README.md",
                 "adapter_config.json",
-                "adapter_model.bin",
+                "adapter_model.safetensors",
                 "config.json",
                 "generation_config.json",
                 "merges.txt",
