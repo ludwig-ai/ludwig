@@ -415,7 +415,7 @@ def _verify_lm_lora_finetuning_layers(
 
     for target_module_name in target_modules:
         target_module_obj = getattr(attention_layer, target_module_name)
-        assert isinstance(target_module_obj, torch.nn.Linear)
+        assert isinstance(target_module_obj, LoraLayer)
 
     if merge_adapter_into_base_model:
         # If LoRA A & B layers are merged, they must have no children layers, and projection matrices must be square.
