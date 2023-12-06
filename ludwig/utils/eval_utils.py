@@ -183,22 +183,22 @@ class ConfusionMatrix:
     def token_accuracy(self):
         return metrics.accuracy_score(self.conditions, self.predictions)
 
-    def avg_precision(self, average: str = "macro", pos_label: Union[str, int] = None):
+    def avg_precision(self, average: str = "macro", pos_label: Union[bool, None] = None):
         if pos_label is None:
             return metrics.precision_score(self.conditions, self.predictions, average=average)
         return metrics.precision_score(self.conditions, self.predictions, average=average, pos_label=pos_label)
 
-    def avg_recall(self, average: str = "macro", pos_label: Union[str, int] = None):
+    def avg_recall(self, average: str = "macro", pos_label: Union[bool, None] = None):
         if pos_label is None:
             return metrics.recall_score(self.conditions, self.predictions, average=average)
         return metrics.recall_score(self.conditions, self.predictions, average=average, pos_label=pos_label)
 
-    def avg_f1_score(self, average: str = "macro", pos_label: Union[str, int] = None):
+    def avg_f1_score(self, average: str = "macro", pos_label: Union[bool, None] = None):
         if pos_label is None:
             return metrics.f1_score(self.conditions, self.predictions, average=average)
         return metrics.f1_score(self.conditions, self.predictions, average=average, pos_label=pos_label)
 
-    def avg_fbeta_score(self, beta, average: str = "macro", pos_label: Union[str, int] = None):
+    def avg_fbeta_score(self, beta: float = 1.0, average: str = "macro", pos_label: Union[bool, None] = None):
         if pos_label is None:
             return metrics.fbeta_score(self.conditions, self.predictions, beta=beta, average=average)
         return metrics.fbeta_score(self.conditions, self.predictions, beta=beta, average=average, pos_label=pos_label)
@@ -255,9 +255,9 @@ class ConfusionMatrix:
             "kappa_score": self.kappa_score(),
         }
         if len(self.idx2label) == 2 and set(self.label2idx.keys()) == {"False", "True"}:
-            stats["avg_precision_binary"] = self.avg_precision(average="binary", pos_label="True")
-            stats["avg_recall_binary"] = self.avg_recall(average="binary", pos_label="True")
-            stats["avg_f1_score_binary"] = self.avg_f1_score(average="binary", pos_label="True")
+            stats["avg_precision_binary"] = self.avg_precision(average="binary", pos_label=True)
+            stats["avg_recall_binary"] = self.avg_recall(average="binary", pos_label=True)
+            stats["avg_f1_score_binary"] = self.avg_f1_score(average="binary", pos_label=True)
         return stats
 
 
