@@ -406,6 +406,7 @@ def _verify_lm_lora_finetuning_layers(
     expected_lora_num_features_orig: tuple[int] = (expected_lora_in_features, expected_lora_out_features)
 
     file_names: list[str] = list_file_names_in_directory(directory_name=model_weights_directory)
+    breakpoint()
     assert set(file_names) == set(expected_file_names)
 
     target_module_name: str
