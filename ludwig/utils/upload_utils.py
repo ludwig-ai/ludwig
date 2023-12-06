@@ -103,26 +103,32 @@ class BaseModelUpload(ABC):
             )
 
 
+def hf_hub_login():
+    """Login to huggingface hub using the token stored in ~/.cache/huggingface/token and returns a HfApi client
+    object that can be used to interact with HF Hub."""
+    cached_token_path = os.path.join(os.path.expanduser("~"), ".cache", "huggingface", "token")
+
+    if not os.path.exists(cached_token_path):
+        login(add_to_git_credential=True)
+
+    with open(cached_token_path) as f:
+        hf_token = f.read()
+
+    hf_api = HfApi(token=hf_token)
+    assert hf_api.token == hf_token
+
+    return hf_api
+
+
 class HuggingFaceHub(BaseModelUpload):
     def __init__(self):
         self.api = None
         self.login()
 
     def login(self):
-        """Login to huggingface hub using the token stored in ~/.cache/huggingface/token and returns a HfApi client
+        """Login to huggingface hub using the token stored in ~/.cache/huggingface/token and return a HfApi client
         object that can be used to interact with HF Hub."""
-        cached_token_path = os.path.join(os.path.expanduser("~"), ".cache", "huggingface", "token")
-
-        if not os.path.exists(cached_token_path):
-            login(add_to_git_credential=True)
-
-        with open(cached_token_path) as f:
-            hf_token = f.read()
-
-        hf_api = HfApi(token=hf_token)
-        assert hf_api.token == hf_token
-
-        self.api = hf_api
+        self.api = hf_hub_login()
 
     @staticmethod
     def _validate_upload_parameters(
