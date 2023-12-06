@@ -109,7 +109,7 @@ class AutoAugment(torch.nn.Module):
         else:
             raise ValueError(f"Unsupported auto-augmentation method: {self.auto_augmentation_method}")
 
-    def forward(self, imgs):
+    def forward(self, imgs: torch.Tensor) -> torch.Tensor:
         method = self.augmentation_method
         uint8imgs = imgs.to(torch.uint8)
         augmented_imgs = method(uint8imgs)
