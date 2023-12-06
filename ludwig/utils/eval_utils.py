@@ -15,6 +15,7 @@
 # ==============================================================================
 import logging
 from collections import OrderedDict
+from typing import Union
 
 import numpy as np
 from sklearn import metrics
@@ -182,17 +183,25 @@ class ConfusionMatrix:
     def token_accuracy(self):
         return metrics.accuracy_score(self.conditions, self.predictions)
 
-    def avg_precision(self, average="macro"):
-        return metrics.precision_score(self.conditions, self.predictions, average=average)
+    def avg_precision(self, average: str = "macro", pos_label: Union[str, int] = None):
+        if pos_label is None:
+            return metrics.precision_score(self.conditions, self.predictions, average=average)
+        return metrics.precision_score(self.conditions, self.predictions, average=average, pos_label=pos_label)
 
-    def avg_recall(self, average="macro"):
-        return metrics.recall_score(self.conditions, self.predictions, average=average)
+    def avg_recall(self, average: str = "macro", pos_label: Union[str, int] = None):
+        if pos_label is None:
+            return metrics.recall_score(self.conditions, self.predictions, average=average)
+        return metrics.recall_score(self.conditions, self.predictions, average=average, pos_label=pos_label)
 
-    def avg_f1_score(self, average="macro"):
-        return metrics.f1_score(self.conditions, self.predictions, average=average)
+    def avg_f1_score(self, average: str = "macro", pos_label: Union[str, int] = None):
+        if pos_label is None:
+            return metrics.f1_score(self.conditions, self.predictions, average=average)
+        return metrics.f1_score(self.conditions, self.predictions, average=average, pos_label=pos_label)
 
-    def avg_fbeta_score(self, beta, average="macro"):
-        return metrics.fbeta_score(self.conditions, self.predictions, beta=beta, average=average)
+    def avg_fbeta_score(self, beta, average: str = "macro", pos_label: Union[str, int] = None):
+        if pos_label is None:
+            return metrics.fbeta_score(self.conditions, self.predictions, beta=beta, average=average)
+        return metrics.fbeta_score(self.conditions, self.predictions, beta=beta, average=average, pos_label=pos_label)
 
     def kappa_score(self):
         return metrics.cohen_kappa_score(self.conditions, self.predictions)
@@ -232,7 +241,7 @@ class ConfusionMatrix:
         return stats
 
     def stats(self):
-        return {
+        stats = {
             "token_accuracy": self.token_accuracy(),
             "avg_precision_macro": self.avg_precision(average="macro"),
             "avg_recall_macro": self.avg_recall(average="macro"),
@@ -245,6 +254,11 @@ class ConfusionMatrix:
             "avg_f1_score_weighted": self.avg_f1_score(average="weighted"),
             "kappa_score": self.kappa_score(),
         }
+        if len(self.idx2label) == 2 and set(self.label2idx.keys()) == {"False", "True"}:
+            stats["avg_precision_binary"] = self.avg_precision(average="binary", pos_label="True")
+            stats["avg_recall_binary"] = self.avg_recall(average="binary", pos_label="True")
+            stats["avg_f1_score_binary"] = self.avg_f1_score(average="binary", pos_label="True")
+        return stats
 
 
 def roc_curve(conditions, prediction_scores, pos_label=None, sample_weight=None):
