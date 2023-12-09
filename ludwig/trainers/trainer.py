@@ -70,6 +70,7 @@ from ludwig.utils.trainer_utils import (
     get_final_steps_per_checkpoint,
     get_latest_metrics_dict,
     get_new_progress_tracker,
+    get_total_expected_checkpoints,
     get_total_steps,
     ProgressTracker,
 )
@@ -931,7 +932,9 @@ class Trainer(BaseTrainer):
                 final_steps_per_checkpoint = min(final_steps_per_checkpoint, self.total_steps)
                 early_stopping_steps = final_steps_per_checkpoint * self.early_stop
                 if not self.skip_save_progress:
-                    self.total_expected_checkpoints = self.total_steps // final_steps_per_checkpoint + self.epochs
+                    self.total_expected_checkpoints = get_total_expected_checkpoints(
+                        self.total_steps, final_steps_per_checkpoint, self.epochs
+                    )
 
                 # Initialize the learning rate scheduler.
                 self.scheduler = LRScheduler(

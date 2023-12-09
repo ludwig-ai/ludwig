@@ -321,6 +321,10 @@ def get_final_steps_per_checkpoint(
     return steps_per_checkpoint
 
 
+def get_total_expected_checkpoints(total_steps: int, final_steps_per_checkpoint: int, epochs: int) -> int:
+    return total_steps // final_steps_per_checkpoint + epochs
+
+
 @DeveloperAPI
 def get_training_report(
     validation_field: str,
