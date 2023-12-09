@@ -535,6 +535,16 @@ def _verify_lm_lora_finetuning_layers(
             {"adapter_len": 6, "adapter_layers": 1},
             id="adaption_prompt-modified-defaults",
         ),
+        pytest.param(
+            "ia3",
+            {},
+            id="ia3-defaults",
+        ),
+        pytest.param(
+            "ia3",
+            {"init_ia3_weights": False},
+            id="ia3-modified-defaults",
+        ),
         # pytest.param(
         #     "prompt_tuning",
         #     {
