@@ -3,7 +3,7 @@ dask[dataframe]<2023.4.0
 pyarrow
 
 # requirements for ray
-ray[default,data,serve,tune]>=2.2.0
+ray[default,data,serve,tune]>=2.8.1
 tensorboardX<2.3
 GPUtil
 tblib
