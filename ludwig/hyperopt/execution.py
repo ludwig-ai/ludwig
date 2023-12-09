@@ -19,8 +19,8 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import ray
 from packaging import version
 from ray import tune
-from ray.air import Checkpoint
 from ray.air.config import CheckpointConfig, FailureConfig, RunConfig
+from ray.train._checkpoint import Checkpoint
 from ray.tune import ExperimentAnalysis, register_trainable, Stopper, TuneConfig
 from ray.tune.execution.placement_groups import PlacementGroupFactory
 from ray.tune.schedulers.resource_changing_scheduler import DistributeResources, ResourceChangingScheduler
