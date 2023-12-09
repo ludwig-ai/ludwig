@@ -83,7 +83,6 @@ import ray  # noqa: E402
 import ray.exceptions  # noqa: E402
 from ray.air.config import DatasetConfig  # noqa: E402
 from ray.data import Dataset, DatasetPipeline  # noqa: E402
-from ray.train._internal.dataset_spec import DataParallelIngestSpec  # noqa: E402
 
 from ludwig.backend.ray import get_trainer_kwargs, RayBackend  # noqa: E402
 from ludwig.data.dataframe.dask import DaskEngine  # noqa: E402
@@ -1068,6 +1067,8 @@ class TestDatasetWindowAutosizing:
             stream_window_size=ds.window_size_bytes,
             global_shuffle=False,
         )
+        from ray.train._internal.dataset_spec import DataParallelIngestSpec  # noqa: E402
+
         spec = DataParallelIngestSpec({"train": dataset_config})
 
         # These two must be called in sequence so that the dataset is tracked internally. No preprocessing is applied.
