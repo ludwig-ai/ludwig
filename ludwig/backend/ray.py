@@ -29,9 +29,9 @@ import tqdm
 from packaging import version
 from ray import ObjectRef
 from ray.air import session
-from ray.air.checkpoint import Checkpoint
 from ray.air.config import DatasetConfig, RunConfig, ScalingConfig
 from ray.air.result import Result
+from ray.train._checkpoint import Checkpoint
 from ray.train.base_trainer import TrainingFailedError
 from ray.train.torch import TorchCheckpoint
 from ray.train.trainer import BaseTrainer as RayBaseTrainer
