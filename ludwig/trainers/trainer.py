@@ -68,8 +68,8 @@ from ludwig.utils.trainer_utils import (
     get_final_steps_per_checkpoint,
     get_latest_metrics_dict,
     get_new_progress_tracker,
-    get_total_steps,
     get_total_expected_checkpoints,
+    get_total_steps,
     ProgressTracker,
 )
 
