@@ -18,7 +18,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import ray
 from packaging import version
-from ray import tune
+from ray import train, tune
 from ray.air.config import CheckpointConfig, FailureConfig, RunConfig
 from ray.train._checkpoint import Checkpoint
 from ray.tune import ExperimentAnalysis, register_trainable, Stopper, TuneConfig
@@ -776,12 +776,23 @@ class RayTuneExecutor:
             else:
                 search_alg = ConcurrencyLimiter(search_alg, max_concurrent=self.max_concurrent_trials)
 
-        def run_experiment_trial(config, local_hyperopt_dict, checkpoint_dir=None):
+        def run_experiment_trial(config, local_hyperopt_dict):
             # Checkpoint dir exists when trials are temporarily paused and resumed, for e.g.,
             # when using the HB_BOHB scheduler.
+            checkpoint = train.get_checkpoint()
+            if checkpoint:
+                with checkpoint.as_directory() as checkpoint_dir:
+                    return self._run_experiment(
+                        config,
+                        checkpoint_dir,
+                        local_hyperopt_dict,
+                        self.decode_ctx,
+                        _is_ray_backend(backend),
+                    )
+
             return self._run_experiment(
                 config,
-                checkpoint_dir,
+                None,
                 local_hyperopt_dict,
                 self.decode_ctx,
                 _is_ray_backend(backend),
