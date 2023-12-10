@@ -17,6 +17,7 @@
 import contextlib
 import copy
 import logging
+import os
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
@@ -29,12 +30,11 @@ import tqdm
 from packaging import version
 from ray import ObjectRef
 from ray.air import session
-from ray.air.config import DatasetConfig, RunConfig, ScalingConfig
+from ray.air.config import RunConfig, ScalingConfig
 from ray.air.result import Result
 from ray.data import ActorPoolStrategy
 from ray.train._checkpoint import Checkpoint
 from ray.train.base_trainer import TrainingFailedError
-from ray.train.torch import TorchCheckpoint
 from ray.train.trainer import BaseTrainer as RayBaseTrainer
 from ray.tune.tuner import Tuner
 from ray.util.dask import ray_dask_get
@@ -53,6 +53,7 @@ from ludwig.distributed import (
     init_dist_strategy,
     LocalStrategy,
 )
+from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
 from ludwig.models.predictor import BasePredictor, get_output_columns, get_predictor_cls
 from ludwig.schema.trainer import ECDTrainerConfig, FineTuneTrainerConfig
@@ -67,10 +68,10 @@ from ludwig.trainers.trainer_llm import RemoteLLMFineTuneTrainer, RemoteLLMTrain
 from ludwig.types import HyperoptConfigDict, ModelConfigDict, TrainerConfigDict, TrainingSetMetadataDict
 from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
 from ludwig.utils.dataframe_utils import is_dask_series_or_df, set_index_name
-from ludwig.utils.fs_utils import get_fs_and_path
+from ludwig.utils.fs_utils import get_fs_and_path, open_file
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.system_utils import Resources
-from ludwig.utils.torch_utils import initialize_pytorch
+from ludwig.utils.torch_utils import get_torch_device, initialize_pytorch
 from ludwig.utils.types import DataFrame, Series
 
 _ray220 = version.parse(ray.__version__) >= version.parse("2.2.0")
@@ -213,14 +214,26 @@ def train_fn(
             report_tqdm_to_ray=True,
             **executable_kwargs,
         )
-        results = trainer.train(train_shard, val_shard, test_shard, return_state_dict=True, **kwargs)
+        # Results is a tuple object of length 4 that has:
+        #   1. The model state dict
+        #   2. The training statistics
+        #   3. The validation statistics
+        #   4. The test statistics
+        results: tuple = trainer.train(train_shard, val_shard, test_shard, return_state_dict=True, **kwargs)
         torch.cuda.empty_cache()
+
+        # Create a local directory to store checkpoint related data
+        ckpt_dir = os.path.join(kwargs.get("save_path"), "checkpoint")
+        os.makedirs(ckpt_dir, exist_ok=True)
+
+        # Save the state dict to disk and load it back on the main process
+        ckpt_path = os.path.join(ckpt_dir, MODEL_WEIGHTS_FILE_NAME)
+        torch.save(results[0], ckpt_path)
 
         # Passing objects containing Torch tensors as metrics is not supported as it will throw an
         # exception on deserialization, so create a checkpoint and return via session.report() along
-        # with the path of the checkpoint
-        ckpt = Checkpoint.from_dict({"state_dict": results})
-        torch_ckpt = TorchCheckpoint.from_checkpoint(ckpt)
+        # with the path of the checkpoint on disk.
+        ckpt: Checkpoint = Checkpoint.from_directory(ckpt_dir)
 
         # The checkpoint is put in the object store and then retrieved by the Trainable actor to be reported to Tune.
         # It is also persisted on disk by the Trainable (and synced to cloud, if configured to do so)
@@ -230,8 +243,11 @@ def train_fn(
             metrics={
                 "validation_field": trainer.validation_field,
                 "validation_metric": trainer.validation_metric,
+                "train_results": results[1],
+                "val_results": results[2],
+                "test_results": results[3],
             },
-            checkpoint=torch_ckpt,
+            checkpoint=ckpt,
         )
 
     except Exception:
@@ -372,40 +388,6 @@ class RayAirRunner:
             **trainer_kwargs,
         )
 
-    def _get_dataset_configs(
-        self,
-        datasets: Dict[str, Any],
-        stream_window_size: Dict[str, Union[None, float]],
-        data_loader_kwargs: Dict[str, Any],
-    ) -> Dict[str, DatasetConfig]:
-        """Generates DatasetConfigs for each dataset passed into the trainer."""
-        dataset_configs = {}
-        for dataset_name, _ in datasets.items():
-            if _ray230:
-                # DatasetConfig.use_stream_api and DatasetConfig.stream_window_size have been removed as of Ray 2.3.
-                # We need to use DatasetConfig.max_object_store_memory_fraction instead -> default to 20% when windowing
-                # is enabled unless the end user specifies a different fraction.
-                # https://docs.ray.io/en/master/ray-air/check-ingest.html?highlight=max_object_store_memory_fraction#enabling-streaming-ingest # noqa
-                dataset_conf = DatasetConfig(
-                    split=True,
-                    max_object_store_memory_fraction=stream_window_size.get(dataset_name),
-                )
-            else:
-                dataset_conf = DatasetConfig(
-                    split=True,
-                    use_stream_api=True,
-                    stream_window_size=stream_window_size.get(dataset_name),
-                )
-
-            if dataset_name == "train":
-                # Mark train dataset as always required
-                dataset_conf.required = True
-                # Check data loader kwargs to see if shuffle should be enabled for the
-                # train dataset. global_shuffle is False by default for all other datasets.
-                dataset_conf.global_shuffle = data_loader_kwargs.get("shuffle", True)
-            dataset_configs[dataset_name] = dataset_conf
-        return dataset_configs
-
     def run(
         self,
         train_loop_per_worker: Callable,
@@ -418,9 +400,13 @@ class RayAirRunner:
     ) -> Result:
         dataset_config = None
         if dataset is not None:
-            data_loader_kwargs = data_loader_kwargs or {}
-            stream_window_size = stream_window_size or {}
-            dataset_config = self._get_dataset_configs(dataset, stream_window_size, data_loader_kwargs)
+            dataset_config = ray.train.DataConfig(
+                datasets_to_split="all",
+                execution_options=ray.data.ExecutionOptions(
+                    preserve_order=data_loader_kwargs.get("shuffle", True),
+                    verbose_progress=True,
+                ),
+            )
 
         callbacks = callbacks or []
 
@@ -524,17 +510,22 @@ class RayTrainerV2(BaseTrainer):
         self._validation_metric = trainer_results.metrics["validation_metric"]
 
         # Load model from checkpoint
-        ckpt = TorchCheckpoint.from_checkpoint(trainer_results.checkpoint)
-        results = ckpt.to_dict()["state_dict"]
+        ckpt = trainer_results.checkpoint
+
+        with open_file(os.path.join(ckpt.path, MODEL_WEIGHTS_FILE_NAME), "rb") as f:
+            state_dict = torch.load(f, map_location=torch.device(get_torch_device()))
 
         # load state dict back into the model
         # use `strict=False` to account for PEFT training, where the saved state in the checkpoint
         # might only contain the PEFT layers that were modified during training
-        state_dict, *args = results
         self.model.load_state_dict(state_dict, strict=False)
-        results = (self.model, *args)
 
-        return results
+        return (
+            self.model,
+            trainer_results.metrics["train_results"],
+            trainer_results.metrics["val_results"],
+            trainer_results.metrics["test_results"],
+        )
 
     def train_online(self, *args, **kwargs):
         # TODO: When this is implemented we also need to update the

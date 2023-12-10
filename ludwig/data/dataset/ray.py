@@ -31,6 +31,7 @@ from pyarrow.lib import ArrowInvalid
 from ray.data import read_parquet
 from ray.data.dataset import Dataset as _Dataset
 from ray.data.dataset_pipeline import DatasetPipeline
+from ray.data.iterator import DataIterator
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend.base import Backend
@@ -296,10 +297,14 @@ class RayDatasetShard(Dataset):
 
     @lru_cache(1)
     def __len__(self):
-        num_rows = 0
-        for block, meta in self.epoch_iter._to_block_iterator()[0]:
-            num_rows += meta.num_rows
-        return num_rows
+        if isinstance(self.epoch_iter, DataIterator):
+            num_rows = 0
+            for block, meta in self.epoch_iter._to_block_iterator()[0]:
+                num_rows += meta.num_rows
+            return num_rows
+        else:
+            # self.epoch_iter is a ray.data.Dataset object
+            return self.epoch_iter.count()
 
     @property
     def size(self):
