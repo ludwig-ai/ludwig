@@ -1,6 +1,6 @@
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from ray.tune.syncer import _BackgroundSyncer
+from ray.train._internal.syncer import _BackgroundSyncer
 
 from ludwig.utils.data_utils import use_credentials
 from ludwig.utils.fs_utils import delete, download, upload
