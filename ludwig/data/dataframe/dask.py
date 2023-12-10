@@ -26,7 +26,7 @@ import ray
 from dask.diagnostics import ProgressBar
 from packaging import version
 from pyarrow.fs import FSSpecHandler, PyFileSystem
-from ray.data import Dataset, read_parquet
+from ray.data import ActorPoolStrategy, Dataset, read_parquet
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.data.dataframe.base import DataFrameEngine
@@ -167,7 +167,7 @@ class DaskEngine(DataFrameEngine):
 
         with tensor_extension_casting(enable_tensor_extension_casting):
             ds = ray.data.from_dask(series)
-            ds = ds.map_batches(map_fn, batch_format="pandas")
+            ds = ds.map_batches(map_fn, batch_format="pandas", compute=ActorPoolStrategy())
             return ds.to_dask()
 
     def apply_objects(self, df, apply_fn, meta=None):

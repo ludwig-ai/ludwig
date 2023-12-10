@@ -19,7 +19,7 @@ import math
 import queue
 import threading
 from functools import lru_cache
-from typing import Dict, Iterable, Iterator, Literal, Optional, Union
+from typing import Dict, Iterable, Literal, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -29,6 +29,7 @@ from packaging import version
 from pyarrow.fs import FSSpecHandler, PyFileSystem
 from pyarrow.lib import ArrowInvalid
 from ray.data import read_parquet
+from ray.data.dataset import Dataset as _Dataset
 from ray.data.dataset_pipeline import DatasetPipeline
 
 from ludwig.api_annotations import DeveloperAPI
@@ -49,6 +50,7 @@ from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
 
+_ray_240 = version.parse(ray.__version__) >= version.parse("2.4.0")
 _ray_230 = version.parse(ray.__version__) >= version.parse("2.3.0")
 
 
@@ -140,7 +142,8 @@ class RayDataset(Dataset):
         augmentation_pipeline=None,
     ):
         yield RayDatasetBatcher(
-            self.ds.repeat().iter_datasets(),
+            # self.ds is a MaterializedDataset object - the iterator call returns a DataIterator object
+            self.ds.iterator(),
             self.features,
             self.training_set_metadata,
             batch_size,
@@ -234,7 +237,7 @@ class RayDatasetManager(DatasetManager):
 class RayDatasetShard(Dataset):
     def __init__(
         self,
-        dataset_shard: DatasetPipeline,
+        dataset_shard: _Dataset,
         features: Dict[str, FeatureConfigDict],
         training_set_metadata: TrainingSetMetadataDict,
     ):
@@ -244,6 +247,10 @@ class RayDatasetShard(Dataset):
         self.create_epoch_iter()
 
     def create_epoch_iter(self) -> None:
+        if _ray_240:
+            self.epoch_iter = self.dataset_shard
+            return
+
         if _ray_230:
             # In Ray >= 2.3, session.get_dataset_shard() returns a DatasetIterator object.
             if isinstance(self.dataset_shard, ray.data.DatasetIterator):
@@ -289,7 +296,10 @@ class RayDatasetShard(Dataset):
 
     @lru_cache(1)
     def __len__(self):
-        return next(self.epoch_iter).count()
+        num_rows = 0
+        for block, meta in self.epoch_iter._to_block_iterator()[0]:
+            num_rows += meta.num_rows
+        return num_rows
 
     @property
     def size(self):
@@ -306,7 +316,7 @@ class RayDatasetShard(Dataset):
 class RayDatasetBatcher(Batcher):
     def __init__(
         self,
-        dataset_epoch_iterator: Iterator[DatasetPipeline],
+        dataset_epoch_iterator: _Dataset,
         features: Dict[str, Dict],
         training_set_metadata: TrainingSetMetadataDict,
         batch_size: int,
@@ -364,7 +374,7 @@ class RayDatasetBatcher(Batcher):
         return math.ceil(self.samples_per_epoch / self.batch_size)
 
     def _fetch_next_epoch(self):
-        pipeline = next(self.dataset_epoch_iterator)
+        pipeline = self.dataset_epoch_iterator
 
         read_parallelism = 1
         if read_parallelism == 1:
@@ -431,14 +441,14 @@ class RayDatasetBatcher(Batcher):
 
         return augment_batch
 
-    def _create_sync_reader(self, pipeline: DatasetPipeline):
+    def _create_sync_reader(self, pipeline: _Dataset):
         def sync_read():
             for batch in pipeline.iter_batches(prefetch_blocks=0, batch_size=self.batch_size, batch_format="pandas"):
                 yield self._prepare_batch(batch)
 
         return sync_read()
 
-    def _create_async_reader(self, pipeline: DatasetPipeline):
+    def _create_async_reader(self, pipeline: _Dataset):
         q = queue.Queue(maxsize=100)
         batch_size = self.batch_size
         augment_batch = self._augment_batch_fn()
@@ -474,7 +484,7 @@ class RayDatasetBatcher(Batcher):
 
         return async_read()
 
-    def _create_async_parallel_reader(self, pipeline: DatasetPipeline, num_threads: int):
+    def _create_async_parallel_reader(self, pipeline: _Dataset, num_threads: int):
         q = queue.Queue(maxsize=100)
 
         batch_size = self.batch_size

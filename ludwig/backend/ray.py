@@ -31,6 +31,7 @@ from ray import ObjectRef
 from ray.air import session
 from ray.air.config import DatasetConfig, RunConfig, ScalingConfig
 from ray.air.result import Result
+from ray.data import ActorPoolStrategy
 from ray.train._checkpoint import Checkpoint
 from ray.train.base_trainer import TrainingFailedError
 from ray.train.torch import TorchCheckpoint
@@ -752,7 +753,7 @@ class RayPredictor(BasePredictor):
             predictions = dataset.ds.map_batches(
                 batch_predictor,
                 batch_size=self.batch_size,
-                compute="actors",
+                compute=ActorPoolStrategy(),
                 batch_format="pandas",
                 num_cpus=num_cpus,
                 num_gpus=num_gpus,
@@ -1135,7 +1136,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
             ds = ds.map_batches(
                 transform_fn,
                 batch_size=batch_size,
-                compute="actors",
+                compute=ActorPoolStrategy(),
                 batch_format="pandas",
                 **self._get_transform_kwargs(),
             )
